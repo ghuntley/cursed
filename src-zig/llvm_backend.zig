@@ -215,7 +215,7 @@ pub const LLVMBackend = struct {
     
     fn generateFromSource(self: *LLVMBackend, source: []const u8, verbose: bool) LLVMBackendError!void {
         // First pass: collect string literals for global constants
-        var string_literals: std.ArrayList([]const u8) = .empty;
+        var string_literals = std.ArrayList([]const u8).init(self.allocator);
         defer {
             for (string_literals.items) |str| {
                 self.allocator.free(str);

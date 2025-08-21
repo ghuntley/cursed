@@ -535,10 +535,10 @@ fn compileMultiArgumentPrint(
     variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)
 ) !void {
     // Parse arguments separated by commas
-    var args_list: std.ArrayList(LLVMValueRef) = .empty;
+    var args_list = std.ArrayList(LLVMValueRef).init(self.allocator);
     defer args_list.deinit();
     
-    var format_parts: std.ArrayList([]const u8) = .empty;
+    var format_parts = std.ArrayList([]const u8).init(self.allocator);
     defer {
         for (format_parts.items) |part| {
             allocator.free(part);
@@ -576,7 +576,7 @@ fn compileMultiArgumentPrint(
     }
     
     // Build format string
-    var format_string: std.ArrayList(u8) = .empty;
+    var format_string = std.ArrayList(u8).init(self.allocator);
     defer format_string.deinit();
     
     for (format_parts.items) |part| {
@@ -587,7 +587,7 @@ fn compileMultiArgumentPrint(
     const format_str = try backend.buildConstString(format_string.items, "fmt_str");
     
     // Create arguments array
-    var final_args: std.ArrayList(LLVMValueRef) = .empty;
+    var final_args = std.ArrayList(LLVMValueRef).init(self.allocator);
     defer final_args.deinit();
     
     try final_args.append(format_str);
@@ -677,7 +677,7 @@ fn generateFunctionBodies(
     var lines = std.mem.splitScalar(u8, source, '\n');
     var in_function = false;
     var current_function: ?LLVMValueRef = null;
-    var function_body_lines: std.ArrayList([]const u8) = .empty;
+    var function_body_lines = std.ArrayList([]const u8).init(self.allocator);
     defer function_body_lines.deinit();
     
     while (lines.next()) |line| {
@@ -911,7 +911,7 @@ fn evaluateExpressionLLVM(
             const args_str = trimmed[args_start..args_end];
             
             // Parse arguments (simplified - assume 2 integer arguments)
-            var args_list: std.ArrayList(LLVMValueRef) = .empty;
+            var args_list = std.ArrayList(LLVMValueRef).init(self.allocator);
             defer args_list.deinit();
             
             if (args_str.len > 0) {

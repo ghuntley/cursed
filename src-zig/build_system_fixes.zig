@@ -72,7 +72,7 @@ pub const SafeBuildStep = struct {
         self.state.store(.running, .release);
         
         // Simulate work
-        std.time.sleep(100_000_000); // 100ms
+        std.Thread.sleep(100_000_000); // 100ms
         
         self.state.store(.completed, .release);
         std.debug.print("✅ Safe build step completed: {s}\n", .{self.name});
@@ -264,7 +264,7 @@ pub const DependencyTracker = struct {
     }
 
     pub fn getExecutionOrder(self: *DependencyTracker) !std.ArrayList(*std.Build.Step) {
-        var order: std.ArrayList(*std.Build.Step) = .empty;
+        var order = std.ArrayList(*std.Build.Step).init(self.allocator);
         var in_degree = std.HashMap(*std.Build.Step, u32, std.hash_map.AutoContext(*std.Build.Step), 80).init(self.allocator);
         defer in_degree.deinit(self.allocator);
 
@@ -283,7 +283,7 @@ pub const DependencyTracker = struct {
         }
 
         // Topological sort
-        var queue: std.ArrayList(*std.Build.Step) = .empty;
+        var queue = std.ArrayList(*std.Build.Step).init(self.allocator);
         defer queue.deinit(self.allocator);
 
         var degree_iterator = in_degree.iterator();

@@ -194,7 +194,7 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
                 const wait_ms = std.fmt.parseInt(u64, time_str, 10) catch 100;
                 
                 if (verbose) print("⏳ Waiting for {}ms...\n", .{wait_ms});
-                std.time.sleep(wait_ms * 1_000_000); // Convert ms to ns
+                std.Thread.sleep(wait_ms * 1_000_000); // Convert ms to ns
                 if (verbose) print("✅ Wait completed\n", .{});
             }
         }

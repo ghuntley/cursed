@@ -823,7 +823,7 @@ pub const EnhancedPGOSystem = struct {
         print("  Analyzing cross-function optimizations...\n", .{});
         
         // Analyze call edge frequency patterns for inlining opportunities
-        var inline_candidates: std.ArrayList(CrossFunctionOptimization) = .empty;
+        var inline_candidates = std.ArrayList(CrossFunctionOptimization).init(self.allocator);
         defer inline_candidates.deinit(self.allocator);
         
         var edge_iter = self.call_edge_profiles.iterator();

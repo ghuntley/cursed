@@ -492,7 +492,7 @@ pub const HotPathOptimizer = struct {
     
     /// Generate optimization recommendations
     pub fn generateOptimizationRecommendations(self: *Self) !std.ArrayList(OptimizationRecommendation) {
-        var recommendations: std.ArrayList(OptimizationRecommendation) = .empty;
+        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
         
         // Analyze hot functions for recommendations
         var func_iter = self.hot_functions.iterator();

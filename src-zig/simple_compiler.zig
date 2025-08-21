@@ -51,7 +51,7 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
     // Step 3: Simple CURSED-to-C translation
     print("[3/5] Translating CURSED to C...\n", .{});
     
-    var variables: std.ArrayList(VariableInfo) = .empty;
+    var variables = std.ArrayList(VariableInfo).init(allocator);
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);

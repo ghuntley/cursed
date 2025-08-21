@@ -503,7 +503,7 @@ pub const Worker = struct {
             }
 
             // No work available, yield CPU
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
     }
 
@@ -666,7 +666,7 @@ pub const Scheduler = struct {
     pub fn yield(_: *Scheduler) !void {
         // In a real implementation, this would cooperatively yield the current goroutine
         // For now, we just sleep briefly to simulate yielding
-        std.time.sleep(1_000); // 1 microsecond
+        std.Thread.sleep(1_000); // 1 microsecond
     }
 
     fn scheduleGoroutine(self: *Scheduler, goroutine: *Goroutine) !void {
@@ -834,7 +834,7 @@ pub const Select = struct {
             }
 
             // Brief sleep to avoid busy waiting
-            std.time.sleep(100_000); // 100 microseconds
+            std.Thread.sleep(100_000); // 100 microseconds
         }
     }
 };
@@ -1079,7 +1079,7 @@ test "goroutine creation and execution" {
     const goroutine_id = try stan(testFn, &context);
     
     // Wait a bit for execution
-    std.time.sleep(10_000_000); // 10ms
+    std.Thread.sleep(10_000_000); // 10ms
     
     try std.testing.expect(executed);
     try std.testing.expect(goroutine_id > 0);

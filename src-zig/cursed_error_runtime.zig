@@ -91,29 +91,52 @@ pub const CursedError = struct {
         self.allocator.destroy(self);
     }
     
-    pub fn format(self: *const CursedError, writer: anytype) !void {
-        try writer.print("[CURSED ERROR] {s}: {s}\n", .{ @tagName(self.error_type), self.message });
-        try writer.print("  Error Code: {}\n", .{self.code});
+    pub fn format(self: *const CursedError, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = options;
+        
+        _ = writer.write("[CURSED ERROR] ") catch 0;
+        _ = writer.write(@tagName(self.error_type)) catch 0;
+        _ = writer.write(": ") catch 0;
+        _ = writer.write(self.message) catch 0;
+        _ = writer.write("\n  Error Code: ") catch 0;
+        
+        var buf: [32]u8 = undefined;
+        const code_str = std.fmt.bufPrint(buf[0..], "{}", .{self.code}) catch "?";
+        _ = writer.write(code_str) catch 0;
+        _ = writer.write("\n") catch 0;
         
         if (self.stack_trace) |trace| {
-            try writer.print("  Stack Trace:\n", .{});
+            _ = writer.write("  Stack Trace:\n") catch 0;
             for (trace) |frame| {
-                try writer.print("    at {s} ({s}:{}:{})\n", .{
-                    frame.function_name, frame.file_name, frame.line, frame.column
-                });
+                _ = writer.write("    at ") catch 0;
+                _ = writer.write(frame.function_name) catch 0;
+                _ = writer.write(" (") catch 0;
+                _ = writer.write(frame.file_name) catch 0;
+                _ = writer.write(":") catch 0;
+                const line_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.line}) catch "?";
+                _ = writer.write(line_str) catch 0;
+                _ = writer.write(":") catch 0;
+                const col_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.column}) catch "?";
+                _ = writer.write(col_str) catch 0;
+                _ = writer.write(")\n") catch 0;
             }
         }
         
         if (self.context) |ctx| {
-            try writer.print("  Context:\n", .{});
+            _ = writer.write("  Context:\n") catch 0;
             for (ctx) |context| {
-                try writer.print("    {s}: {s}\n", .{ context.key, context.value });
+                _ = writer.write("    ") catch 0;
+                _ = writer.write(context.key) catch 0;
+                _ = writer.write(": ") catch 0;
+                _ = writer.write(context.value) catch 0;
+                _ = writer.write("\n") catch 0;
             }
         }
         
         if (self.inner_error) |inner| {
-            try writer.print("  Caused by:\n", .{});
-            try inner.format(writer);
+            _ = writer.write("  Caused by:\n") catch 0;
+            inner.format("", .{}, writer) catch {};
         }
     }
     
@@ -147,12 +170,12 @@ pub const ErrorHandler = struct {
         for (self.error_stack.items) |error_obj| {
             error_obj.deinit();
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(self.allocator);
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit();
+        self.function_stack.deinit(self.allocator);
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
@@ -176,7 +199,7 @@ pub const ErrorHandler = struct {
         column: u32
     ) !*CursedError {
         // Capture current stack trace with accurate line numbers
-        var stack_trace = .empty;
+        var stack_trace = ArrayList(CursedError.StackFrame){};
         
         // Add current execution point as the top of stack trace
         if (self.function_stack.items.len > 0) {
@@ -213,8 +236,8 @@ pub const ErrorHandler = struct {
         );
         
         // Add contextual information
-        var context = .empty;
-        defer context.deinit();
+        var context = ArrayList(CursedError.Context){};
+        defer context.deinit(self.allocator);
         
         try context.append(self.allocator, CursedError.Context{
             .key = try self.allocator.dupe(u8, "error_location"),
@@ -228,7 +251,7 @@ pub const ErrorHandler = struct {
         
         error_obj.context = try self.allocator.dupe(CursedError.Context, context.items);
         
-        stack_trace.deinit();
+        stack_trace.deinit(self.allocator);
         
         try self.error_stack.append(self.allocator, error_obj);
         return error_obj;
@@ -242,7 +265,7 @@ pub const ErrorHandler = struct {
             
             // Create new stack frame for current location
             if (error_obj.stack_trace) |trace| {
-                var new_trace = .empty;
+                var new_trace = ArrayList(CursedError.StackFrame){};
                 
                 // Add existing trace
                 for (trace) |frame| {
@@ -270,7 +293,7 @@ pub const ErrorHandler = struct {
                 self.allocator.free(trace);
                 
                 error_obj.stack_trace = try self.allocator.dupe(CursedError.StackFrame, new_trace.items);
-                new_trace.deinit();
+                new_trace.deinit(self.allocator);
             }
         }
         
@@ -366,7 +389,7 @@ export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.c) void {
     if (error_obj) |err| {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-        err.format(stdout) catch {};
+        err.format("", .{}, stdout) catch {};
     }
 }
 
@@ -454,7 +477,7 @@ export fn cursed_try_catch_end(
         const err: *CursedError = @ptrCast(@alignCast(error_obj.?));
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-        err.format(stdout) catch {};
+        err.format("", .{}, stdout) catch {};
     }
 }
 

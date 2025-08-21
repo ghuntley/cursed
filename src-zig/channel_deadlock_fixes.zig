@@ -159,7 +159,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                     
                     // Exponential backoff
                     const backoff_ns = @as(u64, @intCast(@as(u32, 1000) << @as(u5, @intCast(@min(retry_count, 10)))));
-                    std.time.sleep(backoff_ns);
+                    std.Thread.sleep(backoff_ns);
                     continue;
                 }
                 defer self.mutex.unlock();
@@ -222,7 +222,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                     self.stats.recordOperation(.retry);
                     
                     const backoff_ns = @as(u64, @intCast(@as(u32, 1000) << @as(u5, @intCast(@min(retry_count, 10)))));
-                    std.time.sleep(backoff_ns);
+                    std.Thread.sleep(backoff_ns);
                     continue;
                 }
                 defer self.mutex.unlock();
@@ -264,7 +264,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                 }
                 
                 // Short sleep to avoid busy waiting
-                std.time.sleep(100_000); // 100 microseconds
+                std.Thread.sleep(100_000); // 100 microseconds
             }
             
             return false;
@@ -501,7 +501,7 @@ pub const DeadlockDetector = struct {
     fn detectorMain(self: *DeadlockDetector) void {
         while (self.running.load(.acquire)) {
             self.checkForDeadlocks();
-            std.time.sleep(1_000_000_000); // Check every 1 second
+            std.Thread.sleep(1_000_000_000); // Check every 1 second
         }
     }
     
@@ -677,13 +677,13 @@ fn senderWorker(context: *anyopaque) void {
         
         switch (result) {
             .sent => {},
-            .would_block => std.time.sleep(1_000_000), // 1ms backoff
+            .would_block => std.Thread.sleep(1_000_000), // 1ms backoff
             .closed, .timeout => break,
         }
         
         // Small random delay to create contention
         if (op % 10 == 0) {
-            std.time.sleep(std.crypto.random.intRangeAtMost(u64, 100_000, 5_000_000));
+            std.Thread.sleep(std.crypto.random.intRangeAtMost(u64, 100_000, 5_000_000));
         }
     }
 }
@@ -701,12 +701,12 @@ fn receiverWorker(context: *anyopaque) void {
         if (ctx.channels[channel_idx].receive() catch null) |_| {
             // Successfully received
         } else {
-            std.time.sleep(1_000_000); // 1ms backoff on failure
+            std.Thread.sleep(1_000_000); // 1ms backoff on failure
         }
         
         // Small random delay to create contention
         if (op % 10 == 0) {
-            std.time.sleep(std.crypto.random.intRangeAtMost(u64, 100_000, 5_000_000));
+            std.Thread.sleep(std.crypto.random.intRangeAtMost(u64, 100_000, 5_000_000));
         }
     }
 }

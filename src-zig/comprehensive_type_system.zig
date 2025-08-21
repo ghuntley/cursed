@@ -525,7 +525,7 @@ pub const TypeEnvironment = struct {
     
     // Comprehensive validation before codegen
     pub fn validateAllTypesResolved(self: *TypeEnvironment, ast_node: *ast.ASTNode) !void {
-        var unresolved_vars: std.ArrayList(u32) = .empty;
+        var unresolved_vars = std.ArrayList(u32).init(self.allocator);
         defer unresolved_vars.deinit();
         
         self.collectUnresolvedTypeVars(ast_node, &unresolved_vars);

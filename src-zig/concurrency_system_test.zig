@@ -211,7 +211,7 @@ pub const ConcurrencySystemTest = struct {
         try testing.expect(goroutine_id > 0);
         
         // Wait for execution
-        std.time.sleep(100_000_000); // 100ms
+        std.Thread.sleep(100_000_000); // 100ms
         
         try testing.expect(executed);
         print("✅ Goroutine execution successful\n", .{});

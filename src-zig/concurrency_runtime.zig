@@ -106,7 +106,7 @@ pub const SimpleChannel = struct {
             if (self.mutex.tryLock()) {
                 return true;
             }
-            std.time.sleep(100_000); // 100 microseconds
+            std.Thread.sleep(100_000); // 100 microseconds
         }
         
         return false;
@@ -247,7 +247,7 @@ pub fn sendToChannelTimeout(channel_id: u64, value: Variable, timeout_ns: u64) !
             
             return RuntimeError.ChannelNotFound;
         }
-        std.time.sleep(100_000); // 100 microseconds
+        std.Thread.sleep(100_000); // 100 microseconds
     }
 
     return RuntimeError.ChannelNotFound; // Timeout on registry lock
@@ -279,7 +279,7 @@ pub fn receiveFromChannelTimeout(channel_id: u64, timeout_ns: u64) !?Variable {
             const remaining_timeout = timeout_ns - @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
             return try channel_ptr.receiveTimeout(remaining_timeout);
         }
-        std.time.sleep(100_000); // 100 microseconds
+        std.Thread.sleep(100_000); // 100 microseconds
     }
     
     return RuntimeError.ChannelNotFound; // Timeout on registry lock

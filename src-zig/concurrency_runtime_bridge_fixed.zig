@@ -165,7 +165,7 @@ const GoroutineTracker = struct {
             if (cleanup_id) |id| {
                 self.performCleanup(id);
             } else {
-                std.time.sleep(5_000_000); // 5ms when no work
+                std.Thread.sleep(5_000_000); // 5ms when no work
             }
         }
     }
@@ -173,7 +173,7 @@ const GoroutineTracker = struct {
     /// Perform actual cleanup with proper synchronization
     fn performCleanup(self: *Self, id: concurrency_fixed.GoroutineId) void {
         // Wait for grace period to ensure goroutine has fully completed
-        std.time.sleep(10_000_000); // 10ms grace period
+        std.Thread.sleep(10_000_000); // 10ms grace period
         
         self.mutex.lock();
         defer self.mutex.unlock();
@@ -455,7 +455,7 @@ pub export fn cursed_wait_all_goroutines(timeout_ms: u32) i32 {
         if (elapsed >= timeout_ns) {
             return 1; // Timeout
         }
-        std.time.sleep(10_000_000); // 10ms
+        std.Thread.sleep(10_000_000); // 10ms
     }
     
     return 0; // All completed
@@ -469,5 +469,5 @@ pub export fn cursed_force_cleanup() void {
     
     // This is handled automatically by the cleanup worker thread
     // But we can trigger immediate processing if needed
-    std.time.sleep(1_000_000); // 1ms to allow cleanup worker to process
+    std.Thread.sleep(1_000_000); // 1ms to allow cleanup worker to process
 }

@@ -641,7 +641,7 @@ fn inferExpressionType(engine: *TypeInferenceEngine, expr: ast.Expression) TypeI
             // Infer function type and argument types with advanced constraint generation
             const func_type = try inferExpressionType(engine, call.function.*);
             
-            var arg_types: std.ArrayList(ast.Type) = .empty;
+            var arg_types = std.ArrayList(ast.Type).init(self.allocator);
             defer arg_types.deinit();
             
             for (call.arguments.items) |arg| {
@@ -754,7 +754,7 @@ fn checkVarianceConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, a
         },
         .Generic => |generic| {
             // Generic variance checking with constraints
-            var resolved_args: std.ArrayList(ast.Type) = .empty;
+            var resolved_args = std.ArrayList(ast.Type).init(self.allocator);
             defer resolved_args.deinit();
             
             for (arg_types) |arg_type| {
@@ -873,7 +873,7 @@ fn analyzeNestedGenericDepth(generic: ast.GenericType, current_depth: u32) !u32 
 
 /// Extract nested generic types for constraint analysis
 fn extractNestedGenericTypes(allocator: Allocator, generic: ast.GenericType) ![]ast.Type {
-    var types: std.ArrayList(ast.Type) = .empty;
+    var types = std.ArrayList(ast.Type).init(self.allocator);
     
     for (generic.type_args.items) |arg| {
         try types.append(arg);
@@ -1024,7 +1024,7 @@ fn isVarianceConstraintSatisfied(engine: *TypeInferenceEngine, resolved_type: as
 /// Resolve nested generic constraints
 fn resolveNestedGenericConstraints(engine: *TypeInferenceEngine, nested_constraint: ComplexConstraints.NestedGenericConstraint) !?ast.Type {
     // Create fresh type variables for deeply nested generics
-    var resolved_args: std.ArrayList(ast.Type) = .empty;
+    var resolved_args = std.ArrayList(ast.Type).init(self.allocator);
     defer resolved_args.deinit();
     
     for (nested_constraint.inner_types) |inner_type| {
@@ -1068,7 +1068,7 @@ fn resolveBoundConstraint(engine: *TypeInferenceEngine, type_var_id: u32, bound:
 fn resolveTypeWithFreshVars(engine: *TypeInferenceEngine, type_to_resolve: ast.Type) !ast.Type {
     switch (type_to_resolve) {
         .Generic => |generic| {
-            var fresh_args: std.ArrayList(ast.Type) = .empty;
+            var fresh_args = std.ArrayList(ast.Type).init(self.allocator);
             defer fresh_args.deinit();
             
             for (generic.type_args.items) |arg| {
@@ -1115,7 +1115,7 @@ fn resolveFallbackWithConstraints(engine: *TypeInferenceEngine, func_type: ast.T
 fn instantiateGenericType(engine: *TypeInferenceEngine, generic: ast.GenericType, concrete_type: ast.Type) !ast.Type {
     // Simple instantiation - replace first type parameter with concrete type
     if (generic.type_args.items.len > 0) {
-        var instantiated_args: std.ArrayList(ast.Type) = .empty;
+        var instantiated_args = std.ArrayList(ast.Type).init(self.allocator);
         defer instantiated_args.deinit();
         
         try instantiated_args.append(concrete_type);
@@ -1197,7 +1197,7 @@ fn resolveGenericWithVariance(engine: *TypeInferenceEngine, generic: ast.Generic
     const var_id = engine.next_var_id;
     engine.next_var_id += 1;
     
-    var constraints: std.ArrayList(ast.Type) = .empty;
+    var constraints = std.ArrayList(ast.Type).init(self.allocator);
     try constraints.append(arg_type);
     
     const type_var = TypeVariable{
@@ -1233,7 +1233,7 @@ fn unifyGenericWithConstraints(engine: *TypeInferenceEngine, generic: ast.Generi
 fn applySubstitutions(engine: *TypeInferenceEngine, original_type: ast.Type, substitutions: std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ast.Type {
     switch (original_type) {
         .Generic => |generic| {
-            var substituted_args: std.ArrayList(ast.Type) = .empty;
+            var substituted_args = std.ArrayList(ast.Type).init(self.allocator);
             defer substituted_args.deinit();
             
             for (generic.type_args.items) |arg| {

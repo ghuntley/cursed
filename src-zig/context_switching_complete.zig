@@ -447,7 +447,7 @@ pub const ContextPool = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, initial_size: usize) !Self {
-        var available: std.ArrayList(*Context) = .empty;
+        var available = std.ArrayList(*Context).init(self.allocator);
         try available.ensureTotalCapacity(allocator, initial_size);
         
         // Pre-allocate contexts

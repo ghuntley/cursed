@@ -65,7 +65,7 @@ pub fn bool_to_string_impl(allocator: std.mem.Allocator, value: bool) ![]u8 {
 
 /// Convert array to string representation
 pub fn array_to_string_impl(allocator: std.mem.Allocator, array: []const i64) ![]u8 {
-    var result: std.ArrayList(u8) = .empty;
+    var result = std.ArrayList(u8).init(self.allocator);
     defer result.deinit();
     
     try result.append('[');
@@ -125,7 +125,7 @@ pub fn http_post_impl(allocator: std.mem.Allocator, url: []const u8, data: []con
 /// Sleep implementation in milliseconds
 pub fn sleep_impl(milliseconds: i64) void {
     const nanos = @as(u64, @intCast(milliseconds)) * 1_000_000;
-    std.time.sleep(nanos);
+    std.Thread.sleep(nanos);
 }
 
 /// Get current thread ID

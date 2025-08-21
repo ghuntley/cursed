@@ -72,7 +72,7 @@ test "CURSED language construct support" {
     defer struct_name.deinit();
     
     // Test function call expressions
-    var args: std.ArrayList(*ast.Expression) = .empty;
+    var args = std.ArrayList(*ast.Expression).init(self.allocator);
     defer args.deinit();
     
     const arg1 = try ast.createIntegerExpression(allocator, 10);
@@ -103,7 +103,7 @@ test "AST performance validation" {
     
     // Create a large number of expressions to test performance
     const num_expressions = 1000;
-    var expressions: std.ArrayList(*ast.Expression) = .empty;
+    var expressions = std.ArrayList(*ast.Expression).init(self.allocator);
     defer {
         for (expressions.items) |expr| {
             expr.deinit();

@@ -532,7 +532,7 @@ pub const MemorySafeWorker = struct {
             }
 
             // No work available, yield CPU briefly
-            std.time.sleep(1000); // 1 microsecond
+            std.Thread.sleep(1000); // 1 microsecond
         }
     }
 
@@ -793,7 +793,7 @@ test "memory safe goroutine execution" {
     defer shutdownScheduler();
     
     // Wait a bit for execution
-    std.time.sleep(10_000_000); // 10ms
+    std.Thread.sleep(10_000_000); // 10ms
     
     try std.testing.expect(executed);
     try std.testing.expect(goroutine_id > 0);

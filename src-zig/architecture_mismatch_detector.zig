@@ -103,7 +103,7 @@ pub const ArchitectureMismatchDetector = struct {
     
     /// Provide fix recommendations for architecture mismatches
     pub fn provideFix(self: Self, analysis: BinaryAnalysis, system: SystemCompatibility) ![]const u8 {
-        var fix_message: std.ArrayList(u8) = .empty;
+        var fix_message = std.ArrayList(u8).init(self.allocator);
         const writer = fix_message.writer();
         
         try writer.writeAll("🔧 Architecture Mismatch Fix Recommendations:\n\n");

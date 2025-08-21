@@ -417,7 +417,7 @@ pub const EnhancedPackageManager = struct {
             print("📦 Installing {s}...\n", .{import_result.cursed_equivalent});
             
             // Simulate installation
-            std.time.sleep(1000000000); // 1 second
+            std.Thread.sleep(1000000000); // 1 second
             print("✅ Successfully installed {s}\n", .{import_result.cursed_equivalent});
             
             // Show migration tips

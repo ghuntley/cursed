@@ -337,7 +337,7 @@ pub const LLVMOptimizationEngine = struct {
     /// Get optimization recommendations based on code characteristics
     pub fn getOptimizationRecommendations(self: *LLVMOptimizationEngine, code_analysis: CodeAnalysis) []OptimizationRecommendation {
         _ = self;
-        var recommendations: std.ArrayList(OptimizationRecommendation) = .empty;
+        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
         
         // Loop-heavy code recommendations
         if (code_analysis.loop_count > 10) {

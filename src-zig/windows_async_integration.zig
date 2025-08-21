@@ -115,7 +115,7 @@ pub const WindowsAsyncRuntime = struct {
         var timeout_reached = std.atomic.Value(bool).init(false);
         const timeout_thread = try std.Thread.spawn(.{}, struct {
             fn timeoutMonitor(timeout_flag: *std.atomic.Value(bool), handle: windows.HANDLE, delay_ms: u32) void {
-                std.time.sleep(delay_ms * std.time.ns_per_ms);
+                std.Thread.sleep(delay_ms * std.time.ns_per_ms);
                 timeout_flag.store(true, .release);
                 
                 // Cancel the I/O operation if it's still pending

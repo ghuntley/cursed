@@ -268,9 +268,9 @@ pub const LinkerScriptManager = struct {
     
     /// Generate dynamic linker configuration for targets not in static map
     fn generateDynamicConfig(self: *LinkerScriptManager, triple: target_triple_normalization.TargetTripleNormalizer.NormalizedTriple) LinkerConfig {
-        var args: std.ArrayList([]const u8) = .empty;
+        var args = std.ArrayList([]const u8).init(self.allocator);
         defer args.deinit(self.allocator);
-        var libs: std.ArrayList([]const u8) = .empty;
+        var libs = std.ArrayList([]const u8).init(self.allocator);
         defer libs.deinit(self.allocator);
         
         // Base optimization flags for all targets

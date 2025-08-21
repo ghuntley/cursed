@@ -802,7 +802,7 @@ fn finalizationWorker(gc_instance: *FixedGC) void {
             // Take ownership of objects to finalize
             const objects_to_finalize = gc_instance.finalization_queue.toOwnedSlice() catch {
                 gc_instance.finalization_mutex.unlock();
-                std.time.sleep(10_000_000); // 10ms
+                std.Thread.sleep(10_000_000); // 10ms
                 continue;
             };
             gc_instance.finalization_mutex.unlock();
@@ -827,7 +827,7 @@ fn finalizationWorker(gc_instance: *FixedGC) void {
             gc_instance.finalization_mutex.unlock();
             
             // Sleep for a bit before checking again
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
     }
 }

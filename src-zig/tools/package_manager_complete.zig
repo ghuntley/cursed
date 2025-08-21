@@ -796,7 +796,7 @@ pub const RegistryClient = struct {
         
         // Mock HTTP implementation - in production would use actual HTTP client
         // This simulates network latency and response generation
-        std.time.sleep(std.time.ns_per_ms * 100); // Simulate 100ms latency
+        std.Thread.sleep(std.time.ns_per_ms * 100); // Simulate 100ms latency
         
         if (std.mem.indexOf(u8, path, "/search")) |_| {
             return try self.allocator.dupe(u8, 
@@ -832,7 +832,7 @@ pub const RegistryClient = struct {
         print("Downloading file from {s} to {s}\n", .{ url, destination });
         
         // Mock file download - in production would use actual HTTP client
-        std.time.sleep(std.time.ns_per_ms * 500); // Simulate 500ms download time
+        std.Thread.sleep(std.time.ns_per_ms * 500); // Simulate 500ms download time
         
         // Create mock package file
         const mock_content = "Mock package archive content";

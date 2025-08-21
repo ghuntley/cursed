@@ -110,7 +110,7 @@ pub const LLVMBackendMinimal = struct {
         // Parse function definitions and function calls
         var lines = std.mem.splitScalar(u8, source, '\n');
         var has_functions = false;
-        var main_statements: std.ArrayList([]const u8) = .empty;
+        var main_statements = std.ArrayList([]const u8).init(self.allocator);
         defer {
             // Fix memory leak: Free all duplicated strings before deinit
             for (main_statements.items) |stmt| {
@@ -154,7 +154,7 @@ pub const LLVMBackendMinimal = struct {
     }
     
     fn generateMainFunction(self: *LLVMBackendMinimal, statements: [][]const u8, has_functions: bool) !void {
-        var main_body: std.ArrayList(u8) = .empty;
+        var main_body = std.ArrayList(u8).init(self.allocator);
         defer main_body.deinit();
         
         for (statements) |stmt| {

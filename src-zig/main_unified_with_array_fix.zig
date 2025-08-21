@@ -240,7 +240,7 @@ pub const Variable = union(enum) {
                 defer arena.deinit();
                 const arena_allocator = arena.allocator();
                 
-                var result: std.ArrayList(u8) = .empty;
+                var result = std.ArrayList(u8).init(self.allocator);
                 errdefer result.deinit(); // Clean up on error
                 
                 try result.append('[');
@@ -274,7 +274,7 @@ pub const Variable = union(enum) {
                 return Variable{ .String = ManagedString.fromOwned(copy) };
             },
             .Array => |arr| {
-                var new_arr: std.ArrayList(Variable) = .empty;
+                var new_arr = std.ArrayList(Variable).init(self.allocator);
                 try new_arr.ensureTotalCapacity(allocator, arr.items.len);
                 for (arr.items) |item| {
                     const cloned = try item.clone(allocator);
@@ -950,7 +950,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
 
     
     // Split source into lines for processing
-    var source_lines: std.ArrayList([]const u8) = .empty;
+    var source_lines = std.ArrayList([]const u8).init(self.allocator);
     defer source_lines.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -978,7 +978,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             // Check if it's a single-line or multi-line stan block
             if (std.mem.indexOf(u8, trimmed, "}") == null) {
                 // Multi-line stan block - collect all lines until closing brace
-                var block_lines: std.ArrayList([]const u8) = .empty;
+                var block_lines = std.ArrayList([]const u8).init(self.allocator);
                 defer block_lines.deinit();
                 
                 try block_lines.append(trimmed); // Add the opening line
@@ -999,7 +999,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 }
                 
                 // Reconstruct the full stan statement
-                var full_statement: std.ArrayList(u8) = .empty;
+                var full_statement = std.ArrayList(u8).init(self.allocator);
                 defer full_statement.deinit();
                 
                 for (block_lines.items, 0..) |block_line, i| {
@@ -1192,7 +1192,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         // Wait for all goroutines to finish (simple approach)
         var wait_count: u32 = 0;
         while (scheduler.activeGoroutineCount() > 0 and wait_count < 100) {
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
             wait_count += 1;
         }
         
@@ -1230,7 +1230,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     
     // Split line by semicolons to handle multiple statements on one line
     // But be careful not to split inside braces
-    var statements: std.ArrayList([]const u8) = .empty;
+    var statements = std.ArrayList([]const u8).init(self.allocator);
     defer statements.deinit();
     
     var start: usize = 0;
@@ -3160,7 +3160,7 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
     }
     
     // Add a delay to allow goroutines to start and execute
-    std.time.sleep(50_000_000); // 50ms
+    std.Thread.sleep(50_000_000); // 50ms
 }
 
 /// Handle yikes error creation: yikes "message"
@@ -4368,7 +4368,7 @@ fn handleStdlibFunctionCall(allocator: Allocator, variables: *VariableStore, mod
 
 fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
     // Parse arguments and expand variables
-    var output: std.ArrayList(u8) = .empty;
+    var output = std.ArrayList(u8).init(self.allocator);
     defer output.deinit();
     
     // Split by commas and process each argument
@@ -4608,7 +4608,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     // Check for generic type parameters: func_name<T, U>
     var func_name = func_declaration;
-    var type_params: std.ArrayList([]const u8) = .empty;
+    var type_params = std.ArrayList([]const u8).init(self.allocator);
     defer type_params.deinit();
     
     if (std.mem.indexOf(u8, func_declaration, "<")) |angle_start| {
@@ -4745,7 +4745,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     // Check for generic function call syntax: func_name<T>
     var is_generic_call = false;
     var generic_base_name: []const u8 = func_name;
-    var type_args: std.ArrayList([]const u8) = .empty;
+    var type_args = std.ArrayList([]const u8).init(self.allocator);
     defer type_args.deinit();
     
     // Check for both angle brackets <> and square brackets [] for generic syntax
@@ -5571,7 +5571,7 @@ fn handleReadyOtherwiseBlock(
     }
     
     // First, collect all lines to check if this is pattern matching
-    var block_content: std.ArrayList(u8) = .empty;
+    var block_content = std.ArrayList(u8).init(self.allocator);
     defer block_content.deinit();
     
     var has_pattern_matching = false;
@@ -6199,7 +6199,7 @@ fn handleInlineBestieLoop(
         
         // Execute loop body - split by semicolons and process each statement
         // Parse body statements manually to avoid circular dependency
-        var body_statements: std.ArrayList([]const u8) = .empty;
+        var body_statements = std.ArrayList([]const u8).init(self.allocator);
         defer body_statements.deinit();
         
         var start: usize = 0;
@@ -6400,7 +6400,7 @@ fn handleBestieLoop(
         if (verbose) print("🐛 DEBUG: Executing loop body lines {} to {}\n", .{loop_body_start, loop_body_end});
         
         // Create a sub-array of lines for the loop body
-        var body_lines: std.ArrayList([]const u8) = .empty;
+        var body_lines = std.ArrayList([]const u8).init(self.allocator);
         defer body_lines.deinit();
         
         for (loop_body_start..loop_body_end) |line_idx| {

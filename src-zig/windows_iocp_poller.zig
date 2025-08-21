@@ -563,7 +563,7 @@ pub const IOCPPoller = struct {
                             }
                             
                             // Brief delay before retry
-                            std.time.sleep(1 * std.time.ns_per_ms);
+                            std.Thread.sleep(1 * std.time.ns_per_ms);
                             continue;
                         };
                         
@@ -652,7 +652,7 @@ pub const AsyncFileOps = struct {
             if (operation.bytes_transferred > 0 or operation.error_code != 0) {
                 return true;
             }
-            std.time.sleep(1 * std.time.ns_per_ms); // 1ms sleep
+            std.Thread.sleep(1 * std.time.ns_per_ms); // 1ms sleep
         }
         
         return false;
@@ -874,7 +874,7 @@ pub const AsyncRuntime = struct {
                     .operation = operation,
                 };
             }
-            std.time.sleep(10 * std.time.ns_per_ms); // 10ms sleep
+            std.Thread.sleep(10 * std.time.ns_per_ms); // 10ms sleep
         }
         
         return AsyncResult{

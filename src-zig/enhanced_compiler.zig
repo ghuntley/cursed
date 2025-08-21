@@ -247,7 +247,7 @@ fn generateTargetSpecificLLVMIR(allocator: Allocator, source: []const u8, filena
 
 /// Compile IR to native executable with target-specific settings
 fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, output_filename: []const u8, target_triple: []const u8, config: CompilerConfig) !void {
-    var compile_args: std.ArrayList([]const u8) = .empty;
+    var compile_args = std.ArrayList([]const u8).init(allocator);
     defer compile_args.deinit();
     
     // Base clang command - use versioned clang if available
@@ -371,7 +371,7 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
 /// Compile LLVM IR to native executable using clang
 fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, executable_name: []const u8, debug_info: bool, verbose: bool) !void {
     // First try with clang directly on LLVM IR
-    var compile_args: std.ArrayList([]const u8) = .empty;
+    var compile_args = std.ArrayList([]const u8).init(allocator);
     defer compile_args.deinit();
     
     const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
@@ -429,7 +429,7 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     const obj_filename = try std.fmt.allocPrint(allocator, "{s}.o", .{executable_name});
     defer allocator.free(obj_filename);
     
-    var llc_args: std.ArrayList([]const u8) = .empty;
+    var llc_args = std.ArrayList([]const u8).init(allocator);
     defer llc_args.deinit();
     
     try llc_args.append("llc-18");
@@ -471,7 +471,7 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     }
     
     // Step 2: Use gcc to link object file to executable
-    var gcc_args: std.ArrayList([]const u8) = .empty;
+    var gcc_args = std.ArrayList([]const u8).init(allocator);
     defer gcc_args.deinit();
     
     try gcc_args.append("gcc");
@@ -518,7 +518,7 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
 
 /// Enhanced CURSED-to-C translation with better parsing
 fn translateCursedToC(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
-    var variables: std.ArrayList(VariableInfo) = .empty;
+    var variables = std.ArrayList(VariableInfo).init(allocator);
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);
@@ -570,7 +570,7 @@ fn generateLLVMHeader(writer: anytype, target_triple: []const u8) !void {
 
 /// Enhanced CURSED-to-LLVM IR translation
 fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool) !void {
-    var variables: std.ArrayList(VariableInfo) = .empty;
+    var variables = std.ArrayList(VariableInfo).init(allocator);
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);
@@ -579,7 +579,7 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
         variables.deinit();
     }
     
-    var string_constants: std.ArrayList([]const u8) = .empty;
+    var string_constants = std.ArrayList([]const u8).init(allocator);
     defer {
         for (string_constants.items) |str| {
             allocator.free(str);
@@ -926,7 +926,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     try writer.writeAll("declare i32 @puts(i8*)\n\n");
     
     // Collect string literals for global constants
-    var string_literals: std.ArrayList(StringLiteralInfo) = .empty;
+    var string_literals = std.ArrayList(StringLiteralInfo).init(allocator);
     defer {
         for (string_literals.items) |str_info| {
             allocator.free(str_info.content);
@@ -1048,8 +1048,8 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
     }
 }
 
-fn escapeLLVMString(input: []const u8, _: Allocator) ![]u8 {
-    var result: std.ArrayList(u8) = .empty;
+fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
+    var result = std.ArrayList(u8).init(allocator);
     defer result.deinit();
     
     for (input) |char| {
@@ -1133,7 +1133,7 @@ fn extractAndGenerateFunctionDefinitions(
     verbose: bool
 ) !void {
     // Parse statements to find function definitions, handling multi-line functions
-    var statements: std.ArrayList([]const u8) = .empty;
+    var statements = std.ArrayList([]const u8).init(allocator);
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
@@ -1229,7 +1229,7 @@ fn generateLLVMMainStatements(
     
     // Parse statements properly - each line can contain a complete statement
     var lines = std.mem.splitScalar(u8, source, '\n');
-    var statements: std.ArrayList([]const u8) = .empty;
+    var statements = std.ArrayList([]const u8).init(allocator);
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
@@ -1303,7 +1303,7 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
     
     // Parse statements properly - each line can contain a complete statement
     var lines = std.mem.splitScalar(u8, source, '\n');
-    var statements: std.ArrayList([]const u8) = .empty;
+    var statements = std.ArrayList([]const u8).init(allocator);
     defer {
         for (statements.items) |stmt| {
             allocator.free(stmt);
@@ -1857,8 +1857,8 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
     }
     
     // Parse parameters
-    var param_names: std.ArrayList([]const u8) = .empty;
-    var param_types: std.ArrayList([]const u8) = .empty;
+    var param_names = std.ArrayList([]const u8).init(allocator);
+    var param_types = std.ArrayList([]const u8).init(allocator);
     defer param_names.deinit();
     defer param_types.deinit();
     
@@ -1931,7 +1931,7 @@ fn generateFunctionBody(body: []const u8, param_names: [][]const u8, param_types
         try generateReturnExpression(return_expr, param_names, param_types, return_type, writer, allocator, verbose);
     } else {
         // Handle multi-statement body
-        var statements: std.ArrayList([]const u8) = .empty;
+        var statements = std.ArrayList([]const u8).init(allocator);
         defer statements.deinit();
         
         // Split body into statements (simplified)

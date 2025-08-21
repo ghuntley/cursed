@@ -280,7 +280,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         defer metrics.deinit();
         
         // Create report content
-        var report: std.ArrayList(u8) = .empty;
+        var report = std.ArrayList(u8).init(self.allocator);
         defer report.deinit();
         
         const writer = report.writer();
@@ -358,7 +358,7 @@ pub fn testPerformanceIntegration(allocator: Allocator) !void {
         defer perf_call.end(2, 8, false);
         
         // Simulate some work
-        std.time.sleep(1_000_000); // 1ms
+        std.Thread.sleep(1_000_000); // 1ms
     }
     
     // Test memory allocation instrumentation

@@ -459,7 +459,7 @@ pub const EnhancedFFIManager = struct {
         if (input.len == 0) return input;
         
         // This is a simplified version - in practice you'd want proper memory management
-        var result: std.ArrayList(u8) = .empty;
+        var result = std.ArrayList(u8).init(self.allocator);
         result.append(std.ascii.toUpper(input[0])) catch return input;
         result.appendSlice(input[1..]) catch return input;
         return result.toOwnedSlice() catch input;

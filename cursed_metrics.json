@@ -1,0 +1,12 @@
+{
+  "timestamp": 1755764702,
+  "overall_completion": 0.703,
+  "build_success": false,
+  "total_files": 363,
+  "total_lines": 237888,
+  "total_issues": 350,
+  "todo_count": 209,
+  "fixme_count": 0,
+  "placeholder_count": 141,
+  "issue_density": 0.001471
+}

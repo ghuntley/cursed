@@ -553,7 +553,7 @@ pub const MemoryBenchmarkSuite = struct {
         
         const WorkerFn = struct {
             fn run(data: *ThreadData) void {
-                var allocations: std.ArrayList([]u8) = .empty;
+                var allocations = std.ArrayList([]u8).init(self.allocator);
                 defer {
                     for (allocations.items) |allocation| {
                         data.pool.free(allocation);
@@ -1164,7 +1164,7 @@ pub const MemoryPerformanceMonitor = struct {
             self.processEvents();
             
             // Sleep for 100ms
-            std.time.sleep(100_000_000);
+            std.Thread.sleep(100_000_000);
         }
     }
     

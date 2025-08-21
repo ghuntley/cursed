@@ -434,7 +434,7 @@ pub const TimeOps = struct {
             // WASM cannot sleep - this is a no-op
             return;
         } else {
-            std.time.sleep(ms * std.time.ns_per_ms);
+            std.Thread.sleep(ms * std.time.ns_per_ms);
         }
     }
     

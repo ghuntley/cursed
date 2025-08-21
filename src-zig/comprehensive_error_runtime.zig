@@ -730,7 +730,7 @@ pub const ErrorRuntime = struct {
             if (attempt < max_attempts) {
                 // Exponential backoff
                 const delay = backoff_ms * (@as(u64, 1) << @intCast(attempt));
-                std.time.sleep(delay * std.time.ns_per_ms);
+                std.Thread.sleep(delay * std.time.ns_per_ms);
             }
         }
         

@@ -361,7 +361,7 @@ pub const LTOOptimizer = struct {
     /// Build module dependency graph
     fn buildDependencyGraph(self: *Self) !void {
         for (self.module_ir.items) |*module| {
-            var deps: std.ArrayList([]const u8) = .empty;
+            var deps = std.ArrayList([]const u8).init(self.allocator);
             
             // TODO: Extract actual dependencies from IR
             // For now, create placeholder dependencies
@@ -718,7 +718,7 @@ pub const LTOOptimizer = struct {
     /// Perform Sparse Conditional Constant Propagation
     fn performSCCP(self: *Self) !u32 {
         var propagated_count: u32 = 0;
-        var work_list: std.ArrayList(SCCPWorkItem) = .empty;
+        var work_list = std.ArrayList(SCCPWorkItem).init(self.allocator);
         defer work_list.deinit();
         
         // Initialize SCCP algorithm

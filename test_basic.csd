@@ -1,23 +1,10 @@
-// Basic CURSED program for debugger testing
-sus name tea = "CURSED Developer"
-sus age drip = 25
-sus active lit = based
+yeet "vibez"
 
-vibez.spill("Hello,", name)
-vibez.spill("Age:", age)
-
-ready (active) {
-    vibez.spill("Status: Active!")
-} otherwise {
-    vibez.spill("Status: Inactive")
+slay main() {
+    vibez.spill("Hello from CURSED! The compiler is working!")
+    
+    sus age drip = 25
+    sus name tea = "CURSED Developer"
+    
+    vibez.spill("Name:", name, "Age:", age)
 }
-
-bestie (age > 0) {
-    vibez.spill("Processing user:", name)
-    age = age - 1
-    ready (age == 0) {
-        cap
-    }
-}
-
-vibez.spill("Done processing!")

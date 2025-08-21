@@ -1,56 +1,44 @@
 #!/usr/bin/env python3
-"""Fix unused function parameter issues."""
 
-import os
 import re
+import os
 
-def fix_unused_parameters(file_path):
-    """Fix unused function parameters by prefixing them with underscore."""
-    try:
-        with open(file_path, 'r', encoding='utf-8') as f:
-            content = f.read()
-        
-        original_content = content
-        
-        # Fix unused allocator parameters by prefixing with underscore
-        content = re.sub(r'pub fn init\(allocator: Allocator,', 'pub fn init(_: Allocator,', content)
-        content = re.sub(r'pub fn deinit\(self: \*[a-zA-Z_][a-zA-Z0-9_]*, allocator: Allocator\)', 
-                        r'pub fn deinit(self: *\g<0>, _: Allocator)', content)
-        content = re.sub(r'deinit\(self: \*([a-zA-Z_][a-zA-Z0-9_]*), allocator: Allocator\)', 
-                        r'deinit(self: *\1, _: Allocator)', content)
-        content = re.sub(r'addMultiplePath\(self: \*([a-zA-Z_][a-zA-Z0-9_]*), allocator: Allocator,', 
-                        r'addMultiplePath(self: *\1, _: Allocator,', content)
-        content = re.sub(r'addSelectiveItem\(self: \*([a-zA-Z_][a-zA-Z0-9_]*), allocator: Allocator,', 
-                        r'addSelectiveItem(self: *\1, _: Allocator,', content)
-                        
-        # Fix specific HashMap init pattern
-        content = re.sub(r'\.init\(allocator\)', '.init(_allocator)', content)
-        
-        # Fix allocator field assignment
-        content = re.sub(r'\.allocator = allocator,', '.allocator = _allocator,', content)
-        
-        if content != original_content:
-            with open(file_path, 'w', encoding='utf-8') as f:
-                f.write(content)
-            print(f"Fixed: {file_path}")
-            return True
-        else:
-            return False
+def fix_unused_allocator_params(filename):
+    with open(filename, 'r') as f:
+        content = f.read()
     
-    except Exception as e:
-        print(f"Error processing {file_path}: {e}")
-        return False
-
-def main():
-    """Fix unused parameters in key files that have remaining issues."""
-    problem_files = [
-        'src-zig/advanced_import_resolver.zig',
-        'src-zig/ast.zig'
+    # Replace unused allocator parameters with _
+    patterns = [
+        (r'pub fn deinit\(self: \*[^,]+, allocator: Allocator\)', r'pub fn deinit(self: *\g<1>, _: Allocator)'),
+        (r'pub fn ([^(]+)\([^)]*allocator: Allocator[^)]*\) [^{]*{[^}]*_ = allocator;', 
+         r'pub fn \1(\g<1>_: Allocator\g<2>) \g<3>{\g<4>'),
     ]
     
-    for file_path in problem_files:
-        if os.path.exists(file_path):
-            fix_unused_parameters(file_path)
+    original_content = content
+    
+    # More specific pattern matching
+    lines = content.split('\n')
+    modified_lines = []
+    
+    for line in lines:
+        # Check if line has unused allocator parameter
+        if 'allocator: Allocator' in line and ('_ = allocator' in line or line.strip().endswith('_ = self;')):
+            # Replace allocator with _
+            line = re.sub(r'allocator: Allocator', '_: Allocator', line)
+        
+        modified_lines.append(line)
+    
+    modified_content = '\n'.join(modified_lines)
+    
+    if modified_content != original_content:
+        with open(filename, 'w') as f:
+            f.write(modified_content)
+        print(f"Fixed unused parameters in {filename}")
 
+# Fix the main files
 if __name__ == "__main__":
-    main()
+    for root, dirs, files in os.walk('src-zig/'):
+        for file in files:
+            if file.endswith('.zig'):
+                filepath = os.path.join(root, file)
+                fix_unused_allocator_params(filepath)

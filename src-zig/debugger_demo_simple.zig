@@ -89,7 +89,7 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
     std.debug.print("Type 'help' for available commands\n", .{});
     std.debug.print("Note: This is a demonstration. Full interpreter integration pending.\n\n", .{});
     
-    var lines: std.ArrayList([]const u8) = .empty;
+    var lines = std.ArrayList([]const u8).init(self.allocator);
     defer lines.deinit();
     
     var line_iter = std.mem.splitScalar(u8, source_content, '\n');
@@ -98,7 +98,7 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
     }
     
     var current_line: u32 = 1;
-    var breakpoints: std.ArrayList(u32) = .empty;
+    var breakpoints = std.ArrayList(u32).init(self.allocator);
     defer breakpoints.deinit();
     
     var stdin_buffer: [4096]u8 = undefined;

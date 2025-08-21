@@ -383,7 +383,7 @@ export fn cursed_resolve_function(name_ptr: [*]const u8, name_len: usize,
     const name = name_ptr[0..name_len];
     const arg_types_raw = arg_types_ptr[0..arg_count];
     
-    var arg_types: std.ArrayList(FunctionType) = .empty;
+    var arg_types = std.ArrayList(FunctionType).init(self.allocator);
     defer arg_types.deinit();
     
     for (arg_types_raw) |arg_type_raw| {

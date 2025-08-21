@@ -156,7 +156,7 @@ fn parseSourceFile(allocator: std.mem.Allocator, file_path: []const u8) !ast.Pro
     
     // Tokenize
     var tokenizer = lexer.Lexer.init(allocator, source_content);
-    var tokens: std.ArrayList(lexer.Token) = .empty;
+    var tokens = std.ArrayList(lexer.Token).init(self.allocator);
     defer tokens.deinit();
     
     while (true) {

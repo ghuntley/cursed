@@ -85,7 +85,7 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
     
     cli_args.command = Command.fromString(args[1]) orelse .help;
     
-    var packages: std.ArrayList([:0]const u8) = .empty;
+    var packages = std.ArrayList([:0]const u8).init(self.allocator);
     defer packages.deinit();
     
     var i: usize = 2;

@@ -24,7 +24,7 @@ pub fn main() !void {
 
     // Create lexer and parse the source
     var lex = lexer.Lexer.init(allocator, pkg_manager_source);
-    var tokens: std.ArrayList(lexer.Token) = .empty;
+    var tokens = std.ArrayList(lexer.Token).init(self.allocator);
     defer tokens.deinit();
 
     // Tokenize the source
@@ -46,7 +46,7 @@ pub fn main() !void {
     defer interp.deinit();
 
     // Set up command line arguments in interpreter environment
-    var arg_array: std.ArrayList(interpreter.Value) = .empty;
+    var arg_array = std.ArrayList(interpreter.Value).init(self.allocator);
     defer arg_array.deinit();
 
     for (pkg_args) |arg| {

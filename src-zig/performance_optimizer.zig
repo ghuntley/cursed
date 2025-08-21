@@ -609,7 +609,7 @@ test "PerformanceProfiler" {
     var profiler = try PerformanceProfiler.init(allocator);
     
     profiler.startTiming(.lexing);
-    std.time.sleep(1000000); // 1ms
+    std.Thread.sleep(1000000); // 1ms
     profiler.endTiming(.lexing, 100);
     
     const profile = profiler.getProfile();

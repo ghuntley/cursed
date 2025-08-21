@@ -106,7 +106,7 @@ pub fn Channel(comptime T: type) type {
             // Wait for all other references to be released (with timeout)
             var timeout_count: u32 = 0;
             while (self.ref_count.load(Acquire) > 0 and timeout_count < 100) {
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 timeout_count += 1;
             }
             
@@ -146,12 +146,12 @@ pub fn Channel(comptime T: type) type {
                 }
                 
                 // Exponential backoff with jitter
-                std.time.sleep(backoff);
+                std.Thread.sleep(backoff);
                 backoff = @min(backoff * 2, 1_000_000); // Max 1ms
                 
                 // Add jitter to prevent thundering herd
                 const jitter = @as(u64, @intCast(std.crypto.random.int(u16))) % (backoff / 4);
-                std.time.sleep(jitter);
+                std.Thread.sleep(jitter);
                 
                 if (self.closed.load(Acquire)) {
                     return SendResult.closed;
@@ -260,12 +260,12 @@ pub fn Channel(comptime T: type) type {
                 }
                 
                 // Exponential backoff with jitter
-                std.time.sleep(backoff);
+                std.Thread.sleep(backoff);
                 backoff = @min(backoff * 2, 1_000_000); // Max 1ms
                 
                 // Add jitter
                 const jitter = @as(u64, @intCast(std.crypto.random.int(u16))) % (backoff / 4);
-                std.time.sleep(jitter);
+                std.Thread.sleep(jitter);
             }
         }
         
@@ -451,7 +451,7 @@ pub const Scheduler = struct {
             if (elapsed >= timeout_ns) {
                 break; // Force shutdown
             }
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
         
         // Stop workers
@@ -579,7 +579,7 @@ pub const Worker = struct {
             if (self.getNext()) |goroutine_ctx| {
                 self.executeGoroutine(goroutine_ctx);
             } else {
-                std.time.sleep(1_000_000); // 1ms when no work
+                std.Thread.sleep(1_000_000); // 1ms when no work
             }
         }
     }
@@ -622,7 +622,7 @@ pub const Worker = struct {
         // Memory ordering ensured by atomic state transitions
         
         // Wait a grace period for any pending operations
-        std.time.sleep(5_000_000); // 5ms grace period
+        std.Thread.sleep(5_000_000); // 5ms grace period
         
         // Signal cleanup completion
         goroutine_ctx.cleanup_completed.set();

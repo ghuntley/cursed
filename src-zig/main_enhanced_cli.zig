@@ -352,7 +352,7 @@ fn handleTestCommand(
     }
     
     // Filter tests if specified
-    var filtered_tests: std.ArrayList([]const u8) = .empty;
+    var filtered_tests = std.ArrayList([]const u8).init(self.allocator);
     defer filtered_tests.deinit();
     
     for (test_files.items) |file| {
@@ -562,7 +562,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
 fn discoverTestFiles(allocator: Allocator, test_dir: []const u8, pattern: []const u8) !std.ArrayList([]const u8) {
     _ = pattern;
     
-    var test_files: std.ArrayList([]const u8) = .empty;
+    var test_files = std.ArrayList([]const u8).init(self.allocator);
     
     // Simple implementation - just add some placeholder test files
     // TODO: Implement proper file discovery with glob patterns

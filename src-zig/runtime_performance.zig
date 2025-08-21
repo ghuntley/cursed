@@ -581,7 +581,7 @@ test "PerformanceMonitor" {
     defer monitor.deinit();
     
     monitor.startPhase("lexing");
-    std.time.sleep(1000000); // 1ms
+    std.Thread.sleep(1000000); // 1ms
     monitor.endPhase();
     
     monitor.recordMemoryUsage(1024 * 1024); // 1MB

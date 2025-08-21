@@ -168,7 +168,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
                     }
                     
                     // Yield periodically to prevent goroutine starvation
-                    std.time.sleep(1_000_000); // 1ms yield
+                    std.Thread.sleep(1_000_000); // 1ms yield
                 }
                 
                 if (ctx.verb) print("✅ Goroutine completed (race-safe)\n", .{});
@@ -231,7 +231,7 @@ pub fn handleChannelOperation(variables: *anyopaque, functions: *anyopaque, allo
             var timeout_count: u32 = 0;
             while (timeout_count < 1000) { // 1 second timeout
                 // Simulate channel receive with backoff
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 timeout_count += 1;
             }
             
@@ -245,7 +245,7 @@ pub fn handleChannelOperation(variables: *anyopaque, functions: *anyopaque, allo
         var send_timeout: u32 = 0;
         while (send_timeout < 1000) { // 1 second timeout
             // Simulate channel send with backoff
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             send_timeout += 1;
         }
         
@@ -292,7 +292,7 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
                 const bounded_wait = std.math.min(wait_ms, 10000); // Max 10 seconds
                 
                 if (verbose) print("⏳ Waiting for {}ms (race-safe)...\n", .{bounded_wait});
-                std.time.sleep(bounded_wait * 1_000_000); // Convert ms to ns
+                std.Thread.sleep(bounded_wait * 1_000_000); // Convert ms to ns
                 if (verbose) print("✅ Wait completed (race-safe)\n", .{});
             }
         }
@@ -317,7 +317,7 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
                 var j: u32 = 0;
                 while (j < 100) : (j += 1) {
                     print("Goroutine {}: iteration {}\n", .{ self.id, j });
-                    std.time.sleep(1_000_000); // 1ms
+                    std.Thread.sleep(1_000_000); // 1ms
                 }
             }
         };

@@ -224,7 +224,7 @@ fn goroutineWrapper(context: ?*anyopaque) void {
         if (goroutine_tracker) |tracker| {
             tracker.updateState(id, .completed);
             // Defer cleanup to avoid immediate deallocation
-            std.time.sleep(1_000_000); // 1ms grace period
+            std.Thread.sleep(1_000_000); // 1ms grace period
             tracker.cleanup(id);
         }
         
@@ -523,7 +523,7 @@ pub export fn cursed_ready_select(operations_ptr: ?*anyopaque, operation_count: 
     // If no immediate readiness and no default case, block briefly and retry
     var retry_count: u32 = 0;
     while (retry_count < 100) { // Max 100 retries with microsecond delays
-        std.time.sleep(10_000); // 10 microseconds
+        std.Thread.sleep(10_000); // 10 microseconds
         
         for (ops_slice, 0..) |op, i| {
             switch (op.operation_type) {
@@ -723,7 +723,7 @@ pub export fn cursed_goroutine_join(goroutine_id: u64) void {
                 return;
             }
             
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
         
         // Timeout reached, force cleanup

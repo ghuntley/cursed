@@ -278,7 +278,7 @@ pub const PackageDeclaration = struct {
     name: []const u8,
     version: ?[]const u8,
 
-    pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
+    pub fn deinit(self: *PackageDeclaration, _: Allocator) void {
                 _ = self;
     }
 };
@@ -310,7 +310,7 @@ pub const Type = union(enum) {
     Generic: GenericType,
     Tuple: TupleType,
 
-    pub fn deinit(self: *Type, allocator: Allocator) void {
+    pub fn deinit(self: *Type, _: Allocator) void {
         switch (self.*) {
             .Array => |*arr| arr.deinit(),
             .Map => |*map| map.deinit(),
@@ -350,7 +350,7 @@ pub const ArrayType = struct {
     size: ?usize,
     _owned: bool = true, // Track ownership to prevent double-free
 
-    pub fn deinit(self: *ArrayType, allocator: Allocator) void {
+    pub fn deinit(self: *ArrayType, _: Allocator) void {
         // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
         // The module loader manages the lifetime of these type pointers
         // This causes a small memory leak but prevents crashes
@@ -369,7 +369,7 @@ pub const MapType = struct {
     _key_owned: bool = true,    // Track key ownership to prevent double-free
     _value_owned: bool = true,  // Track value ownership to prevent double-free
 
-    pub fn deinit(self: *MapType, allocator: Allocator) void {
+    pub fn deinit(self: *MapType, _: Allocator) void {
         // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
         // The module loader manages the lifetime of these type pointers
         _ = self;
@@ -386,7 +386,7 @@ pub const FunctionType = struct {
     return_type: ?*Type,
     _return_owned: bool = true, // Track return type ownership
 
-    pub fn deinit(self: *FunctionType, allocator: Allocator) void {
+    pub fn deinit(self: *FunctionType, _: Allocator) void {
         // Clean up parameters (these are value types, safe to cleanup)
         for (self.parameters.items) |*param| {
             param.deinit();
@@ -418,7 +418,7 @@ pub const GenericType = struct {
 pub const TupleType = struct {
     elements: ArrayList(Type),
 
-    pub fn deinit(self: *TupleType, allocator: Allocator) void {
+    pub fn deinit(self: *TupleType, _: Allocator) void {
         for (self.elements.items) |*elem| {
             elem.deinit();
         }
@@ -731,7 +731,7 @@ pub const GoroutineStatement = struct {
 pub const StanStatement = struct {
     body: ArrayList(*anyopaque),
     
-    pub fn deinit(self: *StanStatement, allocator: Allocator) void {
+    pub fn deinit(self: *StanStatement, _: Allocator) void {
         for (self.body.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
             stmt_ptr.deinit();
@@ -759,7 +759,7 @@ pub const StructStatement = struct {
     type_parameters: ArrayList(TypeParameter),
     attributes: ?AttributeList = null, // Attribute decorations for memory layout and optimization
     
-    pub fn deinit(self: *StructStatement, allocator: Allocator) void {
+    pub fn deinit(self: *StructStatement, _: Allocator) void {
         for (self.fields.items) |*field| {
             field.field_type.deinit();
         }
@@ -787,7 +787,7 @@ pub const InterfaceStatement = struct {
     extends: ArrayList([]const u8), // Interface inheritance  
     compositions: ArrayList([]const u8), // Interface composition with "with"
     
-    pub fn deinit(self: *InterfaceStatement, allocator: Allocator) void {
+    pub fn deinit(self: *InterfaceStatement, _: Allocator) void {
                 self.methods.deinit();
         self.type_parameters.deinit();
         self.extends.deinit();
@@ -801,7 +801,7 @@ pub const ImplementationStatement = struct {
     methods: ArrayList(FunctionStatement),
     where_clause: ?[]const u8,
     
-    pub fn deinit(self: *ImplementationStatement, allocator: Allocator) void {
+    pub fn deinit(self: *ImplementationStatement, _: Allocator) void {
         for (self.methods.items) |*method| {
             method.deinit();
         }
@@ -1367,7 +1367,7 @@ pub const AST = Program;
 test "ast creation" {
     const allocator = std.testing.allocator;
     
-    var program = Program.init(_allocator);
+    var program = Program.init(allocator);
     defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 0);

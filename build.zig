@@ -14,8 +14,15 @@ pub fn build(b: *std.Build) void {
         }),
     });
     
+    // Add LLVM C wrapper
+    exe.addCSourceFile(.{
+        .file = b.path("src-zig/llvm_wrapper.c"),
+        .flags = &[_][]const u8{"-std=c99", "-I/usr/lib/llvm-18/include"},
+    });
+    
     // Link LLVM
-    exe.linkSystemLibrary("LLVM-19");
+    exe.linkSystemLibrary("LLVM");
+    exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
     exe.linkLibC();
     
     b.installArtifact(exe);
@@ -30,8 +37,15 @@ pub fn build(b: *std.Build) void {
         }),
     });
     
+    // Add LLVM C wrapper for debugger
+    debugger_exe.addCSourceFile(.{
+        .file = b.path("src-zig/llvm_wrapper.c"),
+        .flags = &[_][]const u8{"-std=c99", "-I/usr/lib/llvm-18/include"},
+    });
+    
     // Link LLVM for debugger
-    debugger_exe.linkSystemLibrary("LLVM-19");
+    debugger_exe.linkSystemLibrary("LLVM");
+    debugger_exe.addLibraryPath(.{ .cwd_relative = "/usr/lib/llvm-18/lib" });
     debugger_exe.linkLibC();
     
     b.installArtifact(debugger_exe);
@@ -72,4 +86,17 @@ pub fn build(b: *std.Build) void {
     
     const run_debug_step = b.step("debug", "Run the CURSED debugger");
     run_debug_step.dependOn(&run_debug_cmd.step);
+
+    // Type checker validation test
+    const type_checker_validation = b.addTest(.{
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/type_checker_simple_validation.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+
+    const run_type_checker_validation = b.addRunArtifact(type_checker_validation);
+    const type_checker_test_step = b.step("test-type-checker", "Run type checker tests");
+    type_checker_test_step.dependOn(&run_type_checker_validation.step);
 }

@@ -128,7 +128,7 @@ fn generateUserFunctionCall(
 ) !c.LLVMValueRef {
         
     // Generate arguments with proper variable resolution
-    var args: std.ArrayList(c.LLVMValueRef) = .empty;
+    var args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
     defer args.deinit();
     
     for (call.arguments.items) |arg_expr| {

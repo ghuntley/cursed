@@ -79,7 +79,7 @@ pub const EnhancedMutex = struct {
         // Wait for any active operations to complete
         var wait_count: u32 = 0;
         while (self.waiters.load(.acquire) > 0 and wait_count < 1000) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             wait_count += 1;
         }
         
@@ -136,7 +136,7 @@ pub const EnhancedMutex = struct {
             
             // Exponential backoff with jitter
             const jitter = @as(u64, @intCast(std.crypto.random.intRange(u32, 0, @intCast(backoff_ns / 4))));
-            std.time.sleep(backoff_ns + jitter);
+            std.Thread.sleep(backoff_ns + jitter);
             
             backoff_ns = @min(backoff_ns * 2, SyncTimeouts.MAX_BACKOFF_NS);
         }
@@ -223,7 +223,7 @@ pub const EnhancedMutex = struct {
         const thread = std.Thread.spawn(.{}, tryLockFn, .{&context}) catch return false;
         
         // Wait very briefly for the lock attempt
-        std.time.sleep(1000); // 1 microsecond
+        std.Thread.sleep(1000); // 1 microsecond
         
         if (success) {
             thread.join();
@@ -278,7 +278,7 @@ pub const EnhancedCondition = struct {
         // Wait for waiters to finish
         var wait_count: u32 = 0;
         while (self.waiters.load(.acquire) > 0 and wait_count < 1000) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             wait_count += 1;
         }
     }
@@ -345,7 +345,7 @@ pub const EnhancedCondition = struct {
                     }
                     
                     // Continue waiting with small delay to avoid busy spinning
-                    std.time.sleep(SyncTimeouts.SPURIOUS_WAKEUP_RETRY_NS);
+                    std.Thread.sleep(SyncTimeouts.SPURIOUS_WAKEUP_RETRY_NS);
                 }
             } else {
                 // No predicate - assume real wakeup
@@ -412,7 +412,7 @@ pub const EnhancedCondition = struct {
                 }
                 
                 // Small sleep to avoid busy spinning
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 
                 // Check if we should wake up (simplified - in real implementation
                 // would need proper signaling mechanism)
@@ -673,7 +673,7 @@ pub const ChannelSyncBridge = struct {
         // Wait for active selects to complete
         var wait_count: u32 = 0;
         while (self.active_selects.load(.acquire) > 0 and wait_count < 1000) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             wait_count += 1;
         }
         
