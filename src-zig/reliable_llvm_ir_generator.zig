@@ -53,7 +53,7 @@ pub const LLVMIRGenerator = struct {
         value: ?[]const u8,
     };
     
-    pub fn init(allocator: Allocator) LLVMIRGenerator {
+    pub fn init() LLVMIRGenerator {
         return LLVMIRGenerator{
             .allocator = allocator,
             .target_triple = "x86_64-unknown-linux-gnu",
@@ -71,14 +71,14 @@ pub const LLVMIRGenerator = struct {
         for (self.ir_lines.items) |line| {
             self.allocator.free(line);
         }
-        self.ir_lines.deinit(allocator);
+        self.ir_lines.deinit();
         
         // Cleanup string literals
         var str_iter = self.string_literals.iterator();
         while (str_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.string_literals.deinit(allocator);
+        self.string_literals.deinit();
         
         // Cleanup functions
         var func_iter = self.functions.iterator();
@@ -94,7 +94,7 @@ pub const LLVMIRGenerator = struct {
             self.allocator.free(entry.value_ptr.return_type);
             self.allocator.free(entry.value_ptr.llvm_type);
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
         // Cleanup variables
         var var_iter = self.variables.iterator();
@@ -107,7 +107,7 @@ pub const LLVMIRGenerator = struct {
                 self.allocator.free(val);
             }
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
     
     // Main generation function
@@ -256,7 +256,7 @@ pub const LLVMIRGenerator = struct {
                 
                 // Extract parameters (simplified parsing)
                 var parameters: std.ArrayList(ParameterInfo) = .empty;
-                defer parameters.deinit(allocator);
+                defer parameters.deinit();
                 
                 // Extract return type (simplified - assuming last word before {)
                 const return_type = "drip"; // Default for now
@@ -548,7 +548,7 @@ pub const LLVMIRGenerator = struct {
     }
     
     fn addLine(self: *LLVMIRGenerator, line: []const u8) !void {
-        try self.ir_lines.append(allocator, line);
+        try self.ir_lines.append(line);
     }
     
     fn verifyIR(self: *LLVMIRGenerator) !void {
@@ -598,7 +598,7 @@ pub const LLVMIRGenerator = struct {
     // Additional helper functions...
     fn escapeString(self: *LLVMIRGenerator, input: []const u8) ![]const u8 {
         var result: std.ArrayList(u8) = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         for (input) |char| {
             switch (char) {
@@ -607,11 +607,11 @@ pub const LLVMIRGenerator = struct {
                 '\n' => try result.appendSlice("\\0A"),
                 '\r' => try result.appendSlice("\\0D"),
                 '\t' => try result.appendSlice("\\09"),
-                else => try result.append(allocator, char),
+                else => try result.append(char),
             }
         }
         
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice();
     }
     
     fn getStringLength(self: *LLVMIRGenerator, str_id: u32) usize {
@@ -626,7 +626,7 @@ pub const LLVMIRGenerator = struct {
     
     fn buildFunctionType(self: *LLVMIRGenerator, parameters: []const ParameterInfo, return_type: []const u8) ![]const u8 {
         var param_types: std.ArrayList([]const u8) = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (parameters) |param| {
             const llvm_type = try self.cursedTypeToLLVMType(param.cursed_type);
@@ -645,7 +645,7 @@ pub const LLVMIRGenerator = struct {
         }
         
         var param_strs: std.ArrayList([]const u8) = .empty;
-        defer param_strs.deinit(allocator);
+        defer param_strs.deinit();
         
         for (parameters) |param| {
             const param_str = try std.fmt.allocPrint(self.allocator, "{s} %{s}", .{param.llvm_type, param.name});
@@ -659,7 +659,7 @@ pub const LLVMIRGenerator = struct {
         // Parse and generate LLVM IR for function body
         var tokenizer = lexer.Tokenizer.init(source);
         var tokens: std.ArrayList(lexer.Token) = .empty;
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         // Tokenize function body
         while (true) {
@@ -725,7 +725,7 @@ pub const LLVMIRGenerator = struct {
 // Public interface function
 pub fn generateReliableLLVMIR(allocator: Allocator, source: []const u8, output_file: []const u8) !void {
     var generator = LLVMIRGenerator.init(allocator);
-    defer generator.deinit(allocator);
+    defer generator.deinit();
     
     try generator.generateIR(source, output_file);
 }
@@ -734,7 +734,7 @@ test "reliable IR generator initialization" {
     const allocator = std.testing.allocator;
     
     var generator = LLVMIRGenerator.init(allocator);
-    defer generator.deinit(allocator);
+    defer generator.deinit();
     
     try std.testing.expect(generator.string_counter == 0);
     try std.testing.expect(generator.ir_lines.items.len == 0);

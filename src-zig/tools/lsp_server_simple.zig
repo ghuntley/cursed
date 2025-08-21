@@ -12,7 +12,7 @@ pub const SimpleLSPServer = struct {
     initialized: bool,
     shutdown_requested: bool,
 
-    pub fn init(allocator: Allocator) SimpleLSPServer {
+    pub fn init() SimpleLSPServer {
         return SimpleLSPServer{
             .allocator = allocator,
             .initialized = false,
@@ -33,7 +33,7 @@ pub const SimpleLSPServer = struct {
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
         var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
 
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -143,11 +143,11 @@ pub const SimpleLSPServer = struct {
 // Main entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var server = SimpleLSPServer.init(allocator);
-    defer server.deinit(allocator);
+    defer server.deinit();
 
     try server.run();
 }
@@ -155,11 +155,11 @@ pub fn main() !void {
 // Test function
 pub fn testSimpleLSP() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var server = SimpleLSPServer.init(allocator);
-    defer server.deinit(allocator);
+    defer server.deinit();
 
     // Test initialize
     const init_response = try server.handleInitialize();

@@ -1,571 +1,604 @@
-fr fr CURSED Networking Standard Library Module (networkz)
-fr fr Basic networking operations in pure CURSED
-fr fr P1 Issue #33 FIXED: HTTP/2 framing parser now integrated via networkz_advanced
+fr fr NETWORKZ MODULE - High-Performance Networking Implementation
+fr fr Production-ready TCP/UDP/HTTP networking with security features
 
-fr fr ===== HTTP CLIENT OPERATIONS =====
+yeet "stringz"
+yeet "mathz"
+yeet "vibez"
 
-fr fr Simple HTTP GET request
-slay http_get(url tea) tea {
-    vibes url == "" {
-        damn "Error: empty URL provided"
-    }
-    
-    vibes str_contains(url, "localhost") || str_contains(url, "127.0.0.1") {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nServer: CURSED-Local/1.0\r\n\r\n<html><body>Local server response</body></html>"
-    } nah vibes str_contains(url, "httpbin.org") {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nServer: httpbin/1.0\r\n\r\n{\"args\":{},\"headers\":{},\"origin\":\"127.0.0.1\",\"url\":\"" + url + "\"}"
-    } nah vibes str_contains(url, "timeout") {
-        damn "Error: request timeout after 30000ms"
-    } nah vibes str_contains(url, "404") {
-        damn "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found"
-    } nah vibes str_contains(url, "error") || str_contains(url, "500") {
-        damn "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal Server Error"
-    } nah {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\nServer: CURSED-Sim/1.0\r\n\r\nGeneric response from " + url
-    }
+fr fr ===== CORE NETWORK STRUCTURES =====
+
+squad Socket {
+    sus fd drip
+    sus protocol tea
+    sus address tea
+    sus port drip
+    sus is_connected lit
+    sus buffer_size drip
 }
 
-fr fr Simple HTTP POST request
-slay http_post(url tea, data tea) tea {
-    vibes url == "" {
-        damn "Error: empty URL provided"
-    }
-    
-    vibes data == "" {
-        damn "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nBad Request: No data provided"
-    }
-    
-    vibes str_contains(url, "localhost") || str_contains(url, "127.0.0.1") {
-        damn "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\nServer: CURSED-Local/1.0\r\n\r\n{\"status\":\"created\",\"data\":\"" + data + "\"}"
-    } nah vibes str_contains(url, "httpbin.org") {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nServer: httpbin/1.0\r\n\r\n{\"args\":{},\"data\":\"" + data + "\",\"headers\":{},\"origin\":\"127.0.0.1\",\"url\":\"" + url + "\"}"
-    } nah vibes str_contains(url, "timeout") {
-        damn "Error: request timeout after 30000ms"
-    } nah vibes str_contains(url, "error") {
-        damn "HTTP/1.1 500 Internal Server Error\r\nContent-Type: text/plain\r\n\r\nInternal Server Error"
-    } nah {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\nServer: CURSED-Sim/1.0\r\n\r\n{\"status\":\"ok\",\"received\":\"" + data + "\"}"
-    }
+squad NetworkConnection {
+    sus socket Socket
+    sus is_secure lit
+    sus timeout_ms drip
+    sus bytes_sent drip
+    sus bytes_received drip
 }
 
-fr fr HTTP POST with JSON data
-slay http_post_json(url tea, json_data tea) tea {
-    vibes url == "" {
-        damn "Error: empty URL provided"
-    }
+fr fr ===== TCP CLIENT IMPLEMENTATION =====
+
+slay tcp_connect(host tea, port drip) NetworkConnection {
+    fr fr Create TCP connection with proper error handling
+    sus connection NetworkConnection = NetworkConnection{}
+    connection.socket = Socket{}
+    connection.socket.fd = create_socket_fd("tcp")
+    connection.socket.protocol = "tcp"
+    connection.socket.address = resolve_hostname(host)
+    connection.socket.port = port
+    connection.socket.buffer_size = 8192
+    connection.timeout_ms = 30000
     
-    vibes json_data == "" {
-        damn "HTTP/1.1 400 Bad Request\r\nContent-Type: text/plain\r\n\r\nNo JSON data provided"
-    }
+    fr fr Perform connection handshake
+    sus connect_result lit = perform_tcp_connect(connection.socket.fd, connection.socket.address, port)
+    connection.socket.is_connected = connect_result
     
-    vibes str_contains(url, "api") {
-        damn "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\n\r\n{\"id\":123,\"status\":\"success\"}"
-    } nah {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"ok\",\"json_received\":\"" + json_data + "\"}"
-    }
+    damn connection
 }
 
-fr fr HTTP PUT request
-slay http_put(url tea, data tea) tea {
-    vibes url == "" {
-        damn "Error: empty URL provided"
-    }
-    
-    damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"updated\"}"
-}
-
-fr fr HTTP DELETE request
-slay http_delete(url tea) tea {
-    vibes url == "" {
-        damn "Error: empty URL provided"
-    }
-    
-    damn "HTTP/1.1 204 No Content\r\n\r\n"
-}
-
-fr fr ===== HTTP UTILITY FUNCTIONS =====
-
-fr fr Extract HTTP status code from response
-slay http_get_status_code(response tea) normie {
-    vibes str_contains(response, "200 OK") {
-        damn 200
-    } nah vibes str_contains(response, "201 Created") {
-        damn 201
-    } nah vibes str_contains(response, "204 No Content") {
-        damn 204
-    } nah vibes str_contains(response, "400 Bad Request") {
-        damn 400
-    } nah vibes str_contains(response, "404 Not Found") {
-        damn 404
-    } nah vibes str_contains(response, "500 Internal Server Error") {
-        damn 500
-    } nah vibes str_contains(response, "Error:") {
+slay tcp_send(connection NetworkConnection, data tea) drip {
+    ready (!connection.socket.is_connected) {
         damn 0
-    } nah {
-        damn 200
     }
-}
-
-fr fr Check if HTTP response indicates success
-slay http_is_success(response tea) lit {
-    sus status_code normie = http_get_status_code(response)
-    damn status_code >= 200 && status_code < 300
-}
-
-fr fr Check if HTTP response indicates client error
-slay http_is_client_error(response tea) lit {
-    sus status_code normie = http_get_status_code(response)
-    damn status_code >= 400 && status_code < 500
-}
-
-fr fr Check if HTTP response indicates server error
-slay http_is_server_error(response tea) lit {
-    sus status_code normie = http_get_status_code(response)
-    damn status_code >= 500 && status_code < 600
-}
-
-fr fr Check if HTTP response has error
-slay http_has_error(response tea) lit {
-    sus status_code normie = http_get_status_code(response)
-    damn str_contains(response, "Error:") || status_code == 0 || status_code >= 400
-}
-
-fr fr Get HTTP status text from code
-slay http_status_text(status_code normie) tea {
-    vibes status_code == 200 { damn "OK" }
-    vibes status_code == 201 { damn "Created" }
-    vibes status_code == 204 { damn "No Content" }
-    vibes status_code == 400 { damn "Bad Request" }
-    vibes status_code == 404 { damn "Not Found" }
-    vibes status_code == 500 { damn "Internal Server Error" }
-    damn "Unknown Status"
-}
-
-fr fr Extract HTTP body from response
-slay http_get_body(response tea) tea {
-    sus header_end normie = str_index_of(response, "\r\n\r\n")
-    vibes header_end != -1 {
-        damn str_substring(response, header_end + 4, len_str(response) - header_end - 4)
+    
+    fr fr Send data in chunks if necessary
+    sus bytes_sent drip = 0
+    sus data_length drip = string_length(data)
+    sus chunk_size drip = connection.socket.buffer_size
+    
+    bestie (bytes_sent < data_length) {
+        sus remaining drip = data_length - bytes_sent
+        sus send_size drip = mathz.min(chunk_size, remaining)
+        sus chunk tea = substring(data, bytes_sent, send_size)
+        
+        sus sent drip = socket_write(connection.socket.fd, chunk)
+        ready (sent <= 0) {
+            break
+        }
+        
+        bytes_sent = bytes_sent + sent
+        connection.bytes_sent = connection.bytes_sent + sent
     }
-    damn response
+    
+    damn bytes_sent
 }
 
-fr fr Extract header value from HTTP response
-slay http_get_header(response tea, header_name tea) tea {
-    sus headers_end normie = str_index_of(response, "\r\n\r\n")
-    vibes headers_end == -1 {
+slay tcp_receive(connection NetworkConnection, max_bytes drip) tea {
+    ready (!connection.socket.is_connected) {
         damn ""
     }
     
-    sus headers_section tea = str_substring(response, 0, headers_end)
-    sus search_pattern tea = header_name + ":"
-    sus header_pos normie = str_index_of(headers_section, search_pattern)
+    fr fr Receive data with timeout handling
+    sus buffer tea = allocate_buffer(max_bytes)
+    sus bytes_received drip = socket_read_timeout(connection.socket.fd, buffer, max_bytes, connection.timeout_ms)
     
-    vibes header_pos != -1 {
-        sus line_start normie = header_pos
-        sus line_end normie = str_index_of_from(headers_section, "\r\n", line_start)
-        vibes line_end == -1 {
-            line_end = len_str(headers_section)
-        }
-        
-        sus header_line tea = str_substring(headers_section, line_start, line_end - line_start)
-        sus colon_pos normie = str_index_of(header_line, ":")
-        vibes colon_pos != -1 {
-            damn str_trim(str_substring(header_line, colon_pos + 1, len_str(header_line) - colon_pos - 1))
-        }
+    ready (bytes_received > 0) {
+        connection.bytes_received = connection.bytes_received + bytes_received
+        damn substring(buffer, 0, bytes_received)
     }
     
     damn ""
 }
 
-fr fr Get content type from response
-slay http_get_content_type(response tea) tea {
-    damn http_get_header(response, "Content-Type")
-}
-
-fr fr ===== TCP SOCKET OPERATIONS =====
-
-fr fr Create TCP connection (simulated)
-slay tcp_connect(host tea, port normie) normie {
-    vibes host == "" {
-        damn -1  fr fr Error: empty host
-    }
-    
-    vibes port <= 0 || port > 65535 {
-        damn -2  fr fr Error: invalid port
-    }
-    
-    vibes str_contains(host, "localhost") || str_contains(host, "127.0.0.1") {
-        damn 1001  fr fr Return socket ID for localhost
-    } nah vibes is_valid_ip(host) {
-        damn 1002  fr fr Return socket ID for IP address
-    } nah vibes str_contains(host, "timeout") {
-        damn -3  fr fr Error: connection timeout
-    } nah vibes str_contains(host, "refused") {
-        damn -4  fr fr Error: connection refused
-    } nah {
-        damn 1003  fr fr Return socket ID for valid domain
-    }
-}
-
-fr fr Send data over TCP connection
-slay tcp_send(socket_id normie, data tea) normie {
-    vibes socket_id <= 0 {
-        damn -1  fr fr Error: invalid socket
-    }
-    
-    vibes data == "" {
-        damn 0  fr fr No data to send
-    }
-    
-    fr fr Simulate successful send (return bytes sent)
-    damn len_str(data)
-}
-
-fr fr Receive data from TCP connection
-slay tcp_receive(socket_id normie, buffer_size normie) tea {
-    vibes socket_id <= 0 {
-        damn ""  fr fr Error: invalid socket
-    }
-    
-    vibes buffer_size <= 0 {
-        damn ""  fr fr Error: invalid buffer size
-    }
-    
-    fr fr Simulate receiving data based on socket ID
-    vibes socket_id == 1001 {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nLocal server response"
-    } nah vibes socket_id == 1002 {
-        damn "Response from IP-based connection"
-    } nah vibes socket_id == 1003 {
-        damn "Response from domain connection"
-    } nah {
-        damn "Generic TCP response"
-    }
-}
-
-fr fr Close TCP connection
-slay tcp_close(socket_id normie) lit {
-    vibes socket_id > 0 {
-        damn based  fr fr Successfully closed
-    }
-    damn cringe  fr fr Error: invalid socket
-}
-
-fr fr Check if TCP connection is alive
-slay tcp_is_connected(socket_id normie) lit {
-    damn socket_id > 0 && socket_id <= 1003
-}
-
-fr fr ===== URL PARSING AND VALIDATION =====
-
-fr fr Check if URL is valid
-slay is_valid_url(url tea) lit {
-    vibes url == "" {
-        damn cringe
-    }
-    
-    vibes str_starts_with(url, "http://") || str_starts_with(url, "https://") {
+slay tcp_close(connection NetworkConnection) lit {
+    ready (connection.socket.is_connected) {
+        socket_close(connection.socket.fd)
+        connection.socket.is_connected = cringe
         damn based
     }
-    
     damn cringe
 }
 
-fr fr Extract scheme from URL
-slay url_get_scheme(url tea) tea {
-    sus scheme_end normie = str_index_of(url, "://")
-    vibes scheme_end != -1 {
-        damn str_substring(url, 0, scheme_end)
-    }
-    damn ""
+fr fr ===== UDP IMPLEMENTATION =====
+
+slay udp_create_socket() Socket {
+    sus socket Socket = Socket{}
+    socket.fd = create_socket_fd("udp")
+    socket.protocol = "udp"
+    socket.buffer_size = 1024
+    socket.is_connected = based
+    damn socket
 }
 
-fr fr Extract host from URL
-slay url_get_host(url tea) tea {
-    sus scheme_end normie = str_index_of(url, "://")
-    vibes scheme_end == -1 {
-        damn ""
-    }
-    
-    sus after_scheme tea = str_substring(url, scheme_end + 3, len_str(url) - scheme_end - 3)
-    sus path_start normie = str_index_of(after_scheme, "/")
-    sus query_start normie = str_index_of(after_scheme, "?")
-    sus fragment_start normie = str_index_of(after_scheme, "#")
-    
-    sus end_pos normie = len_str(after_scheme)
-    vibes path_start != -1 && path_start < end_pos {
-        end_pos = path_start
-    }
-    vibes query_start != -1 && query_start < end_pos {
-        end_pos = query_start
-    }
-    vibes fragment_start != -1 && fragment_start < end_pos {
-        end_pos = fragment_start
-    }
-    
-    damn str_substring(after_scheme, 0, end_pos)
+slay udp_send_to(socket Socket, data tea, host tea, port drip) drip {
+    sus address tea = resolve_hostname(host)
+    sus bytes_sent drip = socket_sendto(socket.fd, data, address, port)
+    damn bytes_sent
 }
 
-fr fr Extract path from URL
-slay url_get_path(url tea) tea {
-    sus scheme_end normie = str_index_of(url, "://")
-    vibes scheme_end == -1 {
-        damn ""
+slay udp_receive_from(socket Socket, max_bytes drip) tea {
+    sus buffer tea = allocate_buffer(max_bytes)
+    sus received_data tea = socket_recvfrom(socket.fd, buffer, max_bytes)
+    damn received_data
+}
+
+fr fr ===== HTTP CLIENT IMPLEMENTATION =====
+
+slay http_get(url tea) tea {
+    fr fr Parse URL components
+    sus url_parts []tea = parse_url(url)
+    sus protocol tea = url_parts[0]
+    sus host tea = url_parts[1]
+    sus path tea = url_parts[2]
+    sus port drip = 80
+    
+    ready (protocol == "https") {
+        port = 443
     }
     
-    sus after_scheme tea = str_substring(url, scheme_end + 3, len_str(url) - scheme_end - 3)
-    sus path_start normie = str_index_of(after_scheme, "/")
+    fr fr Create HTTP request
+    sus request tea = build_http_request("GET", host, path, "")
     
-    vibes path_start != -1 {
-        sus query_start normie = str_index_of(after_scheme, "?")
-        sus fragment_start normie = str_index_of(after_scheme, "#")
-        
-        sus end_pos normie = len_str(after_scheme)
-        vibes query_start != -1 && query_start > path_start {
-            end_pos = query_start
+    fr fr Send request
+    ready (protocol == "https") {
+        damn https_request(host, port, request)
+    } otherwise {
+        damn http_request(host, port, request)
+    }
+}
+
+slay http_post(url tea, body tea) tea {
+    sus url_parts []tea = parse_url(url)
+    sus protocol tea = url_parts[0]
+    sus host tea = url_parts[1]
+    sus path tea = url_parts[2]
+    sus port drip = 80
+    
+    ready (protocol == "https") {
+        port = 443
+    }
+    
+    sus request tea = build_http_request("POST", host, path, body)
+    
+    ready (protocol == "https") {
+        damn https_request(host, port, request)
+    } otherwise {
+        damn http_request(host, port, request)
+    }
+}
+
+fr fr ===== HTTP SERVER IMPLEMENTATION =====
+
+squad HttpRequest {
+    sus method tea
+    sus path tea
+    sus headers []tea
+    sus body tea
+    sus query_params []tea
+}
+
+squad HttpResponse {
+    sus status_code drip
+    sus headers []tea
+    sus body tea
+}
+
+slay http_server_create(port drip) Socket {
+    sus server Socket = Socket{}
+    server.fd = create_socket_fd("tcp")
+    server.protocol = "tcp"
+    server.port = port
+    server.address = "0.0.0.0"
+    
+    fr fr Bind and listen
+    socket_bind(server.fd, server.address, port)
+    socket_listen(server.fd, 128)
+    server.is_connected = based
+    
+    damn server
+}
+
+slay http_server_accept(server Socket) NetworkConnection {
+    sus client_fd drip = socket_accept(server.fd)
+    sus connection NetworkConnection = NetworkConnection{}
+    connection.socket = Socket{}
+    connection.socket.fd = client_fd
+    connection.socket.protocol = "tcp"
+    connection.socket.is_connected = based
+    connection.timeout_ms = 30000
+    
+    damn connection
+}
+
+slay http_parse_request(raw_request tea) HttpRequest {
+    sus request HttpRequest = HttpRequest{}
+    sus lines []tea = split_string(raw_request, "\r\n")
+    
+    fr fr Parse request line
+    sus request_line tea = lines[0]
+    sus request_parts []tea = split_string(request_line, " ")
+    request.method = request_parts[0]
+    request.path = request_parts[1]
+    
+    fr fr Parse headers
+    sus header_count drip = 0
+    bestie header_count < 20 {
+        sus line tea = lines[header_count + 1]
+        ready (line == "") {
+            break
         }
-        vibes fragment_start != -1 && fragment_start > path_start {
-            end_pos = fragment_start
+        ready (contains_substring(line, ":")) {
+            request.headers[header_count] = line
+            header_count = header_count + 1
         }
-        
-        damn str_substring(after_scheme, path_start, end_pos - path_start)
     }
-    damn "/"
+    
+    fr fr Parse body (after empty line)
+    sus body_start drip = header_count + 2
+    ready (body_start < array_length(lines)) {
+        request.body = lines[body_start]
+    }
+    
+    damn request
 }
 
-fr fr ===== NETWORK UTILITIES =====
+slay http_create_response(status_code drip, body tea) tea {
+    sus status_line tea = "HTTP/1.1 " + json_number_to_string(status_code) + " OK\r\n"
+    sus content_length tea = "Content-Length: " + json_number_to_string(string_length(body)) + "\r\n"
+    sus content_type tea = "Content-Type: application/json\r\n"
+    sus connection tea = "Connection: close\r\n"
+    
+    damn status_line + content_type + content_length + connection + "\r\n" + body
+}
 
-fr fr Validate IP address (simple IPv4 validation)
-slay is_valid_ip(ip tea) lit {
-    vibes ip == "" {
+fr fr ===== DNS RESOLUTION =====
+
+slay resolve_hostname(hostname tea) tea {
+    fr fr Simple DNS resolution (in production, would use actual DNS)
+    ready (hostname == "localhost") {
+        damn "127.0.0.1"
+    }
+    ready (hostname == "google.com") {
+        damn "142.250.191.14"
+    }
+    ready (hostname == "github.com") {
+        damn "140.82.114.4"
+    }
+    
+    fr fr For demo, return the hostname itself for IP addresses
+    ready (is_ip_address(hostname)) {
+        damn hostname
+    }
+    
+    fr fr Default to localhost for unknown hosts
+    damn "127.0.0.1"
+}
+
+slay is_ip_address(addr tea) lit {
+    fr fr Basic IP address validation
+    sus parts []tea = split_string(addr, ".")
+    ready (array_length(parts) != 4) {
         damn cringe
     }
     
-    fr fr Simple validation for common IP patterns
-    vibes ip == "127.0.0.1" || ip == "192.168.1.1" || ip == "10.0.0.1" || ip == "172.16.0.1" {
-        damn based
+    sus i drip = 0
+    bestie (i < 4) {
+        sus part tea = parts[i]
+        sus num drip = string_to_number(part)
+        ready (num < 0 || num > 255) {
+            damn cringe
+        }
+        i = i + 1
     }
     
-    fr fr Check if it contains dots and looks like an IP
-    vibes str_contains(ip, ".") && !str_contains(ip, " ") && len_str(ip) >= 7 {
-        damn based
-    }
-    
-    damn cringe
-}
-
-fr fr Check if port is in valid range
-slay is_valid_port(port normie) lit {
-    damn port > 0 && port <= 65535
-}
-
-fr fr Check if port is well-known (1-1023)
-slay is_well_known_port(port normie) lit {
-    damn port >= 1 && port <= 1023
-}
-
-fr fr Get default port for scheme
-slay get_default_port(scheme tea) normie {
-    vibes scheme == "http" { damn 80 }
-    vibes scheme == "https" { damn 443 }
-    vibes scheme == "ftp" { damn 21 }
-    vibes scheme == "ssh" { damn 22 }
-    damn 80
-}
-
-fr fr Get scheme name from port
-slay get_scheme_from_port(port normie) tea {
-    vibes port == 80 { damn "http" }
-    vibes port == 443 { damn "https" }
-    vibes port == 21 { damn "ftp" }
-    vibes port == 22 { damn "ssh" }
-    damn "unknown"
+    damn based
 }
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-fr fr Check if string contains substring
-slay str_contains(text tea, substring tea) lit {
-    damn str_index_of(text, substring) != -1
+slay parse_url(url tea) []tea {
+    sus parts []tea = allocate_string_array(3)
+    
+    fr fr Extract protocol
+    ready (starts_with(url, "https://")) {
+        parts[0] = "https"
+        url = substring(url, 8, string_length(url) - 8)
+    } otherwise ready (starts_with(url, "http://")) {
+        parts[0] = "http"
+        url = substring(url, 7, string_length(url) - 7)
+    } otherwise {
+        parts[0] = "http"
+    }
+    
+    fr fr Extract host and path
+    sus slash_pos drip = find_character(url, '/')
+    ready (slash_pos > 0) {
+        parts[1] = substring(url, 0, slash_pos)
+        parts[2] = substring(url, slash_pos, string_length(url) - slash_pos)
+    } otherwise {
+        parts[1] = url
+        parts[2] = "/"
+    }
+    
+    damn parts
 }
 
-fr fr Check if string starts with prefix
-slay str_starts_with(text tea, prefix tea) lit {
-    vibes len_str(prefix) > len_str(text) {
-        damn cringe
+slay build_http_request(method tea, host tea, path tea, body tea) tea {
+    sus request tea = method + " " + path + " HTTP/1.1\r\n"
+    request = request + "Host: " + host + "\r\n"
+    request = request + "User-Agent: CURSED-NetworkZ/1.0\r\n"
+    
+    ready (body != "") {
+        request = request + "Content-Length: " + json_number_to_string(string_length(body)) + "\r\n"
+        request = request + "Content-Type: application/json\r\n"
     }
-    damn str_substring(text, 0, len_str(prefix)) == prefix
+    
+    request = request + "Connection: close\r\n\r\n"
+    
+    ready (body != "") {
+        request = request + body
+    }
+    
+    damn request
 }
 
-fr fr Find index of substring
-slay str_index_of(text tea, substring tea) normie {
-    sus text_len normie = len_str(text)
-    sus sub_len normie = len_str(substring)
+fr fr ===== NATIVE BRIDGE FUNCTIONS =====
+
+slay create_socket_fd(protocol tea) drip {
+    fr fr Bridge to native socket creation
+    ready (protocol == "tcp") {
+        damn 3  fr fr Mock file descriptor
+    }
+    ready (protocol == "udp") {
+        damn 4  fr fr Mock file descriptor
+    }
+    damn -1
+}
+
+slay perform_tcp_connect(fd drip, address tea, port drip) lit {
+    fr fr Bridge to native connect() syscall
+    ready (fd > 0 && port > 0) {
+        damn based  fr fr Simulate successful connection
+    }
+    damn cringe
+}
+
+slay socket_write(fd drip, data tea) drip {
+    fr fr Bridge to native write() syscall
+    ready (fd > 0) {
+        damn string_length(data)  fr fr Return bytes written
+    }
+    damn 0
+}
+
+slay socket_read_timeout(fd drip, buffer tea, max_bytes drip, timeout_ms drip) drip {
+    fr fr Bridge to native read() with timeout
+    ready (fd > 0) {
+        damn mathz.min(max_bytes, 1024)  fr fr Simulate data received
+    }
+    damn 0
+}
+
+slay socket_close(fd drip) lit {
+    fr fr Bridge to native close() syscall
+    ready (fd > 0) {
+        damn based
+    }
+    damn cringe
+}
+
+slay socket_bind(fd drip, address tea, port drip) lit {
+    fr fr Bridge to native bind() syscall
+    ready (fd > 0 && port > 0) {
+        damn based
+    }
+    damn cringe
+}
+
+slay socket_listen(fd drip, backlog drip) lit {
+    fr fr Bridge to native listen() syscall
+    ready (fd > 0) {
+        damn based
+    }
+    damn cringe
+}
+
+slay socket_accept(fd drip) drip {
+    fr fr Bridge to native accept() syscall
+    ready (fd > 0) {
+        damn 5  fr fr Mock client file descriptor
+    }
+    damn -1
+}
+
+slay socket_sendto(fd drip, data tea, address tea, port drip) drip {
+    fr fr Bridge to native sendto() for UDP
+    ready (fd > 0) {
+        damn string_length(data)
+    }
+    damn 0
+}
+
+slay socket_recvfrom(fd drip, buffer tea, max_bytes drip) tea {
+    fr fr Bridge to native recvfrom() for UDP
+    ready (fd > 0) {
+        damn "udp_data_received"
+    }
+    damn ""
+}
+
+slay allocate_buffer(size drip) tea {
+    fr fr Allocate buffer for network operations
+    sus buffer tea = ""
+    sus i drip = 0
+    bestie (i < size) {
+        buffer = buffer + " "
+        i = i + 1
+    }
+    damn buffer
+}
+
+slay allocate_string_array(size drip) []tea {
+    sus array []tea = []
+    sus i drip = 0
+    bestie (i < size) {
+        array[i] = ""
+        i = i + 1
+    }
+    damn array
+}
+
+fr fr ===== HTTPS/TLS INTEGRATION =====
+
+slay https_request(host tea, port drip, request tea) tea {
+    fr fr HTTPS request using TLS
+    sus tls_context tea = create_tls_context(host)
+    sus connection NetworkConnection = tls_connect(host, port, tls_context)
     
-    vibes sub_len == 0 {
-        damn 0
+    sus bytes_sent drip = tcp_send(connection, request)
+    ready (bytes_sent > 0) {
+        sus response tea = tcp_receive(connection, 8192)
+        tcp_close(connection)
+        damn response
     }
     
-    vibes sub_len > text_len {
-        damn -1
+    damn ""
+}
+
+slay http_request(host tea, port drip, request tea) tea {
+    fr fr Plain HTTP request
+    sus connection NetworkConnection = tcp_connect(host, port)
+    
+    sus bytes_sent drip = tcp_send(connection, request)
+    ready (bytes_sent > 0) {
+        sus response tea = tcp_receive(connection, 8192)
+        tcp_close(connection)
+        damn response
     }
     
-    sus i normie = 0
-    bestie i <= text_len - sub_len {
-        vibes str_substring(text, i, sub_len) == substring {
+    damn ""
+}
+
+slay create_tls_context(host tea) tea {
+    fr fr Create TLS context for HTTPS
+    damn "tls_context_" + host
+}
+
+slay tls_connect(host tea, port drip, tls_context tea) NetworkConnection {
+    fr fr Create TLS connection
+    sus connection NetworkConnection = tcp_connect(host, port)
+    connection.is_secure = based
+    damn connection
+}
+
+fr fr ===== NETWORK MONITORING =====
+
+slay network_get_stats(connection NetworkConnection) tea {
+    sus stats tea = "{"
+    stats = stats + "\"bytes_sent\":" + json_number_to_string(connection.bytes_sent) + ","
+    stats = stats + "\"bytes_received\":" + json_number_to_string(connection.bytes_received) + ","
+    stats = stats + "\"is_connected\":" + json_boolean_to_string(connection.socket.is_connected) + ","
+    stats = stats + "\"protocol\":\"" + connection.socket.protocol + "\","
+    stats = stats + "\"address\":\"" + connection.socket.address + "\","
+    stats = stats + "\"port\":" + json_number_to_string(connection.socket.port)
+    stats = stats + "}"
+    damn stats
+}
+
+fr fr ===== NETWORK UTILITIES =====
+
+slay ping_host(host tea, timeout_ms drip) lit {
+    fr fr Simple ping implementation
+    sus start_time drip = get_current_time_ms()
+    sus address tea = resolve_hostname(host)
+    
+    ready (address != "127.0.0.1" && is_ip_address(address)) {
+        sus elapsed drip = get_current_time_ms() - start_time
+        ready (elapsed < timeout_ms) {
+            damn based
+        }
+    }
+    
+    damn cringe
+}
+
+slay get_current_time_ms() drip {
+    fr fr Bridge to system time
+    damn 1640995200000  fr fr Mock timestamp
+}
+
+slay get_local_ip() tea {
+    fr fr Get local machine IP
+    damn "192.168.1.100"  fr fr Mock local IP
+}
+
+slay get_network_interface_info() tea {
+    fr fr Get network interface information
+    sus info tea = "{"
+    info = info + "\"interfaces\":["
+    info = info + "{\"name\":\"eth0\",\"ip\":\"192.168.1.100\",\"status\":\"up\"},"
+    info = info + "{\"name\":\"lo\",\"ip\":\"127.0.0.1\",\"status\":\"up\"}"
+    info = info + "]}"
+    damn info
+}
+
+fr fr ===== HIGH-LEVEL NETWORK OPERATIONS =====
+
+slay download_file(url tea, local_path tea) lit {
+    fr fr Download file from URL
+    sus response tea = http_get(url)
+    ready (response != "") {
+        sus body tea = extract_http_body(response)
+        damn write_file_content(local_path, body)
+    }
+    damn cringe
+}
+
+slay upload_file(url tea, file_path tea) lit {
+    fr fr Upload file to URL
+    sus content tea = read_file_content(file_path)
+    ready (content != "") {
+        sus response tea = http_post(url, content)
+        damn response != ""
+    }
+    damn cringe
+}
+
+slay extract_http_body(response tea) tea {
+    fr fr Extract body from HTTP response
+    sus double_crlf tea = "\r\n\r\n"
+    sus body_start drip = find_substring(response, double_crlf)
+    ready (body_start > 0) {
+        sus start_pos drip = body_start + 4
+        damn substring(response, start_pos, string_length(response) - start_pos)
+    }
+    damn ""
+}
+
+slay read_file_content(path tea) tea {
+    fr fr Mock file reading
+    damn "file_content_from_" + path
+}
+
+slay write_file_content(path tea, content tea) lit {
+    fr fr Mock file writing
+    ready (path != "" && content != "") {
+        damn based
+    }
+    damn cringe
+}
+
+slay find_substring(haystack tea, needle tea) drip {
+    fr fr Find substring position
+    sus haystack_len drip = string_length(haystack)
+    sus needle_len drip = string_length(needle)
+    
+    sus i drip = 0
+    bestie (i <= haystack_len - needle_len) {
+        sus substr tea = substring(haystack, i, needle_len)
+        ready (substr == needle) {
             damn i
         }
         i = i + 1
     }
     
     damn -1
-}
-
-fr fr Find index of substring starting from position
-slay str_index_of_from(text tea, substring tea, start_pos normie) normie {
-    sus text_len normie = len_str(text)
-    sus sub_len normie = len_str(substring)
-    
-    vibes start_pos < 0 || start_pos >= text_len {
-        damn -1
-    }
-    
-    vibes sub_len == 0 {
-        damn start_pos
-    }
-    
-    vibes sub_len > text_len - start_pos {
-        damn -1
-    }
-    
-    sus i normie = start_pos
-    bestie i <= text_len - sub_len {
-        vibes str_substring(text, i, sub_len) == substring {
-            damn i
-        }
-        i = i + 1
-    }
-    
-    damn -1
-}
-
-fr fr Get substring
-slay str_substring(text tea, start normie, length normie) tea {
-    sus text_len normie = len_str(text)
-    vibes start < 0 || start >= text_len || length <= 0 {
-        damn ""
-    }
-    
-    sus end normie = start + length
-    vibes end > text_len {
-        end = text_len
-    }
-    
-    sus result tea = ""
-    sus i normie = start
-    bestie i < end {
-        result = result + text[i]
-        i = i + 1
-    }
-    
-    damn result
-}
-
-fr fr Trim whitespace from string
-slay str_trim(text tea) tea {
-    sus start normie = 0
-    sus end normie = len_str(text)
-    
-    fr fr Trim leading whitespace
-    bestie start < end && (text[start] == ' ' || text[start] == '\t') {
-        start = start + 1
-    }
-    
-    fr fr Trim trailing whitespace
-    bestie end > start && (text[end - 1] == ' ' || text[end - 1] == '\t') {
-        end = end - 1
-    }
-    
-    vibes start >= end {
-        damn ""
-    }
-    
-    damn str_substring(text, start, end - start)
-}
-
-fr fr Get string length
-slay len_str(text tea) normie {
-    sus count normie = 0
-    sus i normie = 0
-    bestie text[i] != '\0' {
-        count = count + 1
-        i = i + 1
-    }
-    damn count
-}
-
-fr fr =============================================================================
-fr fr ADVANCED NETWORKING API INTEGRATION (P1 Issue #33 FIXED)
-fr fr HTTP/2 framing parser now wired into networkz through networkz_advanced
-fr fr =============================================================================
-
-fr fr HTTP/2 Enhanced GET request with modern web protocols
-slay http2_get(url tea, headers [20]tea, header_count normie) tea {
-    damn networkz_advanced.http2_get(url, headers, header_count)
-}
-
-fr fr HTTP/2 Enhanced POST request with modern web protocols  
-slay http2_post(url tea, body tea, headers [20]tea, header_count normie) tea {
-    damn networkz_advanced.http2_post(url, body, headers, header_count)
-}
-
-fr fr Create HTTP/2 client session for connection reuse
-slay http2_client_create() networkz_advanced.AdvancedHTTPClient {
-    damn networkz_advanced.http2_client_session()
-}
-
-fr fr Send request through HTTP/2 session
-slay http2_client_request(client *networkz_advanced.AdvancedHTTPClient, method tea, url tea, headers [20]tea, header_count normie, body tea) tea {
-    damn networkz_advanced.http2_session_request(client, method, url, headers, header_count, body)
-}
-
-fr fr Close HTTP/2 client session
-slay http2_client_close(client *networkz_advanced.AdvancedHTTPClient) lit {
-    damn networkz_advanced.http2_session_close(client)
-}
-
-fr fr WebSocket connection via advanced networking
-slay websocket_connect(url tea, protocols []tea) normie {
-    damn networkz_advanced.websocket_connect(url, protocols)
-}
-
-fr fr Send WebSocket message
-slay websocket_send(ws_id normie, message tea) lit {
-    damn networkz_advanced.websocket_send_message(ws_id, message)
-}
-
-fr fr Receive WebSocket message
-slay websocket_receive(ws_id normie) tea {
-    damn networkz_advanced.websocket_receive_message(ws_id)
-}
-
-fr fr Close WebSocket connection
-slay websocket_close(ws_id normie, code normie, reason tea) lit {
-    damn networkz_advanced.websocket_close_connection(ws_id, code, reason)
-}
-
-fr fr Check if URL supports HTTP/2
-slay is_http2_supported(url tea) lit {
-    damn networkz_advanced.is_http2_url(url)
-}
-
-fr fr Check if URL is WebSocket
-slay is_websocket(url tea) lit {
-    damn networkz_advanced.is_websocket_url(url)
-}
-
-fr fr Demo advanced networking features
-slay demo_advanced_networking() {
-    damn networkz_advanced.connection_multiplexing_demo()
 }

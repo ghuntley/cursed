@@ -22,7 +22,7 @@ pub const VariableCache = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .cache = HashMap(u64, CachedVariable, std.hash_map.DefaultContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .string_to_hash = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -39,8 +39,8 @@ pub const VariableCache = struct {
             self.allocator.free(entry.key_ptr.*);
         }
         
-        self.cache.deinit(allocator);
-        self.string_to_hash.deinit(allocator);
+        self.cache.deinit();
+        self.string_to_hash.deinit();
     }
     
     pub fn getVariablePtr(self: *Self, name: []const u8) ?*const anyopaque {
@@ -173,7 +173,7 @@ pub const ExpressionCache = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .cache = HashMap(u64, CachedExpression, std.hash_map.DefaultContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -191,7 +191,7 @@ pub const ExpressionCache = struct {
             }
         }
         
-        self.cache.deinit(allocator);
+        self.cache.deinit();
     }
     
     pub fn getHash(expression: []const u8) u64 {
@@ -258,7 +258,7 @@ pub const StringInterner = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .strings = .empty,
             .string_map = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -270,8 +270,8 @@ pub const StringInterner = struct {
         for (self.strings.items) |string| {
             self.allocator.free(string);
         }
-        self.strings.deinit(allocator);
-        self.string_map.deinit(allocator);
+        self.strings.deinit();
+        self.string_map.deinit();
     }
     
     pub fn intern(self: *Self, string: []const u8) ![]const u8 {
@@ -316,7 +316,7 @@ pub const PerformanceMonitor = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .variable_cache = VariableCache.init(allocator),
             .expression_cache = ExpressionCache.init(allocator),
@@ -331,16 +331,16 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.variable_cache.deinit(allocator);
-        self.expression_cache.deinit(allocator);
-        self.string_interner.deinit(allocator);
+        self.variable_cache.deinit();
+        self.expression_cache.deinit();
+        self.string_interner.deinit();
         
         // Free function call tracking
         var iter = self.function_calls.iterator();
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.function_calls.deinit(allocator);
+        self.function_calls.deinit();
     }
     
     pub fn recordVariableLookup(self: *Self) void {
@@ -372,13 +372,13 @@ pub const PerformanceMonitor = struct {
     pub fn printComprehensiveReport(self: *Self) void {
         const total_time_ms = @as(f64, @floatFromInt(self.total_interpretation_time_ns)) / 1_000_000.0;
         
-        std.debug.print("\n=== CURSED Performance Optimization Report ===\n");
+        std.debug.print("\n=== CURSED Performance Optimization Report ===\n", .{});
         std.debug.print("Total interpretation time: {d:.2}ms\n", .{total_time_ms});
         std.debug.print("Variable lookups: {}\n", .{self.total_variable_lookups});
         std.debug.print("Function calls: {}\n", .{self.total_function_calls});
         std.debug.print("Expressions evaluated: {}\n", .{self.total_expressions_evaluated});
         
-        std.debug.print("\n--- Cache Performance ---\n");
+        std.debug.print("\n--- Cache Performance ---\n", .{});
         self.variable_cache.printStats();
         self.expression_cache.printStats();
         
@@ -387,28 +387,28 @@ pub const PerformanceMonitor = struct {
             string_stats.interned_count, string_stats.total_size
         });
         
-        std.debug.print("\n--- Function Performance ---\n");
+        std.debug.print("\n--- Function Performance ---\n", .{});
         var func_iter = self.function_calls.iterator();
         while (func_iter.next()) |entry| {
             entry.value_ptr.printStats();
         }
         
         // Performance recommendations
-        std.debug.print("\n--- Optimization Recommendations ---\n");
+        std.debug.print("\n--- Optimization Recommendations ---\n", .{});
         
         if (self.variable_cache.getCacheHitRatio() < 0.5) {
-            std.debug.print("⚠️  Low variable cache hit ratio - consider optimizing variable access patterns\n");
+            std.debug.print("⚠️  Low variable cache hit ratio - consider optimizing variable access patterns\n", .{});
         }
         
         if (self.total_function_calls > 100 and self.function_calls.count() > 10) {
-            std.debug.print("💡 High function call count - consider function inlining for frequently called functions\n");
+            std.debug.print("💡 High function call count - consider function inlining for frequently called functions\n", .{});
         }
         
         if (string_stats.total_size > 1024) {
-            std.debug.print("💡 Large string usage - string interning is helping reduce memory usage\n");
+            std.debug.print("💡 Large string usage - string interning is helping reduce memory usage\n", .{});
         }
         
-        std.debug.print("✅ Performance analysis complete\n");
+        std.debug.print("✅ Performance analysis complete\n", .{});
     }
 };
 

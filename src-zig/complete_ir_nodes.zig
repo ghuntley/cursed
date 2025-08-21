@@ -360,7 +360,7 @@ test "complete ir nodes integration" {
     const allocator = std.testing.allocator;
     
     var advanced_codegen = try AdvancedCodeGen.init(allocator);
-    defer advanced_codegen.deinit(allocator);
+    defer advanced_codegen.deinit();
     
     var complete_ir = try integrateCompleteIRNodes(&advanced_codegen);
     

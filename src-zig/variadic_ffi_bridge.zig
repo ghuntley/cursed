@@ -219,7 +219,7 @@ pub const VariadicCallBuilder = struct {
     }
     
     pub fn deinit(self: *VariadicCallBuilder) void {
-        self.arguments.deinit(allocator);
+        self.arguments.deinit();
     }
     
     /// Set the format string for printf-style functions
@@ -232,7 +232,7 @@ pub const VariadicCallBuilder = struct {
         if (self.arguments.items.len >= self.max_args) {
             return VariadicError.TooManyArguments;
         }
-        try self.arguments.append(allocator, arg);
+        try self.arguments.append(arg);
     }
     
     /// Add argument from CURSED value
@@ -317,7 +317,7 @@ pub const VariadicCallBuilder = struct {
         
         // Prepare arguments for the call
         var llvm_args = .empty;
-        defer llvm_args.deinit(allocator);
+        defer llvm_args.deinit();
         
         // Add format string if present
         if (self.format_string) |fmt_str| {
@@ -348,7 +348,7 @@ pub const VariadicCallBuilder = struct {
                 ),
                 .boolean => |val| llvm_c.LLVMConstInt(llvm_c.LLVMInt32TypeInContext(context), if (val) 1 else 0, 0),
             };
-            try llvm_args.append(allocator, llvm_value);
+            try llvm_args.append(llvm_value);
         }
         
         // Build the call
@@ -370,7 +370,7 @@ pub const SafeVariadicWrapper = struct {
     allocator: Allocator,
     max_buffer_size: usize,
     
-    pub fn init(allocator: Allocator) SafeVariadicWrapper {
+    pub fn init() SafeVariadicWrapper {
         return SafeVariadicWrapper{
             .allocator = allocator,
             .max_buffer_size = 4096, // 4KB default buffer
@@ -383,7 +383,7 @@ pub const SafeVariadicWrapper = struct {
         if (format.len == 0) return VariadicError.NullFormatString;
         
         var builder = VariadicCallBuilder.init(self.allocator, "printf");
-        defer builder.deinit(allocator);
+        defer builder.deinit();
         
         builder.setFormatString(format);
         for (args) |arg| {
@@ -404,7 +404,7 @@ pub const SafeVariadicWrapper = struct {
         if (format.len == 0) return VariadicError.NullFormatString;
         
         var builder = VariadicCallBuilder.init(self.allocator, "scanf");
-        defer builder.deinit(allocator);
+        defer builder.deinit();
         
         builder.setFormatString(format);
         for (args) |arg| {
@@ -425,7 +425,7 @@ pub const SafeVariadicWrapper = struct {
         if (buffer.len > self.max_buffer_size) return VariadicError.BufferOverflow;
         
         var builder = VariadicCallBuilder.init(self.allocator, "snprintf");
-        defer builder.deinit(allocator);
+        defer builder.deinit();
         
         // Add buffer and size arguments first
         try builder.addArgument(VariadicArgument{ .pointer = buffer.ptr });
@@ -540,7 +540,7 @@ pub const CursedVariadicIntegration = struct {
         return_type: []const u8,
     };
     
-    pub fn init(allocator: Allocator) CursedVariadicIntegration {
+    pub fn init() CursedVariadicIntegration {
         var integration = CursedVariadicIntegration{
             .allocator = allocator,
             .safe_wrapper = SafeVariadicWrapper.init(allocator),
@@ -554,7 +554,7 @@ pub const CursedVariadicIntegration = struct {
     }
     
     pub fn deinit(self: *CursedVariadicIntegration) void {
-        self.registered_functions.deinit(allocator);
+        self.registered_functions.deinit();
     }
     
     fn registerCommonFunctions(self: *CursedVariadicIntegration) !void {
@@ -596,96 +596,96 @@ pub const CursedVariadicIntegration = struct {
         const func_info = self.registered_functions.get(func_name) orelse return VariadicError.InvalidFunctionSignature;
         
         var wrapper = .empty;
-        defer wrapper.deinit(allocator);
+        defer wrapper.deinit();
         
         try wrapper.writer().print("// Auto-generated CURSED wrapper for variadic C function {s}\n", .{func_name});
         try wrapper.writer().print("extern \"C\" {{\n");
         try wrapper.writer().print("    library \"libc\"\n");
         try wrapper.writer().print("    slay {s}(format tea, ...args) {s}\n", .{ func_name, func_info.return_type });
-        try wrapper.writer().print("}}\n\n");
+        try wrapper.writer().print("}}\n\n", .{});
         
-        try wrapper.writer().print("// Safe CURSED wrapper with type checking\n");
+        try wrapper.writer().print("// Safe CURSED wrapper with type checking\n", .{});
         try wrapper.writer().print("slay safe_{s}(format tea, ...args) {s} {{\n", .{ func_name, func_info.return_type });
         
         if (func_info.has_format_string) {
-            try wrapper.writer().print("    // Validate format string\n");
-            try wrapper.writer().print("    ready (format == null) {{\n");
+            try wrapper.writer().print("    // Validate format string\n", .{});
+            try wrapper.writer().print("    ready (format == null) {{\n", .{});
             try wrapper.writer().print("        yikes \"Format string cannot be null\"\n");
-            try wrapper.writer().print("    }}\n\n");
+            try wrapper.writer().print("    }}\n\n", .{});
             
-            try wrapper.writer().print("    // Validate argument count\n");
+            try wrapper.writer().print("    // Validate argument count\n", .{});
             try wrapper.writer().print("    ready (args.len < {} || args.len > {}) {{\n", .{ func_info.min_args - 1, func_info.max_args - 1 });
             try wrapper.writer().print("        yikes \"Invalid number of arguments\"\n");
-            try wrapper.writer().print("    }}\n\n");
+            try wrapper.writer().print("    }}\n\n", .{});
         }
         
-        try wrapper.writer().print("    // Call native function with error handling\n");
+        try wrapper.writer().print("    // Call native function with error handling\n", .{});
         try wrapper.writer().print("    sus result {s} = {s}(format, ...args) fam {{\n", .{ func_info.return_type, func_name });
-        try wrapper.writer().print("        when error -> {{\n");
+        try wrapper.writer().print("        when error -> {{\n", .{});
         try wrapper.writer().print("            vibez.spill(\"Error calling {s}: \" + error)\n", .{func_name});
-        try wrapper.writer().print("            damn -1\n");
-        try wrapper.writer().print("        }}\n");
-        try wrapper.writer().print("    }}\n\n");
+        try wrapper.writer().print("            damn -1\n", .{});
+        try wrapper.writer().print("        }}\n", .{});
+        try wrapper.writer().print("    }}\n\n", .{});
         
-        try wrapper.writer().print("    damn result\n");
-        try wrapper.writer().print("}}\n\n");
+        try wrapper.writer().print("    damn result\n", .{});
+        try wrapper.writer().print("}}\n\n", .{});
         
-        return wrapper.toOwnedSlice(allocator);
+        return wrapper.toOwnedSlice();
     }
     
     /// Generate LLVM integration code for variadic functions
     pub fn generateLLVMIntegration(self: *CursedVariadicIntegration) ![]const u8 {
         var code = .empty;
-        defer code.deinit(allocator);
+        defer code.deinit();
         
-        try code.writer().print("// LLVM Variadic Function Integration\n\n");
-        try code.writer().print("pub fn setupVariadicFunctions(module: llvm_c.LLVMModuleRef, context: llvm_c.LLVMContextRef) !void {{\n");
+        try code.writer().print("// LLVM Variadic Function Integration\n\n", .{});
+        try code.writer().print("pub fn setupVariadicFunctions(module: llvm_c.LLVMModuleRef, context: llvm_c.LLVMContextRef) !void {{\n", .{});
         
         var iterator = self.registered_functions.iterator();
         while (iterator.next()) |entry| {
             const func_info = entry.value_ptr.*;
             try code.writer().print("    // Declare {s}\n", .{func_info.name});
-            try code.writer().print("    {{\n");
-            try code.writer().print("        const return_type = llvm_c.LLVMInt32TypeInContext(context);\n");
-            try code.writer().print("        const param_types = [_]llvm_c.LLVMTypeRef{{\n");
-            try code.writer().print("            llvm_c.LLVMPointerType(llvm_c.LLVMInt8TypeInContext(context), 0)\n");
-            try code.writer().print("        }};\n");
-            try code.writer().print("        const func_type = llvm_c.LLVMFunctionType(\n");
-            try code.writer().print("            return_type,\n");
-            try code.writer().print("            @ptrCast(&param_types),\n");
-            try code.writer().print("            1,\n");
-            try code.writer().print("            1 // is_variadic = true\n");
-            try code.writer().print("        );\n");
+            try code.writer().print("    {{\n", .{});
+            try code.writer().print("        const return_type = llvm_c.LLVMInt32TypeInContext(context);\n", .{});
+            try code.writer().print("        const param_types = [_]llvm_c.LLVMTypeRef{{\n", .{});
+            try code.writer().print("            llvm_c.LLVMPointerType(llvm_c.LLVMInt8TypeInContext(context), 0)\n", .{});
+            try code.writer().print("        }};\n", .{});
+            try code.writer().print("        const func_type = llvm_c.LLVMFunctionType(\n", .{});
+            try code.writer().print("            return_type,\n", .{});
+            try code.writer().print("            @ptrCast(&param_types),\n", .{});
+            try code.writer().print("            1,\n", .{});
+            try code.writer().print("            1 // is_variadic = true\n", .{});
+            try code.writer().print("        );\n", .{});
             try code.writer().print("        _ = llvm_c.LLVMAddFunction(module, \"{s}\", func_type);\n", .{func_info.name});
-            try code.writer().print("    }}\n\n");
+            try code.writer().print("    }}\n\n", .{});
         }
         
-        try code.writer().print("}}\n\n");
+        try code.writer().print("}}\n\n", .{});
         
-        try code.writer().print("pub fn callVariadicFunction(\n");
-        try code.writer().print("    builder: llvm_c.LLVMBuilderRef,\n");
-        try code.writer().print("    module: llvm_c.LLVMModuleRef,\n");
-        try code.writer().print("    func_name: []const u8,\n");
-        try code.writer().print("    args: []llvm_c.LLVMValueRef\n");
-        try code.writer().print(") !llvm_c.LLVMValueRef {{\n");
+        try code.writer().print("pub fn callVariadicFunction(\n", .{});
+        try code.writer().print("    builder: llvm_c.LLVMBuilderRef,\n", .{});
+        try code.writer().print("    module: llvm_c.LLVMModuleRef,\n", .{});
+        try code.writer().print("    func_name: []const u8,\n", .{});
+        try code.writer().print("    args: []llvm_c.LLVMValueRef\n", .{});
+        try code.writer().print(") !llvm_c.LLVMValueRef {{\n", .{});
         try code.writer().print("    const func_name_z = try std.fmt.allocPrintZ(allocator, \"{s}\", .{{func_name}});\n");
-        try code.writer().print("    defer allocator.free(func_name_z);\n");
-        try code.writer().print("    \n");
-        try code.writer().print("    const func = llvm_c.LLVMGetNamedFunction(module, func_name_z) orelse {{\n");
-        try code.writer().print("        return error.FunctionNotFound;\n");
-        try code.writer().print("    }};\n");
-        try code.writer().print("    \n");
-        try code.writer().print("    return llvm_c.LLVMBuildCall2(\n");
-        try code.writer().print("        builder,\n");
-        try code.writer().print("        llvm_c.LLVMGlobalGetValueType(func),\n");
-        try code.writer().print("        func,\n");
-        try code.writer().print("        args.ptr,\n");
-        try code.writer().print("        @intCast(args.len),\n");
+        try code.writer().print("    defer allocator.free(func_name_z);\n", .{});
+        try code.writer().print("    \n", .{});
+        try code.writer().print("    const func = llvm_c.LLVMGetNamedFunction(module, func_name_z) orelse {{\n", .{});
+        try code.writer().print("        return error.FunctionNotFound;\n", .{});
+        try code.writer().print("    }};\n", .{});
+        try code.writer().print("    \n", .{});
+        try code.writer().print("    return llvm_c.LLVMBuildCall2(\n", .{});
+        try code.writer().print("        builder,\n", .{});
+        try code.writer().print("        llvm_c.LLVMGlobalGetValueType(func),\n", .{});
+        try code.writer().print("        func,\n", .{});
+        try code.writer().print("        args.ptr,\n", .{});
+        try code.writer().print("        @intCast(args.len),\n", .{});
         try code.writer().print("        \"variadic_call\"\n");
-        try code.writer().print("    );\n");
-        try code.writer().print("}}\n");
+        try code.writer().print("    );\n", .{});
+        try code.writer().print("}}\n", .{});
         
-        return code.toOwnedSlice(allocator);
+        return code.toOwnedSlice();
     }
 };
 
@@ -713,7 +713,7 @@ test "format string parsing" {
 
 test "variadic call builder" {
     var builder = VariadicCallBuilder.init(std.testing.allocator, "printf");
-    defer builder.deinit(allocator);
+    defer builder.deinit();
     
     builder.setFormatString("Hello %s!");
     try builder.addArgument(VariadicArgument{ .string = "World" });
@@ -734,7 +734,7 @@ test "safe printf wrapper" {
 
 test "CURSED integration" {
     var integration = CursedVariadicIntegration.init(std.testing.allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     const wrapper = try integration.generateCursedWrapper("printf");
     defer std.testing.allocator.free(wrapper);

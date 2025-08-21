@@ -21,7 +21,7 @@ pub const Program = struct {
     imports: ArrayList(ImportStatement),
     statements: ArrayList(Statement),
     
-    pub fn init(allocator: Allocator) Program {
+    pub fn init() Program {
         return Program{
             .package = null,
             .imports = .empty,
@@ -30,8 +30,8 @@ pub const Program = struct {
     }
     
     pub fn deinit(self: *Program) void {
-        self.imports.deinit(allocator);
-        self.statements.deinit(allocator);
+        self.imports.deinit();
+        self.statements.deinit();
     }
 };
 
@@ -70,10 +70,10 @@ pub const Statement = union(enum) {
     
     pub fn deinit(self: *Statement, allocator: Allocator) void {
         switch (self.*) {
-            .Function => |*func| func.deinit(allocator),
-            .Struct => |*struct_stmt| struct_stmt.deinit(allocator),
-            .Interface => |*interface| interface.deinit(allocator),
-            .Expression => |*expr| expr.deinit(allocator),
+            .Function => |*func| func.deinit(),
+            .Struct => |*struct_stmt| struct_stmt.deinit(),
+            .Interface => |*interface| interface.deinit(),
+            .Expression => |*expr| expr.deinit(),
             else => {},
         }
     }
@@ -94,7 +94,7 @@ pub const FunctionStatement = struct {
     pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
         allocator.free(self.type_parameters);
         allocator.free(self.parameters);
-        if (self.return_type) |*ret_type| ret_type.deinit(allocator);
+        if (self.return_type) |*ret_type| ret_type.deinit();
         allocator.free(self.body);
     }
 };
@@ -353,62 +353,62 @@ pub const Type = union(enum) {
     pub fn deinit(self: *Type, allocator: Allocator) void {
         switch (self.*) {
             .Generic => |*generic| {
-                generic.base.deinit(allocator);
+                generic.base.deinit();
                 allocator.destroy(generic.base);
                 for (generic.type_args) |*arg| {
-                    arg.deinit(allocator);
+                    arg.deinit();
                 }
                 allocator.free(generic.type_args);
             },
             .Array => |*array| {
-                array.element_type.deinit(allocator);
+                array.element_type.deinit();
                 allocator.destroy(array.element_type);
             },
             .Slice => |*slice| {
-                slice.element_type.deinit(allocator);
+                slice.element_type.deinit();
                 allocator.destroy(slice.element_type);
             },
             .Pointer => |*pointer| {
-                pointer.target_type.deinit(allocator);
+                pointer.target_type.deinit();
                 allocator.destroy(pointer.target_type);
             },
             .Reference => |*reference| {
-                reference.target_type.deinit(allocator);
+                reference.target_type.deinit();
                 allocator.destroy(reference.target_type);
             },
             .Function => |*function| {
                 for (function.parameters) |*param| {
-                    param.deinit(allocator);
+                    param.deinit();
                 }
                 allocator.free(function.parameters);
                 if (function.return_type) |ret_type| {
-                    ret_type.deinit(allocator);
+                    ret_type.deinit();
                     allocator.destroy(ret_type);
                 }
             },
             .Tuple => |*tuple| {
                 for (tuple.elements) |*element| {
-                    element.deinit(allocator);
+                    element.deinit();
                 }
                 allocator.free(tuple.elements);
             },
             .Channel => |*channel| {
-                channel.element_type.deinit(allocator);
+                channel.element_type.deinit();
                 allocator.destroy(channel.element_type);
             },
             .Union => |*union_type| {
                 for (union_type.variants) |*variant| {
-                    variant.deinit(allocator);
+                    variant.deinit();
                 }
                 allocator.free(union_type.variants);
             },
             .Optional => |*optional| {
-                optional.inner_type.deinit(allocator);
+                optional.inner_type.deinit();
                 allocator.destroy(optional.inner_type);
             },
             .Result => |*result| {
-                result.ok_type.deinit(allocator);
-                result.error_type.deinit(allocator);
+                result.ok_type.deinit();
+                result.error_type.deinit();
                 allocator.destroy(result.ok_type);
                 allocator.destroy(result.error_type);
             },
@@ -450,45 +450,45 @@ pub const Expression = union(enum) {
     pub fn deinit(self: *Expression, allocator: Allocator) void {
         switch (self.*) {
             .Binary => |*binary| {
-                binary.left.deinit(allocator);
-                binary.right.deinit(allocator);
+                binary.left.deinit();
+                binary.right.deinit();
                 allocator.destroy(binary.left);
                 allocator.destroy(binary.right);
             },
             .Unary => |*unary| {
-                unary.operand.deinit(allocator);
+                unary.operand.deinit();
                 allocator.destroy(unary.operand);
             },
             .Call => |*call| {
-                call.callee.deinit(allocator);
+                call.callee.deinit();
                 allocator.destroy(call.callee);
                 for (call.arguments) |*arg| {
-                    arg.deinit(allocator);
+                    arg.deinit();
                 }
                 allocator.free(call.arguments);
             },
             .Match => |*match| {
-                match.expr.deinit(allocator);
+                match.expr.deinit();
                 allocator.destroy(match.expr);
                 for (match.arms) |*arm| {
-                    arm.pattern.deinit(allocator);
+                    arm.pattern.deinit();
                     if (arm.guard) |*guard| {
-                        guard.deinit(allocator);
+                        guard.deinit();
                         allocator.destroy(guard);
                     }
-                    arm.body.deinit(allocator);
+                    arm.body.deinit();
                 }
                 allocator.free(match.arms);
             },
             .Array => |*array| {
                 for (array.elements) |*element| {
-                    element.deinit(allocator);
+                    element.deinit();
                 }
                 allocator.free(array.elements);
             },
             .Tuple => |*tuple| {
                 for (tuple.elements) |*element| {
-                    element.deinit(allocator);
+                    element.deinit();
                 }
                 allocator.free(tuple.elements);
             },
@@ -665,43 +665,43 @@ pub const Pattern = union(enum) {
         switch (self.*) {
             .Tuple => |*tuple| {
                 for (tuple.patterns) |*pattern| {
-                    pattern.deinit(allocator);
+                    pattern.deinit();
                 }
                 allocator.free(tuple.patterns);
             },
             .Struct => |*struct_pattern| {
                 for (struct_pattern.fields) |*field| {
-                    field.pattern.deinit(allocator);
+                    field.pattern.deinit();
                 }
                 allocator.free(struct_pattern.fields);
             },
             .Array => |*array| {
                 for (array.patterns) |*pattern| {
-                    pattern.deinit(allocator);
+                    pattern.deinit();
                 }
                 allocator.free(array.patterns);
             },
             .Or => |*or_pattern| {
                 for (or_pattern.patterns) |*pattern| {
-                    pattern.deinit(allocator);
+                    pattern.deinit();
                 }
                 allocator.free(or_pattern.patterns);
             },
             .Range => |*range| {
-                range.start.deinit(allocator);
-                range.end.deinit(allocator);
+                range.start.deinit();
+                range.end.deinit();
                 allocator.destroy(range.start);
                 allocator.destroy(range.end);
             },
             .Guard => |*guard| {
-                guard.pattern.deinit(allocator);
-                guard.condition.deinit(allocator);
+                guard.pattern.deinit();
+                guard.condition.deinit();
                 allocator.destroy(guard.pattern);
                 allocator.destroy(guard.condition);
             },
             .Enum => |*enum_pattern| {
                 for (enum_pattern.patterns) |*pattern| {
-                    pattern.deinit(allocator);
+                    pattern.deinit();
                 }
                 allocator.free(enum_pattern.patterns);
             },

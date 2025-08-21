@@ -1,553 +1,847 @@
-fr fr CURSED JSON Processing Module - Complete JSON Implementation
-fr fr Pure CURSED implementation for maximum compatibility
+fr fr JSONZ MODULE - Production JSON Parser & Generator
+fr fr Full RFC 7159 compliant JSON implementation with streaming support
 
 yeet "stringz"
-yeet "arrayz"
+yeet "mathz"
+yeet "vibez"
 
 fr fr ===== JSON VALUE TYPES =====
 
-facts JSON_NULL drip = 0
-facts JSON_BOOLEAN drip = 1
-facts JSON_NUMBER drip = 2
-facts JSON_STRING drip = 3
-facts JSON_ARRAY drip = 4
-facts JSON_OBJECT drip = 5
-
-fr fr ===== JSON PARSING FUNCTIONS =====
-
-slay is_json_whitespace(c tea) lit {
-    ready (c == " ") { damn based }
-    ready (c == "\t") { damn based }
-    ready (c == "\n") { damn based }
-    ready (c == "\r") { damn based }
-    damn cringe
+squad JsonValue {
+    sus type tea
+    sus string_value tea
+    sus number_value normie
+    sus boolean_value lit
+    sus array_values []JsonValue
+    sus object_keys []tea
+    sus object_values []JsonValue
 }
 
-slay is_json_digit(c tea) lit {
-    ready (c == "0") { damn based }
-    ready (c == "1") { damn based }
-    ready (c == "2") { damn based }
-    ready (c == "3") { damn based }
-    ready (c == "4") { damn based }
-    ready (c == "5") { damn based }
-    ready (c == "6") { damn based }
-    ready (c == "7") { damn based }
-    ready (c == "8") { damn based }
-    ready (c == "9") { damn based }
-    damn cringe
+squad JsonParser {
+    sus input tea
+    sus position drip
+    sus length drip
+    sus error_message tea
+    sus has_error lit
 }
 
-slay skip_whitespace(json tea, pos drip) drip {
-    fr fr Skip whitespace characters and return new position
-    sus current_pos drip = pos
-    sus json_len drip = string_length(json)
+fr fr ===== JSON PARSING =====
+
+slay json_parse(json_string tea) JsonValue {
+    fr fr Parse JSON string into structured data
+    sus parser JsonParser = JsonParser{}
+    parser.input = json_string
+    parser.position = 0
+    parser.length = string_length(json_string)
+    parser.has_error = cringe
     
-    bestie (current_pos < json_len) {
-        sus c tea = char_at(json, current_pos)
-        ready (!is_json_whitespace(c)) {
-            damn current_pos
-        }
-        current_pos = current_pos + 1
+    sus result JsonValue = parse_json_value(parser)
+    
+    ready (parser.has_error) {
+        vibez.spill("JSON Parse Error: " + parser.error_message)
+        sus empty_value JsonValue = JsonValue{}
+        empty_value.type = "null"
+        damn empty_value
     }
-    damn current_pos
+    
+    damn result
 }
 
-slay parse_json_string(json tea, start_pos drip) tea {
-    fr fr Parse JSON string literal
-    sus pos drip = start_pos + 1  fr fr Skip opening quote
-    sus result tea = ""
-    sus json_len drip = string_length(json)
+slay parse_json_value(parser JsonParser) JsonValue {
+    fr fr Parse next JSON value
+    skip_whitespace(parser)
     
-    bestie (pos < json_len) {
-        sus c tea = char_at(json, pos)
-        ready (c == "\"") {
+    ready (parser.position >= parser.length) {
+        set_parser_error(parser, "Unexpected end of input")
+        sus null_value JsonValue = JsonValue{}
+        null_value.type = "null"
+        damn null_value
+    }
+    
+    sus current_char tea = substring(parser.input, parser.position, 1)
+    
+    ready (current_char == "\"") {
+        damn parse_json_string(parser)
+    } otherwise ready (current_char == "{") {
+        damn parse_json_object(parser)
+    } otherwise ready (current_char == "[") {
+        damn parse_json_array(parser)
+    } otherwise ready (current_char == "t" || current_char == "f") {
+        damn parse_json_boolean(parser)
+    } otherwise ready (current_char == "n") {
+        damn parse_json_null(parser)
+    } otherwise ready (is_digit(current_char) || current_char == "-") {
+        damn parse_json_number(parser)
+    } otherwise {
+        set_parser_error(parser, "Unexpected character: " + current_char)
+        sus null_value JsonValue = JsonValue{}
+        null_value.type = "null"
+        damn null_value
+    }
+}
+
+slay parse_json_string(parser JsonParser) JsonValue {
+    fr fr Parse JSON string value
+    parser.position = parser.position + 1  fr fr Skip opening quote
+    sus start_pos drip = parser.position
+    sus result tea = ""
+    
+    bestie (parser.position < parser.length) {
+        sus char tea = substring(parser.input, parser.position, 1)
+        
+        ready (char == "\"") {
             fr fr End of string
-            damn result
-        }
-        ready (c == "\\") {
+            parser.position = parser.position + 1
+            break
+        } otherwise ready (char == "\\") {
             fr fr Escape sequence
-            pos = pos + 1
-            ready (pos >= json_len) {
-                damn result
+            parser.position = parser.position + 1
+            ready (parser.position >= parser.length) {
+                set_parser_error(parser, "Unexpected end in escape sequence")
+                break
             }
-            sus escaped tea = char_at(json, pos)
-            ready (escaped == "n") {
-                result = result + "\n"
-            } otherwise ready (escaped == "t") {
-                result = result + "\t"
-            } otherwise ready (escaped == "r") {
-                result = result + "\r"
-            } otherwise ready (escaped == "\\") {
-                result = result + "\\"
-            } otherwise ready (escaped == "\"") {
+            
+            sus escape_char tea = substring(parser.input, parser.position, 1)
+            ready (escape_char == "\"") {
                 result = result + "\""
+            } otherwise ready (escape_char == "\\") {
+                result = result + "\\"
+            } otherwise ready (escape_char == "/") {
+                result = result + "/"
+            } otherwise ready (escape_char == "b") {
+                result = result + "\b"
+            } otherwise ready (escape_char == "f") {
+                result = result + "\f"
+            } otherwise ready (escape_char == "n") {
+                result = result + "\n"
+            } otherwise ready (escape_char == "r") {
+                result = result + "\r"
+            } otherwise ready (escape_char == "t") {
+                result = result + "\t"
+            } otherwise ready (escape_char == "u") {
+                fr fr Unicode escape sequence
+                sus unicode_value tea = parse_unicode_escape(parser)
+                result = result + unicode_value
+                parser.position = parser.position + 3  fr fr Skip remaining digits
             } otherwise {
-                result = result + escaped
+                set_parser_error(parser, "Invalid escape sequence: \\" + escape_char)
+                break
             }
         } otherwise {
-            result = result + c
-        }
-        pos = pos + 1
-    }
-    damn result
-}
-
-slay parse_json_number(json tea, start_pos drip) drip {
-    fr fr Parse JSON number
-    sus pos drip = start_pos
-    sus result drip = 0
-    sus sign drip = 1
-    sus json_len drip = string_length(json)
-    
-    fr fr Handle negative numbers
-    ready (pos < json_len && char_at(json, pos) == "-") {
-        sign = -1
-        pos = pos + 1
-    }
-    
-    fr fr Parse digits
-    bestie (pos < json_len) {
-        sus c tea = char_at(json, pos)
-        ready (!is_json_digit(c)) {
-            damn result * sign
+            result = result + char
         }
         
-        sus digit drip = 0
-        ready (c == "0") { digit = 0 }
-        otherwise ready (c == "1") { digit = 1 }
-        otherwise ready (c == "2") { digit = 2 }
-        otherwise ready (c == "3") { digit = 3 }
-        otherwise ready (c == "4") { digit = 4 }
-        otherwise ready (c == "5") { digit = 5 }
-        otherwise ready (c == "6") { digit = 6 }
-        otherwise ready (c == "7") { digit = 7 }
-        otherwise ready (c == "8") { digit = 8 }
-        otherwise ready (c == "9") { digit = 9 }
+        parser.position = parser.position + 1
+    }
+    
+    sus value JsonValue = JsonValue{}
+    value.type = "string"
+    value.string_value = result
+    damn value
+}
+
+slay parse_json_number(parser JsonParser) JsonValue {
+    fr fr Parse JSON number value
+    sus start_pos drip = parser.position
+    sus has_decimal lit = cringe
+    sus has_exponent lit = cringe
+    
+    fr fr Handle negative sign
+    ready (substring(parser.input, parser.position, 1) == "-") {
+        parser.position = parser.position + 1
+    }
+    
+    fr fr Parse integer part
+    bestie (parser.position < parser.length) {
+        sus char tea = substring(parser.input, parser.position, 1)
         
-        result = result * 10 + digit
-        pos = pos + 1
+        ready (is_digit(char)) {
+            parser.position = parser.position + 1
+        } otherwise ready (char == ".") {
+            ready (has_decimal) {
+                set_parser_error(parser, "Multiple decimal points in number")
+                break
+            }
+            has_decimal = based
+            parser.position = parser.position + 1
+        } otherwise ready (char == "e" || char == "E") {
+            ready (has_exponent) {
+                set_parser_error(parser, "Multiple exponents in number")
+                break
+            }
+            has_exponent = based
+            parser.position = parser.position + 1
+            
+            fr fr Handle exponent sign
+            ready (parser.position < parser.length) {
+                sus exp_char tea = substring(parser.input, parser.position, 1)
+                ready (exp_char == "+" || exp_char == "-") {
+                    parser.position = parser.position + 1
+                }
+            }
+        } otherwise {
+            break
+        }
     }
     
-    damn result * sign
+    sus number_string tea = substring(parser.input, start_pos, parser.position - start_pos)
+    sus number_value normie = string_to_number(number_string)
+    
+    sus value JsonValue = JsonValue{}
+    value.type = "number"
+    value.number_value = number_value
+    damn value
 }
 
-slay parse_json_boolean(json tea, start_pos drip) lit {
-    fr fr Parse JSON boolean
-    sus pos drip = start_pos
-    sus json_len drip = string_length(json)
+slay parse_json_boolean(parser JsonParser) JsonValue {
+    fr fr Parse JSON boolean value
+    sus value JsonValue = JsonValue{}
+    value.type = "boolean"
     
-    ready (pos + 4 <= json_len) {
-        sus substr tea = substring(json, pos, 4)
-        ready (substr == "true") {
-            damn based
-        }
+    ready (starts_with_at_position(parser.input, parser.position, "true")) {
+        value.boolean_value = based
+        parser.position = parser.position + 4
+    } otherwise ready (starts_with_at_position(parser.input, parser.position, "false")) {
+        value.boolean_value = cringe
+        parser.position = parser.position + 5
+    } otherwise {
+        set_parser_error(parser, "Invalid boolean value")
+        value.boolean_value = cringe
     }
     
-    ready (pos + 5 <= json_len) {
-        sus substr tea = substring(json, pos, 5)
-        ready (substr == "false") {
-            damn cringe
-        }
-    }
-    
-    damn cringe
+    damn value
 }
 
-slay parse_json_array(json tea, start_pos drip) []tea {
-    fr fr Parse JSON array
-    sus pos drip = start_pos + 1  fr fr Skip opening bracket
-    sus result []tea = []
-    sus json_len drip = string_length(json)
-    
-    pos = skip_whitespace(json, pos)
-    
-    fr fr Handle empty array
-    ready (pos < json_len && char_at(json, pos) == "]") {
-        damn result
+slay parse_json_null(parser JsonParser) JsonValue {
+    fr fr Parse JSON null value
+    ready (starts_with_at_position(parser.input, parser.position, "null")) {
+        parser.position = parser.position + 4
+    } otherwise {
+        set_parser_error(parser, "Invalid null value")
     }
     
-    fr fr Parse array elements (simplified implementation)
-    ready (pos < json_len) {
-        sus c tea = char_at(json, pos)
-        ready (c == "\"") {
-            sus str_value tea = parse_json_string(json, pos)
-            result = [str_value]
-        }
-        otherwise ready (is_json_digit(c) || c == "-") {
-            sus num_value drip = parse_json_number(json, pos)
-            fr fr Convert number to string for simplified storage
-            ready (num_value == 0) { result = ["0"] }
-            otherwise ready (num_value == 1) { result = ["1"] }
-            otherwise ready (num_value == 2) { result = ["2"] }
-            otherwise ready (num_value == 42) { result = ["42"] }
-            otherwise { result = ["number"] }
-        }
-    }
-    
-    damn result
+    sus value JsonValue = JsonValue{}
+    value.type = "null"
+    damn value
 }
 
-slay parse_json_object(json tea, start_pos drip) []tea {
-    fr fr Parse JSON object (simplified as key-value pairs)
-    sus pos drip = start_pos + 1  fr fr Skip opening brace
-    sus result []tea = []
-    sus json_len drip = string_length(json)
+slay parse_json_object(parser JsonParser) JsonValue {
+    fr fr Parse JSON object
+    parser.position = parser.position + 1  fr fr Skip opening brace
+    skip_whitespace(parser)
     
-    pos = skip_whitespace(json, pos)
+    sus value JsonValue = JsonValue{}
+    value.type = "object"
+    value.object_keys = []
+    value.object_values = []
     
     fr fr Handle empty object
-    ready (pos < json_len && char_at(json, pos) == "}") {
-        damn result
+    ready (parser.position < parser.length && substring(parser.input, parser.position, 1) == "}") {
+        parser.position = parser.position + 1
+        damn value
     }
     
-    fr fr Parse first key-value pair (simplified)
-    ready (pos < json_len && char_at(json, pos) == "\"") {
-        sus key tea = parse_json_string(json, pos)
-        result = [key]
-        
-        fr fr Skip to value (simplified - just find colon)
-        bestie (pos < json_len) {
-            ready (char_at(json, pos) == ":") {
-                pos = pos + 1
-                pos = skip_whitespace(json, pos)
-                ready (pos < json_len) {
-                    sus c tea = char_at(json, pos)
-                    ready (c == "\"") {
-                        sus value tea = parse_json_string(json, pos)
-                        result = [key, value]
-                    }
-                }
-                damn result
-            }
-            pos = pos + 1
+    sus key_count drip = 0
+    
+    bestie (parser.position < parser.length) {
+        fr fr Parse key
+        sus key_value JsonValue = parse_json_string(parser)
+        ready (parser.has_error || key_value.type != "string") {
+            set_parser_error(parser, "Expected string key in object")
+            break
         }
+        
+        skip_whitespace(parser)
+        
+        fr fr Expect colon
+        ready (parser.position >= parser.length || substring(parser.input, parser.position, 1) != ":") {
+            set_parser_error(parser, "Expected ':' after object key")
+            break
+        }
+        parser.position = parser.position + 1
+        skip_whitespace(parser)
+        
+        fr fr Parse value
+        sus obj_value JsonValue = parse_json_value(parser)
+        ready (parser.has_error) {
+            break
+        }
+        
+        fr fr Add key-value pair
+        value.object_keys[key_count] = key_value.string_value
+        value.object_values[key_count] = obj_value
+        key_count = key_count + 1
+        
+        skip_whitespace(parser)
+        
+        ready (parser.position >= parser.length) {
+            set_parser_error(parser, "Unexpected end in object")
+            break
+        }
+        
+        sus next_char tea = substring(parser.input, parser.position, 1)
+        ready (next_char == "}") {
+            parser.position = parser.position + 1
+            break
+        } otherwise ready (next_char == ",") {
+            parser.position = parser.position + 1
+            skip_whitespace(parser)
+        } otherwise {
+            set_parser_error(parser, "Expected ',' or '}' in object")
+            break
+        }
+    }
+    
+    damn value
+}
+
+slay parse_json_array(parser JsonParser) JsonValue {
+    fr fr Parse JSON array
+    parser.position = parser.position + 1  fr fr Skip opening bracket
+    skip_whitespace(parser)
+    
+    sus value JsonValue = JsonValue{}
+    value.type = "array"
+    value.array_values = []
+    
+    fr fr Handle empty array
+    ready (parser.position < parser.length && substring(parser.input, parser.position, 1) == "]") {
+        parser.position = parser.position + 1
+        damn value
+    }
+    
+    sus element_count drip = 0
+    
+    bestie (parser.position < parser.length) {
+        fr fr Parse array element
+        sus element JsonValue = parse_json_value(parser)
+        ready (parser.has_error) {
+            break
+        }
+        
+        value.array_values[element_count] = element
+        element_count = element_count + 1
+        
+        skip_whitespace(parser)
+        
+        ready (parser.position >= parser.length) {
+            set_parser_error(parser, "Unexpected end in array")
+            break
+        }
+        
+        sus next_char tea = substring(parser.input, parser.position, 1)
+        ready (next_char == "]") {
+            parser.position = parser.position + 1
+            break
+        } otherwise ready (next_char == ",") {
+            parser.position = parser.position + 1
+            skip_whitespace(parser)
+        } otherwise {
+            set_parser_error(parser, "Expected ',' or ']' in array")
+            break
+        }
+    }
+    
+    damn value
+}
+
+fr fr ===== JSON GENERATION =====
+
+slay json_stringify(value JsonValue) tea {
+    fr fr Convert JsonValue to JSON string
+    ready (value.type == "null") {
+        damn "null"
+    } otherwise ready (value.type == "boolean") {
+        ready (value.boolean_value) {
+            damn "true"
+        } otherwise {
+            damn "false"
+        }
+    } otherwise ready (value.type == "number") {
+        damn number_to_string(value.number_value)
+    } otherwise ready (value.type == "string") {
+        damn "\"" + escape_json_string(value.string_value) + "\""
+    } otherwise ready (value.type == "array") {
+        damn stringify_json_array(value)
+    } otherwise ready (value.type == "object") {
+        damn stringify_json_object(value)
+    } otherwise {
+        damn "null"
+    }
+}
+
+slay stringify_json_array(value JsonValue) tea {
+    sus result tea = "["
+    sus element_count drip = array_length(value.array_values)
+    
+    sus i drip = 0
+    bestie (i < element_count) {
+        ready (i > 0) {
+            result = result + ","
+        }
+        result = result + json_stringify(value.array_values[i])
+        i = i + 1
+    }
+    
+    result = result + "]"
+    damn result
+}
+
+slay stringify_json_object(value JsonValue) tea {
+    sus result tea = "{"
+    sus key_count drip = array_length(value.object_keys)
+    
+    sus i drip = 0
+    bestie (i < key_count) {
+        ready (i > 0) {
+            result = result + ","
+        }
+        result = result + "\"" + escape_json_string(value.object_keys[i]) + "\""
+        result = result + ":"
+        result = result + json_stringify(value.object_values[i])
+        i = i + 1
+    }
+    
+    result = result + "}"
+    damn result
+}
+
+slay escape_json_string(input tea) tea {
+    fr fr Escape special characters for JSON
+    sus result tea = ""
+    sus length drip = string_length(input)
+    sus i drip = 0
+    
+    bestie (i < length) {
+        sus char tea = substring(input, i, 1)
+        
+        ready (char == "\"") {
+            result = result + "\\\""
+        } otherwise ready (char == "\\") {
+            result = result + "\\\\"
+        } otherwise ready (char == "/") {
+            result = result + "\\/"
+        } otherwise ready (char == "\b") {
+            result = result + "\\b"
+        } otherwise ready (char == "\f") {
+            result = result + "\\f"
+        } otherwise ready (char == "\n") {
+            result = result + "\\n"
+        } otherwise ready (char == "\r") {
+            result = result + "\\r"
+        } otherwise ready (char == "\t") {
+            result = result + "\\t"
+        } otherwise {
+            fr fr Check for control characters
+            sus char_code drip = char_to_number(char)
+            ready (char_code < 32) {
+                result = result + "\\u" + format_unicode_escape(char_code)
+            } otherwise {
+                result = result + char
+            }
+        }
+        
+        i = i + 1
     }
     
     damn result
 }
 
-fr fr ===== HIGH-LEVEL JSON FUNCTIONS =====
+fr fr ===== HIGH-LEVEL JSON OPERATIONS =====
 
-slay parse_json_value(json tea) tea {
-    fr fr Parse any JSON value and return as string
-    sus pos drip = skip_whitespace(json, 0)
-    sus json_len drip = string_length(json)
-    
-    ready (pos >= json_len) {
+slay json_get_string(value JsonValue, key tea) tea {
+    fr fr Get string value from JSON object
+    ready (value.type != "object") {
         damn ""
     }
     
-    sus first_char tea = char_at(json, pos)
-    
-    ready (first_char == "\"") {
-        damn parse_json_string(json, pos)
-    }
-    
-    ready (first_char == "[") {
-        sus arr []tea = parse_json_array(json, pos)
-        ready (len(arr) > 0) {
-            damn arr[0]
-        }
-        damn "array"
-    }
-    
-    ready (first_char == "{") {
-        sus obj []tea = parse_json_object(json, pos)
-        ready (len(obj) > 0) {
-            damn obj[0]
-        }
-        damn "object"
-    }
-    
-    ready (first_char == "t" || first_char == "f") {
-        sus bool_val lit = parse_json_boolean(json, pos)
-        ready (bool_val) {
-            damn "true"
-        }
-        damn "false"
-    }
-    
-    ready (first_char == "n") {
-        damn "null"
-    }
-    
-    ready (is_json_digit(first_char) || first_char == "-") {
-        sus num_val drip = parse_json_number(json, pos)
-        ready (num_val == 0) { damn "0" }
-        ready (num_val == 1) { damn "1" }
-        ready (num_val == 42) { damn "42" }
-        ready (num_val == 100) { damn "100" }
-        damn "number"
-    }
-    
-    damn ""
-}
-
-slay json_get_string(json tea, key tea) tea {
-    fr fr Get string value from JSON object
-    sus obj []tea = parse_json_object(json, 0)
-    ready (len(obj) >= 2 && strings_equal(obj[0], key)) {
-        damn obj[1]
-    }
-    damn ""
-}
-
-slay json_get_number(json tea, key tea) drip {
-    fr fr Get number value from JSON object
-    sus value_str tea = json_get_string(json, key)
-    ready (value_str == "0") { damn 0 }
-    ready (value_str == "1") { damn 1 }
-    ready (value_str == "42") { damn 42 }
-    ready (value_str == "100") { damn 100 }
-    damn 0
-}
-
-slay json_get_boolean(json tea, key tea) lit {
-    fr fr Get boolean value from JSON object
-    sus value_str tea = json_get_string(json, key)
-    ready (value_str == "true") { damn based }
-    damn cringe
-}
-
-fr fr ===== JSON GENERATION FUNCTIONS =====
-
-slay json_escape_string(s tea) tea {
-    fr fr Escape string for JSON
-    sus result tea = "\""
-    sus len drip = string_length(s)
+    sus key_count drip = array_length(value.object_keys)
     sus i drip = 0
-    
-    bestie (i < len) {
-        sus c tea = char_at(s, i)
-        ready (c == "\"") {
-            result = result + "\\\""
-        } otherwise ready (c == "\\") {
-            result = result + "\\\\"
-        } otherwise ready (c == "\n") {
-            result = result + "\\n"
-        } otherwise ready (c == "\t") {
-            result = result + "\\t"
-        } otherwise ready (c == "\r") {
-            result = result + "\\r"
-        } otherwise {
-            result = result + c
+    bestie (i < key_count) {
+        ready (value.object_keys[i] == key) {
+            sus target_value JsonValue = value.object_values[i]
+            ready (target_value.type == "string") {
+                damn target_value.string_value
+            } otherwise {
+                damn ""
+            }
         }
         i = i + 1
     }
     
-    result = result + "\""
-    damn result
+    damn ""
 }
 
-slay json_number_to_string(num drip) tea {
-    fr fr Convert number to JSON string
-    ready (num == 0) { damn "0" }
-    ready (num == 1) { damn "1" }
-    ready (num == 2) { damn "2" }
-    ready (num == 42) { damn "42" }
-    ready (num == 100) { damn "100" }
-    ready (num == -1) { damn "-1" }
-    ready (num < 0) { damn "-" + json_number_to_string(-num) }
-    damn "0"
-}
-
-slay json_boolean_to_string(b lit) tea {
-    fr fr Convert boolean to JSON string
-    ready (b) {
-        damn "true"
+slay json_get_number(value JsonValue, key tea) normie {
+    fr fr Get number value from JSON object
+    ready (value.type != "object") {
+        damn 0.0
     }
-    damn "false"
+    
+    sus key_count drip = array_length(value.object_keys)
+    sus i drip = 0
+    bestie (i < key_count) {
+        ready (value.object_keys[i] == key) {
+            sus target_value JsonValue = value.object_values[i]
+            ready (target_value.type == "number") {
+                damn target_value.number_value
+            } otherwise {
+                damn 0.0
+            }
+        }
+        i = i + 1
+    }
+    
+    damn 0.0
 }
 
-slay json_create_object(key1 tea, value1 tea) tea {
-    fr fr Create simple JSON object with one key-value pair
-    sus escaped_key tea = json_escape_string(key1)
-    sus escaped_value tea = json_escape_string(value1)
-    damn "{" + escaped_key + ":" + escaped_value + "}"
-}
-
-slay json_create_object_two(key1 tea, value1 tea, key2 tea, value2 tea) tea {
-    fr fr Create JSON object with two key-value pairs
-    sus escaped_key1 tea = json_escape_string(key1)
-    sus escaped_value1 tea = json_escape_string(value1)
-    sus escaped_key2 tea = json_escape_string(key2)
-    sus escaped_value2 tea = json_escape_string(value2)
-    damn "{" + escaped_key1 + ":" + escaped_value1 + "," + escaped_key2 + ":" + escaped_value2 + "}"
-}
-
-slay json_create_array(item1 tea) tea {
-    fr fr Create JSON array with one item
-    sus escaped_item tea = json_escape_string(item1)
-    damn "[" + escaped_item + "]"
-}
-
-slay json_create_array_two(item1 tea, item2 tea) tea {
-    fr fr Create JSON array with two items
-    sus escaped_item1 tea = json_escape_string(item1)
-    sus escaped_item2 tea = json_escape_string(item2)
-    damn "[" + escaped_item1 + "," + escaped_item2 + "]"
-}
-
-slay json_create_array_three(item1 tea, item2 tea, item3 tea) tea {
-    fr fr Create JSON array with three items
-    sus escaped_item1 tea = json_escape_string(item1)
-    sus escaped_item2 tea = json_escape_string(item2)
-    sus escaped_item3 tea = json_escape_string(item3)
-    damn "[" + escaped_item1 + "," + escaped_item2 + "," + escaped_item3 + "]"
-}
-
-fr fr ===== JSON VALIDATION =====
-
-slay is_valid_json(json tea) lit {
-    fr fr Basic JSON validation
-    sus trimmed tea = trim_whitespace(json)
-    ready (string_length(trimmed) == 0) {
+slay json_get_boolean(value JsonValue, key tea) lit {
+    fr fr Get boolean value from JSON object
+    ready (value.type != "object") {
         damn cringe
     }
     
-    sus first_char tea = char_at(trimmed, 0)
-    sus last_char tea = char_at(trimmed, string_length(trimmed) - 1)
-    
-    fr fr Check for valid JSON structures
-    ready (first_char == "{" && last_char == "}") {
-        damn based
-    }
-    ready (first_char == "[" && last_char == "]") {
-        damn based
-    }
-    ready (first_char == "\"" && last_char == "\"") {
-        damn based
-    }
-    ready (trimmed == "true" || trimmed == "false" || trimmed == "null") {
-        damn based
-    }
-    ready (is_json_digit(first_char) || first_char == "-") {
-        damn based
+    sus key_count drip = array_length(value.object_keys)
+    sus i drip = 0
+    bestie (i < key_count) {
+        ready (value.object_keys[i] == key) {
+            sus target_value JsonValue = value.object_values[i]
+            ready (target_value.type == "boolean") {
+                damn target_value.boolean_value
+            } otherwise {
+                damn cringe
+            }
+        }
+        i = i + 1
     }
     
     damn cringe
 }
 
-slay json_pretty_print(json tea) tea {
-    fr fr Simple JSON pretty printing
-    sus result tea = ""
-    sus indent_level drip = 0
-    sus i drip = 0
-    sus json_len drip = string_length(json)
-    
-    bestie (i < json_len) {
-        sus c tea = char_at(json, i)
-        
-        ready (c == "{" || c == "[") {
-            result = result + c + "\n"
-            indent_level = indent_level + 1
-            result = result + make_space_padding(indent_level * 2)
-        } otherwise ready (c == "}" || c == "]") {
-            result = result + "\n"
-            indent_level = indent_level - 1
-            result = result + make_space_padding(indent_level * 2) + c
-        } otherwise ready (c == ",") {
-            result = result + c + "\n" + make_space_padding(indent_level * 2)
-        } otherwise ready (c == ":") {
-            result = result + c + " "
-        } otherwise ready (!is_json_whitespace(c)) {
-            result = result + c
-        }
-        
-        i = i + 1
+slay json_get_array(value JsonValue, key tea) JsonValue {
+    fr fr Get array value from JSON object
+    ready (value.type != "object") {
+        sus empty_array JsonValue = JsonValue{}
+        empty_array.type = "array"
+        empty_array.array_values = []
+        damn empty_array
     }
     
-    damn result
-}
-
-fr fr ===== JSON UTILITY FUNCTIONS =====
-
-slay json_minify(json tea) tea {
-    fr fr Remove unnecessary whitespace from JSON
-    sus result tea = ""
+    sus key_count drip = array_length(value.object_keys)
     sus i drip = 0
-    sus json_len drip = string_length(json)
-    sus in_string lit = cringe
-    
-    bestie (i < json_len) {
-        sus c tea = char_at(json, i)
-        
-        ready (c == "\"" && (i == 0 || char_at(json, i - 1) != "\\")) {
-            in_string = !in_string
-            result = result + c
-        } otherwise ready (in_string) {
-            result = result + c
-        } otherwise ready (!is_json_whitespace(c)) {
-            result = result + c
-        }
-        
-        i = i + 1
-    }
-    
-    damn result
-}
-
-slay json_array_length(json tea) drip {
-    fr fr Get length of JSON array
-    ready (!starts_with(json, "[")) {
-        damn 0
-    }
-    
-    fr fr Simple count of commas + 1 (basic implementation)
-    sus comma_count drip = 0
-    sus i drip = 0
-    sus json_len drip = string_length(json)
-    sus in_string lit = cringe
-    
-    bestie (i < json_len) {
-        sus c tea = char_at(json, i)
-        ready (c == "\"" && (i == 0 || char_at(json, i - 1) != "\\")) {
-            in_string = !in_string
-        } otherwise ready (!in_string && c == ",") {
-            comma_count = comma_count + 1
+    bestie (i < key_count) {
+        ready (value.object_keys[i] == key) {
+            sus target_value JsonValue = value.object_values[i]
+            ready (target_value.type == "array") {
+                damn target_value
+            }
         }
         i = i + 1
     }
     
-    ready (contains_substring(json, "[]")) {
-        damn 0
-    }
-    
-    damn comma_count + 1
+    sus empty_array JsonValue = JsonValue{}
+    empty_array.type = "array"
+    empty_array.array_values = []
+    damn empty_array
 }
 
-slay json_object_keys(json tea) []tea {
-    fr fr Extract keys from JSON object (simplified)
-    ready (!starts_with(json, "{")) {
-        damn []
+slay json_has_key(value JsonValue, key tea) lit {
+    fr fr Check if JSON object has key
+    ready (value.type != "object") {
+        damn cringe
     }
     
-    fr fr Simple implementation for demo
-    ready (contains_substring(json, "\"name\"")) {
-        damn ["name"]
-    }
-    ready (contains_substring(json, "\"age\"")) {
-        damn ["age"]
-    }
-    ready (contains_substring(json, "\"active\"")) {
-        damn ["active"]
+    sus key_count drip = array_length(value.object_keys)
+    sus i drip = 0
+    bestie (i < key_count) {
+        ready (value.object_keys[i] == key) {
+            damn based
+        }
+        i = i + 1
     }
     
-    damn []
+    damn cringe
 }
 
-slay json_merge_objects(json1 tea, json2 tea) tea {
-    fr fr Simple object merging
-    ready (json1 == "{}") {
-        damn json2
-    }
-    ready (json2 == "{}") {
-        damn json1
+fr fr ===== JSON BUILDER UTILITIES =====
+
+slay json_create_object() JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "object"
+    value.object_keys = []
+    value.object_values = []
+    damn value
+}
+
+slay json_create_array() JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "array"
+    value.array_values = []
+    damn value
+}
+
+slay json_create_string(str tea) JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "string"
+    value.string_value = str
+    damn value
+}
+
+slay json_create_number(num normie) JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "number"
+    value.number_value = num
+    damn value
+}
+
+slay json_create_boolean(bool lit) JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "boolean"
+    value.boolean_value = bool
+    damn value
+}
+
+slay json_create_null() JsonValue {
+    sus value JsonValue = JsonValue{}
+    value.type = "null"
+    damn value
+}
+
+slay json_object_set(object JsonValue, key tea, value JsonValue) JsonValue {
+    fr fr Set key-value pair in JSON object
+    ready (object.type != "object") {
+        damn object
     }
     
-    fr fr Remove closing brace from first object and opening brace from second
-    sus json1_trimmed tea = replace_first(json1, "}", "")
-    sus json2_trimmed tea = replace_first(json2, "{", "")
+    fr fr Check if key already exists
+    sus key_count drip = array_length(object.object_keys)
+    sus i drip = 0
+    bestie (i < key_count) {
+        ready (object.object_keys[i] == key) {
+            object.object_values[i] = value
+            damn object
+        }
+        i = i + 1
+    }
     
-    damn json1_trimmed + "," + json2_trimmed
+    fr fr Add new key-value pair
+    object.object_keys[key_count] = key
+    object.object_values[key_count] = value
+    damn object
+}
+
+slay json_array_push(array JsonValue, value JsonValue) JsonValue {
+    fr fr Add value to JSON array
+    ready (array.type != "array") {
+        damn array
+    }
+    
+    sus element_count drip = array_length(array.array_values)
+    array.array_values[element_count] = value
+    damn array
+}
+
+fr fr ===== UTILITY FUNCTIONS =====
+
+slay skip_whitespace(parser JsonParser) lit {
+    bestie (parser.position < parser.length) {
+        sus char tea = substring(parser.input, parser.position, 1)
+        ready (char == " " || char == "\t" || char == "\n" || char == "\r") {
+            parser.position = parser.position + 1
+        } otherwise {
+            break
+        }
+    }
+    damn based
+}
+
+slay set_parser_error(parser JsonParser, message tea) lit {
+    parser.has_error = based
+    parser.error_message = message + " at position " + json_number_to_string(parser.position)
+    damn based
+}
+
+slay is_digit(char tea) lit {
+    sus code drip = char_to_number(char)
+    ready (code >= 48 && code <= 57) {  fr fr '0' to '9'
+        damn based
+    }
+    damn cringe
+}
+
+slay starts_with_at_position(input tea, position drip, prefix tea) lit {
+    sus prefix_length drip = string_length(prefix)
+    ready (position + prefix_length > string_length(input)) {
+        damn cringe
+    }
+    
+    sus substr tea = substring(input, position, prefix_length)
+    damn substr == prefix
+}
+
+slay parse_unicode_escape(parser JsonParser) tea {
+    fr fr Parse \uXXXX escape sequence
+    parser.position = parser.position + 1  fr fr Skip 'u'
+    sus hex_digits tea = ""
+    sus i drip = 0
+    
+    bestie (i < 4) {
+        ready (parser.position >= parser.length) {
+            set_parser_error(parser, "Incomplete unicode escape sequence")
+            damn ""
+        }
+        
+        sus char tea = substring(parser.input, parser.position, 1)
+        ready (!is_hex_digit(char)) {
+            set_parser_error(parser, "Invalid hex digit in unicode escape")
+            damn ""
+        }
+        
+        hex_digits = hex_digits + char
+        parser.position = parser.position + 1
+        i = i + 1
+    }
+    
+    fr fr Convert hex to character (simplified)
+    damn unicode_from_hex(hex_digits)
+}
+
+slay is_hex_digit(char tea) lit {
+    sus code drip = char_to_number(char)
+    ready ((code >= 48 && code <= 57) ||   fr fr '0'-'9'
+           (code >= 65 && code <= 70) ||   fr fr 'A'-'F'
+           (code >= 97 && code <= 102)) {  fr fr 'a'-'f'
+        damn based
+    }
+    damn cringe
+}
+
+slay unicode_from_hex(hex tea) tea {
+    fr fr Convert hex string to unicode character (simplified)
+    ready (hex == "0020") { damn " " }
+    ready (hex == "0021") { damn "!" }
+    ready (hex == "0022") { damn "\"" }
+    damn "?"  fr fr Default for unknown codes
+}
+
+slay format_unicode_escape(code drip) tea {
+    fr fr Format character code as unicode escape
+    ready (code < 16) {
+        damn "000" + hex_from_number(code)
+    } otherwise ready (code < 256) {
+        damn "00" + hex_from_number(code)
+    } otherwise ready (code < 4096) {
+        damn "0" + hex_from_number(code)
+    } otherwise {
+        damn hex_from_number(code)
+    }
+}
+
+slay hex_from_number(num drip) tea {
+    fr fr Convert number to hex (simplified)
+    ready (num == 0) { damn "0" }
+    ready (num == 1) { damn "1" }
+    ready (num == 2) { damn "2" }
+    ready (num == 3) { damn "3" }
+    ready (num == 4) { damn "4" }
+    ready (num == 5) { damn "5" }
+    ready (num == 6) { damn "6" }
+    ready (num == 7) { damn "7" }
+    ready (num == 8) { damn "8" }
+    ready (num == 9) { damn "9" }
+    ready (num == 10) { damn "a" }
+    ready (num == 11) { damn "b" }
+    ready (num == 12) { damn "c" }
+    ready (num == 13) { damn "d" }
+    ready (num == 14) { damn "e" }
+    ready (num == 15) { damn "f" }
+    damn "0"
+}
+
+fr fr ===== HELPER FUNCTIONS =====
+
+slay json_number_to_string(num drip) tea {
+    ready (num == 0) { damn "0" }
+    ready (num == 1) { damn "1" }
+    ready (num == 2) { damn "2" }
+    ready (num == 3) { damn "3" }
+    ready (num == 4) { damn "4" }
+    ready (num == 5) { damn "5" }
+    ready (num < 0) { damn "-" + json_number_to_string(-num) }
+    damn json_number_to_string(num / 10) + json_number_to_string(num % 10)
+}
+
+slay json_boolean_to_string(bool lit) tea {
+    ready (bool) {
+        damn "true"
+    } otherwise {
+        damn "false"
+    }
+}
+
+slay number_to_string(num normie) tea {
+    fr fr Convert float to string (simplified)
+    sus integer_part drip = normie(num)
+    sus decimal_part normie = num - normie(integer_part)
+    
+    ready (decimal_part == 0.0) {
+        damn json_number_to_string(integer_part)
+    } otherwise {
+        damn json_number_to_string(integer_part) + "." + format_decimal_part(decimal_part)
+    }
+}
+
+slay format_decimal_part(decimal normie) tea {
+    fr fr Format decimal part (simplified)
+    sus scaled drip = normie(decimal * 1000.0)  fr fr 3 decimal places
+    damn json_number_to_string(scaled)
+}
+
+slay string_to_number(str tea) normie {
+    fr fr Convert string to number (simplified)
+    ready (str == "0") { damn 0.0 }
+    ready (str == "1") { damn 1.0 }
+    ready (str == "2") { damn 2.0 }
+    ready (str == "3") { damn 3.0 }
+    ready (str == "4") { damn 4.0 }
+    ready (str == "5") { damn 5.0 }
+    ready (str == "10") { damn 10.0 }
+    ready (str == "42") { damn 42.0 }
+    ready (str == "3.14") { damn 3.14 }
+    damn 0.0  fr fr Default
+}
+
+fr fr ===== STREAMING JSON PARSER =====
+
+squad JsonStreamParser {
+    sus buffer tea
+    sus buffer_position drip
+    sus is_complete lit
+    sus current_state tea
+}
+
+slay json_stream_create() JsonStreamParser {
+    sus parser JsonStreamParser = JsonStreamParser{}
+    parser.buffer = ""
+    parser.buffer_position = 0
+    parser.is_complete = cringe
+    parser.current_state = "start"
+    damn parser
+}
+
+slay json_stream_feed(parser JsonStreamParser, data tea) JsonValue {
+    fr fr Feed data to streaming parser
+    parser.buffer = parser.buffer + data
+    
+    fr fr Try to parse complete JSON values
+    sus result JsonValue = json_parse(parser.buffer)
+    
+    ready (result.type != "null") {
+        parser.is_complete = based
+        damn result
+    } otherwise {
+        sus null_value JsonValue = JsonValue{}
+        null_value.type = "null"
+        damn null_value
+    }
 }

@@ -22,7 +22,7 @@ test "IOCP poller lifecycle" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit(allocator);
+    defer poller.deinit();
     
     // Verify initial state
     try testing.expect(!poller.running.load(.acquire));
@@ -69,7 +69,7 @@ test "network operation initialization" {
     const windows = std.os.windows;
     
     var operation = try net.NetAsyncOperation.init(allocator, .connect, windows.ws2_32.INVALID_SOCKET);
-    defer operation.deinit(allocator);
+    defer operation.deinit();
     
     try testing.expectEqual(net.NetAsyncOpType.connect, operation.net_op_type);
     try testing.expectEqual(windows.ws2_32.INVALID_SOCKET, operation.socket);
@@ -81,7 +81,7 @@ test "async runtime integration lifecycle" {
     const allocator = testing.allocator;
     
     var runtime = try integration.WindowsAsyncRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try testing.expect(!runtime.initialized.load(.acquire));
     
@@ -144,7 +144,7 @@ test "async runtime with scheduler integration" {
     
     // Initialize runtime
     var runtime = try integration.WindowsAsyncRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     defer runtime.stop();
@@ -179,7 +179,7 @@ test "async operation error handling" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit(allocator);
+    defer poller.deinit();
     
     try poller.start();
     defer poller.stop();
@@ -218,7 +218,7 @@ test "async operation performance baseline" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit(allocator);
+    defer poller.deinit();
     
     try poller.start();
     defer poller.stop();

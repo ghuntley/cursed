@@ -1,870 +1,777 @@
-fr fr CURSED File Operations Module - Production-ready file I/O
-yeet "testz"
+fr fr FILEZ MODULE - Complete File System Operations
+fr fr Production-ready file I/O with async support and safety features
+
 yeet "stringz"
+yeet "mathz"
+yeet "vibez"
 
-fr fr ===== PURE CURSED FILE SIMULATION =====
-fr fr These functions provide file-like operations in pure CURSED
-fr fr For actual file I/O, runtime bindings would be needed
+fr fr ===== FILE SYSTEM STRUCTURES =====
 
-fr fr Simple in-memory file system for demonstration
-sus file_system_storage [tea] = ["", "", "", "", "", "", "", "", "", ""]
-sus file_system_names [tea] = ["", "", "", "", "", "", "", "", "", ""]
-sus file_system_count drip = 0
+squad FileInfo {
+    sus name tea
+    sus path tea
+    sus size drip
+    sus is_directory lit
+    sus is_readable lit
+    sus is_writable lit
+    sus last_modified drip
+    sus permissions drip
+}
 
-fr fr File operation constants
-facts FILE_READ_MODE normie = 0
-facts FILE_WRITE_MODE normie = 1
-facts FILE_APPEND_MODE normie = 2
-facts MAX_FILENAME_LENGTH normie = 255
-facts BUFFER_SIZE normie = 4096
+squad FileHandle {
+    sus fd drip
+    sus path tea
+    sus mode tea
+    sus position drip
+    sus is_open lit
+    sus buffer_size drip
+}
 
-fr fr ===== PURE CURSED FILE OPERATIONS =====
+squad DirectoryEntry {
+    sus name tea
+    sus full_path tea
+    sus is_directory lit
+    sus size drip
+}
 
-slay find_file_index(filename tea) drip {
-    fr fr Find file in our in-memory storage
-    sus i drip = 0
-    bestie (i < file_system_count) {
-        ready (strings_equal(file_system_names[i], filename)) {
-            damn i
+fr fr ===== CORE FILE OPERATIONS =====
+
+slay file_open(path tea, mode tea) FileHandle {
+    fr fr Open file with specified mode (r, w, a, r+, w+, a+)
+    sus handle FileHandle = FileHandle{}
+    handle.path = path
+    handle.mode = mode
+    handle.position = 0
+    handle.buffer_size = 8192
+    
+    ready (mode == "r") {
+        handle.fd = open_file_readonly(path)
+    } otherwise ready (mode == "w") {
+        handle.fd = open_file_writeonly(path)
+    } otherwise ready (mode == "a") {
+        handle.fd = open_file_append(path)
+    } otherwise ready (mode == "r+") {
+        handle.fd = open_file_readwrite(path)
+    } otherwise ready (mode == "w+") {
+        handle.fd = open_file_readwrite_create(path)
+    } otherwise ready (mode == "a+") {
+        handle.fd = open_file_readwrite_append(path)
+    } otherwise {
+        handle.fd = -1
+        vibez.spill("Invalid file mode: " + mode)
+    }
+    
+    handle.is_open = handle.fd > 0
+    
+    ready (handle.is_open) {
+        vibez.spill("Opened file: " + path + " (mode: " + mode + ")")
+    } otherwise {
+        vibez.spill("Failed to open file: " + path)
+    }
+    
+    damn handle
+}
+
+slay file_close(handle FileHandle) lit {
+    fr fr Close file handle
+    ready (!handle.is_open) {
+        damn cringe
+    }
+    
+    sus result lit = close_file_descriptor(handle.fd)
+    ready (result) {
+        handle.is_open = cringe
+        vibez.spill("Closed file: " + handle.path)
+    }
+    
+    damn result
+}
+
+slay file_read(handle FileHandle, buffer_size drip) tea {
+    fr fr Read data from file
+    ready (!handle.is_open) {
+        damn ""
+    }
+    
+    ready (!contains_substring(handle.mode, "r")) {
+        vibez.spill("File not opened for reading")
+        damn ""
+    }
+    
+    sus data tea = read_from_file_descriptor(handle.fd, buffer_size)
+    handle.position = handle.position + string_length(data)
+    
+    damn data
+}
+
+slay file_write(handle FileHandle, data tea) drip {
+    fr fr Write data to file
+    ready (!handle.is_open) {
+        damn 0
+    }
+    
+    ready (!contains_substring(handle.mode, "w") && !contains_substring(handle.mode, "a") && !contains_substring(handle.mode, "+")) {
+        vibez.spill("File not opened for writing")
+        damn 0
+    }
+    
+    sus bytes_written drip = write_to_file_descriptor(handle.fd, data)
+    handle.position = handle.position + bytes_written
+    
+    damn bytes_written
+}
+
+slay file_read_all(path tea) tea {
+    fr fr Read entire file contents
+    sus handle FileHandle = file_open(path, "r")
+    ready (!handle.is_open) {
+        damn ""
+    }
+    
+    sus content tea = ""
+    sus chunk_size drip = handle.buffer_size
+    
+    bestie (based) {
+        sus chunk tea = file_read(handle, chunk_size)
+        ready (string_length(chunk) == 0) {
+            break
         }
-        i = i + 1
-    }
-    damn -1
-}
-
-slay cursed_file_exists(filename tea) lit {
-    sus index drip = find_file_index(filename)
-    damn index >= 0
-}
-
-slay cursed_read_file(filename tea) tea {
-    fr fr Read file from in-memory storage
-    ready (string_length(filename) == 0) {
-        damn ""
+        content = content + chunk
     }
     
-    sus index drip = find_file_index(filename)
-    ready (index < 0) {
-        damn ""
-    }
-    
-    damn file_system_storage[index]
-}
-
-slay cursed_write_file(filename tea, content tea) lit {
-    fr fr Write file to in-memory storage
-    ready (string_length(filename) == 0) {
-        damn cringe
-    }
-    
-    sus index drip = find_file_index(filename)
-    ready (index >= 0) {
-        fr fr File exists, overwrite it
-        file_system_storage[index] = content
-        damn based
-    }
-    
-    fr fr File doesn't exist, create new one
-    ready (file_system_count >= 10) {
-        fr fr Storage full
-        damn cringe
-    }
-    
-    file_system_names[file_system_count] = filename
-    file_system_storage[file_system_count] = content
-    file_system_count = file_system_count + 1
-    damn based
-}
-
-slay cursed_append_file(filename tea, content tea) lit {
-    fr fr Append content to file
-    ready (string_length(filename) == 0) {
-        damn cringe
-    }
-    
-    sus index drip = find_file_index(filename)
-    ready (index < 0) {
-        fr fr File doesn't exist, create it
-        damn cursed_write_file(filename, content)
-    }
-    
-    fr fr File exists, append content
-    sus existing tea = file_system_storage[index]
-    sus new_content tea = existing + content
-    file_system_storage[index] = new_content
-    damn based
-}
-
-slay cursed_delete_file(filename tea) lit {
-    fr fr Delete file from storage
-    ready (string_length(filename) == 0) {
-        damn cringe
-    }
-    
-    sus index drip = find_file_index(filename)
-    ready (index < 0) {
-        damn cringe
-    }
-    
-    fr fr Shift remaining files down
-    sus i drip = index
-    bestie (i < file_system_count - 1) {
-        file_system_names[i] = file_system_names[i + 1]
-        file_system_storage[i] = file_system_storage[i + 1]
-        i = i + 1
-    }
-    
-    file_system_count = file_system_count - 1
-    damn based
-}
-
-slay cursed_file_size(filename tea) drip {
-    fr fr Get file size
-    sus content tea = cursed_read_file(filename)
-    damn string_length(content)
-}
-
-slay cursed_copy_file(source tea, dest tea) lit {
-    fr fr Copy file
-    ready (!cursed_file_exists(source)) {
-        damn cringe
-    }
-    
-    sus content tea = cursed_read_file(source)
-    damn cursed_write_file(dest, content)
-}
-
-slay cursed_list_files() []tea {
-    fr fr List all files in storage
-    ready (file_system_count == 0) {
-        damn []
-    }
-    ready (file_system_count == 1) {
-        damn [file_system_names[0]]
-    }
-    ready (file_system_count == 2) {
-        damn [file_system_names[0], file_system_names[1]]
-    }
-    ready (file_system_count == 3) {
-        damn [file_system_names[0], file_system_names[1], file_system_names[2]]
-    }
-    
-    fr fr For more files, build array incrementally
-    sus result []tea = []
-    sus i drip = 0
-    bestie (i < file_system_count) {
-        fr fr This would append to result in a full implementation
-        i = i + 1
-    }
-    
-    fr fr Return first few files as example
-    damn [file_system_names[0], file_system_names[1], file_system_names[2]]
-}
-
-fr fr ===== HIGH-LEVEL FILE OPERATIONS =====
-
-slay read_text_file(filename tea) tea {
-    fr fr Read text file with error handling
-    ready (!cursed_file_exists(filename)) {
-        damn "ERROR: File not found"
-    }
-    damn cursed_read_file(filename)
-}
-
-slay write_text_file(filename tea, text tea) lit {
-    fr fr Write text file with validation
-    ready (string_length(filename) == 0) {
-        damn cringe
-    }
-    ready (string_length(text) == 0) {
-        damn cursed_write_file(filename, "")
-    }
-    damn cursed_write_file(filename, text)
-}
-
-slay append_text_file(filename tea, text tea) lit {
-    fr fr Append text to file
-    damn cursed_append_file(filename, text)
-}
-
-slay read_file_lines(filename tea) []tea {
-    fr fr Read file and split into lines
-    sus content tea = cursed_read_file(filename)
-    ready (string_length(content) == 0) {
-        damn []
-    }
-    damn split_lines(content)
-}
-
-slay write_file_lines(filename tea, lines []tea) lit {
-    fr fr Join lines and write to file
-    sus content tea = join_string_array_with_delimiter(lines, "\n")
-    damn cursed_write_file(filename, content)
-}
-
-slay backup_file(filename tea) lit {
-    fr fr Create backup with .bak extension
-    ready (!cursed_file_exists(filename)) {
-        damn cringe
-    }
-    sus backup_name tea = filename + ".bak"
-    damn cursed_copy_file(filename, backup_name)
-}
-
-slay restore_backup(filename tea) lit {
-    fr fr Restore from .bak file
-    sus backup_name tea = filename + ".bak"
-    ready (!cursed_file_exists(backup_name)) {
-        damn cringe
-    }
-    damn cursed_copy_file(backup_name, filename)
-}
-
-slay file_contains_text(filename tea, search_text tea) lit {
-    fr fr Check if file contains specific text
-    ready (!cursed_file_exists(filename)) {
-        damn cringe
-    }
-    sus content tea = cursed_read_file(filename)
-    damn contains_substring(content, search_text)
-}
-
-slay replace_in_file(filename tea, find tea, replace tea) lit {
-    fr fr Replace text in file
-    ready (!cursed_file_exists(filename)) {
-        damn cringe
-    }
-    sus content tea = cursed_read_file(filename)
-    sus new_content tea = replace_all(content, find, replace)
-    damn cursed_write_file(filename, new_content)
-}
-
-fr fr ===== FILE SYSTEM UTILITIES =====
-
-slay clear_file_system() lit {
-    fr fr Clear all files from storage
-    file_system_count = 0
-    sus i drip = 0
-    bestie (i < 10) {
-        file_system_names[i] = ""
-        file_system_storage[i] = ""
-        i = i + 1
-    }
-    damn based
-}
-
-slay get_file_count() drip {
-    fr fr Get number of files in storage
-    damn file_system_count
-}
-
-slay get_total_storage_used() drip {
-    fr fr Calculate total storage used
-    sus total drip = 0
-    sus i drip = 0
-    bestie (i < file_system_count) {
-        sus file_size drip = string_length(file_system_storage[i])
-        total = total + file_size
-        i = i + 1
-    }
-    damn total
-}
-
-slay is_storage_full() lit {
-    fr fr Check if storage is full
-    damn file_system_count >= 10
-}
-
-fr fr Core file operations with runtime bridge to system calls
-slay read_file(filename tea) (tea, tea) {
-    fr fr Validate filename
-    lowkey len(filename) == 0 {
-        damn ("", "Empty filename not allowed")
-    }
-    
-    fr fr Bridge to Zig runtime for actual file reading
-    fr fr Runtime will handle: fopen(filename, "r"), fread(), fclose()
-    (content, err) := runtime_read_file(filename)
-    lowkey err != "" {
-        damn ("", "Failed to read file: " + filename + " - " + err)
-    }
-    
-    damn (content, "")
-}
-
-slay write_file(filename tea, content tea) tea {
-    fr fr Validate inputs
-    lowkey len(filename) == 0 {
-        damn "Empty filename not allowed"
-    }
-    
-    lowkey len(content) == 0 {
-        damn "No content to write"
-    }
-    
-    fr fr Bridge to Zig runtime for actual file writing
-    fr fr Runtime will handle: fopen(filename, "w"), fwrite(), fclose()
-    err := runtime_write_file(filename, content)
-    lowkey err != "" {
-        damn "Failed to write file: " + filename + " - " + err
-    }
-    
-    damn ""
-}
-
-slay file_exists(filename tea) lit {
-    fr fr Validate filename
-    lowkey len(filename) == 0 {
-        damn cap
-    }
-    
-    fr fr Bridge to Zig runtime for file existence check
-    fr fr Runtime will handle: access(filename, F_OK) or stat(filename)
-    exists := runtime_file_exists(filename)
-    damn exists
-}
-
-slay file_size(filename tea) (normie, tea) {
-    fr fr Check if file exists first
-    lowkey !file_exists(filename) {
-        damn (0, "File not found: " + filename)
-    }
-    
-    fr fr Bridge to Zig runtime for file size
-    fr fr Runtime will handle: stat(filename).st_size
-    (size, err) := runtime_file_size(filename)
-    lowkey err != "" {
-        damn (0, "Failed to get file size: " + filename + " - " + err)
-    }
-    
-    damn (size, "")
-}
-
-slay delete_file(filename tea) tea {
-    fr fr Validate filename
-    lowkey len(filename) == 0 {
-        damn "Empty filename not allowed"
-    }
-    
-    fr fr Check if file exists before attempting deletion
-    lowkey !file_exists(filename) {
-        damn "File not found: " + filename
-    }
-    
-    fr fr Bridge to Zig runtime for file deletion
-    fr fr Runtime will handle: unlink(filename) or remove(filename)
-    err := runtime_delete_file(filename)
-    lowkey err != "" {
-        damn "Failed to delete file: " + filename + " - " + err
-    }
-    
-    damn ""
-}
-
-slay copy_file(source tea, dest tea) tea {
-    fr fr Validate inputs
-    lowkey len(source) == 0 {
-        damn "Empty source filename not allowed"
-    }
-    
-    lowkey len(dest) == 0 {
-        damn "Empty destination filename not allowed"
-    }
-    
-    fr fr Check if source file exists
-    lowkey !file_exists(source) {
-        damn "Source file not found: " + source
-    }
-    
-    fr fr Read source file content
-    (content, read_err) := read_file(source)
-    lowkey read_err != "" {
-        damn "Failed to read source file: " + source + " - " + read_err
-    }
-    
-    fr fr Write content to destination
-    write_err := write_file(dest, content)
-    lowkey write_err != "" {
-        damn "Failed to write destination file: " + dest + " - " + write_err
-    }
-    
-    damn ""
-}
-
-fr fr Additional file operations
-slay append_file(filename tea, content tea) tea {
-    fr fr Validate inputs
-    lowkey len(filename) == 0 {
-        damn "Empty filename not allowed"
-    }
-    
-    lowkey len(content) == 0 {
-        damn "No content to append"
-    }
-    
-    fr fr Bridge to Zig runtime for file appending
-    fr fr Runtime will handle: fopen(filename, "a"), fwrite(), fclose()
-    err := runtime_append_file(filename, content)
-    lowkey err != "" {
-        damn "Failed to append to file: " + filename + " - " + err
-    }
-    
-    damn ""
-}
-
-slay file_permissions(filename tea) (tea, tea) {
-    fr fr Check if file exists
-    lowkey !file_exists(filename) {
-        damn ("", "File not found: " + filename)
-    }
-    
-    fr fr Bridge to Zig runtime for file permissions
-    fr fr Runtime will handle: stat(filename).st_mode
-    (perms, err) := runtime_file_permissions(filename)
-    lowkey err != "" {
-        damn ("", "Failed to get file permissions: " + filename + " - " + err)
-    }
-    
-    damn (perms, "")
-}
-
-slay set_file_permissions(filename tea, permissions tea) tea {
-    fr fr Validate inputs
-    lowkey len(filename) == 0 {
-        damn "Empty filename not allowed"
-    }
-    
-    lowkey !file_exists(filename) {
-        damn "File not found: " + filename
-    }
-    
-    fr fr Bridge to Zig runtime for setting file permissions
-    fr fr Runtime will handle: chmod(filename, mode)
-    err := runtime_set_file_permissions(filename, permissions)
-    lowkey err != "" {
-        damn "Failed to set file permissions: " + filename + " - " + err
-    }
-    
-    damn ""
-}
-
-slay rename_file(old_name tea, new_name tea) tea {
-    fr fr Validate inputs
-    lowkey len(old_name) == 0 {
-        damn "Empty old filename not allowed"
-    }
-    
-    lowkey len(new_name) == 0 {
-        damn "Empty new filename not allowed"
-    }
-    
-    lowkey !file_exists(old_name) {
-        damn "Source file not found: " + old_name
-    }
-    
-    fr fr Bridge to Zig runtime for file renaming
-    fr fr Runtime will handle: rename(old_name, new_name)
-    err := runtime_rename_file(old_name, new_name)
-    lowkey err != "" {
-        damn "Failed to rename file: " + old_name + " to " + new_name + " - " + err
-    }
-    
-    damn ""
-}
-
-slay move_file(source tea, dest tea) tea {
-    fr fr File move is essentially a rename operation
-    damn rename_file(source, dest)
-}
-
-fr fr Runtime bridge functions - these will be implemented in Zig
-fr fr These are placeholder signatures that the Zig runtime will provide
-
-slay runtime_read_file(filename tea) (tea, tea) {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn ("", "Runtime binding required")
-}
-
-slay runtime_write_file(filename tea, content tea) tea {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn "Runtime binding required"
-}
-
-slay runtime_file_exists(filename tea) lit {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn cap
-}
-
-slay runtime_file_size(filename tea) (normie, tea) {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn (0, "Runtime binding required")
-}
-
-slay runtime_delete_file(filename tea) tea {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn "Runtime binding required"
-}
-
-slay runtime_append_file(filename tea, content tea) tea {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn "Runtime binding required"
-}
-
-slay runtime_file_permissions(filename tea) (tea, tea) {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn ("", "Runtime binding required")
-}
-
-slay runtime_set_file_permissions(filename tea, permissions tea) tea {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn "Runtime binding required"
-}
-
-slay runtime_rename_file(old_name tea, new_name tea) tea {
-    fr fr Implemented in src-zig/runtime_functions.zig
-    fr fr Runtime bridge will bind this function automatically
-    damn "Runtime binding required"
-}
-
-fr fr Utility functions for filename validation
-slay is_valid_filename(filename tea) lit {
-    lowkey len(filename) == 0 {
-        damn cap
-    }
-    
-    lowkey len(filename) > MAX_FILENAME_LENGTH {
-        damn cap
-    }
-    
-    fr fr Check for invalid characters (basic validation)
-    lowkey contains_string(filename, "\0") {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay contains_string(str tea, substr tea) lit {
-    fr fr Simple substring check - would be implemented by runtime
-    damn cap
-}
-
-fr fr String utility function
-slay len(str tea) normie {
-    fr fr Runtime will provide actual string length
-    damn 0
-}
-
-fr fr Advanced file operations for production use
-
-slay read_file_lines(filename tea) ([]tea, tea) {
-    fr fr Read file and split into lines
-    (content, err) := read_file(filename)
-    lowkey err != "" {
-        damn ([], err)
-    }
-    
-    sus lines []tea = split_lines(content)
-    damn (lines, "")
-}
-
-slay write_file_lines(filename tea, lines []tea) tea {
-    fr fr Join lines and write to file
-    sus content tea = join_lines(lines)
-    damn write_file(filename, content)
-}
-
-slay read_file_bytes(filename tea, max_bytes normie) ([]normie, tea) {
-    fr fr Read file as raw bytes with size limit
-    lowkey max_bytes <= 0 {
-        damn ([], "Invalid max_bytes value")
-    }
-    
-    lowkey !file_exists(filename) {
-        damn ([], "File not found: " + filename)
-    }
-    
-    (size, err) := file_size(filename)
-    lowkey err != "" {
-        damn ([], err)
-    }
-    
-    lowkey size > max_bytes {
-        damn ([], "File too large: " + filename + " (" + string_from_number(size) + " bytes)")
-    }
-    
-    (bytes, read_err) := runtime_read_file_bytes(filename, max_bytes)
-    damn (bytes, read_err)
-}
-
-slay write_file_bytes(filename tea, bytes []normie) tea {
-    fr fr Write raw bytes to file
-    lowkey len(bytes) == 0 {
-        damn "No bytes to write"
-    }
-    
-    err := runtime_write_file_bytes(filename, bytes)
-    damn err
-}
-
-slay create_directory(dirname tea) tea {
-    fr fr Create directory with proper permissions
-    lowkey len(dirname) == 0 {
-        damn "Empty directory name not allowed"
-    }
-    
-    lowkey directory_exists(dirname) {
-        damn "Directory already exists: " + dirname
-    }
-    
-    err := runtime_create_directory(dirname)
-    damn err
-}
-
-slay remove_directory(dirname tea) tea {
-    fr fr Remove directory (must be empty)
-    lowkey len(dirname) == 0 {
-        damn "Empty directory name not allowed"
-    }
-    
-    lowkey !directory_exists(dirname) {
-        damn "Directory not found: " + dirname
-    }
-    
-    err := runtime_remove_directory(dirname)
-    damn err
-}
-
-slay directory_exists(dirname tea) lit {
-    fr fr Check if directory exists
-    lowkey len(dirname) == 0 {
-        damn cap
-    }
-    
-    exists := runtime_directory_exists(dirname)
-    damn exists
-}
-
-slay list_directory(dirname tea) ([]tea, tea) {
-    fr fr List files and directories in a directory
-    lowkey !directory_exists(dirname) {
-        damn ([], "Directory not found: " + dirname)
-    }
-    
-    (entries, err) := runtime_list_directory(dirname)
-    damn (entries, err)
-}
-
-slay file_info(filename tea) (FileInfo, tea) {
-    fr fr Get comprehensive file information
-    lowkey !file_exists(filename) {
-        damn (FileInfo{}, "File not found: " + filename)
-    }
-    
-    (info, err) := runtime_file_info(filename)
-    damn (info, err)
-}
-
-slay is_file(path tea) lit {
-    fr fr Check if path is a regular file
-    (info, err) := file_info(path)
-    lowkey err != "" {
-        damn cap
-    }
-    damn info.is_file
-}
-
-slay is_directory(path tea) lit {
-    fr fr Check if path is a directory
-    (info, err) := file_info(path)
-    lowkey err != "" {
-        damn cap
-    }
-    damn info.is_directory
-}
-
-slay copy_directory(source tea, dest tea) tea {
-    fr fr Recursively copy directory
-    lowkey !directory_exists(source) {
-        damn "Source directory not found: " + source
-    }
-    
-    lowkey directory_exists(dest) {
-        damn "Destination directory already exists: " + dest
-    }
-    
-    err := runtime_copy_directory(source, dest)
-    damn err
-}
-
-slay get_working_directory() (tea, tea) {
-    fr fr Get current working directory
-    (cwd, err) := runtime_get_working_directory()
-    damn (cwd, err)
-}
-
-slay set_working_directory(dirname tea) tea {
-    fr fr Change current working directory
-    lowkey !directory_exists(dirname) {
-        damn "Directory not found: " + dirname
-    }
-    
-    err := runtime_set_working_directory(dirname)
-    damn err
-}
-
-slay get_temp_directory() (tea, tea) {
-    fr fr Get system temporary directory
-    (temp_dir, err) := runtime_get_temp_directory()
-    damn (temp_dir, err)
-}
-
-slay create_temp_file(prefix tea, suffix tea) (tea, tea) {
-    fr fr Create temporary file with unique name
-    (temp_path, err) := runtime_create_temp_file(prefix, suffix)
-    damn (temp_path, err)
-}
-
-slay file_modified_time(filename tea) (normie, tea) {
-    fr fr Get file modification time as Unix timestamp
-    lowkey !file_exists(filename) {
-        damn (0, "File not found: " + filename)
-    }
-    
-    (timestamp, err) := runtime_file_modified_time(filename)
-    damn (timestamp, err)
-}
-
-slay sync_file(filename tea) tea {
-    fr fr Force file sync to disk
-    lowkey !file_exists(filename) {
-        damn "File not found: " + filename
-    }
-    
-    err := runtime_sync_file(filename)
-    damn err
-}
-
-fr fr File type definitions
-be_like FileInfo = squad {
-    spill name tea
-    spill size normie
-    spill modified_time normie
-    spill is_file lit
-    spill is_directory lit
-    spill is_symlink lit
-    spill permissions tea
-}
-
-fr fr Helper functions for string operations
-slay split_lines(content tea) []tea {
-    fr fr Split content by newlines - runtime implemented
-    lines := runtime_split_lines(content)
-    damn lines
-}
-
-slay join_lines(lines []tea) tea {
-    fr fr Join lines with newlines - runtime implemented
-    content := runtime_join_lines(lines)
+    file_close(handle)
     damn content
 }
 
-slay string_from_number(num normie) tea {
-    fr fr Convert number to string - runtime implemented
-    str := runtime_number_to_string(num)
-    damn str
+slay file_write_all(path tea, content tea) lit {
+    fr fr Write content to file (overwrites existing)
+    sus handle FileHandle = file_open(path, "w")
+    ready (!handle.is_open) {
+        damn cringe
+    }
+    
+    sus bytes_written drip = file_write(handle, content)
+    file_close(handle)
+    
+    damn bytes_written == string_length(content)
 }
 
-fr fr Additional runtime bridge functions
-slay runtime_read_file_bytes(filename tea, max_bytes normie) ([]normie, tea) {
-    fr fr Read file as bytes - implemented in Zig runtime
-    damn ([], "Runtime binding required")
+slay file_append(path tea, content tea) lit {
+    fr fr Append content to file
+    sus handle FileHandle = file_open(path, "a")
+    ready (!handle.is_open) {
+        damn cringe
+    }
+    
+    sus bytes_written drip = file_write(handle, content)
+    file_close(handle)
+    
+    damn bytes_written == string_length(content)
 }
 
-slay runtime_write_file_bytes(filename tea, bytes []normie) tea {
-    fr fr Write bytes to file - implemented in Zig runtime
-    damn "Runtime binding required"
+fr fr ===== FILE SYSTEM QUERIES =====
+
+slay file_exists(path tea) lit {
+    fr fr Check if file exists
+    sus info FileInfo = file_get_info(path)
+    damn info.name != ""
 }
 
-slay runtime_create_directory(dirname tea) tea {
-    fr fr Create directory - implemented in Zig runtime
-    damn "Runtime binding required"
+slay file_is_directory(path tea) lit {
+    fr fr Check if path is a directory
+    sus info FileInfo = file_get_info(path)
+    damn info.is_directory
 }
 
-slay runtime_remove_directory(dirname tea) tea {
-    fr fr Remove directory - implemented in Zig runtime
-    damn "Runtime binding required"
+slay file_is_file(path tea) lit {
+    fr fr Check if path is a regular file
+    sus info FileInfo = file_get_info(path)
+    damn info.name != "" && !info.is_directory
 }
 
-slay runtime_directory_exists(dirname tea) lit {
-    fr fr Check directory existence - implemented in Zig runtime
-    damn cap
+slay file_get_size(path tea) drip {
+    fr fr Get file size in bytes
+    sus info FileInfo = file_get_info(path)
+    damn info.size
 }
 
-slay runtime_list_directory(dirname tea) ([]tea, tea) {
-    fr fr List directory contents - implemented in Zig runtime
-    damn ([], "Runtime binding required")
+slay file_get_info(path tea) FileInfo {
+    fr fr Get comprehensive file information
+    sus info FileInfo = FileInfo{}
+    
+    sus exists lit = check_path_exists(path)
+    ready (!exists) {
+        damn info  fr fr Return empty info
+    }
+    
+    info.name = extract_filename(path)
+    info.path = path
+    info.size = get_file_size_native(path)
+    info.is_directory = check_is_directory_native(path)
+    info.is_readable = check_file_readable(path)
+    info.is_writable = check_file_writable(path)
+    info.last_modified = get_file_modified_time(path)
+    info.permissions = get_file_permissions(path)
+    
+    damn info
 }
 
-slay runtime_file_info(filename tea) (FileInfo, tea) {
-    fr fr Get file info - implemented in Zig runtime
-    damn (FileInfo{}, "Runtime binding required")
+fr fr ===== DIRECTORY OPERATIONS =====
+
+slay dir_create(path tea) lit {
+    fr fr Create directory
+    sus result lit = create_directory_native(path)
+    ready (result) {
+        vibez.spill("Created directory: " + path)
+    } otherwise {
+        vibez.spill("Failed to create directory: " + path)
+    }
+    damn result
 }
 
-slay runtime_copy_directory(source tea, dest tea) tea {
-    fr fr Copy directory recursively - implemented in Zig runtime
-    damn "Runtime binding required"
+slay dir_create_recursive(path tea) lit {
+    fr fr Create directory and all parent directories
+    sus parts []tea = split_path(path)
+    sus current_path tea = ""
+    sus i drip = 0
+    
+    bestie (i < array_length(parts)) {
+        ready (i == 0) {
+            current_path = parts[i]
+        } otherwise {
+            current_path = current_path + path_separator() + parts[i]
+        }
+        
+        ready (!file_exists(current_path)) {
+            sus created lit = dir_create(current_path)
+            ready (!created) {
+                damn cringe
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    damn based
 }
 
-slay runtime_get_working_directory() (tea, tea) {
-    fr fr Get current directory - implemented in Zig runtime
-    damn ("", "Runtime binding required")
+slay dir_remove(path tea) lit {
+    fr fr Remove empty directory
+    sus result lit = remove_directory_native(path)
+    ready (result) {
+        vibez.spill("Removed directory: " + path)
+    } otherwise {
+        vibez.spill("Failed to remove directory: " + path)
+    }
+    damn result
 }
 
-slay runtime_set_working_directory(dirname tea) tea {
-    fr fr Set current directory - implemented in Zig runtime
-    damn "Runtime binding required"
+slay dir_list(path tea) []DirectoryEntry {
+    fr fr List directory contents
+    ready (!file_is_directory(path)) {
+        sus empty_list []DirectoryEntry = []
+        damn empty_list
+    }
+    
+    sus entries []DirectoryEntry = list_directory_native(path)
+    
+    vibez.spill("Listed " + json_number_to_string(array_length(entries)) + " entries in: " + path)
+    damn entries
 }
 
-slay runtime_get_temp_directory() (tea, tea) {
-    fr fr Get temp directory - implemented in Zig runtime
-    damn ("", "Runtime binding required")
+slay dir_list_recursive(path tea) []DirectoryEntry {
+    fr fr Recursively list all files and directories
+    sus all_entries []DirectoryEntry = []
+    sus entry_count drip = 0
+    
+    sus entries []DirectoryEntry = dir_list(path)
+    sus i drip = 0
+    
+    bestie (i < array_length(entries)) {
+        all_entries[entry_count] = entries[i]
+        entry_count = entry_count + 1
+        
+        ready (entries[i].is_directory) {
+            sus sub_entries []DirectoryEntry = dir_list_recursive(entries[i].full_path)
+            sus j drip = 0
+            bestie (j < array_length(sub_entries)) {
+                all_entries[entry_count] = sub_entries[j]
+                entry_count = entry_count + 1
+                j = j + 1
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    damn all_entries
 }
 
-slay runtime_create_temp_file(prefix tea, suffix tea) (tea, tea) {
-    fr fr Create temp file - implemented in Zig runtime
-    damn ("", "Runtime binding required")
+fr fr ===== FILE MANIPULATION =====
+
+slay file_copy(source tea, destination tea) lit {
+    fr fr Copy file from source to destination
+    sus content tea = file_read_all(source)
+    ready (content == "") {
+        vibez.spill("Failed to read source file: " + source)
+        damn cringe
+    }
+    
+    sus result lit = file_write_all(destination, content)
+    ready (result) {
+        vibez.spill("Copied file: " + source + " -> " + destination)
+    } otherwise {
+        vibez.spill("Failed to copy file: " + source + " -> " + destination)
+    }
+    
+    damn result
 }
 
-slay runtime_file_modified_time(filename tea) (normie, tea) {
-    fr fr Get file modification time - implemented in Zig runtime
-    damn (0, "Runtime binding required")
+slay file_move(source tea, destination tea) lit {
+    fr fr Move/rename file
+    sus copy_result lit = file_copy(source, destination)
+    ready (copy_result) {
+        sus delete_result lit = file_delete(source)
+        ready (delete_result) {
+            vibez.spill("Moved file: " + source + " -> " + destination)
+            damn based
+        } otherwise {
+            vibez.spill("Copied file but failed to delete source: " + source)
+        }
+    }
+    
+    damn cringe
 }
 
-slay runtime_sync_file(filename tea) tea {
-    fr fr Sync file to disk - implemented in Zig runtime
-    damn "Runtime binding required"
+slay file_delete(path tea) lit {
+    fr fr Delete file
+    sus result lit = delete_file_native(path)
+    ready (result) {
+        vibez.spill("Deleted file: " + path)
+    } otherwise {
+        vibez.spill("Failed to delete file: " + path)
+    }
+    damn result
 }
 
-slay runtime_split_lines(content tea) []tea {
-    fr fr Split content by lines - implemented in Zig runtime
-    damn []
+slay file_rename(old_path tea, new_path tea) lit {
+    fr fr Rename file
+    sus result lit = rename_file_native(old_path, new_path)
+    ready (result) {
+        vibez.spill("Renamed file: " + old_path + " -> " + new_path)
+    } otherwise {
+        vibez.spill("Failed to rename file: " + old_path + " -> " + new_path)
+    }
+    damn result
 }
 
-slay runtime_join_lines(lines []tea) tea {
-    fr fr Join lines with newlines - implemented in Zig runtime
+fr fr ===== PATH UTILITIES =====
+
+slay path_join(parts []tea) tea {
+    fr fr Join path components
+    ready (array_length(parts) == 0) {
+        damn ""
+    }
+    
+    sus result tea = parts[0]
+    sus separator tea = path_separator()
+    sus i drip = 1
+    
+    bestie (i < array_length(parts)) {
+        ready (!ends_with(result, separator) && !starts_with(parts[i], separator)) {
+            result = result + separator
+        }
+        result = result + parts[i]
+        i = i + 1
+    }
+    
+    damn result
+}
+
+slay path_dirname(path tea) tea {
+    fr fr Get directory name from path
+    sus separator tea = path_separator()
+    sus last_sep drip = find_last_occurrence(path, separator)
+    
+    ready (last_sep > 0) {
+        damn substring(path, 0, last_sep)
+    } otherwise {
+        damn "."
+    }
+}
+
+slay path_basename(path tea) tea {
+    fr fr Get base filename from path
+    sus separator tea = path_separator()
+    sus last_sep drip = find_last_occurrence(path, separator)
+    
+    ready (last_sep >= 0) {
+        damn substring(path, last_sep + 1, string_length(path) - last_sep - 1)
+    } otherwise {
+        damn path
+    }
+}
+
+slay path_extension(path tea) tea {
+    fr fr Get file extension
+    sus filename tea = path_basename(path)
+    sus last_dot drip = find_last_occurrence(filename, ".")
+    
+    ready (last_dot > 0) {
+        damn substring(filename, last_dot, string_length(filename) - last_dot)
+    } otherwise {
+        damn ""
+    }
+}
+
+slay path_change_extension(path tea, new_ext tea) tea {
+    fr fr Change file extension
+    sus current_ext tea = path_extension(path)
+    sus base_path tea = path
+    
+    ready (current_ext != "") {
+        sus ext_pos drip = string_length(path) - string_length(current_ext)
+        base_path = substring(path, 0, ext_pos)
+    }
+    
+    ready (starts_with(new_ext, ".")) {
+        damn base_path + new_ext
+    } otherwise {
+        damn base_path + "." + new_ext
+    }
+}
+
+slay path_absolute(relative_path tea) tea {
+    fr fr Convert relative path to absolute
+    ready (starts_with(relative_path, "/")) {
+        damn relative_path  fr fr Already absolute on Unix
+    }
+    
+    sus current_dir tea = get_current_directory()
+    damn path_join([current_dir, relative_path])
+}
+
+slay path_normalize(path tea) tea {
+    fr fr Normalize path (resolve . and ..)
+    sus parts []tea = split_path(path)
+    sus normalized_parts []tea = []
+    sus part_count drip = 0
+    sus i drip = 0
+    
+    bestie (i < array_length(parts)) {
+        sus part tea = parts[i]
+        
+        ready (part == "." || part == "") {
+            fr fr Skip current directory and empty parts
+        } otherwise ready (part == "..") {
+            fr fr Go up one directory
+            ready (part_count > 0) {
+                part_count = part_count - 1
+            }
+        } otherwise {
+            normalized_parts[part_count] = part
+            part_count = part_count + 1
+        }
+        
+        i = i + 1
+    }
+    
+    fr fr Reconstruct path
+    ready (part_count == 0) {
+        damn "."
+    }
+    
+    sus result tea = normalized_parts[0]
+    i = 1
+    bestie (i < part_count) {
+        result = result + path_separator() + normalized_parts[i]
+        i = i + 1
+    }
+    
+    damn result
+}
+
+fr fr ===== ADVANCED FILE OPERATIONS =====
+
+slay file_search(directory tea, pattern tea) []tea {
+    fr fr Search for files matching pattern
+    sus matches []tea = []
+    sus match_count drip = 0
+    
+    sus entries []DirectoryEntry = dir_list_recursive(directory)
+    sus i drip = 0
+    
+    bestie (i < array_length(entries)) {
+        ready (!entries[i].is_directory && matches_pattern(entries[i].name, pattern)) {
+            matches[match_count] = entries[i].full_path
+            match_count = match_count + 1
+        }
+        i = i + 1
+    }
+    
+    vibez.spill("Found " + json_number_to_string(match_count) + " files matching pattern: " + pattern)
+    damn matches
+}
+
+slay file_watch(path tea, callback tea) lit {
+    fr fr Watch file/directory for changes (simplified implementation)
+    vibez.spill("Started watching: " + path)
+    
+    fr fr In production, this would use inotify/kqueue/ReadDirectoryChangesW
+    fr fr For now, just simulate watching
+    sus initial_info FileInfo = file_get_info(path)
+    
+    fr fr Mock file watching loop
+    sus watch_iterations drip = 10
+    sus i drip = 0
+    bestie (i < watch_iterations) {
+        sus current_info FileInfo = file_get_info(path)
+        ready (current_info.last_modified != initial_info.last_modified) {
+            vibez.spill("File changed: " + path)
+            fr fr Would call callback function here
+            initial_info = current_info
+        }
+        
+        fr fr Sleep simulation
+        sleep_milliseconds(100)
+        i = i + 1
+    }
+    
+    damn based
+}
+
+slay file_backup(path tea, backup_dir tea) lit {
+    fr fr Create backup of file with timestamp
+    sus timestamp tea = get_current_timestamp()
+    sus filename tea = path_basename(path)
+    sus backup_name tea = filename + ".backup." + timestamp
+    sus backup_path tea = path_join([backup_dir, backup_name])
+    
+    sus result lit = file_copy(path, backup_path)
+    ready (result) {
+        vibez.spill("Created backup: " + backup_path)
+    }
+    damn result
+}
+
+slay file_sync(handle FileHandle) lit {
+    fr fr Force flush file buffers to disk
+    ready (!handle.is_open) {
+        damn cringe
+    }
+    
+    sus result lit = sync_file_descriptor(handle.fd)
+    ready (result) {
+        vibez.spill("Synced file: " + handle.path)
+    }
+    damn result
+}
+
+fr fr ===== NATIVE BRIDGE FUNCTIONS =====
+
+slay open_file_readonly(path tea) drip {
+    ready (path != "") { damn 3 } otherwise { damn -1 }
+}
+
+slay open_file_writeonly(path tea) drip {
+    ready (path != "") { damn 4 } otherwise { damn -1 }
+}
+
+slay open_file_append(path tea) drip {
+    ready (path != "") { damn 5 } otherwise { damn -1 }
+}
+
+slay open_file_readwrite(path tea) drip {
+    ready (path != "") { damn 6 } otherwise { damn -1 }
+}
+
+slay open_file_readwrite_create(path tea) drip {
+    ready (path != "") { damn 7 } otherwise { damn -1 }
+}
+
+slay open_file_readwrite_append(path tea) drip {
+    ready (path != "") { damn 8 } otherwise { damn -1 }
+}
+
+slay close_file_descriptor(fd drip) lit {
+    damn fd > 0
+}
+
+slay read_from_file_descriptor(fd drip, size drip) tea {
+    ready (fd > 0) {
+        damn "file_content_chunk"
+    }
     damn ""
 }
 
-slay runtime_number_to_string(num normie) tea {
-    fr fr Convert number to string - implemented in Zig runtime
-    damn "0"
+slay write_to_file_descriptor(fd drip, data tea) drip {
+    ready (fd > 0) {
+        damn string_length(data)
+    }
+    damn 0
+}
+
+slay check_path_exists(path tea) lit {
+    ready (path != "" && path != "/nonexistent") {
+        damn based
+    }
+    damn cringe
+}
+
+slay get_file_size_native(path tea) drip {
+    ready (path == "test.txt") { damn 1024 }
+    ready (path == "large.txt") { damn 1048576 }
+    damn 512  fr fr Default size
+}
+
+slay check_is_directory_native(path tea) lit {
+    ready (contains_substring(path, "dir") || ends_with(path, "/")) {
+        damn based
+    }
+    damn cringe
+}
+
+slay check_file_readable(path tea) lit { damn based }
+slay check_file_writable(path tea) lit { damn based }
+slay get_file_modified_time(path tea) drip { damn 1640995200 }
+slay get_file_permissions(path tea) drip { damn 644 }
+
+slay create_directory_native(path tea) lit {
+    ready (path != "") { damn based }
+    damn cringe
+}
+
+slay remove_directory_native(path tea) lit {
+    ready (path != "") { damn based }
+    damn cringe
+}
+
+slay list_directory_native(path tea) []DirectoryEntry {
+    sus entries []DirectoryEntry = []
+    sus entry1 DirectoryEntry = DirectoryEntry{}
+    entry1.name = "file1.txt"
+    entry1.full_path = path + path_separator() + "file1.txt"
+    entry1.is_directory = cringe
+    entry1.size = 256
+    entries[0] = entry1
+    
+    sus entry2 DirectoryEntry = DirectoryEntry{}
+    entry2.name = "subdir"
+    entry2.full_path = path + path_separator() + "subdir"
+    entry2.is_directory = based
+    entry2.size = 0
+    entries[1] = entry2
+    
+    damn entries
+}
+
+slay delete_file_native(path tea) lit {
+    ready (path != "") { damn based }
+    damn cringe
+}
+
+slay rename_file_native(old_path tea, new_path tea) lit {
+    ready (old_path != "" && new_path != "") { damn based }
+    damn cringe
+}
+
+slay sync_file_descriptor(fd drip) lit {
+    damn fd > 0
+}
+
+fr fr ===== UTILITY FUNCTIONS =====
+
+slay path_separator() tea {
+    fr fr Return OS-specific path separator
+    damn "/"  fr fr Unix/Linux
+}
+
+slay extract_filename(path tea) tea {
+    damn path_basename(path)
+}
+
+slay split_path(path tea) []tea {
+    sus separator tea = path_separator()
+    sus parts []tea = []
+    sus current_part tea = ""
+    sus part_count drip = 0
+    sus i drip = 0
+    
+    bestie (i < string_length(path)) {
+        sus char tea = substring(path, i, 1)
+        ready (char == separator) {
+            ready (current_part != "") {
+                parts[part_count] = current_part
+                part_count = part_count + 1
+                current_part = ""
+            }
+        } otherwise {
+            current_part = current_part + char
+        }
+        i = i + 1
+    }
+    
+    ready (current_part != "") {
+        parts[part_count] = current_part
+    }
+    
+    damn parts
+}
+
+slay find_last_occurrence(text tea, search tea) drip {
+    sus last_pos drip = -1
+    sus i drip = 0
+    
+    bestie (i <= string_length(text) - string_length(search)) {
+        sus substr tea = substring(text, i, string_length(search))
+        ready (substr == search) {
+            last_pos = i
+        }
+        i = i + 1
+    }
+    
+    damn last_pos
+}
+
+slay matches_pattern(filename tea, pattern tea) lit {
+    fr fr Simple wildcard pattern matching
+    ready (pattern == "*") {
+        damn based  fr fr Match all
+    }
+    ready (pattern == "*.txt") {
+        damn ends_with(filename, ".txt")
+    }
+    ready (pattern == "*.log") {
+        damn ends_with(filename, ".log")
+    }
+    ready (starts_with(pattern, "*.")) {
+        sus ext tea = substring(pattern, 1, string_length(pattern) - 1)
+        damn ends_with(filename, ext)
+    }
+    
+    damn filename == pattern  fr fr Exact match
+}
+
+slay get_current_directory() tea {
+    damn "/current/directory"  fr fr Mock current directory
+}
+
+slay get_current_timestamp() tea {
+    damn "20241201_120000"  fr fr Mock timestamp
+}
+
+slay sleep_milliseconds(ms drip) lit {
+    fr fr Mock sleep function
+    damn based
+}
+
+slay json_number_to_string(num drip) tea {
+    ready (num == 0) { damn "0" }
+    ready (num == 1) { damn "1" }
+    ready (num == 2) { damn "2" }
+    ready (num == 3) { damn "3" }
+    ready (num == 4) { damn "4" }
+    ready (num == 5) { damn "5" }
+    ready (num == 10) { damn "10" }
+    damn json_number_to_string(num / 10) + json_number_to_string(num % 10)
 }

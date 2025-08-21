@@ -111,7 +111,7 @@ pub const InliningAnalyzer = struct {
                 const called_function = c.LLVMGetCalledValue(instruction.?);
                 if (called_function != null and c.LLVMIsAFunction(called_function.?) != null) {
                     const decision = try self.analyzeCallSite(caller, called_function.?, instruction.?, pgo_data);
-                    try decisions.append(allocator, decision);
+                    try decisions.append(decision);
                     self.inlining_decisions_made += 1;
                 }
             }
@@ -304,7 +304,7 @@ test "inlining analyzer initialization" {
     const allocator = std.testing.allocator;
     
     var analyzer = try InliningAnalyzer.init(allocator);
-    defer analyzer.deinit(allocator);
+    defer analyzer.deinit();
     
     try std.testing.expect(analyzer.default_threshold == 225);
     try std.testing.expect(analyzer.aggressive_threshold == 325);

@@ -7,7 +7,7 @@ const lexer = @import("lexer.zig");
 // WASM-compatible entry point that doesn't use filesystem or command line args
 export fn cursed_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const source = source_ptr[0..source_len];
@@ -17,7 +17,7 @@ export fn cursed_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     const tokens = lex.tokenize() catch {
         return -1; // Error code
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     // For WASM, just return success for now
     return 0;

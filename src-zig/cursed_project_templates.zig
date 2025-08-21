@@ -26,11 +26,11 @@ pub const ProjectTemplate = struct {
     }
     
     pub fn deinit(self: *ProjectTemplate) void {
-        self.files.deinit(allocator);
+        self.files.deinit();
     }
     
     pub fn addFile(self: *ProjectTemplate, path: []const u8, content: []const u8, executable: bool) !void {
-        try self.files.append(allocator, TemplateFile{
+        try self.files.append(TemplateFile{
             .path = path,
             .content = content,
             .executable = executable,
@@ -612,7 +612,7 @@ pub const ProjectTemplates = struct {
 pub const TemplateManager = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) TemplateManager {
+    pub fn init() TemplateManager {
         return TemplateManager{
             .allocator = allocator,
         };
@@ -627,7 +627,7 @@ pub const TemplateManager = struct {
         const template = try self.getTemplate(template_name, project_name);
         defer {
             var mut_template = template;
-            mut_template.deinit(allocator);
+            mut_template.deinit();
         }
         
         print("Creating {s} project '{s}' in {s}\n", .{ template_name, project_name, target_dir });
@@ -671,9 +671,9 @@ pub const TemplateManager = struct {
         }
         
         print("Project '{s}' created successfully!\n", .{project_name});
-        print("Next steps:\n");
+        print("Next steps:\n", .{});
         print("  cd {s}\n", .{target_dir});
-        print("  zig build cursed-compile\n");
+        print("  zig build cursed-compile\n", .{});
     }
     
     fn getTemplate(self: *TemplateManager, template_name: []const u8, project_name: []const u8) !ProjectTemplate {
@@ -692,11 +692,11 @@ pub const TemplateManager = struct {
     
     pub fn listTemplates(self: *TemplateManager) void {
         _ = self;
-        print("Available CURSED project templates:\n");
-        print("  executable  - Basic executable project\n");
-        print("  library     - Library project\n");
-        print("  web         - Web application with WASM support\n");
-        print("  cli         - Command-line tool\n");
+        print("Available CURSED project templates:\n", .{});
+        print("  executable  - Basic executable project\n", .{});
+        print("  library     - Library project\n", .{});
+        print("  web         - Web application with WASM support\n", .{});
+        print("  cli         - Command-line tool\n", .{});
     }
 };
 
@@ -709,7 +709,7 @@ test "template creation" {
     const template = try manager.getTemplate("executable", "test-project");
     defer {
         var mut_template = template;
-        mut_template.deinit(allocator);
+        mut_template.deinit();
     }
     
     try std.testing.expect(template.files.items.len > 0);

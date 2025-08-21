@@ -122,7 +122,7 @@ pub const MonomorphizationManager = struct {
             };
         };
         
-        pub fn init(allocator: Allocator) GenericRegistry {
+        pub fn init() GenericRegistry {
             return GenericRegistry{
                 .function_generics = HashMap([]const u8, GenericFunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .struct_generics = HashMap([]const u8, GenericStructInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -134,25 +134,25 @@ pub const MonomorphizationManager = struct {
             // Clean up function generics
             var func_iter = self.function_generics.iterator();
             while (func_iter.next()) |entry| {
-                entry.value_ptr.constraint_analysis.required_traits.deinit(allocator);
-                entry.value_ptr.usage_patterns.deinit(allocator);
+                entry.value_ptr.constraint_analysis.required_traits.deinit();
+                entry.value_ptr.usage_patterns.deinit();
             }
-            self.function_generics.deinit(allocator);
+            self.function_generics.deinit();
             
             // Clean up struct generics
             var struct_iter = self.struct_generics.iterator();
             while (struct_iter.next()) |entry| {
-                entry.value_ptr.field_dependencies.deinit(allocator);
+                entry.value_ptr.field_dependencies.deinit();
             }
-            self.struct_generics.deinit(allocator);
+            self.struct_generics.deinit();
             
             // Clean up interface generics
             var interface_iter = self.interface_generics.iterator();
             while (interface_iter.next()) |entry| {
-                entry.value_ptr.method_analysis.deinit(allocator);
-                entry.value_ptr.vtable_optimization.static_dispatch_candidates.deinit(allocator);
+                entry.value_ptr.method_analysis.deinit();
+                entry.value_ptr.vtable_optimization.static_dispatch_candidates.deinit();
             }
-            self.interface_generics.deinit(allocator);
+            self.interface_generics.deinit();
         }
     };
     
@@ -184,7 +184,7 @@ pub const MonomorphizationManager = struct {
             average_throughput: f32, // instantiations per second
         };
         
-        pub fn init(allocator: Allocator) InstantiationPipeline {
+        pub fn init() InstantiationPipeline {
             var pipeline = InstantiationPipeline{
                 .stages = .empty,
                 .current_stage = 0,
@@ -228,20 +228,20 @@ pub const MonomorphizationManager = struct {
             pipeline.stages.appendSlice(&default_stages) catch unreachable;
             
             // Set up stage dependencies
-            pipeline.stages.items[1].dependencies.append(allocator, "type_inference") catch unreachable;
-            pipeline.stages.items[2].dependencies.append(allocator, "constraint_validation") catch unreachable;
-            pipeline.stages.items[3].dependencies.append(allocator, "dependency_analysis") catch unreachable;
-            pipeline.stages.items[4].dependencies.append(allocator, "code_generation") catch unreachable;
+            pipeline.stages.items[1].dependencies.append("type_inference") catch unreachable;
+            pipeline.stages.items[2].dependencies.append("constraint_validation") catch unreachable;
+            pipeline.stages.items[3].dependencies.append("dependency_analysis") catch unreachable;
+            pipeline.stages.items[4].dependencies.append("code_generation") catch unreachable;
             
             return pipeline;
         }
         
         pub fn deinit(self: *InstantiationPipeline) void {
             for (self.stages.items) |*stage| {
-                stage.dependencies.deinit(allocator);
+                stage.dependencies.deinit();
             }
-            self.stages.deinit(allocator);
-            self.stage_metrics.deinit(allocator);
+            self.stages.deinit();
+            self.stage_metrics.deinit();
         }
     };
     
@@ -263,9 +263,9 @@ pub const MonomorphizationManager = struct {
     }
     
     pub fn deinit(self: *MonomorphizationManager) void {
-        self.pending_instantiations.deinit(allocator);
-        self.generic_registry.deinit(allocator);
-        self.instantiation_pipeline.deinit(allocator);
+        self.pending_instantiations.deinit();
+        self.generic_registry.deinit();
+        self.instantiation_pipeline.deinit();
     }
     
     /// Register a generic function with comprehensive analysis
@@ -291,7 +291,7 @@ pub const MonomorphizationManager = struct {
                     .Numeric => constraint_analysis.numeric_constraints = true,
                     .Interface => {
                         if (constraint.interface_name) |interface_name| {
-                            try constraint_analysis.required_traits.append(allocator, interface_name);
+                            try constraint_analysis.required_traits.append(interface_name);
                         }
                     },
                     else => {},
@@ -329,9 +329,9 @@ pub const MonomorphizationManager = struct {
                     },
                     .Sized => generics.Constraint.init(.Sized),
                 };
-                try mono_param.constraints.append(allocator, mono_constraint);
+                try mono_param.constraints.append(mono_constraint);
             }
-            try generic_decl.type_parameters.append(allocator, mono_param);
+            try generic_decl.type_parameters.append(mono_param);
         }
         
         try self.enhanced_monomorphizer.base_monomorphizer.registerGeneric(generic_decl);
@@ -353,7 +353,7 @@ pub const MonomorphizationManager = struct {
             // Check if field type depends on type parameters
             const dependency = self.analyzeFieldTypeDependency(field, type_parameters);
             if (dependency) |dep| {
-                try field_dependencies.append(allocator, dep);
+                try field_dependencies.append(dep);
             }
         }
         
@@ -395,9 +395,9 @@ pub const MonomorphizationManager = struct {
                     },
                     .Sized => generics.Constraint.init(.Sized),
                 };
-                try mono_param.constraints.append(allocator, mono_constraint);
+                try mono_param.constraints.append(mono_constraint);
             }
-            try generic_decl.type_parameters.append(allocator, mono_param);
+            try generic_decl.type_parameters.append(mono_param);
         }
         
         try self.enhanced_monomorphizer.base_monomorphizer.registerGeneric(generic_decl);
@@ -471,7 +471,7 @@ pub const MonomorphizationManager = struct {
             .priority = priority,
         };
         
-        try self.pending_instantiations.append(allocator, request);
+        try self.pending_instantiations.append(request);
         
         // Process through pipeline
         return try self.processInstantiationRequest(request);

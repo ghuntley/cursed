@@ -44,7 +44,7 @@ pub const RuntimeSystem = struct {
         GCError,
     };
     
-    pub fn init(allocator: Allocator) RuntimeSystem {
+    pub fn init() RuntimeSystem {
         return RuntimeSystem{
             .allocator = allocator,
         };

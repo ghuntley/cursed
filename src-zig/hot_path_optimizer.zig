@@ -77,7 +77,7 @@ pub const HotPathOptimizer = struct {
         }
         
         pub fn deinit(self: *HotFunctionInfo) void {
-            self.caller_functions.deinit(allocator);
+            self.caller_functions.deinit();
         }
         
         pub fn addCall(self: *HotFunctionInfo, execution_time_ns: u64, caller: ?[]const u8) !void {
@@ -96,7 +96,7 @@ pub const HotPathOptimizer = struct {
                         return; // Already tracked
                     }
                 }
-                try self.caller_functions.append(allocator, caller_name);
+                try self.caller_functions.append(caller_name);
             }
         }
         
@@ -141,7 +141,7 @@ pub const HotPathOptimizer = struct {
         }
         
         pub fn deinit(self: *CallChain) void {
-            self.function_sequence.deinit(allocator);
+            self.function_sequence.deinit();
         }
         
         pub fn addExecution(self: *CallChain, execution_time_ns: u64) void {
@@ -197,7 +197,7 @@ pub const HotPathOptimizer = struct {
         };
         
         if (optimizer.enabled) {
-            print("🔥 Hot Path Optimizer initialized\n");
+            print("🔥 Hot Path Optimizer initialized\n", .{});
             print("  Hot path threshold: {} executions\n", .{config.hot_path_threshold});
             print("  Hot function threshold: {} executions\n", .{config.hot_function_threshold});
             print("  Optimization interval: {} executions\n", .{config.optimization_interval});
@@ -212,19 +212,19 @@ pub const HotPathOptimizer = struct {
             self.printStatistics();
         }
         
-        self.execution_counts.deinit(allocator);
+        self.execution_counts.deinit();
         
         var func_iter = self.hot_functions.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.hot_functions.deinit(allocator);
+        self.hot_functions.deinit();
         
         var chain_iter = self.call_chains.iterator();
         while (chain_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.call_chains.deinit(allocator);
+        self.call_chains.deinit();
     }
     
     /// Record function execution for hot path detection
@@ -445,7 +445,7 @@ pub const HotPathOptimizer = struct {
     
     /// Identify hot paths from collected data
     pub fn identifyHotPaths(self: *Self) !HotPathAnalysis {
-        print("🔍 Analyzing hot paths...\n");
+        print("🔍 Analyzing hot paths...\n", .{});
         
         var analysis = HotPathAnalysis.init(self.allocator);
         
@@ -469,7 +469,7 @@ pub const HotPathOptimizer = struct {
         while (path_iter.next()) |entry| {
             const exec_info = entry.value_ptr;
             if (exec_info.isHot(self.hot_path_threshold)) {
-                try analysis.hot_paths.append(allocator, HotPathSummary{
+                try analysis.hot_paths.append(HotPathSummary{
                     .path_hash = exec_info.path_hash,
                     .execution_count = exec_info.execution_count,
                     .total_time_ns = exec_info.total_time_ns,
@@ -509,7 +509,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.85,
                         .description = "High-frequency small function suitable for inlining",
                     };
-                    try recommendations.append(allocator, recommendation);
+                    try recommendations.append(recommendation);
                 }
                 
                 if (func.vectorization_candidate) {
@@ -521,7 +521,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.70,
                         .description = "Function with loop patterns suitable for SIMD vectorization",
                     };
-                    try recommendations.append(allocator, recommendation);
+                    try recommendations.append(recommendation);
                 }
             }
         }
@@ -534,15 +534,15 @@ pub const HotPathOptimizer = struct {
     
     /// Print comprehensive statistics
     pub fn printStatistics(self: *const Self) void {
-        print("\n🔥 Hot Path Optimizer Statistics\n");
-        print("================================\n");
+        print("\n🔥 Hot Path Optimizer Statistics\n", .{});
+        print("================================\n", .{});
         print("Optimizer enabled: {}\n", .{self.enabled});
         print("Hot paths identified: {}\n", .{self.paths_identified});
         print("Optimizations applied: {}\n", .{self.paths_optimized});
         print("Optimization passes: {}\n", .{self.optimization_passes});
         print("Estimated time saved: {:.2} ms\n", .{@as(f64, @floatFromInt(self.total_execution_time_saved_ns)) / 1_000_000.0});
         
-        print("\n📊 Hot Function Summary:\n");
+        print("\n📊 Hot Function Summary:\n", .{});
         print("Functions tracked: {}\n", .{self.hot_functions.count()});
         
         var hot_count: u32 = 0;
@@ -555,7 +555,7 @@ pub const HotPathOptimizer = struct {
         }
         print("Hot functions: {}\n", .{hot_count});
         
-        print("\n🛤️ Execution Path Summary:\n");
+        print("\n🛤️ Execution Path Summary:\n", .{});
         print("Paths tracked: {}\n", .{self.execution_counts.count()});
         
         var hot_path_count: u32 = 0;
@@ -568,7 +568,7 @@ pub const HotPathOptimizer = struct {
         }
         print("Hot paths: {}\n", .{hot_path_count});
         
-        print("\n⚙️ Configuration:\n");
+        print("\n⚙️ Configuration:\n", .{});
         print("Hot path threshold: {}\n", .{self.hot_path_threshold});
         print("Hot function threshold: {}\n", .{self.hot_function_threshold});
         print("Optimization interval: {}\n", .{self.optimization_interval});
@@ -618,16 +618,16 @@ pub const HotPathAnalysis = struct {
     }
     
     pub fn deinit(self: *HotPathAnalysis) void {
-        self.hot_functions.deinit(allocator);
-        self.hot_paths.deinit(allocator);
+        self.hot_functions.deinit();
+        self.hot_paths.deinit();
     }
     
     pub fn printSummary(self: *const HotPathAnalysis) void {
-        print("\n📊 Hot Path Analysis Summary\n");
-        print("============================\n");
+        print("\n📊 Hot Path Analysis Summary\n", .{});
+        print("============================\n", .{});
         
         if (self.hot_functions.items.len > 0) {
-            print("\n🔥 Top Hot Functions:\n");
+            print("\n🔥 Top Hot Functions:\n", .{});
             for (self.hot_functions.items[0..@min(5, self.hot_functions.items.len)]) |func| {
                 print("  {s}: {} calls, {:.2} ms total, priority: {}\n", .{
                     func.name,
@@ -639,7 +639,7 @@ pub const HotPathAnalysis = struct {
         }
         
         if (self.hot_paths.items.len > 0) {
-            print("\n🛤️ Top Hot Paths:\n");
+            print("\n🛤️ Top Hot Paths:\n", .{});
             for (self.hot_paths.items[0..@min(5, self.hot_paths.items.len)]) |path| {
                 print("  Path {}: {} executions, {:.2} ms total, optimized: {}\n", .{
                     path.path_hash,

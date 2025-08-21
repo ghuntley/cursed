@@ -66,7 +66,7 @@ pub const IntegratedGenericCompiler = struct {
         
         pub fn deinit(self: *CompiledInstance, allocator: Allocator) void {
             allocator.free(self.mangled_name);
-            self.runtime_type.deinit(allocator);
+            self.runtime_type.deinit();
         }
     };
     
@@ -132,14 +132,14 @@ pub const IntegratedGenericCompiler = struct {
     pub fn deinit(self: *IntegratedGenericCompiler) void {
         var instance_iter = self.compiled_instances.iterator();
         while (instance_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.compiled_instances.deinit(allocator);
+        self.compiled_instances.deinit();
         
-        self.runtime_engine.deinit(allocator);
+        self.runtime_engine.deinit();
         self.allocator.destroy(self.runtime_engine);
         
-        self.monomorphizer.deinit(allocator);
+        self.monomorphizer.deinit();
         self.allocator.destroy(self.monomorphizer);
     }
     
@@ -167,11 +167,11 @@ pub const IntegratedGenericCompiler = struct {
         
         // Convert runtime types to AST types for monomorphizer
         var ast_type_args = .empty;
-        defer ast_type_args.deinit(allocator);
+        defer ast_type_args.deinit();
         
         for (type_args) |runtime_type| {
             const ast_type = try self.runtimeTypeToAstType(runtime_type);
-            try ast_type_args.append(allocator, ast_type);
+            try ast_type_args.append(ast_type);
         }
         
         // Request monomorphization
@@ -238,11 +238,11 @@ pub const IntegratedGenericCompiler = struct {
         
         // Convert to AST types for monomorphizer
         var ast_type_args = .empty;
-        defer ast_type_args.deinit(allocator);
+        defer ast_type_args.deinit();
         
         for (type_args) |runtime_type| {
             const ast_type = try self.runtimeTypeToAstType(runtime_type);
-            try ast_type_args.append(allocator, ast_type);
+            try ast_type_args.append(ast_type);
         }
         
         // Request monomorphization
@@ -310,10 +310,10 @@ pub const IntegratedGenericCompiler = struct {
                 },
             };
             
-            try results.append(allocator, result);
+            try results.append(result);
         }
         
-        return results.toOwnedSlice(allocator);
+        return results.toOwnedSlice();
     }
     
     pub const CompilationRequest = struct {
@@ -374,7 +374,7 @@ pub const IntegratedGenericCompiler = struct {
     pub fn clearCache(self: *IntegratedGenericCompiler) void {
         var instance_iter = self.compiled_instances.iterator();
         while (instance_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
         self.compiled_instances.clearRetainingCapacity();
         
@@ -385,7 +385,7 @@ pub const IntegratedGenericCompiler = struct {
     
     fn generateMangledName(self: *IntegratedGenericCompiler, generic_name: []const u8, type_args: []runtime_generics.RuntimeType) ![]const u8 {
         var name_parts = .empty;
-        defer name_parts.deinit(allocator);
+        defer name_parts.deinit();
         
         try name_parts.appendSlice(generic_name);
         try name_parts.appendSlice("_");
@@ -538,7 +538,7 @@ pub const IntegratedGenericCompiler = struct {
         
         // Simple topological sort based on dependencies and priority
         for (requests) |request| {
-            try sorted.append(allocator, request);
+            try sorted.append(request);
         }
         
         // Sort by priority (higher priority first)
@@ -548,7 +548,7 @@ pub const IntegratedGenericCompiler = struct {
             }
         }.lessThan);
         
-        return sorted.toOwnedSlice(allocator);
+        return sorted.toOwnedSlice();
     }
 };
 
@@ -626,13 +626,13 @@ test "integrated generic compilation" {
     
     // Initialize type environment
     var type_env = runtime_generics.RuntimeTypeEnvironment.init(allocator);
-    defer type_env.deinit(allocator);
+    defer type_env.deinit();
     
     try runtime_generics.initializeBuiltinTypes(&type_env);
     
     // Initialize integrated compiler
     var compiler = try IntegratedGenericCompiler.init(allocator, &type_env, context, module);
-    defer compiler.deinit(allocator);
+    defer compiler.deinit();
     
     // Create API
     var api = GenericCompilationAPI.init(&compiler);

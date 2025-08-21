@@ -148,7 +148,7 @@ pub const GCTypeRegistry = struct {
     
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) GCTypeRegistry {
+    pub fn init() GCTypeRegistry {
         return GCTypeRegistry{
             .types = std.HashMap(u32, RuntimeTypeInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .collision_resistant_registry = CollisionResistantTypeRegistry.init(allocator),
@@ -161,17 +161,17 @@ pub const GCTypeRegistry = struct {
     pub fn deinit(self: *GCTypeRegistry) void {
         var iter = self.types.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.types.deinit(allocator);
+        self.types.deinit();
         
-        self.collision_resistant_registry.deinit(allocator);
+        self.collision_resistant_registry.deinit();
         
         var mapping_iter = self.legacy_id_mapping.iterator();
         while (mapping_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.legacy_id_mapping.deinit(allocator);
+        self.legacy_id_mapping.deinit();
     }
 
     /// Enhanced type registration with collision detection
@@ -353,7 +353,7 @@ pub const TypedAllocator = struct {
             
             // Only deallocate if this was the last reference
             if (old_count == 1) {
-                self.deinit(allocator);
+                self.deinit();
             }
         }
 
@@ -373,9 +373,9 @@ pub const TypedAllocator = struct {
 
     pub fn deinit(self: *TypedAllocator) void {
         for (self.allocated_objects.items) |object| {
-            object.deinit(allocator);
+            object.deinit();
         }
-        self.allocated_objects.deinit(allocator);
+        self.allocated_objects.deinit();
     }
 
     pub fn allocateStruct(self: *TypedAllocator, type_id: u32) !*TypedObject {
@@ -405,7 +405,7 @@ pub const TypedAllocator = struct {
             const object = self.allocated_objects.items[i];
             // Atomically check reference count
             if (object.ref_count.load(.acquire) == 0) {
-                object.deinit(allocator);
+                object.deinit();
                 _ = self.allocated_objects.swapRemove(i);
             } else {
                 i += 1;
@@ -476,7 +476,7 @@ pub const InterfaceRegistry = struct {
         }
     };
 
-    pub fn init(allocator: Allocator) InterfaceRegistry {
+    pub fn init() InterfaceRegistry {
         return InterfaceRegistry{
             .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_resistant_impls = type_collision.InterfaceImplRegistry.init(allocator),
@@ -486,9 +486,9 @@ pub const InterfaceRegistry = struct {
     }
 
     pub fn deinit(self: *InterfaceRegistry) void {
-        self.implementations.deinit(allocator);
-        self.collision_resistant_impls.deinit(allocator);
-        self.vtable_storage.deinit(allocator);
+        self.implementations.deinit();
+        self.collision_resistant_impls.deinit();
+        self.vtable_storage.deinit();
     }
 
     /// Enhanced registration with collision detection
@@ -841,10 +841,10 @@ pub fn registerBuiltinTypes(gc_registry: *GCTypeRegistry) !void {
 test "runtime type checking with collision handling" {
     const allocator = std.testing.allocator;
     var gc_registry = GCTypeRegistry.init(allocator);
-    defer gc_registry.deinit(allocator);
+    defer gc_registry.deinit();
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     // Register built-in types
     try registerBuiltinTypes(&gc_registry);
@@ -878,10 +878,10 @@ test "runtime type checking with collision handling" {
 test "runtime expression checking" {
     const allocator = std.testing.allocator;
     var gc_registry = GCTypeRegistry.init(allocator);
-    defer gc_registry.deinit(allocator);
+    defer gc_registry.deinit();
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     try registerBuiltinTypes(&gc_registry);
     

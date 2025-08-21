@@ -85,7 +85,7 @@ pub const MacroExpansionContext = struct {
         }
         
         pub fn deinit(self: *PendingExpansion) void {
-            self.dependencies.deinit(allocator);
+            self.dependencies.deinit();
         }
     };
     
@@ -118,7 +118,7 @@ pub const MacroExpansionContext = struct {
         }
         
         pub fn deinit(self: *ActiveExpansion) void {
-            self.child_expansions.deinit(allocator);
+            self.child_expansions.deinit();
         }
     };
     
@@ -146,8 +146,7 @@ pub const MacroExpansionContext = struct {
         max_recursion: usize,
         
         pub fn init(allocator: Allocator, name: []const u8) MacroDefinition {
-            _ = allocator;
-            return MacroDefinition{
+                        return MacroDefinition{
                 .name = name,
                 .parameters = &[_][]const u8{},
                 .body = &[_]Token{},
@@ -191,7 +190,7 @@ pub const MacroExpansionContext = struct {
         symbol_capture_context: SymbolCaptureContext,
         
         fn deinit(self: *const NestedExpansionContext, allocator: Allocator) void {
-            self.symbol_capture_context.deinit(allocator);
+            self.symbol_capture_context.deinit();
         }
     };
     
@@ -217,8 +216,8 @@ pub const MacroExpansionContext = struct {
             for (self.captured_symbols.items) |symbol| {
                 allocator.free(symbol);
             }
-            self.captured_symbols.deinit(allocator);
-            self.scope_boundaries.deinit(allocator);
+            self.captured_symbols.deinit();
+            self.scope_boundaries.deinit();
         }
     };
     
@@ -240,34 +239,34 @@ pub const MacroExpansionContext = struct {
     pub fn deinit(self: *MacroExpansionContext) void {
         // Clean up pending expansions
         for (self.expansion_queue.items) |*expansion| {
-            expansion.deinit(allocator);
+            expansion.deinit();
         }
-        self.expansion_queue.deinit(allocator);
+        self.expansion_queue.deinit();
         
         // Clean up active expansions
         var active_iterator = self.current_expansions.iterator();
         while (active_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.current_expansions.deinit(allocator);
+        self.current_expansions.deinit();
         
         // Clean up dependency graph
         var dep_iterator = self.dependency_graph.iterator();
         while (dep_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dependency_graph.deinit(allocator);
+        self.dependency_graph.deinit();
         
-        self.call_stack.deinit(allocator);
+        self.call_stack.deinit();
         
         // Clean up cached expansions
         var cache_iterator = self.expansion_cache.iterator();
         while (cache_iterator.next()) |entry| {
             self.allocator.free(entry.value_ptr.*);
         }
-        self.expansion_cache.deinit(allocator);
+        self.expansion_cache.deinit();
         
-        self.macro_definitions.deinit(allocator);
+        self.macro_definitions.deinit();
     }
     
     /// Register a macro definition
@@ -323,7 +322,7 @@ pub const MacroExpansionContext = struct {
     /// Process all queued macro expansions in correct order
     pub fn processExpansions(self: *MacroExpansionContext) ![]Token {
         var result_tokens = .empty;
-        defer result_tokens.deinit(allocator);
+        defer result_tokens.deinit();
         
         // Process expansions by priority and dependency order
         while (self.expansion_queue.items.len > 0) {
@@ -335,11 +334,11 @@ pub const MacroExpansionContext = struct {
             }
             
             var expansion = self.expansion_queue.swapRemove(next_index.?);
-            defer expansion.deinit(allocator);
+            defer expansion.deinit();
             
             // Create active expansion
             var active = ActiveExpansion.init(self.allocator, expansion.macro_id, self.getCurrentParentExpansion());
-            defer active.deinit(allocator);
+            defer active.deinit();
             
             try self.current_expansions.put(expansion.macro_id, active);
             
@@ -351,7 +350,7 @@ pub const MacroExpansionContext = struct {
             _ = self.current_expansions.remove(expansion.macro_id);
         }
         
-        return result_tokens.toOwnedSlice(allocator);
+        return result_tokens.toOwnedSlice();
     }
     
     /// Expand a single macro with hygiene checking
@@ -375,7 +374,7 @@ pub const MacroExpansionContext = struct {
         
         // Perform macro expansion
         var expanded_tokens = .empty;
-        defer expanded_tokens.deinit(allocator);
+        defer expanded_tokens.deinit();
         
         // Substitute parameters
         if (definition.is_function_like) {
@@ -407,7 +406,7 @@ pub const MacroExpansionContext = struct {
             while (iterator.next()) |entry| {
                 self.allocator.free(entry.value_ptr.*);
             }
-            substitutions.deinit(allocator);
+            substitutions.deinit();
         }
         
         // Parse arguments and create substitutions
@@ -436,7 +435,7 @@ pub const MacroExpansionContext = struct {
                     try result.append(self.allocator, token);
                 }
             } else {
-                try result.append(allocator, token);
+                try result.append(token);
             }
         }
     }
@@ -450,7 +449,7 @@ pub const MacroExpansionContext = struct {
     /// Process nested macro calls in expanded tokens with comprehensive hygiene
     fn processNestedMacros(self: *MacroExpansionContext, tokens: []Token) ![]Token {
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var i: usize = 0;
         while (i < tokens.len) {
@@ -509,7 +508,7 @@ pub const MacroExpansionContext = struct {
                     
                     // Clean up
                     self.allocator.free(sanitized_result);
-                    nested_expansion_context.deinit(allocator);
+                    nested_expansion_context.deinit();
                     
                     i = call_end;
                 } else {
@@ -522,7 +521,7 @@ pub const MacroExpansionContext = struct {
             }
         }
         
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice();
     }
     
     /// Detect recursion in macro expansion
@@ -546,10 +545,10 @@ pub const MacroExpansionContext = struct {
     /// Check for circular dependencies in dependency graph
     fn hasCircularDependency(self: *MacroExpansionContext, start_macro: MacroId) bool {
         var visited = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         
         var recursion_stack = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer recursion_stack.deinit(allocator);
+        defer recursion_stack.deinit();
         
         return self.dfsHasCycle(start_macro, &visited, &recursion_stack);
     }
@@ -614,7 +613,7 @@ pub const MacroExpansionContext = struct {
                         .call_site_hash = 0, // Will be set when actually queued
                     };
                     
-                    try expansion.dependencies.append(allocator, dep_id);
+                    try expansion.dependencies.append(dep_id);
                     
                     // Add to dependency graph
                     if (!self.dependency_graph.contains(expansion.macro_id)) {
@@ -734,7 +733,7 @@ pub const MacroExpansionContext = struct {
             
             if (self.hygiene_context.isAccidentalCapture(captured_symbol, current_expansion)) {
                 // Add a warning or error about potential hygiene violation
-                try self.hygiene_context.hygiene_violations.append(allocator, macro_hygiene.MacroHygieneContext.HygieneViolation{
+                try self.hygiene_context.hygiene_violations.append(macro_hygiene.MacroHygieneContext.HygieneViolation{
                     .kind = .VariableCapture,
                     .symbol_name = captured_symbol,
                     .macro_name = macro_id.name,
@@ -766,14 +765,14 @@ pub const MacroExpansionContext = struct {
         }
         
         const expansion = self.expansion_queue.swapRemove(expansion_index.?);
-        defer expansion.deinit(allocator);
+        defer expansion.deinit();
         
         // Get macro definition
         const definition = self.macro_definitions.get(expansion.macro_id.name) orelse return error.MacroNotDefined;
         
         // Perform expansion with hygiene tracking
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         if (definition.is_function_like) {
             try self.substituteFunctionLikeMacroWithHygiene(&result, &definition, expansion.call.arguments);
@@ -858,7 +857,7 @@ pub const MacroExpansionContext = struct {
                             // Apply hygiene renaming to argument tokens
                             for (parsed_args[param_idx]) |arg_token| {
                                 const renamed_token = try self.applyHygieneToToken(arg_token);
-                                try result.append(allocator, renamed_token);
+                                try result.append(renamed_token);
                             }
                         }
                         is_parameter = true;
@@ -869,10 +868,10 @@ pub const MacroExpansionContext = struct {
                 if (!is_parameter) {
                     // Not a parameter, apply hygiene renaming
                     const renamed_token = try self.applyHygieneToToken(token);
-                    try result.append(allocator, renamed_token);
+                    try result.append(renamed_token);
                 }
             } else {
-                try result.append(allocator, token);
+                try result.append(token);
             }
         }
     }
@@ -881,7 +880,7 @@ pub const MacroExpansionContext = struct {
     fn substituteObjectLikeMacroWithHygiene(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition) !void {
         for (definition.body) |token| {
             const renamed_token = try self.applyHygieneToToken(token);
-            try result.append(allocator, renamed_token);
+            try result.append(renamed_token);
         }
     }
     
@@ -904,10 +903,10 @@ pub const MacroExpansionContext = struct {
     fn parseArguments(self: *MacroExpansionContext, tokens: []const Token) ![][]Token {
         // Simple argument parsing - split on commas at top level
         var args = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         var current_arg = .empty;
-        defer current_arg.deinit(allocator);
+        defer current_arg.deinit();
         
         var paren_depth: i32 = 0;
         
@@ -1015,10 +1014,10 @@ pub const MacroExpansionContext = struct {
 // Test cases for macro expansion order
 test "basic macro expansion order" {
     var hygiene_ctx = try MacroHygieneContext.init(std.testing.allocator);
-    defer hygiene_ctx.deinit(allocator);
+    defer hygiene_ctx.deinit();
     
     var expansion_ctx = try MacroExpansionContext.init(std.testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit(allocator);
+    defer expansion_ctx.deinit();
     
     // Define a simple macro
     var definition = MacroExpansionContext.MacroDefinition.init(std.testing.allocator, "TEST_MACRO");
@@ -1052,10 +1051,10 @@ test "basic macro expansion order" {
 
 test "recursion detection" {
     var hygiene_ctx = try MacroHygieneContext.init(std.testing.allocator);
-    defer hygiene_ctx.deinit(allocator);
+    defer hygiene_ctx.deinit();
     
     var expansion_ctx = try MacroExpansionContext.init(std.testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit(allocator);
+    defer expansion_ctx.deinit();
     
     // Define recursive macro
     var definition = MacroExpansionContext.MacroDefinition.init(std.testing.allocator, "RECURSIVE");

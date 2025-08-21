@@ -77,8 +77,7 @@ fn debuggerMain(allocator: std.mem.Allocator, source: []const u8) !void {
         std.debug.print("\n(cursed-db) ", .{});
         
         var buffer: [256]u8 = undefined;
-        const stdin = std.io.getStdIn().reader();
-        const input = stdin.readUntilDelimiterOrEof(buffer[0..], '\n') catch {
+        const input = std.io.getStdIn().reader().readUntilDelimiterOrEof(buffer[0..], '\n') catch {
             std.debug.print("Input error\n", .{});
             continue;
         };

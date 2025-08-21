@@ -36,7 +36,7 @@ pub const Http2Request = struct {
     headers: ArrayList(http2.HeaderEntry),
     body: ?[]const u8,
     
-    pub fn init(allocator: Allocator) Http2Request {
+    pub fn init() Http2Request {
         return Http2Request{
             .method = "",
             .path = "",
@@ -51,7 +51,7 @@ pub const Http2Request = struct {
         for (self.headers.items) |*header| {
             header.deinit(self.headers.allocator);
         }
-        self.headers.deinit(allocator);
+        self.headers.deinit();
     }
     
     pub fn setMethod(self: *Http2Request, method: []const u8) !void {
@@ -72,7 +72,7 @@ pub const Http2Request = struct {
     
     pub fn addHeader(self: *Http2Request, name: []const u8, value: []const u8) !void {
         const header = try http2.HeaderEntry.init(self.headers.allocator, name, value);
-        try self.headers.append(allocator, header);
+        try self.headers.append(header);
     }
     
     pub fn setBody(self: *Http2Request, body: []const u8) void {
@@ -87,7 +87,7 @@ pub const Http2Response = struct {
     body: ArrayList(u8),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) Http2Response {
+    pub fn init() Http2Response {
         return Http2Response{
             .status = 200,
             .headers = .empty,
@@ -98,10 +98,10 @@ pub const Http2Response = struct {
     
     pub fn deinit(self: *Http2Response) void {
         for (self.headers.items) |*header| {
-            header.deinit(allocator);
+            header.deinit();
         }
-        self.headers.deinit(allocator);
-        self.body.deinit(allocator);
+        self.headers.deinit();
+        self.body.deinit();
     }
     
     pub fn setStatus(self: *Http2Response, status: u16) void {
@@ -154,10 +154,10 @@ pub const Http2Stream = struct {
     }
     
     pub fn deinit(self: *Http2Stream) void {
-        if (self.request) |*req| req.deinit(allocator);
-        if (self.response) |*resp| resp.deinit(allocator);
-        self.data_buffer.deinit(allocator);
-        self.header_buffer.deinit(allocator);
+        if (self.request) |*req| req.deinit();
+        if (self.response) |*resp| resp.deinit();
+        self.data_buffer.deinit();
+        self.header_buffer.deinit();
     }
     
     pub fn appendHeaderData(self: *Http2Stream, data: []const u8) !void {
@@ -208,10 +208,10 @@ pub const Http2Client = struct {
     pub fn deinit(self: *Http2Client) void {
         var iterator = self.streams.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.streams.deinit(allocator);
-        self.connection.deinit(allocator);
+        self.streams.deinit();
+        self.connection.deinit();
         
         if (self.socket) |socket| {
             platform.Network.closeSocket(socket);
@@ -274,7 +274,7 @@ pub const Http2Client = struct {
     fn createHeadersFrame(self: *Http2Client, stream_id: u31, request: *const Http2Request, end_stream: bool) ![]u8 {
         // Build pseudo-headers
         var header_list = .empty;
-        defer header_list.deinit(allocator);
+        defer header_list.deinit();
         
         // :method
         try self.encodeHeader(&header_list, ":method", request.method);
@@ -327,9 +327,9 @@ pub const Http2Client = struct {
         _ = self;
         
         // Simplified encoding - just store name and value lengths + data
-        try buffer.append(allocator, @intCast(name.len));
+        try buffer.append(@intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(allocator, @intCast(value.len));
+        try buffer.append(@intCast(value.len));
         try buffer.appendSlice(value);
     }
     
@@ -373,10 +373,10 @@ pub const Http2Server = struct {
     pub fn deinit(self: *Http2Server) void {
         var iterator = self.streams.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.streams.deinit(allocator);
-        self.connection.deinit(allocator);
+        self.streams.deinit();
+        self.connection.deinit();
     }
     
     /// Set request handler callback
@@ -426,7 +426,7 @@ pub const Http2Server = struct {
     /// Create HEADERS frame for response
     fn createResponseHeadersFrame(self: *Http2Server, stream_id: u31, response: *const Http2Response) ![]u8 {
         var header_list = .empty;
-        defer header_list.deinit(allocator);
+        defer header_list.deinit();
         
         // :status pseudo-header
         var status_buf: [3]u8 = undefined;
@@ -475,7 +475,7 @@ pub const Http2Server = struct {
         _ = self;
         try buffer.append(self.allocator, @intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(allocator, @intCast(value.len));
+        try buffer.append(@intCast(value.len));
         try buffer.appendSlice(value);
     }
 };
@@ -557,7 +557,7 @@ fn exampleRequestHandler(request: *Http2Request, response: *Http2Response) !void
 /// Test HTTP/2 client/server interaction
 pub fn testHttp2Integration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test HTTP/2 client
@@ -567,13 +567,13 @@ pub fn testHttp2Integration() !void {
     };
     
     var client = try Http2Client.init(allocator, client_config);
-    defer client.deinit(allocator);
+    defer client.deinit();
     
     try client.connect("example.com", 443);
     
     // Create and send request
     var request = Http2Request.init(allocator);
-    defer request.deinit(allocator);
+    defer request.deinit();
     
     try request.setMethod("GET");
     try request.setPath("/api/data");
@@ -592,7 +592,7 @@ pub fn testHttp2Integration() !void {
     };
     
     var server = try Http2Server.init(allocator, server_config);
-    defer server.deinit(allocator);
+    defer server.deinit();
     
     server.setRequestHandler(&exampleRequestHandler);
     

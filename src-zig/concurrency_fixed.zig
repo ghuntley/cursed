@@ -110,7 +110,7 @@ pub fn Channel(comptime T: type) type {
                 timeout_count += 1;
             }
             
-            self.buffer.deinit(allocator);
+            self.buffer.deinit();
         }
         
         /// Add reference (thread-safe)
@@ -184,7 +184,7 @@ pub fn Channel(comptime T: type) type {
                 }
                 
                 // Attempt to add to buffer atomically
-                self.buffer.append(allocator, value) catch return null;
+                self.buffer.append(value) catch return null;
                 _ = self.buffer_size.fetchAdd(1, Release);
                 _ = self.stats.total_sent.fetchAdd(1, Release);
                 
@@ -221,7 +221,7 @@ pub fn Channel(comptime T: type) type {
             }
             
             // Add to buffer with error handling
-            self.buffer.append(allocator, value) catch {
+            self.buffer.append(value) catch {
                 // Rollback size on failure
                 _ = self.buffer_size.fetchSub(1, Release);
                 return null;
@@ -414,7 +414,7 @@ pub const Scheduler = struct {
     
     pub fn deinit(self: *Self) void {
         self.shutdown();
-        self.workers.deinit(allocator);
+        self.workers.deinit();
     }
     
     /// Start the scheduler
@@ -549,7 +549,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.queue.deinit(allocator);
+        self.queue.deinit();
     }
     
     pub fn start(self: *Self) !void {
@@ -571,7 +571,7 @@ pub const Worker = struct {
     pub fn schedule(self: *Self, goroutine_ctx: *GoroutineContext) !void {
         self.queue_mutex.lock();
         defer self.queue_mutex.unlock();
-        try self.queue.append(allocator, goroutine_ctx);
+        try self.queue.append(goroutine_ctx);
     }
     
     fn workerMain(self: *Self) void {
@@ -666,7 +666,7 @@ pub const ConcurrencyRuntime = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.scheduler.deinit(allocator);
+        self.scheduler.deinit();
         self.allocator.destroy(self.scheduler);
     }
     
@@ -681,7 +681,7 @@ pub const ConcurrencyRuntime = struct {
     }
     
     pub fn destroyChannel(self: *Self, channel: anytype) void {
-        channel.deinit(allocator);
+        channel.deinit();
         self.allocator.destroy(channel);
     }
 };

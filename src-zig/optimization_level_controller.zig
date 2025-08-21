@@ -332,7 +332,7 @@ pub const OptimizationController = struct {
         c.LLVMAddIndVarSimplifyPass(fpm);
         c.LLVMAddLoopDeletionPass(fpm);
         
-        print("  🔄 Added loop optimization passes\n");
+        print("  🔄 Added loop optimization passes\n", .{});
     }
     
     fn addInterproceduralPasses(self: *Self, mpm: anytype) !void {
@@ -353,7 +353,7 @@ pub const OptimizationController = struct {
         // Dead argument elimination
         c.LLVMAddDeadArgEliminationPass(mpm);
         
-        print("  🌐 Added interprocedural optimization passes\n");
+        print("  🌐 Added interprocedural optimization passes\n", .{});
     }
     
     fn addVectorizationPasses(self: *Self, fpm: anytype) !void {
@@ -367,7 +367,7 @@ pub const OptimizationController = struct {
             c.LLVMAddLoadStoreVectorizerPass(fpm);
         }
         
-        print("  ⚡ Added vectorization passes\n");
+        print("  ⚡ Added vectorization passes\n", .{});
     }
     
     fn addSizeOptimizationPasses(self: *Self, mpm: anytype) !void {
@@ -385,7 +385,7 @@ pub const OptimizationController = struct {
             c.LLVMAddStripDeadPrototypesPass(mpm);
         }
         
-        print("  📦 Added size optimization passes\n");
+        print("  📦 Added size optimization passes\n", .{});
     }
     
     fn runOptimizationPasses(self: *Self, llvm_module: anytype, fpm: anytype, mpm: anytype) !void {
@@ -449,7 +449,7 @@ pub const OptimizationController = struct {
 /// Test the optimization controller
 pub fn testOptimizationController() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     print("🧪 Testing Optimization Controller...\n", .{});

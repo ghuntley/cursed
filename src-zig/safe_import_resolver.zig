@@ -40,13 +40,13 @@ pub const SafeModuleLoader = struct {
             allocator.free(self.name);
             allocator.free(self.path);
             for (self.functions.items) |*func| {
-                func.deinit(allocator);
+                func.deinit();
             }
             for (self.variables.items) |*var_stmt| {
-                var_stmt.deinit(allocator);
+                var_stmt.deinit();
             }
-            self.functions.deinit(allocator);
-            self.variables.deinit(allocator);
+            self.functions.deinit();
+            self.variables.deinit();
         }
         
         pub fn addRef(self: *LoadedModule) void {
@@ -78,16 +78,16 @@ pub const SafeModuleLoader = struct {
         while (states_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.module_states.deinit(allocator);
+        self.module_states.deinit();
         
         // Clean up loaded modules map
         var modules_iter = self.loaded_modules.iterator();
         while (modules_iter.next()) |entry| {
             var module = entry.value_ptr;
-            module.deinit(allocator);
+            module.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.loaded_modules.deinit(allocator);
+        self.loaded_modules.deinit();
         
         // Clean up dependency graph
         var deps_iter = self.dependency_graph.iterator();
@@ -96,17 +96,17 @@ pub const SafeModuleLoader = struct {
             for (deps_list.items) |dep| {
                 self.allocator.free(dep);
             }
-            deps_list.deinit(allocator);
+            deps_list.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.dependency_graph.deinit(allocator);
+        self.dependency_graph.deinit();
         
         // Clean up reference counts map
         var refs_iter = self.reference_counts.iterator();
         while (refs_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.reference_counts.deinit(allocator);
+        self.reference_counts.deinit();
     }
     
     /// Safe module loading with cycle detection and reference counting
@@ -229,14 +229,14 @@ pub const SafeModuleLoader = struct {
             };
             
             const from_key = self.allocator.dupe(u8, from) catch {
-                new_deps.deinit(allocator);
+                new_deps.deinit();
                 self.allocator.free(to_key);
                 return;
             };
             
             self.dependency_graph.put(from_key, new_deps) catch {
                 self.allocator.free(from_key);
-                new_deps.deinit(allocator);
+                new_deps.deinit();
                 self.allocator.free(to_key);
                 return;
             };
@@ -313,7 +313,7 @@ pub const SafeModuleLoader = struct {
     fn findModulePath(self: *SafeModuleLoader, module_name: []const u8) ![]const u8 {
         // Build stdlib path
         var path_buf = .empty;
-        defer path_buf.deinit(allocator);
+        defer path_buf.deinit();
         
         // Find project root
         const project_root = try self.findProjectRoot();
@@ -346,28 +346,28 @@ pub const SafeModuleLoader = struct {
         };
         
         var path_components = .empty;
-        defer path_components.deinit(allocator);
+        defer path_components.deinit();
         
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(allocator, component);
+                try path_components.append(component);
             }
         }
         
         while (path_components.items.len > 0) {
             var test_path = .empty;
-            defer test_path.deinit(allocator);
+            defer test_path.deinit();
             
-            try test_path.append(allocator, '/');
+            try test_path.append('/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append(allocator, '/');
+                try test_path.append('/');
             }
             
             for (markers) |marker| {
                 var marker_path = .empty;
-                defer marker_path.deinit(allocator);
+                defer marker_path.deinit();
                 
                 try marker_path.appendSlice(test_path.items);
                 try marker_path.appendSlice(marker);
@@ -402,7 +402,7 @@ pub const SafeModuleLoader = struct {
     fn parseModuleSafe(self: *SafeModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) !LoadedModule {
         // Use an arena allocator for temporary parsing to prevent use-after-free
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // Tokenize the source
@@ -474,7 +474,7 @@ pub const SafeModuleLoader = struct {
             // No more references, safe to unload
             if (self.loaded_modules.getPtr(module_name)) |module| {
                 if (self.verbose) print("🗑️  Unloading module '{s}' (ref count reached 0)\n", .{module_name});
-                module.deinit(allocator);
+                module.deinit();
                 _ = self.loaded_modules.remove(module_name);
                 try self.setModuleState(module_name, .not_loaded) catch {};
             }
@@ -486,10 +486,10 @@ pub const SafeModuleLoader = struct {
     /// Detect and report dependency cycles
     pub fn detectCycles(self: *SafeModuleLoader) !bool {
         var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         
         var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer rec_stack.deinit(allocator);
+        defer rec_stack.deinit();
         
         var has_cycles = false;
         
@@ -500,7 +500,7 @@ pub const SafeModuleLoader = struct {
             if (visited.get(module) orelse false) continue;
             
             var path = .empty;
-            defer path.deinit(allocator);
+            defer path.deinit();
             
             if (try self.detectCycleRecursive(module, &visited, &rec_stack, &path)) {
                 has_cycles = true;
@@ -529,13 +529,13 @@ pub const SafeModuleLoader = struct {
     ) !bool {
         try visited.put(module, true);
         try rec_stack.put(module, true);
-        try path.append(allocator, module);
+        try path.append(module);
         
         if (self.dependency_graph.get(module)) |dependencies| {
             for (dependencies.items) |dep| {
                 if (rec_stack.get(dep) orelse false) {
                     // Found cycle
-                    try path.append(allocator, dep);
+                    try path.append(dep);
                     return true;
                 }
                 
@@ -554,7 +554,7 @@ pub const SafeModuleLoader = struct {
     
     /// Debug: Print current module states
     pub fn printModuleStates(self: *SafeModuleLoader) void {
-        print("\n=== Module States Debug ===\n");
+        print("\n=== Module States Debug ===\n", .{});
         
         var iter = self.module_states.iterator();
         while (iter.next()) |entry| {
@@ -565,7 +565,7 @@ pub const SafeModuleLoader = struct {
             print("Module: {s} | State: {s} | Refs: {}\n", .{ module, @tagName(state), ref_count });
         }
         
-        print("\n=== Dependency Graph ===\n");
+        print("\n=== Dependency Graph ===\n", .{});
         var deps_iter = self.dependency_graph.iterator();
         while (deps_iter.next()) |entry| {
             const module = entry.key_ptr.*;
@@ -573,12 +573,12 @@ pub const SafeModuleLoader = struct {
             
             print("{s} depends on: ", .{module});
             for (deps.items, 0..) |dep, i| {
-                if (i > 0) print(", ");
+                if (i > 0) print(", ", .{});
                 print("{s}", .{dep});
             }
-            print("\n");
+            print("\n", .{});
         }
-        print("\n");
+        print("\n", .{});
     }
 };
 
@@ -588,7 +588,7 @@ test "safe module loader basic functionality" {
     const allocator = std.testing.allocator;
     
     var loader = SafeModuleLoader.init(allocator, true);
-    defer loader.deinit(allocator);
+    defer loader.deinit();
     
     // Test state tracking
     try loader.setModuleState("test_module", .in_progress);
@@ -601,7 +601,7 @@ test "cycle detection with 3 modules" {
     const allocator = std.testing.allocator;
     
     var loader = SafeModuleLoader.init(allocator, false);
-    defer loader.deinit(allocator);
+    defer loader.deinit();
     
     // Create A -> B -> C -> A cycle
     loader.recordDependency("A", "B");
@@ -616,7 +616,7 @@ test "reference counting" {
     const allocator = std.testing.allocator;
     
     var loader = SafeModuleLoader.init(allocator, false);
-    defer loader.deinit(allocator);
+    defer loader.deinit();
     
     // Test reference counting
     try loader.setRefCount("test_module", 1);

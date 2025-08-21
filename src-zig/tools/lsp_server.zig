@@ -271,8 +271,8 @@ pub const DocumentInfo = struct {
         self.allocator.free(self.uri);
         self.allocator.free(self.content);
         self.allocator.free(self.tokens);
-        self.diagnostics.deinit(allocator);
-        self.symbols.deinit(allocator);
+        self.diagnostics.deinit();
+        self.symbols.deinit();
     }
 
     pub fn updateContent(self: *DocumentInfo, new_content: []const u8, new_version: i32) !void {
@@ -290,7 +290,7 @@ pub const DocumentInfo = struct {
     pub fn parse(self: *DocumentInfo) !void {
         // Simple tokenization for LSP features
         var tokens = ArrayList(SimpleToken).init(self.allocator);
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
 
         var line: u32 = 0;
         var column: u32 = 0;
@@ -592,7 +592,7 @@ pub const LSPHandler = struct {
     initialized: bool,
     shutdown_requested: bool,
 
-    pub fn init(allocator: Allocator) LSPHandler {
+    pub fn init() LSPHandler {
         return LSPHandler{
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -605,9 +605,9 @@ pub const LSPHandler = struct {
     pub fn deinit(self: *LSPHandler) void {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.documents.deinit(allocator);
+        self.documents.deinit();
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
@@ -615,7 +615,7 @@ pub const LSPHandler = struct {
             std.log.err("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer parsed.deinit(allocator);
+        defer parsed.deinit();
 
         const message_obj = parsed.value.object;
         
@@ -697,14 +697,14 @@ pub const LSPHandler = struct {
         _ = params;
         
         const capabilities = json.ObjectMap.init(self.allocator);
-        defer capabilities.deinit(allocator);
+        defer capabilities.deinit();
         
         // Text document sync
         try capabilities.put("textDocumentSync", json.Value{ .Integer = 1 }); // Full sync
         
         // Completion support
         const completion_provider = json.ObjectMap.init(self.allocator);
-        defer completion_provider.deinit(allocator);
+        defer completion_provider.deinit();
         try completion_provider.put("triggerCharacters", json.Value{ .Array = json.Array.init(self.allocator) });
         try capabilities.put("completionProvider", json.Value{ .Object = completion_provider });
         
@@ -725,7 +725,7 @@ pub const LSPHandler = struct {
         
         // Signature help support
         const signature_provider = json.ObjectMap.init(self.allocator);
-        defer signature_provider.deinit(allocator);
+        defer signature_provider.deinit();
         try signature_provider.put("triggerCharacters", json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, &[_]json.Value{json.Value{ .String = "(" }}) });
         try capabilities.put("signatureHelpProvider", json.Value{ .Object = signature_provider });
         
@@ -735,7 +735,7 @@ pub const LSPHandler = struct {
         
         // Rename support
         const rename_provider = json.ObjectMap.init(self.allocator);
-        defer rename_provider.deinit(allocator);
+        defer rename_provider.deinit();
         try rename_provider.put("prepareProvider", json.Value{ .Bool = true });
         try capabilities.put("renameProvider", json.Value{ .Object = rename_provider });
         
@@ -743,11 +743,11 @@ pub const LSPHandler = struct {
         try capabilities.put("publishDiagnostics", json.Value{ .Bool = true });
         
         const result = json.ObjectMap.init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         try result.put("capabilities", json.Value{ .Object = capabilities });
         
         const server_info = json.ObjectMap.init(self.allocator);
-        defer server_info.deinit(allocator);
+        defer server_info.deinit();
         try server_info.put("name", json.Value{ .String = "cursed-lsp" });
         try server_info.put("version", json.Value{ .String = "1.0.0" });
         try result.put("serverInfo", json.Value{ .Object = server_info });
@@ -774,7 +774,7 @@ pub const LSPHandler = struct {
         _ = @as(u32, @intCast(position.get("character").?.Integer));
         
         var items = ArrayList(CompletionItem).init(self.allocator);
-        defer items.deinit(allocator);
+        defer items.deinit();
         
         // Add keywords
         for (self.language_data.keywords) |keyword| {
@@ -896,7 +896,7 @@ pub const LSPHandler = struct {
             }
             
             const hover_obj = json.ObjectMap.init(self.allocator);
-            defer hover_obj.deinit(allocator);
+            defer hover_obj.deinit();
             try hover_obj.put("contents", json.Value{ .String = hover_content });
             
             const response = LSPMessage{
@@ -931,19 +931,19 @@ pub const LSPHandler = struct {
             for (doc.symbols.items) |symbol| {
                 if (std.mem.eql(u8, word, symbol.name)) {
                     const location_obj = json.ObjectMap.init(self.allocator);
-                    defer location_obj.deinit(allocator);
+                    defer location_obj.deinit();
                     try location_obj.put("uri", json.Value{ .String = uri });
                     
                     const range_obj = json.ObjectMap.init(self.allocator);
-                    defer range_obj.deinit(allocator);
+                    defer range_obj.deinit();
                     
                     const start_obj = json.ObjectMap.init(self.allocator);
-                    defer start_obj.deinit(allocator);
+                    defer start_obj.deinit();
                     try start_obj.put("line", json.Value{ .Integer = @intCast(symbol.selectionRange.start.line) });
                     try start_obj.put("character", json.Value{ .Integer = @intCast(symbol.selectionRange.start.character) });
                     
                     const end_obj = json.ObjectMap.init(self.allocator);
-                    defer end_obj.deinit(allocator);
+                    defer end_obj.deinit();
                     try end_obj.put("line", json.Value{ .Integer = @intCast(symbol.selectionRange.end.line) });
                     try end_obj.put("character", json.Value{ .Integer = @intCast(symbol.selectionRange.end.character) });
                     
@@ -1009,19 +1009,19 @@ pub const LSPHandler = struct {
             defer self.allocator.free(formatted);
             
             const edit_obj = json.ObjectMap.init(self.allocator);
-            defer edit_obj.deinit(allocator);
+            defer edit_obj.deinit();
             
             // Replace entire document
             const range_obj = json.ObjectMap.init(self.allocator);
-            defer range_obj.deinit(allocator);
+            defer range_obj.deinit();
             
             const start_obj = json.ObjectMap.init(self.allocator);
-            defer start_obj.deinit(allocator);
+            defer start_obj.deinit();
             try start_obj.put("line", json.Value{ .Integer = 0 });
             try start_obj.put("character", json.Value{ .Integer = 0 });
             
             const end_obj = json.ObjectMap.init(self.allocator);
-            defer end_obj.deinit(allocator);
+            defer end_obj.deinit();
             const lines = std.mem.count(u8, doc.content, "\n");
             try end_obj.put("line", json.Value{ .Integer = @intCast(lines) });
             try end_obj.put("character", json.Value{ .Integer = 0 });
@@ -1073,7 +1073,7 @@ pub const LSPHandler = struct {
             defer self.allocator.free(word);
             
             var locations = ArrayList(json.Value).init(self.allocator);
-            defer locations.deinit(allocator);
+            defer locations.deinit();
             
             // Find all references to this word in the document
             var current_line: u32 = 0;
@@ -1084,20 +1084,20 @@ pub const LSPHandler = struct {
                 if (std.mem.startsWith(u8, doc.content[i..], word)) {
                     // Found a match, create location
                     const location_obj = json.ObjectMap.init(self.allocator);
-                    defer location_obj.deinit(allocator);
+                    defer location_obj.deinit();
                     
                     try location_obj.put("uri", json.Value{ .String = uri });
                     
                     const range_obj = json.ObjectMap.init(self.allocator);
-                    defer range_obj.deinit(allocator);
+                    defer range_obj.deinit();
                     
                     const start_obj = json.ObjectMap.init(self.allocator);
-                    defer start_obj.deinit(allocator);
+                    defer start_obj.deinit();
                     try start_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
                     try start_obj.put("character", json.Value{ .Integer = @intCast(current_char) });
                     
                     const end_obj = json.ObjectMap.init(self.allocator);
-                    defer end_obj.deinit(allocator);
+                    defer end_obj.deinit();
                     try end_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
                     try end_obj.put("character", json.Value{ .Integer = @intCast(current_char + word.len) });
                     
@@ -1140,7 +1140,7 @@ pub const LSPHandler = struct {
         const query = if (params_obj.get("query")) |q| q.String else "";
         
         var symbols = ArrayList(json.Value).init(self.allocator);
-        defer symbols.deinit(allocator);
+        defer symbols.deinit();
         
         // Search through all documents
         var doc_iterator = self.documents.iterator();
@@ -1151,25 +1151,25 @@ pub const LSPHandler = struct {
                 // Simple query matching
                 if (query.len == 0 or std.mem.indexOf(u8, symbol.name, query) != null) {
                     const symbol_obj = json.ObjectMap.init(self.allocator);
-                    defer symbol_obj.deinit(allocator);
+                    defer symbol_obj.deinit();
                     
                     try symbol_obj.put("name", json.Value{ .String = symbol.name });
                     try symbol_obj.put("kind", json.Value{ .Integer = @intFromEnum(symbol.kind) });
                     
                     const location_obj = json.ObjectMap.init(self.allocator);
-                    defer location_obj.deinit(allocator);
+                    defer location_obj.deinit();
                     try location_obj.put("uri", json.Value{ .String = doc.uri });
                     
                     const range_obj = json.ObjectMap.init(self.allocator);
-                    defer range_obj.deinit(allocator);
+                    defer range_obj.deinit();
                     
                     const start_obj = json.ObjectMap.init(self.allocator);
-                    defer start_obj.deinit(allocator);
+                    defer start_obj.deinit();
                     try start_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.start.line) });
                     try start_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.start.character) });
                     
                     const end_obj = json.ObjectMap.init(self.allocator);
-                    defer end_obj.deinit(allocator);
+                    defer end_obj.deinit();
                     try end_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.end.line) });
                     try end_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.end.character) });
                     
@@ -1212,7 +1212,7 @@ pub const LSPHandler = struct {
             for (self.language_data.stdlib_functions) |func| {
                 if (std.mem.eql(u8, func.name, word)) {
                     const signature_obj = json.ObjectMap.init(self.allocator);
-                    defer signature_obj.deinit(allocator);
+                    defer signature_obj.deinit();
                     
                     try signature_obj.put("label", json.Value{ .String = func.signature });
                     try signature_obj.put("documentation", json.Value{ .String = func.description });
@@ -1220,7 +1220,7 @@ pub const LSPHandler = struct {
                     const signatures = [_]json.Value{json.Value{ .Object = signature_obj }};
                     
                     const result_obj = json.ObjectMap.init(self.allocator);
-                    defer result_obj.deinit(allocator);
+                    defer result_obj.deinit();
                     try result_obj.put("signatures", json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, &signatures) });
                     try result_obj.put("activeSignature", json.Value{ .Integer = 0 });
                     try result_obj.put("activeParameter", json.Value{ .Integer = 0 });
@@ -1261,7 +1261,7 @@ pub const LSPHandler = struct {
             // Extract the range content and format it
             var lines = std.mem.split(u8, doc.content, "\n");
             var range_content = ArrayList(u8).init(self.allocator);
-            defer range_content.deinit(allocator);
+            defer range_content.deinit();
             
             var current_line: u32 = 0;
             while (lines.next()) |line| {
@@ -1278,7 +1278,7 @@ pub const LSPHandler = struct {
             defer self.allocator.free(formatted);
             
             const edit_obj = json.ObjectMap.init(self.allocator);
-            defer edit_obj.deinit(allocator);
+            defer edit_obj.deinit();
             try edit_obj.put("range", json.Value{ .Object = range.Object });
             try edit_obj.put("newText", json.Value{ .String = formatted });
             
@@ -1314,7 +1314,7 @@ pub const LSPHandler = struct {
             defer self.allocator.free(old_name);
             
             var edits = ArrayList(json.Value).init(self.allocator);
-            defer edits.deinit(allocator);
+            defer edits.deinit();
             
             // Find all occurrences and create edits
             var current_line: u32 = 0;
@@ -1324,18 +1324,18 @@ pub const LSPHandler = struct {
             while (i < doc.content.len) {
                 if (std.mem.startsWith(u8, doc.content[i..], old_name)) {
                     const edit_obj = json.ObjectMap.init(self.allocator);
-                    defer edit_obj.deinit(allocator);
+                    defer edit_obj.deinit();
                     
                     const range_obj = json.ObjectMap.init(self.allocator);
-                    defer range_obj.deinit(allocator);
+                    defer range_obj.deinit();
                     
                     const start_obj = json.ObjectMap.init(self.allocator);
-                    defer start_obj.deinit(allocator);
+                    defer start_obj.deinit();
                     try start_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
                     try start_obj.put("character", json.Value{ .Integer = @intCast(current_char) });
                     
                     const end_obj = json.ObjectMap.init(self.allocator);
-                    defer end_obj.deinit(allocator);
+                    defer end_obj.deinit();
                     try end_obj.put("line", json.Value{ .Integer = @intCast(current_line) });
                     try end_obj.put("character", json.Value{ .Integer = @intCast(current_char + old_name.len) });
                     
@@ -1360,11 +1360,11 @@ pub const LSPHandler = struct {
             }
             
             const changes_obj = json.ObjectMap.init(self.allocator);
-            defer changes_obj.deinit(allocator);
+            defer changes_obj.deinit();
             try changes_obj.put(uri, json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try edits.toOwnedSlice()) });
             
             const result_obj = json.ObjectMap.init(self.allocator);
-            defer result_obj.deinit(allocator);
+            defer result_obj.deinit();
             try result_obj.put("changes", json.Value{ .Object = changes_obj });
             
             const response = LSPMessage{
@@ -1444,7 +1444,7 @@ pub const LSPHandler = struct {
         const uri = text_document.get("uri").?.String;
         
         if (self.documents.fetchRemove(uri)) |entry| {
-            entry.value.deinit(allocator);
+            entry.value.deinit();
             self.allocator.free(entry.key);
         }
         
@@ -1453,7 +1453,7 @@ pub const LSPHandler = struct {
 
     fn publishDiagnostics(self: *LSPHandler, uri: []const u8, diagnostics: []const Diagnostic) !void {
         const params_obj = json.ObjectMap.init(self.allocator);
-        defer params_obj.deinit(allocator);
+        defer params_obj.deinit();
         try params_obj.put("uri", json.Value{ .String = uri });
         
         const diagnostics_json = try self.diagnosticsToJson(diagnostics);
@@ -1513,7 +1513,7 @@ pub const LSPHandler = struct {
 
     fn formatDocument(self: *LSPHandler, content: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var indent_level: u32 = 0;
         var at_line_start = true;
@@ -1564,11 +1564,11 @@ pub const LSPHandler = struct {
 
     fn completionItemsToJson(self: *LSPHandler, items: []const CompletionItem) !json.Value {
         var json_items = ArrayList(json.Value).init(self.allocator);
-        defer json_items.deinit(allocator);
+        defer json_items.deinit();
         
         for (items) |item| {
             var item_obj = std.StringHashMap(json.Value).init(self.allocator);
-            defer item_obj.deinit(allocator);
+            defer item_obj.deinit();
             
             try item_obj.put("label", json.Value{ .string = item.label });
             if (item.kind) |kind| {
@@ -1592,26 +1592,26 @@ pub const LSPHandler = struct {
 
     fn symbolsToJson(self: *LSPHandler, symbols: []const DocumentSymbol) !json.Value {
         var json_symbols = ArrayList(json.Value).init(self.allocator);
-        defer json_symbols.deinit(allocator);
+        defer json_symbols.deinit();
         
         for (symbols) |symbol| {
             const symbol_obj = json.ObjectMap.init(self.allocator);
-            defer symbol_obj.deinit(allocator);
+            defer symbol_obj.deinit();
             
             try symbol_obj.put("name", json.Value{ .String = symbol.name });
             try symbol_obj.put("kind", json.Value{ .Integer = @intFromEnum(symbol.kind) });
             
             // Add range
             const range_obj = json.ObjectMap.init(self.allocator);
-            defer range_obj.deinit(allocator);
+            defer range_obj.deinit();
             
             const start_obj = json.ObjectMap.init(self.allocator);
-            defer start_obj.deinit(allocator);
+            defer start_obj.deinit();
             try start_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.start.line) });
             try start_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.start.character) });
             
             const end_obj = json.ObjectMap.init(self.allocator);
-            defer end_obj.deinit(allocator);
+            defer end_obj.deinit();
             try end_obj.put("line", json.Value{ .Integer = @intCast(symbol.range.end.line) });
             try end_obj.put("character", json.Value{ .Integer = @intCast(symbol.range.end.character) });
             
@@ -1621,15 +1621,15 @@ pub const LSPHandler = struct {
             
             // Add selection range
             const sel_range_obj = json.ObjectMap.init(self.allocator);
-            defer sel_range_obj.deinit(allocator);
+            defer sel_range_obj.deinit();
             
             const sel_start_obj = json.ObjectMap.init(self.allocator);
-            defer sel_start_obj.deinit(allocator);
+            defer sel_start_obj.deinit();
             try sel_start_obj.put("line", json.Value{ .Integer = @intCast(symbol.selectionRange.start.line) });
             try sel_start_obj.put("character", json.Value{ .Integer = @intCast(symbol.selectionRange.start.character) });
             
             const sel_end_obj = json.ObjectMap.init(self.allocator);
-            defer sel_end_obj.deinit(allocator);
+            defer sel_end_obj.deinit();
             try sel_end_obj.put("line", json.Value{ .Integer = @intCast(symbol.selectionRange.end.line) });
             try sel_end_obj.put("character", json.Value{ .Integer = @intCast(symbol.selectionRange.end.character) });
             
@@ -1645,23 +1645,23 @@ pub const LSPHandler = struct {
 
     fn diagnosticsToJson(self: *LSPHandler, diagnostics: []const Diagnostic) !json.Value {
         var json_diagnostics = ArrayList(json.Value).init(self.allocator);
-        defer json_diagnostics.deinit(allocator);
+        defer json_diagnostics.deinit();
         
         for (diagnostics) |diagnostic| {
             const diag_obj = json.ObjectMap.init(self.allocator);
-            defer diag_obj.deinit(allocator);
+            defer diag_obj.deinit();
             
             // Range
             const range_obj = json.ObjectMap.init(self.allocator);
-            defer range_obj.deinit(allocator);
+            defer range_obj.deinit();
             
             const start_obj = json.ObjectMap.init(self.allocator);
-            defer start_obj.deinit(allocator);
+            defer start_obj.deinit();
             try start_obj.put("line", json.Value{ .Integer = @intCast(diagnostic.range.start.line) });
             try start_obj.put("character", json.Value{ .Integer = @intCast(diagnostic.range.start.character) });
             
             const end_obj = json.ObjectMap.init(self.allocator);
-            defer end_obj.deinit(allocator);
+            defer end_obj.deinit();
             try end_obj.put("line", json.Value{ .Integer = @intCast(diagnostic.range.end.line) });
             try end_obj.put("character", json.Value{ .Integer = @intCast(diagnostic.range.end.character) });
             
@@ -1685,13 +1685,13 @@ pub const LSPHandler = struct {
 
     fn createErrorResponse(self: *LSPHandler, id: json.Value, code: i32, message: []const u8) ![]u8 {
         var response_obj = std.StringHashMap(json.Value).init(self.allocator);
-        defer response_obj.deinit(allocator);
+        defer response_obj.deinit();
         
         try response_obj.put("jsonrpc", json.Value{ .string = "2.0" });
         try response_obj.put("id", id);
         
         var error_obj = std.StringHashMap(json.Value).init(self.allocator);
-        defer error_obj.deinit(allocator);
+        defer error_obj.deinit();
         try error_obj.put("code", json.Value{ .integer = code });
         try error_obj.put("message", json.Value{ .string = message });
         
@@ -1705,11 +1705,11 @@ pub const LSPHandler = struct {
 // Main LSP Server Entry Point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var handler = LSPHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
 
     std.log.info("CURSED Language Server starting...", .{});
 
@@ -1719,7 +1719,7 @@ pub fn main() !void {
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
     var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
 
     while (!handler.shutdown_requested) {
         // Read Content-Length header
@@ -1757,11 +1757,11 @@ pub fn main() !void {
 // Test function for development
 pub fn testLSP() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var handler = LSPHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
 
     // Test initialize
     const init_message = 

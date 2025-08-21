@@ -27,7 +27,7 @@ pub fn main() !void {
         .retain_metadata = false,
         .verbose_log = false,
     }){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     // Get command line arguments
@@ -46,21 +46,21 @@ pub fn main() !void {
                 .coverage => |coverage_args| {
                     switch (coverage_args.subcmd) {
                         .run => |run_args| {
-                            run_args.source_dirs.deinit(allocator);
-                            run_args.exclude_patterns.deinit(allocator);
-                            run_args.formats.deinit(allocator);
+                            run_args.source_dirs.deinit();
+                            run_args.exclude_patterns.deinit();
+                            run_args.formats.deinit();
                         },
                         .report => |report_args| {
-                            report_args.formats.deinit(allocator);
+                            report_args.formats.deinit();
                         },
                         .instrument => |instrument_args| {
-                            instrument_args.source_dirs.deinit(allocator);
+                            instrument_args.source_dirs.deinit();
                         },
                     }
                 },
                 .debug => |debug_args| {
-                    debug_args.breakpoints.deinit(allocator);
-                    debug_args.watch_vars.deinit(allocator);
+                    debug_args.breakpoints.deinit();
+                    debug_args.watch_vars.deinit();
                 },
                 .pkg => |pkg_args| {
                     switch (pkg_args.subcmd) {
@@ -68,7 +68,7 @@ pub fn main() !void {
                     }
                 },
                 .build => |build_args| {
-                    build_args.features.deinit(allocator);
+                    build_args.features.deinit();
                 },
                 else => {},
             }
@@ -213,7 +213,7 @@ fn handleCompileCommand(
         error_reporter.reportError("E0001", error_msg, input_file, 0, 0);
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (verbose) {
         print("🔍 Lexed {} tokens\n", .{tokens.items.len});
@@ -297,7 +297,7 @@ fn handleRunCommand(
         error_reporter.reportError("E0001", error_msg, run_args.input, 0, 0);
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (verbose) {
         print("🔍 Lexed {} tokens\n", .{tokens.items.len});
@@ -344,7 +344,7 @@ fn handleTestCommand(
         for (test_files.items) |file| {
             allocator.free(file);
         }
-        test_files.deinit(allocator);
+        test_files.deinit();
     }
     
     if (verbose) {
@@ -353,7 +353,7 @@ fn handleTestCommand(
     
     // Filter tests if specified
     var filtered_tests: std.ArrayList([]const u8) = .empty;
-    defer filtered_tests.deinit(allocator);
+    defer filtered_tests.deinit();
     
     for (test_files.items) |file| {
         if (test_args.filter) |filter| {
@@ -361,7 +361,7 @@ fn handleTestCommand(
                 continue;
             }
         }
-        try filtered_tests.append(allocator, file);
+        try filtered_tests.append(file);
     }
     
     if (verbose) {
@@ -433,96 +433,84 @@ fn handleTestCommand(
 
 /// Placeholder implementations for other subcommands
 fn handleCoverageCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, coverage_args: cli.ArgParser.Subcommand.CoverageArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = coverage_args;
     _ = error_reporter;
     print("Coverage command not yet implemented\n", .{});
 }
 
 fn handleDebugCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, debug_args: cli.ArgParser.Subcommand.DebugArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = debug_args;
     _ = error_reporter;
     print("Debug command not yet implemented\n", .{});
 }
 
 fn handleReplCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, repl_args: cli.ArgParser.Subcommand.ReplArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = repl_args;
     _ = error_reporter;
     print("REPL command not yet implemented\n", .{});
 }
 
 fn handlePkgCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, pkg_args: cli.ArgParser.Subcommand.PkgArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = pkg_args;
     _ = error_reporter;
     print("Package management command not yet implemented\n", .{});
 }
 
 fn handleLintCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, lint_args: cli.ArgParser.Subcommand.LintArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = lint_args;
     _ = error_reporter;
     print("Lint command not yet implemented\n", .{});
 }
 
 fn handleFmtCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, fmt_args: cli.ArgParser.Subcommand.FmtArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = fmt_args;
     _ = error_reporter;
     print("Format command not yet implemented\n", .{});
 }
 
 fn handleDocCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, doc_args: cli.ArgParser.Subcommand.DocArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = doc_args;
     _ = error_reporter;
     print("Documentation command not yet implemented\n", .{});
 }
 
 fn handleLspCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, lsp_args: cli.ArgParser.Subcommand.LspArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = lsp_args;
     _ = error_reporter;
     print("LSP command not yet implemented\n", .{});
 }
 
 fn handleBuildCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, build_args: cli.ArgParser.Subcommand.BuildArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = build_args;
     _ = error_reporter;
     print("Build command not yet implemented\n", .{});
 }
 
 fn handleCleanCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, clean_args: cli.ArgParser.Subcommand.CleanArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = clean_args;
     _ = error_reporter;
     print("Clean command not yet implemented\n", .{});
 }
 
 fn handleCheckCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, check_args: cli.ArgParser.Subcommand.CheckArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = check_args;
     _ = error_reporter;
     print("Check command not yet implemented\n", .{});
 }
 
 fn handleExplainCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, explain_args: cli.ArgParser.Subcommand.ExplainArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = error_reporter;
+        _ = error_reporter;
     const use_color = global_args.shouldShowColor();
     
     if (use_color) {
@@ -539,8 +527,7 @@ fn handleExplainCommand(allocator: Allocator, global_args: *cli.ArgParser.Global
 }
 
 fn handleVersionCommand(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, version_args: cli.ArgParser.Subcommand.VersionArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = error_reporter;
     if (version_args.verbose) {
         cli.printVersionInfo();
@@ -551,8 +538,7 @@ fn handleVersionCommand(allocator: Allocator, global_args: *cli.ArgParser.Global
 
 /// Helper functions
 fn checkCompilationDependencies(allocator: Allocator, global_args: *cli.ArgParser.GlobalArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = global_args;
+        _ = global_args;
     _ = error_reporter;
     
     print("Checking compilation dependencies...\n", .{});
@@ -568,8 +554,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
     _ = filename;
     _ = global_args;
     _ = error_reporter;
-    _ = allocator;
-    
+        
     // TODO: Implement interpreter execution
     print("Interpreter execution not yet implemented\n", .{});
 }
@@ -587,8 +572,7 @@ fn discoverTestFiles(allocator: Allocator, test_dir: []const u8, pattern: []cons
 }
 
 fn runSingleTest(allocator: Allocator, test_file: []const u8, timeout: u64, global_args: *cli.ArgParser.GlobalArgs, error_reporter: *cli.ErrorReporter) !bool {
-    _ = allocator;
-    _ = test_file;
+        _ = test_file;
     _ = timeout;
     _ = global_args;
     _ = error_reporter;
@@ -598,8 +582,7 @@ fn runSingleTest(allocator: Allocator, test_file: []const u8, timeout: u64, glob
 }
 
 fn generateCoverageReport(allocator: Allocator, format: []const u8, threshold: f64, global_args: *cli.ArgParser.GlobalArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = format;
+        _ = format;
     _ = threshold;
     _ = global_args;
     _ = error_reporter;
@@ -608,8 +591,7 @@ fn generateCoverageReport(allocator: Allocator, format: []const u8, threshold: f
 }
 
 fn generateBenchmarkReport(allocator: Allocator, result: anytype, global_args: *cli.ArgParser.GlobalArgs, error_reporter: *cli.ErrorReporter) !void {
-    _ = allocator;
-    _ = result;
+        _ = result;
     _ = global_args;
     _ = error_reporter;
     

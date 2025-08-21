@@ -90,21 +90,21 @@ pub const EnhancedInterfaceDispatcher = struct {
         // Clean up vtables
         var vtable_iterator = self.vtables.iterator();
         while (vtable_iterator.next()) |entry| {
-            entry.value_ptr.*.deinit(allocator);
+            entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.vtables.deinit(allocator);
+        self.vtables.deinit();
         
         // Clean up interface types
         var interface_iterator = self.interface_types.iterator();
         while (interface_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.interface_types.deinit(allocator);
+        self.interface_types.deinit();
         
-        self.implementations.deinit(allocator);
-        self.method_cache.deinit(allocator);
-        self.validation_errors.deinit(allocator);
+        self.implementations.deinit();
+        self.method_cache.deinit();
+        self.validation_errors.deinit();
     }
 
     /// Register an interface type with comprehensive validation
@@ -188,7 +188,7 @@ pub const EnhancedInterfaceDispatcher = struct {
             }
             
             if (!found) {
-                vtable.deinit(allocator);
+                vtable.deinit();
                 self.allocator.destroy(vtable);
                 std.log.err("Method '{}' not found in implementation for struct '{}' interface '{}'", 
                            .{ interface_method.name, struct_name, interface_name });
@@ -213,7 +213,7 @@ pub const EnhancedInterfaceDispatcher = struct {
                     // Validate method signature compatibility
                     const signature_result = try self.validateMethodSignatureComplete(interface_method, method_impl);
                     if (!signature_result.compatible) {
-                        try signature_mismatches.append(allocator, SignatureMismatch{
+                        try signature_mismatches.append(SignatureMismatch{
                             .method_name = interface_method.name,
                             .expected_signature = interface_method,
                             .actual_function = method_impl.function,
@@ -225,7 +225,7 @@ pub const EnhancedInterfaceDispatcher = struct {
             }
             
             if (!found) {
-                try missing_methods.append(allocator, interface_method.name);
+                try missing_methods.append(interface_method.name);
             }
         }
         
@@ -580,9 +580,9 @@ pub const InterfaceType = struct {
     }
 
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit(allocator);
-        self.inheritance_chain.deinit(allocator);
-        self.attributes.deinit(allocator);
+        self.methods.deinit();
+        self.inheritance_chain.deinit();
+        self.attributes.deinit();
     }
 
     pub fn addMethod(self: *InterfaceType, method: MethodSignature) !void {
@@ -741,10 +741,10 @@ test "enhanced interface dispatch system" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     var dispatcher = EnhancedInterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit(allocator);
+    defer dispatcher.deinit();
     
     // Test comprehensive interface registration and validation
     const drawable_methods = [_]MethodSignature{
@@ -787,10 +787,10 @@ test "interface validation and error handling" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit(allocator);
+    defer interface_registry.deinit();
     
     var dispatcher = EnhancedInterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit(allocator);
+    defer dispatcher.deinit();
     
     // Test empty interface error
     const empty_methods = [_]MethodSignature{};

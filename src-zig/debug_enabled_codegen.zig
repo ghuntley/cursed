@@ -139,7 +139,7 @@ pub const DebugEnabledCodeGen = struct {
     }
     
     pub fn deinit(self: *DebugEnabledCodeGen) void {
-        self.debug_generator.deinit(allocator);
+        self.debug_generator.deinit();
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);

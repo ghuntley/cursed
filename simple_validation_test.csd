@@ -1,29 +1,39 @@
-# Simple Core Functionality Test
-sus x drip = 42
-sus name tea = "CURSED"
-sus active lit = based
+#!/usr/bin/env cursed-zig
+# Simple validation of Oracle Week 1 implementations
 
-vibez.spill("Number:", x)
-vibez.spill("String:", name)
-vibez.spill("Boolean:", active)
+yeet "vibez"
 
-# Array test
-sus numbers []drip = [1, 2, 3, 4, 5]
-vibez.spill("Array:", numbers)
-
-# Function test
-slay add_numbers(a drip, b drip) drip {
-    damn a + b
+# Test basic struct definition and field validation
+squad TestStruct {
+    id drip,
+    name tea,
+    active lit,
 }
 
-sus result drip = add_numbers(10, 20)
-vibez.spill("Function result:", result)
-
-# Control flow test
-ready (x > 40) {
-    vibez.spill("X is greater than 40")
-} otherwise {
-    vibez.spill("X is 40 or less")
+# Test method implementation (vtable generation)
+TestStruct.show() tea {
+    damn "TestStruct: " + self.name + " (id:" + tea(self.id) + ")"
 }
 
-vibez.spill("Simple test completed!")
+# Main test function
+slay main() {
+    vibez.spill("🎯 Oracle Week 1 Validation - Simple Test")
+    
+    # Test struct creation with field validation
+    sus test TestStruct = TestStruct{
+        id: 42,
+        name: "test_struct",
+        active: based,
+    }
+    
+    # Test field access
+    vibez.spill("ID: " + tea(test.id))
+    vibez.spill("Name: " + test.name)
+    vibez.spill("Active: " + tea(test.active))
+    
+    # Test method call (vtable lookup)
+    sus result tea = test.show()
+    vibez.spill("Method result: " + result)
+    
+    vibez.spill("✅ Oracle Week 1: Basic validation successful!")
+}

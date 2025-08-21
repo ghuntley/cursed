@@ -35,7 +35,7 @@ pub const CodeGen = struct {
     variables: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     runtime_functions: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
-    pub fn init(allocator: Allocator) CodeGen {
+    pub fn init() CodeGen {
         return CodeGen{
             .allocator = allocator,
             .context = c.LLVMContextCreate(),
@@ -48,9 +48,9 @@ pub const CodeGen = struct {
     }
 
     pub fn deinit(self: *CodeGen) void {
-        self.functions.deinit(allocator);
-        self.variables.deinit(allocator);
-        self.runtime_functions.deinit(allocator);
+        self.functions.deinit();
+        self.variables.deinit();
+        self.runtime_functions.deinit();
         
         if (self.builder) |builder| {
             c.LLVMDisposeBuilder(builder);
@@ -159,7 +159,7 @@ test "codegen basic" {
     const allocator = std.testing.allocator;
     
     var codegen = CodeGen.init(allocator);
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     // Test basic initialization
     try std.testing.expect(codegen.context != null);

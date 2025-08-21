@@ -30,7 +30,7 @@ test "parse struct statement" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -79,7 +79,7 @@ test "parse generic struct statement" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -112,7 +112,7 @@ test "parse interface statement" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -152,7 +152,7 @@ test "parse for loop statement" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -184,7 +184,7 @@ test "parse while-style for loop" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -216,7 +216,7 @@ test "parse range for loop" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 1);
     
@@ -269,7 +269,7 @@ test "parse complex program" {
     
     var parser_instance = Parser.init(allocator, &tokens);
     var program = try parser_instance.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try testing.expect(program.statements.items.len == 3);
     

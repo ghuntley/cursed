@@ -8,12 +8,12 @@ const StackFrame = diagnostics.StackFrame;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Initialize error handler
     var handler = ErrorHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     
     // Sample CURSED source code with errors
     const source_code = 
@@ -127,7 +127,7 @@ pub fn main() !void {
     engine.setUnicode(false);
     
     // Clear and re-add one diagnostic for demonstration
-    engine.diagnostics.clearAndFree(allocator);
+    engine.diagnostics.clearAndFree();
     engine.error_count = 0;
     engine.warning_count = 0;
     
@@ -143,11 +143,11 @@ pub fn main() !void {
 // Test function demonstrating integration with lexer
 pub fn demonstrateLexerIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     const bad_source = "sus x tea = \"unterminated string";
     try engine.addSourceFile("lexer_test.csd", bad_source);
@@ -171,11 +171,11 @@ pub fn demonstrateLexerIntegration() !void {
 // Test function demonstrating integration with parser
 pub fn demonstrateParserIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     const bad_source = 
         \\slay badFunction() {
@@ -204,11 +204,11 @@ pub fn demonstrateParserIntegration() !void {
 // Test function demonstrating semantic analysis integration
 pub fn demonstrateSemanticIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     const bad_source = 
         \\slay main() {

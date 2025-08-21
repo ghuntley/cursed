@@ -21,7 +21,7 @@ const VariableEnvironment = struct {
     
     pub fn deinit(self: *VariableEnvironment) void {
         // Arena allocator automatically cleans up all allocated strings
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
     
     pub fn set(self: *VariableEnvironment, name: []const u8, value: i64) !void {
@@ -37,7 +37,7 @@ const VariableEnvironment = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -95,7 +95,7 @@ pub fn main() !void {
     defer {
         // Clean up lexer resources if it has a deinit method
         if (@hasDecl(@TypeOf(l), "deinit")) {
-            l.deinit(allocator);
+            l.deinit();
         }
     }
 
@@ -103,7 +103,7 @@ pub fn main() !void {
         print("Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator); // Memory-safe token cleanup
+    defer tokens.deinit(); // Memory-safe token cleanup
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -139,7 +139,7 @@ fn compileToC(allocator: Allocator, filename: []const u8, tokens: std.ArrayList(
     
     // Generate C code
     var c_code: std.ArrayList(u8) = .empty;
-    defer c_code.deinit(allocator);
+    defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <string.h>\n\n");
     try c_code.appendSlice("int main() {\n");
@@ -205,7 +205,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     print("🚀 Interpreting CURSED program...\n", .{});
     
     var env = VariableEnvironment.init(allocator);
-    defer env.deinit(allocator);
+    defer env.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     var line_number: u32 = 0;

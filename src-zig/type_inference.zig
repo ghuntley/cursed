@@ -65,9 +65,9 @@ pub const TypeInferenceContext = struct {
     }
     
     pub fn deinit(self: *TypeInferenceContext) void {
-        self.inferred_types.deinit(allocator);
-        self.constraint_queue.deinit(allocator);
-        self.unification_cache.deinit(allocator);
+        self.inferred_types.deinit();
+        self.constraint_queue.deinit();
+        self.unification_cache.deinit();
     }
     
     /// Infer type parameters for a generic function call
@@ -103,21 +103,21 @@ pub const TypeInferenceContext = struct {
         
         // Extract inferred type arguments
         var type_args = .empty;
-        defer type_args.deinit(allocator);
+        defer type_args.deinit();
         
         for (generic_decl.type_parameters.items) |param| {
             if (self.inferred_types.get(param.name)) |inferred_type| {
-                try type_args.append(allocator, inferred_type);
+                try type_args.append(inferred_type);
             } else {
                 // Could not infer this type parameter
                 return null;
             }
         }
         
-        return type_args.toOwnedSlice(allocator);
+        return type_args.toOwnedSlice();
     }
     
-    /// Generate constraints from function arguments
+    /// Generate constraints from function arguments with enhanced generic support
     fn generateArgumentConstraints(self: *TypeInferenceContext, func_decl: *ast.FunctionStatement, arg_types: []const ast.Type) !void {
         if (arg_types.len != func_decl.parameters.items.len) {
             return error.ArgumentCountMismatch;
@@ -125,13 +125,51 @@ pub const TypeInferenceContext = struct {
         
         for (func_decl.parameters.items, 0..) |param, i| {
             const arg_type = arg_types[i];
+            
+            // Enhanced constraint generation with parameter name context
+            const constraint_name = try std.fmt.allocPrint(self.allocator, "{s}_arg{d}", .{ func_decl.name, i });
+            defer self.allocator.free(constraint_name);
+            
             try self.unifyTypes(param.param_type, arg_type);
+            
+            // Add explicit constraint for better tracking
+            if (self.isTypeParameter(param.param_type)) {
+                try self.addConstraint(self.extractTypeParameterName(param.param_type), arg_type, .Argument);
+            }
         }
     }
     
-    /// Add a type constraint
+    /// Check if a type is a type parameter
+    fn isTypeParameter(self: *TypeInferenceContext, type_expr: ast.Type) bool {
+        return switch (type_expr) {
+            .Identifier => true, // Type parameters are represented as identifiers
+            else => false,
+        };
+    }
+    
+    /// Extract type parameter name from type expression
+    fn extractTypeParameterName(self: *TypeInferenceContext, type_expr: ast.Type) []const u8 {
+        return switch (type_expr) {
+            .Identifier => |ident| ident,
+            else => "", // Should not happen if isTypeParameter returned true
+        };
+    }
+    
+    /// Add a type constraint with enhanced validation
     fn addConstraint(self: *TypeInferenceContext, type_param: []const u8, concrete_type: ast.Type, source: Constraint.ConstraintSource) !void {
-        try self.constraint_queue.append(allocator, Constraint{
+        // Validate constraint before adding
+        if (type_param.len == 0) {
+            return error.InvalidTypeParameter;
+        }
+        
+        // Check for immediate contradictions
+        if (self.inferred_types.get(type_param)) |existing_type| {
+            if (!self.typesAreCompatible(existing_type, concrete_type)) {
+                return error.ConflictingTypeConstraints;
+            }
+        }
+        
+        try self.constraint_queue.append(self.allocator, Constraint{
             .type_param = type_param,
             .concrete_type = concrete_type,
             .source = source,
@@ -298,6 +336,88 @@ pub const TypeInferenceContext = struct {
         }
     }
     
+    /// Propagate constraints to dependent type parameters
+    fn propagateConstraints(self: *TypeInferenceContext, type_param: []const u8, concrete_type: ast.Type) !void {
+        // Look for dependent constraints that can be resolved
+        for (self.constraint_queue.items) |constraint| {
+            if (!std.mem.eql(u8, constraint.type_param, type_param)) {
+                // Check if this constraint depends on the newly resolved type parameter
+                if (self.constraintDependsOn(constraint, type_param)) {
+                    try self.propagateToConstraint(constraint, type_param, concrete_type);
+                }
+            }
+        }
+    }
+    
+    /// Check if a constraint depends on a specific type parameter
+    fn constraintDependsOn(self: *TypeInferenceContext, constraint: Constraint, type_param: []const u8) bool {
+        return self.typeDependsOn(constraint.concrete_type, type_param);
+    }
+    
+    /// Check if a type expression depends on a specific type parameter
+    fn typeDependsOn(self: *TypeInferenceContext, type_expr: ast.Type, type_param: []const u8) bool {
+        switch (type_expr) {
+            .Identifier => |ident| return std.mem.eql(u8, ident, type_param),
+            .Array => |array_type| return self.typeDependsOn(array_type.element_type.*, type_param),
+            .Slice => |slice_type| return self.typeDependsOn(slice_type.element_type.*, type_param),
+            .Function => |func_type| {
+                if (self.typeDependsOn(func_type.return_type.*, type_param)) return true;
+                for (func_type.parameter_types.items) |param_type| {
+                    if (self.typeDependsOn(param_type, type_param)) return true;
+                }
+                return false;
+            },
+            else => return false,
+        }
+    }
+    
+    /// Propagate concrete type to a dependent constraint
+    fn propagateToConstraint(self: *TypeInferenceContext, constraint: Constraint, type_param: []const u8, concrete_type: ast.Type) !void {
+        // Substitute the concrete type in the constraint's type expression
+        const substituted_type = try self.substituteTypeInExpression(constraint.concrete_type, type_param, concrete_type);
+        
+        // Update the constraint with the substituted type
+        if (self.inferred_types.getPtr(constraint.type_param)) |existing_ptr| {
+            // Try to unify with existing binding
+            if (!self.typesAreCompatible(existing_ptr.*, substituted_type)) {
+                return error.TypePropagationConflict;
+            }
+            existing_ptr.* = substituted_type;
+        } else {
+            try self.inferred_types.put(constraint.type_param, substituted_type);
+        }
+    }
+    
+    /// Substitute a type parameter with concrete type in a type expression
+    fn substituteTypeInExpression(self: *TypeInferenceContext, type_expr: ast.Type, type_param: []const u8, concrete_type: ast.Type) !ast.Type {
+        switch (type_expr) {
+            .Identifier => |ident| {
+                if (std.mem.eql(u8, ident, type_param)) {
+                    return concrete_type;
+                }
+                return type_expr;
+            },
+            .Array => |array_type| {
+                const new_element_type = try self.substituteTypeInExpression(array_type.element_type.*, type_param, concrete_type);
+                const element_type_ptr = try self.allocator.create(ast.Type);
+                element_type_ptr.* = new_element_type;
+                return ast.Type{ .Array = ast.ArrayType{
+                    .element_type = element_type_ptr,
+                    .size = array_type.size,
+                }};
+            },
+            .Slice => |slice_type| {
+                const new_element_type = try self.substituteTypeInExpression(slice_type.element_type.*, type_param, concrete_type);
+                const element_type_ptr = try self.allocator.create(ast.Type);
+                element_type_ptr.* = new_element_type;
+                return ast.Type{ .Slice = ast.SliceType{
+                    .element_type = element_type_ptr,
+                }};
+            },
+            else => return type_expr,
+        }
+    }
+    
     /// Enhanced type compatibility checking with source context
     fn typesAreCompatibleEnhanced(self: *TypeInferenceContext, type1: ast.Type, type2: ast.Type, source: ConstraintSource) bool {
         if (std.meta.eql(type1, type2)) return true;
@@ -383,7 +503,7 @@ pub const TypeInferenceContext = struct {
                     return replacement;
                 }
                 // Recursively substitute in type arguments
-                var new_args = std.ArrayList(ast.Type).init(self.allocator);
+                var new_args: std.ArrayList(ast.Type) = .empty;
                 for (generic.type_args.items) |arg| {
                     try new_args.append(self.substituteType(arg, param_name, replacement));
                 }
@@ -463,14 +583,14 @@ pub const GenericCallResolver = struct {
     const ScopeInfo = struct {
         variables: HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
         
-        pub fn init(allocator: Allocator) ScopeInfo {
+        pub fn init() ScopeInfo {
             return ScopeInfo{
                 .variables = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             };
         }
         
         pub fn deinit(self: *ScopeInfo) void {
-            self.variables.deinit(allocator);
+            self.variables.deinit();
         }
     };
     
@@ -485,16 +605,16 @@ pub const GenericCallResolver = struct {
     
     pub fn deinit(self: *GenericCallResolver) void {
         if (self.current_scope) |scope| {
-            scope.deinit(allocator);
+            scope.deinit();
         }
-        self.global_types.deinit(allocator);
+        self.global_types.deinit();
     }
     
     /// Resolve generic function call with automatic type inference
     pub fn resolveGenericCall(self: *GenericCallResolver, func_name: []const u8, args: []const ast.Expression, expected_return_type: ?ast.Type) !?[]const u8 {
         // Extract argument types
         var arg_types = .empty;
-        defer arg_types.deinit(allocator);
+        defer arg_types.deinit();
         
         for (args) |arg| {
             const arg_type = try self.inferExpressionType(arg);
@@ -572,9 +692,40 @@ pub const GenericCallResolver = struct {
         return ast.Type{ .Primitive = .Normie };
     }
     
-    /// Infer function call result type
+    /// Infer function call result type with enhanced generic support
     fn inferFunctionCallType(self: *GenericCallResolver, call: ast.FunctionCall) !ast.Type {
-        // Look up function in registered functions
+        // First check for generic functions with proper type inference
+        if (self.inference_context.monomorphizer.generic_declarations.get(call.name)) |generic_decl| {
+            if (generic_decl.kind == .Function) {
+                // Extract argument types for generic inference
+                var arg_types: std.ArrayList(ast.Type) = .empty;
+                defer arg_types.deinit();
+                
+                for (call.arguments.items) |arg| {
+                    const arg_type = try self.inferExpressionType(arg);
+                    try arg_types.append(arg_type);
+                }
+                
+                // Attempt generic type inference
+                const inferred_types = try self.inference_context.inferGenericFunctionCall(
+                    call.name, 
+                    arg_types.items, 
+                    null // No expected return type constraint
+                );
+                
+                if (inferred_types) |type_args| {
+                    defer self.allocator.free(type_args);
+                    
+                    // Substitute type parameters in return type
+                    const func_decl = generic_decl.ast_node.Function;
+                    if (func_decl.return_type) |ret_type| {
+                        return try self.substituteTypeParameters(ret_type, generic_decl.type_parameters.items, type_args);
+                    }
+                }
+            }
+        }
+        
+        // Look up monomorphic functions in registered functions
         var iter = self.global_types.iterator();
         while (iter.next()) |entry| {
             if (std.mem.eql(u8, entry.key_ptr.*, call.name)) {
@@ -594,7 +745,78 @@ pub const GenericCallResolver = struct {
             return ast.Type{ .Primitive = .Normie };
         }
         
-        // Default return type inference based on common patterns
+        // Enhanced default inference with pattern matching
+        return self.inferReturnTypeFromContext(call);
+    }
+    
+    /// Substitute type parameters in a type expression
+    fn substituteTypeParameters(self: *GenericCallResolver, type_expr: ast.Type, type_params: []const ast.TypeParameter, type_args: []const ast.Type) !ast.Type {
+        switch (type_expr) {
+            .Identifier => |ident| {
+                // Check if this is a type parameter
+                for (type_params, 0..) |param, i| {
+                    if (std.mem.eql(u8, param.name, ident)) {
+                        if (i < type_args.len) {
+                            return type_args[i];
+                        }
+                    }
+                }
+                return type_expr; // Not a type parameter
+            },
+            .Array => |array_type| {
+                const new_element_type = try self.substituteTypeParameters(array_type.element_type.*, type_params, type_args);
+                const element_type_ptr = try self.allocator.create(ast.Type);
+                element_type_ptr.* = new_element_type;
+                return ast.Type{ .Array = ast.ArrayType{
+                    .element_type = element_type_ptr,
+                    .size = array_type.size,
+                }};
+            },
+            .Slice => |slice_type| {
+                const new_element_type = try self.substituteTypeParameters(slice_type.element_type.*, type_params, type_args);
+                const element_type_ptr = try self.allocator.create(ast.Type);
+                element_type_ptr.* = new_element_type;
+                return ast.Type{ .Slice = ast.SliceType{
+                    .element_type = element_type_ptr,
+                }};
+            },
+            .Function => |func_type| {
+                // Substitute in parameter and return types
+                var new_param_types: std.ArrayList(ast.Type) = .empty;
+                defer new_param_types.deinit(self.allocator);
+                
+                for (func_type.parameter_types.items) |param_type| {
+                    const substituted = try self.substituteTypeParameters(param_type, type_params, type_args);
+                    try new_param_types.append(self.allocator, substituted);
+                }
+                
+                const new_return_type = try self.substituteTypeParameters(func_type.return_type.*, type_params, type_args);
+                const return_type_ptr = try self.allocator.create(ast.Type);
+                return_type_ptr.* = new_return_type;
+                
+                return ast.Type{ .Function = ast.FunctionType{
+                    .parameter_types = try new_param_types.toOwnedSlice(self.allocator),
+                    .return_type = return_type_ptr,
+                }};
+            },
+            else => return type_expr, // No substitution needed
+        }
+    }
+    
+    /// Infer return type from call context and patterns
+    fn inferReturnTypeFromContext(self: *GenericCallResolver, call: ast.FunctionCall) ast.Type {
+        // Pattern-based inference for common function patterns
+        if (std.mem.endsWith(u8, call.name, "_int") or std.mem.endsWith(u8, call.name, "_count")) {
+            return ast.Type{ .Primitive = .Normie };
+        } else if (std.mem.endsWith(u8, call.name, "_string") or std.mem.endsWith(u8, call.name, "_text")) {
+            return ast.Type{ .Primitive = .Tea };
+        } else if (std.mem.endsWith(u8, call.name, "_bool") or std.mem.endsWith(u8, call.name, "_check")) {
+            return ast.Type{ .Primitive = .Lit };
+        } else if (std.mem.endsWith(u8, call.name, "_float") or std.mem.endsWith(u8, call.name, "_decimal")) {
+            return ast.Type{ .Primitive = .Meal };
+        }
+        
+        // Default to normie for unknown functions
         return ast.Type{ .Primitive = .Normie };
     }
 };
@@ -650,13 +872,13 @@ pub const PatternTypeInference = struct {
 // Test cases for type inference
 test "basic generic function type inference" {
     var registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     var monomorphizer = generics.Monomorphizer.init(std.testing.allocator, null, null);
-    defer monomorphizer.deinit(allocator);
+    defer monomorphizer.deinit();
     
     var inference_ctx = TypeInferenceContext.init(std.testing.allocator, &monomorphizer, &registry);
-    defer inference_ctx.deinit(allocator);
+    defer inference_ctx.deinit();
     
     // Test inferring T from function call: foo[T](arg: T) with arg of type normie
     
@@ -674,13 +896,13 @@ test "basic generic function type inference" {
 
 test "array type inference" {
     var registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     var monomorphizer = generics.Monomorphizer.init(std.testing.allocator, null, null);
-    defer monomorphizer.deinit(allocator);
+    defer monomorphizer.deinit();
     
     var inference_ctx = TypeInferenceContext.init(std.testing.allocator, &monomorphizer, &registry);
-    defer inference_ctx.deinit(allocator);
+    defer inference_ctx.deinit();
     
     // Test array type unification
     const element_type = try std.testing.allocator.create(ast.Type);

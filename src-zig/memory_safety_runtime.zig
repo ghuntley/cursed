@@ -87,7 +87,7 @@ pub const MemoryTracker = struct {
     peak_allocated: usize,
     allocation_count: usize,
     
-    pub fn init(allocator: Allocator) MemoryTracker {
+    pub fn init() MemoryTracker {
         return MemoryTracker{
             .allocations = std.HashMap(usize, SafePointer).init(allocator),
             .allocator = allocator,
@@ -98,7 +98,7 @@ pub const MemoryTracker = struct {
     }
     
     pub fn deinit(self: *MemoryTracker) void {
-        self.allocations.deinit(allocator);
+        self.allocations.deinit();
     }
     
     pub fn trackAllocation(self: *MemoryTracker, ptr: *anyopaque, size: usize) !void {
@@ -208,7 +208,7 @@ pub fn initMemorySafety(allocator: Allocator, config: MemorySafetyConfig) !void 
 pub fn deinitMemorySafety() void {
     if (global_memory_tracker) |*tracker| {
         tracker.detectLeaks();
-        tracker.deinit(allocator);
+        tracker.deinit();
         global_memory_tracker = null;
     }
 }
@@ -244,7 +244,7 @@ export fn cursed_stack_check() void {
 
 // Testing
 pub fn testMemorySafety() !void {
-    print("Testing memory safety implementation...\n");
+    print("Testing memory safety implementation...\n", .{});
     
     // Test array bounds checking
     try checkArrayBounds(5, 10); // Should pass
@@ -259,5 +259,5 @@ pub fn testMemorySafety() !void {
         return error.TestFailed;
     } else |_| {}
     
-    print("Memory safety tests passed!\n");
+    print("Memory safety tests passed!\n", .{});
 }

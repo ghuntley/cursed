@@ -48,7 +48,7 @@ pub const ErrorValue = struct {
             self.allocator.free(frame.function_name);
             self.allocator.free(frame.file);
         }
-        self.stack_trace.deinit(allocator);
+        self.stack_trace.deinit();
     }
     
     pub fn addStackFrame(self: *ErrorValue, function_name: []const u8, file: []const u8, line: u32, column: u32) !void {
@@ -66,7 +66,7 @@ pub const ErrorValue = struct {
         try writer.print("Location: {s}:{}:{}\n", .{ self.location.file, self.location.line, self.location.column });
         
         if (self.stack_trace.items.len > 0) {
-            try writer.print("Stack trace:\n");
+            try writer.print("Stack trace:\n", .{});
             for (self.stack_trace.items) |frame| {
                 try writer.print("  at {s} ({s}:{}:{})\n", .{ frame.function_name, frame.file, frame.line, frame.column });
             }
@@ -94,7 +94,7 @@ pub const ErrorHandler = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) ErrorHandler {
+    pub fn init() ErrorHandler {
         return ErrorHandler{
             .allocator = allocator,
             .current_error = null,
@@ -106,25 +106,25 @@ pub const ErrorHandler = struct {
     
     pub fn deinit(self: *ErrorHandler) void {
         if (self.current_error) |*err| {
-            err.deinit(allocator);
+            err.deinit();
         }
         
         for (self.error_stack.items) |*err| {
-            err.deinit(allocator);
+            err.deinit();
         }
-        self.error_stack.deinit(allocator);
+        self.error_stack.deinit();
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit(allocator);
+        self.function_stack.deinit();
         
         for (self.try_catch_stack.items) |frame| {
             if (frame.error_variable) |var_name| {
                 self.allocator.free(var_name);
             }
         }
-        self.try_catch_stack.deinit(allocator);
+        self.try_catch_stack.deinit();
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
@@ -169,7 +169,7 @@ pub const ErrorHandler = struct {
         }
         
         if (self.current_error) |*current| {
-            current.deinit(allocator);
+            current.deinit();
         }
         
         self.current_error = error_value;
@@ -191,7 +191,7 @@ pub const ErrorHandler = struct {
     
     pub fn clearError(self: *ErrorHandler) void {
         if (self.current_error) |*err| {
-            err.deinit(allocator);
+            err.deinit();
             self.current_error = null;
         }
     }
@@ -252,7 +252,7 @@ export fn cursed_error_handler_init() ?*ErrorHandler {
 
 export fn cursed_error_handler_deinit(handler: *ErrorHandler) void {
     const allocator = handler.allocator;
-    handler.deinit(allocator);
+    handler.deinit();
     allocator.destroy(handler);
 }
 
@@ -314,7 +314,7 @@ export fn cursed_pop_try_catch(handler: *ErrorHandler) void {
 test "error handling runtime" {
     const allocator = std.testing.allocator;
     var handler = ErrorHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     
     // Test function stack
     try handler.pushFunction("main");

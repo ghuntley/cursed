@@ -70,7 +70,7 @@ pub const StackFrame = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.locals.deinit(allocator);
+        self.locals.deinit();
     }
 
     pub fn addLocal(self: *StackFrame, name: []const u8, value: []const u8) !void {
@@ -83,15 +83,15 @@ pub const StackFrame = struct {
         try writer.print("  at {s}() in {s}:{}:{}\n", .{ self.function_name, self.file_path, self.line_number, self.column_number });
         
         if (self.locals.count() > 0) {
-            try writer.print("    locals: ");
+            try writer.print("    locals: ", .{});
             var iterator = self.locals.iterator();
             var first = true;
             while (iterator.next()) |entry| {
-                if (!first) try writer.print(", ");
+                if (!first) try writer.print(", ", .{});
                 try writer.print("{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
                 first = false;
             }
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
     }
 };
@@ -103,7 +103,7 @@ pub const StackTrace = struct {
     thread_id: u32,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) StackTrace {
+    pub fn init() StackTrace {
         return StackTrace{
             .frames = .empty,
             .captured_at = std.time.timestamp(),
@@ -114,13 +114,13 @@ pub const StackTrace = struct {
 
     pub fn deinit(self: *StackTrace) void {
         for (self.frames.items) |*frame| {
-            frame.deinit(allocator);
+            frame.deinit();
         }
-        self.frames.deinit(allocator);
+        self.frames.deinit();
     }
 
     pub fn addFrame(self: *StackTrace, frame: StackFrame) !void {
-        try self.frames.append(allocator, frame);
+        try self.frames.append(frame);
     }
 
     pub fn capture(allocator: Allocator) !StackTrace {
@@ -294,7 +294,7 @@ pub const YikesError = struct {
         }
         
         if (self.stack_trace) |*trace| {
-            trace.deinit(allocator);
+            trace.deinit();
         }
         
         var context_iterator = self.context_data.iterator();
@@ -302,10 +302,10 @@ pub const YikesError = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.context_data.deinit(allocator);
+        self.context_data.deinit();
         
         if (self.inner_error) |inner| {
-            inner.deinit(allocator);
+            inner.deinit();
             self.allocator.destroy(inner);
         }
     }
@@ -340,15 +340,15 @@ pub const YikesError = struct {
         
         // Context data
         if (self.context_data.count() > 0) {
-            try writer.print("  context: ");
+            try writer.print("  context: ", .{});
             var iterator = self.context_data.iterator();
             var first = true;
             while (iterator.next()) |entry| {
-                if (!first) try writer.print(", ");
+                if (!first) try writer.print(", ", .{});
                 try writer.print("{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
                 first = false;
             }
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
         
         // Stack trace
@@ -358,14 +358,14 @@ pub const YikesError = struct {
         
         // Inner error
         if (self.inner_error) |inner| {
-            try writer.print("\nCaused by:\n");
+            try writer.print("\nCaused by:\n", .{});
             try inner.format(writer);
         }
     }
 
     pub fn toString(self: YikesError) ![]u8 {
         var buffer = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         const writer = buffer.writer();
         try self.format(writer);
@@ -440,7 +440,7 @@ pub const ShookResult = union(enum) {
                     else => {},
                 }
             },
-            .Error => |*error_value| error_value.deinit(allocator),
+            .Error => |*error_value| error_value.deinit(),
         }
     }
 };
@@ -457,7 +457,7 @@ pub const DeferStack = struct {
     current_scope: u32,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) DeferStack {
+    pub fn init() DeferStack {
         return DeferStack{
             .entries = .empty,
             .current_scope = 0,
@@ -468,7 +468,7 @@ pub const DeferStack = struct {
     pub fn deinit(self: *DeferStack) void {
         // Execute all remaining defers before cleanup
         self.executeAll();
-        self.entries.deinit(allocator);
+        self.entries.deinit();
     }
 
     pub fn push(self: *DeferStack, cleanup_func: *const fn () void, context: []const u8) !void {
@@ -528,7 +528,7 @@ pub const FamBlock = struct {
         handler_func: *const fn () void,
     };
 
-    pub fn init(allocator: Allocator) FamBlock {
+    pub fn init() FamBlock {
         return FamBlock{
             .defer_stack = DeferStack.init(allocator),
             .error_handlers = .empty,
@@ -538,12 +538,12 @@ pub const FamBlock = struct {
     }
 
     pub fn deinit(self: *FamBlock) void {
-        self.defer_stack.deinit(allocator);
-        self.error_handlers.deinit(allocator);
+        self.defer_stack.deinit();
+        self.error_handlers.deinit();
     }
 
     pub fn addErrorHandler(self: *FamBlock, error_type: YikesError.ErrorType, handler: *const fn (YikesError) ShookResult) !void {
-        try self.error_handlers.append(allocator, ErrorHandler{
+        try self.error_handlers.append(ErrorHandler{
             .error_type = error_type,
             .handler_func = handler,
         });
@@ -594,7 +594,7 @@ pub const ErrorContext = struct {
     defer_stack: DeferStack,
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) ErrorContext {
+    pub fn init() ErrorContext {
         return ErrorContext{
             .current_function = "unknown",
             .current_file = "unknown",
@@ -606,7 +606,7 @@ pub const ErrorContext = struct {
     }
 
     pub fn deinit(self: *ErrorContext) void {
-        self.defer_stack.deinit(allocator);
+        self.defer_stack.deinit();
     }
 
     pub fn setLocation(self: *ErrorContext, function: []const u8, file: []const u8, line: u32, column: u32) void {
@@ -651,7 +651,7 @@ export fn cursed_error_create(message_ptr: [*]const u8, message_len: usize, code
 
 export fn cursed_error_destroy(error_ptr: *YikesError) void {
     const allocator = std.heap.page_allocator;
-    error_ptr.deinit(allocator);
+    error_ptr.deinit();
     allocator.destroy(error_ptr);
 }
 
@@ -664,7 +664,7 @@ export fn cursed_stack_trace_capture() *StackTrace {
 
 export fn cursed_stack_trace_destroy(trace_ptr: *StackTrace) void {
     const allocator = std.heap.page_allocator;
-    trace_ptr.deinit(allocator);
+    trace_ptr.deinit();
     allocator.destroy(trace_ptr);
 }
 
@@ -680,7 +680,7 @@ test "enhanced error system" {
         .Runtime,
         .Error
     );
-    defer err.deinit(allocator);
+    defer err.deinit();
     
     // Add context
     try err.addContext("user_id", "12345");
@@ -699,14 +699,14 @@ test "enhanced error system" {
     
     // Test defer stack
     var defer_stack = DeferStack.init(allocator);
-    defer defer_stack.deinit(allocator);
+    defer defer_stack.deinit();
     
     defer_stack.enterScope();
     defer_stack.exitScope();
     
     // Test FAM block
     var fam = FamBlock.init(allocator);
-    defer fam.deinit(allocator);
+    defer fam.deinit();
     
     // Add error handler
     const test_handler = struct {

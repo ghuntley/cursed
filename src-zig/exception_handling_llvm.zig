@@ -82,7 +82,7 @@ pub const ExceptionHandlingLLVM = struct {
     }
     
     pub fn deinit(self: *ExceptionHandlingLLVM) void {
-        self.exception_context_stack.deinit(allocator);
+        self.exception_context_stack.deinit();
         self.allocator.destroy(self);
     }
     
@@ -317,7 +317,7 @@ pub const ExceptionHandlingLLVM = struct {
             .error_variable = if (fam.catch_handler) |ch| ch.error_variable else null,
         };
         
-        try self.exception_context_stack.append(allocator, exception_context);
+        try self.exception_context_stack.append(exception_context);
         defer _ = self.exception_context_stack.pop();
         
         // Set up exception handling frame
@@ -542,7 +542,7 @@ pub fn testExceptionHandling() !void {
     
     // Create exception handling system
     var exception_handler = try ExceptionHandlingLLVM.init(allocator, context, module, builder);
-    defer exception_handler.deinit(allocator);
+    defer exception_handler.deinit();
     
     // Generate exception metadata
     try exception_handler.generateExceptionMetadata();

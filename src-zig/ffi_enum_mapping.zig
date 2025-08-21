@@ -76,7 +76,7 @@ pub const CEnumDefinition = struct {
     }
     
     pub fn deinit(self: *CEnumDefinition) void {
-        self.values.deinit(allocator);
+        self.values.deinit();
     }
     
     /// Add enum value with auto-increment
@@ -157,7 +157,7 @@ pub const FFIEnumMapper = struct {
     enum_definitions: HashMap([]const u8, CEnumDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     type_mappings: HashMap([]const u8, extern_abi.CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    pub fn init(allocator: Allocator) FFIEnumMapper {
+    pub fn init() FFIEnumMapper {
         return FFIEnumMapper{
             .allocator = allocator,
             .enum_definitions = HashMap([]const u8, CEnumDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -168,10 +168,10 @@ pub const FFIEnumMapper = struct {
     pub fn deinit(self: *FFIEnumMapper) void {
         var iterator = self.enum_definitions.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.enum_definitions.deinit(allocator);
-        self.type_mappings.deinit(allocator);
+        self.enum_definitions.deinit();
+        self.type_mappings.deinit();
     }
     
     /// Parse C enum declaration with size attributes
@@ -297,7 +297,7 @@ pub const FFIEnumMapper = struct {
     /// Generate CURSED enum from C enum
     pub fn generateCursedEnum(self: *FFIEnumMapper, c_enum: *const CEnumDefinition) ![]const u8 {
         var output = .empty;
-        defer output.deinit(allocator);
+        defer output.deinit();
         
         try output.writer().print("// Generated from C enum {s}\n", .{c_enum.name});
         try output.writer().print("// Underlying type: {s} ({} bits)\n", .{
@@ -327,7 +327,7 @@ pub const FFIEnumMapper = struct {
         try output.writer().print("    damn @enumFromInt(value)\n", .{});
         try output.writer().print("}}\n\n", .{});
         
-        return output.toOwnedSlice(allocator);
+        return output.toOwnedSlice();
     }
     
     /// Generate C header for CURSED enum
@@ -335,7 +335,7 @@ pub const FFIEnumMapper = struct {
         const enum_def = self.enum_definitions.get(cursed_enum_name) orelse return error.EnumNotFound;
         
         var output = .empty;
-        defer output.deinit(allocator);
+        defer output.deinit();
         
         try output.writer().print("// Generated C header for CURSED enum {s}\n", .{cursed_enum_name});
         try output.writer().print("typedef enum {{\n", .{});
@@ -359,7 +359,7 @@ pub const FFIEnumMapper = struct {
             enum_def.underlying_size.toCType(enum_def.is_signed)
         });
         
-        return output.toOwnedSlice(allocator);
+        return output.toOwnedSlice();
     }
     
     /// Register enum type mapping for FFI
@@ -406,7 +406,7 @@ pub const FFIEnumMapper = struct {
 // Test cases
 test "basic enum parsing" {
     var mapper = FFIEnumMapper.init(std.testing.allocator);
-    defer mapper.deinit(allocator);
+    defer mapper.deinit();
     
     const enum_text = 
         \\enum Color {
@@ -426,7 +426,7 @@ test "basic enum parsing" {
 
 test "enum with size specification" {
     var mapper = FFIEnumMapper.init(std.testing.allocator);
-    defer mapper.deinit(allocator);
+    defer mapper.deinit();
     
     const enum_text = 
         \\enum Status : unsigned char {
@@ -445,7 +445,7 @@ test "enum with size specification" {
 
 test "enum marshalling" {
     var mapper = FFIEnumMapper.init(std.testing.allocator);
-    defer mapper.deinit(allocator);
+    defer mapper.deinit();
     
     const enum_text = 
         \\enum Color {

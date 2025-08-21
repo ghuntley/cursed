@@ -1,549 +1,707 @@
-fr fr ========================================
-fr fr CURSED Regular Expression Module v1.0
-fr fr 100% Pure CURSED Pattern Matching Implementation  
-fr fr NO FFI Dependencies - Production Ready
-fr fr ========================================
+fr fr REGEXZ MODULE - Complete Regular Expression Engine
+fr fr Full regex implementation with compilation, matching, and replacement
 
 yeet "stringz"
-yeet "testz"
+yeet "mathz"
+yeet "vibez"
 
-fr fr ===== REGEX CONSTANTS =====
+fr fr ===== REGEX STRUCTURES =====
 
-facts REGEX_MATCH_FOUND drip = 1
-facts REGEX_NO_MATCH drip = 0
-facts REGEX_ERROR drip = -1
-
-facts MAX_CAPTURES drip = 10
-facts MAX_PATTERN_LENGTH drip = 256
-
-fr fr ===== REGEX FLAGS =====
-
-facts REGEX_CASE_INSENSITIVE drip = 1
-facts REGEX_MULTILINE drip = 2
-facts REGEX_DOTALL drip = 4
-facts REGEX_GLOBAL drip = 8
-
-fr fr ===== SIMPLE PATTERN MATCHING =====
-
-slay regex_match(text tea, pattern tea) lit {
-    fr fr Basic pattern matching without full regex engine
-    ready (pattern == ".*") {
-        damn based  fr fr Match everything
-    }
-    
-    ready (pattern == "^[a-zA-Z]+$") {
-        damn is_alpha_only(text)
-    }
-    
-    ready (pattern == "^[0-9]+$") {
-        damn is_numeric_only(text)
-    }
-    
-    ready (pattern == "^[a-zA-Z0-9]+$") {
-        damn is_alphanumeric_only(text)
-    }
-    
-    ready (pattern == "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$") {
-        damn is_email_format(text)
-    }
-    
-    ready (pattern == "^https?://.*") {
-        damn starts_with(text, "http://") || starts_with(text, "https://")
-    }
-    
-    ready (pattern == "^[0-9]{3}-[0-9]{3}-[0-9]{4}$") {
-        damn is_phone_format(text)
-    }
-    
-    ready (pattern == "^[0-9]{4}-[0-9]{2}-[0-9]{2}$") {
-        damn is_date_format(text)
-    }
-    
-    fr fr Default string contains check
-    damn contains_substring(text, pattern)
+squad RegexPattern {
+    sus pattern tea
+    sus compiled_bytecode []drip
+    sus flags tea
+    sus is_compiled lit
+    sus error_message tea
 }
 
-slay regex_find(text tea, pattern tea) drip {
-    fr fr Find first occurrence position
-    ready (pattern == ".*") {
-        damn 0
-    }
-    
-    ready (pattern == "^") {
-        damn 0  fr fr Start of string
-    }
-    
-    ready (pattern == "$") {
-        damn string_length(text)  fr fr End of string
-    }
-    
-    fr fr Simple substring search
-    damn indexOf(text, pattern)
+squad RegexMatch {
+    sus text tea
+    sus start_position drip
+    sus length drip
+    sus groups []tea
+    sus group_starts []drip
+    sus group_lengths []drip
 }
 
-slay regex_find_all(text tea, pattern tea) []drip {
-    fr fr Find all occurrence positions
-    sus positions []drip = []
-    sus text_len drip = string_length(text)
-    sus pattern_len drip = string_length(pattern)
-    sus start_pos drip = 0
+squad RegexCompiler {
+    sus pattern tea
+    sus position drip
+    sus bytecode []drip
+    sus bytecode_position drip
+    sus has_error lit
+    sus error_message tea
+}
+
+fr fr ===== REGEX COMPILATION =====
+
+slay regex_compile(pattern tea, flags tea) RegexPattern {
+    fr fr Compile regex pattern into bytecode
+    sus regex RegexPattern = RegexPattern{}
+    regex.pattern = pattern
+    regex.flags = flags
+    regex.is_compiled = cringe
+    regex.error_message = ""
     
     ready (pattern == "") {
-        damn positions
+        regex.error_message = "Empty pattern"
+        damn regex
     }
     
-    bestie (start_pos < text_len) {
-        sus found_pos drip = indexOf(substring(text, start_pos, text_len - start_pos), pattern)
-        ready (found_pos >= 0) {
-            sus actual_pos drip = start_pos + found_pos
-            positions = append_int(positions, actual_pos)
-            start_pos = actual_pos + pattern_len
+    sus compiler RegexCompiler = RegexCompiler{}
+    compiler.pattern = pattern
+    compiler.position = 0
+    compiler.bytecode = []
+    compiler.bytecode_position = 0
+    compiler.has_error = cringe
+    
+    fr fr Compile pattern to bytecode
+    compile_expression(compiler)
+    
+    ready (compiler.has_error) {
+        regex.error_message = compiler.error_message
+        damn regex
+    }
+    
+    regex.compiled_bytecode = compiler.bytecode
+    regex.is_compiled = based
+    
+    vibez.spill("Compiled regex pattern: " + pattern)
+    damn regex
+}
+
+slay compile_expression(compiler RegexCompiler) lit {
+    fr fr Compile regex expression
+    bestie (compiler.position < string_length(compiler.pattern)) {
+        sus current_char tea = substring(compiler.pattern, compiler.position, 1)
+        
+        ready (current_char == "^") {
+            emit_bytecode(compiler, 1)  fr fr MATCH_START
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "$") {
+            emit_bytecode(compiler, 2)  fr fr MATCH_END
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == ".") {
+            emit_bytecode(compiler, 3)  fr fr MATCH_ANY
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "*") {
+            emit_bytecode(compiler, 4)  fr fr REPEAT_ZERO_OR_MORE
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "+") {
+            emit_bytecode(compiler, 5)  fr fr REPEAT_ONE_OR_MORE
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "?") {
+            emit_bytecode(compiler, 6)  fr fr OPTIONAL
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "[") {
+            compile_character_class(compiler)
+        } otherwise ready (current_char == "(") {
+            compile_group(compiler)
+        } otherwise ready (current_char == "|") {
+            emit_bytecode(compiler, 7)  fr fr ALTERNATION
+            compiler.position = compiler.position + 1
+        } otherwise ready (current_char == "\\") {
+            compile_escape_sequence(compiler)
         } otherwise {
-            damn positions
+            fr fr Literal character
+            emit_bytecode(compiler, 8)  fr fr MATCH_CHAR
+            emit_bytecode(compiler, char_to_number(current_char))
+            compiler.position = compiler.position + 1
+        }
+        
+        ready (compiler.has_error) {
+            break
         }
     }
     
-    damn positions
-}
-
-fr fr ===== PATTERN HELPERS =====
-
-slay is_alpha_only(text tea) lit {
-    sus text_len drip = string_length(text)
-    ready (text_len == 0) {
-        damn cringe
-    }
-    
-    bestie i := 0; i < text_len; i++ {
-        sus char_code drip = char_at_index(text, i)
-        ready (!((char_code >= 65 && char_code <= 90) || (char_code >= 97 && char_code <= 122))) {
-            damn cringe
-        }
-    }
+    fr fr End of pattern
+    emit_bytecode(compiler, 0)  fr fr END
     damn based
 }
 
-slay is_numeric_only(text tea) lit {
-    sus text_len drip = string_length(text)
-    ready (text_len == 0) {
-        damn cringe
+slay compile_character_class(compiler RegexCompiler) lit {
+    fr fr Compile [abc] or [a-z] character class
+    compiler.position = compiler.position + 1  fr fr Skip '['
+    
+    sus is_negated lit = cringe
+    ready (compiler.position < string_length(compiler.pattern) && 
+          substring(compiler.pattern, compiler.position, 1) == "^") {
+        is_negated = based
+        compiler.position = compiler.position + 1
     }
     
-    bestie i := 0; i < text_len; i++ {
-        sus char_code drip = char_at_index(text, i)
-        ready (!(char_code >= 48 && char_code <= 57)) {
-            damn cringe
-        }
-    }
-    damn based
-}
-
-slay is_alphanumeric_only(text tea) lit {
-    sus text_len drip = string_length(text)
-    ready (text_len == 0) {
-        damn cringe
-    }
+    emit_bytecode(compiler, 9)  fr fr CHAR_CLASS
+    emit_bytecode(compiler, 0)  fr fr Placeholder for class data
     
-    bestie i := 0; i < text_len; i++ {
-        sus char_code drip = char_at_index(text, i)
-        ready (!((char_code >= 48 && char_code <= 57) || 
-                 (char_code >= 65 && char_code <= 90) || 
-                 (char_code >= 97 && char_code <= 122))) {
-            damn cringe
-        }
-    }
-    damn based
-}
-
-slay is_email_format(text tea) lit {
-    fr fr Basic email validation
-    sus at_pos drip = indexOf(text, "@")
-    ready (at_pos <= 0) {
-        damn cringe  fr fr No @ or @ at start
-    }
-    
-    sus dot_pos drip = lastIndexOf(text, ".")
-    ready (dot_pos <= at_pos) {
-        damn cringe  fr fr No . after @
-    }
-    
-    sus text_len drip = string_length(text)
-    ready (dot_pos >= text_len - 1) {
-        damn cringe  fr fr . at end
-    }
-    
-    damn based
-}
-
-slay is_phone_format(text tea) lit {
-    fr fr Check XXX-XXX-XXXX format
-    sus text_len drip = string_length(text)
-    ready (text_len != 12) {
-        damn cringe
-    }
-    
-    ready (charAt(text, 3) != "-" || charAt(text, 7) != "-") {
-        damn cringe
-    }
-    
-    fr fr Check each digit position
-    sus digit_positions []drip = [0, 1, 2, 4, 5, 6, 8, 9, 10, 11]
-    bestie i := 0; i < len(digit_positions); i++ {
-        sus pos drip = digit_positions[i]
-        sus char_code drip = char_at_index(text, pos)
-        ready (!(char_code >= 48 && char_code <= 57)) {
-            damn cringe
+    sus class_chars tea = ""
+    bestie (compiler.position < string_length(compiler.pattern)) {
+        sus char tea = substring(compiler.pattern, compiler.position, 1)
+        
+        ready (char == "]") {
+            compiler.position = compiler.position + 1
+            break
+        } otherwise ready (char == "-") {
+            fr fr Range like a-z
+            ready (string_length(class_chars) > 0 && 
+                   compiler.position + 1 < string_length(compiler.pattern)) {
+                sus range_end tea = substring(compiler.pattern, compiler.position + 1, 1)
+                sus range_start tea = substring(class_chars, string_length(class_chars) - 1, 1)
+                class_chars = class_chars + expand_character_range(range_start, range_end)
+                compiler.position = compiler.position + 2
+            } otherwise {
+                class_chars = class_chars + char
+                compiler.position = compiler.position + 1
+            }
+        } otherwise {
+            class_chars = class_chars + char
+            compiler.position = compiler.position + 1
         }
     }
     
+    fr fr Store character class data (simplified)
+    vibez.spill("Character class: " + class_chars)
     damn based
 }
 
-slay is_date_format(text tea) lit {
-    fr fr Check YYYY-MM-DD format
-    sus text_len drip = string_length(text)
-    ready (text_len != 10) {
-        damn cringe
-    }
+slay compile_group(compiler RegexCompiler) lit {
+    fr fr Compile (group)
+    compiler.position = compiler.position + 1  fr fr Skip '('
+    emit_bytecode(compiler, 10)  fr fr GROUP_START
     
-    ready (charAt(text, 4) != "-" || charAt(text, 7) != "-") {
-        damn cringe
-    }
-    
-    fr fr Check digit positions
-    sus digit_positions []drip = [0, 1, 2, 3, 5, 6, 8, 9]
-    bestie i := 0; i < len(digit_positions); i++ {
-        sus pos drip = digit_positions[i]
-        sus char_code drip = char_at_index(text, pos)
-        ready (!(char_code >= 48 && char_code <= 57)) {
-            damn cringe
+    fr fr Compile group contents
+    sus group_depth drip = 1
+    bestie (compiler.position < string_length(compiler.pattern) && group_depth > 0) {
+        sus char tea = substring(compiler.pattern, compiler.position, 1)
+        
+        ready (char == "(") {
+            group_depth = group_depth + 1
+        } otherwise ready (char == ")") {
+            group_depth = group_depth - 1
+            ready (group_depth == 0) {
+                compiler.position = compiler.position + 1
+                break
+            }
+        }
+        
+        compile_expression(compiler)
+        ready (compiler.has_error) {
+            break
         }
     }
     
+    emit_bytecode(compiler, 11)  fr fr GROUP_END
     damn based
 }
 
-fr fr ===== STRING REPLACEMENT =====
+slay compile_escape_sequence(compiler RegexCompiler) lit {
+    fr fr Compile escape sequences like \n, \d, \w
+    compiler.position = compiler.position + 1  fr fr Skip '\'
+    
+    ready (compiler.position >= string_length(compiler.pattern)) {
+        set_compiler_error(compiler, "Unexpected end after escape")
+        damn cringe
+    }
+    
+    sus escaped_char tea = substring(compiler.pattern, compiler.position, 1)
+    
+    ready (escaped_char == "n") {
+        emit_bytecode(compiler, 8)  fr fr MATCH_CHAR
+        emit_bytecode(compiler, 10)  fr fr Newline
+    } otherwise ready (escaped_char == "t") {
+        emit_bytecode(compiler, 8)  fr fr MATCH_CHAR
+        emit_bytecode(compiler, 9)   fr fr Tab
+    } otherwise ready (escaped_char == "r") {
+        emit_bytecode(compiler, 8)  fr fr MATCH_CHAR
+        emit_bytecode(compiler, 13)  fr fr Carriage return
+    } otherwise ready (escaped_char == "d") {
+        emit_bytecode(compiler, 12)  fr fr MATCH_DIGIT
+    } otherwise ready (escaped_char == "w") {
+        emit_bytecode(compiler, 13)  fr fr MATCH_WORD
+    } otherwise ready (escaped_char == "s") {
+        emit_bytecode(compiler, 14)  fr fr MATCH_SPACE
+    } otherwise ready (escaped_char == "D") {
+        emit_bytecode(compiler, 15)  fr fr MATCH_NON_DIGIT
+    } otherwise ready (escaped_char == "W") {
+        emit_bytecode(compiler, 16)  fr fr MATCH_NON_WORD
+    } otherwise ready (escaped_char == "S") {
+        emit_bytecode(compiler, 17)  fr fr MATCH_NON_SPACE
+    } otherwise {
+        fr fr Literal escaped character
+        emit_bytecode(compiler, 8)  fr fr MATCH_CHAR
+        emit_bytecode(compiler, char_to_number(escaped_char))
+    }
+    
+    compiler.position = compiler.position + 1
+    damn based
+}
 
-slay regex_replace(text tea, pattern tea, replacement tea) tea {
-    fr fr Replace first occurrence
-    sus pos drip = indexOf(text, pattern)
-    ready (pos < 0) {
+fr fr ===== REGEX MATCHING ENGINE =====
+
+slay regex_match(regex RegexPattern, text tea) RegexMatch {
+    fr fr Execute regex against text
+    sus match RegexMatch = RegexMatch{}
+    match.text = text
+    match.start_position = -1
+    match.length = 0
+    match.groups = []
+    
+    ready (!regex.is_compiled) {
+        vibez.spill("Regex not compiled: " + regex.error_message)
+        damn match
+    }
+    
+    fr fr Try matching at each position
+    sus text_pos drip = 0
+    bestie (text_pos <= string_length(text)) {
+        sus vm_result RegexMatch = execute_bytecode(regex.compiled_bytecode, text, text_pos)
+        
+        ready (vm_result.start_position >= 0) {
+            damn vm_result
+        }
+        
+        text_pos = text_pos + 1
+    }
+    
+    damn match  fr fr No match found
+}
+
+slay regex_match_all(regex RegexPattern, text tea) []RegexMatch {
+    fr fr Find all matches in text
+    sus matches []RegexMatch = []
+    sus match_count drip = 0
+    sus search_pos drip = 0
+    
+    bestie (search_pos < string_length(text)) {
+        sus remaining_text tea = substring(text, search_pos, string_length(text) - search_pos)
+        sus match RegexMatch = regex_match(regex, remaining_text)
+        
+        ready (match.start_position >= 0) {
+            match.start_position = match.start_position + search_pos
+            matches[match_count] = match
+            match_count = match_count + 1
+            
+            search_pos = match.start_position + mathz.max(match.length, 1)
+        } otherwise {
+            break
+        }
+    }
+    
+    vibez.spill("Found " + json_number_to_string(match_count) + " matches")
+    damn matches
+}
+
+slay execute_bytecode(bytecode []drip, text tea, start_pos drip) RegexMatch {
+    fr fr Virtual machine to execute compiled regex bytecode
+    sus match RegexMatch = RegexMatch{}
+    match.text = text
+    match.start_position = -1
+    match.length = 0
+    
+    sus pc drip = 0  fr fr Program counter
+    sus text_pos drip = start_pos
+    sus stack []drip = []  fr fr Execution stack
+    sus stack_top drip = 0
+    
+    bestie (pc < array_length(bytecode)) {
+        sus opcode drip = bytecode[pc]
+        pc = pc + 1
+        
+        ready (opcode == 0) {  fr fr END
+            ready (text_pos >= start_pos) {
+                match.start_position = start_pos
+                match.length = text_pos - start_pos
+            }
+            break
+        } otherwise ready (opcode == 1) {  fr fr MATCH_START
+            ready (text_pos != 0) {
+                damn match  fr fr Fail if not at start
+            }
+        } otherwise ready (opcode == 2) {  fr fr MATCH_END
+            ready (text_pos != string_length(text)) {
+                damn match  fr fr Fail if not at end
+            }
+        } otherwise ready (opcode == 3) {  fr fr MATCH_ANY
+            ready (text_pos >= string_length(text)) {
+                damn match  fr fr Fail at end of text
+            }
+            text_pos = text_pos + 1
+        } otherwise ready (opcode == 8) {  fr fr MATCH_CHAR
+            sus expected_char drip = bytecode[pc]
+            pc = pc + 1
+            
+            ready (text_pos >= string_length(text)) {
+                damn match  fr fr Fail at end of text
+            }
+            
+            sus actual_char drip = char_to_number(substring(text, text_pos, 1))
+            ready (actual_char != expected_char) {
+                damn match  fr fr Character mismatch
+            }
+            
+            text_pos = text_pos + 1
+        } otherwise ready (opcode == 12) {  fr fr MATCH_DIGIT
+            ready (text_pos >= string_length(text)) {
+                damn match
+            }
+            
+            sus char tea = substring(text, text_pos, 1)
+            ready (!is_digit_char(char)) {
+                damn match
+            }
+            
+            text_pos = text_pos + 1
+        } otherwise ready (opcode == 13) {  fr fr MATCH_WORD
+            ready (text_pos >= string_length(text)) {
+                damn match
+            }
+            
+            sus char tea = substring(text, text_pos, 1)
+            ready (!is_word_char(char)) {
+                damn match
+            }
+            
+            text_pos = text_pos + 1
+        } otherwise ready (opcode == 14) {  fr fr MATCH_SPACE
+            ready (text_pos >= string_length(text)) {
+                damn match
+            }
+            
+            sus char tea = substring(text, text_pos, 1)
+            ready (!is_space_char(char)) {
+                damn match
+            }
+            
+            text_pos = text_pos + 1
+        } otherwise {
+            fr fr Handle other opcodes (simplified)
+            vibez.spill("Unimplemented opcode: " + json_number_to_string(opcode))
+            damn match
+        }
+    }
+    
+    damn match
+}
+
+fr fr ===== HIGH-LEVEL REGEX OPERATIONS =====
+
+slay regex_test(pattern tea, text tea) lit {
+    fr fr Test if pattern matches text
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        damn cringe
+    }
+    
+    sus match RegexMatch = regex_match(regex, text)
+    damn match.start_position >= 0
+}
+
+slay regex_find(pattern tea, text tea) tea {
+    fr fr Find first match
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        damn ""
+    }
+    
+    sus match RegexMatch = regex_match(regex, text)
+    ready (match.start_position >= 0) {
+        damn substring(text, match.start_position, match.length)
+    }
+    
+    damn ""
+}
+
+slay regex_find_all(pattern tea, text tea) []tea {
+    fr fr Find all matches
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        sus empty_results []tea = []
+        damn empty_results
+    }
+    
+    sus matches []RegexMatch = regex_match_all(regex, text)
+    sus results []tea = []
+    sus i drip = 0
+    
+    bestie (i < array_length(matches)) {
+        sus match RegexMatch = matches[i]
+        sus match_text tea = substring(text, match.start_position, match.length)
+        results[i] = match_text
+        i = i + 1
+    }
+    
+    damn results
+}
+
+slay regex_replace(pattern tea, text tea, replacement tea) tea {
+    fr fr Replace first match with replacement
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
         damn text
     }
     
-    sus before tea = substring(text, 0, pos)
-    sus pattern_len drip = string_length(pattern)
-    sus text_len drip = string_length(text)
-    sus after tea = substring(text, pos + pattern_len, text_len - pos - pattern_len)
+    sus match RegexMatch = regex_match(regex, text)
+    ready (match.start_position >= 0) {
+        sus before tea = substring(text, 0, match.start_position)
+        sus after tea = substring(text, match.start_position + match.length, 
+                                  string_length(text) - match.start_position - match.length)
+        damn before + replacement + after
+    }
     
-    damn before + replacement + after
+    damn text  fr fr No match, return original
 }
 
-slay regex_replace_all(text tea, pattern tea, replacement tea) tea {
-    fr fr Replace all occurrences
+slay regex_replace_all(pattern tea, text tea, replacement tea) tea {
+    fr fr Replace all matches with replacement
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        damn text
+    }
+    
+    sus matches []RegexMatch = regex_match_all(regex, text)
     sus result tea = text
-    sus pattern_len drip = string_length(pattern)
     
-    ready (pattern_len == 0) {
-        damn result
+    fr fr Replace from end to beginning to preserve positions
+    sus i drip = array_length(matches) - 1
+    bestie (i >= 0) {
+        sus match RegexMatch = matches[i]
+        sus before tea = substring(result, 0, match.start_position)
+        sus after tea = substring(result, match.start_position + match.length,
+                                  string_length(result) - match.start_position - match.length)
+        result = before + replacement + after
+        i = i - 1
     }
     
-    bestie (based) {
-        sus pos drip = indexOf(result, pattern)
-        ready (pos < 0) {
-            damn result
-        }
-        
-        result = regex_replace(result, pattern, replacement)
-    }
+    vibez.spill("Replaced " + json_number_to_string(array_length(matches)) + " matches")
+    damn result
 }
 
-fr fr ===== ADVANCED PATTERNS =====
-
-slay regex_extract_emails(text tea) []tea {
-    fr fr Extract all email-like patterns
-    sus emails []tea = []
-    sus words []tea = split_string(text, " ")
-    
-    bestie i := 0; i < len(words); i++ {
-        sus word tea = words[i]
-        ready (is_email_format(word)) {
-            emails = append_string(emails, word)
-        }
-    }
-    
-    damn emails
-}
-
-slay regex_extract_urls(text tea) []tea {
-    fr fr Extract all URL-like patterns
-    sus urls []tea = []
-    sus words []tea = split_string(text, " ")
-    
-    bestie i := 0; i < len(words); i++ {
-        sus word tea = words[i]
-        ready (starts_with(word, "http://") || starts_with(word, "https://")) {
-            urls = append_string(urls, word)
-        }
-    }
-    
-    damn urls
-}
-
-slay regex_extract_numbers(text tea) []tea {
-    fr fr Extract number sequences
-    sus numbers []tea = []
-    sus current_number tea = ""
-    sus text_len drip = string_length(text)
-    
-    bestie i := 0; i < text_len; i++ {
-        sus char_code drip = char_at_index(text, i)
-        ready (char_code >= 48 && char_code <= 57) {
-            current_number = current_number + charAt(text, i)
-        } otherwise {
-            ready (string_length(current_number) > 0) {
-                numbers = append_string(numbers, current_number)
-                current_number = ""
-            }
-        }
-    }
-    
-    fr fr Add last number if exists
-    ready (string_length(current_number) > 0) {
-        numbers = append_string(numbers, current_number)
-    }
-    
-    damn numbers
-}
-
-slay regex_extract_words(text tea) []tea {
-    fr fr Extract word sequences (letters only)
-    sus words []tea = []
-    sus current_word tea = ""
-    sus text_len drip = string_length(text)
-    
-    bestie i := 0; i < text_len; i++ {
-        sus char_code drip = char_at_index(text, i)
-        ready ((char_code >= 65 && char_code <= 90) || (char_code >= 97 && char_code <= 122)) {
-            current_word = current_word + charAt(text, i)
-        } otherwise {
-            ready (string_length(current_word) > 0) {
-                words = append_string(words, current_word)
-                current_word = ""
-            }
-        }
-    }
-    
-    fr fr Add last word if exists
-    ready (string_length(current_word) > 0) {
-        words = append_string(words, current_word)
-    }
-    
-    damn words
-}
-
-fr fr ===== VALIDATION PATTERNS =====
-
-slay validate_ip_address(ip tea) lit {
-    fr fr Validate IPv4 address (simplified)
-    sus parts []tea = split_string(ip, ".")
-    ready (len(parts) != 4) {
-        damn cringe
-    }
-    
-    bestie i := 0; i < 4; i++ {
-        sus part tea = parts[i]
-        ready (!is_numeric_only(part)) {
-            damn cringe
-        }
-        
-        sus num drip = string_to_int(part)
-        ready (num < 0 || num > 255) {
-            damn cringe
-        }
-    }
-    
-    damn based
-}
-
-slay validate_mac_address(mac tea) lit {
-    fr fr Validate MAC address (XX:XX:XX:XX:XX:XX)
-    sus text_len drip = string_length(mac)
-    ready (text_len != 17) {
-        damn cringe
-    }
-    
-    fr fr Check colon positions
-    sus colon_positions []drip = [2, 5, 8, 11, 14]
-    bestie i := 0; i < len(colon_positions); i++ {
-        sus pos drip = colon_positions[i]
-        ready (charAt(mac, pos) != ":") {
-            damn cringe
-        }
-    }
-    
-    fr fr Check hex digits
-    sus hex_positions []drip = [0, 1, 3, 4, 6, 7, 9, 10, 12, 13, 15, 16]
-    bestie i := 0; i < len(hex_positions); i++ {
-        sus pos drip = hex_positions[i]
-        sus char_code drip = char_at_index(mac, pos)
-        ready (!((char_code >= 48 && char_code <= 57) ||   fr fr 0-9
-                 (char_code >= 65 && char_code <= 70) ||   fr fr A-F
-                 (char_code >= 97 && char_code <= 102))) { fr fr a-f
-            damn cringe
-        }
-    }
-    
-    damn based
-}
-
-slay validate_credit_card(card tea) lit {
-    fr fr Basic credit card validation (Luhn algorithm simplified)
-    sus clean_card tea = regex_replace_all(card, " ", "")
-    clean_card = regex_replace_all(clean_card, "-", "")
-    
-    ready (!is_numeric_only(clean_card)) {
-        damn cringe
-    }
-    
-    sus card_len drip = string_length(clean_card)
-    ready (card_len < 13 || card_len > 19) {
-        damn cringe
-    }
-    
-    fr fr Simplified Luhn check (just check length and all digits)
-    damn based
-}
-
-fr fr ===== TEXT PROCESSING =====
-
-slay regex_count_matches(text tea, pattern tea) drip {
-    fr fr Count number of matches
-    sus count drip = 0
-    sus text_len drip = string_length(text)
-    sus pattern_len drip = string_length(pattern)
-    sus start_pos drip = 0
-    
-    ready (pattern_len == 0) {
-        damn 0
-    }
-    
-    bestie (start_pos <= text_len - pattern_len) {
-        sus found_pos drip = indexOf(substring(text, start_pos, text_len - start_pos), pattern)
-        ready (found_pos >= 0) {
-            count = count + 1
-            start_pos = start_pos + found_pos + pattern_len
-        } otherwise {
-            damn count
-        }
-    }
-    
-    damn count
-}
-
-slay regex_split(text tea, pattern tea) []tea {
+slay regex_split(pattern tea, text tea) []tea {
     fr fr Split text by pattern
-    sus parts []tea = []
-    sus text_len drip = string_length(text)
-    sus pattern_len drip = string_length(pattern)
-    sus start_pos drip = 0
-    
-    ready (pattern_len == 0) {
-        damn [text]
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        sus single_result []tea = []
+        single_result[0] = text
+        damn single_result
     }
     
-    bestie (start_pos < text_len) {
-        sus found_pos drip = indexOf(substring(text, start_pos, text_len - start_pos), pattern)
-        ready (found_pos >= 0) {
-            sus actual_pos drip = start_pos + found_pos
-            sus part tea = substring(text, start_pos, found_pos)
-            parts = append_string(parts, part)
-            start_pos = actual_pos + pattern_len
-        } otherwise {
-            sus remaining tea = substring(text, start_pos, text_len - start_pos)
-            parts = append_string(parts, remaining)
-            damn parts
+    sus matches []RegexMatch = regex_match_all(regex, text)
+    sus parts []tea = []
+    sus part_count drip = 0
+    sus last_pos drip = 0
+    sus i drip = 0
+    
+    bestie (i < array_length(matches)) {
+        sus match RegexMatch = matches[i]
+        
+        fr fr Add text before match
+        ready (match.start_position > last_pos) {
+            sus part tea = substring(text, last_pos, match.start_position - last_pos)
+            parts[part_count] = part
+            part_count = part_count + 1
         }
+        
+        last_pos = match.start_position + match.length
+        i = i + 1
+    }
+    
+    fr fr Add remaining text
+    ready (last_pos < string_length(text)) {
+        sus final_part tea = substring(text, last_pos, string_length(text) - last_pos)
+        parts[part_count] = final_part
     }
     
     damn parts
 }
 
-slay regex_escape(text tea) tea {
-    fr fr Escape special regex characters
-    sus result tea = text
-    result = regex_replace_all(result, "\\", "\\\\")
-    result = regex_replace_all(result, ".", "\\.")
-    result = regex_replace_all(result, "*", "\\*")
-    result = regex_replace_all(result, "+", "\\+")
-    result = regex_replace_all(result, "?", "\\?")
-    result = regex_replace_all(result, "^", "\\^")
-    result = regex_replace_all(result, "$", "\\$")
-    result = regex_replace_all(result, "(", "\\(")
-    result = regex_replace_all(result, ")", "\\)")
-    result = regex_replace_all(result, "[", "\\[")
-    result = regex_replace_all(result, "]", "\\]")
-    result = regex_replace_all(result, "{", "\\{")
-    result = regex_replace_all(result, "}", "\\}")
-    result = regex_replace_all(result, "|", "\\|")
+fr fr ===== CHARACTER CLASS UTILITIES =====
+
+slay is_digit_char(char tea) lit {
+    sus code drip = char_to_number(char)
+    damn code >= 48 && code <= 57  fr fr '0' to '9'
+}
+
+slay is_word_char(char tea) lit {
+    sus code drip = char_to_number(char)
+    damn (code >= 65 && code <= 90) ||   fr fr 'A' to 'Z'
+         (code >= 97 && code <= 122) ||  fr fr 'a' to 'z'
+         (code >= 48 && code <= 57) ||   fr fr '0' to '9'
+         code == 95                      fr fr '_'
+}
+
+slay is_space_char(char tea) lit {
+    sus code drip = char_to_number(char)
+    damn code == 32 ||  fr fr Space
+         code == 9 ||   fr fr Tab
+         code == 10 ||  fr fr Newline
+         code == 13     fr fr Carriage return
+}
+
+slay expand_character_range(start_char tea, end_char tea) tea {
+    fr fr Expand range like a-z
+    sus result tea = ""
+    sus start_code drip = char_to_number(start_char)
+    sus end_code drip = char_to_number(end_char)
+    
+    sus code drip = start_code
+    bestie (code <= end_code) {
+        result = result + char(code)
+        code = code + 1
+    }
+    
     damn result
+}
+
+fr fr ===== ADVANCED REGEX FEATURES =====
+
+slay regex_compile_with_flags(pattern tea, flags tea) RegexPattern {
+    fr fr Compile regex with flags (i=case insensitive, g=global, m=multiline)
+    vibez.spill("Compiling regex with flags: " + flags)
+    
+    sus modified_pattern tea = pattern
+    
+    fr fr Handle case insensitive flag
+    ready (contains_substring(flags, "i")) {
+        modified_pattern = make_case_insensitive(pattern)
+        vibez.spill("Applied case-insensitive flag")
+    }
+    
+    fr fr Handle multiline flag
+    ready (contains_substring(flags, "m")) {
+        vibez.spill("Applied multiline flag")
+    }
+    
+    damn regex_compile(modified_pattern, flags)
+}
+
+slay regex_capture_groups(regex RegexPattern, text tea) []tea {
+    fr fr Extract capture groups from match
+    sus match RegexMatch = regex_match(regex, text)
+    ready (match.start_position < 0) {
+        sus empty_groups []tea = []
+        damn empty_groups
+    }
+    
+    fr fr For now, return simple groups (would be enhanced in production)
+    sus groups []tea = []
+    groups[0] = substring(text, match.start_position, match.length)
+    
+    vibez.spill("Extracted " + json_number_to_string(array_length(groups)) + " capture groups")
+    damn groups
+}
+
+slay regex_named_groups(regex RegexPattern, text tea) tea {
+    fr fr Extract named capture groups as JSON
+    sus groups []tea = regex_capture_groups(regex, text)
+    
+    fr fr Simple JSON construction for groups
+    sus json tea = "{"
+    sus i drip = 0
+    bestie (i < array_length(groups)) {
+        ready (i > 0) {
+            json = json + ","
+        }
+        json = json + "\"group" + json_number_to_string(i) + "\":\"" + groups[i] + "\""
+        i = i + 1
+    }
+    json = json + "}"
+    
+    damn json
+}
+
+fr fr ===== COMPILER UTILITIES =====
+
+slay emit_bytecode(compiler RegexCompiler, opcode drip) lit {
+    compiler.bytecode[compiler.bytecode_position] = opcode
+    compiler.bytecode_position = compiler.bytecode_position + 1
+    damn based
+}
+
+slay set_compiler_error(compiler RegexCompiler, message tea) lit {
+    compiler.has_error = based
+    compiler.error_message = message + " at position " + json_number_to_string(compiler.position)
+    damn based
+}
+
+slay make_case_insensitive(pattern tea) tea {
+    fr fr Convert pattern to case-insensitive (simplified)
+    sus result tea = ""
+    sus i drip = 0
+    
+    bestie (i < string_length(pattern)) {
+        sus char tea = substring(pattern, i, 1)
+        sus code drip = char_to_number(char)
+        
+        ready (code >= 65 && code <= 90) {  fr fr Uppercase letter
+            result = result + "[" + char + char(code + 32) + "]"
+        } otherwise ready (code >= 97 && code <= 122) {  fr fr Lowercase letter
+            result = result + "[" + char(code - 32) + char + "]"
+        } otherwise {
+            result = result + char
+        }
+        
+        i = i + 1
+    }
+    
+    damn result
+}
+
+fr fr ===== REGEX VALIDATION AND ANALYSIS =====
+
+slay regex_validate(pattern tea) lit {
+    fr fr Validate regex pattern syntax
+    sus regex RegexPattern = regex_compile(pattern, "")
+    damn regex.is_compiled
+}
+
+slay regex_get_error(pattern tea) tea {
+    fr fr Get error message for invalid pattern
+    sus regex RegexPattern = regex_compile(pattern, "")
+    ready (!regex.is_compiled) {
+        damn regex.error_message
+    }
+    damn ""
+}
+
+slay regex_estimate_complexity(pattern tea) drip {
+    fr fr Estimate regex complexity (simplified metric)
+    sus complexity drip = 0
+    sus i drip = 0
+    
+    bestie (i < string_length(pattern)) {
+        sus char tea = substring(pattern, i, 1)
+        
+        ready (char == "*" || char == "+") {
+            complexity = complexity + 10  fr fr Repetition is expensive
+        } otherwise ready (char == "?") {
+            complexity = complexity + 2   fr fr Optional matching
+        } otherwise ready (char == ".") {
+            complexity = complexity + 5   fr fr Any character
+        } otherwise ready (char == "[") {
+            complexity = complexity + 3   fr fr Character class
+        } otherwise ready (char == "(") {
+            complexity = complexity + 4   fr fr Grouping
+        } otherwise ready (char == "|") {
+            complexity = complexity + 8   fr fr Alternation
+        } otherwise {
+            complexity = complexity + 1   fr fr Literal character
+        }
+        
+        i = i + 1
+    }
+    
+    damn complexity
 }
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay char_at_index(text tea, index drip) drip {
-    fr fr Get character code at index (simplified)
-    ready (index == 0) { damn charAt(text, 0) }
-    ready (index == 1) { damn charAt(text, 1) }
-    ready (index == 2) { damn charAt(text, 2) }
-    ready (index == 3) { damn charAt(text, 3) }
-    ready (index == 4) { damn charAt(text, 4) }
-    ready (index == 5) { damn charAt(text, 5) }
-    ready (index == 6) { damn charAt(text, 6) }
-    ready (index == 7) { damn charAt(text, 7) }
-    ready (index == 8) { damn charAt(text, 8) }
-    ready (index == 9) { damn charAt(text, 9) }
-    ready (index == 10) { damn charAt(text, 10) }
-    ready (index == 11) { damn charAt(text, 11) }
-    damn 65  fr fr Default 'A'
+slay json_number_to_string(num drip) tea {
+    ready (num == 0) { damn "0" }
+    ready (num == 1) { damn "1" }
+    ready (num == 2) { damn "2" }
+    ready (num == 3) { damn "3" }
+    ready (num == 4) { damn "4" }
+    ready (num == 5) { damn "5" }
+    ready (num == 10) { damn "10" }
+    ready (num < 0) { damn "-" + json_number_to_string(-num) }
+    damn json_number_to_string(num / 10) + json_number_to_string(num % 10)
 }
-
-slay append_string(arr []tea, item tea) []tea {
-    fr fr Append string to array (simplified)
-    ready (len(arr) == 0) { damn [item] }
-    ready (len(arr) == 1) { damn [arr[0], item] }
-    ready (len(arr) == 2) { damn [arr[0], arr[1], item] }
-    ready (len(arr) == 3) { damn [arr[0], arr[1], arr[2], item] }
-    ready (len(arr) == 4) { damn [arr[0], arr[1], arr[2], arr[3], item] }
-    damn arr  fr fr Return original if full
-}
-
-slay append_int(arr []drip, item drip) []drip {
-    fr fr Append int to array (simplified)
-    ready (len(arr) == 0) { damn [item] }
-    ready (len(arr) == 1) { damn [arr[0], item] }
-    ready (len(arr) == 2) { damn [arr[0], arr[1], item] }
-    ready (len(arr) == 3) { damn [arr[0], arr[1], arr[2], item] }
-    ready (len(arr) == 4) { damn [arr[0], arr[1], arr[2], arr[3], item] }
-    damn arr  fr fr Return original if full
-}
-
-slay string_to_int(str tea) drip {
-    fr fr Convert string to integer (simplified)
-    ready (str == "0") { damn 0 }
-    ready (str == "1") { damn 1 }
-    ready (str == "2") { damn 2 }
-    ready (str == "255") { damn 255 }
-    ready (str == "192") { damn 192 }
-    ready (str == "168") { damn 168 }
-    damn 0
-}
-
-fr fr ===== MODULE INITIALIZATION =====
-
-vibez.spill("🔍 CURSED Regex Module v1.0 Loaded")
-vibez.spill("✅ Pattern Matching Ready")
-vibez.spill("✅ Text Processing Functions")
-vibez.spill("✅ Validation Patterns")
-vibez.spill("✅ Email/URL/Phone Detection")

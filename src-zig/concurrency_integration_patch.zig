@@ -62,11 +62,11 @@ pub const EnhancedScheduler = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.core_scheduler.deinit(allocator);
+        self.core_scheduler.deinit();
         self.allocator.destroy(self.core_scheduler);
         
         if (self.legacy_scheduler) |legacy| {
-            legacy.deinit(allocator);
+            legacy.deinit();
             self.allocator.destroy(legacy);
         }
     }
@@ -194,7 +194,7 @@ pub const EnhancedSchedulerStats = struct {
     race_conditions_prevented: u64,
     
     pub fn deinit(self: *EnhancedSchedulerStats, allocator: Allocator) void {
-        self.core_stats.deinit(allocator);
+        self.core_stats.deinit();
     }
     
     pub fn print(self: *const EnhancedSchedulerStats) void {
@@ -237,7 +237,7 @@ pub fn EnhancedChannel(comptime T: type) type {
         }
         
         pub fn deinit(self: *Self, allocator: Allocator) void {
-            self.core_channel.deinit(allocator);
+            self.core_channel.deinit();
             allocator.destroy(self.core_channel);
         }
         
@@ -415,7 +415,7 @@ pub fn shutdownEnhancedScheduler(allocator: Allocator) void {
     
     if (global_enhanced_scheduler) |scheduler| {
         scheduler.shutdown();
-        scheduler.deinit(allocator);
+        scheduler.deinit();
         allocator.destroy(scheduler);
         global_enhanced_scheduler = null;
         print("✅ Enhanced scheduler shutdown complete\n", .{});
@@ -502,7 +502,7 @@ test "enhanced scheduler initialization" {
     try std.testing.expect(scheduler != null);
     
     const stats = scheduler.?.getStats();
-    stats.deinit(allocator);
+    stats.deinit();
 }
 
 test "enhanced channel creation and operations" {
@@ -510,7 +510,7 @@ test "enhanced channel creation and operations" {
     
     var enhanced_channel = try Migration.createEnhancedChannel(i32, allocator, 10);
     defer {
-        enhanced_channel.deinit(allocator);
+        enhanced_channel.deinit();
         allocator.destroy(enhanced_channel);
     }
     
@@ -555,5 +555,5 @@ test "migration from legacy to enhanced" {
     try std.testing.expect(enhanced != null);
     
     const stats = enhanced.?.getStats();
-    stats.deinit(allocator);
+    stats.deinit();
 }

@@ -36,11 +36,11 @@ const ConcurrencyRuntime = struct {
     
     fn deinit(self: *ConcurrencyRuntime) void {
         if (self.scheduler) |scheduler| {
-            scheduler.deinit(allocator);
+            scheduler.deinit();
             self.allocator.destroy(scheduler);
         }
         if (self.gc_context) |gc_ctx| {
-            gc_ctx.deinit(allocator);
+            gc_ctx.deinit();
             self.allocator.destroy(gc_ctx);
         }
     }
@@ -108,7 +108,7 @@ const CompilerFeatures = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -163,7 +163,7 @@ pub fn main() !void {
 
     // Initialize concurrency runtime
     var runtime = ConcurrencyRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
 
     // Read source file
     const source = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
@@ -180,7 +180,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator); // Fix memory leak
+    defer tokens.deinit(); // Fix memory leak
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -285,7 +285,7 @@ fn compileWithConcurrency(
     defer allocator.free(c_filename);
     
     var c_code: std.ArrayList(u8) = .empty;
-    defer c_code.deinit(allocator);
+    defer c_code.deinit();
     
     // Generate comprehensive C code with concurrency support
     try generateConcurrencyHeaders(&c_code);
@@ -302,19 +302,19 @@ fn compileWithConcurrency(
     if (features.has_select) try c_code.appendSlice("select ");
     try c_code.appendSlice("\n");
     try c_code.appendSlice("// Optimization level: ");
-    try c_code.append(allocator, '0' + optimization_level);
+    try c_code.append('0' + optimization_level);
     try c_code.appendSlice("\n\n");
     
     // Generate concurrency-aware code generation
     if (features.requiresConcurrency()) {
         var codegen = concurrency_codegen.ConcurrencyCodeGen.init(allocator);
-        defer codegen.deinit(allocator);
+        defer codegen.deinit();
         
         // Parse into AST (simplified)
         var program = ast.Program{
             .statements = .empty,
         };
-        defer program.statements.deinit(allocator);
+        defer program.statements.deinit();
         
         // Convert tokens to statements (simplified parsing)
         try parseTokensToStatements(allocator, &program, tokens.items);
@@ -346,16 +346,16 @@ fn compileWithConcurrency(
     };
     
     var compile_args = .empty;
-    defer compile_args.deinit(allocator);
+    defer compile_args.deinit();
     
-    try compile_args.append(allocator, "gcc");
-    try compile_args.append(allocator, opt_flag);
-    try compile_args.append(allocator, "-o");
-    try compile_args.append(allocator, output_name);
-    try compile_args.append(allocator, c_filename);
+    try compile_args.append("gcc");
+    try compile_args.append(opt_flag);
+    try compile_args.append("-o");
+    try compile_args.append(output_name);
+    try compile_args.append(c_filename);
     
     if (features.requiresConcurrency()) {
-        try compile_args.append(allocator, "-lpthread"); // For concurrency support
+        try compile_args.append("-lpthread"); // For concurrency support
     }
     
     if (verbose) {

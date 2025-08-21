@@ -145,7 +145,7 @@ pub const ArchitectureMismatchDetector = struct {
             try writer.print("   - {s}\n", .{linker});
         }
         
-        return fix_message.toOwnedSlice(allocator);
+        return fix_message.toOwnedSlice();
     }
 };
 

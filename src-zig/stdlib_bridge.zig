@@ -16,7 +16,7 @@ pub const StdlibBridge = struct {
     allocator: Allocator,
     core: *stdlib_core.StdlibCore,
     
-    pub fn init(allocator: Allocator) StdlibBridge {
+    pub fn init() StdlibBridge {
         return StdlibBridge{
             .allocator = allocator,
             .core = stdlib_core.get_stdlib_core(),
@@ -557,7 +557,7 @@ pub const StdlibBridge = struct {
             if (std.mem.eql(u8, function_name, "len")) {
                 return try function_registry.arrayz.len(self, args);
             } else if (std.mem.eql(u8, function_name, "append")) {
-                return try function_registry.arrayz.append(allocator, self, args);
+                return try function_registry.arrayz.append(self, args);
             }
         }
         
@@ -607,11 +607,11 @@ pub const StdlibBridge = struct {
 
 /// Test the stdlib bridge functionality
 pub fn test_stdlib_bridge() !void {
-    print("\n🧪 Testing CURSED Stdlib Bridge\n");
-    print("===============================\n");
+    print("\n🧪 Testing CURSED Stdlib Bridge\n", .{});
+    print("===============================\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Initialize stdlib core and bridge
@@ -619,28 +619,28 @@ pub fn test_stdlib_bridge() !void {
     var bridge = StdlibBridge.init(allocator);
     
     // Test vibez.spill()
-    print("Testing vibez.spill()...\n");
+    print("Testing vibez.spill()...\n", .{});
     const hello_var = Variable{ .type = .String, .string = "Hello from CURSED!" };
     const spill_result = try bridge.callStdlibFunction("vibez", "spill", &[_]Variable{hello_var});
     print("spill() result: {any}\n", .{spill_result.boolean});
     
     // Test stringz.length()
-    print("Testing stringz.length()...\n");
+    print("Testing stringz.length()...\n", .{});
     const test_string = Variable{ .type = .String, .string = "Hello" };
     const length_result = try bridge.callStdlibFunction("stringz", "length", &[_]Variable{test_string});
     print("length() result: {}\n", .{length_result.integer});
     
     // Test mathz.abs_normie()
-    print("Testing mathz.abs_normie()...\n");
+    print("Testing mathz.abs_normie()...\n", .{});
     const negative_int = Variable{ .type = .Integer, .integer = -42 };
     const abs_result = try bridge.callStdlibFunction("mathz", "abs_normie", &[_]Variable{negative_int});
     print("abs_normie(-42) result: {}\n", .{abs_result.integer});
     
     // Test mathz.sqrt_meal()
-    print("Testing mathz.sqrt_meal()...\n");
+    print("Testing mathz.sqrt_meal()...\n", .{});
     const sixteen = Variable{ .type = .Float, .float = 16.0 };
     const sqrt_result = try bridge.callStdlibFunction("mathz", "sqrt_meal", &[_]Variable{sixteen});
     print("sqrt_meal(16.0) result: {d}\n", .{sqrt_result.float});
     
-    print("\n✅ Stdlib Bridge tests completed successfully\n");
+    print("\n✅ Stdlib Bridge tests completed successfully\n", .{});
 }

@@ -38,7 +38,7 @@ pub const CircularDependencyDetector = struct {
     visited: HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     recursion_stack: HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    pub fn init(allocator: Allocator) CircularDependencyDetector {
+    pub fn init() CircularDependencyDetector {
         return CircularDependencyDetector{
             .allocator = allocator,
             .visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -47,8 +47,8 @@ pub const CircularDependencyDetector = struct {
     }
     
     pub fn deinit(self: *CircularDependencyDetector) void {
-        self.visited.deinit(allocator);
-        self.recursion_stack.deinit(allocator);
+        self.visited.deinit();
+        self.recursion_stack.deinit();
     }
     
     pub fn detectCircularDependencies(self: *CircularDependencyDetector, manifest: *const package_manager.PackageManifest) !void {
@@ -108,7 +108,7 @@ pub const VersionConflictResolver = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) VersionConflictResolver {
+    pub fn init() VersionConflictResolver {
         return VersionConflictResolver{
             .allocator = allocator,
             .conflicts = ArrayList(VersionConflict).init(allocator),
@@ -117,9 +117,9 @@ pub const VersionConflictResolver = struct {
     
     pub fn deinit(self: *VersionConflictResolver) void {
         for (self.conflicts.items) |*conflict| {
-            conflict.requirements.deinit(allocator);
+            conflict.requirements.deinit();
         }
-        self.conflicts.deinit(allocator);
+        self.conflicts.deinit();
     }
     
     pub fn resolveVersionConflicts(self: *VersionConflictResolver, dependencies: []const package_manager.Dependency) !void {
@@ -128,9 +128,9 @@ pub const VersionConflictResolver = struct {
         defer {
             var iter = package_requirements.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            package_requirements.deinit(allocator);
+            package_requirements.deinit();
         }
         
         // Collect all requirements for each package
@@ -198,7 +198,7 @@ pub const NetworkResilience = struct {
     timeout_ms: u64,
     fallback_registries: ArrayList([]const u8),
     
-    pub fn init(allocator: Allocator) NetworkResilience {
+    pub fn init() NetworkResilience {
         var resilience = NetworkResilience{
             .allocator = allocator,
             .max_retries = 3,
@@ -214,7 +214,7 @@ pub const NetworkResilience = struct {
     }
     
     pub fn deinit(self: *NetworkResilience) void {
-        self.fallback_registries.deinit(allocator);
+        self.fallback_registries.deinit();
     }
     
     pub fn downloadWithRetry(self: *NetworkResilience, url: []const u8, dest_path: []const u8) !void {
@@ -280,7 +280,7 @@ pub const SecurityValidator = struct {
     allocator: Allocator,
     trusted_keys: ArrayList([]const u8),
     
-    pub fn init(allocator: Allocator) SecurityValidator {
+    pub fn init() SecurityValidator {
         return SecurityValidator{
             .allocator = allocator,
             .trusted_keys = ArrayList([]const u8).init(allocator),
@@ -288,7 +288,7 @@ pub const SecurityValidator = struct {
     }
     
     pub fn deinit(self: *SecurityValidator) void {
-        self.trusted_keys.deinit(allocator);
+        self.trusted_keys.deinit();
     }
     
     pub fn validatePackageIntegrity(self: *SecurityValidator, package_path: []const u8, expected_checksum: []const u8) !void {
@@ -433,7 +433,7 @@ pub const DiskSpaceManager = struct {
         
         var iterator = cache_dir.iterate();
         var cache_entries = ArrayList(CacheEntry).init(self.allocator);
-        defer cache_entries.deinit(allocator);
+        defer cache_entries.deinit();
         
         // Collect cache entries with timestamps
         while (try iterator.next()) |entry| {
@@ -489,7 +489,7 @@ pub const ConcurrentAccessManager = struct {
     package_locks: HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     mutex: std.Thread.Mutex,
     
-    pub fn init(allocator: Allocator) ConcurrentAccessManager {
+    pub fn init() ConcurrentAccessManager {
         return ConcurrentAccessManager{
             .allocator = allocator,
             .package_locks = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -498,7 +498,7 @@ pub const ConcurrentAccessManager = struct {
     }
     
     pub fn deinit(self: *ConcurrentAccessManager) void {
-        self.package_locks.deinit(allocator);
+        self.package_locks.deinit();
     }
     
     pub fn acquirePackageLock(self: *ConcurrentAccessManager, package_name: []const u8) !void {
@@ -559,11 +559,11 @@ pub const EdgeCaseHandler = struct {
     }
     
     pub fn deinit(self: *EdgeCaseHandler) void {
-        self.circular_detector.deinit(allocator);
-        self.conflict_resolver.deinit(allocator);
-        self.network_resilience.deinit(allocator);
-        self.security_validator.deinit(allocator);
-        self.access_manager.deinit(allocator);
+        self.circular_detector.deinit();
+        self.conflict_resolver.deinit();
+        self.network_resilience.deinit();
+        self.security_validator.deinit();
+        self.access_manager.deinit();
     }
     
     pub fn validatePackageInstallation(self: *EdgeCaseHandler, manifest: *const package_manager.PackageManifest, package_name: []const u8) !void {
@@ -601,10 +601,10 @@ test "circular dependency detection" {
     const allocator = std.testing.allocator;
     
     var detector = CircularDependencyDetector.init(allocator);
-    defer detector.deinit(allocator);
+    defer detector.deinit();
     
     var manifest = package_manager.PackageManifest.init(allocator);
-    defer manifest.deinit(allocator);
+    defer manifest.deinit();
     
     // Create a circular dependency scenario
     // This would detect A -> B -> A in a real implementation
@@ -615,7 +615,7 @@ test "version conflict resolution" {
     const allocator = std.testing.allocator;
     
     var resolver = VersionConflictResolver.init(allocator);
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
     
     // Test resolving conflicts between different version requirements
     const deps = [_]package_manager.Dependency{};
@@ -626,7 +626,7 @@ test "security validation" {
     const allocator = std.testing.allocator;
     
     var validator = SecurityValidator.init(allocator);
-    defer validator.deinit(allocator);
+    defer validator.deinit();
     
     // Test path traversal detection
     const malicious_path = "../../../etc/passwd";

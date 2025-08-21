@@ -18,7 +18,7 @@ pub const SimpleTestRunner = struct {
     allocator: Allocator,
     results: std.ArrayList(SimpleTestResult),
     
-    pub fn init(allocator: Allocator) SimpleTestRunner {
+    pub fn init() SimpleTestRunner {
         return SimpleTestRunner{
             .allocator = allocator,
             .results = std.ArrayList(SimpleTestResult).init(allocator),
@@ -26,7 +26,7 @@ pub const SimpleTestRunner = struct {
     }
     
     pub fn deinit(self: *SimpleTestRunner) void {
-        self.results.deinit(allocator);
+        self.results.deinit();
     }
     
     pub fn runTest(self: *SimpleTestRunner, name: []const u8, test_fn: fn() anyerror!void) !void {
@@ -125,7 +125,7 @@ fn testArrayOperations() !void {
 
 fn testMemoryAllocation() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const memory = try allocator.alloc(u8, 100);
@@ -209,7 +209,7 @@ fn performanceTestBasicOperations() !void {
 
 fn performanceTestMemoryOperations() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const iterations = 1000;
@@ -229,7 +229,7 @@ pub fn runDemoTests(allocator: Allocator) !void {
     std.debug.print("=" ** 50 ++ "\n", .{});
     
     var runner = SimpleTestRunner.init(allocator);
-    defer runner.deinit(allocator);
+    defer runner.deinit();
     
     // Run basic functionality tests
     std.debug.print("🧪 Basic Functionality Tests:\n", .{});
@@ -267,7 +267,7 @@ pub fn runAutomatedTestSuite(allocator: Allocator, config: AutomationConfig) !bo
     }
     
     var runner = SimpleTestRunner.init(allocator);
-    defer runner.deinit(allocator);
+    defer runner.deinit();
     
     // Core tests
     try runner.runTest("Core Functionality", testBasicMath);
@@ -342,7 +342,7 @@ pub fn testCrossPlatformCompatibility() !void {
 // Zig test integration
 test "Demo Testing Framework" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     try runDemoTests(allocator);
@@ -350,7 +350,7 @@ test "Demo Testing Framework" {
 
 test "Automated Test Suite" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const config = AutomationConfig{

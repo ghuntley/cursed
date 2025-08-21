@@ -17,7 +17,7 @@ const SimpleJIT = struct {
     allocator: Allocator,
     variables: HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
-    pub fn init(allocator: Allocator) SimpleJIT {
+    pub fn init() SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
             .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -30,7 +30,7 @@ const SimpleJIT = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {
@@ -271,7 +271,7 @@ const Config = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -342,8 +342,7 @@ pub fn main() !void {
 }
 
 fn parseArgs(allocator: Allocator, args: [][:0]u8) !Config {
-    _ = allocator;
-    var config = Config.init();
+        var config = Config.init();
     
     if (args.len < 2) {
         config.command = .help;
@@ -579,7 +578,7 @@ fn executeInterpret(allocator: Allocator, config: Config) !void {
         print("❌ Error initializing arena manager: {any}\n", .{err});
         return;
     };
-    defer arena_manager.deinit(allocator);
+    defer arena_manager.deinit();
     
     const filename = config.source_file.?;
     
@@ -646,7 +645,7 @@ fn executeCompile(allocator: Allocator, config: Config) !void {
     
     // Initialize cross-compiler
     var cross_compiler = cross_compilation.CrossCompiler.init(allocator);
-    defer cross_compiler.deinit(allocator);
+    defer cross_compiler.deinit();
     
     // Validate target platform
     const zig_target = adjusted_config.target_platform.getZigTarget() orelse "native";
@@ -724,7 +723,7 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
     
     // Format the code
     var fmt = formatter.Formatter.init(allocator, formatter.FormatterConfig{});
-    defer fmt.deinit(allocator);
+    defer fmt.deinit();
     
     const formatted = fmt.format(source) catch |err| {
         print("❌ Error formatting file {s}: {any}\n", .{ filename, err });
@@ -796,7 +795,7 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
 fn executeTest(allocator: Allocator, config: Config) !void {
     // Use arena allocator for better memory management in tests
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const arena_allocator = arena.allocator();
     
     if (config.verbose) {
@@ -953,7 +952,7 @@ fn executeJIT(allocator: Allocator, config: Config) !void {
     print("🚀 Using Fixed JIT Execution Engine\n", .{});
     
     var jit_engine = SimpleJIT.init(allocator);
-    defer jit_engine.deinit(allocator);
+    defer jit_engine.deinit();
     
     // Execute multiple times to demonstrate JIT optimization
     var i: u32 = 1;
@@ -992,7 +991,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     
     // Discover test files using arena allocator (all memory cleaned up automatically)
     var test_files: std.ArrayList([]const u8) = .empty;
-    defer test_files.deinit(allocator);
+    defer test_files.deinit();
     
     try discoverTestFiles(allocator, &test_files, "tests");
     
@@ -1010,7 +1009,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     var total_failed: u32 = 0;
     var total_duration: u64 = 0;
     var failed_tests: std.ArrayList([]const u8) = .empty;
-    defer failed_tests.deinit(allocator);
+    defer failed_tests.deinit();
     
     const suite_start_time = std.time.milliTimestamp();
     
@@ -1039,7 +1038,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
         const result = runSingleTest(allocator, test_file, verbose, debug_mode) catch |err| {
             print("❌ ERROR ({any})\n", .{err});
             total_failed += 1;
-            try failed_tests.append(allocator, test_file);
+            try failed_tests.append(test_file);
             continue;
         };
         
@@ -1062,7 +1061,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
             } else {
                 print("❌ FAIL\n", .{});
             }
-            try failed_tests.append(allocator, test_file);
+            try failed_tests.append(test_file);
         }
     }
     
@@ -1108,7 +1107,7 @@ fn discoverTestFiles(allocator: Allocator, test_files: *std.ArrayList([]const u8
             .file => {
                 // Check if it's a .csd file
                 if (std.mem.endsWith(u8, entry.name, ".csd")) {
-                    try test_files.append(allocator, full_path);
+                    try test_files.append(full_path);
                 } else {
                     allocator.free(full_path);
                 }
@@ -1141,15 +1140,15 @@ const Variable = union(enum) {
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Array => |arr| {
                 var result: std.ArrayList(u8) = .empty;
-                try result.append(allocator, '[');
+                try result.append('[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
                     const item_str = try item.toString(allocator);
                     defer allocator.free(item_str);
                     try result.appendSlice(item_str);
                 }
-                try result.append(allocator, ']');
-                return result.toOwnedSlice(allocator);
+                try result.append(']');
+                return result.toOwnedSlice();
             },
         }
     }
@@ -1170,7 +1169,7 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit(allocator);
+        imports.deinit();
     }
     
     // Validate imports
@@ -1210,12 +1209,12 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
                             else => {},
                         }
                     }
-                    arr.deinit(allocator);
+                    arr.deinit();
                 },
                 else => {},
             }
         }
-        variables.deinit(allocator);
+        variables.deinit();
     }
     
     // Simple line-by-line interpretation
@@ -1270,7 +1269,7 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
         print("❌ Tokenization error: {any}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (config.verbose) {
         print("🔤 Tokenized {} tokens\n", .{tokens.items.len});
@@ -1292,7 +1291,7 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
     // TODO: Execute with proper interpreter once compilation issues are resolved
     // const runtime_allocator = arena_manager.getRuntimeAllocator();
     // var cursed_interpreter = interpreter.Interpreter.init(runtime_allocator);
-    // defer cursed_interpreter.deinit(allocator);
+    // defer cursed_interpreter.deinit();
     
     if (config.verbose) print("🚀 AST parsing completed successfully - function execution not yet implemented\n", .{});
     // cursed_interpreter.execute(program) catch |err| {
@@ -1348,8 +1347,7 @@ fn compileWithLLVM(allocator: Allocator, source: []const u8, filename: []const u
 }
 
 fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
-    _ = allocator;
-    _ = source;
+        _ = source;
     _ = filename;
     _ = config;
     print("❌ C backend not yet implemented\n", .{});
@@ -1357,8 +1355,7 @@ fn compileWithC(allocator: Allocator, source: []const u8, filename: []const u8, 
 }
 
 fn compileWithWASM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
-    _ = allocator;
-    _ = source;
+        _ = source;
     _ = filename;
     _ = config;
     print("❌ WASM backend not yet implemented\n", .{});
@@ -1376,7 +1373,7 @@ fn showTokens(allocator: Allocator, source: []const u8) !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     print("=== TOKENS ({}) ===\n", .{tokens.items.len});
     for (tokens.items) |token| {
@@ -1392,7 +1389,7 @@ fn checkSyntax(allocator: Allocator, source: []const u8, config: Config) !void {
         print("❌ Syntax error during tokenization: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (config.verbose) {
         print("✅ Tokenization successful ({} tokens)\n", .{tokens.items.len});
@@ -1407,7 +1404,7 @@ fn checkSyntax(allocator: Allocator, source: []const u8, config: Config) !void {
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit(allocator);
+        imports.deinit();
     }
     
     if (imports.items.len > 0) {
@@ -1552,7 +1549,7 @@ fn handleVariableDeclaration(variables: *VariableStore, allocator: Allocator, li
                             if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(allocator, Variable{ .Integer = int_val });
+                        try array.append(Variable{ .Integer = int_val });
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -1589,7 +1586,7 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             if (hasCommaOutsideQuotes(trimmed_content)) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
-                defer args.deinit(allocator);
+                defer args.deinit();
                 
                 var first_arg = true;
                 for (args.items) |arg| {
@@ -1630,14 +1627,14 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
             in_quotes = !in_quotes;
         } else if (char == ',' and !in_quotes) {
             const arg = std.mem.trim(u8, text[start..i], " \t");
-            try args.append(allocator, arg);
+            try args.append(arg);
             start = i + 1;
         }
     }
     
     // Add the last argument
     const arg = std.mem.trim(u8, text[start..], " \t");
-    try args.append(allocator, arg);
+    try args.append(arg);
     
     return args;
 }
@@ -1838,7 +1835,7 @@ fn compileWithLLVMCrossCompilation(
     
     // Create a temporary allocator for compilation
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Create temporary LLVM IR file
@@ -1900,8 +1897,7 @@ fn compileWithCCrossCompilation(
     output_file: []const u8
 ) !void {
     _ = source;
-    _ = allocator;
-    _ = filename;
+        _ = filename;
     _ = cross_compiler;
     _ = output_file;
     

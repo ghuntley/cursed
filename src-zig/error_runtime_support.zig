@@ -36,7 +36,7 @@ const DeferStack = struct {
     fn deinit(self: *DeferStack) void {
         // Execute all remaining cleanup functions
         self.executeAll();
-        self.entries.deinit(allocator);
+        self.entries.deinit();
     }
     
     fn enterScope(self: *DeferStack) !void {
@@ -102,7 +102,7 @@ export fn cursed_error_runtime_init(allocator_ptr: ?*anyopaque) void {
 export fn cursed_error_runtime_deinit() void {
     if (global_error_propagator) |prop| {
         if (global_allocator) |allocator| {
-            prop.deinit(allocator);
+            prop.deinit();
             allocator.destroy(prop);
         }
         global_error_propagator = null;
@@ -199,7 +199,7 @@ export fn cursed_try_begin() void {
             .finally_handler = null,
             .scope_id = prop.current_scope_id,
         };
-        prop.try_catch_stack.append(allocator, try_context) catch {};
+        prop.try_catch_stack.append(try_context) catch {};
         prop.current_scope_id += 1;
         
         // Mark beginning of defer scope for this try block
@@ -263,7 +263,7 @@ export fn cursed_clear_current_error() void {
         // Remove the top error from the stack
         if (prop.error_stack.items.len > 0) {
             var error_ctx = prop.error_stack.pop();
-            error_ctx.deinit(allocator);
+            error_ctx.deinit();
         }
     }
 }
@@ -332,7 +332,7 @@ export fn cursed_add_error_to_stack(error_ptr: ?*anyopaque) void {
     const error_ctx = @as(*ErrorContext, @ptrCast(@alignCast(error_ptr)));
     
     // Add to error stack
-    global_error_propagator.?.error_stack.append(allocator, error_ctx.*) catch {};
+    global_error_propagator.?.error_stack.append(error_ctx.*) catch {};
 }
 
 /// Check if we're in a try block
@@ -456,7 +456,7 @@ export fn cursed_create_contextual_error(
 
 test "error runtime support" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test runtime initialization

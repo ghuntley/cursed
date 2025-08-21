@@ -10,11 +10,22 @@ const ast = @import("ast.zig");
 /// Type inference errors
 pub const TypeInferenceError = error{
     CyclicTypeDependency,
+    CyclicTypeReference,
     InfiniteType,
     RecursionDepthExceeded,
     TypeMismatch,
     UnboundTypeVariable,
     OutOfMemory,
+    ArityMismatch,
+    VarianceViolation,
+    ConstraintViolation,
+    TypeArgumentCountMismatch,
+    GenericInstantiationFailure,
+    BoundConstraintViolation,
+    UnificationFailure,
+    MismatchedTypes,
+    UnsupportedTypeOperation,
+    MemoryAllocationFailure,
 };
 
 /// Type variable with unique ID for tracking
@@ -32,7 +43,7 @@ pub const TypeVariable = struct {
     }
     
     pub fn deinit(self: *TypeVariable) void {
-        self.bounds.deinit(allocator);
+        self.bounds.deinit();
     }
 };
 
@@ -60,7 +71,7 @@ pub const RecursionDetector = struct {
     
     const MAX_RECURSION_DEPTH = 1000;
     
-    pub fn init(allocator: Allocator) RecursionDetector {
+    pub fn init() RecursionDetector {
         return RecursionDetector{
             .visiting = HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .visited = HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -70,8 +81,8 @@ pub const RecursionDetector = struct {
     }
     
     pub fn deinit(self: *RecursionDetector, allocator: Allocator) void {
-        self.visiting.deinit(allocator);
-        self.visited.deinit(allocator);
+        self.visiting.deinit();
+        self.visited.deinit();
     }
     
     /// Check if entering a type variable would create a cycle
@@ -160,7 +171,7 @@ pub const TypeMemoization = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) TypeMemoization {
+    pub fn init() TypeMemoization {
         return TypeMemoization{
             .unification_cache = HashMap(UnificationKey, ast.Type, UnificationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .substitution_cache = HashMap(SubstitutionKey, ast.Type, SubstitutionKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -168,8 +179,8 @@ pub const TypeMemoization = struct {
     }
     
     pub fn deinit(self: *TypeMemoization) void {
-        self.unification_cache.deinit(allocator);
-        self.substitution_cache.deinit(allocator);
+        self.unification_cache.deinit();
+        self.substitution_cache.deinit();
     }
     
     /// Hash a type for memoization
@@ -232,7 +243,7 @@ pub const TypeInferenceEngine = struct {
     memoization: TypeMemoization,
     next_var_id: u32,
     
-    pub fn init(allocator: Allocator) TypeInferenceEngine {
+    pub fn init() TypeInferenceEngine {
         return TypeInferenceEngine{
             .allocator = allocator,
             .type_variables = HashMap(u32, TypeVariable, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -246,12 +257,12 @@ pub const TypeInferenceEngine = struct {
     pub fn deinit(self: *TypeInferenceEngine) void {
         var iter = self.type_variables.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.type_variables.deinit(allocator);
-        self.constraints.deinit(allocator);
-        self.recursion_detector.deinit(allocator);
-        self.memoization.deinit(allocator);
+        self.type_variables.deinit();
+        self.constraints.deinit();
+        self.recursion_detector.deinit();
+        self.memoization.deinit();
     }
     
     /// Create a fresh type variable
@@ -411,7 +422,7 @@ pub const TypeInferenceEngine = struct {
                         var unified_args = .empty;
                         for (left_generic.type_arguments.items, right_generic.type_arguments.items) |left_arg, right_arg| {
                             const unified_arg = try self.unify(left_arg, right_arg);
-                            try unified_args.append(allocator, unified_arg);
+                            try unified_args.append(unified_arg);
                         }
                         
                         return ast.Type{
@@ -586,32 +597,32 @@ pub const TypeInferenceEngine = struct {
     
     /// Debug print type inference state
     pub fn debugPrint(self: *TypeInferenceEngine) void {
-        std.debug.print("=== Type Inference State ===\n");
+        std.debug.print("=== Type Inference State ===\n", .{});
         std.debug.print("Type Variables: {d}\n", .{self.type_variables.count()});
         std.debug.print("Constraints: {d}\n", .{self.constraints.items.len});
         std.debug.print("Recursion Depth: {d}\n", .{self.recursion_detector.recursion_depth});
         std.debug.print("Cache Entries: {d}\n", .{self.memoization.unification_cache.count()});
-        std.debug.print("============================\n");
+        std.debug.print("============================\n", .{});
     }
 };
 
 /// High-level type inference interface
 pub fn inferTypes(allocator: Allocator, expressions: []const ast.Expression) TypeInferenceError![]ast.Type {
     var engine = TypeInferenceEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     var result_types = .empty;
     
     // Generate constraints for each expression
     for (expressions) |expr| {
         const expr_type = try inferExpressionType(&engine, expr);
-        try result_types.append(allocator, expr_type);
+        try result_types.append(expr_type);
     }
     
     // Solve all constraints
     try engine.solveConstraints();
     
-    return result_types.toOwnedSlice(allocator);
+    return result_types.toOwnedSlice();
 }
 
 /// Infer type of a single expression
@@ -627,26 +638,32 @@ fn inferExpressionType(engine: *TypeInferenceEngine, expr: ast.Expression) TypeI
             return ast.Type{ .Custom = var_name };
         },
         .FunctionCall => |call| {
-            // Infer function type and argument types
+            // Infer function type and argument types with advanced constraint generation
             const func_type = try inferExpressionType(engine, call.function.*);
             
-            var arg_types = .empty;
+            var arg_types: std.ArrayList(ast.Type) = .empty;
+            defer arg_types.deinit();
+            
             for (call.arguments.items) |arg| {
                 const arg_type = try inferExpressionType(engine, arg);
-                try arg_types.append(allocator, arg_type);
+                try arg_types.append(arg_type);
             }
             
-            // Advanced cycle detection and variance checking
-            if (try detectTypeCycle(engine, func_type)) {
-                return error.CyclicTypeReference;
+            // Generate complex constraints for advanced type scenarios
+            const constraints = try generateComplexConstraints(engine, func_type, arg_types.items);
+            
+            // Advanced cycle detection with memoization
+            if (try detectTypeCycleWithMemo(engine, func_type, constraints)) {
+                return TypeInferenceError.CyclicTypeReference;
             }
             
-            // Check variance compatibility for function calls
-            if (try checkVarianceConstraints(engine, func_type, arg_types.items)) |validated_type| {
+            // Enhanced variance checking for nested generics and multiple constraints
+            if (try checkAdvancedVarianceConstraints(engine, func_type, arg_types.items, constraints)) |validated_type| {
                 return validated_type;
             }
             
-            return ast.Type{ .Basic = .Drip }; // Fallback
+            // Fallback with proper constraint resolution
+            return try resolveFallbackWithConstraints(engine, func_type, arg_types.items)
         },
         else => {
             // Create fresh type variable for unknown expressions
@@ -661,7 +678,7 @@ test "type inference with recursion detection" {
     const allocator = std.testing.allocator;
     
     var engine = TypeInferenceEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Create two type variables that would form a cycle
     const var1 = try engine.createTypeVariable("T1");
@@ -679,7 +696,7 @@ test "type memoization" {
     const allocator = std.testing.allocator;
     
     var memoization = TypeMemoization.init(allocator);
-    defer memoization.deinit(allocator);
+    defer memoization.deinit();
     
     const type1 = ast.Type{ .Basic = .Drip };
     const type2 = ast.Type{ .Basic = .Tea };
@@ -737,7 +754,7 @@ fn checkVarianceConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, a
         },
         .Generic => |generic| {
             // Generic variance checking with constraints
-            var resolved_args = std.ArrayList(ast.Type).init(engine.allocator);
+            var resolved_args: std.ArrayList(ast.Type) = .empty;
             defer resolved_args.deinit();
             
             for (arg_types) |arg_type| {
@@ -774,20 +791,467 @@ fn isSubtype(subtype: ast.Type, supertype: ast.Type) bool {
     }
 }
 
+/// Complex constraint container for advanced type scenarios
+const ComplexConstraints = struct {
+    nested_generics: std.ArrayList(NestedGenericConstraint),
+    variance_constraints: std.ArrayList(VarianceConstraint),
+    bound_constraints: std.ArrayList(BoundConstraint),
+    
+    const NestedGenericConstraint = struct {
+        outer_type: ast.Type,
+        inner_types: []ast.Type,
+        depth_level: u32,
+    };
+    
+    const VarianceConstraint = struct {
+        type_var: u32,
+        variance: Variance,
+        required_bound: ?ast.Type,
+    };
+    
+    const BoundConstraint = struct {
+        type_var: u32,
+        lower_bound: ?ast.Type,
+        upper_bound: ?ast.Type,
+    };
+};
+
+/// Generate complex constraints for advanced type scenarios
+fn generateComplexConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, arg_types: []ast.Type) !ComplexConstraints {
+    var constraints = ComplexConstraints{
+        .nested_generics = std..empty,
+        .variance_constraints = std..empty,
+        .bound_constraints = std..empty,
+    };
+    
+    // Analyze nested generics depth and constraints
+    switch (func_type) {
+        .Generic => |generic| {
+            const depth = try analyzeNestedGenericDepth(generic, 0);
+            if (depth > 3) { // Complex nesting detected
+                const inner_types = try extractNestedGenericTypes(engine.allocator, generic);
+                try constraints.nested_generics.append(.{
+                    .outer_type = func_type,
+                    .inner_types = inner_types,
+                    .depth_level = depth,
+                });
+            }
+        },
+        .Function => |func| {
+            // Generate constraints for function parameter variance
+            for (func.parameters.items, 0..) |param, i| {
+                if (i < arg_types.len) {
+                    const var_constraint = try generateVarianceConstraint(engine, param.parameter_type, arg_types[i]);
+                    if (var_constraint) |vc| {
+                        try constraints.variance_constraints.append(vc);
+                    }
+                }
+            }
+        },
+        else => {},
+    }
+    
+    return constraints;
+}
+
+/// Analyze depth of nested generic types
+fn analyzeNestedGenericDepth(generic: ast.GenericType, current_depth: u32) !u32 {
+    var max_depth = current_depth;
+    
+    for (generic.type_args.items) |arg| {
+        switch (arg) {
+            .Generic => |nested_generic| {
+                const nested_depth = try analyzeNestedGenericDepth(nested_generic, current_depth + 1);
+                max_depth = @max(max_depth, nested_depth);
+            },
+            else => {},
+        }
+    }
+    
+    return max_depth;
+}
+
+/// Extract nested generic types for constraint analysis
+fn extractNestedGenericTypes(allocator: Allocator, generic: ast.GenericType) ![]ast.Type {
+    var types: std.ArrayList(ast.Type) = .empty;
+    
+    for (generic.type_args.items) |arg| {
+        try types.append(arg);
+        switch (arg) {
+            .Generic => |nested| {
+                const nested_types = try extractNestedGenericTypes(allocator, nested);
+                for (nested_types) |nested_type| {
+                    try types.append(nested_type);
+                }
+            },
+            else => {},
+        }
+    }
+    
+    return types.toOwnedSlice();
+}
+
+/// Generate variance constraint for type pairs
+fn generateVarianceConstraint(engine: *TypeInferenceEngine, param_type: ast.Type, arg_type: ast.Type) !?ComplexConstraints.VarianceConstraint {
+    switch (param_type) {
+        .Generic => |generic| {
+            const var_id = try engine.createTypeVariable(generic.name);
+            return ComplexConstraints.VarianceConstraint{
+                .type_var = var_id,
+                .variance = .Contravariant, // Function parameters are contravariant
+                .required_bound = arg_type,
+            };
+        },
+        else => return null,
+    }
+}
+
+/// Advanced cycle detection with memoization and constraint awareness
+fn detectTypeCycleWithMemo(engine: *TypeInferenceEngine, func_type: ast.Type, constraints: ComplexConstraints) !bool {
+    // Check memoization cache first
+    const memo_key = TypeMemoization.UnificationKey{ .left = func_type, .right = func_type };
+    if (engine.type_memo.unification_cache.get(memo_key)) |_| {
+        return false; // Already processed, no cycle
+    }
+    
+    // Enhanced cycle detection considering constraints
+    const has_cycle = try detectTypeCycle(engine, func_type);
+    if (has_cycle) return true;
+    
+    // Check nested generic constraints for cycles
+    for (constraints.nested_generics.items) |nested_constraint| {
+        for (nested_constraint.inner_types) |inner_type| {
+            if (try detectTypeCycle(engine, inner_type)) {
+                return true;
+            }
+        }
+    }
+    
+    // Cache negative result
+    try engine.type_memo.unification_cache.put(memo_key, func_type);
+    return false;
+}
+
+/// Enhanced variance checking for nested generics and multiple constraints
+fn checkAdvancedVarianceConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, arg_types: []ast.Type, constraints: ComplexConstraints) !?ast.Type {
+    // First perform standard variance checking
+    const standard_result = try checkVarianceConstraints(engine, func_type, arg_types);
+    if (standard_result) |result| {
+        // Validate against complex constraints
+        if (try validateComplexConstraints(engine, result, constraints)) {
+            return result;
+        }
+    }
+    
+    // Handle nested generic constraints
+    for (constraints.nested_generics.items) |nested_constraint| {
+        const resolved_nested = try resolveNestedGenericConstraints(engine, nested_constraint);
+        if (resolved_nested) |resolved| {
+            return resolved;
+        }
+    }
+    
+    // Handle variance constraints with bounds
+    for (constraints.variance_constraints.items) |var_constraint| {
+        if (var_constraint.required_bound) |bound| {
+            const resolved_bound = try resolveBoundConstraint(engine, var_constraint.type_var, bound);
+            if (resolved_bound) |resolved| {
+                return resolved;
+            }
+        }
+    }
+    
+    return null;
+}
+
+/// Validate complex constraints against resolved type
+fn validateComplexConstraints(engine: *TypeInferenceEngine, resolved_type: ast.Type, constraints: ComplexConstraints) !bool {
+    // Check nested generic depth limits
+    for (constraints.nested_generics.items) |nested_constraint| {
+        if (nested_constraint.depth_level > 10) { // Prevent excessive nesting
+            return false;
+        }
+        
+        // Verify type compatibility at each nesting level
+        if (!try isTypeCompatibleWithNesting(resolved_type, nested_constraint)) {
+            return false;
+        }
+    }
+    
+    // Check variance constraint satisfaction
+    for (constraints.variance_constraints.items) |var_constraint| {
+        if (!try isVarianceConstraintSatisfied(engine, resolved_type, var_constraint)) {
+            return false;
+        }
+    }
+    
+    return true;
+}
+
+/// Check type compatibility with nested generic constraints
+fn isTypeCompatibleWithNesting(resolved_type: ast.Type, nested_constraint: ComplexConstraints.NestedGenericConstraint) !bool {
+    switch (resolved_type) {
+        .Generic => |generic| {
+            // Check if resolved generic matches expected structure
+            if (generic.type_args.items.len != nested_constraint.inner_types.len) {
+                return false;
+            }
+            
+            for (generic.type_args.items, 0..) |arg, i| {
+                if (!areTypesCompatible(arg, nested_constraint.inner_types[i])) {
+                    return false;
+                }
+            }
+            return true;
+        },
+        else => return nested_constraint.depth_level == 0, // Only compatible if no nesting expected
+    }
+}
+
+/// Check if variance constraint is satisfied
+fn isVarianceConstraintSatisfied(engine: *TypeInferenceEngine, resolved_type: ast.Type, constraint: ComplexConstraints.VarianceConstraint) !bool {
+    if (constraint.required_bound) |bound| {
+        switch (constraint.variance) {
+            .Covariant => return isSubtype(resolved_type, bound),
+            .Contravariant => return isSubtype(bound, resolved_type),
+            .Invariant => return areTypesEqual(resolved_type, bound),
+            .Bivariant => return true, // Bivariant accepts any type
+        }
+    }
+    return true;
+}
+
+/// Resolve nested generic constraints
+fn resolveNestedGenericConstraints(engine: *TypeInferenceEngine, nested_constraint: ComplexConstraints.NestedGenericConstraint) !?ast.Type {
+    // Create fresh type variables for deeply nested generics
+    var resolved_args: std.ArrayList(ast.Type) = .empty;
+    defer resolved_args.deinit();
+    
+    for (nested_constraint.inner_types) |inner_type| {
+        const resolved_inner = try resolveTypeWithFreshVars(engine, inner_type);
+        try resolved_args.append(resolved_inner);
+    }
+    
+    switch (nested_constraint.outer_type) {
+        .Generic => |generic| {
+            return ast.Type{ .Generic = .{
+                .name = generic.name,
+                .type_args = try resolved_args.toOwnedSlice(),
+            }};
+        },
+        else => return null,
+    }
+}
+
+/// Resolve bound constraint for type variable
+fn resolveBoundConstraint(engine: *TypeInferenceEngine, type_var_id: u32, bound: ast.Type) !?ast.Type {
+    if (engine.type_variables.get(type_var_id)) |type_var| {
+        // Check if bound is compatible with existing constraints
+        for (type_var.constraints.items) |constraint| {
+            if (!areTypesCompatible(bound, constraint)) {
+                return TypeInferenceError.ConstraintViolation;
+            }
+        }
+        
+        // Update type variable with resolved bound
+        var updated_var = type_var;
+        updated_var.resolved_type = bound;
+        try engine.type_variables.put(type_var_id, updated_var);
+        
+        return bound;
+    }
+    
+    return null;
+}
+
+/// Resolve type with fresh type variables
+fn resolveTypeWithFreshVars(engine: *TypeInferenceEngine, type_to_resolve: ast.Type) !ast.Type {
+    switch (type_to_resolve) {
+        .Generic => |generic| {
+            var fresh_args: std.ArrayList(ast.Type) = .empty;
+            defer fresh_args.deinit();
+            
+            for (generic.type_args.items) |arg| {
+                const fresh_arg = try resolveTypeWithFreshVars(engine, arg);
+                try fresh_args.append(fresh_arg);
+            }
+            
+            return ast.Type{ .Generic = .{
+                .name = generic.name,
+                .type_args = try fresh_args.toOwnedSlice(),
+            }};
+        },
+        .Custom => |name| {
+            // Create fresh type variable
+            const var_id = try engine.createTypeVariable(name);
+            const var_name = try std.fmt.allocPrint(engine.allocator, "fresh_{s}_{d}", .{ name, var_id });
+            return ast.Type{ .Custom = var_name };
+        },
+        else => return type_to_resolve,
+    }
+}
+
+/// Fallback resolution with constraint awareness
+fn resolveFallbackWithConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, arg_types: []ast.Type) !ast.Type {
+    // Try to infer return type from function signature
+    switch (func_type) {
+        .Function => |func| return func.return_type.*,
+        .Generic => |generic| {
+            // For generic functions, try to instantiate with argument types
+            if (arg_types.len > 0) {
+                return try instantiateGenericType(engine, generic, arg_types[0]);
+            }
+        },
+        else => {},
+    }
+    
+    // Ultimate fallback - create constrained type variable
+    const var_id = try engine.createTypeVariable("fallback");
+    const var_name = try std.fmt.allocPrint(engine.allocator, "fallback_{d}", .{var_id});
+    return ast.Type{ .Custom = var_name };
+}
+
+/// Instantiate generic type with concrete argument
+fn instantiateGenericType(engine: *TypeInferenceEngine, generic: ast.GenericType, concrete_type: ast.Type) !ast.Type {
+    // Simple instantiation - replace first type parameter with concrete type
+    if (generic.type_args.items.len > 0) {
+        var instantiated_args: std.ArrayList(ast.Type) = .empty;
+        defer instantiated_args.deinit();
+        
+        try instantiated_args.append(concrete_type);
+        for (generic.type_args.items[1..]) |arg| {
+            try instantiated_args.append(arg);
+        }
+        
+        return ast.Type{ .Generic = .{
+            .name = generic.name,
+            .type_args = try instantiated_args.toOwnedSlice(),
+        }};
+    }
+    
+    return ast.Type{ .Generic = generic };
+}
+
+/// Check if two types are equal
+fn areTypesEqual(type1: ast.Type, type2: ast.Type) bool {
+    switch (type1) {
+        .Basic => |basic1| {
+            switch (type2) {
+                .Basic => |basic2| return basic1 == basic2,
+                else => return false,
+            }
+        },
+        .Primitive => |prim1| {
+            switch (type2) {
+                .Primitive => |prim2| return prim1 == prim2,
+                else => return false,
+            }
+        },
+        .Custom => |name1| {
+            switch (type2) {
+                .Custom => |name2| return std.mem.eql(u8, name1, name2),
+                else => return false,
+            }
+        },
+        .Generic => |gen1| {
+            switch (type2) {
+                .Generic => |gen2| {
+                    if (!std.mem.eql(u8, gen1.name, gen2.name)) return false;
+                    if (gen1.type_args.items.len != gen2.type_args.items.len) return false;
+                    for (gen1.type_args.items, 0..) |arg1, i| {
+                        if (!areTypesEqual(arg1, gen2.type_args.items[i])) return false;
+                    }
+                    return true;
+                },
+                else => return false,
+            }
+        },
+        else => return false,
+    }
+}
+
+/// Check if two types are compatible (less strict than equality)
+fn areTypesCompatible(type1: ast.Type, type2: ast.Type) bool {
+    if (areTypesEqual(type1, type2)) return true;
+    
+    // Additional compatibility rules
+    switch (type1) {
+        .Basic => |basic1| {
+            switch (type2) {
+                .Primitive => |prim2| {
+                    // Allow some basic/primitive compatibility
+                    return (basic1 == .Drip and prim2 == .Int) or 
+                           (basic1 == .Tea and prim2 == .String);
+                },
+                else => return false,
+            }
+        },
+        .Custom => return true, // Type variables are compatible with anything
+        else => return false,
+    }
+}
+
 /// Resolve generic types with variance constraints
 fn resolveGenericWithVariance(engine: *TypeInferenceEngine, generic: ast.GenericType, arg_type: ast.Type) !ast.Type {
-    // Create type variable if needed
+    // Create type variable with enhanced constraint tracking
     const var_id = engine.next_var_id;
     engine.next_var_id += 1;
     
+    var constraints: std.ArrayList(ast.Type) = .empty;
+    try constraints.append(arg_type);
+    
     const type_var = TypeVariable{
         .id = var_id,
-        .constraints = .empty,
+        .constraints = constraints,
         .resolved_type = null,
         .variance = .Covariant, // Default to covariant
     };
     
     try engine.type_variables.put(var_id, type_var);
     
-    return arg_type;
+    // Try to unify with generic constraints
+    return try unifyGenericWithConstraints(engine, generic, arg_type);
+}
+
+/// Unify generic type with constraints
+fn unifyGenericWithConstraints(engine: *TypeInferenceEngine, generic: ast.GenericType, concrete_type: ast.Type) !ast.Type {
+    // Create substitution map for generic parameters
+    var substitution_map = std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(engine.allocator);
+    defer substitution_map.deinit();
+    
+    // If we have type arguments, try to match them with concrete types
+    if (generic.type_args.items.len > 0) {
+        // Simple case: match first type arg with concrete type
+        const type_param_name = try std.fmt.allocPrint(engine.allocator, "T_{s}_0", .{generic.name});
+        try substitution_map.put(type_param_name, concrete_type);
+    }
+    
+    return try applySubstitutions(engine, ast.Type{ .Generic = generic }, substitution_map);
+}
+
+/// Apply type substitutions
+fn applySubstitutions(engine: *TypeInferenceEngine, original_type: ast.Type, substitutions: std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ast.Type {
+    switch (original_type) {
+        .Generic => |generic| {
+            var substituted_args: std.ArrayList(ast.Type) = .empty;
+            defer substituted_args.deinit();
+            
+            for (generic.type_args.items) |arg| {
+                const substituted_arg = try applySubstitutions(engine, arg, substitutions);
+                try substituted_args.append(substituted_arg);
+            }
+            
+            return ast.Type{ .Generic = .{
+                .name = generic.name,
+                .type_args = try substituted_args.toOwnedSlice(),
+            }};
+        },
+        .Custom => |name| {
+            if (substitutions.get(name)) |substituted_type| {
+                return substituted_type;
+            }
+            return original_type;
+        },
+        else => return original_type,
+    }
 }

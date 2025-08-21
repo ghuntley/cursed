@@ -40,7 +40,7 @@ pub const AsyncTransform = struct {
         }
         
         pub fn deinit(self: *Self) void {
-            self.suspension_points.deinit(allocator);
+            self.suspension_points.deinit();
         }
     };
     
@@ -60,7 +60,7 @@ pub const AsyncTransform = struct {
         };
     };
     
-    pub fn init(allocator: Allocator) AsyncTransform {
+    pub fn init() AsyncTransform {
         return AsyncTransform{
             .allocator = allocator,
             .next_state_id = 0,
@@ -70,11 +70,11 @@ pub const AsyncTransform = struct {
     }
     
     pub fn deinit(self: *AsyncTransform) void {
-        self.suspension_points.deinit(allocator);
+        self.suspension_points.deinit();
         for (self.loop_stack.items) |*ctx| {
-            ctx.deinit(allocator);
+            ctx.deinit();
         }
-        self.loop_stack.deinit(allocator);
+        self.loop_stack.deinit();
     }
     
     /// Transform async function into state machine
@@ -112,11 +112,11 @@ pub const AsyncTransform = struct {
                     .can_suspend = true,
                 };
                 
-                try self.suspension_points.append(allocator, suspension_point);
+                try self.suspension_points.append(suspension_point);
                 
                 // If we're in a loop, record this suspension point
                 if (suspension_point.loop_context) |loop_ctx| {
-                    try loop_ctx.suspension_points.append(allocator, suspension_point.id);
+                    try loop_ctx.suspension_points.append(suspension_point.id);
                 }
                 
                 // Continue analyzing the awaited expression
@@ -292,14 +292,14 @@ pub const AsyncTransform = struct {
                     .transitions = .empty,
                 };
                 
-                try state_machine.states.append(allocator, await_state);
+                try state_machine.states.append(await_state);
                 
                 // Next state for continuation
                 current_state.* = self.nextStateId();
                 
                 // Add transition to continuation state
                 var await_state_mut = &state_machine.states.items[state_machine.states.items.len - 1];
-                try await_state_mut.transitions.append(allocator, StateMachine.State.Transition{
+                try await_state_mut.transitions.append(StateMachine.State.Transition{
                     .condition = null, // Unconditional after await completes
                     .target_state = current_state.*,
                 });
@@ -316,10 +316,10 @@ pub const AsyncTransform = struct {
                     .code = "// Loop entry",
                     .transitions = .empty,
                 };
-                try state_machine.states.append(allocator, entry_state);
+                try state_machine.states.append(entry_state);
                 
                 var entry_state_mut = &state_machine.states.items[state_machine.states.items.len - 1];
-                try entry_state_mut.transitions.append(allocator, StateMachine.State.Transition{
+                try entry_state_mut.transitions.append(StateMachine.State.Transition{
                     .condition = null,
                     .target_state = loop_body_state,
                 });
@@ -333,11 +333,11 @@ pub const AsyncTransform = struct {
                 if (current_state.* != loop_body_state) {
                     // Body generated new states, add transition back to entry
                     var last_state = &state_machine.states.items[state_machine.states.items.len - 1];
-                    try last_state.transitions.append(allocator, StateMachine.State.Transition{
+                    try last_state.transitions.append(StateMachine.State.Transition{
                         .condition = "continue_loop", // Loop condition check
                         .target_state = loop_entry,
                     });
-                    try last_state.transitions.append(allocator, StateMachine.State.Transition{
+                    try last_state.transitions.append(StateMachine.State.Transition{
                         .condition = "exit_loop",
                         .target_state = loop_exit_state,
                     });
@@ -359,12 +359,12 @@ pub const AsyncTransform = struct {
                     .transitions = .empty,
                 };
                 
-                try state_machine.states.append(allocator, simple_state);
+                try state_machine.states.append(simple_state);
                 current_state.* = self.nextStateId();
                 
                 // Add transition to next state
                 var simple_state_mut = &state_machine.states.items[state_machine.states.items.len - 1];
-                try simple_state_mut.transitions.append(allocator, StateMachine.State.Transition{
+                try simple_state_mut.transitions.append(StateMachine.State.Transition{
                     .condition = null,
                     .target_state = current_state.*,
                 });
@@ -409,7 +409,7 @@ pub const AsyncRuntime = struct {
         completed: bool,
     };
     
-    pub fn init(allocator: Allocator) AsyncRuntime {
+    pub fn init() AsyncRuntime {
         return AsyncRuntime{
             .allocator = allocator,
             .pending_tasks = std.HashMap(u32, *AsyncTask, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -418,7 +418,7 @@ pub const AsyncRuntime = struct {
     }
     
     pub fn deinit(self: *AsyncRuntime) void {
-        self.pending_tasks.deinit(allocator);
+        self.pending_tasks.deinit();
     }
     
     /// Spawn async task
@@ -480,7 +480,7 @@ pub const AsyncRuntime = struct {
 // Export the transform function for use by the compiler
 pub fn transformAsyncFunction(allocator: Allocator, func: *ast.AsyncFunction) !AsyncTransform.StateMachine {
     var transformer = AsyncTransform.init(allocator);
-    defer transformer.deinit(allocator);
+    defer transformer.deinit();
     
     return try transformer.transformAsyncFunction(func);
 }

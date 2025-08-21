@@ -286,7 +286,7 @@ fn createTestLexer(allocator: Allocator, source: []const u8) !Lexer {
 
 test "parse simple attribute" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const source = "@inline";
@@ -294,7 +294,7 @@ test "parse simple attribute" {
     
     var parser = AttributeParser.init(allocator, &lex);
     var attrs = try parser.parseAttributeList();
-    defer attrs.deinit(allocator);
+    defer attrs.deinit();
     
     try std.testing.expect(attrs.attributes.items.len == 1);
     const attr = &attrs.attributes.items[0];
@@ -304,7 +304,7 @@ test "parse simple attribute" {
 
 test "parse attribute with parameters" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const source = "@performance(level=high)";
@@ -312,7 +312,7 @@ test "parse attribute with parameters" {
     
     var parser = AttributeParser.init(allocator, &lex);
     var attrs = try parser.parseAttributeList();
-    defer attrs.deinit(allocator);
+    defer attrs.deinit();
     
     try std.testing.expect(attrs.attributes.items.len == 1);
     const attr = &attrs.attributes.items[0];
@@ -325,7 +325,7 @@ test "parse attribute with parameters" {
 
 test "parse multiple attributes" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const source = "@inline @performance(level=medium) @debug(enable=true)";
@@ -333,7 +333,7 @@ test "parse multiple attributes" {
     
     var parser = AttributeParser.init(allocator, &lex);
     var attrs = try parser.parseAttributeList();
-    defer attrs.deinit(allocator);
+    defer attrs.deinit();
     
     try std.testing.expect(attrs.attributes.items.len == 3);
     try std.testing.expect(attrs.hasAttribute(.Inline));
@@ -343,7 +343,7 @@ test "parse multiple attributes" {
 
 test "reject unknown custom attribute" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const source = "@my_custom_attr(value=42, name=\"test\")";

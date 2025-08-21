@@ -21,11 +21,11 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     // Initialize performance tracking
     var perf_stats = performance_optimizations.PerformanceStats.init();
     var string_interner = performance_optimizations.StringInterner.init(allocator);
-    defer string_interner.deinit(allocator);
+    defer string_interner.deinit();
     
     // Optimized tokenization
     var fast_tokenizer = parser_optimizations.FastTokenizer.init(allocator, source) catch return;
-    defer fast_tokenizer.deinit(allocator);
+    defer fast_tokenizer.deinit();
     
     const tokenize_start = timer.read();
     const tokens = fast_tokenizer.tokenize() catch return;
@@ -36,7 +36,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     
     // Optimized parsing
     var fast_parser = parser_optimizations.FastParser.init(allocator, tokens);
-    defer fast_parser.deinit(allocator);
+    defer fast_parser.deinit();
     
     const parse_start = timer.read();
     const ast = fast_parser.parse() catch return;
@@ -47,10 +47,10 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     
     // Initialize optimized execution context
     var optimized_scope = performance_optimizations.OptimizedScope.init(allocator, null, &string_interner);
-    defer optimized_scope.deinit(allocator);
+    defer optimized_scope.deinit();
     
     var function_context = performance_optimizations.OptimizedFunctionContext.init(allocator);
-    defer function_context.deinit(allocator);
+    defer function_context.deinit();
     
     // Execute with optimizations
     const execution_start = timer.read();
@@ -63,7 +63,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     
     if (verbose) {
         print("⚡ Optimized execution completed in {d:.2}ms\n", .{@as(f64, @floatFromInt(execution_time)) / 1_000_000.0});
-        print("\n=== Performance Statistics ===\n");
+        print("\n=== Performance Statistics ===\n", .{});
         perf_stats.print();
         print("Cache efficiency: {d:.2}%\n", .{optimized_scope.cache.getCacheEfficiency() * 100.0});
         
@@ -97,16 +97,16 @@ pub fn optimizedCompile(allocator: Allocator, source: []const u8, filename: []co
     };
     
     var llvm_optimizer = llvm_optimizations.LLVMOptimizer.init(allocator, optimization_level, inline_threshold);
-    defer llvm_optimizer.deinit(allocator);
+    defer llvm_optimizer.deinit();
     
     // Fast tokenization and parsing
     var fast_tokenizer = parser_optimizations.FastTokenizer.init(allocator, source) catch return;
-    defer fast_tokenizer.deinit(allocator);
+    defer fast_tokenizer.deinit();
     
     const tokens = fast_tokenizer.tokenize() catch return;
     
     var fast_parser = parser_optimizations.FastParser.init(allocator, tokens);
-    defer fast_parser.deinit(allocator);
+    defer fast_parser.deinit();
     
     const ast = fast_parser.parse() catch return;
     
@@ -220,20 +220,20 @@ fn generateBasicLLVMIR(
     
     if (verbose) print("📝 Generated basic LLVM IR ({} bytes)\n", .{ir.items.len});
     
-    return ir.toOwnedSlice(allocator);
+    return ir.toOwnedSlice();
 }
 
 // Main entry point with optimization flags
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
     
     if (args.len < 2) {
-        print("Usage: cursed-optimized [--compile] [--optimize=N] [--verbose] <file.csd>\n");
+        print("Usage: cursed-optimized [--compile] [--optimize=N] [--verbose] <file.csd>\n", .{});
         return;
     }
     
@@ -256,7 +256,7 @@ pub fn main() !void {
     }
     
     if (filename == null) {
-        print("❌ Error: No CURSED source file specified\n");
+        print("❌ Error: No CURSED source file specified\n", .{});
         return;
     }
     

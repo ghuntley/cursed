@@ -126,11 +126,11 @@ pub const InlinedFunctionDebugGenerator = struct {
     }
     
     pub fn deinit(self: *InlinedFunctionDebugGenerator) void {
-        self.inline_contexts.deinit(allocator);
-        self.inlined_function_debug_info.deinit(allocator);
-        self.variable_mappings.deinit(allocator);
-        self.instruction_debug_locations.deinit(allocator);
-        self.inline_stack.deinit(allocator);
+        self.inline_contexts.deinit();
+        self.inlined_function_debug_info.deinit();
+        self.variable_mappings.deinit();
+        self.instruction_debug_locations.deinit();
+        self.inline_stack.deinit();
     }
     
     /// Create debug information for an inlined function
@@ -216,14 +216,14 @@ pub const InlinedFunctionDebugGenerator = struct {
         mapping.original_debug_info = original_debug_info;
         mapping.inlined_debug_info = inlined_debug_info;
         
-        try self.variable_mappings.append(allocator, mapping);
+        try self.variable_mappings.append(mapping);
         
         std.debug.print("📍 Tracked inlined variable: {s} -> {s}\n", .{ original_name, inlined_name });
     }
     
     /// Handle nested inlining by maintaining a stack of inline contexts
     pub fn pushInlineContext(self: *InlinedFunctionDebugGenerator, context: *const InlineContext) InlineDebugError!void {
-        try self.inline_stack.append(allocator, context);
+        try self.inline_stack.append(context);
     }
     
     pub fn popInlineContext(self: *InlinedFunctionDebugGenerator) void {
@@ -305,10 +305,10 @@ pub const InlinedFunctionDebugGenerator = struct {
         
         const writer = file.writer();
         
-        try writer.print("# CURSED Inlined Function Debug Report\n\n");
+        try writer.print("# CURSED Inlined Function Debug Report\n\n", .{});
         try writer.print("Generated: {d} inline contexts tracked\n\n", .{self.inline_contexts.items.len});
         
-        try writer.print("## Inline Contexts\n\n");
+        try writer.print("## Inline Contexts\n\n", .{});
         for (self.inline_contexts.items, 0..) |context, i| {
             try writer.print("### Context {d}\n", .{i + 1});
             try writer.print("- Original Function: `{s}`\n", .{context.original_function});
@@ -316,19 +316,19 @@ pub const InlinedFunctionDebugGenerator = struct {
             try writer.print("- Inline Site: {s}:{d}:{d}\n", .{context.original_file, context.inline_site_line, context.inline_site_column});
             try writer.print("- Original Location: {d}:{d}\n", .{context.original_line, context.original_column});
             try writer.print("- Inline Depth: {d}\n", .{context.inline_depth});
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
         
-        try writer.print("## Variable Mappings\n\n");
+        try writer.print("## Variable Mappings\n\n", .{});
         for (self.variable_mappings.items, 0..) |mapping, i| {
             try writer.print("### Mapping {d}\n", .{i + 1});
             try writer.print("- Original: `{s}`\n", .{mapping.original_name});
             try writer.print("- Inlined: `{s}`\n", .{mapping.inlined_name});
             try writer.print("- Context: {s} -> {s}\n", .{mapping.inline_context.original_function, mapping.inline_context.target_function});
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
         
-        try writer.print("## Statistics\n\n");
+        try writer.print("## Statistics\n\n", .{});
         try writer.print("- Total inline contexts: {d}\n", .{self.inline_contexts.items.len});
         try writer.print("- Total variable mappings: {d}\n", .{self.variable_mappings.items.len});
         try writer.print("- Total instruction mappings: {d}\n", .{self.instruction_debug_locations.count()});
@@ -367,7 +367,7 @@ pub const InlinedFunctionDebugGenerator = struct {
         }
         
         if (valid) {
-            std.debug.print("✅ All inlined debug information is valid\n");
+            std.debug.print("✅ All inlined debug information is valid\n", .{});
         }
         
         return valid;
@@ -439,10 +439,10 @@ pub const InlinedDebugIntegration = struct {
 
 /// Test the inlined function debug generation
 pub fn testInlinedFunctionDebug() !void {
-    std.debug.print("Testing inlined function debug generation...\n");
+    std.debug.print("Testing inlined function debug generation...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Create mock LLVM context and DI builder
@@ -450,7 +450,7 @@ pub fn testInlinedFunctionDebug() !void {
     const di_builder: c.LLVMDIBuilderRef = null; // Mock
     
     var inlined_debug = try InlinedFunctionDebugGenerator.init(allocator, context, di_builder);
-    defer inlined_debug.deinit(allocator);
+    defer inlined_debug.deinit();
     
     // Test creating inline context
     const inline_context = InlineContext.init(
@@ -471,7 +471,7 @@ pub fn testInlinedFunctionDebug() !void {
     // Generate test report
     try inlined_debug.generateInliningReport("inlined_debug_test_report.md");
     
-    std.debug.print("✅ Inlined function debug tests passed!\n");
+    std.debug.print("✅ Inlined function debug tests passed!\n", .{});
 }
 
 // Export functions for integration with LLVM backend

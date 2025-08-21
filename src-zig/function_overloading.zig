@@ -81,7 +81,7 @@ pub const FunctionSignature = struct {
     }
     
     pub fn deinit(self: *FunctionSignature) void {
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
         self.allocator.free(self.mangled_name);
     }
     
@@ -90,7 +90,7 @@ pub const FunctionSignature = struct {
         // Update mangled name
         self.allocator.free(self.mangled_name);
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (self.parameters.items) |p| {
             try param_types.append(self.allocator, p.param_type);
@@ -156,7 +156,7 @@ pub const FunctionSignature = struct {
     pub fn format(self: *const FunctionSignature, writer: anytype) !void {
         try writer.print("slay {}(", .{self.name});
         for (self.parameters.items, 0..) |param, i| {
-            if (i > 0) try writer.print(", ");
+            if (i > 0) try writer.print(", ", .{});
             try writer.print("{} {}", .{ param.name, param.param_type });
         }
         try writer.print(") {}", .{self.return_type});
@@ -178,9 +178,9 @@ pub const OverloadSet = struct {
     
     pub fn deinit(self: *OverloadSet) void {
         for (self.overloads.items) |*overload| {
-            overload.deinit(allocator);
+            overload.deinit();
         }
-        self.overloads.deinit(allocator);
+        self.overloads.deinit();
     }
     
     pub fn addOverload(self: *OverloadSet, signature: FunctionSignature) !void {
@@ -200,17 +200,17 @@ pub const OverloadSet = struct {
             }
         }
         
-        try self.overloads.append(allocator, signature);
+        try self.overloads.append(signature);
     }
     
     pub fn resolveCall(self: *const OverloadSet, arg_types: []const FunctionType) OverloadingError!*const FunctionSignature {
         var candidates = .empty;
-        defer candidates.deinit(allocator);
+        defer candidates.deinit();
         
         // Find all matching overloads
         for (self.overloads.items) |*overload| {
             if (overload.matchesCall(arg_types)) {
-                try candidates.append(allocator, overload);
+                try candidates.append(overload);
             }
         }
         
@@ -244,7 +244,7 @@ pub const FunctionRegistry = struct {
     overload_sets: HashMap([]const u8, OverloadSet),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) FunctionRegistry {
+    pub fn init() FunctionRegistry {
         return FunctionRegistry{
             .overload_sets = HashMap([]const u8, OverloadSet).init(allocator),
             .allocator = allocator,
@@ -254,9 +254,9 @@ pub const FunctionRegistry = struct {
     pub fn deinit(self: *FunctionRegistry) void {
         var iter = self.overload_sets.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.overload_sets.deinit(allocator);
+        self.overload_sets.deinit();
     }
     
     pub fn registerFunction(self: *FunctionRegistry, signature: FunctionSignature) !void {
@@ -280,11 +280,11 @@ pub const FunctionRegistry = struct {
 // Function name mangling for unique identification
 fn mangleFunctionName(allocator: Allocator, name: []const u8, param_types: []const FunctionType) ![]u8 {
     var mangled = .empty;
-    defer mangled.deinit(allocator);
+    defer mangled.deinit();
     
     try mangled.appendSlice("_CURSED_");
     try mangled.appendSlice(name);
-    try mangled.append(allocator, '_');
+    try mangled.append('_');
     
     for (param_types) |param_type| {
         const type_code = switch (param_type) {
@@ -305,7 +305,7 @@ fn mangleFunctionName(allocator: Allocator, name: []const u8, param_types: []con
         try mangled.appendSlice(type_code);
     }
     
-    return mangled.toOwnedSlice(allocator);
+    return mangled.toOwnedSlice();
 }
 
 // Helper functions for parser integration
@@ -324,7 +324,7 @@ pub fn parseParameterList(allocator: Allocator, param_string: []const u8) !Array
         const type_str = parts.next() orelse "normie";
         
         const param_type = parseType(type_str);
-        try params.append(allocator, Parameter.init(name, param_type));
+        try params.append(Parameter.init(name, param_type));
     }
     
     return params;
@@ -351,7 +351,7 @@ pub fn initFunctionOverloading(allocator: Allocator) !void {
 
 pub fn deinitFunctionOverloading() void {
     if (global_registry) |*registry| {
-        registry.deinit(allocator);
+        registry.deinit();
         global_registry = null;
     }
 }
@@ -384,10 +384,10 @@ export fn cursed_resolve_function(name_ptr: [*]const u8, name_len: usize,
     const arg_types_raw = arg_types_ptr[0..arg_count];
     
     var arg_types: std.ArrayList(FunctionType) = .empty;
-    defer arg_types.deinit(allocator);
+    defer arg_types.deinit();
     
     for (arg_types_raw) |arg_type_raw| {
-        arg_types.append(allocator, @enumFromInt(arg_type_raw)) catch return null;
+        arg_types.append(@enumFromInt(arg_type_raw)) catch return null;
     }
     
     const signature = global_registry.?.resolveFunction(name, arg_types.items) catch return null;
@@ -396,14 +396,14 @@ export fn cursed_resolve_function(name_ptr: [*]const u8, name_len: usize,
 
 // Testing
 pub fn testFunctionOverloading() !void {
-    print("Testing function overloading implementation...\n");
+    print("Testing function overloading implementation...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var registry = FunctionRegistry.init(allocator);
-    defer registry.deinit(allocator);
+    defer registry.deinit();
     
     // Register multiple overloads for "add"
     var sig1 = try FunctionSignature.init(allocator, "add", .Normie);
@@ -430,5 +430,5 @@ pub fn testFunctionOverloading() !void {
     std.testing.expect(resolved2.return_type == .Meal) catch return error.TestFailed;
     std.testing.expect(resolved3.return_type == .Tea) catch return error.TestFailed;
     
-    print("Function overloading tests passed!\n");
+    print("Function overloading tests passed!\n", .{});
 }

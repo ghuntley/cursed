@@ -277,7 +277,7 @@ pub const MemoryBenchmarkSuite = struct {
     }
     
     pub fn deinit(self: *MemoryBenchmarkSuite) void {
-        self.results.deinit(allocator);
+        self.results.deinit();
     }
     
     /// Run comprehensive benchmark suite
@@ -349,15 +349,15 @@ pub const MemoryBenchmarkSuite = struct {
         
         // Sequential allocation benchmark
         const seq_result = try self.benchmarkSequentialAllocation(pool);
-        try self.results.append(allocator, seq_result);
+        try self.results.append(seq_result);
         
         // Random size allocation benchmark
         const rand_result = try self.benchmarkRandomSizeAllocation(pool);
-        try self.results.append(allocator, rand_result);
+        try self.results.append(rand_result);
         
         // Allocation/deallocation pairs benchmark
         const pair_result = try self.benchmarkAllocationPairs(pool);
-        try self.results.append(allocator, pair_result);
+        try self.results.append(pair_result);
     }
     
     fn runMultiThreadedBenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool, numa: ?*NUMATopology) !void {
@@ -365,21 +365,21 @@ pub const MemoryBenchmarkSuite = struct {
         
         // Concurrent allocation benchmark
         const concurrent_result = try self.benchmarkConcurrentAllocation(pool);
-        try self.results.append(allocator, concurrent_result);
+        try self.results.append(concurrent_result);
         
         // Producer-consumer benchmark
         const prodcons_result = try self.benchmarkProducerConsumer(pool);
-        try self.results.append(allocator, prodcons_result);
+        try self.results.append(prodcons_result);
     }
     
     fn runNUMABenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool, numa: *NUMATopology) !void {
         // Local vs remote allocation latency
         const numa_latency_result = try self.benchmarkNUMALatency(pool, numa);
-        try self.results.append(allocator, numa_latency_result);
+        try self.results.append(numa_latency_result);
         
         // Cross-NUMA bandwidth
         const numa_bandwidth_result = try self.benchmarkNUMABandwidth(pool, numa);
-        try self.results.append(allocator, numa_bandwidth_result);
+        try self.results.append(numa_bandwidth_result);
     }
     
     fn runSizeClassBenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool) !void {
@@ -387,7 +387,7 @@ pub const MemoryBenchmarkSuite = struct {
         
         for (size_classes) |size| {
             const result = try self.benchmarkFixedSizeAllocation(pool, size);
-            try self.results.append(allocator, result);
+            try self.results.append(result);
         }
     }
     
@@ -558,7 +558,7 @@ pub const MemoryBenchmarkSuite = struct {
                     for (allocations.items) |allocation| {
                         data.pool.free(allocation);
                     }
-                    allocations.deinit(allocator);
+                    allocations.deinit();
                 }
                 
                 var rng = std.rand.DefaultPrng.init(@as(u64, @intCast(std.time.nanoTimestamp())));
@@ -573,7 +573,7 @@ pub const MemoryBenchmarkSuite = struct {
                     const allocation = data.pool.alloc(size) catch continue;
                     const end = std.time.nanoTimestamp();
                     
-                    allocations.append(allocator, allocation) catch continue;
+                    allocations.append(allocation) catch continue;
                     local_latency += @as(u64, @intCast(end - start));
                     local_bytes += size;
                 }
@@ -627,7 +627,7 @@ pub const MemoryBenchmarkSuite = struct {
             for (allocated_ptrs.items) |ptr| {
                 pool.free(ptr);
             }
-            allocated_ptrs.deinit(allocator);
+            allocated_ptrs.deinit();
         }
         
         const start_time = std.time.nanoTimestamp();
@@ -639,7 +639,7 @@ pub const MemoryBenchmarkSuite = struct {
             const ptr = try pool.alloc(1024);
             const alloc_end = std.time.nanoTimestamp();
             
-            try allocated_ptrs.append(allocator, ptr);
+            try allocated_ptrs.append(ptr);
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
         }
         
@@ -821,7 +821,7 @@ pub const MemoryBenchmarkSuite = struct {
             for (allocations.items) |allocation| {
                 pool.free(allocation);
             }
-            allocations.deinit(allocator);
+            allocations.deinit();
         }
         
         const start_time = std.time.nanoTimestamp();
@@ -835,7 +835,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = pool.alloc(size) catch break;
             const alloc_end = std.time.nanoTimestamp();
             
-            allocations.append(allocator, allocation) catch break;
+            allocations.append(allocation) catch break;
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
             allocation_count += 1;
             
@@ -872,7 +872,7 @@ pub const MemoryBenchmarkSuite = struct {
             for (allocations.items) |allocation| {
                 pool.free(allocation);
             }
-            allocations.deinit(allocator);
+            allocations.deinit();
         }
         
         var rng = std.rand.DefaultPrng.init(@as(u64, @intCast(std.time.timestamp())));
@@ -888,7 +888,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = try pool.alloc(size);
             const alloc_end = std.time.nanoTimestamp();
             
-            try allocations.append(allocator, allocation);
+            try allocations.append(allocation);
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
             
             // Randomly free some allocations to create holes
@@ -906,7 +906,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = pool.alloc(size) catch continue;
             const alloc_end = std.time.nanoTimestamp();
             
-            allocations.append(allocator, allocation) catch continue;
+            allocations.append(allocation) catch continue;
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
         }
         
@@ -1085,10 +1085,10 @@ pub const MemoryPerformanceMonitor = struct {
             thread.join();
         }
         
-        self.event_buffer.deinit(allocator);
-        self.metrics_history.deinit(allocator);
-        self.hotspots.deinit(allocator);
-        self.regression_alerts.deinit(allocator);
+        self.event_buffer.deinit();
+        self.metrics_history.deinit();
+        self.hotspots.deinit();
+        self.regression_alerts.deinit();
     }
     
     /// Record allocation event
@@ -1124,7 +1124,7 @@ pub const MemoryPerformanceMonitor = struct {
         var iterator = self.hotspots.iterator();
         while (iterator.next()) |entry| {
             if (entry.value_ptr.calculateScore() > self.config.hotspot_threshold) {
-                try hotspots.append(self, entry.value_ptr.*);
+                try hotspots.append(self, self, entry.value_ptr.*);
             }
         }
         
@@ -1136,7 +1136,7 @@ pub const MemoryPerformanceMonitor = struct {
         };
         std.mem.sort(MemoryHotspot, hotspots.items, {}, SortContext.lessThan);
         
-        return hotspots.toOwnedSlice(allocator);
+        return hotspots.toOwnedSlice();
     }
     
     /// Get regression alerts
@@ -1178,13 +1178,13 @@ pub const MemoryPerformanceMonitor = struct {
         
         // Process events in the time window
         var events = .empty;
-        defer events.deinit(allocator);
+        defer events.deinit();
         
         // Read all events from buffer (simplified - in practice, would filter by time)
         while (self.event_buffer.readOne()) |event| {
             if (event.timestamp >= @as(u64, @intCast(start_time)) and 
                 event.timestamp <= @as(u64, @intCast(end_time))) {
-                events.append(allocator, event) catch break;
+                events.append(event) catch break;
             }
         }
         
@@ -1195,12 +1195,12 @@ pub const MemoryPerformanceMonitor = struct {
         self.current_metrics = metrics;
         
         // Add to history
-        self.metrics_history.append(allocator, metrics) catch {
+        self.metrics_history.append(metrics) catch {
             // Remove oldest if we're at capacity
             if (self.metrics_history.items.len >= 1440) { // Keep 24 hours of minute-level data
                 _ = self.metrics_history.orderedRemove(0);
             }
-            self.metrics_history.append(allocator, metrics) catch {};
+            self.metrics_history.append(metrics) catch {};
         };
         
         // Detect regressions
@@ -1228,7 +1228,7 @@ pub const MemoryPerformanceMonitor = struct {
         var total_bytes: u64 = 0;
         var total_latency: u64 = 0;
         var latencies = .empty;
-        defer latencies.deinit(allocator);
+        defer latencies.deinit();
         
         var min_latency: u32 = std.math.maxInt(u32);
         var max_latency: u32 = 0;
@@ -1242,7 +1242,7 @@ pub const MemoryPerformanceMonitor = struct {
                     total_bytes += event.size;
                     total_latency += event.latency_ns;
                     
-                    latencies.append(allocator, event.latency_ns) catch {};
+                    latencies.append(event.latency_ns) catch {};
                     
                     min_latency = @min(min_latency, event.latency_ns);
                     max_latency = @max(max_latency, event.latency_ns);
@@ -1362,7 +1362,7 @@ pub const MemoryPerformanceMonitor = struct {
                     .timestamp = @as(u64, @intCast(std.time.timestamp())),
                     .severity = RegressionAlert.getSeverity(regression),
                 };
-                self.regression_alerts.append(allocator, alert) catch {};
+                self.regression_alerts.append(alert) catch {};
             }
         }
         
@@ -1379,7 +1379,7 @@ pub const MemoryPerformanceMonitor = struct {
                     .timestamp = @as(u64, @intCast(std.time.timestamp())),
                     .severity = RegressionAlert.getSeverity(regression),
                 };
-                self.regression_alerts.append(allocator, alert) catch {};
+                self.regression_alerts.append(alert) catch {};
             }
         }
         
@@ -1414,7 +1414,7 @@ export fn cursed_memory_monitor_create(buffer_size: usize, window_us: u64) ?*Mem
 
 export fn cursed_memory_monitor_destroy(monitor: ?*MemoryPerformanceMonitor) void {
     if (monitor) |m| {
-        m.deinit(allocator);
+        m.deinit();
         std.heap.page_allocator.destroy(m);
     }
 }

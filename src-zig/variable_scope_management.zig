@@ -133,18 +133,18 @@ pub const Scope = struct {
         // Clean up variables
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
         
         // Clean up children
         for (self.children.items) |child| {
-            child.deinit(allocator);
+            child.deinit();
             self.allocator.destroy(child);
         }
-        self.children.deinit(allocator);
+        self.children.deinit();
         
-        self.captured_variables.deinit(allocator);
+        self.captured_variables.deinit();
     }
     
     pub fn addChild(self: *Scope, child: *Scope) !void {
@@ -186,7 +186,7 @@ pub const Scope = struct {
                 // Mark as captured if accessed from child scope
                 if (self.depth > scope.depth and scope.is_function_scope) {
                     variable.is_captured = true;
-                    scope.captured_variables.append(allocator, name) catch {};
+                    scope.captured_variables.append(name) catch {};
                 }
                 return variable;
             }
@@ -218,7 +218,7 @@ pub const Scope = struct {
         if (self.depth == target_depth) {
             var var_iter = self.variables.iterator();
             while (var_iter.next()) |entry| {
-                try result.append(allocator, entry.value_ptr.*);
+                try result.append(entry.value_ptr.*);
             }
         }
         
@@ -252,7 +252,7 @@ pub const ScopeManager = struct {
         global_scope.* = Scope.init(allocator, .Global, 0, null, 0, 0);
         
         var scope_stack = .empty;
-        try scope_stack.append(allocator, global_scope);
+        try scope_stack.append(global_scope);
         
         return ScopeManager{
             .global_scope = global_scope,
@@ -266,10 +266,10 @@ pub const ScopeManager = struct {
     }
     
     pub fn deinit(self: *ScopeManager) void {
-        self.global_scope.deinit(allocator);
+        self.global_scope.deinit();
         self.allocator.destroy(self.global_scope);
-        self.scope_stack.deinit(allocator);
-        self.function_scopes.deinit(allocator);
+        self.scope_stack.deinit();
+        self.function_scopes.deinit();
     }
     
     pub fn enterScope(self: *ScopeManager, scope_type: ScopeType, start_line: u32, start_column: u32) !*Scope {
@@ -374,13 +374,13 @@ pub const ScopeManager = struct {
     }
     
     pub fn generateScopeReport(self: *ScopeManager, writer: anytype) !void {
-        try writer.print("Scope Report:\n");
+        try writer.print("Scope Report:\n", .{});
         try writer.print("Max depth: {}\n", .{self.max_depth});
         try writer.print("Current depth: {}\n", .{self.current_depth});
         try writer.print("Function scopes: {}\n", .{self.function_scopes.items.len});
         
         var all_variables = .empty;
-        defer all_variables.deinit(allocator);
+        defer all_variables.deinit();
         
         for (0..self.max_depth + 1) |depth| {
             try self.global_scope.getVariablesAtDepth(@intCast(depth), &all_variables);
@@ -408,7 +408,7 @@ pub fn initScopeManagement(allocator: Allocator) !void {
 
 pub fn deinitScopeManagement() void {
     if (global_scope_manager) |*manager| {
-        manager.deinit(allocator);
+        manager.deinit();
         global_scope_manager = null;
     }
 }
@@ -455,14 +455,14 @@ export fn cursed_check_shadowing(name_ptr: [*]const u8, name_len: usize) u32 {
 
 // Testing
 pub fn testScopeManagement() !void {
-    print("Testing variable scope management...\n");
+    print("Testing variable scope management...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var manager = try ScopeManager.init(allocator);
-    defer manager.deinit(allocator);
+    defer manager.deinit();
     
     // Test global scope
     try manager.declareVariable("global_var", "normie", 1, 1);
@@ -493,5 +493,5 @@ pub fn testScopeManagement() !void {
     
     try manager.exitScope(20, 1);
     
-    print("Scope management tests passed!\n");
+    print("Scope management tests passed!\n", .{});
 }

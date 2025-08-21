@@ -30,7 +30,7 @@ pub const StructInstance = struct {
     
     pub fn deinit(self: *StructInstance) void {
         self.allocator.free(self.type_name);
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
     
     pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
@@ -123,7 +123,7 @@ pub const Environment = struct {
     }
 
     pub fn deinit(self: *Environment) void {
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -244,7 +244,7 @@ pub const StructType = struct {
     
     pub fn deinit(self: *StructType) void {
         self.allocator.free(self.name);
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
     
     pub fn addField(self: *StructType, name: []const u8, field_type: []const u8) !void {
@@ -267,7 +267,7 @@ pub const SimpleInterpreter = struct {
     struct_types: HashMap([]const u8, StructType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
 
-    pub fn init(allocator: Allocator) SimpleInterpreter {
+    pub fn init() SimpleInterpreter {
         return SimpleInterpreter{
             .environment = Environment.init(allocator, null),
             .functions = HashMap([]const u8, FuncStmt, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -277,9 +277,9 @@ pub const SimpleInterpreter = struct {
     }
 
     pub fn deinit(self: *SimpleInterpreter) void {
-        self.environment.deinit(allocator);
-        self.functions.deinit(allocator);
-        self.struct_types.deinit(allocator);
+        self.environment.deinit();
+        self.functions.deinit();
+        self.struct_types.deinit();
     }
 
     pub fn execute(self: *SimpleInterpreter, tokens: []const lexer.Token) InterpreterError!void {
@@ -585,7 +585,7 @@ test "simple interpreter basic" {
     const allocator = std.testing.allocator;
     
     var interpreter = SimpleInterpreter.init(allocator);
-    defer interpreter.deinit(allocator);
+    defer interpreter.deinit();
     
     // Test basic value operations
     const int_val = Value{ .Integer = 42 };

@@ -181,7 +181,7 @@ pub const AdvancedCodeGen = struct {
         
         // Cleanup GC integration
         if (self.gc_integration) |gc_ptr| {
-            gc_ptr.deinit(allocator);
+            gc_ptr.deinit();
             self.base_codegen.allocator.destroy(gc_ptr);
         }
         
@@ -202,36 +202,36 @@ pub const AdvancedCodeGen = struct {
         }
         
         // 2. Clean up Zig data structures
-        self.base_codegen.deinit(allocator);
-        self.defer_stack.deinit(allocator);
+        self.base_codegen.deinit();
+        self.defer_stack.deinit();
         
         // Clean up scope defer stacks
         var scope_iter = self.scope_defer_stacks.iterator();
         while (scope_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.scope_defer_stacks.deinit(allocator);
+        self.scope_defer_stacks.deinit();
         
-        self.struct_types.deinit(allocator);
-        self.interface_types.deinit(allocator);
-        self.generic_instances.deinit(allocator);
-        self.vtables.deinit(allocator);
+        self.struct_types.deinit();
+        self.interface_types.deinit();
+        self.generic_instances.deinit();
+        self.vtables.deinit();
         
         // Clean up monomorphizer
-        self.monomorphizer.deinit(allocator);
+        self.monomorphizer.deinit();
         self.base_codegen.allocator.destroy(self.monomorphizer);
         
-        self.gc_type_registry.deinit(allocator);
-        self.typed_allocator.deinit(allocator);
-        self.interface_registry.deinit(allocator);
-        self.interface_dispatcher.deinit(allocator);
+        self.gc_type_registry.deinit();
+        self.typed_allocator.deinit();
+        self.interface_registry.deinit();
+        self.interface_dispatcher.deinit();
         if (self.optimization_engine) |*engine| {
-            engine.deinit(allocator);
+            engine.deinit();
         }
         if (self.debug_generator) |*debug_gen| {
-            debug_gen.deinit(allocator);
+            debug_gen.deinit();
         }
-        self.source_locations.deinit(allocator);
+        self.source_locations.deinit();
         
         std.debug.print("✅ AdvancedCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
@@ -363,7 +363,7 @@ pub const AdvancedCodeGen = struct {
         const scope_id = blk: {
             const stack_len = self.scope_stack.items.len;
             if (stack_len == 0) {
-                std.debug.print("⚠️ Warning: No active scopes in defer statement, using default scope 0\n");
+                std.debug.print("⚠️ Warning: No active scopes in defer statement, using default scope 0\n", .{});
                 break :blk @as(u32, 0);
             }
             
@@ -387,7 +387,7 @@ pub const AdvancedCodeGen = struct {
             .scope_id = scope_id,
         };
         
-        try self.defer_stack.append(allocator, defer_info);
+        try self.defer_stack.append(defer_info);
         
         std.debug.print("✅ Advanced defer statement compiled: {s} (error-safe, LIFO)\n", .{cleanup_func_name});
     }
@@ -479,7 +479,7 @@ pub const AdvancedCodeGen = struct {
                 ""
             );
             
-            std.debug.print("💥 Generated error handling with defer cleanup\n");
+            std.debug.print("💥 Generated error handling with defer cleanup\n", .{});
         }
     }
     
@@ -584,7 +584,7 @@ pub const AdvancedCodeGen = struct {
             try self.base_codegen.runtime_functions.put("cursed_defer_init", init_func);
         }
         
-        std.debug.print("✅ All defer runtime functions declared\n");
+        std.debug.print("✅ All defer runtime functions declared\n", .{});
     }
     
     /// Generate function exit with defer cleanup
@@ -616,11 +616,11 @@ pub const AdvancedCodeGen = struct {
         self.current_scope_id += 1;
         
         // Bounds-checked append with error handling
-        try self.scope_stack.append(allocator, self.current_scope_id);
+        try self.scope_stack.append(self.current_scope_id);
         
         // Verify the append was successful
         if (self.scope_stack.items.len == 0 or self.scope_stack.items[self.scope_stack.items.len - 1] != self.current_scope_id) {
-            std.debug.print("🚨 Critical: Scope stack append verification failed\n");
+            std.debug.print("🚨 Critical: Scope stack append verification failed\n", .{});
             return error.ScopeStackCorruption;
         }
         
@@ -631,14 +631,14 @@ pub const AdvancedCodeGen = struct {
     /// Exit current scope and generate defer cleanup with bounds checking
     pub fn exitScope(self: *AdvancedCodeGen) !void {
         if (self.scope_stack.items.len == 0) {
-            std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n");
+            std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n", .{});
             return;
         }
         
         // Double-check bounds before popping
         const stack_len = self.scope_stack.items.len;
         if (stack_len == 0) {
-            std.debug.print("🚨 Critical: Race condition detected - scope stack emptied between checks\n");
+            std.debug.print("🚨 Critical: Race condition detected - scope stack emptied between checks\n", .{});
             return error.ScopeStackUnderflow;
         }
         
@@ -715,7 +715,7 @@ pub const AdvancedCodeGen = struct {
         c.LLVMPositionBuilderAtEnd(builder, error_exit_block);
         _ = c.LLVMBuildRet(builder, error_value);
         
-        std.debug.print("💥 Generated error handling with defer cleanup\n");
+        std.debug.print("💥 Generated error handling with defer cleanup\n", .{});
     }
     
     /// Set debug location for current instruction
@@ -968,13 +968,13 @@ pub const AdvancedCodeGen = struct {
         const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @truncate(select_stmt.cases.items.len)));
         
         var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
-        defer case_blocks.deinit(allocator);
+        defer case_blocks.deinit();
         
         // Generate blocks for each case
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(context, current_function, 
                 try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
-            try case_blocks.append(allocator, case_block);
+            try case_blocks.append(case_block);
 
             // Add case to switch
             const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
@@ -1383,8 +1383,8 @@ pub const AdvancedCodeGen = struct {
         // Generate pattern matching cases
         var phi_values = .empty;
         var phi_blocks = .empty;
-        defer phi_values.deinit(allocator);
-        defer phi_blocks.deinit(allocator);
+        defer phi_values.deinit();
+        defer phi_blocks.deinit();
         
         for (match_expr.cases.items) |case| {
             const case_block = c.LLVMAppendBasicBlockInContext(self.base_codegen.context, current_func, "match_case");
@@ -1397,8 +1397,8 @@ pub const AdvancedCodeGen = struct {
             // Generate case body
             c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, case_block);
             const case_result = try self.generateExpression(case.result);
-            try phi_values.append(allocator, case_result);
-            try phi_blocks.append(allocator, c.LLVMGetInsertBlock(self.base_codegen.builder));
+            try phi_values.append(case_result);
+            try phi_blocks.append(c.LLVMGetInsertBlock(self.base_codegen.builder));
             
             if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
                 _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
@@ -2066,21 +2066,21 @@ pub const AdvancedCodeGen = struct {
     /// Collect struct definition information
     fn collectStructDefinition(self: *AdvancedCodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
         var field_types = .empty;
-        defer field_types.deinit(allocator);
+        defer field_types.deinit();
         
         var field_names = .empty;
-        defer field_names.deinit(allocator);
+        defer field_names.deinit();
         
         for (struct_stmt.fields.items) |field| {
             const field_type = try self.base_codegen.getLLVMType(field.field_type);
-            try field_types.append(allocator, field_type);
-            try field_names.append(allocator, field.name);
+            try field_types.append(field_type);
+            try field_names.append(field.name);
         }
         
         const struct_info = StructTypeInfo{
             .name = struct_stmt.name,
-            .field_types = try field_types.toOwnedSlice(allocator),
-            .field_names = try field_names.toOwnedSlice(allocator),
+            .field_types = try field_types.toOwnedSlice(),
+            .field_names = try field_names.toOwnedSlice(),
             .llvm_type = null, // Will be set during generation
             .methods = .empty,
             .is_generic = struct_stmt.type_parameters.items.len > 0,
@@ -2100,7 +2100,7 @@ pub const AdvancedCodeGen = struct {
                 .index = index,
                 .signature = method, // Store full signature
             };
-            try methods.append(allocator, method_info);
+            try methods.append(method_info);
         }
         
         const interface_info = InterfaceTypeInfo{
@@ -2197,7 +2197,7 @@ pub const AdvancedCodeGen = struct {
             
             // Register interface with dispatcher
             var method_signatures = .empty;
-            defer method_signatures.deinit(allocator);
+            defer method_signatures.deinit();
             
             for (interface_info.methods.items) |method| {
                 const signature = interface_dispatch.MethodSignature{
@@ -2205,7 +2205,7 @@ pub const AdvancedCodeGen = struct {
                     .parameter_types = &[_][]const u8{}, // TODO: Add proper type conversion
                     .return_type = "void", // TODO: Add proper return type
                 };
-                try method_signatures.append(allocator, signature);
+                try method_signatures.append(signature);
             }
             
             try self.interface_dispatcher.registerInterface(interface_info.name, method_signatures.items);
@@ -2226,7 +2226,7 @@ pub const AdvancedCodeGen = struct {
     /// Register struct implementation with interface dispatcher
     fn registerStructImplementation(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) CodeGenError!void {
         var method_impls = .empty;
-        defer method_impls.deinit(allocator);
+        defer method_impls.deinit();
         
         for (interface_info.methods.items) |interface_method| {
             // Find corresponding method in struct
@@ -2269,7 +2269,7 @@ pub const AdvancedCodeGen = struct {
     /// Generate vtable for struct implementing interface
     fn generateVTableForImplementation(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) CodeGenError!void {
         var vtable_name = .empty;
-        defer vtable_name.deinit(allocator);
+        defer vtable_name.deinit();
         
         try vtable_name.appendSlice(struct_info.name);
         try vtable_name.appendSlice("_");
@@ -2295,7 +2295,7 @@ pub const AdvancedCodeGen = struct {
         
         // Initialize vtable with method pointers
         var method_pointers = .empty;
-        defer method_pointers.deinit(allocator);
+        defer method_pointers.deinit();
         
         for (interface_info.methods.items) |interface_method| {
             // Find corresponding method in struct
@@ -2304,7 +2304,7 @@ pub const AdvancedCodeGen = struct {
                 return CodeGenError.UndefinedSymbol;
             };
             
-            try method_pointers.append(allocator, method_func);
+            try method_pointers.append(method_func);
         }
         
         // Create constant array initializer
@@ -2313,7 +2313,7 @@ pub const AdvancedCodeGen = struct {
         
         // Store vtable info
         const vtable_info = VTableInfo{
-            .name = try vtable_name.toOwnedSlice(allocator),
+            .name = try vtable_name.toOwnedSlice(),
             .interface_name = interface_info.name,
             .struct_name = struct_info.name,
             .global_value = vtable_global,
@@ -2364,13 +2364,13 @@ pub const AdvancedCodeGen = struct {
         if (self.struct_types.get(base_name)) |base_struct| {
             // Create specialized struct type
             var specialized_field_types = .empty;
-            defer specialized_field_types.deinit(allocator);
+            defer specialized_field_types.deinit();
             
             // Substitute type parameters with concrete types
             for (base_struct.field_types) |field_type| {
                 // For now, use the field type as-is
                 // In a full implementation, we would do type parameter substitution
-                try specialized_field_types.append(allocator, field_type);
+                try specialized_field_types.append(field_type);
             }
             
             // Create the specialized LLVM struct type
@@ -2380,7 +2380,7 @@ pub const AdvancedCodeGen = struct {
             // Store the specialized type
             const specialized_struct = StructTypeInfo{
                 .name = specialized_name,
-                .field_types = try specialized_field_types.toOwnedSlice(allocator),
+                .field_types = try specialized_field_types.toOwnedSlice(),
                 .field_names = base_struct.field_names,
                 .llvm_type = specialized_llvm_type,
                 .methods = .empty,
@@ -2669,11 +2669,11 @@ pub const AdvancedCodeGen = struct {
         
         // Prepare arguments (data pointer + original args)
         var call_args = .empty;
-        defer call_args.deinit(allocator);
+        defer call_args.deinit();
         
-        try call_args.append(allocator, data_ptr); // self pointer
+        try call_args.append(data_ptr); // self pointer
         for (args) |arg| {
-            try call_args.append(allocator, arg);
+            try call_args.append(arg);
         }
         
         // Call the method through function pointer
@@ -2738,7 +2738,7 @@ pub const AdvancedCodeGen = struct {
             self.last_optimization_result = result;
             
             // Print optimization statistics
-            std.debug.print("✅ Advanced optimizations applied:\n");
+            std.debug.print("✅ Advanced optimizations applied:\n", .{});
             std.debug.print("   - Functions optimized: {}\n", .{result.functions_optimized});
             std.debug.print("   - Instructions eliminated: {}\n", .{result.instructions_eliminated});
             std.debug.print("   - Constants folded: {}\n", .{result.constants_folded});
@@ -2778,7 +2778,7 @@ pub const AdvancedCodeGen = struct {
     /// Generate optimization report
     fn generateOptimizationReport(self: *AdvancedCodeGen, base_path: []const u8) CodeGenError!void {
         var report_path = .empty;
-        defer report_path.deinit(allocator);
+        defer report_path.deinit();
         
         try report_path.appendSlice(base_path);
         try report_path.appendSlice(".opt_report");
@@ -2792,8 +2792,8 @@ pub const AdvancedCodeGen = struct {
         
         const writer = report_file.writer();
         
-        try writer.print("CURSED Advanced Optimization Report\n");
-        try writer.print("====================================\n\n");
+        try writer.print("CURSED Advanced Optimization Report\n", .{});
+        try writer.print("====================================\n\n", .{});
         
         const timestamp = std.fmt.allocPrint(self.base_codegen.allocator, "{}", .{std.time.timestamp()}) catch "unknown";
         defer if (!std.mem.eql(u8, timestamp, "unknown")) self.base_codegen.allocator.free(timestamp);
@@ -2802,7 +2802,7 @@ pub const AdvancedCodeGen = struct {
         try writer.print("Source file: {s}\n\n", .{self.source_file orelse "unknown"});
         
         // Report on optimization passes applied
-        try writer.print("Optimization Passes Applied:\n");
+        try writer.print("Optimization Passes Applied:\n", .{});
         for (self.optimization_passes.items) |pass| {
             switch (pass) {
                 .FunctionInlining => try writer.print("  - Function Inlining\n"),
@@ -2814,18 +2814,18 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Report on type system statistics
-        try writer.print("\nType System Statistics:\n");
+        try writer.print("\nType System Statistics:\n", .{});
         try writer.print("  - Struct types: {d}\n", .{self.struct_types.count()});
         try writer.print("  - Interface types: {d}\n", .{self.interface_types.count()});
         try writer.print("  - Generic instances: {d}\n", .{self.generic_instances.count()});
         try writer.print("  - VTables generated: {d}\n", .{self.vtables.count()});
         
         // Report on memory management
-        try writer.print("\nMemory Management:\n");
+        try writer.print("\nMemory Management:\n", .{});
         try writer.print("  - GC enabled: {s}\n", .{if (self.gc_enabled) "yes" else "no"});
         
         // Report on debug information
-        try writer.print("\nDebug Information:\n");
+        try writer.print("\nDebug Information:\n", .{});
         try writer.print("  - Debug enabled: {s}\n", .{if (self.debug_enabled) "yes" else "no"});
         try writer.print("  - Source locations tracked: {d}\n", .{self.source_locations.count()});
         
@@ -2872,11 +2872,11 @@ pub const AdvancedCodeGen = struct {
         
         // Create function type
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (func_stmt.parameters.items) |param| {
             const param_type = self.base_codegen.convertType(param.param_type) catch c.LLVMInt64TypeInContext(context);
-            try param_types.append(allocator, param_type);
+            try param_types.append(param_type);
         }
         
         const return_type = if (func_stmt.return_type) |ret_type|
@@ -2900,11 +2900,11 @@ pub const AdvancedCodeGen = struct {
             
             // Create debug types for parameters
             var debug_param_types = .empty;
-            defer debug_param_types.deinit(allocator);
+            defer debug_param_types.deinit();
             
             for (func_stmt.parameters.items) |_| {
                 const debug_type = try self.getCursedDebugType("drip"); // Default to drip for now
-                try debug_param_types.append(allocator, debug_type);
+                try debug_param_types.append(debug_type);
             }
             
             // Create debug type for return value
@@ -2996,13 +2996,13 @@ pub const AdvancedCodeGen = struct {
         
         // Create debug field information
         var fields = .empty;
-        defer fields.deinit(allocator);
+        defer fields.deinit();
         
         for (field_names, field_types) |field_name, field_type| {
             const di_type = try self.getCursedDebugType(field_type);
             const size_bits = self.getCursedTypeSize(field_type) * 8;
             
-            try fields.append(allocator, debug_info.StructField{
+            try fields.append(debug_info.StructField{
                 .name = field_name,
                 .di_type = di_type,
                 .size_bits = size_bits,
@@ -3024,11 +3024,11 @@ pub const AdvancedCodeGen = struct {
         
         // For interfaces, create a structure with function pointers
         var fields = .empty;
-        defer fields.deinit(allocator);
+        defer fields.deinit();
         
         // Add vtable pointer field
         const ptr_type = try debug_gen.createPointerType(try self.getCursedDebugType("normie"));
-        try fields.append(allocator, debug_info.StructField{
+        try fields.append(debug_info.StructField{
             .name = "vtable_ptr",
             .di_type = ptr_type,
             .size_bits = 64,
@@ -3038,7 +3038,7 @@ pub const AdvancedCodeGen = struct {
         // Add method function pointers
         for (method_names) |method_name| {
             const func_ptr_type = try debug_gen.createPointerType(try self.getCursedDebugType("normie"));
-            try fields.append(allocator, debug_info.StructField{
+            try fields.append(debug_info.StructField{
                 .name = method_name,
                 .di_type = func_ptr_type,
                 .size_bits = 64,
@@ -3212,12 +3212,12 @@ pub const AdvancedCodeGen = struct {
         
         // Generate elements with type inference
         var element_values = .empty;
-        defer element_values.deinit(allocator);
+        defer element_values.deinit();
         
         var common_type: ?c.LLVMTypeRef = null;
         for (array.elements.items) |element| {
             const value = try self.generateExpression(element);
-            try element_values.append(allocator, value);
+            try element_values.append(value);
             
             if (common_type == null) {
                 common_type = c.LLVMTypeOf(value);
@@ -3558,7 +3558,7 @@ pub const AdvancedCodeGen = struct {
     fn generateAdvancedLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
         // First, analyze the lambda to detect captured variables
         var captured_vars = .empty;
-        defer captured_vars.deinit(allocator);
+        defer captured_vars.deinit();
         
         // Analyze lambda body for variable captures
         switch (lambda.parameters.len) {
@@ -3588,11 +3588,11 @@ pub const AdvancedCodeGen = struct {
         
         // Simple case: treat parameters as string names for now
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (lambda.parameters.items) |_| {
             // Default all parameters to int for now
-            try param_types.append(allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
+            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
         }
         
         const func_type = c.LLVMFunctionType(
@@ -3640,31 +3640,31 @@ pub const AdvancedCodeGen = struct {
     fn generateClosureLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression, captured_vars: [][]const u8) CodeGenError!c.LLVMValueRef {
         // Create closure struct type: { function_ptr, capture_count, captured_vars... }
         var closure_field_types = .empty;
-        defer closure_field_types.deinit(allocator);
+        defer closure_field_types.deinit();
         
         // Function pointer type
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         // First parameter is closure environment pointer
-        try param_types.append(allocator, c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
+        try param_types.append(c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
         
         // Add lambda parameters (default to int for now)
         for (lambda.parameters.items) |_| {
-            try param_types.append(allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
+            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
         }
         
         const return_type = c.LLVMInt32TypeInContext(self.base_codegen.context);
         
         const func_ptr_type = c.LLVMPointerTypeInContext(self.base_codegen.context, 0);
-        try closure_field_types.append(allocator, func_ptr_type);
+        try closure_field_types.append(func_ptr_type);
         
         // Capture count
-        try closure_field_types.append(allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
+        try closure_field_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
         
         // Captured variable slots
         for (captured_vars) |_| {
-            try closure_field_types.append(allocator, c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
+            try closure_field_types.append(c.LLVMPointerTypeInContext(self.base_codegen.context, 0));
         }
         
         const closure_type = c.LLVMStructTypeInContext(
@@ -3788,7 +3788,7 @@ pub const AdvancedCodeGen = struct {
                             return; // Already captured
                         }
                     }
-                    try captured_vars.append(allocator, var_expr.name);
+                    try captured_vars.append(var_expr.name);
                 }
             },
             .FunctionCall => |call| {
@@ -4273,23 +4273,23 @@ pub const AdvancedCodeGen = struct {
         
         // Generate method call arguments
         var llvm_args: std.ArrayList(c.LLVMValueRef) = .empty;
-        defer llvm_args.deinit(allocator);
+        defer llvm_args.deinit();
         
         // First argument is 'self' (the instance)
-        try llvm_args.append(allocator, instance);
+        try llvm_args.append(instance);
         
         // Add other arguments
         for (args) |arg| {
             const arg_value = try self.base_codegen.generateExpression(arg);
-            try llvm_args.append(allocator, arg_value);
+            try llvm_args.append(arg_value);
         }
         
         // Create function type for the method call
         var param_types: std.ArrayList(c.LLVMTypeRef) = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (llvm_args.items) |arg| {
-            try param_types.append(allocator, c.LLVMTypeOf(arg));
+            try param_types.append(c.LLVMTypeOf(arg));
         }
         
         const return_type = c.LLVMInt64TypeInContext(context); // Default return type
@@ -4455,12 +4455,12 @@ pub const AdvancedCodeGen = struct {
         
         // Extract type arguments from call if available
         var type_args: std.ArrayList(Type) = .empty;
-        defer type_args.deinit(allocator);
+        defer type_args.deinit();
         
         // For now, infer types from arguments since CURSED uses type inference
         for (call.arguments) |arg| {
             const arg_type = try self.inferExpressionType(arg);
-            try type_args.append(allocator, arg_type);
+            try type_args.append(arg_type);
         }
         
         // Create mangled name for the instantiated function
@@ -4547,14 +4547,14 @@ pub const AdvancedCodeGen = struct {
         
         // Fallback: treat as regular function call with object as first parameter
         var args: std.ArrayList(c.LLVMValueRef) = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
-        try args.append(allocator, object_value);
+        try args.append(object_value);
         
         // Add method call arguments
         for (method_call.arguments.items) |arg| {
             const arg_value = try self.generateExpression(arg);
-            try args.append(allocator, arg_value);
+            try args.append(arg_value);
         }
         
         // Try to find method as a function with object type as first parameter
@@ -4738,9 +4738,17 @@ pub const AdvancedCodeGen = struct {
         const perf_start = try self.generatePerfCounterStart("vtable_lookup");
         defer self.generatePerfCounterEnd("vtable_lookup", perf_start) catch {};
         
+        // VTable cache optimization - check for frequently called method
+        const cache_key = try self.generateVTableCacheKey(object_ptr, method_index);
+        const cached_method = try self.checkVTableCache(cache_key);
+        if (cached_method != null) {
+            return cached_method.?;
+        }
+        
+        // Store in cache for future lookups
+        try self.storeVTableCache(cache_key, method_func_ptr);
+        
         return method_func_ptr;
-        const null_ptr = c.LLVMConstNull(c.LLVMPointerTypeInContext(context, 0));
-        const is_null = c.LLVMBuildICmp(builder, c.LLVMIntEQ, object_ptr, null_ptr, "obj_null_check");
         
         // Create blocks for null check
         const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
@@ -4884,11 +4892,11 @@ pub const AdvancedCodeGen = struct {
         
         // Generate arguments with proper expression evaluation
         var args = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         for (call.arguments.items) |arg_expr| {
             const arg_value = try self.generateExpression(arg_expr);
-            try args.append(allocator, arg_value);
+            try args.append(arg_value);
         }
         
         // Generate function call
@@ -4911,11 +4919,11 @@ pub const AdvancedCodeGen = struct {
         
         // Generate arguments
         var args = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         for (call.arguments.items) |arg_expr| {
             const arg_value = try self.generateExpression(arg_expr);
-            try args.append(allocator, arg_value);
+            try args.append(arg_value);
         }
         
         // Generate runtime function call
@@ -4966,10 +4974,10 @@ pub const AdvancedCodeGen = struct {
         
         // Handle multiple arguments
         var format_parts = .empty;
-        defer format_parts.deinit(allocator);
+        defer format_parts.deinit();
         
         var printf_args = .empty;
-        defer printf_args.deinit(allocator);
+        defer printf_args.deinit();
         
         for (call.arguments.items, 0..) |arg_expr, i| {
             if (i > 0) {
@@ -4988,34 +4996,34 @@ pub const AdvancedCodeGen = struct {
                     const true_str = c.LLVMBuildGlobalStringPtr(builder, "based", "true_str");
                     const false_str = c.LLVMBuildGlobalStringPtr(builder, "cringe", "false_str");
                     const bool_str = c.LLVMBuildSelect(builder, arg_value, true_str, false_str, "bool_str");
-                    try printf_args.append(allocator, bool_str);
+                    try printf_args.append(bool_str);
                 } else {
                     try format_parts.appendSlice("%lld");
-                    try printf_args.append(allocator, arg_value);
+                    try printf_args.append(arg_value);
                 }
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
                 try format_parts.appendSlice("%.2f");
-                try printf_args.append(allocator, arg_value);
+                try printf_args.append(arg_value);
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
                 try format_parts.appendSlice("%s");
-                try printf_args.append(allocator, arg_value);
+                try printf_args.append(arg_value);
             } else {
                 try format_parts.appendSlice("%p");
-                try printf_args.append(allocator, arg_value);
+                try printf_args.append(arg_value);
             }
         }
         
         try format_parts.appendSlice("\n");
         
         // Create format string
-        const format_str = try format_parts.toOwnedSlice(allocator);
+        const format_str = try format_parts.toOwnedSlice();
         defer self.base_codegen.allocator.free(format_str);
         const format = c.LLVMBuildGlobalStringPtr(builder, format_str.ptr, "printf_fmt");
         
         // Build final printf arguments
         var final_args = .empty;
-        defer final_args.deinit(allocator);
-        try final_args.append(allocator, format);
+        defer final_args.deinit();
+        try final_args.append(format);
         try final_args.appendSlice(printf_args.items);
         
         return c.LLVMBuildCall2(
@@ -5075,6 +5083,74 @@ pub const AdvancedCodeGen = struct {
         // For simplicity, return the function pointer directly
         // In a full implementation, we'd create a closure or method object
         return method_func_ptr;
+    }
+
+    /// VTable cache optimization functions
+    fn generateVTableCacheKey(self: *AdvancedCodeGen, object_ptr: c.LLVMValueRef, method_index: u32) !c.LLVMValueRef {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        
+        // Generate unique cache key from object type hash + method index
+        const object_type_hash = c.LLVMBuildPtrToInt(builder, object_ptr, 
+            c.LLVMInt64TypeInContext(context), "obj_type_hash");
+        const method_idx_val = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), method_index, 0);
+        const method_idx_64 = c.LLVMBuildZExt(builder, method_idx_val, 
+            c.LLVMInt64TypeInContext(context), "method_idx_64");
+        
+        // Combine hash with method index for cache key
+        const cache_key = c.LLVMBuildXor(builder, object_type_hash, method_idx_64, "cache_key");
+        return cache_key;
+    }
+    
+    fn checkVTableCache(self: *AdvancedCodeGen, cache_key: c.LLVMValueRef) !?c.LLVMValueRef {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        
+        // Call runtime cache lookup function
+        const cache_lookup_func = try self.getOrCreateRuntimeFunction("cursed_vtable_cache_lookup",
+            c.LLVMFunctionType(c.LLVMPointerTypeInContext(context, 0), 
+                &[_]c.LLVMTypeRef{c.LLVMInt64TypeInContext(context)}, 1, 0));
+        
+        const cached_result = c.LLVMBuildCall2(builder, 
+            c.LLVMGlobalGetValueType(cache_lookup_func), 
+            cache_lookup_func, &[_]c.LLVMValueRef{cache_key}, 1, "cached_method");
+        
+        // Check if cache hit (non-null result)
+        const null_ptr = c.LLVMConstNull(c.LLVMPointerTypeInContext(context, 0));
+        const is_cached = c.LLVMBuildICmp(builder, c.LLVMIntNE, cached_result, null_ptr, "is_cached");
+        
+        // Create conditional return based on cache hit
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const cache_hit_block = c.LLVMAppendBasicBlockInContext(context, current_func, "cache_hit");
+        const cache_miss_block = c.LLVMAppendBasicBlockInContext(context, current_func, "cache_miss");
+        
+        _ = c.LLVMBuildCondBr(builder, is_cached, cache_hit_block, cache_miss_block);
+        
+        // Cache hit - return cached method
+        c.LLVMPositionBuilderAtEnd(builder, cache_hit_block);
+        // This would need to be properly integrated with PHI nodes for full implementation
+        
+        // Cache miss - continue to cache_miss_block
+        c.LLVMPositionBuilderAtEnd(builder, cache_miss_block);
+        
+        // For now, return null to indicate cache miss (full implementation would use PHI)
+        return null;
+    }
+    
+    fn storeVTableCache(self: *AdvancedCodeGen, cache_key: c.LLVMValueRef, method_ptr: c.LLVMValueRef) !void {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        
+        // Call runtime cache store function
+        const cache_store_func = try self.getOrCreateRuntimeFunction("cursed_vtable_cache_store",
+            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), 
+                &[_]c.LLVMTypeRef{
+                    c.LLVMInt64TypeInContext(context),
+                    c.LLVMPointerTypeInContext(context, 0)
+                }, 2, 0));
+        
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(cache_store_func), 
+            cache_store_func, &[_]c.LLVMValueRef{cache_key, method_ptr}, 2, "");
     }
 
     /// Get method index for vtable lookup
@@ -5152,7 +5228,7 @@ pub const AdvancedCodeGen = struct {
     /// Create mangled name for generic function instantiation
     fn createMangledGenericName(self: *AdvancedCodeGen, base_name: []const u8, type_args: []Type) CodeGenError![]u8 {
         var mangled: std.ArrayList(u8) = .empty;
-        defer mangled.deinit(allocator);
+        defer mangled.deinit();
         
         try mangled.appendSlice(base_name);
         try mangled.appendSlice("_");
@@ -5233,7 +5309,7 @@ pub const AdvancedCodeGen = struct {
 
         // Create operation descriptors for each case
         var operation_values: std.ArrayList(c.LLVMValueRef) = .empty;
-        defer operation_values.deinit(allocator);
+        defer operation_values.deinit();
         
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_index = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
@@ -5296,7 +5372,7 @@ pub const AdvancedCodeGen = struct {
 
         // Create basic blocks for each case
         var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
-        defer case_blocks.deinit(allocator);
+        defer case_blocks.deinit();
         
         const merge_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_merge");
         const no_case_ready_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_no_case");
@@ -5308,7 +5384,7 @@ pub const AdvancedCodeGen = struct {
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(context, current_func, 
                 try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
-            try case_blocks.append(allocator, case_block);
+            try case_blocks.append(case_block);
 
             // Add case to switch
             const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
@@ -5804,7 +5880,7 @@ test "advanced codegen initialization" {
     const allocator = std.testing.allocator;
     
     var advanced_codegen = try AdvancedCodeGen.init(allocator);
-    defer advanced_codegen.deinit(allocator);
+    defer advanced_codegen.deinit();
     
     try std.testing.expect(advanced_codegen.gc_enabled == true);
     try std.testing.expect(advanced_codegen.struct_types.count() == 0);

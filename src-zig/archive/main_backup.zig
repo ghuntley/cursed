@@ -10,7 +10,7 @@ const codegen = @import("codegen.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -66,7 +66,7 @@ pub fn main() !void {
     // Lexical analysis
     var lex = lexer.Lexer.init(allocator, file_content);
     const tokens = try lex.tokenize();
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -79,7 +79,7 @@ pub fn main() !void {
     // Parse into AST
     var parse = parser.Parser.init(allocator, tokens.items);
     const program = try parse.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     if (debug_ast) {
         print("=== AST ===\n", .{});
@@ -90,7 +90,7 @@ pub fn main() !void {
     if (compile_mode) {
         // Compile to native executable
         var codegen_ctx = codegen.CodeGen.init(allocator);
-        defer codegen_ctx.deinit(allocator);
+        defer codegen_ctx.deinit();
         
         try codegen_ctx.generateProgram(program);
         const output_name = try getOutputName(allocator, filename);
@@ -101,7 +101,7 @@ pub fn main() !void {
     } else {
         // Interpret mode
         var interpreter = @import("interpreter.zig").Interpreter.init(allocator);
-        defer interpreter.deinit(allocator);
+        defer interpreter.deinit();
         
         print("🚀 Executing {s} in interpretation mode...\n", .{filename});
         try interpreter.execute(program);

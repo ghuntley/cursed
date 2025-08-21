@@ -92,9 +92,9 @@ pub const DeferLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *DeferLLVMCodeGen) void {
-        self.defer_stack.deinit(allocator);
-        self.scope_stack.deinit(allocator);
-        self.defer_runtime_functions.deinit(allocator);
+        self.defer_stack.deinit();
+        self.scope_stack.deinit();
+        self.defer_runtime_functions.deinit();
     }
     
     /// Declare runtime defer functions for LLVM integration
@@ -164,7 +164,7 @@ pub const DeferLLVMCodeGen = struct {
     
     /// Compile defer statement with full LLVM integration
     pub fn compileDeferStatement(self: *DeferLLVMCodeGen, defer_stmt: ast.DeferStatement) !void {
-        std.debug.print("🔨 Compiling defer statement...\n");
+        std.debug.print("🔨 Compiling defer statement...\n", .{});
         
         // Ensure we have a current function
         const current_function = self.current_function orelse return error.NoCurrentFunction;
@@ -280,7 +280,7 @@ pub const DeferLLVMCodeGen = struct {
             .parent_scope = parent_scope,
         };
         
-        try self.scope_stack.append(allocator, scope_info);
+        try self.scope_stack.append(scope_info);
         
         // Call runtime scope management
         const enter_scope_func = self.defer_runtime_functions.get("cursed_defer_enter_scope") orelse
@@ -302,7 +302,7 @@ pub const DeferLLVMCodeGen = struct {
     /// Exit scope and generate defer cleanup code
     pub fn exitScope(self: *DeferLLVMCodeGen) !void {
         if (self.scope_stack.items.len == 0) {
-            std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n");
+            std.debug.print("⚠️ Warning: Attempting to exit scope when no scopes are active\n", .{});
             return;
         }
         
@@ -338,7 +338,7 @@ pub const DeferLLVMCodeGen = struct {
     
     /// Generate function exit with defer cleanup
     pub fn generateFunctionExit(self: *DeferLLVMCodeGen, return_value: ?c.LLVMValueRef) !void {
-        std.debug.print("🚪 Generating function exit with defer cleanup\n");
+        std.debug.print("🚪 Generating function exit with defer cleanup\n", .{});
         
         // Create cleanup block for normal exit
         const current_function = self.current_function orelse return error.NoCurrentFunction;
@@ -375,12 +375,12 @@ pub const DeferLLVMCodeGen = struct {
             _ = c.LLVMBuildRetVoid(self.builder);
         }
         
-        std.debug.print("✅ Function exit with defer cleanup generated\n");
+        std.debug.print("✅ Function exit with defer cleanup generated\n", .{});
     }
     
     /// Generate error handling with defer cleanup
     pub fn generateErrorUnwind(self: *DeferLLVMCodeGen, error_value: c.LLVMValueRef) !void {
-        std.debug.print("💥 Generating error unwind with defer cleanup\n");
+        std.debug.print("💥 Generating error unwind with defer cleanup\n", .{});
         
         const current_function = self.current_function orelse return error.NoCurrentFunction;
         const error_cleanup_block = c.LLVMAppendBasicBlockInContext(self.context, current_function, "error_defer_cleanup");
@@ -417,7 +417,7 @@ pub const DeferLLVMCodeGen = struct {
         c.LLVMPositionBuilderAtEnd(self.builder, error_exit_block);
         _ = c.LLVMBuildRet(self.builder, error_value);
         
-        std.debug.print("✅ Error unwind with defer cleanup generated\n");
+        std.debug.print("✅ Error unwind with defer cleanup generated\n", .{});
     }
     
     /// Integration with error handling system (yikes/shook/fam)
@@ -446,7 +446,7 @@ pub const DeferLLVMCodeGen = struct {
             c.LLVMPositionBuilderAtEnd(self.builder, current_block);
         }
         
-        std.debug.print("🔗 Integrated defer with error handling system\n");
+        std.debug.print("🔗 Integrated defer with error handling system\n", .{});
     }
     
     /// Placeholder for statement compilation (to be implemented based on existing codegen)
@@ -454,7 +454,7 @@ pub const DeferLLVMCodeGen = struct {
         _ = self;
         _ = statement;
         // This would integrate with the main statement compilation logic
-        std.debug.print("🔧 Compiling deferred statement (placeholder)\n");
+        std.debug.print("🔧 Compiling deferred statement (placeholder)\n", .{});
     }
     
     /// Set current function for defer compilation
@@ -476,16 +476,16 @@ pub const DeferLLVMCodeGen = struct {
         self.defer_stack.clearRetainingCapacity();
         self.scope_stack.clearRetainingCapacity();
         
-        std.debug.print("🧹 Cleared all defer entries\n");
+        std.debug.print("🧹 Cleared all defer entries\n", .{});
     }
 };
 
 // Test function for the defer LLVM implementation
 pub fn testDeferLLVMImplementation() !void {
-    std.debug.print("🧪 Testing Defer LLVM Implementation...\n");
+    std.debug.print("🧪 Testing Defer LLVM Implementation...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Initialize LLVM
@@ -500,7 +500,7 @@ pub fn testDeferLLVMImplementation() !void {
     
     // Create defer codegen
     var defer_codegen = try DeferLLVMCodeGen.init(allocator, context, module, builder);
-    defer defer_codegen.deinit(allocator);
+    defer defer_codegen.deinit();
     
     // Test function creation
     const test_func_type = c.LLVMFunctionType(
@@ -531,5 +531,5 @@ pub fn testDeferLLVMImplementation() !void {
     // Test function exit generation
     try defer_codegen.generateFunctionExit(null);
     
-    std.debug.print("✅ Defer LLVM Implementation test completed\n");
+    std.debug.print("✅ Defer LLVM Implementation test completed\n", .{});
 }

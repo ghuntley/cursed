@@ -75,7 +75,7 @@ pub const ParseError = struct {
             try writer.print(" (context: {s})", .{self.context});
         }
         
-        try writer.print("\n");
+        try writer.print("\n", .{});
     }
 };
 
@@ -123,8 +123,8 @@ pub const EnhancedParser = struct {
     }
 
     pub fn deinit(self: *EnhancedParser) void {
-        self.errors.deinit(allocator);
-        self.arena.deinit(allocator);
+        self.errors.deinit();
+        self.arena.deinit();
     }
 
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) EnhancedParser {
@@ -165,14 +165,14 @@ pub const EnhancedParser = struct {
         
         // Check if we've hit the error limit
         if (self.errors.items.len >= self.max_errors) {
-            std.debug.print("Too many parse errors, aborting...\n");
+            std.debug.print("Too many parse errors, aborting...\n", .{});
             return ParserError.TooManyErrors;
         }
         
         const error_info = ParseError.init(ParserError.SyntaxError, message, location, token, context);
         
         // Try to add error to list (gracefully handle OOM)
-        self.errors.append(allocator, error_info) catch {
+        self.errors.append(error_info) catch {
             // If we can't allocate for error tracking, at least print it
             std.debug.print("Error: {s} (failed to track error due to OOM)\n", .{message});
         };
@@ -240,7 +240,7 @@ pub const EnhancedParser = struct {
     /// Safe program parsing with comprehensive error handling
     pub fn parseProgram(self: *EnhancedParser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(allocator);
+        errdefer program.deinit();
         
         while (!self.isAtEnd()) {
             // Skip newlines, semicolons, and comments gracefully
@@ -264,7 +264,7 @@ pub const EnhancedParser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(allocator, import_stmt) catch |err| {
+                    program.imports.append(import_stmt) catch |err| {
                         try self.reportError("Failed to add import to program", "parseProgram");
                         if (err == error.OutOfMemory) return ParserError.OutOfMemory;
                     };
@@ -409,7 +409,7 @@ pub const EnhancedParser = struct {
         
         const name = self.advance().lexeme;
         var func = FunctionStatement.init(self.allocator, name);
-        errdefer func.deinit(allocator);
+        errdefer func.deinit();
         
         // Parse parameters with error recovery
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
@@ -427,7 +427,7 @@ pub const EnhancedParser = struct {
                     return err;
                 };
                 
-                func.parameters.append(allocator, param) catch {
+                func.parameters.append(param) catch {
                     try self.reportError("Out of memory adding parameter", "parseFunctionStatement");
                     return ParserError.OutOfMemory;
                 };
@@ -844,7 +844,7 @@ pub const EnhancedParser = struct {
             for (arguments.items) |arg| {
                 self.allocator.destroy(arg);
             }
-            arguments.deinit(allocator);
+            arguments.deinit();
         }
 
         if (!self.check(.RightParen)) {
@@ -1055,7 +1055,7 @@ pub const EnhancedParser = struct {
                 const stmt: *Statement = self.safePtrCast(Statement, stmt_ptr) catch continue;
                 self.allocator.destroy(stmt);
             }
-            then_branch.deinit(allocator);
+            then_branch.deinit();
         }
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1119,7 +1119,7 @@ pub const EnhancedParser = struct {
             for (body.items) |stmt| {
                 self.allocator.destroy(stmt);
             }
-            body.deinit(allocator);
+            body.deinit();
         }
         
         self.in_loop = true;
@@ -1245,7 +1245,7 @@ test "enhanced parser graceful error handling" {
     };
     
     var parser = EnhancedParser.init(allocator, &tokens);
-    defer parser.deinit(allocator);
+    defer parser.deinit();
     
     // Should not crash, but should report errors
     const result = parser.parseProgram();
@@ -1254,7 +1254,7 @@ test "enhanced parser graceful error handling" {
     try std.testing.expect(parser.hasErrors());
     
     if (result) |program| {
-        defer program.deinit(allocator);
+        defer program.deinit();
         // Parser should continue despite errors
     } else |err| {
         // Error should be handled gracefully

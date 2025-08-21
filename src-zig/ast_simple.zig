@@ -24,7 +24,7 @@ pub const Program = struct {
     pub fn deinit(self: *Program) void {
         // Arena allocator automatically cleans up all allocated memory
         // No need to manually free individual statements/imports/package
-        self.arena.deinit(allocator);
+        self.arena.deinit();
     }
 
     pub fn allocator(self: *Program) Allocator {

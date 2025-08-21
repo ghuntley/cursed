@@ -31,8 +31,7 @@ const ConfigFile = struct {
     }
     
     pub fn loadFromFile(allocator: Allocator, path: []const u8) !ConfigFile {
-        _ = allocator;
-        _ = path;
+                _ = path;
         // TODO: Implement TOML parsing for configuration files
         return ConfigFile.init();
     }
@@ -971,7 +970,7 @@ pub fn printVersionInfo() void {
 /// Test the CLI framework
 pub fn testCLI() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var parser = ArgParser.init(allocator, "cursed");

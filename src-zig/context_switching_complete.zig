@@ -138,7 +138,7 @@ pub const X86Context = struct {
     /// Initialize context with stack and entry point
     pub fn initWithStack(self: *X86Context, stack: []u8, entry_fn: *const fn (?*anyopaque) void, context: ?*anyopaque) void {
         if (stack.len < 16) {
-            print("Warning: Stack too small for x86_64 context\n");
+            print("Warning: Stack too small for x86_64 context\n", .{});
             return;
         }
         
@@ -238,7 +238,7 @@ pub const ARM64Context = struct {
     /// Initialize context with stack and entry point
     pub fn initWithStack(self: *ARM64Context, stack: []u8, entry_fn: *const fn (?*anyopaque) void, context: ?*anyopaque) void {
         if (stack.len < 16) {
-            print("Warning: Stack too small for ARM64 context\n");
+            print("Warning: Stack too small for ARM64 context\n", .{});
             return;
         }
         
@@ -366,7 +366,7 @@ pub const StackAllocator = struct {
             const stack_size = entry.value_ptr.*;
             self.allocator.free(stack_ptr[0..stack_size]);
         }
-        self.allocated_stacks.deinit(allocator);
+        self.allocated_stacks.deinit();
     }
     
     /// Allocate a new stack
@@ -402,7 +402,7 @@ pub const StackAllocator = struct {
         }
         
         if (overflow_detected) {
-            print("WARNING: Stack overflow detected in goroutine stack\n");
+            print("WARNING: Stack overflow detected in goroutine stack\n", .{});
         }
         
         // Remove from tracking
@@ -454,7 +454,7 @@ pub const ContextPool = struct {
         for (0..initial_size) |_| {
             const context = try allocator.create(Context);
             context.* = Context.init();
-            try available.append(allocator, context);
+            try available.append(context);
         }
         
         return Self{
@@ -469,8 +469,8 @@ pub const ContextPool = struct {
         for (self.available_contexts.items) |context| {
             self.allocator.destroy(context);
         }
-        self.available_contexts.deinit(allocator);
-        self.stack_allocator.deinit(allocator);
+        self.available_contexts.deinit();
+        self.stack_allocator.deinit();
     }
     
     /// Get a context from the pool or create a new one
@@ -550,7 +550,7 @@ test "stack allocator" {
     const allocator = std.testing.allocator;
     
     var stack_allocator = StackAllocator.init(allocator, 8192);
-    defer stack_allocator.deinit(allocator);
+    defer stack_allocator.deinit();
     
     const stack = try stack_allocator.allocateStack(null);
     defer stack_allocator.freeStack(stack);
@@ -566,7 +566,7 @@ test "context pool" {
     const allocator = std.testing.allocator;
     
     var context_pool = try ContextPool.init(allocator, 2);
-    defer context_pool.deinit(allocator);
+    defer context_pool.deinit();
     
     const testFn = struct {
         fn run(ctx: ?*anyopaque) void {

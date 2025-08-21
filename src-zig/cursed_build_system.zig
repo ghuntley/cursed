@@ -31,15 +31,15 @@ pub const CursedProject = struct {
     }
     
     pub fn deinit(self: *CursedProject) void {
-        self.authors.deinit(allocator);
+        self.authors.deinit();
         for (self.dependencies.items) |*dep| {
-            dep.deinit(allocator);
+            dep.deinit();
         }
-        self.dependencies.deinit(allocator);
+        self.dependencies.deinit();
     }
     
     pub fn addDependency(self: *CursedProject, dep: CursedDependency) !void {
-        try self.dependencies.append(allocator, dep);
+        try self.dependencies.append(dep);
     }
     
     pub fn findMainFile(self: *CursedProject, allocator: Allocator) ![]const u8 {
@@ -397,7 +397,7 @@ pub const CursedBuilder = struct {
         
         // Find all test files
         const test_files = try self.findFilesWithExtension("tests", ".csd");
-        defer test_files.deinit(allocator);
+        defer test_files.deinit();
         defer for (test_files.items) |file| {
             self.allocator.free(file);
         };
@@ -432,7 +432,7 @@ pub const CursedBuilder = struct {
         const bench_step = self.b.step("cursed-bench", "Run CURSED benchmarks");
         
         const bench_files = try self.findFilesWithExtension("benchmarks", ".csd");
-        defer bench_files.deinit(allocator);
+        defer bench_files.deinit();
         defer for (bench_files.items) |file| {
             self.allocator.free(file);
         };
@@ -526,7 +526,7 @@ pub fn createCursedBuildStep(
     cursed_compiler_path: []const u8
 ) !void {
     var project = try loadCursedProject(b.allocator, "CursedPackage.toml");
-    defer project.deinit(allocator);
+    defer project.deinit();
     
     // Set optimization from Zig build
     project.build_config.optimization = switch (optimize) {
@@ -553,7 +553,7 @@ test "cursed project loading" {
     
     // Test default project creation
     var project = CursedProject.init(allocator, "test-project", "1.0.0");
-    defer project.deinit(allocator);
+    defer project.deinit();
     
     try std.testing.expectEqualStrings("test-project", project.name);
     try std.testing.expectEqualStrings("1.0.0", project.version);

@@ -255,7 +255,7 @@ pub const WorkStealingDeque = struct {
     // Memory ordering for thread safety
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .items = .empty,
             .allocator = allocator,
@@ -267,7 +267,7 @@ pub const WorkStealingDeque = struct {
         while (self.popBottom()) |goroutine| {
             goroutine.context.release(self.allocator);
         }
-        self.items.deinit(allocator);
+        self.items.deinit();
     }
     
     /// Push to bottom (owner thread only)
@@ -283,7 +283,7 @@ pub const WorkStealingDeque = struct {
         
         // Atomic append with proper ordering
         const old_tail = self.tail.load(.acquire);
-        try self.items.append(allocator, goroutine);
+        try self.items.append(goroutine);
         self.tail.store(old_tail + 1, .release);
     }
     
@@ -392,7 +392,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.deque.deinit(allocator);
+        self.deque.deinit();
     }
     
     pub fn start(self: *Self) !void {
@@ -532,9 +532,9 @@ pub const Scheduler = struct {
         self.stop();
         
         for (self.workers.items) |*worker| {
-            worker.deinit(allocator);
+            worker.deinit();
         }
-        self.workers.deinit(allocator);
+        self.workers.deinit();
     }
     
     pub fn start(self: *Self) !void {
@@ -568,7 +568,7 @@ pub const Scheduler = struct {
             worker.stop();
         }
         
-        print("[SCHEDULER] Stopped\n");
+        print("[SCHEDULER] Stopped\n", .{});
     }
     
     pub fn scheduleGoroutine(self: *Self, goroutine: *Goroutine) !void {
@@ -619,10 +619,10 @@ pub const Scheduler = struct {
     
     pub fn getSchedulerStats(self: *const Self) SchedulerStats {
         var worker_stats = .empty;
-        defer worker_stats.deinit(allocator);
+        defer worker_stats.deinit();
         
         for (self.workers.items) |*worker| {
-            worker_stats.append(allocator, worker.getStats()) catch {};
+            worker_stats.append(worker.getStats()) catch {};
         }
         
         return SchedulerStats{
@@ -630,7 +630,7 @@ pub const Scheduler = struct {
             .num_workers = self.workers.items.len,
             .total_goroutines_scheduled = self.total_goroutines_scheduled.load(.acquire),
             .active_goroutines = self.getActiveGoroutineCount(),
-            .worker_stats = worker_stats.toOwnedSlice(allocator) catch &.{},
+            .worker_stats = worker_stats.toOwnedSlice() catch &.{},
         };
     }
 };
@@ -680,7 +680,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.deque.deinit(allocator);
+        self.deque.deinit();
     }
     
     /// Start worker thread
@@ -836,7 +836,7 @@ pub const Scheduler = struct {
         
         for (0..num_workers) |i| {
             const worker = Worker.init(allocator, @intCast(i), &scheduler);
-            try scheduler.workers.append(allocator, worker);
+            try scheduler.workers.append(worker);
         }
         
         return scheduler;
@@ -847,9 +847,9 @@ pub const Scheduler = struct {
         
         // Clean up workers
         for (self.workers.items) |*worker| {
-            worker.deinit(allocator);
+            worker.deinit();
         }
-        self.workers.deinit(allocator);
+        self.workers.deinit();
     }
     
     /// Start the scheduler
@@ -913,10 +913,10 @@ pub const Scheduler = struct {
     /// Get scheduler statistics
     pub fn getStats(self: *const Self) SchedulerStats {
         var worker_stats = .empty;
-        defer worker_stats.deinit(allocator);
+        defer worker_stats.deinit();
         
         for (self.workers.items) |*worker| {
-            worker_stats.append(allocator, worker.stats) catch {};
+            worker_stats.append(worker.stats) catch {};
         }
         
         return SchedulerStats{
@@ -924,7 +924,7 @@ pub const Scheduler = struct {
             .num_workers = @intCast(self.workers.items.len),
             .active_goroutines = self.active_goroutines.load(.acquire),
             .total_goroutines = self.total_goroutines.load(.acquire),
-            .worker_stats = worker_stats.toOwnedSlice(allocator) catch &[_]WorkerStats{},
+            .worker_stats = worker_stats.toOwnedSlice() catch &[_]WorkerStats{},
         };
     }
 };
@@ -1065,7 +1065,7 @@ pub fn shutdownScheduler(allocator: Allocator) void {
     defer global_scheduler_mutex.unlock();
     
     if (global_scheduler) |scheduler| {
-        scheduler.deinit(allocator);
+        scheduler.deinit();
         allocator.destroy(scheduler);
         global_scheduler = null;
     }
@@ -1167,7 +1167,7 @@ test "work stealing deque" {
     const allocator = std.testing.allocator;
     
     var deque = WorkStealingDeque.init(allocator);
-    defer deque.deinit(allocator);
+    defer deque.deinit();
     
     var goroutine = try allocator.create(Goroutine);
     defer allocator.destroy(goroutine);
@@ -1196,7 +1196,7 @@ test "multiple workers and work stealing" {
     };
     
     var scheduler = try Scheduler.init(allocator, config);
-    defer scheduler.deinit(allocator);
+    defer scheduler.deinit();
     
     try scheduler.start();
     
@@ -1236,5 +1236,5 @@ test "multiple workers and work stealing" {
     
     const stats = scheduler.getStats();
     try std.testing.expect(stats.total_goroutines == num_goroutines);
-    stats.deinit(allocator);
+    stats.deinit();
 }

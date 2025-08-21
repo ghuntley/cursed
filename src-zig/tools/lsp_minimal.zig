@@ -58,7 +58,7 @@ pub const CursedLSP = struct {
     initialized: bool,
     shutdown_requested: bool,
     
-    pub fn init(allocator: Allocator) CursedLSP {
+    pub fn init() CursedLSP {
         return CursedLSP{
             .allocator = allocator,
             .documents = std.StringHashMap(Document).init(allocator),
@@ -71,10 +71,10 @@ pub const CursedLSP = struct {
         var iter = self.documents.iterator();
         while (iter.next()) |entry| {
             var doc = entry.value_ptr;
-            doc.deinit(allocator);
+            doc.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.documents.deinit(allocator);
+        self.documents.deinit();
     }
     
     // Core message handling
@@ -262,7 +262,7 @@ pub const CursedLSP = struct {
     // Utilities
     fn unescapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var i: usize = 0;
         while (i < text.len) {
@@ -290,7 +290,7 @@ pub const CursedLSP = struct {
     
     fn escapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         for (text) |c| {
             switch (c) {
@@ -308,7 +308,7 @@ pub const CursedLSP = struct {
     
     fn formatCursedCode(self: *CursedLSP, content: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var indent_level: u32 = 0;
         var at_line_start = true;
@@ -372,7 +372,7 @@ pub const CursedLSP = struct {
     
     fn analyzeDiagnostics(self: *CursedLSP, content: []const u8, uri: []const u8) ![]u8 {
         var diagnostics = ArrayList(u8).init(self.allocator);
-        defer diagnostics.deinit(allocator);
+        defer diagnostics.deinit();
         
         try diagnostics.appendSlice("{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"");
         try diagnostics.appendSlice(uri);
@@ -435,7 +435,7 @@ pub const CursedLSP = struct {
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -474,11 +474,11 @@ pub const CursedLSP = struct {
 // Main entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var server = CursedLSP.init(allocator);
-    defer server.deinit(allocator);
+    defer server.deinit();
     
     try server.run();
 }

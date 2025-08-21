@@ -11,7 +11,7 @@ const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -142,7 +142,7 @@ fn cmdExtract(allocator: Allocator, args: [][]const u8) !void {
         print("Error initializing resolver: {any}\n", .{err});
         return;
     };
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
 
     const imports = resolver.extractImports(source_content) catch |err| {
         print("❌ Failed to extract imports: {any}\n", .{err});
@@ -151,9 +151,9 @@ fn cmdExtract(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit(allocator);
+            import_spec.deinit();
         }
-        imports.deinit(allocator);
+        imports.deinit();
     }
 
     print("Found {} import(s):\n\n", .{imports.items.len});
@@ -198,7 +198,7 @@ fn cmdValidate(allocator: Allocator, args: [][]const u8) !void {
         print("Error initializing resolver: {any}\n", .{err});
         return;
     };
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
 
     const resolved_imports = resolver.resolveFileImports(source_content, source_file) catch |err| {
         print("❌ Failed to resolve imports: {any}\n", .{err});
@@ -207,9 +207,9 @@ fn cmdValidate(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (resolved_imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit(allocator);
+            import_spec.deinit();
         }
-        resolved_imports.deinit(allocator);
+        resolved_imports.deinit();
     }
 
     print("Validation Results:\n", .{});
@@ -249,7 +249,7 @@ fn cmdReport(allocator: Allocator, args: [][]const u8) !void {
         print("Error initializing resolver: {any}\n", .{err});
         return;
     };
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
 
     // Scan current directory for CURSED files
     var dir = std.fs.cwd().openIterableDir(".", .{}) catch |err| {
@@ -289,9 +289,9 @@ fn cmdReport(allocator: Allocator, args: [][]const u8) !void {
         defer {
             for (resolved_imports.items) |*import| {
                 var import_spec = import;
-                import_spec.deinit(allocator);
+                import_spec.deinit();
             }
-            resolved_imports.deinit(allocator);
+            resolved_imports.deinit();
         }
 
         print("  Found {} imports\n", .{resolved_imports.items.len});
@@ -311,7 +311,7 @@ fn cmdTestCycle(allocator: Allocator, args: [][]const u8) !void {
     print("=======================\n\n", .{});
 
     var resolver = AdvancedImportResolver.init(allocator);
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
 
     // Create a dependency graph with cycles for testing
     print("Creating test dependency graph...\n", .{});
@@ -341,7 +341,7 @@ fn cmdTestCycle(allocator: Allocator, args: [][]const u8) !void {
         print("Checking for cycles starting from: {s}\n", .{module});
         
         if (try resolver.module_cache.detectCycle(module)) |cycle| {
-            defer cycle.deinit(allocator);
+            defer cycle.deinit();
             
             print("  🔄 Cycle detected:\n", .{});
             for (cycle.items) |cycle_module| {
@@ -373,7 +373,7 @@ fn cmdAddAlias(allocator: Allocator, args: [][]const u8) !void {
         print("Error initializing resolver: {any}\n", .{err});
         return;
     };
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
 
     try resolver.addAlias(alias, target);
 
@@ -388,7 +388,7 @@ fn cmdAddAlias(allocator: Allocator, args: [][]const u8) !void {
 
     defer {
         var spec = import_spec;
-        spec.deinit(allocator);
+        spec.deinit();
     }
 
     print("✅ Alias resolved:\n", .{});

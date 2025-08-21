@@ -43,7 +43,7 @@ const TokenPool = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .tokens = .empty,
             .token_cache = undefined,
@@ -53,7 +53,7 @@ const TokenPool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.tokens.deinit(allocator);
+        self.tokens.deinit();
     }
     
     pub fn getToken(self: *Self) *Token {
@@ -64,7 +64,7 @@ const TokenPool = struct {
         }
         
         // Fallback to heap allocation if cache is full
-        self.tokens.append(allocator, Token{
+        self.tokens.append(Token{
             .kind = .invalid,
             .lexeme = "",
             .line = 0,
@@ -135,8 +135,8 @@ const FastTokenizer = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.token_pool.deinit(allocator);
-        self.keyword_map.deinit(allocator);
+        self.token_pool.deinit();
+        self.keyword_map.deinit();
     }
     
     // Fast character classification using lookup tables
@@ -458,7 +458,7 @@ const ASTNodePool = struct {
     
     const Self = @This();
     
-    pub fn init(allocator: Allocator) Self {
+    pub fn init() Self {
         return Self{
             .nodes = .empty,
             .node_cache = undefined,
@@ -468,7 +468,7 @@ const ASTNodePool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.nodes.deinit(allocator);
+        self.nodes.deinit();
     }
     
     pub fn getNode(self: *Self) *ASTNode {
@@ -481,7 +481,7 @@ const ASTNodePool = struct {
         }
         
         // Fallback to heap allocation
-        self.nodes.append(allocator, ASTNode{
+        self.nodes.append(ASTNode{
             .kind = .expression,
             .value = "",
             .children = [_]?*ASTNode{null} ** 8,
@@ -525,7 +525,7 @@ pub const FastParser = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.ast_pool.deinit(allocator);
+        self.ast_pool.deinit();
     }
     
     pub fn parse(self: *Self) !*ASTNodePool.ASTNode {
@@ -1000,7 +1000,7 @@ pub const ParserBenchmark = struct {
     }
     
     pub fn print(self: *Self) void {
-        std.debug.print("=== Parser Performance Report ===\n");
+        std.debug.print("=== Parser Performance Report ===\n", .{});
         std.debug.print("Tokenization: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.tokenization_time_ns)) / 1_000_000.0});
         std.debug.print("Parsing: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.parsing_time_ns)) / 1_000_000.0});
         std.debug.print("Total: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.tokenization_time_ns + self.parsing_time_ns)) / 1_000_000.0});

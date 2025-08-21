@@ -86,7 +86,7 @@ const SimpleLLVMCompiler = struct {
     }
     
     pub fn deinit(self: *SimpleLLVMCompiler) void {
-        self.variables.deinit(allocator);
+        self.variables.deinit();
         llvm_fix.LLVMDisposeBuilder(self.builder);
         llvm_fix.LLVMDisposeModule(self.module);
         llvm_fix.LLVMContextDispose(self.context);
@@ -185,17 +185,17 @@ const SimpleLLVMCompiler = struct {
         if (std.mem.eql(u8, function_name, "vibez.spill")) {
             // Handle print call
             var llvm_args = .empty;
-            defer llvm_args.deinit(allocator);
+            defer llvm_args.deinit();
             
             // Create format string based on arguments
             var format_str = .empty;
-            defer format_str.deinit(allocator);
+            defer format_str.deinit();
             
             for (args, 0..) |arg, i| {
-                if (i > 0) try format_str.append(allocator, ' ');
+                if (i > 0) try format_str.append(' ');
                 
                 const arg_value = try self.compileExpression(arg);
-                try llvm_args.append(allocator, arg_value);
+                try llvm_args.append(arg_value);
                 
                 switch (arg) {
                     .Literal => |lit| {
@@ -209,8 +209,8 @@ const SimpleLLVMCompiler = struct {
                 }
             }
             
-            try format_str.append(allocator, '\n');
-            try format_str.append(allocator, 0); // null terminator
+            try format_str.append('\n');
+            try format_str.append(0); // null terminator
             
             const format_global = llvm_fix.LLVMBuildGlobalStringPtr(self.builder, format_str.items.ptr, "printf_fmt");
             
@@ -220,8 +220,8 @@ const SimpleLLVMCompiler = struct {
             
             // Build call arguments
             var printf_args = .empty;
-            defer printf_args.deinit(allocator);
-            try printf_args.append(allocator, format_global);
+            defer printf_args.deinit();
+            try printf_args.append(format_global);
             try printf_args.appendSlice(llvm_args.items);
             
             // For now return a dummy value since we need the actual build call function
@@ -269,7 +269,7 @@ fn parseBasicCursed(allocator: Allocator, source: []const u8) !Program {
             Value{ .String = value_str };
         
         const var_name_owned = try allocator.dupe(u8, var_name);
-        try statements.append(allocator, Statement{ .VarDecl = .{ .name = var_name_owned, .value = Expression{ .Literal = value } } });
+        try statements.append(Statement{ .VarDecl = .{ .name = var_name_owned, .value = Expression{ .Literal = value } } });
     }
     
     // Look for vibez.spill call
@@ -288,23 +288,23 @@ fn parseBasicCursed(allocator: Allocator, source: []const u8) !Program {
             
             // Check if it's a variable reference
             if (std.mem.eql(u8, trimmed, "x")) {
-                try args.append(allocator, Expression{ .Identifier = "x" });
+                try args.append(Expression{ .Identifier = "x" });
             } else {
                 // It's a string literal
                 const arg_owned = try allocator.dupe(u8, trimmed);
-                try args.append(allocator, Expression{ .Literal = Value{ .String = arg_owned } });
+                try args.append(Expression{ .Literal = Value{ .String = arg_owned } });
             }
         }
         
-        try statements.append(allocator, Statement{ .Call = .{ .function = "vibez.spill", .args = try args.toOwnedSlice(allocator) } });
+        try statements.append(Statement{ .Call = .{ .function = "vibez.spill", .args = try args.toOwnedSlice() } });
     }
     
-    return Program{ .statements = try statements.toOwnedSlice(allocator) };
+    return Program{ .statements = try statements.toOwnedSlice() };
 }
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -346,7 +346,7 @@ pub fn main() !void {
             print("Failed to initialize LLVM compiler: {}\n", .{err});
             return;
         };
-        defer compiler.deinit(allocator);
+        defer compiler.deinit();
         
         compiler.compileProgram(program) catch |err| {
             print("Compilation failed: {}\n", .{err});

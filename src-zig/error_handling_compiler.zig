@@ -11,7 +11,7 @@ const FamBlock = error_operators.FamBlock;
 /// Simple error handling compiler for testing yikes, shook, fam operators
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -19,16 +19,16 @@ pub fn main() !void {
 
     if (args.len < 2) {
         print("Usage: {} <program.csd>\n", .{args[0]});
-        print("CURSED Error Handling Compiler - Testing yikes, shook, fam operators\n");
-        print("\nError handling syntax:\n");
+        print("CURSED Error Handling Compiler - Testing yikes, shook, fam operators\n", .{});
+        print("\nError handling syntax:\n", .{});
         print("  yikes \"message\", code     - Create error\n");
-        print("  shook expression           - Propagate error\n");
-        print("  fam {{ ... }} catch(e) {{ ... }}  - Panic recovery\n");
+        print("  shook expression           - Propagate error\n", .{});
+        print("  fam {{ ... }} catch(e) {{ ... }}  - Panic recovery\n", .{});
         return;
     }
 
     const filename = args[1];
-    print("🔧 CURSED Error Handling Compiler\n");
+    print("🔧 CURSED Error Handling Compiler\n", .{});
     print("📁 Processing: {s}\n", .{filename});
 
     // Read file content
@@ -46,11 +46,11 @@ pub fn main() !void {
     // Test the error operators
     try testErrorOperators(allocator);
 
-    print("✅ Error handling analysis completed\n");
+    print("✅ Error handling analysis completed\n", .{});
 }
 
 fn analyzeErrorHandling(allocator: Allocator, content: []const u8) !void {
-    print("\n🔍 Error handling analysis:\n");
+    print("\n🔍 Error handling analysis:\n", .{});
     
     var line_number: u32 = 1;
     var lines = std.mem.split(u8, content, "\n");
@@ -104,12 +104,12 @@ fn processYikesExpression(allocator: Allocator, line: []const u8, line_number: u
             
             // Create actual YikesError for testing
             var test_error = YikesError.init(allocator, message, 42) catch {
-                print("   ⚠️  Could not create YikesError\n");
+                print("   ⚠️  Could not create YikesError\n", .{});
                 return;
             };
-            defer test_error.deinit(allocator);
+            defer test_error.deinit();
             
-            print("   ✅ Created YikesError successfully\n");
+            print("   ✅ Created YikesError successfully\n", .{});
         }
     }
 }
@@ -118,15 +118,15 @@ fn processShookExpression(allocator: Allocator, line: []const u8, line_number: u
     print("Line {}: ⚡ SHOOK expression - {s}\n", .{ line_number, line });
     
     // Simulate error propagation
-    print("   🔄 Simulating error propagation...\n");
+    print("   🔄 Simulating error propagation...\n", .{});
     
     // Create a test error and shook result
     var test_error = YikesError.init(allocator, "Test propagation", 100) catch return;
-    defer test_error.deinit(allocator);
+    defer test_error.deinit();
     
     const shook_result = ShookResult.err(test_error);
     if (shook_result.isError()) {
-        print("   ✅ Error propagation working\n");
+        print("   ✅ Error propagation working\n", .{});
     }
 }
 
@@ -135,34 +135,34 @@ fn processFamExpression(allocator: Allocator, line: []const u8, line_number: u32
     
     // Check for catch blocks
     if (std.mem.indexOf(u8, line, "catch")) |_| {
-        print("   🎯 Catch handler detected\n");
+        print("   🎯 Catch handler detected\n", .{});
     }
     
     if (std.mem.indexOf(u8, line, "finally")) |_| {
-        print("   🏁 Finally handler detected\n");
+        print("   🏁 Finally handler detected\n", .{});
     }
     
     // Create test fam block
     var fam_block = FamBlock.init(allocator);
-    defer fam_block.deinit(allocator);
+    defer fam_block.deinit();
     
-    print("   ✅ FAM block structure working\n");
+    print("   ✅ FAM block structure working\n", .{});
 }
 
 fn testErrorOperators(allocator: Allocator) !void {
-    print("\n🧪 Testing error operators implementation:\n");
+    print("\n🧪 Testing error operators implementation:\n", .{});
     
     // Test 1: yikes error creation
-    print("1. Testing yikes error creation...\n");
+    print("1. Testing yikes error creation...\n", .{});
     var error1 = YikesError.init(allocator, "Test error", 404) catch {
-        print("   ❌ YikesError creation failed\n");
+        print("   ❌ YikesError creation failed\n", .{});
         return;
     };
-    defer error1.deinit(allocator);
+    defer error1.deinit();
     print("   ✅ yikes: Created error with message '{s}' and code {}\n", .{ error1.getMessage(), error1.getCode() });
     
     // Test 2: shook error propagation
-    print("2. Testing shook error propagation...\n");
+    print("2. Testing shook error propagation...\n", .{});
     const shook_result = ShookResult.err(error1);
     if (shook_result.isError()) {
         const propagated_error = shook_result.getError().?;
@@ -170,20 +170,20 @@ fn testErrorOperators(allocator: Allocator) !void {
     }
     
     // Test 3: fam block creation
-    print("3. Testing fam panic recovery...\n");
+    print("3. Testing fam panic recovery...\n", .{});
     var fam_block = FamBlock.init(allocator);
-    defer fam_block.deinit(allocator);
-    print("   ✅ fam: Recovery block created successfully\n");
+    defer fam_block.deinit();
+    print("   ✅ fam: Recovery block created successfully\n", .{});
     
     // Test 4: Complete error flow
-    print("4. Testing complete error handling flow...\n");
+    print("4. Testing complete error handling flow...\n", .{});
     var original_error = YikesError.init(allocator, "Original error", 500) catch return;
-    defer original_error.deinit(allocator);
+    defer original_error.deinit();
     
     const result = ShookResult.err(original_error);
     if (result.isError()) {
-        print("   ✅ Complete flow: yikes -> shook -> fam working\n");
+        print("   ✅ Complete flow: yikes -> shook -> fam working\n", .{});
     }
     
-    print("\n🎉 All error operator tests passed!\n");
+    print("\n🎉 All error operator tests passed!\n", .{});
 }

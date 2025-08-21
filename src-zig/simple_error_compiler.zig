@@ -8,7 +8,7 @@ const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -43,7 +43,7 @@ pub fn main() !void {
         for (errors_created.items) |error_name| {
             allocator.free(error_name);
         }
-        errors_created.deinit(allocator);
+        errors_created.deinit();
     }
 
     print("🔍 Parsing CURSED error handling statements...\n", .{});
@@ -104,7 +104,7 @@ fn processYikesStatement(allocator: Allocator, line: []const u8, line_number: u3
     
     if (parts.next()) |error_name| {
         const name_copy = try allocator.dupe(u8, error_name);
-        try errors_created.append(allocator, name_copy);
+        try errors_created.append(name_copy);
         
         if (std.mem.indexOf(u8, line, "=")) |_| {
             print("   ✨ Error '{s}' created with initial value\n", .{error_name});
@@ -137,8 +137,7 @@ fn processVibezSpill(line: []const u8, line_number: u32) !void {
 }
 
 fn simulateErrorHandling(allocator: Allocator, errors_created: *ArrayList([]const u8)) !void {
-    _ = allocator;
-    
+        
     if (errors_created.items.len == 0) {
         print("No errors to simulate\n", .{});
         return;

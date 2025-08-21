@@ -79,7 +79,7 @@ pub const LinterConfig = struct {
     max_function_length: u32 = 50,
     enforce_gen_z_syntax: bool = true,
     
-    pub fn init(allocator: Allocator) LinterConfig {
+    pub fn init() LinterConfig {
         return LinterConfig{
             .enabled_rules = std.HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .severity_overrides = std.HashMap([]const u8, Severity, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -87,8 +87,8 @@ pub const LinterConfig = struct {
     }
     
     pub fn deinit(self: *LinterConfig) void {
-        self.enabled_rules.deinit(allocator);
-        self.severity_overrides.deinit(allocator);
+        self.enabled_rules.deinit();
+        self.severity_overrides.deinit();
     }
 };
 
@@ -107,7 +107,7 @@ pub const Linter = struct {
     }
     
     pub fn deinit(self: *Linter) void {
-        self.issues.deinit(allocator);
+        self.issues.deinit();
     }
     
     pub fn lintFile(self: *Linter, file_path: []const u8) !void {
@@ -126,7 +126,7 @@ pub const Linter = struct {
         var token_lexer = lexer.Lexer.init(self.allocator, source);
         
         const tokens = try token_lexer.tokenize();
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         // Parse tokens
         var cursed_parser = parser.Parser.init(self.allocator, tokens.items);
@@ -332,7 +332,7 @@ pub const Linter = struct {
     fn checkUnusedVariables(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = ast_tree; // TODO: Use this when implementing proper AST traversal
         var declared_vars = std.StringHashMap(VariableInfo).init(self.allocator);
-        defer declared_vars.deinit(allocator);
+        defer declared_vars.deinit();
         
         // TODO: Implement proper AST traversal with new structure
         // First pass: collect all variable declarations  
@@ -1322,7 +1322,7 @@ pub const Linter = struct {
     fn toSnakeCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to snake_case
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         for (name, 0..) |char, i| {
             if (char >= 'A' and char <= 'Z') {
@@ -1339,7 +1339,7 @@ pub const Linter = struct {
     fn toPascalCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to PascalCase
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var capitalize_next = true;
         for (name) |char| {
@@ -1368,8 +1368,7 @@ pub fn printIssues(allocator: Allocator, issues: []const LintIssue, format: []co
 }
 
 fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
-    _ = allocator;
-    var stdout_buffer: [4096]u8 = undefined;
+        var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     for (issues) |issue| {
@@ -1391,8 +1390,7 @@ fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
 }
 
 fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
-    _ = allocator;
-    var stdout_buffer: [4096]u8 = undefined;
+        var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     try stdout.writeAll("{\n  \"issues\": [\n");
@@ -1424,7 +1422,7 @@ fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
 // Main linter entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -1436,10 +1434,10 @@ pub fn main() !void {
     }
     
     var config = LinterConfig.init(allocator);
-    defer config.deinit(allocator);
+    defer config.deinit();
     
     var linter = Linter.init(allocator, config);
-    defer linter.deinit(allocator);
+    defer linter.deinit();
     
     const file_path = args[1];
     const format = if (args.len > 2 and std.mem.eql(u8, args[2], "--format") and args.len > 3) args[3] else "human";

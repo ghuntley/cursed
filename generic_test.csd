@@ -1,4 +1,1 @@
-slay identity[T](value T) T {
-    damn value
-}
-vibez.spill(identity[tea]("hello"))
+slay test_generics[T](value T) T { damn value } sus int_result normie = test_generics(42); sus str_result tea = test_generics("hello"); vibez.spill("Generic int:", int_result); vibez.spill("Generic string:", str_result)

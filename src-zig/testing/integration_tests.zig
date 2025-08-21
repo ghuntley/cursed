@@ -43,7 +43,7 @@ pub const IntegrationTestRunner = struct {
         error_details: ?[]const u8 = null,
     };
 
-    pub fn init(allocator: Allocator) IntegrationTestRunner {
+    pub fn init() IntegrationTestRunner {
         return IntegrationTestRunner{
             .allocator = allocator,
             .results = std.ArrayList(IntegrationTestResult).init(allocator),
@@ -56,7 +56,7 @@ pub const IntegrationTestRunner = struct {
                 self.allocator.free(output);
             }
         }
-        self.results.deinit(allocator);
+        self.results.deinit();
     }
 
     pub fn runTestCase(self: *IntegrationTestRunner, test_case: IntegrationTestCase) !void {
@@ -117,7 +117,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Lexer init failed: {}", .{err});
             return result;
         };
-        defer lex.deinit(allocator);
+        defer lex.deinit();
 
         const tokens = lex.tokenize() catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Tokenization failed: {}", .{err});
@@ -131,13 +131,13 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Parser init failed: {}", .{err});
             return result;
         };
-        defer parse.deinit(allocator);
+        defer parse.deinit();
 
         const program = parse.parseProgram() catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Parsing failed: {}", .{err});
             return result;
         };
-        defer program.deinit(allocator);
+        defer program.deinit();
         result.parser_success = true;
 
         // Stage 3: Code Generation
@@ -145,7 +145,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Codegen init failed: {}", .{err});
             return result;
         };
-        defer generator.deinit(allocator);
+        defer generator.deinit();
 
         const c_code = generator.generateC(program) catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Code generation failed: {}", .{err});
@@ -159,7 +159,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Interpreter init failed: {}", .{err});
             return result;
         };
-        defer interpreter.deinit(allocator);
+        defer interpreter.deinit();
 
         // Capture output
         const output = interpreter.executeString(source_code) catch |err| {
@@ -174,7 +174,7 @@ pub const IntegrationTestRunner = struct {
     }
 
     pub fn printSummary(self: *IntegrationTestRunner) void {
-        std.debug.print("\n📊 Integration Test Summary:\n");
+        std.debug.print("\n📊 Integration Test Summary:\n", .{});
         std.debug.print("=" ** 50 ++ "\n");
 
         var total_tests: u32 = 0;
@@ -208,7 +208,7 @@ pub const IntegrationTestRunner = struct {
             if (result.pipeline_result.execution_success) execution_success += 1;
         }
 
-        std.debug.print("\n🔧 Pipeline Stage Success Rates:\n");
+        std.debug.print("\n🔧 Pipeline Stage Success Rates:\n", .{});
         std.debug.print("  Lexer: {}/{} ({d:.1}%)\n", .{ lexer_success, total_tests, 
             if (total_tests > 0) (@as(f64, @floatFromInt(lexer_success)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0 });
         std.debug.print("  Parser: {}/{} ({d:.1}%)\n", .{ parser_success, total_tests,
@@ -223,14 +223,14 @@ pub const IntegrationTestRunner = struct {
         for (self.results.items) |result| {
             if (!result.passed) {
                 if (!has_failures) {
-                    std.debug.print("\n❌ Failed Tests:\n");
+                    std.debug.print("\n❌ Failed Tests:\n", .{});
                     has_failures = true;
                 }
                 std.debug.print("  • {s}", .{result.test_name});
                 if (result.error_details) |details| {
                     std.debug.print(" - {s}", .{details});
                 }
-                std.debug.print("\n");
+                std.debug.print("\n", .{});
             }
         }
     }
@@ -367,11 +367,11 @@ const integration_test_cases = [_]IntegrationTestCase{
 
 // Main integration test runner
 pub fn runAllIntegrationTests(allocator: Allocator) !void {
-    std.debug.print("🚀 Starting CURSED Integration Test Suite\n");
+    std.debug.print("🚀 Starting CURSED Integration Test Suite\n", .{});
     std.debug.print("=" ** 60 ++ "\n");
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit(allocator);
+    defer runner.deinit();
 
     for (integration_test_cases) |test_case| {
         try runner.runTestCase(test_case);
@@ -382,7 +382,7 @@ pub fn runAllIntegrationTests(allocator: Allocator) !void {
 
 // Cross-platform testing
 pub fn runCrossPlatformTests(allocator: Allocator) !void {
-    std.debug.print("🌍 Running Cross-Platform Integration Tests\n");
+    std.debug.print("🌍 Running Cross-Platform Integration Tests\n", .{});
     std.debug.print("=" ** 50 ++ "\n");
 
     // Test platform-specific functionality
@@ -400,7 +400,7 @@ pub fn runCrossPlatformTests(allocator: Allocator) !void {
     };
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit(allocator);
+    defer runner.deinit();
 
     try runner.runTestCase(platform_test);
     runner.printSummary();
@@ -408,7 +408,7 @@ pub fn runCrossPlatformTests(allocator: Allocator) !void {
 
 // Stress testing for compiler robustness
 pub fn runStressTests(allocator: Allocator) !void {
-    std.debug.print("💪 Running Compiler Stress Tests\n");
+    std.debug.print("💪 Running Compiler Stress Tests\n", .{});
     std.debug.print("=" ** 40 ++ "\n");
 
     // Large program test
@@ -420,7 +420,7 @@ pub fn runStressTests(allocator: Allocator) !void {
     };
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit(allocator);
+    defer runner.deinit();
 
     try runner.runTestCase(large_program_test);
     runner.printSummary();
@@ -428,8 +428,7 @@ pub fn runStressTests(allocator: Allocator) !void {
 
 fn generateLargeProgram(allocator: Allocator) []const u8 {
     // Generate a large CURSED program for stress testing
-    _ = allocator;
-    return 
+        return 
         \\fr fr Large program with many functions and structures
         \\
         \\squad LargeStruct {
@@ -459,7 +458,7 @@ fn generateLargeProgram(allocator: Allocator) []const u8 {
 // Zig test integration
 test "Integration Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     try runAllIntegrationTests(allocator);
@@ -467,7 +466,7 @@ test "Integration Tests" {
 
 test "Cross-Platform Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     try runCrossPlatformTests(allocator);
@@ -475,7 +474,7 @@ test "Cross-Platform Tests" {
 
 test "Stress Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     try runStressTests(allocator);

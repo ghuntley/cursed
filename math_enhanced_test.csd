@@ -1,0 +1,1 @@
+yeet "mathz"; sus numbers []normie = [1, 2, 3, 4, 5]; sus sum normie = mathz.sum(numbers); sus avg meal = mathz.average(numbers); vibez.spill("Numbers:", numbers); vibez.spill("Sum:", sum); vibez.spill("Average:", avg)

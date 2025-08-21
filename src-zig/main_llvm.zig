@@ -11,7 +11,7 @@ const simple_import_resolver = @import("simple_import_resolver.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -76,7 +76,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -89,7 +89,7 @@ pub fn main() !void {
     };
     defer {
         var mut_program = program;
-        mut_program.deinit(allocator);
+        mut_program.deinit();
     }
 
     if (verbose) print("✅ Parsed {} statements\n", .{program.statements.items.len});
@@ -107,7 +107,7 @@ fn compileToLLVM(allocator: Allocator, program: ast.Program, output_name: []cons
 
     // Initialize LLVM codegen
     var cg = codegen.CodeGen.init(allocator);
-    defer cg.deinit(allocator);
+    defer cg.deinit();
 
     // Generate LLVM IR
     cg.generateProgramAdvanced(program) catch |err| {

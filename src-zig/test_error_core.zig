@@ -14,7 +14,7 @@ test "basic error handling system" {
     
     // Test 1: Basic error context creation and management
     var ctx = try ErrorContext.init(allocator, CursedError.OutOfMemory, "Test out of memory error");
-    defer ctx.deinit(allocator);
+    defer ctx.deinit();
     
     try testing.expect(ctx.error_code == CursedError.OutOfMemory);
     try testing.expect(std.mem.eql(u8, ctx.message, "Test out of memory error"));
@@ -25,7 +25,7 @@ test "error recovery system" {
     
     // Test error recovery system
     var recovery = ErrorRecovery.init(allocator, 5);
-    defer recovery.deinit(allocator);
+    defer recovery.deinit();
     
     const error1 = try ErrorContext.init(allocator, CursedError.ParseError, "Parse failed");
     const error2 = try ErrorContext.init(allocator, CursedError.TypeMismatch, "Type mismatch");
@@ -64,7 +64,7 @@ test "error context with location" {
         "Variable 'x' not found",
         location
     );
-    defer ctx_with_loc.deinit(allocator);
+    defer ctx_with_loc.deinit();
     
     try testing.expect(ctx_with_loc.location != null);
     try testing.expect(ctx_with_loc.location.?.line == 42);
@@ -84,7 +84,7 @@ test "nested error contexts" {
         "Compilation failed due to missing input",
         inner_ptr
     );
-    defer outer_ctx.deinit(allocator);
+    defer outer_ctx.deinit();
     
     try testing.expect(outer_ctx.inner_error != null);
     try testing.expect(outer_ctx.inner_error.?.error_code == CursedError.FileNotFound);
@@ -118,7 +118,7 @@ test "error context formatting" {
     const allocator = testing.allocator;
     
     var ctx = try ErrorContext.init(allocator, CursedError.ParseError, "Unexpected token");
-    defer ctx.deinit(allocator);
+    defer ctx.deinit();
     
     const formatted = try ctx.toString(allocator);
     defer allocator.free(formatted);

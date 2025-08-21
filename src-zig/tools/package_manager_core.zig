@@ -75,8 +75,7 @@ pub const VersionRequirement = struct {
     constraint: VersionConstraint,
     
     pub fn parse(allocator: Allocator, req_str: []const u8) !VersionRequirement {
-        _ = allocator;
-        
+                
         if (std.mem.startsWith(u8, req_str, "^")) {
             const version = try Version.parse(req_str[1..]);
             return VersionRequirement{ .constraint = .{ .caret = version } };
@@ -213,8 +212,7 @@ pub const Dependency = struct {
     dev_only: bool = false,
     
     pub fn init(allocator: Allocator, name: []const u8, version_req: VersionRequirement, source: PackageSource) Dependency {
-        _ = allocator;
-        return Dependency{
+                return Dependency{
             .name = name,
             .version_req = version_req,
             .source = source,
@@ -223,7 +221,7 @@ pub const Dependency = struct {
     
     pub fn deinit(self: *Dependency, allocator: Allocator) void {
         allocator.free(self.name);
-        self.source.deinit(allocator);
+        self.source.deinit();
     }
 };
 
@@ -239,7 +237,7 @@ pub const PackageManifest = struct {
     exports: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) PackageManifest {
+    pub fn init() PackageManifest {
         return PackageManifest{
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },
@@ -260,28 +258,28 @@ pub const PackageManifest = struct {
         for (self.authors.items) |author| {
             self.allocator.free(author);
         }
-        self.authors.deinit(allocator);
+        self.authors.deinit();
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dependencies.deinit(allocator);
+        self.dependencies.deinit();
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dev_dependencies.deinit(allocator);
+        self.dev_dependencies.deinit();
         
         var export_iter = self.exports.iterator();
         while (export_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.exports.deinit(allocator);
+        self.exports.deinit();
     }
     
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -496,7 +494,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit(allocator);
+        defer manifest.deinit();
         
         // Parse version requirement
         const version_req = try VersionRequirement.parse(allocator, version_spec);
@@ -528,7 +526,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit(allocator);
+        defer manifest.deinit();
         
         // Create cache directory
         try std.fs.cwd().makePath(".cursed/cache");
@@ -594,7 +592,7 @@ pub const commands = struct {
     
     fn generateLockFile(allocator: Allocator, manifest: *const PackageManifest) !void {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit(allocator);
+        defer content.deinit();
         var writer = content.writer();
         
         try writer.writeAll("# CursedPackage.lock - Generated lock file\n");
@@ -637,7 +635,7 @@ pub const commands = struct {
     
     fn generateBuildIntegration(allocator: Allocator, manifest: *const PackageManifest) !void {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit(allocator);
+        defer content.deinit();
         var writer = content.writer();
         
         try writer.writeAll("// Generated build integration for CURSED package manager\n");
@@ -680,7 +678,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit(allocator);
+        defer manifest.deinit();
         
         // Update each dependency
         var dep_iter = manifest.dependencies.iterator();
@@ -717,18 +715,18 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit(allocator);
+        defer manifest.deinit();
         
         // Remove from dependencies
         if (manifest.dependencies.fetchRemove(package_name)) |removed| {
             allocator.free(removed.key);
             var mut_value = removed.value;
-            mut_value.deinit(allocator);
+            mut_value.deinit();
             print("✅ Removed {s} from dependencies\n", .{package_name});
         } else if (manifest.dev_dependencies.fetchRemove(package_name)) |removed| {
             allocator.free(removed.key);
             var mut_value = removed.value;
-            mut_value.deinit(allocator);
+            mut_value.deinit();
             print("✅ Removed {s} from dev dependencies\n", .{package_name});
         } else {
             print("❌ Package {s} not found in dependencies\n", .{package_name});
@@ -750,8 +748,7 @@ pub const commands = struct {
     }
     
     pub fn search(allocator: Allocator, args: [][]const u8) !void {
-        _ = allocator;
-        if (args.len == 0) {
+                if (args.len == 0) {
             print("❌ Search query required\n", .{});
             print("Usage: cursed-pkg search <query>\n", .{});
             return;
@@ -805,7 +802,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit(allocator);
+        defer manifest.deinit();
         
         // Validate package
         if (manifest.name.len == 0) {

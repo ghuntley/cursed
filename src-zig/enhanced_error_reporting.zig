@@ -193,7 +193,7 @@ pub const DiagnosticMessage = struct {
     
     pub fn deinit(self: *DiagnosticMessage) void {
         self.allocator.free(self.message);
-        self.suggestions.deinit(allocator);
+        self.suggestions.deinit();
         if (self.source_snippet) |snippet| {
             self.allocator.free(snippet);
         }
@@ -315,16 +315,16 @@ pub const ErrorReporter = struct {
     
     pub fn deinit(self: *ErrorReporter) void {
         for (self.diagnostics.items) |*diagnostic| {
-            diagnostic.deinit(allocator);
+            diagnostic.deinit();
         }
-        self.diagnostics.deinit(allocator);
+        self.diagnostics.deinit();
         
         var iterator = self.source_files.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.source_files.deinit(allocator);
+        self.source_files.deinit();
     }
     
     pub fn addSourceFile(self: *ErrorReporter, file_path: []const u8, contents: []const u8) !void {
@@ -387,7 +387,7 @@ pub const ErrorReporter = struct {
         // Add helpful suggestions based on error code
         try self.addSuggestionsForError(&diagnostic);
         
-        try self.diagnostics.append(allocator, diagnostic);
+        try self.diagnostics.append(diagnostic);
     }
     
     fn extractSourceLine(self: *ErrorReporter, source: []const u8, line_num: u32) ![]const u8 {
@@ -571,13 +571,13 @@ pub const DebugInfo = struct {
     }
     
     pub fn deinit(self: *DebugInfo) void {
-        self.line_table.deinit(allocator);
-        self.scope_table.deinit(allocator);
+        self.line_table.deinit();
+        self.scope_table.deinit();
         for (self.variable_table.items) |variable| {
             self.allocator.free(variable.name);
             self.allocator.free(variable.type_name);
         }
-        self.variable_table.deinit(allocator);
+        self.variable_table.deinit();
     }
     
     pub fn addLineInfo(self: *DebugInfo, line: u32, column: u32, file_path: []const u8, offset: u32) !void {
@@ -607,7 +607,7 @@ pub const DebugInfo = struct {
         if (self.level == .None) return 0;
         
         const scope_id = self.scope_table.items.len;
-        try self.scope_table.append(allocator, ScopeInfo{
+        try self.scope_table.append(ScopeInfo{
             .start_offset = start_offset,
             .end_offset = 0, // Will be set when scope ends
             .parent_scope = parent,
@@ -711,7 +711,7 @@ test "enhanced error reporting system" {
     
     // Test error reporter
     var reporter = ErrorReporter.init(allocator, 10);
-    defer reporter.deinit(allocator);
+    defer reporter.deinit();
     
     const location = SourceLocation.init("test.csd", 1, 5, 4);
     
@@ -725,7 +725,7 @@ test "enhanced error reporting system" {
     
     // Test debug info
     var debug_info = DebugInfo.init(allocator, .Full);
-    defer debug_info.deinit(allocator);
+    defer debug_info.deinit();
     
     try debug_info.addLineInfo(1, 5, "test.csd", 100);
     const scope_id = try debug_info.enterScope(.Function, 100, null);

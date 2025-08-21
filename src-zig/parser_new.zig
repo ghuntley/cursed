@@ -57,13 +57,13 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 const import_stmt = try self.parseImportStatement();
-                try program.imports.append(allocator, import_stmt);
+                try program.imports.append(import_stmt);
                 continue;
             }
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(allocator, stmt);
+            try program.statements.append(stmt);
         }
 
         return program;
@@ -116,13 +116,13 @@ pub const Parser = struct {
                 if (import_token.type != .Identifier) {
                     return ParserError.ExpectedIdentifier;
                 }
-                try imports.append(allocator, import_token.lexeme);
+                try imports.append(import_token.lexeme);
                 if (!self.match(.Comma)) break;
             }
             if (!self.match(.RightBrace)) {
                 return ParserError.ExpectedRightBrace;
             }
-            specific_imports = try imports.toOwnedSlice(allocator);
+            specific_imports = try imports.toOwnedSlice();
         }
         
         return import_stmt;
@@ -199,11 +199,11 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             // Parse parameter list
             const param = try self.parseParameter();
-            try parameters.append(allocator, param);
+            try parameters.append(param);
             
             while (self.match(.Comma)) {
                 const next_param = try self.parseParameter();
-                try parameters.append(allocator, next_param);
+                try parameters.append(next_param);
             }
         }
         
@@ -225,7 +225,7 @@ pub const Parser = struct {
                 continue;
             }
             const stmt = try self.parseStatement();
-            try body.append(allocator, stmt);
+            try body.append(stmt);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after function body");
@@ -258,7 +258,7 @@ pub const Parser = struct {
                 continue;
             }
             const stmt = try self.parseStatement();
-            try then_branch.append(allocator, stmt);
+            try then_branch.append(stmt);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after if body");
@@ -275,7 +275,7 @@ pub const Parser = struct {
                     continue;
                 }
                 const stmt = try self.parseStatement();
-                try else_stmts.append(allocator, stmt);
+                try else_stmts.append(stmt);
             }
             
             _ = try self.consume(.RightBrace, "Expected '}' after else body");
@@ -305,7 +305,7 @@ pub const Parser = struct {
                 continue;
             }
             const stmt = try self.parseStatement();
-            try body.append(allocator, stmt);
+            try body.append(stmt);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after while body");
@@ -353,7 +353,7 @@ pub const Parser = struct {
                 continue;
             }
             const stmt = try self.parseStatement();
-            try body.append(allocator, stmt);
+            try body.append(stmt);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after for body");
@@ -426,7 +426,7 @@ pub const Parser = struct {
                 .visibility = visibility,
             };
             
-            try fields.append(allocator, field);
+            try fields.append(field);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after struct body");
@@ -473,11 +473,11 @@ pub const Parser = struct {
             
             if (!self.check(.RightParen)) {
                 const param = try self.parseParameter();
-                try parameters.append(allocator, param);
+                try parameters.append(param);
                 
                 while (self.match(.Comma)) {
                     const next_param = try self.parseParameter();
-                    try parameters.append(allocator, next_param);
+                    try parameters.append(next_param);
                 }
             }
             
@@ -496,7 +496,7 @@ pub const Parser = struct {
                 .return_type = return_type,
             };
             
-            try methods.append(allocator, method);
+            try methods.append(method);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after interface body");
@@ -640,11 +640,11 @@ pub const Parser = struct {
 
         if (!self.check(.RightParen)) {
             const arg = try self.parseExpression();
-            try arguments.append(allocator, arg);
+            try arguments.append(arg);
             
             while (self.match(.Comma)) {
                 const next_arg = try self.parseExpression();
-                try arguments.append(allocator, next_arg);
+                try arguments.append(next_arg);
             }
         }
 
@@ -953,7 +953,7 @@ pub const Parser = struct {
         if (!self.check(closing_token)) {
         while (true) {
             const type_arg = try self.parseType();
-                try type_arguments.append(allocator, type_arg);
+                try type_arguments.append(type_arg);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -982,7 +982,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const element_type = try self.parseType();
-                try elements.append(allocator, element_type);
+                try elements.append(element_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -1065,7 +1065,7 @@ test "parser basic functionality" {
     
     var parser = Parser.init(allocator, &tokens);
     const expr = try parser.parseExpression();
-    defer expr.deinit(allocator);
+    defer expr.deinit();
     
     // Verify it's a binary expression
     switch (expr.kind) {
@@ -1091,7 +1091,7 @@ test "parser program parsing" {
     
     var parser = Parser.init(allocator, &tokens);
     var program = try parser.parseProgram();
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 1);
 }

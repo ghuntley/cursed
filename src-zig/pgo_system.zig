@@ -68,7 +68,7 @@ pub const PGOSystem = struct {
         }
         
         pub fn deinit(self: *CallProfile) void {
-            self.call_sites.deinit(allocator);
+            self.call_sites.deinit();
         }
     };
     
@@ -218,7 +218,7 @@ pub const PGOSystem = struct {
             print("📝 Creating new PGO profile database ({})\n", .{err});
         };
         
-        print("🎯 Profile-Guided Optimization system initialized\n");
+        print("🎯 Profile-Guided Optimization system initialized\n", .{});
         print("  Profile data path: {s}\n", .{profile_path});
         
         return pgo;
@@ -234,18 +234,18 @@ pub const PGOSystem = struct {
         // Cleanup hashmaps
         var function_iter = self.function_call_counts.iterator();
         while (function_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.function_call_counts.deinit(allocator);
-        self.branch_profiles.deinit(allocator);
-        self.loop_profiles.deinit(allocator);
-        self.memory_profiles.deinit(allocator);
-        self.hot_functions.deinit(allocator);
-        self.cold_functions.deinit(allocator);
+        self.function_call_counts.deinit();
+        self.branch_profiles.deinit();
+        self.loop_profiles.deinit();
+        self.memory_profiles.deinit();
+        self.hot_functions.deinit();
+        self.cold_functions.deinit();
         
         self.allocator.free(self.profile_data_path);
         
-        print("💾 PGO profile data saved and system cleaned up\n");
+        print("💾 PGO profile data saved and system cleaned up\n", .{});
     }
     
     /// Record function call for profiling
@@ -275,7 +275,7 @@ pub const PGOSystem = struct {
                     .call_frequency = 1,
                     .context_hash = std.hash_map.hashString(caller_name) ^ line ^ column,
                 };
-                try p.call_sites.append(allocator, call_site);
+                try p.call_sites.append(call_site);
             }
         }
         
@@ -323,7 +323,7 @@ pub const PGOSystem = struct {
     
     /// Analyze collected profile data and generate optimization recommendations
     pub fn analyzeProfiles(self: *Self) !PGOAnalysisResult {
-        print("🔍 Analyzing PGO profile data...\n");
+        print("🔍 Analyzing PGO profile data...\n", .{});
         
         var result = PGOAnalysisResult.init(self.allocator);
         
@@ -342,7 +342,7 @@ pub const PGOSystem = struct {
         // Generate hot/cold function classifications
         try self.classifyFunctions(&result);
         
-        print("✅ PGO analysis completed\n");
+        print("✅ PGO analysis completed\n", .{});
         result.printSummary();
         
         return result;
@@ -356,7 +356,7 @@ pub const PGOSystem = struct {
             
             // Identify hot functions (called frequently or consume significant time)
             if (profile.isHotFunction(100, 1_000_000_000)) { // 100 calls or 1s total time
-                try result.hot_functions.append(allocator, profile.function_name);
+                try result.hot_functions.append(profile.function_name);
                 
                 // Check for inlining candidates
                 if (profile.call_count > 1000 and profile.average_execution_time_ns < 10_000) {
@@ -367,10 +367,10 @@ pub const PGOSystem = struct {
                         .expected_improvement = 15.0, // 15% improvement estimate
                         .description = "High-frequency small function, excellent inlining candidate",
                     };
-                    try result.recommendations.append(allocator, recommendation);
+                    try result.recommendations.append(recommendation);
                 }
             } else if (profile.call_count < 10) {
-                try result.cold_functions.append(allocator, profile.function_name);
+                try result.cold_functions.append(profile.function_name);
             }
         }
     }
@@ -455,10 +455,10 @@ pub const PGOSystem = struct {
         
         // Copy from analysis results
         for (result.hot_functions.items) |func| {
-            try self.hot_functions.append(allocator, func);
+            try self.hot_functions.append(func);
         }
         for (result.cold_functions.items) |func| {
-            try self.cold_functions.append(allocator, func);
+            try self.cold_functions.append(func);
         }
     }
     
@@ -567,8 +567,8 @@ pub const PGOSystem = struct {
     
     /// Print comprehensive PGO statistics
     pub fn printStatistics(self: *const Self) void {
-        print("\n🎯 Profile-Guided Optimization Statistics\n");
-        print("=========================================\n");
+        print("\n🎯 Profile-Guided Optimization Statistics\n", .{});
+        print("=========================================\n", .{});
         print("Function profiles: {}\n", .{self.function_call_counts.count()});
         print("Branch profiles: {}\n", .{self.branch_profiles.count()});
         print("Loop profiles: {}\n", .{self.loop_profiles.count()});
@@ -580,7 +580,7 @@ pub const PGOSystem = struct {
         
         // Print top hot functions
         if (self.hot_functions.items.len > 0) {
-            print("\n🔥 Top Hot Functions:\n");
+            print("\n🔥 Top Hot Functions:\n", .{});
             for (self.hot_functions.items[0..@min(5, self.hot_functions.items.len)]) |func| {
                 if (self.function_call_counts.get(func)) |profile| {
                     print("  {} calls, {:.2} ms avg - {s}\n", .{
@@ -613,23 +613,23 @@ pub const PGOAnalysisResult = struct {
     }
     
     pub fn deinit(self: *PGOAnalysisResult) void {
-        self.hot_functions.deinit(allocator);
-        self.cold_functions.deinit(allocator);
+        self.hot_functions.deinit();
+        self.cold_functions.deinit();
         for (self.recommendations.items) |*rec| {
             self.allocator.free(rec.target);
         }
-        self.recommendations.deinit(allocator);
+        self.recommendations.deinit();
     }
     
     pub fn printSummary(self: *const PGOAnalysisResult) void {
-        print("\n📊 PGO Analysis Summary:\n");
+        print("\n📊 PGO Analysis Summary:\n", .{});
         print("Hot functions identified: {}\n", .{self.hot_functions.items.len});
         print("Cold functions identified: {}\n", .{self.cold_functions.items.len});
         print("Optimization recommendations: {}\n", .{self.recommendations.items.len});
         print("Analysis time: {} ms\n", .{self.total_analysis_time_ms});
         
         if (self.recommendations.items.len > 0) {
-            print("\n🎯 Top Optimization Recommendations:\n");
+            print("\n🎯 Top Optimization Recommendations:\n", .{});
             for (self.recommendations.items[0..@min(5, self.recommendations.items.len)]) |rec| {
                 print("  {} - {s} ({:.1}% improvement, {:.0}% confidence)\n", .{
                     rec.type,

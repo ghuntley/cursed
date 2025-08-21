@@ -52,31 +52,31 @@ pub const ReplSession = struct {
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
         
         // Clean up functions
         var func_iter = self.functions.iterator();
         while (func_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
         // Clean up structs
         var struct_iter = self.structs.iterator();
         while (struct_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.structs.deinit(allocator);
+        self.structs.deinit();
         
         // Clean up history
         for (self.history.items) |line| {
             self.allocator.free(line);
         }
-        self.history.deinit(allocator);
+        self.history.deinit();
         
         // Clean up history file path
         if (self.history_file_path) |path| {
@@ -118,7 +118,7 @@ pub const ReplSession = struct {
         
         const history_path = self.history_file_path.?;
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // Check for temporary file (indicates interrupted write)
@@ -225,7 +225,7 @@ pub const ReplSession = struct {
         
         const history_path = self.history_file_path.?;
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         const temp_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_TEMP_SUFFIX });
@@ -287,7 +287,7 @@ pub const ReplSession = struct {
         
         // Try to parse and evaluate the input
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // First try: parse as a complete statement
@@ -461,7 +461,7 @@ pub const ReplSession = struct {
         
         // Update or create the variable
         if (self.variables.getPtr(var_name)) |existing| {
-            existing.deinit(allocator);
+            existing.deinit();
             existing.* = persistent_value;
         } else {
             const var_name_copy = try self.allocator.dupe(u8, var_name);
@@ -520,7 +520,7 @@ pub fn runRepl(allocator: Allocator, verbose: bool) !void {
 /// CURSED REPL implementation with custom history file
 pub fn runReplWithHistory(allocator: Allocator, verbose: bool, history_file: ?[]const u8) !void {
     var session = ReplSession.init(allocator, verbose);
-    defer session.deinit(allocator);
+    defer session.deinit();
     
     // Initialize robust history persistence
     session.initHistoryPersistence(history_file) catch |err| {
@@ -569,7 +569,7 @@ pub fn runReplWithHistory(allocator: Allocator, verbose: bool, history_file: ?[]
                 
                 // Clean up the result
                 var temp_value = value;
-                temp_value.deinit(allocator);
+                temp_value.deinit();
             }
         } else |err| {
             switch (err) {

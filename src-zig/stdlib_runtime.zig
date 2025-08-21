@@ -86,8 +86,8 @@ pub const CompiledModule = struct {
 
     pub fn deinit(self: *CompiledModule) void {
         self.allocator.free(self.name);
-        self.module.deinit(allocator);
-        self.functions.deinit(allocator);
+        self.module.deinit();
+        self.functions.deinit();
         if (self.compiled_binary) |binary| {
             self.allocator.free(binary);
         }
@@ -111,9 +111,9 @@ pub const ModuleCache = struct {
     pub fn deinit(self: *ModuleCache) void {
         var iterator = self.modules.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.modules.deinit(allocator);
+        self.modules.deinit();
         self.allocator.free(self.cache_dir);
     }
 
@@ -166,18 +166,18 @@ pub const StdlibRuntime = struct {
     }
 
     pub fn deinit(self: *StdlibRuntime) void {
-        self.module_cache.deinit(allocator);
+        self.module_cache.deinit();
         self.allocator.free(self.stdlib_path);
         
         // Clean up function execution registry
         var func_iter = self.function_execution_registry.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.function_execution_registry.deinit(allocator);
+        self.function_execution_registry.deinit();
         
-        self.compilation_times.deinit(allocator);
-        self.function_call_counts.deinit(allocator);
+        self.compilation_times.deinit();
+        self.function_call_counts.deinit();
     }
 
     /// Discover all stdlib modules in the stdlib directory
@@ -254,14 +254,14 @@ pub const StdlibRuntime = struct {
         // Lexical analysis
         var lex = lexer.Lexer.init(self.allocator, source_code);
         const tokens = try lex.tokenize();
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
 
         // Parse into AST
         var parse = parser.Parser.init(self.allocator, tokens.items);
         const program = try parse.parseProgram();
         defer {
             var mutable_program = program;
-            mutable_program.deinit(allocator);
+            mutable_program.deinit();
         }
 
         // Generate LLVM code
@@ -393,7 +393,7 @@ pub const StdlibRuntime = struct {
         
         // Create execution context
         var execution_context = interp.ExecutionContext.init(self.allocator);
-        defer execution_context.deinit(allocator);
+        defer execution_context.deinit();
         
         // Set up function arguments
         for (func_entry.ast_function.parameters.items, 0..) |param, i| {
@@ -534,7 +534,7 @@ pub const StdlibRegistry = struct {
     }
 
     pub fn deinit(self: *StdlibRegistry) void {
-        self.registered_functions.deinit(allocator);
+        self.registered_functions.deinit();
     }
 
     /// Register all stdlib functions for runtime access
@@ -544,7 +544,7 @@ pub const StdlibRegistry = struct {
             for (modules.items) |module_name| {
                 self.allocator.free(module_name);
             }
-            modules.deinit(allocator);
+            modules.deinit();
         }
 
         for (modules.items) |module_name| {
@@ -604,7 +604,7 @@ pub fn testStdlibRuntime(allocator: Allocator) !void {
     print("======================================\n", .{});
     
     var runtime = try initializeStdlibRuntime(allocator, "stdlib");
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     // Test module discovery
     const modules = try runtime.discoverModules();
@@ -612,7 +612,7 @@ pub fn testStdlibRuntime(allocator: Allocator) !void {
         for (modules.items) |module_name| {
             allocator.free(module_name);
         }
-        modules.deinit(allocator);
+        modules.deinit();
     }
     
     print("\n📦 Discovered {} stdlib modules\n", .{modules.items.len});

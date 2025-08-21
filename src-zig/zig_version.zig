@@ -224,7 +224,7 @@ test "arraylist compatibility" {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    var list = ArrayList(i32).init(allocator);
+    var list = .empty;
     defer list.deinit();
     
     try list.append(42);

@@ -232,7 +232,7 @@ pub fn testLLVMBackendFixed(allocator: Allocator) !void {
     print("Testing fixed LLVM backend...\n", .{});
     
     var backend = try LLVMBackendFixed.init(allocator, "test_module");
-    defer backend.deinit(allocator);
+    defer backend.deinit();
     
     // Create a simple function: int main() { return 42; }
     const int32_type = backend.getInt32Type();
@@ -273,7 +273,7 @@ fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: 
     
     // Parse the source code (simplified for now)
     var backend = try LLVMBackendFixed.init(allocator, "cursed_program");
-    defer backend.deinit(allocator);
+    defer backend.deinit();
     
     // Create main function
     const int32_type = backend.getInt32Type();
@@ -296,13 +296,13 @@ fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: 
         while (iterator.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        variables.deinit(allocator);
+        variables.deinit();
         
         var llvm_iterator = llvm_variables.iterator();
         while (llvm_iterator.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        llvm_variables.deinit(allocator);
+        llvm_variables.deinit();
     }
     
     // Store user-defined functions
@@ -312,7 +312,7 @@ fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: 
         while (func_iterator.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        user_functions.deinit(allocator);
+        user_functions.deinit();
     }
     
     // Two-pass compilation: first collect functions, then generate code
@@ -536,14 +536,14 @@ fn compileMultiArgumentPrint(
 ) !void {
     // Parse arguments separated by commas
     var args_list: std.ArrayList(LLVMValueRef) = .empty;
-    defer args_list.deinit(allocator);
+    defer args_list.deinit();
     
     var format_parts: std.ArrayList([]const u8) = .empty;
     defer {
         for (format_parts.items) |part| {
             allocator.free(part);
         }
-        format_parts.deinit(allocator);
+        format_parts.deinit();
     }
     
     var arg_iter = std.mem.tokenizeScalar(u8, content, ',');
@@ -553,31 +553,31 @@ fn compileMultiArgumentPrint(
         if (trimmed_arg.len >= 2 and trimmed_arg[0] == '"' and trimmed_arg[trimmed_arg.len - 1] == '"') {
             // String argument
             const string_content = trimmed_arg[1..trimmed_arg.len - 1];
-            try format_parts.append(allocator, try allocator.dupe(u8, string_content));
+            try format_parts.append(try allocator.dupe(u8, string_content));
             
         } else if (variables.get(trimmed_arg)) |value| {
             // Variable argument
-            try format_parts.append(allocator, try allocator.dupe(u8, " %ld"));
+            try format_parts.append(try allocator.dupe(u8, " %ld"));
             const value_const = backend.buildConstInt(backend.getInt32Type(), @intCast(value));
-            try args_list.append(allocator, value_const);
+            try args_list.append(value_const);
             
         } else if (std.fmt.parseInt(i64, trimmed_arg, 10)) |value| {
             // Integer literal
-            try format_parts.append(allocator, try allocator.dupe(u8, " %ld"));
+            try format_parts.append(try allocator.dupe(u8, " %ld"));
             const value_const = backend.buildConstInt(backend.getInt32Type(), @intCast(value));
-            try args_list.append(allocator, value_const);
+            try args_list.append(value_const);
             
         } else |_| {
             // Unknown argument, treat as string
-            try format_parts.append(allocator, try allocator.dupe(u8, " %s"));
+            try format_parts.append(try allocator.dupe(u8, " %s"));
             const string_value = try backend.buildConstString(trimmed_arg, "str_val");
-            try args_list.append(allocator, string_value);
+            try args_list.append(string_value);
         }
     }
     
     // Build format string
     var format_string: std.ArrayList(u8) = .empty;
-    defer format_string.deinit(allocator);
+    defer format_string.deinit();
     
     for (format_parts.items) |part| {
         try format_string.appendSlice(part);
@@ -588,9 +588,9 @@ fn compileMultiArgumentPrint(
     
     // Create arguments array
     var final_args: std.ArrayList(LLVMValueRef) = .empty;
-    defer final_args.deinit(allocator);
+    defer final_args.deinit();
     
-    try final_args.append(allocator, format_str);
+    try final_args.append(format_str);
     try final_args.appendSlice(args_list.items);
     
     _ = try backend.buildCall(printf_func, final_args.items, "printf_call");
@@ -678,7 +678,7 @@ fn generateFunctionBodies(
     var in_function = false;
     var current_function: ?LLVMValueRef = null;
     var function_body_lines: std.ArrayList([]const u8) = .empty;
-    defer function_body_lines.deinit(allocator);
+    defer function_body_lines.deinit();
     
     while (lines.next()) |line| {
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
@@ -714,7 +714,7 @@ fn generateFunctionBodies(
             } else {
                 // Collect function body line
                 const line_copy = try allocator.dupe(u8, trimmed);
-                try function_body_lines.append(allocator, line_copy);
+                try function_body_lines.append(line_copy);
             }
             continue;
         }
@@ -912,14 +912,14 @@ fn evaluateExpressionLLVM(
             
             // Parse arguments (simplified - assume 2 integer arguments)
             var args_list: std.ArrayList(LLVMValueRef) = .empty;
-            defer args_list.deinit(allocator);
+            defer args_list.deinit();
             
             if (args_str.len > 0) {
                 var arg_parts = std.mem.tokenizeScalar(u8, args_str, ',');
                 while (arg_parts.next()) |arg| {
                     const trimmed_arg = std.mem.trim(u8, arg, " \t");
                     const arg_value = try evaluateExpressionLLVM(allocator, trimmed_arg, backend, variables, llvm_variables, user_functions);
-                    try args_list.append(allocator, arg_value);
+                    try args_list.append(arg_value);
                 }
             }
             

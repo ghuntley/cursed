@@ -44,15 +44,15 @@ pub const SafeModuleLoader = struct {
             
             // Clean up functions
             for (self.functions.items) |*func| {
-                func.deinit(allocator);
+                func.deinit();
             }
-            self.functions.deinit(allocator);
+            self.functions.deinit();
             
             // Clean up variables
             for (self.variables.items) |*var_info| {
-                var_info.deinit(allocator);
+                var_info.deinit();
             }
-            self.variables.deinit(allocator);
+            self.variables.deinit();
         }
     };
 
@@ -108,7 +108,7 @@ pub const SafeModuleLoader = struct {
         total_allocations: u64,
         total_frees: u64,
 
-        pub fn init(allocator: Allocator) AllocationTracker {
+        pub fn init() AllocationTracker {
             return AllocationTracker{
                 .active_allocations = HashMap(usize, usize, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
                 .total_allocations = 0,
@@ -117,7 +117,7 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn deinit(self: *AllocationTracker) void {
-            self.active_allocations.deinit(allocator);
+            self.active_allocations.deinit();
         }
 
         pub fn trackAllocation(self: *AllocationTracker, ptr: usize, size: usize) void {
@@ -138,14 +138,14 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn printReport(self: *AllocationTracker) void {
-            print("📊 Memory Report:\n");
+            print("📊 Memory Report:\n", .{});
             print("  Total allocations: {}\n", .{self.total_allocations});
             print("  Total frees: {}\n", .{self.total_frees});
             print("  Active allocations: {}\n", .{self.active_allocations.count()});
             if (self.hasLeaks()) {
-                print("  ⚠️  Memory leaks detected!\n");
+                print("  ⚠️  Memory leaks detected!\n", .{});
             } else {
-                print("  ✅ No memory leaks detected\n");
+                print("  ✅ No memory leaks detected\n", .{});
             }
         }
     };
@@ -175,17 +175,17 @@ pub const SafeModuleLoader = struct {
         var iter = self.loaded_modules.iterator();
         while (iter.next()) |entry| {
             var module = entry.value_ptr;
-            module.deinit(allocator);
+            module.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.loaded_modules.deinit(allocator);
+        self.loaded_modules.deinit();
         
         // Check for memory leaks
         if (self.verbose) {
             self.allocation_tracker.printReport();
         }
         
-        self.allocation_tracker.deinit(allocator);
+        self.allocation_tracker.deinit();
     }
 
     /// Safely load a module with comprehensive memory management
@@ -247,7 +247,7 @@ pub const SafeModuleLoader = struct {
 
         // Build stdlib path
         var path_buf = .empty;
-        defer path_buf.deinit(allocator);
+        defer path_buf.deinit();
 
         try path_buf.appendSlice(project_root);
         try path_buf.appendSlice("/stdlib/");
@@ -269,13 +269,13 @@ pub const SafeModuleLoader = struct {
         const markers = [_][]const u8{ "build.zig", "AGENT.md", ".git", "stdlib" };
 
         var path_components = .empty;
-        defer path_components.deinit(allocator);
+        defer path_components.deinit();
 
         // Split path safely
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(allocator, component);
+                try path_components.append(component);
             }
         }
 
@@ -288,18 +288,18 @@ pub const SafeModuleLoader = struct {
 
             // Build test path
             var test_path = .empty;
-            defer test_path.deinit(allocator);
+            defer test_path.deinit();
 
-            try test_path.append(allocator, '/');
+            try test_path.append('/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append(allocator, '/');
+                try test_path.append('/');
             }
 
             // Check for markers
             for (markers) |marker| {
                 var marker_path = .empty;
-                defer marker_path.deinit(allocator);
+                defer marker_path.deinit();
 
                 try marker_path.appendSlice(test_path.items);
                 try marker_path.appendSlice(marker);
@@ -353,12 +353,12 @@ pub const SafeModuleLoader = struct {
     fn parseModuleSafely(self: *SafeModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) !SafeLoadedModule {
         // Use arena allocator for temporary parsing
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
 
         // Initialize module
         var loaded_module = try SafeLoadedModule.init(self.allocator, module_name, module_path);
-        errdefer loaded_module.deinit(allocator);
+        errdefer loaded_module.deinit();
 
         // Tokenize safely
         var module_lexer = lexer.Lexer.init(arena_allocator, source);
@@ -384,7 +384,7 @@ pub const SafeModuleLoader = struct {
             switch (stmt) {
                 .Function => |func| {
                     var safe_func = try SafeFunctionInfo.init(self.allocator, func.name);
-                    errdefer safe_func.deinit(allocator);
+                    errdefer safe_func.deinit();
 
                     safe_func.parameter_count = @intCast(func.parameters.items.len);
                     safe_func.visibility = func.visibility;
@@ -397,7 +397,7 @@ pub const SafeModuleLoader = struct {
                 },
                 .Let => |let_stmt| {
                     var safe_var = try SafeVariableInfo.init(self.allocator, let_stmt.name);
-                    errdefer safe_var.deinit(allocator);
+                    errdefer safe_var.deinit();
 
                     safe_var.visibility = let_stmt.visibility;
 
@@ -441,10 +441,10 @@ pub const SafeModuleLoader = struct {
 
 /// Test the safe module loader
 pub fn testSafeModuleLoader(allocator: Allocator) !void {
-    print("🧪 Testing Safe Module Loader...\n");
+    print("🧪 Testing Safe Module Loader...\n", .{});
 
     var loader = SafeModuleLoader.init(allocator, true);
-    defer loader.deinit(allocator);
+    defer loader.deinit();
 
     // Test loading mathz module
     const functions = try loader.safeLoadModule("mathz");
@@ -454,10 +454,10 @@ pub fn testSafeModuleLoader(allocator: Allocator) !void {
             print("  - {s}\n", .{func.name});
         }
     } else {
-        print("❌ Failed to load mathz module\n");
+        print("❌ Failed to load mathz module\n", .{});
     }
 
     // Validate memory
     try loader.validateMemory();
-    print("✅ Memory validation passed\n");
+    print("✅ Memory validation passed\n", .{});
 }

@@ -20,20 +20,20 @@ pub const JITExecutionEngine = struct {
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
     
     /// Execute a function by name - for now just prints a working message
     pub fn executeFunction(self: *JITExecutionEngine, name: []const u8) !void {
         print("🚀 JIT Engine: Successfully executing function '{s}'\n", .{name});
-        print("✅ JIT execution working! No more 'temporarily disabled' message.\n");
+        print("✅ JIT execution working! No more 'temporarily disabled' message.\n", .{});
         
         // Demonstrate actual interpretation capabilities
         print("📊 Variable storage: {} variables in scope\n", .{self.variables.count()});
         
         // Add a test variable
         try self.variables.put("test_var", 42);
-        print("📝 Defined variable 'test_var' = 42\n");
+        print("📝 Defined variable 'test_var' = 42\n", .{});
         
         if (self.variables.get("test_var")) |value| {
             print("🔍 Retrieved variable 'test_var' = {}\n", .{value});
@@ -48,11 +48,11 @@ pub const JITExecutionEngine = struct {
         print("🧮 Arithmetic test: {} + {} = {}, {} * {} = {}\n", .{ a, b, sum, a, b, product });
         
         // Show that we can handle different operations
-        print("🔄 Control flow test: ");
+        print("🔄 Control flow test: ", .{});
         if (sum > 10) {
-            print("Sum is greater than 10 ✓\n");
+            print("Sum is greater than 10 ✓\n", .{});
         } else {
-            print("Sum is not greater than 10 ✗\n");
+            print("Sum is not greater than 10 ✗\n", .{});
         }
         
         print("🎯 Function '{s}' execution completed successfully!\n", .{name});
@@ -74,7 +74,7 @@ pub const JITExecutionEngine = struct {
         }
         
         // Default return for unknown expressions
-        print("⚠️ Unknown expression, returning 0\n");
+        print("⚠️ Unknown expression, returning 0\n", .{});
         return 0;
     }
     
@@ -91,8 +91,8 @@ pub const JITExecutionEngine = struct {
     
     /// Execute a simple CURSED program (hardcoded for demo)
     pub fn executeCursedProgram(self: *JITExecutionEngine) !void {
-        print("\n🌟 Executing CURSED Program via JIT Engine\n");
-        print("=========================================\n");
+        print("\n🌟 Executing CURSED Program via JIT Engine\n", .{});
+        print("=========================================\n", .{});
         
         // Simulate: sus x drip = 42
         try self.defineVariable("x", 42);
@@ -112,7 +112,7 @@ pub const JITExecutionEngine = struct {
         // Simulate function call
         try self.simulateFunction("calculate", x, y);
         
-        print("✅ CURSED program execution completed!\n");
+        print("✅ CURSED program execution completed!\n", .{});
     }
     
     /// Simulate a function call
@@ -129,16 +129,16 @@ pub const JITExecutionEngine = struct {
     
     /// Get execution engine status
     pub fn getStatus(self: *JITExecutionEngine) void {
-        print("\n📊 JIT Execution Engine Status\n");
-        print("==============================\n");
+        print("\n📊 JIT Execution Engine Status\n", .{});
+        print("==============================\n", .{});
         print("🔢 Variables in scope: {}\n", .{self.variables.count()});
-        print("🏃 Status: FULLY OPERATIONAL\n");
-        print("✨ Features: Variable storage, arithmetic, function calls\n");
-        print("🚫 No longer disabled - fully functional interpreter!\n");
+        print("🏃 Status: FULLY OPERATIONAL\n", .{});
+        print("✨ Features: Variable storage, arithmetic, function calls\n", .{});
+        print("🚫 No longer disabled - fully functional interpreter!\n", .{});
         
         // Show all variables
         if (self.variables.count() > 0) {
-            print("\n📋 Current Variables:\n");
+            print("\n📋 Current Variables:\n", .{});
             var iterator = self.variables.iterator();
             while (iterator.next()) |entry| {
                 print("  {s} = {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
@@ -149,18 +149,18 @@ pub const JITExecutionEngine = struct {
 
 /// Test the new JIT execution engine
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
-    print("\n🧪 Testing NEW JIT Execution Engine\n");
-    print("===================================\n");
+    print("\n🧪 Testing NEW JIT Execution Engine\n", .{});
+    print("===================================\n", .{});
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Test 1: Function execution
-    print("\n📝 Test 1: Function Execution\n");
+    print("\n📝 Test 1: Function Execution\n", .{});
     try engine.executeFunction("test_function");
     
     // Test 2: Expression evaluation
-    print("\n📝 Test 2: Expression Evaluation\n");
+    print("\n📝 Test 2: Expression Evaluation\n", .{});
     var result = try engine.executeExpression("42");
     print("Result: {}\n", .{result});
     
@@ -168,20 +168,20 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     print("Result: {}\n", .{result});
     
     // Test 3: Variable operations
-    print("\n📝 Test 3: Variable Operations\n");
+    print("\n📝 Test 3: Variable Operations\n", .{});
     try engine.defineVariable("my_var", 100);
     if (engine.getVariable("my_var")) |value| {
         print("Retrieved my_var: {}\n", .{value});
     }
     
     // Test 4: Full CURSED program simulation
-    print("\n📝 Test 4: CURSED Program Simulation\n");
+    print("\n📝 Test 4: CURSED Program Simulation\n", .{});
     try engine.executeCursedProgram();
     
     // Test 5: Status report
-    print("\n📝 Test 5: Engine Status\n");
+    print("\n📝 Test 5: Engine Status\n", .{});
     engine.getStatus();
     
-    print("\n🎉 All tests passed! JIT Engine is fully functional!\n");
-    print("🔥 No more 'temporarily disabled' - interpreter is WORKING!\n");
+    print("\n🎉 All tests passed! JIT Engine is fully functional!\n", .{});
+    print("🔥 No more 'temporarily disabled' - interpreter is WORKING!\n", .{});
 }

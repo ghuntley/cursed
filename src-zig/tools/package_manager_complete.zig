@@ -26,9 +26,9 @@ pub const PackageManager = struct {
     }
     
     pub fn deinit(self: *PackageManager) void {
-        self.registry_client.deinit(allocator);
-        self.dependency_resolver.deinit(allocator);
-        self.local_packages.deinit(allocator);
+        self.registry_client.deinit();
+        self.dependency_resolver.deinit();
+        self.local_packages.deinit();
     }
     
     // Install a package and its dependencies
@@ -41,10 +41,10 @@ pub const PackageManager = struct {
         
         // Install packages in dependency order
         var install_order = try self.dependency_resolver.getInstallOrder(dep_graph);
-        defer install_order.deinit(allocator);
+        defer install_order.deinit();
         
         var installed_packages = ArrayList(InstalledPackage).init(self.allocator);
-        defer installed_packages.deinit(allocator);
+        defer installed_packages.deinit();
         
         for (install_order.items) |package_spec| {
             const installed = try self.installSinglePackage(package_spec);
@@ -117,7 +117,7 @@ pub const PackageManager = struct {
         
         // Extract package metadata
         var metadata = try self.extractPackageMetadata(package_dir);
-        defer metadata.deinit(allocator);
+        defer metadata.deinit();
         
         if (!dry_run) {
             // Upload to registry
@@ -144,7 +144,7 @@ pub const PackageManager = struct {
         print("Updating all packages...\n", .{});
         
         var updated_packages = ArrayList(UpdatedPackage).init(self.allocator);
-        defer updated_packages.deinit(allocator);
+        defer updated_packages.deinit();
         
         var package_iterator = self.local_packages.iterator();
         while (package_iterator.next()) |entry| {
@@ -175,7 +175,7 @@ pub const PackageManager = struct {
     // List installed packages
     pub fn listInstalledPackages(self: *PackageManager) ![]InstalledPackageInfo {
         var packages = ArrayList(InstalledPackageInfo).init(self.allocator);
-        defer packages.deinit(allocator);
+        defer packages.deinit();
         
         var package_iterator = self.local_packages.iterator();
         while (package_iterator.next()) |entry| {
@@ -201,7 +201,7 @@ pub const PackageManager = struct {
             .version = "1.0",
             .packages = ArrayList(LockFilePackage).init(self.allocator),
         };
-        defer lock_file.deinit(allocator);
+        defer lock_file.deinit();
         
         var package_iterator = self.local_packages.iterator();
         while (package_iterator.next()) |entry| {
@@ -248,7 +248,7 @@ pub const PackageManager = struct {
     
     fn findDependentPackages(self: *PackageManager, package_name: []const u8) ![][]const u8 {
         var dependents = ArrayList([]const u8).init(self.allocator);
-        defer dependents.deinit(allocator);
+        defer dependents.deinit();
         
         // Check all installed packages for dependencies on this package
         var package_iterator = self.local_packages.iterator();
@@ -296,7 +296,7 @@ pub const PackageManager = struct {
         // Check for required files
         const required_files = [_][]const u8{ "CursedPackage.toml", "src/", "README.md" };
         var errors = ArrayList([]const u8).init(self.allocator);
-        defer errors.deinit(allocator);
+        defer errors.deinit();
         
         for (required_files) |file| {
             const file_path = try std.fmt.allocPrint(self.allocator, "{s}/{s}", .{ package_dir, file });
@@ -334,14 +334,14 @@ pub const PackageManager = struct {
         // For simplicity, we'll create a mock archive with directory contents
         
         var archive_contents = ArrayList(u8).init(self.allocator);
-        defer archive_contents.deinit(allocator);
+        defer archive_contents.deinit();
         
         // Walk through the package directory and collect file contents
         var dir = try std.fs.cwd().openDir(package_dir, .{ .iterate = true });
         defer dir.close();
         
         var walker = try dir.walk(self.allocator);
-        defer walker.deinit(allocator);
+        defer walker.deinit();
         
         var file_count: u32 = 0;
         while (try walker.next()) |entry| {
@@ -470,7 +470,7 @@ pub const PackageManager = struct {
         var current_file_size: usize = 0;
         var reading_file_content = false;
         var content_buffer = ArrayList(u8).init(self.allocator);
-        defer content_buffer.deinit(allocator);
+        defer content_buffer.deinit();
         
         while (lines.next()) |line| {
             if (std.mem.startsWith(u8, line, "FILE:")) {
@@ -534,7 +534,7 @@ pub const PackageManager = struct {
         const lock_file_path = "CursedPackage.lock";
         
         var file_contents = ArrayList(u8).init(self.allocator);
-        defer file_contents.deinit(allocator);
+        defer file_contents.deinit();
         
         // Write header
         try file_contents.appendSlice("# CURSED Package Lock File\n");
@@ -600,7 +600,7 @@ pub const PackageManager = struct {
     fn getDependencyList(self: *PackageManager, package_name: []const u8) ![][]const u8 {
         // Mock dependency list - in real implementation would read from package metadata
         var deps = ArrayList([]const u8).init(self.allocator);
-        defer deps.deinit(allocator);
+        defer deps.deinit();
         
         // Return mock dependencies based on package name
         if (std.mem.eql(u8, package_name, "test-package")) {
@@ -644,7 +644,7 @@ pub const RegistryClient = struct {
         
         // Mock implementation with realistic results for testing
         var results = ArrayList(PackageSearchResult).init(self.allocator);
-        defer results.deinit(allocator);
+        defer results.deinit();
         
         // Mock search results based on query
         if (std.mem.indexOf(u8, query, "http")) |_| {
@@ -692,7 +692,7 @@ pub const RegistryClient = struct {
         
         // Create simple mock package data
         var package_data = ArrayList(u8).init(self.allocator);
-        defer package_data.deinit(allocator);
+        defer package_data.deinit();
         
         // Create main source file
         const main_file = try std.fmt.allocPrint(self.allocator, 
@@ -846,7 +846,7 @@ pub const RegistryClient = struct {
 pub const DependencyResolver = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) DependencyResolver {
+    pub fn init() DependencyResolver {
         return DependencyResolver{
             .allocator = allocator,
         };
@@ -889,10 +889,10 @@ pub const DependencyResolver = struct {
         };
         
         var visited = std.HashMap([]const u8, void, std.hash_map.StringContext, 80).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         
         var pending = ArrayList(PendingDependency).init(self.allocator);
-        defer pending.deinit(allocator);
+        defer pending.deinit();
         
         // Add root package
         const root_version = version orelse "latest";
@@ -973,15 +973,15 @@ pub const DependencyResolver = struct {
         
         // Implement topological sort for proper dependency order
         var in_degree = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer in_degree.deinit(allocator);
+        defer in_degree.deinit();
         
         var adjacency_list = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
         defer {
             var iterator = adjacency_list.iterator();
             while (iterator.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            adjacency_list.deinit(allocator);
+            adjacency_list.deinit();
         }
         
         // Initialize in-degree and adjacency list
@@ -1002,7 +1002,7 @@ pub const DependencyResolver = struct {
         
         // Find nodes with no incoming edges
         var queue = ArrayList([]const u8).init(self.allocator);
-        defer queue.deinit(allocator);
+        defer queue.deinit();
         
         var degree_iterator = in_degree.iterator();
         while (degree_iterator.next()) |entry| {
@@ -1160,7 +1160,7 @@ pub const LockFile = struct {
     packages: ArrayList(LockFilePackage),
     
     pub fn deinit(self: *LockFile) void {
-        self.packages.deinit(allocator);
+        self.packages.deinit();
     }
 };
 
@@ -1189,7 +1189,7 @@ pub fn main() !void {
     print("=============================\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const config = PackageConfig{
@@ -1199,7 +1199,7 @@ pub fn main() !void {
     };
     
     var package_manager = try PackageManager.init(allocator, config);
-    defer package_manager.deinit(allocator);
+    defer package_manager.deinit();
     
     // Test package manager functionality
     print("\n🧪 Testing Package Manager Functionality\n", .{});

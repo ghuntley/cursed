@@ -126,15 +126,14 @@ fn generateUserFunctionCall(
     call: ast.CallExpression,
     allocator: std.mem.Allocator,
 ) !c.LLVMValueRef {
-    _ = allocator;
-    
+        
     // Generate arguments with proper variable resolution
     var args: std.ArrayList(c.LLVMValueRef) = .empty;
-    defer args.deinit(allocator);
+    defer args.deinit();
     
     for (call.arguments.items) |arg_expr| {
         const arg_value = try generateExpressionValue(context, builder, arg_expr);
-        try args.append(allocator, arg_value);
+        try args.append(arg_value);
     }
     
     // Generate function call
@@ -159,8 +158,7 @@ fn generateVibesSpillCall(
     call: ast.CallExpression,
     allocator: std.mem.Allocator,
 ) !c.LLVMValueRef {
-    _ = allocator;
-    
+        
     // Get or declare printf function
     const printf_func = c.LLVMGetNamedFunction(module, "printf") orelse {
         const printf_type = c.LLVMFunctionType(
@@ -337,8 +335,7 @@ pub fn generateEnhancedFunctionBody(
     allocator: std.mem.Allocator,
 ) !void {
     _ = params;
-    _ = allocator;
-    
+        
     // Create entry block
     const entry_block = c.LLVMAppendBasicBlockInContext(context, function, "entry");
     c.LLVMPositionBuilderAtEnd(builder, entry_block);
@@ -485,7 +482,7 @@ pub fn initializeVariableScope(allocator: std.mem.Allocator) !void {
 /// Cleanup the global scope manager
 pub fn deinitializeVariableScope(allocator: std.mem.Allocator) void {
     if (global_scope_manager) |scope_manager| {
-        scope_manager.deinit(allocator);
+        scope_manager.deinit();
         allocator.destroy(scope_manager);
         global_scope_manager = null;
     }

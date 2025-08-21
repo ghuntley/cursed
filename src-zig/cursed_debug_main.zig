@@ -15,7 +15,7 @@ const DebuggerState = struct {
     variables: std.StringHashMap([]const u8),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) DebuggerState {
+    pub fn init() DebuggerState {
         return DebuggerState{
             .breakpoints = std.AutoHashMap(u32, bool).init(allocator),
             .current_line = 1,
@@ -28,7 +28,7 @@ const DebuggerState = struct {
     }
     
     pub fn deinit(self: *DebuggerState) void {
-        self.breakpoints.deinit();
+        self.breakpoints.deinit(self.allocator);
         for (self.source_lines.items) |line| {
             self.allocator.free(line);
         }
@@ -39,13 +39,13 @@ const DebuggerState = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 };
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(self.allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -97,7 +97,7 @@ fn startInteractiveSession(debugger: *DebuggerState, source_file: []const u8) !v
     const stdin = std.io.getStdIn().reader();
     
     while (true) {
-        print("(cursed-db) ");
+        print("(cursed-db) ", .{});
         
         var buffer: [256]u8 = undefined;
         if (try stdin.readUntilDelimiterOrEof(buffer[0..], '\n')) |input| {

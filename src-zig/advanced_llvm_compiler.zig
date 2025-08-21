@@ -218,12 +218,12 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     
     // Build clang command with optimization flags
     var clang_args: std.ArrayList([]const u8) = .empty;
-    defer clang_args.deinit(allocator);
+    defer clang_args.deinit();
     
-    try clang_args.append(allocator, "clang");
-    try clang_args.append(allocator, ir_filename);
-    try clang_args.append(allocator, "-o");
-    try clang_args.append(allocator, output_filename);
+    try clang_args.append("clang");
+    try clang_args.append(ir_filename);
+    try clang_args.append("-o");
+    try clang_args.append(output_filename);
     
     // Add optimization flags
     const opt_flag = switch (config.optimization_level) {
@@ -233,16 +233,16 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
         3 => "-O3",
         else => "-O2",
     };
-    try clang_args.append(allocator, opt_flag);
+    try clang_args.append(opt_flag);
     
     // Add size optimization if requested
     if (config.size_optimization) {
-        try clang_args.append(allocator, "-Os");
+        try clang_args.append("-Os");
     }
     
     // Add LTO if enabled
     if (config.lto_enabled) {
-        try clang_args.append(allocator, "-flto");
+        try clang_args.append("-flto");
         if (config.verbose) print("✅ Link-Time Optimization enabled in linking\n", .{});
     }
     
@@ -250,62 +250,62 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     if (config.pgo_enabled and config.pgo_profile_path != null) {
         const pgo_flag = try std.fmt.allocPrint(allocator, "-fprofile-use={s}", .{config.pgo_profile_path.?});
         defer allocator.free(pgo_flag);
-        try clang_args.append(allocator, pgo_flag);
+        try clang_args.append(pgo_flag);
         if (config.verbose) print("✅ Profile-Guided Optimization enabled in linking\n", .{});
     }
     
     // Add vectorization flags
     if (config.vectorization_enabled) {
-        try clang_args.append(allocator, "-ftree-vectorize");
-        try clang_args.append(allocator, "-fslp-vectorize");
+        try clang_args.append("-ftree-vectorize");
+        try clang_args.append("-fslp-vectorize");
     } else {
-        try clang_args.append(allocator, "-fno-vectorize");
-        try clang_args.append(allocator, "-fno-slp-vectorize");
+        try clang_args.append("-fno-vectorize");
+        try clang_args.append("-fno-slp-vectorize");
     }
     
     // Add target-specific flags
     if (config.target_cpu) |cpu| {
         const cpu_flag = try std.fmt.allocPrint(allocator, "-mcpu={s}", .{cpu});
         defer allocator.free(cpu_flag);
-        try clang_args.append(allocator, cpu_flag);
+        try clang_args.append(cpu_flag);
     }
     
     if (config.target_features) |features| {
         const features_flag = try std.fmt.allocPrint(allocator, "-mattr={s}", .{features});
         defer allocator.free(features_flag);
-        try clang_args.append(allocator, features_flag);
+        try clang_args.append(features_flag);
     }
     
     // Add static linking if requested
     if (config.static_link) {
-        try clang_args.append(allocator, "-static");
+        try clang_args.append("-static");
     }
     
     // Add debug information if requested
     if (config.debug_info) {
-        try clang_args.append(allocator, "-g");
-        try clang_args.append(allocator, "-gdwarf-4");
+        try clang_args.append("-g");
+        try clang_args.append("-gdwarf-4");
     }
     
     // Add target specification if provided
     if (config.target) |target| {
         const target_flag = try std.fmt.allocPrint(allocator, "--target={s}", .{target});
         defer allocator.free(target_flag);
-        try clang_args.append(allocator, target_flag);
+        try clang_args.append(target_flag);
     }
     
     // Add additional optimization flags for performance
     if (config.optimization_level >= 2) {
-        try clang_args.append(allocator, "-ffast-math");
-        try clang_args.append(allocator, "-funroll-loops");
-        try clang_args.append(allocator, "-fomit-frame-pointer");
+        try clang_args.append("-ffast-math");
+        try clang_args.append("-funroll-loops");
+        try clang_args.append("-fomit-frame-pointer");
     }
     
     if (config.optimization_level >= 3) {
-        try clang_args.append(allocator, "-finline-functions");
-        try clang_args.append(allocator, "-funswitch-loops");
-        try clang_args.append(allocator, "-fpredictive-commoning");
-        try clang_args.append(allocator, "-fgcse-after-reload");
+        try clang_args.append("-finline-functions");
+        try clang_args.append("-funswitch-loops");
+        try clang_args.append("-fpredictive-commoning");
+        try clang_args.append("-fgcse-after-reload");
     }
     
     // Execute clang compilation

@@ -8,7 +8,7 @@ const Allocator = std.mem.Allocator;
 // Simple LSP server that responds to basic requests
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     _ = gpa.allocator();
     
     var stdin_buffer: [4096]u8 = undefined;

@@ -65,12 +65,12 @@ pub const OptimizedCompiler = struct {
     
     pub fn deinit(self: *OptimizedCompiler) void {
         if (self.parallel_compiler) |*pc| {
-            pc.deinit(allocator);
+            pc.deinit();
         }
-        self.compilation_cache.deinit(allocator);
-        self.llvm_optimizer.deinit(allocator);
-        self.performance_optimizer.deinit(allocator);
-        self.arena_allocator.deinit(allocator);
+        self.compilation_cache.deinit();
+        self.llvm_optimizer.deinit();
+        self.performance_optimizer.deinit();
+        self.arena_allocator.deinit();
     }
     
     /// Compile single file with all optimizations enabled
@@ -362,7 +362,7 @@ pub const OptimizedCompiler = struct {
         // Analyze cache hit rate
         const cache_stats = self.compilation_cache.getCacheStatistics();
         if (cache_stats.hit_rate < 0.5) {
-            try recommendations.append(allocator, .{
+            try recommendations.append(.{
                 .category = "caching",
                 .description = "Low cache hit rate - consider increasing cache size",
                 .estimated_benefit = 2.0,
@@ -374,7 +374,7 @@ pub const OptimizedCompiler = struct {
         if (self.parallel_compiler) |*pc| {
             const efficiency = pc.calculateParallelEfficiency();
             if (efficiency < 0.7) {
-                try recommendations.append(allocator, .{
+                try recommendations.append(.{
                     .category = "parallelization",
                     .description = "Low parallel efficiency - consider optimizing work distribution",
                     .estimated_benefit = 1.5,
@@ -382,7 +382,7 @@ pub const OptimizedCompiler = struct {
                 });
             }
         } else {
-            try recommendations.append(allocator, .{
+            try recommendations.append(.{
                 .category = "parallelization",
                 .description = "Enable parallel compilation for better performance",
                 .estimated_benefit = 2.5,
@@ -390,7 +390,7 @@ pub const OptimizedCompiler = struct {
             });
         }
         
-        return recommendations.toOwnedSlice(allocator);
+        return recommendations.toOwnedSlice();
     }
 };
 

@@ -51,7 +51,7 @@ pub const EffectSystem = struct {
         may_panic: bool,
         may_block: bool,
         
-        pub fn init(allocator: Allocator) EffectSet {
+        pub fn init() EffectSet {
             return EffectSet{
                 .reads = .empty,
                 .writes = .empty,
@@ -66,11 +66,11 @@ pub const EffectSystem = struct {
         }
         
         pub fn deinit(self: *EffectSet) void {
-            self.reads.deinit(allocator);
-            self.writes.deinit(allocator);
-            self.borrows.deinit(allocator);
-            self.calls.deinit(allocator);
-            self.allocations.deinit(allocator);
+            self.reads.deinit();
+            self.writes.deinit();
+            self.borrows.deinit();
+            self.calls.deinit();
+            self.allocations.deinit();
         }
     };
     
@@ -94,7 +94,7 @@ pub const EffectSystem = struct {
             dependencies: ArrayList(u32), // other lifetimes this depends on
         };
         
-        pub fn init(allocator: Allocator) BorrowChecker {
+        pub fn init() BorrowChecker {
             return BorrowChecker{
                 .allocator = allocator,
                 .active_borrows = HashMap(u32, ArrayList(BorrowInfo), std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -105,15 +105,15 @@ pub const EffectSystem = struct {
         pub fn deinit(self: *BorrowChecker) void {
             var iter = self.active_borrows.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            self.active_borrows.deinit(allocator);
+            self.active_borrows.deinit();
             
             var lifetime_iter = self.lifetimes.iterator();
             while (lifetime_iter.next()) |entry| {
-                entry.value_ptr.dependencies.deinit(allocator);
+                entry.value_ptr.dependencies.deinit();
             }
-            self.lifetimes.deinit(allocator);
+            self.lifetimes.deinit();
         }
     };
     
@@ -132,25 +132,25 @@ pub const EffectSystem = struct {
         // Clean up read effects
         var read_iter = self.read_effects.iterator();
         while (read_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.read_effects.deinit(allocator);
+        self.read_effects.deinit();
         
         // Clean up write effects
         var write_iter = self.write_effects.iterator();
         while (write_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.write_effects.deinit(allocator);
+        self.write_effects.deinit();
         
-        self.borrow_effects.deinit(allocator);
+        self.borrow_effects.deinit();
         
         // Clean up effect cache
         var cache_iter = self.effect_cache.iterator();
         while (cache_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.effect_cache.deinit(allocator);
+        self.effect_cache.deinit();
     }
     
     /// Track a read effect and integrate with borrow analysis
@@ -164,7 +164,7 @@ pub const EffectSystem = struct {
             result.value_ptr.* = .empty;
         }
         
-        try result.value_ptr.append(allocator, target_id);
+        try result.value_ptr.append(target_id);
     }
     
     /// Track a write effect and integrate with borrow analysis
@@ -178,7 +178,7 @@ pub const EffectSystem = struct {
             result.value_ptr.* = .empty;
         }
         
-        try result.value_ptr.append(allocator, target_id);
+        try result.value_ptr.append(target_id);
     }
     
     /// Track a borrow effect and integrate with lifetime analysis
@@ -215,7 +215,7 @@ pub const EffectSystem = struct {
             for (reads.items) |target_id| {
                 // CRITICAL FIX: Check all active borrows for conflicts
                 if (self.checkBorrowConflictOnRead(target_id)) |violation| {
-                    try violations.append(allocator, violation);
+                    try violations.append(violation);
                     is_safe = false;
                     effect_set.is_safe = false;
                 }
@@ -230,7 +230,7 @@ pub const EffectSystem = struct {
             for (writes.items) |target_id| {
                 // CRITICAL FIX: Check for write-read and write-write conflicts
                 if (self.checkBorrowConflictOnWrite(target_id)) |violation| {
-                    try violations.append(allocator, violation);
+                    try violations.append(violation);
                     is_safe = false;
                     effect_set.is_safe = false;
                 }
@@ -239,11 +239,11 @@ pub const EffectSystem = struct {
         
         // Analyze borrow effects with lifetime constraints
         if (self.borrow_effects.get(operation_id)) |borrow_info| {
-            try effect_set.borrows.append(allocator, operation_id);
+            try effect_set.borrows.append(operation_id);
             
             // CRITICAL FIX: Cross-check with existing borrows for conflicts
             if (self.checkBorrowLifetimeConflict(borrow_info)) |violation| {
-                try violations.append(allocator, violation);
+                try violations.append(violation);
                 is_safe = false;
                 effect_set.is_safe = false;
             }
@@ -337,7 +337,7 @@ pub const EffectSystem = struct {
             result.value_ptr.* = .empty;
         }
         
-        try result.value_ptr.append(allocator, borrow_info);
+        try result.value_ptr.append(borrow_info);
     }
     
     /// Check read permission against borrow constraints
@@ -380,8 +380,8 @@ pub const EffectAnalysisResult = struct {
     violations: ArrayList(BorrowViolation),
     
     pub fn deinit(self: *EffectAnalysisResult) void {
-        self.effects.deinit(allocator);
-        self.violations.deinit(allocator);
+        self.effects.deinit();
+        self.violations.deinit();
     }
 };
 
@@ -420,7 +420,7 @@ pub const EffectReport = struct {
     };
     
     pub fn deinit(self: *EffectReport) void {
-        self.violations.deinit(allocator);
+        self.violations.deinit();
     }
 };
 
@@ -439,10 +439,10 @@ test "effect system borrow integration" {
     const gpa = std.testing.allocator;
     
     var borrow_checker = EffectSystem.BorrowChecker.init(gpa);
-    defer borrow_checker.deinit(allocator);
+    defer borrow_checker.deinit();
     
     var effect_system = EffectSystem.init(gpa, &borrow_checker);
-    defer effect_system.deinit(allocator);
+    defer effect_system.deinit();
     
     // Test borrow tracking
     const borrow_info = EffectSystem.BorrowInfo{

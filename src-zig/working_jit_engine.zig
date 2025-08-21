@@ -42,7 +42,7 @@ pub const WorkingJITEngine = struct {
         ret,
     };
     
-    pub fn init(allocator: Allocator) WorkingJITEngine {
+    pub fn init() WorkingJITEngine {
         return WorkingJITEngine{
             .allocator = allocator,
             .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -58,8 +58,8 @@ pub const WorkingJITEngine = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.value_ptr.*.bytecode);
         }
-        self.compiled_functions.deinit(allocator);
-        self.variables.deinit(allocator);
+        self.compiled_functions.deinit();
+        self.variables.deinit();
     }
     
     /// Compile and execute CURSED source code via JIT
@@ -174,7 +174,7 @@ pub const WorkingJITEngine = struct {
         
         // Simple parsing - split by comma
         var args: ArrayList([]const u8) = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         var parts = std.mem.splitScalar(u8, content, ',');
         while (parts.next()) |part| {
@@ -257,7 +257,7 @@ pub const WorkingJITEngine = struct {
     /// Execute bytecode instructions
     fn executeBytecode(self: *WorkingJITEngine, bytecode: []Instruction) !void {
         var stack: ArrayList(i64) = .empty;
-        defer stack.deinit(allocator);
+        defer stack.deinit();
         
         var pc: usize = 0;
         
@@ -270,7 +270,7 @@ pub const WorkingJITEngine = struct {
                 },
                 .load_var => |name| {
                     const val = self.variables.get(name) orelse return error.UndefinedVariable;
-                    try stack.append(allocator, val);
+                    try stack.append(val);
                 },
                 .store_var => |name| {
                     if (stack.items.len == 0) return error.ExecutionFailed;
@@ -283,26 +283,26 @@ pub const WorkingJITEngine = struct {
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
                     const result = a + b;
-                    try stack.append(allocator, result);
+                    try stack.append(result);
                     print("🧮 Computed {} + {} = {}\n", .{ a, b, result });
                 },
                 .sub => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(allocator, a - b);
+                    try stack.append(a - b);
                 },
                 .mul => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(allocator, a * b);
+                    try stack.append(a * b);
                 },
                 .div => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(allocator, @divTrunc(a, b));
+                    try stack.append(@divTrunc(a, b));
                 },
                 .print_str => |str| {
                     print("{s} ", .{str});
@@ -327,7 +327,7 @@ pub const WorkingJITEngine = struct {
         
         // Simple optimization: constant folding
         var optimized = .empty;
-        defer optimized.deinit(allocator);
+        defer optimized.deinit();
         
         var i: usize = 0;
         while (i < bytecode.len) {
@@ -344,10 +344,10 @@ pub const WorkingJITEngine = struct {
                 const result = a + b;
                 
                 print("🔧 Constant folded: {} + {} = {} (saved 2 instructions)\n", .{ a, b, result });
-                try optimized.append(allocator, Instruction{ .load_const = result });
+                try optimized.append(Instruction{ .load_const = result });
                 i += 3; // Skip the folded instructions
             } else {
-                try optimized.append(allocator, instr);
+                try optimized.append(instr);
                 i += 1;
             }
         }
@@ -356,7 +356,7 @@ pub const WorkingJITEngine = struct {
         
         // Store the optimized version
         const main_func = CompiledFunction{
-            .bytecode = try optimized.toOwnedSlice(allocator),
+            .bytecode = try optimized.toOwnedSlice(),
             .execution_count = self.execution_count,
             .is_hot = true,
         };
@@ -403,7 +403,7 @@ pub const WorkingJITEngine = struct {
         print("==============================\n", .{});
         
         var engine = WorkingJITEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         const test_program =
             \\sus x drip = 42

@@ -683,7 +683,7 @@ pub const AsyncRuntime = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.poller.deinit(allocator);
+        self.poller.deinit();
     }
     
     pub fn start(self: *Self) IOCPError!void {
@@ -710,7 +710,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit(allocator);
+                defer result_channel.deinit();
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -771,7 +771,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit(allocator);
+                defer result_channel.deinit();
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -836,7 +836,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit(allocator);
+                defer result_channel.deinit();
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -892,7 +892,7 @@ test "IOCP poller initialization" {
     
     const allocator = std.testing.allocator;
     var poller = try IOCPPoller.init(allocator);
-    defer poller.deinit(allocator);
+    defer poller.deinit();
     
     try std.testing.expect(!poller.running.load(.acquire));
 }
@@ -902,7 +902,7 @@ test "async runtime integration" {
     
     const allocator = std.testing.allocator;
     var runtime = try AsyncRuntime.init(allocator);
-    defer runtime.deinit(allocator);
+    defer runtime.deinit();
     
     try runtime.start();
     defer runtime.stop();

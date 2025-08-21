@@ -44,7 +44,7 @@ pub fn deinitGlobalConcurrency() void {
     defer global_concurrency_mutex.unlock();
     
     if (global_channels) |*channels| {
-        channels.deinit(allocator);
+        channels.deinit();
         global_channels = null;
     }
     if (global_goroutines) |*goroutines| {
@@ -52,7 +52,7 @@ pub fn deinitGlobalConcurrency() void {
         for (goroutines.items) |*thread| {
             thread.join();
         }
-        goroutines.deinit(allocator);
+        goroutines.deinit();
         global_goroutines = null;
     }
     global_allocator = null;
@@ -114,7 +114,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         
         // Extract the body of the stan block
         var body_lines = .empty;
-        defer body_lines.deinit(allocator);
+        defer body_lines.deinit();
         
         // Find the corresponding closing brace
         var current_line = line_index + 1;
@@ -130,7 +130,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             }
             
             if (brace_count > 0) {
-                try body_lines.append(allocator, block_line);
+                try body_lines.append(block_line);
             }
             current_line += 1;
         }
@@ -183,7 +183,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         defer global_concurrency_mutex.unlock();
         
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(allocator, thread);
+            try goroutines.append(thread);
         }
         
         if (verbose) print("✅ Goroutine spawned (race-safe)\n", .{});
@@ -263,12 +263,12 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
         // Thread-safe wait for all spawned goroutines
         global_concurrency_mutex.lock();
         var threads_to_join = .empty;
-        defer threads_to_join.deinit(allocator);
+        defer threads_to_join.deinit();
         
         if (global_goroutines) |*goroutines| {
             // Copy thread handles to avoid holding lock during join
             for (goroutines.items) |thread| {
-                try threads_to_join.append(allocator, thread);
+                try threads_to_join.append(thread);
             }
             goroutines.clearRetainingCapacity();
         }
@@ -327,7 +327,7 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
         
         global_concurrency_mutex.lock();
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(allocator, thread);
+            try goroutines.append(thread);
         }
         global_concurrency_mutex.unlock();
     }
@@ -337,11 +337,11 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
     // Wait for all to complete
     global_concurrency_mutex.lock();
     var threads_to_join = .empty;
-    defer threads_to_join.deinit(allocator);
+    defer threads_to_join.deinit();
     
     if (global_goroutines) |*goroutines| {
         for (goroutines.items) |thread| {
-            try threads_to_join.append(allocator, thread);
+            try threads_to_join.append(thread);
         }
         goroutines.clearRetainingCapacity();
     }

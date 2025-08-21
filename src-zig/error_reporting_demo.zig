@@ -11,7 +11,7 @@ const error_reporting = @import("enhanced_error_reporting.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     print("🎯 CURSED Enhanced Error Reporting Demo\n", .{});
@@ -19,7 +19,7 @@ pub fn main() !void {
 
     // Initialize error reporter
     var error_reporter = error_reporting.ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit(allocator);
+    defer error_reporter.deinit();
     
     error_reporter.setColors(true);
     error_reporter.setVerbose(true);
@@ -35,7 +35,7 @@ pub fn main() !void {
         print("Failed to initialize lexer: {any}\n", .{err});
         return;
     };
-    defer lexer1.deinit(allocator);
+    defer lexer1.deinit();
 
     _ = lexer1.tokenize() catch |err| {
         print("Expected lexer error: {any}\n", .{err});
@@ -50,7 +50,7 @@ pub fn main() !void {
 
     // Reset error reporter for new test
     var error_reporter2 = error_reporting.ErrorReporter.init(allocator, 10);
-    defer error_reporter2.deinit(allocator);
+    defer error_reporter2.deinit();
     error_reporter2.setColors(true);
 
     const source2 = 
@@ -67,7 +67,7 @@ pub fn main() !void {
         print("Failed to initialize lexer: {any}\n", .{err});
         return;
     };
-    defer lexer2.deinit(allocator);
+    defer lexer2.deinit();
 
     _ = lexer2.tokenize() catch {
         // Expect errors
@@ -80,7 +80,7 @@ pub fn main() !void {
     print("----------------------------------\n", .{});
 
     var error_reporter3 = error_reporting.ErrorReporter.init(allocator, 5);
-    defer error_reporter3.deinit(allocator);
+    defer error_reporter3.deinit();
     error_reporter3.setColors(true);
 
     // Manually create diagnostic with suggestions
@@ -111,7 +111,7 @@ pub fn main() !void {
     print("---------------------------------------\n", .{});
 
     var error_reporter4 = error_reporting.ErrorReporter.init(allocator, 3); // Low limit
-    defer error_reporter4.deinit(allocator);
+    defer error_reporter4.deinit();
     error_reporter4.setColors(true);
 
     // Generate many errors to test limits

@@ -120,7 +120,7 @@ pub const EnhancedLLVMPipeline = struct {
         memory_allocated_kb: u64 = 0,
         
         pub fn print(self: CompilationStats) void {
-            std.debug.print("=== CURSED LLVM Compilation Statistics ===\n");
+            std.debug.print("=== CURSED LLVM Compilation Statistics ===\n", .{});
             std.debug.print("Compilation time: {} ms\n", .{self.compilation_time_ms});
             std.debug.print("Optimization time: {} ms\n", .{self.optimization_time_ms});
             std.debug.print("Code size: {} bytes\n", .{self.code_size_bytes});
@@ -248,7 +248,7 @@ pub const EnhancedLLVMPipeline = struct {
             c.LLVMValueAsMetadata(c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 4, 0))
         );
         
-        std.debug.print("✅ Enhanced DWARF debug information enabled\n");
+        std.debug.print("✅ Enhanced DWARF debug information enabled\n", .{});
     }
     
     /// Enable profile-guided optimization
@@ -259,7 +259,7 @@ pub const EnhancedLLVMPipeline = struct {
         // TODO: Load profile data from file
         _ = profile_data_path;
         
-        std.debug.print("✅ Profile-guided optimization enabled\n");
+        std.debug.print("✅ Profile-guided optimization enabled\n", .{});
     }
     
     /// Enable link-time optimization
@@ -267,7 +267,7 @@ pub const EnhancedLLVMPipeline = struct {
         self.link_time_optimization = true;
         self.optimization_config.link_time_optimization = true;
         
-        std.debug.print("✅ Link-time optimization enabled\n");
+        std.debug.print("✅ Link-time optimization enabled\n", .{});
     }
     
     /// Setup target machine for cross-compilation
@@ -405,7 +405,7 @@ pub const EnhancedLLVMPipeline = struct {
         
         // Create advanced codegen instance
         var adv_codegen = try advanced_codegen.AdvancedCodeGen.init(self.allocator);
-        defer adv_codegen.deinit(allocator);
+        defer adv_codegen.deinit();
         
         // Configure advanced codegen
         adv_codegen.base_codegen.context = self.context;
@@ -550,7 +550,7 @@ pub const EnhancedLLVMPipeline = struct {
         self.compilation_stats.print();
         
         // Print optimization configuration
-        std.debug.print("\n=== Optimization Configuration ===\n");
+        std.debug.print("\n=== Optimization Configuration ===\n", .{});
         std.debug.print("Level: {}\n", .{self.optimization_level});
         std.debug.print("Inline threshold: {}\n", .{self.optimization_config.inline_threshold});
         std.debug.print("Vectorization: {}\n", .{self.optimization_config.vectorize});
@@ -563,7 +563,7 @@ pub const EnhancedLLVMPipeline = struct {
     
     /// Validate that all CURSED language features compile correctly
     pub fn validateLanguageFeatures(self: *EnhancedLLVMPipeline) !void {
-        std.debug.print("\n=== CURSED Language Feature Validation ===\n");
+        std.debug.print("\n=== CURSED Language Feature Validation ===\n", .{});
         
         // Check for runtime function availability
         const required_runtime_functions = [_][]const u8{
@@ -587,18 +587,18 @@ pub const EnhancedLLVMPipeline = struct {
         }
         
         // Validate type system integration
-        std.debug.print("✅ Type system integration: Enhanced type checking enabled\n");
+        std.debug.print("✅ Type system integration: Enhanced type checking enabled\n", .{});
         
         // Validate memory management
-        std.debug.print("✅ Memory management: GC metadata generation enabled\n");
+        std.debug.print("✅ Memory management: GC metadata generation enabled\n", .{});
         
         // Validate concurrency support
-        std.debug.print("✅ Concurrency support: Goroutine and channel compilation enabled\n");
+        std.debug.print("✅ Concurrency support: Goroutine and channel compilation enabled\n", .{});
         
         // Validate error handling
-        std.debug.print("✅ Error handling: Error propagation compilation enabled\n");
+        std.debug.print("✅ Error handling: Error propagation compilation enabled\n", .{});
         
-        std.debug.print("✅ CURSED language feature validation completed\n");
+        std.debug.print("✅ CURSED language feature validation completed\n", .{});
     }
 };
 
@@ -607,7 +607,7 @@ test "enhanced llvm pipeline initialization" {
     const allocator = std.testing.allocator;
     
     var pipeline = try EnhancedLLVMPipeline.init(allocator, "test_module");
-    defer pipeline.deinit(allocator);
+    defer pipeline.deinit();
     
     try std.testing.expect(pipeline.optimization_level == .Default);
     try std.testing.expect(pipeline.debug_enabled == false);
@@ -617,7 +617,7 @@ test "optimization level configuration" {
     const allocator = std.testing.allocator;
     
     var pipeline = try EnhancedLLVMPipeline.init(allocator, "test_module");
-    defer pipeline.deinit(allocator);
+    defer pipeline.deinit();
     
     try pipeline.setOptimizationLevel(.Aggressive);
     try std.testing.expect(pipeline.optimization_level == .Aggressive);

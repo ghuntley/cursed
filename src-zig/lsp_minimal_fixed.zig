@@ -7,7 +7,7 @@ const Allocator = std.mem.Allocator;
 pub const CursedLSP = struct {
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) CursedLSP {
+    pub fn init() CursedLSP {
         return CursedLSP{ .allocator = allocator };
     }
     
@@ -80,7 +80,7 @@ pub const CursedLSP = struct {
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         var buffer: std.ArrayList(u8) = .empty;
-        defer buffer.deinit(allocator);
+        defer buffer.deinit();
         
         while (true) {
             // Read Content-Length header
@@ -147,7 +147,7 @@ pub const CursedLSP = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var server = CursedLSP.init(allocator);

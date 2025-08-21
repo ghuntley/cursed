@@ -44,15 +44,15 @@ const FreestandingLexer = struct {
     
     pub fn tokenize(self: *@This()) ![]Token {
         var tokens: std.ArrayList(Token) = .empty;
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         while (!self.isAtEnd()) {
             const token = self.scanToken();
-            try tokens.append(allocator, token);
+            try tokens.append(token);
             if (token.type == .EOF) break;
         }
         
-        return tokens.toOwnedSlice(allocator);
+        return tokens.toOwnedSlice();
     }
     
     fn scanToken(self: *@This()) Token {
@@ -189,7 +189,7 @@ const FreestandingInterpreter = struct {
     }
     
     pub fn deinit(self: *@This()) void {
-        self.output.deinit(allocator);
+        self.output.deinit();
     }
     
     pub fn execute(self: *@This(), tokens: []Token) !void {
@@ -263,7 +263,7 @@ export fn cursed_init() i32 {
 
 export fn cursed_deinit() void {
     if (global_interpreter) |*interpreter| {
-        interpreter.deinit(allocator);
+        interpreter.deinit();
         global_interpreter = null;
     }
     fba = null;

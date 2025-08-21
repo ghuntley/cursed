@@ -44,7 +44,7 @@ pub const ImportSpec = struct {
     owns_version_req: bool = true,
     
     // Safe initialization with proper ownership tracking
-    pub fn init(allocator: Allocator, raw_path: []const u8, source_file: []const u8, line: u32, column: u32) !ImportSpec {
+    pub fn init(_: Allocator, raw_path: []const u8, source_file: []const u8, line: u32, column: u32) !ImportSpec {
         return ImportSpec{
             .raw_path = try allocator.dupe(u8, raw_path),
             .resolved_path = null,
@@ -81,7 +81,7 @@ pub const ImportSpec = struct {
         };
     }
     
-    pub fn deinit(self: *ImportSpec, allocator: Allocator) void {
+    pub fn deinit(self: *pub fn deinit(self: *ImportSpec, _: Allocator), _: Allocator) void {
         // Only free if we own the memory and haven't already freed it
         if (self.owns_resolved_path) {
             if (self.resolved_path) |path| {
@@ -115,7 +115,7 @@ pub const ImportSpec = struct {
         // Clean up version requirement if present
         if (self.owns_version_req) {
             if (self.version_req) |*version_req| {
-                version_req.deinit(allocator);
+                version_req.deinit();
                 self.version_req = null;
                 self.owns_version_req = false;
             }
@@ -148,14 +148,14 @@ pub const ModuleSearchPath = struct {
     is_stdlib: bool = false,
     is_cache: bool = false,
     
-    pub fn init(allocator: Allocator, path: []const u8, priority: u32) !ModuleSearchPath {
+    pub fn init(_: Allocator, path: []const u8, priority: u32) !ModuleSearchPath {
         return ModuleSearchPath{
             .path = try allocator.dupe(u8, path),
             .priority = priority,
         };
     }
     
-    pub fn deinit(self: *ModuleSearchPath, allocator: Allocator) void {
+    pub fn deinit(self: *pub fn deinit(self: *ModuleSearchPath, _: Allocator), _: Allocator) void {
         allocator.free(self.path);
     }
 };
@@ -178,14 +178,14 @@ pub const ModuleCache = struct {
         var resolved_iter = self.resolved_modules.iterator();
         while (resolved_iter.next()) |entry| {
             var import_spec = entry.value_ptr;
-            import_spec.deinit(allocator);
+            import_spec.deinit();
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.resolved_modules.deinit(allocator);
+        self.resolved_modules.deinit();
         
         // Clean up import graph
         var graph_iter = self.import_graph.iterator();
@@ -196,14 +196,14 @@ pub const ModuleCache = struct {
                     self.allocator.free(dep);
                 }
             }
-            deps.deinit(allocator);
+            deps.deinit();
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.import_graph.deinit(allocator);
+        self.import_graph.deinit();
     }
     
     pub fn addToGraph(self: *ModuleCache, from_module: []const u8, to_module: []const u8) !void {
@@ -220,10 +220,10 @@ pub const ModuleCache = struct {
     
     pub fn detectCycle(self: *ModuleCache, start_module: []const u8) !?ArrayList([]const u8) {
         var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         
         var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer rec_stack.deinit(allocator);
+        defer rec_stack.deinit();
         
         var path = .empty;
         
@@ -232,7 +232,7 @@ pub const ModuleCache = struct {
         if (has_cycle) {
             return path;
         } else {
-            path.deinit(allocator);
+            path.deinit();
             return null;
         }
     }
@@ -246,13 +246,13 @@ pub const ModuleCache = struct {
     ) !bool {
         try visited.put(module, true);
         try rec_stack.put(module, true);
-        try path.append(allocator, module);
+        try path.append(module);
         
         if (self.import_graph.get(module)) |dependencies| {
             for (dependencies.items) |dep| {
                 if (rec_stack.get(dep) orelse false) {
                     // Found cycle
-                    try path.append(allocator, dep);
+                    try path.append(dep);
                     return true;
                 }
                 
@@ -280,24 +280,24 @@ pub const AdvancedImportResolver = struct {
     aliases: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     current_file: ?[]const u8 = null,
     
-    pub fn init(allocator: Allocator) AdvancedImportResolver {
+    pub fn init() AdvancedImportResolver {
         return AdvancedImportResolver{
-            .allocator = allocator,
+            .allocator = _allocator,
             .search_paths = .empty,
-            .module_cache = ModuleCache.init(allocator),
-            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .module_cache = ModuleCache.init(_allocator),
+            .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(_allocator),
         };
     }
     
     pub fn deinit(self: *AdvancedImportResolver) void {
         // Clean up search paths
         for (self.search_paths.items) |*path| {
-            path.deinit(allocator);
+            path.deinit();
         }
-        self.search_paths.deinit(allocator);
+        self.search_paths.deinit();
         
         // Clean up module cache
-        self.module_cache.deinit(allocator);
+        self.module_cache.deinit();
         
         // Clean up aliases
         var alias_iter = self.aliases.iterator();
@@ -311,18 +311,18 @@ pub const AdvancedImportResolver = struct {
                 entry.value_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.aliases.deinit(allocator);
+        self.aliases.deinit();
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
-            manifest.deinit(allocator);
+            manifest.deinit();
             self.package_manifest = null;
         }
     }
     
     // Initialize with default search paths
     pub fn initWithDefaults(allocator: Allocator) !AdvancedImportResolver {
-        var resolver = AdvancedImportResolver.init(allocator);
+        var resolver = AdvancedImportResolver.init(_allocator);
         
         // Add default search paths in priority order
         try resolver.addStdlibPath();
@@ -395,27 +395,27 @@ pub const AdvancedImportResolver = struct {
         };
         
         var path_components = .empty;
-        defer path_components.deinit(allocator);
+        defer path_components.deinit();
         
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(allocator, component);
+                try path_components.append(component);
             }
         }
         
         while (path_components.items.len > 0) {
             var test_path = .empty;
-            defer test_path.deinit(allocator);
+            defer test_path.deinit();
             
             for (path_components.items) |component| {
-                try test_path.append(allocator, '/');
+                try test_path.append('/');
                 try test_path.appendSlice(component);
             }
             
             for (markers) |marker| {
                 var marker_path = .empty;
-                defer marker_path.deinit(allocator);
+                defer marker_path.deinit();
                 
                 try marker_path.appendSlice(test_path.items);
                 try marker_path.append(self.allocator, '/');
@@ -485,7 +485,7 @@ pub const AdvancedImportResolver = struct {
         
         // Check for import cycles
         if (try self.module_cache.detectCycle(current_file)) |cycle| {
-            defer cycle.deinit(allocator);
+            defer cycle.deinit();
             
             print("Error: Import cycle detected:\n", .{});
             for (cycle.items, 0..) |module, i| {
@@ -496,7 +496,7 @@ pub const AdvancedImportResolver = struct {
                 }
             }
             // Clean up allocated memory in import_spec before returning error
-            import_spec.deinit(allocator);
+            import_spec.deinit();
             return error.ImportCycle;
         }
         
@@ -526,7 +526,7 @@ pub const AdvancedImportResolver = struct {
             import_spec.raw_path = try self.allocator.dupe(u8, module_name);
             import_spec.version_req = VersionRequirement.parse(self.allocator, version_spec) catch |err| {
                 // Clean up on error
-                import_spec.deinit(allocator);
+                import_spec.deinit();
                 return err;
             };
         }
@@ -628,10 +628,10 @@ pub const AdvancedImportResolver = struct {
             
             for (pattern_formats) |format| {
                 var test_path: std.ArrayList(u8) = .empty;
-                defer test_path.deinit(allocator);
+                defer test_path.deinit();
                 
                 try test_path.appendSlice(search_path.path);
-                try test_path.append(allocator, '/');
+                try test_path.append('/');
                 try test_path.appendSlice(import_spec.raw_path);
                 try test_path.appendSlice(format.middle);
                 
@@ -677,7 +677,7 @@ pub const AdvancedImportResolver = struct {
             
             for (pattern_formats) |format| {
                 var test_path: std.ArrayList(u8) = .empty;
-                defer test_path.deinit(allocator);
+                defer test_path.deinit();
                 
                 try test_path.appendSlice(search_path.path);
                 try test_path.append(self.allocator, '/');
@@ -744,10 +744,10 @@ pub const AdvancedImportResolver = struct {
             // Look for "yeet" statements
             if (std.mem.startsWith(u8, trimmed, "yeet ")) {
                 var import_specs = try self.parseYeetStatementMultiple(trimmed, line_num);
-                defer import_specs.deinit(allocator);
+                defer import_specs.deinit();
                 
                 for (import_specs.items) |import_spec| {
-                    try imports.append(allocator, import_spec);
+                    try imports.append(import_spec);
                 }
             }
             
@@ -837,9 +837,9 @@ pub const AdvancedImportResolver = struct {
         var extracted_imports = try self.extractImports(source);
         defer {
             for (extracted_imports.items) |*import| {
-                import.deinit(allocator);
+                import.deinit();
             }
-            extracted_imports.deinit(allocator);
+            extracted_imports.deinit();
         }
         
         var resolved_imports = .empty;
@@ -850,7 +850,7 @@ pub const AdvancedImportResolver = struct {
                 continue;
             };
             
-            try resolved_imports.append(allocator, resolved);
+            try resolved_imports.append(resolved);
         }
         
         return resolved_imports;
@@ -877,7 +877,7 @@ pub const AdvancedImportResolver = struct {
         print("\n=== Cycle Detection ===\n", .{});
         
         var checked = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer checked.deinit(allocator);
+        defer checked.deinit();
         
         var graph_iter = self.module_cache.import_graph.iterator();
         while (graph_iter.next()) |entry| {
@@ -886,7 +886,7 @@ pub const AdvancedImportResolver = struct {
             if (checked.get(module) orelse false) continue;
             
             if (try self.module_cache.detectCycle(module)) |cycle| {
-                defer cycle.deinit(allocator);
+                defer cycle.deinit();
                 
                 print("Cycle detected starting from {s}:\n", .{module});
                 for (cycle.items) |cycle_module| {
@@ -911,7 +911,7 @@ test "advanced import resolver basic functionality" {
     const allocator = std.testing.allocator;
     
     var resolver = try AdvancedImportResolver.initWithDefaults(allocator);
-    defer resolver.deinit(allocator);
+    defer resolver.deinit();
     
     // Test adding search paths
     try resolver.addLocalPath("test_modules");
@@ -925,13 +925,13 @@ test "advanced import resolver basic functionality" {
 test "version requirement parsing and matching" {
     const allocator = std.testing.allocator;
     
-    var resolver = AdvancedImportResolver.init(allocator);
-    defer resolver.deinit(allocator);
+    var resolver = AdvancedImportResolver.init(_allocator);
+    defer resolver.deinit();
     
     const import_spec = try resolver.parseImportStatement("json@^1.0.0", "test.csd");
     defer {
         var spec = import_spec;
-        spec.deinit(allocator);
+        spec.deinit();
     }
     
     try std.testing.expectEqualStrings("json", import_spec.raw_path);
@@ -941,8 +941,8 @@ test "version requirement parsing and matching" {
 test "cycle detection" {
     const allocator = std.testing.allocator;
     
-    var resolver = AdvancedImportResolver.init(allocator);
-    defer resolver.deinit(allocator);
+    var resolver = AdvancedImportResolver.init(_allocator);
+    defer resolver.deinit();
     
     // Create a cycle: A -> B -> C -> A
     try resolver.module_cache.addToGraph("A", "B");
@@ -953,7 +953,7 @@ test "cycle detection" {
     try std.testing.expect(cycle != null);
     
     if (cycle) |c| {
-        defer c.deinit(allocator);
+        defer c.deinit();
         try std.testing.expect(c.items.len >= 3);
     }
 }

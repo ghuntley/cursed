@@ -175,65 +175,52 @@ pub const ArrayMetadata = struct {
             
             // Generate bounds check trap for out-of-bounds access
             const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+            const module = c.LLVMGetGlobalParent(current_func);
             const bounds_error_block = c.LLVMAppendBasicBlockInContext(context, current_func, "bounds_error");
             const bounds_ok_block = c.LLVMAppendBasicBlockInContext(context, current_func, "bounds_ok");
             
-            // Branch based on bounds check
+            // Branch based on bounds check result
             _ = c.LLVMBuildCondBr(builder, index_valid, bounds_ok_block, bounds_error_block);
             
-            // Bounds error block - generate comprehensive error handling
+            // === BOUNDS ERROR BLOCK ===
             c.LLVMPositionBuilderAtEnd(builder, bounds_error_block);
             
-            // Generate runtime bounds error with detailed information
-            const bounds_error_func = c.LLVMGetNamedFunction(module, "cursed_bounds_error");
-            const bounds_error_call = if (bounds_error_func != null) 
-                bounds_error_func
-            else blk: {
-                // Create bounds error function: void cursed_bounds_error(i64 index, i64 length)
-                const void_type = c.LLVMVoidTypeInContext(context);
-                const i64_type = c.LLVMInt64TypeInContext(context);
+            // Generate runtime bounds error function with detailed information
+            const void_type = c.LLVMVoidTypeInContext(context);
+            const i64_type = c.LLVMInt64TypeInContext(context);
+            
+            // Create or get bounds error function: void cursed_bounds_error(i64 index, i64 length)  
+            const bounds_error_func = c.LLVMGetNamedFunction(module, "cursed_bounds_error") orelse blk: {
                 const error_func_type = c.LLVMFunctionType(void_type, 
                     &[_]c.LLVMTypeRef{i64_type, i64_type}, 2, 0);
                 break :blk c.LLVMAddFunction(module, "cursed_bounds_error", error_func_type);
             };
             
-            // Call runtime bounds error handler with index and length
+            // Call runtime bounds error handler with detailed diagnostics
             _ = c.LLVMBuildCall2(builder, 
-                c.LLVMGlobalGetValueType(bounds_error_call.?),
-                bounds_error_call.?, 
-                &[_]c.LLVMValueRef{index, length}, 2, "");
-                
-            // Generate trap instruction as a fallback
-            const trap_func = c.LLVMGetNamedFunction(module, "llvm.trap");
-            const trap_call = if (trap_func != null) 
-                trap_func
-            else blk: {
-                const void_type = c.LLVMVoidTypeInContext(context);
+                c.LLVMGlobalGetValueType(bounds_error_func),
+                bounds_error_func, 
+                &[_]c.LLVMValueRef{index, length}, 2, "bounds_error_call");
+            
+            // Generate immediate trap instruction for memory safety
+            const trap_func = c.LLVMGetNamedFunction(module, "llvm.trap") orelse blk: {
                 const trap_func_type = c.LLVMFunctionType(void_type, null, 0, 0);
-                break :blk c.LLVMAddFunction(module, "llvm.trap", trap_func_type);
+                const func = c.LLVMAddFunction(module, "llvm.trap", trap_func_type);
+                // Mark as nounwind and noreturn for optimization
+                c.LLVMAddAttributeAtIndex(func, c.LLVMAttributeFunctionIndex, 
+                    c.LLVMCreateEnumAttribute(context, c.LLVMGetEnumAttributeKindForName("nounwind", 8), 0));
+                c.LLVMAddAttributeAtIndex(func, c.LLVMAttributeFunctionIndex, 
+                    c.LLVMCreateEnumAttribute(context, c.LLVMGetEnumAttributeKindForName("noreturn", 8), 0));
+                break :blk func;
             };
             
             _ = c.LLVMBuildCall2(builder, 
-                c.LLVMGlobalGetValueType(trap_call.?), 
-                trap_call.?, null, 0, "");
+                c.LLVMGlobalGetValueType(trap_func), 
+                trap_func, null, 0, "immediate_trap");
             _ = c.LLVMBuildUnreachable(builder);
             
-            // Continue with bounds OK block
-            c.LLVMPositionBuilderAtEnd(builder, bounds_ok_block);
-            
-            // Create bounds error function call
-            const error_func_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0);
-            const bounds_error_func = c.LLVMAddFunction(c.LLVMGetModuleFromFunction(current_func), 
-                "cursed_bounds_error", error_func_type);
-            _ = c.LLVMBuildCall2(builder, error_func_type, bounds_error_func, null, 0, "");
-            
-            // Generate trap instruction to immediately terminate
-            const trap_func = c.LLVMAddFunction(c.LLVMGetModuleFromFunction(current_func),
-                "llvm.trap", c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
-            _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(trap_func), trap_func, null, 0, "bounds_trap");
-            _ = c.LLVMBuildUnreachable(builder);
-            
-            // Continue with valid bounds
+            // === BOUNDS OK BLOCK ===
+            // Continue execution with valid array access
             c.LLVMPositionBuilderAtEnd(builder, bounds_ok_block);
         }
         

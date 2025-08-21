@@ -29,7 +29,7 @@ pub const DiagnosticLexer = struct {
     }
     
     pub fn deinit(self: *DiagnosticLexer) void {
-        self.lexer.deinit(allocator);
+        self.lexer.deinit();
     }
     
     pub fn nextToken(self: *DiagnosticLexer) !?Token {
@@ -289,13 +289,13 @@ test "diagnostic lexer integration" {
     const allocator = std.testing.allocator;
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Test with error-prone source
     const bad_source = "sus x tea = \"unterminated string\nsus y normie = 999999999999999999999";
     
     var diagnostic_lexer = try DiagnosticLexer.init(allocator, bad_source, "test.csd", &engine);
-    defer diagnostic_lexer.deinit(allocator);
+    defer diagnostic_lexer.deinit();
     
     // Tokenize and collect errors
     while (try diagnostic_lexer.nextToken()) |_| {

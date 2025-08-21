@@ -213,7 +213,7 @@ pub const TLSContext = struct {
     }
     
     pub fn deinit(self: *TLSContext) void {
-        self.session_cache.deinit(allocator);
+        self.session_cache.deinit();
     }
     
     pub fn loadCACertificates(self: *TLSContext, ca_bundle_path: []const u8) !void {
@@ -248,8 +248,8 @@ pub const TLSContext = struct {
         };
         
         var ca_list: std.ArrayList(X509Certificate) = .empty;
-        try ca_list.append(allocator, example_ca);
-        self.ca_certificates = try ca_list.toOwnedSlice(allocator);
+        try ca_list.append(example_ca);
+        self.ca_certificates = try ca_list.toOwnedSlice();
     }
     
     pub fn validateCertificateChain(self: *TLSContext, cert_chain: []const X509Certificate, hostname: []const u8) CertificateValidationError!void {
@@ -409,7 +409,7 @@ pub const TLSContext = struct {
             return err;
         };
         
-        print("Secure TLS connection established successfully\n");
+        print("Secure TLS connection established successfully\n", .{});
     }
 };
 
@@ -419,36 +419,36 @@ pub fn auditTLSConfiguration(config: TLSSecurityConfig) []const []const u8 {
     
     // Check minimum TLS version
     if (@intFromEnum(config.min_tls_version) < @intFromEnum(TLSVersion.tls_1_2)) {
-        warnings.append(allocator, "Warning: Minimum TLS version below 1.2 is deprecated") catch {};
+        warnings.append("Warning: Minimum TLS version below 1.2 is deprecated") catch {};
     }
     
     // Check certificate validation
     if (!config.verify_certificates) {
-        warnings.append(allocator, "CRITICAL: Certificate validation is disabled") catch {};
+        warnings.append("CRITICAL: Certificate validation is disabled") catch {};
     }
     
     if (!config.verify_hostname) {
-        warnings.append(allocator, "CRITICAL: Hostname verification is disabled") catch {};
+        warnings.append("CRITICAL: Hostname verification is disabled") catch {};
     }
     
     if (config.allow_self_signed) {
-        warnings.append(allocator, "Warning: Self-signed certificates are allowed") catch {};
+        warnings.append("Warning: Self-signed certificates are allowed") catch {};
     }
     
     // Check security features
     if (!config.require_perfect_forward_secrecy) {
-        warnings.append(allocator, "Warning: Perfect forward secrecy not required") catch {};
+        warnings.append("Warning: Perfect forward secrecy not required") catch {};
     }
     
     if (!config.disable_compression) {
-        warnings.append(allocator, "Warning: TLS compression enabled (CRIME vulnerability)") catch {};
+        warnings.append("Warning: TLS compression enabled (CRIME vulnerability)") catch {};
     }
     
     if (!config.disable_renegotiation) {
-        warnings.append(allocator, "Warning: TLS renegotiation enabled (potential DoS)") catch {};
+        warnings.append("Warning: TLS renegotiation enabled (potential DoS)") catch {};
     }
     
-    return warnings.toOwnedSlice(allocator) catch &[_][]const u8{};
+    return warnings.toOwnedSlice() catch &[_][]const u8{};
 }
 
 /// Runtime function for CURSED language TLS operations
@@ -479,10 +479,10 @@ pub fn runtime_secure_connect(context: *TLSContext, hostname: []const u8, port: 
 
 /// Test the TLS security implementation
 pub fn runTLSSecurityTests() !void {
-    print("Running TLS Security Tests...\n");
+    print("Running TLS Security Tests...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test 1: Default configuration
@@ -497,7 +497,7 @@ pub fn runTLSSecurityTests() !void {
     
     // Test 3: Create TLS context
     var context = try TLSContext.init(allocator, default_config);
-    defer context.deinit(allocator);
+    defer context.deinit();
     
     // Test 4: Certificate validation
     const mock_cert = X509Certificate{
@@ -519,5 +519,5 @@ pub fn runTLSSecurityTests() !void {
         print("Expected certificate validation error: {}\n", .{err});
     };
     
-    print("TLS Security Tests completed successfully\n");
+    print("TLS Security Tests completed successfully\n", .{});
 }

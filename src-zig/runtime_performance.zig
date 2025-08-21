@@ -11,7 +11,7 @@ pub const RuntimeOptimizer = struct {
     enable_vectorization: bool,
     enable_branch_prediction: bool,
     
-    pub fn init(allocator: Allocator) RuntimeOptimizer {
+    pub fn init() RuntimeOptimizer {
         return RuntimeOptimizer{
             .allocator = allocator,
             .optimization_level = 3,
@@ -361,7 +361,7 @@ pub const CompilerOptimizationPass = struct {
     enable_loop_optimization: bool,
     enable_inline_expansion: bool,
     
-    pub fn init(allocator: Allocator) CompilerOptimizationPass {
+    pub fn init() CompilerOptimizationPass {
         return CompilerOptimizationPass{
             .allocator = allocator,
             .enable_dead_code_elimination = true,
@@ -429,7 +429,7 @@ pub const PerformanceMonitor = struct {
         memory_delta: isize,
     };
     
-    pub fn init(allocator: Allocator) PerformanceMonitor {
+    pub fn init() PerformanceMonitor {
         return PerformanceMonitor{
             .allocator = allocator,
             .start_time = std.time.milliTimestamp(),
@@ -439,7 +439,7 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn deinit(self: *PerformanceMonitor) void {
-        self.compilation_phases.deinit(allocator);
+        self.compilation_phases.deinit();
     }
     
     pub fn startPhase(self: *PerformanceMonitor, name: []const u8) void {
@@ -448,7 +448,7 @@ pub const PerformanceMonitor = struct {
             .duration_ns = @intCast(std.time.nanoTimestamp()),
             .memory_delta = 0,
         };
-        self.compilation_phases.append(allocator, phase) catch {};
+        self.compilation_phases.append(phase) catch {};
     }
     
     pub fn endPhase(self: *PerformanceMonitor) void {
@@ -460,7 +460,7 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn printReport(self: *PerformanceMonitor) void {
-        std.debug.print("=== COMPILATION PERFORMANCE REPORT ===\n");
+        std.debug.print("=== COMPILATION PERFORMANCE REPORT ===\n", .{});
         
         var total_time: u64 = 0;
         for (self.compilation_phases.items) |phase| {
@@ -472,7 +472,7 @@ pub const PerformanceMonitor = struct {
         const total_ms = @as(f64, @floatFromInt(total_time)) / 1_000_000;
         std.debug.print("Total compilation time: {d:.3}ms\n", .{total_ms});
         std.debug.print("Peak memory usage: {d:.2}MB\n", .{ @as(f64, @floatFromInt(self.memory_usage)) / 1_048_576 });
-        std.debug.print("=====================================\n");
+        std.debug.print("=====================================\n", .{});
     }
     
     pub fn recordMemoryUsage(self: *PerformanceMonitor, bytes: usize) void {
@@ -578,7 +578,7 @@ test "PerformanceMonitor" {
     const allocator = std.testing.allocator;
     
     var monitor = PerformanceMonitor.init(allocator);
-    defer monitor.deinit(allocator);
+    defer monitor.deinit();
     
     monitor.startPhase("lexing");
     std.time.sleep(1000000); // 1ms

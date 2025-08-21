@@ -35,7 +35,7 @@ pub const TestSuiteResult = struct {
     total_execution_time_ms: u64,
     results: ArrayList(TestResult),
     
-    pub fn init(allocator: Allocator) TestSuiteResult {
+    pub fn init() TestSuiteResult {
         return TestSuiteResult{
             .total_tests = 0,
             .passed_tests = 0,
@@ -50,11 +50,11 @@ pub const TestSuiteResult = struct {
         for (self.results.items) |*result| {
             result.deinit(self.results.allocator);
         }
-        self.results.deinit(allocator);
+        self.results.deinit();
     }
     
     pub fn addResult(self: *TestSuiteResult, result: TestResult) !void {
-        try self.results.append(allocator, result);
+        try self.results.append(result);
         self.total_tests += 1;
         if (result.passed) {
             self.passed_tests += 1;
@@ -68,16 +68,16 @@ pub const TestSuiteResult = struct {
     }
     
     pub fn printSummary(self: *const TestSuiteResult) void {
-        print("\n=== REGRESSION TEST SUITE SUMMARY ===\n");
+        print("\n=== REGRESSION TEST SUITE SUMMARY ===\n", .{});
         print("Total Tests: {d}\n", .{self.total_tests});
         print("Passed: {d} ({d:.1}%)\n", .{ self.passed_tests, @as(f64, @floatFromInt(self.passed_tests)) / @as(f64, @floatFromInt(self.total_tests)) * 100.0 });
         print("Failed: {d} ({d:.1}%)\n", .{ self.failed_tests, @as(f64, @floatFromInt(self.failed_tests)) / @as(f64, @floatFromInt(self.total_tests)) * 100.0 });
         print("Memory Leaks: {d}\n", .{self.memory_leak_tests});
         print("Total Execution Time: {d}ms\n", .{self.total_execution_time_ms});
-        print("=====================================\n");
+        print("=====================================\n", .{});
         
         if (self.failed_tests > 0) {
-            print("\nFAILED TESTS:\n");
+            print("\nFAILED TESTS:\n", .{});
             for (self.results.items) |result| {
                 if (!result.passed) {
                     print("  ❌ {s}", .{result.name});
@@ -87,13 +87,13 @@ pub const TestSuiteResult = struct {
                     if (result.memory_leaks > 0) {
                         print(" (MEMORY LEAKS: {d})", .{result.memory_leaks});
                     }
-                    print("\n");
+                    print("\n", .{});
                 }
             }
         }
         
         if (self.memory_leak_tests > 0) {
-            print("\nMEMORY LEAK TESTS:\n");
+            print("\nMEMORY LEAK TESTS:\n", .{});
             for (self.results.items) |result| {
                 if (result.memory_leaks > 0) {
                     print("  🚨 {s} - {d} leaks\n", .{ result.name, result.memory_leaks });
@@ -110,7 +110,7 @@ pub const RegressionTestRunner = struct {
     use_valgrind: bool,
     verbose: bool,
     
-    pub fn init(allocator: Allocator) RegressionTestRunner {
+    pub fn init() RegressionTestRunner {
         return RegressionTestRunner{
             .allocator = allocator,
             .test_timeout_ms = 5000, // 5 second timeout per test
@@ -154,7 +154,7 @@ pub const RegressionTestRunner = struct {
                     if (test_result.memory_leaks > 0) {
                         print(" LEAKS: {d}", .{test_result.memory_leaks});
                     }
-                    print("\n");
+                    print("\n", .{});
                 }
             }
         }
@@ -244,12 +244,12 @@ pub const RegressionTestRunner = struct {
         }
         
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // Lexical analysis with error handling
         var lexer = Lexer.init(arena_allocator, content);
-        // Note: lexer.deinit(allocator) not needed as it uses arena allocator
+        // Note: lexer.deinit() not needed as it uses arena allocator
         
         const tokens = lexer.tokenize() catch |err| {
             if (self.verbose) print("Lexer error: {}\n", .{err});
@@ -264,7 +264,7 @@ pub const RegressionTestRunner = struct {
         
         // Parsing with comprehensive error recovery
         var parser = Parser.init(arena_allocator, tokens.items);
-        defer parser.deinit(allocator);
+        defer parser.deinit();
         
         const ast = parser.parseProgram() catch |err| {
             if (self.verbose) print("Parser error: {}\n", .{err});
@@ -279,17 +279,17 @@ pub const RegressionTestRunner = struct {
     /// Run round-trip test (parse -> serialize -> parse again)
     fn runRoundTripTest(self: *RegressionTestRunner, original_content: []const u8) !bool {
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const arena_allocator = arena.allocator();
         
         // First parse
         var lexer1 = Lexer.init(arena_allocator, original_content);
-        defer lexer1.deinit(allocator);
+        defer lexer1.deinit();
         
         const tokens1 = lexer1.tokenize() catch return false;
         
         var parser1 = Parser.init(arena_allocator, tokens1);
-        defer parser1.deinit(allocator);
+        defer parser1.deinit();
         
         const ast1 = parser1.parseProgram() catch return false;
         
@@ -298,12 +298,12 @@ pub const RegressionTestRunner = struct {
         
         // Second parse
         var lexer2 = Lexer.init(arena_allocator, serialized);
-        defer lexer2.deinit(allocator);
+        defer lexer2.deinit();
         
         const tokens2 = lexer2.tokenize() catch return false;
         
         var parser2 = Parser.init(arena_allocator, tokens2);
-        defer parser2.deinit(allocator);
+        defer parser2.deinit();
         
         const ast2 = parser2.parseProgram() catch return false;
         
@@ -385,10 +385,10 @@ pub const RegressionTestRunner = struct {
         
         for (ast.statements) |stmt| {
             try self.serializeStatement(&result, stmt);
-            try result.append(allocator, '\n');
+            try result.append('\n');
         }
         
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice();
     }
     
     fn serializeStatement(self: *RegressionTestRunner, result: *ArrayList(u8), stmt: AST.Statement) !void {
@@ -426,7 +426,7 @@ pub fn runRegressionTests(allocator: Allocator, args: []const []const u8) !void 
     
     // Parse command line arguments
     var test_directories = .empty;
-    defer test_directories.deinit(allocator);
+    defer test_directories.deinit();
     
     var i: usize = 0;
     while (i < args.len) {
@@ -441,28 +441,28 @@ pub fn runRegressionTests(allocator: Allocator, args: []const []const u8) !void 
                 runner.test_timeout_ms = try std.fmt.parseInt(u32, args[i], 10);
             }
         } else if (!std.mem.startsWith(u8, arg, "--")) {
-            try test_directories.append(allocator, arg);
+            try test_directories.append(arg);
         }
         i += 1;
     }
     
     // Default test directories if none specified
     if (test_directories.items.len == 0) {
-        try test_directories.append(allocator, "tests/regression/parser");
-        try test_directories.append(allocator, "tests/regression/stdlib");
-        try test_directories.append(allocator, "tests/regression/memory");
-        try test_directories.append(allocator, "tests/regression/errors");
-        try test_directories.append(allocator, "tests/regression/roundtrip");
+        try test_directories.append("tests/regression/parser");
+        try test_directories.append("tests/regression/stdlib");
+        try test_directories.append("tests/regression/memory");
+        try test_directories.append("tests/regression/errors");
+        try test_directories.append("tests/regression/roundtrip");
     }
     
     var overall_results = TestSuiteResult.init(allocator);
-    defer overall_results.deinit(allocator);
+    defer overall_results.deinit();
     
     // Run tests for each directory
     for (test_directories.items) |test_dir| {
         print("Running tests in: {s}\n", .{test_dir});
         var dir_results = try runner.runTestDirectory(test_dir);
-        defer dir_results.deinit(allocator);
+        defer dir_results.deinit();
         
         // Merge results
         for (dir_results.results.items) |result| {
@@ -484,7 +484,7 @@ pub fn runRegressionTests(allocator: Allocator, args: []const []const u8) !void 
 // Test entry point for zig build test-regression
 test "regression test runner" {
     var arena = std.heap.ArenaAllocator.init(testing.allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     
     const runner = RegressionTestRunner.init(arena.allocator());
     

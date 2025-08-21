@@ -107,8 +107,8 @@ const DocumentData = struct {
     pub fn deinit(self: *DocumentData) void {
         self.allocator.free(self.uri);
         self.allocator.free(self.text);
-        self.symbols.deinit(allocator);
-        self.diagnostics.deinit(allocator);
+        self.symbols.deinit();
+        self.diagnostics.deinit();
     }
 };
 
@@ -131,7 +131,7 @@ pub const CursedLanguageServer = struct {
         }
     };
 
-    pub fn init(allocator: Allocator) CursedLanguageServer {
+    pub fn init() CursedLanguageServer {
         return CursedLanguageServer{
             .allocator = allocator,
             .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -144,9 +144,9 @@ pub const CursedLanguageServer = struct {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
             var doc = entry.value_ptr;
-            doc.deinit(allocator);
+            doc.deinit();
         }
-        self.documents.deinit(allocator);
+        self.documents.deinit();
         
         if (self.workspace_root) |root| {
             self.allocator.free(root);
@@ -159,7 +159,7 @@ pub const CursedLanguageServer = struct {
             std.log.err("Failed to parse JSON: {}", .{err});
             return;
         };
-        defer parsed.deinit(allocator);
+        defer parsed.deinit();
 
         const root = parsed.value;
         
@@ -343,11 +343,11 @@ pub const CursedLanguageServer = struct {
             });
             return;
         };
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
 
         // Parse
         var parse = parser.Parser.init(self.allocator, tokens.items);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
         
         const program = parse.parseProgram() catch |err| {
             // Try to get more precise error position from parser
@@ -448,7 +448,7 @@ pub const CursedLanguageServer = struct {
                 if (item.detail) |detail| self.allocator.free(detail);
                 if (item.documentation) |doc| self.allocator.free(doc);
             }
-            completions.deinit(allocator);
+            completions.deinit();
         }
 
         // Get current document for context-aware completion
@@ -591,12 +591,12 @@ pub const CursedLanguageServer = struct {
         const character = @as(u32, @intCast(position.get("character").?.integer));
 
         var locations = .empty;
-        defer locations.deinit(allocator);
+        defer locations.deinit();
 
         if (self.documents.get(uri)) |doc_data| {
             for (doc_data.symbols.items) |symbol| {
                 if (self.positionInRange(Position{ .line = line, .character = character }, symbol.location.range)) {
-                    try locations.append(allocator, symbol.location);
+                    try locations.append(symbol.location);
                 }
             }
         }
@@ -608,7 +608,7 @@ pub const CursedLanguageServer = struct {
     fn handleReferences(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         var empty_locations = .empty;
-        defer empty_locations.deinit(allocator);
+        defer empty_locations.deinit();
         try self.sendReferencesResponse(writer, id, &empty_locations);
     }
 
@@ -620,7 +620,7 @@ pub const CursedLanguageServer = struct {
         const uri = text_document.get("uri").?.string;
 
         var text_edits = .empty;
-        defer text_edits.deinit(allocator);
+        defer text_edits.deinit();
 
         if (self.documents.get(uri)) |doc_data| {
             const formatted = try self.formatCursedCode(doc_data.text);
@@ -646,7 +646,7 @@ pub const CursedLanguageServer = struct {
     fn handleSemanticTokens(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         var empty_tokens = .empty;
-        defer empty_tokens.deinit(allocator);
+        defer empty_tokens.deinit();
         try self.sendSemanticTokensResponse(writer, id, &empty_tokens);
     }
 
@@ -657,14 +657,14 @@ pub const CursedLanguageServer = struct {
         const query = if (params.get("query")) |q| q.string else "";
 
         var symbols = .empty;
-        defer symbols.deinit(allocator);
+        defer symbols.deinit();
 
         var doc_iterator = self.documents.iterator();
         while (doc_iterator.next()) |entry| {
             const doc_data = entry.value_ptr;
             for (doc_data.symbols.items) |symbol| {
                 if (query.len == 0 or std.mem.indexOf(u8, symbol.name, query) != null) {
-                    try symbols.append(allocator, symbol);
+                    try symbols.append(symbol);
                 }
             }
         }
@@ -686,7 +686,7 @@ pub const CursedLanguageServer = struct {
     /// Format CURSED code (basic implementation)
     fn formatCursedCode(self: *CursedLanguageServer, code: []const u8) ![]u8 {
         var formatted = .empty;
-        defer formatted.deinit(allocator);
+        defer formatted.deinit();
         
         var indent_level: u32 = 0;
         var lines = std.mem.splitScalar(u8, code, '\n');
@@ -701,7 +701,7 @@ pub const CursedLanguageServer = struct {
                 try formatted.appendSlice("    ");
                 }
             try formatted.appendSlice(trimmed);
-            try formatted.append(allocator, '\n');
+            try formatted.append('\n');
             indent_level += 1;
             } else if (std.mem.eql(u8, trimmed, "}")) {
                 if (indent_level > 0) indent_level -= 1;
@@ -711,7 +711,7 @@ pub const CursedLanguageServer = struct {
                     try formatted.appendSlice("    ");
             }
                 try formatted.appendSlice(trimmed);
-            try formatted.append(allocator, '\n');
+            try formatted.append('\n');
         } else if (trimmed.len > 0) {
             // Add indentation
             var i: u32 = 0;
@@ -719,13 +719,13 @@ pub const CursedLanguageServer = struct {
                 try formatted.appendSlice("    ");
             }
             try formatted.appendSlice(trimmed);
-            try formatted.append(allocator, '\n');
+            try formatted.append('\n');
         } else {
-            try formatted.append(allocator, '\n');
+            try formatted.append('\n');
         }
         }
         
-        return formatted.toOwnedSlice(allocator);
+        return formatted.toOwnedSlice();
     }
 
     /// Check if position is in range
@@ -762,7 +762,7 @@ pub const CursedLanguageServer = struct {
     fn publishDiagnostics(self: *CursedLanguageServer, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
         // Build diagnostics JSON array
         var diag_json = .empty;
-        defer diag_json.deinit(allocator);
+        defer diag_json.deinit();
         
         try diag_json.appendSlice("[");
         
@@ -771,7 +771,7 @@ pub const CursedLanguageServer = struct {
             
             // Escape diagnostic message for JSON
             var escaped_message = .empty;
-            defer escaped_message.deinit(allocator);
+            defer escaped_message.deinit();
             
             for (diag.message) |c| {
                 switch (c) {
@@ -812,7 +812,7 @@ pub const CursedLanguageServer = struct {
     fn sendCompletionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, completions: *ArrayList(CompletionItem)) !void {
         // Build completion items JSON array
         var items_json = .empty;
-        defer items_json.deinit(allocator);
+        defer items_json.deinit();
         
         try items_json.appendSlice("[");
         
@@ -861,7 +861,7 @@ pub const CursedLanguageServer = struct {
     fn sendDefinitionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
         // Build locations JSON array
         var locations_json = .empty;
-        defer locations_json.deinit(allocator);
+        defer locations_json.deinit();
         
         try locations_json.appendSlice("[");
         
@@ -939,7 +939,7 @@ pub const CursedLanguageServer = struct {
 /// LSP Server main loop
 pub fn runLspServer(allocator: Allocator) !void {
     var server = CursedLanguageServer.init(allocator);
-    defer server.deinit(allocator);
+    defer server.deinit();
 
     var stdin_buffer: [4096]u8 = undefined;
     const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
@@ -950,7 +950,7 @@ pub fn runLspServer(allocator: Allocator) !void {
     std.log.info("CURSED LSP Server starting...", .{});
 
     var buffer = .empty;
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
 
     while (true) {
         // Read Content-Length header

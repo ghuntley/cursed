@@ -18,7 +18,7 @@ const lexer = @import("lexer.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -188,8 +188,7 @@ fn compileLLVM(allocator: Allocator, source: []const u8, filename: []const u8, o
 }
 
 fn generateSimpleLLVMIR(allocator: Allocator, source: []const u8, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, context: c.LLVMContextRef, verbose: bool) !void {
-    _ = allocator;
-    
+        
     // Create main function
     const main_type = c.LLVMFunctionType(c.LLVMInt32TypeInContext(context), null, 0, 0);
     const main_func = c.LLVMAddFunction(module, "main", main_type);
@@ -275,8 +274,7 @@ fn interpretSimple(allocator: Allocator, source: []const u8, verbose: bool) !voi
         print("✅ Program interpretation completed\n", .{});
     }
     
-    _ = allocator;
-}
+    }
 
 fn printUsage() void {
     print("CURSED LLVM Compiler v1.0.0\n", .{});

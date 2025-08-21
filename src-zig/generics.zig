@@ -27,9 +27,9 @@ pub const TypeParameter = struct {
     
     pub fn deinit(self: *TypeParameter, allocator: Allocator) void {
         for (self.constraints.items) |*constraint| {
-            constraint.deinit(allocator);
+            constraint.deinit();
         }
-        self.constraints.deinit(allocator);
+        self.constraints.deinit();
     }
 };
 
@@ -96,9 +96,9 @@ pub const GenericDeclaration = struct {
     
     pub fn deinit(self: *GenericDeclaration, allocator: Allocator) void {
         for (self.type_parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.type_parameters.deinit(allocator);
+        self.type_parameters.deinit();
     }
 };
 
@@ -133,7 +133,7 @@ pub const MonomorphizedInstance = struct {
     }
     
     pub fn deinit(self: *MonomorphizedInstance, allocator: Allocator) void {
-        self.substitutions.deinit(allocator);
+        self.substitutions.deinit();
         allocator.free(self.specialized_name);
     }
 };
@@ -173,9 +173,8 @@ pub const Monomorphizer = struct {
         }
         
         pub fn deinit(self: *InstantiationRequest, allocator: Allocator) void {
-            self.type_arguments.deinit(allocator);
-            _ = allocator;
-        }
+            self.type_arguments.deinit();
+                    }
     };
     
     pub fn init(allocator: Allocator, context: c.LLVMContextRef, module: c.LLVMModuleRef, type_registry: *type_system.GCTypeRegistry) Monomorphizer {
@@ -194,26 +193,26 @@ pub const Monomorphizer = struct {
     pub fn deinit(self: *Monomorphizer) void {
         var decl_iterator = self.generic_declarations.iterator();
         while (decl_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.generic_declarations.deinit(allocator);
+        self.generic_declarations.deinit();
         
         var instance_iterator = self.instances.iterator();
         while (instance_iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.instances.deinit(allocator);
+        self.instances.deinit();
         
         for (self.work_queue.items) |*request| {
-            request.deinit(allocator);
+            request.deinit();
         }
-        self.work_queue.deinit(allocator);
+        self.work_queue.deinit();
         
         // CRITICAL FIX: Clean up const generics manager
-        self.const_generics_manager.deinit(allocator);
+        self.const_generics_manager.deinit();
         
         // Clean up constraint validator
-        self.constraint_validator.deinit(allocator);
+        self.constraint_validator.deinit();
     }
     
     /// Register a generic declaration
@@ -282,7 +281,7 @@ pub const Monomorphizer = struct {
     pub fn processInstantiations(self: *Monomorphizer) !void {
         while (self.work_queue.items.len > 0) {
             const request = self.work_queue.pop();
-            defer request.deinit(allocator);
+            defer request.deinit();
             
             try self.instantiateGeneric(request);
         }
@@ -291,7 +290,7 @@ pub const Monomorphizer = struct {
     /// Generate specialized name for generic instantiation
     fn generateSpecializedName(self: *Monomorphizer, generic_name: []const u8, type_arguments: []ast.Type) ![]const u8 {
         var name_builder = .empty;
-        defer name_builder.deinit(allocator);
+        defer name_builder.deinit();
         
         try name_builder.appendSlice(generic_name);
         
@@ -373,9 +372,9 @@ pub const Monomorphizer = struct {
         var type_params: std.ArrayList(generic_constraints.GenericTypeParameter) = .empty;
         defer {
             for (type_params.items) |*param| {
-                param.deinit(allocator);
+                param.deinit();
             }
-            type_params.deinit(allocator);
+            type_params.deinit();
         }
         
         for (generic_decl.type_parameters.items) |old_param| {
@@ -703,7 +702,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit(allocator);
+        defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -720,7 +719,7 @@ pub const Monomorphizer = struct {
         
         // Substitute parameter types
         for (func_decl.parameters.items) |param| {
-            try specialized_func.parameters.append(allocator, ast.Parameter{
+            try specialized_func.parameters.append(ast.Parameter{
                 .name = param.name,
                 .param_type = try self.substituteType(param.param_type, &substitution_map),
             });
@@ -742,7 +741,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit(allocator);
+        defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -756,7 +755,7 @@ pub const Monomorphizer = struct {
         
         // Substitute field types
         for (struct_decl.fields.items) |field| {
-            try specialized_struct.fields.append(allocator, ast.StructField{
+            try specialized_struct.fields.append(ast.StructField{
                 .name = field.name,
                 .field_type = try self.substituteType(field.field_type, &substitution_map),
             });
@@ -778,7 +777,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit(allocator);
+        defer substitution_map.deinit();
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -800,13 +799,13 @@ pub const Monomorphizer = struct {
             
             // Substitute parameter types
             for (method.parameters.items) |param| {
-                try specialized_method.parameters.append(allocator, ast.Parameter{
+                try specialized_method.parameters.append(ast.Parameter{
                     .name = param.name,
                     .param_type = try self.substituteType(param.param_type, &substitution_map),
                 });
             }
             
-            try specialized_interface.methods.append(allocator, specialized_method);
+            try specialized_interface.methods.append(specialized_method);
         }
         
         // Generate LLVM vtable structure
@@ -863,7 +862,7 @@ pub const Monomorphizer = struct {
         
         for (original_statements) |stmt| {
             const new_stmt = try self.substituteStatement(stmt, substitutions);
-            try new_statements.append(allocator, new_stmt);
+            try new_statements.append(new_stmt);
         }
         
         return new_statements;
@@ -899,10 +898,10 @@ pub const Monomorphizer = struct {
     fn generateSpecializedLLVMFunction(self: *Monomorphizer, func_decl: *ast.FunctionDeclaration) !void {
         // Create LLVM function type
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (func_decl.parameters.items) |param| {
-            try param_types.append(allocator, try self.typeToLLVMType(param.param_type));
+            try param_types.append(try self.typeToLLVMType(param.param_type));
         }
         
         const return_type = if (func_decl.return_type) |rt| 
@@ -935,10 +934,10 @@ pub const Monomorphizer = struct {
     fn generateSpecializedLLVMStruct(self: *Monomorphizer, struct_decl: *ast.StructDeclaration) !void {
         // Create LLVM struct type
         var field_types = .empty;
-        defer field_types.deinit(allocator);
+        defer field_types.deinit();
         
         for (struct_decl.fields.items) |field| {
-            try field_types.append(allocator, try self.typeToLLVMType(field.field_type));
+            try field_types.append(try self.typeToLLVMType(field.field_type));
         }
         
         const llvm_struct_type = c.LLVMStructCreateNamed(self.context, struct_decl.name.ptr);
@@ -1021,19 +1020,19 @@ pub const Monomorphizer = struct {
     fn generateSpecializedVTable(self: *Monomorphizer, interface_decl: *ast.InterfaceDeclaration) !void {
         // Create vtable struct type
         var method_types = .empty;
-        defer method_types.deinit(allocator);
+        defer method_types.deinit();
         
         // Add function pointer for each method
         for (interface_decl.methods.items) |method| {
             var param_types = .empty;
-            defer param_types.deinit(allocator);
+            defer param_types.deinit();
             
             // Add 'self' parameter (always a pointer)
-            try param_types.append(allocator, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
             
             // Add method parameters
             for (method.parameters.items) |param| {
-                try param_types.append(allocator, try self.typeToLLVMType(param.param_type));
+                try param_types.append(try self.typeToLLVMType(param.param_type));
             }
             
             const return_type = if (method.return_type) |rt| 
@@ -1048,7 +1047,7 @@ pub const Monomorphizer = struct {
                 0
             );
             
-            try method_types.append(allocator, c.LLVMPointerType(method_func_type, 0));
+            try method_types.append(c.LLVMPointerType(method_func_type, 0));
         }
         
         // Create vtable struct

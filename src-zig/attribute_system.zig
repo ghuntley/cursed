@@ -74,7 +74,7 @@ pub const AttributeValue = union(enum) {
     pub fn deinit(self: *AttributeValue, allocator: Allocator) void {
         switch (self.*) {
             .Expression => |expr| {
-                expr.deinit(allocator);
+                expr.deinit();
                 allocator.destroy(expr);
             },
             else => {},
@@ -88,7 +88,7 @@ pub const AttributeParameter = struct {
     value: AttributeValue,
     
     pub fn deinit(self: *AttributeParameter, allocator: Allocator) void {
-        self.value.deinit(allocator);
+        self.value.deinit();
     }
 };
 
@@ -110,15 +110,14 @@ pub const Attribute = struct {
     
     pub fn deinit(self: *Attribute, allocator: Allocator) void {
         for (self.parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
     }
     
     /// Add a parameter to this attribute
     pub fn addParameter(self: *Attribute, allocator: Allocator, name: []const u8, value: AttributeValue) !void {
-        _ = allocator; // Suppress unused warning
-        try self.parameters.append(allocator, AttributeParameter{
+                try self.parameters.append(AttributeParameter{
             .name = name,
             .value = value,
         });
@@ -178,7 +177,7 @@ pub const Attribute = struct {
 pub const AttributeList = struct {
     attributes: ArrayList(Attribute),
     
-    pub fn init(allocator: Allocator) AttributeList {
+    pub fn init() AttributeList {
         return AttributeList{
             .attributes = .empty,
         };
@@ -186,14 +185,14 @@ pub const AttributeList = struct {
     
     pub fn deinit(self: *AttributeList, allocator: Allocator) void {
         for (self.attributes.items) |*attr| {
-            attr.deinit(allocator);
+            attr.deinit();
         }
-        self.attributes.deinit(allocator);
+        self.attributes.deinit();
     }
     
     /// Add an attribute to the list
     pub fn addAttribute(self: *AttributeList, attr: Attribute) !void {
-        try self.attributes.append(allocator, attr);
+        try self.attributes.append(attr);
     }
     
     /// Find attribute by type
@@ -226,7 +225,7 @@ pub const AttributeList = struct {
         var result = .empty;
         for (self.attributes.items) |*attr| {
             if (attr.type == attr_type) {
-                try result.append(allocator, attr);
+                try result.append(attr);
             }
         }
         return result;
@@ -394,12 +393,12 @@ pub fn createTestAttributes(allocator: Allocator) !AttributeList {
 
 test "attribute system basic functionality" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Test creating attributes
     var attrs = try createTestAttributes(allocator);
-    defer attrs.deinit(allocator);
+    defer attrs.deinit();
     
     // Test finding attributes
     const perf_attr = attrs.findByType(.Performance);
@@ -417,11 +416,11 @@ test "attribute system basic functionality" {
 
 test "attribute parameter access" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var attr = try createAlignAttribute(allocator, 16, SourceLocation.unknown());
-    defer attr.deinit(allocator);
+    defer attr.deinit();
     
     const bytes = attr.getIntegerParameter("bytes");
     try std.testing.expect(bytes != null);

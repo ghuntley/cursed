@@ -107,16 +107,16 @@ pub const CodeGenerator = struct {
     }
 
     pub fn deinit(self: *CodeGenerator) void {
-        self.variables.deinit(allocator);
-        self.struct_types.deinit(allocator);
-        self.interface_types.deinit(allocator);
+        self.variables.deinit();
+        self.struct_types.deinit();
+        self.interface_types.deinit();
         
         // Clean up struct fields
         var field_iter = self.struct_fields.iterator();
         while (field_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.struct_fields.deinit(allocator);
+        self.struct_fields.deinit();
         
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
@@ -729,7 +729,7 @@ pub const CodeGenerator = struct {
         }
     }
 
-    /// Generate function call expressions
+    /// Generate function call expressions with interface dispatch support
     fn generateCallExpression(self: *CodeGenerator, call: ast.CallExpression) !c.LLVMValueRef {
         // Special handling for built-in functions
         if (call.function.* == .Identifier) {
@@ -738,6 +738,11 @@ pub const CodeGenerator = struct {
             if (std.mem.eql(u8, func_name, "printf") or std.mem.eql(u8, func_name, "vibez.spill") or std.mem.eql(u8, func_name, "facts")) {
             return try self.generatePrintfCall(call);
             }
+        }
+        
+        // Check for interface method calls (Member access on interface objects)
+        if (call.function.* == .Member) {
+            return try self.generateInterfaceMethodCall(call);
         }
         
         // General function call handling
@@ -762,6 +767,190 @@ pub const CodeGenerator = struct {
             @intCast(args.len),
             "call_tmp"
         );
+    }
+
+    /// Generate interface method calls with guaranteed vtable dispatch
+    fn generateInterfaceMethodCall(self: *CodeGenerator, call: ast.CallExpression) !c.LLVMValueRef {
+        const member_expr = call.function.Member;
+        const obj_expr = member_expr.object;
+        const method_name = member_expr.member;
+        
+        // Generate the object (interface instance)
+        const obj_value = try self.generateExpression(obj_expr.*);
+        
+        // Extract vtable pointer from interface object
+        // Interface object layout: {vtable_ptr, data_ptr}
+        const vtable_ptr = c.LLVMBuildExtractValue(self.builder, obj_value, 0, "vtable_ptr");
+        const data_ptr = c.LLVMBuildExtractValue(self.builder, obj_value, 1, "data_ptr");
+        
+        // Fail-fast assertion: Validate vtable magic number
+        const magic_ptr = c.LLVMBuildStructGEP2(
+            self.builder,
+            c.LLVMTypeOf(vtable_ptr),
+            vtable_ptr,
+            0,
+            "magic_ptr"
+        );
+        const magic_value = c.LLVMBuildLoad2(
+            self.builder,
+            c.LLVMInt64TypeInContext(self.context),
+            magic_ptr,
+            "magic_value"
+        );
+        
+        // Magic number for vtable validation (0xDEADBEEF12345678)
+        const expected_magic = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0xDEADBEEF12345678, 0);
+        const magic_check = c.LLVMBuildICmp(
+            self.builder,
+            c.LLVMIntEQ,
+            magic_value,
+            expected_magic,
+            "magic_check"
+        );
+        
+        // Create trap block for invalid vtable
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+        const trap_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "vtable_trap");
+        const valid_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "vtable_valid");
+        
+        // Branch based on magic check
+        _ = c.LLVMBuildCondBr(self.builder, magic_check, valid_block, trap_block);
+        
+        // Generate trap block (fail-fast assertion)
+        c.LLVMPositionBuilderAtEnd(self.builder, trap_block);
+        const trap_func = c.LLVMGetNamedFunction(self.module, "llvm.trap");
+        if (trap_func != null) {
+            _ = c.LLVMBuildCall2(
+                self.builder,
+                c.LLVMGlobalGetValueType(trap_func),
+                trap_func,
+                null,
+                0,
+                ""
+            );
+        }
+        _ = c.LLVMBuildUnreachable(self.builder);
+        
+        // Continue with valid vtable
+        c.LLVMPositionBuilderAtEnd(self.builder, valid_block);
+        
+        // Calculate method index in vtable (simplified - would need method registry)
+        const method_index = self.getMethodIndex(method_name) orelse {
+            std.debug.print("Error: Unknown interface method '{s}'\n", .{method_name});
+            return error.UnknownMethod;
+        };
+        
+        // Get method function pointer from vtable
+        const method_ptr_ptr = c.LLVMBuildStructGEP2(
+            self.builder,
+            c.LLVMTypeOf(vtable_ptr),
+            vtable_ptr,
+            method_index + 1, // +1 to skip magic number
+            "method_ptr_ptr"
+        );
+        const method_ptr = c.LLVMBuildLoad2(
+            self.builder,
+            c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+            method_ptr_ptr,
+            "method_ptr"
+        );
+        
+        // Prepare arguments: self pointer, error context, then user arguments
+        var args = try self.allocator.alloc(c.LLVMValueRef, call.arguments.len + 2);
+        defer self.allocator.free(args);
+        
+        args[0] = data_ptr; // self pointer
+        args[1] = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)); // error context placeholder
+        
+        // Generate user arguments
+        for (call.arguments, 0..) |arg, i| {
+            args[i + 2] = try self.generateExpression(arg);
+        }
+        
+        // Create function type for interface method call
+        var param_types = try self.allocator.alloc(c.LLVMTypeRef, args.len);
+        defer self.allocator.free(param_types);
+        
+        param_types[0] = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0); // self
+        param_types[1] = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0); // error context
+        for (call.arguments, 0..) |_, i| {
+            param_types[i + 2] = c.LLVMTypeOf(args[i + 2]);
+        }
+        
+        // Error-aware return type struct: {result, error_code}
+        var return_struct_members = [_]c.LLVMTypeRef{
+            c.LLVMInt32TypeInContext(self.context), // placeholder return type
+            c.LLVMInt32TypeInContext(self.context), // error code
+        };
+        const error_aware_return_type = c.LLVMStructTypeInContext(
+            self.context,
+            &return_struct_members,
+            2,
+            0
+        );
+        
+        const method_func_type = c.LLVMFunctionType(
+            error_aware_return_type,
+            param_types.ptr,
+            @intCast(param_types.len),
+            0
+        );
+        
+        // Call interface method through vtable
+        const result = c.LLVMBuildCall2(
+            self.builder,
+            method_func_type,
+            method_ptr,
+            args.ptr,
+            @intCast(args.len),
+            "interface_call"
+        );
+        
+        // Extract result and check error code
+        const method_result = c.LLVMBuildExtractValue(self.builder, result, 0, "method_result");
+        const error_code = c.LLVMBuildExtractValue(self.builder, result, 1, "error_code");
+        
+        // Check for interface method errors
+        const zero_error = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        const error_check = c.LLVMBuildICmp(
+            self.builder,
+            c.LLVMIntEQ,
+            error_code,
+            zero_error,
+            "error_check"
+        );
+        
+        // Create error handling blocks
+        const error_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "method_error");
+        const success_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "method_success");
+        
+        _ = c.LLVMBuildCondBr(self.builder, error_check, success_block, error_block);
+        
+        // Error block - could propagate error or trap
+        c.LLVMPositionBuilderAtEnd(self.builder, error_block);
+        _ = c.LLVMBuildUnreachable(self.builder); // Simplified error handling
+        
+        // Success block
+        c.LLVMPositionBuilderAtEnd(self.builder, success_block);
+        
+        std.debug.print("✅ Interface method call '{s}' generated with vtable dispatch\n", .{method_name});
+        return method_result;
+    }
+    
+    /// Get method index for interface dispatch (simplified registry)
+    fn getMethodIndex(self: *CodeGenerator, method_name: []const u8) ?u32 {
+        _ = self;
+        
+        // Simplified method registry - in production this would be a proper hash map
+        const method_registry = std.ComptimeStringMap(u32, .{
+            .{ "toString", 0 },
+            .{ "equals", 1 },
+            .{ "hashCode", 2 },
+            .{ "clone", 3 },
+            .{ "dispose", 4 },
+        });
+        
+        return method_registry.get(method_name);
     }
 
     /// Generate printf/vibez.spill calls
@@ -1291,7 +1480,7 @@ pub const CodeGenerator = struct {
 
         // Write LLVM IR to file for debugging
         var ir_filename: std.ArrayList(u8) = .empty;
-        defer ir_filename.deinit(allocator);
+        defer ir_filename.deinit();
         
         try ir_filename.appendSlice(output_path);
         try ir_filename.appendSlice(".ll");
@@ -1334,7 +1523,7 @@ pub const CodeGenerator = struct {
 
         // Generate object file
         var obj_filename: std.ArrayList(u8) = .empty;
-        defer obj_filename.deinit(allocator);
+        defer obj_filename.deinit();
         try obj_filename.appendSlice(output_path);
         try obj_filename.appendSlice(".o");
 
@@ -1361,31 +1550,31 @@ pub const CodeGenerator = struct {
         const is_windows = std.builtin.os.tag == .windows;
         
         var link_args: std.ArrayList([]const u8) = .empty;
-        defer link_args.deinit(allocator);
+        defer link_args.deinit();
         
         if (is_windows) {
             // Windows: use link.exe or ld
-            try link_args.append(allocator, "ld");
-            try link_args.append(allocator, "-o");
-            try link_args.append(allocator, output_path);
-            try link_args.append(allocator, obj_path);
-            try link_args.append(allocator, "-lc");
+            try link_args.append("ld");
+            try link_args.append("-o");
+            try link_args.append(output_path);
+            try link_args.append(obj_path);
+            try link_args.append("-lc");
         } else if (is_macos) {
             // macOS: use ld
-            try link_args.append(allocator, "ld");
-            try link_args.append(allocator, "-o");
-            try link_args.append(allocator, output_path);
-            try link_args.append(allocator, obj_path);
-            try link_args.append(allocator, "-lSystem");
-            try link_args.append(allocator, "-arch");
-            try link_args.append(allocator, "x86_64");
+            try link_args.append("ld");
+            try link_args.append("-o");
+            try link_args.append(output_path);
+            try link_args.append(obj_path);
+            try link_args.append("-lSystem");
+            try link_args.append("-arch");
+            try link_args.append("x86_64");
         } else {
             // Linux: use ld or gcc
-            try link_args.append(allocator, "gcc");
-            try link_args.append(allocator, "-o");
-            try link_args.append(allocator, output_path);
-            try link_args.append(allocator, obj_path);
-            try link_args.append(allocator, "-no-pie"); // Disable PIE for compatibility
+            try link_args.append("gcc");
+            try link_args.append("-o");
+            try link_args.append(output_path);
+            try link_args.append(obj_path);
+            try link_args.append("-no-pie"); // Disable PIE for compatibility
         }
 
         // Execute linker
@@ -1508,7 +1697,36 @@ pub const CodeGenerator = struct {
         // Store interface type for later reference
         try self.interface_types.put(interface_stmt.name, vtable_type);
         
-        std.debug.print("✅ Interface '{s}' defined with {} methods (error-aware)\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
+        // Generate vtable instance template with magic validation
+        const vtable_name_buf = try self.allocator.alloc(u8, interface_stmt.name.len + 8);
+        defer self.allocator.free(vtable_name_buf);
+        const vtable_name = try std.fmt.bufPrint(vtable_name_buf, "{s}_vtable", .{interface_stmt.name});
+        
+        // Create global vtable template
+        const global_vtable = c.LLVMAddGlobal(self.module, vtable_type, vtable_name.ptr);
+        c.LLVMSetLinkage(global_vtable, c.LLVMWeakLinkage);
+        
+        // Initialize vtable with magic number and null function pointers
+        var vtable_values = try self.allocator.alloc(c.LLVMValueRef, vtable_members.len);
+        defer self.allocator.free(vtable_values);
+        
+        // Set magic number for validation
+        vtable_values[0] = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0xDEADBEEF12345678, 0);
+        
+        // Initialize method pointers to null (will be set by implementations)
+        for (1..vtable_values.len) |i| {
+            vtable_values[i] = c.LLVMConstNull(vtable_members[i]);
+        }
+        
+        const vtable_const = c.LLVMConstStructInContext(
+            self.context,
+            vtable_values.ptr,
+            @intCast(vtable_values.len),
+            0
+        );
+        c.LLVMSetInitializer(global_vtable, vtable_const);
+        
+        std.debug.print("✅ Interface '{s}' defined with {} methods (error-aware + vtable validation)\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
     }
 
     /// Generate implementation blocks
@@ -2074,7 +2292,7 @@ pub const CodeGenerator = struct {
         
         // Track all case blocks for cleanup
         var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
-        defer case_blocks.deinit(allocator);
+        defer case_blocks.deinit();
         
         // Generate comparison chains for each pattern
         var current_block = c.LLVMGetInsertBlock(self.builder);

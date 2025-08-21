@@ -44,7 +44,7 @@ pub const I18nConfig = struct {
         custom_placeholders: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     };
 
-    pub fn init(allocator: Allocator) I18nConfig {
+    pub fn init() I18nConfig {
         return I18nConfig{
             .default_locale = .en_US,
             .fallback_locale = .en_US,
@@ -67,9 +67,9 @@ pub const I18nConfig = struct {
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             var rule = entry.value_ptr;
-            rule.custom_placeholders.deinit(allocator);
+            rule.custom_placeholders.deinit();
         }
-        self.custom_formatting.deinit(allocator);
+        self.custom_formatting.deinit();
     }
 
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !I18nConfig {
@@ -153,7 +153,7 @@ pub const I18nConfig = struct {
 
     fn serialize(self: I18nConfig) ![]u8 {
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
 
         try result.appendSlice("{\n");
         try result.appendSlice("  \"default_locale\": \"");
@@ -486,7 +486,7 @@ pub const LanguagePackGenerator = struct {
 
     fn generateLanguagePackContent(allocator: Allocator, locale: Locale) ![]u8 {
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
 
         try result.appendSlice("{\n");
         try result.appendSlice("  \"meta\": {\n");
@@ -611,7 +611,7 @@ test "i18n config creation and serialization" {
     const allocator = std.testing.allocator;
     
     var config = I18nConfig.init(allocator);
-    defer config.deinit(allocator);
+    defer config.deinit();
 
     config.default_locale = .fr_FR;
     config.fallback_locale = .en_US;
@@ -632,7 +632,7 @@ test "language pack loader default creation" {
     const loader = LanguagePackLoader.init(allocator, config);
     
     var pack = try loader.createDefaultLanguagePack(.es_ES);
-    defer pack.deinit(allocator);
+    defer pack.deinit();
 
     const template = pack.getMessage("panic.yikes");
     try std.testing.expect(template != null);

@@ -35,7 +35,7 @@ pub const StructInstance = struct {
     
     pub fn deinit(self: *StructInstance) void {
         self.allocator.free(self.type_name);
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
     
     pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
@@ -86,7 +86,7 @@ pub const VTable = struct {
     
     pub fn deinit(self: *VTable) void {
         self.allocator.free(self.interface_name);
-        self.methods.deinit(allocator);
+        self.methods.deinit();
     }
     
     pub fn setMethod(self: *VTable, name: []const u8, func: *FunctionValue) !void {
@@ -193,16 +193,16 @@ pub const Value = union(enum) {
             .String => |str| allocator.free(str),
             // .Tuple => |*tuple| {
             //     for (tuple.items) |*item| {
-            //         item.deinit(allocator);
+            //         item.deinit();
             //     }
-            //     tuple.deinit(allocator);
+            //     tuple.deinit();
             // },
-            .Error => |*err| err.deinit(allocator),
-            .Pointer => |*ptr| ptr.deinit(allocator),
-            .Struct => |*struct_inst| struct_inst.deinit(allocator),
-            .Interface => |*interface_inst| interface_inst.deinit(allocator),
+            .Error => |*err| err.deinit(),
+            .Pointer => |*ptr| ptr.deinit(),
+            .Struct => |*struct_inst| struct_inst.deinit(),
+            .Interface => |*interface_inst| interface_inst.deinit(),
             .CursedError => |cursed_err| {
-                cursed_err.deinit(allocator);
+                cursed_err.deinit();
                 allocator.destroy(cursed_err);
             },
             else => {}, // Other types don't need cleanup
@@ -249,15 +249,15 @@ pub const Value = union(enum) {
             .Null => return allocator.dupe(u8, "cap"),
             .Tuple => |tuple| {
                 var result: std.ArrayList(u8) = .empty;
-                defer result.deinit(allocator);
-                try result.append(allocator, '(');
+                defer result.deinit();
+                try result.append('(');
                 for (tuple.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
                     const item_str = try item.toString(allocator);
                     defer allocator.free(item_str);
                     try result.appendSlice(item_str);
                 }
-                try result.append(allocator, ')');
+                try result.append(')');
                 return try allocator.dupe(u8, result.items);
             },
             .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "struct {s}", .{struct_inst.type_name}),
@@ -313,7 +313,7 @@ pub const Environment = struct {
     }
 
     pub fn deinit(self: *Environment) void {
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -358,7 +358,7 @@ pub const TypeRegistry = struct {
     vtables: HashMap([]const u8, VTable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
-    pub fn init(allocator: Allocator) TypeRegistry {
+    pub fn init() TypeRegistry {
         return TypeRegistry{
             .struct_types = HashMap([]const u8, ast.StructStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .interface_types = HashMap([]const u8, ast.InterfaceStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -368,9 +368,9 @@ pub const TypeRegistry = struct {
     }
     
     pub fn deinit(self: *TypeRegistry) void {
-        self.struct_types.deinit(allocator);
-        self.interface_types.deinit(allocator);
-        self.vtables.deinit(allocator);
+        self.struct_types.deinit();
+        self.interface_types.deinit();
+        self.vtables.deinit();
     }
     
     pub fn registerStruct(self: *TypeRegistry, name: []const u8, struct_decl: ast.StructStatement) !void {
@@ -425,7 +425,7 @@ pub const Interpreter = struct {
 
     const MAX_CALL_STACK_DEPTH = 1000;
 
-    pub fn init(allocator: Allocator) Interpreter {
+    pub fn init() Interpreter {
         var globals = Environment.init(allocator, null);
         
         return Interpreter{
@@ -447,22 +447,22 @@ pub const Interpreter = struct {
         // Execute any remaining deferred statements before cleanup
         self.executeAllDefers();
         
-        self.globals.deinit(allocator);
-        self.functions.deinit(allocator);
-        self.type_registry.deinit(allocator);
-        self.defer_stack.deinit(allocator);
-        self.error_handler.deinit(allocator);
+        self.globals.deinit();
+        self.functions.deinit();
+        self.type_registry.deinit();
+        self.defer_stack.deinit();
+        self.error_handler.deinit();
         
         // Clean up channel storage
         // var channel_iterator = self.channel_storage.iterator();
         // while (channel_iterator.next()) |entry| {
         //     // Clean up each Value in the channel's ArrayList
         //     for (entry.value_ptr.items) |*value| {
-        //         value.deinit(allocator);
+        //         value.deinit();
         //     }
-        //     entry.value_ptr.deinit(allocator);
+        //     entry.value_ptr.deinit();
         // }
-        // self.channel_storage.deinit(allocator);
+        // self.channel_storage.deinit();
     }
 
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
@@ -1041,12 +1041,12 @@ pub const Interpreter = struct {
                         std.debug.print("DEBUG: Calling user function '{s}'\n", .{name});
                         // Evaluate arguments
                         var args = .empty;
-                        defer args.deinit(allocator);
-                        errdefer args.deinit(allocator); // Clean up on error
+                        defer args.deinit();
+                        errdefer args.deinit(); // Clean up on error
                         
                         for (call.arguments.items) |arg_expr| {
                             const arg = try self.evaluateExpression(arg_expr.*);
-                            try args.append(allocator, arg);
+                            try args.append(arg);
                         }
                         
                         return try self.callFunction(func, args.items);
@@ -1130,8 +1130,8 @@ pub const Interpreter = struct {
                         if (std.mem.eql(u8, method.name, member.property)) {
                             // Call the struct method
                             var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
-                            defer method_args.deinit(allocator);
-                            errdefer method_args.deinit(allocator); // Clean up on error
+                            defer method_args.deinit();
+                            errdefer method_args.deinit(); // Clean up on error
                             
                             // First argument is self (the struct instance)
                             try method_args.append(self.allocator, Value{ .Struct = struct_inst });
@@ -1152,8 +1152,8 @@ pub const Interpreter = struct {
             .Interface => |interface_inst| {
                 // Use interface dispatch through vtable
                 var method_args = try std.ArrayList(Value).initCapacity(self.allocator, args.len + 1);
-                defer method_args.deinit(allocator);
-                errdefer method_args.deinit(allocator); // Clean up on error
+                defer method_args.deinit();
+                errdefer method_args.deinit(); // Clean up on error
                 
                 // First argument is self (the underlying struct)
                 try method_args.append(self.allocator, Value{ .Struct = interface_inst.underlying_struct.* });
@@ -1181,7 +1181,7 @@ pub const Interpreter = struct {
     fn executeInterfaceMethod(self: *Interpreter, method_func: *FunctionValue, args: []Value) InterpreterError!Value {
         // Create new environment for method execution
         var method_env = Environment.init(self.allocator, self.environment);
-        defer method_env.deinit(allocator);
+        defer method_env.deinit();
         
         // Bind parameters to arguments
         if (args.len != method_func.parameters.len + 1) { // +1 for 'self'
@@ -1218,7 +1218,7 @@ pub const Interpreter = struct {
     fn executeMethodBody(self: *Interpreter, method: ast.FunctionStatement, args: []Value) InterpreterError!Value {
         // Create new environment for method execution
         var method_env = Environment.init(self.allocator, self.environment);
-        defer method_env.deinit(allocator);
+        defer method_env.deinit();
         
         // First argument is always 'self' (the struct instance)
         if (args.len > 0) {
@@ -1345,12 +1345,12 @@ pub const Interpreter = struct {
         
         // Evaluate function arguments
         var args = .empty;
-        defer args.deinit(allocator);
-        errdefer args.deinit(allocator); // Clean up on error
+        defer args.deinit();
+        errdefer args.deinit(); // Clean up on error
         
         for (arguments) |arg_expr| {
             const arg_value = try self.evaluateExpression(arg_expr);
-            try args.append(allocator, arg_value);
+            try args.append(arg_value);
         }
         
         std.debug.print("DEBUG: Calling generic function '{s}' with {d} arguments\n", 
@@ -1407,7 +1407,7 @@ pub const Interpreter = struct {
     /// Parse comma-separated type arguments
     fn parseTypeArguments(self: *Interpreter, type_args_str: []const u8) ![][]const u8 {
         var type_args = .empty;
-        defer type_args.deinit(allocator);
+        defer type_args.deinit();
         
         var iterator = std.mem.splitScalar(u8, type_args_str, ',');
         while (iterator.next()) |type_arg| {
@@ -1451,7 +1451,7 @@ pub const Interpreter = struct {
         
         // Create type parameter mapping
         var type_substitutions = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer type_substitutions.deinit(allocator);
+        defer type_substitutions.deinit();
         
         for (template_func.declaration.type_parameters.items, 0..) |type_param, i| {
             try type_substitutions.put(type_param.name, type_args[i]);
@@ -1471,7 +1471,7 @@ pub const Interpreter = struct {
         // Clone parameters with type substitution
         for (template_func.declaration.parameters.items) |param| {
             const substituted_type = try self.substituteTypeInParameter(param.param_type, &type_substitutions);
-            try specialized_decl.parameters.append(allocator, ast.Parameter{
+            try specialized_decl.parameters.append(ast.Parameter{
                 .name = param.name,
                 .param_type = substituted_type,
             });
@@ -1501,16 +1501,16 @@ pub const Interpreter = struct {
         self.allocator.free(func.declaration.name);
         
         // Free parameters
-        func.declaration.parameters.deinit(allocator);
+        func.declaration.parameters.deinit();
         
         // Free body statements
         for (func.declaration.body.items) |stmt| {
             self.allocator.destroy(stmt);
         }
-        func.declaration.body.deinit(allocator);
+        func.declaration.body.deinit();
         
         // Free type parameters (should be empty)
-        func.declaration.type_parameters.deinit(allocator);
+        func.declaration.type_parameters.deinit();
         
         std.debug.print("DEBUG: Cleaned up specialized function\n", .{});
     }
@@ -1637,7 +1637,7 @@ pub const Interpreter = struct {
         
         // Create new environment for function execution
         var function_env = Environment.init(self.allocator, func.closure);
-        defer function_env.deinit(allocator);
+        defer function_env.deinit();
         
         // Bind parameters
         if (args.len != func.declaration.parameters.items.len) {
@@ -1665,8 +1665,8 @@ pub const Interpreter = struct {
         
         // Track multiple return values for tuple returns
         var return_values = .empty;
-        defer return_values.deinit(allocator);
-        errdefer return_values.deinit(allocator); // Clean up on error
+        defer return_values.deinit();
+        errdefer return_values.deinit(); // Clean up on error
         
         for (func.declaration.body.items) |stmt| {
             switch (stmt.*) {
@@ -1802,7 +1802,7 @@ pub const Interpreter = struct {
         
         // Use error propagation system to create and handle error
         var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
-        defer error_propagator.deinit(allocator);
+        defer error_propagator.deinit();
         
         const error_ctx = try error_propagator.createYikesError(
             message,
@@ -1828,7 +1828,7 @@ pub const Interpreter = struct {
         
         // Create error propagation system for this fam block
         var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
-        defer error_propagator.deinit(allocator);
+        defer error_propagator.deinit();
         
         // Enter try-catch block
         try error_propagator.enterTryCatchBlock(fam.catch_blocks.items, fam.finally_block);
@@ -2005,7 +2005,7 @@ pub const Interpreter = struct {
                 
                 // Create a new environment for the goroutine
                 var goroutine_env = Environment.init(context.allocator, context.interpreter.environment);
-                defer goroutine_env.deinit(allocator);
+                defer goroutine_env.deinit();
                 
                 const old_env = context.interpreter.environment;
                 context.interpreter.environment = &goroutine_env;
@@ -2085,7 +2085,7 @@ pub const Interpreter = struct {
         for (pattern_switch.patterns.items) |case| {
             // Create new scope for pattern bindings
             var pattern_env = Environment.init(self.allocator, self.environment);
-            defer pattern_env.deinit(allocator);
+            defer pattern_env.deinit();
             
             const old_env = self.environment;
             self.environment = &pattern_env;
@@ -2136,7 +2136,7 @@ pub const Interpreter = struct {
         for (match_expr.cases.items) |case| {
             // Create new scope for pattern bindings
             var pattern_env = Environment.init(self.allocator, self.environment);
-            defer pattern_env.deinit(allocator);
+            defer pattern_env.deinit();
             
             const old_env = self.environment;
             self.environment = &pattern_env;
@@ -2249,7 +2249,7 @@ pub const Interpreter = struct {
         };
         
         // Push onto defer stack (LIFO order)
-        try self.defer_stack.append(allocator, defer_entry);
+        try self.defer_stack.append(defer_entry);
         
         std.debug.print("✅ Defer statement pushed to stack (size: {d})\n", .{self.defer_stack.items.len});
     }
@@ -2306,7 +2306,7 @@ pub const Interpreter = struct {
         
         // Create error propagation system
         var error_propagator = error_prop.ErrorPropagation.init(self.allocator);
-        defer error_propagator.deinit(allocator);
+        defer error_propagator.deinit();
         
         // Evaluate the wrapped expression
         const result = self.evaluateExpression(shook.expression.*) catch |err| {
@@ -2405,11 +2405,11 @@ pub const Interpreter = struct {
     // Enhanced channel simulation methods
     fn storeChannelValue(self: *Interpreter, channel_id: u64, value: Value) InterpreterError!void {
         if (self.channel_storage.getPtr(channel_id)) |channel_list| {
-            try channel_list.append(allocator, value);
+            try channel_list.append(value);
         } else {
             var new_list = .empty;
-            errdefer new_list.deinit(allocator); // Clean up on error
-            try new_list.append(allocator, value);
+            errdefer new_list.deinit(); // Clean up on error
+            try new_list.append(value);
             try self.channel_storage.put(channel_id, new_list);
         }
     }
@@ -2434,11 +2434,11 @@ pub const Interpreter = struct {
     
     fn evaluateTuple(self: *Interpreter, tuple: ast.TupleExpression) InterpreterError!Value {
         var tuple_values = .empty;
-        errdefer tuple_values.deinit(allocator); // Clean up on error
+        errdefer tuple_values.deinit(); // Clean up on error
         
         for (tuple.elements.items) |element_expr| {
             const element_value = try self.evaluateExpression(element_expr.*);
-            try tuple_values.append(allocator, element_value);
+            try tuple_values.append(element_value);
         }
         
         return Value{ .Tuple = tuple_values };
@@ -2446,7 +2446,7 @@ pub const Interpreter = struct {
 
     fn evaluateStringInterpolation(self: *Interpreter, interpolation: ast.StringInterpolationExpression) InterpreterError!Value {
         var result: std.ArrayList(u8) = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         for (interpolation.parts.items) |part| {
             if (part.expression) |expr_ptr| {
@@ -2471,7 +2471,7 @@ test "interpreter basic" {
     const allocator = std.testing.allocator;
     
     var interpreter = Interpreter.init(allocator);
-    defer interpreter.deinit(allocator);
+    defer interpreter.deinit();
     
     // Test basic value operations
     const int_val = Value{ .Integer = 42 };

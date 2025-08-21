@@ -1,0 +1,1 @@
+vibez.spill("🚀 Welcome to the CURSED ecosystem!"); sus contributors normie = 0; sus packages normie = 0; sus downloads normie = 0; vibez.spill("Current stats:"); vibez.spill("Contributors:", contributors); vibez.spill("Packages:", packages); vibez.spill("Downloads:", downloads); vibez.spill("Ready for community growth!")

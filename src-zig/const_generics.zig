@@ -52,12 +52,12 @@ pub const ConstGenericValue = union(ConstGenericKind) {
             .String => |val| try writer.print("\"{}\"", .{val}),
             .Float => |val| try writer.print("{d}", .{val}),
             .Array => |arr| {
-                try writer.print("[");
+                try writer.print("[", .{});
                 for (arr.elements, 0..) |elem, i| {
-                    if (i > 0) try writer.print(", ");
+                    if (i > 0) try writer.print(", ", .{});
                     try elem.format("", .{}, writer);
                 }
-                try writer.print("]");
+                try writer.print("]", .{});
             },
         }
     }
@@ -76,7 +76,7 @@ pub const ConstGenericBounds = struct {
     must_be_power_of_two: bool = false,
     max_array_length: ?usize = null,
     
-    pub fn init(allocator: Allocator) ConstGenericBounds {
+    pub fn init() ConstGenericBounds {
         return ConstGenericBounds{
             .allowed_values = .empty,
         };
@@ -84,7 +84,7 @@ pub const ConstGenericBounds = struct {
     
     pub fn deinit(self: *ConstGenericBounds) void {
         if (self.allowed_values) |*values| {
-            values.deinit(allocator);
+            values.deinit();
         }
     }
     
@@ -202,7 +202,7 @@ pub const ConstGenericParam = struct {
     }
     
     pub fn deinit(self: *ConstGenericParam) void {
-        self.bounds.deinit(allocator);
+        self.bounds.deinit();
     }
     
     pub fn validate(self: ConstGenericParam, value: ConstGenericValue) ConstGenericError!void {
@@ -242,7 +242,7 @@ pub const ConstGenericInstantiation = struct {
     parameters: HashMap([]const u8, ConstGenericParam, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     values: HashMap([]const u8, ConstGenericValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
-    pub fn init(allocator: Allocator) ConstGenericInstantiation {
+    pub fn init() ConstGenericInstantiation {
         return ConstGenericInstantiation{
             .allocator = allocator,
             .parameters = HashMap([]const u8, ConstGenericParam, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -254,10 +254,10 @@ pub const ConstGenericInstantiation = struct {
         var param_iter = self.parameters.iterator();
         while (param_iter.next()) |entry| {
             var param = entry.value_ptr;
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
-        self.values.deinit(allocator);
+        self.parameters.deinit();
+        self.values.deinit();
     }
     
     /// Add a const generic parameter with bounds
@@ -557,7 +557,7 @@ pub const ConstGenericEvaluator = struct {
         const bounds = ConstGenericBounds.init(self.allocator);
         defer {
             var mut_bounds = bounds;
-            mut_bounds.deinit(allocator);
+            mut_bounds.deinit();
         }
         
         return switch (left) {
@@ -648,11 +648,11 @@ pub const ConstGenericLLVMIntegration = struct {
             },
             .Array => |arr_val| {
                 var llvm_elements = .empty;
-                defer llvm_elements.deinit(allocator);
+                defer llvm_elements.deinit();
                 
                 for (arr_val.elements) |elem| {
                     const llvm_elem = try self.generateLLVMConstant(elem);
-                    try llvm_elements.append(allocator, llvm_elem);
+                    try llvm_elements.append(llvm_elem);
                 }
                 
                 const element_type = try self.constGenericKindToLLVMType(arr_val.element_type);
@@ -737,7 +737,7 @@ pub const ConstGenericsManager = struct {
     }
     
     pub fn deinit(self: *ConstGenericsManager) void {
-        self.instantiation.deinit(allocator);
+        self.instantiation.deinit();
     }
     
     /// Process const generic declaration with bounds checking
@@ -836,11 +836,11 @@ pub const ConstGenericsManager = struct {
 // Tests
 test "const generic bounds validation" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const allocator = arena.allocator();
     
     var bounds = ConstGenericBounds.init(allocator);
-    defer bounds.deinit(allocator);
+    defer bounds.deinit();
     
     bounds.min_value = ConstGenericValue{ .Integer = 0 };
     bounds.max_value = ConstGenericValue{ .Integer = 100 };
@@ -857,11 +857,11 @@ test "const generic bounds validation" {
 
 test "const generic expression evaluation" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit(allocator);
+    defer arena.deinit();
     const allocator = arena.allocator();
     
     var instantiation = ConstGenericInstantiation.init(allocator);
-    defer instantiation.deinit(allocator);
+    defer instantiation.deinit();
     
     // Add a parameter
     const param = ConstGenericParam.init(allocator, "N", .Integer);

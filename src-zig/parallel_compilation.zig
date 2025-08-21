@@ -81,13 +81,13 @@ pub const ParallelCompiler = struct {
         }
         
         // Cleanup work queues
-        self.lexing_queue.deinit(allocator);
-        self.parsing_queue.deinit(allocator);
-        self.type_checking_queue.deinit(allocator);
-        self.codegen_queue.deinit(allocator);
+        self.lexing_queue.deinit();
+        self.parsing_queue.deinit();
+        self.type_checking_queue.deinit();
+        self.codegen_queue.deinit();
         
-        self.worker_threads.deinit(allocator);
-        self.thread_pool.deinit(allocator);
+        self.worker_threads.deinit();
+        self.thread_pool.deinit();
     }
     
     /// Compile multiple files in parallel
@@ -575,14 +575,14 @@ fn WorkQueue(comptime T: type) type {
         }
         
         fn deinit(self: *Self) void {
-            self.items.deinit(allocator);
+            self.items.deinit();
         }
         
         fn enqueue(self: *Self, item: T) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
             
-            try self.items.append(allocator, item);
+            try self.items.append(item);
             self.not_empty.signal();
         }
         
@@ -631,7 +631,7 @@ const CompilationStage = struct {
     fn addResult(self: *CompilationStage, result: anytype) !void {
         self.results_mutex.lock();
         defer self.results_mutex.unlock();
-        try self.results.append(allocator, @as(anyopaque, result));
+        try self.results.append(@as(anyopaque, result));
     }
     
     fn getResults(self: *CompilationStage) ![]anyopaque {

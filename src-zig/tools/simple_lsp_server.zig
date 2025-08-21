@@ -75,7 +75,7 @@ const SimpleLSPHandler = struct {
     documents: std.StringHashMap(DocumentState),
     initialized: bool,
     
-    pub fn init(allocator: Allocator) SimpleLSPHandler {
+    pub fn init() SimpleLSPHandler {
         return SimpleLSPHandler{
             .allocator = allocator,
             .documents = std.StringHashMap(DocumentState).init(allocator),
@@ -86,9 +86,9 @@ const SimpleLSPHandler = struct {
     pub fn deinit(self: *SimpleLSPHandler) void {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.documents.deinit(allocator);
+        self.documents.deinit();
     }
     
     pub fn handleMessage(self: *SimpleLSPHandler, message: []const u8) !?[]u8 {
@@ -148,7 +148,7 @@ const SimpleLSPHandler = struct {
         _ = message;
         
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         try result.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[");
         
@@ -199,7 +199,7 @@ const SimpleLSPHandler = struct {
     fn sendDiagnostics(self: *SimpleLSPHandler, uri: []const u8, content: []const u8) !void {
         // Simple syntax check - look for basic errors
         var diagnostics = ArrayList(u8).init(self.allocator);
-        defer diagnostics.deinit(allocator);
+        defer diagnostics.deinit();
         
         try diagnostics.writer(&[_]u8{}).print("Content-Length: 200\r\n\r\n{{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{{\"uri\":\"{s}\",\"diagnostics\":[", .{uri});
         
@@ -255,18 +255,18 @@ fn extractJsonString(json_text: []const u8, key: []const u8) ?[]const u8 {
 // Main LSP Server
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var handler = SimpleLSPHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     
     std.log.info("CURSED Simple Language Server starting...", .{});
     
     var stdin_buffer: [4096]u8 = undefined;
     const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
     
     // Main LSP loop
     while (true) {
@@ -303,11 +303,11 @@ pub fn main() !void {
 // Test function for development
 pub fn testSimpleLSP() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     var handler = SimpleLSPHandler.init(allocator);
-    defer handler.deinit(allocator);
+    defer handler.deinit();
     
     // Test initialize
     const init_message = 

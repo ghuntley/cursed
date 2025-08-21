@@ -67,7 +67,7 @@ pub const PerformanceOptimizationSuite = struct {
         }
         
         pub fn printMetrics(self: *const PerformanceMetrics) void {
-            std.debug.print("📊 Performance Metrics:\n");
+            std.debug.print("📊 Performance Metrics:\n", .{});
             print("  Compilation time: {} ms\n", .{self.compilation_time_ms});
             print("  Memory usage: {:.2} MB\n", .{@as(f64, @floatFromInt(self.memory_usage_bytes)) / 1024.0 / 1024.0});
             print("  Peak memory: {:.2} MB\n", .{@as(f64, @floatFromInt(self.peak_memory_bytes)) / 1024.0 / 1024.0});
@@ -119,10 +119,10 @@ pub const PerformanceOptimizationSuite = struct {
         }
         
         pub fn deinit(self: *PGOData) void {
-            self.function_call_counts.deinit(allocator);
-            self.branch_probabilities.deinit(allocator);
-            self.hot_functions.deinit(allocator);
-            self.cold_functions.deinit(allocator);
+            self.function_call_counts.deinit();
+            self.branch_probabilities.deinit();
+            self.hot_functions.deinit();
+            self.cold_functions.deinit();
         }
     };
     
@@ -179,7 +179,7 @@ pub const PerformanceOptimizationSuite = struct {
             };
         }
         
-        print("🚀 Performance Optimization Suite initialized\n");
+        print("🚀 Performance Optimization Suite initialized\n", .{});
         print("  PGO: {}, LTO: {}, Profiling: {}\n", .{ suite.pgo_enabled, suite.lto_enabled, suite.profiling_enabled });
         print("  Hot path optimization: {}, Memory pooling: {}\n", .{ suite.hot_path_optimization, suite.memory_pooling });
         print("  Concurrency optimization: {}, Compile-time optimization: {}\n", .{ suite.concurrency_optimization, suite.compile_time_optimization });
@@ -189,11 +189,11 @@ pub const PerformanceOptimizationSuite = struct {
     
     /// Deinitialize and cleanup resources
     pub fn deinit(self: *Self) void {
-        self.string_pool.deinit(allocator);
-        self.ast_node_pool.deinit(allocator);
-        self.token_pool.deinit(allocator);
-        self.hot_path_cache.deinit(allocator);
-        self.pgo_data.deinit(allocator);
+        self.string_pool.deinit();
+        self.ast_node_pool.deinit();
+        self.token_pool.deinit();
+        self.hot_path_cache.deinit();
+        self.pgo_data.deinit();
         
         // Save PGO data for future runs
         if (self.pgo_enabled) {
@@ -211,7 +211,7 @@ pub const PerformanceOptimizationSuite = struct {
         // Pre-allocate pools based on typical CURSED program sizes
         _ = self; // Placeholder - pools are initialized in init()
         
-        print("🏊 Memory pools initialized for optimized allocation\n");
+        print("🏊 Memory pools initialized for optimized allocation\n", .{});
     }
     
     /// Apply comprehensive optimizations to compilation process
@@ -270,7 +270,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         
         // Implementation for PGO optimizations
-        print("🎯 Applying profile-guided optimizations...\n");
+        print("🎯 Applying profile-guided optimizations...\n", .{});
         
         // TODO: Implement actual PGO logic
         result.optimization_passes_applied += 1;
@@ -280,7 +280,7 @@ pub const PerformanceOptimizationSuite = struct {
     fn optimizeHotPaths(self: *Self, result: *OptimizationResult) !void {
         _ = self;
         
-        print("🔥 Optimizing hot code paths...\n");
+        print("🔥 Optimizing hot code paths...\n", .{});
         
         // TODO: Implement hot path optimization
         result.optimization_passes_applied += 1;
@@ -290,7 +290,7 @@ pub const PerformanceOptimizationSuite = struct {
     fn optimizeMemoryAllocations(self: *Self, result: *OptimizationResult) !void {
         _ = self;
         
-        print("🧠 Optimizing memory allocations...\n");
+        print("🧠 Optimizing memory allocations...\n", .{});
         
         // TODO: Implement memory optimization
         result.optimization_passes_applied += 1;
@@ -300,7 +300,7 @@ pub const PerformanceOptimizationSuite = struct {
     fn optimizeConcurrency(self: *Self, result: *OptimizationResult) !void {
         _ = self;
         
-        print("⚡ Optimizing concurrency patterns...\n");
+        print("⚡ Optimizing concurrency patterns...\n", .{});
         
         // TODO: Implement concurrency optimization
         result.optimization_passes_applied += 1;
@@ -310,7 +310,7 @@ pub const PerformanceOptimizationSuite = struct {
     fn optimizeCompileTime(self: *Self, result: *OptimizationResult) !void {
         _ = self;
         
-        print("⏱️ Optimizing compile-time performance...\n");
+        print("⏱️ Optimizing compile-time performance...\n", .{});
         
         // TODO: Implement compile-time optimization
         result.optimization_passes_applied += 1;
@@ -320,7 +320,7 @@ pub const PerformanceOptimizationSuite = struct {
     fn applyLLVMOptimizations(self: *Self, result: *OptimizationResult) !void {
         _ = self;
         
-        print("🛠️ Applying LLVM optimizations and LTO...\n");
+        print("🛠️ Applying LLVM optimizations and LTO...\n", .{});
         
         // TODO: Implement LLVM optimization passes
         result.optimization_passes_applied += 1;
@@ -331,7 +331,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         
         // TODO: Implement PGO data loading from file
-        print("📁 Loading profile-guided optimization data...\n");
+        print("📁 Loading profile-guided optimization data...\n", .{});
     }
     
     /// Save PGO data for future compilation runs
@@ -339,7 +339,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         
         // TODO: Implement PGO data saving to file
-        print("💾 Saving profile-guided optimization data...\n");
+        print("💾 Saving profile-guided optimization data...\n", .{});
     }
     
     /// Start performance profiling for a compilation session
@@ -347,25 +347,25 @@ pub const PerformanceOptimizationSuite = struct {
         if (!self.profiling_enabled) return;
         
         self.metrics.reset();
-        print("🔍 Starting performance profiling...\n");
+        print("🔍 Starting performance profiling...\n", .{});
     }
     
     /// Stop performance profiling and generate report
     pub fn stopProfiling(self: *Self) void {
         if (!self.profiling_enabled) return;
         
-        print("📊 Performance profiling completed\n");
+        print("📊 Performance profiling completed\n", .{});
         self.metrics.printMetrics();
     }
     
     /// Generate comprehensive performance report
     pub fn printPerformanceReport(self: *const Self) void {
-        print("\n🏆 CURSED Compiler Performance Optimization Report\n");
-        print("=================================================\n");
+        print("\n🏆 CURSED Compiler Performance Optimization Report\n", .{});
+        print("=================================================\n", .{});
         
         self.metrics.printMetrics();
         
-        print("\n📈 Compilation Statistics:\n");
+        print("\n📈 Compilation Statistics:\n", .{});
         print("  Files compiled: {}\n", .{self.compilation_stats.files_compiled});
         print("  Lines of code: {}\n", .{self.compilation_stats.lines_of_code});
         print("  AST nodes created: {}\n", .{self.compilation_stats.ast_nodes_created});
@@ -374,7 +374,7 @@ pub const PerformanceOptimizationSuite = struct {
         print("  Cache misses: {}\n", .{self.compilation_stats.cache_misses});
         print("  GC collections: {}\n", .{self.compilation_stats.gc_collections});
         
-        print("\n🎯 Optimization Status:\n");
+        print("\n🎯 Optimization Status:\n", .{});
         print("  PGO: {s}\n", .{if (self.pgo_enabled) "✅ Enabled" else "❌ Disabled"});
         print("  LTO: {s}\n", .{if (self.lto_enabled) "✅ Enabled" else "❌ Disabled"});
         print("  Hot path optimization: {s}\n", .{if (self.hot_path_optimization) "✅ Enabled" else "❌ Disabled"});
@@ -382,23 +382,23 @@ pub const PerformanceOptimizationSuite = struct {
         print("  Concurrency optimization: {s}\n", .{if (self.concurrency_optimization) "✅ Enabled" else "❌ Disabled"});
         print("  Compile-time optimization: {s}\n", .{if (self.compile_time_optimization) "✅ Enabled" else "❌ Disabled"});
         
-        print("\n🚀 Performance Recommendations:\n");
+        print("\n🚀 Performance Recommendations:\n", .{});
         if (self.metrics.cache_hit_rate < 0.8) {
-            print("  • Consider increasing cache sizes for better hit rates\n");
+            print("  • Consider increasing cache sizes for better hit rates\n", .{});
         }
         if (self.metrics.compilation_time_ms > 5000) {
-            print("  • Enable incremental compilation for faster builds\n");
+            print("  • Enable incremental compilation for faster builds\n", .{});
         }
         if (self.metrics.peak_memory_bytes > 1024 * 1024 * 1024) { // 1GB
-            print("  • Consider enabling memory pooling to reduce allocations\n");
+            print("  • Consider enabling memory pooling to reduce allocations\n", .{});
         }
         
-        print("\n✨ Optimization suite completed successfully\n");
+        print("\n✨ Optimization suite completed successfully\n", .{});
     }
     
     /// Run comprehensive benchmark suite
     pub fn runBenchmarkSuite(self: *Self) !BenchmarkResults {
-        print("🏃 Running comprehensive benchmark suite...\n");
+        print("🏃 Running comprehensive benchmark suite...\n", .{});
         
         var results = BenchmarkResults.init(self.allocator);
         
@@ -408,7 +408,7 @@ pub const PerformanceOptimizationSuite = struct {
         try self.runConcurrencyBenchmarks(&results);
         try self.runOptimizationBenchmarks(&results);
         
-        print("✅ Benchmark suite completed\n");
+        print("✅ Benchmark suite completed\n", .{});
         results.printResults();
         
         return results;
@@ -419,7 +419,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         _ = results;
         
-        print("  📝 Running compiler benchmarks...\n");
+        print("  📝 Running compiler benchmarks...\n", .{});
         // TODO: Implement compiler benchmarks
     }
     
@@ -428,7 +428,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         _ = results;
         
-        print("  🧠 Running memory benchmarks...\n");
+        print("  🧠 Running memory benchmarks...\n", .{});
         // TODO: Implement memory benchmarks
     }
     
@@ -437,7 +437,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         _ = results;
         
-        print("  ⚡ Running concurrency benchmarks...\n");
+        print("  ⚡ Running concurrency benchmarks...\n", .{});
         // TODO: Implement concurrency benchmarks
     }
     
@@ -446,7 +446,7 @@ pub const PerformanceOptimizationSuite = struct {
         _ = self;
         _ = results;
         
-        print("  🎯 Running optimization benchmarks...\n");
+        print("  🎯 Running optimization benchmarks...\n", .{});
         // TODO: Implement optimization benchmarks
     }
 };
@@ -523,7 +523,7 @@ pub const BenchmarkResults = struct {
     }
     
     pub fn printResults(self: *const BenchmarkResults) void {
-        std.debug.print("\n📊 Benchmark Results Summary:\n");
+        std.debug.print("\n📊 Benchmark Results Summary:\n", .{});
         print("  Compiler benchmarks: {} ms\n", .{self.compiler_benchmark_ms});
         print("  Memory benchmarks: {} ms\n", .{self.memory_benchmark_ms});
         print("  Concurrency benchmarks: {} ms\n", .{self.concurrency_benchmark_ms});

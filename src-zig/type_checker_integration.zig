@@ -24,7 +24,7 @@ const TypeVariable = struct {
     }
     
     pub fn deinit(self: *TypeVariable) void {
-        self.constraints.deinit(allocator);
+        self.constraints.deinit();
     }
 };
 
@@ -62,7 +62,7 @@ const ConstraintResolutionResult = struct {
     success: bool,
     
     pub fn deinit(self: *ConstraintResolutionResult) void {
-        self.resolved_constraints.deinit(allocator);
+        self.resolved_constraints.deinit();
     }
 };
 
@@ -78,7 +78,7 @@ pub const TypeCheckerIntegration = struct {
     }
     
     pub fn deinit(self: *TypeCheckerIntegration) void {
-        self.type_checker.deinit(allocator);
+        self.type_checker.deinit();
     }
     
     /// Main entry point for type checking a CURSED program
@@ -89,7 +89,7 @@ pub const TypeCheckerIntegration = struct {
         var error_details = .empty;
         
         for (errors) |error_msg| {
-            try error_details.append(allocator, TypeErrorDetail{
+            try error_details.append(TypeErrorDetail{
                 .kind = error_msg.kind,
                 .message = error_msg.message,
                 .line = error_msg.line,
@@ -157,7 +157,7 @@ pub const TypeCheckerIntegration = struct {
         
         // Phase 1: Collect all type variables and their constraints
         var type_variables = std.HashMap([]const u8, TypeVariable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer type_variables.deinit(allocator);
+        defer type_variables.deinit();
         
         // Phase 2: Build constraint graph
         var changed = true;
@@ -177,7 +177,7 @@ pub const TypeCheckerIntegration = struct {
                     // Try to resolve based on constraints
                     if (self.tryResolveTypeVariable(type_var)) {
                         changed = true;
-                        try resolved_constraints.append(allocator, ResolvedConstraint{
+                        try resolved_constraints.append(ResolvedConstraint{
                             .variable_name = var_name,
                             .resolved_type = type_var.resolved_type.?,
                             .constraint_source = .Inference,
@@ -245,7 +245,7 @@ pub const TypeCheckerIntegration = struct {
                         _ = struct_info;
                         
                         if (!found) {
-                            try missing_methods.append(allocator, required_method.name);
+                            try missing_methods.append(required_method.name);
                         }
                     }
                     
@@ -309,7 +309,7 @@ pub const TypeCheckerIntegration = struct {
         
         // Extract type parameters from function signature
         // This is a simplified implementation
-        try type_parameters.append(allocator, TypeParameterInfo{
+        try type_parameters.append(TypeParameterInfo{
             .name = "T", // Placeholder
             .constraints = .empty,
             .default_type = null,
@@ -389,7 +389,7 @@ pub const TypeCheckerIntegration = struct {
         
         try cursed_type.format("", .{}, writer);
         
-        return buffer.toOwnedSlice(allocator);
+        return buffer.toOwnedSlice();
     }
 };
 
@@ -401,8 +401,8 @@ pub const TypeCheckResult = struct {
     warnings: ArrayList(TypeErrorDetail),
     
     pub fn deinit(self: *TypeCheckResult) void {
-        self.errors.deinit(allocator);
-        self.warnings.deinit(allocator);
+        self.errors.deinit();
+        self.warnings.deinit();
     }
 };
 
@@ -435,9 +435,9 @@ pub const GenericCheckResult = struct {
     
     pub fn deinit(self: *GenericCheckResult) void {
         for (self.type_parameters.items) |*param| {
-            param.constraints.deinit(allocator);
+            param.constraints.deinit();
         }
-        self.type_parameters.deinit(allocator);
+        self.type_parameters.deinit();
     }
 };
 
@@ -461,7 +461,7 @@ pub const ConstraintResolutionResult = struct {
     success: bool,
     
     pub fn deinit(self: *ConstraintResolutionResult) void {
-        self.resolved_constraints.deinit(allocator);
+        self.resolved_constraints.deinit();
     }
 };
 
@@ -476,8 +476,8 @@ pub const InterfaceCheckResult = struct {
     signature_mismatches: ArrayList(SignatureMismatch),
     
     pub fn deinit(self: *InterfaceCheckResult) void {
-        self.missing_methods.deinit(allocator);
-        self.signature_mismatches.deinit(allocator);
+        self.missing_methods.deinit();
+        self.signature_mismatches.deinit();
     }
 };
 
@@ -500,7 +500,7 @@ pub const SignatureMismatch = struct {
 /// Create a type checker instance and check a program
 pub fn checkCursedProgram(allocator: Allocator, program: *const ast.Program) !TypeCheckResult {
     var integration = try TypeCheckerIntegration.init(allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     return integration.checkProgram(program);
 }
@@ -508,7 +508,7 @@ pub fn checkCursedProgram(allocator: Allocator, program: *const ast.Program) !Ty
 /// Quick type checking for a single expression (useful for REPL)
 pub fn inferExpressionType(allocator: Allocator, expr: *const ast.Expression) !ExpressionTypeResult {
     var integration = try TypeCheckerIntegration.init(allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     return integration.checkExpression(expr);
 }
@@ -516,7 +516,7 @@ pub fn inferExpressionType(allocator: Allocator, expr: *const ast.Expression) !E
 /// Validate interface implementation
 pub fn validateInterfaceImplementation(allocator: Allocator, struct_name: []const u8, interface_name: []const u8) !bool {
     var integration = try TypeCheckerIntegration.init(allocator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     return try integration.validateInterfaceImpl(struct_name, interface_name);
 }
@@ -550,5 +550,5 @@ pub fn formatTypeErrors(errors: []const TypeErrorDetail, allocator: Allocator) !
         }
     }
     
-    return buffer.toOwnedSlice(allocator);
+    return buffer.toOwnedSlice();
 }

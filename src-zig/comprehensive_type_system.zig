@@ -244,7 +244,7 @@ pub const TypeEnvironment = struct {
         variables: HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
         types: HashMap([]const u8, CursedType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
         
-        pub fn init(allocator: Allocator) Scope {
+        pub fn init() Scope {
             return Scope{
                 .variables = HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .types = HashMap([]const u8, CursedType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -252,8 +252,8 @@ pub const TypeEnvironment = struct {
         }
         
         pub fn deinit(self: *Scope) void {
-            self.variables.deinit(allocator);
-            self.types.deinit(allocator);
+            self.variables.deinit();
+            self.types.deinit();
         }
     };
     
@@ -286,11 +286,11 @@ pub const TypeEnvironment = struct {
     
     pub fn deinit(self: *TypeEnvironment) void {
         for (self.scopes.items) |*scope| {
-            scope.deinit(allocator);
+            scope.deinit();
         }
-        self.scopes.deinit(allocator);
-        self.type_vars.deinit(allocator);
-        self.constraints.deinit(allocator);
+        self.scopes.deinit();
+        self.type_vars.deinit();
+        self.constraints.deinit();
     }
     
     pub fn enterScope(self: *TypeEnvironment) !void {
@@ -300,7 +300,7 @@ pub const TypeEnvironment = struct {
     pub fn exitScope(self: *TypeEnvironment) void {
         if (self.scopes.items.len > 1) {
             var scope = self.scopes.pop();
-            scope.deinit(allocator);
+            scope.deinit();
         }
     }
     
@@ -371,7 +371,7 @@ pub const TypeEnvironment = struct {
     // Occurs check to prevent infinite types
     fn occursCheck(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType) bool {
         var visited = std.AutoHashMap(u64, void).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         return self.occursCheckRecursive(var_id, cursed_type, &visited);
     }
     
@@ -492,7 +492,7 @@ pub const TypeEnvironment = struct {
         const MAX_RESOLUTION_DEPTH = 100;
         var current_type = cursed_type;
         var visited = std.AutoHashMap(u32, void).init(self.allocator);
-        defer visited.deinit(allocator);
+        defer visited.deinit();
         var depth: u32 = 0;
         
         while (depth < MAX_RESOLUTION_DEPTH) {
@@ -526,7 +526,7 @@ pub const TypeEnvironment = struct {
     // Comprehensive validation before codegen
     pub fn validateAllTypesResolved(self: *TypeEnvironment, ast_node: *ast.ASTNode) !void {
         var unresolved_vars: std.ArrayList(u32) = .empty;
-        defer unresolved_vars.deinit(allocator);
+        defer unresolved_vars.deinit();
         
         self.collectUnresolvedTypeVars(ast_node, &unresolved_vars);
         
@@ -605,7 +605,7 @@ pub const TypeEnvironment = struct {
         const resolved = self.resolveTypeRecursive(cursed_type);
         switch (resolved) {
             .Unknown => |var_id| {
-                unresolved.append(allocator, var_id) catch {};
+                unresolved.append(var_id) catch {};
             },
             .Array => |arr| {
                 self.collectUnresolvedFromType(arr.element_type.*, unresolved);
@@ -882,7 +882,7 @@ pub const TypeInferenceEngine = struct {
     }
     
     pub fn deinit(self: *TypeInferenceEngine) void {
-        self.unification_constraints.deinit(allocator);
+        self.unification_constraints.deinit();
     }
     
     /// Infer type of an expression
@@ -1633,9 +1633,9 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     pub fn deinit(self: *ComprehensiveTypeChecker) void {
-        self.environment.deinit(allocator);
-        self.inference_engine.deinit(allocator);
-        self.error_messages.deinit(allocator);
+        self.environment.deinit();
+        self.inference_engine.deinit();
+        self.error_messages.deinit();
     }
     
     pub fn checkProgram(self: *ComprehensiveTypeChecker, program: *const ast.Program) !bool {
@@ -1707,7 +1707,7 @@ pub const ComprehensiveTypeChecker = struct {
         
         // Add parameters to scope
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         for (func_decl.parameters.items) |param| {
             const param_type = try self.inference_engine.astTypeToCursedType(param.param_type);
@@ -1780,7 +1780,7 @@ pub const ComprehensiveTypeChecker = struct {
         for (interface_decl.methods.items) |method| {
             var param_types = .empty;
             for (method.parameters.items) |param| {
-                try param_types.append(allocator, try self.inference_engine.astTypeToCursedType(param.param_type));
+                try param_types.append(try self.inference_engine.astTypeToCursedType(param.param_type));
             }
             
             const return_type = if (method.return_type) |ret| 

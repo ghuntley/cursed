@@ -214,22 +214,22 @@ pub const JITExecutionEngine = struct {
     }
 
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.orc_jit.deinit(allocator);
+        self.orc_jit.deinit();
         
         var func_iter = self.functions.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.functions.deinit(allocator);
+        self.functions.deinit();
         
         var sig_iter = self.function_signatures.iterator();
         while (sig_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.function_signatures.deinit(allocator);
+        self.function_signatures.deinit();
         
-        self.hot_functions.deinit(allocator);
-        self.interpreter_env.deinit(allocator);
+        self.hot_functions.deinit();
+        self.interpreter_env.deinit();
     }
 
     /// Register a function for JIT compilation
@@ -303,7 +303,7 @@ pub const JITExecutionEngine = struct {
     fn interpretFunction(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
         // Create local execution context
         var local_vars = std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer local_vars.deinit(allocator);
+        defer local_vars.deinit();
         
         // Handle built-in functions
         if (std.mem.eql(u8, jit_func.name, "spill")) {
@@ -320,7 +320,7 @@ pub const JITExecutionEngine = struct {
     fn evaluateUserDefinedFunction(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value, local_vars: *std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !interpreter.Value {
         // Create function-local environment  
         var func_env = interpreter.Environment.init(self.allocator, &self.interpreter_env);
-        defer func_env.deinit(allocator);
+        defer func_env.deinit();
         
         // Bind function parameters to arguments
         if (self.function_signatures.get(jit_func.name)) |signature| {
@@ -1150,7 +1150,7 @@ pub const JITExecutionEngine = struct {
                     .optimization_priority = @intFromFloat(hotness_score),
                 };
                 
-                try self.hot_functions.append(allocator, hot_profile);
+                try self.hot_functions.append(hot_profile);
             }
         }
         
@@ -1223,7 +1223,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     print("==============================\n", .{});
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Register test functions with signatures
     var add_params = try allocator.alloc([]const u8, 2);

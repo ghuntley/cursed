@@ -88,8 +88,8 @@ pub const WorkingCodeGen = struct {
     }
 
     pub fn deinit(self: *WorkingCodeGen) void {
-        self.functions.deinit(allocator);
-        self.variables.deinit(allocator);
+        self.functions.deinit();
+        self.variables.deinit();
         
         if (self.builder != null) c.LLVMDisposeBuilder(self.builder);
         if (self.module != null) c.LLVMDisposeModule(self.module);
@@ -160,7 +160,7 @@ pub const WorkingCodeGen = struct {
             if (error_str.len > 0) {
                 std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
             } else {
-                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n");
+                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n", .{});
             }
             return CodeGenError.LLVMError;
         }
@@ -196,7 +196,7 @@ pub const WorkingCodeGen = struct {
             if (error_str.len > 0) {
                 std.debug.print("❌ CRITICAL: LLVM module verification failed: {s}\n", .{error_str});
             } else {
-                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n");
+                std.debug.print("❌ CRITICAL: LLVM module verification failed with unknown error\n", .{});
             }
             return CodeGenError.LLVMError;
         }
@@ -295,12 +295,12 @@ pub const WorkingCodeGen = struct {
     fn generateFunction(self: *WorkingCodeGen, func: ast.FunctionStatement) !void {
         // Determine parameter types
         var param_types = .empty;
-        defer param_types.deinit(allocator);
+        defer param_types.deinit();
         
         if (func.parameters) |params| {
             for (params.items) |param| {
                 const param_type = try self.getCursedTypeToLLVM(param.param_type);
-                try param_types.append(allocator, param_type);
+                try param_types.append(param_type);
             }
         }
         
@@ -365,7 +365,7 @@ pub const WorkingCodeGen = struct {
         
         // Restore context
         self.current_function = old_function;
-        self.variables.deinit(allocator);
+        self.variables.deinit();
         self.variables = old_variables;
     }
 
@@ -584,11 +584,11 @@ pub const WorkingCodeGen = struct {
                 // Regular function call
                 if (self.functions.get(name)) |function| {
                     var args = .empty;
-                    defer args.deinit(allocator);
+                    defer args.deinit();
                     
                     for (call.arguments.items) |arg_expr| {
                         const arg = try self.generateExpression(arg_expr);
-                        try args.append(allocator, arg);
+                        try args.append(arg);
                     }
                     
                     return c.LLVMBuildCall2(
@@ -854,7 +854,7 @@ pub const WorkingCodeGen = struct {
     pub fn writeExecutable(self: *WorkingCodeGen, output_path: []const u8) !void {
         // First write IR to temporary file
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit(allocator);
+        defer arena.deinit();
         const temp_allocator = arena.allocator();
         
         const ir_file = try std.fmt.allocPrint(temp_allocator, "{s}.ll", .{output_path});
@@ -1027,7 +1027,7 @@ pub const WorkingCodeGen = struct {
         
         // Initialize channel with make_chan call (simplified)
         const malloc_func = self.functions.get("malloc") orelse {
-            std.debug.print("malloc function not found\n");
+            std.debug.print("malloc function not found\n", .{});
             return CodeGenError.UndefinedSymbol;
         };
         
@@ -1057,7 +1057,7 @@ pub const WorkingCodeGen = struct {
         
         // Create blocks for each case and default/exit
         var case_blocks = .empty;
-        defer case_blocks.deinit(allocator);
+        defer case_blocks.deinit();
         
         for (select_stmt.cases.items, 0..) |_, i| {
             const case_name = try std.fmt.allocPrint(self.allocator, "select_case_{d}", .{i});
@@ -1094,7 +1094,7 @@ pub const WorkingCodeGen = struct {
                     _ = try self.generateExpression(send.value);
                     
                     // Call channel send function (simplified)
-                    std.debug.print("Generated channel send operation\n");
+                    std.debug.print("Generated channel send operation\n", .{});
                 },
                 .Receive => |recv| {
                     // Generate channel receive operation
@@ -1104,7 +1104,7 @@ pub const WorkingCodeGen = struct {
                         try self.variables.put(var_name, var_name);
                     }
                     
-                    std.debug.print("Generated channel receive operation\n");
+                    std.debug.print("Generated channel receive operation\n", .{});
                 },
             }
             
@@ -1139,7 +1139,7 @@ pub fn testWorkingCodegen() !void {
     const allocator = std.heap.page_allocator;
     
     var codegen = try WorkingCodeGen.init(allocator);
-    defer codegen.deinit(allocator);
+    defer codegen.deinit();
     
     const source = 
         \\slay main_character() {

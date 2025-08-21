@@ -1072,7 +1072,7 @@ pub const ActorSystem = struct {
                 if (self.messages.items.len >= self.capacity) {
                     return error.MailboxFull;
                 }
-                try self.messages.append(allocator, message);
+                try self.messages.append(message);
             }
             
             pub fn receiveMessage(self: *Mailbox) ?Message {
@@ -1168,7 +1168,7 @@ pub const ActorSystem = struct {
         };
         
         pub fn dispatchMessage(self: *MessageDispatcher, message: Message) !void {
-            try self.dispatch_queue.append(allocator, message);
+            try self.dispatch_queue.append(message);
         }
     };
     

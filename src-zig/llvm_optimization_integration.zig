@@ -74,7 +74,7 @@ pub const LLVMOptimizationIntegration = struct {
             LiveRangeOptimal,
         };
         
-        pub fn init(allocator: Allocator) RegisterAllocationOptimizer {
+        pub fn init() RegisterAllocationOptimizer {
             return RegisterAllocationOptimizer{
                 .virtual_registers = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .register_interference = HashMap(u32, ArrayList(u32), std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -88,13 +88,13 @@ pub const LLVMOptimizationIntegration = struct {
             while (iter.next()) |entry| {
                 self.allocator.free(entry.key_ptr.*);
             }
-            self.virtual_registers.deinit(allocator);
+            self.virtual_registers.deinit();
             
             var interference_iter = self.register_interference.iterator();
             while (interference_iter.next()) |entry| {
-                entry.value_ptr.deinit(allocator);
+                entry.value_ptr.deinit();
             }
-            self.register_interference.deinit(allocator);
+            self.register_interference.deinit();
         }
         
         pub fn allocateRegister(self: *RegisterAllocationOptimizer, variable_name: []const u8) !u32 {
@@ -168,7 +168,7 @@ pub const LLVMOptimizationIntegration = struct {
                 self.allocator.free(entry.key_ptr.*);
                 self.allocator.free(entry.value_ptr.function_name);
             }
-            self.inline_candidates.deinit(allocator);
+            self.inline_candidates.deinit();
         }
         
         pub fn analyzeFunction(self: *FunctionInliningOptimizer, function_name: []const u8, call_count: u32, size: u32) !void {
@@ -219,7 +219,7 @@ pub const LLVMOptimizationIntegration = struct {
         dead_code_blocks: ArrayList([]const u8),
         allocator: Allocator,
         
-        pub fn init(allocator: Allocator) DeadCodeEliminationOptimizer {
+        pub fn init() DeadCodeEliminationOptimizer {
             return DeadCodeEliminationOptimizer{
                 .live_variables = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .live_functions = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -233,18 +233,18 @@ pub const LLVMOptimizationIntegration = struct {
             while (live_var_iter.next()) |entry| {
                 self.allocator.free(entry.key_ptr.*);
             }
-            self.live_variables.deinit(allocator);
+            self.live_variables.deinit();
             
             var live_func_iter = self.live_functions.iterator();
             while (live_func_iter.next()) |entry| {
                 self.allocator.free(entry.key_ptr.*);
             }
-            self.live_functions.deinit(allocator);
+            self.live_functions.deinit();
             
             for (self.dead_code_blocks.items) |block| {
                 self.allocator.free(block);
             }
-            self.dead_code_blocks.deinit(allocator);
+            self.dead_code_blocks.deinit();
         }
         
         pub fn markLiveVariable(self: *DeadCodeEliminationOptimizer, variable_name: []const u8) !void {
@@ -269,7 +269,7 @@ pub const LLVMOptimizationIntegration = struct {
         }
     };
     
-    pub fn init(allocator: Allocator) LLVMOptimizationIntegration {
+    pub fn init() LLVMOptimizationIntegration {
         return LLVMOptimizationIntegration{
             .allocator = allocator,
             .optimization_level = .Standard,
@@ -282,10 +282,10 @@ pub const LLVMOptimizationIntegration = struct {
     }
     
     pub fn deinit(self: *LLVMOptimizationIntegration) void {
-        self.optimization_passes.deinit(allocator);
-        self.register_allocator.deinit(allocator);
-        self.function_inliner.deinit(allocator);
-        self.dead_code_eliminator.deinit(allocator);
+        self.optimization_passes.deinit();
+        self.register_allocator.deinit();
+        self.function_inliner.deinit();
+        self.dead_code_eliminator.deinit();
     }
     
     /// Set optimization level and configure passes
@@ -301,32 +301,32 @@ pub const LLVMOptimizationIntegration = struct {
                 // No optimizations
             },
             .Basic => {
-                try self.optimization_passes.append(allocator, .ConstantPropagation);
-                try self.optimization_passes.append(allocator, .DeadCodeElimination);
+                try self.optimization_passes.append(.ConstantPropagation);
+                try self.optimization_passes.append(.DeadCodeElimination);
             },
             .Standard => {
-                try self.optimization_passes.append(allocator, .ConstantPropagation);
-                try self.optimization_passes.append(allocator, .DeadCodeElimination);
-                try self.optimization_passes.append(allocator, .CommonSubexpressionElimination);
-                try self.optimization_passes.append(allocator, .FunctionInlining);
-                try self.optimization_passes.append(allocator, .RegisterAllocation);
+                try self.optimization_passes.append(.ConstantPropagation);
+                try self.optimization_passes.append(.DeadCodeElimination);
+                try self.optimization_passes.append(.CommonSubexpressionElimination);
+                try self.optimization_passes.append(.FunctionInlining);
+                try self.optimization_passes.append(.RegisterAllocation);
             },
             .Aggressive => {
-                try self.optimization_passes.append(allocator, .ConstantPropagation);
-                try self.optimization_passes.append(allocator, .DeadCodeElimination);
-                try self.optimization_passes.append(allocator, .CommonSubexpressionElimination);
-                try self.optimization_passes.append(allocator, .LoopOptimization);
-                try self.optimization_passes.append(allocator, .FunctionInlining);
-                try self.optimization_passes.append(allocator, .RegisterAllocation);
-                try self.optimization_passes.append(allocator, .VectorOptimization);
-                try self.optimization_passes.append(allocator, .TailCallOptimization);
-                try self.optimization_passes.append(allocator, .BranchPrediction);
-                try self.optimization_passes.append(allocator, .CacheOptimization);
+                try self.optimization_passes.append(.ConstantPropagation);
+                try self.optimization_passes.append(.DeadCodeElimination);
+                try self.optimization_passes.append(.CommonSubexpressionElimination);
+                try self.optimization_passes.append(.LoopOptimization);
+                try self.optimization_passes.append(.FunctionInlining);
+                try self.optimization_passes.append(.RegisterAllocation);
+                try self.optimization_passes.append(.VectorOptimization);
+                try self.optimization_passes.append(.TailCallOptimization);
+                try self.optimization_passes.append(.BranchPrediction);
+                try self.optimization_passes.append(.CacheOptimization);
             },
             .Size => {
-                try self.optimization_passes.append(allocator, .DeadCodeElimination);
-                try self.optimization_passes.append(allocator, .FunctionInlining);
-                try self.optimization_passes.append(allocator, .RegisterAllocation);
+                try self.optimization_passes.append(.DeadCodeElimination);
+                try self.optimization_passes.append(.FunctionInlining);
+                try self.optimization_passes.append(.RegisterAllocation);
             },
         }
         
@@ -393,7 +393,7 @@ pub const LLVMOptimizationIntegration = struct {
             for (recommendations.items) |rec| {
                 self.allocator.free(rec);
             }
-            recommendations.deinit(allocator);
+            recommendations.deinit();
         }
         
         self.compilation_stats.functions_inlined = @as(u32, @intCast(recommendations.items.len));
@@ -539,7 +539,7 @@ pub fn optimizeCursedProgram(
     optimization_level: LLVMOptimizationIntegration.OptimizationLevel
 ) !LLVMOptimizationIntegration.CompilationStats {
     var optimizer = LLVMOptimizationIntegration.init(allocator);
-    defer optimizer.deinit(allocator);
+    defer optimizer.deinit();
     
     try optimizer.setOptimizationLevel(optimization_level);
     try optimizer.analyzeProgram(program_source);
@@ -562,7 +562,7 @@ test "llvm optimization integration" {
     const allocator = std.testing.allocator;
     
     var optimizer = LLVMOptimizationIntegration.init(allocator);
-    defer optimizer.deinit(allocator);
+    defer optimizer.deinit();
     
     try optimizer.setOptimizationLevel(.Standard);
     try std.testing.expect(optimizer.optimization_level == .Standard);

@@ -72,7 +72,7 @@ const CliArgs = struct {
     }
     
     pub fn deinit(self: *CliArgs) void {
-        self.options.deinit(allocator);
+        self.options.deinit();
     }
 };
 
@@ -86,7 +86,7 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
     cli_args.command = Command.fromString(args[1]) orelse .help;
     
     var packages: std.ArrayList([:0]const u8) = .empty;
-    defer packages.deinit(allocator);
+    defer packages.deinit();
     
     var i: usize = 2;
     while (i < args.len) {
@@ -106,13 +106,13 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
                 try cli_args.options.put(key, value);
             }
         } else {
-            try packages.append(allocator, arg);
+            try packages.append(arg);
         }
         
         i += 1;
     }
     
-    cli_args.packages = try packages.toOwnedSlice(allocator);
+    cli_args.packages = try packages.toOwnedSlice();
     return cli_args;
 }
 
@@ -186,15 +186,13 @@ fn printHelp() void {
 // ===== Basic Command Implementations =====
 
 fn cmdInit(allocator: std.mem.Allocator, args: []const u8) !void {
-    _ = allocator;
-    const project_name = if (args.len > 0) args else "new-cursed-package";
+        const project_name = if (args.len > 0) args else "new-cursed-package";
     print("📦 Initializing CURSED package: {s}\n", .{project_name});
     print("✅ Package initialized successfully\n", .{});
 }
 
 fn cmdAdd(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    if (packages.len == 0) {
+        if (packages.len == 0) {
         print("Usage: cursed-pkg add <package_name> [version]\n", .{});
         return;
     }
@@ -205,8 +203,7 @@ fn cmdAdd(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdRemove(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    if (packages.len == 0) {
+        if (packages.len == 0) {
         print("Usage: cursed-pkg remove <package_name>\n", .{});
         return;
     }
@@ -216,22 +213,19 @@ fn cmdRemove(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdInstall(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     print("📦 Installing dependencies...\n", .{});
     print("✅ All dependencies installed successfully\n", .{});
 }
 
 fn cmdUpdate(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     print("📦 Updating dependencies...\n", .{});
     print("✅ All dependencies updated successfully\n", .{});
 }
 
 fn cmdPublish(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     print("📦 Publishing package...\n", .{});
     print("✅ Package published successfully\n", .{});
 }
@@ -239,8 +233,7 @@ fn cmdPublish(allocator: std.mem.Allocator, packages: []const []const u8) !void 
 // ===== Enhanced Command Implementations =====
 
 fn cmdSearch(allocator: std.mem.Allocator, packages: []const []const u8, options: std.StringHashMap([]const u8)) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg search <query> [options]\n", .{});
         return;
@@ -271,8 +264,7 @@ fn cmdSearch(allocator: std.mem.Allocator, packages: []const []const u8, options
 }
 
 fn cmdInfo(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg info <package_name>\n", .{});
         return;
@@ -303,8 +295,7 @@ fn cmdInfo(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdTrending(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     
     print("📈 Trending CURSED Packages\n", .{});
     print("=" ** 40 ++ "\n", .{});
@@ -318,8 +309,7 @@ fn cmdTrending(allocator: std.mem.Allocator, packages: []const []const u8) !void
 }
 
 fn cmdAnalytics(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg analytics <package_name> [timeframe]\n", .{});
         return;
@@ -346,8 +336,7 @@ fn cmdAnalytics(allocator: std.mem.Allocator, packages: []const []const u8) !voi
 }
 
 fn cmdMigrate(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    
+        
     if (packages.len < 2) {
         print("Usage: cursed-pkg migrate <ecosystem> <package_spec>\n", .{});
         print("Ecosystems: npm, cargo, pip, go\n", .{});
@@ -375,8 +364,7 @@ fn cmdMigrate(allocator: std.mem.Allocator, packages: []const []const u8) !void 
 }
 
 fn cmdReview(allocator: std.mem.Allocator, packages: []const []const u8, options: std.StringHashMap([]const u8)) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg review <package_name> --rating <1-5> --title \"title\" --content \"review text\"\n", .{});
         return;
@@ -395,8 +383,7 @@ fn cmdReview(allocator: std.mem.Allocator, packages: []const []const u8, options
 }
 
 fn cmdVote(allocator: std.mem.Allocator, packages: []const []const u8, options: std.StringHashMap([]const u8)) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg vote <review_id> --helpful [true|false]\n", .{});
         return;
@@ -411,8 +398,7 @@ fn cmdVote(allocator: std.mem.Allocator, packages: []const []const u8, options: 
 }
 
 fn cmdCurate(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg curate <package_name>\n", .{});
         return;
@@ -434,8 +420,7 @@ fn cmdCurate(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdSecurityScan(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    
+        
     if (packages.len == 0) {
         print("Usage: cursed-pkg security-scan <package_name> [version]\n", .{});
         return;
@@ -455,8 +440,7 @@ fn cmdSecurityScan(allocator: std.mem.Allocator, packages: []const []const u8) !
 }
 
 fn cmdLogin(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     
     print("🔐 Login to CURSED Package Registry\n", .{});
     print("Email/Username: user@cursed.dev\n", .{});
@@ -466,8 +450,7 @@ fn cmdLogin(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdLogout(allocator: std.mem.Allocator, packages: []const []const u8) !void {
-    _ = allocator;
-    _ = packages;
+        _ = packages;
     
     print("🔓 Logging out from CURSED Package Registry\n", .{});
     print("✅ Successfully logged out\n", .{});
@@ -475,8 +458,7 @@ fn cmdLogout(allocator: std.mem.Allocator, packages: []const []const u8) !void {
 }
 
 fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
-    _ = allocator;
-    
+        
     print("📦 Installed packages:\n", .{});
     
     // Check if CursedPackage.toml exists
@@ -508,8 +490,7 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
 }
 
 fn cmdClean(allocator: std.mem.Allocator, args: CliArgs) !void {
-    _ = allocator;
-    
+        
     print("Cleaning package cache: {s}\n", .{args.cache_dir});
     
     if (args.dry_run) {
@@ -576,7 +557,7 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -586,7 +567,7 @@ pub fn main() !void {
         print("Error parsing arguments: {}\n", .{err});
         std.process.exit(1);
     };
-    defer cli_args.deinit(allocator);
+    defer cli_args.deinit();
     
     runCommand(allocator, cli_args) catch |err| {
         print("Error: {}\n", .{err});
@@ -611,7 +592,7 @@ test "argument parsing" {
     const test_args = [_][:0]const u8{ "cursed-pkg", "add", "json", "--verbose", "--cache-dir=/tmp/cache" };
     
     var cli_args = try parseArgs(allocator, @constCast(&test_args));
-    defer cli_args.deinit(allocator);
+    defer cli_args.deinit();
     
     try std.testing.expect(cli_args.command == .add);
     try std.testing.expect(cli_args.packages.len == 1);

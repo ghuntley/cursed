@@ -46,7 +46,7 @@ pub const PGOMemoryIntegration = struct {
             .gc_integration_enabled = true,
             .hot_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80).init(allocator),
             .cold_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80).init(allocator),
-            .allocation_hotspots = std.ArrayList(AllocationHotspot).init(allocator),
+            .allocation_hotspots = std..empty,
         };
     }
     
@@ -60,7 +60,7 @@ pub const PGOMemoryIntegration = struct {
     
     /// Integrate PGO with memory optimizer
     pub fn integrateWithMemoryOptimizer(self: *Self, pgo_analysis: anytype) !void {
-        print("🧠 Integrating PGO with memory optimizer...\n");
+        print("🧠 Integrating PGO with memory optimizer...\n", .{});
         
         // Process hot functions for memory optimization
         for (pgo_analysis.hot_functions) |func_name| {
@@ -75,7 +75,7 @@ pub const PGOMemoryIntegration = struct {
         // Apply memory layout optimizations based on profile
         try self.applyMemoryLayoutOptimizations();
         
-        print("  ✅ Memory optimizer integration completed\n");
+        print("  ✅ Memory optimizer integration completed\n", .{});
     }
     
     /// Optimize memory usage for hot functions
@@ -124,7 +124,7 @@ pub const PGOMemoryIntegration = struct {
     
     /// Apply memory layout optimizations
     fn applyMemoryLayoutOptimizations(self: *Self) !void {
-        print("  📊 Applying memory layout optimizations...\n");
+        print("  📊 Applying memory layout optimizations...\n", .{});
         
         // Sort hotspots by allocation count for optimization priority
         const Hotspot = AllocationHotspot;
@@ -150,7 +150,7 @@ pub const PGOMemoryIntegration = struct {
     
     /// Validate memory safety with PGO
     pub fn validateMemorySafety(self: *Self) !bool {
-        print("🛡️  Validating memory safety with PGO...\n");
+        print("🛡️  Validating memory safety with PGO...\n", .{});
         
         // Check for memory leaks in hot allocations
         var potential_leaks: u32 = 0;
@@ -160,7 +160,7 @@ pub const PGOMemoryIntegration = struct {
             
             // Short-lived allocations with high frequency should be optimized
             if (profile.lifetime < 100.0 and profile.frequency > 5000) {
-                print("    🔍 Potential optimization opportunity detected\n");
+                print("    🔍 Potential optimization opportunity detected\n", .{});
             }
             
             // Check for realistic memory patterns
@@ -182,7 +182,7 @@ pub const PGOMemoryIntegration = struct {
         
         const is_safe = potential_leaks == 0;
         if (is_safe) {
-            print("    ✅ Memory safety validation passed\n");
+            print("    ✅ Memory safety validation passed\n", .{});
             print("    ✅ Hot allocations: {}\n", .{self.hot_allocations.count()});
             print("    ✅ Cold allocations: {}\n", .{self.cold_allocations.count()});
             print("    ✅ Memory hotspots: {}\n", .{self.allocation_hotspots.items.len});
@@ -195,8 +195,8 @@ pub const PGOMemoryIntegration = struct {
     
     /// Generate memory optimization report
     pub fn generateOptimizationReport(self: *Self) !void {
-        print("\n📋 PGO Memory Optimization Report\n");
-        print("==================================\n");
+        print("\n📋 PGO Memory Optimization Report\n", .{});
+        print("==================================\n", .{});
         
         // Hot allocation statistics
         var total_hot_allocations: u64 = 0;
@@ -218,12 +218,12 @@ pub const PGOMemoryIntegration = struct {
             total_cold_size += profile.size * profile.frequency;
         }
         
-        print("Hot Memory Profile:\n");
+        print("Hot Memory Profile:\n", .{});
         print("  Functions: {}\n", .{self.hot_allocations.count()});
         print("  Total Allocations: {}\n", .{total_hot_allocations});
         print("  Total Size: {} bytes\n", .{total_hot_size});
         
-        print("\nCold Memory Profile:\n");
+        print("\nCold Memory Profile:\n", .{});
         print("  Functions: {}\n", .{self.cold_allocations.count()});
         print("  Total Allocations: {}\n", .{total_cold_allocations});
         print("  Total Size: {} bytes\n", .{total_cold_size});
@@ -239,18 +239,18 @@ pub const PGOMemoryIntegration = struct {
         const total_allocations = total_hot_allocations + total_cold_allocations;
         const hot_ratio = @as(f64, @floatFromInt(total_hot_allocations)) / @as(f64, @floatFromInt(total_allocations));
         
-        print("\nEfficiency Metrics:\n");
+        print("\nEfficiency Metrics:\n", .{});
         print("  Hot/Cold Ratio: {d:.2}% hot\n", .{hot_ratio * 100.0});
         print("  Memory Optimizer: {s}\n", .{if (self.memory_optimizer_enabled) "✅ Enabled" else "❌ Disabled"});
         print("  GC Integration: {s}\n", .{if (self.gc_integration_enabled) "✅ Enabled" else "❌ Disabled"});
         
-        print("\n🎯 Memory optimization integrated successfully with PGO\n");
+        print("\n🎯 Memory optimization integrated successfully with PGO\n", .{});
     }
 };
 
 /// Test PGO memory integration
 pub fn testPGOMemoryIntegration() !void {
-    print("🧪 Testing PGO Memory Integration...\n");
+    print("🧪 Testing PGO Memory Integration...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
@@ -282,5 +282,5 @@ pub fn testPGOMemoryIntegration() !void {
     // Generate report
     try pgo_memory.generateOptimizationReport();
     
-    print("✅ PGO Memory Integration test completed successfully\n");
+    print("✅ PGO Memory Integration test completed successfully\n", .{});
 }

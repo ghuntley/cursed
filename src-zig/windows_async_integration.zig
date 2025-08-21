@@ -54,8 +54,8 @@ pub const WindowsAsyncRuntime = struct {
         if (self.initialized.load(.acquire)) {
             self.stop();
         }
-        self.network_runtime.deinit(allocator);
-        self.iocp_runtime.deinit(allocator);
+        self.network_runtime.deinit();
+        self.iocp_runtime.deinit();
     }
     
     pub fn start(self: *Self) !void {
@@ -252,7 +252,7 @@ pub fn deinitGlobalAsyncRuntime(allocator: std.mem.Allocator) void {
     defer runtime_mutex.unlock();
     
     if (global_async_runtime) |runtime| {
-        runtime.deinit(allocator);
+        runtime.deinit();
         allocator.destroy(runtime);
         global_async_runtime = null;
         
@@ -353,7 +353,7 @@ pub const CursedAsyncBindings = struct {
         const connect_addr = net.NetAddress.fromString(ip_str, port) catch return -2; // Invalid address
         
         var client = runtime.createTcpClient() catch return -3; // Client creation failed
-        defer client.deinit(allocator);
+        defer client.deinit();
         
         client.connect(connect_addr) catch return -4; // Connection failed
         

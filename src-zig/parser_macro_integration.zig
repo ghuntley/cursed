@@ -65,11 +65,11 @@ pub const MacroAwareParser = struct {
             self.base_parser.allocator.free(call.call.name);
             self.base_parser.allocator.free(call.call.arguments);
         }
-        self.pending_macro_calls.deinit(allocator);
+        self.pending_macro_calls.deinit();
         
-        self.expansion_context.deinit(allocator);
-        self.hygiene_context.deinit(allocator);
-        self.base_parser.deinit(allocator);
+        self.expansion_context.deinit();
+        self.hygiene_context.deinit();
+        self.base_parser.deinit();
     }
     
     /// Parse with macro expansion preprocessing
@@ -99,7 +99,7 @@ pub const MacroAwareParser = struct {
                         const call_end = try self.findMacroCallEnd(i);
                         const macro_call = try self.parseMacroCallFromTokens(self.original_tokens[i..call_end]);
                         
-                        try self.pending_macro_calls.append(allocator, PendingMacroCall{
+                        try self.pending_macro_calls.append(PendingMacroCall{
                             .call = macro_call,
                             .token_range = .{ .start = i, .end = call_end },
                             .replacement_needed = true,
@@ -123,7 +123,7 @@ pub const MacroAwareParser = struct {
                             try self.expansion_context.defineMacro(macro_def);
                             
                             // Mark these tokens for removal in expanded stream
-                            try self.pending_macro_calls.append(allocator, PendingMacroCall{
+                            try self.pending_macro_calls.append(PendingMacroCall{
                                 .call = MacroCall{
                                     .name = "",
                                     .arguments = &[_]Token{},
@@ -376,7 +376,7 @@ pub const MacroAwareParser = struct {
     /// Parse parameter list from tokens
     fn parseParameterList(self: *MacroAwareParser, tokens: []const Token) ![][]const u8 {
         var params = .empty;
-        defer params.deinit(allocator);
+        defer params.deinit();
         
         if (tokens.len < 2 or tokens[0].kind != .LeftParen) {
             return &[_][]const u8{};
@@ -385,7 +385,7 @@ pub const MacroAwareParser = struct {
         var i: usize = 1;
         while (i < tokens.len and tokens[i].kind != .RightParen) {
             if (tokens[i].kind == .Identifier) {
-                try params.append(allocator, try self.base_parser.allocator.dupe(u8, tokens[i].value));
+                try params.append(try self.base_parser.allocator.dupe(u8, tokens[i].value));
             }
             
             i += 1;
@@ -396,13 +396,13 @@ pub const MacroAwareParser = struct {
             }
         }
         
-        return params.toOwnedSlice(allocator);
+        return params.toOwnedSlice();
     }
     
     /// Build final token stream with macro expansions
     fn buildExpandedTokenStream(self: *MacroAwareParser, expansion_results: []const Token) ![]Token {
         var result = .empty;
-        defer result.deinit(allocator);
+        defer result.deinit();
         
         var original_index: usize = 0;
         var expansion_index: usize = 0;
@@ -413,7 +413,7 @@ pub const MacroAwareParser = struct {
         for (self.pending_macro_calls.items) |pending| {
             // Add tokens before this macro call/definition
             while (original_index < pending.token_range.start) {
-                try result.append(allocator, self.original_tokens[original_index]);
+                try result.append(self.original_tokens[original_index]);
                 original_index += 1;
             }
             
@@ -434,11 +434,11 @@ pub const MacroAwareParser = struct {
         
         // Add remaining original tokens
         while (original_index < self.original_tokens.len) {
-            try result.append(allocator, self.original_tokens[original_index]);
+            try result.append(self.original_tokens[original_index]);
             original_index += 1;
         }
         
-        return result.toOwnedSlice(allocator);
+        return result.toOwnedSlice();
     }
     
     /// Estimate size of expansion for a macro (simple heuristic)
@@ -523,7 +523,7 @@ test "macro aware parser basic functionality" {
     };
     
     var macro_parser = try MacroAwareParser.init(std.testing.allocator, &test_tokens);
-    defer macro_parser.deinit(allocator);
+    defer macro_parser.deinit();
     
     try macro_parser.registerBuiltinMacros();
     

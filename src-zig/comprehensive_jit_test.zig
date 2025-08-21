@@ -5,7 +5,7 @@ const Allocator = std.mem.Allocator;
 /// Comprehensive JIT execution test demonstrating the FIXED JIT engine
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     print("🚀 COMPREHENSIVE JIT EXECUTION ENGINE TEST\n", .{});
@@ -46,7 +46,7 @@ fn testBasicJIT(allocator: Allocator) !void {
     ;
 
     var jit = SimpleJIT.init(allocator);
-    defer jit.deinit(allocator);
+    defer jit.deinit();
 
     try jit.execute(simple_program);
     print("✅ Basic JIT execution successful\n", .{});
@@ -63,7 +63,7 @@ fn testComplexExpressions(allocator: Allocator) !void {
     ;
 
     var jit = SimpleJIT.init(allocator);
-    defer jit.deinit(allocator);
+    defer jit.deinit();
 
     try jit.execute(complex_program);
     print("✅ Complex expression compilation successful\n", .{});
@@ -76,7 +76,7 @@ fn testMultipleExecutions(allocator: Allocator) !void {
     ;
 
     var jit = SimpleJIT.init(allocator);
-    defer jit.deinit(allocator);
+    defer jit.deinit();
 
     var i: u32 = 1;
     while (i <= 3) {
@@ -98,7 +98,7 @@ fn testFileExecution(allocator: Allocator) !void {
     print("📁 Executing file: test_jit_comprehensive.csd ({} bytes)\n", .{file_content.len});
 
     var jit = SimpleJIT.init(allocator);
-    defer jit.deinit(allocator);
+    defer jit.deinit();
 
     try jit.execute(file_content);
     print("✅ File-based JIT execution successful\n", .{});
@@ -109,7 +109,7 @@ const SimpleJIT = struct {
     allocator: Allocator,
     variables: std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
-    pub fn init(allocator: Allocator) SimpleJIT {
+    pub fn init() SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
             .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -122,7 +122,7 @@ const SimpleJIT = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {

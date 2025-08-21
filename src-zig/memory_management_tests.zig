@@ -69,13 +69,13 @@ test "JIT execution engine memory safety" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing JIT Execution Engine Memory Safety\n");
-    print("============================================\n");
+    print("\n🧪 Testing JIT Execution Engine Memory Safety\n", .{});
+    print("============================================\n", .{});
     
     // Test 1: Basic allocation and cleanup
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         const simple_program = 
             \\vibez.spill("Memory test")
@@ -90,7 +90,7 @@ test "JIT execution engine memory safety" {
     // Test 2: Repeated execution (memory leak test)
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         const config = TestConfig{};
         for (0..config.stress_iterations) |i| {
@@ -113,7 +113,7 @@ test "JIT execution engine memory safety" {
     // Test 3: Function calls and recursion
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         const recursive_program = 
             \\slay fibonacci(n drip) drip {
@@ -132,7 +132,7 @@ test "JIT execution engine memory safety" {
     // Test 4: Error handling and recovery
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         // Test division by zero error handling
         const error_program = 
@@ -160,8 +160,8 @@ test "concurrency system memory safety" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing Concurrency System Memory Safety\n");
-    print("===========================================\n");
+    print("\n🧪 Testing Concurrency System Memory Safety\n", .{});
+    print("===========================================\n", .{});
     
     // Test 1: Channel creation and cleanup
     {
@@ -261,8 +261,8 @@ test "garbage collector memory safety" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing Garbage Collector Memory Safety\n");
-    print("==========================================\n");
+    print("\n🧪 Testing Garbage Collector Memory Safety\n", .{});
+    print("==========================================\n", .{});
     
     // Test 1: GC initialization and cleanup
     {
@@ -271,7 +271,7 @@ test "garbage collector memory safety" {
         config.young_gen_size = 512 * 1024;     // 512KB
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit(allocator);
+        defer gc_instance.deinit();
         
         tracker.update();
         
@@ -289,7 +289,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 2 * 1024 * 1024; // 2MB
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit(allocator);
+        defer gc_instance.deinit();
         
         // Allocate many small objects
         var objects: [1000]*anyopaque = undefined;
@@ -312,7 +312,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 1024 * 1024;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit(allocator);
+        defer gc_instance.deinit();
         
         var root: ?*anyopaque = null;
         try gc_instance.addRoot(&root);
@@ -332,7 +332,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 1024 * 1024;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit(allocator);
+        defer gc_instance.deinit();
         
         const obj = try gc_instance.alloc(128, 1);
         const weak_ref = try gc_instance.createWeakRef(obj);
@@ -357,8 +357,8 @@ test "LLVM module memory safety" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing LLVM Module Memory Safety\n");
-    print("====================================\n");
+    print("\n🧪 Testing LLVM Module Memory Safety\n", .{});
+    print("====================================\n", .{});
     
     // This test would verify LLVM module cleanup
     // For now, we'll simulate the operations
@@ -406,21 +406,21 @@ test "integrated memory management" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing Integrated Memory Management\n");
-    print("======================================\n");
+    print("\n🧪 Testing Integrated Memory Management\n", .{});
+    print("======================================\n", .{});
     
     // Initialize all systems
     var config = gc_fixed.gc.GCConfig.default();
     config.initial_heap_size = 4 * 1024 * 1024; // 4MB
     
     const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-    defer gc_instance.deinit(allocator);
+    defer gc_instance.deinit();
     
     try concurrency_fixed.initializeScheduler(allocator, 2);
     defer concurrency_fixed.shutdownScheduler();
     
     var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     tracker.update();
     
@@ -482,7 +482,7 @@ test "integrated memory management" {
     const memory_delta = tracker.getMemoryDelta();
     try testing.expect(@abs(memory_delta) < 5 * 1024 * 1024); // Less than 5MB growth
     
-    print("\n✅ All memory management tests passed!\n");
+    print("\n✅ All memory management tests passed!\n", .{});
 }
 
 /// Stress test for memory management under load
@@ -490,8 +490,8 @@ test "memory management stress test" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Memory Management Stress Test\n");
-    print("================================\n");
+    print("\n🧪 Memory Management Stress Test\n", .{});
+    print("================================\n", .{});
     
     const config = TestConfig{
         .stress_iterations = 50, // Reduced for CI
@@ -503,13 +503,13 @@ test "memory management stress test" {
     gc_config.initial_heap_size = 8 * 1024 * 1024; // 8MB
     
     const gc_instance = try gc_fixed.FixedGC.init(allocator, gc_config);
-    defer gc_instance.deinit(allocator);
+    defer gc_instance.deinit();
     
     try concurrency_fixed.initializeScheduler(allocator, 4);
     defer concurrency_fixed.shutdownScheduler();
     
     var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     tracker.update();
     
@@ -571,7 +571,7 @@ test "memory management stress test" {
     const memory_delta = tracker.getMemoryDelta();
     try testing.expect(@abs(memory_delta) < 10 * 1024 * 1024); // Less than 10MB growth
     
-    print("✅ Stress test completed successfully!\n");
+    print("✅ Stress test completed successfully!\n", .{});
 }
 
 /// Test memory management with error conditions
@@ -579,8 +579,8 @@ test "memory management error handling" {
     const allocator = testing.allocator;
     var tracker = MemoryTracker.init(allocator);
     
-    print("\n🧪 Testing Memory Management Error Handling\n");
-    print("===========================================\n");
+    print("\n🧪 Testing Memory Management Error Handling\n", .{});
+    print("===========================================\n", .{});
     
     // Test 1: Out of memory conditions
     {
@@ -589,7 +589,7 @@ test "memory management error handling" {
         small_config.young_gen_size = 512;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, small_config);
-        defer gc_instance.deinit(allocator);
+        defer gc_instance.deinit();
         
         // Try to allocate more than available
         var allocations: usize = 0;
@@ -609,7 +609,7 @@ test "memory management error handling" {
     // Test 2: Invalid operations
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit(allocator);
+        defer engine.deinit();
         
         // Test invalid syntax
         const invalid_program = "this is not valid CURSED syntax @#$%";
@@ -657,5 +657,5 @@ test "memory management error handling" {
     const memory_delta = tracker.getMemoryDelta();
     try testing.expect(@abs(memory_delta) < 1024 * 1024); // Less than 1MB growth
     
-    print("✅ Error handling tests completed!\n");
+    print("✅ Error handling tests completed!\n", .{});
 }

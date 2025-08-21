@@ -25,14 +25,14 @@ pub const Identifier = struct {
 pub const Program = struct {
     statements: ArrayList(Statement),
     
-    pub fn init(allocator: Allocator) Program {
+    pub fn init() Program {
         return Program{
             .statements = .empty,
         };
     }
     
     pub fn deinit(self: *Program) void {
-        self.statements.deinit(allocator);
+        self.statements.deinit();
     }
 };
 
@@ -119,7 +119,7 @@ pub const BlockStatement = struct {
     node: Node,
     statements: ArrayList(Statement),
     
-    pub fn init(allocator: Allocator) BlockStatement {
+    pub fn init() BlockStatement {
         return BlockStatement{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .statements = .empty,
@@ -127,7 +127,7 @@ pub const BlockStatement = struct {
     }
     
     pub fn deinit(self: *BlockStatement) void {
-        self.statements.deinit(allocator);
+        self.statements.deinit();
     }
 };
 
@@ -223,7 +223,7 @@ pub const FunctionLiteral = struct {
     is_generic: bool,
     generic_params: ?ArrayList(*Identifier),
     
-    pub fn init(allocator: Allocator) FunctionLiteral {
+    pub fn init() FunctionLiteral {
         return FunctionLiteral{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .parameters = .empty,
@@ -235,9 +235,9 @@ pub const FunctionLiteral = struct {
     }
     
     pub fn deinit(self: *FunctionLiteral) void {
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
         if (self.generic_params) |*params| {
-            params.deinit(allocator);
+            params.deinit();
         }
     }
 };
@@ -254,7 +254,7 @@ pub const CallExpression = struct {
     function: *Expression,
     arguments: ArrayList(Expression),
     
-    pub fn init(allocator: Allocator) CallExpression {
+    pub fn init() CallExpression {
         return CallExpression{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .function = undefined,
@@ -263,7 +263,7 @@ pub const CallExpression = struct {
     }
     
     pub fn deinit(self: *CallExpression) void {
-        self.arguments.deinit(allocator);
+        self.arguments.deinit();
     }
 };
 
@@ -334,7 +334,7 @@ pub const GoroutineSpawn = struct {
     function: *Expression,
     arguments: ArrayList(Expression),
     
-    pub fn init(allocator: Allocator) GoroutineSpawn {
+    pub fn init() GoroutineSpawn {
         return GoroutineSpawn{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .function = undefined,
@@ -343,7 +343,7 @@ pub const GoroutineSpawn = struct {
     }
     
     pub fn deinit(self: *GoroutineSpawn) void {
-        self.arguments.deinit(allocator);
+        self.arguments.deinit();
     }
 };
 
@@ -365,7 +365,7 @@ pub const SelectExpression = struct {
     default_case: ?*BlockStatement,
     timeout: ?Expression,
     
-    pub fn init(allocator: Allocator) SelectExpression {
+    pub fn init() SelectExpression {
         return SelectExpression{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .cases = .empty,
@@ -375,7 +375,7 @@ pub const SelectExpression = struct {
     }
     
     pub fn deinit(self: *SelectExpression) void {
-        self.cases.deinit(allocator);
+        self.cases.deinit();
     }
 };
 
@@ -385,7 +385,7 @@ pub const StructLiteral = struct {
     name: *Identifier,
     fields: ArrayList(*FieldValue),
     
-    pub fn init(allocator: Allocator) StructLiteral {
+    pub fn init() StructLiteral {
         return StructLiteral{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .name = undefined,
@@ -394,7 +394,7 @@ pub const StructLiteral = struct {
     }
     
     pub fn deinit(self: *StructLiteral) void {
-        self.fields.deinit(allocator);
+        self.fields.deinit();
     }
 };
 
@@ -409,7 +409,7 @@ pub const ArrayLiteral = struct {
     elements: ArrayList(Expression),
     element_type: ?Type,
     
-    pub fn init(allocator: Allocator) ArrayLiteral {
+    pub fn init() ArrayLiteral {
         return ArrayLiteral{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .elements = .empty,
@@ -418,7 +418,7 @@ pub const ArrayLiteral = struct {
     }
     
     pub fn deinit(self: *ArrayLiteral) void {
-        self.elements.deinit(allocator);
+        self.elements.deinit();
     }
 };
 
@@ -428,7 +428,7 @@ pub const MapLiteral = struct {
     key_type: ?Type,
     value_type: ?Type,
     
-    pub fn init(allocator: Allocator) MapLiteral {
+    pub fn init() MapLiteral {
         return MapLiteral{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .pairs = .empty,
@@ -438,7 +438,7 @@ pub const MapLiteral = struct {
     }
     
     pub fn deinit(self: *MapLiteral) void {
-        self.pairs.deinit(allocator);
+        self.pairs.deinit();
     }
 };
 
@@ -453,7 +453,7 @@ pub const MatchExpression = struct {
     value: *Expression,
     arms: ArrayList(*MatchArm),
     
-    pub fn init(allocator: Allocator) MatchExpression {
+    pub fn init() MatchExpression {
         return MatchExpression{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .value = undefined,
@@ -462,7 +462,7 @@ pub const MatchExpression = struct {
     }
     
     pub fn deinit(self: *MatchExpression) void {
-        self.arms.deinit(allocator);
+        self.arms.deinit();
     }
 };
 
@@ -528,7 +528,7 @@ pub const FunctionType = struct {
     parameters: ArrayList(Type),
     return_type: *Type,
     
-    pub fn init(allocator: Allocator) FunctionType {
+    pub fn init() FunctionType {
         return FunctionType{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .parameters = .empty,
@@ -537,7 +537,7 @@ pub const FunctionType = struct {
     }
     
     pub fn deinit(self: *FunctionType) void {
-        self.parameters.deinit(allocator);
+        self.parameters.deinit();
     }
 };
 
@@ -554,7 +554,7 @@ pub const InterfaceType = struct {
     name: *Identifier,
     methods: ArrayList(*MethodSignature),
     
-    pub fn init(allocator: Allocator) InterfaceType {
+    pub fn init() InterfaceType {
         return InterfaceType{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .name = undefined,
@@ -563,7 +563,7 @@ pub const InterfaceType = struct {
     }
     
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit(allocator);
+        self.methods.deinit();
     }
 };
 
@@ -581,7 +581,7 @@ pub const StructType = struct {
     is_generic: bool,
     generic_params: ?ArrayList(*Identifier),
     
-    pub fn init(allocator: Allocator) StructType {
+    pub fn init() StructType {
         return StructType{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .name = undefined,
@@ -592,9 +592,9 @@ pub const StructType = struct {
     }
     
     pub fn deinit(self: *StructType) void {
-        self.fields.deinit(allocator);
+        self.fields.deinit();
         if (self.generic_params) |*params| {
-            params.deinit(allocator);
+            params.deinit();
         }
     }
 };
@@ -612,7 +612,7 @@ pub const GenericType = struct {
     base_type: *Type,
     type_arguments: ArrayList(Type),
     
-    pub fn init(allocator: Allocator) GenericType {
+    pub fn init() GenericType {
         return GenericType{
             .node = Node{ .start_pos = 0, .end_pos = 0 },
             .base_type = undefined,
@@ -621,7 +621,7 @@ pub const GenericType = struct {
     }
     
     pub fn deinit(self: *GenericType) void {
-        self.type_arguments.deinit(allocator);
+        self.type_arguments.deinit();
     }
 };
 
@@ -675,7 +675,7 @@ test "AST creation and basic operations" {
     
     // Test program creation
     var program = Program.init(allocator);
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     // Test identifier creation
     const ident = try createIdentifier(allocator, "test_var");
@@ -702,7 +702,7 @@ test "concurrency AST nodes" {
     
     const spawn = try createGoroutineSpawn(allocator, function_expr);
     defer {
-        spawn.deinit(allocator);
+        spawn.deinit();
         allocator.destroy(spawn);
     }
     
@@ -711,7 +711,7 @@ test "concurrency AST nodes" {
     // Test select expression creation
     const select_expr = try createSelectExpression(allocator);
     defer {
-        select_expr.deinit(allocator);
+        select_expr.deinit();
         allocator.destroy(select_expr);
     }
     

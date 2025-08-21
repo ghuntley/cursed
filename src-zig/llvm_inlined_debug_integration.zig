@@ -104,22 +104,22 @@ pub const LLVMInlinedDebugIntegration = struct {
         // Clean up inlining candidates
         var candidate_iterator = self.inlining_candidates.iterator();
         while (candidate_iterator.next()) |entry| {
-            entry.value_ptr.call_sites.deinit(allocator);
+            entry.value_ptr.call_sites.deinit();
         }
-        self.inlining_candidates.deinit(allocator);
+        self.inlining_candidates.deinit();
         
         // Clean up active inlines
         for (self.active_inlines.items) |*active| {
-            active.original_instructions.deinit(allocator);
-            active.inlined_instructions.deinit(allocator);
-            active.variable_mappings.deinit(allocator);
+            active.original_instructions.deinit();
+            active.inlined_instructions.deinit();
+            active.variable_mappings.deinit();
         }
-        self.active_inlines.deinit(allocator);
+        self.active_inlines.deinit();
     }
     
     /// Analyze module for inlining opportunities and prepare debug info
     pub fn analyzeModuleForInlining(self: *LLVMInlinedDebugIntegration, module: c.LLVMModuleRef) IntegrationError!void {
-        print("🔍 Analyzing module for inlining opportunities...\n");
+        print("🔍 Analyzing module for inlining opportunities...\n", .{});
         
         // Walk through all functions in the module
         var current_function = c.LLVMGetFirstFunction(module);
@@ -168,7 +168,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             try self.inlining_candidates.put(function_name, candidate);
             print("📋 Added inlining candidate: {s} ({d} instructions)\n", .{ function_name, candidate.instruction_count });
         } else {
-            candidate.call_sites.deinit(allocator);
+            candidate.call_sites.deinit();
         }
     }
     
@@ -188,7 +188,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .call_column = 1, // Would be extracted from debug info in real implementation
         };
         
-        try candidate.call_sites.append(allocator, call_site);
+        try candidate.call_sites.append(call_site);
     }
     
     /// Determine if a function should be considered for inlining
@@ -236,7 +236,7 @@ pub const LLVMInlinedDebugIntegration = struct {
         // Collect original instructions for debug info mapping
         try self.collectOriginalInstructions(original_function, &active_inline);
         
-        try self.active_inlines.append(allocator, active_inline);
+        try self.active_inlines.append(active_inline);
         
         // Create debug info for the inlined function
         if (self.inlining_candidates.get(original_name)) |candidate| {
@@ -261,7 +261,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             while (current_instruction != null) {
                 defer current_instruction = c.LLVMGetNextInstruction(current_instruction);
                 
-                try active_inline.original_instructions.append(allocator, current_instruction);
+                try active_inline.original_instructions.append(current_instruction);
             }
         }
     }
@@ -280,7 +280,7 @@ pub const LLVMInlinedDebugIntegration = struct {
         const active_inline = &self.active_inlines.items[self.active_inlines.items.len - 1];
         
         // Track the instruction mapping
-        try active_inline.inlined_instructions.append(allocator, inlined_instruction);
+        try active_inline.inlined_instructions.append(inlined_instruction);
         
         // Create debug location for the inlined instruction
         try self.inlined_debug_generator.createInlinedDebugLocation(
@@ -291,7 +291,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             &active_inline.inline_context
         );
         
-        print("🎯 Mapped inlined instruction with debug info\n");
+        print("🎯 Mapped inlined instruction with debug info\n", .{});
     }
     
     /// Hook called when variable is inlined
@@ -315,7 +315,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .original_alloca = original_alloca,
             .inlined_alloca = inlined_alloca,
         };
-        try active_inline.variable_mappings.append(allocator, mapping);
+        try active_inline.variable_mappings.append(mapping);
         
         // Create debug info for the inlined variable
         try self.inlined_debug_generator.trackInlinedVariable(
@@ -345,9 +345,9 @@ pub const LLVMInlinedDebugIntegration = struct {
         _ = self.inlined_debug_generator.validateInlinedDebugInfo();
         
         // Clean up
-        completed_inline.original_instructions.deinit(allocator);
-        completed_inline.inlined_instructions.deinit(allocator);
-        completed_inline.variable_mappings.deinit(allocator);
+        completed_inline.original_instructions.deinit();
+        completed_inline.inlined_instructions.deinit();
+        completed_inline.variable_mappings.deinit();
     }
     
     /// Generate comprehensive inlining debug report
@@ -360,29 +360,29 @@ pub const LLVMInlinedDebugIntegration = struct {
         
         const writer = file.writer();
         
-        try writer.print("# CURSED LLVM Inlined Debug Integration Report\n\n");
+        try writer.print("# CURSED LLVM Inlined Debug Integration Report\n\n", .{});
         
-        try writer.print("## Inlining Candidates\n\n");
+        try writer.print("## Inlining Candidates\n\n", .{});
         var candidate_iterator = self.inlining_candidates.iterator();
         while (candidate_iterator.next()) |entry| {
             const candidate = entry.value_ptr;
             try writer.print("### {s}\n", .{candidate.function_name});
             try writer.print("- Instructions: {d}\n", .{candidate.instruction_count});
             try writer.print("- Call sites: {d}\n", .{candidate.call_sites.items.len});
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
         
-        try writer.print("## Active Inlines\n\n");
+        try writer.print("## Active Inlines\n\n", .{});
         for (self.active_inlines.items, 0..) |active, i| {
             try writer.print("### Active Inline {d}\n", .{i + 1});
             try writer.print("- Function: {s} -> {s}\n", .{ active.inline_context.original_function, active.inline_context.target_function });
             try writer.print("- Original instructions: {d}\n", .{active.original_instructions.items.len});
             try writer.print("- Inlined instructions: {d}\n", .{active.inlined_instructions.items.len});
             try writer.print("- Variable mappings: {d}\n", .{active.variable_mappings.items.len});
-            try writer.print("\n");
+            try writer.print("\n", .{});
         }
         
-        try writer.print("## Statistics\n\n");
+        try writer.print("## Statistics\n\n", .{});
         try writer.print("- Total candidates: {d}\n", .{self.inlining_candidates.count()});
         try writer.print("- Active inlines: {d}\n", .{self.active_inlines.items.len});
         
@@ -394,7 +394,7 @@ pub const LLVMInlinedDebugIntegration = struct {
         // Clean up any remaining debug info
         self.inlined_debug_generator.cleanupUnusedInlinedDebugInfo();
         
-        print("🧹 Finalized inlining debug info integration\n");
+        print("🧹 Finalized inlining debug info integration\n", .{});
     }
 };
 
@@ -402,7 +402,7 @@ pub const LLVMInlinedDebugIntegration = struct {
 export fn cursed_llvm_function_will_be_inlined(original_function: c.LLVMValueRef,
                                               target_function: c.LLVMValueRef,
                                               call_site: c.LLVMValueRef) void {
-    print("🔄 LLVM hook: Function will be inlined\n");
+    print("🔄 LLVM hook: Function will be inlined\n", .{});
     // In real implementation, this would call the integration's onFunctionWillBeInlined
     _ = original_function;
     _ = target_function;
@@ -411,7 +411,7 @@ export fn cursed_llvm_function_will_be_inlined(original_function: c.LLVMValueRef
 
 export fn cursed_llvm_instruction_inlined(original_instruction: c.LLVMValueRef,
                                         inlined_instruction: c.LLVMValueRef) void {
-    print("🎯 LLVM hook: Instruction inlined\n");
+    print("🎯 LLVM hook: Instruction inlined\n", .{});
     // In real implementation, this would call the integration's onInstructionInlined
     _ = original_instruction;
     _ = inlined_instruction;
@@ -431,16 +431,16 @@ export fn cursed_llvm_variable_inlined(original_name_ptr: [*]const u8, original_
 }
 
 export fn cursed_llvm_inlining_complete() void {
-    print("✅ LLVM hook: Inlining complete\n");
+    print("✅ LLVM hook: Inlining complete\n", .{});
     // In real implementation, this would call the integration's onInliningComplete
 }
 
 /// Test the LLVM integration
 pub fn testLLVMInlinedDebugIntegration() !void {
-    print("Testing LLVM inlined debug integration...\n");
+    print("Testing LLVM inlined debug integration...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     // Create mock debug generators
@@ -449,18 +449,18 @@ pub fn testLLVMInlinedDebugIntegration() !void {
     const di_builder: c.LLVMDIBuilderRef = null;
     
     var debug_generator = try debug_info.DebugInfoGenerator.init(allocator, context, module);
-    defer debug_generator.deinit(allocator);
+    defer debug_generator.deinit();
     
     var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(allocator, context, di_builder);
-    defer inlined_debug_generator.deinit(allocator);
+    defer inlined_debug_generator.deinit();
     
     var integration = LLVMInlinedDebugIntegration.init(allocator, &debug_generator, &inlined_debug_generator);
-    defer integration.deinit(allocator);
+    defer integration.deinit();
     
     // Test the integration workflow
     try integration.analyzeModuleForInlining(module);
     try integration.generateInliningReport("llvm_integration_test_report.md");
     integration.finalizeInlining();
     
-    print("✅ LLVM inlined debug integration tests passed!\n");
+    print("✅ LLVM inlined debug integration tests passed!\n", .{});
 }

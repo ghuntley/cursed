@@ -15,7 +15,7 @@ pub const SimpleLLVMIRGenerator = struct {
     string_counter: u32,
     verbose: bool,
     
-    pub fn init(allocator: Allocator) SimpleLLVMIRGenerator {
+    pub fn init() SimpleLLVMIRGenerator {
         return SimpleLLVMIRGenerator{
             .allocator = allocator,
             .ir_buffer = .empty,
@@ -25,7 +25,7 @@ pub const SimpleLLVMIRGenerator = struct {
     }
     
     pub fn deinit(self: *SimpleLLVMIRGenerator) void {
-        self.ir_buffer.deinit(allocator);
+        self.ir_buffer.deinit();
     }
     
     pub fn setVerbose(self: *SimpleLLVMIRGenerator, verbose: bool) void {
@@ -40,10 +40,10 @@ pub const SimpleLLVMIRGenerator = struct {
         var lex = lexer.Lexer.init(self.allocator, source);
         
         const tokens = try lex.tokenize();
-        defer tokens.deinit(allocator);
+        defer tokens.deinit();
         
         var parse = parser.Parser.init(self.allocator, tokens.items);
-        defer parse.deinit(allocator);
+        defer parse.deinit();
         
         const program = try parse.parseProgram();
         
@@ -283,10 +283,10 @@ pub const SimpleLLVMIRGenerator = struct {
         // Handle special functions
         if (std.mem.eql(u8, func_name, "vibez.spill")) {
             var args = .empty;
-            defer args.deinit(allocator);
+            defer args.deinit();
             
             for (call.arguments.items) |arg_ptr| {
-                try args.append(allocator, arg_ptr.*);
+                try args.append(arg_ptr.*);
             }
             
             return try self.generatePrintCall(args.items);
@@ -294,7 +294,7 @@ pub const SimpleLLVMIRGenerator = struct {
         
         // Regular function call
         var args = .empty;
-        defer args.deinit(allocator);
+        defer args.deinit();
         
         for (call.arguments.items) |arg_ptr| {
             const arg_result = try self.generateExpression(arg_ptr.*);

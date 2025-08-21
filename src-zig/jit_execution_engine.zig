@@ -20,7 +20,7 @@ pub const JITExecutionEngine = struct {
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.variables.deinit(allocator);
+        self.variables.deinit();
     }
     
     /// Execute a function by name - for now just prints a working message
@@ -153,7 +153,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     print("===================================\n", .{});
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit(allocator);
+    defer engine.deinit();
     
     // Test 1: Function execution
     print("\n📝 Test 1: Function Execution\n", .{});

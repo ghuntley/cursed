@@ -1,0 +1,1 @@
+yeet "mathz", "stringz", "arrayz"; sus numbers []normie = [1, 2, 3, 4, 5]; sus sum normie = mathz.sum(numbers); sus text tea = stringz.join(arrayz.to_string_array(numbers), ", "); vibez.spill("Array:", text, "Sum:", sum)
