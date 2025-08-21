@@ -358,30 +358,54 @@ pub const GCIntegration = struct {
         );
     }
     
-    /// Generate stack map for precise GC
+    /// Generate LLVM stackmaps for precise garbage collection
     pub fn generateStackMap(self: *GCIntegration, function: c.LLVMValueRef, live_pointers: []c.LLVMValueRef) !void {
-        // This would generate LLVM stack maps for precise stack scanning
-        // For now, we'll add metadata to track live pointers
+        const context = self.context;
+        const module = self.module;
+        const builder = self.builder;
         
-        _ = self;
-        _ = function;
-        _ = live_pointers;
+        // Generate precise LLVM stack map for GC root scanning
+        const stack_map_func = c.LLVMAddFunction(module, "llvm.experimental.stackmap", 
+            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 1)); // Variadic
         
-        // Generate LLVM stack map for GC root scanning
-    const stack_map_func = c.LLVMAddFunction(module, "llvm.experimental.stackmap", 
-        c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
-    
-    // Create stack map intrinsic call
-    var map_args = [_]c.LLVMValueRef{
-        c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0), // ID
-        c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0), // Shadow bytes
-    };
-    _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(stack_map_func), 
-        stack_map_func, &map_args, 2, "stackmap");
-        // This would involve:
-        // 1. Creating stack map intrinsics
-        // 2. Marking GC safepoints
-        // 3. Recording live pointer locations
+        // Create unique stack map ID for this function
+        const function_name = c.LLVMGetValueName(function);
+        const stack_map_id = std.hash_map.hashString(std.mem.sliceTo(function_name, 0));
+        
+        // Prepare stackmap arguments: ID, shadow bytes, followed by live roots
+        var total_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        defer total_args.deinit();
+        
+        try total_args.append(c.LLVMConstInt(c.LLVMInt64TypeInContext(context), stack_map_id, 0)); // Unique ID
+        try total_args.append(c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0)); // Shadow bytes (0 = unlimited)
+        
+        // Add all live pointer locations as GC roots
+        for (live_pointers) |ptr| {
+            // Only add actual pointer types to the stackmap
+            const ptr_type = c.LLVMTypeOf(ptr);
+            if (c.LLVMGetTypeKind(ptr_type) == c.LLVMPointerTypeKind) {
+                try total_args.append(ptr);
+            }
+        }
+        
+        // Generate the stackmap intrinsic call
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(stack_map_func), 
+            stack_map_func, total_args.items.ptr, @intCast(total_args.items.len), "gc_stackmap");
+            
+        // Add metadata to mark this as a GC safepoint
+        const safepoint_kind = c.LLVMGetMDKindIDInContext(context, "gc.safepoint", 12);
+        const safepoint_metadata = c.LLVMMDStringInContext(context, "precise", 7);
+        const safepoint_node = c.LLVMMDNodeInContext(context, &[_]c.LLVMValueRef{safepoint_metadata}, 1);
+        
+        // Get the current instruction to attach metadata
+        const current_inst = c.LLVMGetLastInstruction(c.LLVMGetInsertBlock(builder));
+        if (current_inst != null) {
+            c.LLVMSetMetadata(current_inst, safepoint_kind, safepoint_node);
+        }
+        
+        // Record stackmap for runtime GC integration
+        std.debug.print("✅ Generated precise stackmap for function '{}' with {} live roots\n", 
+            .{ std.mem.sliceTo(function_name, 0), live_pointers.len });
     }
     
     /// Generate GC safepoint

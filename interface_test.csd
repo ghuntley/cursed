@@ -1,8 +1,1 @@
-collab Drawable {
-    slay draw()
-}
-squad Circle {
-    slay draw() {
-        vibez.spill("Drawing circle")
-    }
-}
+be_like Greeter collab { greet(name tea) tea } be_like Person squad { name tea } impl Person fam Greeter { slay greet(name tea) tea { damn "Hello, " + name } } sus g Greeter = Person{name: "World"}; sus msg tea = g.greet("CURSED"); vibez.spill(msg)

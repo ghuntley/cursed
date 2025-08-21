@@ -1,9 +1,1 @@
-slay add(a drip, b drip) drip {
-    damn a + b
-}
-
-slay main_character() {
-    vibez.spill("Testing simple function")
-    sus result drip = add(5, 3)
-    vibez.spill("Result:", result)
-}
+slay simple_add(a normie, b normie) normie { damn a + b } sus result normie = simple_add(10, 20); vibez.spill("Simple function result:", result)

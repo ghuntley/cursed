@@ -667,7 +667,7 @@ test "deadlock detection and prevention" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 4);
-    defer scheduler.deinit(self.allocator);
+    defer scheduler.deinit();
 
     // Create jobs with potential circular dependency
     const job1 = try scheduler.addJob("compile_main", JobPriority.normal);
@@ -690,7 +690,7 @@ test "circular dependency detection" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 4);
-    defer scheduler.deinit(self.allocator);
+    defer scheduler.deinit();
 
     // Create jobs with circular dependency
     const job1 = try scheduler.addJob("job_a", JobPriority.normal);
@@ -715,7 +715,7 @@ test "parallel job execution" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 2);
-    defer scheduler.deinit(self.allocator);
+    defer scheduler.deinit();
 
     // Create independent jobs that can run in parallel
     const job1 = try scheduler.addJob("parallel_task_1", JobPriority.normal);

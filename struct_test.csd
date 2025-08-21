@@ -1,8 +1,1 @@
-fr fr Simple struct field test
-
-squad SimpleStruct {
-    value drip
-}
-
-sus simple SimpleStruct = SimpleStruct { value: 123 }
-vibez.spill("Simple struct value:", simple.value)
+be_like Person squad { name tea; age normie } sus p Person = {name: "Alice", age: 30}; vibez.spill("Person:", p.name, "Age:", p.age)

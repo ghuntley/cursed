@@ -247,7 +247,7 @@ pub const LinkerScriptManager = struct {
     }
     
     pub fn deinit(self: *LinkerScriptManager) void {
-        self.normalizer.deinit(self.allocator);
+        self.normalizer.deinit();
     }
     
     /// Get linker configuration for a target triple

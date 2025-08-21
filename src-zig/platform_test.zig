@@ -4,10 +4,10 @@ const platform = @import("platform_abstraction.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    std.debug.print("CURSED Platform Abstraction Test Suite\n");
+    std.debug.print("CURSED Platform Abstraction Test Suite\n", .{});
     std.debug.print("=====================================\n\n", .{});
     
     // Initialize platform (required for some platforms like Windows)

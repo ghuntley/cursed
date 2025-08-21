@@ -487,7 +487,24 @@ pub const PGOSystem = struct {
             defer self.allocator.free(name_bytes);
             _ = reader.read(name_bytes) catch break;
             
-            // Read call count
+            // Read call count and frequency data
+            const call_count = reader.readIntLittle(u64) catch break;
+            const frequency = reader.readIntLittle(f64) catch break;
+            
+            // Store function profile data
+            const name_owned = self.allocator.dupe(u8, name_bytes) catch continue;
+            try self.function_profiles.put(name_owned, .{
+                .call_count = call_count,
+                .frequency = frequency,
+                .is_hot = frequency > self.hot_threshold,
+            });
+            
+            // Categorize hot/cold functions
+            if (frequency > self.hot_threshold) {
+                try self.hot_functions.append(self.allocator, name_owned);
+            } else if (frequency < (self.hot_threshold * 0.1)) {
+                try self.cold_functions.append(self.allocator, name_owned);
+            }
             const call_count = reader.readIntLittle(u64) catch break;
             
             // Store in hash map

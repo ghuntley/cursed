@@ -34,7 +34,7 @@ const StandaloneDebugger = struct {
         for (self.source_lines.items) |line| {
             self.allocator.free(line);
         }
-        self.source_lines.deinit(allocator);
+        self.source_lines.deinit(self.allocator);
         
         for (self.watch_variables.items) |var_name| {
             self.allocator.free(var_name);
@@ -350,7 +350,7 @@ const StandaloneDebugger = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

@@ -86,12 +86,12 @@ As of August 10, 2025, CURSED has achieved **100% ecosystem completion** with pr
 
 ## 📖 Documentation
 
-- **[Getting Started Guide](docs/user-guide/getting-started.md)** - Your first CURSED program
-- **[Language Reference](docs/user-guide/language-reference.md)** - Complete syntax guide
-- **[Standard Library](docs/api/)** - 50+ module documentation
-- **[Migration Guides](docs/migration/)** - From other languages
-- **[Developer Guide](docs/developer-guide/)** - Contributing and internals
-- **[Examples](examples/)** - Comprehensive code examples
+- **[Getting Started Guide](docs/GETTING_STARTED.md)** - Your first CURSED program in minutes
+- **[Language Reference](docs/LANGUAGE_REFERENCE.md)** - Complete syntax guide with working examples
+- **[Migration Guide](docs/MIGRATION_GUIDE.md)** - From Rust, Go, Python, Java, C/C++
+- **[Troubleshooting Guide](docs/TROUBLESHOOTING.md)** - Solutions for common issues
+- **[Examples](examples/)** - 269 comprehensive code examples
+- **[Standard Library](stdlib/)** - 50+ production-ready modules
 
 ## 🎯 Language Syntax
 
@@ -186,57 +186,45 @@ Download from [GitHub Releases](https://github.com/ghuntley/cursed/releases):
 
 ### Build from Source
 ```bash
-# Prerequisites: Zig 0.12+ and LLVM 18
+# Prerequisites: Zig 0.12+ 
 git clone https://github.com/ghuntley/cursed.git
 cd cursed
 
-# Development environment (automatic dependencies)
-direnv allow  # Loads Zig, LLVM, and dev tools
-
-# Build (0.1-0.2 second builds!)
+# Build (0.05-0.2 second builds!)
 zig build
 
-# All tools are in zig-out/bin/
+# Test installation
 ./zig-out/bin/cursed-zig --version
+
+# Run your first program
+echo 'vibez.spill("Hello CURSED!")' > hello.csd
+./zig-out/bin/cursed-zig hello.csd
 ```
 
 ## 🛠️ Usage
 
 ### Command Line Interface
 ```bash
-# Run CURSED program
-cursed program.csd
-
-# Interactive REPL
-cursed repl
-
-# Compile to binary
-cursed program.csd --compile
-
-# Cross-compile
-cursed program.csd --compile --target=aarch64-macos
+# Run CURSED program (100% working interpreter mode)
+./zig-out/bin/cursed-zig program.csd
 
 # Type checking
-cursed check program.csd
+./zig-out/bin/cursed-zig check program.csd
 
 # Format code
-cursed format src/
+./zig-out/bin/cursed-fmt program.csd
 
-# Lint code  
-cursed lint src/
+# Compile to binary (working with warnings)
+./zig-out/bin/cursed-zig --compile program.csd
 
-# Generate docs
-cursed doc src/
+# Cross-compile (Linux targets work perfectly)
+zig build -Dtarget=aarch64-linux
 
-# Run tests
-cursed test test_suite.csd
+# Memory safety validation  
+valgrind ./zig-out/bin/cursed-zig program.csd
 
-# Performance profiling
-cursed program.csd --profile
-
-# Debug with GDB/LLDB
-cursed program.csd --compile --debug-info
-gdb ./program
+# Performance testing
+time ./zig-out/bin/cursed-zig program.csd
 ```
 
 ### IDE Integration

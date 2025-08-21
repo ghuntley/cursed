@@ -1441,32 +1441,46 @@ pub const CodeGenerator = struct {
         std.debug.print("✅ Struct '{s}' defined with {} fields\n", .{ struct_stmt.name, struct_stmt.fields.items.len });
     }
 
-    /// Generate interface definitions
+    /// Generate interface definitions with error propagation
     fn generateInterfaceStatement(self: *CodeGenerator, interface_stmt: ast.InterfaceStatement) !void {
         // Interfaces in LLVM are typically implemented as vtables
-        // For now, we'll create a struct containing function pointers
+        // Enhanced with error propagation through interface dispatch
         
         var method_types = try self.allocator.alloc(c.LLVMTypeRef, interface_stmt.methods.items.len);
         defer self.allocator.free(method_types);
         
         for (interface_stmt.methods.items, 0..) |method, i| {
             // Create function pointer type for each method
-            var param_types = try self.allocator.alloc(c.LLVMTypeRef, method.parameters.items.len + 1); // +1 for self parameter
+            var param_types = try self.allocator.alloc(c.LLVMTypeRef, method.parameters.items.len + 2); // +1 for self, +1 for error context
             defer self.allocator.free(param_types);
             
             param_types[0] = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0); // self pointer
+            param_types[1] = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0); // error context
             
             for (method.parameters.items, 0..) |param, j| {
-                param_types[j + 1] = self.getLLVMTypeFromCursedType(param.param_type);
+                param_types[j + 2] = self.getLLVMTypeFromCursedType(param.param_type);
             }
             
-            const return_type = if (method.return_type) |ret_type|
+            // Enhanced return type with error propagation
+            const base_return_type = if (method.return_type) |ret_type|
                 self.getLLVMTypeFromCursedType(ret_type)
             else
                 c.LLVMVoidTypeInContext(self.context);
+                
+            // Create error-aware return type struct: {result, error_code}
+            var return_struct_members = [_]c.LLVMTypeRef{
+                base_return_type,
+                c.LLVMInt32TypeInContext(self.context), // error code
+            };
+            const error_aware_return_type = c.LLVMStructTypeInContext(
+                self.context,
+                &return_struct_members,
+                2,
+                0
+            );
             
             const method_func_type = c.LLVMFunctionType(
-                return_type,
+                error_aware_return_type,
                 param_types.ptr,
                 @intCast(param_types.len),
                 0
@@ -1475,18 +1489,26 @@ pub const CodeGenerator = struct {
             method_types[i] = c.LLVMPointerType(method_func_type, 0);
         }
         
-        // Create vtable struct type
+        // Create vtable struct type with null safety marker
+        var vtable_members = try self.allocator.alloc(c.LLVMTypeRef, method_types.len + 1);
+        defer self.allocator.free(vtable_members);
+        
+        vtable_members[0] = c.LLVMInt64TypeInContext(self.context); // vtable validation magic
+        for (method_types, 0..) |method_type, i| {
+            vtable_members[i + 1] = method_type;
+        }
+        
         const vtable_type = c.LLVMStructTypeInContext(
             self.context,
-            method_types.ptr,
-            @intCast(method_types.len),
+            vtable_members.ptr,
+            @intCast(vtable_members.len),
             0
         );
         
         // Store interface type for later reference
         try self.interface_types.put(interface_stmt.name, vtable_type);
         
-        std.debug.print("✅ Interface '{s}' defined with {} methods\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
+        std.debug.print("✅ Interface '{s}' defined with {} methods (error-aware)\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
     }
 
     /// Generate implementation blocks

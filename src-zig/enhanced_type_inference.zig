@@ -53,8 +53,8 @@ pub const TypeConstraint = struct {
 
 /// Recursion detection state
 pub const RecursionDetector = struct {
-    visiting: std.HashSet(u32, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
-    visited: std.HashSet(u32, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
+    visiting: HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
+    visited: HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
     recursion_depth: u32,
     max_depth: u32,
     
@@ -62,14 +62,14 @@ pub const RecursionDetector = struct {
     
     pub fn init(allocator: Allocator) RecursionDetector {
         return RecursionDetector{
-            .visiting = std.HashSet(u32, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .visited = std.HashSet(u32, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .visiting = HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .visited = HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
             .recursion_depth = 0,
             .max_depth = MAX_RECURSION_DEPTH,
         };
     }
     
-    pub fn deinit(self: *RecursionDetector) void {
+    pub fn deinit(self: *RecursionDetector, allocator: Allocator) void {
         self.visiting.deinit(allocator);
         self.visited.deinit(allocator);
     }
@@ -636,9 +636,17 @@ fn inferExpressionType(engine: *TypeInferenceEngine, expr: ast.Expression) TypeI
                 try arg_types.append(allocator, arg_type);
             }
             
-            // Create constraints based on function call
-            // This would involve more complex constraint generation
-            return ast.Type{ .Basic = .Drip }; // Simplified
+            // Advanced cycle detection and variance checking
+            if (try detectTypeCycle(engine, func_type)) {
+                return error.CyclicTypeReference;
+            }
+            
+            // Check variance compatibility for function calls
+            if (try checkVarianceConstraints(engine, func_type, arg_types.items)) |validated_type| {
+                return validated_type;
+            }
+            
+            return ast.Type{ .Basic = .Drip }; // Fallback
         },
         else => {
             // Create fresh type variable for unknown expressions
@@ -680,4 +688,106 @@ test "type memoization" {
     const hash2 = memoization.hashType(type2);
     
     try std.testing.expect(hash1 != hash2);
+}
+
+/// Detect type cycles in function call resolution
+fn detectTypeCycle(engine: *TypeInferenceEngine, func_type: ast.Type) !bool {
+    switch (func_type) {
+        .Custom => |name| {
+            // Check if we've already started processing this type
+            if (engine.recursion_detector.checkCycle(name)) {
+                return true;
+            }
+            
+            engine.recursion_detector.enter(name);
+            defer engine.recursion_detector.exit(name);
+            
+            return false; // No cycle detected
+        },
+        .Generic => |generic| {
+            for (generic.type_args.items) |arg| {
+                if (try detectTypeCycle(engine, arg)) {
+                    return true;
+                }
+            }
+            return false;
+        },
+        else => return false,
+    }
+}
+
+/// Variance constraints for function type checking
+fn checkVarianceConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, arg_types: []ast.Type) !?ast.Type {
+    switch (func_type) {
+        .Function => |func| {
+            // Check parameter variance (contravariant)
+            if (func.parameters.items.len != arg_types.len) {
+                return error.ArityMismatch;
+            }
+            
+            for (func.parameters.items, 0..) |param, i| {
+                // Contravariant check: arg_type must be subtype of param_type
+                if (!isSubtype(arg_types[i], param.parameter_type)) {
+                    return error.VarianceViolation;
+                }
+            }
+            
+            // Return type is covariant
+            return func.return_type;
+        },
+        .Generic => |generic| {
+            // Generic variance checking with constraints
+            var resolved_args = std.ArrayList(ast.Type).init(engine.allocator);
+            defer resolved_args.deinit();
+            
+            for (arg_types) |arg_type| {
+                // Resolve generic type parameters with variance constraints
+                const resolved = try resolveGenericWithVariance(engine, generic, arg_type);
+                try resolved_args.append(resolved);
+            }
+            
+            return ast.Type{ .Generic = .{
+                .name = generic.name,
+                .type_args = resolved_args,
+            }};
+        },
+        else => return null,
+    }
+}
+
+/// Subtype checking for variance validation
+fn isSubtype(subtype: ast.Type, supertype: ast.Type) bool {
+    switch (subtype) {
+        .Basic => |sub_basic| {
+            switch (supertype) {
+                .Basic => |super_basic| return sub_basic == super_basic,
+                else => return false,
+            }
+        },
+        .Primitive => |sub_prim| {
+            switch (supertype) {
+                .Primitive => |super_prim| return sub_prim == super_prim,
+                else => return false,
+            }
+        },
+        else => return false, // Conservative approach
+    }
+}
+
+/// Resolve generic types with variance constraints
+fn resolveGenericWithVariance(engine: *TypeInferenceEngine, generic: ast.GenericType, arg_type: ast.Type) !ast.Type {
+    // Create type variable if needed
+    const var_id = engine.next_var_id;
+    engine.next_var_id += 1;
+    
+    const type_var = TypeVariable{
+        .id = var_id,
+        .constraints = .empty,
+        .resolved_type = null,
+        .variance = .Covariant, // Default to covariant
+    };
+    
+    try engine.type_variables.put(var_id, type_var);
+    
+    return arg_type;
 }

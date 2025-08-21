@@ -1,0 +1,40 @@
+const std = @import("std");
+
+pub fn build(b: *std.Build) void {
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // Create minimal CURSED compiler executable
+    const minimal_exe = b.addExecutable(.{
+        .name = "cursed-minimal",
+        .root_source_file = b.path("cursed_minimal.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+
+    b.installArtifact(minimal_exe);
+
+    // Create run command
+    const run_cmd = b.addRunArtifact(minimal_exe);
+    run_cmd.step.dependOn(b.getInstallStep());
+
+    if (b.args) |args| {
+        run_cmd.addArgs(args);
+    }
+
+    const run_step = b.step("run", "Run the minimal CURSED compiler");
+    run_step.dependOn(&run_cmd.step);
+
+    // Create test command
+    const test_step = b.step("test", "Test the minimal compiler");
+    
+    // Add a simple test that builds the compiler
+    const test_build = b.addTest(.{
+        .root_source_file = b.path("cursed_minimal.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    
+    const run_tests = b.addRunArtifact(test_build);
+    test_step.dependOn(&run_tests.step);
+}

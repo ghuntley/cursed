@@ -18,7 +18,7 @@ const ArenaMemoryLeakValidator = struct {
     pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
             .allocator = allocator,
-            .test_results = std.ArrayList(TestResult).init(allocator),
+            .test_results = std.ArrayList(TestResult){},
         };
     }
     
@@ -29,7 +29,7 @@ const ArenaMemoryLeakValidator = struct {
                 self.allocator.free(msg);
             }
         }
-        self.test_results.deinit();
+        self.test_results.deinit(self.allocator);
     }
     
     /// Run a single arena manager test
@@ -101,7 +101,7 @@ const ArenaMemoryLeakValidator = struct {
             .error_message = error_message,
         };
         
-        self.test_results.append(result) catch {};
+        self.test_results.append(self.allocator, result) catch {};
         
         // Print result immediately
         if (passed) {
@@ -201,7 +201,7 @@ const ArenaMemoryLeakValidator = struct {
             .error_message = error_message,
         };
         
-        self.test_results.append(result) catch {};
+        self.test_results.append(self.allocator, result) catch {};
         
         if (passed) {
             std.debug.print("✅ {s}: 10 x 64KB allocations, memory {d} -> {d} KB\n", 
@@ -249,7 +249,7 @@ const ArenaMemoryLeakValidator = struct {
             .error_message = error_message,
         };
         
-        self.test_results.append(result) catch {};
+        self.test_results.append(self.allocator, result) catch {};
         
         if (passed) {
             std.debug.print("✅ {s}: 500 rapid cycles, memory {d} -> {d} KB\n", 
@@ -312,7 +312,7 @@ const ArenaMemoryLeakValidator = struct {
             .error_message = error_message,
         };
         
-        self.test_results.append(result) catch {};
+        self.test_results.append(self.allocator, result) catch {};
         
         if (passed) {
             std.debug.print("✅ {s}: 50 reset cycles, memory {d} -> {d} KB\n", 

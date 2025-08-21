@@ -1,79 +1,158 @@
 const std = @import("std");
-const builtin = @import("builtin");
 
-// Simple LLVM linking function that avoids API issues
-fn addLlvm(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget) void {
-    // Skip LLVM for WASM targets
-    if (target.result.cpu.arch == .wasm32) return;
-    
-    // Configure LLVM with proper CPU target specification
-    const cpu_name = switch (target.result.cpu.arch) {
-        .x86_64 => "x86-64",
-        .aarch64 => "generic",
-        else => "generic",
-    };
-    
-    // Set explicit CPU target to avoid athlon-xp conflicts
-    exe.root_module.addCMacro("LLVM_DEFAULT_TARGET_TRIPLE", b.fmt("\"{s}\"", .{@tagName(target.result.cpu.arch)}));
-    exe.root_module.addCMacro("LLVM_HOST_TARGET", b.fmt("\"{s}\"", .{cpu_name}));
-    
-    // Use hardcoded paths for Ubuntu/Debian systems
-    exe.addSystemIncludePath(b.path("/usr/include/llvm-c-18"));
-    exe.addSystemIncludePath(b.path("/usr/include/llvm-18"));
-    exe.addLibraryPath(b.path("/usr/lib/llvm-18/lib"));
-    exe.linkSystemLibrary("LLVM-18");
-    
-    // Link additional required libraries  
-    exe.linkSystemLibrary("dl");
-    exe.linkSystemLibrary("pthread");
-    exe.linkSystemLibrary("z");
-    exe.linkSystemLibrary("ncurses");
-}
-
+/// Simple compatibility-aware build script for CURSED  
+/// Checks Zig version and reports compatibility issues
 pub fn build(b: *std.Build) void {
-    const target = b.standardTargetOptions(.{});
-    const optimize = b.standardOptimizeOption(.{});
+    // Check Zig version for compatibility warnings
+    const zig_version = @import("builtin").zig_version;
     
-    const resolved_target = target;
-    const is_wasm = resolved_target.result.cpu.arch == .wasm32;
-    const is_cross_compile = resolved_target.result.cpu.arch != @import("builtin").target.cpu.arch or
-                            resolved_target.result.os.tag != @import("builtin").target.os.tag;
-    
-    // Create the main CURSED compiler executable
-    const exe = b.addExecutable(.{
-        .name = "cursed", 
-        .root_source_file = if (is_wasm) b.path("src-zig/wasm_minimal_compiler.zig") else b.path("src-zig/minimal_main.zig"),
-        .target = resolved_target,
-        .optimize = optimize,
-    });
-
-    if (!is_wasm) {
-        exe.linkLibC();
+    if (zig_version.major == 0 and zig_version.minor >= 16) {
+        std.log.warn("Using Zig {}.{}.{} - some features may be experimental", .{
+            zig_version.major, zig_version.minor, zig_version.patch
+        });
     }
     
-    b.installArtifact(exe);
-    
-    // Create syscall-enabled compiler with LLVM support
-    if (!is_cross_compile and !is_wasm) {
-        const syscall_exe = b.addExecutable(.{
-            .name = "cursed-syscall",
-            .root_source_file = b.path("src-zig/main_unified.zig"),
-            .target = resolved_target,
+    const target = b.standardTargetOptions(.{});
+    const optimize = b.standardOptimizeOption(.{});
+
+    // Create main CURSED module - check if it exists
+    const main_file_exists = blk: {
+        std.fs.cwd().access("src-zig/main.zig", .{}) catch {
+            break :blk false;
+        };
+        break :blk true;
+    };
+
+    if (main_file_exists) {
+        // Full CURSED compiler
+        const cursed_exe = b.addExecutable(.{
+            .name = "cursed-zig",
+            .root_source_file = b.path("src-zig/main.zig"),
+            .target = target,
             .optimize = optimize,
         });
         
-        syscall_exe.linkLibC();
-        addLlvm(b, syscall_exe, resolved_target);
-        b.installArtifact(syscall_exe);
-    }
-    
-    // Create run step
-    const run_cmd = b.addRunArtifact(exe);
-    run_cmd.step.dependOn(b.getInstallStep());
-    if (b.args) |args| {
-        run_cmd.addArgs(args);
+        b.installArtifact(cursed_exe);
+        
+        // Run command
+        const run_cmd = b.addRunArtifact(cursed_exe);
+        run_cmd.step.dependOn(b.getInstallStep());
+        
+        if (b.args) |args| {
+            run_cmd.addArgs(args);
+        }
+        
+        const run_step = b.step("run", "Run the CURSED compiler");
+        run_step.dependOn(&run_cmd.step);
     }
 
-    const run_step = b.step("run", "Run the CURSED compiler");
-    run_step.dependOn(&run_cmd.step);
+    // Create minimal CURSED compiler (always available)
+    const minimal_exe = b.addExecutable(.{
+        .name = "cursed-minimal",
+        .root_source_file = b.path("cursed_minimal.zig"),
+        .target = target,
+        .optimize = optimize,
+    });
+    
+    b.installArtifact(minimal_exe);
+
+    // Demo and version steps
+    const demo_step = b.step("demo", "Show CURSED language demo");
+    const demo_cmd = b.addRunArtifact(minimal_exe);
+    demo_cmd.addArg("--demo");
+    demo_step.dependOn(&demo_cmd.step);
+
+    const version_step = b.step("version", "Show compiler version");
+    const version_cmd = b.addRunArtifact(minimal_exe);
+    version_cmd.addArg("--version");
+    version_step.dependOn(&version_cmd.step);
+
+    // Test step with basic compatibility tests
+    const test_step = b.step("test", "Run all tests");
+    
+    // Test compatibility layer if it exists
+    const compat_test_exists = blk: {
+        std.fs.cwd().access("src-zig/zig_version.zig", .{}) catch {
+            break :blk false;  
+        };
+        break :blk true;
+    };
+    
+    if (compat_test_exists) {
+        const compat_test = b.addTest(.{
+            .root_source_file = b.path("src-zig/zig_version.zig"),
+            .target = target,
+            .optimize = optimize,
+        });
+        
+        const run_compat_test = b.addRunArtifact(compat_test);
+        test_step.dependOn(&run_compat_test.step);
+    }
+
+    // Test other components if they exist
+    const test_files = [_][]const u8{
+        "src-zig/lexer.zig",
+        "src-zig/parser.zig",
+        "src-zig/ast.zig",
+    };
+    
+    for (test_files) |test_file| {
+        const file_exists = blk: {
+            std.fs.cwd().access(test_file, .{}) catch {
+                break :blk false;
+            };
+            break :blk true;
+        };
+        
+        if (file_exists) {
+            const test_exe = b.addTest(.{
+                .root_source_file = b.path(test_file),
+                .target = target,
+                .optimize = optimize,
+            });
+            
+            const run_test = b.addRunArtifact(test_exe);
+            test_step.dependOn(&run_test.step);
+        }
+    }
+    
+    // Compatibility check step
+    const compat_check_step = b.step("check-compat", "Check Zig version compatibility");
+    
+    // Create inline compatibility checker
+    const compat_checker = b.addExecutable(.{
+        .name = "zig-compat-check",
+        .root_source_file = b.addWriteFiles().add("compat_check.zig", 
+            \\const std = @import("std");
+            \\
+            \\pub fn main() !void {
+            \\    const version = @import("builtin").zig_version;
+            \\    const min_major = 0;
+            \\    const min_minor = 15;
+            \\    const min_patch = 1;
+            \\    
+            \\    std.log.info("=== Zig Compatibility Check ===", .{});
+            \\    std.log.info("Current version: {}.{}.{}", .{version.major, version.minor, version.patch});
+            \\    std.log.info("Minimum required: {}.{}.{}", .{min_major, min_minor, min_patch});
+            \\    
+            \\    if (version.major < min_major or 
+            \\        (version.major == min_major and version.minor < min_minor) or
+            \\        (version.major == min_major and version.minor == min_minor and version.patch < min_patch)) {
+            \\        std.log.err("❌ Unsupported Zig version", .{});
+            \\        return error.UnsupportedVersion;
+            \\    }
+            \\    
+            \\    if (version.minor >= 16) {
+            \\        std.log.warn("⚠️  Using experimental Zig version", .{});
+            \\    } else {
+            \\        std.log.info("✅ Compatible Zig version", .{});
+            \\    }
+            \\}
+        ),
+        .target = target,
+        .optimize = optimize,
+    });
+    
+    const run_compat_check = b.addRunArtifact(compat_checker);
+    compat_check_step.dependOn(&run_compat_check.step);
 }

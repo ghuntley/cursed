@@ -1298,8 +1298,14 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
         
         // Handle while loop statements: bestie (condition) { ... }
         if (std.mem.startsWith(u8, stmt_trimmed, "bestie ")) {
-            if (verbose) print("🔍 Processing bestie while loop (inline): {s}\n", .{stmt_trimmed});
-            try handleInlineBestieLoop(variables, functions, allocator, stmt_trimmed, verbose);
+            // Check if this is a C-style for loop (contains semicolons) or while-style (parentheses)
+            if (std.mem.indexOf(u8, stmt_trimmed, ";") != null) {
+                if (verbose) print("🔍 Processing bestie C-style for loop: {s}\n", .{stmt_trimmed});
+                try handleBestieForLoop(variables, functions, allocator, stmt_trimmed, verbose);
+            } else {
+                if (verbose) print("🔍 Processing bestie while loop (inline): {s}\n", .{stmt_trimmed});
+                try handleInlineBestieLoop(variables, functions, allocator, stmt_trimmed, verbose);
+            }
             continue;
         }
         
@@ -5228,6 +5234,9 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     // Parse function body from subsequent lines until closing brace (multi-line function)
     var current_line = start_line + 1;
     var lines_consumed: usize = 1; // Start with 1 for the function signature line
+    var multi_line_statement = std.ArrayList(u8).init(allocator);
+    defer multi_line_statement.deinit();
+    var in_multi_line = false;
     
     while (current_line < source_lines.items.len) {
         const body_line = source_lines.items[current_line];
@@ -5236,15 +5245,45 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
         lines_consumed += 1;
         
         if (std.mem.eql(u8, body_trimmed, "}")) {
-            break;
+            // If we're in a multi-line statement, this might be closing it
+            if (in_multi_line) {
+                try multi_line_statement.appendSlice(" ");
+                try multi_line_statement.appendSlice(body_trimmed);
+                
+                // Check if this completes a ready/otherwise block
+                const complete_statement = multi_line_statement.items;
+                if (std.mem.indexOf(u8, complete_statement, "ready") != null) {
+                    const stmt_copy = try allocator.dupe(u8, complete_statement);
+                    errdefer allocator.free(stmt_copy);
+                    try func_def.body.append(allocator, stmt_copy);
+                    if (verbose) print("  📝 Multi-line statement: {s}\n", .{complete_statement});
+                    multi_line_statement.clearRetainingCapacity();
+                    in_multi_line = false;
+                    current_line += 1;
+                    continue;
+                }
+            } else {
+                // This is the end of the function
+                break;
+            }
         }
         
         if (body_trimmed.len > 0 and !std.mem.eql(u8, body_trimmed, "{")) {
-            const body_line_copy = try allocator.dupe(u8, body_trimmed);
-            errdefer allocator.free(body_line_copy);
-            
-            try func_def.body.append(allocator, body_line_copy);
-            if (verbose) print("  📝 Body line: {s}\n", .{body_trimmed});
+            // Check if this starts a multi-line ready statement
+            if (std.mem.startsWith(u8, body_trimmed, "ready ") and !std.mem.endsWith(u8, body_trimmed, "}")) {
+                in_multi_line = true;
+                try multi_line_statement.appendSlice(body_trimmed);
+            } else if (in_multi_line) {
+                // Continue building multi-line statement
+                try multi_line_statement.appendSlice(" ");
+                try multi_line_statement.appendSlice(body_trimmed);
+            } else {
+                // Regular single-line statement
+                const body_line_copy = try allocator.dupe(u8, body_trimmed);
+                errdefer allocator.free(body_line_copy);
+                try func_def.body.append(allocator, body_line_copy);
+                if (verbose) print("  📝 Body line: {s}\n", .{body_trimmed});
+            }
         }
         
         current_line += 1;
@@ -5499,6 +5538,13 @@ fn executeReadyStatement(variables: *VariableStore, functions: *FunctionStore, a
         return try executePatternMatchingFixed(variables, functions, allocator, trimmed, verbose);
     }
     
+    // Check if this is a multi-line ready statement (just starts with "ready")
+    // For multi-line blocks, we can't handle them here since we don't have access to source lines
+    if (!std.mem.endsWith(u8, trimmed, "}") and std.mem.startsWith(u8, trimmed, "ready ")) {
+        if (verbose) print("    ⚠️ Multi-line ready statement detected but cannot parse in function context: {s}\n", .{trimmed});
+        return;
+    }
+    
     // Check if this has an otherwise clause (traditional if-else)
     if (std.mem.indexOf(u8, trimmed, "otherwise")) |otherwise_pos| {
         // Parse: ready (condition) { body } otherwise { else_body }
@@ -5678,15 +5724,29 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
         return;
     }
     
-    // Handle function calls in function body
+    // Handle function calls first before falling through to general processing
     if (std.mem.indexOf(u8, trimmed, "(")) |paren_pos| {
-        const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
-        if (functions.get(func_name)) |_| {
-            if (verbose) print("  🔧 Processing function call in function: {s}\n", .{trimmed});
-            _ = try handleFunctionCall(functions, variables, allocator, trimmed, verbose);
-            return;
+        // Make sure this isn't a ready statement that starts with function call in condition
+        if (!std.mem.startsWith(u8, trimmed, "ready")) {
+            const func_name = std.mem.trim(u8, trimmed[0..paren_pos], " \t");
+            if (functions.get(func_name)) |_| {
+                if (verbose) print("  🔧 Processing function call in function: {s}\n", .{trimmed});
+                _ = try handleFunctionCall(functions, variables, allocator, trimmed, verbose);
+                return;
+            }
         }
     }
+    
+    // Handle expressions and assignments in function body
+    if (std.mem.indexOf(u8, trimmed, "=")) |_| {
+        if (verbose) print("  🔧 Processing assignment in function: {s}\n", .{trimmed});
+        var temp_structs = StructStore.init(allocator);
+        defer temp_structs.deinit(allocator);
+        try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, trimmed, verbose);
+        return;
+    }
+    
+    // Removed duplicate function call handling - now handled above
     
     // If we get here, log it as an unhandled line in function body
     if (verbose) {
@@ -6798,6 +6858,57 @@ fn executeSimpleStatement(
         return;
     }
     
+    // Handle increment/decrement operators: varname++ or varname--
+    if (std.mem.endsWith(u8, stmt, "++")) {
+        const var_name = std.mem.trim(u8, stmt[0..stmt.len - 2], " \t");
+        if (verbose) print("🔄 Increment operator: {s}++\n", .{var_name});
+        
+        // Get current value
+        if (variables.get(var_name)) |current_value| {
+            const incremented = switch (current_value) {
+                .Integer => |i| Variable{ .Integer = i + 1 },
+                .Float => |f| Variable{ .Float = f + 1.0 },
+                else => {
+                    if (verbose) print("❌ Cannot increment non-numeric value\n", .{});
+                    return;
+                }
+            };
+            
+            // Update the variable
+            const key_copy = try allocator.dupe(u8, var_name);
+            try variables.put(key_copy, incremented);
+            if (verbose) print("✅ Incremented {s} to {any}\n", .{ var_name, incremented });
+        } else {
+            if (verbose) print("❌ Variable '{s}' not found for increment\n", .{var_name});
+        }
+        return;
+    }
+    
+    if (std.mem.endsWith(u8, stmt, "--")) {
+        const var_name = std.mem.trim(u8, stmt[0..stmt.len - 2], " \t");
+        if (verbose) print("🔄 Decrement operator: {s}--\n", .{var_name});
+        
+        // Get current value  
+        if (variables.get(var_name)) |current_value| {
+            const decremented = switch (current_value) {
+                .Integer => |i| Variable{ .Integer = i - 1 },
+                .Float => |f| Variable{ .Float = f - 1.0 },
+                else => {
+                    if (verbose) print("❌ Cannot decrement non-numeric value\n", .{});
+                    return;
+                }
+            };
+            
+            // Update the variable
+            const key_copy = try allocator.dupe(u8, var_name);
+            try variables.put(key_copy, decremented);
+            if (verbose) print("✅ Decremented {s} to {any}\n", .{ var_name, decremented });
+        } else {
+            if (verbose) print("❌ Variable '{s}' not found for decrement\n", .{var_name});
+        }
+        return;
+    }
+
     // Handle variable assignments: varname = value
     if (std.mem.indexOf(u8, stmt, "=")) |equals_pos| {
         try executeAssignmentStatement(variables, functions, allocator, stmt, equals_pos, verbose);
@@ -6811,6 +6922,208 @@ fn executeSimpleStatement(
     }
     
     if (verbose) print("⚠️  Unhandled simple statement: {s}\n", .{stmt});
+}
+
+/// Handle C-style for loops: bestie init; condition; update { body }
+fn handleBestieForLoop(
+    variables: *VariableStore,
+    functions: *FunctionStore,
+    allocator: Allocator,
+    statement: []const u8,
+    verbose: bool
+) !void {
+    if (verbose) print("🔄 Processing C-style for loop: {s}\n", .{statement});
+    
+    // Parse: bestie init; condition; update { body }
+    const after_bestie = std.mem.trim(u8, statement[6..], " \t"); // Skip "bestie"
+    
+    // Find the braces first to isolate the header
+    var body_start: ?usize = null;
+    var body_end: ?usize = null;
+    
+    if (std.mem.indexOf(u8, after_bestie, "{")) |brace_start| {
+        body_start = brace_start;
+        var brace_count: i32 = 0;
+        for (after_bestie[brace_start..], brace_start..) |char, idx| {
+            if (char == '{') {
+                brace_count += 1;
+            } else if (char == '}') {
+                brace_count -= 1;
+                if (brace_count == 0) {
+                    body_end = idx;
+                    break;
+                }
+            }
+        }
+    }
+    
+    if (body_start == null or body_end == null) {
+        if (verbose) print("❌ Invalid for loop syntax - missing braces\n", .{});
+        return;
+    }
+    
+    // Extract header and body
+    const header = std.mem.trim(u8, after_bestie[0..body_start.?], " \t");
+    const body_text = std.mem.trim(u8, after_bestie[body_start.? + 1..body_end.?], " \t");
+    
+    // Split header by semicolons: init; condition; update
+    var semicolon_positions: [2]?usize = .{ null, null };
+    var semicolon_count: usize = 0;
+    
+    for (header, 0..) |char, i| {
+        if (char == ';' and semicolon_count < 2) {
+            semicolon_positions[semicolon_count] = i;
+            semicolon_count += 1;
+        }
+    }
+    
+    if (semicolon_count != 2) {
+        if (verbose) print("❌ Invalid for loop syntax - expected 2 semicolons, found {}\n", .{semicolon_count});
+        return;
+    }
+    
+    const init_part = std.mem.trim(u8, header[0..semicolon_positions[0].?], " \t");
+    const condition_part = std.mem.trim(u8, header[semicolon_positions[0].? + 1..semicolon_positions[1].?], " \t");
+    const update_part = std.mem.trim(u8, header[semicolon_positions[1].? + 1..], " \t");
+    
+    if (verbose) {
+        print("🔄 For loop parts:\n");
+        print("   Init: '{s}'\n", .{init_part});
+        print("   Condition: '{s}'\n", .{condition_part});
+        print("   Update: '{s}'\n", .{update_part});
+        print("   Body: '{s}'\n", .{body_text});
+    }
+    
+    // Create a new scope for loop variables
+    const original_variables = variables.*;
+    var loop_variables = VariableStore.init(allocator);
+    defer loop_variables.deinit(allocator);
+    
+    // Copy existing variables to loop scope
+    var var_iter = original_variables.iterator();
+    while (var_iter.next()) |entry| {
+        const key_copy = try allocator.dupe(u8, entry.key_ptr.*);
+        const value_copy = try entry.value_ptr.copy(allocator);
+        try loop_variables.put(key_copy, value_copy);
+    }
+    
+    // Execute initialization (supports := declarations)
+    if (init_part.len > 0) {
+        if (verbose) print("🔄 Executing init: {s}\n", .{init_part});
+        
+        // Handle := initialization
+        if (std.mem.indexOf(u8, init_part, ":=")) |declare_pos| {
+            const var_name = std.mem.trim(u8, init_part[0..declare_pos], " \t");
+            const var_value_expr = std.mem.trim(u8, init_part[declare_pos + 2..], " \t");
+            
+            if (verbose) print("🔄 Declaring loop variable '{s}' = {s}\n", .{ var_name, var_value_expr });
+            
+            // Evaluate the initial value
+            const initial_value = evaluateExpression(&loop_variables, functions, allocator, var_value_expr, verbose) catch |err| {
+                if (verbose) print("❌ Failed to evaluate init value: {any}\n", .{err});
+                return;
+            };
+            
+            // Store the loop variable
+            const key_copy = try allocator.dupe(u8, var_name);
+            try loop_variables.put(key_copy, initial_value);
+            
+            if (verbose) print("✅ Loop variable '{s}' initialized\n", .{var_name});
+        } else {
+            // Regular assignment or statement
+            try executeSimpleStatement(&loop_variables, functions, allocator, init_part, verbose);
+        }
+    }
+    
+    // Execute the loop with safety limit
+    const max_iterations = 10000;
+    var iteration_count: usize = 0;
+    
+    while (iteration_count < max_iterations) {
+        // Evaluate the condition
+        if (condition_part.len > 0) {
+            const condition_result = evaluateExpression(&loop_variables, functions, allocator, condition_part, verbose) catch |err| {
+                if (verbose) print("❌ Failed to evaluate loop condition: {any}\n", .{err});
+                break;
+            };
+            defer { var temp_result = condition_result; temp_result.deinit(allocator); }
+            
+            // Convert result to boolean
+            const condition_is_true = switch (condition_result) {
+                .Boolean => |b| b,
+                .Integer => |i| i != 0,
+                .Float => |f| f != 0.0,
+                .String => |s| s.data.len > 0,
+                else => false,
+            };
+            
+            if (!condition_is_true) {
+                if (verbose) print("🔄 Loop condition false, exiting loop\n", .{});
+                break;
+            }
+        } else {
+            // No condition means infinite loop - use safety counter
+            if (verbose and iteration_count == 0) print("🔄 Infinite loop detected, using safety limit\n", .{});
+        }
+        
+        if (verbose and iteration_count == 0) print("🔄 Starting for loop execution\n", .{});
+        
+        // Execute loop body statements
+        if (body_text.len > 0) {
+            // Split body by semicolons and execute each statement
+            var body_statements: std.ArrayList([]const u8) = .empty;
+            defer body_statements.deinit(allocator);
+            
+            var start: usize = 0;
+            var brace_count: i32 = 0;
+            var in_quotes = false;
+            
+            for (body_text, 0..) |char, i| {
+                if (char == '"' and (i == 0 or body_text[i-1] != '\\')) {
+                    in_quotes = !in_quotes;
+                } else if (!in_quotes) {
+                    if (char == '{') {
+                        brace_count += 1;
+                    } else if (char == '}') {
+                        brace_count -= 1;
+                    } else if (char == ';' and brace_count == 0) {
+                        const stmt_part = std.mem.trim(u8, body_text[start..i], " \t\r\n");
+                        if (stmt_part.len > 0) {
+                            try body_statements.append(allocator, stmt_part);
+                        }
+                        start = i + 1;
+                    }
+                }
+            }
+            
+            // Add the final statement if it doesn't end with semicolon
+            const final_stmt = std.mem.trim(u8, body_text[start..], " \t\r\n");
+            if (final_stmt.len > 0) {
+                try body_statements.append(allocator, final_stmt);
+            }
+            
+            // Execute each statement in loop scope
+            for (body_statements.items) |stmt| {
+                if (verbose) print("🔄 Executing for loop body statement: {s}\n", .{stmt});
+                try executeSimpleStatement(&loop_variables, functions, allocator, stmt, verbose);
+            }
+        }
+        
+        // Execute update statement
+        if (update_part.len > 0) {
+            if (verbose) print("🔄 Executing update: {s}\n", .{update_part});
+            try executeSimpleStatement(&loop_variables, functions, allocator, update_part, verbose);
+        }
+        
+        iteration_count += 1;
+    }
+    
+    // Loop variables go out of scope here - they are not copied back to original scope
+    if (iteration_count >= max_iterations) {
+        if (verbose) print("⚠️  For loop terminated after {} iterations (safety limit)\n", .{max_iterations});
+    } else if (verbose) {
+        print("✅ For loop completed after {} iterations\n", .{iteration_count});
+    }
 }
 
 /// Handle bestie (while loop) control flow blocks
@@ -6938,10 +7251,13 @@ fn handleBestieLoop(
         var body_lines: std.ArrayList([]const u8) = .empty;
         defer body_lines.deinit(allocator);
         
-        for (loop_body_start..loop_body_end) |line_idx| {
-            if (line_idx >= source_lines.items.len) break;
-            const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            try body_lines.append(allocator, exec_line);
+        // Ensure valid range to prevent integer overflow
+        if (loop_body_start < loop_body_end and loop_body_start < source_lines.items.len) {
+            const safe_end = @min(loop_body_end, source_lines.items.len);
+            for (loop_body_start..safe_end) |line_idx| {
+                const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
+                try body_lines.append(allocator, exec_line);
+            }
         }
         
         // Execute the body using the main interpreter logic

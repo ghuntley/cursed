@@ -220,7 +220,7 @@ pub const DependencyTracker = struct {
         if (!gop.found_existing) {
             gop.value_ptr.* = .empty;
         }
-        try gop.value_ptr.append(allocator, to);
+        try gop.value_ptr.append(self.allocator, to);
     }
 
     fn wouldCreateCycle(self: *DependencyTracker, from: *std.Build.Step, to: *std.Build.Step) !bool {
@@ -233,7 +233,7 @@ pub const DependencyTracker = struct {
         if (!gop.found_existing) {
             gop.value_ptr.* = .empty;
         }
-        try gop.value_ptr.append(allocator, to);
+        try gop.value_ptr.append(self.allocator, to);
 
         const has_cycle = try self.hasCycleDFS(from);
 
@@ -266,7 +266,7 @@ pub const DependencyTracker = struct {
     pub fn getExecutionOrder(self: *DependencyTracker) !std.ArrayList(*std.Build.Step) {
         var order: std.ArrayList(*std.Build.Step) = .empty;
         var in_degree = std.HashMap(*std.Build.Step, u32, std.hash_map.AutoContext(*std.Build.Step), 80).init(self.allocator);
-        defer in_degree.deinit(allocator);
+        defer in_degree.deinit(self.allocator);
 
         // Calculate in-degrees
         var graph_iterator = self.graph.iterator();
@@ -284,25 +284,25 @@ pub const DependencyTracker = struct {
 
         // Topological sort
         var queue: std.ArrayList(*std.Build.Step) = .empty;
-        defer queue.deinit(allocator);
+        defer queue.deinit(self.allocator);
 
         var degree_iterator = in_degree.iterator();
         while (degree_iterator.next()) |entry| {
             if (entry.value_ptr.* == 0) {
-                try queue.append(allocator, entry.key_ptr.*);
+                try queue.append(self.allocator, entry.key_ptr.*);
             }
         }
 
         while (queue.items.len > 0) {
             const current = queue.orderedRemove(0);
-            try order.append(allocator, current);
+            try order.append(self.allocator, current);
 
             if (self.graph.get(current)) |dependencies| {
                 for (dependencies.items) |dep| {
                     if (in_degree.getPtr(dep)) |degree| {
                         degree.* -= 1;
                         if (degree.* == 0) {
-                            try queue.append(allocator, dep);
+                            try queue.append(self.allocator, dep);
                         }
                     }
                 }
@@ -339,7 +339,7 @@ pub const ResourceManager = struct {
     pub fn deinit(self: *ResourceManager) void {
         var iterator = self.resources.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.waiting_queue.deinit(allocator);
+            entry.value_ptr.waiting_queue.deinit(self.allocator);
             self.allocator.free(entry.value_ptr.name);
         }
         self.resources.deinit(self.allocator);
@@ -369,7 +369,7 @@ pub const ResourceManager = struct {
             defer resource.mutex.unlock();
 
             while (resource.current_users >= resource.max_concurrent) {
-                try resource.waiting_queue.append(allocator, step);
+                try resource.waiting_queue.append(self.allocator, step);
                 resource.condition.wait(&resource.mutex);
             }
 
@@ -421,11 +421,11 @@ pub fn createSafeBuildConfig(b: *std.Build) !void {
 
 test "safe build step execution" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     const step = try SafeBuildStep.init(allocator, "test_step");
-    defer step.deinit(allocator);
+    defer step.deinit();
 
     step.markReady();
     try std.testing.expect(step.isReady());
@@ -435,16 +435,16 @@ test "safe build step execution" {
 
 test "dependency cycle detection" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var tracker = DependencyTracker.init(allocator);
-    defer tracker.deinit(allocator);
+    defer tracker.deinit();
 
     const step1 = try SafeBuildStep.init(allocator, "step1");
-    defer step1.deinit(allocator);
+    defer step1.deinit();
     const step2 = try SafeBuildStep.init(allocator, "step2");
-    defer step2.deinit(allocator);
+    defer step2.deinit();
 
     // Add dependency: step1 -> step2
     try tracker.addDependency(&step1.base, &step2.base);
@@ -458,18 +458,18 @@ test "dependency cycle detection" {
 
 test "resource contention management" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit(allocator);
+    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
     var manager = ResourceManager.init(allocator);
-    defer manager.deinit(allocator);
+    defer manager.deinit();
 
     try manager.addResource("memory", 2); // Max 2 concurrent users
 
     const step1 = try SafeBuildStep.init(allocator, "memory_user_1");
-    defer step1.deinit(allocator);
+    defer step1.deinit();
     const step2 = try SafeBuildStep.init(allocator, "memory_user_2");
-    defer step2.deinit(allocator);
+    defer step2.deinit();
 
     try manager.acquireResource("memory", &step1.base);
     try manager.acquireResource("memory", &step2.base);

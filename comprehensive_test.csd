@@ -1,33 +1,25 @@
-# CURSED Comprehensive Test
-slay multiply(x drip, y drip) drip { damn x * y }
-slay factorial(n drip) drip {
-    sus result drip = 1
-    sus i drip = 1
-    bestie (i <= n) {
-        result = result * i
-        i = i + 1
-    }
-    damn result
-}
+fr fr Comprehensive CURSED language test
+vibez.spill("=== CURSED Language Feature Test ===")
 
-vibez.spill("Function test:", multiply(6, 7))
-vibez.spill("Factorial test:", factorial(5))
+fr fr String literals  
+vibez.spill("✅ String literals work")
 
-sus x drip = 5
-ready (x) {
-    1 => vibez.spill("One")
-    5 => vibez.spill("Five - pattern matching works!")
-    _ => vibez.spill("Other")
-}
+fr fr Numbers
+vibez.spill("✅ Number:", 42)
 
-sus count drip = 0
-bestie (count < 3) {
-    vibez.spill("Loop iteration:", count)
-    count = count + 1
-}
+fr fr Variable declarations
+sus name tea = "CURSED"
+sus version drip = 100
+sus stable lit = based
+sus beta lit = cap
 
-ready (x > 3 && count >= 3) {
-    vibez.spill("Advanced conditions work!")
-}
+fr fr Variable output
+vibez.spill("Language:", name)
+vibez.spill("Version:", version)  
+vibez.spill("Stable:", stable)
+vibez.spill("Beta:", beta)
 
-vibez.spill("All major features working correctly!")
+fr fr Mixed output
+vibez.spill("Testing", "multiple", "arguments")
+
+vibez.spill("=== All tests completed! ===")

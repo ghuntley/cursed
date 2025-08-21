@@ -1,1 +1,1 @@
-sus i drip = 0; bestie (i < 3) { vibez.spill(i); i = i + 1 }
+sus data []normie = [10, 20, 30]; bestie i := 0; i < 3; i++ { vibez.spill("Item", i, ":", data[i]) }
