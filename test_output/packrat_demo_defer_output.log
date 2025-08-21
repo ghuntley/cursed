@@ -1,0 +1,261 @@
+CURSED Interpreter (Oracle P2 Migration Build)
+Executing: examples/packrat_demo.csd
+File size: 9581 bytes
+
+[Line 1] Processing: fr fr PackRat Archive Demo
+[Line 2] Processing: fr fr Demonstrates TAR and ZIP archive functionality in CURSED
+[Line 4] Import statement: yeet "stdlib::packrat"
+[Line 5] Import statement: yeet "stdlib::io"
+[Line 6] Import statement: yeet "stdlib::dropz"
+[Line 7] Import statement: yeet "vibez"
+[Line 9] Processing: slay main() -> tea {
+OUTPUT: 🐀 PackRat Archive Demo - Hoarding files like a pro! 🐀
+OUTPUT: 
+[Line 13] Processing: // Demonstrate TAR operations
+[Line 14] Processing: demo_tar_operations()?;
+OUTPUT: 
+[Line 18] Processing: // Demonstrate ZIP operations
+[Line 19] Processing: demo_zip_operations()?;
+OUTPUT: 
+[Line 23] Processing: // Demonstrate compression utilities
+[Line 24] Processing: demo_compression_utilities()?;
+OUTPUT: 
+OUTPUT: ✨ PackRat demo completed successfully! ✨
+[Line 29] Processing: periodt tea::cap;
+[Line 30] Processing: }
+[Line 32] Processing: fr fr Demonstrate TAR archive operations using RatPack and RatStash
+[Line 33] Processing: slay demo_tar_operations() -> tea {
+OUTPUT: 📦 TAR Archive Operations (RatPack & RatStash)
+OUTPUT: ==============================================
+[Line 37] Processing: // Create a TAR archive (RatStash)
+OUTPUT: Creating TAR archive...
+[Line 40] Processing: facts archive_file, err = dropz.Create("example.tar");
+[Line 41] Processing: lowkey err != cap {
+[Line 42] Processing: periodt err;
+[Line 43] Processing: }
+[Line 44] Processing: defer archive_file.Close();
+[Line 46] Processing: facts stash = packrat.NewRatStash(archive_file);
+[Line 47] Processing: defer stash.Close();
+[Line 49] Processing: // Add files to the archive
+[Line 50] Processing: facts files = [
+[Line 51] Processing: {"name": "readme.txt", "content": "This is a readme file for the TAR demo"},
+[Line 52] Processing: {"name": "config.json", "content": "{\"app\": \"cursed\", \"version\": \"1.0\"}"},
+[Line 53] Processing: {"name": "data/sample.csv", "content": "name,age,city\nAlice,25,NYC\nBob,30,LA"},
+[Line 54] Processing: ];
+[Line 56] Processing: for file in files {
+[Line 57] Processing: // Create header for the file
+[Line 58] Processing: facts header, err = packrat.FileInfoHeader(
+[Line 59] Processing: file.name,
+[Line 60] Processing: len(file.content),
+[Line 61] Processing: 0o644,
+[Line 62] Processing: ""
+[Line 63] Processing: );
+[Line 64] Processing: lowkey err != cap {
+[Line 65] Processing: periodt err;
+[Line 66] Processing: }
+[Line 68] Processing: header.Name = file.name;
+[Line 70] Processing: // Write header and content
+[Line 71] Processing: err = stash.WriteHeader(header);
+[Line 72] Processing: lowkey err != cap {
+[Line 73] Processing: periodt err;
+[Line 74] Processing: }
+[Line 76] Processing: facts written, err = stash.Write([]byte(file.content));
+[Line 77] Processing: lowkey err != cap {
+[Line 78] Processing: periodt err;
+[Line 79] Processing: }
+OUTPUT: "  ✓ Added: {} ({} bytes)", file.name, written
+[Line 82] Processing: }
+OUTPUT: TAR archive created successfully!
+OUTPUT: 
+[Line 87] Processing: // Read the TAR archive (RatPack)
+OUTPUT: Reading TAR archive...
+[Line 90] Processing: facts read_file, err = dropz.Open("example.tar");
+[Line 91] Processing: lowkey err != cap {
+[Line 92] Processing: periodt err;
+[Line 93] Processing: }
+[Line 94] Processing: defer read_file.Close();
+[Line 96] Processing: facts pack = packrat.NewRatPack(read_file);
+[Line 98] Processing: for {
+[Line 99] Processing: facts header, err = pack.Next();
+[Line 100] Processing: lowkey err != cap {
+[Line 101] Processing: periodt err;
+[Line 102] Processing: }
+[Line 104] Processing: lowkey header == cap {
+[Line 105] Processing: bestie; // End of archive
+[Line 106] Processing: }
+OUTPUT: "  📄 File: {}", header.Name
+OUTPUT: "     Size: {} bytes", header.Size
+OUTPUT: "     Mode: {:o}", header.Mode
+OUTPUT: "     Modified: {}", header.ModTime
+[Line 113] Processing: // Read file content
+[Line 114] Processing: facts content = make([]byte, header.Size);
+[Line 115] Processing: facts read, err = pack.Read(content);
+[Line 116] Processing: lowkey err != cap {
+[Line 117] Processing: periodt err;
+[Line 118] Processing: }
+OUTPUT: [vibez.spill statement]
+[Line 121] Processing: string(content[:min(read, 50)]));
+OUTPUT: 
+[Line 123] Processing: }
+[Line 125] Processing: periodt cap;
+[Line 126] Processing: }
+[Line 128] Processing: fr fr Demonstrate ZIP archive operations using HoardPack and HoardStash
+[Line 129] Processing: slay demo_zip_operations() -> tea {
+OUTPUT: 🗜️ ZIP Archive Operations (HoardPack & HoardStash)
+OUTPUT: ================================================
+[Line 133] Processing: // Create a ZIP archive (HoardStash)
+OUTPUT: Creating ZIP archive...
+[Line 136] Processing: facts archive_file, err = dropz.Create("example.zip");
+[Line 137] Processing: lowkey err != cap {
+[Line 138] Processing: periodt err;
+[Line 139] Processing: }
+[Line 140] Processing: defer archive_file.Close();
+[Line 142] Processing: facts stash = packrat.NewHoardStash(archive_file);
+[Line 143] Processing: defer stash.Close();
+[Line 145] Processing: // Add files to the ZIP archive
+[Line 146] Processing: facts files = [
+[Line 147] Processing: {"name": "program.csd", "content": "slay main() -> tea {\n    vibez.spill(\"Hello from ZIP!\");\n    periodt cap;\n}"},
+[Line 148] Processing: {"name": "docs/manual.md", "content": "# CURSED Manual\n\nThis is the manual for CURSED programming language."},
+[Line 149] Processing: {"name": "assets/logo.txt", "content": "   ____  __ __  ____   _____ _____  _____ \n  /  _/ / / / / /  _/  /  __// ___/ /  __/\n _/ /  / /_/ / _/ /   /  _/ / /_   /  _/  \n/___/  \\____/ /___/  /___/ \\___/  /___/  "},
+[Line 150] Processing: ];
+[Line 152] Processing: for file in files {
+[Line 153] Processing: // Create file in ZIP
+[Line 154] Processing: facts writer, err = stash.Create(file.name);
+[Line 155] Processing: lowkey err != cap {
+[Line 156] Processing: periodt err;
+[Line 157] Processing: }
+[Line 159] Processing: facts written, err = writer.Write([]byte(file.content));
+[Line 160] Processing: lowkey err != cap {
+[Line 161] Processing: periodt err;
+[Line 162] Processing: }
+OUTPUT: "  ✓ Added: {} ({} bytes)", file.name, written
+[Line 165] Processing: }
+OUTPUT: ZIP archive created successfully!
+OUTPUT: 
+[Line 170] Processing: // Read the ZIP archive (HoardPack)
+OUTPUT: Reading ZIP archive...
+[Line 173] Processing: facts read_file, err = dropz.Open("example.zip");
+[Line 174] Processing: lowkey err != cap {
+[Line 175] Processing: periodt err;
+[Line 176] Processing: }
+[Line 177] Processing: defer read_file.Close();
+[Line 179] Processing: facts size = read_file.Size();
+[Line 180] Processing: facts hoard, err = packrat.NewHoardPack(read_file, size);
+[Line 181] Processing: lowkey err != cap {
+[Line 182] Processing: periodt err;
+[Line 183] Processing: }
+OUTPUT: "ZIP archive contains {} files:", len(hoard.Files)
+[Line 187] Processing: for file in hoard.Files {
+OUTPUT: "  📄 File: {}", file.FileHeader.Name
+OUTPUT: "     Compressed: {} bytes", file.FileHeader.CompressedSize
+OUTPUT: "     Uncompressed: {} bytes", file.FileHeader.UncompressedSize
+OUTPUT: "     Method: {}", file.FileHeader.Method
+OUTPUT: "     CRC32: {:08x}", file.FileHeader.CRC32
+[Line 194] Processing: // Open and read file content
+[Line 195] Processing: facts reader, err = file.Open();
+[Line 196] Processing: lowkey err != cap {
+[Line 197] Processing: periodt err;
+[Line 198] Processing: }
+[Line 200] Processing: facts content, err = io.ReadAll(reader);
+[Line 201] Processing: lowkey err != cap {
+[Line 202] Processing: periodt err;
+[Line 203] Processing: }
+OUTPUT: [vibez.spill statement]
+[Line 206] Processing: string(content[:min(len(content), 50)]));
+OUTPUT: 
+[Line 208] Processing: }
+[Line 210] Processing: periodt cap;
+[Line 211] Processing: }
+[Line 213] Processing: fr fr Demonstrate compression utilities and format detection
+[Line 214] Processing: slay demo_compression_utilities() -> tea {
+OUTPUT: 🔍 Compression Utilities & Format Detection
+OUTPUT: ==========================================
+[Line 218] Processing: // Test format detection
+OUTPUT: Testing format detection...
+[Line 221] Processing: facts tar_file, err = dropz.Open("example.tar");
+[Line 222] Processing: lowkey err != cap {
+[Line 223] Processing: periodt err;
+[Line 224] Processing: }
+[Line 225] Processing: defer tar_file.Close();
+[Line 227] Processing: facts is_tar = packrat.IsTar(tar_file);
+OUTPUT: "  example.tar is TAR: {}", is_tar
+[Line 230] Processing: facts zip_file, err = dropz.Open("example.zip");
+[Line 231] Processing: lowkey err != cap {
+[Line 232] Processing: periodt err;
+[Line 233] Processing: }
+[Line 234] Processing: defer zip_file.Close();
+[Line 236] Processing: facts is_zip = packrat.IsZip(zip_file);
+OUTPUT: "  example.zip is ZIP: {}", is_zip
+OUTPUT: 
+[Line 240] Processing: // Demonstrate compression/decompression
+OUTPUT: Testing compression and decompression...
+[Line 243] Processing: // Create a test directory with files
+[Line 244] Processing: err = dropz.MkdirAll("test_data", 0o755);
+[Line 245] Processing: lowkey err != cap {
+[Line 246] Processing: periodt err;
+[Line 247] Processing: }
+[Line 249] Processing: facts test_files = [
+[Line 250] Processing: "test_data/file1.txt",
+[Line 251] Processing: "test_data/file2.txt",
+[Line 252] Processing: "test_data/file3.txt",
+[Line 253] Processing: ];
+[Line 255] Processing: for i, file_path in enumerate(test_files) {
+[Line 256] Processing: facts content = format("This is test file number {}\nContaining some sample data for compression testing.", i + 1);
+[Line 257] Processing: err = dropz.WriteFile(file_path, []byte(content), 0o644);
+[Line 258] Processing: lowkey err != cap {
+[Line 259] Processing: periodt err;
+[Line 260] Processing: }
+OUTPUT: "  ✓ Created: {}", file_path
+[Line 262] Processing: }
+[Line 264] Processing: // Compress directory to TAR
+OUTPUT: 
+OUTPUT: Compressing test_data to archive...
+[Line 268] Processing: err = packrat.Compress("test_data", "compressed.tar", "tar");
+[Line 269] Processing: lowkey err != cap {
+OUTPUT: "  ⚠️ Compression failed: {} (expected in demo)", err
+[Line 271] Processing: } flex {
+OUTPUT:   ✓ Compressed test_data to compressed.tar
+[Line 273] Processing: }
+[Line 275] Processing: // Test decompression
+[Line 276] Processing: err = packrat.Decompress("example.tar", "extracted");
+[Line 277] Processing: lowkey err != cap {
+OUTPUT: "  ⚠️ Decompression failed: {} (expected in demo)", err
+[Line 279] Processing: } flex {
+OUTPUT:   ✓ Decompressed example.tar to extracted/
+[Line 281] Processing: }
+OUTPUT: 
+OUTPUT: 📊 Archive Statistics:
+[Line 286] Processing: // Show file sizes
+[Line 287] Processing: facts tar_info, err = dropz.Stat("example.tar");
+[Line 288] Processing: lowkey err == cap {
+OUTPUT: "  TAR archive size: {} bytes", tar_info.Size()
+[Line 290] Processing: }
+[Line 292] Processing: facts zip_info, err = dropz.Stat("example.zip");
+[Line 293] Processing: lowkey err == cap {
+OUTPUT: "  ZIP archive size: {} bytes", zip_info.Size()
+[Line 295] Processing: }
+[Line 297] Processing: periodt cap;
+[Line 298] Processing: }
+[Line 300] Processing: fr fr Helper function to get minimum of two values
+[Line 301] Processing: slay min(a int, b int) -> int {
+[Line 302] Processing: lowkey a < b {
+[Line 303] Processing: periodt a;
+[Line 304] Processing: }
+[Line 305] Processing: periodt b;
+[Line 306] Processing: }
+[Line 308] Processing: fr fr Helper function for enumeration
+[Line 309] Processing: slay enumerate(arr []string) -> [][2]any {
+[Line 310] Processing: facts result = make([][2]any, len(arr));
+[Line 311] Processing: for i, item in range arr {
+[Line 312] Processing: result[i] = [2]any{i, item};
+[Line 313] Processing: }
+[Line 314] Processing: periodt result;
+[Line 315] Processing: }
+[Line 317] Processing: fr fr Helper function for string formatting
+[Line 318] Processing: slay format(template string, args ...any) -> string {
+[Line 319] Processing: // Simplified format function for demo
+[Line 320] Processing: // In real implementation would use proper string formatting
+[Line 321] Processing: periodt template;
+[Line 322] Processing: }
+
+✓ Execution completed

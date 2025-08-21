@@ -1,0 +1,211 @@
+CURSED Interpreter (Oracle P2 Migration Build)
+Executing: examples/test_vibes_demo.csd
+File size: 7333 bytes
+
+[Line 1] Processing: fr fr TestVibes Framework Demo
+[Line 2] Processing: fr fr This example demonstrates the key features of the TestVibes testing framework
+[Line 4] Import statement: yeet "stdlib::test_vibes"
+[Line 6] Processing: fr fr Basic test function using vibes
+[Line 7] Processing: slay TestAddition(t *VibeTest) {
+[Line 8] Processing: facts result = 2 + 2
+[Line 9] Processing: TestVibes.AssertEqual(t, 4, result, "2+2 should equal 4")
+[Line 10] Processing: t.PassVibe()
+[Line 11] Processing: }
+[Line 13] Processing: fr fr Table-driven test example
+[Line 14] Processing: slay TestStringOperations(t *VibeTest) {
+[Line 15] Processing: facts testCases = []TestVibes.TestCase{
+[Line 16] Processing: {
+[Line 17] Processing: Name:     "Uppercase conversion",
+[Line 18] Processing: Input:    "hello",
+[Line 19] Processing: Expected: "HELLO",
+[Line 20] Processing: TestFn: slay (t *VibeTest, input, expected interface{}) {
+[Line 21] Processing: result := stringz.ToUpper(input.(tea))
+[Line 22] Processing: TestVibes.AssertEqual(t, expected, result, "String should be uppercased")
+[Line 23] Processing: },
+[Line 24] Processing: },
+[Line 25] Processing: {
+[Line 26] Processing: Name:     "Lowercase conversion",
+[Line 27] Processing: Input:    "WORLD",
+[Line 28] Processing: Expected: "world",
+[Line 29] Processing: TestFn: slay (t *VibeTest, input, expected interface{}) {
+[Line 30] Processing: result := stringz.ToLower(input.(tea))
+[Line 31] Processing: TestVibes.AssertEqual(t, expected, result, "String should be lowercased")
+[Line 32] Processing: },
+[Line 33] Processing: },
+[Line 34] Processing: }
+[Line 36] Processing: TestVibes.RunTestCases(t, testCases)
+[Line 37] Processing: }
+[Line 39] Processing: fr fr Test with fixture
+[Line 40] Processing: slay TestDatabase(t *VibeTest) {
+[Line 41] Processing: fixture := TestVibes.NewFixtureVibe(
+[Line 42] Processing: slay (t *VibeTest) interface{} {
+[Line 43] Processing: fr fr Setup: Create a test database
+[Line 44] Processing: db := NewTestDatabase()
+[Line 45] Processing: db.Connect()
+[Line 46] Processing: damn db
+[Line 47] Processing: },
+[Line 48] Processing: slay (t *VibeTest, fixture interface{}) {
+[Line 49] Processing: fr fr Teardown: Close the database connection
+[Line 50] Processing: db := fixture.(*Database)
+[Line 51] Processing: db.Close()
+[Line 52] Processing: },
+[Line 53] Processing: )
+[Line 55] Processing: fixture.Run(t, slay (t *VibeTest, fixture interface{}) {
+[Line 56] Processing: db := fixture.(*Database)
+[Line 58] Processing: fr fr Test database operations
+[Line 59] Processing: user, err := db.CreateUser("testuser")
+[Line 60] Processing: TestVibes.AssertNoError(t, err, "Creating user should not fail")
+[Line 61] Processing: TestVibes.AssertNotNil(t, user, "User should be created")
+[Line 62] Processing: TestVibes.AssertEqual(t, "testuser", user.Name, "User name should match")
+[Line 63] Processing: })
+[Line 64] Processing: }
+[Line 66] Processing: fr fr Mock testing example
+[Line 67] Processing: slay TestWithMock(t *VibeTest) {
+[Line 68] Processing: fr fr Create a mock service
+[Line 69] Processing: mockService := TestVibes.MockVibe{Name: "UserService"}
+[Line 71] Processing: fr fr Set up expectations
+[Line 72] Processing: mockService.Expect("GetUser")
+[Line 73] Processing: .WithArgs([]interface{}{123})
+[Line 74] Processing: .Return([]interface{}{"Alice", nil})
+[Line 75] Processing: .Times(1)
+[Line 77] Processing: fr fr Test code that uses the mock
+[Line 78] Processing: userID := 123
+[Line 79] Processing: name, err := mockService.GetUser(userID)
+[Line 81] Processing: fr fr Verify results
+[Line 82] Processing: TestVibes.AssertNoError(t, err, "GetUser should not return error")
+[Line 83] Processing: TestVibes.AssertEqual(t, "Alice", name, "Should return correct user name")
+[Line 85] Processing: fr fr Verify all expectations were met
+[Line 86] Processing: mockService.Verify(t)
+[Line 87] Processing: }
+[Line 89] Processing: fr fr Benchmark example
+[Line 90] Processing: slay BenchmarkStringConcatenation(b *VibeBench) {
+[Line 91] Processing: lowkey (sus i = 0; i < b.N; i++) {
+[Line 92] Processing: _ = "hello" + "world"
+[Line 93] Processing: }
+[Line 94] Processing: }
+[Line 96] Processing: fr fr Benchmark with setup
+[Line 97] Processing: slay BenchmarkMapOperations(b *VibeBench) {
+[Line 98] Processing: data := make(map[tea]normie)
+[Line 99] Processing: lowkey (sus i = 0; i < 1000; i++) {
+[Line 100] Processing: data[fmt.Sprintf("key%d", i)] = i
+[Line 101] Processing: }
+[Line 103] Processing: b.ResetTimer()
+[Line 105] Processing: lowkey (sus i = 0; i < b.N; i++) {
+[Line 106] Processing: _ = data["key500"]
+[Line 107] Processing: }
+[Line 108] Processing: }
+[Line 110] Processing: fr fr Test utility example
+[Line 111] Processing: slay TestWithUtilities(t *VibeTest) {
+[Line 112] Processing: fr fr Use temporary file
+[Line 113] Processing: tempFile, tempPath := TestVibes.TempFile(t, "test_data")
+[Line 114] Processing: defer tempFile.Close()
+[Line 116] Processing: fr fr Write test data
+[Line 117] Processing: testData := "Hello, TestVibes!"
+[Line 118] Processing: err := ioutil.WriteFile(tempPath, []byte(testData), 0644)
+[Line 119] Processing: TestVibes.AssertNoError(t, err, "Should write to temp file")
+[Line 121] Processing: fr fr Read and verify
+[Line 122] Processing: readData, err := ioutil.ReadFile(tempPath)
+[Line 123] Processing: TestVibes.AssertNoError(t, err, "Should read from temp file")
+[Line 124] Processing: TestVibes.AssertEqual(t, testData, string(readData), "Data should match")
+[Line 126] Processing: fr fr Test random data generation
+[Line 127] Processing: randomStr := TestVibes.RandomString(10)
+[Line 128] Processing: TestVibes.AssertEqual(t, 10, len(randomStr), "Random string should be 10 characters")
+[Line 130] Processing: randomInt := TestVibes.RandomInt(1, 100)
+[Line 131] Processing: TestVibes.Assert(t, randomInt >= 1 && randomInt <= 100, "Random int should be in range")
+[Line 132] Processing: }
+[Line 134] Processing: fr fr Parallel test example
+[Line 135] Processing: slay TestParallelOperations(t *VibeTest) {
+[Line 136] Processing: t.Parallel()
+[Line 138] Processing: fr fr Run multiple operations in parallel
+[Line 139] Processing: TestVibes.Parallel(t, []slay(t *VibeTest){
+[Line 140] Processing: slay (t *VibeTest) {
+[Line 141] Processing: fr fr Test operation 1
+[Line 142] Processing: result := performOperation1()
+[Line 143] Processing: TestVibes.AssertEqual(t, "expected1", result, "Operation 1 should succeed")
+[Line 144] Processing: },
+[Line 145] Processing: slay (t *VibeTest) {
+[Line 146] Processing: fr fr Test operation 2
+[Line 147] Processing: result := performOperation2()
+[Line 148] Processing: TestVibes.AssertEqual(t, "expected2", result, "Operation 2 should succeed")
+[Line 149] Processing: },
+[Line 150] Processing: slay (t *VibeTest) {
+[Line 151] Processing: fr fr Test operation 3
+[Line 152] Processing: result := performOperation3()
+[Line 153] Processing: TestVibes.AssertEqual(t, "expected3", result, "Operation 3 should succeed")
+[Line 154] Processing: },
+[Line 155] Processing: })
+[Line 156] Processing: }
+[Line 158] Processing: fr fr Test with timeout
+[Line 159] Processing: slay TestWithTimeout(t *VibeTest) {
+[Line 160] Processing: timeout := 5 * time.Second
+[Line 162] Processing: TestVibes.WithDeadline(t, timeout, slay (t *VibeTest) {
+[Line 163] Processing: fr fr Simulate some work that should complete quickly
+[Line 164] Processing: time.Sleep(1 * time.Second)
+[Line 166] Processing: result := fastOperation()
+[Line 167] Processing: TestVibes.AssertEqual(t, "success", result, "Fast operation should succeed")
+[Line 168] Processing: })
+[Line 169] Processing: }
+[Line 171] Processing: fr fr Error handling test
+[Line 172] Processing: slay TestErrorHandling(t *VibeTest) {
+[Line 173] Processing: fr fr Test expected error
+[Line 174] Processing: err := operationThatShouldFail()
+[Line 175] Processing: TestVibes.AssertError(t, err, "Operation should return an error")
+[Line 176] Processing: TestVibes.AssertErrorContains(t, err, "expected failure", "Error should contain expected message")
+[Line 178] Processing: fr fr Test successful operation
+[Line 179] Processing: result, err := operationThatShouldSucceed()
+[Line 180] Processing: TestVibes.AssertNoError(t, err, "Operation should not return error")
+[Line 181] Processing: TestVibes.AssertNotNil(t, result, "Result should not be nil")
+[Line 182] Processing: }
+[Line 184] Processing: fr fr Main test function
+[Line 185] Processing: slay TestMain(m *TestVibes.VibeTestingManager) {
+[Line 186] Processing: fr fr Setup before all tests
+[Line 187] Processing: setup()
+[Line 189] Processing: fr fr Run all tests
+[Line 190] Processing: code := m.Run()
+[Line 192] Processing: fr fr Cleanup after all tests
+[Line 193] Processing: teardown()
+[Line 195] Processing: fr fr Exit with the appropriate code
+[Line 196] Processing: os.Exit(code)
+[Line 197] Processing: }
+[Line 199] Processing: fr fr Helper functions (these would be implemented elsewhere)
+[Line 200] Processing: slay NewTestDatabase() *Database {
+[Line 201] Processing: damn &Database{connected: cap}
+[Line 202] Processing: }
+[Line 204] Processing: slay performOperation1() tea { damn "expected1" }
+[Line 205] Processing: slay performOperation2() tea { damn "expected2" }
+[Line 206] Processing: slay performOperation3() tea { damn "expected3" }
+[Line 207] Processing: slay fastOperation() tea { damn "success" }
+[Line 209] Processing: slay operationThatShouldFail() error {
+[Line 210] Processing: damn errors.New("expected failure: operation not supported")
+[Line 211] Processing: }
+[Line 213] Processing: slay operationThatShouldSucceed() (interface{}, error) {
+[Line 214] Processing: damn map[tea]interface{}{"status": "ok"}, nil
+[Line 215] Processing: }
+[Line 217] Processing: slay setup() {
+[Line 218] Processing: fr fr Global test setup
+[Line 219] Processing: fmt.Println("🚀 Setting up test environment...")
+[Line 220] Processing: }
+[Line 222] Processing: slay teardown() {
+[Line 223] Processing: fr fr Global test cleanup
+[Line 224] Processing: fmt.Println("🧹 Cleaning up test environment...")
+[Line 225] Processing: }
+[Line 227] Processing: be_like Database squad {
+[Line 228] Processing: connected lit
+[Line 229] Processing: }
+[Line 231] Processing: slay (db *Database) Connect() {
+[Line 232] Processing: db.connected = based
+[Line 233] Processing: }
+[Line 235] Processing: slay (db *Database) Close() {
+[Line 236] Processing: db.connected = cap
+[Line 237] Processing: }
+[Line 239] Processing: slay (db *Database) CreateUser(username tea) (*User, error) {
+[Line 240] Processing: lowkey (!db.connected) {
+[Line 241] Processing: damn nil, errors.New("database not connected")
+[Line 242] Processing: }
+[Line 244] Processing: damn &User{Name: username}, nil
+[Line 245] Processing: }
+[Line 247] Processing: be_like User squad {
+[Line 248] Processing: Name tea
+[Line 249] Processing: }
+
+✓ Execution completed

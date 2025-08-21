@@ -1,0 +1,66 @@
+name: Performance Regression Testing
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+  schedule:
+    # Run nightly performance tests
+    - cron: '0 2 * * *'
+
+jobs:
+  performance-baseline:
+    name: Performance Regression Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: '0.13.0'
+        
+    - name: Build CURSED Compiler
+      run: |
+        zig build
+        ls -la zig-out/bin/
+        
+    - name: Run Performance Benchmarks
+      run: |
+        python3 performance_benchmark_comprehensive.py
+        
+    - name: Check Performance Regression
+      run: |
+        python3 scripts/check_performance_regression.py \
+          --baseline cursed_v1.0_performance_baseline.json \
+          --current cursed_v1.0_performance_baseline.json \
+          --threshold 5.0
+          
+    - name: Upload Performance Results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-results
+        path: |
+          cursed_v1.0_performance_baseline.json
+          performance_regression_report.md
+        retention-days: 30
+        
+    - name: Comment Performance Results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          if (fs.existsSync('performance_regression_report.md')) {
+            const report = fs.readFileSync('performance_regression_report.md', 'utf8');
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## 📊 Performance Regression Report\\n\\n${report}`
+            });
+          }

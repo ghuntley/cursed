@@ -1,30 +1,40 @@
-# Advanced CURSED test program for debugging
-sus x drip = 10
-sus y drip = 20
-sus result drip = 0
+// Advanced CURSED program for debugger testing
+yeet "vibez"
+yeet "mathz"
 
-slay calculate_sum(a drip, b drip) drip {
-    sus temp drip = a + b
-    damn temp
-}
+// Variables of different types
+sus name tea = "CURSED Debugger Test"
+sus count drip = 42
+sus active lit = based
+sus items []tea = ["first", "second", "third"]
 
-slay main_character() {
-    result = calculate_sum(x, y)
-    vibez.spill("x =", x)
-    vibez.spill("y =", y) 
-    vibez.spill("result =", result)
-    
-    ready (result > 25) {
-        vibez.spill("Result is greater than 25")
+// Function definition
+slay processData(value drip) drip {
+    ready (value > 10) {
+        vibez.spill("Processing:", value)
+        damn value * 2
     } otherwise {
-        vibez.spill("Result is 25 or less")
+        vibez.spill("Small value:", value)
+        damn value + 1
     }
-    
-    sus counter drip = 0
-    bestie (counter < 3) {
-        vibez.spill("Counter:", counter)
-        counter = counter + 1
-    }
-    
-    vibez.spill("Program complete")
 }
+
+// Main execution
+vibez.spill("Starting advanced test...")
+vibez.spill("Name:", name)
+vibez.spill("Count:", count)
+
+ready (active) {
+    sus result drip = processData(count)
+    vibez.spill("Result:", result)
+    
+    bestie (sus i drip = 0; i < 3; i = i + 1) {
+        vibez.spill("Item", i, ":", items[i])
+        
+        ready (i == 1) {
+            vibez.spill("Middle item reached")
+        }
+    }
+}
+
+vibez.spill("Advanced test complete!")

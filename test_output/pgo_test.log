@@ -1,0 +1,11 @@
+CURSED Interpreter (Oracle P2 Migration Build)
+Executing: test_pgo_flag.csd
+File size: 108 bytes
+
+[Line 1] Processing: // Test PGO flag integration
+[Line 2] Variable declaration: sus main_character() {
+OUTPUT: Testing PGO integration
+[Line 4] Processing: damn 0
+[Line 5] Processing: }
+
+✓ Execution completed

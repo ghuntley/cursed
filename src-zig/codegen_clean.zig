@@ -1669,6 +1669,98 @@ pub const CodeGenerator = struct {
             c.LLVMAppendBasicBlockInContext(self.context, current_func, "select.default")
         else
             null;
+            
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select.end");
+        
+        // Create blocks for each select case
+        for (select_stmt.cases.items, 0..) |_, i| {
+            var case_name_buf: [32]u8 = undefined;
+            const case_name = try std.fmt.bufPrint(&case_name_buf, "select.case.{}", .{i});
+            case_blocks[i] = c.LLVMAppendBasicBlockInContext(self.context, current_func, case_name.ptr);
+        }
+        
+        // Generate runtime select() call - this requires runtime support
+        // For now, simplified implementation that tries each channel in order
+        const select_runtime_func = try self.getOrCreateSelectFunction();
+        
+        // Prepare channel array for runtime selection
+        const channel_count = select_stmt.cases.items.len;
+        const ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const channel_array_type = c.LLVMArrayType(ptr_type, @intCast(channel_count));
+        const channel_array = c.LLVMBuildAlloca(self.builder, channel_array_type, "channel_array");
+        
+        // Fill channel array with case channels
+        for (select_stmt.cases.items, 0..) |select_case, i| {
+            // Extract channel from select case (simplified)
+            const channel_ptr = try self.generateExpression(select_case.channel_op.*);
+            const array_elem = c.LLVMBuildGEP2(self.builder, channel_array_type, channel_array, 
+                &[_]c.LLVMValueRef{
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0),
+                    c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(i), 0)
+                }, 2, "channel_elem");
+            _ = c.LLVMBuildStore(self.builder, channel_ptr, array_elem);
+        }
+        
+        // Call runtime select function
+        const selected_case = c.LLVMBuildCall2(self.builder, 
+            c.LLVMGlobalGetValueType(select_runtime_func),
+            select_runtime_func, 
+            &[_]c.LLVMValueRef{
+                channel_array,
+                c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(channel_count), 0)
+            }, 2, "selected_case");
+        
+        // Generate switch on selected case
+        const switch_inst = c.LLVMBuildSwitch(self.builder, selected_case, 
+            default_block orelse merge_block, @intCast(channel_count));
+        
+        // Add cases to switch and generate their bodies
+        for (select_stmt.cases.items, 0..) |select_case, i| {
+            const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @intCast(i), 0);
+            c.LLVMAddCase(switch_inst, case_value, case_blocks[i]);
+            
+            // Generate case body
+            c.LLVMPositionBuilderAtEnd(self.builder, case_blocks[i]);
+            for (select_case.statements.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            
+            if (!c.LLVMGetBasicBlockTerminator(case_blocks[i])) {
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+            }
+        }
+        
+        // Generate default case
+        if (select_stmt.default_case) |default_stmts| {
+            c.LLVMPositionBuilderAtEnd(self.builder, default_block.?);
+            for (default_stmts.items) |stmt| {
+                try self.generateStatement(stmt);
+            }
+            if (!c.LLVMGetBasicBlockTerminator(default_block.?)) {
+                _ = c.LLVMBuildBr(self.builder, merge_block);
+            }
+        }
+        
+        // Continue with merge block
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+        
+        std.debug.print("✅ Select statement with {} cases generated\n", .{select_stmt.cases.items.len});
+    }
+    
+    /// Get or create runtime select function for channel multiplexing
+    fn getOrCreateSelectFunction(self: *CodeGenerator) !c.LLVMValueRef {
+        const select_func = c.LLVMGetNamedFunction(self.module, "cursed_runtime_select");
+        if (select_func != null) return select_func;
+        
+        // Create runtime select function signature: int cursed_runtime_select(void** channels, int count)
+        const ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const ptr_ptr_type = c.LLVMPointerType(ptr_type, 0);
+        const int_type = c.LLVMInt32TypeInContext(self.context);
+        
+        const select_func_type = c.LLVMFunctionType(int_type, 
+            &[_]c.LLVMTypeRef{ptr_ptr_type, int_type}, 2, 0);
+        return c.LLVMAddFunction(self.module, "cursed_runtime_select", select_func_type);
+            null;
         
         const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select.end");
         

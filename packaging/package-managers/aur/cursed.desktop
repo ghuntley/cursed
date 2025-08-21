@@ -1,0 +1,28 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CURSED Compiler
+GenericName=Programming Language Compiler
+Comment=CURSED Programming Language Compiler
+Keywords=programming;compiler;development;systems;language;
+Exec=cursed %f
+TryExec=cursed
+Icon=cursed
+Terminal=true
+MimeType=text/x-cursed;application/x-cursed-source;
+Categories=Development;IDE;TextEditor;
+StartupNotify=false
+StartupWMClass=cursed
+Actions=format;lint;compile;
+
+[Desktop Action format]
+Name=Format Code
+Exec=cursed-fmt %f
+
+[Desktop Action lint]
+Name=Lint Code
+Exec=cursed-lint %f
+
+[Desktop Action compile]
+Name=Compile
+Exec=cursed --compile %f

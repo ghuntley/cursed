@@ -293,9 +293,21 @@ fn interpretProgram(ctx: *Context, source: []const u8) !void {
             continue;
         }
         
-        // For other statements, read until end of line or semicolon
+        // For other statements, read until end of line or semicolon (respecting braces)
         const stmt_start = i;
-        while (i < source.len and source[i] != '\n' and source[i] != ';') {
+        var brace_depth: i32 = 0;
+        
+        while (i < source.len) {
+            const char = source[i];
+            
+            if (char == '{') {
+                brace_depth += 1;
+            } else if (char == '}') {
+                brace_depth -= 1;
+            } else if (brace_depth == 0 and (char == '\n' or char == ';')) {
+                break;
+            }
+            
             i += 1;
         }
         
@@ -623,13 +635,43 @@ fn handlePrint(ctx: *Context, statement: []const u8) ParseError!void {
 }
 
 fn executeStatementBlock(ctx: *Context, block: []const u8) ParseError!void {
-    var statements = std.mem.splitAny(u8, block, ";\n");
+    var i: usize = 0;
     
-    while (statements.next()) |stmt| {
-        const trimmed = std.mem.trim(u8, stmt, " \t\r\n");
-        if (trimmed.len == 0) continue;
+    while (i < block.len) {
+        // Skip whitespace
+        while (i < block.len and (block[i] == ' ' or block[i] == '\t' or block[i] == '\r' or block[i] == '\n')) {
+            i += 1;
+        }
         
-        try executeStatement(ctx, trimmed);
+        if (i >= block.len) break;
+        
+        const stmt_start = i;
+        var brace_depth: i32 = 0;
+        
+        // Find statement end, respecting braces
+        while (i < block.len) {
+            const char = block[i];
+            
+            if (char == '{') {
+                brace_depth += 1;
+            } else if (char == '}') {
+                brace_depth -= 1;
+            } else if (brace_depth == 0 and (char == ';' or char == '\n')) {
+                break;
+            }
+            
+            i += 1;
+        }
+        
+        const statement = std.mem.trim(u8, block[stmt_start..i], " \t\r\n");
+        if (statement.len > 0) {
+            try executeStatement(ctx, statement);
+        }
+        
+        // Skip the delimiter
+        if (i < block.len and (block[i] == ';' or block[i] == '\n')) {
+            i += 1;
+        }
     }
 }
 

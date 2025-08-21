@@ -1,0 +1,94 @@
+# CURSED Programming Language - Default Configuration
+# Oracle Week 3 cross-platform packaging preparation for v1.0 launch
+
+[compiler]
+# Compiler behavior settings
+default_optimize = "Debug"          # Debug, ReleaseSafe, ReleaseFast, ReleaseSmall
+emit_llvm_ir = false               # Emit LLVM IR files
+enable_lto = false                 # Link-time optimization
+strip_debug_info = false           # Strip debug information
+parallel_codegen = true            # Parallel code generation
+cache_dir = "~/.cache/cursed"      # Compilation cache directory
+
+[runtime]
+# Runtime behavior settings  
+stack_size = "8MB"                 # Default stack size for threads
+gc_enabled = true                  # Enable garbage collection
+gc_threshold = "32MB"              # GC trigger threshold
+max_heap_size = "1GB"              # Maximum heap size
+thread_pool_size = 0               # 0 = auto-detect CPU cores
+
+[stdlib]
+# Standard library configuration
+path = "/usr/share/cursed/stdlib"  # Standard library path
+preload_common = true              # Preload commonly used modules
+validate_imports = true            # Validate imported modules
+cache_compiled = true              # Cache compiled standard library
+
+[lsp]
+# Language Server Protocol settings
+port = 0                           # 0 = auto-assign port, or specific port number
+max_diagnostics = 100              # Maximum diagnostics per file
+completion_timeout = "5s"          # Completion request timeout
+semantic_tokens = true             # Enable semantic token support
+inlay_hints = true                 # Enable inlay hints
+
+[formatter]
+# Code formatting settings
+indent_size = 4                    # Number of spaces per indent level
+use_tabs = false                   # Use tabs instead of spaces
+line_width = 100                   # Maximum line width
+trailing_newline = true            # Ensure files end with newline
+trim_trailing_whitespace = true    # Remove trailing whitespace
+
+[linter]
+# Static analysis settings
+max_warnings = 100                 # Maximum warnings to display
+unused_variables = "warn"          # error, warn, allow
+unused_functions = "warn"          # error, warn, allow
+deprecated_features = "warn"       # error, warn, allow
+style_violations = "allow"         # error, warn, allow
+performance_hints = "warn"         # error, warn, allow
+
+[debugger]
+# Debugging configuration
+debug_info_format = "dwarf"        # dwarf, codeview, pdb
+optimize_debug_builds = false      # Apply optimizations in debug builds
+inline_threshold = 0               # Function inlining threshold (0 = disabled)
+enable_assertions = true           # Enable runtime assertions
+
+[package_manager]
+# Package manager settings
+registry_url = "https://packages.cursedlang.org"
+cache_dir = "~/.cache/cursed/packages"
+timeout = "30s"                    # Network timeout for operations
+verify_signatures = true          # Verify package signatures
+allow_prerelease = false          # Allow prerelease packages
+
+[logging]
+# Logging configuration
+level = "info"                     # trace, debug, info, warn, error
+format = "compact"                 # compact, full, json
+file = ""                          # Log file path (empty = stderr)
+max_file_size = "10MB"            # Maximum log file size
+rotate_files = true                # Rotate log files
+
+[telemetry]
+# Telemetry settings (optional)
+enabled = false                    # Enable anonymous telemetry
+endpoint = ""                      # Custom telemetry endpoint
+include_performance = false        # Include performance metrics
+include_errors = false            # Include error reports
+
+[paths]
+# Additional paths configuration
+examples = "/usr/share/cursed/examples"
+documentation = "/usr/share/doc/cursed" 
+templates = "/usr/share/cursed/templates"
+tools = "/usr/bin"
+
+[arch_linux]
+# Arch Linux specific settings
+use_system_llvm = true            # Use system LLVM installation
+pacman_integration = true         # Integrate with pacman package manager
+aur_helper = "auto"               # AUR helper to use (auto, yay, paru, none)

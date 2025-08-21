@@ -403,6 +403,102 @@ pub const GCIntegration = struct {
             c.LLVMSetMetadata(current_inst, safepoint_kind, safepoint_node);
         }
         
+        std.debug.print("✅ Generated stackmap for function '{}' with {} live pointers\n", 
+            .{function_name, live_pointers.len});
+    }
+    
+    /// Generate GC statepoints for function prologue/epilogue
+    pub fn generateGCStatepoints(self: *GCIntegration, function: c.LLVMValueRef) !void {
+        const context = self.context;
+        const module = self.module;
+        const builder = self.builder;
+        
+        // Get or create LLVM statepoint intrinsic
+        const statepoint_func = c.LLVMGetNamedFunction(module, "llvm.experimental.gc.statepoint.p0i8");
+        const statepoint_call = if (statepoint_func != null) 
+            statepoint_func
+        else blk: {
+            // Create statepoint intrinsic signature
+            const void_type = c.LLVMVoidTypeInContext(context);
+            const i64_type = c.LLVMInt64TypeInContext(context);
+            const i32_type = c.LLVMInt32TypeInContext(context);
+            const ptr_type = c.LLVMPointerTypeInContext(context, 0);
+            
+            const statepoint_type = c.LLVMFunctionType(void_type, 
+                &[_]c.LLVMTypeRef{i64_type, i32_type, ptr_type, i32_type}, 4, 1); // Variadic
+            break :blk c.LLVMAddFunction(module, "llvm.experimental.gc.statepoint.p0i8", statepoint_type);
+        };
+        
+        // Generate GC safepoint at function entry
+        const entry_block = c.LLVMGetEntryBasicBlock(function);
+        const first_inst = c.LLVMGetFirstInstruction(entry_block);
+        
+        if (first_inst != null) {
+            c.LLVMPositionBuilderBefore(builder, first_inst);
+        } else {
+            c.LLVMPositionBuilderAtEnd(builder, entry_block);
+        }
+        
+        // Generate statepoint call: statepoint(id, flags, callee, num_args, ...)
+        const statepoint_id = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0x12345678, 0);
+        const statepoint_flags = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0); // No flags
+        const dummy_callee = c.LLVMConstNull(c.LLVMPointerTypeInContext(context, 0));
+        const num_args = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), 0, 0);
+        
+        _ = c.LLVMBuildCall2(builder, 
+            c.LLVMGlobalGetValueType(statepoint_call.?),
+            statepoint_call.?, 
+            &[_]c.LLVMValueRef{statepoint_id, statepoint_flags, dummy_callee, num_args}, 4, 
+            "gc_statepoint_entry");
+            
+        // Generate GC safepoint at function exits (before return instructions)
+        var current_block = c.LLVMGetFirstBasicBlock(function);
+        while (current_block != null) {
+            var inst = c.LLVMGetLastInstruction(current_block);
+            if (inst != null and c.LLVMGetInstructionOpcode(inst) == c.LLVMRet) {
+                // Insert statepoint before return
+                c.LLVMPositionBuilderBefore(builder, inst);
+                
+                _ = c.LLVMBuildCall2(builder, 
+                    c.LLVMGlobalGetValueType(statepoint_call.?),
+                    statepoint_call.?, 
+                    &[_]c.LLVMValueRef{statepoint_id, statepoint_flags, dummy_callee, num_args}, 4, 
+                    "gc_statepoint_exit");
+            }
+            current_block = c.LLVMGetNextBasicBlock(current_block);
+        }
+        
+        std.debug.print("✅ Generated GC statepoints for function '{}'\n", .{c.LLVMGetValueName(function)});
+    }
+    
+    /// Wire up complete GC integration for heap stress testing
+    pub fn wireGCIntegration(self: *GCIntegration, module_functions: []c.LLVMValueRef) !void {
+        for (module_functions) |function| {
+            // Generate stackmaps for all functions
+            var live_pointers = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+            defer live_pointers.deinit();
+            
+            // Collect all pointer values in function as potential GC roots
+            var current_block = c.LLVMGetFirstBasicBlock(function);
+            while (current_block != null) {
+                var inst = c.LLVMGetFirstInstruction(current_block);
+                while (inst != null) {
+                    const inst_type = c.LLVMTypeOf(inst);
+                    if (c.LLVMGetTypeKind(inst_type) == c.LLVMPointerTypeKind) {
+                        try live_pointers.append(inst);
+                    }
+                    inst = c.LLVMGetNextInstruction(inst);
+                }
+                current_block = c.LLVMGetNextBasicBlock(current_block);
+            }
+            
+            // Generate stackmap and statepoints for this function
+            try self.generateStackMap(function, live_pointers.items);
+            try self.generateGCStatepoints(function);
+        }
+        
+        std.debug.print("✅ Wired GC integration for {} functions\n", .{module_functions.len});
+        
         // Record stackmap for runtime GC integration
         std.debug.print("✅ Generated precise stackmap for function '{}' with {} live roots\n", 
             .{ std.mem.sliceTo(function_name, 0), live_pointers.len });

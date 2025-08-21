@@ -1,0 +1,253 @@
+CURSED Interpreter (Oracle P2 Migration Build)
+Executing: examples/template_syntax_demo.csd
+File size: 8788 bytes
+
+[Line 1] Processing: fr fr/ CURSED Template Syntax Demo
+[Line 2] Processing: fr fr/ Demonstrates the comprehensive template system with CURSED-style Gen Z slang
+[Line 4] Processing: fr fr Basic template with variable interpolation
+[Line 5] Variable declaration: sus basic_template = "Hello {{ user.name }}! You have {{ user.message_count }} messages.";
+[Line 7] Processing: fr fr CURSED-style conditional template
+[Line 8] Variable declaration: sus cursed_conditional = `
+[Line 9] Processing: {% lowkey user.is_premium %}
+[Line 10] Processing: <div class="premium-user">
+[Line 11] Processing: Welcome, VIP {{ user.name }}! ✨
+[Line 12] Processing: You're totally slaying with your premium account!
+[Line 13] Processing: </div>
+[Line 14] Processing: {% highkey user.is_active %}
+[Line 15] Processing: <div class="active-user">
+[Line 16] Processing: Hey {{ user.name }}! Good to see you back 👋
+[Line 17] Processing: </div>
+[Line 18] Processing: {% highkey %}
+[Line 19] Processing: <div class="inactive-user">
+[Line 20] Processing: {{ user.name }}, we miss you! Come back soon 💔
+[Line 21] Processing: </div>
+[Line 22] Processing: {% end %}
+[Line 23] Processing: `;
+[Line 25] Processing: fr fr CURSED-style loop template
+[Line 26] Variable declaration: sus cursed_loop = `
+[Line 27] Processing: <div class="user-list">
+[Line 28] Processing: {% stan user in users %}
+[Line 29] Processing: <div class="user-card {{ lowkey user.is_online }}online{{ highkey }}offline{{ end }}">
+[Line 30] Processing: <h3>{{ user.name }}</h3>
+[Line 31] Processing: <p>Status: {{ sus user.is_online }}🟢 Online{{ cap user.is_online }}🔴 Offline{{ end }}</p>
+[Line 32] Processing: <p>Posts: {{ user.post_count | default(0) }}</p>
+[Line 33] Processing: </div>
+[Line 34] Processing: {% end %}
+[Line 35] Processing: </div>
+[Line 36] Processing: `;
+[Line 38] Processing: fr fr Advanced template with expressions and filters
+[Line 39] Variable declaration: sus advanced_template = `
+[Line 40] Processing: <article class="post">
+[Line 41] Processing: <header>
+[Line 42] Processing: <h1>{{ post.title | titlecase }}</h1>
+[Line 43] Processing: <div class="meta">
+[Line 44] Processing: By {{ post.author.name }} on {{ post.created_at | date("F j, Y") }}
+[Line 45] Processing: {% lowkey post.view_count > 1000 %}
+[Line 46] Processing: <span class="viral">🔥 Viral!</span>
+[Line 47] Processing: {% end %}
+[Line 48] Processing: </div>
+[Line 49] Processing: </header>
+[Line 51] Processing: <div class="content">
+[Line 52] Processing: {{ post.content | markdown | truncate(500) }}
+[Line 53] Processing: {% lowkey post.content | length > 500 %}
+[Line 54] Processing: <a href="/posts/{{ post.id }}">Read more...</a>
+[Line 55] Processing: {% end %}
+[Line 56] Processing: </div>
+[Line 58] Processing: <footer>
+[Line 59] Processing: <div class="tags">
+[Line 60] Processing: {% stan tag in post.tags %}
+[Line 61] Processing: <span class="tag">#{{ tag }}</span>
+[Line 62] Processing: {% end %}
+[Line 63] Processing: </div>
+[Line 65] Processing: <div class="stats">
+[Line 66] Processing: {{ post.like_count }} likes
+[Line 67] Processing: {{ post.comment_count }} comments
+[Line 68] Processing: {% lowkey post.is_bookmarked %}
+[Line 69] Processing: <span class="bookmarked">🔖 Saved</span>
+[Line 70] Processing: {% end %}
+[Line 71] Processing: </div>
+[Line 72] Processing: </footer>
+[Line 73] Processing: </article>
+[Line 74] Processing: `;
+[Line 76] Processing: fr fr Template with CURSED operators and expressions
+[Line 77] Variable declaration: sus cursed_expressions = `
+[Line 78] Processing: <div class="user-profile">
+[Line 79] Processing: {% set full_name = user.first_name + " " + user.last_name %}
+[Line 80] Processing: <h1>{{ full_name }}</h1>
+[Line 82] Processing: <!-- CURSED truthiness check -->
+[Line 83] Processing: {% lowkey sus user.bio %}
+[Line 84] Processing: <p class="bio">{{ user.bio }}</p>
+[Line 85] Processing: {% end %}
+[Line 87] Processing: <!-- CURSED loose equality -->
+[Line 88] Processing: {% lowkey user.age vibe 21 %}
+[Line 89] Processing: <div class="legal-drinking">🍻 Can legally drink!</div>
+[Line 90] Processing: {% end %}
+[Line 92] Processing: <!-- CURSED contains check -->
+[Line 93] Processing: {% lowkey user.interests slay "programming" %}
+[Line 94] Processing: <div class="programmer">💻 Fellow developer detected!</div>
+[Line 95] Processing: {% end %}
+[Line 97] Processing: <!-- Conditional expression -->
+[Line 98] Processing: <div class="status">
+[Line 99] Processing: Status: {{ user.is_online ? "🟢 Online" : "🔴 Offline" }}
+[Line 100] Processing: </div>
+[Line 102] Processing: <!-- Array and object handling -->
+[Line 103] Processing: <div class="recent-posts">
+[Line 104] Processing: <h3>Recent Posts ({{ user.posts | length }})</h3>
+[Line 105] Processing: {% stan post in user.posts[0:3] %}
+[Line 106] Processing: <article>
+[Line 107] Processing: <h4>{{ post.title }}</h4>
+[Line 108] Processing: <p>{{ post.summary }}</p>
+[Line 109] Processing: <small>{{ post.created_at | timeago }}</small>
+[Line 110] Processing: </article>
+[Line 111] Processing: {% end %}
+[Line 112] Processing: </div>
+[Line 113] Processing: </div>
+[Line 114] Processing: `;
+[Line 116] Processing: fr fr Template inheritance example
+[Line 117] Variable declaration: sus base_layout = `
+[Line 118] Processing: <!DOCTYPE html>
+[Line 119] Processing: <html>
+[Line 120] Processing: <head>
+[Line 121] Processing: <title>{{ title | default("CURSED App") }}</title>
+[Line 122] Processing: <meta charset="utf-8">
+[Line 123] Processing: <meta name="viewport" content="width=device-width, initial-scale=1">
+[Line 124] Processing: </head>
+[Line 125] Processing: <body>
+[Line 126] Processing: <header>
+[Line 127] Processing: <nav>{{ navigation | safe }}</nav>
+[Line 128] Processing: </header>
+[Line 130] Processing: <main>
+[Line 131] Processing: {% block content %}
+[Line 132] Processing: <p>Default content - override this block!</p>
+[Line 133] Processing: {% end %}
+[Line 134] Processing: </main>
+[Line 136] Processing: <footer>
+[Line 137] Processing: <p>&copy; {{ year }} CURSED Framework</p>
+[Line 138] Processing: </footer>
+[Line 139] Processing: </body>
+[Line 140] Processing: </html>
+[Line 141] Processing: `;
+[Line 143] Variable declaration: sus page_template = `
+[Line 144] Processing: {% extends "base_layout" %}
+[Line 146] Processing: {% block content %}
+[Line 147] Processing: <div class="page">
+[Line 148] Processing: <h1>{{ page.title }}</h1>
+[Line 150] Processing: {% lowkey page.featured %}
+[Line 151] Processing: <div class="featured-banner">
+[Line 152] Processing: ⭐ Featured Content ⭐
+[Line 153] Processing: </div>
+[Line 154] Processing: {% end %}
+[Line 156] Processing: <div class="page-content">
+[Line 157] Processing: {{ page.content | markdown }}
+[Line 158] Processing: </div>
+[Line 160] Processing: {% lowkey page.comments_enabled %}
+[Line 161] Processing: <section class="comments">
+[Line 162] Processing: <h3>Comments ({{ page.comments | length }})</h3>
+[Line 163] Processing: {% stan comment in page.comments %}
+[Line 164] Processing: <div class="comment">
+[Line 165] Processing: <strong>{{ comment.author }}</strong>
+[Line 166] Processing: <time>{{ comment.created_at | timeago }}</time>
+[Line 167] Processing: <p>{{ comment.content }}</p>
+[Line 168] Processing: </div>
+[Line 169] Processing: {% end %}
+[Line 170] Processing: </section>
+[Line 171] Processing: {% end %}
+[Line 172] Processing: </div>
+[Line 173] Processing: {% end %}
+[Line 174] Processing: `;
+[Line 176] Processing: fr fr Complex data manipulation template
+[Line 177] Variable declaration: sus data_template = `
+[Line 178] Processing: <div class="dashboard">
+[Line 179] Processing: {% set total_users = users | length %}
+[Line 180] Processing: {% set active_users = users | filter("is_active") | length %}
+[Line 181] Processing: {% set activity_rate = (active_users / total_users * 100) | round(1) %}
+[Line 183] Processing: <div class="stats">
+[Line 184] Processing: <div class="stat">
+[Line 185] Processing: <h3>{{ total_users }}</h3>
+[Line 186] Processing: <p>Total Users</p>
+[Line 187] Processing: </div>
+[Line 188] Processing: <div class="stat">
+[Line 189] Processing: <h3>{{ active_users }}</h3>
+[Line 190] Processing: <p>Active Users</p>
+[Line 191] Processing: </div>
+[Line 192] Processing: <div class="stat">
+[Line 193] Processing: <h3>{{ activity_rate }}%</h3>
+[Line 194] Processing: <p>Activity Rate</p>
+[Line 195] Processing: </div>
+[Line 196] Processing: </div>
+[Line 198] Processing: <!-- Grouped data -->
+[Line 199] Processing: {% set users_by_role = users | groupby("role") %}
+[Line 200] Processing: <div class="user-groups">
+[Line 201] Processing: {% stan group in users_by_role %}
+[Line 202] Processing: <div class="group">
+[Line 203] Processing: <h4>{{ group.key | titlecase }} ({{ group.items | length }})</h4>
+[Line 204] Processing: <ul>
+[Line 205] Processing: {% stan user in group.items %}
+[Line 206] Processing: <li>
+[Line 207] Processing: {{ user.name }}
+[Line 208] Processing: {% lowkey user.is_online %}
+[Line 209] Processing: <span class="online">●</span>
+[Line 210] Processing: {% end %}
+[Line 211] Processing: </li>
+[Line 212] Processing: {% end %}
+[Line 213] Processing: </ul>
+[Line 214] Processing: </div>
+[Line 215] Processing: {% end %}
+[Line 216] Processing: </div>
+[Line 218] Processing: <!-- Advanced filtering and sorting -->
+[Line 219] Processing: <div class="top-contributors">
+[Line 220] Processing: <h3>Top Contributors</h3>
+[Line 221] Processing: {% set top_users = users | filter("post_count", ">", 10) | sort("post_count", "desc") | slice(0, 5) %}
+[Line 222] Processing: <ol>
+[Line 223] Processing: {% stan user in top_users %}
+[Line 224] Processing: <li>
+[Line 225] Processing: {{ user.name }} - {{ user.post_count }} posts
+[Line 226] Processing: {% lowkey user.post_count > 100 %}
+[Line 227] Processing: <span class="super-contributor">🌟</span>
+[Line 228] Processing: {% end %}
+[Line 229] Processing: </li>
+[Line 230] Processing: {% end %}
+[Line 231] Processing: </ol>
+[Line 232] Processing: </div>
+[Line 233] Processing: </div>
+[Line 234] Processing: `;
+[Line 236] Processing: fr fr Function to demonstrate template compilation and rendering
+[Line 237] Processing: slay compile_and_render_template(template_source: String, context: Map<String, Value>) -> Result<String, CursedError> {
+[Line 238] Processing: // This would integrate with the template engine
+[Line 239] Processing: facts delimiters = TemplateDelimiters {
+[Line 240] Processing: variable: ("{{".to_string(), "}}".to_string()),
+[Line 241] Processing: block: ("{%".to_string(), "%}".to_string()),
+[Line 242] Processing: comment: ("{#".to_string(), "#}".to_string()),
+[Line 243] Processing: };
+[Line 245] Processing: // Tokenize the template
+[Line 246] Variable declaration: sus mut lexer = TemplateLexer::new(&template_source, &delimiters);
+[Line 247] Processing: facts tokens = lexer.tokenize()?;
+[Line 249] Processing: // Parse into AST
+[Line 250] Variable declaration: sus mut parser = TemplateParser::new(tokens);
+[Line 251] Processing: facts ast = parser.parse()?;
+[Line 253] Processing: // Render the template (this would be implemented in the template engine)
+[Line 254] Processing: // render_template(ast, context)
+[Line 256] Processing: periodt "Template compiled successfully!".to_string();
+[Line 257] Processing: }
+[Line 259] Processing: fr fr Example usage
+[Line 260] Processing: slay main() -> Result<(), CursedError> {
+[Line 261] Processing: // Sample context data
+[Line 262] Variable declaration: sus context = Map::new();
+[Line 263] Processing: context.insert("user".to_string(), Value::Object({
+[Line 264] Variable declaration: sus mut user = Map::new();
+[Line 265] Processing: user.insert("name".to_string(), Value::String("Alice".to_string()));
+[Line 266] Processing: user.insert("is_premium".to_string(), Value::Boolean(based));
+[Line 267] Processing: user.insert("is_active".to_string(), Value::Boolean(based));
+[Line 268] Processing: user.insert("message_count".to_string(), Value::Number(42.0));
+[Line 269] Processing: user
+[Line 270] Processing: }));
+[Line 272] Processing: // Compile and render basic template
+[Line 273] Processing: facts result = compile_and_render_template(basic_template, context.clone())?;
+[Line 274] Processing: println!("Basic template result: {}", result);
+[Line 276] Processing: // Compile advanced template
+[Line 277] Processing: facts advanced_result = compile_and_render_template(advanced_template, context)?;
+[Line 278] Processing: println!("Advanced template compiled successfully!");
+[Line 280] Processing: periodt ();
+[Line 281] Processing: }
+
+✓ Execution completed
