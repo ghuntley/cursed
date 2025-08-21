@@ -182,6 +182,7 @@ pub const Program = struct {
     package: ?PackageDeclaration,
 
     pub fn init(allocator: Allocator) Program {
+        _ = allocator;
         return Program{
             .statements = .empty,
             .imports = .empty,
@@ -248,6 +249,7 @@ pub const ImportStatement = struct {
     version: ?[]const u8,
 
     pub fn init(allocator: Allocator, path: []const u8) ImportStatement {
+        _ = allocator;
         return ImportStatement{
             .path = path,
             .alias = null,
@@ -259,16 +261,15 @@ pub const ImportStatement = struct {
     }
 
     pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
-        _ = allocator;
         self.multiple_paths.deinit(allocator);
         self.selective_items.deinit(allocator);
     }
     
-    pub fn addMultiplePath(self: *ImportStatement, path: []const u8) !void {
+    pub fn addMultiplePath(self: *ImportStatement, allocator: Allocator, path: []const u8) !void {
         try self.multiple_paths.append(allocator, path);
     }
     
-    pub fn addSelectiveItem(self: *ImportStatement, name: []const u8, item_alias: ?[]const u8) !void {
+    pub fn addSelectiveItem(self: *ImportStatement, allocator: Allocator, name: []const u8, item_alias: ?[]const u8) !void {
         try self.selective_items.append(allocator, ImportItem{ .name = name, .alias = item_alias });
         self.is_selective = true;
     }
@@ -637,6 +638,7 @@ pub const FunctionStatement = struct {
     attributes: ?AttributeList = null, // Attribute decorations for code generation
 
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
+        _ = allocator;
         return FunctionStatement{
             .name = name,
             .parameters = .empty,

@@ -4665,6 +4665,102 @@ pub const AdvancedCodeGen = struct {
         const printf_type = c.LLVMFunctionType(int_type, &[_]c.LLVMTypeRef{char_ptr_type}, 1, 1); // Variadic
         return c.LLVMAddFunction(module, "printf", printf_type);
     }
+    
+    /// VTable lookup with fast-path and null safety
+    pub fn generateVTableLookup(self: *AdvancedCodeGen, object_ptr: c.LLVMValueRef, method_index: u32) CodeGenError!c.LLVMValueRef {
+        const context = self.base_codegen.context;
+        const builder = self.base_codegen.builder;
+        const module = self.base_codegen.module;
+        
+        // Fast-path null check
+        const null_ptr = c.LLVMConstNull(c.LLVMPointerTypeInContext(context, 0));
+        const is_null = c.LLVMBuildICmp(builder, c.LLVMIntEQ, object_ptr, null_ptr, "obj_null_check");
+        
+        // Create blocks for null check
+        const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+        const null_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_null_error");
+        const valid_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_valid");
+        const merge_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_merge");
+        
+        _ = c.LLVMBuildCondBr(builder, is_null, null_block, valid_block);
+        
+        // Null error block - call runtime error handler
+        c.LLVMPositionBuilderAtEnd(builder, null_block);
+        const error_func = try self.getOrCreateRuntimeFunction("cursed_null_vtable_error",
+            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(error_func), error_func, null, 0, "");
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        // Valid vtable lookup block
+        c.LLVMPositionBuilderAtEnd(builder, valid_block);
+        
+        // Load vtable pointer (first field of object)
+        const vtable_ptr_ptr = c.LLVMBuildStructGEP2(builder,
+            c.LLVMPointerTypeInContext(context, 0), object_ptr, 0, "vtable_ptr_ptr");
+        const vtable_ptr = c.LLVMBuildLoad2(builder,
+            c.LLVMPointerTypeInContext(context, 0), vtable_ptr_ptr, "vtable_ptr");
+            
+        // Null check on vtable pointer
+        const vtable_is_null = c.LLVMBuildICmp(builder, c.LLVMIntEQ, vtable_ptr, null_ptr, "vtable_null");
+        const vtable_null_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_ptr_null");
+        const vtable_valid_block = c.LLVMAppendBasicBlockInContext(context, current_func, "vtable_ptr_valid");
+        
+        _ = c.LLVMBuildCondBr(builder, vtable_is_null, vtable_null_block, vtable_valid_block);
+        
+        // VTable pointer null error
+        c.LLVMPositionBuilderAtEnd(builder, vtable_null_block);
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(error_func), error_func, null, 0, "");
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        // Valid vtable access
+        c.LLVMPositionBuilderAtEnd(builder, vtable_valid_block);
+        
+        // Verify vtable magic number (first field)
+        const magic_ptr = c.LLVMBuildStructGEP2(builder,
+            c.LLVMInt64TypeInContext(context), vtable_ptr, 0, "magic_ptr");
+        const magic_value = c.LLVMBuildLoad2(builder,
+            c.LLVMInt64TypeInContext(context), magic_ptr, "magic_value");
+        const expected_magic = c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0xDEADBEEFCAFEBABE, 0);
+        const magic_valid = c.LLVMBuildICmp(builder, c.LLVMIntEQ, magic_value, expected_magic, "magic_valid");
+        
+        const magic_error_block = c.LLVMAppendBasicBlockInContext(context, current_func, "magic_error");
+        const method_lookup_block = c.LLVMAppendBasicBlockInContext(context, current_func, "method_lookup");
+        
+        _ = c.LLVMBuildCondBr(builder, magic_valid, method_lookup_block, magic_error_block);
+        
+        // Magic validation error
+        c.LLVMPositionBuilderAtEnd(builder, magic_error_block);
+        const corrupt_func = try self.getOrCreateRuntimeFunction("cursed_corrupt_vtable_error",
+            c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
+        _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(corrupt_func), corrupt_func, null, 0, "");
+        _ = c.LLVMBuildUnreachable(builder);
+        
+        // Method lookup
+        c.LLVMPositionBuilderAtEnd(builder, method_lookup_block);
+        const method_ptr = c.LLVMBuildStructGEP2(builder,
+            c.LLVMPointerTypeInContext(context, 0), vtable_ptr, method_index + 1, "method_ptr");
+        const method_func = c.LLVMBuildLoad2(builder,
+            c.LLVMPointerTypeInContext(context, 0), method_ptr, "method_func");
+            
+        _ = c.LLVMBuildBr(builder, merge_block);
+        
+        // Merge block
+        c.LLVMPositionBuilderAtEnd(builder, merge_block);
+        const phi = c.LLVMBuildPhi(builder, c.LLVMPointerTypeInContext(context, 0), "method_result");
+        c.LLVMAddIncoming(phi, &[_]c.LLVMValueRef{method_func}, &[_]c.LLVMBasicBlockRef{method_lookup_block}, 1);
+        
+        return phi;
+    }
+    
+    /// Get or create runtime function
+    fn getOrCreateRuntimeFunction(self: *AdvancedCodeGen, name: [*:0]const u8, func_type: c.LLVMTypeRef) CodeGenError!c.LLVMValueRef {
+        const module = self.base_codegen.module;
+        
+        const existing = c.LLVMGetNamedFunction(module, name);
+        if (existing != null) return existing;
+        
+        return c.LLVMAddFunction(module, name, func_type);
+    }
 
     /// Get or create abs function
     fn getOrCreateAbsFunction(self: *AdvancedCodeGen) CodeGenError!c.LLVMValueRef {

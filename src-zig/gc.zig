@@ -311,8 +311,8 @@ const MemoryPool = struct {
         for (self.chunks.items) |chunk| {
             self.allocator.free(chunk);
         }
-        self.chunks.deinit(allocator);
-        self.free_blocks.deinit(allocator);
+        self.chunks.deinit(self.allocator);
+        self.free_blocks.deinit(self.allocator);
     }
     
     pub fn allocate(self: *MemoryPool) !*anyopaque {

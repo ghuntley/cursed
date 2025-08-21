@@ -173,9 +173,31 @@ pub const ArrayMetadata = struct {
                 "bounds_check"
             );
             
-            // TODO: Generate error handling for out-of-bounds access
-            // For now, we proceed with the access (unsafe but functional)
-            _ = index_valid;
+            // Generate bounds check trap for out-of-bounds access
+            const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(builder));
+            const bounds_error_block = c.LLVMAppendBasicBlockInContext(context, current_func, "bounds_error");
+            const bounds_ok_block = c.LLVMAppendBasicBlockInContext(context, current_func, "bounds_ok");
+            
+            // Branch based on bounds check
+            _ = c.LLVMBuildCondBr(builder, index_valid, bounds_ok_block, bounds_error_block);
+            
+            // Bounds error block - generate trap instruction
+            c.LLVMPositionBuilderAtEnd(builder, bounds_error_block);
+            
+            // Create bounds error function call
+            const error_func_type = c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0);
+            const bounds_error_func = c.LLVMAddFunction(c.LLVMGetModuleFromFunction(current_func), 
+                "cursed_bounds_error", error_func_type);
+            _ = c.LLVMBuildCall2(builder, error_func_type, bounds_error_func, null, 0, "");
+            
+            // Generate trap instruction to immediately terminate
+            const trap_func = c.LLVMAddFunction(c.LLVMGetModuleFromFunction(current_func),
+                "llvm.trap", c.LLVMFunctionType(c.LLVMVoidTypeInContext(context), null, 0, 0));
+            _ = c.LLVMBuildCall2(builder, c.LLVMGlobalGetValueType(trap_func), trap_func, null, 0, "bounds_trap");
+            _ = c.LLVMBuildUnreachable(builder);
+            
+            // Continue with valid bounds
+            c.LLVMPositionBuilderAtEnd(builder, bounds_ok_block);
         }
         
         // Get data pointer

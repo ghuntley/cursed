@@ -786,33 +786,120 @@ pub const EnhancedPGOSystem = struct {
     fn analyzeCriticalPaths(self: *Self, result: *PGOAnalysisResult) !void {
         print("  Analyzing critical execution paths...\n");
         
-        // TODO: Implement critical path analysis
-        // This would involve graph analysis of basic block execution patterns
-        _ = result;
+        // Build execution graph from basic block profiles
+        var path_frequencies = std.HashMap([]const u8, f64, std.StringContext, 80).init(self.allocator);
+        defer path_frequencies.deinit();
         
-        print("    Critical paths identified: {}\n", .{self.critical_paths.items.len});
+        // Identify hot paths based on basic block sequence frequency
+        var bb_iter = self.basic_block_profiles.iterator();
+        while (bb_iter.next()) |entry| {
+            const bb_name = entry.key_ptr.*;
+            const profile = entry.value_ptr.*;
+            
+            if (profile.execution_count > 1000) {  // Hot basic block threshold
+                try path_frequencies.put(bb_name, @floatFromInt(profile.execution_count));
+                try self.critical_paths.append(.{
+                    .path_name = try self.allocator.dupe(u8, bb_name),
+                    .frequency = @floatFromInt(profile.execution_count),
+                    .optimization_potential = profile.execution_count * 0.1,
+                });
+            }
+        }
+        
+        // Sort paths by frequency for result prioritization
+        const CriticalPath = @TypeOf(self.critical_paths.items[0]);
+        std.sort.sort(CriticalPath, self.critical_paths.items, {}, struct {
+            fn lessThan(_: void, a: CriticalPath, b: CriticalPath) bool {
+                return a.frequency > b.frequency;
+            }
+        }.lessThan);
+        
+        result.critical_paths = try self.critical_paths.toOwnedSlice(self.allocator);
+        print("    Critical paths identified: {}\n", .{result.critical_paths.len});
     }
     
     /// Analyze cross-function optimization opportunities
     fn analyzeCrossFunctionOptimizations(self: *Self, result: *PGOAnalysisResult) !void {
         print("  Analyzing cross-function optimizations...\n");
         
-        // TODO: Implement interprocedural optimization analysis
-        _ = result;
+        // Analyze call edge frequency patterns for inlining opportunities
+        var inline_candidates = std.ArrayList(CrossFunctionOptimization).init(self.allocator);
+        defer inline_candidates.deinit();
         
-        print("    Cross-function opportunities: 0\n");
+        var edge_iter = self.call_edge_profiles.iterator();
+        while (edge_iter.next()) |entry| {
+            const edge_name = entry.key_ptr.*;
+            const profile = entry.value_ptr.*;
+            
+            // High-frequency small functions are inline candidates
+            if (profile.call_count > 100 and profile.call_frequency > 0.8) {
+                try inline_candidates.append(.{
+                    .optimization_type = .Inlining,
+                    .caller_function = try self.extractCallerName(edge_name),
+                    .callee_function = try self.extractCalleeName(edge_name),
+                    .benefit_score = profile.call_frequency * profile.call_count,
+                });
+            }
+        }
+        
+        result.cross_function_optimizations = try inline_candidates.toOwnedSlice(self.allocator);
+        print("    Cross-function opportunities: {}\n", .{result.cross_function_optimizations.len});
     }
     
     /// Load profile database from file
     fn loadProfileDatabase(self: *Self) !void {
-        // TODO: Implement binary profile database loading
         print("📂 Loading PGO database from {s}\n", .{self.profile_database_path});
+        
+        const file = std.fs.cwd().openFile(self.profile_database_path, .{}) catch |err| {
+            print("  Warning: Could not load profile database: {}\n", .{err});
+            return;
+        };
+        defer file.close();
+        
+        var reader = file.reader();
+        
+        // Read binary format: [magic:u32][version:u32][sections...]
+        const magic = reader.readIntLittle(u32) catch return;
+        if (magic != 0x50474F44) { // "PGOD" magic
+            print("  Error: Invalid profile database format\n");
+            return;
+        }
+        
+        const version = reader.readIntLittle(u32) catch return;
+        if (version != 1) {
+            print("  Error: Unsupported database version {}\n", .{version});
+            return;
+        }
+        
+        // Load function profiles section
+        try self.loadFunctionProfilesSection(&reader);
+        // Load basic block profiles section  
+        try self.loadBasicBlockProfilesSection(&reader);
+        // Load call edge profiles section
+        try self.loadCallEdgeProfilesSection(&reader);
     }
     
     /// Save profile database to file
     fn saveProfileDatabase(self: *Self) !void {
-        // TODO: Implement binary profile database saving
         print("💾 Saving PGO database to {s}\n", .{self.profile_database_path});
+        
+        const file = std.fs.cwd().createFile(self.profile_database_path, .{}) catch |err| {
+            print("  Error: Could not create profile database: {}\n", .{err});
+            return;
+        };
+        defer file.close();
+        
+        var writer = file.writer();
+        
+        // Write binary format header
+        try writer.writeIntLittle(u32, 0x50474F44); // "PGOD" magic
+        try writer.writeIntLittle(u32, 1); // version
+        
+        // Save all profile sections
+        try self.saveFunctionProfilesSection(&writer);
+        try self.saveBasicBlockProfilesSection(&writer);  
+        try self.saveCallEdgeProfilesSection(&writer);
+        
         print("  Function profiles: {}\n", .{self.function_profiles.count()});
         print("  Basic block profiles: {}\n", .{self.basic_block_profiles.count()});
         print("  Call edge profiles: {}\n", .{self.call_edge_profiles.count()});

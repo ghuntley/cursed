@@ -1,0 +1,1 @@
+sus greeting tea = "Hello CURSED v1.0!"; sus numbers []normie = [1, 2, 3, 4, 5]; sus total normie = 0; vibez.spill(greeting); bestie i normie = 0; i < 5; i = i + 1 { total = total + numbers[i] } vibez.spill("Array sum:", total)

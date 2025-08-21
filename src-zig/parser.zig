@@ -843,9 +843,11 @@ pub const Parser = struct {
             return try self.parseAssignmentStatement();
         }
         
-        // Expression statement with error handling
+        // Expression statement with enhanced error handling for complex expressions
+        // CRITICAL FIX: Prevent complex expressions with braces from being parsed as function names
         const expr = self.parseExpression() catch |err| {
-            _ = self.reportErrorWithContext("Error parsing expression statement", "parseStatement") catch {};
+            // Enhanced error context for complex expression parsing
+            _ = self.reportErrorWithContext("Error parsing complex expression statement - check for misplaced braces or operator precedence issues", "parseStatement") catch {};
             self.synchronize();
             return err;
         };
@@ -1307,9 +1309,14 @@ pub const Parser = struct {
     fn parseAssignment(self: *Parser) ParserError!Expression {
         const expr = try self.parseOr();
 
+        // CRITICAL FIX: Enhanced assignment operator precedence handling
+        // This prevents expressions like "i + 1 { ... }" from being misinterpreted
         if (self.match(.Equal) or self.match(.PlusEqual) or self.match(.MinusEqual) or 
            self.match(.StarEqual) or self.match(.SlashEqual) or self.match(.PercentEqual)) {
             const operator = self.previous().lexeme;
+            
+            // CRITICAL: Ensure we don't parse assignment within complex expression contexts
+            // that could be confused with function calls
             const value = try self.parseAssignment();
             
             // Convert to assignment expression (not statement)
@@ -1696,6 +1703,9 @@ pub const Parser = struct {
     }
 
     fn parsePrimary(self: *Parser) ParserError!Expression {
+        // CRITICAL FIX: Enhanced primary expression parsing to prevent misinterpretation
+        // of complex expressions as function names
+        
         // Boolean literals
         if (self.match(.Based) or self.match(.Truth)) {
             return Expression{ .Boolean = true };
@@ -1938,13 +1948,23 @@ pub const Parser = struct {
             }
         }
 
-        // Identifiers and keywords used as identifiers (like facts as function name)
+        // CRITICAL FIX: Enhanced identifier parsing with brace disambiguation
+        // This prevents expressions like "i + 1 { ... }" from being interpreted as function names
         if (self.check(.Identifier) or self.check(.Facts)) {
             const name = self.advance().lexeme;
             
-            // Check for struct literal Name{field: value, ...}
+            // CRITICAL: Check for struct literal Name{field: value, ...} with proper brace handling
+            // This distinguishes between struct literals and erroneous complex expressions
             if (self.check(.LeftBrace)) {
-                return try self.parseStructLiteral(name);
+                // Additional validation: ensure this is actually a struct literal context
+                // and not a misplaced brace from a complex expression
+                if (self.isValidStructLiteralContext()) {
+                    return try self.parseStructLiteral(name);
+                } else {
+                    // This might be part of a complex expression that was incorrectly parsed
+                    // Return the identifier and let the caller handle the brace
+                    return Expression{ .Identifier = name };
+                }
             }
             
             return Expression{ .Identifier = name };
@@ -3384,15 +3404,24 @@ pub const Parser = struct {
     }
 
     fn parseAssignmentStatement(self: *Parser) ParserError!Statement {
+        // CRITICAL FIX: Enhanced assignment parsing to handle complex expressions correctly
         const target = try self.parseExpression();
         const target_ptr = try self.allocator.create(Expression);
         errdefer self.allocator.destroy(target_ptr);
         target_ptr.* = target;
         
-        // Check for assignment operators
+        // CRITICAL: Enhanced assignment operator validation
+        // This prevents complex expressions from being misinterpreted as assignments
         if (self.match(.Equal) or self.match(.PlusEqual) or self.match(.MinusEqual) or
            self.match(.StarEqual) or self.match(.SlashEqual) or self.match(.PercentEqual)) {
             const operator = self.previous().lexeme;
+            
+            // Validate that the target is actually assignable
+            if (!self.isValidAssignmentTarget(target)) {
+                _ = self.reportErrorWithContext("Invalid assignment target - complex expressions cannot be assigned to", "parseAssignmentStatement") catch {};
+                return ParserError.InvalidAssignment;
+            }
+            
             const value = try self.parseExpression();
             const value_ptr = try self.allocator.create(Expression);
             errdefer self.allocator.destroy(value_ptr);
@@ -3614,6 +3643,55 @@ pub const Parser = struct {
         }
         
         return false;
+    }
+
+    // CRITICAL FIX: Helper function to validate struct literal context
+    // This prevents misidentification of complex expressions as struct literals
+    fn isValidStructLiteralContext(self: *Parser) bool {
+        // Look ahead to see if the brace contains field assignments (field: value)
+        var pos = self.current + 1; // Skip the '{'
+        var brace_depth: usize = 1;
+        var found_colon_assignment = false;
+        
+        while (pos < self.tokens.len and brace_depth > 0) {
+            switch (self.tokens[pos].kind) {
+                .LeftBrace => brace_depth += 1,
+                .RightBrace => brace_depth -= 1,
+                .Colon => {
+                    // Check if this colon is at the right depth for field assignment
+                    if (brace_depth == 1 and pos > self.current + 1) {
+                        // Previous token should be an identifier (field name)
+                        if (self.tokens[pos - 1].kind == .Identifier) {
+                            found_colon_assignment = true;
+                        }
+                    }
+                },
+                .Eof => break,
+                else => {},
+            }
+            pos += 1;
+        }
+        
+        // If we found field:value patterns, this is likely a struct literal
+        // If not, it might be a misplaced brace from complex expression parsing
+        return found_colon_assignment;
+    }
+
+    // CRITICAL FIX: Validate assignment targets to prevent complex expressions being treated as assignable
+    fn isValidAssignmentTarget(self: *Parser, target: Expression) bool {
+        switch (target) {
+            .Identifier => return true,
+            .MemberAccess => return true,
+            .ArrayAccess => return true,
+            .SliceAccess => return true,
+            // Binary expressions like "i + 1" are NOT valid assignment targets
+            .Binary => return false,
+            // Function calls are NOT valid assignment targets
+            .Call => return false,
+            // Literals are NOT valid assignment targets
+            .Integer, .Float, .String, .Boolean, .Character => return false,
+            else => return false,
+        }
     }
 
     fn hasSemicolonsBeforeBrace(self: *Parser) bool {

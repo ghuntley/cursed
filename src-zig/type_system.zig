@@ -311,6 +311,13 @@ pub const TypeCheckError = struct {
         InvalidOperation,
         ArgumentCountMismatch,
         InvalidAccess,
+        UnknownStructType,
+        IncompatibleFieldType,
+        MissingStructField,
+        UnknownStructField,
+        VarianceViolation,
+        CyclicTypeReference,
+        InferenceConvergenceFailed,
     };
 
     pub const SourceLocation = struct {
@@ -686,8 +693,52 @@ pub const TypeChecker = struct {
             return error.UnknownStructType;
         }
         
-        // TODO: Validate field types match the struct definition
-        // For now, return the struct type
+        // Enhanced struct field validation with fail-fast errors
+        const struct_def = self.environment.getStructDefinition(struct_literal.type_name) orelse {
+            return self.createTypeError(.UnknownStructType, "Struct type '{s}' not found", .{struct_literal.type_name});
+        };
+        
+        // Validate all required fields are present
+        for (struct_def.fields) |field| {
+            var field_found = false;
+            for (struct_literal.fields) |literal_field| {
+                if (std.mem.eql(u8, field.name, literal_field.name)) {
+                    // Check field type compatibility
+                    const field_type = try self.checkExpression(literal_field.value);
+                    const expected_type = try self.resolveTypeExpression(field.field_type);
+                    
+                    if (!self.typesAreCompatible(field_type, expected_type)) {
+                        return self.createTypeError(.IncompatibleFieldType, 
+                            "Field '{s}' expects type '{s}' but got '{s}'", 
+                            .{ field.name, expected_type.toString(), field_type.toString() });
+                    }
+                    field_found = true;
+                    break;
+                }
+            }
+            
+            if (!field_found) {
+                return self.createTypeError(.MissingStructField, 
+                    "Required field '{s}' missing in struct literal", .{field.name});
+            }
+        }
+        
+        // Check for unknown fields
+        for (struct_literal.fields) |literal_field| {
+            var field_exists = false;
+            for (struct_def.fields) |field| {
+                if (std.mem.eql(u8, field.name, literal_field.name)) {
+                    field_exists = true;
+                    break;
+                }
+            }
+            
+            if (!field_exists) {
+                return self.createTypeError(.UnknownStructField, 
+                    "Unknown field '{s}' in struct '{s}'", .{ literal_field.name, struct_literal.type_name });
+            }
+        }
+        
         return TypeExpression.named(self.allocator, struct_literal.type_name);
     }
 
@@ -997,6 +1048,37 @@ pub const TypeChecker = struct {
         
         // TODO: Check against current function's return type
         _ = return_type;
+    }
+
+    /// Create a typed error with formatted message
+    fn createTypeError(self: *TypeChecker, kind: TypeCheckError.TypeErrorKind, comptime fmt: []const u8, args: anytype) !TypeExpression {
+        const message = try std.fmt.allocPrint(self.allocator, fmt, args);
+        const error_info = TypeCheckError.init(self.allocator, kind, message);
+        self.allocator.free(message);
+        return error.TypeCheckingFailed;
+    }
+    
+    /// Check type compatibility for struct fields
+    fn typesAreCompatible(self: *TypeChecker, type1: TypeExpression, type2: TypeExpression) bool {
+        // Enhanced type compatibility checking
+        return type1.isCompatibleWith(type2);
+    }
+    
+    /// Resolve type expression to concrete type
+    fn resolveTypeExpression(self: *TypeChecker, type_expr: ast.Type) !TypeExpression {
+        switch (type_expr) {
+            .Basic => |basic| {
+                switch (basic) {
+                    .Drip => return TypeExpression.primitive(.Integer),
+                    .Tea => return TypeExpression.primitive(.String),
+                    .Lit => return TypeExpression.primitive(.Boolean),
+                    else => return TypeExpression.primitive(.Void),
+                }
+            },
+            .Primitive => |prim| return TypeExpression.primitive(prim),
+            .Custom => |name| return TypeExpression.named(self.allocator, name),
+            else => return TypeExpression.primitive(.Void),
+        }
     }
 
     fn checkAssignment(self: *TypeChecker, assignment: *const ast.AssignmentStatement) !void {

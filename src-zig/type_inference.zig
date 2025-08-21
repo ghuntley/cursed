@@ -264,6 +264,138 @@ pub const TypeInferenceContext = struct {
         }
     }
     
+    /// Enhanced constraint solving with iterative propagation
+    fn solveConstraintsWithPropagation(self: *TypeInferenceContext) !void {
+        var changed = true;
+        var iteration = 0;
+        const max_iterations = 100;
+        
+        // Iteratively solve constraints until convergence
+        while (changed and iteration < max_iterations) {
+            changed = false;
+            iteration += 1;
+            
+            for (self.constraint_queue.items) |constraint| {
+                // Check if we already have a binding for this type parameter
+                if (self.inferred_types.get(constraint.type_param)) |existing_type| {
+                    // Verify consistency with enhanced checking
+                    if (!self.typesAreCompatibleEnhanced(existing_type, constraint.concrete_type, constraint.source)) {
+                        return error.InconsistentTypeInference;
+                    }
+                } else {
+                    // Add new binding with propagation
+                    try self.inferred_types.put(constraint.type_param, constraint.concrete_type);
+                    changed = true;
+                    
+                    // Propagate constraints to dependent type parameters
+                    try self.propagateConstraints(constraint.type_param, constraint.concrete_type);
+                }
+            }
+        }
+        
+        if (iteration >= max_iterations) {
+            return error.InferenceConvergenceFailed;
+        }
+    }
+    
+    /// Enhanced type compatibility checking with source context
+    fn typesAreCompatibleEnhanced(self: *TypeInferenceContext, type1: ast.Type, type2: ast.Type, source: ConstraintSource) bool {
+        if (std.meta.eql(type1, type2)) return true;
+        
+        // Context-sensitive compatibility checking
+        switch (source) {
+            .ReturnType => return self.checkReturnTypeCompatibility(type1, type2),
+            .Argument => return self.checkArgumentTypeCompatibility(type1, type2),
+            else => return self.typesAreCompatible(type1, type2),
+        }
+    }
+    
+    /// Check return type compatibility (covariant)
+    fn checkReturnTypeCompatibility(self: *TypeInferenceContext, expected: ast.Type, actual: ast.Type) bool {
+        // Return types are covariant
+        return self.isSubtype(actual, expected);
+    }
+    
+    /// Check argument type compatibility (contravariant)
+    fn checkArgumentTypeCompatibility(self: *TypeInferenceContext, expected: ast.Type, actual: ast.Type) bool {
+        // Argument types are contravariant
+        return self.isSubtype(expected, actual);
+    }
+    
+    /// Subtype checking for variance
+    fn isSubtype(self: *TypeInferenceContext, subtype: ast.Type, supertype: ast.Type) bool {
+        // Simplified subtype relation
+        switch (subtype) {
+            .Primitive => |sub_prim| {
+                switch (supertype) {
+                    .Primitive => |super_prim| return sub_prim == super_prim,
+                    else => return false,
+                }
+            },
+            else => return self.typesAreCompatible(subtype, supertype),
+        }
+    }
+    
+    /// Propagate constraints to dependent type parameters
+    fn propagateConstraints(self: *TypeInferenceContext, type_param: []const u8, concrete_type: ast.Type) !void {
+        // Find all constraints that depend on this type parameter
+        for (self.constraint_queue.items) |constraint| {
+            if (self.typeContainsParameter(constraint.concrete_type, type_param)) {
+                // Substitute the resolved type and create new constraints
+                const substituted_type = self.substituteType(constraint.concrete_type, type_param, concrete_type);
+                if (!std.meta.eql(substituted_type, constraint.concrete_type)) {
+                    try self.constraint_queue.append(.{
+                        .type_param = constraint.type_param,
+                        .concrete_type = substituted_type,
+                        .source = constraint.source,
+                    });
+                }
+            }
+        }
+    }
+    
+    /// Check if a type contains a specific type parameter
+    fn typeContainsParameter(self: *TypeInferenceContext, type_to_check: ast.Type, param_name: []const u8) bool {
+        switch (type_to_check) {
+            .Custom => |name| return std.mem.eql(u8, name, param_name),
+            .Generic => |generic| {
+                if (std.mem.eql(u8, generic.name, param_name)) return true;
+                for (generic.type_args.items) |arg| {
+                    if (self.typeContainsParameter(arg, param_name)) return true;
+                }
+                return false;
+            },
+            else => return false,
+        }
+    }
+    
+    /// Substitute a type parameter with a concrete type
+    fn substituteType(self: *TypeInferenceContext, original: ast.Type, param_name: []const u8, replacement: ast.Type) ast.Type {
+        switch (original) {
+            .Custom => |name| {
+                if (std.mem.eql(u8, name, param_name)) {
+                    return replacement;
+                }
+                return original;
+            },
+            .Generic => |generic| {
+                if (std.mem.eql(u8, generic.name, param_name)) {
+                    return replacement;
+                }
+                // Recursively substitute in type arguments
+                var new_args = std.ArrayList(ast.Type).init(self.allocator);
+                for (generic.type_args.items) |arg| {
+                    try new_args.append(self.substituteType(arg, param_name, replacement));
+                }
+                return ast.Type{ .Generic = .{
+                    .name = generic.name,
+                    .type_args = new_args,
+                }};
+            },
+            else => return original,
+        }
+    }
+    
     /// Check if two types are compatible for inference
     fn typesAreCompatible(self: *TypeInferenceContext, type1: ast.Type, type2: ast.Type) bool {
         if (std.meta.eql(type1, type2)) return true;
@@ -528,10 +660,12 @@ test "basic generic function type inference" {
     
     // Test inferring T from function call: foo[T](arg: T) with arg of type normie
     
-    // This would require a proper generic function declaration in the test
-    // For now, just test the constraint generation mechanism
+    // Enhanced generic function constraint propagation
     try inference_ctx.addConstraint("T", ast.Type{ .Primitive = .Normie }, .Argument);
-    try inference_ctx.solveConstraints();
+    try inference_ctx.addConstraint("T", ast.Type{ .Primitive = .Normie }, .ReturnType);
+    
+    // Propagate constraints iteratively with dependency tracking
+    try inference_ctx.solveConstraintsWithPropagation();
     
     const inferred_type = inference_ctx.inferred_types.get("T");
     try std.testing.expect(inferred_type != null);
