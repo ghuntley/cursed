@@ -504,7 +504,7 @@ pub const Worker = struct {
             }
 
             // No work available, yield
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             self.stats.idle_cycles += 1;
         }
     }
@@ -775,7 +775,7 @@ test "race condition free goroutine spawning" {
     const goroutine_id = try stan(testFn, &context);
     
     // Wait a bit for execution
-    std.time.sleep(10_000_000); // 10ms
+    std.Thread.sleep(10_000_000); // 10ms
     
     try std.testing.expect(executed);
     try std.testing.expect(goroutine_id > 0);

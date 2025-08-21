@@ -184,7 +184,7 @@ fn generateBasicLLVMIR(
     llvm_optimizer: *llvm_optimizations.LLVMOptimizer,
     verbose: bool
 ) ![]u8 {
-    var ir: std.ArrayList(u8) = .empty;
+    var ir = std.ArrayList(u8).init(self.allocator);
     
     // Add basic LLVM IR structure
     try ir.appendSlice("; CURSED Optimized LLVM IR\n");

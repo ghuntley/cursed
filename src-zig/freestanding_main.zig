@@ -43,7 +43,7 @@ const FreestandingLexer = struct {
     }
     
     pub fn tokenize(self: *@This()) ![]Token {
-        var tokens: std.ArrayList(Token) = .empty;
+        var tokens = std.ArrayList(Token).init(self.allocator);
         defer tokens.deinit();
         
         while (!self.isAtEnd()) {

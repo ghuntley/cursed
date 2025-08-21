@@ -128,7 +128,7 @@ pub const RealLLVMCodeGen = struct {
     
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
         // Separate functions from global statements
-        var global_statements: std.ArrayList(*Statement) = .empty;
+        var global_statements = std.ArrayList(*Statement).init(self.allocator);
         defer global_statements.deinit();
         
         // Process statements - functions are generated immediately, others saved for main
@@ -410,7 +410,7 @@ pub const RealLLVMCodeGen = struct {
             // Look up function in symbol table
             if (self.functions.get(func_name)) |func| {
                 // Generate arguments
-                var args: std.ArrayList(?*anyopaque) = .empty;
+                var args = std.ArrayList(?*anyopaque).init(self.allocator);
                 defer args.deinit();
                 
                 for (call.arguments) |arg_ptr| {

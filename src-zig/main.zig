@@ -990,7 +990,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     }
     
     // Discover test files using arena allocator (all memory cleaned up automatically)
-    var test_files: std.ArrayList([]const u8) = .empty;
+    var test_files = std.ArrayList([]const u8).init(allocator);
     defer test_files.deinit();
     
     try discoverTestFiles(allocator, &test_files, "tests");
@@ -1008,7 +1008,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     var total_passed: u32 = 0;
     var total_failed: u32 = 0;
     var total_duration: u64 = 0;
-    var failed_tests: std.ArrayList([]const u8) = .empty;
+    var failed_tests = std.ArrayList([]const u8).init(allocator);
     defer failed_tests.deinit();
     
     const suite_start_time = std.time.milliTimestamp();
@@ -1139,7 +1139,7 @@ const Variable = union(enum) {
             .String => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Array => |arr| {
-                var result: std.ArrayList(u8) = .empty;
+                var result = std.ArrayList(u8).init(self.allocator);
                 try result.append('[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");

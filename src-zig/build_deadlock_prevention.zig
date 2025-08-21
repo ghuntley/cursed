@@ -612,7 +612,7 @@ pub const BuildWorker = struct {
                 self.executeJob(job_id);
             } else {
                 // No jobs available, wait a bit
-                std.time.sleep(10_000_000); // 10ms
+                std.Thread.sleep(10_000_000); // 10ms
             }
         }
     }
@@ -643,7 +643,7 @@ pub const BuildWorker = struct {
             
             // Simulate work with random duration
             const duration_ms = job.estimated_duration_ms + (std.crypto.random.int(u32) % 500);
-            std.time.sleep(duration_ms * 1_000_000);
+            std.Thread.sleep(duration_ms * 1_000_000);
             
             // 95% success rate for simulation
             const success = (std.crypto.random.int(u32) % 100) < 95;

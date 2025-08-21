@@ -206,7 +206,7 @@ test "gc finalization" {
     try gc.collectNow();
     
     // Give finalization thread time to run
-    std.time.sleep(50_000_000); // 50ms
+    std.Thread.sleep(50_000_000); // 50ms
     
     const stats = gc.getStats();
     try testing.expect(stats.finalized_objects > 0);
@@ -284,7 +284,7 @@ test "gc stress test" {
     defer gc.deinit();
     
     const num_objects = 1000;
-    var live_objects: std.ArrayList(*TestObject) = .empty;
+    var live_objects = std.ArrayList(*TestObject).init(self.allocator);
     defer live_objects.deinit();
     
     // Allocate many objects, keeping some as roots
@@ -331,7 +331,7 @@ test "gc heap management" {
     const gc = try GC.init(test_allocator, config);
     defer gc.deinit();
     
-    var objects: std.ArrayList(*TestObject) = .empty;
+    var objects = std.ArrayList(*TestObject).init(self.allocator);
     defer objects.deinit();
     
     // Allocate objects to force heap growth
@@ -398,7 +398,7 @@ test "gc concurrent safety" {
                 }
                 
                 // Small delay to allow other threads to work
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
             }
         }
     };
@@ -470,7 +470,7 @@ test "gc collection benchmark" {
     
     // Fill heap with objects
     const num_objects = 10000;
-    var roots: std.ArrayList(?*anyopaque) = .empty;
+    var roots = std.ArrayList(?*anyopaque).init(self.allocator);
     defer roots.deinit();
     
     for (0..num_objects) |i| {

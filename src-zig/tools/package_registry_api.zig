@@ -346,7 +346,7 @@ pub const RegistryApiClient = struct {
         _ = package_path;
         
         // Simulate security scanning
-        std.time.sleep(1000000000); // 1 second
+        std.Thread.sleep(1000000000); // 1 second
         
         // Mock scan result
         return SecurityScanResult{
@@ -371,7 +371,7 @@ pub const RegistryApiClient = struct {
         
         // Simulate upload
         print("   ⬆️  Uploading to {s}...\n", .{self.base_url});
-        std.time.sleep(2000000000); // 2 seconds
+        std.Thread.sleep(2000000000); // 2 seconds
         
         return UploadResult{
             .success = true,

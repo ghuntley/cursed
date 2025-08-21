@@ -255,7 +255,7 @@ pub const LLVMIRGenerator = struct {
                 const func_name = std.mem.trim(u8, line[space_pos + 1..space_pos + 1 + paren_pos], " \t");
                 
                 // Extract parameters (simplified parsing)
-                var parameters: std.ArrayList(ParameterInfo) = .empty;
+                var parameters = std.ArrayList(ParameterInfo).init(self.allocator);
                 defer parameters.deinit();
                 
                 // Extract return type (simplified - assuming last word before {)
@@ -597,7 +597,7 @@ pub const LLVMIRGenerator = struct {
     
     // Additional helper functions...
     fn escapeString(self: *LLVMIRGenerator, input: []const u8) ![]const u8 {
-        var result: std.ArrayList(u8) = .empty;
+        var result = std.ArrayList(u8).init(self.allocator);
         defer result.deinit();
         
         for (input) |char| {
@@ -625,7 +625,7 @@ pub const LLVMIRGenerator = struct {
     }
     
     fn buildFunctionType(self: *LLVMIRGenerator, parameters: []const ParameterInfo, return_type: []const u8) ![]const u8 {
-        var param_types: std.ArrayList([]const u8) = .empty;
+        var param_types = std.ArrayList([]const u8).init(self.allocator);
         defer param_types.deinit();
         
         for (parameters) |param| {
@@ -644,7 +644,7 @@ pub const LLVMIRGenerator = struct {
             return try self.allocator.dupe(u8, "");
         }
         
-        var param_strs: std.ArrayList([]const u8) = .empty;
+        var param_strs = std.ArrayList([]const u8).init(self.allocator);
         defer param_strs.deinit();
         
         for (parameters) |param| {
@@ -658,7 +658,7 @@ pub const LLVMIRGenerator = struct {
     fn generateFunctionBody(self: *LLVMIRGenerator, func_name: []const u8, source: []const u8) !void {
         // Parse and generate LLVM IR for function body
         var tokenizer = lexer.Tokenizer.init(source);
-        var tokens: std.ArrayList(lexer.Token) = .empty;
+        var tokens = std.ArrayList(lexer.Token).init(self.allocator);
         defer tokens.deinit();
         
         // Tokenize function body

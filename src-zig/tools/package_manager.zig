@@ -328,7 +328,7 @@ pub const RegistryClient = struct {
         print("HTTP {s} request to: {s}\n", .{ method, url });
         
         // Mock HTTP implementation with timing
-        std.time.sleep(std.time.ns_per_ms * 200); // Simulate 200ms latency
+        std.Thread.sleep(std.time.ns_per_ms * 200); // Simulate 200ms latency
         
         // Return mock JSON response
         return try self.allocator.dupe(u8, 
@@ -344,7 +344,7 @@ pub const RegistryClient = struct {
         print("Downloading file from {s} to {s}\n", .{ url, destination });
         
         // Mock file download with realistic timing
-        std.time.sleep(std.time.ns_per_ms * 1000); // Simulate 1 second download
+        std.Thread.sleep(std.time.ns_per_ms * 1000); // Simulate 1 second download
         
         // Create mock package file
         const mock_content = 

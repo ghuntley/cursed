@@ -217,7 +217,7 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     print("[5/6] Compiling optimized IR to native executable...\n", .{});
     
     // Build clang command with optimization flags
-    var clang_args: std.ArrayList([]const u8) = .empty;
+    var clang_args = std.ArrayList([]const u8).init(self.allocator);
     defer clang_args.deinit();
     
     try clang_args.append("clang");

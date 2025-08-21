@@ -247,7 +247,7 @@ pub const TLSContext = struct {
             .is_ca = true,
         };
         
-        var ca_list: std.ArrayList(X509Certificate) = .empty;
+        var ca_list = std.ArrayList(X509Certificate).init(self.allocator);
         try ca_list.append(example_ca);
         self.ca_certificates = try ca_list.toOwnedSlice();
     }
@@ -415,7 +415,7 @@ pub const TLSContext = struct {
 
 /// Security audit function to check for common TLS misconfigurations
 pub fn auditTLSConfiguration(config: TLSSecurityConfig) []const []const u8 {
-    var warnings: std.ArrayList([]const u8) = .empty;
+    var warnings = std.ArrayList([]const u8).init(self.allocator);
     
     // Check minimum TLS version
     if (@intFromEnum(config.min_tls_version) < @intFromEnum(TLSVersion.tls_1_2)) {

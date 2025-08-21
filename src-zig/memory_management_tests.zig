@@ -225,7 +225,7 @@ test "concurrency system memory safety" {
         }
         
         // Wait for execution
-        std.time.sleep(100_000_000); // 100ms
+        std.Thread.sleep(100_000_000); // 100ms
         
         tracker.update();
         print("Executed goroutines: {}\n", .{executed_count});
@@ -371,7 +371,7 @@ test "LLVM module memory safety" {
             modules[i] = true; // "Create" module
             
             // Simulate some operations
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
             
             modules[i] = false; // "Destroy" module
         }

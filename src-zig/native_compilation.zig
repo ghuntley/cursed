@@ -720,7 +720,7 @@ pub const NativeCompiler = struct {
         defer c.LLVMDisposePassManager(pass_manager);
         
         // Parse profile data to identify hot functions
-        var hot_functions: std.ArrayList([]const u8) = .empty;
+        var hot_functions = std.ArrayList([]const u8).init(self.allocator);
         defer hot_functions.deinit();
         
         try self.parseProfileData(profile_data, &hot_functions);

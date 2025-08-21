@@ -110,7 +110,7 @@ pub const Parser = struct {
         // Parse optional specific imports: yeet "module" { func1, func2 }
         var specific_imports: ?[][]const u8 = null;
         if (self.match(.LeftBrace)) {
-            var imports: std.ArrayList([]const u8) = .empty;
+            var imports = std.ArrayList([]const u8).init(self.allocator);
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 const import_token = self.advance();
                 if (import_token.type != .Identifier) {

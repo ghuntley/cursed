@@ -357,7 +357,7 @@ pub const OptimizedCompiler = struct {
     
     /// Generate optimization recommendations
     fn generateOptimizationRecommendations(self: *OptimizedCompiler) ![]OptimizationRecommendation {
-        var recommendations: std.ArrayList(OptimizationRecommendation) = .empty;
+        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
         
         // Analyze cache hit rate
         const cache_stats = self.compilation_cache.getCacheStatistics();

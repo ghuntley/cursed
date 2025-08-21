@@ -503,7 +503,7 @@ pub const TypeInferenceContext = struct {
                     return replacement;
                 }
                 // Recursively substitute in type arguments
-                var new_args: std.ArrayList(ast.Type) = .empty;
+                var new_args = std.ArrayList(ast.Type).init(self.allocator);
                 for (generic.type_args.items) |arg| {
                     try new_args.append(self.substituteType(arg, param_name, replacement));
                 }
@@ -698,7 +698,7 @@ pub const GenericCallResolver = struct {
         if (self.inference_context.monomorphizer.generic_declarations.get(call.name)) |generic_decl| {
             if (generic_decl.kind == .Function) {
                 // Extract argument types for generic inference
-                var arg_types: std.ArrayList(ast.Type) = .empty;
+                var arg_types = std.ArrayList(ast.Type).init(self.allocator);
                 defer arg_types.deinit();
                 
                 for (call.arguments.items) |arg| {
@@ -782,7 +782,7 @@ pub const GenericCallResolver = struct {
             },
             .Function => |func_type| {
                 // Substitute in parameter and return types
-                var new_param_types: std.ArrayList(ast.Type) = .empty;
+                var new_param_types = std.ArrayList(ast.Type).init(self.allocator);
                 defer new_param_types.deinit(self.allocator);
                 
                 for (func_type.parameter_types.items) |param_type| {

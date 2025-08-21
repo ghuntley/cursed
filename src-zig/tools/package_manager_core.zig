@@ -837,7 +837,7 @@ pub const commands = struct {
         print("🚀 Publishing to registry...\n", .{});
         
         // Simulate network delay
-        std.time.sleep(1000000000); // 1 second
+        std.Thread.sleep(1000000000); // 1 second
         
         print("✅ Successfully published {s}@{s}\n", .{manifest.name, version_str});
         print("🌐 Available at: https://packages.cursed.dev/{s}\n", .{manifest.name});

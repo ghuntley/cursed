@@ -480,7 +480,7 @@ pub const AsyncTcpServer = struct {
             // Start async accept
             const accept_op = self.network.acceptAsync(self.listen_socket) catch |err| {
                 std.log.err("Failed to start async accept: {}", .{err});
-                std.time.sleep(100 * std.time.ns_per_ms); // 100ms delay before retry
+                std.Thread.sleep(100 * std.time.ns_per_ms); // 100ms delay before retry
                 continue;
             };
             

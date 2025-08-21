@@ -524,7 +524,7 @@ pub const CursedLSPServer = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer: std.ArrayList(u8) = .empty;
+        var buffer = std.ArrayList(u8).init(self.allocator);
         defer buffer.deinit();
         
         while (!self.shutdown_requested) {

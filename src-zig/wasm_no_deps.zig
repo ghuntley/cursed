@@ -69,7 +69,7 @@ const WasmLexer = struct {
     }
     
     pub fn tokenize(self: *Self) !std.ArrayList(Token) {
-        var tokens: std.ArrayList(Token) = .empty;
+        var tokens = std.ArrayList(Token).init(self.allocator);
         
         while (!self.isAtEnd()) {
             self.skipWhitespace();

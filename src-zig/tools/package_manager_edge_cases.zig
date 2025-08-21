@@ -232,7 +232,7 @@ pub const NetworkResilience = struct {
                     if (retry_count <= self.max_retries) {
                         const delay_ms = std.math.pow(u64, 2, retry_count) * 1000; // Exponential backoff
                         print("⏳ Network timeout, retrying in {}ms (attempt {} of {})\n", .{delay_ms, retry_count + 1, self.max_retries + 1});
-                        std.time.sleep(delay_ms * std.time.ns_per_ms);
+                        std.Thread.sleep(delay_ms * std.time.ns_per_ms);
                     }
                 },
                 else => return err,
@@ -265,7 +265,7 @@ pub const NetworkResilience = struct {
         
         // Simulate successful download
         print("📥 Downloading from {s} to {s}\n", .{url, dest_path});
-        std.time.sleep(std.time.ns_per_ms * 500); // Simulate download time
+        std.Thread.sleep(std.time.ns_per_ms * 500); // Simulate download time
         
         const mock_content = "# Mock package content\nversion = \"1.0.0\"\n";
         const file = try std.fs.cwd().createFile(dest_path, .{});
@@ -512,7 +512,7 @@ pub const ConcurrentAccessManager = struct {
             var retry_count: u32 = 0;
             while (self.package_locks.contains(package_name) and retry_count < 30) { // 30 second timeout
                 self.mutex.unlock();
-                std.time.sleep(std.time.ns_per_s); // Wait 1 second
+                std.Thread.sleep(std.time.ns_per_s); // Wait 1 second
                 self.mutex.lock();
                 retry_count += 1;
             }

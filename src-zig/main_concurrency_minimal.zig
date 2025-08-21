@@ -100,7 +100,7 @@ fn compileProgram(allocator: Allocator, filename: []const u8, tokens: ArrayList(
     const c_filename = try std.fmt.allocPrint(allocator, "{s}.c", .{output_name});
     defer allocator.free(c_filename);
     
-    var c_code: std.ArrayList(u8) = .empty;
+    var c_code = std.ArrayList(u8).init(self.allocator);
     defer c_code.deinit();
     
     // Generate basic C code with concurrency stubs

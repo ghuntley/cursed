@@ -94,7 +94,7 @@ pub fn Channel(comptime T: type) type {
             var wait_count: u32 = 0;
             while (self.ref_count > 1 and wait_count < 1000) {
                 self.mutex.unlock();
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 wait_count += 1;
                 self.mutex.lock();
             }
@@ -522,7 +522,7 @@ pub const Scheduler = struct {
             if (elapsed >= timeout_ns) {
                 return false; // Timeout
             }
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
         
         return true; // All completed
@@ -689,7 +689,7 @@ test "scheduler lifecycle" {
     _ = try stan(testFn, &context);
     
     // Wait for execution
-    std.time.sleep(50_000_000); // 50ms
+    std.Thread.sleep(50_000_000); // 50ms
     
     try std.testing.expect(executed);
 }

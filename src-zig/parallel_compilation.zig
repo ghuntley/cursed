@@ -143,7 +143,7 @@ pub const ParallelCompiler = struct {
         
         // Wait for all lexing tasks to complete
         while (!self.lexing_queue.isEmpty() or self.lexing_stage.active_workers.load(.Acquire) > 0) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
         
         self.lexing_stage.finish();
@@ -172,7 +172,7 @@ pub const ParallelCompiler = struct {
         
         // Wait for all parsing tasks to complete
         while (!self.parsing_queue.isEmpty() or self.parsing_stage.active_workers.load(.Acquire) > 0) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
         
         self.parsing_stage.finish();
@@ -201,7 +201,7 @@ pub const ParallelCompiler = struct {
         
         // Wait for all type checking tasks to complete
         while (!self.type_checking_queue.isEmpty() or self.type_checking_stage.active_workers.load(.Acquire) > 0) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
         
         self.type_checking_stage.finish();
@@ -230,7 +230,7 @@ pub const ParallelCompiler = struct {
         
         // Wait for all code generation tasks to complete
         while (!self.codegen_queue.isEmpty() or self.codegen_stage.active_workers.load(.Acquire) > 0) {
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
         
         self.codegen_stage.finish();
@@ -260,7 +260,7 @@ pub const ParallelCompiler = struct {
             if (self.tryProcessCodegenTask(worker_id)) continue;
             
             // No work available, sleep briefly
-            std.time.sleep(100_000); // 100μs
+            std.Thread.sleep(100_000); // 100μs
         }
     }
     

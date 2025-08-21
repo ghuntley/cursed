@@ -329,7 +329,7 @@ pub const SelectStatement = struct {
             }
             
             // Small delay before trying again to avoid busy waiting
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
     }
     
@@ -602,7 +602,7 @@ test "goroutine spawning" {
     try std.testing.expect(goroutine_id > 0);
     
     // Wait a bit for execution
-    std.time.sleep(50_000_000); // 50ms
+    std.Thread.sleep(50_000_000); // 50ms
     
     // In a real test, would need proper synchronization to check execution
     const stats = runtime.getStats();

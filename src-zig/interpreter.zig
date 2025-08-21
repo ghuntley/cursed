@@ -18,7 +18,7 @@ const safeDupeString = error_handling.safeDupeString;
 // Forward declarations for struct and interface support
 pub const StructInstance = struct {
     type_name: []const u8,
-    fields: HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    fields: HashMap([]const u8, *Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, type_name: []const u8) CursedError!StructInstance {
@@ -28,23 +28,35 @@ pub const StructInstance = struct {
         
         return StructInstance{
             .type_name = type_name_copy,
-            .fields = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .fields = HashMap([]const u8, *Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *StructInstance) void {
+        // Free all values stored in fields
+        var iterator = self.fields.iterator();
+        while (iterator.next()) |entry| {
+            entry.value_ptr.*.deinit(self.allocator);
+            self.allocator.destroy(entry.value_ptr.*);
+            self.allocator.free(entry.key_ptr.*);
+        }
         self.allocator.free(self.type_name);
         self.fields.deinit();
     }
     
     pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
         const field_name = try self.allocator.dupe(u8, name);
-        try self.fields.put(field_name, value);
+        const value_ptr = try self.allocator.create(Value);
+        value_ptr.* = value;
+        try self.fields.put(field_name, value_ptr);
     }
     
     pub fn getField(self: *StructInstance, name: []const u8) ?Value {
-        return self.fields.get(name);
+        if (self.fields.get(name)) |value_ptr| {
+            return value_ptr.*;
+        }
+        return null;
     }
 };
 
@@ -164,13 +176,12 @@ pub const ErrorValue = struct {
 };
 
 pub const PointerValue = struct {
-    pointee_value: Value,
+    pointee_value: *Value,
     allocator: Allocator,
     
     pub fn deinit(self: *PointerValue) void {
-        // Note: We store the value directly, so no additional cleanup needed
-        // In a real implementation, this might need to handle reference counting
-        _ = self;
+        self.pointee_value.deinit(self.allocator);
+        self.allocator.destroy(self.pointee_value);
     }
 };
 
@@ -248,7 +259,7 @@ pub const Value = union(enum) {
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
             .Null => return allocator.dupe(u8, "cap"),
             .Tuple => |tuple| {
-                var result: std.ArrayList(u8) = .empty;
+                var result = std.ArrayList(u8).init(self.allocator);
                 defer result.deinit();
                 try result.append('(');
                 for (tuple.items, 0..) |item, i| {
@@ -619,14 +630,14 @@ pub const Interpreter = struct {
                     },
                     .Pointer => |*ptr| {
                         // Dereference pointer and assign to field
-                        switch (ptr.pointee_value) {
+                        switch (ptr.pointee_value.*) {
                             .Struct => |*struct_inst| {
                                 try struct_inst.setField(member.property, value);
                                 // Update the pointer's pointee value
-                                ptr.pointee_value = Value{ .Struct = struct_inst.* };
+                                ptr.pointee_value.* = Value{ .Struct = struct_inst.* };
                             },
                             else => {
-                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .{@tagName(ptr.pointee_value)});
+                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
                                 return InterpreterError.TypeMismatch;
                             }
                         }
@@ -643,10 +654,10 @@ pub const Interpreter = struct {
                     const ptr_value = try self.evaluateExpression(unary.operand.*);
                     switch (ptr_value) {
                         .Pointer => |*ptr| {
-                            switch (ptr.pointee_value) {
+                            switch (ptr.pointee_value.*) {
                                 .Struct => |*struct_inst| {
                                     try struct_inst.setField(member.property, value);
-                                    ptr.pointee_value = Value{ .Struct = struct_inst.* };
+                                    ptr.pointee_value.* = Value{ .Struct = struct_inst.* };
                                 },
                                 else => {
                                     return InterpreterError.TypeMismatch;
@@ -901,7 +912,7 @@ pub const Interpreter = struct {
                 .Pointer => |ptr| {
                     // For simplicity, we'll store the pointed-to value directly
                     // In a real implementation, this would dereference memory
-                    return ptr.pointee_value;
+                    return ptr.pointee_value.*;
                 },
                 else => {
                     std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .{@tagName(operand)});
@@ -910,8 +921,10 @@ pub const Interpreter = struct {
             }
         } else if (std.mem.eql(u8, unary.operator, "&")) {
             // Address-of operator - create a pointer to the operand
+            const pointee_ptr = try self.allocator.create(Value);
+            pointee_ptr.* = operand;
             return Value{ .Pointer = PointerValue{
-                .pointee_value = operand,
+                .pointee_value = pointee_ptr,
                 .allocator = self.allocator,
             }};
         } else {
@@ -1093,18 +1106,18 @@ pub const Interpreter = struct {
             },
             .Pointer => |ptr| {
                 // Automatically dereference pointer for member access
-                switch (ptr.pointee_value) {
+                switch (ptr.pointee_value.*) {
                     .Struct => |struct_inst| {
                         if (struct_inst.fields.get(member.property)) |field_value| {
-                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .{member.property, @tagName(field_value)});
-                            return field_value;
+                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .{member.property, @tagName(field_value.*)});
+                            return field_value.*;
                         } else {
                             std.debug.print("DEBUG: Field '{s}' not found in dereferenced struct\n", .{member.property});
                             return InterpreterError.UndefinedField;
                         }
                     },
                     else => {
-                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .{@tagName(ptr.pointee_value)});
+                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
                         return InterpreterError.TypeMismatch;
                     }
                 }
@@ -2041,7 +2054,7 @@ pub const Interpreter = struct {
         std.debug.print("Spawned goroutine with ID: {}\n", .{goroutine_id});
         
         // Wait a bit longer for goroutine to execute
-        std.time.sleep(10_000_000); // 10ms
+        std.Thread.sleep(10_000_000); // 10ms
     }
     
     /// Execute basic switch statement (simple value matching)
@@ -2445,7 +2458,7 @@ pub const Interpreter = struct {
     }
 
     fn evaluateStringInterpolation(self: *Interpreter, interpolation: ast.StringInterpolationExpression) InterpreterError!Value {
-        var result: std.ArrayList(u8) = .empty;
+        var result = std.ArrayList(u8).init(self.allocator);
         defer result.deinit();
         
         for (interpolation.parts.items) |part| {

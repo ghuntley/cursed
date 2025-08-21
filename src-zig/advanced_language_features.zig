@@ -1155,7 +1155,7 @@ pub const ActorSystem = struct {
                         const message = self.message_queue.orderedRemove(0);
                         try self.deliverMessage(message);
                     } else {
-                        std.time.sleep(1000000); // 1ms
+                        std.Thread.sleep(1000000); // 1ms
                     }
                 }
             }

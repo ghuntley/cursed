@@ -270,7 +270,7 @@ pub const SimpleScheduler = struct {
         // Wait for active goroutines to complete (with timeout)
         var timeout_count: u32 = 0;
         while (self.active_count.load(.acquire) > 0 and timeout_count < 100) {
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
             timeout_count += 1;
         }
     }
@@ -327,7 +327,7 @@ pub const SimpleScheduler = struct {
             if (elapsed >= timeout_ns) {
                 return false;
             }
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
         
         return true;
@@ -445,7 +445,7 @@ test "simple scheduler" {
     _ = try stan(testFn, &context);
     
     // Wait for completion
-    std.time.sleep(100_000_000); // 100ms
+    std.Thread.sleep(100_000_000); // 100ms
     
     try std.testing.expect(completed);
 }

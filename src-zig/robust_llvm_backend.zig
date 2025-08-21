@@ -87,7 +87,7 @@ pub const ARM64CallingConvention = struct {
     
     /// Classify function parameters for ARM64
     pub fn classifyParameters(param_types: []c.LLVMTypeRef) ![]ParameterClass {
-        var classifications: std.ArrayList(ParameterClass) = .empty;
+        var classifications = std.ArrayList(ParameterClass).init(self.allocator);
         var general_reg_count: u8 = 0;
         var fp_reg_count: u8 = 0;
         var stack_offset: u32 = 0;
@@ -464,8 +464,8 @@ pub const RobustLLVMBackend = struct {
         const result_phi = c.LLVMBuildPhi(self.builder, result_type, "pattern_result");
         c.LLVMPositionBuilderAtEnd(self.builder, current_block);
         
-        var phi_values: std.ArrayList(c.LLVMValueRef) = .empty;
-        var phi_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
+        var phi_values = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var phi_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
         defer phi_values.deinit();
         defer phi_blocks.deinit();
         
@@ -586,7 +586,7 @@ pub const RobustLLVMBackend = struct {
         const return_type = c.LLVMGetReturnType(func_type);
         const return_classification = self.classifyReturnType(return_type);
         
-        var adjusted_args: std.ArrayList(c.LLVMValueRef) = .empty;
+        var adjusted_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
         defer adjusted_args.deinit();
         
         var return_alloca: ?c.LLVMValueRef = null;

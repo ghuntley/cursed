@@ -449,7 +449,7 @@ pub const Worker = struct {
                 self.idle.store(true, .release);
             } else {
                 // No work available, sleep briefly
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
             }
         }
         
@@ -721,7 +721,7 @@ pub const Worker = struct {
             
             if (!work_done) {
                 // No work available - brief sleep to avoid busy waiting
-                std.time.sleep(100_000); // 100 microseconds
+                std.Thread.sleep(100_000); // 100 microseconds
                 self.stats.idle_cycles += 1;
             }
         }
@@ -1036,7 +1036,7 @@ const GenericContext = struct {
         // Fallback implementation - just yield
         _ = self;
         _ = target;
-        std.time.sleep(1_000); // 1 microsecond
+        std.Thread.sleep(1_000); // 1 microsecond
         return true;
     }
 };
@@ -1093,7 +1093,7 @@ pub fn spawn(entry_fn: *const fn (?*anyopaque) void, context: ?*anyopaque) !u64 
 /// Yield current goroutine (cooperative scheduling)
 pub fn yield() void {
     // In a full implementation, this would yield the current goroutine
-    std.time.sleep(1_000); // 1 microsecond
+    std.Thread.sleep(1_000); // 1 microsecond
 }
 
 // Tests
@@ -1137,7 +1137,7 @@ test "goroutine spawning and execution" {
     try std.testing.expect(goroutine_id > 0);
     
     // Wait for execution
-    std.time.sleep(100_000_000); // 100ms
+    std.Thread.sleep(100_000_000); // 100ms
     
     try std.testing.expect(executed);
 }
@@ -1218,7 +1218,7 @@ test "multiple workers and work stealing" {
         fn run(ctx: ?*anyopaque) void {
             const test_ctx: *TestContext = @ptrCast(@alignCast(ctx.?));
             test_ctx.increment();
-            std.time.sleep(1_000_000); // 1ms
+            std.Thread.sleep(1_000_000); // 1ms
         }
     }.run;
     
@@ -1229,7 +1229,7 @@ test "multiple workers and work stealing" {
     }
     
     // Wait for execution
-    std.time.sleep(200_000_000); // 200ms
+    std.Thread.sleep(200_000_000); // 200ms
     
     // All goroutines should have executed
     try std.testing.expect(execution_count == num_goroutines);

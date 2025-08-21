@@ -137,7 +137,7 @@ pub const EnhancedScheduler = struct {
             // Wait for legacy goroutines to complete
             var wait_count: u32 = 0;
             while (legacy.activeGoroutineCount() > 0 and wait_count < 100) {
-                std.time.sleep(10_000_000); // 10ms
+                std.Thread.sleep(10_000_000); // 10ms
                 wait_count += 1;
             }
             
@@ -455,7 +455,7 @@ pub const Migration = struct {
             var wait_count: u32 = 0;
             while (legacy_scheduler.activeGoroutineCount() > 0 and wait_count < 100) {
                 print("   Waiting for {} goroutines to complete...\n", .{legacy_scheduler.activeGoroutineCount()});
-                std.time.sleep(50_000_000); // 50ms
+                std.Thread.sleep(50_000_000); // 50ms
                 wait_count += 1;
             }
             

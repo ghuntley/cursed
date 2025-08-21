@@ -735,7 +735,7 @@ pub const CodeGen = struct {
             return CodeGenError.UndefinedSymbol;
         };
         
-        var format_str: std.ArrayList(u8) = .empty;
+        var format_str = std.ArrayList(u8).init(self.allocator);
         defer format_str.deinit();
         
         var llvm_args = .empty;

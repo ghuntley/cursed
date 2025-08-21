@@ -180,7 +180,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     defer allocator.free(c_filename);
     
     // Generate optimized C code
-    var c_code: std.ArrayList(u8) = .empty;
+    var c_code = std.ArrayList(u8).init(self.allocator);
     defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n");

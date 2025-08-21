@@ -130,7 +130,7 @@ pub fn Channel(comptime T: type) type {
                 self.recv_condition.broadcast();
                 
                 // Small delay before checking again
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 attempts += 1;
             }
         }
@@ -349,7 +349,7 @@ pub fn testChannelRaceConditions() !void {
         try goroutine.spawn(TestContext.senderFunc, .{&ctx});
         
         // Small delay to let sender start
-        std.time.sleep(10_000_000); // 10ms
+        std.Thread.sleep(10_000_000); // 10ms
         
         // Receive the value
         const value = try channel_guard.receive();
@@ -411,7 +411,7 @@ pub fn testChannelRaceConditions() !void {
         }
         
         // Let all goroutines run
-        std.time.sleep(100_000_000); // 100ms
+        std.Thread.sleep(100_000_000); // 100ms
     }
     
     std.debug.print("✅ All channel race condition tests passed!\n", .{});

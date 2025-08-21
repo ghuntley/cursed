@@ -1837,7 +1837,7 @@ pub const GCImpl = struct {
             const lock_acquired = self.finalization_mutex.tryLock();
             if (!lock_acquired) {
                 // If we can't get the lock immediately, yield to GC collection
-                std.time.sleep(1_000_000); // 1ms
+                std.Thread.sleep(1_000_000); // 1ms
                 continue;
             }
             
@@ -1917,7 +1917,7 @@ pub const GCImpl = struct {
         
         // Brief pause between batches to avoid CPU spinning
         if (processed_count == 0) {
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
     }
     
@@ -2741,7 +2741,7 @@ pub const GCImpl = struct {
                 const length_ptr = @as(*usize, @ptrCast(@alignCast(ptr)));
                 const length = length_ptr.*;
                 
-                var arr: std.ArrayList(Variable) = .empty;
+                var arr = std.ArrayList(Variable).init(self.allocator);
                 try arr.ensureTotalCapacity(allocator, length);
                 
                 // Load array elements (recursive loading needed for GC objects)
@@ -2753,7 +2753,7 @@ pub const GCImpl = struct {
                 return Variable{ .Array = arr };
             },
             3 => { // Struct
-                _ = self; // Suppress unused warning
+                // Struct loading would require type registry
                 // Struct loading would require type registry for field names
                 // For now, return a simple struct placeholder
                 const struct_inst = @import("main_unified.zig").StructInstance.init(allocator, "Unknown");
@@ -2837,7 +2837,7 @@ fn concurrentCollectionWorker(gc: *GC) void {
         }
         
         // Yield CPU between iterations to prevent tight loops
-        std.time.sleep(1000); // 1μs yield
+        std.Thread.sleep(1000); // 1μs yield
     }
     
     // Ensure clean shutdown state
@@ -2903,7 +2903,7 @@ fn finalizationWorker(gc: *GC) void {
             gc.finalization_mutex.unlock();
             
             // Sleep for a bit before checking again
-            std.time.sleep(10_000_000); // 10ms
+            std.Thread.sleep(10_000_000); // 10ms
         }
     }
 }
@@ -3386,7 +3386,7 @@ test "GC stress test - allocation and collection cycles" {
     var gc = try GC.init(gpa, config);
     defer gc.deinit();
     
-    var allocated_ptrs: std.ArrayList(*anyopaque) = .empty;
+    var allocated_ptrs = std.ArrayList(*anyopaque).init(gpa);
     defer allocated_ptrs.deinit();
     
     // Stress test: allocate many objects
@@ -3492,7 +3492,7 @@ test "GC generational collection" {
     defer gc.deinit();
     
     // Allocate objects in young generation
-    var young_ptrs: std.ArrayList(*anyopaque) = .empty;
+    var young_ptrs = std.ArrayList(*anyopaque).init(gpa);
     defer young_ptrs.deinit();
     
     for (0..50) |i| {
@@ -3573,7 +3573,7 @@ test "GC enhanced finalization system" {
     try gc.collectNow();
     
     // Give finalization thread time to process
-    std.time.sleep(50_000_000); // 50ms
+    std.Thread.sleep(50_000_000); // 50ms
     
     // Get final stats
     const final_stats = gc.getFinalizationStats();

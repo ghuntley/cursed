@@ -627,7 +627,7 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path: std.ArrayList(u8) = .empty;
+                var test_path = std.ArrayList(u8).init(self.allocator);
                 defer test_path.deinit();
                 
                 try test_path.appendSlice(search_path.path);
@@ -676,7 +676,7 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path: std.ArrayList(u8) = .empty;
+                var test_path = std.ArrayList(u8).init(self.allocator);
                 defer test_path.deinit();
                 
                 try test_path.appendSlice(search_path.path);

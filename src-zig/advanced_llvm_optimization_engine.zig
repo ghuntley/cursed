@@ -851,7 +851,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         
         // Thin LTO performs incremental linking and optimization
         // 1. Create summary index for each module
-        var summaries: std.ArrayList(ThinLTOSummary) = .empty;
+        var summaries = std.ArrayList(ThinLTOSummary).init(self.allocator);
         defer summaries.deinit();
         
         for (modules) |module| {

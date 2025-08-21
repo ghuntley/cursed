@@ -190,7 +190,7 @@ pub const ConcurrencyBridge = struct {
         /// Try all operations immediately without blocking
         fn tryImmediateOperations(self: *SelectSelf) !?SelectResult {
             // Convert operations to bridge format
-            var bridge_ops: std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }) = .empty;
+            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.allocator);
             defer bridge_ops.deinit();
             
             for (self.operations.items) |op| {
@@ -242,7 +242,7 @@ pub const ConcurrencyBridge = struct {
             const start_time = std.time.nanoTimestamp();
             
             // Convert operations to bridge format
-            var bridge_ops: std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }) = .empty;
+            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.allocator);
             defer bridge_ops.deinit();
             
             for (self.operations.items) |op| {

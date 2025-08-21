@@ -282,12 +282,12 @@ pub fn parse_time(time_str: []const u8) i64 {
 
 pub fn runtime_sleep_millis(duration_millis: i64) void {
     const duration_ms = @max(1, duration_millis);
-    std.time.sleep(@intCast(duration_ms * 1000000));
+    std.Thread.sleep(@intCast(duration_ms * 1000000));
 }
 
 pub fn runtime_sleep_nanos(duration_nanos: i64) void {
     const duration_ms = @max(1, @divTrunc(duration_nanos, 1000000));
-    std.time.sleep(@intCast(duration_ms * 1000000));
+    std.Thread.sleep(@intCast(duration_ms * 1000000));
 }
 
 // === MEMORY RUNTIME FUNCTIONS ===

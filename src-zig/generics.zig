@@ -369,7 +369,7 @@ pub const Monomorphizer = struct {
         try self.const_generics_manager.validateAllConstGenerics();
         
         // Convert old constraint format to new format for validation
-        var type_params: std.ArrayList(generic_constraints.GenericTypeParameter) = .empty;
+        var type_params = std.ArrayList(generic_constraints.GenericTypeParameter).init(self.allocator);
         defer {
             for (type_params.items) |*param| {
                 param.deinit();

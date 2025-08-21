@@ -1479,7 +1479,7 @@ pub const CodeGenerator = struct {
         c.LLVMInitializeAllAsmPrinters();
 
         // Write LLVM IR to file for debugging
-        var ir_filename: std.ArrayList(u8) = .empty;
+        var ir_filename = std.ArrayList(u8).init(self.allocator);
         defer ir_filename.deinit();
         
         try ir_filename.appendSlice(output_path);
@@ -1522,7 +1522,7 @@ pub const CodeGenerator = struct {
         }
 
         // Generate object file
-        var obj_filename: std.ArrayList(u8) = .empty;
+        var obj_filename = std.ArrayList(u8).init(self.allocator);
         defer obj_filename.deinit();
         try obj_filename.appendSlice(output_path);
         try obj_filename.appendSlice(".o");
@@ -1549,7 +1549,7 @@ pub const CodeGenerator = struct {
         const is_macos = std.builtin.os.tag == .macos;
         const is_windows = std.builtin.os.tag == .windows;
         
-        var link_args: std.ArrayList([]const u8) = .empty;
+        var link_args = std.ArrayList([]const u8).init(self.allocator);
         defer link_args.deinit();
         
         if (is_windows) {
@@ -2291,7 +2291,7 @@ pub const CodeGenerator = struct {
         const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_default");
         
         // Track all case blocks for cleanup
-        var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
         defer case_blocks.deinit();
         
         // Generate comparison chains for each pattern

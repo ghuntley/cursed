@@ -287,8 +287,8 @@ pub const CrossCompilationManager = struct {
     fn setupMingwPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
         _ = normalized;
         
-        var lib_paths: std.ArrayList([]const u8) = .empty;
-        var include_paths: std.ArrayList([]const u8) = .empty;
+        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
+        var include_paths = std.ArrayList([]const u8).init(self.allocator);
         
         // Common MinGW paths
         const mingw_prefixes = [_][]const u8{
@@ -322,8 +322,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup MSVC paths and libraries with proper Visual Studio detection
     fn setupMsvcPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        var lib_paths: std.ArrayList([]const u8) = .empty;
-        var include_paths: std.ArrayList([]const u8) = .empty;
+        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
+        var include_paths = std.ArrayList([]const u8).init(self.allocator);
         
         // Try to find Visual Studio installations
         const vs_paths = [_][]const u8{
@@ -494,8 +494,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup Apple Silicon specific paths
     fn setupAppleSiliconPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        var lib_paths: std.ArrayList([]const u8) = .empty;
-        var include_paths: std.ArrayList([]const u8) = .empty;
+        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
+        var include_paths = std.ArrayList([]const u8).init(self.allocator);
         
         // Apple Silicon SDK paths
         const sdk_paths = [_][]const u8{
@@ -528,8 +528,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup Linux system paths for cross-compilation with enhanced ARM64 support
     fn setupLinuxSystemPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
-        var lib_paths: std.ArrayList([]const u8) = .empty;
-        var include_paths: std.ArrayList([]const u8) = .empty;
+        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
+        var include_paths = std.ArrayList([]const u8).init(self.allocator);
         
         if (normalized.isARM64()) {
             // Enhanced ARM64 cross-compilation library paths
@@ -767,7 +767,7 @@ pub const CrossCompilationManager = struct {
         toolchain: ToolchainInfo,
         normalized: TargetTripleNormalizer.NormalizedTriple,
     ) ![][]const u8 {
-        var command: std.ArrayList([]const u8) = .empty;
+        var command = std.ArrayList([]const u8).init(self.allocator);
         
         // Compiler
         try command.append(self.allocator, try self.allocator.dupe(u8, toolchain.compiler_path));
@@ -900,7 +900,7 @@ pub const CrossCompilationManager = struct {
         
         const TimeoutMonitor = struct {
             fn monitor(timeout_flag: *std.atomic.Value(bool), pid: std.process.Child.Id, timeout: u64) void {
-                std.time.sleep(timeout * std.time.ns_per_ms);
+                std.Thread.sleep(timeout * std.time.ns_per_ms);
                 timeout_flag.store(true, .release);
                 
                 // Try to kill the hung process
@@ -955,8 +955,8 @@ pub const CrossCompilationManager = struct {
         };
         
         // Parse warnings and errors from stderr
-        var warnings: std.ArrayList([]const u8) = .empty;
-        var errors: std.ArrayList([]const u8) = .empty;
+        var warnings = std.ArrayList([]const u8).init(self.allocator);
+        var errors = std.ArrayList([]const u8).init(self.allocator);
         
         var lines = std.mem.splitScalar(u8, stderr, '\n');
         while (lines.next()) |line| {
@@ -1059,7 +1059,7 @@ pub const CrossCompilationManager = struct {
         base_options: CompilationOptions,
     ) ![]CompilationResult {
         _ = project_path;
-        var results: std.ArrayList(CompilationResult) = .empty;
+        var results = std.ArrayList(CompilationResult).init(self.allocator);
         
         for (targets) |target| {
             var options = base_options;

@@ -967,7 +967,7 @@ pub const AdvancedCodeGen = struct {
         }
         const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @truncate(select_stmt.cases.items.len)));
         
-        var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
         defer case_blocks.deinit();
         
         // Generate blocks for each case
@@ -4272,7 +4272,7 @@ pub const AdvancedCodeGen = struct {
         );
         
         // Generate method call arguments
-        var llvm_args: std.ArrayList(c.LLVMValueRef) = .empty;
+        var llvm_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
         defer llvm_args.deinit();
         
         // First argument is 'self' (the instance)
@@ -4285,7 +4285,7 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Create function type for the method call
-        var param_types: std.ArrayList(c.LLVMTypeRef) = .empty;
+        var param_types = std.ArrayList(c.LLVMTypeRef).init(self.allocator);
         defer param_types.deinit();
         
         for (llvm_args.items) |arg| {
@@ -4454,7 +4454,7 @@ pub const AdvancedCodeGen = struct {
         _ = self.base_codegen.module;
         
         // Extract type arguments from call if available
-        var type_args: std.ArrayList(Type) = .empty;
+        var type_args = std.ArrayList(Type).init(self.allocator);
         defer type_args.deinit();
         
         // For now, infer types from arguments since CURSED uses type inference
@@ -4546,7 +4546,7 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Fallback: treat as regular function call with object as first parameter
-        var args: std.ArrayList(c.LLVMValueRef) = .empty;
+        var args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
         defer args.deinit();
         
         try args.append(object_value);
@@ -5227,7 +5227,7 @@ pub const AdvancedCodeGen = struct {
     
     /// Create mangled name for generic function instantiation
     fn createMangledGenericName(self: *AdvancedCodeGen, base_name: []const u8, type_args: []Type) CodeGenError![]u8 {
-        var mangled: std.ArrayList(u8) = .empty;
+        var mangled = std.ArrayList(u8).init(self.allocator);
         defer mangled.deinit();
         
         try mangled.appendSlice(base_name);
@@ -5308,7 +5308,7 @@ pub const AdvancedCodeGen = struct {
         );
 
         // Create operation descriptors for each case
-        var operation_values: std.ArrayList(c.LLVMValueRef) = .empty;
+        var operation_values = std.ArrayList(c.LLVMValueRef).init(self.allocator);
         defer operation_values.deinit();
         
         for (select_stmt.cases.items, 0..) |case_item, i| {
@@ -5371,7 +5371,7 @@ pub const AdvancedCodeGen = struct {
         );
 
         // Create basic blocks for each case
-        var case_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
         defer case_blocks.deinit();
         
         const merge_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_merge");

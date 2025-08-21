@@ -435,7 +435,7 @@ pub const GCIntegration = struct {
         const stack_map_id = @as(u64, @truncate(std.hash_map.hashString(name_slice)));
         
         // Prepare stackmap arguments: ID, shadow bytes, followed by live roots
-        var total_args: std.ArrayList(c.LLVMValueRef) = .empty;
+        var total_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
         defer total_args.deinit();
         
         // Oracle's Week 2: Precise stackmap metadata
@@ -650,7 +650,7 @@ pub const GCIntegration = struct {
     pub fn wireGCIntegration(self: *GCIntegration, module_functions: []c.LLVMValueRef) !void {
         for (module_functions) |function| {
             // Generate stackmaps for all functions
-            var live_pointers: std.ArrayList(c.LLVMValueRef) = .empty;
+            var live_pointers = std.ArrayList(c.LLVMValueRef).init(self.allocator);
             defer live_pointers.deinit();
             
             // Collect all pointer values in function as potential GC roots

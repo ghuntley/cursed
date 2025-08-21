@@ -87,7 +87,7 @@ pub const AttributeParameter = struct {
     name: []const u8,
     value: AttributeValue,
     
-    pub fn deinit(self: *AttributeParameter, allocator: Allocator) void {
+    pub fn deinit(self: *AttributeParameter, _: Allocator) void {
         self.value.deinit();
     }
 };
@@ -99,7 +99,7 @@ pub const Attribute = struct {
     parameters: ArrayList(AttributeParameter),
     location: SourceLocation,
     
-    pub fn init(allocator: Allocator, attr_type: AttributeType, name: []const u8, location: SourceLocation) Attribute {
+    pub fn init(_: Allocator, attr_type: AttributeType, name: []const u8, location: SourceLocation) Attribute {
         return Attribute{
             .type = attr_type,
             .name = name,
@@ -108,7 +108,7 @@ pub const Attribute = struct {
         };
     }
     
-    pub fn deinit(self: *Attribute, allocator: Allocator) void {
+    pub fn deinit(self: *Attribute, _: Allocator) void {
         for (self.parameters.items) |*param| {
             param.deinit();
         }
@@ -116,7 +116,7 @@ pub const Attribute = struct {
     }
     
     /// Add a parameter to this attribute
-    pub fn addParameter(self: *Attribute, allocator: Allocator, name: []const u8, value: AttributeValue) !void {
+    pub fn addParameter(self: *Attribute, _: Allocator, name: []const u8, value: AttributeValue) !void {
                 try self.parameters.append(AttributeParameter{
             .name = name,
             .value = value,
@@ -183,7 +183,7 @@ pub const AttributeList = struct {
         };
     }
     
-    pub fn deinit(self: *AttributeList, allocator: Allocator) void {
+    pub fn deinit(self: *AttributeList, _: Allocator) void {
         for (self.attributes.items) |*attr| {
             attr.deinit();
         }
@@ -221,7 +221,7 @@ pub const AttributeList = struct {
     }
     
     /// Get all attributes of a specific type
-    pub fn getAttributesByType(self: *const AttributeList, allocator: Allocator, attr_type: AttributeType) !ArrayList(*const Attribute) {
+    pub fn getAttributesByType(self: *const AttributeList, _: Allocator, attr_type: AttributeType) !ArrayList(*const Attribute) {
         var result = .empty;
         for (self.attributes.items) |*attr| {
             if (attr.type == attr_type) {

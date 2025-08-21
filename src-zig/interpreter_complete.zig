@@ -585,7 +585,7 @@ pub const CursedInterpreter = struct {
             .Character => |c| return std.fmt.allocPrint(self.allocator, "{c}", .{c}),
             .Null => return self.allocator.dupe(u8, "cap"),
             .Array => |arr| {
-                var result: std.ArrayList(u8) = .empty;
+                var result = std.ArrayList(u8).init(self.allocator);
                 try result.append(self.allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
@@ -597,7 +597,7 @@ pub const CursedInterpreter = struct {
                 return result.toOwnedSlice(self.allocator);
             },
             .Tuple => |tuple| {
-                var result: std.ArrayList(u8) = .empty;
+                var result = std.ArrayList(u8).init(self.allocator);
                 try result.append(self.allocator, '(');
                 for (tuple.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");

@@ -199,7 +199,7 @@ pub const NUMANodeInfo = struct {
         // Parse hexadecimal CPU mask
         // Format could be "ff,ffffffff" for >32 CPUs
         var mask_parts = mem.split(u8, content, ",");
-        var cpu_masks: std.ArrayList(u64) = .empty;
+        var cpu_masks = std.ArrayList(u64).init(self.allocator);
         defer cpu_masks.deinit();
         
         while (mask_parts.next()) |part| {
@@ -257,7 +257,7 @@ pub const NUMANodeInfo = struct {
         const bytes_read = try file.readAll(buffer[0..]);
         const content = mem.trim(u8, buffer[0..bytes_read], " \t\n\r");
         
-        var distances: std.ArrayList(u8) = .empty;
+        var distances = std.ArrayList(u8).init(self.allocator);
         defer distances.deinit(self);
         
         var parts = mem.split(u8, content, " ");
@@ -779,7 +779,7 @@ pub const NUMATopology = struct {
     fn balancerThreadMain(self: *NUMATopology) void {
         while (!self.shutdown.load(.acquire)) {
             // Rebalance every 5 seconds
-            std.time.sleep(5_000_000_000);
+            std.Thread.sleep(5_000_000_000);
             
             self.mutex.lock();
             defer self.mutex.unlock();
@@ -791,10 +791,10 @@ pub const NUMATopology = struct {
     
     fn rebalanceNodes(self: *NUMATopology) void {
         // Find nodes that are over-utilized (>80%) and under-utilized (<30%)
-        var overloaded: std.ArrayList(u8) = .empty;
+        var overloaded = std.ArrayList(u8).init(self.allocator);
         defer overloaded.deinit();
         
-        var underloaded: std.ArrayList(u8) = .empty;
+        var underloaded = std.ArrayList(u8).init(self.allocator);
         defer underloaded.deinit();
         
         for (self.nodes, 0..) |*node, i| {

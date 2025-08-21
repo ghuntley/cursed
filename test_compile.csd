@@ -1,1 +1,6 @@
-yeet "vibez"; vibez.spill("Hello from CURSED!");
+yeet "vibez"
+
+slay main() {
+    vibez.spill("Hello, CURSED world!")
+    damn 0
+}
