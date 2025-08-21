@@ -36,7 +36,7 @@ const c = struct {
 /// Test variable registration and lookup in LLVM compilation
 pub fn testVariableSystem() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const allocator = arena.allocator();
     
     // Initialize LLVM
@@ -101,7 +101,7 @@ pub fn testVariableSystem() !void {
 /// Test generating expressions with variables
 pub fn testExpressionCompilation() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const allocator = arena.allocator();
     
     // Initialize LLVM components

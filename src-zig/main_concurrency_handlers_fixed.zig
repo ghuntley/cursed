@@ -29,7 +29,7 @@ pub fn initGlobalConcurrency(allocator: Allocator) void {
     
     // Safe to initialize - we have exclusive access
     global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    global_goroutines = ArrayList(std.Thread).init(allocator);
+    global_goroutines = .empty;
     global_allocator = allocator;
     
     // Release barrier ensures all initialization is visible before setting flag
@@ -44,7 +44,7 @@ pub fn deinitGlobalConcurrency() void {
     defer global_concurrency_mutex.unlock();
     
     if (global_channels) |*channels| {
-        channels.deinit();
+        channels.deinit(allocator);
         global_channels = null;
     }
     if (global_goroutines) |*goroutines| {
@@ -52,7 +52,7 @@ pub fn deinitGlobalConcurrency() void {
         for (goroutines.items) |*thread| {
             thread.join();
         }
-        goroutines.deinit();
+        goroutines.deinit(allocator);
         global_goroutines = null;
     }
     global_allocator = null;
@@ -113,8 +113,8 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         if (verbose) print("🚀 Spawning goroutine with block (race-safe)\n", .{});
         
         // Extract the body of the stan block
-        var body_lines = ArrayList([]const u8).init(allocator);
-        defer body_lines.deinit();
+        var body_lines = .empty;
+        defer body_lines.deinit(allocator);
         
         // Find the corresponding closing brace
         var current_line = line_index + 1;
@@ -130,7 +130,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             }
             
             if (brace_count > 0) {
-                try body_lines.append(block_line);
+                try body_lines.append(allocator, block_line);
             }
             current_line += 1;
         }
@@ -183,7 +183,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         defer global_concurrency_mutex.unlock();
         
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         
         if (verbose) print("✅ Goroutine spawned (race-safe)\n", .{});
@@ -263,13 +263,13 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
         
         // Thread-safe wait for all spawned goroutines
         global_concurrency_mutex.lock();
-        var threads_to_join = ArrayList(std.Thread).init(allocator);
-        defer threads_to_join.deinit();
+        var threads_to_join = .empty;
+        defer threads_to_join.deinit(allocator);
         
         if (global_goroutines) |*goroutines| {
             // Copy thread handles to avoid holding lock during join
             for (goroutines.items) |thread| {
-                try threads_to_join.append(thread);
+                try threads_to_join.append(allocator, thread);
             }
             goroutines.clearRetainingCapacity();
         }
@@ -328,7 +328,7 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
         
         global_concurrency_mutex.lock();
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         global_concurrency_mutex.unlock();
     }
@@ -337,12 +337,12 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
     
     // Wait for all to complete
     global_concurrency_mutex.lock();
-    var threads_to_join = ArrayList(std.Thread).init(allocator);
-    defer threads_to_join.deinit();
+    var threads_to_join = .empty;
+    defer threads_to_join.deinit(allocator);
     
     if (global_goroutines) |*goroutines| {
         for (goroutines.items) |thread| {
-            try threads_to_join.append(thread);
+            try threads_to_join.append(allocator, thread);
         }
         goroutines.clearRetainingCapacity();
     }

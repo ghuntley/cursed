@@ -43,16 +43,16 @@ const FreestandingLexer = struct {
     }
     
     pub fn tokenize(self: *@This()) ![]Token {
-        var tokens = std.ArrayList(Token).init(self.allocator);
-        defer tokens.deinit();
+        var tokens: std.ArrayList(Token) = .empty;
+        defer tokens.deinit(allocator);
         
         while (!self.isAtEnd()) {
             const token = self.scanToken();
-            try tokens.append(token);
+            try tokens.append(allocator, token);
             if (token.type == .EOF) break;
         }
         
-        return tokens.toOwnedSlice();
+        return tokens.toOwnedSlice(allocator);
     }
     
     fn scanToken(self: *@This()) Token {
@@ -184,12 +184,12 @@ const FreestandingInterpreter = struct {
     pub fn init(allocator: std.mem.Allocator) @This() {
         return .{
             .allocator = allocator,
-            .output = std.ArrayList(u8).init(allocator),
+            .output = .{},
         };
     }
     
     pub fn deinit(self: *@This()) void {
-        self.output.deinit();
+        self.output.deinit(allocator);
     }
     
     pub fn execute(self: *@This(), tokens: []Token) !void {
@@ -263,7 +263,7 @@ export fn cursed_init() i32 {
 
 export fn cursed_deinit() void {
     if (global_interpreter) |*interpreter| {
-        interpreter.deinit();
+        interpreter.deinit(allocator);
         global_interpreter = null;
     }
     fba = null;

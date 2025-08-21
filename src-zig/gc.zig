@@ -230,7 +230,7 @@ const MemoryTracker = struct {
     }
     
     pub fn deinit(self: *MemoryTracker) void {
-        self.allocations.deinit();
+        self.allocations.deinit(allocator);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, address: usize, info: AllocationInfo) !void {
@@ -262,7 +262,7 @@ const MemoryTracker = struct {
         self.tracker_mutex.lock();
         defer self.tracker_mutex.unlock();
         
-        var leaks = ArrayList(LeakInfo).init(allocator);
+        var leaks = .empty;
         
         var iterator = self.allocations.iterator();
         while (iterator.next()) |entry| {
@@ -270,14 +270,14 @@ const MemoryTracker = struct {
             
             // Consider allocation a leak if it's old and large
             if (age_ms > 60_000_000 and entry.value_ptr.size > self.leak_threshold) { // 60 seconds
-                try leaks.append(LeakInfo{
+                try leaks.append(allocator, LeakInfo{
                     .address = entry.key_ptr.*,
                     .info = entry.value_ptr.*,
                 });
             }
         }
         
-        return leaks.toOwnedSlice();
+        return leaks.toOwnedSlice(allocator);
     }
     
     pub fn getCurrentUsage(self: *MemoryTracker) usize {
@@ -300,8 +300,8 @@ const MemoryPool = struct {
         return MemoryPool{
             .block_size = block_size,
             .blocks_per_chunk = blocks_per_chunk,
-            .free_blocks = ArrayList(*anyopaque).init(allocator),
-            .chunks = ArrayList([]u8).init(allocator),
+            .free_blocks = .empty,
+            .chunks = .empty,
             .pool_mutex = Mutex{},
             .allocator = allocator,
         };
@@ -311,8 +311,8 @@ const MemoryPool = struct {
         for (self.chunks.items) |chunk| {
             self.allocator.free(chunk);
         }
-        self.chunks.deinit();
-        self.free_blocks.deinit();
+        self.chunks.deinit(allocator);
+        self.free_blocks.deinit(allocator);
     }
     
     pub fn allocate(self: *MemoryPool) !*anyopaque {
@@ -330,17 +330,17 @@ const MemoryPool = struct {
         self.pool_mutex.lock();
         defer self.pool_mutex.unlock();
         
-        try self.free_blocks.append(ptr);
+        try self.free_blocks.append(self.allocator, ptr);
     }
     
     fn addChunk(self: *MemoryPool) !void {
         const chunk_size = self.block_size * self.blocks_per_chunk;
         const chunk = try self.allocator.alloc(u8, chunk_size);
-        try self.chunks.append(chunk);
+        try self.chunks.append(self.allocator, chunk);
         
         var ptr = chunk.ptr;
         for (0..self.blocks_per_chunk) |_| {
-            try self.free_blocks.append(@ptrCast(ptr));
+            try self.free_blocks.append(self.allocator, @ptrCast(ptr));
             ptr += self.block_size;
         }
     }
@@ -371,7 +371,7 @@ const MemoryPoolManager = struct {
     
     pub fn deinit(self: *MemoryPoolManager) void {
         for (&self.pools) |*pool| {
-            pool.deinit();
+            pool.deinit(allocator);
         }
     }
     
@@ -521,11 +521,11 @@ const FinalizationQueue = struct {
     
     pub fn init(allocator: std.mem.Allocator) FinalizationQueue {
         return FinalizationQueue{
-            .critical_queue = ArrayList(FinalizationEntry).init(allocator),
-            .high_queue = ArrayList(FinalizationEntry).init(allocator),
-            .normal_queue = ArrayList(FinalizationEntry).init(allocator),
-            .low_queue = ArrayList(FinalizationEntry).init(allocator),
-            .retry_queue = ArrayList(FinalizationEntry).init(allocator),
+            .critical_queue = .empty,
+            .high_queue = .empty,
+            .normal_queue = .empty,
+            .low_queue = .empty,
+            .retry_queue = .empty,
             .total_queued = Atomic(u64).init(0),
             .total_processed = Atomic(u64).init(0),
             .total_failed = Atomic(u64).init(0),
@@ -537,11 +537,11 @@ const FinalizationQueue = struct {
     }
     
     pub fn deinit(self: *FinalizationQueue) void {
-        self.critical_queue.deinit();
-        self.high_queue.deinit();
-        self.normal_queue.deinit();
-        self.low_queue.deinit();
-        self.retry_queue.deinit();
+        self.critical_queue.deinit(allocator);
+        self.high_queue.deinit(allocator);
+        self.normal_queue.deinit(allocator);
+        self.low_queue.deinit(allocator);
+        self.retry_queue.deinit(allocator);
     }
     
     pub fn enqueue(self: *FinalizationQueue, object: *ObjectHeader, finalizer: Finalizer) !void {
@@ -556,10 +556,10 @@ const FinalizationQueue = struct {
         defer self.queue_mutex.unlock();
         
         switch (finalizer.priority) {
-            .Critical => try self.critical_queue.append(entry),
-            .High => try self.high_queue.append(entry),
-            .Normal => try self.normal_queue.append(entry),
-            .Low => try self.low_queue.append(entry),
+            .Critical => try self.critical_queue.append(allocator, entry),
+            .High => try self.high_queue.append(allocator, entry),
+            .Normal => try self.normal_queue.append(allocator, entry),
+            .Low => try self.low_queue.append(allocator, entry),
         }
         
         _ = self.total_queued.fetchAdd(1, .acq_rel);
@@ -600,7 +600,7 @@ const FinalizationQueue = struct {
         
         var retry_entry = entry;
         retry_entry.attempts += 1;
-        try self.retry_queue.append(retry_entry);
+        try self.retry_queue.append(allocator, retry_entry);
         
         _ = self.total_retried.fetchAdd(1, .acq_rel);
     }
@@ -660,7 +660,7 @@ const FinalizationQueue = struct {
 };
 
 /// Production Garbage Collector
-pub const GC = struct {
+pub const GCImpl = struct {
     /// Configuration
     config: GCConfig,
     /// Statistics
@@ -777,7 +777,7 @@ pub const GC = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        self.mark_stack.append(header) catch {};
+                        self.mark_stack.append(allocator, header) catch {};
                     }
                 }
             }
@@ -967,27 +967,27 @@ pub const GC = struct {
             
             .all_objects = null,
             .free_list = null,
-            .mark_stack = ArrayList(*ObjectHeader).init(allocator),
-            .roots = ArrayList(RootRef).init(allocator),
-            .stack_roots = ArrayList(*anyopaque).init(allocator),
+            .mark_stack = .empty,
+            .roots = .empty,
+            .stack_roots = .empty,
             .roots_mutex = Mutex{},
             .collection_mutex = Mutex{},
             .collection_condition = Condition{},
             .collection_thread = null,
             .collection_running = Atomic(bool).init(false),
             .stop_collection = Atomic(bool).init(false),
-            .write_barriers = ArrayList(WriteBarrier).init(allocator),
+            .write_barriers = .empty,
             .write_barrier_mutex = Mutex{},
-            .finalizers = ArrayList(Finalizer).init(allocator),
+            .finalizers = .empty,
             .finalization_queue = FinalizationQueue.init(allocator),
             .finalization_mutex = Mutex{},
             .finalization_thread = null,
             .finalizer_error_handler = null,
         .finalizer_panic_handler = null,
-        .quarantined_objects = ArrayList(QuarantineEntryPrivate).init(allocator),
-            .weak_refs = ArrayList(*WeakRef).init(allocator),
+        .quarantined_objects = .empty,
+            .weak_refs = .empty,
             .weak_ref_mutex = Mutex{},
-            .heap_segments = ArrayList(HeapSegment).init(allocator),
+            .heap_segments = .empty,
             .forwarding_table = HashMap(*u8, *u8, std.hash_map.AutoContext(*u8), std.hash_map.default_max_load_percentage).init(allocator),
             .pause_mutex = Mutex{},
             .last_gc_time = undefined,
@@ -1016,26 +1016,26 @@ pub const GC = struct {
         self.deallocateHeap();
         
         // Clean up advanced memory management features
-        self.memory_tracker.deinit();
-        self.allocation_map.deinit();
-        self.ref_count_map.deinit();
-        self.memory_pools.deinit();
+        self.memory_tracker.deinit(allocator);
+        self.allocation_map.deinit(allocator);
+        self.ref_count_map.deinit(allocator);
+        self.memory_pools.deinit(allocator);
         
         // Clean up data structures
-        self.mark_stack.deinit();
-        self.roots.deinit();
-        self.stack_roots.deinit();
-        self.write_barriers.deinit();
-        self.finalizers.deinit();
-        self.finalization_queue.deinit();
-        self.quarantined_objects.deinit();
-        self.weak_refs.deinit();
-        self.heap_segments.deinit();
-        self.forwarding_table.deinit();
+        self.mark_stack.deinit(allocator);
+        self.roots.deinit(allocator);
+        self.stack_roots.deinit(allocator);
+        self.write_barriers.deinit(allocator);
+        self.finalizers.deinit(allocator);
+        self.finalization_queue.deinit(allocator);
+        self.quarantined_objects.deinit(allocator);
+        self.weak_refs.deinit(allocator);
+        self.heap_segments.deinit(allocator);
+        self.forwarding_table.deinit(allocator);
         
         // Clean up arena manager
         if (self.arena_manager) |manager| {
-            manager.deinit();
+            manager.deinit(allocator);
             self.allocator.destroy(manager);
         }
         
@@ -1081,8 +1081,8 @@ pub const GC = struct {
             .generation = 1,
         };
         
-        try self.heap_segments.append(young_segment);
-        try self.heap_segments.append(old_segment);
+        try self.heap_segments.append(allocator, young_segment);
+        try self.heap_segments.append(allocator, old_segment);
         
         std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes ({}%), Old: {} bytes ({}%)", .{ 
             self.heap_size, young_gen_size, @as(u8, @intFromFloat(self.config.young_gen_ratio * 100)),
@@ -1324,7 +1324,7 @@ pub const GC = struct {
     
     /// Register a root reference
     pub fn addRoot(self: *GC, ptr: *?*anyopaque, type_id: u16) !void {
-        try self.roots.append(RootRef{ .ptr = ptr, .type_id = type_id });
+        try self.roots.append(allocator, RootRef{ .ptr = ptr, .type_id = type_id });
     }
     
     /// Remove a root reference
@@ -1339,7 +1339,7 @@ pub const GC = struct {
     
     /// Add stack root for conservative scanning
     pub fn addStackRoot(self: *GC, ptr: *anyopaque) !void {
-        try self.stack_roots.append(ptr);
+        try self.stack_roots.append(self.allocator, ptr);
     }
     
     /// Create a weak reference
@@ -1350,7 +1350,7 @@ pub const GC = struct {
         
         self.weak_ref_mutex.lock();
         defer self.weak_ref_mutex.unlock();
-        try self.weak_refs.append(weak_ref);
+        try self.weak_refs.append(self.allocator, weak_ref);
         
         return weak_ref;
     }
@@ -1384,7 +1384,7 @@ pub const GC = struct {
         }
         defer self.finalization_mutex.unlock();
         
-        try self.finalizers.append(finalizer_entry);
+        try self.finalizers.append(allocator, finalizer_entry);
     }
     
     /// Set error handler for finalizer failures
@@ -1401,7 +1401,7 @@ pub const GC = struct {
         self.write_barrier_mutex.lock();
         defer self.write_barrier_mutex.unlock();
         
-        self.write_barriers.append(WriteBarrier{
+        self.write_barriers.append(allocator, WriteBarrier{
             .old_ref = old_ref,
             .new_ref = new_ref,
             .timestamp = @intCast(timestamp),
@@ -1519,7 +1519,7 @@ pub const GC = struct {
     /// Tri-color marking phase
     fn markPhase(self: *GC, generation: Generation) !void {
         // Clear mark stack
-        self.mark_stack.clearAndFree();
+        self.mark_stack.clearAndFree(allocator);
         
         // Reset all objects to white
         var current = self.all_objects;
@@ -1558,7 +1558,7 @@ pub const GC = struct {
                 const header = ObjectHeader.fromData(ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
         }
@@ -1603,7 +1603,7 @@ pub const GC = struct {
                     const child_header = ObjectHeader.fromData(ptr);
                     if (child_header.color == @intFromEnum(Color.White)) {
                         child_header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(child_header);
+                        try self.mark_stack.append(allocator, child_header);
                     }
                 }
             }
@@ -1622,12 +1622,12 @@ pub const GC = struct {
                 const header = ObjectHeader.fromData(barrier.new_ref);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
         }
         
-        self.write_barriers.clearAndFree();
+        self.write_barriers.clearAndFree(allocator);
     }
     
     /// Sweep phase - collect unmarked objects
@@ -1934,7 +1934,7 @@ pub const GC = struct {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        try self.quarantined_objects.append(quarantine_entry);
+        try self.quarantined_objects.append(allocator, quarantine_entry);
         std.log.info("Object {*} quarantined for manual finalization", .{object});
     }
     
@@ -2224,7 +2224,7 @@ pub const GC = struct {
         self.roots_mutex.lock();
         defer self.roots_mutex.unlock();
         
-        try self.stack_roots.append(ptr);
+        try self.stack_roots.append(allocator, ptr);
         std.log.debug("GC: Registered stack root at {*}", .{ptr});
     }
     
@@ -2267,7 +2267,7 @@ pub const GC = struct {
                         if (header.color == @intFromEnum(Color.White)) {
                             // Mark as gray for further scanning
                             header.color = @intFromEnum(Color.Gray);
-                            self.mark_stack.append(header) catch {};
+                            self.mark_stack.append(allocator, header) catch {};
                         }
                     }
                 }
@@ -2429,7 +2429,7 @@ pub const GC = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2485,7 +2485,7 @@ pub const GC = struct {
                     const header = ObjectHeader.fromData(element_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2507,7 +2507,7 @@ pub const GC = struct {
                     const header = ObjectHeader.fromData(field_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2529,7 +2529,7 @@ pub const GC = struct {
                     const header = ObjectHeader.fromData(capture_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2551,7 +2551,7 @@ pub const GC = struct {
                 const header = ObjectHeader.fromData(potential_ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
             
@@ -2575,7 +2575,7 @@ pub const GC = struct {
                     if (obj.finalize == 1) {
                         // Add to finalization queue
                         self.finalization_mutex.lock();
-                        try self.finalization_queue.append(obj);
+                        try self.finalization_queue.append(allocator, obj);
                         self.finalization_mutex.unlock();
                     } else {
                         // Free immediately
@@ -2633,7 +2633,7 @@ pub const GC = struct {
                 if (obj.finalize == 1) {
                     // Add to finalization queue
                     self.finalization_mutex.lock();
-                    try self.finalization_queue.append(obj);
+                    try self.finalization_queue.append(allocator, obj);
                     self.finalization_mutex.unlock();
                 } else {
                     // Free immediately
@@ -2741,13 +2741,13 @@ pub const GC = struct {
                 const length_ptr = @as(*usize, @ptrCast(@alignCast(ptr)));
                 const length = length_ptr.*;
                 
-                var arr = std.ArrayList(Variable).init(allocator);
-                try arr.ensureTotalCapacity(length);
+                var arr: std.ArrayList(Variable) = .empty;
+                try arr.ensureTotalCapacity(allocator, length);
                 
                 // Load array elements (recursive loading needed for GC objects)
                 for (0..length) |_| {
                     // For now, add placeholder integers
-                    try arr.append(Variable{ .Integer = 0 });
+                    try arr.append(allocator, Variable{ .Integer = 0 });
                 }
                 
                 return Variable{ .Array = arr };
@@ -2919,7 +2919,7 @@ export fn cursed_gc_init(initial_heap_size: usize) ?*GC {
 
 export fn cursed_gc_deinit(gc: ?*GC) void {
     if (gc) |g| {
-        g.deinit();
+        g.deinit(allocator);
     }
 }
 
@@ -3063,7 +3063,7 @@ export fn cursed_gc_create_weak_ref(gc: ?*GC, target: *anyopaque) ?*WeakRef {
         };
         
         g.weak_ref_mutex.lock();
-        g.weak_refs.append(weak_ref) catch {
+        g.weak_refs.append(allocator, weak_ref) catch {
             g.weak_ref_mutex.unlock();
             g.allocator.destroy(weak_ref);
             return null;
@@ -3097,7 +3097,7 @@ export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: 
             
             g.finalization_mutex.lock();
             const finalizer_entry = Finalizer.init(header, @ptrCast(fn_ptr), .Normal, "c_export", 3);
-            g.finalizers.append(finalizer_entry) catch {};
+            g.finalizers.append(allocator, finalizer_entry) catch {};
             g.finalization_mutex.unlock();
         }
     }
@@ -3131,7 +3131,7 @@ export fn cursed_gc_scan_stack_frame(gc: ?*GC, frame_start: *anyopaque, frame_si
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        g.mark_stack.append(header) catch {};
+                        g.mark_stack.append(allocator, header) catch {};
                     }
                 }
             }
@@ -3267,7 +3267,7 @@ test "GC basic allocation and collection" {
     config.initial_heap_size = 1024 * 1024; // 1MB for testing
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Test basic allocation
     _ = try gc.alloc(64, 0);
@@ -3294,7 +3294,7 @@ test "GC tri-color marking algorithm" {
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Allocate objects
     const ptr1 = try gc.alloc(64, 2); // Array type
@@ -3332,7 +3332,7 @@ test "GC Variable integration" {
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Create test Variables
     const ManagedString = @import("main_unified.zig").ManagedString;
@@ -3384,10 +3384,10 @@ test "GC stress test - allocation and collection cycles" {
     config.young_gc_trigger_threshold = 0.5; // Trigger more frequently
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
-    var allocated_ptrs = std.ArrayList(*anyopaque).init(gpa);
-    defer allocated_ptrs.deinit();
+    var allocated_ptrs: std.ArrayList(*anyopaque) = .empty;
+    defer allocated_ptrs.deinit(allocator);
     
     // Stress test: allocate many objects
     const num_objects = 1000;
@@ -3396,7 +3396,7 @@ test "GC stress test - allocation and collection cycles" {
         const type_id = @as(u16, @intCast(i % 4)); // Different types
         
         const ptr = try gc.alloc(size, type_id);
-        try allocated_ptrs.append(ptr);
+        try allocated_ptrs.append(allocator, ptr);
         
         // Add some as roots to keep them alive
         if (i % 10 == 0) {
@@ -3433,7 +3433,7 @@ test "GC memory leak detection" {
     config.initial_heap_size = 1024 * 1024;
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Allocate objects but don't make them roots (should be leaked)
     for (0..10) |i| {
@@ -3462,7 +3462,7 @@ test "GC concurrent collection safety" {
     config.concurrent_threads = 2;
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Test write barriers
     const ptr1 = try gc.alloc(64, 0);
@@ -3489,15 +3489,15 @@ test "GC generational collection" {
     config.young_gc_trigger_threshold = 0.3; // Trigger young GC early
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Allocate objects in young generation
-    var young_ptrs = std.ArrayList(*anyopaque).init(gpa);
-    defer young_ptrs.deinit();
+    var young_ptrs: std.ArrayList(*anyopaque) = .empty;
+    defer young_ptrs.deinit(allocator);
     
     for (0..50) |i| {
         const ptr = try gc.alloc(32 + i, 0);
-        try young_ptrs.append(ptr);
+        try young_ptrs.append(allocator, ptr);
         
         // Make some objects roots so they survive
         if (i % 5 == 0) {
@@ -3526,7 +3526,7 @@ test "GC enhanced finalization system" {
     config.enable_finalization = true;
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Simple finalizer function for testing
     const finalizer_fn = struct {
@@ -3594,7 +3594,7 @@ test "GC memory pool allocation" {
     const gpa = std.testing.allocator;
     
     var pool_manager = try MemoryPoolManager.init(gpa);
-    defer pool_manager.deinit();
+    defer pool_manager.deinit(allocator);
     
     // Test small allocations
     const ptr1 = try pool_manager.getAllocation(16);
@@ -3622,7 +3622,7 @@ test "GC weak references" {
     const config = GCConfig.default();
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Allocate object
     const ptr = try gc.alloc(64, 0);
@@ -3651,7 +3651,7 @@ test "GC comprehensive memory statistics" {
     const config = GCConfig.default();
     
     var gc = try GC.init(gpa, config);
-    defer gc.deinit();
+    defer gc.deinit(allocator);
     
     // Allocate some objects
     for (0..10) |i| {
@@ -3695,7 +3695,7 @@ pub const ArenaUsage = struct {
 };
 
 // Add missing method implementations
-const GCImpl = struct {
+const GCImplHelpers = struct {
     // Helper methods for GC implementation
     
     /// Get comprehensive memory statistics
@@ -3820,7 +3820,7 @@ const GCImpl = struct {
     
     /// Register stack root
     pub fn registerStackRoot(self: *GC, ptr: *anyopaque) !void {
-        try self.stack_roots.append(ptr);
+        try self.stack_roots.append(allocator, ptr);
     }
     
     /// Unregister stack root
@@ -3847,5 +3847,5 @@ const GCImpl = struct {
 
 };
 
-// Add methods to GC struct
-pub usingnamespace GCImpl;
+// Export GC implementation
+pub const GC = GCImpl;

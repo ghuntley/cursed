@@ -23,7 +23,7 @@ pub fn resolveImport(allocator: Allocator, module_name: []const u8, base_path: [
         }
         return resolveStdlibImportLegacy(allocator, module_name, base_path);
     };
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
 
     // Add custom base path if not stdlib
     if (!std.mem.eql(u8, base_path, "stdlib")) {
@@ -72,7 +72,7 @@ pub fn resolveStdlibImportWithPath(allocator: Allocator, module_name: []const u8
         // Fallback to legacy behavior if advanced resolver fails
         return resolveStdlibImportLegacy(allocator, module_name, stdlib_path_override);
     };
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
 
     // Add custom stdlib path if provided
     if (stdlib_path_override) |custom_path| {
@@ -94,8 +94,8 @@ fn resolveStdlibImportLegacy(allocator: Allocator, module_name: []const u8, stdl
     const cwd = std.fs.cwd();
     var buf: [1024]u8 = undefined;
 
-    var stdlib_path = std.ArrayList(u8).init(allocator);
-    defer stdlib_path.deinit();
+    var stdlib_path: std.ArrayList(u8) = .empty;
+    defer stdlib_path.deinit(allocator);
 
     if (stdlib_path_override) |custom_path| {
         // Use provided stdlib path
@@ -113,7 +113,7 @@ fn resolveStdlibImportLegacy(allocator: Allocator, module_name: []const u8, stdl
         try stdlib_path.appendSlice("/stdlib");
     }
 
-    try stdlib_path.append('/');
+    try stdlib_path.append(allocator, '/');
     try stdlib_path.appendSlice(module_name);
     try stdlib_path.appendSlice("/mod.csd");
 
@@ -130,35 +130,35 @@ fn findProjectRoot(allocator: Allocator) ![]const u8 {
     // Look for marker files that indicate project root
     const markers = [_][]const u8{ "build.zig", "Cargo.toml", "CursedPackage.toml", "AGENT.md", ".git" };
 
-    var path_components = std.ArrayList([]const u8).init(allocator);
-    defer path_components.deinit();
+    var path_components: std.ArrayList([]const u8) = .empty;
+    defer path_components.deinit(allocator);
 
     // Split path into components
     var iter = std.mem.splitScalar(u8, current_path, '/');
     while (iter.next()) |component| {
         if (component.len > 0) {
-            try path_components.append(component);
+            try path_components.append(allocator, component);
         }
     }
 
     // Walk up the directory tree
     while (path_components.items.len > 0) {
         // Build current test path
-        var test_path = std.ArrayList(u8).init(allocator);
-        defer test_path.deinit();
+        var test_path: std.ArrayList(u8) = .empty;
+        defer test_path.deinit(allocator);
 
         for (path_components.items) |component| {
-            try test_path.append('/');
+            try test_path.append(allocator, '/');
             try test_path.appendSlice(component);
         }
 
         // Check for marker files
         for (markers) |marker| {
-            var marker_path = std.ArrayList(u8).init(allocator);
-            defer marker_path.deinit();
+            var marker_path: std.ArrayList(u8) = .empty;
+            defer marker_path.deinit(allocator);
 
             try marker_path.appendSlice(test_path.items);
-            try marker_path.append('/');
+            try marker_path.append(allocator, '/');
             try marker_path.appendSlice(marker);
 
             cwd.access(marker_path.items, .{}) catch continue;
@@ -180,7 +180,7 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
         // Fallback to legacy extraction
         return extractImportsLegacy(allocator, source);
     };
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
 
     const import_specs = resolver.extractImports(source) catch {
         return extractImportsLegacy(allocator, source);
@@ -195,20 +195,20 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
                 allocator.free(alias);
             }
         }
-        import_specs.deinit();
+        import_specs.deinit(allocator);
     }
 
     // Convert ImportSpec array to string array for compatibility
-    var imports = ArrayList([]const u8).init(allocator);
+    var imports = .empty;
     for (import_specs.items) |spec| {
-        try imports.append(try allocator.dupe(u8, spec.raw_path));
+        try imports.append(allocator, try allocator.dupe(u8, spec.raw_path));
     }
 
     return imports;
 }
 
 fn extractImportsLegacy(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
-    var imports = ArrayList([]const u8).init(allocator);
+    var imports = .empty;
 
     var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
@@ -225,7 +225,7 @@ fn extractImportsLegacy(allocator: Allocator, source: []const u8) !ArrayList([]c
                     const after_start = import_part[start_quote + 1 ..];
                     if (std.mem.indexOf(u8, after_start, "\"")) |end_quote| {
                         const module_name = after_start[0..end_quote];
-                        try imports.append(try allocator.dupe(u8, module_name));
+                        try imports.append(allocator, try allocator.dupe(u8, module_name));
                         search_offset = start_quote + 1 + end_quote + 1;
                     } else {
                         break; // No closing quote found
@@ -250,7 +250,7 @@ pub fn validateImportsWithPath(allocator: Allocator, imports: ArrayList([]const 
         // Fallback to legacy validation
         return validateImportsLegacy(allocator, imports, stdlib_path_override);
     };
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
 
     // Add custom stdlib path if provided
     if (stdlib_path_override) |custom_path| {

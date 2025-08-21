@@ -10,7 +10,7 @@ pub fn main() !void {
     print("==============================================\n\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test stdlib core

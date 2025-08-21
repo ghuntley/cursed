@@ -50,7 +50,7 @@ pub const JITExecutionEngine = struct {
         
         // Add built-in functions to global environment with error handling
         global_env.define("vibez", Value{ .String = "built_in_vibez" }) catch |err| {
-            arena.deinit();
+            arena.deinit(allocator);
             return err;
         };
         
@@ -73,14 +73,14 @@ pub const JITExecutionEngine = struct {
     
     pub fn deinit(self: *JITExecutionEngine) void {
         // Arena allocator automatically frees all memory
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
     
     /// Execute CURSED source code with proper memory management
     pub fn executeSource(self: *JITExecutionEngine, source: []const u8) !void {
         // Create a scoped arena for this execution
         var exec_arena = ArenaAllocator.init(self.allocator);
-        defer exec_arena.deinit();
+        defer exec_arena.deinit(allocator);
         const exec_allocator = exec_arena.allocator();
         
         var lex = lexer.Lexer.init(exec_allocator, source);
@@ -371,17 +371,17 @@ pub const JITExecutionEngine = struct {
         if (self.functions.get(call.function_name)) |func| {
             // Create temporary arena for arguments to prevent memory leaks
             var arg_arena = ArenaAllocator.init(self.allocator);
-            defer arg_arena.deinit();
+            defer arg_arena.deinit(allocator);
             const arg_allocator = arg_arena.allocator();
             
             // Evaluate arguments
-            var args = ArrayList(Value).init(arg_allocator);
-            defer args.deinit();
-            errdefer args.deinit(); // Clean up on error
+            var args = .empty;
+            defer args.deinit(allocator);
+            errdefer args.deinit(allocator); // Clean up on error
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
             
             return try self.callFunction(func, args.items);
@@ -466,7 +466,7 @@ pub const JITExecutionEngine = struct {
     fn builtinVibesSpill(self: *JITExecutionEngine, arguments: ArrayList(*ast.Expression)) !Value {
         // Create temporary arena for string operations
         var print_arena = ArenaAllocator.init(self.allocator);
-        defer print_arena.deinit();
+        defer print_arena.deinit(allocator);
         const print_allocator = print_arena.allocator();
         
         for (arguments.items, 0..) |arg, i| {
@@ -727,7 +727,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     print("=====================================\n");
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     // Test 1: Simple expression evaluation
     print("\n📝 Test 1: Simple expression\n");

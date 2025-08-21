@@ -4,14 +4,14 @@ const error_reporting = @import("enhanced_error_reporting.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     print("🧪 Simple Error Reporting Test\n", .{});
 
     // Test basic error reporting without lexer
     var error_reporter = error_reporting.ErrorReporter.init(allocator, 5);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     error_reporter.setColors(true);
 

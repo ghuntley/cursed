@@ -69,7 +69,7 @@ pub const Scope = struct {
             var var_info = entry.value_ptr;
             var_info.deinit(self.variables.allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(allocator);
     }
     
     /// Look up a variable in this scope or parent scopes
@@ -111,7 +111,7 @@ pub const VariableScopeManager = struct {
     pub fn init(allocator: Allocator) VariableScopeManager {
         return VariableScopeManager{
             .allocator = allocator,
-            .scopes = ArrayList(*Scope).init(allocator),
+            .scopes = .empty,
             .current_scope = null,
             .next_scope_id = 0,
         };
@@ -120,10 +120,10 @@ pub const VariableScopeManager = struct {
     pub fn deinit(self: *VariableScopeManager) void {
         // Clean up all scopes
         for (self.scopes.items) |scope| {
-            scope.deinit();
+            scope.deinit(allocator);
             self.allocator.destroy(scope);
         }
-        self.scopes.deinit();
+        self.scopes.deinit(allocator);
     }
     
     /// Enter a new scope
@@ -132,7 +132,7 @@ pub const VariableScopeManager = struct {
         scope.* = Scope.init(self.allocator, self.next_scope_id, self.current_scope);
         self.next_scope_id += 1;
         
-        try self.scopes.append(scope);
+        try self.scopes.append(self.allocator, scope);
         self.current_scope = scope;
         
         return scope;

@@ -69,8 +69,8 @@ pub const StdlibTestRunner = struct {
     }
 
     pub fn deinit(self: *StdlibTestRunner) void {
-        self.interpreter.deinit();
-        self.results.deinit();
+        self.interpreter.deinit(allocator);
+        self.results.deinit(allocator);
     }
 
     pub fn runAllModuleTests(self: *StdlibTestRunner) !void {
@@ -187,7 +187,7 @@ pub const StdlibTestRunner = struct {
             result.detailed_error = error_msg;
             return error.LexicalError;
         };
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         result.lexer_passed = true;
 
         if (tokens.items.len == 0) {
@@ -202,7 +202,7 @@ pub const StdlibTestRunner = struct {
             result.detailed_error = error_msg;
             return error.SyntaxError;
         };
-        defer program.deinit();
+        defer program.deinit(allocator);
         result.parser_passed = true;
 
         if (parser.had_error) {
@@ -224,7 +224,7 @@ pub const StdlibTestRunner = struct {
             result.detailed_error = error_msg;
             return error.CodeGenInitError;
         };
-        defer codegen.deinit();
+        defer codegen.deinit(allocator);
 
         // Generate IR without full compilation to test syntax validity
         codegen.generateAdvancedProgram(program) catch |err| {
@@ -252,7 +252,7 @@ pub const StdlibTestRunner = struct {
             std.debug.print("Compilation failed at lexical analysis: {}\n", .{err});
             return error.LexicalError;
         };
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
 
         if (tokens.items.len == 0) {
             return error.EmptyTokenStream;
@@ -264,7 +264,7 @@ pub const StdlibTestRunner = struct {
             std.debug.print("Compilation failed at syntax analysis: {}\n", .{err});
             return error.SyntaxError;
         };
-        defer program.deinit();
+        defer program.deinit(allocator);
 
         if (parser.had_error) {
             return error.ParseError;
@@ -278,7 +278,7 @@ pub const StdlibTestRunner = struct {
             std.debug.print("Compilation failed to initialize code generator: {}\n", .{err});
             return error.CodeGenInitError;
         };
-        defer codegen.deinit();
+        defer codegen.deinit(allocator);
 
         // Generate IR without full compilation to test syntax validity
         codegen.generateAdvancedProgram(program) catch |err| {
@@ -321,7 +321,7 @@ pub const StdlibTestRunner = struct {
 
         // 3. Validate no duplicate function names
         var function_names = std.StringHashMap(void).init(self.allocator);
-        defer function_names.deinit();
+        defer function_names.deinit(allocator);
 
         for (program.statements.items) |stmt| {
             switch (stmt) {
@@ -363,7 +363,7 @@ pub const StdlibTestRunner = struct {
     fn testModuleCombination(self: *StdlibTestRunner, modules: []const []const u8) !void {
         // Generate a combined test program that imports all modules
         var test_program = std.ArrayList(u8).init(self.allocator);
-        defer test_program.deinit();
+        defer test_program.deinit(allocator);
 
         const writer = test_program.writer();
         
@@ -669,7 +669,7 @@ fn createTestFile(allocator: Allocator, file_path: []const u8, module_name: []co
 // Integration with main test runner
 test "Stdlib Module Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const workspace_root = "/home/ghuntley/code/cursed";
@@ -679,7 +679,7 @@ test "Stdlib Module Tests" {
 
     // Run all module tests
     var runner = try StdlibTestRunner.init(allocator, workspace_root);
-    defer runner.deinit();
+    defer runner.deinit(allocator);
 
     try runner.runAllModuleTests();
 }

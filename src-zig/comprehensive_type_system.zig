@@ -252,8 +252,8 @@ pub const TypeEnvironment = struct {
         }
         
         pub fn deinit(self: *Scope) void {
-            self.variables.deinit();
-            self.types.deinit();
+            self.variables.deinit(allocator);
+            self.types.deinit(allocator);
         }
     };
     
@@ -270,9 +270,9 @@ pub const TypeEnvironment = struct {
     
     pub fn init(allocator: Allocator) !TypeEnvironment {
         var env = TypeEnvironment{
-            .scopes = ArrayList(Scope).init(allocator),
+            .scopes = .empty,
             .type_vars = HashMap(u32, CursedType, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .constraints = ArrayList(TypeConstraintSet).init(allocator),
+            .constraints = .empty,
             .next_type_var_id = 1,
             .allocator = allocator,
         };
@@ -286,21 +286,21 @@ pub const TypeEnvironment = struct {
     
     pub fn deinit(self: *TypeEnvironment) void {
         for (self.scopes.items) |*scope| {
-            scope.deinit();
+            scope.deinit(allocator);
         }
-        self.scopes.deinit();
-        self.type_vars.deinit();
-        self.constraints.deinit();
+        self.scopes.deinit(allocator);
+        self.type_vars.deinit(allocator);
+        self.constraints.deinit(allocator);
     }
     
     pub fn enterScope(self: *TypeEnvironment) !void {
-        try self.scopes.append(Scope.init(self.allocator));
+        try self.scopes.append(self.allocator, Scope.init(self.allocator));
     }
     
     pub fn exitScope(self: *TypeEnvironment) void {
         if (self.scopes.items.len > 1) {
             var scope = self.scopes.pop();
-            scope.deinit();
+            scope.deinit(allocator);
         }
     }
     
@@ -371,7 +371,7 @@ pub const TypeEnvironment = struct {
     // Occurs check to prevent infinite types
     fn occursCheck(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType) bool {
         var visited = std.AutoHashMap(u64, void).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(allocator);
         return self.occursCheckRecursive(var_id, cursed_type, &visited);
     }
     
@@ -492,7 +492,7 @@ pub const TypeEnvironment = struct {
         const MAX_RESOLUTION_DEPTH = 100;
         var current_type = cursed_type;
         var visited = std.AutoHashMap(u32, void).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(allocator);
         var depth: u32 = 0;
         
         while (depth < MAX_RESOLUTION_DEPTH) {
@@ -525,8 +525,8 @@ pub const TypeEnvironment = struct {
     
     // Comprehensive validation before codegen
     pub fn validateAllTypesResolved(self: *TypeEnvironment, ast_node: *ast.ASTNode) !void {
-        var unresolved_vars = std.ArrayList(u32).init(self.allocator);
-        defer unresolved_vars.deinit();
+        var unresolved_vars: std.ArrayList(u32) = .empty;
+        defer unresolved_vars.deinit(allocator);
         
         self.collectUnresolvedTypeVars(ast_node, &unresolved_vars);
         
@@ -605,7 +605,7 @@ pub const TypeEnvironment = struct {
         const resolved = self.resolveTypeRecursive(cursed_type);
         switch (resolved) {
             .Unknown => |var_id| {
-                unresolved.append(var_id) catch {};
+                unresolved.append(allocator, var_id) catch {};
             },
             .Array => |arr| {
                 self.collectUnresolvedFromType(arr.element_type.*, unresolved);
@@ -876,13 +876,13 @@ pub const TypeInferenceEngine = struct {
     pub fn init(allocator: Allocator, environment: *TypeEnvironment) TypeInferenceEngine {
         return TypeInferenceEngine{
             .environment = environment,
-            .unification_constraints = ArrayList(UnificationConstraint).init(allocator),
+            .unification_constraints = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *TypeInferenceEngine) void {
-        self.unification_constraints.deinit();
+        self.unification_constraints.deinit(allocator);
     }
     
     /// Infer type of an expression
@@ -1323,7 +1323,7 @@ pub const TypeInferenceEngine = struct {
     }
     
     fn inferTupleLiteral(self: *TypeInferenceEngine, tuple_lit: ast.TupleLiteralExpression) !InferenceResult {
-        var element_types = ArrayList(CursedType).init(self.allocator);
+        var element_types = .empty;
         
         for (tuple_lit.elements.items) |elem| {
             const elem_result = try self.inferExpression(elem);
@@ -1335,7 +1335,7 @@ pub const TypeInferenceEngine = struct {
                 };
             }
             
-            try element_types.append(self.environment.resolveType(elem_result.inferred_type));
+            try element_types.append(self.allocator, self.environment.resolveType(elem_result.inferred_type));
         }
         
         const tuple_type_ptr = try self.allocator.create(TupleType);
@@ -1627,15 +1627,15 @@ pub const ComprehensiveTypeChecker = struct {
         return ComprehensiveTypeChecker{
             .environment = environment,
             .inference_engine = inference_engine,
-            .error_messages = ArrayList(TypeErrorMessage).init(allocator),
+            .error_messages = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *ComprehensiveTypeChecker) void {
-        self.environment.deinit();
-        self.inference_engine.deinit();
-        self.error_messages.deinit();
+        self.environment.deinit(allocator);
+        self.inference_engine.deinit(allocator);
+        self.error_messages.deinit(allocator);
     }
     
     pub fn checkProgram(self: *ComprehensiveTypeChecker, program: *const ast.Program) !bool {
@@ -1706,12 +1706,12 @@ pub const ComprehensiveTypeChecker = struct {
         defer self.environment.exitScope();
         
         // Add parameters to scope
-        var param_types = ArrayList(CursedType).init(self.allocator);
-        defer param_types.deinit();
+        var param_types = .empty;
+        defer param_types.deinit(allocator);
         
         for (func_decl.parameters.items) |param| {
             const param_type = try self.inference_engine.astTypeToCursedType(param.param_type);
-            try param_types.append(param_type);
+            try param_types.append(self.allocator, param_type);
             try self.environment.addVariable(param.name, param_type, false);
         }
         
@@ -1752,11 +1752,11 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     fn checkStructDeclaration(self: *ComprehensiveTypeChecker, struct_decl: ast.StructDeclaration) !bool {
-        var fields = ArrayList(StructType.StructField).init(self.allocator);
+        var fields = .empty;
         
         for (struct_decl.fields.items) |field| {
             const field_type = try self.inference_engine.astTypeToCursedType(field.field_type);
-            try fields.append(StructType.StructField{
+            try fields.append(self.allocator, StructType.StructField{
                 .name = field.name,
                 .field_type = field_type,
                 .is_public = true, // Default to public
@@ -1775,12 +1775,12 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     fn checkInterfaceDeclaration(self: *ComprehensiveTypeChecker, interface_decl: ast.InterfaceDeclaration) !bool {
-        var methods = ArrayList(InterfaceType.MethodSignature).init(self.allocator);
+        var methods = .empty;
         
         for (interface_decl.methods.items) |method| {
-            var param_types = ArrayList(CursedType).init(self.allocator);
+            var param_types = .empty;
             for (method.parameters.items) |param| {
-                try param_types.append(try self.inference_engine.astTypeToCursedType(param.param_type));
+                try param_types.append(allocator, try self.inference_engine.astTypeToCursedType(param.param_type));
             }
             
             const return_type = if (method.return_type) |ret| 
@@ -1788,7 +1788,7 @@ pub const ComprehensiveTypeChecker = struct {
             else 
                 null;
             
-            try methods.append(InterfaceType.MethodSignature{
+            try methods.append(self.allocator, InterfaceType.MethodSignature{
                 .name = method.name,
                 .parameters = param_types,
                 .return_type = return_type,
@@ -1846,7 +1846,7 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     fn addError(self: *ComprehensiveTypeChecker, kind: TypeErrorMessage.ErrorKind, message: []const u8, line: u32, column: u32) !void {
-        try self.error_messages.append(TypeErrorMessage{
+        try self.error_messages.append(self.allocator, TypeErrorMessage{
             .kind = kind,
             .message = try self.allocator.dupe(u8, message),
             .line = line,

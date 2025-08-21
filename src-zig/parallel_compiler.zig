@@ -37,11 +37,11 @@ pub const ParallelCompiler = struct {
     }
     
     pub fn deinit(self: *ParallelCompiler) void {
-        self.codegen_phase.deinit();
-        self.parsing_phase.deinit();
-        self.lexing_phase.deinit();
-        self.work_queue.deinit();
-        self.thread_pool.deinit();
+        self.codegen_phase.deinit(allocator);
+        self.parsing_phase.deinit(allocator);
+        self.lexing_phase.deinit(allocator);
+        self.work_queue.deinit(allocator);
+        self.thread_pool.deinit(allocator);
     }
     
     /// Compile multiple files in parallel
@@ -332,7 +332,7 @@ const WorkQueue = struct {
     fn init(allocator: Allocator) !WorkQueue {
         return WorkQueue{
             .allocator = allocator,
-            .queue = ArrayList(WorkItem).init(allocator),
+            .queue = .empty,
             .mutex = Mutex{},
             .condition = Condition{},
             .completed_tasks = 0,
@@ -340,14 +340,14 @@ const WorkQueue = struct {
     }
     
     fn deinit(self: *WorkQueue) void {
-        self.queue.deinit();
+        self.queue.deinit(allocator);
     }
     
     fn enqueue(self: *WorkQueue, item: WorkItem) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        try self.queue.append(item);
+        try self.queue.append(allocator, item);
         self.condition.signal();
     }
     
@@ -606,7 +606,7 @@ test "ParallelCompiler initialization" {
     const allocator = std.testing.allocator;
     
     var compiler = try ParallelCompiler.init(allocator, 4);
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
     
     const stats = compiler.getCompilationStats();
     try std.testing.expect(stats.thread_count == 4);

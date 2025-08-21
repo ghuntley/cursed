@@ -98,7 +98,7 @@ pub const ExecutionFrame = struct {
     }
     
     pub fn deinit(self: *ExecutionFrame) void {
-        self.env.deinit();
+        self.env.deinit(allocator);
     }
 };
 
@@ -135,7 +135,7 @@ pub const GoroutineFunctionExecutor = struct {
             .allocator = allocator,
             .arena = arena,
             .arena_allocator = arena_allocator,
-            .call_stack = ArrayList(ExecutionFrame).init(arena_allocator),
+            .call_stack = .empty,
             .stack_depth = 0,
             .max_stack_depth = MAX_STACK_FRAMES,
             .total_frame_size = 0,
@@ -153,11 +153,11 @@ pub const GoroutineFunctionExecutor = struct {
     pub fn deinit(self: *GoroutineFunctionExecutor) void {
         // Clean up all stack frames
         for (self.call_stack.items) |*frame| {
-            frame.deinit();
+            frame.deinit(allocator);
         }
         
         // Arena handles the rest of the cleanup
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
     
     /// Register a function for interpreted execution
@@ -248,7 +248,7 @@ pub const GoroutineFunctionExecutor = struct {
         };
         
         // Update stack tracking
-        try self.call_stack.append(frame);
+        try self.call_stack.append(allocator, frame);
         self.stack_depth += 1;
         self.total_frame_size += frame.frame_size;
         
@@ -257,7 +257,7 @@ pub const GoroutineFunctionExecutor = struct {
             if (self.call_stack.items.len > 0) {
                 var popped_frame = self.call_stack.pop();
                 self.total_frame_size -= popped_frame.frame_size;
-                popped_frame.deinit();
+                popped_frame.deinit(allocator);
                 self.stack_depth -= 1;
             }
         }
@@ -435,12 +435,12 @@ pub const GoroutineFunctionExecutor = struct {
     /// Handle function calls with recursion detection
     fn handleFunctionCall(self: *GoroutineFunctionExecutor, call: ast.CallExpression, env: *Environment) !Value {
         // Evaluate arguments
-        var args = ArrayList(Value).init(self.arena_allocator);
-        defer args.deinit();
-        errdefer args.deinit(); // Clean up on error
+        var args = .empty;
+        defer args.deinit(allocator);
+        errdefer args.deinit(allocator); // Clean up on error
         for (call.arguments.items) |arg| {
             const value = try self.evaluateExpression(arg.*, env);
-            try args.append(value);
+            try args.append(allocator, value);
         }
         
         // Check if it's a built-in function
@@ -706,11 +706,11 @@ pub const GoroutineFunctionExecutor = struct {
 /// Test the goroutine function executor
 pub fn testGoroutineFunctionExecutor() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var executor = try GoroutineFunctionExecutor.init(allocator, 1);
-    defer executor.deinit();
+    defer executor.deinit(allocator);
     
     print("Goroutine function executor test completed successfully\n");
 }

@@ -77,7 +77,7 @@ const CliArgs = struct {
     }
     
     pub fn deinit(self: *CliArgs) void {
-        self.options.deinit();
+        self.options.deinit(allocator);
         // Free the packages slice that was allocated with toOwnedSlice()
         // Even empty slices from toOwnedSlice need to be freed
         if (self.packages.ptr != &[_][:0]const u8{}) {
@@ -95,8 +95,8 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
     
     cli_args.command = Command.fromString(args[1]) orelse .help;
     
-    var packages = std.ArrayList([:0]const u8).init(allocator);
-    defer packages.deinit();
+    var packages: std.ArrayList([:0]const u8) = .empty;
+    defer packages.deinit(allocator);
     
     var i: usize = 2;
     while (i < args.len) {
@@ -116,13 +116,13 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
                 try cli_args.options.put(key, value);
             }
         } else {
-            try packages.append(arg);
+            try packages.append(allocator, arg);
         }
         
         i += 1;
     }
     
-    cli_args.packages = try packages.toOwnedSlice();
+    cli_args.packages = try packages.toOwnedSlice(allocator);
     return cli_args;
 }
 
@@ -350,7 +350,7 @@ fn runCommand(allocator: std.mem.Allocator, args: CliArgs) !void {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -360,7 +360,7 @@ pub fn main() !void {
         print("Error parsing arguments: {}\n", .{err});
         std.process.exit(1);
     };
-    defer cli_args.deinit();
+    defer cli_args.deinit(allocator);
     
     runCommand(allocator, cli_args) catch |err| {
         print("Error: {}\n", .{err});
@@ -700,7 +700,7 @@ test "argument parsing" {
     const test_args = [_][:0]const u8{ "cursed-pkg", "add", "json", "--verbose", "--cache-dir=/tmp/cache" };
     
     var cli_args = try parseArgs(allocator, &test_args);
-    defer cli_args.deinit();
+    defer cli_args.deinit(allocator);
     
     try std.testing.expect(cli_args.command == .add);
     try std.testing.expect(cli_args.packages.len == 1);

@@ -193,10 +193,10 @@ pub const WindowsAsyncNetwork = struct {
         var iterator = self.active_operations.iterator();
         while (iterator.next()) |entry| {
             const operation = entry.key_ptr.*;
-            operation.deinit(self.allocator);
+            operation.deinit(allocator);
             self.allocator.destroy(operation);
         }
-        self.active_operations.deinit();
+        self.active_operations.deinit(allocator);
     }
     
     // Create TCP socket with IOCP association
@@ -266,7 +266,7 @@ pub const WindowsAsyncNetwork = struct {
             const error_code = WSAGetLastError();
             if (error_code != @intFromEnum(ws2_32.WS2_32_ERROR.WSA_IO_PENDING)) {
                 _ = self.active_operations.remove(operation);
-                operation.deinit(self.allocator);
+                operation.deinit(allocator);
                 self.allocator.destroy(operation);
                 return error.AcceptFailed;
             }
@@ -295,7 +295,7 @@ pub const WindowsAsyncNetwork = struct {
         const bind_result = ws2_32.bind(socket, @ptrCast(&local_addr), @sizeOf(@TypeOf(local_addr)));
         if (bind_result != 0) {
             _ = self.active_operations.remove(operation);
-            operation.deinit(self.allocator);
+            operation.deinit(allocator);
             self.allocator.destroy(operation);
             return error.BindFailed;
         }
@@ -318,7 +318,7 @@ pub const WindowsAsyncNetwork = struct {
             const error_code = WSAGetLastError();
             if (error_code != @intFromEnum(ws2_32.WS2_32_ERROR.WSA_IO_PENDING)) {
                 _ = self.active_operations.remove(operation);
-                operation.deinit(self.allocator);
+                operation.deinit(allocator);
                 self.allocator.destroy(operation);
                 return error.ConnectFailed;
             }
@@ -355,7 +355,7 @@ pub const WindowsAsyncNetwork = struct {
             const error_code = WSAGetLastError();
             if (error_code != @intFromEnum(ws2_32.WS2_32_ERROR.WSA_IO_PENDING)) {
                 _ = self.active_operations.remove(operation);
-                operation.deinit(self.allocator);
+                operation.deinit(allocator);
                 self.allocator.destroy(operation);
                 return error.SendFailed;
             }
@@ -393,7 +393,7 @@ pub const WindowsAsyncNetwork = struct {
             const error_code = WSAGetLastError();
             if (error_code != @intFromEnum(ws2_32.WS2_32_ERROR.WSA_IO_PENDING)) {
                 _ = self.active_operations.remove(operation);
-                operation.deinit(self.allocator);
+                operation.deinit(allocator);
                 self.allocator.destroy(operation);
                 return error.RecvFailed;
             }
@@ -405,7 +405,7 @@ pub const WindowsAsyncNetwork = struct {
     // Complete and clean up operation
     pub fn completeOperation(self: *Self, operation: *NetAsyncOperation) void {
         _ = self.active_operations.remove(operation);
-        operation.deinit(self.allocator);
+        operation.deinit(allocator);
         self.allocator.destroy(operation);
     }
     
@@ -581,7 +581,7 @@ pub const RuntimeIntegration = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.network.deinit();
+        self.network.deinit(allocator);
     }
     
     // Goroutine-friendly TCP server

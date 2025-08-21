@@ -12,6 +12,34 @@ const type_system = @import("type_system_runtime.zig");
 const RuntimeTypeInfo = type_system.RuntimeTypeInfo;
 const InterfaceRegistry = type_system.InterfaceRegistry;
 
+const ast = @import("ast.zig");
+
+/// Result of method signature validation
+const SignatureCompatibilityResult = struct {
+    compatible: bool,
+    error_message: ?[]const u8,
+};
+
+/// Result of interface implementation validation  
+const ImplementationValidationResult = struct {
+    valid: bool,
+    missing_methods: ArrayList([]const u8),
+    signature_mismatches: ArrayList(SignatureMismatch),
+    
+    pub fn deinit(self: *ImplementationValidationResult) void {
+        self.missing_methods.deinit(allocator);
+        self.signature_mismatches.deinit(allocator);
+    }
+};
+
+/// Signature mismatch information
+const SignatureMismatch = struct {
+    method_name: []const u8,
+    expected_signature: MethodSignature,
+    actual_signature: MethodSignature,
+    error_message: ?[]const u8,
+};
+
 // LLVM C imports disabled to fix "athlon-xp" CPU detection issues
 // Replace with dummy types to allow compilation without LLVM
 const c = struct {
@@ -75,23 +103,23 @@ pub const InterfaceDispatcher = struct {
         // Clean up vtables
         var vtable_iterator = self.vtables.iterator();
         while (vtable_iterator.next()) |entry| {
-            entry.value_ptr.*.deinit();
+            entry.value_ptr.*.deinit(allocator);
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.vtables.deinit();
+        self.vtables.deinit(allocator);
         
         // Clean up interface types
         var interface_iterator = self.interface_types.iterator();
         while (interface_iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.interface_types.deinit();
+        self.interface_types.deinit(allocator);
         
         // Clean up implementations
-        self.implementations.deinit();
+        self.implementations.deinit(allocator);
         
         // Clean up method cache
-        self.method_cache.deinit();
+        self.method_cache.deinit(allocator);
     }
 
     /// Register an interface type
@@ -161,7 +189,7 @@ pub const InterfaceDispatcher = struct {
             }
             
             if (!found) {
-                vtable.deinit();
+                vtable.deinit(allocator);
                 self.allocator.destroy(vtable);
                 return InterfaceDispatchError.MethodNotImplemented;
             }
@@ -170,22 +198,120 @@ pub const InterfaceDispatcher = struct {
         return vtable;
     }
 
-    /// Validate that all interface methods are implemented
-    fn validateImplementation(self: *Self, interface_type: InterfaceType, methods: []const MethodImpl) !bool {
-        _ = self;
+    /// Validate that all interface methods are implemented with correct signatures
+    fn validateImplementation(self: *Self, interface_type: InterfaceType, methods: []const MethodImpl) !ImplementationValidationResult {
+        var missing_methods = .empty;
+        var signature_mismatches = .empty;
         
         for (interface_type.methods.items) |interface_method| {
             var found = false;
             for (methods) |method_impl| {
                 if (std.mem.eql(u8, interface_method.name, method_impl.name)) {
-                    // TODO: Add signature validation
                     found = true;
+                    
+                    // Validate method signature compatibility
+                    const signature_result = try self.validateMethodSignature(interface_method, method_impl);
+                    if (!signature_result.compatible) {
+                        try signature_mismatches.append(allocator, SignatureMismatch{
+                            .method_name = interface_method.name,
+                            .expected_signature = interface_method,
+                            .actual_signature = method_impl.signature,
+                            .error_message = signature_result.error_message,
+                        });
+                    }
                     break;
                 }
             }
-            if (!found) return false;
+            
+            if (!found) {
+                try missing_methods.append(allocator, interface_method.name);
+            }
         }
-        return true;
+        
+        const is_valid = missing_methods.items.len == 0 and signature_mismatches.items.len == 0;
+        
+        return ImplementationValidationResult{
+            .valid = is_valid,
+            .missing_methods = missing_methods,
+            .signature_mismatches = signature_mismatches,
+        };
+    }
+    
+    /// Validate method signature compatibility
+    fn validateMethodSignature(self: *Self, interface_method: MethodSignature, impl_method: MethodSignature) !SignatureCompatibilityResult {
+        
+        // Check parameter count
+        if (interface_method.parameters.len != impl_method.parameters.len) {
+            return SignatureCompatibilityResult{
+                .compatible = false,
+                .error_message = "Parameter count mismatch",
+            };
+        }
+        
+        // Check parameter types (covariant/contravariant rules)
+        for (interface_method.parameters, impl_method.parameters) |expected_param, actual_param| {
+            if (!self.areTypesCompatible(expected_param.param_type, actual_param.param_type)) {
+                return SignatureCompatibilityResult{
+                    .compatible = false,
+                    .error_message = "Parameter type mismatch",
+                };
+            }
+        }
+        
+        // Check return type (covariant)
+        if (interface_method.return_type) |expected_return| {
+            if (impl_method.return_type) |actual_return| {
+                if (!self.areTypesCompatible(expected_return, actual_return)) {
+                    return SignatureCompatibilityResult{
+                        .compatible = false,
+                        .error_message = "Return type mismatch",
+                    };
+                }
+            } else {
+                return SignatureCompatibilityResult{
+                    .compatible = false,
+                    .error_message = "Missing return type",
+                };
+            }
+        } else if (impl_method.return_type != null) {
+            return SignatureCompatibilityResult{
+                .compatible = false,
+                .error_message = "Unexpected return type",
+            };
+        }
+        
+        return SignatureCompatibilityResult{
+            .compatible = true,
+            .error_message = null,
+        };
+    }
+    
+    /// Check if two types are compatible (handling variance)
+    fn areTypesCompatible(self: *Self, expected_type: ast.Type, actual_type: ast.Type) bool {
+        
+        // Simple type compatibility check - in a full system this would handle:
+        // - Subtyping relationships
+        // - Generic type instantiation
+        // - Variance rules (covariant/contravariant)
+        
+        return switch (expected_type) {
+            .Primitive => |expected_prim| switch (actual_type) {
+                .Primitive => |actual_prim| expected_prim == actual_prim,
+                else => false,
+            },
+            .Identifier => |expected_name| switch (actual_type) {
+                .Identifier => |actual_name| std.mem.eql(u8, expected_name, actual_name),
+                else => false,
+            },
+            .Array => |expected_array| switch (actual_type) {
+                .Array => |actual_array| {
+                    return expected_array.size == actual_array.size and
+                           self.areTypesCompatible(expected_array.element_type.*, actual_array.element_type.*);
+                },
+                else => false,
+            },
+            else => false, // More sophisticated matching would be needed for full type system
+        };
     }
 
     /// Dispatch interface method call with optimization
@@ -424,7 +550,6 @@ pub const InterfaceDispatcher = struct {
 
     /// Create interface instance value in LLVM
     pub fn createInterfaceInstanceLLVM(self: *Self, context: c.LLVMContextRef, builder: c.LLVMBuilderRef, vtable: c.LLVMValueRef, data_ptr: c.LLVMValueRef) !c.LLVMValueRef {
-        _ = self; // Mark unused parameter
         // Interface structure: { vtable_ptr, data_ptr, type_info }
         const interface_type = c.LLVMStructTypeInContext(
             context,
@@ -440,20 +565,20 @@ pub const InterfaceDispatcher = struct {
         // Allocate interface instance
         const interface_instance = c.LLVMBuildAlloca(builder, interface_type, "interface_instance");
         
-        // Set vtable pointer
+        // Set vtable pointer with write barrier for GC integration
         const vtable_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 0, "vtable_field");
-        // TODO: Add write barrier for interface vtable field stores
+        try self.insertWriteBarrier(context, builder, interface_instance, vtable_field, vtable, "vtable");
         _ = c.LLVMBuildStore(builder, vtable, vtable_field);
         
-        // Set data pointer
+        // Set data pointer with write barrier for GC integration
         const data_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 1, "data_field");
-        // TODO: Add write barrier for interface data field stores
+        try self.insertWriteBarrier(context, builder, interface_instance, data_field, data_ptr, "data");
         _ = c.LLVMBuildStore(builder, data_ptr, data_field);
         
-        // Set type info (null for now)
+        // Set type info (null for now) with write barrier for GC integration
         const type_info_field = c.LLVMBuildStructGEP2(builder, interface_type, interface_instance, 2, "type_info_field");
         const null_ptr = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(context), 0));
-        // TODO: Add write barrier for interface type_info field stores
+        try self.insertWriteBarrier(context, builder, interface_instance, type_info_field, null_ptr, "type_info");
         _ = c.LLVMBuildStore(builder, null_ptr, type_info_field);
         
         return interface_instance;
@@ -500,10 +625,22 @@ pub const InterfaceInstance = struct {
     interface_name: []const u8,
 
     pub fn callMethod(self: *InterfaceInstance, method_name: []const u8, args: []Value) !Value {
-        _ = method_name;
-        // Find method in vtable and call it
-        // This is a simplified version - real implementation would need method index lookup
-        return self.vtable.methods[0].call(args); // TODO: Proper method resolution
+        // Find method in vtable and call it with proper method resolution
+        for (self.vtable.methods) |method| {
+            if (std.mem.eql(u8, method.name, method_name)) {
+                // Validate argument count
+                if (args.len != method.parameter_count) {
+                    return CursedError.ArgumentCountMismatch;
+                }
+                
+                // Call the method with validated arguments
+                return method.call(args);
+            }
+        }
+        
+        // Method not found in interface
+        std.log.err("Method '{}' not found in interface '{}'", .{ method_name, self.interface_name });
+        return CursedError.MethodNotFound;
     }
 };
 
@@ -516,17 +653,17 @@ pub const InterfaceType = struct {
     pub fn init(allocator: Allocator, name: []const u8) InterfaceType {
         return InterfaceType{
             .name = name,
-            .methods = ArrayList(MethodSignature).init(allocator),
+            .methods = .empty,
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit();
+        self.methods.deinit(allocator);
     }
 
     pub fn addMethod(self: *InterfaceType, method: MethodSignature) !void {
-        try self.methods.append(method);
+        try self.methods.append(allocator, method);
     }
 };
 
@@ -615,10 +752,10 @@ test "interface dispatch vtable generation" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit();
+    defer interface_registry.deinit(allocator);
     
     var dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit();
+    defer dispatcher.deinit(allocator);
     
     // Register Drawable interface
     const drawable_methods = [_]MethodSignature{
@@ -650,10 +787,10 @@ test "vtable creation and method dispatch" {
     const allocator = testing.allocator;
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit();
+    defer interface_registry.deinit(allocator);
     
     var dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
-    defer dispatcher.deinit();
+    defer dispatcher.deinit(allocator);
     
     // Register interface
     const methods = [_]MethodSignature{

@@ -153,13 +153,13 @@ pub const CABISignature = struct {
         return CABISignature{
             .name = name,
             .return_type = .Void,
-            .parameters = ArrayList(CABIParameter).init(allocator),
+            .parameters = .empty,
             .calling_convention = .C,
         };
     }
     
     pub fn deinit(self: *CABISignature) void {
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
     }
 };
 
@@ -188,9 +188,9 @@ pub const ExternLibrary = struct {
     pub fn deinit(self: *ExternLibrary) void {
         var iterator = self.functions.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.signature.deinit();
+            entry.value_ptr.signature.deinit(allocator);
         }
-        self.functions.deinit();
+        self.functions.deinit(allocator);
         
         if (self.handle) |handle| {
             c.closeLibrary(handle);
@@ -254,7 +254,7 @@ pub const CABIBridge = struct {
             .allocator = allocator,
             .libraries = HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_mappings = HashMap([]const u8, CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .generated_wrappers = ArrayList([]const u8).init(allocator),
+            .generated_wrappers = .empty,
             .enum_mapper = ffi_enum.FFIEnumMapper.init(allocator),
         };
         
@@ -267,19 +267,19 @@ pub const CABIBridge = struct {
     pub fn deinit(self: *CABIBridge) void {
         var lib_iterator = self.libraries.iterator();
         while (lib_iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.libraries.deinit();
+        self.libraries.deinit(allocator);
         
-        self.type_mappings.deinit();
+        self.type_mappings.deinit(allocator);
         
         for (self.generated_wrappers.items) |wrapper| {
             self.allocator.free(wrapper);
         }
-        self.generated_wrappers.deinit();
+        self.generated_wrappers.deinit(allocator);
         
         // Clean up enum mapper
-        self.enum_mapper.deinit();
+        self.enum_mapper.deinit(allocator);
     }
     
     /// Initialize CURSED to C type mappings
@@ -326,7 +326,7 @@ pub const CABIBridge = struct {
         while (tokens.next()) |param_type| {
             const param_name = tokens.next() orelse break;
             
-            try signature.parameters.append(CABISignature.CABIParameter{
+            try signature.parameters.append(self.allocator, CABISignature.CABIParameter{
                 .name = try self.allocator.dupe(u8, param_name),
                 .param_type = self.parseCType(param_type),
             });
@@ -372,8 +372,8 @@ pub const CABIBridge = struct {
     
     /// Generate CURSED wrapper for extern function
     pub fn generateWrapper(self: *CABIBridge, signature: CABISignature, library_name: []const u8) ![]const u8 {
-        var wrapper = ArrayList(u8).init(self.allocator);
-        defer wrapper.deinit();
+        var wrapper = .empty;
+        defer wrapper.deinit(allocator);
         
         try wrapper.writer().print("// Auto-generated wrapper for extern function {s}\n", .{signature.name});
         try wrapper.writer().print("slay {s}(", .{signature.name});
@@ -409,8 +409,8 @@ pub const CABIBridge = struct {
         
         try wrapper.writer().print("}}\n\n", .{});
         
-        const result = try wrapper.toOwnedSlice();
-        try self.generated_wrappers.append(result);
+        const result = try wrapper.toOwnedSlice(allocator);
+        try self.generated_wrappers.append(allocator, result);
         return result;
     }
     
@@ -457,8 +457,8 @@ pub const CABIBridge = struct {
     
     /// Generate C header for CURSED functions
     pub fn generateCHeader(self: *CABIBridge, cursed_functions: []const ast.FunctionStatement) ![]const u8 {
-        var header = ArrayList(u8).init(self.allocator);
-        defer header.deinit();
+        var header = .empty;
+        defer header.deinit(allocator);
         
         try header.writer().print("#ifndef CURSED_C_BINDINGS_H\n");
         try header.writer().print("#define CURSED_C_BINDINGS_H\n\n");
@@ -485,7 +485,7 @@ pub const CABIBridge = struct {
         try header.writer().print("#endif\n\n");
         try header.writer().print("#endif // CURSED_C_BINDINGS_H\n");
         
-        return header.toOwnedSlice();
+        return header.toOwnedSlice(allocator);
     }
     
     /// Convert CURSED type to C type
@@ -514,8 +514,8 @@ pub const CABIBridge = struct {
     
     /// Generate FFI call implementation
     pub fn generateFFIRuntime(self: *CABIBridge) ![]const u8 {
-        var runtime = ArrayList(u8).init(self.allocator);
-        defer runtime.deinit();
+        var runtime = .empty;
+        defer runtime.deinit(allocator);
         
         try runtime.writer().print("// Auto-generated FFI runtime for C interop\n\n");
         try runtime.writer().print("yeet \"cursed_ffi_internal\"\n\n");
@@ -538,7 +538,7 @@ pub const CABIBridge = struct {
         try runtime.writer().print("    damn call_c_function(func_ptr, args)\n");
         try runtime.writer().print("}}\n\n");
         
-        return runtime.toOwnedSlice();
+        return runtime.toOwnedSlice(allocator);
     }
     
     /// Enhanced enum support methods
@@ -634,11 +634,11 @@ pub const ExternParser = struct {
 // Test cases for extern ABI
 test "basic extern function parsing" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     const decl = "extern \"C\" int add(int a, int b)";
     var signature = try bridge.parseExternDeclaration(decl);
-    defer signature.deinit();
+    defer signature.deinit(allocator);
     
     try std.testing.expectEqualStrings("add", signature.name);
     try std.testing.expect(signature.return_type == .Int32);
@@ -649,13 +649,13 @@ test "basic extern function parsing" {
 
 test "wrapper generation" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     var signature = CABISignature.init(std.testing.allocator, "strlen");
-    defer signature.deinit();
+    defer signature.deinit(allocator);
     
     signature.return_type = .Int32;
-    try signature.parameters.append(CABISignature.CABIParameter{
+    try signature.parameters.append(allocator, CABISignature.CABIParameter{
         .name = "str",
         .param_type = .String,
     });
@@ -670,7 +670,7 @@ test "wrapper generation" {
 
 test "enum type parsing and mapping" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     // Test basic enum parsing
     const enum_decl = 
@@ -697,7 +697,7 @@ test "enum type parsing and mapping" {
 
 test "enum with different sizes" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     // Test char-sized enum
     const char_enum = 
@@ -720,7 +720,7 @@ test "enum with different sizes" {
 
 test "enum binding generation" {
     var bridge = CABIBridge.init(std.testing.allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     const enum_decl = 
         \\enum FileMode {

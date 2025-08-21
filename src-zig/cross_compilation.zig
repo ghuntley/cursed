@@ -27,15 +27,15 @@ pub const CrossCompiler = struct {
         linking_mode: []const u8,
         verbose: bool
     ) ![][]const u8 {
-        var command_parts = ArrayList([]const u8).init(self.allocator);
+        var command_parts = .empty;
         
-        try command_parts.append("zig");
-        try command_parts.append("build-exe");
-        try command_parts.append(source_file);
+        try command_parts.append(self.allocator, "zig");
+        try command_parts.append(self.allocator, "build-exe");
+        try command_parts.append(self.allocator, source_file);
         
         // Add target specification
         const target_arg = try std.fmt.allocPrint(self.allocator, "-target={s}", .{target_platform});
-        try command_parts.append(target_arg);
+        try command_parts.append(self.allocator, target_arg);
         
         // Add optimization level
         const opt_arg = switch (optimization_level) {
@@ -45,29 +45,29 @@ pub const CrossCompiler = struct {
             3 => "-O3",
             else => "-O2",
         };
-        try command_parts.append(opt_arg);
+        try command_parts.append(self.allocator, opt_arg);
         
         // Add linking mode for static linking
         if (std.mem.eql(u8, linking_mode, "static")) {
-            try command_parts.append("--static");
+            try command_parts.append(self.allocator, "--static");
         }
         
         // Add output file specification
         if (output_file) |output| {
             const output_arg = try std.fmt.allocPrint(self.allocator, "--name={s}", .{output});
-            try command_parts.append(output_arg);
+            try command_parts.append(self.allocator, output_arg);
         }
         
         // Add libc linkage for native targets
         if (!std.mem.startsWith(u8, target_platform, "wasm")) {
-            try command_parts.append("-lc");
+            try command_parts.append(self.allocator, "-lc");
         }
         
         if (verbose) {
             print("🔧 Cross-compilation command: {s}\n", .{try std.mem.join(self.allocator, " ", command_parts.items)});
         }
         
-        return command_parts.toOwnedSlice();
+        return command_parts.toOwnedSlice(self.allocator);
     }
     
     // Generate compilation command for LLVM IR files
@@ -80,28 +80,28 @@ pub const CrossCompiler = struct {
         linking_mode: []const u8,
         verbose: bool
     ) ![][]const u8 {
-        var command_parts = ArrayList([]const u8).init(self.allocator);
+        var command_parts = .empty;
         
         // Use llc to compile LLVM IR to object file, then link
         if (std.mem.eql(u8, target_platform, "wasm32-freestanding")) {
             // WebAssembly compilation
-            try command_parts.append("llc");
-            try command_parts.append(ir_file);
-            try command_parts.append("-march=wasm32");
-            try command_parts.append("-filetype=obj");
+            try command_parts.append(self.allocator, "llc");
+            try command_parts.append(self.allocator, ir_file);
+            try command_parts.append(self.allocator, "-march=wasm32");
+            try command_parts.append(self.allocator, "-filetype=obj");
             const obj_file = try std.fmt.allocPrint(self.allocator, "{s}.o", .{std.fs.path.stem(ir_file)});
             const obj_arg = try std.fmt.allocPrint(self.allocator, "-o={s}", .{obj_file});
-            try command_parts.append(obj_arg);
+            try command_parts.append(self.allocator, obj_arg);
         } else {
             // Native compilation using zig cc as a wrapper
-            try command_parts.append("zig");
-            try command_parts.append("cc");
-            try command_parts.append(ir_file);
+            try command_parts.append(self.allocator, "zig");
+            try command_parts.append(self.allocator, "cc");
+            try command_parts.append(self.allocator, ir_file);
             
             // Add target specification (skip for native)
             if (!std.mem.eql(u8, target_platform, "native")) {
                 const target_arg = try std.fmt.allocPrint(self.allocator, "-target={s}", .{target_platform});
-                try command_parts.append(target_arg);
+                try command_parts.append(self.allocator, target_arg);
             }
             
             // Add optimization level
@@ -112,17 +112,17 @@ pub const CrossCompiler = struct {
                 3 => "-O3",
                 else => "-O2",
             };
-            try command_parts.append(opt_arg);
+            try command_parts.append(allocator, opt_arg);
             
             // Add linking mode for static linking
             if (std.mem.eql(u8, linking_mode, "static")) {
-                try command_parts.append("-static");
+                try command_parts.append(allocator, "-static");
             }
             
             // Add output file specification
             if (output_file) |output| {
-                try command_parts.append("-o");
-                try command_parts.append(output);
+                try command_parts.append(self.allocator, "-o");
+                try command_parts.append(self.allocator, output);
             }
         }
         
@@ -132,7 +132,7 @@ pub const CrossCompiler = struct {
             print("🔧 LLVM IR compilation command: {s}\n", .{command_str});
         }
         
-        return command_parts.toOwnedSlice();
+        return command_parts.toOwnedSlice(self.allocator);
     }
     
     // Free a command array returned by generateCompileCommand
@@ -323,7 +323,8 @@ pub const CrossCompilationTester = struct {
             \\const std = @import("std");
             \\
             \\pub fn main() !void {
-            \\    const stdout = std.io.getStdOut().writer();
+            var stdout_buffer: [4096]u8 = undefined;
+            \\    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
             \\    try stdout.print("Cross-compilation test successful!\n", .{});
             \\}
         ;
@@ -341,7 +342,7 @@ pub const CrossCompilationTester = struct {
         defer std.fs.cwd().deleteFile(test_file) catch {};
         
         var cross_compiler = CrossCompiler.init(self.allocator);
-        defer cross_compiler.deinit();
+        defer cross_compiler.deinit(allocator);
         
         const test_targets = [_]struct {
             name: []const u8,

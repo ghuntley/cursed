@@ -167,7 +167,7 @@ test "diagnostic utils integration" {
     const allocator = std.testing.allocator;
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     const test_source = "sus x normie = \"string value\"\n";
     try engine.addSourceFile("test.csd", test_source);

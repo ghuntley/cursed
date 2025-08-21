@@ -55,7 +55,7 @@ pub const DeadCodeTracker = struct {
 
     /// Find dead instructions in the module
     pub fn findDeadCode(self: *DeadCodeTracker, module: c.LLVMModuleRef) !ArrayList(c.LLVMValueRef) {
-        var dead_instructions = ArrayList(c.LLVMValueRef).init(self.allocator);
+        var dead_instructions = .empty;
         
         // Iterate through all functions
         var function = c.LLVMGetFirstFunction(module);
@@ -72,13 +72,13 @@ pub const DeadCodeTracker = struct {
 
     /// Find dead functions in the module
     pub fn findDeadFunctions(self: *DeadCodeTracker, module: c.LLVMModuleRef) !ArrayList(c.LLVMValueRef) {
-        var dead_functions = ArrayList(c.LLVMValueRef).init(self.allocator);
+        var dead_functions = .empty;
         
         // Build call graph and find unreferenced functions
         var function = c.LLVMGetFirstFunction(module);
         while (function != null) {
             if (self.isFunctionDead(function.?)) {
-                try dead_functions.append(function.?);
+                try dead_functions.append(allocator, function.?);
                 self.dead_functions_found += 1;
             }
             function = c.LLVMGetNextFunction(function.?);
@@ -107,7 +107,7 @@ pub const DeadCodeTracker = struct {
             self.instructions_analyzed += 1;
             
             if (self.isInstructionDead(instruction.?)) {
-                try dead_instructions.append(instruction.?);
+                try dead_instructions.append(allocator, instruction.?);
                 self.dead_instructions_found += 1;
             }
             
@@ -205,7 +205,7 @@ pub const DeadCodeTracker = struct {
             
             // Find and eliminate dead instructions
             const dead_instructions = try self.findDeadCode(module);
-            defer dead_instructions.deinit();
+            defer dead_instructions.deinit(allocator);
             
             for (dead_instructions.items) |instruction| {
                 c.LLVMInstructionEraseFromParent(instruction);
@@ -215,7 +215,7 @@ pub const DeadCodeTracker = struct {
             
             // Find and eliminate dead functions
             const dead_functions = try self.findDeadFunctions(module);
-            defer dead_functions.deinit();
+            defer dead_functions.deinit(allocator);
             
             for (dead_functions.items) |function| {
                 c.LLVMDeleteFunction(function);
@@ -237,9 +237,9 @@ pub const DeadCodeTracker = struct {
 
     /// Find unreachable basic blocks
     pub fn findUnreachableBlocks(self: *DeadCodeTracker, function: c.LLVMValueRef) !ArrayList(c.LLVMBasicBlockRef) {
-        var unreachable_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        var unreachable_blocks = .empty;
         var visited = HashMap(c.LLVMBasicBlockRef, bool, std.hash_map.AutoContext(c.LLVMBasicBlockRef), std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(allocator);
         
         // Start DFS from entry block
         const entry_block = c.LLVMGetEntryBasicBlock(function);
@@ -251,7 +251,7 @@ pub const DeadCodeTracker = struct {
         var bb = c.LLVMGetFirstBasicBlock(function);
         while (bb != null) {
             if (!visited.contains(bb.?)) {
-                try unreachable_blocks.append(bb.?);
+                try unreachable_blocks.append(allocator, bb.?);
             }
             bb = c.LLVMGetNextBasicBlock(bb.?);
         }
@@ -295,7 +295,7 @@ test "dead code tracker initialization" {
     const allocator = std.testing.allocator;
     
     var tracker = try DeadCodeTracker.init(allocator);
-    defer tracker.deinit();
+    defer tracker.deinit(allocator);
     
     const stats = tracker.getStatistics();
     try std.testing.expect(stats.instructions_analyzed == 0);

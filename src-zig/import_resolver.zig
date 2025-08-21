@@ -19,8 +19,8 @@ pub const ImportResolver = struct {
         
         const stdlib_path = try std.fmt.allocPrint(allocator, "{s}/stdlib", .{current_dir});
         
-        var search_paths = ArrayList([]const u8).init(allocator);
-        try search_paths.append(try allocator.dupe(u8, current_dir));
+        var search_paths = .empty;
+        try search_paths.append(allocator, try allocator.dupe(u8, current_dir));
         
         return ImportResolver{
             .allocator = allocator,
@@ -35,14 +35,14 @@ pub const ImportResolver = struct {
         for (self.search_paths.items) |path| {
             self.allocator.free(path);
         }
-        self.search_paths.deinit();
+        self.search_paths.deinit(allocator);
         
         var iterator = self.loaded_modules.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(allocator);
     }
 
     pub fn resolveImport(self: *ImportResolver, module_name: []const u8) ![]const u8 {
@@ -168,7 +168,7 @@ pub const ImportResolver = struct {
 
 // Parse "yeet" import statements from source code
 pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
-    var imports = ArrayList([]const u8).init(allocator);
+    var imports = .empty;
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
@@ -183,7 +183,7 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
                 const after_start = import_part[start_quote + 1..];
                 if (std.mem.indexOf(u8, after_start, "\"")) |end_quote| {
                     const module_name = after_start[0..end_quote];
-                    try imports.append(try allocator.dupe(u8, module_name));
+                    try imports.append(allocator, try allocator.dupe(u8, module_name));
                 }
             }
         }
@@ -197,7 +197,7 @@ pub fn testImportResolution(allocator: Allocator) !void {
     print("🧪 Testing Import Resolution System...\n", .{});
     
     var resolver = try ImportResolver.init(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     // Test stdlib module resolution
     const test_modules = [_][]const u8{ "testz", "math", "io", "string_simple" };

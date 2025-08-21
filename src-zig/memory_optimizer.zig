@@ -94,8 +94,8 @@ pub const MemoryOptimizer = struct {
     }
 
     pub fn deinit(self: *MemoryOptimizer) void {
-        self.allocation_cache.deinit();
-        self.lifetime_cache.deinit();
+        self.allocation_cache.deinit(allocator);
+        self.lifetime_cache.deinit(allocator);
     }
 
     /// Optimize memory allocations in the module
@@ -161,7 +161,7 @@ pub const MemoryOptimizer = struct {
         
         // Find all allocations in the function
         const allocations = try self.findAllocationsInFunction(function);
-        defer allocations.deinit();
+        defer allocations.deinit(allocator);
         
         // Analyze allocations
         for (allocations.items) |allocation| {
@@ -203,7 +203,7 @@ pub const MemoryOptimizer = struct {
 
     /// Find all memory allocations in a function
     fn findAllocationsInFunction(self: *MemoryOptimizer, function: c.LLVMValueRef) !ArrayList(c.LLVMValueRef) {
-        var allocations = ArrayList(c.LLVMValueRef).init(self.allocator);
+        var allocations = .empty;
         
         var basic_block = c.LLVMGetFirstBasicBlock(function);
         while (basic_block != null) {
@@ -211,7 +211,7 @@ pub const MemoryOptimizer = struct {
             
             while (instruction != null) {
                 if (self.isAllocationInstruction(instruction.?)) {
-                    try allocations.append(instruction.?);
+                    try allocations.append(allocator, instruction.?);
                 }
                 instruction = c.LLVMGetNextInstruction(instruction.?);
             }
@@ -371,7 +371,7 @@ pub const MemoryOptimizer = struct {
             
             // Perform integrated effect analysis with borrow checking
             const analysis = try effect_sys.analyzeEffectsWithBorrowChecking(allocation_id);
-            defer analysis.deinit();
+            defer analysis.deinit(allocator);
             
             // Update lifetime info based on effect analysis
             if (!analysis.is_safe) {
@@ -462,7 +462,7 @@ pub const MemoryOptimizer = struct {
             .escapes_through_return = false,
             .escapes_through_call = false,
             .escapes_through_store = false,
-            .escape_sites = ArrayList(c.LLVMValueRef).init(self.allocator),
+            .escape_sites = .empty,
         };
         
         // Analyze all uses of the allocation
@@ -478,17 +478,17 @@ pub const MemoryOptimizer = struct {
                     .EscapeReturn => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_return = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                     .EscapeCall => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_call = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                     .EscapeStore => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_store = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                 }
             }
@@ -933,7 +933,7 @@ test "memory optimizer initialization" {
     const allocator = std.testing.allocator;
     
     var optimizer = try MemoryOptimizer.init(allocator);
-    defer optimizer.deinit();
+    defer optimizer.deinit(allocator);
     
     try std.testing.expect(optimizer.config.enable_stack_promotion == true);
     try std.testing.expect(optimizer.config.max_stack_promotion_size == 4096);

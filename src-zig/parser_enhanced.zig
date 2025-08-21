@@ -114,7 +114,7 @@ pub const EnhancedParser = struct {
             .scope_depth = 0,
             .file_path = "unknown",
             .telemetry = null,
-            .errors = ArrayList(ParseError).init(allocator),
+            .errors = .empty,
             .max_errors = 10,
             .recursion_depth = 0,
             .max_recursion = 100,
@@ -123,8 +123,8 @@ pub const EnhancedParser = struct {
     }
 
     pub fn deinit(self: *EnhancedParser) void {
-        self.errors.deinit();
-        self.arena.deinit();
+        self.errors.deinit(allocator);
+        self.arena.deinit(allocator);
     }
 
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) EnhancedParser {
@@ -172,7 +172,7 @@ pub const EnhancedParser = struct {
         const error_info = ParseError.init(ParserError.SyntaxError, message, location, token, context);
         
         // Try to add error to list (gracefully handle OOM)
-        self.errors.append(error_info) catch {
+        self.errors.append(allocator, error_info) catch {
             // If we can't allocate for error tracking, at least print it
             std.debug.print("Error: {s} (failed to track error due to OOM)\n", .{message});
         };
@@ -240,7 +240,7 @@ pub const EnhancedParser = struct {
     /// Safe program parsing with comprehensive error handling
     pub fn parseProgram(self: *EnhancedParser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(self.allocator);
+        errdefer program.deinit(allocator);
         
         while (!self.isAtEnd()) {
             // Skip newlines, semicolons, and comments gracefully
@@ -264,7 +264,7 @@ pub const EnhancedParser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(import_stmt) catch |err| {
+                    program.imports.append(allocator, import_stmt) catch |err| {
                         try self.reportError("Failed to add import to program", "parseProgram");
                         if (err == error.OutOfMemory) return ParserError.OutOfMemory;
                     };
@@ -291,7 +291,7 @@ pub const EnhancedParser = struct {
                     return err;
                 };
                 
-                program.statements.append(anyopaque_ptr) catch |err| {
+                program.statements.append(self.allocator, anyopaque_ptr) catch |err| {
                     self.allocator.destroy(stmt_ptr);
                     try self.reportError("Failed to add statement to program", "parseProgram");
                     if (err == error.OutOfMemory) return ParserError.OutOfMemory;
@@ -409,7 +409,7 @@ pub const EnhancedParser = struct {
         
         const name = self.advance().lexeme;
         var func = FunctionStatement.init(self.allocator, name);
-        errdefer func.deinit(self.allocator);
+        errdefer func.deinit(allocator);
         
         // Parse parameters with error recovery
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
@@ -427,7 +427,7 @@ pub const EnhancedParser = struct {
                     return err;
                 };
                 
-                func.parameters.append(param) catch {
+                func.parameters.append(allocator, param) catch {
                     try self.reportError("Out of memory adding parameter", "parseFunctionStatement");
                     return ParserError.OutOfMemory;
                 };
@@ -467,7 +467,7 @@ pub const EnhancedParser = struct {
             };
             stmt_ptr.* = stmt; 
             
-            func.body.append(stmt_ptr) catch {
+            func.body.append(self.allocator, stmt_ptr) catch {
                 self.allocator.destroy(stmt_ptr);
                 try self.reportError("Out of memory adding statement to function body", "parseFunctionStatement");
                 return ParserError.OutOfMemory;
@@ -839,12 +839,12 @@ pub const EnhancedParser = struct {
     }
 
     fn finishCall(self: *EnhancedParser, callee: Expression) ParserError!Expression {
-        var arguments = ArrayList(*Expression).init(self.allocator);
+        var arguments = .empty;
         errdefer {
             for (arguments.items) |arg| {
                 self.allocator.destroy(arg);
             }
-            arguments.deinit();
+            arguments.deinit(allocator);
         }
 
         if (!self.check(.RightParen)) {
@@ -856,7 +856,7 @@ pub const EnhancedParser = struct {
                 };
                 arg_ptr.* = arg;
                 
-                arguments.append(arg_ptr) catch {
+                arguments.append(self.allocator, arg_ptr) catch {
                     self.allocator.destroy(arg_ptr);
                     try self.reportError("Out of memory in function call", "finishCall");
                     return ParserError.OutOfMemory;
@@ -1049,13 +1049,13 @@ pub const EnhancedParser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var then_branch = ArrayList(*anyopaque).init(self.allocator);
+        var then_branch = .empty;
         errdefer {
             for (then_branch.items) |stmt_ptr| {
                 const stmt: *Statement = self.safePtrCast(Statement, stmt_ptr) catch continue;
                 self.allocator.destroy(stmt);
             }
-            then_branch.deinit();
+            then_branch.deinit(allocator);
         }
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1078,7 +1078,7 @@ pub const EnhancedParser = struct {
                 return err;
             };
             
-            then_branch.append(anyopaque_ptr) catch {
+            then_branch.append(self.allocator, anyopaque_ptr) catch {
                 self.allocator.destroy(stmt_ptr);
                 try self.reportError("Out of memory in if statement", "parseIfStatement");
                 return ParserError.OutOfMemory;
@@ -1114,12 +1114,12 @@ pub const EnhancedParser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(*Statement).init(self.allocator);
+        var body = .empty;
         errdefer {
             for (body.items) |stmt| {
                 self.allocator.destroy(stmt);
             }
-            body.deinit();
+            body.deinit(allocator);
         }
         
         self.in_loop = true;
@@ -1140,7 +1140,7 @@ pub const EnhancedParser = struct {
             };
             stmt_ptr.* = stmt;
             
-            body.append(stmt_ptr) catch {
+            body.append(self.allocator, stmt_ptr) catch {
                 self.allocator.destroy(stmt_ptr);
                 try self.reportError("Out of memory in while statement", "parseWhileStatement");
                 return ParserError.OutOfMemory;
@@ -1245,7 +1245,7 @@ test "enhanced parser graceful error handling" {
     };
     
     var parser = EnhancedParser.init(allocator, &tokens);
-    defer parser.deinit();
+    defer parser.deinit(allocator);
     
     // Should not crash, but should report errors
     const result = parser.parseProgram();

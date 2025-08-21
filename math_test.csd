@@ -1,1 +1,1 @@
-yeet "mathz"; sus result drip = abs_normie(-42); vibez.spill("abs(-42) =", result)
+yeet "mathz"; sus result normie = add(5, 3); vibez.spill("Result:", result)

@@ -161,13 +161,13 @@ pub const LLVMIRPipeline = struct {
         print("🧹 Cleaning up LLVM IR Pipeline...\n");
         
         // Clean up hash maps first
-        self.functions.deinit();
-        self.variables.deinit();
-        self.global_strings.deinit();
-        self.type_cache.deinit();
+        self.functions.deinit(allocator);
+        self.variables.deinit(allocator);
+        self.global_strings.deinit(allocator);
+        self.type_cache.deinit(allocator);
         
         // Clean up type system components
-        self.type_checker.deinit();
+        self.type_checker.deinit(allocator);
         
         // Dispose LLVM objects in proper order
         if (self.pass_manager) |pm| {
@@ -187,7 +187,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Clean up arena and self
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
         
         print("✅ LLVM IR Pipeline cleanup complete\n");
@@ -200,12 +200,12 @@ pub const LLVMIRPipeline = struct {
         // Step 1: Tokenize source
         if (verbose) print("📝 Step 1: Tokenizing source code...\n");
         var lex = try lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
         
         // Step 2: Parse into AST
         if (verbose) print("🌳 Step 2: Parsing AST...\n");
         var parse = try parser.Parser.init(self.allocator, &lex);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
         const program = try parse.parseProgram();
         
         // Step 3: Type checking
@@ -337,12 +337,12 @@ pub const LLVMIRPipeline = struct {
     /// Generate LLVM function
     fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionDeclaration) !void {
         // Create function type
-        var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-        defer param_types.deinit();
+        var param_types = .empty;
+        defer param_types.deinit(allocator);
         
         for (func_decl.parameters.items) |param| {
             const llvm_type = try self.cursedTypeToLLVM(param.param_type);
-            try param_types.append(llvm_type);
+            try param_types.append(allocator, llvm_type);
         }
         
         const return_type = if (func_decl.return_type) |ret_type|
@@ -529,12 +529,12 @@ pub const LLVMIRPipeline = struct {
         
         // Look up user-defined function
         if (self.functions.get(call.name)) |function| {
-            var args = ArrayList(c.LLVMValueRef).init(self.allocator);
-            defer args.deinit();
+            var args = .empty;
+            defer args.deinit(allocator);
             
             for (call.arguments.items) |arg| {
                 const arg_val = try self.generateExpression(arg);
-                try args.append(arg_val);
+                try args.append(allocator, arg_val);
             }
             
             const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));

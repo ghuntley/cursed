@@ -27,11 +27,13 @@ pub const SimpleLSPServer = struct {
     pub fn run(self: *SimpleLSPServer) !void {
         std.log.info("CURSED Language Server starting...", .{});
 
-        const stdin = std.io.getStdIn().reader();
-        const stdout = std.io.getStdOut().writer();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
         var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        defer buffer.deinit(allocator);
 
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -141,11 +143,11 @@ pub const SimpleLSPServer = struct {
 // Main entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var server = SimpleLSPServer.init(allocator);
-    defer server.deinit();
+    defer server.deinit(allocator);
 
     try server.run();
 }
@@ -153,11 +155,11 @@ pub fn main() !void {
 // Test function
 pub fn testSimpleLSP() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var server = SimpleLSPServer.init(allocator);
-    defer server.deinit();
+    defer server.deinit(allocator);
 
     // Test initialize
     const init_response = try server.handleInitialize();

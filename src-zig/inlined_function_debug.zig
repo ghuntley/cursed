@@ -117,20 +117,20 @@ pub const InlinedFunctionDebugGenerator = struct {
             .allocator = allocator,
             .context = context,
             .di_builder = di_builder,
-            .inline_contexts = ArrayList(InlineContext).init(allocator),
+            .inline_contexts = .empty,
             .inlined_function_debug_info = HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variable_mappings = ArrayList(InlinedVariableMapping).init(allocator),
+            .variable_mappings = .empty,
             .instruction_debug_locations = HashMap(c.LLVMValueRef, c.LLVMMetadataRef, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
-            .inline_stack = ArrayList(*const InlineContext).init(allocator),
+            .inline_stack = .empty,
         };
     }
     
     pub fn deinit(self: *InlinedFunctionDebugGenerator) void {
-        self.inline_contexts.deinit();
-        self.inlined_function_debug_info.deinit();
-        self.variable_mappings.deinit();
-        self.instruction_debug_locations.deinit();
-        self.inline_stack.deinit();
+        self.inline_contexts.deinit(allocator);
+        self.inlined_function_debug_info.deinit(allocator);
+        self.variable_mappings.deinit(allocator);
+        self.instruction_debug_locations.deinit(allocator);
+        self.inline_stack.deinit(allocator);
     }
     
     /// Create debug information for an inlined function
@@ -154,7 +154,7 @@ pub const InlinedFunctionDebugGenerator = struct {
         // Store the inline context with metadata
         var stored_context = inline_context;
         stored_context.inlined_at_metadata = inlined_at;
-        try self.inline_contexts.append(stored_context);
+        try self.inline_contexts.append(self.allocator, stored_context);
         
         // Create debug info key for this inlined instance
         const debug_key = try std.fmt.allocPrint(self.allocator, "{s}_inlined_in_{s}_at_{d}_{d}", 
@@ -216,14 +216,14 @@ pub const InlinedFunctionDebugGenerator = struct {
         mapping.original_debug_info = original_debug_info;
         mapping.inlined_debug_info = inlined_debug_info;
         
-        try self.variable_mappings.append(mapping);
+        try self.variable_mappings.append(allocator, mapping);
         
         std.debug.print("📍 Tracked inlined variable: {s} -> {s}\n", .{ original_name, inlined_name });
     }
     
     /// Handle nested inlining by maintaining a stack of inline contexts
     pub fn pushInlineContext(self: *InlinedFunctionDebugGenerator, context: *const InlineContext) InlineDebugError!void {
-        try self.inline_stack.append(context);
+        try self.inline_stack.append(allocator, context);
     }
     
     pub fn popInlineContext(self: *InlinedFunctionDebugGenerator) void {
@@ -442,7 +442,7 @@ pub fn testInlinedFunctionDebug() !void {
     std.debug.print("Testing inlined function debug generation...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Create mock LLVM context and DI builder
@@ -450,7 +450,7 @@ pub fn testInlinedFunctionDebug() !void {
     const di_builder: c.LLVMDIBuilderRef = null; // Mock
     
     var inlined_debug = try InlinedFunctionDebugGenerator.init(allocator, context, di_builder);
-    defer inlined_debug.deinit();
+    defer inlined_debug.deinit(allocator);
     
     // Test creating inline context
     const inline_context = InlineContext.init(

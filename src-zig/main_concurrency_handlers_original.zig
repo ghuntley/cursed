@@ -14,21 +14,21 @@ var global_allocator: ?Allocator = null;
 pub fn initGlobalConcurrency(allocator: Allocator) void {
     if (global_channels == null) {
         global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-        global_goroutines = ArrayList(std.Thread).init(allocator);
+        global_goroutines = .empty;
         global_allocator = allocator;
     }
 }
 
 pub fn deinitGlobalConcurrency() void {
     if (global_channels) |*channels| {
-        channels.deinit();
+        channels.deinit(allocator);
         global_channels = null;
     }
     if (global_goroutines) |*goroutines| {
         for (goroutines.items) |*thread| {
             thread.join();
         }
-        goroutines.deinit();
+        goroutines.deinit(allocator);
         global_goroutines = null;
     }
     global_allocator = null;
@@ -49,8 +49,8 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         if (verbose) print("🚀 Spawning goroutine with block\n", .{});
         
         // Extract the body of the stan block (simplified for now)
-        var body_lines = ArrayList([]const u8).init(allocator);
-        defer body_lines.deinit();
+        var body_lines = .empty;
+        defer body_lines.deinit(allocator);
         
         // Find the corresponding closing brace (simplified)
         var current_line = line_index + 1;
@@ -59,7 +59,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             if (std.mem.eql(u8, block_line, "}")) {
                 break;
             }
-            try body_lines.append(block_line);
+            try body_lines.append(allocator, block_line);
             current_line += 1;
         }
         
@@ -117,7 +117,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         
         const thread = try std.Thread.spawn(.{}, goroutine_fn, .{context});
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         
         if (verbose) print("✅ Goroutine spawned\n", .{});

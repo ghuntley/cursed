@@ -129,12 +129,12 @@ fn generateUserFunctionCall(
     _ = allocator;
     
     // Generate arguments with proper variable resolution
-    var args = std.ArrayList(c.LLVMValueRef).init(std.heap.page_allocator);
-    defer args.deinit();
+    var args: std.ArrayList(c.LLVMValueRef) = .empty;
+    defer args.deinit(allocator);
     
     for (call.arguments.items) |arg_expr| {
         const arg_value = try generateExpressionValue(context, builder, arg_expr);
-        try args.append(arg_value);
+        try args.append(allocator, arg_value);
     }
     
     // Generate function call
@@ -485,7 +485,7 @@ pub fn initializeVariableScope(allocator: std.mem.Allocator) !void {
 /// Cleanup the global scope manager
 pub fn deinitializeVariableScope(allocator: std.mem.Allocator) void {
     if (global_scope_manager) |scope_manager| {
-        scope_manager.deinit();
+        scope_manager.deinit(allocator);
         allocator.destroy(scope_manager);
         global_scope_manager = null;
     }

@@ -56,7 +56,7 @@ pub const IntegrationTestRunner = struct {
                 self.allocator.free(output);
             }
         }
-        self.results.deinit();
+        self.results.deinit(allocator);
     }
 
     pub fn runTestCase(self: *IntegrationTestRunner, test_case: IntegrationTestCase) !void {
@@ -117,7 +117,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Lexer init failed: {}", .{err});
             return result;
         };
-        defer lex.deinit();
+        defer lex.deinit(allocator);
 
         const tokens = lex.tokenize() catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Tokenization failed: {}", .{err});
@@ -131,13 +131,13 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Parser init failed: {}", .{err});
             return result;
         };
-        defer parse.deinit();
+        defer parse.deinit(allocator);
 
         const program = parse.parseProgram() catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Parsing failed: {}", .{err});
             return result;
         };
-        defer program.deinit(self.allocator);
+        defer program.deinit(allocator);
         result.parser_success = true;
 
         // Stage 3: Code Generation
@@ -145,7 +145,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Codegen init failed: {}", .{err});
             return result;
         };
-        defer generator.deinit();
+        defer generator.deinit(allocator);
 
         const c_code = generator.generateC(program) catch |err| {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Code generation failed: {}", .{err});
@@ -159,7 +159,7 @@ pub const IntegrationTestRunner = struct {
             result.error_message = try std.fmt.allocPrint(self.allocator, "Interpreter init failed: {}", .{err});
             return result;
         };
-        defer interpreter.deinit();
+        defer interpreter.deinit(allocator);
 
         // Capture output
         const output = interpreter.executeString(source_code) catch |err| {
@@ -371,7 +371,7 @@ pub fn runAllIntegrationTests(allocator: Allocator) !void {
     std.debug.print("=" ** 60 ++ "\n");
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit();
+    defer runner.deinit(allocator);
 
     for (integration_test_cases) |test_case| {
         try runner.runTestCase(test_case);
@@ -400,7 +400,7 @@ pub fn runCrossPlatformTests(allocator: Allocator) !void {
     };
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit();
+    defer runner.deinit(allocator);
 
     try runner.runTestCase(platform_test);
     runner.printSummary();
@@ -420,7 +420,7 @@ pub fn runStressTests(allocator: Allocator) !void {
     };
 
     var runner = IntegrationTestRunner.init(allocator);
-    defer runner.deinit();
+    defer runner.deinit(allocator);
 
     try runner.runTestCase(large_program_test);
     runner.printSummary();
@@ -459,7 +459,7 @@ fn generateLargeProgram(allocator: Allocator) []const u8 {
 // Zig test integration
 test "Integration Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     try runAllIntegrationTests(allocator);
@@ -467,7 +467,7 @@ test "Integration Tests" {
 
 test "Cross-Platform Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     try runCrossPlatformTests(allocator);
@@ -475,7 +475,7 @@ test "Cross-Platform Tests" {
 
 test "Stress Tests" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     try runStressTests(allocator);

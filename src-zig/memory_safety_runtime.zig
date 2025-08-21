@@ -98,7 +98,7 @@ pub const MemoryTracker = struct {
     }
     
     pub fn deinit(self: *MemoryTracker) void {
-        self.allocations.deinit();
+        self.allocations.deinit(allocator);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, ptr: *anyopaque, size: usize) !void {
@@ -208,7 +208,7 @@ pub fn initMemorySafety(allocator: Allocator, config: MemorySafetyConfig) !void 
 pub fn deinitMemorySafety() void {
     if (global_memory_tracker) |*tracker| {
         tracker.detectLeaks();
-        tracker.deinit();
+        tracker.deinit(allocator);
         global_memory_tracker = null;
     }
 }

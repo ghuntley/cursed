@@ -12,7 +12,7 @@ test "arena allocator basic pattern" {
     
     // Test the basic arena pattern we use in our fixes
     var arena = ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     const arena_allocator = arena.allocator();
     
@@ -38,13 +38,13 @@ test "nested arena allocators" {
     const allocator = testing.allocator;
     
     var outer_arena = ArenaAllocator.init(allocator);
-    defer outer_arena.deinit();
+    defer outer_arena.deinit(allocator);
     
     const outer_allocator = outer_arena.allocator();
     
     // Create inner arena
     var inner_arena = ArenaAllocator.init(allocator);
-    defer inner_arena.deinit();
+    defer inner_arena.deinit(allocator);
     
     const inner_allocator = inner_arena.allocator();
     
@@ -65,15 +65,15 @@ test "arraylist with arena allocator" {
     const allocator = testing.allocator;
     
     var arena = ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     const arena_allocator = arena.allocator();
     
-    var list = ArrayList(u32).init(arena_allocator);
+    var list = .empty;
     // No need to deinit - arena handles it
     
     for (0..100) |i| {
-        try list.append(@intCast(i));
+        try list.append(allocator, @intCast(i));
     }
     
     try testing.expect(list.items.len == 100);
@@ -85,7 +85,7 @@ test "hashmap with arena allocator" {
     const allocator = testing.allocator;
     
     var arena = ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     const arena_allocator = arena.allocator();
     
@@ -106,7 +106,7 @@ test "string duplication with arena" {
     const allocator = testing.allocator;
     
     var arena = ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     const arena_allocator = arena.allocator();
     
@@ -131,7 +131,7 @@ test "error handling with arena cleanup" {
     const testFunction = struct {
         fn run(test_allocator: std.mem.Allocator, should_fail: bool) TestError![]u8 {
             var arena = ArenaAllocator.init(test_allocator);
-            errdefer arena.deinit(); // Cleanup on error
+            errdefer arena.deinit(allocator); // Cleanup on error
             
             const arena_allocator = arena.allocator();
             const data = try arena_allocator.alloc(u8, 1024);
@@ -379,7 +379,7 @@ test "comprehensive cleanup pattern" {
             
             return @This(){
                 .arena = arena,
-                .resources = ArrayList(*Resource).init(arena_allocator),
+                .resources = .empty,
             };
         }
         
@@ -390,18 +390,18 @@ test "comprehensive cleanup pattern" {
             }
             
             // Then clean up arena
-            self.arena.deinit();
+            self.arena.deinit(allocator);
         }
         
         fn addResource(self: *@This(), size: usize) !*Resource {
             const resource = try Resource.init(self.arena.child_allocator, size, @intCast(self.resources.items.len));
-            try self.resources.append(resource);
+            try self.resources.append(allocator, resource);
             return resource;
         }
     };
     
     var manager = ResourceManager.init(allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     // Add some resources
     const res1 = try manager.addResource(128);

@@ -61,8 +61,8 @@ pub const TargetHandler = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit(self.build.allocator);
         }
-        self.supported_targets.deinit();
-        self.normalizer.deinit();
+        self.supported_targets.deinit(allocator);
+        self.normalizer.deinit(allocator);
     }
     
     /// Initialize the list of supported targets with their characteristics
@@ -280,13 +280,14 @@ pub const TargetHandler = struct {
     
     /// List all supported targets
     pub fn listSupportedTargets(self: *TargetHandler) !void {
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         try stdout.print("Supported target platforms:\n\n");
         
         var iterator = self.supported_targets.iterator();
         var printed_targets = std.StringHashMap(void).init(self.build.allocator);
-        defer printed_targets.deinit();
+        defer printed_targets.deinit(allocator);
         
         while (iterator.next()) |entry| {
             const target_info = entry.value_ptr;

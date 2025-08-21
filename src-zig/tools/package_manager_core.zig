@@ -260,28 +260,28 @@ pub const PackageManifest = struct {
         for (self.authors.items) |author| {
             self.allocator.free(author);
         }
-        self.authors.deinit();
+        self.authors.deinit(allocator);
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.dev_dependencies.deinit();
+        self.dev_dependencies.deinit(allocator);
         
         var export_iter = self.exports.iterator();
         while (export_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.exports.deinit();
+        self.exports.deinit(allocator);
     }
     
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -496,7 +496,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Parse version requirement
         const version_req = try VersionRequirement.parse(allocator, version_spec);
@@ -528,7 +528,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Create cache directory
         try std.fs.cwd().makePath(".cursed/cache");
@@ -594,7 +594,7 @@ pub const commands = struct {
     
     fn generateLockFile(allocator: Allocator, manifest: *const PackageManifest) !void {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         var writer = content.writer();
         
         try writer.writeAll("# CursedPackage.lock - Generated lock file\n");
@@ -637,7 +637,7 @@ pub const commands = struct {
     
     fn generateBuildIntegration(allocator: Allocator, manifest: *const PackageManifest) !void {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         var writer = content.writer();
         
         try writer.writeAll("// Generated build integration for CURSED package manager\n");
@@ -680,7 +680,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Update each dependency
         var dep_iter = manifest.dependencies.iterator();
@@ -717,7 +717,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Remove from dependencies
         if (manifest.dependencies.fetchRemove(package_name)) |removed| {
@@ -805,7 +805,7 @@ pub const commands = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Validate package
         if (manifest.name.len == 0) {

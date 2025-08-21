@@ -11,6 +11,74 @@ pub const ErrorPropagation = struct {
     error_stack: ArrayList(ErrorContext),
     propagation_handlers: ArrayList(PropagationHandler),
     try_catch_stack: ArrayList(TryCatchFrame),
+    current_scope_id: u32,
+    defer_entries: DeferStack,
+    current_file: ?[]const u8,
+    current_line: u32,
+    current_column: u32,
+    
+    const DeferStack = struct {
+        entries: ArrayList(DeferEntry),
+        current_scope: u32,
+        allocator: Allocator,
+        
+        const DeferEntry = struct {
+            cleanup_fn: *const fn() void,
+            context_data: []const u8,
+            scope_id: u32,
+        };
+        
+        fn init(allocator: Allocator) DeferStack {
+            return DeferStack{
+                .entries = .empty,
+                .current_scope = 0,
+                .allocator = allocator,
+            };
+        }
+        
+        fn deinit(self: *DeferStack) void {
+            self.executeAll();
+            self.entries.deinit(allocator);
+        }
+        
+        fn enterScope(self: *DeferStack) !void {
+            self.current_scope += 1;
+        }
+        
+        fn exitScope(self: *DeferStack) void {
+            var i = self.entries.items.len;
+            while (i > 0) {
+                i -= 1;
+                const entry = self.entries.items[i];
+                if (entry.scope_id == self.current_scope) {
+                    entry.cleanup_fn();
+                    self.allocator.free(entry.context_data);
+                    _ = self.entries.orderedRemove(i);
+                }
+            }
+            
+            if (self.current_scope > 0) {
+                self.current_scope -= 1;
+            }
+        }
+        
+        fn executeAll(self: *DeferStack) void {
+            while (self.entries.items.len > 0) {
+                const entry = self.entries.pop();
+                entry.cleanup_fn();
+                self.allocator.free(entry.context_data);
+            }
+        }
+        
+        fn push(self: *DeferStack, cleanup_fn: *const fn() void, context: []const u8) !void {
+            const context_copy = try self.allocator.dupe(u8, context);
+            try self.entries.append(self.allocator, DeferEntry{
+                .cleanup_fn = cleanup_fn,
+                .context_data = context_copy,
+                .scope_id = self.current_scope,
+            });
+        }
+    };
     
     const PropagationHandler = struct {
         error_type: []const u8,
@@ -33,33 +101,43 @@ pub const ErrorPropagation = struct {
     pub fn init(allocator: Allocator) ErrorPropagation {
         return ErrorPropagation{
             .allocator = allocator,
-            .error_stack = ArrayList(ErrorContext).init(allocator),
-            .propagation_handlers = ArrayList(PropagationHandler).init(allocator),
-            .try_catch_stack = ArrayList(TryCatchFrame).init(allocator),
+            .error_stack = .empty,
+            .propagation_handlers = .empty,
+            .try_catch_stack = .empty,
+            .current_scope_id = 0,
+            .defer_entries = DeferStack.init(allocator),
+            .current_file = null,
+            .current_line = 0,
+            .current_column = 0,
         };
     }
     
     pub fn deinit(self: *ErrorPropagation) void {
         for (self.error_stack.items) |*error_ctx| {
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(allocator);
         
         for (self.try_catch_stack.items) |*frame| {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit();
+                catch_block.body.deinit(allocator);
             }
-            frame.catch_blocks.deinit();
+            frame.catch_blocks.deinit(allocator);
             if (frame.finally_block) |*finally| {
-                finally.deinit();
+                finally.deinit(allocator);
             }
             if (frame.error_occurred) |*err| {
-                err.deinit();
+                err.deinit(allocator);
             }
         }
-        self.try_catch_stack.deinit();
+        self.try_catch_stack.deinit(allocator);
         
-        self.propagation_handlers.deinit();
+        self.defer_entries.deinit(allocator);
+        self.propagation_handlers.deinit(allocator);
+        
+        if (self.current_file) |file| {
+            self.allocator.free(file);
+        }
     }
     
     /// Create error with yikes semantics
@@ -75,7 +153,7 @@ pub const ErrorPropagation = struct {
         }
         
         // Add to error stack for propagation
-        try self.error_stack.append(ctx);
+        try self.error_stack.append(self.allocator, ctx);
         
         return ctx;
     }
@@ -92,7 +170,7 @@ pub const ErrorPropagation = struct {
             
             // Store error in current frame
             if (current_frame.error_occurred) |*existing_err| {
-                existing_err.deinit();
+                existing_err.deinit(allocator);
             }
             current_frame.error_occurred = try ErrorContext.initWithInner(
                 self.allocator,
@@ -107,7 +185,7 @@ pub const ErrorPropagation = struct {
         
         if (propagate_immediately) {
             // No try-catch frame, propagate error up the call stack
-            try self.error_stack.append(error_ctx);
+            try self.error_stack.append(allocator, error_ctx);
             return CursedError.RuntimeError;
         }
         
@@ -121,7 +199,7 @@ pub const ErrorPropagation = struct {
         finally_block: ?ArrayList(ast.Statement)
     ) CursedError!void {
         var frame = TryCatchFrame{
-            .catch_blocks = ArrayList(TryCatchFrame.CatchBlock).init(self.allocator),
+            .catch_blocks = .empty,
             .finally_block = finally_block,
             .error_occurred = null,
             .recovery_point = self.error_stack.items.len,
@@ -136,13 +214,13 @@ pub const ErrorPropagation = struct {
             };
             
             for (ast_catch.body.items) |stmt| {
-                try runtime_catch.body.append(stmt);
+                try runtime_catch.body.append(self.allocator, stmt);
             }
             
-            try frame.catch_blocks.append(runtime_catch);
+            try frame.catch_blocks.append(self.allocator, runtime_catch);
         }
         
-        try self.try_catch_stack.append(frame);
+        try self.try_catch_stack.append(self.allocator, frame);
     }
     
     /// Exit fam try-catch block and handle any errors
@@ -154,11 +232,11 @@ pub const ErrorPropagation = struct {
         const frame: TryCatchFrame = self.try_catch_stack.pop() orelse return null;
         defer {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit();
+                catch_block.body.deinit(allocator);
             }
-            frame.catch_blocks.deinit();
+            frame.catch_blocks.deinit(allocator);
             if (frame.finally_block) |*finally| {
-                finally.deinit();
+                finally.deinit(allocator);
             }
         }
         
@@ -200,7 +278,7 @@ pub const ErrorPropagation = struct {
         error_type: []const u8,
         handler_fn: *const fn (ErrorContext) CursedError!void
     ) CursedError!void {
-        try self.propagation_handlers.append(PropagationHandler{
+        try self.propagation_handlers.append(self.allocator, PropagationHandler{
             .error_type = try self.allocator.dupe(u8, error_type),
             .handler_fn = handler_fn,
         });
@@ -231,7 +309,7 @@ pub const ErrorPropagation = struct {
     /// Clear error stack (useful for error recovery)
     pub fn clearErrors(self: *ErrorPropagation) void {
         for (self.error_stack.items) |*error_ctx| {
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
         self.error_stack.clearRetainingCapacity();
     }
@@ -523,7 +601,7 @@ test "error propagation system" {
     const allocator = std.testing.allocator;
     
     var error_prop = ErrorPropagation.init(allocator);
-    defer error_prop.deinit();
+    defer error_prop.deinit(allocator);
     
     // Test yikes error creation
     const location = ErrorContext.SourceLocation{

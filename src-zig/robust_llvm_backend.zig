@@ -87,7 +87,7 @@ pub const ARM64CallingConvention = struct {
     
     /// Classify function parameters for ARM64
     pub fn classifyParameters(param_types: []c.LLVMTypeRef) ![]ParameterClass {
-        var classifications = ArrayList(ParameterClass).init(std.heap.page_allocator);
+        var classifications: std.ArrayList(ParameterClass) = .empty;
         var general_reg_count: u8 = 0;
         var fp_reg_count: u8 = 0;
         var stack_offset: u32 = 0;
@@ -98,23 +98,23 @@ pub const ARM64CallingConvention = struct {
             switch (type_kind) {
                 c.LLVMIntegerTypeKind, c.LLVMPointerTypeKind => {
                     if (general_reg_count < 8) {
-                        try classifications.append(ParameterClass.init(.General, general_reg_count));
+                        try classifications.append(allocator, ParameterClass.init(.General, general_reg_count));
                         general_reg_count += 1;
                     } else {
                         var stack_param = ParameterClass.init(.Stack, 0);
                         stack_param.stack_offset = stack_offset;
-                        try classifications.append(stack_param);
+                        try classifications.append(allocator, stack_param);
                         stack_offset += 8;
                     }
                 },
                 c.LLVMFloatTypeKind, c.LLVMDoubleTypeKind => {
                     if (fp_reg_count < 8) {
-                        try classifications.append(ParameterClass.init(.FloatingPoint, fp_reg_count));
+                        try classifications.append(allocator, ParameterClass.init(.FloatingPoint, fp_reg_count));
                         fp_reg_count += 1;
                     } else {
                         var stack_param = ParameterClass.init(.Stack, 0);
                         stack_param.stack_offset = stack_offset;
-                        try classifications.append(stack_param);
+                        try classifications.append(allocator, stack_param);
                         stack_offset += 8;
                     }
                 },
@@ -128,13 +128,13 @@ pub const ARM64CallingConvention = struct {
                         const regs_needed = @as(u8, @intCast((struct_size + 7) / 8)); // Round up to 8-byte chunks
                         if (general_reg_count + regs_needed <= 8) {
                             // Fits in available general registers
-                            try classifications.append(ParameterClass.init(.General, general_reg_count));
+                            try classifications.append(allocator, ParameterClass.init(.General, general_reg_count));
                             general_reg_count += regs_needed;
                         } else {
                             // Not enough registers available - pass on stack
                             var stack_param = ParameterClass.init(.Stack, 0);
                             stack_param.stack_offset = stack_offset;
-                            try classifications.append(stack_param);
+                            try classifications.append(allocator, stack_param);
                             stack_offset += @intCast((struct_size + 7) & ~@as(u32, 7)); // 8-byte align
                         }
                     } else {
@@ -142,14 +142,14 @@ pub const ARM64CallingConvention = struct {
                         if (general_reg_count < 8) {
                             var indirect_param = ParameterClass.init(.General, general_reg_count);
                             indirect_param.is_indirect = true;
-                            try classifications.append(indirect_param);
+                            try classifications.append(allocator, indirect_param);
                             general_reg_count += 1;
                         } else {
                             // No registers available for pointer - pass reference on stack
                             var stack_param = ParameterClass.init(.Stack, 0);
                             stack_param.stack_offset = stack_offset;
                             stack_param.is_indirect = true;
-                            try classifications.append(stack_param);
+                            try classifications.append(allocator, stack_param);
                             stack_offset += 8; // Pointer size
                         }
                     }
@@ -158,13 +158,13 @@ pub const ARM64CallingConvention = struct {
                     // Unknown type - conservative stack placement
                     var stack_param = ParameterClass.init(.Stack, 0);
                     stack_param.stack_offset = stack_offset;
-                    try classifications.append(stack_param);
+                    try classifications.append(allocator, stack_param);
                     stack_offset += 8;
                 },
             }
         }
         
-        return classifications.toOwnedSlice();
+        return classifications.toOwnedSlice(allocator);
     }
 };
 
@@ -391,8 +391,8 @@ pub const RobustLLVMBackend = struct {
             .arm64_convention = ARM64CallingConvention{},
             .target_triple = try allocator.dupe(u8, actual_triple),
             .is_arm64 = is_arm64,
-            .errors = ArrayList([]const u8).init(allocator),
-            .warnings = ArrayList([]const u8).init(allocator),
+            .errors = .{},
+            .warnings = .{},
         };
         
         std.debug.print("✅ Initialized robust LLVM backend for {s}\n", .{actual_triple});
@@ -404,12 +404,12 @@ pub const RobustLLVMBackend = struct {
         for (self.errors.items) |error_msg| {
             self.allocator.free(error_msg);
         }
-        self.errors.deinit();
+        self.errors.deinit(allocator);
         
         for (self.warnings.items) |warning_msg| {
             self.allocator.free(warning_msg);
         }
-        self.warnings.deinit();
+        self.warnings.deinit(allocator);
         
         self.allocator.free(self.target_triple);
         
@@ -420,20 +420,20 @@ pub const RobustLLVMBackend = struct {
         if (self.module) |m| c.LLVMDisposeModule(m);
         if (self.context) |ctx| c.LLVMContextDispose(ctx);
         
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
     
     /// Add error message
     fn addError(self: *RobustLLVMBackend, message: []const u8) !void {
         const owned_message = try self.allocator.dupe(u8, message);
-        try self.errors.append(owned_message);
+        try self.errors.append(self.allocator, owned_message);
     }
     
     /// Add warning message
     fn addWarning(self: *RobustLLVMBackend, message: []const u8) !void {
         const owned_message = try self.allocator.dupe(u8, message);
-        try self.warnings.append(owned_message);
+        try self.warnings.append(self.allocator, owned_message);
     }
     
     /// Add structured error context (for enhanced error reporting)
@@ -464,10 +464,10 @@ pub const RobustLLVMBackend = struct {
         const result_phi = c.LLVMBuildPhi(self.builder, result_type, "pattern_result");
         c.LLVMPositionBuilderAtEnd(self.builder, current_block);
         
-        var phi_values = ArrayList(c.LLVMValueRef).init(self.allocator);
-        var phi_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
-        defer phi_values.deinit();
-        defer phi_blocks.deinit();
+        var phi_values: std.ArrayList(c.LLVMValueRef) = .empty;
+        var phi_blocks: std.ArrayList(c.LLVMBasicBlockRef) = .empty;
+        defer phi_values.deinit(allocator);
+        defer phi_blocks.deinit(allocator);
         
         // Generate case blocks
         for (match_expr.cases.items, 0..) |case, i| {
@@ -483,8 +483,8 @@ pub const RobustLLVMBackend = struct {
             // Generate case body
             c.LLVMPositionBuilderAtEnd(self.builder, case_block);
             const case_result = try self.generateExpression(case.result);
-            try phi_values.append(case_result);
-            try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
+            try phi_values.append(allocator, case_result);
+            try phi_blocks.append(allocator, c.LLVMGetInsertBlock(self.builder));
             
             // Ensure case block has terminator
             if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
@@ -586,15 +586,15 @@ pub const RobustLLVMBackend = struct {
         const return_type = c.LLVMGetReturnType(func_type);
         const return_classification = self.classifyReturnType(return_type);
         
-        var adjusted_args = ArrayList(c.LLVMValueRef).init(self.allocator);
-        defer adjusted_args.deinit();
+        var adjusted_args: std.ArrayList(c.LLVMValueRef) = .empty;
+        defer adjusted_args.deinit(allocator);
         
         var return_alloca: ?c.LLVMValueRef = null;
         
         // Add X8 parameter for indirect returns (ARM64 AAPCS64)
         if (return_classification.is_indirect) {
             return_alloca = c.LLVMBuildAlloca(self.builder, return_type, "indirect_return");
-            try adjusted_args.append(return_alloca.?);
+            try adjusted_args.append(allocator, return_alloca.?);
         }
         
         // Add regular parameters with ARM64 adjustments
@@ -603,9 +603,9 @@ pub const RobustLLVMBackend = struct {
                 // Pass large structs by reference
                 const arg_alloca = c.LLVMBuildAlloca(self.builder, c.LLVMTypeOf(arg), "indirect_arg");
                 _ = c.LLVMBuildStore(self.builder, arg, arg_alloca);
-                try adjusted_args.append(arg_alloca);
+                try adjusted_args.append(allocator, arg_alloca);
             } else {
-                try adjusted_args.append(arg);
+                try adjusted_args.append(allocator, arg);
             }
         }
         

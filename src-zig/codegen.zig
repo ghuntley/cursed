@@ -48,9 +48,9 @@ pub const CodeGen = struct {
     }
 
     pub fn deinit(self: *CodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
-        self.runtime_functions.deinit();
+        self.functions.deinit(allocator);
+        self.variables.deinit(allocator);
+        self.runtime_functions.deinit(allocator);
         
         if (self.builder) |builder| {
             c.LLVMDisposeBuilder(builder);
@@ -159,7 +159,7 @@ test "codegen basic" {
     const allocator = std.testing.allocator;
     
     var codegen = CodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Test basic initialization
     try std.testing.expect(codegen.context != null);

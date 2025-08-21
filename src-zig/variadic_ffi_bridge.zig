@@ -212,14 +212,14 @@ pub const VariadicCallBuilder = struct {
         return VariadicCallBuilder{
             .allocator = allocator,
             .function_name = function_name,
-            .arguments = ArrayList(VariadicArgument).init(allocator),
+            .arguments = .empty,
             .format_string = null,
             .max_args = MAX_VARIADIC_ARGS,
         };
     }
     
     pub fn deinit(self: *VariadicCallBuilder) void {
-        self.arguments.deinit();
+        self.arguments.deinit(allocator);
     }
     
     /// Set the format string for printf-style functions
@@ -232,7 +232,7 @@ pub const VariadicCallBuilder = struct {
         if (self.arguments.items.len >= self.max_args) {
             return VariadicError.TooManyArguments;
         }
-        try self.arguments.append(arg);
+        try self.arguments.append(allocator, arg);
     }
     
     /// Add argument from CURSED value
@@ -316,15 +316,15 @@ pub const VariadicCallBuilder = struct {
         }
         
         // Prepare arguments for the call
-        var llvm_args = ArrayList(llvm_c.LLVMValueRef).init(self.allocator);
-        defer llvm_args.deinit();
+        var llvm_args = .empty;
+        defer llvm_args.deinit(allocator);
         
         // Add format string if present
         if (self.format_string) |fmt_str| {
             const fmt_str_z = try std.fmt.allocPrintZ(self.allocator, "{s}", .{fmt_str});
             defer self.allocator.free(fmt_str_z);
             const fmt_global = llvm_c.LLVMBuildGlobalStringPtr(builder, fmt_str_z, "fmt_str");
-            try llvm_args.append(fmt_global);
+            try llvm_args.append(self.allocator, fmt_global);
         }
         
         // Convert arguments to LLVM values
@@ -348,7 +348,7 @@ pub const VariadicCallBuilder = struct {
                 ),
                 .boolean => |val| llvm_c.LLVMConstInt(llvm_c.LLVMInt32TypeInContext(context), if (val) 1 else 0, 0),
             };
-            try llvm_args.append(llvm_value);
+            try llvm_args.append(allocator, llvm_value);
         }
         
         // Build the call
@@ -383,7 +383,7 @@ pub const SafeVariadicWrapper = struct {
         if (format.len == 0) return VariadicError.NullFormatString;
         
         var builder = VariadicCallBuilder.init(self.allocator, "printf");
-        defer builder.deinit();
+        defer builder.deinit(allocator);
         
         builder.setFormatString(format);
         for (args) |arg| {
@@ -404,7 +404,7 @@ pub const SafeVariadicWrapper = struct {
         if (format.len == 0) return VariadicError.NullFormatString;
         
         var builder = VariadicCallBuilder.init(self.allocator, "scanf");
-        defer builder.deinit();
+        defer builder.deinit(allocator);
         
         builder.setFormatString(format);
         for (args) |arg| {
@@ -425,7 +425,7 @@ pub const SafeVariadicWrapper = struct {
         if (buffer.len > self.max_buffer_size) return VariadicError.BufferOverflow;
         
         var builder = VariadicCallBuilder.init(self.allocator, "snprintf");
-        defer builder.deinit();
+        defer builder.deinit(allocator);
         
         // Add buffer and size arguments first
         try builder.addArgument(VariadicArgument{ .pointer = buffer.ptr });
@@ -554,7 +554,7 @@ pub const CursedVariadicIntegration = struct {
     }
     
     pub fn deinit(self: *CursedVariadicIntegration) void {
-        self.registered_functions.deinit();
+        self.registered_functions.deinit(allocator);
     }
     
     fn registerCommonFunctions(self: *CursedVariadicIntegration) !void {
@@ -595,8 +595,8 @@ pub const CursedVariadicIntegration = struct {
     pub fn generateCursedWrapper(self: *CursedVariadicIntegration, func_name: []const u8) ![]const u8 {
         const func_info = self.registered_functions.get(func_name) orelse return VariadicError.InvalidFunctionSignature;
         
-        var wrapper = ArrayList(u8).init(self.allocator);
-        defer wrapper.deinit();
+        var wrapper = .empty;
+        defer wrapper.deinit(allocator);
         
         try wrapper.writer().print("// Auto-generated CURSED wrapper for variadic C function {s}\n", .{func_name});
         try wrapper.writer().print("extern \"C\" {{\n");
@@ -630,13 +630,13 @@ pub const CursedVariadicIntegration = struct {
         try wrapper.writer().print("    damn result\n");
         try wrapper.writer().print("}}\n\n");
         
-        return wrapper.toOwnedSlice();
+        return wrapper.toOwnedSlice(allocator);
     }
     
     /// Generate LLVM integration code for variadic functions
     pub fn generateLLVMIntegration(self: *CursedVariadicIntegration) ![]const u8 {
-        var code = ArrayList(u8).init(self.allocator);
-        defer code.deinit();
+        var code = .empty;
+        defer code.deinit(allocator);
         
         try code.writer().print("// LLVM Variadic Function Integration\n\n");
         try code.writer().print("pub fn setupVariadicFunctions(module: llvm_c.LLVMModuleRef, context: llvm_c.LLVMContextRef) !void {{\n");
@@ -685,7 +685,7 @@ pub const CursedVariadicIntegration = struct {
         try code.writer().print("    );\n");
         try code.writer().print("}}\n");
         
-        return code.toOwnedSlice();
+        return code.toOwnedSlice(allocator);
     }
 };
 
@@ -713,7 +713,7 @@ test "format string parsing" {
 
 test "variadic call builder" {
     var builder = VariadicCallBuilder.init(std.testing.allocator, "printf");
-    defer builder.deinit();
+    defer builder.deinit(allocator);
     
     builder.setFormatString("Hello %s!");
     try builder.addArgument(VariadicArgument{ .string = "World" });
@@ -734,7 +734,7 @@ test "safe printf wrapper" {
 
 test "CURSED integration" {
     var integration = CursedVariadicIntegration.init(std.testing.allocator);
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     const wrapper = try integration.generateCursedWrapper("printf");
     defer std.testing.allocator.free(wrapper);

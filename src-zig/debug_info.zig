@@ -91,7 +91,7 @@ pub const DebugInfoGenerator = struct {
             .di_builder = di_builder,
             .compile_unit = null,
             .file_metadata = null,
-            .scope_stack = ArrayList(c.LLVMMetadataRef).init(allocator),
+            .scope_stack = .empty,
             .debug_types = std.HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_line = 1,
             .current_column = 1,
@@ -107,10 +107,10 @@ pub const DebugInfoGenerator = struct {
         if (self.di_builder) |builder| {
             c.LLVMDisposeDIBuilder(builder);
         }
-        self.scope_stack.deinit();
-        self.debug_types.deinit();
-        self.function_debug_info.deinit();
-        self.variable_debug_info.deinit();
+        self.scope_stack.deinit(allocator);
+        self.debug_types.deinit(allocator);
+        self.function_debug_info.deinit(allocator);
+        self.variable_debug_info.deinit(allocator);
     }
     
     /// Initialize comprehensive debug compilation unit with enhanced GDB/LLDB support
@@ -159,7 +159,7 @@ pub const DebugInfoGenerator = struct {
         self.cursed_debug_types = try self.createCursedTypes();
         
         // Push compile unit as initial scope
-        try self.scope_stack.append(self.compile_unit.?);
+        try self.scope_stack.append(allocator, self.compile_unit.?);
         
         std.debug.print("✅ Debug compilation unit created for {s}\n", .{source_filename});
     }
@@ -194,7 +194,7 @@ pub const DebugInfoGenerator = struct {
         c.LLVMSetSubprogram(function, di_function);
         
         // Push function as new scope
-        try self.scope_stack.append(di_function);
+        try self.scope_stack.append(allocator, di_function);
         
         return di_function;
     }
@@ -343,7 +343,7 @@ pub const DebugInfoGenerator = struct {
         
         // Create field debug info
         var field_metadata = try ArrayList(c.LLVMMetadataRef).initCapacity(self.allocator, fields.len);
-        defer field_metadata.deinit();
+        defer field_metadata.deinit(allocator);
         
         var offset_bits: u64 = 0;
         for (fields) |field| {
@@ -406,7 +406,7 @@ pub const DebugInfoGenerator = struct {
     pub fn createFunctionType(self: *DebugInfoGenerator, return_type: c.LLVMMetadataRef, param_types: []c.LLVMMetadataRef) DebugError!c.LLVMMetadataRef {
         // Create parameter array (return type is first element)
         var all_types = try ArrayList(c.LLVMMetadataRef).initCapacity(self.allocator, param_types.len + 1);
-        defer all_types.deinit();
+        defer all_types.deinit(allocator);
         
         all_types.appendAssumeCapacity(return_type);
         for (param_types) |param_type| {
@@ -488,7 +488,7 @@ pub const DebugInfoGenerator = struct {
     
     /// Enter new lexical scope
     pub fn pushScope(self: *DebugInfoGenerator, scope: c.LLVMMetadataRef) DebugError!void {
-        try self.scope_stack.append(scope);
+        try self.scope_stack.append(allocator, scope);
     }
     
     /// Exit current lexical scope
@@ -797,7 +797,7 @@ test "debug info generator initialization" {
     defer c.LLVMDisposeModule(module);
     
     var debug_gen = try DebugInfoGenerator.init(allocator, context, module);
-    defer debug_gen.deinit();
+    defer debug_gen.deinit(allocator);
     
     try debug_gen.createCompileUnit("test.csd", "/tmp");
     
@@ -815,7 +815,7 @@ test "basic type creation" {
     defer c.LLVMDisposeModule(module);
     
     var debug_gen = try DebugInfoGenerator.init(allocator, context, module);
-    defer debug_gen.deinit();
+    defer debug_gen.deinit(allocator);
     
     try debug_gen.createCompileUnit("test.csd", "/tmp");
     

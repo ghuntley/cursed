@@ -70,9 +70,9 @@ pub const CompilationResult = struct {
     pub fn init(allocator: Allocator) CompilationResult {
         return CompilationResult{
             .success = false,
-            .output_files = ArrayList([]const u8).init(allocator),
-            .errors = ArrayList([]const u8).init(allocator),
-            .warnings = ArrayList([]const u8).init(allocator),
+            .output_files = .empty,
+            .errors = .empty,
+            .warnings = .empty,
             .type_inference_stats = TypeInferenceStats{},
             .llvm_stats = LLVMStats{},
         };
@@ -83,25 +83,25 @@ pub const CompilationResult = struct {
         for (self.errors.items) |error_msg| allocator.free(error_msg);
         for (self.warnings.items) |warning_msg| allocator.free(warning_msg);
         
-        self.output_files.deinit();
-        self.errors.deinit();
-        self.warnings.deinit();
+        self.output_files.deinit(allocator);
+        self.errors.deinit(allocator);
+        self.warnings.deinit(allocator);
     }
     
     pub fn addError(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.errors.append(owned_message);
+        try self.errors.append(allocator, owned_message);
         self.success = false;
     }
     
     pub fn addWarning(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.warnings.append(owned_message);
+        try self.warnings.append(allocator, owned_message);
     }
     
     pub fn addOutputFile(self: *CompilationResult, allocator: Allocator, file_path: []const u8) !void {
         const owned_path = try allocator.dupe(u8, file_path);
-        try self.output_files.append(owned_path);
+        try self.output_files.append(allocator, owned_path);
     }
 };
 
@@ -130,8 +130,8 @@ pub const ComprehensiveLLVMCompiler = struct {
     }
     
     pub fn deinit(self: *ComprehensiveLLVMCompiler) void {
-        self.type_inference_engine.deinit();
-        self.llvm_backend.deinit();
+        self.type_inference_engine.deinit(allocator);
+        self.llvm_backend.deinit(allocator);
     }
     
     /// Compile CURSED source code with comprehensive error handling
@@ -209,14 +209,14 @@ pub const ComprehensiveLLVMCompiler = struct {
         _ = source;
         
         // Simplified parsing - in real implementation would use full parser
-        var expressions = ArrayList(ast.Expression).init(self.allocator);
+        var expressions = .empty;
         
         // Example expressions for testing
-        try expressions.append(ast.Expression{ .Integer = 42 });
-        try expressions.append(ast.Expression{ .String = "Hello, World!" });
-        try expressions.append(ast.Expression{ .Boolean = true });
+        try expressions.append(allocator, ast.Expression{ .Integer = 42 });
+        try expressions.append(allocator, ast.Expression{ .String = "Hello, World!" });
+        try expressions.append(allocator, ast.Expression{ .Boolean = true });
         
-        return expressions.toOwnedSlice();
+        return expressions.toOwnedSlice(self.allocator);
     }
     
     /// Perform type inference with comprehensive error handling
@@ -534,7 +534,7 @@ pub fn compileWithComprehensiveErrorHandling(
     config: CompilationConfig,
 ) !CompilationResult {
     var compiler = try ComprehensiveLLVMCompiler.init(allocator, config);
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
     
     return compiler.compile(source, output_path);
 }

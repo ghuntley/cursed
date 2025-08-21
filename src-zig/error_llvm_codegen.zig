@@ -557,7 +557,7 @@ test "error LLVM integration" {
     
     // Test that the LLVM codegen can work with the comprehensive error runtime
     var error_runtime = ErrorRuntime.init(allocator);
-    defer error_runtime.deinit();
+    defer error_runtime.deinit(allocator);
     
     // Create test error
     var error_obj = try error_runtime.yikes(

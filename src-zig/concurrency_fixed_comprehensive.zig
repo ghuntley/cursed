@@ -91,7 +91,7 @@ pub fn Channel(comptime T: type) type {
         pub fn init(allocator: Allocator, capacity: usize) !Self {
             return Self{
                 .id = generateChannelId(),
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .mutex = Mutex{},
                 .send_condition = Condition{},
                 .recv_condition = Condition{},
@@ -117,7 +117,7 @@ pub fn Channel(comptime T: type) type {
                 }
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
 
         /// Send a value to the channel (blocking) - RACE-CONDITION FREE
@@ -151,7 +151,7 @@ pub fn Channel(comptime T: type) type {
                 // For unbuffered channels, wait for receiver
                 if (self.capacity == 0) {
                     if (self.receiver_count.load(.acquire) > 0) {
-                        try self.buffer.append(value);
+                        try self.buffer.append(allocator, value);
                         self.recv_condition.signal();
                         self.stats.total_sent += 1;
                         return SendResult.sent;
@@ -168,7 +168,7 @@ pub fn Channel(comptime T: type) type {
 
                 // For buffered channels, check capacity
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(value);
+                    try self.buffer.append(allocator, value);
                     self.recv_condition.signal();
                     self.stats.total_sent += 1;
                     return SendResult.sent;
@@ -386,7 +386,7 @@ pub const WorkStealingDeque = struct {
 
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .items = ArrayList(*Goroutine).init(allocator),
+            .items = .empty,
             .mutex = Mutex{},
             .top = Atomic(usize).init(0),
             .bottom = Atomic(usize).init(0),
@@ -395,7 +395,7 @@ pub const WorkStealingDeque = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.items.deinit();
+        self.items.deinit(allocator);
     }
 
     /// Push goroutine to bottom (owner thread only) - RACE-CONDITION FREE
@@ -404,7 +404,7 @@ pub const WorkStealingDeque = struct {
         defer self.mutex.unlock();
 
         goroutine.addRef(); // Add reference for the deque
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -470,7 +470,7 @@ pub const Worker = struct {
 
     pub fn deinit(self: *Worker) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(allocator);
     }
 
     pub fn start(self: *Worker) !void {
@@ -579,7 +579,7 @@ pub const Scheduler = struct {
     pub fn init(allocator: Allocator, config: SchedulerConfig) !Self {
         var scheduler = Self{
             .allocator = allocator,
-            .workers = ArrayList(Worker).init(allocator),
+            .workers = .empty,
             .running = Atomic(bool).init(false),
             .next_goroutine_id = Atomic(u64).init(1),
             .next_worker_id = Atomic(usize).init(0),
@@ -589,10 +589,10 @@ pub const Scheduler = struct {
         };
 
         // Create workers
-        try scheduler.workers.ensureTotalCapacity(config.num_workers);
+        try scheduler.workers.ensureTotalCapacity(allocator, config.num_workers);
         for (0..config.num_workers) |i| {
             const worker = Worker.init(allocator, i, &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
 
         return scheduler;
@@ -602,9 +602,9 @@ pub const Scheduler = struct {
         self.stop();
         
         for (self.workers.items) |*worker| {
-            worker.deinit();
+            worker.deinit(allocator);
         }
-        self.workers.deinit();
+        self.workers.deinit(allocator);
     }
 
     pub fn start(self: *Self) !void {
@@ -706,7 +706,7 @@ pub fn shutdownScheduler(allocator: Allocator) void {
     defer global_scheduler_mutex.unlock();
     
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         allocator.destroy(scheduler);
         global_scheduler = null;
         global_scheduler_initialized.store(false, .release);
@@ -734,7 +734,7 @@ test "race condition free channel operations" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
     
@@ -785,7 +785,7 @@ test "race condition free work stealing" {
     const allocator = std.testing.allocator;
     
     var deque = WorkStealingDeque.init(allocator);
-    defer deque.deinit();
+    defer deque.deinit(allocator);
 
     // Test that work stealing index updates are atomic
     var test_goroutine = Goroutine.init(allocator, 1, undefined, null);

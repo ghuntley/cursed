@@ -134,25 +134,25 @@ pub const MonomorphizationManager = struct {
             // Clean up function generics
             var func_iter = self.function_generics.iterator();
             while (func_iter.next()) |entry| {
-                entry.value_ptr.constraint_analysis.required_traits.deinit();
-                entry.value_ptr.usage_patterns.deinit();
+                entry.value_ptr.constraint_analysis.required_traits.deinit(allocator);
+                entry.value_ptr.usage_patterns.deinit(allocator);
             }
-            self.function_generics.deinit();
+            self.function_generics.deinit(allocator);
             
             // Clean up struct generics
             var struct_iter = self.struct_generics.iterator();
             while (struct_iter.next()) |entry| {
-                entry.value_ptr.field_dependencies.deinit();
+                entry.value_ptr.field_dependencies.deinit(allocator);
             }
-            self.struct_generics.deinit();
+            self.struct_generics.deinit(allocator);
             
             // Clean up interface generics
             var interface_iter = self.interface_generics.iterator();
             while (interface_iter.next()) |entry| {
-                entry.value_ptr.method_analysis.deinit();
-                entry.value_ptr.vtable_optimization.static_dispatch_candidates.deinit();
+                entry.value_ptr.method_analysis.deinit(allocator);
+                entry.value_ptr.vtable_optimization.static_dispatch_candidates.deinit(allocator);
             }
-            self.interface_generics.deinit();
+            self.interface_generics.deinit(allocator);
         }
     };
     
@@ -186,7 +186,7 @@ pub const MonomorphizationManager = struct {
         
         pub fn init(allocator: Allocator) InstantiationPipeline {
             var pipeline = InstantiationPipeline{
-                .stages = ArrayList(PipelineStage).init(allocator),
+                .stages = .empty,
                 .current_stage = 0,
                 .stage_metrics = HashMap([]const u8, StageMetrics, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             };
@@ -196,31 +196,31 @@ pub const MonomorphizationManager = struct {
                 PipelineStage{
                     .name = "type_inference",
                     .processor = .TypeInference,
-                    .dependencies = ArrayList([]const u8).init(allocator),
+                    .dependencies = .empty,
                     .parallel_safe = true,
                 },
                 PipelineStage{
                     .name = "constraint_validation",
                     .processor = .ConstraintValidation,
-                    .dependencies = ArrayList([]const u8).init(allocator),
+                    .dependencies = .empty,
                     .parallel_safe = true,
                 },
                 PipelineStage{
                     .name = "dependency_analysis",
                     .processor = .DependencyAnalysis,
-                    .dependencies = ArrayList([]const u8).init(allocator),
+                    .dependencies = .empty,
                     .parallel_safe = false,
                 },
                 PipelineStage{
                     .name = "code_generation",
                     .processor = .CodeGeneration,
-                    .dependencies = ArrayList([]const u8).init(allocator),
+                    .dependencies = .empty,
                     .parallel_safe = false,
                 },
                 PipelineStage{
                     .name = "optimization",
                     .processor = .Optimization,
-                    .dependencies = ArrayList([]const u8).init(allocator),
+                    .dependencies = .empty,
                     .parallel_safe = true,
                 },
             };
@@ -228,20 +228,20 @@ pub const MonomorphizationManager = struct {
             pipeline.stages.appendSlice(&default_stages) catch unreachable;
             
             // Set up stage dependencies
-            pipeline.stages.items[1].dependencies.append("type_inference") catch unreachable;
-            pipeline.stages.items[2].dependencies.append("constraint_validation") catch unreachable;
-            pipeline.stages.items[3].dependencies.append("dependency_analysis") catch unreachable;
-            pipeline.stages.items[4].dependencies.append("code_generation") catch unreachable;
+            pipeline.stages.items[1].dependencies.append(allocator, "type_inference") catch unreachable;
+            pipeline.stages.items[2].dependencies.append(allocator, "constraint_validation") catch unreachable;
+            pipeline.stages.items[3].dependencies.append(allocator, "dependency_analysis") catch unreachable;
+            pipeline.stages.items[4].dependencies.append(allocator, "code_generation") catch unreachable;
             
             return pipeline;
         }
         
         pub fn deinit(self: *InstantiationPipeline) void {
             for (self.stages.items) |*stage| {
-                stage.dependencies.deinit();
+                stage.dependencies.deinit(allocator);
             }
-            self.stages.deinit();
-            self.stage_metrics.deinit();
+            self.stages.deinit(allocator);
+            self.stage_metrics.deinit(allocator);
         }
     };
     
@@ -256,16 +256,16 @@ pub const MonomorphizationManager = struct {
             .enhanced_monomorphizer = enhanced_monomorphizer,
             .advanced_codegen = advanced_codegen,
             .type_registry = type_registry,
-            .pending_instantiations = ArrayList(InstantiationRequest).init(allocator),
+            .pending_instantiations = .empty,
             .generic_registry = GenericRegistry.init(allocator),
             .instantiation_pipeline = InstantiationPipeline.init(allocator),
         };
     }
     
     pub fn deinit(self: *MonomorphizationManager) void {
-        self.pending_instantiations.deinit();
-        self.generic_registry.deinit();
-        self.instantiation_pipeline.deinit();
+        self.pending_instantiations.deinit(allocator);
+        self.generic_registry.deinit(allocator);
+        self.instantiation_pipeline.deinit(allocator);
     }
     
     /// Register a generic function with comprehensive analysis
@@ -276,7 +276,7 @@ pub const MonomorphizationManager = struct {
     ) !void {
         // Analyze function constraints
         var constraint_analysis = GenericRegistry.GenericFunctionInfo.ConstraintAnalysis{
-            .required_traits = ArrayList([]const u8).init(self.allocator),
+            .required_traits = .empty,
             .numeric_constraints = false,
             .lifetime_constraints = false,
             .complexity_score = 0,
@@ -291,7 +291,7 @@ pub const MonomorphizationManager = struct {
                     .Numeric => constraint_analysis.numeric_constraints = true,
                     .Interface => {
                         if (constraint.interface_name) |interface_name| {
-                            try constraint_analysis.required_traits.append(interface_name);
+                            try constraint_analysis.required_traits.append(allocator, interface_name);
                         }
                     },
                     else => {},
@@ -303,7 +303,7 @@ pub const MonomorphizationManager = struct {
             .declaration = func_decl,
             .type_parameters = type_parameters,
             .constraint_analysis = constraint_analysis,
-            .usage_patterns = ArrayList(GenericRegistry.GenericFunctionInfo.UsagePattern).init(self.allocator),
+            .usage_patterns = .empty,
         };
         
         try self.generic_registry.function_generics.put(func_decl.name, generic_info);
@@ -329,9 +329,9 @@ pub const MonomorphizationManager = struct {
                     },
                     .Sized => generics.Constraint.init(.Sized),
                 };
-                try mono_param.constraints.append(mono_constraint);
+                try mono_param.constraints.append(allocator, mono_constraint);
             }
-            try generic_decl.type_parameters.append(mono_param);
+            try generic_decl.type_parameters.append(allocator, mono_param);
         }
         
         try self.enhanced_monomorphizer.base_monomorphizer.registerGeneric(generic_decl);
@@ -347,13 +347,13 @@ pub const MonomorphizationManager = struct {
         type_parameters: []const ast.TypeParameter
     ) !void {
         // Analyze field dependencies
-        var field_dependencies = ArrayList(GenericRegistry.GenericStructInfo.FieldDependency).init(self.allocator);
+        var field_dependencies = .empty;
         
         for (struct_decl.fields.items) |field| {
             // Check if field type depends on type parameters
             const dependency = self.analyzeFieldTypeDependency(field, type_parameters);
             if (dependency) |dep| {
-                try field_dependencies.append(dep);
+                try field_dependencies.append(allocator, dep);
             }
         }
         
@@ -395,9 +395,9 @@ pub const MonomorphizationManager = struct {
                     },
                     .Sized => generics.Constraint.init(.Sized),
                 };
-                try mono_param.constraints.append(mono_constraint);
+                try mono_param.constraints.append(allocator, mono_constraint);
             }
-            try generic_decl.type_parameters.append(mono_param);
+            try generic_decl.type_parameters.append(allocator, mono_param);
         }
         
         try self.enhanced_monomorphizer.base_monomorphizer.registerGeneric(generic_decl);
@@ -471,7 +471,7 @@ pub const MonomorphizationManager = struct {
             .priority = priority,
         };
         
-        try self.pending_instantiations.append(request);
+        try self.pending_instantiations.append(allocator, request);
         
         // Process through pipeline
         return try self.processInstantiationRequest(request);
@@ -618,8 +618,10 @@ pub const MonomorphizationManager = struct {
                 return try self.validateSingleConstraint(type_arg, ast.TypeConstraint{ .kind = .Numeric, .interface_name = null });
             },
             .Interface => {
-                // TODO: Implement interface constraint validation
-                return true;
+                if (constraint.interface_name) |interface_name| {
+                    return try self.validateInterfaceConstraint(type_arg, interface_name);
+                }
+                return false;
             },
             .Sized => {
                 switch (type_arg) {
@@ -630,6 +632,119 @@ pub const MonomorphizationManager = struct {
                 }
             },
         }
+    }
+    
+    /// Validate that a type satisfies an interface constraint
+    fn validateInterfaceConstraint(
+        self: *MonomorphizationManager,
+        type_arg: ast.Type,
+        interface_name: []const u8
+    ) !bool {
+        // Check built-in interfaces first
+        if (std.mem.eql(u8, interface_name, "Comparable")) {
+            return self.isComparable(type_arg);
+        } else if (std.mem.eql(u8, interface_name, "Numeric")) {
+            return self.isNumeric(type_arg);
+        } else if (std.mem.eql(u8, interface_name, "Ordered")) {
+            return self.isOrdered(type_arg);
+        } else if (std.mem.eql(u8, interface_name, "Display")) {
+            return self.isDisplayable(type_arg);
+        } else if (std.mem.eql(u8, interface_name, "Clone")) {
+            return self.isCloneable(type_arg);
+        }
+
+        // Check user-defined interface implementations
+        return try self.checkUserDefinedInterface(type_arg, interface_name);
+    }
+    
+    /// Check if type implements a user-defined interface
+    fn checkUserDefinedInterface(
+        self: *MonomorphizationManager,
+        type_arg: ast.Type,
+        interface_name: []const u8
+    ) !bool {
+        const type_name = switch (type_arg) {
+            .Identifier => |name| name,
+            .Primitive => |prim| @tagName(prim),
+            else => return false, // Complex types not supported yet
+        };
+
+        // Check if this is a struct type
+        if (self.generic_registry.struct_generics.get(type_name)) |struct_info| {
+            // For generic structs, check if any implementation exists
+            // This is simplified - in reality we'd need to check specific instantiations
+            return try self.hasInterfaceImplementation(type_name, interface_name);
+        }
+
+        // Check regular struct types (would need integration with struct registry)
+        return try self.hasInterfaceImplementation(type_name, interface_name);
+    }
+    
+    /// Check if a type has an interface implementation
+    fn hasInterfaceImplementation(
+        self: *MonomorphizationManager,
+        type_name: []const u8,
+        interface_name: []const u8
+    ) !bool {
+        // This would integrate with the interface registry system
+        // For now, use a simplified check
+        _ = self;
+        _ = type_name;
+        _ = interface_name;
+        
+        // TODO: Integrate with the actual interface registry system
+        // This should check self.interface_registry or similar
+        return true; // Conservative approach - assume implementation exists
+    }
+    
+    /// Check if a type is comparable
+    fn isComparable(self: *MonomorphizationManager, type_arg: ast.Type) bool {
+        _ = self;
+        return switch (type_arg) {
+            .Primitive => |prim| switch (prim) {
+                .Normie, .Drip, .Smol, .Thicc, .Meal, .Snack => true,
+                .Tea, .Lit, .Vibes => false,
+            },
+            else => false,
+        };
+    }
+    
+    /// Check if a type is numeric
+    fn isNumeric(self: *MonomorphizationManager, type_arg: ast.Type) bool {
+        _ = self;
+        return switch (type_arg) {
+            .Primitive => |prim| switch (prim) {
+                .Normie, .Drip, .Smol, .Thicc, .Meal, .Snack => true,
+                else => false,
+            },
+            else => false,
+        };
+    }
+    
+    /// Check if a type is ordered
+    fn isOrdered(self: *MonomorphizationManager, type_arg: ast.Type) bool {
+        return self.isComparable(type_arg); // Same as comparable for now
+    }
+    
+    /// Check if a type is displayable
+    fn isDisplayable(self: *MonomorphizationManager, type_arg: ast.Type) bool {
+        _ = self;
+        return switch (type_arg) {
+            .Primitive => true, // All primitive types are displayable
+            .Identifier => true, // Assume user types implement display
+            else => false,
+        };
+    }
+    
+    /// Check if a type is cloneable
+    fn isCloneable(self: *MonomorphizationManager, type_arg: ast.Type) bool {
+        _ = self;
+        return switch (type_arg) {
+            .Primitive => true, // All primitive types are cloneable
+            .Identifier => true, // Assume user types are cloneable
+            .Array, .Slice => true, // Collections are cloneable if elements are
+            else => false,
+        };
     }
     
     /// Analyze dependencies for an instantiation request

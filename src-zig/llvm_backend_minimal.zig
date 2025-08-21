@@ -21,8 +21,8 @@ pub const LLVMBackendMinimal = struct {
         return LLVMBackendMinimal{
             .allocator = allocator,
             .module_name = module_name,
-            .functions = std.ArrayList([]const u8).init(allocator),
-            .globals = std.ArrayList([]const u8).init(allocator),
+            .functions = .{},
+            .globals = .{},
             .target_triple = "x86_64-unknown-linux-gnu",
         };
     }
@@ -34,8 +34,8 @@ pub const LLVMBackendMinimal = struct {
         for (self.globals.items) |global| {
             self.allocator.free(global);
         }
-        self.functions.deinit();
-        self.globals.deinit();
+        self.functions.deinit(allocator);
+        self.globals.deinit(allocator);
     }
     
     pub fn addFunction(self: *LLVMBackendMinimal, name: []const u8, return_type: []const u8, params: []const u8, body: []const u8) !void {
@@ -47,14 +47,14 @@ pub const LLVMBackendMinimal = struct {
             \\
         , .{ return_type, name, params, body });
         
-        try self.functions.append(func_def);
+        try self.functions.append(self.allocator, func_def);
     }
     
     pub fn addGlobal(self: *LLVMBackendMinimal, name: []const u8, type_str: []const u8, value: []const u8) !void {
         const global_def = try std.fmt.allocPrint(self.allocator,
             "@{s} = global {s} {s}\n", .{ name, type_str, value });
         
-        try self.globals.append(global_def);
+        try self.globals.append(self.allocator, global_def);
     }
     
     pub fn generateIR(self: *LLVMBackendMinimal, writer: anytype) !void {
@@ -110,13 +110,13 @@ pub const LLVMBackendMinimal = struct {
         // Parse function definitions and function calls
         var lines = std.mem.splitScalar(u8, source, '\n');
         var has_functions = false;
-        var main_statements = std.ArrayList([]const u8).init(self.allocator);
+        var main_statements: std.ArrayList([]const u8) = .empty;
         defer {
             // Fix memory leak: Free all duplicated strings before deinit
             for (main_statements.items) |stmt| {
                 self.allocator.free(stmt);
             }
-            main_statements.deinit();
+            main_statements.deinit(allocator);
         }
         
         while (lines.next()) |line| {
@@ -129,7 +129,7 @@ pub const LLVMBackendMinimal = struct {
                 has_functions = true;
             } else {
                 // Collect main statements - fix memory leak by properly managing string lifecycle
-                try main_statements.append(try self.allocator.dupe(u8, trimmed));
+                try main_statements.append(self.allocator, try self.allocator.dupe(u8, trimmed));
             }
         }
         
@@ -154,8 +154,8 @@ pub const LLVMBackendMinimal = struct {
     }
     
     fn generateMainFunction(self: *LLVMBackendMinimal, statements: [][]const u8, has_functions: bool) !void {
-        var main_body = std.ArrayList(u8).init(self.allocator);
-        defer main_body.deinit();
+        var main_body: std.ArrayList(u8) = .empty;
+        defer main_body.deinit(allocator);
         
         for (statements) |stmt| {
             if (std.mem.indexOf(u8, stmt, "vibez.spill(") != null) {
@@ -243,7 +243,7 @@ pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []co
     print("[LLVM] Compiling CURSED program without C imports...\n", .{});
     
     var backend = try LLVMBackendMinimal.init(allocator, "cursed_module");
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     // Parse the source to extract variable assignments and arithmetic
     try backend.compileProgram(source);

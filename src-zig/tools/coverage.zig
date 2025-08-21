@@ -42,9 +42,9 @@ pub const CoverageData = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.line_coverage.deinit();
-        self.function_coverage.deinit();
-        self.branch_coverage.deinit();
+        self.line_coverage.deinit(allocator);
+        self.function_coverage.deinit(allocator);
+        self.branch_coverage.deinit(allocator);
     }
     
     pub fn getLineCoveragePercent(self: *const Self) f32 {
@@ -88,9 +88,9 @@ pub const CoverageReport = struct {
     
     pub fn deinit(self: *Self) void {
         for (self.files.items) |*file| {
-            file.deinit();
+            file.deinit(allocator);
         }
-        self.files.deinit();
+        self.files.deinit(allocator);
     }
     
     pub fn addFile(self: *Self, file_data: CoverageData) !void {
@@ -128,15 +128,15 @@ pub const CoverageAnalyzer = struct {
     pub fn deinit(self: *Self) void {
         var iter = self.coverage_data.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.coverage_data.deinit();
+        self.coverage_data.deinit(allocator);
         
         var runtime_iter = self.runtime_data.iterator();
         while (runtime_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.runtime_data.deinit();
+        self.runtime_data.deinit(allocator);
     }
     
     pub fn analyzeFile(self: *Self, file_path: []const u8) !CoverageData {
@@ -149,7 +149,7 @@ pub const CoverageAnalyzer = struct {
         
         var parser_instance = parser.Parser.init(self.allocator, tokens);
         const ast_tree = try parser_instance.parse();
-        defer ast_tree.deinit();
+        defer ast_tree.deinit(allocator);
         
         var coverage = CoverageData.init(self.allocator, file_path);
         try self.analyzeAST(&coverage, ast_tree.root);
@@ -228,7 +228,7 @@ pub const CoverageAnalyzer = struct {
     
     fn addCoverageInstrumentation(self: *Self, source: []const u8, file_path: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         // Add coverage runtime import at the top
         try result.appendSlice("yeet \"coverage_runtime\"\n");
@@ -304,7 +304,7 @@ pub const CoverageAnalyzer = struct {
     
     fn generateHTMLReport(self: *Self) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         try result.appendSlice(
             \\<!DOCTYPE html>
@@ -376,7 +376,7 @@ pub const CoverageAnalyzer = struct {
     
     fn generateJSONReport(self: *Self) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         try result.appendSlice("{\n  \"coverage\": {\n");
         
@@ -428,7 +428,7 @@ pub const CoverageAnalyzer = struct {
     
     fn generateLCOVReport(self: *Self) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         var coverage_iter = self.coverage_data.iterator();
         while (coverage_iter.next()) |entry| {
@@ -452,7 +452,7 @@ pub const CoverageAnalyzer = struct {
     
     fn generateConsoleReport(self: *Self) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         try result.appendSlice("CURSED Code Coverage Report\n");
         try result.appendSlice("===========================\n\n");
@@ -518,9 +518,9 @@ pub const CoverageRuntime = struct {
     pub fn deinit(self: *Self) void {
         var iter = self.coverage_data.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.coverage_data.deinit();
+        self.coverage_data.deinit(allocator);
         self.allocator.destroy(self);
         instance = null;
     }
@@ -548,7 +548,7 @@ pub const CoverageRuntime = struct {
     
     pub fn saveReport(self: *Self, output_path: []const u8, format: ReportFormat) !void {
         var analyzer = CoverageAnalyzer.init(self.allocator);
-        defer analyzer.deinit();
+        defer analyzer.deinit(allocator);
         
         // Transfer runtime data to analyzer
         var iter = self.coverage_data.iterator();

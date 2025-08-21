@@ -71,7 +71,7 @@ pub fn Channel(comptime T: type) type {
             return Self{
                 .mutex = Mutex{},
                 .condition = Condition{},
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .capacity = capacity,
                 .closed = false,
                 .ref_count = 1, // Start with 1 reference
@@ -99,7 +99,7 @@ pub fn Channel(comptime T: type) type {
                 self.mutex.lock();
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
         
         /// Add reference - must be called with external synchronization
@@ -141,7 +141,7 @@ pub fn Channel(comptime T: type) type {
                 // For unbuffered channels (capacity == 0)
                 if (self.capacity == 0) {
                     // Synchronous send - add to buffer and notify
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -149,7 +149,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For buffered channels
                 if (self.buffer.items.len < self.capacity) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -322,7 +322,7 @@ pub const WorkQueue = struct {
         return Self{
             .mutex = Mutex{},
             .condition = Condition{},
-            .queue = ArrayList(*Goroutine).init(allocator),
+            .queue = .empty,
             .closed = false,
             .allocator = allocator,
         };
@@ -334,7 +334,7 @@ pub const WorkQueue = struct {
         
         self.closed = true;
         self.condition.broadcast();
-        self.queue.deinit();
+        self.queue.deinit(allocator);
     }
     
     /// Add goroutine to queue
@@ -346,7 +346,7 @@ pub const WorkQueue = struct {
             return error.QueueClosed;
         }
         
-        try self.queue.append(goroutine);
+        try self.queue.append(allocator, goroutine);
         self.condition.signal(); // Wake one worker
     }
     
@@ -447,17 +447,17 @@ pub const Scheduler = struct {
         var scheduler = Self{
             .allocator = allocator,
             .work_queue = WorkQueue.init(allocator),
-            .workers = ArrayList(Worker).init(allocator),
+            .workers = .empty,
             .running = Atomic(bool).init(false),
             .active_goroutines = Atomic(u64).init(0),
             .next_id = Atomic(u64).init(1),
         };
         
         // Create workers
-        try scheduler.workers.ensureTotalCapacity(worker_count);
+        try scheduler.workers.ensureTotalCapacity(allocator, worker_count);
         for (0..worker_count) |i| {
             const worker = Worker.init(@intCast(i), &scheduler.work_queue, &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
         
         return scheduler;
@@ -465,8 +465,8 @@ pub const Scheduler = struct {
     
     pub fn deinit(self: *Self) void {
         self.shutdown();
-        self.work_queue.deinit();
-        self.workers.deinit();
+        self.work_queue.deinit(allocator);
+        self.workers.deinit(allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -550,7 +550,7 @@ pub const ChannelRegistry = struct {
     pub fn deinit(self: *Self) void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        self.channels.deinit();
+        self.channels.deinit(allocator);
     }
     
     pub fn registerChannel(self: *Self, channel_ptr: *anyopaque) ChannelId {
@@ -604,13 +604,13 @@ pub fn initRuntime(allocator: Allocator, worker_count: u32) !void {
 /// Shutdown the concurrency runtime
 pub fn shutdownRuntime() void {
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         global_allocator.?.destroy(scheduler);
         global_scheduler = null;
     }
     
     if (global_registry) |registry| {
-        registry.deinit();
+        registry.deinit(allocator);
         global_allocator.?.destroy(registry);
         global_registry = null;
     }
@@ -637,7 +637,7 @@ test "race condition free channel operations" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
     

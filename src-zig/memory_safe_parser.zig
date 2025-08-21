@@ -85,7 +85,7 @@ pub const Parser = struct {
 
     pub fn deinit(self: *Parser) void {
         // Arena automatically cleans up all AST nodes and temporary allocations
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
@@ -95,8 +95,8 @@ pub const Parser = struct {
         // Use errdefer for automatic cleanup on error
         errdefer {
             // Arena cleanup handles all allocated memory
-            program.statements.deinit();
-            program.imports.deinit();
+            program.statements.deinit(allocator);
+            program.imports.deinit(allocator);
         }
         
         while (!self.isAtEnd()) {
@@ -115,13 +115,13 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 const import_stmt = try self.parseImportStatement();
-                try program.imports.append(import_stmt);
+                try program.imports.append(allocator, import_stmt);
                 continue;
             }
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(stmt);
+            try program.statements.append(allocator, stmt);
         }
 
         return program;
@@ -397,19 +397,19 @@ pub const Parser = struct {
                     const param_name = self.advance().lexeme;
                     var type_param = ast.TypeParameter{
                         .name = param_name,
-                        .constraints = ArrayList(ast.Type).init(arena_allocator),
+                        .constraints = .empty,
                     };
                     
                     // Parse constraints (T: SomeInterface)
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseType();
-                            try type_param.constraints.append(constraint);
+                            try type_param.constraints.append(allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
                     
-                    try func.type_parameters.append(type_param);
+                    try func.type_parameters.append(allocator, type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -426,7 +426,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try func.parameters.append(param);
+                try func.parameters.append(allocator, param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -450,7 +450,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try func.body.append(stmt);
+            try func.body.append(allocator, stmt);
         }
         
         try self.consume(.RightBrace, "Expected '}'");
@@ -564,12 +564,12 @@ pub const Parser = struct {
         if (self.check(.LeftParen) and self.isFunctionType()) {
             _ = self.advance(); // consume '('
             
-            var param_types = ArrayList(ast.Type).init(arena_allocator);
+            var param_types = .empty;
             
             if (!self.check(.RightParen)) {
                 while (true) {
                     const param_type = try self.parseType();
-                    try param_types.append(param_type);
+                    try param_types.append(allocator, param_type);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -589,12 +589,12 @@ pub const Parser = struct {
 
         // Tuple types (type1, type2, type3)
         if (self.match(.LeftParen)) {
-            var element_types = ArrayList(ast.Type).init(arena_allocator);
+            var element_types = .empty;
             
             if (!self.check(.RightParen)) {
                 while (true) {
                     const element_type = try self.parseType();
-                    try element_types.append(element_type);
+                    try element_types.append(allocator, element_type);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -996,7 +996,7 @@ test "memory safe parser basic program" {
     };
     
     var parser = Parser.init(allocator, &tokens);
-    defer parser.deinit();
+    defer parser.deinit(allocator);
     
     const program = try parser.parseProgram();
     

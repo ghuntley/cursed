@@ -27,23 +27,23 @@ fn createToken(kind: TokenKind, lexeme: []const u8, line: u32, column: u32) Toke
 }
 
 fn createTokens(allocator: std.mem.Allocator, token_specs: []const struct { TokenKind, []const u8 }) ![]Token {
-    var tokens = ArrayList(Token).init(allocator);
-    defer tokens.deinit();
+    var tokens = .empty;
+    defer tokens.deinit(allocator);
     
     for (token_specs, 0..) |spec, i| {
-        try tokens.append(createToken(spec[0], spec[1], 1, @intCast(i + 1)));
+        try tokens.append(allocator, createToken(spec[0], spec[1], 1, @intCast(i + 1)));
     }
     
-    return tokens.toOwnedSlice();
+    return tokens.toOwnedSlice(allocator);
 }
 
 // Test 1: Basic macro expansion order
 test "basic macro expansion order" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define macros with different priorities
     var high_priority_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "HIGH");
@@ -90,10 +90,10 @@ test "basic macro expansion order" {
 // Test 2: Recursion detection
 test "macro recursion detection" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define recursive macro
     var recursive_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "RECURSIVE");
@@ -119,10 +119,10 @@ test "macro recursion detection" {
 // Test 3: Dependency ordering
 test "macro dependency ordering" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define base macro
     var base_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "BASE");
@@ -161,10 +161,10 @@ test "macro dependency ordering" {
 // Test 4: Function-like macro parameter substitution
 test "function-like macro parameter substitution" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define function-like macro: ADD(a, b) -> a + b
     var add_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "ADD");
@@ -207,7 +207,7 @@ test "function-like macro parameter substitution" {
 // Test 5: Hygiene violation detection
 test "hygiene violation detection" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     // Declare variable in outer scope
     _ = try hygiene_ctx.declareSymbol("x", .Variable);
@@ -249,7 +249,7 @@ test "parser macro integration" {
     };
     
     var macro_parser = try MacroAwareParser.init(testing.allocator, &test_tokens);
-    defer macro_parser.deinit();
+    defer macro_parser.deinit(allocator);
     
     // Test scanning
     try macro_parser.scanForMacros();
@@ -265,10 +265,10 @@ test "parser macro integration" {
 // Test 7: Nested macro expansion
 test "nested macro expansion order" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define inner macro
     var inner_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "INNER");
@@ -307,10 +307,10 @@ test "nested macro expansion order" {
 // Test 8: Expansion caching
 test "expansion result caching" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define macro
     var cached_macro = MacroExpansionContext.MacroDefinition.init(testing.allocator, "CACHED");
@@ -347,10 +347,10 @@ test "expansion result caching" {
 // Test 9: Circular dependency detection
 test "circular dependency detection" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define macro A that depends on B
     var macro_a = MacroExpansionContext.MacroDefinition.init(testing.allocator, "A");
@@ -386,10 +386,10 @@ test "circular dependency detection" {
 // Test 10: Performance with many macros
 test "performance with many macro expansions" {
     var hygiene_ctx = try MacroHygieneContext.init(testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     var expansion_ctx = try MacroExpansionContext.init(testing.allocator, &hygiene_ctx);
-    defer expansion_ctx.deinit();
+    defer expansion_ctx.deinit(allocator);
     
     // Define many simple macros
     const num_macros = 100;

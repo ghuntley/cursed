@@ -336,7 +336,7 @@ pub const EnhancedPGOSystem = struct {
         pub fn init(allocator: std.mem.Allocator, hash: u64) CriticalPath {
             return CriticalPath{
                 .path_hash = hash,
-                .basic_blocks = std.ArrayList(u64).init(allocator),
+                .basic_blocks = .{},
                 .total_execution_time_ns = 0,
                 .execution_frequency = 0,
                 .optimization_priority = 0.0,
@@ -344,7 +344,7 @@ pub const EnhancedPGOSystem = struct {
         }
         
         pub fn deinit(self: *CriticalPath) void {
-            self.basic_blocks.deinit();
+            self.basic_blocks.deinit(allocator);
         }
     };
     
@@ -410,13 +410,13 @@ pub const EnhancedPGOSystem = struct {
             .hot_function_threshold = 1000,      // 1000 calls or 1ms total
             .cold_function_threshold = 10,       // 10 calls or 10μs total
             .hot_basic_block_threshold = 10000,  // 10000 executions
-            .hot_functions = std.ArrayList(u64).init(allocator),
-            .cold_functions = std.ArrayList(u64).init(allocator),
-            .critical_paths = std.ArrayList(CriticalPath).init(allocator),
-            .inlining_candidates = std.ArrayList(InliningCandidate).init(allocator),
-            .unrolling_candidates = std.ArrayList(UnrollingCandidate).init(allocator),
-            .vectorization_candidates = std.ArrayList(VectorizationCandidate).init(allocator),
-            .prefetch_candidates = std.ArrayList(PrefetchCandidate).init(allocator),
+            .hot_functions = .{},
+            .cold_functions = .{},
+            .critical_paths = .{},
+            .inlining_candidates = .{},
+            .unrolling_candidates = .{},
+            .vectorization_candidates = .{},
+            .prefetch_candidates = .{},
             .total_samples = 0,
             .profiling_overhead_ns = 0,
             .analysis_time_ms = 0,
@@ -446,23 +446,23 @@ pub const EnhancedPGOSystem = struct {
         };
         
         // Cleanup data structures
-        self.function_profiles.deinit();
-        self.basic_block_profiles.deinit();
-        self.call_edge_profiles.deinit();
-        self.loop_profiles.deinit();
-        self.memory_access_profiles.deinit();
-        self.hot_functions.deinit();
-        self.cold_functions.deinit();
+        self.function_profiles.deinit(allocator);
+        self.basic_block_profiles.deinit(allocator);
+        self.call_edge_profiles.deinit(allocator);
+        self.loop_profiles.deinit(allocator);
+        self.memory_access_profiles.deinit(allocator);
+        self.hot_functions.deinit(allocator);
+        self.cold_functions.deinit(allocator);
         
         for (self.critical_paths.items) |*path| {
-            path.deinit();
+            path.deinit(allocator);
         }
-        self.critical_paths.deinit();
+        self.critical_paths.deinit(allocator);
         
-        self.inlining_candidates.deinit();
-        self.unrolling_candidates.deinit();
-        self.vectorization_candidates.deinit();
-        self.prefetch_candidates.deinit();
+        self.inlining_candidates.deinit(allocator);
+        self.unrolling_candidates.deinit(allocator);
+        self.vectorization_candidates.deinit(allocator);
+        self.prefetch_candidates.deinit(allocator);
         
         self.allocator.free(self.profile_database_path);
         
@@ -636,14 +636,14 @@ pub const EnhancedPGOSystem = struct {
             const profile = entry.value_ptr;
             
             if (profile.isHotFunction(self.hot_function_threshold)) {
-                try self.hot_functions.append(profile.function_hash);
-                try result.hot_functions.append(profile.function_hash);
+                try self.hot_functions.append(allocator, profile.function_hash);
+                try result.hot_functions.append(allocator, profile.function_hash);
                 
                 // Calculate inlining score for hot functions
                 _ = profile.calculateInliningScore();
             } else if (profile.isColdFunction(self.cold_function_threshold)) {
-                try self.cold_functions.append(profile.function_hash);
-                try result.cold_functions.append(profile.function_hash);
+                try self.cold_functions.append(allocator, profile.function_hash);
+                try result.cold_functions.append(allocator, profile.function_hash);
             }
         }
         
@@ -694,8 +694,8 @@ pub const EnhancedPGOSystem = struct {
                     .recommendation = recommendation,
                 };
                 
-                try self.inlining_candidates.append(candidate);
-                try result.inlining_recommendations.append(candidate);
+                try self.inlining_candidates.append(allocator, candidate);
+                try result.inlining_recommendations.append(allocator, candidate);
             }
         }
         
@@ -724,8 +724,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = @min(@as(f64, @floatFromInt(loop_profile.execution_count)) / 100.0, 1.0),
                 };
                 
-                try self.unrolling_candidates.append(candidate);
-                try result.unrolling_recommendations.append(candidate);
+                try self.unrolling_candidates.append(allocator, candidate);
+                try result.unrolling_recommendations.append(allocator, candidate);
             }
             
             // Vectorization analysis
@@ -746,8 +746,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = if (loop_profile.vectorizable) 0.9 else 0.5,
                 };
                 
-                try self.vectorization_candidates.append(candidate);
-                try result.vectorization_recommendations.append(candidate);
+                try self.vectorization_candidates.append(allocator, candidate);
+                try result.vectorization_recommendations.append(allocator, candidate);
             }
         }
         
@@ -774,8 +774,8 @@ pub const EnhancedPGOSystem = struct {
                     .confidence = estimated_benefit,
                 };
                 
-                try self.prefetch_candidates.append(candidate);
-                try result.prefetch_recommendations.append(candidate);
+                try self.prefetch_candidates.append(allocator, candidate);
+                try result.prefetch_recommendations.append(allocator, candidate);
             }
         }
         
@@ -855,23 +855,23 @@ pub const PGOAnalysisResult = struct {
     pub fn init(allocator: std.mem.Allocator) PGOAnalysisResult {
         return PGOAnalysisResult{
             .allocator = allocator,
-            .hot_functions = std.ArrayList(u64).init(allocator),
-            .cold_functions = std.ArrayList(u64).init(allocator),
-            .inlining_recommendations = std.ArrayList(EnhancedPGOSystem.InliningCandidate).init(allocator),
-            .unrolling_recommendations = std.ArrayList(EnhancedPGOSystem.UnrollingCandidate).init(allocator),
-            .vectorization_recommendations = std.ArrayList(EnhancedPGOSystem.VectorizationCandidate).init(allocator),
-            .prefetch_recommendations = std.ArrayList(EnhancedPGOSystem.PrefetchCandidate).init(allocator),
+            .hot_functions = .{},
+            .cold_functions = .{},
+            .inlining_recommendations = .{},
+            .unrolling_recommendations = .{},
+            .vectorization_recommendations = .{},
+            .prefetch_recommendations = .{},
             .analysis_time_ms = 0,
         };
     }
     
     pub fn deinit(self: *PGOAnalysisResult) void {
-        self.hot_functions.deinit();
-        self.cold_functions.deinit();
-        self.inlining_recommendations.deinit();
-        self.unrolling_recommendations.deinit();
-        self.vectorization_recommendations.deinit();
-        self.prefetch_recommendations.deinit();
+        self.hot_functions.deinit(allocator);
+        self.cold_functions.deinit(allocator);
+        self.inlining_recommendations.deinit(allocator);
+        self.unrolling_recommendations.deinit(allocator);
+        self.vectorization_recommendations.deinit(allocator);
+        self.prefetch_recommendations.deinit(allocator);
     }
     
     pub fn printComprehensiveSummary(self: *const PGOAnalysisResult) void {

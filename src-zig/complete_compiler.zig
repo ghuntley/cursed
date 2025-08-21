@@ -66,10 +66,10 @@ pub const CursedCompiler = struct {
     
     pub fn deinit(self: *CursedCompiler) void {
         if (self.native_compiler) |*compiler| {
-            compiler.deinit();
+            compiler.deinit(allocator);
         }
         if (self.debug_generator) |*debug_gen| {
-            debug_gen.deinit();
+            debug_gen.deinit(allocator);
         }
     }
     
@@ -101,7 +101,7 @@ pub const CursedCompiler = struct {
         // Step 1: Lexical Analysis
         std.debug.print("[1/7] Lexical Analysis...\n", .{});
         const tokens = try self.performLexicalAnalysis();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         // Step 2: Syntax Analysis (Parsing)
         std.debug.print("[2/7] Syntax Analysis...\n", .{});
@@ -156,7 +156,7 @@ pub const CursedCompiler = struct {
         
         // Tokenize
         var l = lexer.Lexer.init(self.allocator, source);
-        defer l.deinit();
+        defer l.deinit(allocator);
         
         const tokens = l.tokenize() catch |err| {
             std.debug.print("❌ Lexical error: {}\n", .{err});
@@ -170,7 +170,7 @@ pub const CursedCompiler = struct {
     /// Perform syntax analysis (parsing)
     fn performSyntaxAnalysis(self: *CursedCompiler, tokens: ArrayList(lexer.Token)) CompilerError!ast.Program {
         var p = parser.Parser.init(self.allocator, tokens);
-        defer p.deinit();
+        defer p.deinit(allocator);
         
         const program = p.parseProgram() catch |err| {
             std.debug.print("❌ Syntax error: {}\n", .{err});
@@ -395,7 +395,7 @@ pub const CursedCompiler = struct {
         
         // Read and parse source once
         const tokens = try self.performLexicalAnalysis();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         const program = try self.performSyntaxAnalysis(tokens);
         try self.performSemanticAnalysis(program);
@@ -409,7 +409,7 @@ pub const CursedCompiler = struct {
     /// Generate assembly output for analysis
     pub fn generateAssembly(self: *CursedCompiler) CompilerError!void {
         const tokens = try self.performLexicalAnalysis();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         const program = try self.performSyntaxAnalysis(tokens);
         try self.performSemanticAnalysis(program);
@@ -425,7 +425,7 @@ pub const CursedCompiler = struct {
     /// Performance benchmark compilation
     pub fn benchmarkCompilation(self: *CursedCompiler) CompilerError!u64 {
         const tokens = try self.performLexicalAnalysis();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         const program = try self.performSyntaxAnalysis(tokens);
         
@@ -463,7 +463,7 @@ pub const CursedCompiler = struct {
 /// Command-line interface for the complete compiler
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -548,7 +548,7 @@ pub fn main() !void {
     
     // Initialize compiler
     var compiler = try CursedCompiler.init(allocator, source_filename, final_output_path);
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
     
     compiler.setOptimizationLevel(optimization_level);
     compiler.setDebugInfo(debug_info_enabled);
@@ -602,7 +602,7 @@ test "complete compiler initialization" {
     const allocator = std.testing.allocator;
     
     var compiler = try CursedCompiler.init(allocator, "test.csd", "test_output");
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
     
     try std.testing.expect(compiler.optimization_level == .Default);
     try std.testing.expect(compiler.debug_info_enabled == true);

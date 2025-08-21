@@ -36,7 +36,8 @@ var syscall_mutex: std.Thread.Mutex = std.Thread.Mutex{};
 
 /// Print string to stdout (core.print implementation)
 export fn cursed_print_string(data: [*:0]const u8) void {
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     const len = std.mem.len(data);
     stdout.writeAll(data[0..len]) catch |err| {
         print("[PRINT] Error writing to stdout: {}\n", .{err});
@@ -48,7 +49,8 @@ var read_line_buffer: [256:0]u8 = undefined;
 
 /// Read line from stdin (core.read_line implementation)
 export fn cursed_read_line() [*:0]const u8 {
-    const stdin = std.io.getStdIn().reader();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var temp_buffer: [256]u8 = undefined;
     
     if (stdin.readUntilDelimiterOrEof(temp_buffer[0..], '\n')) |maybe_line| {
@@ -972,21 +974,21 @@ pub export fn cursed_syscall_cleanup_registries() void {
         file.close();
         global_allocator.?.free(entry.value_ptr.path);
     }
-    file_handles.deinit();
+    file_handles.deinit(allocator);
     
     // Cleanup sockets
     var socket_iter = socket_registry.iterator();
     while (socket_iter.next()) |entry| {
         std.posix.close(entry.value_ptr.fd);
     }
-    socket_registry.deinit();
+    socket_registry.deinit(allocator);
     
     // Cleanup processes
     var process_iter = process_registry.iterator();
     while (process_iter.next()) |entry| {
         global_allocator.?.free(entry.value_ptr.command);
     }
-    process_registry.deinit();
+    process_registry.deinit(allocator);
     
     print("[SYSCALL] All registries cleaned up\n", .{});
 }

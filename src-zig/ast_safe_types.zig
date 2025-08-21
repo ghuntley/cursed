@@ -52,7 +52,7 @@ pub fn RefPtr(comptime T: type) type {
             if (self.ref_count.* == 0) {
                 // Last reference - safe to destroy
                 if (std.meta.hasFn(T, "deinit")) {
-                    self.ptr.?.deinit(self.allocator);
+                    self.ptr.?.deinit(allocator);
                 }
                 self.allocator.destroy(self.ptr.?);
                 self.allocator.destroy(self.ref_count);
@@ -75,7 +75,7 @@ pub const SafeArrayType = struct {
     }
 
     pub fn deinit(self: *SafeArrayType) void {
-        self.element_type.deinit();
+        self.element_type.deinit(allocator);
     }
 
     pub fn toAstType(self: *const SafeArrayType) ast.ArrayType {
@@ -99,8 +99,8 @@ pub const SafeMapType = struct {
     }
 
     pub fn deinit(self: *SafeMapType) void {
-        self.key_type.deinit();
-        self.value_type.deinit();
+        self.key_type.deinit(allocator);
+        self.value_type.deinit(allocator);
     }
 
     pub fn toAstType(self: *const SafeMapType) ast.MapType {
@@ -133,10 +133,10 @@ pub const SafeFunctionType = struct {
         for (self.parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         if (self.return_type) |*ret| {
-            ret.deinit();
+            ret.deinit(allocator);
         }
     }
 
@@ -178,10 +178,10 @@ test "RefPtr reference counting" {
     const allocator = std.testing.allocator;
     
     var ref1 = try RefPtr(i32).init(allocator, 42);
-    defer ref1.deinit();
+    defer ref1.deinit(allocator);
     
     var ref2 = ref1.clone();
-    defer ref2.deinit();
+    defer ref2.deinit(allocator);
     
     // Both should point to the same value
     try std.testing.expect(ref1.get().?.* == 42);
@@ -194,11 +194,11 @@ test "SafeArrayType lifecycle" {
     
     const element_type = ast.Type{ .Basic = "drip" };
     var array_type = try SafeArrayType.init(allocator, element_type, null);
-    defer array_type.deinit();
+    defer array_type.deinit(allocator);
     
     // Should be safely cloneable
     var cloned = array_type.element_type.clone();
-    defer cloned.deinit();
+    defer cloned.deinit(allocator);
     
     try std.testing.expect(array_type.element_type.ref_count.* == 2);
 }

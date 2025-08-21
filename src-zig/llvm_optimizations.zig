@@ -64,21 +64,53 @@ pub const LLVMOptimizationEngine = struct {
     
     /// Basic optimization passes (O0) - minimal overhead
     fn addBasicPasses(self: *LLVMOptimizationEngine, llvm_module: anytype) !void {
-        _ = llvm_module; // TODO: Use for actual LLVM pass configuration
+        // Configure actual LLVM passes for O0 optimization level
+        const c = @import("llvm_c_api.zig");
+        
+        // Create pass managers if not already created
+        if (self.module_pass_manager == null) {
+            self.module_pass_manager = c.LLVMCreatePassManager();
+        }
+        if (self.function_pass_manager == null) {
+            self.function_pass_manager = c.LLVMCreateFunctionPassManagerForModule(llvm_module);
+        }
+        
+        // Add essential passes for O0 (minimal optimization)
+        c.LLVMAddPromoteMemoryToRegisterPass(self.function_pass_manager); // mem2reg - essential for SSA form
+        c.LLVMAddInstructionCombiningPass(self.function_pass_manager);    // instcombine - cleanup
         
         const passes = [_]OptimizationPass{
             .{ .name = "mem2reg", .description = "Memory to register promotion", .estimated_speedup = 1.2 },
-            .{ .name = "simplifycfg", .description = "Simplify control flow", .estimated_speedup = 1.1 },
+            .{ .name = "instcombine", .description = "Basic instruction combining", .estimated_speedup = 1.05 },
         };
         
         for (passes) |pass| {
             try self.addPass(pass);
         }
+        
+        print("  ✅ Added {} basic optimization passes (O0)\n", .{passes.len});
     }
     
     /// O1 optimization passes - balanced performance and compile time
     fn addO1Passes(self: *LLVMOptimizationEngine, llvm_module: anytype) !void {
-        _ = llvm_module;
+        const c = @import("llvm_c_api.zig");
+        
+        // Ensure pass managers exist
+        if (self.module_pass_manager == null) {
+            self.module_pass_manager = c.LLVMCreatePassManager();
+        }
+        if (self.function_pass_manager == null) {
+            self.function_pass_manager = c.LLVMCreateFunctionPassManagerForModule(llvm_module);
+        }
+        
+        // Add O1 optimization passes in optimal order
+        c.LLVMAddPromoteMemoryToRegisterPass(self.function_pass_manager);  // mem2reg
+        c.LLVMAddInstructionCombiningPass(self.function_pass_manager);     // instcombine
+        c.LLVMAddReassociatePass(self.function_pass_manager);              // reassociate
+        c.LLVMAddGVNPass(self.function_pass_manager);                      // gvn
+        c.LLVMAddCFGSimplificationPass(self.function_pass_manager);        // simplifycfg
+        c.LLVMAddDeadCodeEliminationPass(self.function_pass_manager);      // dce
+        c.LLVMAddConstantPropagationPass(self.function_pass_manager);      // constprop
         
         const passes = [_]OptimizationPass{
             .{ .name = "mem2reg", .description = "Memory to register promotion", .estimated_speedup = 1.2 },
@@ -87,11 +119,14 @@ pub const LLVMOptimizationEngine = struct {
             .{ .name = "gvn", .description = "Global value numbering", .estimated_speedup = 1.4 },
             .{ .name = "simplifycfg", .description = "Simplify control flow", .estimated_speedup = 1.3 },
             .{ .name = "dce", .description = "Dead code elimination", .estimated_speedup = 1.2 },
+            .{ .name = "constprop", .description = "Constant propagation", .estimated_speedup = 1.25 },
         };
         
         for (passes) |pass| {
             try self.addPass(pass);
         }
+        
+        print("  ✅ Added {} O1 optimization passes\n", .{passes.len});
     }
     
     /// O2 optimization passes - good performance with reasonable compile time
@@ -302,11 +337,11 @@ pub const LLVMOptimizationEngine = struct {
     /// Get optimization recommendations based on code characteristics
     pub fn getOptimizationRecommendations(self: *LLVMOptimizationEngine, code_analysis: CodeAnalysis) []OptimizationRecommendation {
         _ = self;
-        var recommendations = std.ArrayList(OptimizationRecommendation).init(std.heap.page_allocator);
+        var recommendations: std.ArrayList(OptimizationRecommendation) = .empty;
         
         // Loop-heavy code recommendations
         if (code_analysis.loop_count > 10) {
-            recommendations.append(.{
+            recommendations.append(allocator, .{
                 .pass_name = "loop-vectorize",
                 .reason = "High loop count detected",
                 .estimated_benefit = 2.5,
@@ -316,7 +351,7 @@ pub const LLVMOptimizationEngine = struct {
         
         // Function call heavy code
         if (code_analysis.function_call_count > 50) {
-            recommendations.append(.{
+            recommendations.append(allocator, .{
                 .pass_name = "inline",
                 .reason = "High function call overhead",
                 .estimated_benefit = 1.9,
@@ -326,7 +361,7 @@ pub const LLVMOptimizationEngine = struct {
         
         // Memory intensive code
         if (code_analysis.memory_operations > 100) {
-            recommendations.append(.{
+            recommendations.append(allocator, .{
                 .pass_name = "memcpyopt",
                 .reason = "Memory operation optimization needed",
                 .estimated_benefit = 1.3,
@@ -334,7 +369,7 @@ pub const LLVMOptimizationEngine = struct {
             }) catch {};
         }
         
-        return recommendations.toOwnedSlice() catch &[_]OptimizationRecommendation{};
+        return recommendations.toOwnedSlice(allocator) catch &[_]OptimizationRecommendation{};
     }
 };
 

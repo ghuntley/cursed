@@ -28,8 +28,8 @@ pub const EnhancedPackageManager = struct {
     }
     
     pub fn deinit(self: *EnhancedPackageManager) void {
-        self.registry_client.deinit();
-        self.package_registry.deinit();
+        self.registry_client.deinit(allocator);
+        self.package_registry.deinit(allocator);
     }
     
     // ===== Enhanced Search Command =====
@@ -51,7 +51,7 @@ pub const EnhancedPackageManager = struct {
         
         // Build advanced search query
         var search_query = registry.SearchQuery.init(self.allocator, query_str);
-        defer search_query.deinit();
+        defer search_query.deinit(allocator);
         
         // Apply filters from options
         if (options.category) |cat| {
@@ -81,7 +81,7 @@ pub const EnhancedPackageManager = struct {
         // Perform search with caching
         const start_time = std.time.milliTimestamp();
         var search_result = try self.registry_client.search(search_query);
-        defer search_result.deinit();
+        defer search_result.deinit(allocator);
         const end_time = std.time.milliTimestamp();
         
         // Display results with enhanced formatting
@@ -154,7 +154,7 @@ pub const EnhancedPackageManager = struct {
         
         // Generate context for recommendations
         var context = registry.RecommendationContext.init(self.allocator);
-        defer context.deinit();
+        defer context.deinit(allocator);
         
         // Infer categories from search query
         if (std.mem.indexOf(u8, query, "web") != null or std.mem.indexOf(u8, query, "http") != null) {
@@ -173,7 +173,7 @@ pub const EnhancedPackageManager = struct {
             for (recommendations.items) |rec| {
                 self.allocator.free(rec);
             }
-            recommendations.deinit();
+            recommendations.deinit(allocator);
         }
         
         for (recommendations.items) |rec| {
@@ -199,11 +199,11 @@ pub const EnhancedPackageManager = struct {
         
         // Get package metadata
         var metadata = try self.registry_client.getPackageInfo(package_name, version);
-        defer metadata.deinit();
+        defer metadata.deinit(allocator);
         
         // Security scan
         var security_status = try self.package_registry.security_scanner.scanPackage(package_name, metadata.version);
-        defer security_status.vulnerabilities.deinit();
+        defer security_status.vulnerabilities.deinit(allocator);
         metadata.security_status = security_status;
         
         // Quality evaluation
@@ -221,7 +221,7 @@ pub const EnhancedPackageManager = struct {
             for (recommendations.items) |rec| {
                 self.allocator.free(rec);
             }
-            recommendations.deinit();
+            recommendations.deinit(allocator);
         }
         
         if (recommendations.items.len > 0) {
@@ -352,7 +352,7 @@ pub const EnhancedPackageManager = struct {
         print("\n📊 Analytics (Last 30 days):\n", .{});
         
         var package_analytics = try self.registry_client.getPackageAnalytics(package_name, .last_30_days);
-        defer package_analytics.deinit();
+        defer package_analytics.deinit(allocator);
         
         print("   Downloads: {}\n", .{package_analytics.total_downloads});
         print("   Unique users: {}\n", .{package_analytics.unique_users});
@@ -511,7 +511,7 @@ pub const EnhancedPackageManager = struct {
         print("=" ** 50 ++ "\n\n");
         
         var analytics_data = try self.registry_client.getPackageAnalytics(package_name, timeframe);
-        defer analytics_data.deinit();
+        defer analytics_data.deinit(allocator);
         
         // Display analytics with charts
         try self.displayAnalyticsCharts(analytics_data, timeframe_str);
@@ -597,7 +597,7 @@ pub const commands = struct {
     
     pub fn deinit() void {
         if (manager) |*m| {
-            m.deinit();
+            m.deinit(allocator);
         }
     }
     
@@ -607,7 +607,7 @@ pub const commands = struct {
         // Parse options from args
         var search_options = SearchOptions{};
         var search_args = ArrayList([]const u8).init(allocator);
-        defer search_args.deinit();
+        defer search_args.deinit(allocator);
         
         var i: usize = 0;
         while (i < args.len) {
@@ -664,7 +664,7 @@ test "search options parsing" {
     const allocator = std.testing.allocator;
     
     var manager = try EnhancedPackageManager.init(allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     const options = SearchOptions{
         .category = "utilities",

@@ -16,7 +16,7 @@ const LintIssue = struct {
 // Simple linter for CURSED code
 pub fn lintCursedCode(allocator: Allocator, source: []const u8, _: []const u8) ![]LintIssue {
     var issues = ArrayList(LintIssue).init(allocator);
-    defer issues.deinit();
+    defer issues.deinit(allocator);
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     var line_number: u32 = 0;
@@ -100,7 +100,7 @@ pub fn lintCursedCode(allocator: Allocator, source: []const u8, _: []const u8) !
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -134,7 +134,8 @@ pub fn main() !void {
     defer allocator.free(issues);
     
     // Output results
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     if (issues.len == 0) {
         try stdout.print("✅ No issues found in {s}\n", .{file_path});

@@ -26,7 +26,7 @@ pub const TomlValue = union(enum) {
                 for (arr.items) |*item| {
                     item.deinit(allocator);
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             .table => |*table| {
                 var iterator = table.iterator();
@@ -36,7 +36,7 @@ pub const TomlValue = union(enum) {
                     // Free the value
                     entry.value_ptr.deinit(allocator);
                 }
-                table.deinit();
+                table.deinit(allocator);
             },
             else => {},
         }
@@ -296,7 +296,7 @@ pub const Version = struct {
         
         // Reconstruct patch part including any remaining parts (for build metadata with dots)
         var patch_part_builder = std.ArrayList(u8).init(allocator);
-        defer patch_part_builder.deinit();
+        defer patch_part_builder.deinit(allocator);
         
         try patch_part_builder.appendSlice(patch_part_start);
         while (parts.next()) |remaining_part| {
@@ -325,7 +325,7 @@ pub const Version = struct {
         var pre_release: ?[]const u8 = null;
         if (patch_parts.next()) |first_part| {
             var pre_release_parts = std.ArrayList(u8).init(allocator);
-            defer pre_release_parts.deinit();
+            defer pre_release_parts.deinit(allocator);
             
             try pre_release_parts.appendSlice(first_part);
             while (patch_parts.next()) |part| {
@@ -554,7 +554,7 @@ pub const Dependency = struct {
     }
 
     pub fn deinit(self: *Dependency) void {
-        self.features.deinit();
+        self.features.deinit(allocator);
     }
 };
 
@@ -649,50 +649,50 @@ pub const PackageManifest = struct {
         for (self.authors.items) |author| {
             allocator.free(author);
         }
-        self.authors.deinit();
+        self.authors.deinit(allocator);
         
         // Free keywords array contents
         for (self.keywords.items) |keyword| {
             allocator.free(keyword);
         }
-        self.keywords.deinit();
+        self.keywords.deinit(allocator);
         
         // Free categories array contents
         for (self.categories.items) |category| {
             allocator.free(category);
         }
-        self.categories.deinit();
+        self.categories.deinit(allocator);
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.dev_dependencies.deinit();
+        self.dev_dependencies.deinit(allocator);
         
         var build_dep_iter = self.build_dependencies.iterator();
         while (build_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.build_dependencies.deinit();
+        self.build_dependencies.deinit(allocator);
         
         var features_iter = self.features.iterator();
         while (features_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.features.deinit();
+        self.features.deinit(allocator);
         
-        self.bin.deinit();
+        self.bin.deinit(allocator);
         if (self.lib) |*lib| {
-            lib.crate_type.deinit();
+            lib.crate_type.deinit(allocator);
         }
-        self.include_files.deinit();
-        self.exclude_files.deinit();
+        self.include_files.deinit(allocator);
+        self.exclude_files.deinit(allocator);
     }
 
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -822,7 +822,7 @@ pub const PackageManifest = struct {
 
     pub fn toTomlString(self: *const PackageManifest, allocator: Allocator) ![]const u8 {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         
         const writer = content.writer();
         
@@ -953,7 +953,7 @@ pub const LockFile = struct {
         }
         
         pub fn deinit(self: *LockedPackage) void {
-            self.dependencies.deinit();
+            self.dependencies.deinit(allocator);
         }
         
         pub fn fromToml(allocator: Allocator, toml_table: HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !LockedPackage {
@@ -1007,9 +1007,9 @@ pub const LockFile = struct {
 
     pub fn deinit(self: *LockFile) void {
         for (self.packages.items) |*pkg| {
-            pkg.deinit();
+            pkg.deinit(allocator);
         }
-        self.packages.deinit();
+        self.packages.deinit(allocator);
     }
 
     pub fn saveToFile(self: *const LockFile, allocator: Allocator, file_path: []const u8) !void {
@@ -1058,7 +1058,7 @@ pub const LockFile = struct {
 
     pub fn toTomlString(self: *const LockFile, allocator: Allocator) ![]const u8 {
         var content = ArrayList(u8).init(allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         
         const writer = content.writer();
         
@@ -1121,15 +1121,15 @@ pub const DependencyResolver = struct {
     pub fn deinit(self: *DependencyResolver) void {
         var iter = self.registry_cache.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.registry_cache.deinit();
+        self.registry_cache.deinit(allocator);
     }
     
     pub fn resolve(self: *DependencyResolver, manifest: *const PackageManifest) !ArrayList(ResolvedDependency) {
         var resolved = ArrayList(ResolvedDependency).init(self.allocator);
         var visited = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(allocator);
         
         // Resolve all dependencies
         try self.resolveDependencies(&resolved, &visited, manifest.dependencies);
@@ -1158,7 +1158,7 @@ pub const DependencyResolver = struct {
         }
         
         pub fn deinit(self: *ResolvedDependency) void {
-            self.dependencies.deinit();
+            self.dependencies.deinit(allocator);
         }
     };
     
@@ -1328,7 +1328,7 @@ pub const PackageCache = struct {
     
     fn cloneFromGit(self: *PackageCache, dest_path: []const u8, git: anytype) !void {
         var args = ArrayList([]const u8).init(self.allocator);
-        defer args.deinit();
+        defer args.deinit(allocator);
         
         try args.appendSlice(&[_][]const u8{ "git", "clone", git.url, dest_path });
         
@@ -1377,7 +1377,7 @@ pub const PackageCache = struct {
         defer dest_dir.close();
         
         var walker = try source_dir.walk(self.allocator);
-        defer walker.deinit();
+        defer walker.deinit(allocator);
         
         while (try walker.next()) |entry| {
             switch (entry.kind) {
@@ -1432,14 +1432,14 @@ pub const BuildIntegration = struct {
     pub fn generateBuildFile(self: *BuildIntegration, manifest: *const PackageManifest, lock_file: *const LockFile) !void {
         _ = lock_file;
         var resolver = DependencyResolver.init(self.allocator);
-        defer resolver.deinit();
+        defer resolver.deinit(allocator);
         
         const resolved = try resolver.resolve(manifest);
         defer {
             for (resolved.items) |*dep| {
-                dep.deinit();
+                dep.deinit(allocator);
             }
-            resolved.deinit();
+            resolved.deinit(allocator);
         }
         
         // Generate build.zig modifications
@@ -1457,7 +1457,7 @@ pub const BuildIntegration = struct {
     fn generateBuildZigContent(self: *BuildIntegration, manifest: *const PackageManifest, resolved: ArrayList(DependencyResolver.ResolvedDependency)) ![]const u8 {
         _ = manifest;
         var content = ArrayList(u8).init(self.allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         
         const writer = content.writer();
         
@@ -1516,14 +1516,14 @@ pub const BuildIntegration = struct {
         try self.cache.ensureCacheDir();
         
         var resolver = DependencyResolver.init(self.allocator);
-        defer resolver.deinit();
+        defer resolver.deinit(allocator);
         
         const resolved = try resolver.resolve(manifest);
         defer {
             for (resolved.items) |*dep| {
-                dep.deinit();
+                dep.deinit(allocator);
             }
-            resolved.deinit();
+            resolved.deinit(allocator);
         }
         
         // Install missing dependencies
@@ -1658,19 +1658,19 @@ pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
     
     // Generate and update lock file
     var resolver = DependencyResolver.init(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     const resolved = try resolver.resolve(&manifest);
     defer {
         for (resolved.items) |*dep| {
-            dep.deinit();
+            dep.deinit(allocator);
         }
-        resolved.deinit();
+        resolved.deinit(allocator);
     }
     
     // Create lock file
     var lock_file = LockFile.init(allocator);
-    defer lock_file.deinit();
+    defer lock_file.deinit(allocator);
     
     for (resolved.items) |dep| {
         var locked_pkg = LockFile.LockedPackage.init(allocator);
@@ -1726,12 +1726,12 @@ pub fn cmdRemove(allocator: Allocator, args: [][]const u8) !void {
     // Remove from dependencies
     if (manifest.dependencies.fetchRemove(package_name)) |removed_entry| {
     var removed_dep = removed_entry.value;
-        removed_dep.deinit();
+        removed_dep.deinit(allocator);
     allocator.free(removed_entry.key);
         print("Removed dependency: {s}\n", .{package_name});
     } else if (manifest.dev_dependencies.fetchRemove(package_name)) |removed_entry| {
     var removed_dep = removed_entry.value;
-        removed_dep.deinit();
+        removed_dep.deinit(allocator);
                 allocator.free(removed_entry.key);
                 print("Removed dev dependency: {s}\n", .{package_name});
             } else {

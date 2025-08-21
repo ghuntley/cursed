@@ -21,10 +21,10 @@ const StandaloneDebugger = struct {
     pub fn init(allocator: std.mem.Allocator) !Self {
         return Self{
             .allocator = allocator,
-            .source_lines = std.ArrayList([]const u8).init(allocator),
+            .source_lines = .empty,
             .current_line = 0,
             .breakpoints = std.HashMap(u32, bool, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .watch_variables = std.ArrayList([]const u8).init(allocator),
+            .watch_variables = .empty,
             .is_running = false,
             .is_paused = false,
         };
@@ -34,14 +34,14 @@ const StandaloneDebugger = struct {
         for (self.source_lines.items) |line| {
             self.allocator.free(line);
         }
-        self.source_lines.deinit();
+        self.source_lines.deinit(allocator);
         
         for (self.watch_variables.items) |var_name| {
             self.allocator.free(var_name);
         }
-        self.watch_variables.deinit();
+        self.watch_variables.deinit(allocator);
         
-        self.breakpoints.deinit();
+        self.breakpoints.deinit(allocator);
     }
     
     pub fn loadSourceFile(self: *Self, file_path: []const u8) !void {
@@ -57,7 +57,7 @@ const StandaloneDebugger = struct {
         var line_iter = std.mem.splitScalar(u8, content, '\n');
         while (line_iter.next()) |line| {
             const line_copy = try self.allocator.dupe(u8, line);
-            try self.source_lines.append(line_copy);
+            try self.source_lines.append(self.allocator, line_copy);
         }
         
         print("✅ Loaded {} lines from {s}\n", .{ self.source_lines.items.len, file_path });
@@ -73,8 +73,8 @@ const StandaloneDebugger = struct {
     }
     
     fn commandLoop(self: *Self) !void {
-        const stdin = std.io.getStdIn().reader();
         var input_buffer: [256]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(input_buffer[0..]);
         
         while (true) {
             if (self.is_paused) {
@@ -277,7 +277,7 @@ const StandaloneDebugger = struct {
         };
         
         const name_copy = try self.allocator.dupe(u8, var_name);
-        try self.watch_variables.append(name_copy);
+        try self.watch_variables.append(self.allocator, name_copy);
         print("👁️ Now watching variable: {s}\n", .{var_name});
     }
     
@@ -350,7 +350,7 @@ const StandaloneDebugger = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -365,7 +365,7 @@ pub fn main() !void {
     const source_file = args[1];
     
     var debugger = try StandaloneDebugger.init(allocator);
-    defer debugger.deinit();
+    defer debugger.deinit(allocator);
     
     try debugger.startSession(source_file);
 }

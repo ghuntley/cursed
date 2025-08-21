@@ -43,12 +43,12 @@ pub const Parser = struct {
     }
     
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
     
     pub fn parseProgram(self: *Parser) !Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(); // Clean up on error
+        errdefer program.deinit(allocator); // Clean up on error
         
         while (!self.isAtEnd()) {
             // Skip error tokens and newlines for recovery
@@ -71,8 +71,8 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(import_stmt) catch |err| {
-                        import_stmt.deinit(self.allocator);
+                    program.imports.append(self.allocator, import_stmt) catch |err| {
+                        import_stmt.deinit(allocator);
                         return err;
                     };
                 } else |err| {
@@ -84,8 +84,8 @@ pub const Parser = struct {
             
             // Parse regular statements
             if (self.parseStatement()) |stmt| {
-                program.statements.append(stmt) catch |err| {
-                    stmt.deinit(self.allocator);
+                program.statements.append(self.allocator, stmt) catch |err| {
+                    stmt.deinit(allocator);
                     return err;
                 };
             } else |err| {
@@ -222,14 +222,14 @@ pub const Parser = struct {
         // Parse parameters
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
-        var parameters = ArrayList(ast.Parameter).init(self.allocator);
-        errdefer parameters.deinit(); // Clean up on error
+        var parameters = .empty;
+        errdefer parameters.deinit(allocator); // Clean up on error
         
         if (!self.check(.RightParen)) {
             while (true) {
                 if (self.parseParameter()) |param| {
-                    parameters.append(param) catch |err| {
-                        param.deinit(self.allocator);
+                    parameters.append(self.allocator, param) catch |err| {
+                        param.deinit(allocator);
                         return err;
                     };
                 } else |err| {
@@ -269,10 +269,10 @@ pub const Parser = struct {
         // Parse function body
         _ = try self.consume(.LeftBrace, "Expected '{' before function body");
         
-        var body = ArrayList(Statement).init(self.allocator);
+        var body = .empty;
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.parseStatement()) |stmt| {
-                try body.append(stmt);
+                try body.append(allocator, stmt);
             } else |err| {
                 try self.handleParseError(err, "Failed to parse statement in function body");
                 self.synchronize();
@@ -283,9 +283,9 @@ pub const Parser = struct {
         
         return ast.FunctionStatement{
             .name = name_token.lexeme,
-            .parameters = try parameters.toOwnedSlice(),
+            .parameters = try parameters.toOwnedSlice(self.allocator),
             .return_type = return_type,
-            .body = try body.toOwnedSlice(),
+            .body = try body.toOwnedSlice(self.allocator),
             .allocator = self.allocator,
         };
     }
@@ -350,11 +350,11 @@ pub const Parser = struct {
         
         // Handle generic types Type<T>
         if (self.match(.Less)) {
-            var type_params = ArrayList(ast.Type).init(self.allocator);
+            var type_params = .empty;
             
             while (true) {
                 const param_type = try self.parseType();
-                try type_params.append(param_type);
+                try type_params.append(allocator, param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -364,7 +364,7 @@ pub const Parser = struct {
             return ast.Type{
                 .Generic = .{
                     .name = type_token.lexeme,
-                    .type_params = try type_params.toOwnedSlice(),
+                    .type_params = try type_params.toOwnedSlice(allocator),
                 }
             };
         }
@@ -657,12 +657,12 @@ pub const Parser = struct {
     }
     
     fn finishCall(self: *Parser, callee: Expression) !Expression {
-        var arguments = ArrayList(Expression).init(self.allocator);
+        var arguments = .empty;
         
         if (!self.check(.RightParen)) {
             while (true) {
                 const arg = try self.parseExpression();
-                try arguments.append(arg);
+                try arguments.append(allocator, arg);
                 
                 if (!self.match(.Comma)) break;
                 
@@ -678,7 +678,7 @@ pub const Parser = struct {
         const call_expr = Expression{
             .Call = .{
                 .callee = try self.allocator.create(Expression),
-                .arguments = try arguments.toOwnedSlice(),
+                .arguments = try arguments.toOwnedSlice(self.allocator),
             }
         };
         call_expr.Call.callee.* = callee;
@@ -917,12 +917,12 @@ test "enhanced parser with error reporting" {
     const allocator = std.testing.allocator;
     
     var error_reporter = ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     // Test valid parsing
     const source = "slay main() normie { sus x normie = 42; damn x; }";
     var lexer = try enhanced_lexer.Lexer.init(allocator, source, "test.csd", &error_reporter);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
@@ -930,7 +930,7 @@ test "enhanced parser with error reporting" {
     var parser = Parser.init(allocator, tokens, &error_reporter);
     
     const program = try parser.parseProgram();
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     try std.testing.expect(program.statements.len > 0);
     try std.testing.expect(!error_reporter.hasErrors());

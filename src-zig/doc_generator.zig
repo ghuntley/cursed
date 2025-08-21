@@ -51,16 +51,16 @@ pub const DocComment = struct {
     
     pub fn init(allocator: Allocator) DocComment {
         return DocComment{
-            .params = ArrayList(ParamDoc).init(allocator),
-            .examples = ArrayList([]const u8).init(allocator),
-            .see_also = ArrayList([]const u8).init(allocator),
+            .params = .empty,
+            .examples = .empty,
+            .see_also = .empty,
         };
     }
     
     pub fn deinit(self: *DocComment) void {
-        self.params.deinit();
-        self.examples.deinit();
-        self.see_also.deinit();
+        self.params.deinit(allocator);
+        self.examples.deinit(allocator);
+        self.see_also.deinit(allocator);
     }
 };
 
@@ -92,17 +92,17 @@ pub const ModuleDoc = struct {
         return ModuleDoc{
             .name = name,
             .description = null,
-            .items = ArrayList(DocItem).init(allocator),
-            .submodules = ArrayList(ModuleDoc).init(allocator),
+            .items = .empty,
+            .submodules = .empty,
         };
     }
     
     pub fn deinit(self: *ModuleDoc) void {
-        self.items.deinit();
+        self.items.deinit(allocator);
         for (self.submodules.items) |*submodule| {
-            submodule.deinit();
+            submodule.deinit(allocator);
         }
-        self.submodules.deinit();
+        self.submodules.deinit(allocator);
     }
 };
 
@@ -132,15 +132,15 @@ pub const DocGenerator = struct {
         return DocGenerator{
             .allocator = allocator,
             .config = config,
-            .modules = ArrayList(ModuleDoc).init(allocator),
+            .modules = .empty,
         };
     }
     
     pub fn deinit(self: *DocGenerator) void {
         for (self.modules.items) |*module| {
-            module.deinit();
+            module.deinit(allocator);
         }
-        self.modules.deinit();
+        self.modules.deinit(allocator);
     }
     
     pub fn generateFromDirectory(self: *DocGenerator, dir_path: []const u8) !void {
@@ -177,7 +177,7 @@ pub const DocGenerator = struct {
         // Parse documentation
         var module = ModuleDoc.init(self.allocator, try self.allocator.dupe(u8, module_name));
         try self.extractDocumentation(file_path, source, &module);
-        try self.modules.append(module);
+        try self.modules.append(self.allocator, module);
     }
     
     pub fn writeDocumentation(self: *DocGenerator) !void {
@@ -196,7 +196,7 @@ pub const DocGenerator = struct {
         var token_lexer = lexer.Lexer.init(self.allocator, source);
         
         const tokens = try token_lexer.tokenize();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         // Parse tokens
         var cursed_parser = parser.Parser.init(self.allocator, tokens.items);
@@ -232,7 +232,7 @@ pub const DocGenerator = struct {
                     // Extract documentation comment
                     // TODO: Extract from func.comments if available
                     
-                    try module.items.append(doc_item);
+                    try module.items.append(self.allocator, doc_item);
                 },
                 .Struct => |structure| {
                     const doc_item = DocItem{
@@ -246,7 +246,7 @@ pub const DocGenerator = struct {
                     };
                     
                     // TODO: Extract from structure.comments if available
-                    try module.items.append(doc_item);
+                    try module.items.append(self.allocator, doc_item);
                 },
                 .Interface => |interface| {
                     const doc_item = DocItem{
@@ -260,7 +260,7 @@ pub const DocGenerator = struct {
                     };
                     
                     // TODO: Extract from interface.comments if available
-                    try module.items.append(doc_item);
+                    try module.items.append(self.allocator, doc_item);
                 },
                 else => {},
             }
@@ -274,8 +274,8 @@ pub const DocGenerator = struct {
         var lines = std.mem.splitScalar(u8, text, '\n');
         
         var current_section: ?[]const u8 = null;
-        var description_lines = ArrayList(u8).init(self.allocator);
-        defer description_lines.deinit();
+        var description_lines = .empty;
+        defer description_lines.deinit(allocator);
         
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t");
@@ -296,7 +296,7 @@ pub const DocGenerator = struct {
             } else if (std.mem.startsWith(u8, clean_line, "@example")) {
                 current_section = "example";
             } else if (std.mem.startsWith(u8, clean_line, "@see")) {
-                try doc_comment.see_also.append(try self.allocator.dupe(u8, std.mem.trim(u8, clean_line[4..], " \t")));
+                try doc_comment.see_also.append(self.allocator, try self.allocator.dupe(u8, std.mem.trim(u8, clean_line[4..], " \t")));
             } else if (std.mem.startsWith(u8, clean_line, "@since")) {
                 doc_comment.since = try self.allocator.dupe(u8, std.mem.trim(u8, clean_line[6..], " \t"));
             } else if (std.mem.startsWith(u8, clean_line, "@deprecated")) {
@@ -305,7 +305,7 @@ pub const DocGenerator = struct {
                 // Regular description text
                 if (clean_line.len > 0) {
                     if (description_lines.items.len > 0) {
-                        try description_lines.append('\n');
+                        try description_lines.append(self.allocator, '\n');
                     }
                     try description_lines.appendSlice(clean_line);
                 }
@@ -313,7 +313,7 @@ pub const DocGenerator = struct {
         }
         
         if (description_lines.items.len > 0) {
-            doc_comment.description = try description_lines.toOwnedSlice();
+            doc_comment.description = try description_lines.toOwnedSlice(allocator);
         }
     }
     
@@ -324,65 +324,65 @@ pub const DocGenerator = struct {
         const name = parts.next() orelse return;
         const param_type = parts.next() orelse "";
         
-        var description = ArrayList(u8).init(self.allocator);
-        defer description.deinit();
+        var description = .empty;
+        defer description.deinit(allocator);
         
         while (parts.next()) |part| {
-            if (description.items.len > 0) try description.append(' ');
+            if (description.items.len > 0) try description.append(self.allocator, ' ');
             try description.appendSlice(part);
         }
         
-        try doc_comment.params.append(DocComment.ParamDoc{
+        try doc_comment.params.append(self.allocator, DocComment.ParamDoc{
             .name = try self.allocator.dupe(u8, name),
             .type = try self.allocator.dupe(u8, param_type),
-            .description = try description.toOwnedSlice(),
+            .description = try description.toOwnedSlice(self.allocator),
         });
     }
     
     fn buildFunctionSignature(self: *DocGenerator, func: ast.FunctionStatement) ![]const u8 {
-        var signature = ArrayList(u8).init(self.allocator);
-        defer signature.deinit();
+        var signature = .empty;
+        defer signature.deinit(allocator);
         
         try signature.appendSlice("slay ");
         try signature.appendSlice(func.name);
-        try signature.append('(');
+        try signature.append(allocator, '(');
         
         for (func.parameters.items, 0..) |param, i| {
             if (i > 0) try signature.appendSlice(", ");
             try signature.appendSlice(param.name);
-            try signature.append(' ');
+            try signature.append(allocator, ' ');
             // Note: param_type is a Type union, need to convert to string
             try signature.appendSlice("Type"); // Placeholder for now
         }
         
-        try signature.append(')');
+        try signature.append(allocator, ')');
         
         if (func.return_type) |_| {
-            try signature.append(' ');
+            try signature.append(allocator, ' ');
             try signature.appendSlice("ReturnType"); // Placeholder for now
         }
         
-        return try signature.toOwnedSlice();
+        return try signature.toOwnedSlice(allocator);
     }
     
     fn buildStructSignature(self: *DocGenerator, structure: ast.StructStatement) ![]const u8 {
-        var signature = ArrayList(u8).init(self.allocator);
-        defer signature.deinit();
+        var signature = .empty;
+        defer signature.deinit(allocator);
         
         try signature.appendSlice("squad ");
         try signature.appendSlice(structure.name);
         
-        return try signature.toOwnedSlice();
+        return try signature.toOwnedSlice(allocator);
     }
     
     fn buildInterfaceSignature(self: *DocGenerator, interface: ast.InterfaceStatement) ![]const u8 {
-        var signature = ArrayList(u8).init(self.allocator);
-        defer signature.deinit();
+        var signature = .empty;
+        defer signature.deinit(allocator);
         
         try signature.appendSlice("collab ");
         try signature.appendSlice(interface.name);
         
-        return try signature.toOwnedSlice();
+        return try signature.toOwnedSlice(allocator);
     }
     
     // HTML Documentation Generation
@@ -509,18 +509,18 @@ pub const DocGenerator = struct {
         }
         
         // Group items by type
-        var functions = ArrayList(DocItem).init(self.allocator);
-        var structs = ArrayList(DocItem).init(self.allocator);
-        var interfaces = ArrayList(DocItem).init(self.allocator);
-        defer functions.deinit();
-        defer structs.deinit();
-        defer interfaces.deinit();
+        var functions = .empty;
+        var structs = .empty;
+        var interfaces = .empty;
+        defer functions.deinit(allocator);
+        defer structs.deinit(allocator);
+        defer interfaces.deinit(allocator);
         
         for (module.items.items) |item| {
             switch (item.type) {
-                .Function => try functions.append(item),
-                .Struct => try structs.append(item),
-                .Interface => try interfaces.append(item),
+                .Function => try functions.append(allocator, item),
+                .Struct => try structs.append(allocator, item),
+                .Interface => try interfaces.append(allocator, item),
                 else => {},
             }
         }
@@ -691,7 +691,7 @@ pub const DocGenerator = struct {
 // Main documentation generator entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -728,7 +728,7 @@ pub fn main() !void {
     }
     
     var generator = DocGenerator.init(allocator, config);
-    defer generator.deinit();
+    defer generator.deinit(allocator);
     
     try generator.generateFromDirectory(source_dir);
     try generator.writeDocumentation();

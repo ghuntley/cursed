@@ -73,17 +73,17 @@ const WasmLexer = struct {
     }
     
     pub fn tokenize(self: *Self) ![]Token {
-        var tokens = ArrayList(Token).init(self.allocator);
+        var tokens = .empty;
         
         while (!self.isAtEnd()) {
             const token = self.scanToken();
             if (token.type != .Invalid) {
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
             if (token.type == .EOF) break;
         }
         
-        return tokens.toOwnedSlice();
+        return tokens.toOwnedSlice(allocator);
     }
     
     fn scanToken(self: *Self) Token {
@@ -239,12 +239,12 @@ const WasmInterpreter = struct {
     pub fn init(allocator: Allocator) Self {
         return Self{
             .allocator = allocator,
-            .output = ArrayList(u8).init(allocator),
+            .output = .empty,
         };
     }
     
     pub fn deinit(self: *Self) void {
-        self.output.deinit();
+        self.output.deinit(allocator);
     }
     
     pub fn execute(self: *Self, tokens: []Token) !void {
@@ -275,7 +275,7 @@ const WasmInterpreter = struct {
                 
                 if (token.type == .Delimiter and std.mem.eql(u8, token.value, ")")) {
                     index.* += 1; // Skip ")"
-                    try self.output.append('\n');
+                    try self.output.append(allocator, '\n');
                     break;
                 }
                 
@@ -343,11 +343,11 @@ export fn wasm_init() i32 {
 
 export fn wasm_deinit() void {
     if (global_interpreter) |*interpreter| {
-        interpreter.deinit();
+        interpreter.deinit(allocator);
         global_interpreter = null;
     }
     if (global_allocator) |*arena| {
-        arena.deinit();
+        arena.deinit(allocator);
         global_allocator = null;
     }
 }

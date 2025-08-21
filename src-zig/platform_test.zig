@@ -4,7 +4,7 @@ const platform = @import("platform_abstraction.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     std.debug.print("CURSED Platform Abstraction Test Suite\n");
@@ -15,7 +15,7 @@ pub fn main() !void {
         std.debug.print("Platform initialization failed: {any}\n", .{err});
         return;
     };
-    defer platform.PlatformInit.deinit();
+    defer platform.PlatformInit.deinit(allocator);
     
     // Test platform detection
     const current_platform = platform.Platform.current();

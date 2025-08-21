@@ -100,8 +100,8 @@ pub const DebugFunction = struct {
             .name = name,
             .mangled_name = mangled_name,
             .return_type = return_type,
-            .parameters = ArrayList(DebugVariable).init(allocator),
-            .local_variables = ArrayList(DebugVariable).init(allocator),
+            .parameters = .empty,
+            .local_variables = .empty,
             .location = location,
             .llvm_function = null,
             .llvm_debug_info = null,
@@ -110,19 +110,19 @@ pub const DebugFunction = struct {
     }
     
     pub fn deinit(self: *DebugFunction) void {
-        self.parameters.deinit();
-        self.local_variables.deinit();
+        self.parameters.deinit(allocator);
+        self.local_variables.deinit(allocator);
     }
     
     pub fn addParameter(self: *DebugFunction, variable: DebugVariable) !void {
         var param = variable;
         param.is_parameter = true;
         param.is_local = false;
-        try self.parameters.append(param);
+        try self.parameters.append(allocator, param);
     }
     
     pub fn addLocalVariable(self: *DebugFunction, variable: DebugVariable) !void {
-        try self.local_variables.append(variable);
+        try self.local_variables.append(allocator, variable);
     }
 };
 
@@ -137,8 +137,8 @@ pub const DebugScope = struct {
     pub fn init(allocator: Allocator, parent: ?*DebugScope, location: SourceLocation) DebugScope {
         return DebugScope{
             .parent = parent,
-            .children = ArrayList(*DebugScope).init(allocator),
-            .variables = ArrayList(DebugVariable).init(allocator),
+            .children = .empty,
+            .variables = .empty,
             .location = location,
             .llvm_scope = null,
             .allocator = allocator,
@@ -147,17 +147,17 @@ pub const DebugScope = struct {
     
     pub fn deinit(self: *DebugScope) void {
         for (self.children.items) |child| {
-            child.deinit();
+            child.deinit(allocator);
             self.allocator.destroy(child);
         }
-        self.children.deinit();
-        self.variables.deinit();
+        self.children.deinit(allocator);
+        self.variables.deinit(allocator);
     }
     
     pub fn createChildScope(self: *DebugScope, location: SourceLocation) !*DebugScope {
         const child = try self.allocator.create(DebugScope);
         child.* = DebugScope.init(self.allocator, self, location);
-        try self.children.append(child);
+        try self.children.append(self.allocator, child);
         return child;
     }
 };
@@ -181,9 +181,9 @@ pub const CompilationUnit = struct {
             .producer = "CURSED Compiler",
             .version = "1.0.0",
             .language = "CURSED",
-            .functions = ArrayList(DebugFunction).init(allocator),
-            .global_variables = ArrayList(DebugVariable).init(allocator),
-            .types = ArrayList(DebugType).init(allocator),
+            .functions = .empty,
+            .global_variables = .empty,
+            .types = .empty,
             .llvm_compile_unit = null,
             .allocator = allocator,
         };
@@ -191,14 +191,14 @@ pub const CompilationUnit = struct {
     
     pub fn deinit(self: *CompilationUnit) void {
         for (self.functions.items) |*func| {
-            func.deinit();
+            func.deinit(allocator);
         }
-        self.functions.deinit();
-        self.global_variables.deinit();
+        self.functions.deinit(allocator);
+        self.global_variables.deinit(allocator);
         for (self.types.items) |*debug_type| {
-            debug_type.deinit();
+            debug_type.deinit(allocator);
         }
-        self.types.deinit();
+        self.types.deinit(allocator);
     }
 };
 
@@ -277,9 +277,9 @@ pub const DebugInfoGenerator = struct {
     }
     
     pub fn deinit(self: *DebugInfoGenerator) void {
-        self.compilation_unit.deinit();
+        self.compilation_unit.deinit(allocator);
         if (self.current_scope) |scope| {
-            scope.deinit();
+            scope.deinit(allocator);
             self.allocator.destroy(scope);
         }
         llvm.LLVMDisposeDIBuilder(self.di_builder);
@@ -502,7 +502,7 @@ pub fn initDebugGeneration(allocator: Allocator, llvm_context: llvm.LLVMContextR
 pub fn deinitDebugGeneration() void {
     if (global_debug_generator) |*generator| {
         generator.finalize();
-        generator.deinit();
+        generator.deinit(allocator);
         global_debug_generator = null;
     }
 }
@@ -552,11 +552,11 @@ pub fn testDebugGeneration() !void {
     defer llvm.LLVMDisposeModule(module);
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var generator = try DebugInfoGenerator.init(allocator, context, module, "test.csd", "/tmp");
-    defer generator.deinit();
+    defer generator.deinit(allocator);
     
     try generator.createCompileUnit();
     try generator.createCursedTypes();
@@ -564,7 +564,7 @@ pub fn testDebugGeneration() !void {
     // Create a test function
     const location = SourceLocation.init("test.csd", "/tmp", 1, 1);
     var test_func = DebugFunction.init(allocator, "test_function", "test_function", "void", location);
-    defer test_func.deinit();
+    defer test_func.deinit(allocator);
     
     try generator.createFunction(&test_func);
     generator.finalize();

@@ -110,9 +110,9 @@ pub const ErrorDiagnostic = struct {
             .line_number = line,
             .column_number = col,
             .source_line = null,
-            .stack_trace = ArrayList(StackFrame).init(allocator),
-            .suggestions = ArrayList([]const u8).init(allocator),
-            .related_errors = ArrayList(*ErrorDiagnostic).init(allocator),
+            .stack_trace = .empty,
+            .suggestions = .empty,
+            .related_errors = .empty,
             .allocator = allocator,
         };
     }
@@ -127,17 +127,17 @@ pub const ErrorDiagnostic = struct {
         }
         
         for (self.stack_trace.items) |*frame| {
-            frame.deinit(self.allocator);
+            frame.deinit(allocator);
         }
-        self.stack_trace.deinit();
+        self.stack_trace.deinit(allocator);
         
         for (self.suggestions.items) |suggestion| {
             self.allocator.free(suggestion);
         }
-        self.suggestions.deinit();
+        self.suggestions.deinit(allocator);
         
         // Note: Don't free related_errors items - they're owned elsewhere
-        self.related_errors.deinit();
+        self.related_errors.deinit(allocator);
     }
     
     pub fn setSourceLine(self: *ErrorDiagnostic, source: []const u8) !void {
@@ -148,15 +148,15 @@ pub const ErrorDiagnostic = struct {
     }
     
     pub fn addStackFrame(self: *ErrorDiagnostic, frame: StackFrame) !void {
-        try self.stack_trace.append(frame);
+        try self.stack_trace.append(self.allocator, frame);
     }
     
     pub fn addSuggestion(self: *ErrorDiagnostic, suggestion: []const u8) !void {
-        try self.suggestions.append(try self.allocator.dupe(u8, suggestion));
+        try self.suggestions.append(self.allocator, try self.allocator.dupe(u8, suggestion));
     }
     
     pub fn addRelatedError(self: *ErrorDiagnostic, related: *ErrorDiagnostic) !void {
-        try self.related_errors.append(related);
+        try self.related_errors.append(self.allocator, related);
     }
     
     pub fn format(self: ErrorDiagnostic, writer: anytype, use_colors: bool) !void {
@@ -218,8 +218,8 @@ pub const ErrorDiagnostic = struct {
     }
     
     pub fn toString(self: ErrorDiagnostic, use_colors: bool) ![]u8 {
-        var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        var buffer = .empty;
+        defer buffer.deinit(allocator);
         
         const writer = buffer.writer();
         try self.format(writer, use_colors);
@@ -240,10 +240,10 @@ pub const ErrorHandler = struct {
     pub fn init(allocator: Allocator, max_errors: usize) ErrorHandler {
         return ErrorHandler{
             .allocator = allocator,
-            .diagnostics = ArrayList(ErrorDiagnostic).init(allocator),
+            .diagnostics = .empty,
             .current_file = null,
             .source_lines = null,
-            .function_stack = ArrayList(StackFrame).init(allocator),
+            .function_stack = .empty,
             .max_errors = max_errors,
             .use_colors = std.io.tty.detectConfig(std.io.getStdErr()) != .no_color,
         };
@@ -251,9 +251,9 @@ pub const ErrorHandler = struct {
     
     pub fn deinit(self: *ErrorHandler) void {
         for (self.diagnostics.items) |*diagnostic| {
-            diagnostic.deinit();
+            diagnostic.deinit(allocator);
         }
-        self.diagnostics.deinit();
+        self.diagnostics.deinit(allocator);
         
         if (self.current_file) |file| {
             self.allocator.free(file);
@@ -263,13 +263,13 @@ pub const ErrorHandler = struct {
             for (lines.items) |line| {
                 self.allocator.free(line);
             }
-            lines.deinit();
+            lines.deinit(allocator);
         }
         
         for (self.function_stack.items) |*frame| {
-            frame.deinit(self.allocator);
+            frame.deinit(allocator);
         }
-        self.function_stack.deinit();
+        self.function_stack.deinit(allocator);
     }
     
     pub fn setCurrentFile(self: *ErrorHandler, file_path: []const u8, source: []const u8) !void {
@@ -283,10 +283,10 @@ pub const ErrorHandler = struct {
             for (old_lines.items) |line| {
                 self.allocator.free(line);
             }
-            old_lines.deinit();
+            old_lines.deinit(allocator);
         }
         
-        self.source_lines = ArrayList([]const u8).init(self.allocator);
+        self.source_lines = .empty;
         var lines = std.mem.splitScalar(u8, source, '\n');
         while (lines.next()) |line| {
             try self.source_lines.?.append(try self.allocator.dupe(u8, line));
@@ -302,13 +302,13 @@ pub const ErrorHandler = struct {
             col,
             self.getSourceLine(line)
         );
-        try self.function_stack.append(frame);
+        try self.function_stack.append(self.allocator, frame);
     }
     
     pub fn popFunction(self: *ErrorHandler) void {
         if (self.function_stack.items.len > 0) {
             var frame = self.function_stack.pop();
-            frame.deinit(self.allocator);
+            frame.deinit(allocator);
         }
     }
     
@@ -361,7 +361,7 @@ pub const ErrorHandler = struct {
             try diagnostic.addStackFrame(frame_copy);
         }
         
-        try self.diagnostics.append(diagnostic);
+        try self.diagnostics.append(self.allocator, diagnostic);
     }
     
     pub fn reportYikesError(self: *ErrorHandler, message: []const u8, line: u32, col: u32) !void {
@@ -451,9 +451,9 @@ pub const ErrorHandler = struct {
     
     pub fn clear(self: *ErrorHandler) void {
         for (self.diagnostics.items) |*diagnostic| {
-            diagnostic.deinit();
+            diagnostic.deinit(allocator);
         }
-        self.diagnostics.clearAndFree();
+        self.diagnostics.clearAndFree(allocator);
     }
 };
 
@@ -461,7 +461,7 @@ test "error diagnostics system" {
     const allocator = std.testing.allocator;
     
     var handler = ErrorHandler.init(allocator, 100);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     // Test setting current file
     const test_source = "slay test_func() {\n    yikes \"test error\"\n}";

@@ -27,12 +27,12 @@ pub const TypeVariable = struct {
     pub fn init(allocator: Allocator, id: u32) TypeVariable {
         return TypeVariable{
             .id = id,
-            .bounds = ArrayList(ast.Type).init(allocator),
+            .bounds = .empty,
         };
     }
     
     pub fn deinit(self: *TypeVariable) void {
-        self.bounds.deinit();
+        self.bounds.deinit(allocator);
     }
 };
 
@@ -70,8 +70,8 @@ pub const RecursionDetector = struct {
     }
     
     pub fn deinit(self: *RecursionDetector) void {
-        self.visiting.deinit();
-        self.visited.deinit();
+        self.visiting.deinit(allocator);
+        self.visited.deinit(allocator);
     }
     
     /// Check if entering a type variable would create a cycle
@@ -168,8 +168,8 @@ pub const TypeMemoization = struct {
     }
     
     pub fn deinit(self: *TypeMemoization) void {
-        self.unification_cache.deinit();
-        self.substitution_cache.deinit();
+        self.unification_cache.deinit(allocator);
+        self.substitution_cache.deinit(allocator);
     }
     
     /// Hash a type for memoization
@@ -236,7 +236,7 @@ pub const TypeInferenceEngine = struct {
         return TypeInferenceEngine{
             .allocator = allocator,
             .type_variables = HashMap(u32, TypeVariable, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .constraints = ArrayList(TypeConstraint).init(allocator),
+            .constraints = .empty,
             .recursion_detector = RecursionDetector.init(allocator),
             .memoization = TypeMemoization.init(allocator),
             .next_var_id = 1,
@@ -246,12 +246,12 @@ pub const TypeInferenceEngine = struct {
     pub fn deinit(self: *TypeInferenceEngine) void {
         var iter = self.type_variables.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.type_variables.deinit();
-        self.constraints.deinit();
-        self.recursion_detector.deinit();
-        self.memoization.deinit();
+        self.type_variables.deinit(allocator);
+        self.constraints.deinit(allocator);
+        self.recursion_detector.deinit(allocator);
+        self.memoization.deinit(allocator);
     }
     
     /// Create a fresh type variable
@@ -269,7 +269,7 @@ pub const TypeInferenceEngine = struct {
     /// Add a type constraint
     pub fn addConstraint(self: *TypeInferenceEngine, left: ast.Type, right: ast.Type, origin: []const u8) !void {
         const constraint = TypeConstraint.init(left, right, origin);
-        try self.constraints.append(constraint);
+        try self.constraints.append(self.allocator, constraint);
     }
     
     /// Unify two types with recursion detection and memoization
@@ -370,10 +370,10 @@ pub const TypeInferenceEngine = struct {
                         }
                         
                         // Unify parameters
-                        var unified_params = ArrayList(ast.Type).init(self.allocator);
+                        var unified_params = .empty;
                         for (left_func.parameters.items, right_func.parameters.items) |left_param, right_param| {
                             const unified_param = try self.unify(left_param, right_param);
-                            try unified_params.append(unified_param);
+                            try unified_params.append(self.allocator, unified_param);
                         }
                         
                         // Unify return types
@@ -408,10 +408,10 @@ pub const TypeInferenceEngine = struct {
                         }
                         
                         // Unify type arguments
-                        var unified_args = ArrayList(ast.Type).init(self.allocator);
+                        var unified_args = .empty;
                         for (left_generic.type_arguments.items, right_generic.type_arguments.items) |left_arg, right_arg| {
                             const unified_arg = try self.unify(left_arg, right_arg);
-                            try unified_args.append(unified_arg);
+                            try unified_args.append(allocator, unified_arg);
                         }
                         
                         return ast.Type{
@@ -524,10 +524,10 @@ pub const TypeInferenceEngine = struct {
                 };
             },
             .Function => |func| {
-                var new_params = ArrayList(ast.Type).init(self.allocator);
+                var new_params = .empty;
                 for (func.parameters.items) |param| {
                     const new_param = try self.substituteInternal(var_id, replacement, param);
-                    try new_params.append(new_param);
+                    try new_params.append(self.allocator, new_param);
                 }
                 
                 const new_return = if (func.return_type) |return_type| blk: {
@@ -598,20 +598,20 @@ pub const TypeInferenceEngine = struct {
 /// High-level type inference interface
 pub fn inferTypes(allocator: Allocator, expressions: []const ast.Expression) TypeInferenceError![]ast.Type {
     var engine = TypeInferenceEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
-    var result_types = ArrayList(ast.Type).init(allocator);
+    var result_types = .empty;
     
     // Generate constraints for each expression
     for (expressions) |expr| {
         const expr_type = try inferExpressionType(&engine, expr);
-        try result_types.append(expr_type);
+        try result_types.append(allocator, expr_type);
     }
     
     // Solve all constraints
     try engine.solveConstraints();
     
-    return result_types.toOwnedSlice();
+    return result_types.toOwnedSlice(allocator);
 }
 
 /// Infer type of a single expression
@@ -630,10 +630,10 @@ fn inferExpressionType(engine: *TypeInferenceEngine, expr: ast.Expression) TypeI
             // Infer function type and argument types
             const func_type = try inferExpressionType(engine, call.function.*);
             
-            var arg_types = ArrayList(ast.Type).init(engine.allocator);
+            var arg_types = .empty;
             for (call.arguments.items) |arg| {
                 const arg_type = try inferExpressionType(engine, arg);
-                try arg_types.append(arg_type);
+                try arg_types.append(allocator, arg_type);
             }
             
             // Create constraints based on function call
@@ -653,7 +653,7 @@ test "type inference with recursion detection" {
     const allocator = std.testing.allocator;
     
     var engine = TypeInferenceEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     // Create two type variables that would form a cycle
     const var1 = try engine.createTypeVariable("T1");
@@ -671,7 +671,7 @@ test "type memoization" {
     const allocator = std.testing.allocator;
     
     var memoization = TypeMemoization.init(allocator);
-    defer memoization.deinit();
+    defer memoization.deinit(allocator);
     
     const type1 = ast.Type{ .Basic = .Drip };
     const type2 = ast.Type{ .Basic = .Tea };

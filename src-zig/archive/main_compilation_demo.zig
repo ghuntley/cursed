@@ -27,7 +27,7 @@ const CompilerError = error{
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -82,20 +82,20 @@ fn demonstrateCompilationPipeline(allocator: Allocator, source: []const u8, file
     print("1️⃣ Tokenization...\n", .{});
     var l = lexer.Lexer.init(allocator, source);
     const tokens = try l.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     print("   Generated {} tokens\n", .{tokens.items.len});
 
     // Step 2: Parsing
     print("2️⃣ Parsing...\n", .{});
     var p = parser.Parser.init(allocator, tokens.items);
-    defer p.deinit();
+    defer p.deinit(allocator);
     const program = try p.parseProgram();
     print("   Parsed {} statements\n", .{program.statements.items.len});
 
     // Step 3: LLVM IR Generation
     print("3️⃣ LLVM IR Generation...\n", .{});
     var codegen = SimpleCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.generateProgram(program);
     print("   Generated LLVM module\n", .{});
@@ -105,7 +105,7 @@ fn demonstrateCompilationPipeline(allocator: Allocator, source: []const u8, file
     defer allocator.free(output_name);
     
     var ir_filename = ArrayList(u8).init(allocator);
-    defer ir_filename.deinit();
+    defer ir_filename.deinit(allocator);
     try ir_filename.appendSlice(output_name);
     try ir_filename.appendSlice(".ll");
     
@@ -242,7 +242,7 @@ const SimpleCodeGen = struct {
 
         // Generate object file
         var obj_filename = ArrayList(u8).init(self.allocator);
-        defer obj_filename.deinit();
+        defer obj_filename.deinit(allocator);
         try obj_filename.appendSlice(output_base);
         try obj_filename.appendSlice(".o");
 
@@ -258,13 +258,13 @@ const SimpleCodeGen = struct {
 
 fn linkToExecutable(allocator: Allocator, output_base: []const u8) !void {
     var obj_filename = ArrayList(u8).init(allocator);
-    defer obj_filename.deinit();
+    defer obj_filename.deinit(allocator);
     try obj_filename.appendSlice(output_base);
     try obj_filename.appendSlice(".o");
 
     // Link using gcc
     var link_args = ArrayList([]const u8).init(allocator);
-    defer link_args.deinit();
+    defer link_args.deinit(allocator);
     
     try link_args.append("gcc");
     try link_args.append("-o");

@@ -11,7 +11,7 @@ const FamBlock = error_operators.FamBlock;
 /// Simple error handling compiler for testing yikes, shook, fam operators
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -107,7 +107,7 @@ fn processYikesExpression(allocator: Allocator, line: []const u8, line_number: u
                 print("   ⚠️  Could not create YikesError\n");
                 return;
             };
-            defer test_error.deinit();
+            defer test_error.deinit(allocator);
             
             print("   ✅ Created YikesError successfully\n");
         }
@@ -122,7 +122,7 @@ fn processShookExpression(allocator: Allocator, line: []const u8, line_number: u
     
     // Create a test error and shook result
     var test_error = YikesError.init(allocator, "Test propagation", 100) catch return;
-    defer test_error.deinit();
+    defer test_error.deinit(allocator);
     
     const shook_result = ShookResult.err(test_error);
     if (shook_result.isError()) {
@@ -144,7 +144,7 @@ fn processFamExpression(allocator: Allocator, line: []const u8, line_number: u32
     
     // Create test fam block
     var fam_block = FamBlock.init(allocator);
-    defer fam_block.deinit();
+    defer fam_block.deinit(allocator);
     
     print("   ✅ FAM block structure working\n");
 }
@@ -158,7 +158,7 @@ fn testErrorOperators(allocator: Allocator) !void {
         print("   ❌ YikesError creation failed\n");
         return;
     };
-    defer error1.deinit();
+    defer error1.deinit(allocator);
     print("   ✅ yikes: Created error with message '{s}' and code {}\n", .{ error1.getMessage(), error1.getCode() });
     
     // Test 2: shook error propagation
@@ -172,13 +172,13 @@ fn testErrorOperators(allocator: Allocator) !void {
     // Test 3: fam block creation
     print("3. Testing fam panic recovery...\n");
     var fam_block = FamBlock.init(allocator);
-    defer fam_block.deinit();
+    defer fam_block.deinit(allocator);
     print("   ✅ fam: Recovery block created successfully\n");
     
     // Test 4: Complete error flow
     print("4. Testing complete error handling flow...\n");
     var original_error = YikesError.init(allocator, "Original error", 500) catch return;
-    defer original_error.deinit();
+    defer original_error.deinit(allocator);
     
     const result = ShookResult.err(original_error);
     if (result.isError()) {

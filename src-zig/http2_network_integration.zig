@@ -42,7 +42,7 @@ pub const Http2Request = struct {
             .path = "",
             .scheme = "",
             .authority = "",
-            .headers = ArrayList(http2.HeaderEntry).init(allocator),
+            .headers = .empty,
             .body = null,
         };
     }
@@ -51,7 +51,7 @@ pub const Http2Request = struct {
         for (self.headers.items) |*header| {
             header.deinit(self.headers.allocator);
         }
-        self.headers.deinit();
+        self.headers.deinit(allocator);
     }
     
     pub fn setMethod(self: *Http2Request, method: []const u8) !void {
@@ -72,7 +72,7 @@ pub const Http2Request = struct {
     
     pub fn addHeader(self: *Http2Request, name: []const u8, value: []const u8) !void {
         const header = try http2.HeaderEntry.init(self.headers.allocator, name, value);
-        try self.headers.append(header);
+        try self.headers.append(allocator, header);
     }
     
     pub fn setBody(self: *Http2Request, body: []const u8) void {
@@ -90,18 +90,18 @@ pub const Http2Response = struct {
     pub fn init(allocator: Allocator) Http2Response {
         return Http2Response{
             .status = 200,
-            .headers = ArrayList(http2.HeaderEntry).init(allocator),
-            .body = ArrayList(u8).init(allocator),
+            .headers = .empty,
+            .body = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *Http2Response) void {
         for (self.headers.items) |*header| {
-            header.deinit(self.allocator);
+            header.deinit(allocator);
         }
-        self.headers.deinit();
-        self.body.deinit();
+        self.headers.deinit(allocator);
+        self.body.deinit(allocator);
     }
     
     pub fn setStatus(self: *Http2Response, status: u16) void {
@@ -110,7 +110,7 @@ pub const Http2Response = struct {
     
     pub fn addHeader(self: *Http2Response, name: []const u8, value: []const u8) !void {
         const header = try http2.HeaderEntry.init(self.allocator, name, value);
-        try self.headers.append(header);
+        try self.headers.append(self.allocator, header);
     }
     
     pub fn setBody(self: *Http2Response, body: []const u8) !void {
@@ -147,17 +147,17 @@ pub const Http2Stream = struct {
             .dependency = null,
             .weight = 16,
             .exclusive = false,
-            .data_buffer = ArrayList(u8).init(allocator),
-            .header_buffer = ArrayList(u8).init(allocator),
+            .data_buffer = .empty,
+            .header_buffer = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *Http2Stream) void {
-        if (self.request) |*req| req.deinit();
-        if (self.response) |*resp| resp.deinit();
-        self.data_buffer.deinit();
-        self.header_buffer.deinit();
+        if (self.request) |*req| req.deinit(allocator);
+        if (self.response) |*resp| resp.deinit(allocator);
+        self.data_buffer.deinit(allocator);
+        self.header_buffer.deinit(allocator);
     }
     
     pub fn appendHeaderData(self: *Http2Stream, data: []const u8) !void {
@@ -208,10 +208,10 @@ pub const Http2Client = struct {
     pub fn deinit(self: *Http2Client) void {
         var iterator = self.streams.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.streams.deinit();
-        self.connection.deinit();
+        self.streams.deinit(allocator);
+        self.connection.deinit(allocator);
         
         if (self.socket) |socket| {
             platform.Network.closeSocket(socket);
@@ -273,8 +273,8 @@ pub const Http2Client = struct {
     /// Create HEADERS frame for request
     fn createHeadersFrame(self: *Http2Client, stream_id: u31, request: *const Http2Request, end_stream: bool) ![]u8 {
         // Build pseudo-headers
-        var header_list = ArrayList(u8).init(self.allocator);
-        defer header_list.deinit();
+        var header_list = .empty;
+        defer header_list.deinit(allocator);
         
         // :method
         try self.encodeHeader(&header_list, ":method", request.method);
@@ -327,9 +327,9 @@ pub const Http2Client = struct {
         _ = self;
         
         // Simplified encoding - just store name and value lengths + data
-        try buffer.append(@intCast(name.len));
+        try buffer.append(allocator, @intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(@intCast(value.len));
+        try buffer.append(allocator, @intCast(value.len));
         try buffer.appendSlice(value);
     }
     
@@ -373,10 +373,10 @@ pub const Http2Server = struct {
     pub fn deinit(self: *Http2Server) void {
         var iterator = self.streams.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.streams.deinit();
-        self.connection.deinit();
+        self.streams.deinit(allocator);
+        self.connection.deinit(allocator);
     }
     
     /// Set request handler callback
@@ -425,8 +425,8 @@ pub const Http2Server = struct {
     
     /// Create HEADERS frame for response
     fn createResponseHeadersFrame(self: *Http2Server, stream_id: u31, response: *const Http2Response) ![]u8 {
-        var header_list = ArrayList(u8).init(self.allocator);
-        defer header_list.deinit();
+        var header_list = .empty;
+        defer header_list.deinit(allocator);
         
         // :status pseudo-header
         var status_buf: [3]u8 = undefined;
@@ -473,9 +473,9 @@ pub const Http2Server = struct {
     /// Simple header encoding
     fn encodeHeader(self: *Http2Server, buffer: *ArrayList(u8), name: []const u8, value: []const u8) !void {
         _ = self;
-        try buffer.append(@intCast(name.len));
+        try buffer.append(self.allocator, @intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(@intCast(value.len));
+        try buffer.append(allocator, @intCast(value.len));
         try buffer.appendSlice(value);
     }
 };
@@ -557,7 +557,7 @@ fn exampleRequestHandler(request: *Http2Request, response: *Http2Response) !void
 /// Test HTTP/2 client/server interaction
 pub fn testHttp2Integration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test HTTP/2 client
@@ -567,13 +567,13 @@ pub fn testHttp2Integration() !void {
     };
     
     var client = try Http2Client.init(allocator, client_config);
-    defer client.deinit();
+    defer client.deinit(allocator);
     
     try client.connect("example.com", 443);
     
     // Create and send request
     var request = Http2Request.init(allocator);
-    defer request.deinit();
+    defer request.deinit(allocator);
     
     try request.setMethod("GET");
     try request.setPath("/api/data");
@@ -592,7 +592,7 @@ pub fn testHttp2Integration() !void {
     };
     
     var server = try Http2Server.init(allocator, server_config);
-    defer server.deinit();
+    defer server.deinit(allocator);
     
     server.setRequestHandler(&exampleRequestHandler);
     

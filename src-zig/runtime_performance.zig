@@ -434,12 +434,12 @@ pub const PerformanceMonitor = struct {
             .allocator = allocator,
             .start_time = std.time.milliTimestamp(),
             .memory_usage = 0,
-            .compilation_phases = ArrayList(PhaseProfile).init(allocator),
+            .compilation_phases = .empty,
         };
     }
     
     pub fn deinit(self: *PerformanceMonitor) void {
-        self.compilation_phases.deinit();
+        self.compilation_phases.deinit(allocator);
     }
     
     pub fn startPhase(self: *PerformanceMonitor, name: []const u8) void {
@@ -448,7 +448,7 @@ pub const PerformanceMonitor = struct {
             .duration_ns = @intCast(std.time.nanoTimestamp()),
             .memory_delta = 0,
         };
-        self.compilation_phases.append(phase) catch {};
+        self.compilation_phases.append(allocator, phase) catch {};
     }
     
     pub fn endPhase(self: *PerformanceMonitor) void {
@@ -578,7 +578,7 @@ test "PerformanceMonitor" {
     const allocator = std.testing.allocator;
     
     var monitor = PerformanceMonitor.init(allocator);
-    defer monitor.deinit();
+    defer monitor.deinit(allocator);
     
     monitor.startPhase("lexing");
     std.time.sleep(1000000); // 1ms

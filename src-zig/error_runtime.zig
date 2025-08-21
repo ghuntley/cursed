@@ -29,7 +29,7 @@ pub const ErrorValue = struct {
         return ErrorValue{
             .message = try allocator.dupe(u8, message),
             .error_type = try allocator.dupe(u8, error_type),
-            .stack_trace = ArrayList(StackFrame).init(allocator),
+            .stack_trace = .empty,
             .location = SourceLocation{
                 .file = try allocator.dupe(u8, location.file),
                 .line = location.line,
@@ -48,11 +48,11 @@ pub const ErrorValue = struct {
             self.allocator.free(frame.function_name);
             self.allocator.free(frame.file);
         }
-        self.stack_trace.deinit();
+        self.stack_trace.deinit(allocator);
     }
     
     pub fn addStackFrame(self: *ErrorValue, function_name: []const u8, file: []const u8, line: u32, column: u32) !void {
-        try self.stack_trace.append(StackFrame{
+        try self.stack_trace.append(self.allocator, StackFrame{
             .function_name = try self.allocator.dupe(u8, function_name),
             .file = try self.allocator.dupe(u8, file),
             .line = line,
@@ -98,37 +98,37 @@ pub const ErrorHandler = struct {
         return ErrorHandler{
             .allocator = allocator,
             .current_error = null,
-            .error_stack = ArrayList(ErrorValue).init(allocator),
-            .function_stack = ArrayList([]const u8).init(allocator),
-            .try_catch_stack = ArrayList(TryCatchFrame).init(allocator),
+            .error_stack = .empty,
+            .function_stack = .empty,
+            .try_catch_stack = .empty,
         };
     }
     
     pub fn deinit(self: *ErrorHandler) void {
         if (self.current_error) |*err| {
-            err.deinit();
+            err.deinit(allocator);
         }
         
         for (self.error_stack.items) |*err| {
-            err.deinit();
+            err.deinit(allocator);
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(allocator);
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit();
+        self.function_stack.deinit(allocator);
         
         for (self.try_catch_stack.items) |frame| {
             if (frame.error_variable) |var_name| {
                 self.allocator.free(var_name);
             }
         }
-        self.try_catch_stack.deinit();
+        self.try_catch_stack.deinit(allocator);
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
-        try self.function_stack.append(try self.allocator.dupe(u8, function_name));
+        try self.function_stack.append(self.allocator, try self.allocator.dupe(u8, function_name));
     }
     
     pub fn popFunction(self: *ErrorHandler) void {
@@ -139,7 +139,7 @@ pub const ErrorHandler = struct {
     }
     
     pub fn pushTryCatch(self: *ErrorHandler, try_block_start: usize, error_variable: ?[]const u8, handler_type: TryCatchFrame.HandlerType) !void {
-        try self.try_catch_stack.append(TryCatchFrame{
+        try self.try_catch_stack.append(self.allocator, TryCatchFrame{
             .try_block_start = try_block_start,
             .catch_block_start = null,
             .error_variable = if (error_variable) |var_name| try self.allocator.dupe(u8, var_name) else null,
@@ -169,7 +169,7 @@ pub const ErrorHandler = struct {
         }
         
         if (self.current_error) |*current| {
-            current.deinit();
+            current.deinit(allocator);
         }
         
         self.current_error = error_value;
@@ -191,7 +191,7 @@ pub const ErrorHandler = struct {
     
     pub fn clearError(self: *ErrorHandler) void {
         if (self.current_error) |*err| {
-            err.deinit();
+            err.deinit(allocator);
             self.current_error = null;
         }
     }
@@ -252,7 +252,7 @@ export fn cursed_error_handler_init() ?*ErrorHandler {
 
 export fn cursed_error_handler_deinit(handler: *ErrorHandler) void {
     const allocator = handler.allocator;
-    handler.deinit();
+    handler.deinit(allocator);
     allocator.destroy(handler);
 }
 
@@ -314,7 +314,7 @@ export fn cursed_pop_try_catch(handler: *ErrorHandler) void {
 test "error handling runtime" {
     const allocator = std.testing.allocator;
     var handler = ErrorHandler.init(allocator);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     // Test function stack
     try handler.pushFunction("main");

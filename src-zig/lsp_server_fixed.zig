@@ -61,9 +61,9 @@ const FileTracker = struct {
         var iterator = self.files.iterator();
         while (iterator.next()) |entry| {
             var file_info = entry.value_ptr;
-            file_info.deinit(self.allocator);
+            file_info.deinit(allocator);
         }
-        self.files.deinit();
+        self.files.deinit(allocator);
     }
     
     pub fn addOrUpdateFile(self: *FileTracker, uri: []const u8, version: i32, content: []const u8) !void {
@@ -81,7 +81,7 @@ const FileTracker = struct {
     pub fn removeFile(self: *FileTracker, uri: []const u8) bool {
         if (self.files.fetchRemove(uri)) |kv| {
             var file_info = kv.value;
-            file_info.deinit(self.allocator);
+            file_info.deinit(allocator);
             self.allocator.free(kv.key);
             return true;
         }
@@ -168,7 +168,7 @@ pub const CursedLSPServer = struct {
     }
     
     pub fn deinit(self: *CursedLSPServer) void {
-        self.file_tracker.deinit();
+        self.file_tracker.deinit(allocator);
     }
     
     // Safe AST parsing with error handling
@@ -444,7 +444,7 @@ pub const CursedLSPServer = struct {
             std.log.warn("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer parsed.deinit();
+        defer parsed.deinit(allocator);
         
         const root = parsed.value;
         const method = root.object.get("method");
@@ -519,11 +519,13 @@ pub const CursedLSPServer = struct {
     pub fn run(self: *CursedLSPServer) !void {
         std.log.info("CURSED Language Server starting (crash-resistant version)...", .{});
         
-        const stdin = std.io.getStdIn().reader();
-        const stdout = std.io.getStdOut().writer();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = std.ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        var buffer: std.ArrayList(u8) = .empty;
+        defer buffer.deinit(allocator);
         
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -592,11 +594,11 @@ pub const CursedLSPServer = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var server = CursedLSPServer.init(allocator);
-    defer server.deinit();
+    defer server.deinit(allocator);
     
     try server.run();
 }

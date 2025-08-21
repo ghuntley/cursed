@@ -8,7 +8,7 @@ const ast = @import("ast_simple.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -39,7 +39,7 @@ pub fn main() !void {
     // Tokenize the source
     var lex = lexer.Lexer.init(allocator, source_content);
     var tokens = ArrayList(lexer.Token).init(allocator);
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     std.debug.print("Tokenizing...\n", .{});
     while (true) {

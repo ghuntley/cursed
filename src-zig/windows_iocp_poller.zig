@@ -98,6 +98,23 @@ extern "kernel32" fn WriteFile(
     lpOverlapped: ?*OVERLAPPED,
 ) callconv(windows.WINAPI) BOOL;
 
+// Additional Windows APIs for improved error handling
+extern "kernel32" fn CancelIo(
+    hFile: HANDLE,
+) callconv(windows.WINAPI) BOOL;
+
+extern "kernel32" fn CancelIoEx(
+    hFile: HANDLE,
+    lpOverlapped: ?*OVERLAPPED,
+) callconv(windows.WINAPI) BOOL;
+
+extern "kernel32" fn GetOverlappedResult(
+    hFile: HANDLE,
+    lpOverlapped: *OVERLAPPED,
+    lpNumberOfBytesTransferred: *DWORD,
+    bWait: BOOL,
+) callconv(windows.WINAPI) BOOL;
+
 extern "ntdll" fn RtlNtStatusToDosError(Status: DWORD) callconv(windows.WINAPI) DWORD;
 
 extern "kernel32" fn CreateWaitableTimerW(
@@ -666,7 +683,7 @@ pub const AsyncRuntime = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.poller.deinit();
+        self.poller.deinit(allocator);
     }
     
     pub fn start(self: *Self) IOCPError!void {
@@ -693,7 +710,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit();
+                defer result_channel.deinit(allocator);
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -754,7 +771,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit();
+                defer result_channel.deinit(allocator);
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -819,7 +836,7 @@ pub const AsyncRuntime = struct {
                 const result_channel = concurrency.Channel(AsyncResult).init(self.poller.allocator, 1) catch {
                     return IOCPError.OutOfMemory;
                 };
-                defer result_channel.deinit();
+                defer result_channel.deinit(allocator);
                 
                 operation.bindGoroutine(current_goroutine.id, result_channel);
                 
@@ -875,7 +892,7 @@ test "IOCP poller initialization" {
     
     const allocator = std.testing.allocator;
     var poller = try IOCPPoller.init(allocator);
-    defer poller.deinit();
+    defer poller.deinit(allocator);
     
     try std.testing.expect(!poller.running.load(.acquire));
 }
@@ -885,7 +902,7 @@ test "async runtime integration" {
     
     const allocator = std.testing.allocator;
     var runtime = try AsyncRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     try runtime.start();
     defer runtime.stop();

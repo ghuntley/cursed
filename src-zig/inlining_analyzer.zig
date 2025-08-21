@@ -73,7 +73,7 @@ pub const InliningAnalyzer = struct {
 
     /// Analyze module for inlining opportunities
     pub fn analyzeModule(self: *InliningAnalyzer, module: c.LLVMModuleRef, pgo_data: ?ProfileData) !ArrayList(InliningDecision) {
-        var decisions = ArrayList(InliningDecision).init(self.allocator);
+        var decisions = .empty;
         
         // Iterate through all functions
         var function = c.LLVMGetFirstFunction(module);
@@ -111,7 +111,7 @@ pub const InliningAnalyzer = struct {
                 const called_function = c.LLVMGetCalledValue(instruction.?);
                 if (called_function != null and c.LLVMIsAFunction(called_function.?) != null) {
                     const decision = try self.analyzeCallSite(caller, called_function.?, instruction.?, pgo_data);
-                    try decisions.append(decision);
+                    try decisions.append(allocator, decision);
                     self.inlining_decisions_made += 1;
                 }
             }
@@ -304,7 +304,7 @@ test "inlining analyzer initialization" {
     const allocator = std.testing.allocator;
     
     var analyzer = try InliningAnalyzer.init(allocator);
-    defer analyzer.deinit();
+    defer analyzer.deinit(allocator);
     
     try std.testing.expect(analyzer.default_threshold == 225);
     try std.testing.expect(analyzer.aggressive_threshold == 325);

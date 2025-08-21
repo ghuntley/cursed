@@ -87,7 +87,7 @@ pub const LLVMBackend = struct {
             .builder = builder,
             .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .error_contexts = std.ArrayList(error_handling.ErrorContext).init(allocator),
+            .error_contexts = .{},
             .current_function = null,
             .string_counter = 0,
         };
@@ -96,12 +96,12 @@ pub const LLVMBackend = struct {
     pub fn deinit(self: *LLVMBackend) void {
         // Clean up error contexts
         for (self.error_contexts.items) |*error_ctx| {
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
-        self.error_contexts.deinit();
+        self.error_contexts.deinit(allocator);
         
-        self.functions.deinit();
-        self.variables.deinit();
+        self.functions.deinit(allocator);
+        self.variables.deinit(allocator);
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);
@@ -150,7 +150,7 @@ pub const LLVMBackend = struct {
         
         // Use clang to compile LLVM IR to native executable
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         var child = std.process.Child.init(&[_][]const u8{
@@ -215,12 +215,12 @@ pub const LLVMBackend = struct {
     
     fn generateFromSource(self: *LLVMBackend, source: []const u8, verbose: bool) LLVMBackendError!void {
         // First pass: collect string literals for global constants
-        var string_literals = std.ArrayList([]const u8).init(self.allocator);
+        var string_literals: std.ArrayList([]const u8) = .empty;
         defer {
             for (string_literals.items) |str| {
                 self.allocator.free(str);
             }
-            string_literals.deinit();
+            string_literals.deinit(allocator);
         }
         
         try self.collectStringLiterals(source, &string_literals);
@@ -268,7 +268,7 @@ pub const LLVMBackend = struct {
                         if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
                             const string_content = content[1..content.len - 1];
                             const string_copy = try self.allocator.dupe(u8, string_content);
-                            try string_literals.append(string_copy);
+                            try string_literals.append(self.allocator, string_copy);
                         }
                     }
                 }
@@ -588,7 +588,7 @@ pub const LLVMBackend = struct {
     /// Report structured error through proper error reporting system
     fn reportStructuredError(self: *LLVMBackend, error_ctx: error_handling.ErrorContext) !void {
         // Store error context for later retrieval by compilation pipeline
-        try self.error_contexts.append(error_ctx);
+        try self.error_contexts.append(allocator, error_ctx);
         
         // Also report to error reporter if available (can be extended)
         // For now, we store the error and let the compilation pipeline handle it
@@ -608,7 +608,7 @@ pub const LLVMBackend = struct {
     /// Clear accumulated error contexts
     pub fn clearErrorContexts(self: *LLVMBackend) void {
         for (self.error_contexts.items) |*error_ctx| {
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
         self.error_contexts.clearRetainingCapacity();
     }

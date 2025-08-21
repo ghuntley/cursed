@@ -28,7 +28,8 @@ pub const StdlibCore = struct {
     
     /// Read a line from stdin - core function for vibez.scanln()
     pub fn read_line(self: *StdlibCore) ![]u8 {
-        const stdin = std.io.getStdIn().reader();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
         const input = try stdin.readUntilDelimiterAlloc(self.allocator, '\n', 4096);
         return input;
     }
@@ -36,7 +37,8 @@ pub const StdlibCore = struct {
     /// Read a single character from stdin
     pub fn read_char(self: *StdlibCore) !u8 {
         _ = self;
-        const stdin = std.io.getStdIn().reader();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
         return try stdin.readByte();
     }
     
@@ -89,7 +91,7 @@ pub const StdlibCore = struct {
     /// Append to dynamic array (simplified)
     pub fn array_append(self: *StdlibCore, list: *ArrayList([]const u8), item: []const u8) !void {
         _ = self;
-        try list.append(item);
+        try list.append(allocator, item);
     }
     
     // ===== MATH FUNCTIONS (mathz module) =====
@@ -233,7 +235,7 @@ pub const StdlibCore = struct {
     
     /// List directory files
     pub fn list_directory_files(self: *StdlibCore, directory: []const u8) !ArrayList([]const u8) {
-        var result = ArrayList([]const u8).init(self.allocator);
+        var result = .empty;
         
         var dir = std.fs.cwd().openIterableDir(directory, .{}) catch return result;
         defer dir.close();
@@ -241,7 +243,7 @@ pub const StdlibCore = struct {
         var iterator = dir.iterate();
         while (try iterator.next()) |entry| {
             const name = try self.allocator.dupe(u8, entry.name);
-            try result.append(name);
+            try result.append(self.allocator, name);
         }
         
         return result;
@@ -484,7 +486,7 @@ pub fn test_stdlib_core() !void {
     print("=========================================\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Initialize core

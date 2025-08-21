@@ -220,13 +220,13 @@ pub const StackFrame = struct {
             .function_name = function_name,
             .file = file,
             .line = line,
-            .defer_actions = ArrayList(DeferAction).init(allocator),
+            .defer_actions = .empty,
             .scope_level = scope_level,
         };
     }
     
     pub fn deinit(self: *StackFrame) void {
-        self.defer_actions.deinit();
+        self.defer_actions.deinit(allocator);
     }
 };
 
@@ -275,7 +275,7 @@ pub fn Channel(comptime T: type) type {
         pub fn init(allocator: Allocator, capacity: usize) !Self {
             return Self{
                 .id = generateChannelId(),
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .mutex = Mutex{},
                 .send_condition = Condition{},
                 .recv_condition = Condition{},
@@ -301,7 +301,7 @@ pub fn Channel(comptime T: type) type {
                 _ = item;
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
 
         /// Race condition fix: Increment reference count atomically
@@ -341,7 +341,7 @@ pub fn Channel(comptime T: type) type {
                 // For complex types, would need proper cleanup
                 _ = item;
             }
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
             
             // Mark cleanup as completed
             self.cleanup_completed.store(true, .release);
@@ -404,7 +404,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -421,7 +421,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -447,7 +447,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -463,7 +463,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -498,7 +498,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -520,7 +520,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -695,12 +695,12 @@ pub fn Channel(comptime T: type) type {
             // If buffer is using less than 25% of capacity and capacity > initial, shrink
             if (current_len < capacity / 4 and capacity > self.capacity) {
                 const new_capacity = @max(self.capacity, capacity / 2);
-                try self.buffer.ensureTotalCapacity(new_capacity);
+                try self.buffer.ensureTotalCapacity(allocator, new_capacity);
             }
             // If buffer is near full and capacity < 4x initial, grow
             else if (current_len > capacity * 3 / 4 and capacity < self.capacity * 4) {
                 const new_capacity = @min(self.capacity * 4, capacity * 2);
-                try self.buffer.ensureTotalCapacity(new_capacity);
+                try self.buffer.ensureTotalCapacity(allocator, new_capacity);
             }
         }
 
@@ -985,7 +985,7 @@ pub const WorkStealingDeque = struct {
 
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .items = ArrayList(*Goroutine).init(allocator),
+            .items = .empty,
             .mutex = Mutex{},
             .top = Atomic(usize).init(0),
             .bottom = Atomic(usize).init(0),
@@ -994,7 +994,7 @@ pub const WorkStealingDeque = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.items.deinit();
+        self.items.deinit(allocator);
     }
 
     /// Push goroutine to bottom (owner thread only)
@@ -1002,7 +1002,7 @@ pub const WorkStealingDeque = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -1076,7 +1076,7 @@ pub const Worker = struct {
 
     pub fn deinit(self: *Worker) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(allocator);
     }
 
     pub fn start(self: *Worker) !void {
@@ -1358,8 +1358,8 @@ pub const Scheduler = struct {
     pub fn init(allocator: Allocator, config: SchedulerConfig) Scheduler {
         return Scheduler{
             .config = config,
-            .workers = ArrayList(Worker).init(allocator),
-            .global_queue = ArrayList(*Goroutine).init(allocator),
+            .workers = .empty,
+            .global_queue = .empty,
             .global_mutex = Mutex{},
             .next_goroutine_id = Atomic(GoroutineId).init(1),
             .next_worker_id = Atomic(WorkerId).init(0),
@@ -1377,12 +1377,12 @@ pub const Scheduler = struct {
         self.running.store(true, .release);
         
         // Initialize workers
-        try self.workers.ensureTotalCapacity(self.config.num_workers);
+        try self.workers.ensureTotalCapacity(self.allocator, self.config.num_workers);
         for (0..self.config.num_workers) |_| {
             const worker_id = self.next_worker_id.fetchAdd(1, .acq_rel);
             var worker = Worker.init(self.allocator, worker_id, self);
             try worker.start();
-            try self.workers.append(worker);
+            try self.workers.append(self.allocator, worker);
         }
         
         // Start preemption timer if enabled
@@ -1435,15 +1435,15 @@ pub const Scheduler = struct {
         self.stop();
         
         for (self.workers.items) |*worker| {
-            worker.deinit();
+            worker.deinit(allocator);
         }
-        self.workers.deinit();
+        self.workers.deinit(allocator);
         
         // Clean up remaining goroutines
         for (self.global_queue.items) |goroutine| {
             self.allocator.destroy(goroutine);
         }
-        self.global_queue.deinit();
+        self.global_queue.deinit(allocator);
     }
 
 
@@ -1502,7 +1502,7 @@ pub const Scheduler = struct {
             // Fallback to global queue
             self.global_mutex.lock();
             defer self.global_mutex.unlock();
-            try self.global_queue.append(goroutine);
+            try self.global_queue.append(allocator, goroutine);
         }
     }
 
@@ -1558,7 +1558,7 @@ pub const Scheduler = struct {
             // If scheduling fails, add to global queue
             self.global_mutex.lock();
             defer self.global_mutex.unlock();
-            self.global_queue.append(goroutine) catch {
+            self.global_queue.append(self.allocator, goroutine) catch {
                 // Last resort: destroy the goroutine to prevent memory leaks
                 self.allocator.destroy(goroutine);
             };
@@ -1743,7 +1743,7 @@ pub const Select = struct {
 
     pub fn init(allocator: Allocator) Select {
         return Select{
-            .operations = ArrayList(SelectOperation).init(allocator),
+            .operations = .empty,
             .timeout_ms = null,
             .has_default = false,
             .allocator = allocator,
@@ -1751,24 +1751,24 @@ pub const Select = struct {
     }
 
     pub fn deinit(self: *Select) void {
-        self.operations.deinit();
+        self.operations.deinit(allocator);
     }
 
     pub fn addSend(self: *Select, channel_id: ChannelId, case_index: usize) !void {
-        try self.operations.append(SelectOperation{
+        try self.operations.append(allocator, SelectOperation{
             .send = .{ .channel_id = channel_id, .case_index = case_index },
         });
     }
 
     pub fn addReceive(self: *Select, channel_id: ChannelId, case_index: usize) !void {
-        try self.operations.append(SelectOperation{
+        try self.operations.append(allocator, SelectOperation{
             .receive = .{ .channel_id = channel_id, .case_index = case_index },
         });
     }
 
     pub fn addDefault(self: *Select, case_index: usize) !void {
         self.has_default = true;
-        try self.operations.append(SelectOperation{
+        try self.operations.append(allocator, SelectOperation{
             .default = .{ .case_index = case_index },
         });
     }
@@ -1782,23 +1782,23 @@ pub const Select = struct {
         
         // Fast path: try all operations once without blocking
         {
-            var ready_ops = ArrayList(usize).init(self.allocator);
-            defer ready_ops.deinit();
+            var ready_ops = .empty;
+            defer ready_ops.deinit(allocator);
 
             for (self.operations.items, 0..) |op, i| {
                 switch (op) {
                     .send => |send_op| {
                         if (canSendToChannel(send_op.channel_id)) {
-                            try ready_ops.append(i);
+                            try ready_ops.append(allocator, i);
                         }
                     },
                     .receive => |recv_op| {
                         if (canReceiveFromChannel(recv_op.channel_id)) {
-                            try ready_ops.append(i);
+                            try ready_ops.append(allocator, i);
                         }
                     },
                     .default => {
-                        try ready_ops.append(i);
+                        try ready_ops.append(allocator, i);
                     },
                 }
             }
@@ -1980,7 +1980,7 @@ pub fn shutdownScheduler(allocator: Allocator) void {
     defer scheduler_mutex.unlock();
 
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         allocator.destroy(scheduler);
         global_scheduler = null;
     }
@@ -2104,10 +2104,10 @@ pub const VariableChannel = struct {
     pub fn deinit(self: *Self) void {
         // Clean up Variable references in the channel buffer
         for (self.channel.buffer.items) |*variable| {
-            variable.deinit(self.allocator);
+            variable.deinit(allocator);
         }
         
-        self.channel.deinit();
+        self.channel.deinit(allocator);
         self.allocator.destroy(self.channel);
     }
     
@@ -2322,7 +2322,7 @@ pub const EnhancedSelect = struct {
     
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .cases = ArrayList(SelectCase).init(allocator),
+            .cases = .empty,
             .has_default = false,
             .default_case_id = 0,
             .timeout_ms = null,
@@ -2331,11 +2331,11 @@ pub const EnhancedSelect = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.cases.deinit();
+        self.cases.deinit(allocator);
     }
     
     pub fn addSendCase(self: *Self, channel_id: ChannelId, data: ?*anyopaque, case_id: usize) !void {
-        try self.cases.append(SelectCase{
+        try self.cases.append(allocator, SelectCase{
             .channel_id = channel_id,
             .operation = SelectChannelOp.send,
             .data = data,
@@ -2344,7 +2344,7 @@ pub const EnhancedSelect = struct {
     }
     
     pub fn addReceiveCase(self: *Self, channel_id: ChannelId, case_id: usize) !void {
-        try self.cases.append(SelectCase{
+        try self.cases.append(allocator, SelectCase{
             .channel_id = channel_id,
             .operation = SelectChannelOp.receive,
             .data = null,
@@ -2717,7 +2717,7 @@ test "channel send and receive" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -2737,7 +2737,7 @@ test "channel close behavior" {
     
     var channel = try makeChannel(i32, allocator, 1);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -2756,7 +2756,7 @@ test "select statement creation" {
     const allocator = std.testing.allocator;
     
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     try select_stmt.addDefault(0);
     try std.testing.expect(select_stmt.has_default);
@@ -2769,7 +2769,7 @@ test "work-stealing deque" {
     const allocator = std.testing.allocator;
     
     var deque = WorkStealingDeque.init(allocator);
-    defer deque.deinit();
+    defer deque.deinit(allocator);
 
     var goroutine = Goroutine.init(allocator, 1, undefined, null);
     
@@ -2810,7 +2810,7 @@ test "Variable channel with GC integration" {
     const allocator = std.testing.allocator;
     
     var var_channel = try VariableChannel.init(allocator, 2);
-    defer var_channel.deinit();
+    defer var_channel.deinit(allocator);
     
     // Create test Variables
     const Variable = @import("main_unified.zig").Variable;
@@ -2880,7 +2880,7 @@ test "Enhanced channel operations - timeout and non-blocking" {
     
     var channel = try makeChannel(i32, allocator, 2);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -2907,7 +2907,7 @@ test "Channel buffer optimization" {
     
     var channel = try makeChannel(i32, allocator, 4);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -2934,7 +2934,7 @@ test "Enhanced channel state checking" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -2969,7 +2969,7 @@ test "Enhanced select statement" {
     const allocator = std.testing.allocator;
     
     var select_stmt = EnhancedSelect.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     // Test default case
     try select_stmt.addDefault(0);
@@ -2978,7 +2978,7 @@ test "Enhanced select statement" {
     
     // Test timeout
     var timeout_select = EnhancedSelect.init(allocator);
-    defer timeout_select.deinit();
+    defer timeout_select.deinit(allocator);
     
     timeout_select.setTimeout(50); // 50ms timeout
     const timeout_result = try timeout_select.execute();
@@ -2990,7 +2990,7 @@ test "AnyChannel interface" {
     
     var channel = try makeChannel(i32, allocator, 2);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 

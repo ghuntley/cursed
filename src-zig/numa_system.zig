@@ -199,13 +199,13 @@ pub const NUMANodeInfo = struct {
         // Parse hexadecimal CPU mask
         // Format could be "ff,ffffffff" for >32 CPUs
         var mask_parts = mem.split(u8, content, ",");
-        var cpu_masks = std.ArrayList(u64).init(allocator);
-        defer cpu_masks.deinit();
+        var cpu_masks: std.ArrayList(u64) = .empty;
+        defer cpu_masks.deinit(allocator);
         
         while (mask_parts.next()) |part| {
             const trimmed = mem.trim(u8, part, " \t");
             const mask_value = fmt.parseInt(u64, trimmed, 16) catch continue;
-            try cpu_masks.append(mask_value);
+            try cpu_masks.append(allocator, mask_value);
         }
         
         if (cpu_masks.items.len > 0) {
@@ -257,8 +257,8 @@ pub const NUMANodeInfo = struct {
         const bytes_read = try file.readAll(buffer[0..]);
         const content = mem.trim(u8, buffer[0..bytes_read], " \t\n\r");
         
-        var distances = std.ArrayList(u8).init(allocator);
-        defer distances.deinit();
+        var distances: std.ArrayList(u8) = .empty;
+        defer distances.deinit(self);
         
         var parts = mem.split(u8, content, " ");
         while (parts.next()) |part| {
@@ -266,7 +266,7 @@ pub const NUMANodeInfo = struct {
             if (trimmed.len == 0) continue;
             
             const distance = fmt.parseInt(u8, trimmed, 10) catch continue;
-            try distances.append(distance);
+            try distances.append(allocator, distance);
         }
         
         self.distances = try allocator.alloc(u8, distances.items.len);
@@ -568,7 +568,7 @@ pub const NUMATopology = struct {
         var stats = NUMAMemoryStats{
             .total_memory = 0,
             .total_free = 0,
-            .nodes = std.ArrayList(NodeMemoryStats).init(std.heap.page_allocator),
+            .nodes = .{},
         };
         
         for (self.nodes) |*node| {
@@ -576,7 +576,7 @@ pub const NUMATopology = struct {
             stats.total_memory += node.total_memory;
             stats.total_free += free_memory;
             
-            stats.nodes.append(NodeMemoryStats{
+            stats.nodes.append(allocator, NodeMemoryStats{
                 .node_id = node.node_id,
                 .total = node.total_memory,
                 .free = free_memory,
@@ -791,18 +791,18 @@ pub const NUMATopology = struct {
     
     fn rebalanceNodes(self: *NUMATopology) void {
         // Find nodes that are over-utilized (>80%) and under-utilized (<30%)
-        var overloaded = std.ArrayList(u8).init(std.heap.page_allocator);
-        defer overloaded.deinit();
+        var overloaded: std.ArrayList(u8) = .empty;
+        defer overloaded.deinit(allocator);
         
-        var underloaded = std.ArrayList(u8).init(std.heap.page_allocator);
-        defer underloaded.deinit();
+        var underloaded: std.ArrayList(u8) = .empty;
+        defer underloaded.deinit(allocator);
         
         for (self.nodes, 0..) |*node, i| {
             const utilization = node.getUtilization();
             if (utilization > 0.8) {
-                overloaded.append(@intCast(i)) catch {};
+                overloaded.append(allocator, @intCast(i)) catch {};
             } else if (utilization < 0.3) {
-                underloaded.append(@intCast(i)) catch {};
+                underloaded.append(allocator, @intCast(i)) catch {};
             }
         }
         
@@ -847,7 +847,7 @@ pub const NUMAMemoryStats = struct {
     };
     
     pub fn deinit(self: *NUMAMemoryStats) void {
-        self.nodes.deinit();
+        self.nodes.deinit(allocator);
     }
 };
 

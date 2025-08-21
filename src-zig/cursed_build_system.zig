@@ -24,22 +24,22 @@ pub const CursedProject = struct {
         return CursedProject{
             .name = name,
             .version = version,
-            .authors = ArrayList([]const u8).init(allocator),
-            .dependencies = ArrayList(CursedDependency).init(allocator),
+            .authors = .empty,
+            .dependencies = .empty,
             .build_config = CursedBuildConfig.init(),
         };
     }
     
     pub fn deinit(self: *CursedProject) void {
-        self.authors.deinit();
+        self.authors.deinit(allocator);
         for (self.dependencies.items) |*dep| {
-            dep.deinit();
+            dep.deinit(allocator);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
     }
     
     pub fn addDependency(self: *CursedProject, dep: CursedDependency) !void {
-        try self.dependencies.append(dep);
+        try self.dependencies.append(allocator, dep);
     }
     
     pub fn findMainFile(self: *CursedProject, allocator: Allocator) ![]const u8 {
@@ -136,8 +136,8 @@ pub const CursedBuildConfig = struct {
     
     pub fn init() CursedBuildConfig {
         return CursedBuildConfig{
-            .custom_c_flags = ArrayList([]const u8).init(std.heap.page_allocator),
-            .custom_zig_flags = ArrayList([]const u8).init(std.heap.page_allocator),
+            .custom_c_flags = .empty,
+            .custom_zig_flags = .empty,
         };
     }
     
@@ -397,7 +397,7 @@ pub const CursedBuilder = struct {
         
         // Find all test files
         const test_files = try self.findFilesWithExtension("tests", ".csd");
-        defer test_files.deinit();
+        defer test_files.deinit(allocator);
         defer for (test_files.items) |file| {
             self.allocator.free(file);
         };
@@ -432,7 +432,7 @@ pub const CursedBuilder = struct {
         const bench_step = self.b.step("cursed-bench", "Run CURSED benchmarks");
         
         const bench_files = try self.findFilesWithExtension("benchmarks", ".csd");
-        defer bench_files.deinit();
+        defer bench_files.deinit(allocator);
         defer for (bench_files.items) |file| {
             self.allocator.free(file);
         };
@@ -460,7 +460,7 @@ pub const CursedBuilder = struct {
     }
     
     fn findFilesWithExtension(self: *CursedBuilder, dir_name: []const u8, extension: []const u8) !ArrayList([]const u8) {
-        var files = ArrayList([]const u8).init(self.allocator);
+        var files = .empty;
         
         var dir = std.fs.cwd().openDir(dir_name, .{ .iterate = true }) catch return files;
         defer dir.close();
@@ -472,7 +472,7 @@ pub const CursedBuilder = struct {
                     self.allocator, 
                     &[_][]const u8{ dir_name, entry.name }
                 );
-                try files.append(full_path);
+                try files.append(self.allocator, full_path);
             }
         }
         
@@ -526,7 +526,7 @@ pub fn createCursedBuildStep(
     cursed_compiler_path: []const u8
 ) !void {
     var project = try loadCursedProject(b.allocator, "CursedPackage.toml");
-    defer project.deinit();
+    defer project.deinit(allocator);
     
     // Set optimization from Zig build
     project.build_config.optimization = switch (optimize) {
@@ -553,7 +553,7 @@ test "cursed project loading" {
     
     // Test default project creation
     var project = CursedProject.init(allocator, "test-project", "1.0.0");
-    defer project.deinit();
+    defer project.deinit(allocator);
     
     try std.testing.expectEqualStrings("test-project", project.name);
     try std.testing.expectEqualStrings("1.0.0", project.version);

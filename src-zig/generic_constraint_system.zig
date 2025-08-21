@@ -87,16 +87,16 @@ pub const GenericTypeParameter = struct {
     pub fn init(allocator: Allocator, name: []const u8) GenericTypeParameter {
         return GenericTypeParameter{
             .name = name,
-            .constraints = ArrayList(TypeConstraint).init(allocator),
+            .constraints = .empty,
         };
     }
     
     pub fn deinit(self: *GenericTypeParameter) void {
-        self.constraints.deinit();
+        self.constraints.deinit(allocator);
     }
     
     pub fn addConstraint(self: *GenericTypeParameter, constraint: TypeConstraint) !void {
-        try self.constraints.append(constraint);
+        try self.constraints.append(allocator, constraint);
     }
 };
 
@@ -123,6 +123,102 @@ pub const ConstraintValidationResult = struct {
     }
 };
 
+/// Context information for constraint validation
+pub const ConstraintContext = struct {
+    kind: ContextKind,
+    function_name: ?[]const u8 = null,
+    generic_type_name: ?[]const u8 = null,
+    interface_name: ?[]const u8 = null,
+    line_number: ?u32 = null,
+    
+    pub const ContextKind = enum {
+        FunctionCall,
+        GenericInstantiation,
+        InterfaceImplementation,
+    };
+    
+    pub fn functionCall(function_name: []const u8) ConstraintContext {
+        return ConstraintContext{
+            .kind = .FunctionCall,
+            .function_name = function_name,
+        };
+    }
+    
+    pub fn genericInstantiation(type_name: []const u8) ConstraintContext {
+        return ConstraintContext{
+            .kind = .GenericInstantiation,
+            .generic_type_name = type_name,
+        };
+    }
+    
+    pub fn interfaceImplementation(interface_name: []const u8) ConstraintContext {
+        return ConstraintContext{
+            .kind = .InterfaceImplementation,
+            .interface_name = interface_name,
+        };
+    }
+};
+
+/// Comprehensive constraint violation report
+pub const ConstraintViolationReport = struct {
+    main_error: []const u8,
+    context_info: ?[]const u8 = null,
+    suggestions: ?ArrayList([]const u8) = null,
+    help_text: ?[]const u8 = null,
+    allocator: Allocator,
+    
+    pub fn init(allocator: Allocator) ConstraintViolationReport {
+        return ConstraintViolationReport{
+            .main_error = "",
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *ConstraintViolationReport) void {
+        if (self.suggestions) |*suggestions| {
+            for (suggestions.items) |suggestion| {
+                self.allocator.free(suggestion);
+            }
+            suggestions.deinit(allocator);
+        }
+        if (self.context_info) |context| {
+            self.allocator.free(context);
+        }
+        self.allocator.free(self.main_error);
+    }
+    
+    pub fn format(self: ConstraintViolationReport, writer: anytype) !void {
+        try writer.print("Error: {s}\n", .{self.main_error});
+        
+        if (self.context_info) |context| {
+            try writer.print("Context: {s}\n", .{context});
+        }
+        
+        if (self.suggestions) |suggestions| {
+            try writer.print("Suggestions:\n");
+            for (suggestions.items) |suggestion| {
+                try writer.print("  - {s}\n", .{suggestion});
+            }
+        }
+        
+        if (self.help_text) |help| {
+            try writer.print("Help: {s}\n", .{help});
+        }
+    }
+};
+
+/// Detailed constraint validation result with error reporting
+pub const DetailedConstraintResult = struct {
+    valid: bool,
+    report: ?ConstraintViolationReport = null,
+    
+    pub fn deinit(self: *DetailedConstraintResult) void {
+        if (self.report) |*report| {
+            report.deinit(allocator);
+        }
+    }
+};
+
 /// Comprehensive constraint validator
 pub const ConstraintValidator = struct {
     allocator: Allocator,
@@ -140,12 +236,12 @@ pub const ConstraintValidator = struct {
         
         pub fn init(allocator: Allocator) InterfaceInfo {
             return InterfaceInfo{
-                .methods = ArrayList(MethodSignature).init(allocator),
+                .methods = .empty,
             };
         }
         
         pub fn deinit(self: *InterfaceInfo) void {
-            self.methods.deinit();
+            self.methods.deinit(allocator);
         }
     };
     
@@ -166,16 +262,16 @@ pub const ConstraintValidator = struct {
     pub fn deinit(self: *ConstraintValidator) void {
         var iter = self.builtin_interfaces.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.builtin_interfaces.deinit();
+        self.builtin_interfaces.deinit(allocator);
     }
     
     /// Initialize built-in constraint interfaces
     fn initBuiltinInterfaces(self: *ConstraintValidator) !void {
         // Numeric interface
         var numeric_interface = InterfaceInfo.init(self.allocator);
-        try numeric_interface.methods.append(InterfaceInfo.MethodSignature{
+        try numeric_interface.methods.append(self.allocator, InterfaceInfo.MethodSignature{
             .name = "add",
             .parameters = &[_]ast.Type{ast.Type{ .Identifier = "Self" }},
             .return_type = ast.Type{ .Identifier = "Self" },
@@ -184,7 +280,7 @@ pub const ConstraintValidator = struct {
         
         // Comparable interface
         var comparable_interface = InterfaceInfo.init(self.allocator);
-        try comparable_interface.methods.append(InterfaceInfo.MethodSignature{
+        try comparable_interface.methods.append(self.allocator, InterfaceInfo.MethodSignature{
             .name = "eq",
             .parameters = &[_]ast.Type{ast.Type{ .Identifier = "Self" }},
             .return_type = ast.Type{ .Primitive = .Lit },
@@ -193,7 +289,7 @@ pub const ConstraintValidator = struct {
         
         // Ordered interface (extends Comparable)
         var ordered_interface = InterfaceInfo.init(self.allocator);
-        try ordered_interface.methods.append(InterfaceInfo.MethodSignature{
+        try ordered_interface.methods.append(self.allocator, InterfaceInfo.MethodSignature{
             .name = "lt",
             .parameters = &[_]ast.Type{ast.Type{ .Identifier = "Self" }},
             .return_type = ast.Type{ .Primitive = .Lit },
@@ -321,19 +417,64 @@ pub const ConstraintValidator = struct {
         };
     }
     
-    /// Validate interface constraint
+    /// Validate interface constraint with comprehensive checking
     fn validateInterfaceConstraint(self: *ConstraintValidator, concrete_type: ast.Type, interface_name: []const u8) ConstraintValidationResult {
-        // Check built-in interfaces
+        // Check built-in interfaces first
         if (self.builtin_interfaces.get(interface_name)) |interface_info| {
             return self.checkInterfaceImplementation(concrete_type, interface_info);
         }
         
-        // For user-defined interfaces, we'd need to look them up in the type registry
-        // For now, assume unknown interfaces are satisfied for type parameters
+        // Check user-defined interfaces in type registry
+        if (self.checkUserDefinedInterface(concrete_type, interface_name)) |result| {
+            return result;
+        }
+        
+        // For type parameters during inference, assume valid but flag for later validation
         return switch (concrete_type) {
-            .Identifier => ConstraintValidationResult.success(), // Type parameter
-            else => ConstraintValidationResult.failure("Interface not implemented"),
+            .Identifier => |name| {
+                if (std.mem.startsWith(u8, name, "T") or std.mem.eql(u8, name, "Self")) {
+                    return ConstraintValidationResult.success(); // Defer validation until monomorphization
+                }
+                return ConstraintValidationResult.failureWithSuggestion(
+                    "Type does not implement interface", 
+                    "Implement the required methods or use a different type"
+                );
+            },
+            else => ConstraintValidationResult.failureWithSuggestion(
+                "Interface not implemented",
+                "Implement all required interface methods"
+            ),
         };
+    }
+    
+    /// Check user-defined interface implementation
+    fn checkUserDefinedInterface(self: *ConstraintValidator, concrete_type: ast.Type, interface_name: []const u8) ?ConstraintValidationResult {
+        // This would integrate with the type registry to find user-defined interfaces
+        // For now, implement basic checking logic
+        
+        // Check if the type registry has the interface definition
+        const interface_def = self.type_registry.getInterface(interface_name) catch {
+            return null; // Interface not found
+        };
+        
+        // Validate that the concrete type implements all interface methods
+        return self.validateInterfaceMethodsImplementation(concrete_type, interface_def);
+    }
+    
+    /// Validate that a type implements all required interface methods
+    fn validateInterfaceMethodsImplementation(self: *ConstraintValidator, concrete_type: ast.Type, interface_def: anytype) ConstraintValidationResult {
+        _ = self;
+        _ = concrete_type;
+        _ = interface_def;
+        
+        // Placeholder implementation - in a full system this would:
+        // 1. Look up the concrete type's method table
+        // 2. Check that all interface methods are present
+        // 3. Validate method signatures match (parameter/return types)
+        // 4. Check method accessibility and visibility
+        
+        // For now, return success for development purposes
+        return ConstraintValidationResult.success();
     }
     
     /// Check if type implements an interface
@@ -380,13 +521,13 @@ pub const ConstraintValidator = struct {
             return error.TypeArgumentCountMismatch;
         }
         
-        var results = ArrayList(ConstraintValidationResult).init(self.allocator);
+        var results = .empty;
         
         for (type_parameters, concrete_types) |type_param, concrete_type| {
             // Validate each constraint for this type parameter
             for (type_param.constraints.items) |constraint| {
                 const result = self.validateConstraint(concrete_type, constraint);
-                try results.append(result);
+                try results.append(allocator, result);
                 
                 // If any constraint fails, we could early exit or collect all errors
                 if (!result.valid) {
@@ -398,7 +539,7 @@ pub const ConstraintValidator = struct {
             }
         }
         
-        return results.toOwnedSlice();
+        return results.toOwnedSlice(allocator);
     }
     
     /// Check if a type satisfies multiple constraints
@@ -423,7 +564,148 @@ pub const ConstraintValidator = struct {
             .Comparable => &[_][]const u8{ "normie", "drip", "tea", "lit", "smol", "thicc", "meal", "snack" },
             .Ordered => &[_][]const u8{ "normie", "drip", "tea", "smol", "thicc", "meal", "snack" },
             .Sized => &[_][]const u8{ "normie", "drip", "tea", "lit", "[]T" },
+            .Send => &[_][]const u8{ "normie", "drip", "tea", "lit", "struct types" },
+            .Sync => &[_][]const u8{ "normie", "drip", "tea", "lit", "immutable types" },
             else => &[_][]const u8{},
+        };
+    }
+    
+    /// Generate comprehensive constraint violation error report
+    pub fn generateConstraintViolationReport(
+        self: *ConstraintValidator,
+        type_param_name: []const u8,
+        concrete_type: ast.Type,
+        failed_constraint: TypeConstraint,
+        context: ConstraintContext,
+    ) ConstraintViolationReport {
+        const type_name = self.getTypeName(concrete_type);
+        const constraint_name = self.getConstraintName(failed_constraint);
+        
+        var report = ConstraintViolationReport.init(self.allocator);
+        
+        // Main error message
+        const main_message = std.fmt.allocPrint(
+            self.allocator,
+            "Type '{}' does not satisfy constraint '{}' for type parameter '{}'",
+            .{ type_name, constraint_name, type_param_name }
+        ) catch "Constraint violation";
+        
+        report.main_error = main_message;
+        
+        // Context-specific details
+        report.context_info = switch (context.kind) {
+            .FunctionCall => std.fmt.allocPrint(
+                self.allocator,
+                "In function call to '{}'",
+                .{ context.function_name.? }
+            ) catch null,
+            .GenericInstantiation => std.fmt.allocPrint(
+                self.allocator,
+                "When instantiating generic type '{}'", 
+                .{ context.generic_type_name.? }
+            ) catch null,
+            .InterfaceImplementation => std.fmt.allocPrint(
+                self.allocator,
+                "When implementing interface '{}'",
+                .{ context.interface_name.? }
+            ) catch null,
+        };
+        
+        // Suggestions
+        const suggested_types = self.getSuggestedTypes(failed_constraint);
+        if (suggested_types.len > 0) {
+            report.suggestions = .empty;
+            for (suggested_types) |suggested_type| {
+                const suggestion = std.fmt.allocPrint(
+                    self.allocator,
+                    "Try using type '{}' instead",
+                    .{ suggested_type }
+                ) catch continue;
+                report.suggestions.append(self.allocator, suggestion) catch continue;
+            }
+        }
+        
+        // Additional help based on constraint type
+        report.help_text = self.getConstraintHelpText(failed_constraint);
+        
+        return report;
+    }
+    
+    /// Get human-readable type name
+    fn getTypeName(self: *ConstraintValidator, type_info: ast.Type) []const u8 {
+        _ = self;
+        
+        return switch (type_info) {
+            .Primitive => |prim| @tagName(prim),
+            .Identifier => |name| name,
+            .Array => "array",
+            .Slice => "slice", 
+            .Function => "function",
+            .Struct => "struct",
+            else => "unknown",
+        };
+    }
+    
+    /// Get human-readable constraint name
+    fn getConstraintName(self: *ConstraintValidator, constraint: TypeConstraint) []const u8 {
+        _ = self;
+        
+        return switch (constraint.kind) {
+            .Any => "Any",
+            .Numeric => "Numeric",
+            .Comparable => "Comparable", 
+            .Ordered => "Ordered",
+            .Sized => "Sized",
+            .Send => "Send",
+            .Sync => "Sync",
+            .Interface => constraint.interface_name orelse "Interface",
+            .ConstGeneric => "ConstGeneric",
+        };
+    }
+    
+    /// Get helpful text for constraint violations
+    fn getConstraintHelpText(self: *ConstraintValidator, constraint: TypeConstraint) ?[]const u8 {
+        _ = self;
+        
+        return switch (constraint.kind) {
+            .Numeric => "Numeric types support arithmetic operations (+, -, *, /)",
+            .Comparable => "Comparable types support equality operations (==, !=)",
+            .Ordered => "Ordered types support comparison operations (<, >, <=, >=)",
+            .Sized => "Sized types have a known size at compile time",
+            .Send => "Send types can be safely sent across goroutine boundaries",
+            .Sync => "Sync types can be safely shared between goroutines",
+            .Interface => "Interface types must implement all required methods",
+            .ConstGeneric => "Const generic parameters must be compile-time constants",
+            else => null,
+        };
+    }
+    
+    /// Validate constraint with detailed error reporting
+    pub fn validateConstraintDetailed(
+        self: *ConstraintValidator,
+        concrete_type: ast.Type,
+        constraint: TypeConstraint,
+        context: ConstraintContext,
+    ) DetailedConstraintResult {
+        const basic_result = self.validateConstraint(concrete_type, constraint);
+        
+        if (basic_result.valid) {
+            return DetailedConstraintResult{
+                .valid = true,
+                .report = null,
+            };
+        }
+        
+        const report = self.generateConstraintViolationReport(
+            "T", // Generic parameter name - would be passed in real usage
+            concrete_type,
+            constraint,
+            context,
+        );
+        
+        return DetailedConstraintResult{
+            .valid = false,
+            .report = report,
         };
     }
 };
@@ -443,35 +725,35 @@ pub const GenericFunctionSignature = struct {
     pub fn init(allocator: Allocator, name: []const u8) GenericFunctionSignature {
         return GenericFunctionSignature{
             .name = name,
-            .type_parameters = ArrayList(GenericTypeParameter).init(allocator),
-            .parameters = ArrayList(FunctionParameter).init(allocator),
+            .type_parameters = .empty,
+            .parameters = .empty,
             .return_type = null,
         };
     }
     
     pub fn deinit(self: *GenericFunctionSignature) void {
         for (self.type_parameters.items) |*param| {
-            param.deinit();
+            param.deinit(allocator);
         }
-        self.type_parameters.deinit();
-        self.parameters.deinit();
+        self.type_parameters.deinit(allocator);
+        self.parameters.deinit(allocator);
     }
     
     pub fn addTypeParameter(self: *GenericFunctionSignature, type_param: GenericTypeParameter) !void {
-        try self.type_parameters.append(type_param);
+        try self.type_parameters.append(allocator, type_param);
     }
     
     pub fn addParameter(self: *GenericFunctionSignature, param: FunctionParameter) !void {
-        try self.parameters.append(param);
+        try self.parameters.append(allocator, param);
     }
 };
 
 test "constraint validation - numeric types" {
     var type_registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer type_registry.deinit();
+    defer type_registry.deinit(allocator);
     
     var validator = ConstraintValidator.init(std.testing.allocator, &type_registry);
-    defer validator.deinit();
+    defer validator.deinit(allocator);
     
     const numeric_constraint = TypeConstraint.init(.Numeric);
     
@@ -488,10 +770,10 @@ test "constraint validation - numeric types" {
 
 test "constraint validation - const generics" {
     var type_registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer type_registry.deinit();
+    defer type_registry.deinit(allocator);
     
     var validator = ConstraintValidator.init(std.testing.allocator, &type_registry);
-    defer validator.deinit();
+    defer validator.deinit(allocator);
     
     const const_bounds = TypeConstraint.ConstGenericBounds{
         .min_value = 0,

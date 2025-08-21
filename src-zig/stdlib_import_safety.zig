@@ -76,13 +76,13 @@ pub const SafeImportManager = struct {
         var iter = self.import_cache.iterator();
         while (iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit(self.allocator);
+            result.deinit(allocator);
             self.allocator.free(entry.key_ptr.*);
         }
-        self.import_cache.deinit();
+        self.import_cache.deinit(allocator);
 
         // Clean up module loader
-        self.module_loader_instance.deinit();
+        self.module_loader_instance.deinit(allocator);
 
         if (self.verbose) {
             print("📊 Memory Guard Final Report:\n");
@@ -223,10 +223,10 @@ pub const SafeImportManager = struct {
         var iter = self.import_cache.iterator();
         while (iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit(self.allocator);
+            result.deinit(allocator);
             self.allocator.free(entry.key_ptr.*);
         }
-        self.import_cache.clearAndFree();
+        self.import_cache.clearAndFree(self.allocator);
 
         if (self.verbose) {
             print("🧹 Import cache cleared\n");
@@ -269,12 +269,12 @@ pub const ImportStats = struct {
 
 /// Enhanced import extraction with safety checks
 pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
-    var imports = ArrayList([]const u8).init(allocator);
+    var imports = .empty;
     errdefer {
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
 
     // Input validation
@@ -324,7 +324,7 @@ pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList
                                 
                                 if (valid) {
                                     const module_copy = try allocator.dupe(u8, module_name);
-                                    try imports.append(module_copy);
+                                    try imports.append(allocator, module_copy);
                                 }
                             }
                         }
@@ -345,7 +345,7 @@ pub fn validateImportsSafely(allocator: Allocator, imports: ArrayList([]const u8
 
     // Use safe import manager for validation
     var safe_manager = SafeImportManager.init(allocator, false); // Non-verbose for validation
-    defer safe_manager.deinit();
+    defer safe_manager.deinit(allocator);
 
     var all_valid = true;
 
@@ -365,7 +365,7 @@ pub fn testSafeImportSystem(allocator: Allocator) !void {
     print("🧪 Testing Safe Import System...\n");
 
     var safe_manager = SafeImportManager.init(allocator, true);
-    defer safe_manager.deinit();
+    defer safe_manager.deinit(allocator);
 
     // Test importing standard modules
     const test_modules = [_][]const u8{ "mathz", "stringz", "arrayz" };

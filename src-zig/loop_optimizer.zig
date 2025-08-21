@@ -64,8 +64,8 @@ pub const LoopOptimizer = struct {
     }
 
     pub fn deinit(self: *LoopOptimizer) void {
-        self.loop_info_cache.deinit();
-        self.vectorization_cache.deinit();
+        self.loop_info_cache.deinit(allocator);
+        self.vectorization_cache.deinit(allocator);
     }
 
     /// Optimize loops in the module
@@ -124,7 +124,7 @@ pub const LoopOptimizer = struct {
         
         // Find all loops in the function
         const loops = try self.findLoopsInFunction(function);
-        defer loops.deinit();
+        defer loops.deinit(allocator);
         
         for (loops.items) |loop_header| {
             const loop_result = try self.optimizeLoop(loop_header);
@@ -146,13 +146,13 @@ pub const LoopOptimizer = struct {
 
     /// Find all loop headers in a function
     fn findLoopsInFunction(self: *LoopOptimizer, function: c.LLVMValueRef) !ArrayList(c.LLVMBasicBlockRef) {
-        var loops = ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        var loops = .empty;
         
         // Use a simple approach: find basic blocks that have back edges
         var basic_block = c.LLVMGetFirstBasicBlock(function);
         while (basic_block != null) {
             if (try self.isLoopHeader(basic_block.?)) {
-                try loops.append(basic_block.?);
+                try loops.append(allocator, basic_block.?);
             }
             basic_block = c.LLVMGetNextBasicBlock(basic_block.?);
         }
@@ -255,17 +255,17 @@ pub const LoopOptimizer = struct {
         
         var loop_info = LoopInfo{
             .header = loop_header,
-            .blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator),
-            .exit_blocks = ArrayList(c.LLVMBasicBlockRef).init(self.allocator),
-            .induction_variables = ArrayList(c.LLVMValueRef).init(self.allocator),
-            .invariant_instructions = ArrayList(c.LLVMValueRef).init(self.allocator),
+            .blocks = .empty,
+            .exit_blocks = .empty,
+            .induction_variables = .empty,
+            .invariant_instructions = .empty,
             .trip_count = null,
             .is_innermost = false,
             .is_vectorizable = false,
             .is_unrollable = false,
             .has_early_exit = false,
             .instruction_count = 0,
-            .memory_accesses = ArrayList(MemoryAccess).init(self.allocator),
+            .memory_accesses = .empty,
         };
         
         // Find all blocks in the loop
@@ -302,7 +302,7 @@ pub const LoopOptimizer = struct {
     fn findLoopBlocks(self: *LoopOptimizer, loop_header: c.LLVMBasicBlockRef, blocks: *ArrayList(c.LLVMBasicBlockRef)) !void {
         
         // Add the header
-        try blocks.append(loop_header);
+        try blocks.append(allocator, loop_header);
         
         // Simple approach: traverse from header and find blocks that can reach back to header
         _ = c.LLVMGetBasicBlockParent(loop_header);
@@ -311,7 +311,7 @@ pub const LoopOptimizer = struct {
         while (basic_block != null) {
             // Check if this block can reach back to the header
             if (self.canReachBlock(basic_block.?, loop_header)) {
-                try blocks.append(basic_block.?);
+                try blocks.append(allocator, basic_block.?);
             }
             basic_block = c.LLVMGetNextBasicBlock(basic_block.?);
         }
@@ -369,7 +369,7 @@ pub const LoopOptimizer = struct {
                     }
                     
                     if (!already_added) {
-                        try loop_info.exit_blocks.append(successor);
+                        try loop_info.exit_blocks.append(allocator, successor);
                     }
                 }
                 
@@ -390,7 +390,7 @@ pub const LoopOptimizer = struct {
         while (instruction != null) {
             if (c.LLVMGetInstructionOpcode(instruction.?) == c.LLVMPHI) {
                 if (self.isPHIAnInductionVariable(instruction.?, loop_info)) {
-                    try loop_info.induction_variables.append(instruction.?);
+                    try loop_info.induction_variables.append(allocator, instruction.?);
                 }
             }
             instruction = c.LLVMGetNextInstruction(instruction.?);
@@ -471,7 +471,7 @@ pub const LoopOptimizer = struct {
                 while (instruction != null) {
                     if (!self.isInstructionInvariant(instruction.?, loop_info) and 
                         self.canInstructionBeInvariant(instruction.?, loop_info)) {
-                        try loop_info.invariant_instructions.append(instruction.?);
+                        try loop_info.invariant_instructions.append(allocator, instruction.?);
                         changed = true;
                     }
                     instruction = c.LLVMGetNextInstruction(instruction.?);
@@ -556,7 +556,7 @@ pub const LoopOptimizer = struct {
                         .stride = self.analyzeMemoryStride(instruction.?, loop_info),
                     };
                     
-                    try loop_info.memory_accesses.append(memory_access);
+                    try loop_info.memory_accesses.append(allocator, memory_access);
                     loop_info.instruction_count += 1;
                 }
                 
@@ -839,7 +839,7 @@ test "loop optimizer initialization" {
     const allocator = std.testing.allocator;
     
     var optimizer = try LoopOptimizer.init(allocator);
-    defer optimizer.deinit();
+    defer optimizer.deinit(allocator);
     
     try std.testing.expect(optimizer.config.enable_vectorization == true);
     try std.testing.expect(optimizer.config.max_unroll_factor == 4);

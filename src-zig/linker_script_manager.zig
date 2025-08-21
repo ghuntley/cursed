@@ -1,6 +1,7 @@
 const std = @import("std");
 const target_triple_normalization = @import("target_triple_normalization.zig");
 const Allocator = std.mem.Allocator;
+const ArrayList = std.ArrayList;
 
 /// Cross-compilation linker script selection manager for Zig build system
 pub const LinkerScriptManager = struct {
@@ -246,7 +247,7 @@ pub const LinkerScriptManager = struct {
     }
     
     pub fn deinit(self: *LinkerScriptManager) void {
-        self.normalizer.deinit();
+        self.normalizer.deinit(self.allocator);
     }
     
     /// Get linker configuration for a target triple
@@ -267,48 +268,50 @@ pub const LinkerScriptManager = struct {
     
     /// Generate dynamic linker configuration for targets not in static map
     fn generateDynamicConfig(self: *LinkerScriptManager, triple: target_triple_normalization.TargetTripleNormalizer.NormalizedTriple) LinkerConfig {
-        var args = std.ArrayList([]const u8).init(self.allocator);
-        var libs = std.ArrayList([]const u8).init(self.allocator);
+        var args: std.ArrayList([]const u8) = .empty;
+        defer args.deinit(self.allocator);
+        var libs: std.ArrayList([]const u8) = .empty;
+        defer libs.deinit(self.allocator);
         
         // Base optimization flags for all targets
-        args.append("-Wl,--gc-sections") catch {};
+        args.append(self.allocator, "-Wl,--gc-sections") catch {};
         
         if (triple.isWindows()) {
-            args.append("-static-libgcc") catch {};
-            libs.append("ws2_32") catch {};
-            libs.append("kernel32") catch {};
+            args.append(self.allocator, "-static-libgcc") catch {};
+            libs.append(self.allocator, "ws2_32") catch {};
+            libs.append(self.allocator, "kernel32") catch {};
         } else if (triple.isLinux()) {
-            args.append("-Wl,--as-needed") catch {};
-            libs.append("c") catch {};
+            args.append(self.allocator, "-Wl,--as-needed") catch {};
+            libs.append(self.allocator, "c") catch {};
             
             // Handle musl vs glibc differences
             if (triple.abi != null and std.mem.eql(u8, triple.abi.?, "musl")) {
                 // musl libc: static linking preferred, integrated threading
-                args.append("-static") catch {};
-                args.append("-Wl,--no-dynamic-linker") catch {};
+                args.append(self.allocator, "-static") catch {};
+                args.append(self.allocator, "-Wl,--no-dynamic-linker") catch {};
                 // musl doesn't need separate libm or pthread
             } else {
                 // glibc: dynamic linking, separate math and threading libs
-                libs.append("m") catch {};
+                libs.append(self.allocator, "m") catch {};
                 if (triple.supportsThreading()) {
-                    libs.append("pthread") catch {};
+                    libs.append(self.allocator, "pthread") catch {};
                 }
             }
         } else if (triple.isApple()) {
-            args.append("-Wl,-dead_strip") catch {};
-            libs.append("System") catch {};
+            args.append(self.allocator, "-Wl,-dead_strip") catch {};
+            libs.append(self.allocator, "System") catch {};
         }
         
         // ARM64-specific linker flags
         if (triple.isARM64() and triple.isLinux()) {
-            args.append("-Wl,--fix-cortex-a53-843419") catch {};
-            args.append("-Wl,--fix-cortex-a53-835769") catch {};
+            args.append(self.allocator, "-Wl,--fix-cortex-a53-843419") catch {};
+            args.append(self.allocator, "-Wl,--fix-cortex-a53-835769") catch {};
         }
         
         return LinkerConfig{
             .script_path = null,
-            .linker_args = args.toOwnedSlice() catch &[_][]const u8{},
-            .required_libs = libs.toOwnedSlice() catch &[_][]const u8{},
+            .linker_args = args.toOwnedSlice(self.allocator) catch &[_][]const u8{},
+            .required_libs = libs.toOwnedSlice(self.allocator) catch &[_][]const u8{},
             .memory_layout = null,
         };
     }
@@ -578,7 +581,7 @@ const testing = std.testing;
 
 test "LinkerScriptManager basic functionality" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
-    defer manager.deinit();
+    defer manager.deinit(testing.allocator);
     
     // Test getting configuration for known targets
     const linux_config = try manager.getLinkerConfig("x86_64-unknown-linux-gnu");
@@ -592,7 +595,7 @@ test "LinkerScriptManager basic functionality" {
 
 test "LinkerScriptManager ARM64 configuration" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
-    defer manager.deinit();
+    defer manager.deinit(testing.allocator);
     
     // Test ARM64 Linux configuration
     const arm64_linux = try manager.getLinkerConfig("aarch64-unknown-linux-gnu");
@@ -605,7 +608,7 @@ test "LinkerScriptManager ARM64 configuration" {
 
 test "LinkerScriptManager WebAssembly configuration" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
-    defer manager.deinit();
+    defer manager.deinit(testing.allocator);
     
     // Test WASM configuration
     const wasm_config = try manager.getLinkerConfig("wasm32-unknown-unknown");
@@ -619,7 +622,7 @@ test "LinkerScriptManager WebAssembly configuration" {
 
 test "LinkerScriptManager musl targets" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
-    defer manager.deinit();
+    defer manager.deinit(testing.allocator);
     
     // Test musl x86_64 configuration (Alpine Linux)
     const musl_x64_config = try manager.getLinkerConfig("x86_64-unknown-linux-musl");
@@ -636,7 +639,7 @@ test "LinkerScriptManager musl targets" {
 
 test "LinkerScriptManager validation" {
     var manager = LinkerScriptManager.init(testing.allocator, "/test/project");
-    defer manager.deinit();
+    defer manager.deinit(testing.allocator);
     
     // Test validation for supported targets
     try testing.expect(try manager.validateLinkerConfig("x86_64-unknown-linux-gnu"));

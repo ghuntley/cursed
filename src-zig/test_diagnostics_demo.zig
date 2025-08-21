@@ -8,12 +8,12 @@ const StackFrame = diagnostics.StackFrame;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Initialize error handler
     var handler = ErrorHandler.init(allocator);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     // Sample CURSED source code with errors
     const source_code = 
@@ -110,7 +110,8 @@ pub fn main() !void {
     );
     
     // Print all diagnostics with colors
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     try engine.printDiagnostics(stdout);
     
     // Demonstrate diagnostic counts
@@ -126,7 +127,7 @@ pub fn main() !void {
     engine.setUnicode(false);
     
     // Clear and re-add one diagnostic for demonstration
-    engine.diagnostics.clearAndFree();
+    engine.diagnostics.clearAndFree(allocator);
     engine.error_count = 0;
     engine.warning_count = 0;
     
@@ -142,11 +143,11 @@ pub fn main() !void {
 // Test function demonstrating integration with lexer
 pub fn demonstrateLexerIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     const bad_source = "sus x tea = \"unterminated string";
     try engine.addSourceFile("lexer_test.csd", bad_source);
@@ -162,18 +163,19 @@ pub fn demonstrateLexerIntegration() !void {
         12
     );
     
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     try engine.printDiagnostics(stdout);
 }
 
 // Test function demonstrating integration with parser
 pub fn demonstrateParserIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     const bad_source = 
         \\slay badFunction() {
@@ -194,18 +196,19 @@ pub fn demonstrateParserIntegration() !void {
         0, 42    // start offset, end offset
     );
     
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     try engine.printDiagnostics(stdout);
 }
 
 // Test function demonstrating semantic analysis integration
 pub fn demonstrateSemanticIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var engine = DiagnosticEngine.init(allocator, 10);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     const bad_source = 
         \\slay main() {
@@ -233,6 +236,7 @@ pub fn demonstrateSemanticIntegration() !void {
         &related_spans
     );
     
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     try engine.printDiagnostics(stdout);
 }

@@ -45,7 +45,7 @@ pub const ParallelCompiler = struct {
         var compiler = ParallelCompiler{
             .allocator = allocator,
             .thread_pool = try ThreadPool.init(allocator, optimal_threads),
-            .worker_threads = ArrayList(*Thread).init(allocator),
+            .worker_threads = .empty,
             
             .lexing_stage = CompilationStage.init("lexing"),
             .parsing_stage = CompilationStage.init("parsing"), 
@@ -81,13 +81,13 @@ pub const ParallelCompiler = struct {
         }
         
         // Cleanup work queues
-        self.lexing_queue.deinit();
-        self.parsing_queue.deinit();
-        self.type_checking_queue.deinit();
-        self.codegen_queue.deinit();
+        self.lexing_queue.deinit(allocator);
+        self.parsing_queue.deinit(allocator);
+        self.type_checking_queue.deinit(allocator);
+        self.codegen_queue.deinit(allocator);
         
-        self.worker_threads.deinit();
-        self.thread_pool.deinit();
+        self.worker_threads.deinit(allocator);
+        self.thread_pool.deinit(allocator);
     }
     
     /// Compile multiple files in parallel
@@ -246,7 +246,7 @@ pub const ParallelCompiler = struct {
         for (0..thread_count) |i| {
             const thread = try self.allocator.create(Thread);
             thread.* = try Thread.spawn(.{}, workerThreadMain, .{ self, i });
-            try self.worker_threads.append(thread);
+            try self.worker_threads.append(self.allocator, thread);
         }
     }
     
@@ -567,7 +567,7 @@ fn WorkQueue(comptime T: type) type {
         fn init(allocator: Allocator, capacity: usize) !Self {
             return Self{
                 .allocator = allocator,
-                .items = ArrayList(T).init(allocator),
+                .items = .empty,
                 .mutex = Mutex{},
                 .not_empty = Condition{},
                 .capacity = capacity,
@@ -575,14 +575,14 @@ fn WorkQueue(comptime T: type) type {
         }
         
         fn deinit(self: *Self) void {
-            self.items.deinit();
+            self.items.deinit(allocator);
         }
         
         fn enqueue(self: *Self, item: T) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
             
-            try self.items.append(item);
+            try self.items.append(allocator, item);
             self.not_empty.signal();
         }
         
@@ -615,7 +615,7 @@ const CompilationStage = struct {
             .name = name,
             .is_active = AtomicBool.init(false),
             .active_workers = AtomicUsize.init(0),
-            .results = ArrayList(anyopaque).init(std.heap.page_allocator),
+            .results = .empty,
             .results_mutex = Mutex{},
         };
     }
@@ -631,7 +631,7 @@ const CompilationStage = struct {
     fn addResult(self: *CompilationStage, result: anytype) !void {
         self.results_mutex.lock();
         defer self.results_mutex.unlock();
-        try self.results.append(@as(anyopaque, result));
+        try self.results.append(allocator, @as(anyopaque, result));
     }
     
     fn getResults(self: *CompilationStage) ![]anyopaque {

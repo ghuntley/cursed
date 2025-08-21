@@ -10,13 +10,13 @@ test "comprehensive AST validation" {
     // Test 1: Basic expression creation (would fail with circular dependencies)
     std.debug.print("✅ Test 1: Basic expression creation\n", .{});
     const int_expr = try ast.createIntegerExpression(allocator, 42);
-    defer int_expr.deinit();
+    defer int_expr.deinit(allocator);
     
     const string_expr = try ast.createStringExpression(allocator, "hello");
-    defer string_expr.deinit();
+    defer string_expr.deinit(allocator);
     
     const bool_expr = try ast.createBooleanExpression(allocator, true);
-    defer bool_expr.deinit();
+    defer bool_expr.deinit(allocator);
     
     // Test 2: Complex nested expressions (multiple levels of nesting)
     std.debug.print("✅ Test 2: Complex nested expressions\n", .{});
@@ -29,18 +29,18 @@ test "comprehensive AST validation" {
     
     const operand4 = try ast.createIntegerExpression(allocator, 4);
     const final_expr = try ast.createBinaryExpression(allocator, binary2, "-", operand4);
-    defer final_expr.deinit();
+    defer final_expr.deinit(allocator);
     
     // Test 3: Program structure creation
     std.debug.print("✅ Test 3: Program structure creation\n", .{});
     var program = ast.Program.init(allocator);
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     // Test 4: Statement creation with expression nesting
     std.debug.print("✅ Test 4: Statement creation with expression nesting\n", .{});
     const stmt_expr = try ast.createIntegerExpression(allocator, 123);
     const stmt = try ast.Statement.init(allocator, .{ .expression = stmt_expr });
-    defer stmt.deinit();
+    defer stmt.deinit(allocator);
     
     // Test 5: Memory safety validation (no leaks or double-frees)
     std.debug.print("✅ Test 5: Memory safety validation\n", .{});
@@ -49,7 +49,7 @@ test "comprehensive AST validation" {
         const temp_expr2 = try ast.createIntegerExpression(allocator, 20);
         const temp_binary = try ast.createBinaryExpression(allocator, temp_expr1, "+", temp_expr2);
         // These should clean up properly when they go out of scope
-        temp_binary.deinit();
+        temp_binary.deinit(allocator);
     }
     
     std.debug.print("✅ All tests passed! Circular dependency issues resolved.\n", .{});
@@ -69,20 +69,20 @@ test "CURSED language construct support" {
     
     // Test struct-like expressions
     const struct_name = try ast.createIdentifierExpression(allocator, "Point");
-    defer struct_name.deinit();
+    defer struct_name.deinit(allocator);
     
     // Test function call expressions
-    var args = std.ArrayList(*ast.Expression).init(allocator);
-    defer args.deinit();
+    var args: std.ArrayList(*ast.Expression) = .empty;
+    defer args.deinit(allocator);
     
     const arg1 = try ast.createIntegerExpression(allocator, 10);
     const arg2 = try ast.createIntegerExpression(allocator, 20);
-    try args.append(arg1);
-    try args.append(arg2);
+    try args.append(allocator, arg1);
+    try args.append(allocator, arg2);
     
     const func_name = try ast.createIdentifierExpression(allocator, "test_function");
     const call_expr = try ast.createCallExpression(allocator, func_name, args);
-    defer call_expr.deinit();
+    defer call_expr.deinit(allocator);
     
     // Verify call structure
     switch (call_expr.kind) {
@@ -103,18 +103,18 @@ test "AST performance validation" {
     
     // Create a large number of expressions to test performance
     const num_expressions = 1000;
-    var expressions = std.ArrayList(*ast.Expression).init(allocator);
+    var expressions: std.ArrayList(*ast.Expression) = .empty;
     defer {
         for (expressions.items) |expr| {
-            expr.deinit();
+            expr.deinit(allocator);
         }
-        expressions.deinit();
+        expressions.deinit(allocator);
     }
     
     // Create expressions rapidly
     for (0..num_expressions) |i| {
         const expr = try ast.createIntegerExpression(allocator, @intCast(i));
-        try expressions.append(expr);
+        try expressions.append(allocator, expr);
     }
     
     try std.testing.expect(expressions.items.len == num_expressions);
@@ -124,7 +124,7 @@ test "AST performance validation" {
 // Final validation that demonstrates the solution
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     std.debug.print("\n🎉 CURSED AST Circular Dependency Resolution - COMPLETE! 🎉\n", .{});
@@ -133,7 +133,7 @@ pub fn main() !void {
     
     // Demonstrate working AST
     const program_expr = try ast.createStringExpression(allocator, "CURSED is now fully functional!");
-    defer program_expr.deinit();
+    defer program_expr.deinit(allocator);
     
     std.debug.print("\nWorking example:\n", .{});
     try program_expr.print(0);

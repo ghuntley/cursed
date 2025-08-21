@@ -110,8 +110,8 @@ pub const RealLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *RealLLVMCodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
+        self.functions.deinit(allocator);
+        self.variables.deinit(allocator);
         
         if (self.builder) |builder| llvm_dispose_builder(builder);
         if (self.module) |module| llvm_dispose_module(module);
@@ -128,8 +128,8 @@ pub const RealLLVMCodeGen = struct {
     
     pub fn generateProgram(self: *RealLLVMCodeGen, program: Program) LLVMError!void {
         // Separate functions from global statements
-        var global_statements = std.ArrayList(*Statement).init(self.allocator);
-        defer global_statements.deinit();
+        var global_statements: std.ArrayList(*Statement) = .empty;
+        defer global_statements.deinit(allocator);
         
         // Process statements - functions are generated immediately, others saved for main
         for (program.statements.items) |stmt_ptr| {
@@ -139,7 +139,7 @@ pub const RealLLVMCodeGen = struct {
                     try self.generateStatement(stmt.*);
                 },
                 else => {
-                    try global_statements.append(stmt);
+                    try global_statements.append(allocator, stmt);
                 },
             }
         }
@@ -377,6 +377,9 @@ pub const RealLLVMCodeGen = struct {
             .Match => |match_expr| {
                 return try self.generateMatchExpression(match_expr);
             },
+            .MethodCall => |method_call| {
+                return try self.generateMethodCall(method_call);
+            },
             else => {
                 std.debug.print("Expression type {s} not implemented yet\n", .{@tagName(expr)});
                 return llvm_const_int(self.i32_type, 0);
@@ -407,13 +410,13 @@ pub const RealLLVMCodeGen = struct {
             // Look up function in symbol table
             if (self.functions.get(func_name)) |func| {
                 // Generate arguments
-                var args = std.ArrayList(?*anyopaque).init(self.allocator);
-                defer args.deinit();
+                var args: std.ArrayList(?*anyopaque) = .empty;
+                defer args.deinit(allocator);
                 
                 for (call.arguments) |arg_ptr| {
                     const arg_expr: *Expression = @ptrCast(@alignCast(arg_ptr));
                     const arg_value = try self.generateExpression(arg_expr.*);
-                    try args.append(arg_value);
+                    try args.append(allocator, arg_value);
                 }
                 
                 const func_type = llvm_get_function_type(func);
@@ -435,12 +438,12 @@ pub const RealLLVMCodeGen = struct {
         };
         
         // Generate arguments
-        var args = ArrayList(?*anyopaque).init(self.allocator);
-        defer args.deinit();
+        var args = .empty;
+        defer args.deinit(allocator);
         
         for (call.arguments) |arg| {
             const arg_value = try self.generateExpression(arg.*);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         // Create format string based on argument types (simplified)
@@ -802,6 +805,70 @@ pub const RealLLVMCodeGen = struct {
         _ = match_expr;
         return llvm_const_int(self.i32_type, 0);
     }
+
+    fn generateMethodCall(self: *RealLLVMCodeGen, method_call: *ast.MethodCallExpression) LLVMError!?*anyopaque {
+        // Handle vibez.spill() method calls
+        const object_expr: *Expression = @ptrCast(@alignCast(method_call.object));
+        
+        if (object_expr.* == .Identifier and std.mem.eql(u8, object_expr.*.Identifier, "vibez") and 
+            std.mem.eql(u8, method_call.method_name, "spill")) {
+            // Generate vibez.spill() as printf calls
+            for (method_call.arguments.items) |arg| {
+                const arg_value = try self.generateExpression(arg);
+                
+                // Create format string based on type
+                switch (arg) {
+                    .Integer => {
+                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%lld ", "int_fmt");
+                        const printf = try self.getOrCreatePrintf();
+                        const printf_type = llvm_get_function_type(printf);
+                        _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
+                    },
+                    .String => {
+                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%s ", "str_fmt");
+                        const printf = try self.getOrCreatePrintf();
+                        const printf_type = llvm_get_function_type(printf);
+                        _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
+                    },
+                    .Float => {
+                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%f ", "float_fmt");
+                        const printf = try self.getOrCreatePrintf();
+                        const printf_type = llvm_get_function_type(printf);
+                        _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
+                    },
+                    else => {
+                        // Default to pointer format
+                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%p ", "ptr_fmt");
+                        const printf = try self.getOrCreatePrintf();
+                        const printf_type = llvm_get_function_type(printf);
+                        _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
+                    },
+                }
+            }
+            
+            // Print newline
+            const newline_str = llvm_build_global_string_ptr(self.builder, "\n", "newline");
+            const printf = try self.getOrCreatePrintf();
+            const printf_type = llvm_get_function_type(printf);
+            _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{newline_str}, 1, "print_newline");
+            
+            return llvm_const_int(self.i32_type, 0); // void return
+        }
+        
+        // Default: return placeholder for other method calls
+        return llvm_const_int(self.i32_type, 0);
+    }
+
+    fn getOrCreatePrintf(self: *RealLLVMCodeGen) LLVMError!?*anyopaque {
+        // Try to get existing printf function
+        const printf = llvm_get_named_function(self.module, "printf");
+        if (printf != null) return printf;
+        
+        // Create printf function type: int printf(char*, ...)
+        const char_ptr_type = llvm_pointer_type(self.i8_type, 0);
+        const func_type = llvm_function_type(self.i32_type, &[_]*anyopaque{char_ptr_type}, 1, 1); // Variadic
+        return llvm_add_function(self.module, "printf", func_type);
+    }
 };
 
 test "real llvm basic" {
@@ -811,7 +878,7 @@ test "real llvm basic" {
         std.debug.print("Failed to initialize LLVM: {}\n", .{err});
         return;
     };
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Test basic initialization
     try std.testing.expect(codegen.context != null);

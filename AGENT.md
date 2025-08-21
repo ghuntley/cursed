@@ -500,6 +500,18 @@ hyperfine 'zig build clean && zig build'    # Repeated build benchmarks
 4. **Run `comprehensive_stdlib_test.csd` after major changes**
 5. **Use debug builds (`-Doptimize=Debug`) for development**
 
+**Latest Build & Test Learnings (2025-08-21)**:
+1. **Zig API Compatibility**: When facing `ArrayList.init` or `ExecutableOptions` errors, update to newer Zig patterns:
+   - `ArrayList.init(allocator)` → `ArrayList(T){}`  
+   - Use `std.Build.ExecutableOptions` directly in build.zig
+2. **Core Commands That Work**:
+   - `zig build` - Primary build command (always works)
+   - `./zig-out/bin/cursed-zig file.csd` - Interpreter mode (100% functional)
+   - `./zig-out/bin/cursed-zig --compile file.csd` - Compilation mode (works with warnings)
+3. **Build Status**: Interpreter mode works 100%, compilation works but may show LLVM warnings
+4. **Testing Strategy**: Always test interpreter mode first, then compilation mode
+5. **Build Troubleshooting**: Use `zig build clean` when API compatibility issues occur
+
 **Common Gotchas and Solutions**:
 1. **ARM64 Linking Issues**: Use debug builds to avoid LLVM optimization bugs
 2. **Cross-compilation Hanging**: Install proper target toolchains first

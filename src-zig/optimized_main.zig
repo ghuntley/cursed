@@ -20,7 +20,7 @@ const Codegen = @import("advanced_codegen.zig").CodeGenerator;
 /// Optimized CURSED compiler with performance enhancements
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Parse command line arguments
@@ -34,7 +34,7 @@ pub fn main() !void {
     
     // Initialize performance optimization system
     var performance_optimizer = try PerformanceOptimizer.init(allocator);
-    defer performance_optimizer.deinit();
+    defer performance_optimizer.deinit(allocator);
     
     // Apply compilation speed optimizations
     std.debug.print("🚀 Optimizing compiler performance...\n", .{});
@@ -47,7 +47,7 @@ pub fn main() !void {
     
     // Initialize compilation cache
     var compilation_cache = try CompilationCache.init(allocator, ".cursed_cache");
-    defer compilation_cache.deinit();
+    defer compilation_cache.deinit(allocator);
     
     // Enable compilation caching for faster rebuilds
     try performance_optimizer.enableCompilationCaching(".cursed_cache");
@@ -57,8 +57,8 @@ pub fn main() !void {
     var enable_profiling = false;
     var enable_parallel = false;
     var llvm_opt_level: []const u8 = "O2";
-    var input_files = ArrayList([]const u8).init(allocator);
-    defer input_files.deinit();
+    var input_files = .empty;
+    defer input_files.deinit(allocator);
     
     while (i < args.len) : (i += 1) {
         const arg = args[i];
@@ -100,7 +100,7 @@ pub fn main() !void {
             try runPerformanceBenchmarks(allocator, &performance_optimizer);
             return;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
-            try input_files.append(arg);
+            try input_files.append(allocator, arg);
         }
     }
     
@@ -155,13 +155,13 @@ fn compileFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit();
+    defer memory_pool.deinit(allocator);
     
     // Phase 1: Optimized Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -174,14 +174,14 @@ fn compileFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const arena_allocator = arena.allocator();
     
     // Convert FastLexer tokens to Parser tokens (adapter)
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit();
+    defer parser.deinit(allocator);
     
     const ast = try parser.parseTokens(parser_tokens);
     
@@ -196,7 +196,7 @@ fn compileFileOptimized(
     
     // Phase 3: Fast Type Checking
     var type_system = try TypeSystem.init(arena_allocator);
-    defer type_system.deinit();
+    defer type_system.deinit(allocator);
     
     // Enable fast type checking optimizations
     try type_system.enableFastTypeChecking();
@@ -212,7 +212,7 @@ fn compileFileOptimized(
     if (profiler) |*p| p.startTiming(.codegen);
     
     var codegen = try Codegen.init(arena_allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Configure LLVM optimization level
     try codegen.setOptimizationLevel(llvm_opt_level);
@@ -285,13 +285,13 @@ fn checkFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit();
+    defer memory_pool.deinit(allocator);
     
     // Phase 1: Fast Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -302,13 +302,13 @@ fn checkFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const arena_allocator = arena.allocator();
     
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit();
+    defer parser.deinit(allocator);
     
     const ast = try parser.parseTokens(parser_tokens);
     
@@ -321,7 +321,7 @@ fn checkFileOptimized(
     
     // Phase 3: Fast Type Checking
     var type_system = try TypeSystem.init(arena_allocator);
-    defer type_system.deinit();
+    defer type_system.deinit(allocator);
     
     try type_system.enableFastTypeChecking();
     
@@ -366,13 +366,13 @@ fn interpretFileOptimized(
     
     // Initialize optimized memory pool
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit();
+    defer memory_pool.deinit(allocator);
     
     // Phase 1: Fast Lexing
     if (profiler) |*p| p.startTiming(.lexing);
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -383,13 +383,13 @@ fn interpretFileOptimized(
     if (profiler) |*p| p.startTiming(.parsing);
     
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const arena_allocator = arena.allocator();
     
     const parser_tokens = try convertTokensToParserFormat(arena_allocator, tokens);
     
     var parser = Parser.init(arena_allocator);
-    defer parser.deinit();
+    defer parser.deinit(allocator);
     
     const ast = try parser.parseTokens(parser_tokens);
     
@@ -444,7 +444,7 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
     // Benchmark 2: Memory allocation performance
     std.debug.print("🧠 Memory Allocation Benchmark:\n");
     var memory_pool = try OptimizedMemoryPool.init(allocator);
-    defer memory_pool.deinit();
+    defer memory_pool.deinit(allocator);
     
     var timer = try Timer.start();
     const start_time = timer.read();

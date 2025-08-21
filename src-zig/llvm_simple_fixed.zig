@@ -13,8 +13,8 @@ pub const LLVMSimpleFixed = struct {
     pub fn init(allocator: Allocator) LLVMSimpleFixed {
         return LLVMSimpleFixed{
             .allocator = allocator,
-            .ir_content = ArrayList(u8).init(allocator),
-            .allocated_strings = ArrayList([]const u8).init(allocator),
+            .ir_content = .empty,
+            .allocated_strings = .empty,
         };
     }
 
@@ -23,13 +23,13 @@ pub const LLVMSimpleFixed = struct {
         for (self.allocated_strings.items) |str| {
             self.allocator.free(str);
         }
-        self.allocated_strings.deinit();
-        self.ir_content.deinit();
+        self.allocated_strings.deinit(allocator);
+        self.ir_content.deinit(allocator);
     }
 
     /// Track allocated string for cleanup
     fn trackString(self: *LLVMSimpleFixed, str: []const u8) !void {
-        try self.allocated_strings.append(str);
+        try self.allocated_strings.append(self.allocator, str);
     }
 
     pub fn compileProgram(self: *LLVMSimpleFixed, source: []const u8) !void {
@@ -141,7 +141,7 @@ pub fn compileToLLVM(allocator: Allocator, source: []const u8, output_file: []co
     print("[LLVM] Compiling with simple memory-safe backend...\n", .{});
     
     var backend = LLVMSimpleFixed.init(allocator);
-    defer backend.deinit(); // Proper cleanup prevents all memory leaks
+    defer backend.deinit(allocator); // Proper cleanup prevents all memory leaks
     
     // Check for function definitions first
     if (std.mem.indexOf(u8, source, "slay ") != null) {
@@ -198,7 +198,7 @@ pub fn compileAdvancedFeatures(allocator: Allocator, source: []const u8, output_
     print("[LLVM] Compiling advanced CURSED features with memory safety...\n", .{});
     
     var backend = LLVMSimpleFixed.init(allocator);
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     // Detect and compile various CURSED language constructs
     var has_pattern_matching = false;
@@ -361,7 +361,7 @@ pub fn crossCompile(allocator: Allocator, source: []const u8, output_file: []con
     print("[LLVM] Cross-compiling to target: {s}\n", .{target_triple});
     
     var backend = LLVMSimpleFixed.init(allocator);
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     // Add target-specific headers
     const target_header = try std.fmt.allocPrint(allocator,
@@ -397,7 +397,7 @@ test "simple fixed llvm backend" {
     const allocator = std.testing.allocator;
     
     var backend = LLVMSimpleFixed.init(allocator);
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     try backend.compileProgram("vibez.spill(42)");
     

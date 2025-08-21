@@ -66,7 +66,7 @@ pub const TestSummary = struct {
     }
 
     pub fn deinit(self: *TestSummary) void {
-        self.category_results.deinit();
+        self.category_results.deinit(allocator);
     }
 
     pub fn addCategoryResult(self: *TestSummary, category: TestCategory, result: CategoryResult) !void {
@@ -96,7 +96,7 @@ pub const TestAutomation = struct {
     }
 
     pub fn deinit(self: *TestAutomation) void {
-        self.summary.deinit();
+        self.summary.deinit(allocator);
     }
 
     pub fn runTests(self: *TestAutomation) !bool {
@@ -210,7 +210,7 @@ pub const TestAutomation = struct {
             std.debug.print("❌ Stdlib test runner init failed: {}\n", .{err});
             return false;
         };
-        defer runner.deinit();
+        defer runner.deinit(allocator);
 
         runner.runAllModuleTests() catch |err| {
             std.debug.print("❌ Stdlib tests failed: {}\n", .{err});
@@ -425,7 +425,7 @@ pub fn runAutomatedTests(allocator: Allocator, args: []const []const u8) !bool {
     }
 
     var automation = TestAutomation.init(allocator, config);
-    defer automation.deinit();
+    defer automation.deinit(allocator);
 
     return try automation.runTests();
 }
@@ -433,7 +433,7 @@ pub fn runAutomatedTests(allocator: Allocator, args: []const []const u8) !bool {
 // Main entry point for standalone test runner
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -447,7 +447,7 @@ pub fn main() !void {
 // Zig test integration
 test "Test Automation Framework" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const config = TestConfig{
@@ -457,7 +457,7 @@ test "Test Automation Framework" {
     };
 
     var automation = TestAutomation.init(allocator, config);
-    defer automation.deinit();
+    defer automation.deinit(allocator);
 
     // Test basic automation functionality
     const success = try automation.runTests();

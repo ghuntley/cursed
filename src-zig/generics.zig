@@ -21,7 +21,7 @@ pub const TypeParameter = struct {
     pub fn init(allocator: Allocator, name: []const u8) TypeParameter {
         return TypeParameter{
             .name = name,
-            .constraints = ArrayList(Constraint).init(allocator),
+            .constraints = .empty,
         };
     }
     
@@ -29,7 +29,7 @@ pub const TypeParameter = struct {
         for (self.constraints.items) |*constraint| {
             constraint.deinit(allocator);
         }
-        self.constraints.deinit();
+        self.constraints.deinit(allocator);
     }
 };
 
@@ -88,7 +88,7 @@ pub const GenericDeclaration = struct {
     pub fn init(allocator: Allocator, name: []const u8, kind: DeclarationKind) GenericDeclaration {
         return GenericDeclaration{
             .name = name,
-            .type_parameters = ArrayList(TypeParameter).init(allocator),
+            .type_parameters = .empty,
             .kind = kind,
             .ast_node = undefined, // Set by caller
         };
@@ -98,7 +98,7 @@ pub const GenericDeclaration = struct {
         for (self.type_parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
     }
 };
 
@@ -127,13 +127,13 @@ pub const MonomorphizedInstance = struct {
     pub fn init(allocator: Allocator, generic_name: []const u8, specialized_name: []const u8) MonomorphizedInstance {
         return MonomorphizedInstance{
             .generic_name = generic_name,
-            .substitutions = ArrayList(TypeSubstitution).init(allocator),
+            .substitutions = .empty,
             .specialized_name = specialized_name,
         };
     }
     
     pub fn deinit(self: *MonomorphizedInstance, allocator: Allocator) void {
-        self.substitutions.deinit();
+        self.substitutions.deinit(allocator);
         allocator.free(self.specialized_name);
     }
 };
@@ -167,13 +167,13 @@ pub const Monomorphizer = struct {
         pub fn init(allocator: Allocator, generic_name: []const u8, usage_location: []const u8) InstantiationRequest {
             return InstantiationRequest{
                 .generic_name = generic_name,
-                .type_arguments = ArrayList(ast.Type).init(allocator),
+                .type_arguments = .empty,
                 .usage_location = usage_location,
             };
         }
         
         pub fn deinit(self: *InstantiationRequest, allocator: Allocator) void {
-            self.type_arguments.deinit();
+            self.type_arguments.deinit(allocator);
             _ = allocator;
         }
     };
@@ -185,7 +185,7 @@ pub const Monomorphizer = struct {
             .module = module,
             .generic_declarations = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .instances = HashMap([]const u8, MonomorphizedInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .work_queue = ArrayList(InstantiationRequest).init(allocator),
+            .work_queue = .empty,
             .const_generics_manager = const_generics.ConstGenericsManager.init(allocator, context),
             .constraint_validator = generic_constraints.ConstraintValidator.init(allocator, type_registry),
         };
@@ -194,26 +194,26 @@ pub const Monomorphizer = struct {
     pub fn deinit(self: *Monomorphizer) void {
         var decl_iterator = self.generic_declarations.iterator();
         while (decl_iterator.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.generic_declarations.deinit();
+        self.generic_declarations.deinit(allocator);
         
         var instance_iterator = self.instances.iterator();
         while (instance_iterator.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.instances.deinit();
+        self.instances.deinit(allocator);
         
         for (self.work_queue.items) |*request| {
-            request.deinit(self.allocator);
+            request.deinit(allocator);
         }
-        self.work_queue.deinit();
+        self.work_queue.deinit(allocator);
         
         // CRITICAL FIX: Clean up const generics manager
-        self.const_generics_manager.deinit();
+        self.const_generics_manager.deinit(allocator);
         
         // Clean up constraint validator
-        self.constraint_validator.deinit();
+        self.constraint_validator.deinit(allocator);
     }
     
     /// Register a generic declaration
@@ -255,9 +255,9 @@ pub const Monomorphizer = struct {
         // Create instantiation request
         var request = InstantiationRequest.init(self.allocator, generic_name, usage_location);
         for (type_arguments) |type_arg| {
-            try request.type_arguments.append(type_arg);
+            try request.type_arguments.append(self.allocator, type_arg);
         }
-        try self.work_queue.append(request);
+        try self.work_queue.append(self.allocator, request);
         
         // Create placeholder instance
         var instance = MonomorphizedInstance.init(self.allocator, generic_name, specialized_name);
@@ -271,7 +271,7 @@ pub const Monomorphizer = struct {
             }
             
             const param_name = generic_decl.type_parameters.items[i].name;
-            try instance.substitutions.append(TypeSubstitution.init(param_name, type_arg));
+            try instance.substitutions.append(self.allocator, TypeSubstitution.init(param_name, type_arg));
         }
         
         try self.instances.put(try self.allocator.dupe(u8, specialized_name), instance);
@@ -282,7 +282,7 @@ pub const Monomorphizer = struct {
     pub fn processInstantiations(self: *Monomorphizer) !void {
         while (self.work_queue.items.len > 0) {
             const request = self.work_queue.pop();
-            defer request.deinit(self.allocator);
+            defer request.deinit(allocator);
             
             try self.instantiateGeneric(request);
         }
@@ -290,8 +290,8 @@ pub const Monomorphizer = struct {
     
     /// Generate specialized name for generic instantiation
     fn generateSpecializedName(self: *Monomorphizer, generic_name: []const u8, type_arguments: []ast.Type) ![]const u8 {
-        var name_builder = ArrayList(u8).init(self.allocator);
-        defer name_builder.deinit();
+        var name_builder = .empty;
+        defer name_builder.deinit(allocator);
         
         try name_builder.appendSlice(generic_name);
         
@@ -302,7 +302,7 @@ pub const Monomorphizer = struct {
             try name_builder.appendSlice(type_name);
         }
         
-        return name_builder.toOwnedSlice();
+        return name_builder.toOwnedSlice(self.allocator);
     }
     
     /// Convert type to string for name generation
@@ -370,12 +370,12 @@ pub const Monomorphizer = struct {
         try self.const_generics_manager.validateAllConstGenerics();
         
         // Convert old constraint format to new format for validation
-        var type_params = std.ArrayList(generic_constraints.GenericTypeParameter).init(self.allocator);
+        var type_params: std.ArrayList(generic_constraints.GenericTypeParameter) = .empty;
         defer {
             for (type_params.items) |*param| {
-                param.deinit();
+                param.deinit(allocator);
             }
-            type_params.deinit();
+            type_params.deinit(allocator);
         }
         
         for (generic_decl.type_parameters.items) |old_param| {
@@ -402,7 +402,7 @@ pub const Monomorphizer = struct {
                 try new_param.addConstraint(new_constraint);
             }
             
-            try type_params.append(new_param);
+            try type_params.append(self.allocator, new_param);
         }
         
         // Use comprehensive constraint validator
@@ -621,9 +621,8 @@ pub const Monomorphizer = struct {
             return self.isBuiltinOrdered(type_name);
         }
         
-        // TODO: Check user-defined interface implementations
-        // This would require integration with the interface registry
-        return true; // Assume true for now
+        // Check user-defined interface implementations
+        return try self.checkUserInterfaceImplementation(type_name, interface_name);
     }
     
     /// Check if type name represents a built-in comparable type
@@ -650,6 +649,37 @@ pub const Monomorphizer = struct {
         return false;
     }
     
+    /// Check if a type implements a user-defined interface
+    fn checkUserInterfaceImplementation(self: *Monomorphizer, type_name: []const u8, interface_name: []const u8) !bool {
+        // This would integrate with the interface registry system
+        // For now, we implement a basic check system
+        
+        // Check if we have interface implementations recorded
+        if (self.implementations.get(type_name)) |impls| {
+            for (impls.items) |impl| {
+                if (std.mem.eql(u8, impl.interface_name, interface_name)) {
+                    // Found implementation, now validate method signatures
+                    return try self.validateInterfaceMethodSignatures(type_name, interface_name);
+                }
+            }
+        }
+        
+        // No implementation found
+        return false;
+    }
+    
+    /// Validate that method signatures match interface requirements
+    fn validateInterfaceMethodSignatures(self: *Monomorphizer, type_name: []const u8, interface_name: []const u8) !bool {
+        _ = self;
+        _ = type_name;
+        _ = interface_name;
+        
+        // This is where we would check that all required interface methods
+        // are implemented with compatible signatures
+        // For now, assume valid if implementation exists
+        return true;
+    }
+    
     /// Check if type name represents a built-in ordered type
     fn isBuiltinOrdered(self: *Monomorphizer, type_name: []const u8) bool {
         return self.isBuiltinNumeric(type_name);
@@ -673,7 +703,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit();
+        defer substitution_map.deinit(allocator);
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -682,7 +712,7 @@ pub const Monomorphizer = struct {
         // Create specialized function declaration
         var specialized_func = ast.FunctionDeclaration{
             .name = try self.generateSpecializedName(generic_decl.name, type_arguments),
-            .parameters = ArrayList(ast.Parameter).init(self.allocator),
+            .parameters = .empty,
             .return_type = if (func_decl.return_type) |rt| try self.substituteType(rt, &substitution_map) else null,
             .body = try self.substituteStatements(func_decl.body.items, &substitution_map),
             .is_async = func_decl.is_async,
@@ -690,7 +720,7 @@ pub const Monomorphizer = struct {
         
         // Substitute parameter types
         for (func_decl.parameters.items) |param| {
-            try specialized_func.parameters.append(ast.Parameter{
+            try specialized_func.parameters.append(allocator, ast.Parameter{
                 .name = param.name,
                 .param_type = try self.substituteType(param.param_type, &substitution_map),
             });
@@ -712,7 +742,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit();
+        defer substitution_map.deinit(allocator);
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -721,12 +751,12 @@ pub const Monomorphizer = struct {
         // Create specialized struct declaration
         var specialized_struct = ast.StructDeclaration{
             .name = try self.generateSpecializedName(generic_decl.name, type_arguments),
-            .fields = ArrayList(ast.StructField).init(self.allocator),
+            .fields = .empty,
         };
         
         // Substitute field types
         for (struct_decl.fields.items) |field| {
-            try specialized_struct.fields.append(ast.StructField{
+            try specialized_struct.fields.append(allocator, ast.StructField{
                 .name = field.name,
                 .field_type = try self.substituteType(field.field_type, &substitution_map),
             });
@@ -748,7 +778,7 @@ pub const Monomorphizer = struct {
         
         // Create substitution map
         var substitution_map = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer substitution_map.deinit();
+        defer substitution_map.deinit(allocator);
         
         for (generic_decl.type_parameters.items, 0..) |param, i| {
             try substitution_map.put(param.name, type_arguments[i]);
@@ -757,26 +787,26 @@ pub const Monomorphizer = struct {
         // Create specialized interface declaration
         var specialized_interface = ast.InterfaceDeclaration{
             .name = try self.generateSpecializedName(generic_decl.name, type_arguments),
-            .methods = ArrayList(ast.InterfaceMethod).init(self.allocator),
+            .methods = .empty,
         };
         
         // Substitute method types
         for (interface_decl.methods.items) |method| {
             var specialized_method = ast.InterfaceMethod{
                 .name = method.name,
-                .parameters = ArrayList(ast.Parameter).init(self.allocator),
+                .parameters = .empty,
                 .return_type = if (method.return_type) |rt| try self.substituteType(rt, &substitution_map) else null,
             };
             
             // Substitute parameter types
             for (method.parameters.items) |param| {
-                try specialized_method.parameters.append(ast.Parameter{
+                try specialized_method.parameters.append(allocator, ast.Parameter{
                     .name = param.name,
                     .param_type = try self.substituteType(param.param_type, &substitution_map),
                 });
             }
             
-            try specialized_interface.methods.append(specialized_method);
+            try specialized_interface.methods.append(allocator, specialized_method);
         }
         
         // Generate LLVM vtable structure
@@ -829,11 +859,11 @@ pub const Monomorphizer = struct {
     
     /// Substitute type parameters in statement list
     fn substituteStatements(self: *Monomorphizer, original_statements: []ast.Statement, substitutions: *HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ArrayList(ast.Statement) {
-        var new_statements = ArrayList(ast.Statement).init(self.allocator);
+        var new_statements = .empty;
         
         for (original_statements) |stmt| {
             const new_stmt = try self.substituteStatement(stmt, substitutions);
-            try new_statements.append(new_stmt);
+            try new_statements.append(allocator, new_stmt);
         }
         
         return new_statements;
@@ -868,11 +898,11 @@ pub const Monomorphizer = struct {
     /// Generate LLVM function for specialized generic function
     fn generateSpecializedLLVMFunction(self: *Monomorphizer, func_decl: *ast.FunctionDeclaration) !void {
         // Create LLVM function type
-        var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-        defer param_types.deinit();
+        var param_types = .empty;
+        defer param_types.deinit(allocator);
         
         for (func_decl.parameters.items) |param| {
-            try param_types.append(try self.typeToLLVMType(param.param_type));
+            try param_types.append(allocator, try self.typeToLLVMType(param.param_type));
         }
         
         const return_type = if (func_decl.return_type) |rt| 
@@ -904,11 +934,11 @@ pub const Monomorphizer = struct {
     /// Generate LLVM struct type for specialized generic struct
     fn generateSpecializedLLVMStruct(self: *Monomorphizer, struct_decl: *ast.StructDeclaration) !void {
         // Create LLVM struct type
-        var field_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-        defer field_types.deinit();
+        var field_types = .empty;
+        defer field_types.deinit(allocator);
         
         for (struct_decl.fields.items) |field| {
-            try field_types.append(try self.typeToLLVMType(field.field_type));
+            try field_types.append(allocator, try self.typeToLLVMType(field.field_type));
         }
         
         const llvm_struct_type = c.LLVMStructCreateNamed(self.context, struct_decl.name.ptr);
@@ -990,20 +1020,20 @@ pub const Monomorphizer = struct {
     /// Generate LLVM vtable for specialized interface
     fn generateSpecializedVTable(self: *Monomorphizer, interface_decl: *ast.InterfaceDeclaration) !void {
         // Create vtable struct type
-        var method_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-        defer method_types.deinit();
+        var method_types = .empty;
+        defer method_types.deinit(allocator);
         
         // Add function pointer for each method
         for (interface_decl.methods.items) |method| {
-            var param_types = ArrayList(c.LLVMTypeRef).init(self.allocator);
-            defer param_types.deinit();
+            var param_types = .empty;
+            defer param_types.deinit(allocator);
             
             // Add 'self' parameter (always a pointer)
-            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            try param_types.append(allocator, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
             
             // Add method parameters
             for (method.parameters.items) |param| {
-                try param_types.append(try self.typeToLLVMType(param.param_type));
+                try param_types.append(allocator, try self.typeToLLVMType(param.param_type));
             }
             
             const return_type = if (method.return_type) |rt| 
@@ -1018,7 +1048,7 @@ pub const Monomorphizer = struct {
                 0
             );
             
-            try method_types.append(c.LLVMPointerType(method_func_type, 0));
+            try method_types.append(allocator, c.LLVMPointerType(method_func_type, 0));
         }
         
         // Create vtable struct

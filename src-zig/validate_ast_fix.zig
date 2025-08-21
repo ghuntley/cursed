@@ -7,18 +7,18 @@ test "AST compiles without circular dependency" {
     
     // Test that we can create expressions without circular dependency issues
     const int_expr = try ast.createIntegerExpression(allocator, 42);
-    defer int_expr.deinit();
+    defer int_expr.deinit(allocator);
     
     const string_expr = try ast.createStringExpression(allocator, "hello");
-    defer string_expr.deinit();
+    defer string_expr.deinit(allocator);
     
     // Test binary expression creation (this would fail with circular dependencies)
     const binary_expr = try ast.createBinaryExpression(allocator, int_expr, "+", string_expr);
-    defer binary_expr.deinit();
+    defer binary_expr.deinit(allocator);
     
     // Test that we can create a program
     var program = ast.Program.init(allocator);
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     // If we reach here, circular dependencies are resolved!
     try std.testing.expect(true);
@@ -33,7 +33,7 @@ test "AST memory safety validation" {
     const binary = try ast.createBinaryExpression(allocator, left, "+", right);
     
     // Manual cleanup - this tests that the memory management works correctly
-    binary.deinit();
+    binary.deinit(allocator);
     
     try std.testing.expect(true);
 }
@@ -51,7 +51,7 @@ test "Complex AST structure creation" {
     const binary2 = try ast.createBinaryExpression(allocator, left2, "+", right2);
     
     const final_expr = try ast.createBinaryExpression(allocator, binary1, "*", binary2);
-    defer final_expr.deinit();
+    defer final_expr.deinit(allocator);
     
     // Verify the structure
     switch (final_expr.kind) {
@@ -82,7 +82,7 @@ test "Statement creation and cleanup" {
     // Create an expression statement
     const expr = try ast.createIntegerExpression(allocator, 42);
     const stmt = try ast.Statement.init(allocator, .{ .expression = expr });
-    defer stmt.deinit();
+    defer stmt.deinit(allocator);
     
     // Verify the statement structure
     switch (stmt.kind) {

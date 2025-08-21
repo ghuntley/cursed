@@ -117,8 +117,8 @@ pub const Program = struct {
 
     pub fn init(allocator: Allocator) Program {
         return Program{
-            .statements = ArrayList(Statement).init(allocator),
-            .imports = ArrayList(ImportStatement).init(allocator),
+            .statements = .empty,
+            .imports = .empty,
             .package = null,
         };
     }
@@ -127,12 +127,12 @@ pub const Program = struct {
         for (self.statements.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.statements.deinit();
+        self.statements.deinit(allocator);
         
         for (self.imports.items) |*import| {
             import.deinit(allocator);
         }
-        self.imports.deinit();
+        self.imports.deinit(allocator);
         
         if (self.package) |*pkg| {
             pkg.deinit(allocator);
@@ -168,13 +168,13 @@ pub const ImportStatement = struct {
         return ImportStatement{
             .path = path,
             .alias = null,
-            .items = ArrayList([]const u8).init(allocator),
+            .items = .empty,
         };
     }
 
     pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
         _ = allocator;
-        self.items.deinit();
+        self.items.deinit(allocator);
     }
 };
 
@@ -277,7 +277,7 @@ pub const FunctionType = struct {
         for (self.parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         if (self.return_type) |ret| {
             ast_types.typeCast(ret).deinit(allocator);
@@ -294,7 +294,7 @@ pub const InterfaceType = struct {
         for (self.methods.items) |*method| {
             method.deinit(allocator);
         }
-        self.methods.deinit();
+        self.methods.deinit(allocator);
     }
 };
 
@@ -306,7 +306,7 @@ pub const StructType = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
 };
 
@@ -319,12 +319,12 @@ pub const GenericType = struct {
         for (self.type_arguments.items) |*type_arg| {
             type_arg.deinit(allocator);
         }
-        self.type_arguments.deinit();
+        self.type_arguments.deinit(allocator);
         
         for (self.constraints.items) |*constraint| {
             constraint.deinit(allocator);
         }
-        self.constraints.deinit();
+        self.constraints.deinit(allocator);
     }
 };
 
@@ -352,7 +352,7 @@ pub const TupleType = struct {
         for (self.elements.items) |*elem| {
             elem.deinit(allocator);
         }
-        self.elements.deinit();
+        self.elements.deinit(allocator);
     }
 };
 
@@ -365,7 +365,7 @@ pub const MethodSignature = struct {
         for (self.parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         if (self.return_type) |*ret_type| {
             ret_type.deinit(allocator);
@@ -406,7 +406,7 @@ pub const TypeParameter = struct {
         for (self.constraints.items) |*constraint| {
             constraint.deinit(allocator);
         }
-        self.constraints.deinit();
+        self.constraints.deinit(allocator);
     }
 };
 
@@ -531,7 +531,7 @@ pub const CallExpression = struct {
             ast_types.expressionCast(arg).deinit(allocator);
             allocator.destroy(ast_types.expressionCast(arg));
         }
-        self.arguments.deinit();
+        self.arguments.deinit(allocator);
     }
 };
 
@@ -563,7 +563,7 @@ pub const ArrayExpression = struct {
             ast_types.expressionCast(elem).deinit(allocator);
             allocator.destroy(ast_types.expressionCast(elem));
         }
-        self.elements.deinit();
+        self.elements.deinit(allocator);
     }
 };
 
@@ -574,7 +574,7 @@ pub const MapExpression = struct {
         for (self.entries.items) |*entry| {
             entry.deinit(allocator);
         }
-        self.entries.deinit();
+        self.entries.deinit(allocator);
     }
 };
 
@@ -599,7 +599,7 @@ pub const CompositeLiteralExpression = struct {
             ast_types.expressionCast(elem).deinit(allocator);
             allocator.destroy(ast_types.expressionCast(elem));
         }
-        self.elements.deinit();
+        self.elements.deinit(allocator);
     }
 };
 
@@ -645,7 +645,7 @@ pub const StructLiteralExpression = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
 };
 
@@ -664,7 +664,7 @@ pub const LambdaExpression = struct {
     body: ast_types.ExpressionRef,
 
     pub fn deinit(self: *LambdaExpression, allocator: Allocator) void {
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         ast_types.expressionCast(self.body).deinit(allocator);
         allocator.destroy(ast_types.expressionCast(self.body));
     }
@@ -678,7 +678,7 @@ pub const TupleExpression = struct {
             ast_types.expressionCast(elem).deinit(allocator);
             allocator.destroy(ast_types.expressionCast(elem));
         }
-        self.elements.deinit();
+        self.elements.deinit(allocator);
     }
 };
 
@@ -796,7 +796,7 @@ pub const StructuredErrorExpression = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
 };
 
@@ -855,11 +855,11 @@ pub const InterfaceDeclaration = struct {
         for (self.methods.items) |*method| {
             method.deinit(allocator);
         }
-        self.methods.deinit();
+        self.methods.deinit(allocator);
         for (self.type_parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
     }
 };
 
@@ -872,7 +872,7 @@ pub const InterfaceMethod = struct {
         for (self.parameters.items) |*param| {
             param.param_type.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         if (self.return_type) |*ret_type| {
             ret_type.deinit(allocator);
         }
@@ -900,7 +900,7 @@ pub const MatchExpression = struct {
         for (self.cases.items) |*case| {
             case.deinit(allocator);
         }
-        self.cases.deinit();
+        self.cases.deinit(allocator);
         
         if (self.default_case) |default| {
             ast_types.expressionCast(default).deinit(allocator);
@@ -921,7 +921,7 @@ pub const TypeSwitchExpression = struct {
         for (self.cases.items) |*case| {
             case.deinit(allocator);
         }
-        self.cases.deinit();
+        self.cases.deinit(allocator);
         
         if (self.default_case) |default| {
             ast_types.expressionCast(default).deinit(allocator);
@@ -984,13 +984,13 @@ pub const IfStatement = struct {
         for (self.then_branch.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.then_branch.deinit();
+        self.then_branch.deinit(allocator);
         
         if (self.else_branch) |*else_br| {
             for (else_br.items) |*stmt| {
                 stmt.deinit(allocator);
             }
-            else_br.deinit();
+            else_br.deinit(allocator);
         }
     }
 };
@@ -1008,13 +1008,13 @@ pub const FunctionStatement = struct {
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
         return FunctionStatement{
             .name = name,
-            .parameters = ArrayList(Parameter).init(allocator),
+            .parameters = .empty,
             .return_type = null,
-            .body = ArrayList(Statement).init(allocator),
+            .body = .empty,
             .visibility = .Private,
             .is_async = false,
-            .type_parameters = ArrayList(TypeParameter).init(allocator),
-            .comments = ArrayList(ast_types.Comment).init(allocator),
+            .type_parameters = .empty,
+            .comments = .empty,
         };
     }
 
@@ -1022,7 +1022,7 @@ pub const FunctionStatement = struct {
         for (self.parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         if (self.return_type) |*ret_type| {
             ret_type.deinit(allocator);
@@ -1031,14 +1031,14 @@ pub const FunctionStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
         
         for (self.type_parameters.items) |*type_param| {
             type_param.deinit(allocator);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
         
-        self.comments.deinit();
+        self.comments.deinit(allocator);
     }
 };
 
@@ -1053,7 +1053,7 @@ pub const WhileStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1082,7 +1082,7 @@ pub const ForStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1098,7 +1098,7 @@ pub const ForInStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1114,13 +1114,13 @@ pub const SwitchStatement = struct {
         for (self.cases.items) |*case| {
             case.deinit(allocator);
         }
-        self.cases.deinit();
+        self.cases.deinit(allocator);
         
         if (self.default_case) |*default| {
             for (default.items) |*stmt| {
                 stmt.deinit(allocator);
             }
-            default.deinit();
+            default.deinit(allocator);
         }
     }
 };
@@ -1137,13 +1137,13 @@ pub const PatternSwitchStatement = struct {
         for (self.patterns.items) |*pattern| {
             pattern.deinit(allocator);
         }
-        self.patterns.deinit();
+        self.patterns.deinit(allocator);
         
         if (self.default_case) |*default| {
             for (default.items) |*stmt| {
                 stmt.deinit(allocator);
             }
-            default.deinit();
+            default.deinit(allocator);
         }
     }
 };
@@ -1178,13 +1178,13 @@ pub const SelectStatement = struct {
         for (self.cases.items) |*case| {
             case.deinit(allocator);
         }
-        self.cases.deinit();
+        self.cases.deinit(allocator);
         
         if (self.default_case) |*default| {
             for (default.items) |*stmt| {
                 stmt.deinit(allocator);
             }
-            default.deinit();
+            default.deinit(allocator);
         }
     }
 };
@@ -1199,12 +1199,12 @@ pub const StructStatement = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
         
         for (self.type_parameters.items) |*type_param| {
             type_param.deinit(allocator);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
     }
 };
 
@@ -1218,12 +1218,12 @@ pub const InterfaceStatement = struct {
         for (self.methods.items) |*method| {
             method.deinit(allocator);
         }
-        self.methods.deinit();
+        self.methods.deinit(allocator);
         
         for (self.type_parameters.items) |*type_param| {
             type_param.deinit(allocator);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
     }
 };
 
@@ -1255,7 +1255,7 @@ pub const CatchStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
         
         if (self.error_type) |*err_type| {
             err_type.deinit(allocator);
@@ -1309,13 +1309,13 @@ pub const ShortDeclarationStatement = struct {
     values: ArrayList(ast_types.ExpressionRef),
 
     pub fn deinit(self: *ShortDeclarationStatement, allocator: Allocator) void {
-        self.names.deinit();
+        self.names.deinit(allocator);
         
         for (self.values.items) |val| {
             ast_types.expressionCast(val).deinit(allocator);
             allocator.destroy(ast_types.expressionCast(val));
         }
-        self.values.deinit();
+        self.values.deinit(allocator);
     }
 };
 
@@ -1345,13 +1345,13 @@ pub const FamStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
         
         if (self.recovery_body) |*recovery| {
             for (recovery.items) |*stmt| {
                 stmt.deinit(allocator);
             }
-            recovery.deinit();
+            recovery.deinit(allocator);
         }
     }
 };
@@ -1384,7 +1384,7 @@ pub const SwitchCase = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1404,7 +1404,7 @@ pub const PatternCase = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1418,7 +1418,7 @@ pub const SelectCase = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit(allocator);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
     }
 };
 
@@ -1492,7 +1492,7 @@ pub const Pattern = union(enum) {
                 for (tuple.items) |*pattern| {
                     pattern.deinit(allocator);
                 }
-                tuple.deinit();
+                tuple.deinit(allocator);
             },
             .Struct => |*struct_pattern| {
                 struct_pattern.deinit(allocator);
@@ -1501,7 +1501,7 @@ pub const Pattern = union(enum) {
                 for (array.items) |*pattern| {
                     pattern.deinit(allocator);
                 }
-                array.deinit();
+                array.deinit(allocator);
             },
             else => {},
         }
@@ -1516,7 +1516,7 @@ pub const StructPattern = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
 };
 

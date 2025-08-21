@@ -16,7 +16,7 @@ pub const SimpleFunctionInfo = struct {
 };
 
 pub fn extractFunctionNames(allocator: Allocator, source: []const u8) !ArrayList(SimpleFunctionInfo) {
-    var functions = ArrayList(SimpleFunctionInfo).init(allocator);
+    var functions = .empty;
     
     // Simple regex-like parsing to find function declarations
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -43,7 +43,7 @@ pub fn extractFunctionNames(allocator: Allocator, source: []const u8) !ArrayList
                 // Validate function name
                 if (func_name.len > 0 and func_name.len <= 64 and isValidIdentifier(func_name)) {
                     const name_copy = try allocator.dupe(u8, func_name);
-                    try functions.append(SimpleFunctionInfo{
+                    try functions.append(allocator, SimpleFunctionInfo{
                         .name = name_copy,
                         .available = true,
                     });

@@ -35,7 +35,7 @@ const VariableStore = std.HashMap([]const u8, Variable, std.hash_map.StringConte
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -98,7 +98,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit(); // Fix memory leak: Clean up tokens ArrayList
+    defer tokens.deinit(allocator); // Fix memory leak: Clean up tokens ArrayList
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -180,8 +180,8 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     defer allocator.free(c_filename);
     
     // Generate optimized C code
-    var c_code = std.ArrayList(u8).init(allocator);
-    defer c_code.deinit();
+    var c_code: std.ArrayList(u8) = .empty;
+    defer c_code.deinit(allocator);
     
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n");
     
@@ -191,7 +191,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     try c_code.appendSlice(filename);
     try c_code.appendSlice("\n");
     try c_code.appendSlice("// Optimization level: ");
-    try c_code.append('0' + optimization_level);
+    try c_code.append(allocator, '0' + optimization_level);
     try c_code.appendSlice("\n\n");
     
     try c_code.appendSlice("int main() {\n");
@@ -319,7 +319,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, verbose: bool) !vo
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
     
     // Validate all imported modules
@@ -349,7 +349,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, verbose: bool) !vo
         print("❌ Lexer error during interpretation: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     if (verbose) print("🔍 Parsed {} tokens for interpretation\n", .{tokens.items.len});
     
@@ -365,7 +365,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, verbose: bool) !vo
     
     // Execute with interpreter
     var cursed_interpreter = interpreter.Interpreter.init(allocator);
-    defer cursed_interpreter.deinit();
+    defer cursed_interpreter.deinit(allocator);
     
     cursed_interpreter.execute(program) catch |err| {
         print("❌ Runtime error: {}\n", .{err});

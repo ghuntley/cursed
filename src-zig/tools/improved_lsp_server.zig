@@ -179,21 +179,21 @@ pub const LSPHandler = struct {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
             var doc = entry.value_ptr;
-            doc.deinit();
+            doc.deinit(allocator);
         }
-        self.documents.deinit();
+        self.documents.deinit(allocator);
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
 
         const parsed = json.parseFromSlice(LSPMessage, arena_allocator, message_text, .{}) catch |err| {
             std.log.err("Failed to parse LSP message: {}", .{err});
             return null;
         };
-        defer parsed.deinit();
+        defer parsed.deinit(allocator);
 
         if (parsed.value.method) |method| {
             if (parsed.value.id != null) {
@@ -273,7 +273,7 @@ pub const LSPHandler = struct {
         }
         
         var items = ArrayList([]const u8).init(self.allocator);
-        defer items.deinit();
+        defer items.deinit(allocator);
         
         // Add keywords
         for (self.language_data.keywords) |keyword| {
@@ -304,7 +304,7 @@ pub const LSPHandler = struct {
         
         // Build response
         var response_builder = ArrayList(u8).init(self.allocator);
-        defer response_builder.deinit();
+        defer response_builder.deinit(allocator);
         
         try response_builder.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":");
         const id_str = try std.fmt.allocPrint(self.allocator, "{}", .{id.Integer});
@@ -400,19 +400,21 @@ pub const LSPHandler = struct {
 // Main LSP Server Entry Point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var handler = LSPHandler.init(allocator);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
 
     std.log.info("CURSED Language Server starting...", .{});
 
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
     var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit();
+    defer buffer.deinit(allocator);
 
     while (!handler.shutdown_requested) {
         // Read Content-Length header

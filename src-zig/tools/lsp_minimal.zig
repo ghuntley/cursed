@@ -71,10 +71,10 @@ pub const CursedLSP = struct {
         var iter = self.documents.iterator();
         while (iter.next()) |entry| {
             var doc = entry.value_ptr;
-            doc.deinit(self.allocator);
+            doc.deinit(allocator);
             self.allocator.free(entry.key_ptr.*);
         }
-        self.documents.deinit();
+        self.documents.deinit(allocator);
     }
     
     // Core message handling
@@ -262,7 +262,7 @@ pub const CursedLSP = struct {
     // Utilities
     fn unescapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         var i: usize = 0;
         while (i < text.len) {
@@ -290,7 +290,7 @@ pub const CursedLSP = struct {
     
     fn escapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         for (text) |c| {
             switch (c) {
@@ -308,7 +308,7 @@ pub const CursedLSP = struct {
     
     fn formatCursedCode(self: *CursedLSP, content: []const u8) ![]u8 {
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         var indent_level: u32 = 0;
         var at_line_start = true;
@@ -362,7 +362,8 @@ pub const CursedLSP = struct {
             const diagnostics = try self.analyzeDiagnostics(doc.content, uri);
             defer self.allocator.free(diagnostics);
             
-            const stdout = std.io.getStdOut().writer();
+            var stdout_buffer: [4096]u8 = undefined;
+            const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
             try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ diagnostics.len, diagnostics });
             
             std.log.info("Published diagnostics for {s}", .{uri});
@@ -371,7 +372,7 @@ pub const CursedLSP = struct {
     
     fn analyzeDiagnostics(self: *CursedLSP, content: []const u8, uri: []const u8) ![]u8 {
         var diagnostics = ArrayList(u8).init(self.allocator);
-        defer diagnostics.deinit();
+        defer diagnostics.deinit(allocator);
         
         try diagnostics.appendSlice("{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"");
         try diagnostics.appendSlice(uri);
@@ -428,11 +429,13 @@ pub const CursedLSP = struct {
     pub fn run(self: *CursedLSP) !void {
         std.log.info("CURSED Language Server starting...", .{});
         
-        const stdin = std.io.getStdIn().reader();
-        const stdout = std.io.getStdOut().writer();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        defer buffer.deinit(allocator);
         
         while (!self.shutdown_requested) {
             // Read Content-Length header
@@ -471,11 +474,11 @@ pub const CursedLSP = struct {
 // Main entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var server = CursedLSP.init(allocator);
-    defer server.deinit();
+    defer server.deinit(allocator);
     
     try server.run();
 }

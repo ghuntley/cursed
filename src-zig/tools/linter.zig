@@ -87,8 +87,8 @@ pub const LinterConfig = struct {
     }
     
     pub fn deinit(self: *LinterConfig) void {
-        self.enabled_rules.deinit();
-        self.severity_overrides.deinit();
+        self.enabled_rules.deinit(allocator);
+        self.severity_overrides.deinit(allocator);
     }
 };
 
@@ -107,7 +107,7 @@ pub const Linter = struct {
     }
     
     pub fn deinit(self: *Linter) void {
-        self.issues.deinit();
+        self.issues.deinit(allocator);
     }
     
     pub fn lintFile(self: *Linter, file_path: []const u8) !void {
@@ -126,7 +126,7 @@ pub const Linter = struct {
         var token_lexer = lexer.Lexer.init(self.allocator, source);
         
         const tokens = try token_lexer.tokenize();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         // Parse tokens
         var cursed_parser = parser.Parser.init(self.allocator, tokens.items);
@@ -332,7 +332,7 @@ pub const Linter = struct {
     fn checkUnusedVariables(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = ast_tree; // TODO: Use this when implementing proper AST traversal
         var declared_vars = std.StringHashMap(VariableInfo).init(self.allocator);
-        defer declared_vars.deinit();
+        defer declared_vars.deinit(allocator);
         
         // TODO: Implement proper AST traversal with new structure
         // First pass: collect all variable declarations  
@@ -1322,7 +1322,7 @@ pub const Linter = struct {
     fn toSnakeCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to snake_case
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         for (name, 0..) |char, i| {
             if (char >= 'A' and char <= 'Z') {
@@ -1339,7 +1339,7 @@ pub const Linter = struct {
     fn toPascalCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to PascalCase
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         var capitalize_next = true;
         for (name) |char| {
@@ -1369,7 +1369,8 @@ pub fn printIssues(allocator: Allocator, issues: []const LintIssue, format: []co
 
 fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
     _ = allocator;
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     for (issues) |issue| {
         try stdout.print("{s}:{}:{}: {s}: {s} [{s}]\n", .{
@@ -1391,7 +1392,8 @@ fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
 
 fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
     _ = allocator;
-    const stdout = std.io.getStdOut().writer();
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     try stdout.writeAll("{\n  \"issues\": [\n");
     
@@ -1422,7 +1424,7 @@ fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
 // Main linter entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -1434,10 +1436,10 @@ pub fn main() !void {
     }
     
     var config = LinterConfig.init(allocator);
-    defer config.deinit();
+    defer config.deinit(allocator);
     
     var linter = Linter.init(allocator, config);
-    defer linter.deinit();
+    defer linter.deinit(allocator);
     
     const file_path = args[1];
     const format = if (args.len > 2 and std.mem.eql(u8, args[2], "--format") and args.len > 3) args[3] else "human";

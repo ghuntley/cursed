@@ -30,7 +30,7 @@ pub const StructInstance = struct {
     
     pub fn deinit(self: *StructInstance) void {
         self.allocator.free(self.type_name);
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
     
     pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
@@ -123,7 +123,7 @@ pub const Environment = struct {
     }
 
     pub fn deinit(self: *Environment) void {
-        self.variables.deinit();
+        self.variables.deinit(allocator);
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -237,14 +237,14 @@ pub const StructType = struct {
         
         return StructType{
             .name = name_copy,
-            .fields = ArrayList(FieldDefinition).init(allocator),
+            .fields = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *StructType) void {
         self.allocator.free(self.name);
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
     
     pub fn addField(self: *StructType, name: []const u8, field_type: []const u8) !void {
@@ -252,7 +252,7 @@ pub const StructType = struct {
             .name = try self.allocator.dupe(u8, name),
             .field_type = try self.allocator.dupe(u8, field_type),
         };
-        try self.fields.append(field);
+        try self.fields.append(self.allocator, field);
     }
 };
 
@@ -277,9 +277,9 @@ pub const SimpleInterpreter = struct {
     }
 
     pub fn deinit(self: *SimpleInterpreter) void {
-        self.environment.deinit();
-        self.functions.deinit();
-        self.struct_types.deinit();
+        self.environment.deinit(allocator);
+        self.functions.deinit(allocator);
+        self.struct_types.deinit(allocator);
     }
 
     pub fn execute(self: *SimpleInterpreter, tokens: []const lexer.Token) InterpreterError!void {
@@ -585,7 +585,7 @@ test "simple interpreter basic" {
     const allocator = std.testing.allocator;
     
     var interpreter = SimpleInterpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
     
     // Test basic value operations
     const int_val = Value{ .Integer = 42 };

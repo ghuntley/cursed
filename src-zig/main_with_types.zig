@@ -67,7 +67,7 @@ const Config = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var args = try std.process.argsAlloc(allocator);
@@ -297,7 +297,7 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit();
+    defer token_list.deinit(allocator);
 
     if (config.show_tokens) {
         print("\n📝 Tokens:\n");
@@ -326,15 +326,15 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         print("Type checker initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit();
+    defer type_integration.deinit(allocator);
 
     const type_result = type_integration.checkProgram(&program) catch |err| {
         print("Type checking error: {}\n", .{err});
         std.process.exit(1);
     };
     defer {
-        type_result.errors.deinit();
-        type_result.warnings.deinit();
+        type_result.errors.deinit(allocator);
+        type_result.warnings.deinit(allocator);
     }
 
     // Display results
@@ -390,7 +390,7 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit();
+    defer token_list.deinit(allocator);
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
@@ -404,7 +404,7 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
         print("Type system initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit();
+    defer type_integration.deinit(allocator);
 
     print("📋 Type Inference Results:\n");
     print("========================\n");
@@ -440,7 +440,7 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
                     print("  Generic check error: {}\n", .{err});
                     continue;
                 };
-                defer generic_result.deinit();
+                defer generic_result.deinit(allocator);
                 
                 print("  Is generic: {}\n", .{generic_result.is_generic});
                 print("  Monomorphization needed: {}\n", .{generic_result.monomorphization_needed});
@@ -480,7 +480,7 @@ fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit();
+    defer token_list.deinit(allocator);
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
@@ -493,14 +493,14 @@ fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config
         print("Type system initialization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer type_integration.deinit();
+    defer type_integration.deinit(allocator);
 
     // Run constraint resolution
     const constraint_result = type_integration.resolveConstraints() catch |err| {
         print("Constraint resolution error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer constraint_result.deinit();
+    defer constraint_result.deinit(allocator);
 
     print("🔍 Constraint Resolution Results:\n");
     print("=================================\n");
@@ -538,7 +538,7 @@ fn runSyntaxCheck(allocator: Allocator, source_file: []const u8, config: Config)
         print("Tokenization error: {}\n", .{err});
         std.process.exit(1);
     };
-    defer token_list.deinit();
+    defer token_list.deinit(allocator);
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {

@@ -73,7 +73,7 @@ pub const ExceptionHandlingLLVM = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .exception_context_stack = std.ArrayList(ExceptionContext).init(allocator),
+            .exception_context_stack = .{},
             .runtime_functions = undefined,
         };
         
@@ -82,7 +82,7 @@ pub const ExceptionHandlingLLVM = struct {
     }
     
     pub fn deinit(self: *ExceptionHandlingLLVM) void {
-        self.exception_context_stack.deinit();
+        self.exception_context_stack.deinit(allocator);
         self.allocator.destroy(self);
     }
     
@@ -317,7 +317,7 @@ pub const ExceptionHandlingLLVM = struct {
             .error_variable = if (fam.catch_handler) |ch| ch.error_variable else null,
         };
         
-        try self.exception_context_stack.append(exception_context);
+        try self.exception_context_stack.append(allocator, exception_context);
         defer _ = self.exception_context_stack.pop();
         
         // Set up exception handling frame
@@ -542,7 +542,7 @@ pub fn testExceptionHandling() !void {
     
     // Create exception handling system
     var exception_handler = try ExceptionHandlingLLVM.init(allocator, context, module, builder);
-    defer exception_handler.deinit();
+    defer exception_handler.deinit(allocator);
     
     // Generate exception metadata
     try exception_handler.generateExceptionMetadata();

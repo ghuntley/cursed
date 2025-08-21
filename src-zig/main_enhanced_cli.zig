@@ -27,7 +27,7 @@ pub fn main() !void {
         .retain_metadata = false,
         .verbose_log = false,
     }){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     // Get command line arguments
@@ -46,21 +46,21 @@ pub fn main() !void {
                 .coverage => |coverage_args| {
                     switch (coverage_args.subcmd) {
                         .run => |run_args| {
-                            run_args.source_dirs.deinit();
-                            run_args.exclude_patterns.deinit();
-                            run_args.formats.deinit();
+                            run_args.source_dirs.deinit(allocator);
+                            run_args.exclude_patterns.deinit(allocator);
+                            run_args.formats.deinit(allocator);
                         },
                         .report => |report_args| {
-                            report_args.formats.deinit();
+                            report_args.formats.deinit(allocator);
                         },
                         .instrument => |instrument_args| {
-                            instrument_args.source_dirs.deinit();
+                            instrument_args.source_dirs.deinit(allocator);
                         },
                     }
                 },
                 .debug => |debug_args| {
-                    debug_args.breakpoints.deinit();
-                    debug_args.watch_vars.deinit();
+                    debug_args.breakpoints.deinit(allocator);
+                    debug_args.watch_vars.deinit(allocator);
                 },
                 .pkg => |pkg_args| {
                     switch (pkg_args.subcmd) {
@@ -68,7 +68,7 @@ pub fn main() !void {
                     }
                 },
                 .build => |build_args| {
-                    build_args.features.deinit();
+                    build_args.features.deinit(allocator);
                 },
                 else => {},
             }
@@ -213,7 +213,7 @@ fn handleCompileCommand(
         error_reporter.reportError("E0001", error_msg, input_file, 0, 0);
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     if (verbose) {
         print("🔍 Lexed {} tokens\n", .{tokens.items.len});
@@ -297,7 +297,7 @@ fn handleRunCommand(
         error_reporter.reportError("E0001", error_msg, run_args.input, 0, 0);
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     if (verbose) {
         print("🔍 Lexed {} tokens\n", .{tokens.items.len});
@@ -344,7 +344,7 @@ fn handleTestCommand(
         for (test_files.items) |file| {
             allocator.free(file);
         }
-        test_files.deinit();
+        test_files.deinit(allocator);
     }
     
     if (verbose) {
@@ -352,8 +352,8 @@ fn handleTestCommand(
     }
     
     // Filter tests if specified
-    var filtered_tests = std.ArrayList([]const u8).init(allocator);
-    defer filtered_tests.deinit();
+    var filtered_tests: std.ArrayList([]const u8) = .empty;
+    defer filtered_tests.deinit(allocator);
     
     for (test_files.items) |file| {
         if (test_args.filter) |filter| {
@@ -361,7 +361,7 @@ fn handleTestCommand(
                 continue;
             }
         }
-        try filtered_tests.append(file);
+        try filtered_tests.append(allocator, file);
     }
     
     if (verbose) {
@@ -577,7 +577,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
 fn discoverTestFiles(allocator: Allocator, test_dir: []const u8, pattern: []const u8) !std.ArrayList([]const u8) {
     _ = pattern;
     
-    var test_files = std.ArrayList([]const u8).init(allocator);
+    var test_files: std.ArrayList([]const u8) = .empty;
     
     // Simple implementation - just add some placeholder test files
     // TODO: Implement proper file discovery with glob patterns

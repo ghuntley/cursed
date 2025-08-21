@@ -168,7 +168,7 @@ pub const MessageTemplate = struct {
     allocator: Allocator,
 
     pub fn init(allocator: Allocator, template: []const u8) !MessageTemplate {
-        var placeholders = ArrayList([]const u8).init(allocator);
+        var placeholders = .empty;
         
         // Extract placeholders from template (format: {placeholder_name})
         var i: usize = 0;
@@ -181,7 +181,7 @@ pub const MessageTemplate = struct {
                 }
                 if (i < template.len and template[i] == '}') {
                     const placeholder = template[start..i];
-                    try placeholders.append(try allocator.dupe(u8, placeholder));
+                    try placeholders.append(allocator, try allocator.dupe(u8, placeholder));
                 }
             }
             i += 1;
@@ -198,13 +198,13 @@ pub const MessageTemplate = struct {
         for (self.placeholders.items) |placeholder| {
             self.allocator.free(placeholder);
         }
-        self.placeholders.deinit();
+        self.placeholders.deinit(allocator);
         self.allocator.free(self.template);
     }
 
     pub fn format(self: MessageTemplate, values: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         var i: usize = 0;
         while (i < self.template.len) {
@@ -220,16 +220,16 @@ pub const MessageTemplate = struct {
                         try result.appendSlice(value);
                     } else {
                         // Keep placeholder if no value provided
-                        try result.append('{');
+                        try result.append(allocator, '{');
                         try result.appendSlice(placeholder);
-                        try result.append('}');
+                        try result.append(allocator, '}');
                     }
                     i += 1;
                 } else {
-                    try result.append(self.template[i - 1]);
+                    try result.append(self.allocator, self.template[i - 1]);
                 }
             } else {
-                try result.append(self.template[i]);
+                try result.append(self.allocator, self.template[i]);
                 i += 1;
             }
         }
@@ -315,9 +315,9 @@ pub const LanguagePack = struct {
         var iterator = self.messages.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.messages.deinit();
+        self.messages.deinit(allocator);
     }
 
     pub fn addMessage(self: *LanguagePack, key: []const u8, template: []const u8) !void {
@@ -426,8 +426,8 @@ pub const UnicodeUtils = struct {
 
         var view = unicode.Utf8View.init(text) catch return error.InvalidUTF8;
         var iterator = view.iterator();
-        var result = ArrayList(u8).init(allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         var count: usize = 0;
         while (iterator.nextCodepoint()) |codepoint| {
@@ -446,16 +446,16 @@ pub const UnicodeUtils = struct {
         if (!validateUTF8(text)) return error.InvalidUTF8;
         
         var view = unicode.Utf8View.init(text) catch return error.InvalidUTF8;
-        var codepoints = ArrayList(u21).init(allocator);
-        defer codepoints.deinit();
+        var codepoints = .empty;
+        defer codepoints.deinit(allocator);
 
         var iterator = view.iterator();
         while (iterator.nextCodepoint()) |codepoint| {
-            try codepoints.append(codepoint);
+            try codepoints.append(allocator, codepoint);
         }
 
-        var result = ArrayList(u8).init(allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         var i: usize = codepoints.items.len;
         while (i > 0) {
@@ -503,9 +503,9 @@ pub const I18nManager = struct {
     pub fn deinit(self: *I18nManager) void {
         var iterator = self.language_packs.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.language_packs.deinit();
+        self.language_packs.deinit(allocator);
     }
 
     pub fn loadLanguagePack(self: *I18nManager, locale: Locale) !void {
@@ -550,8 +550,8 @@ pub const I18nManager = struct {
     }
 
     fn formatFallbackMessage(self: *I18nManager, key: []const u8, values: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         try result.appendSlice("UNTRANSLATED: ");
         try result.appendSlice(key);
@@ -730,7 +730,7 @@ pub fn initGlobalI18n(allocator: Allocator, locale: ?Locale) !void {
     defer global_i18n_mutex.unlock();
 
     if (global_i18n != null) {
-        global_i18n.?.deinit();
+        global_i18n.?.deinit(allocator);
     }
 
     const detected_locale = locale orelse detectSystemLocale();
@@ -745,7 +745,7 @@ pub fn deinitGlobalI18n() void {
     defer global_i18n_mutex.unlock();
 
     if (global_i18n) |*i18n| {
-        i18n.deinit();
+        i18n.deinit(allocator);
         global_i18n = null;
     }
 }
@@ -761,8 +761,8 @@ pub fn formatGlobalPanicMessage(message_key: []const u8, values: HashMap([]const
 
     // Fallback if i18n not initialized
     const allocator = std.heap.page_allocator;
-    var result = ArrayList(u8).init(allocator);
-    defer result.deinit();
+    var result = .empty;
+    defer result.deinit(allocator);
 
     try result.appendSlice("🚨 CURSED Error: ");
     try result.appendSlice(message_key);
@@ -820,10 +820,10 @@ test "message template formatting" {
     const allocator = std.testing.allocator;
     
     var template = try MessageTemplate.init(allocator, "Error: {message} (Code: {code})");
-    defer template.deinit();
+    defer template.deinit(allocator);
 
     var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer values.deinit();
+    defer values.deinit(allocator);
 
     try values.put("message", "Test error");
     try values.put("code", "42");
@@ -854,12 +854,12 @@ test "i18n manager basic functionality" {
     const allocator = std.testing.allocator;
     
     var i18n = I18nManager.init(allocator, .en_US, .en_US);
-    defer i18n.deinit();
+    defer i18n.deinit(allocator);
 
     try i18n.loadLanguagePack(.en_US);
 
     var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer values.deinit();
+    defer values.deinit(allocator);
     try values.put("message", "Test panic");
 
     const formatted = try i18n.formatPanicMessage("panic.yikes", values);

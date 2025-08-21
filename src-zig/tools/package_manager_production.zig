@@ -36,7 +36,7 @@ pub const ProductionPackageManager = struct {
     }
     
     pub fn deinit(self: *ProductionPackageManager) void {
-        self.edge_handler.deinit();
+        self.edge_handler.deinit(allocator);
     }
     
     pub fn installPackageProduction(self: *ProductionPackageManager, package_name: []const u8, version_req: []const u8) !void {
@@ -50,7 +50,7 @@ pub const ProductionPackageManager = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Run comprehensive edge case validation
         try self.edge_handler.validatePackageInstallation(&manifest, package_name);
@@ -135,7 +135,7 @@ pub const ProductionPackageManager = struct {
         
         // Create dependency resolver with enhanced features
         var resolver = package_manager.DependencyResolver.init(self.allocator);
-        defer resolver.deinit();
+        defer resolver.deinit(allocator);
         
         // Resolve dependencies with enhanced error handling
         const resolved = resolver.resolve(manifest) catch |err| {
@@ -144,9 +144,9 @@ pub const ProductionPackageManager = struct {
         };
         defer {
             for (resolved.items) |*dep| {
-                dep.deinit();
+                dep.deinit(allocator);
             }
-            resolved.deinit();
+            resolved.deinit(allocator);
         }
         
         // Install each dependency with comprehensive error handling
@@ -261,7 +261,7 @@ pub const ProductionPackageManager = struct {
         print("🔒 Generating production lock file...\n", .{});
         
         var lock_file = package_manager.LockFile.init(self.allocator);
-        defer lock_file.deinit();
+        defer lock_file.deinit(allocator);
         
         for (resolved.items) |dep| {
             var locked_pkg = package_manager.LockFile.LockedPackage.init(self.allocator);
@@ -294,7 +294,7 @@ pub const ProductionPackageManager = struct {
     
     fn generateLockFileContent(self: *ProductionPackageManager, lock_file: *const package_manager.LockFile) ![]const u8 {
         var content = ArrayList(u8).init(self.allocator);
-        defer content.deinit();
+        defer content.deinit(allocator);
         
         const writer = content.writer();
         
@@ -338,7 +338,7 @@ pub const ProductionPackageManager = struct {
         
         // Create enhanced manifest with production defaults
         var manifest = package_manager.PackageManifest.init(self.allocator);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         manifest.name = try self.allocator.dupe(u8, project_name);
         manifest.version = package_manager.Version{ .major = 0, .minor = 1, .patch = 0 };
@@ -516,7 +516,7 @@ pub const ProductionPackageManager = struct {
             },
             else => return err,
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Install with production handling
         try self.installDependenciesProduction(&manifest);
@@ -548,7 +548,7 @@ pub const commands = struct {
     
     pub fn deinit() void {
         if (manager) |*m| {
-            m.deinit();
+            m.deinit(allocator);
         }
     }
     

@@ -31,8 +31,8 @@ pub const SafeBuildStep = struct {
                 .id = std.Build.Step.Id.custom,
                 .name = name,
                 .owner = undefined, // Will be set by caller
-                .dependencies = std.ArrayList(*std.Build.Step).init(allocator),
-                .dependants = std.ArrayList(*std.Build.Step).init(allocator),
+                .dependencies = .empty,
+                .dependants = .empty,
                 .state = .{},
                 .max_rss = 0,
                 .peak_rss = 0,
@@ -43,7 +43,7 @@ pub const SafeBuildStep = struct {
                 .make_fn = makeStep,
             },
             .name = try allocator.dupe(u8, name),
-            .dependencies = std.ArrayList(*std.Build.Step).init(allocator),
+            .dependencies = .empty,
             .state = std.atomic.Value(StepState).init(.pending),
             .mutex = std.Thread.Mutex{},
             .allocator = allocator,
@@ -52,7 +52,7 @@ pub const SafeBuildStep = struct {
     }
 
     pub fn deinit(self: *SafeBuildStep) void {
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         self.allocator.free(self.name);
         self.allocator.destroy(self);
     }
@@ -103,7 +103,7 @@ pub const BuildThreadPool = struct {
 
     pub fn init(allocator: std.mem.Allocator, thread_count: u32) !BuildThreadPool {
         var pool = BuildThreadPool{
-            .threads = std.ArrayList(std.Thread).init(allocator),
+            .threads = .empty,
             .work_queue = std.fifo.LinearFifo(*std.Build.Step, .Dynamic).init(allocator),
             .mutex = std.Thread.Mutex{},
             .condition = std.Thread.Condition{},
@@ -114,7 +114,7 @@ pub const BuildThreadPool = struct {
         // Create worker threads
         for (0..thread_count) |i| {
             const thread = try std.Thread.spawn(.{}, workerThread, .{ &pool, i });
-            try pool.threads.append(thread);
+            try pool.threads.append(allocator, thread);
         }
 
         return pool;
@@ -130,8 +130,8 @@ pub const BuildThreadPool = struct {
             thread.join();
         }
 
-        self.threads.deinit();
-        self.work_queue.deinit();
+        self.threads.deinit(self.allocator);
+        self.work_queue.deinit(self.allocator);
     }
 
     pub fn submit(self: *BuildThreadPool, step: *std.Build.Step) !void {
@@ -201,11 +201,11 @@ pub const DependencyTracker = struct {
     pub fn deinit(self: *DependencyTracker) void {
         var iterator = self.graph.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(self.allocator);
         }
-        self.graph.deinit();
-        self.visited.deinit();
-        self.recursion_stack.deinit();
+        self.graph.deinit(self.allocator);
+        self.visited.deinit(self.allocator);
+        self.recursion_stack.deinit(self.allocator);
     }
 
     pub fn addDependency(self: *DependencyTracker, from: *std.Build.Step, to: *std.Build.Step) !void {
@@ -218,9 +218,9 @@ pub const DependencyTracker = struct {
         // Add the dependency
         const gop = try self.graph.getOrPut(from);
         if (!gop.found_existing) {
-            gop.value_ptr.* = std.ArrayList(*std.Build.Step).init(self.allocator);
+            gop.value_ptr.* = .empty;
         }
-        try gop.value_ptr.append(to);
+        try gop.value_ptr.append(allocator, to);
     }
 
     fn wouldCreateCycle(self: *DependencyTracker, from: *std.Build.Step, to: *std.Build.Step) !bool {
@@ -231,9 +231,9 @@ pub const DependencyTracker = struct {
         // Temporarily add the edge and check for cycles
         const gop = try self.graph.getOrPut(from);
         if (!gop.found_existing) {
-            gop.value_ptr.* = std.ArrayList(*std.Build.Step).init(self.allocator);
+            gop.value_ptr.* = .empty;
         }
-        try gop.value_ptr.append(to);
+        try gop.value_ptr.append(allocator, to);
 
         const has_cycle = try self.hasCycleDFS(from);
 
@@ -264,9 +264,9 @@ pub const DependencyTracker = struct {
     }
 
     pub fn getExecutionOrder(self: *DependencyTracker) !std.ArrayList(*std.Build.Step) {
-        var order = std.ArrayList(*std.Build.Step).init(self.allocator);
+        var order: std.ArrayList(*std.Build.Step) = .empty;
         var in_degree = std.HashMap(*std.Build.Step, u32, std.hash_map.AutoContext(*std.Build.Step), 80).init(self.allocator);
-        defer in_degree.deinit();
+        defer in_degree.deinit(allocator);
 
         // Calculate in-degrees
         var graph_iterator = self.graph.iterator();
@@ -283,26 +283,26 @@ pub const DependencyTracker = struct {
         }
 
         // Topological sort
-        var queue = std.ArrayList(*std.Build.Step).init(self.allocator);
-        defer queue.deinit();
+        var queue: std.ArrayList(*std.Build.Step) = .empty;
+        defer queue.deinit(allocator);
 
         var degree_iterator = in_degree.iterator();
         while (degree_iterator.next()) |entry| {
             if (entry.value_ptr.* == 0) {
-                try queue.append(entry.key_ptr.*);
+                try queue.append(allocator, entry.key_ptr.*);
             }
         }
 
         while (queue.items.len > 0) {
             const current = queue.orderedRemove(0);
-            try order.append(current);
+            try order.append(allocator, current);
 
             if (self.graph.get(current)) |dependencies| {
                 for (dependencies.items) |dep| {
                     if (in_degree.getPtr(dep)) |degree| {
                         degree.* -= 1;
                         if (degree.* == 0) {
-                            try queue.append(dep);
+                            try queue.append(allocator, dep);
                         }
                     }
                 }
@@ -339,10 +339,10 @@ pub const ResourceManager = struct {
     pub fn deinit(self: *ResourceManager) void {
         var iterator = self.resources.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.waiting_queue.deinit();
+            entry.value_ptr.waiting_queue.deinit(allocator);
             self.allocator.free(entry.value_ptr.name);
         }
-        self.resources.deinit();
+        self.resources.deinit(self.allocator);
     }
 
     pub fn addResource(self: *ResourceManager, name: []const u8, max_concurrent: u32) !void {
@@ -354,7 +354,7 @@ pub const ResourceManager = struct {
             .name = owned_name,
             .max_concurrent = max_concurrent,
             .current_users = 0,
-            .waiting_queue = std.ArrayList(*std.Build.Step).init(self.allocator),
+            .waiting_queue = .empty,
             .mutex = std.Thread.Mutex{},
             .condition = std.Thread.Condition{},
         });
@@ -369,7 +369,7 @@ pub const ResourceManager = struct {
             defer resource.mutex.unlock();
 
             while (resource.current_users >= resource.max_concurrent) {
-                try resource.waiting_queue.append(step);
+                try resource.waiting_queue.append(allocator, step);
                 resource.condition.wait(&resource.mutex);
             }
 
@@ -421,11 +421,11 @@ pub fn createSafeBuildConfig(b: *std.Build) !void {
 
 test "safe build step execution" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const step = try SafeBuildStep.init(allocator, "test_step");
-    defer step.deinit();
+    defer step.deinit(allocator);
 
     step.markReady();
     try std.testing.expect(step.isReady());
@@ -435,16 +435,16 @@ test "safe build step execution" {
 
 test "dependency cycle detection" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var tracker = DependencyTracker.init(allocator);
-    defer tracker.deinit();
+    defer tracker.deinit(allocator);
 
     const step1 = try SafeBuildStep.init(allocator, "step1");
-    defer step1.deinit();
+    defer step1.deinit(allocator);
     const step2 = try SafeBuildStep.init(allocator, "step2");
-    defer step2.deinit();
+    defer step2.deinit(allocator);
 
     // Add dependency: step1 -> step2
     try tracker.addDependency(&step1.base, &step2.base);
@@ -458,18 +458,18 @@ test "dependency cycle detection" {
 
 test "resource contention management" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var manager = ResourceManager.init(allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
 
     try manager.addResource("memory", 2); // Max 2 concurrent users
 
     const step1 = try SafeBuildStep.init(allocator, "memory_user_1");
-    defer step1.deinit();
+    defer step1.deinit(allocator);
     const step2 = try SafeBuildStep.init(allocator, "memory_user_2");
-    defer step2.deinit();
+    defer step2.deinit(allocator);
 
     try manager.acquireResource("memory", &step1.base);
     try manager.acquireResource("memory", &step2.base);

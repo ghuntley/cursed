@@ -280,8 +280,8 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         defer metrics.deinit(allocator);
         
         // Create report content
-        var report = std.ArrayList(u8).init(allocator);
-        defer report.deinit();
+        var report: std.ArrayList(u8) = .empty;
+        defer report.deinit(allocator);
         
         const writer = report.writer();
         

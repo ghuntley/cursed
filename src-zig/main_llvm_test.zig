@@ -5,7 +5,7 @@ const llvm_real = @import("llvm_real.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -35,7 +35,7 @@ pub fn main() !void {
         std.debug.print("❌ Tokenization error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     std.debug.print("✅ Tokenization successful. Tokens: {d}\n", .{tokens.items.len});
 
@@ -54,7 +54,7 @@ pub fn main() !void {
         std.debug.print("❌ LLVM initialization failed: {}\n", .{err});
         return;
     };
-    defer llvm_codegen.deinit();
+    defer llvm_codegen.deinit(allocator);
 
     std.debug.print("✅ LLVM backend initialized\n", .{});
 

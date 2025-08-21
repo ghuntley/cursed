@@ -120,8 +120,8 @@ pub const FixedJITExecutionEngine = struct {
         if (self.context) |context| {
             c.LLVMContextDispose(context);
         }
-        self.variables.deinit();
-        self.functions.deinit();
+        self.variables.deinit(allocator);
+        self.functions.deinit(allocator);
     }
     
     /// Initialize the JIT execution engine
@@ -148,7 +148,7 @@ pub const FixedJITExecutionEngine = struct {
         
         // Parse the source code
         var program = try self.parseSource(source);
-        defer program.deinit();
+        defer program.deinit(allocator);
         
         // Generate LLVM IR
         try self.generateLLVMIR(program);
@@ -173,12 +173,12 @@ pub const FixedJITExecutionEngine = struct {
             // Parse variable declarations: sus x drip = 42
             if (std.mem.startsWith(u8, trimmed, "sus ")) {
                 const var_stmt = try self.parseVariableDeclaration(trimmed);
-                try program.statements.append(var_stmt);
+                try program.statements.append(self.allocator, var_stmt);
             }
             // Parse vibez.spill statements
             else if (std.mem.startsWith(u8, trimmed, "vibez.spill")) {
                 const print_stmt = try self.parsePrintStatement(trimmed);
-                try program.statements.append(print_stmt);
+                try program.statements.append(allocator, print_stmt);
             }
         }
         
@@ -390,7 +390,7 @@ pub const FixedJITExecutionEngine = struct {
         print("=====================================\n", .{});
         
         var engine = try FixedJITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         const test_program =
             \\sus x drip = 42

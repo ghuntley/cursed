@@ -36,7 +36,7 @@ pub const AttributeIntegration = struct {
     
     pub fn deinit(self: *AttributeIntegration) void {
         if (self.attribute_codegen) |codegen| {
-            codegen.deinit();
+            codegen.deinit(allocator);
             self.allocator.destroy(codegen);
         }
     }
@@ -307,11 +307,11 @@ pub fn createTestIntegration(allocator: Allocator) AttributeIntegration {
 
 test "attribute integration basic functionality" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var integration = createTestIntegration(allocator);
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     // Test that integration can be created and destroyed without issues
     try std.testing.expect(integration.attribute_codegen == null);
@@ -319,11 +319,11 @@ test "attribute integration basic functionality" {
 
 test "attribute validation" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var integration = createTestIntegration(allocator);
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     // Create a valid function attribute list
     var attrs = AttributeList.init(allocator);

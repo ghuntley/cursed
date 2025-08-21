@@ -31,7 +31,7 @@ const BenchmarkResult = struct {
     notes: ?[]const u8 = null,
 };
 
-var benchmark_results = std.ArrayList(BenchmarkResult).init(std.heap.page_allocator);
+var benchmark_results: std.ArrayList(BenchmarkResult) = .empty;
 
 /// Run a benchmark and record results
 fn runBenchmark(
@@ -46,7 +46,7 @@ fn runBenchmark(
     
     const actual_ops = benchmarkFn(operations) catch |err| {
         print("❌ Benchmark {s} failed: {}\n", .{ name, err });
-        benchmark_results.append(BenchmarkResult{
+        benchmark_results.append(allocator, BenchmarkResult{
             .name = name,
             .operations = 0,
             .duration_ms = 0,
@@ -66,7 +66,7 @@ fn runBenchmark(
     const ops_per_second = @as(f64, @as(f64, @floatFromInt(actual_ops * 1000))) / @as(f64, @as(f64, @floatFromInt(duration)));
     const memory_used = if (memory_end > memory_start) memory_end - memory_start else 0;
     
-    benchmark_results.append(BenchmarkResult{
+    benchmark_results.append(allocator, BenchmarkResult{
         .name = name,
         .operations = actual_ops,
         .duration_ms = duration,
@@ -89,14 +89,14 @@ fn getCurrentMemoryUsage() u64 {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     print("🚀 CURSED Concurrency Performance Benchmarks\n", .{});
     print("=============================================\n\n", .{});
 
-    benchmark_results = std.ArrayList(BenchmarkResult).init(allocator);
-    defer benchmark_results.deinit();
+    benchmark_results = .{};
+    defer benchmark_results.deinit(allocator);
 
     // Goroutine benchmarks
     runBenchmark("Goroutine Creation", 10000, benchmarkGoroutineCreation);
@@ -263,7 +263,7 @@ fn benchmarkChannelSendReceive(target_ops: u64) !u64 {
     
     var channel = try concurrency.makeChannel(u64, allocator, 1000);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -294,7 +294,7 @@ fn benchmarkBufferedChannelThroughput(target_ops: u64) !u64 {
 
     var channel = try concurrency.makeChannel(u64, allocator, 10000);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -374,7 +374,7 @@ fn benchmarkUnbufferedChannelSync(target_ops: u64) !u64 {
 
     var channel = try concurrency.makeUnbufferedChannel(u64, allocator);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -453,7 +453,7 @@ fn benchmarkChannelClosePerformance(target_ops: u64) !u64 {
         
         // Close and cleanup
         channel.close();
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
         
         close_operations += 1;
@@ -636,7 +636,7 @@ fn benchmarkSelectDefaultCase(target_ops: u64) !u64 {
     
     for (0..target_ops) |_| {
         var select_stmt = concurrency.Select.init(allocator);
-        defer select_stmt.deinit();
+        defer select_stmt.deinit(allocator);
         
         try select_stmt.addDefault(0);
         
@@ -654,13 +654,13 @@ fn benchmarkSelectMultiChannel(target_ops: u64) !u64 {
     
     var channel1 = try concurrency.makeChannel(u32, allocator, 100);
     defer {
-        channel1.deinit();
+        channel1.deinit(allocator);
         allocator.destroy(channel1);
     }
     
     var channel2 = try concurrency.makeChannel(u32, allocator, 100);
     defer {
-        channel2.deinit();
+        channel2.deinit(allocator);
         allocator.destroy(channel2);
     }
 
@@ -674,7 +674,7 @@ fn benchmarkSelectMultiChannel(target_ops: u64) !u64 {
     
     for (0..target_ops) |_| {
         var select_stmt = concurrency.Select.init(allocator);
-        defer select_stmt.deinit();
+        defer select_stmt.deinit(allocator);
         
         try select_stmt.addReceive(channel1.id, 0);
         try select_stmt.addReceive(channel2.id, 1);
@@ -696,7 +696,7 @@ fn benchmarkSelectTimeout(target_ops: u64) !u64 {
     
     for (0..target_ops) |_| {
         var select_stmt = concurrency.Select.init(allocator);
-        defer select_stmt.deinit();
+        defer select_stmt.deinit(allocator);
         
         select_stmt.setTimeout(1); // 1ms timeout
         
@@ -785,16 +785,16 @@ fn benchmarkMemoryScalability(target_ops: u64) !u64 {
         var channels = std.ArrayList(*concurrency.Channel(u64)).init(allocator);
         defer {
             for (channels.items) |channel| {
-                channel.deinit();
+                channel.deinit(allocator);
                 allocator.destroy(channel);
             }
-            channels.deinit();
+            channels.deinit(allocator);
         }
         
         // Create multiple channels
         for (0..10) |_| {
             const channel = try concurrency.makeChannel(u64, allocator, 10);
-            try channels.append(channel);
+            try channels.append(allocator, channel);
         }
         
         // Use channels briefly
@@ -817,7 +817,7 @@ fn benchmarkChannelFanout(target_ops: u64) !u64 {
 
     var input_channel = try concurrency.makeChannel(u64, allocator, 1000);
     defer {
-        input_channel.deinit();
+        input_channel.deinit(allocator);
         allocator.destroy(input_channel);
     }
 
@@ -902,7 +902,7 @@ fn benchmarkProducerConsumer(target_ops: u64) !u64 {
 
     var channel = try concurrency.makeChannel(u64, allocator, 100);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -979,13 +979,13 @@ fn benchmarkWorkerPool(target_ops: u64) !u64 {
 
     var job_channel = try concurrency.makeChannel(u64, allocator, 100);
     defer {
-        job_channel.deinit();
+        job_channel.deinit(allocator);
         allocator.destroy(job_channel);
     }
     
     var result_channel = try concurrency.makeChannel(u64, allocator, 100);
     defer {
-        result_channel.deinit();
+        result_channel.deinit(allocator);
         allocator.destroy(result_channel);
     }
 
@@ -1086,19 +1086,19 @@ fn benchmarkPipelineProcessing(target_ops: u64) !u64 {
     // Create pipeline: input -> stage1 -> stage2 -> output
     var input_channel = try concurrency.makeChannel(u64, allocator, 50);
     defer {
-        input_channel.deinit();
+        input_channel.deinit(allocator);
         allocator.destroy(input_channel);
     }
     
     var stage1_channel = try concurrency.makeChannel(u64, allocator, 50);
     defer {
-        stage1_channel.deinit();
+        stage1_channel.deinit(allocator);
         allocator.destroy(stage1_channel);
     }
     
     var output_channel = try concurrency.makeChannel(u64, allocator, 50);
     defer {
-        output_channel.deinit();
+        output_channel.deinit(allocator);
         allocator.destroy(output_channel);
     }
 

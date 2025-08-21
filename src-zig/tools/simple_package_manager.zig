@@ -24,7 +24,7 @@ const PackageManifest = struct {
     }
     
     pub fn deinit(self: *PackageManifest) void {
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
     }
 };
 
@@ -32,7 +32,7 @@ const PackageManifest = struct {
 pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
     // Create package.json
     var manifest = PackageManifest.init(allocator);
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     const json_content = try std.fmt.allocPrint(allocator,
         \\{{
@@ -107,7 +107,7 @@ pub fn cmdSearch(allocator: Allocator, query: []const u8) !void {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

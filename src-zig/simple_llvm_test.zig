@@ -28,7 +28,7 @@ extern fn llvm_write_bitcode_to_file(?*anyopaque, [*c]const u8) c_int;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     std.debug.print("🚀 Starting LLVM Backend Test\n", .{});

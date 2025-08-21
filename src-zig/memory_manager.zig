@@ -27,8 +27,8 @@ pub const MemoryManager = struct {
             self.allocator.destroy(@as(*anyopaque, @ptrCast(ptr)));
         }
         
-        self.ref_counts.deinit();
-        self.allocated_objects.deinit();
+        self.ref_counts.deinit(allocator);
+        self.allocated_objects.deinit(allocator);
     }
 
     pub fn createManaged(self: *MemoryManager, comptime T: type) !*T {
@@ -95,7 +95,7 @@ pub fn initGlobalManager(allocator: Allocator) void {
 
 pub fn deinitGlobalManager() void {
     if (thread_local_manager) |*manager| {
-        manager.deinit();
+        manager.deinit(allocator);
         thread_local_manager = null;
     }
 }

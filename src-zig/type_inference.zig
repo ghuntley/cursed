@@ -59,15 +59,15 @@ pub const TypeInferenceContext = struct {
             .monomorphizer = monomorphizer,
             .type_registry = type_registry,
             .inferred_types = HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .constraint_queue = ArrayList(Constraint).init(allocator),
+            .constraint_queue = .empty,
             .unification_cache = HashMap(UnificationKey, bool, UnificationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
     
     pub fn deinit(self: *TypeInferenceContext) void {
-        self.inferred_types.deinit();
-        self.constraint_queue.deinit();
-        self.unification_cache.deinit();
+        self.inferred_types.deinit(allocator);
+        self.constraint_queue.deinit(allocator);
+        self.unification_cache.deinit(allocator);
     }
     
     /// Infer type parameters for a generic function call
@@ -102,19 +102,19 @@ pub const TypeInferenceContext = struct {
         try self.solveConstraints();
         
         // Extract inferred type arguments
-        var type_args = ArrayList(ast.Type).init(self.allocator);
-        defer type_args.deinit();
+        var type_args = .empty;
+        defer type_args.deinit(allocator);
         
         for (generic_decl.type_parameters.items) |param| {
             if (self.inferred_types.get(param.name)) |inferred_type| {
-                try type_args.append(inferred_type);
+                try type_args.append(allocator, inferred_type);
             } else {
                 // Could not infer this type parameter
                 return null;
             }
         }
         
-        return type_args.toOwnedSlice();
+        return type_args.toOwnedSlice(allocator);
     }
     
     /// Generate constraints from function arguments
@@ -131,7 +131,7 @@ pub const TypeInferenceContext = struct {
     
     /// Add a type constraint
     fn addConstraint(self: *TypeInferenceContext, type_param: []const u8, concrete_type: ast.Type, source: Constraint.ConstraintSource) !void {
-        try self.constraint_queue.append(Constraint{
+        try self.constraint_queue.append(allocator, Constraint{
             .type_param = type_param,
             .concrete_type = concrete_type,
             .source = source,
@@ -338,7 +338,7 @@ pub const GenericCallResolver = struct {
         }
         
         pub fn deinit(self: *ScopeInfo) void {
-            self.variables.deinit();
+            self.variables.deinit(allocator);
         }
     };
     
@@ -353,20 +353,20 @@ pub const GenericCallResolver = struct {
     
     pub fn deinit(self: *GenericCallResolver) void {
         if (self.current_scope) |scope| {
-            scope.deinit();
+            scope.deinit(allocator);
         }
-        self.global_types.deinit();
+        self.global_types.deinit(allocator);
     }
     
     /// Resolve generic function call with automatic type inference
     pub fn resolveGenericCall(self: *GenericCallResolver, func_name: []const u8, args: []const ast.Expression, expected_return_type: ?ast.Type) !?[]const u8 {
         // Extract argument types
-        var arg_types = ArrayList(ast.Type).init(self.allocator);
-        defer arg_types.deinit();
+        var arg_types = .empty;
+        defer arg_types.deinit(allocator);
         
         for (args) |arg| {
             const arg_type = try self.inferExpressionType(arg);
-            try arg_types.append(arg_type);
+            try arg_types.append(self.allocator, arg_type);
         }
         
         // Attempt type inference
@@ -518,13 +518,13 @@ pub const PatternTypeInference = struct {
 // Test cases for type inference
 test "basic generic function type inference" {
     var registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer registry.deinit();
+    defer registry.deinit(allocator);
     
     var monomorphizer = generics.Monomorphizer.init(std.testing.allocator, null, null);
-    defer monomorphizer.deinit();
+    defer monomorphizer.deinit(allocator);
     
     var inference_ctx = TypeInferenceContext.init(std.testing.allocator, &monomorphizer, &registry);
-    defer inference_ctx.deinit();
+    defer inference_ctx.deinit(allocator);
     
     // Test inferring T from function call: foo[T](arg: T) with arg of type normie
     
@@ -540,13 +540,13 @@ test "basic generic function type inference" {
 
 test "array type inference" {
     var registry = type_system.GCTypeRegistry.init(std.testing.allocator);
-    defer registry.deinit();
+    defer registry.deinit(allocator);
     
     var monomorphizer = generics.Monomorphizer.init(std.testing.allocator, null, null);
-    defer monomorphizer.deinit();
+    defer monomorphizer.deinit(allocator);
     
     var inference_ctx = TypeInferenceContext.init(std.testing.allocator, &monomorphizer, &registry);
-    defer inference_ctx.deinit();
+    defer inference_ctx.deinit(allocator);
     
     // Test array type unification
     const element_type = try std.testing.allocator.create(ast.Type);

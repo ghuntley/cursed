@@ -109,7 +109,7 @@ pub const ModuleLoader = struct {
                 }
                 // Skip func.deinit(allocator) to prevent double-free crashes
             }
-            self.functions.deinit();
+            self.functions.deinit(allocator);
             
             // Safe cleanup of variables - skip initializer cleanup to prevent double-free
             for (self.variables.items) |*var_stmt| {
@@ -119,7 +119,7 @@ pub const ModuleLoader = struct {
                 }
                 // Skip var_stmt.deinit(allocator) to prevent double-free crashes
             }
-            self.variables.deinit();
+            self.variables.deinit(allocator);
         }
     };
     
@@ -161,13 +161,13 @@ pub const ModuleLoader = struct {
         while (iter.next()) |entry| {
             var module = entry.value_ptr;
             // Safe module cleanup that prevents double-free crashes
-            module.deinit(self.allocator);
+            module.deinit(allocator);
             // Free the key (module name) to prevent memory leak
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
             }
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(allocator);
     }
     
     /// Load a module and return the functions it exports
@@ -234,7 +234,7 @@ pub const ModuleLoader = struct {
             
             // Clean up the new module since we're not storing it
             var cleanup_module = loaded_module;
-            cleanup_module.deinit(self.allocator);
+            cleanup_module.deinit(allocator);
             self.allocator.free(cached_name);
             
             return error.ModuleNameCollision;
@@ -252,14 +252,14 @@ pub const ModuleLoader = struct {
         // Try to resolve stdlib module first with custom path if available
         if (simple_import_resolver.resolveStdlibImportWithPath(self.allocator, module_name, self.stdlib_path) catch false) {
             // Build stdlib path using consistent method
-            var path_buf = ArrayList(u8).init(self.allocator);
-            defer path_buf.deinit();
+            var path_buf = .empty;
+            defer path_buf.deinit(allocator);
             
             if (self.stdlib_path) |custom_path| {
                 // Use provided stdlib path
                 if (self.verbose) print("📁 Using custom stdlib path: {s}\n", .{custom_path});
                 try path_buf.appendSlice(custom_path);
-                try path_buf.append('/');
+                try path_buf.append(self.allocator, '/');
                 try path_buf.appendSlice(module_name);
                 try path_buf.appendSlice("/mod.csd");
             } else {
@@ -306,14 +306,14 @@ pub const ModuleLoader = struct {
             "CursedPackage.toml"
         };
         
-        var path_components = ArrayList([]const u8).init(self.allocator);
-        defer path_components.deinit();
+        var path_components = .empty;
+        defer path_components.deinit(allocator);
         
         // Split path into components
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(allocator, component);
             }
         }
         
@@ -322,21 +322,21 @@ pub const ModuleLoader = struct {
         // Walk up the directory tree
         while (path_components.items.len > 0) {
             // Build current test path
-            var test_path = ArrayList(u8).init(self.allocator);
-            defer test_path.deinit();
+            var test_path = .empty;
+            defer test_path.deinit(allocator);
             
-            try test_path.append('/');
+            try test_path.append(allocator, '/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
             }
             
             if (self.verbose) print("🔍 Checking directory: {s}\n", .{test_path.items});
             
             // Check for marker files
             for (markers) |marker| {
-                var marker_path = ArrayList(u8).init(self.allocator);
-                defer marker_path.deinit();
+                var marker_path = .empty;
+                defer marker_path.deinit(allocator);
                 
                 try marker_path.appendSlice(test_path.items);
                 try marker_path.appendSlice(marker);
@@ -388,7 +388,7 @@ pub const ModuleLoader = struct {
     fn parseModule(self: *ModuleLoader, module_name: []const u8, module_path: []const u8, source: []const u8) anyerror!LoadedModule {
         // Use an arena allocator for temporary parsing to prevent use-after-free
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         // Tokenize the source
@@ -406,8 +406,8 @@ pub const ModuleLoader = struct {
         if (self.verbose) print("🔍 Parsed module '{s}' - {} statements\n", .{ module_name, program.statements.items.len });
         
         // Extract functions and variables with proper string copying
-        var functions = ArrayList(ast.FunctionStatement).init(self.allocator);
-        var variables = ArrayList(ast.LetStatement).init(self.allocator);
+        var functions = .empty;
+        var variables = .empty;
         
         for (program.statements.items) |stmt_ptr| {
             const stmt = @as(*ast.Statement, @ptrCast(@alignCast(stmt_ptr))).*;
@@ -428,7 +428,7 @@ pub const ModuleLoader = struct {
                     copied_func.is_async = func.is_async;
                     copied_func.location = func.location;
                     
-                    try functions.append(copied_func);
+                    try functions.append(self.allocator, copied_func);
                     if (self.verbose) print("📦 Found function: {s}\n", .{copied_func.name});
                 },
                 .Let => |let_stmt| {
@@ -441,7 +441,7 @@ pub const ModuleLoader = struct {
                     copied_let.type_annotation = null;
                     copied_let.initializer = null;
                     
-                    try variables.append(copied_let);
+                    try variables.append(self.allocator, copied_let);
                     if (self.verbose) print("📦 Found variable: {s}\n", .{copied_let.name});
                 },
                 else => {
@@ -473,15 +473,15 @@ pub const ModuleLoader = struct {
     
     /// Get list of loaded modules
     pub fn getLoadedModules(self: *ModuleLoader) []const []const u8 {
-        var names = ArrayList([]const u8).init(self.allocator);
-        defer names.deinit();
+        var names = .empty;
+        defer names.deinit(allocator);
         
         var iter = self.loaded_modules.iterator();
         while (iter.next()) |entry| {
-            names.append(entry.key_ptr.*) catch continue;
+            names.append(allocator, entry.key_ptr.*) catch continue;
         }
         
-        return names.toOwnedSlice() catch &[_][]const u8{};
+        return names.toOwnedSlice(allocator) catch &[_][]const u8{};
     }
     
 

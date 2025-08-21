@@ -96,7 +96,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .debug_generator = debug_generator,
             .inlined_debug_generator = inlined_debug_generator,
             .inlining_candidates = HashMap([]const u8, InliningCandidate, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .active_inlines = ArrayList(ActiveInline).init(allocator),
+            .active_inlines = .empty,
         };
     }
     
@@ -104,17 +104,17 @@ pub const LLVMInlinedDebugIntegration = struct {
         // Clean up inlining candidates
         var candidate_iterator = self.inlining_candidates.iterator();
         while (candidate_iterator.next()) |entry| {
-            entry.value_ptr.call_sites.deinit();
+            entry.value_ptr.call_sites.deinit(allocator);
         }
-        self.inlining_candidates.deinit();
+        self.inlining_candidates.deinit(allocator);
         
         // Clean up active inlines
         for (self.active_inlines.items) |*active| {
-            active.original_instructions.deinit();
-            active.inlined_instructions.deinit();
-            active.variable_mappings.deinit();
+            active.original_instructions.deinit(allocator);
+            active.inlined_instructions.deinit(allocator);
+            active.variable_mappings.deinit(allocator);
         }
-        self.active_inlines.deinit();
+        self.active_inlines.deinit(allocator);
     }
     
     /// Analyze module for inlining opportunities and prepare debug info
@@ -142,7 +142,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .llvm_function = function,
             .debug_info = null, // Will be filled if available
             .instruction_count = 0,
-            .call_sites = ArrayList(InliningCandidate.CallSite).init(self.allocator),
+            .call_sites = .empty,
         };
         
         // Count instructions and analyze complexity
@@ -168,7 +168,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             try self.inlining_candidates.put(function_name, candidate);
             print("📋 Added inlining candidate: {s} ({d} instructions)\n", .{ function_name, candidate.instruction_count });
         } else {
-            candidate.call_sites.deinit();
+            candidate.call_sites.deinit(allocator);
         }
     }
     
@@ -188,7 +188,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .call_column = 1, // Would be extracted from debug info in real implementation
         };
         
-        try candidate.call_sites.append(call_site);
+        try candidate.call_sites.append(allocator, call_site);
     }
     
     /// Determine if a function should be considered for inlining
@@ -228,15 +228,15 @@ pub const LLVMInlinedDebugIntegration = struct {
         // Set up active inline tracking
         var active_inline = ActiveInline{
             .inline_context = inline_context,
-            .original_instructions = ArrayList(c.LLVMValueRef).init(self.allocator),
-            .inlined_instructions = ArrayList(c.LLVMValueRef).init(self.allocator),
-            .variable_mappings = ArrayList(ActiveInline.VariableMapping).init(self.allocator),
+            .original_instructions = .empty,
+            .inlined_instructions = .empty,
+            .variable_mappings = .empty,
         };
         
         // Collect original instructions for debug info mapping
         try self.collectOriginalInstructions(original_function, &active_inline);
         
-        try self.active_inlines.append(active_inline);
+        try self.active_inlines.append(allocator, active_inline);
         
         // Create debug info for the inlined function
         if (self.inlining_candidates.get(original_name)) |candidate| {
@@ -261,7 +261,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             while (current_instruction != null) {
                 defer current_instruction = c.LLVMGetNextInstruction(current_instruction);
                 
-                try active_inline.original_instructions.append(current_instruction);
+                try active_inline.original_instructions.append(allocator, current_instruction);
             }
         }
     }
@@ -280,7 +280,7 @@ pub const LLVMInlinedDebugIntegration = struct {
         const active_inline = &self.active_inlines.items[self.active_inlines.items.len - 1];
         
         // Track the instruction mapping
-        try active_inline.inlined_instructions.append(inlined_instruction);
+        try active_inline.inlined_instructions.append(allocator, inlined_instruction);
         
         // Create debug location for the inlined instruction
         try self.inlined_debug_generator.createInlinedDebugLocation(
@@ -315,7 +315,7 @@ pub const LLVMInlinedDebugIntegration = struct {
             .original_alloca = original_alloca,
             .inlined_alloca = inlined_alloca,
         };
-        try active_inline.variable_mappings.append(mapping);
+        try active_inline.variable_mappings.append(allocator, mapping);
         
         // Create debug info for the inlined variable
         try self.inlined_debug_generator.trackInlinedVariable(
@@ -345,9 +345,9 @@ pub const LLVMInlinedDebugIntegration = struct {
         _ = self.inlined_debug_generator.validateInlinedDebugInfo();
         
         // Clean up
-        completed_inline.original_instructions.deinit();
-        completed_inline.inlined_instructions.deinit();
-        completed_inline.variable_mappings.deinit();
+        completed_inline.original_instructions.deinit(allocator);
+        completed_inline.inlined_instructions.deinit(allocator);
+        completed_inline.variable_mappings.deinit(allocator);
     }
     
     /// Generate comprehensive inlining debug report
@@ -440,7 +440,7 @@ pub fn testLLVMInlinedDebugIntegration() !void {
     print("Testing LLVM inlined debug integration...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Create mock debug generators
@@ -449,13 +449,13 @@ pub fn testLLVMInlinedDebugIntegration() !void {
     const di_builder: c.LLVMDIBuilderRef = null;
     
     var debug_generator = try debug_info.DebugInfoGenerator.init(allocator, context, module);
-    defer debug_generator.deinit();
+    defer debug_generator.deinit(allocator);
     
     var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(allocator, context, di_builder);
-    defer inlined_debug_generator.deinit();
+    defer inlined_debug_generator.deinit(allocator);
     
     var integration = LLVMInlinedDebugIntegration.init(allocator, &debug_generator, &inlined_debug_generator);
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     // Test the integration workflow
     try integration.analyzeModuleForInlining(module);

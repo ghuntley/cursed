@@ -34,12 +34,12 @@ pub fn testComplexProgramParsing(allocator: Allocator) !void {
     // Tokenize the source
     var lex = Lexer.init(allocator, source);
     const tokens = try lex.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     // Parse the tokens
     var parse = Parser.init(allocator, tokens.items);
     var program = try parse.parseProgram();
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     // Verify the program structure
     std.debug.print("Parsed program with {} statements\n", .{program.statements.items.len});
@@ -70,11 +70,11 @@ pub fn testMemoryManagement(allocator: Allocator) !void {
     
     var lex = Lexer.init(allocator, source);
     const tokens = try lex.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     var parse = Parser.init(allocator, tokens.items);
     var program = try parse.parseProgram();
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     std.debug.print("Memory management test completed successfully\n", .{});
 }
@@ -85,11 +85,11 @@ pub fn testExpressionParsing(allocator: Allocator) !void {
     
     var lex = Lexer.init(allocator, source);
     const tokens = try lex.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
     
     var parse = Parser.init(allocator, tokens.items);
     var program = try parse.parseProgram();
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     // Verify we got a let statement with a complex expression
     if (program.statements.items.len > 0) {
@@ -130,20 +130,20 @@ test "AST circular dependency resolution" {
     
     // Create nested expressions that would have caused circular dependency issues
     const left = try ast.createIntegerExpression(allocator, 1);
-    defer left.deinit();
+    defer left.deinit(allocator);
     
     const right = try ast.createIntegerExpression(allocator, 2);
-    defer right.deinit();
+    defer right.deinit(allocator);
     
     const binary = try ast.createBinaryExpression(allocator, left, "+", right);
-    defer binary.deinit();
+    defer binary.deinit(allocator);
     
     // Create another level of nesting
     const nested_right = try ast.createIntegerExpression(allocator, 3);
-    defer nested_right.deinit();
+    defer nested_right.deinit(allocator);
     
     const nested_binary = try ast.createBinaryExpression(allocator, binary, "*", nested_right);
-    defer nested_binary.deinit();
+    defer nested_binary.deinit(allocator);
     
     // If we get here without circular dependency errors, the test passes
     try std.testing.expect(true);
@@ -164,11 +164,11 @@ test "advanced CURSED features parsing" {
     for (sources) |source| {
         var lex = Lexer.init(allocator, source);
         const tokens = try lex.tokenize();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         var parse = Parser.init(allocator, tokens.items);
         var program = try parse.parseProgram();
-        defer program.deinit();
+        defer program.deinit(allocator);
         
         // Verify that parsing completed without errors
         try std.testing.expect(program.statements.items.len > 0);

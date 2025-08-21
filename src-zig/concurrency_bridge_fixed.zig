@@ -52,17 +52,17 @@ pub const ConcurrencyBridge = struct {
         try self.global_mutex.lock();
         var iterator = self.active_selects.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit();
+            entry.value_ptr.*.deinit(allocator);
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.active_selects.deinit();
+        self.active_selects.deinit(allocator);
         self.global_mutex.unlock() catch {};
         
         // Clean up bridge
-        self.channel_sync_bridge.deinit();
+        self.channel_sync_bridge.deinit(allocator);
         self.allocator.destroy(self.channel_sync_bridge);
         
-        self.global_mutex.deinit();
+        self.global_mutex.deinit(allocator);
     }
     
     /// Enhanced select operation that uses proper condition variable synchronization
@@ -99,7 +99,7 @@ pub const ConcurrencyBridge = struct {
             select_op.* = SelectSelf{
                 .id = bridge.next_select_id.fetchAdd(1, .acq_rel),
                 .bridge = bridge,
-                .operations = std.ArrayList(ChannelOperation).init(allocator),
+                .operations = .{},
                 .has_default = false,
                 .default_case_index = 0,
                 .timeout_ns = null,
@@ -112,9 +112,9 @@ pub const ConcurrencyBridge = struct {
         }
         
         pub fn deinit(self: *SelectSelf) void {
-            self.operations.deinit();
-            self.result_mutex.deinit();
-            self.result_condition.deinit();
+            self.operations.deinit(allocator);
+            self.result_mutex.deinit(allocator);
+            self.result_condition.deinit(allocator);
         }
         
         /// Add a send operation to the select
@@ -126,7 +126,7 @@ pub const ConcurrencyBridge = struct {
                 .value_ptr = value_ptr,
                 .value_size = value_size,
             };
-            try self.operations.append(op);
+            try self.operations.append(allocator, op);
         }
         
         /// Add a receive operation to the select
@@ -138,7 +138,7 @@ pub const ConcurrencyBridge = struct {
                 .value_ptr = buffer_ptr,
                 .value_size = buffer_size,
             };
-            try self.operations.append(op);
+            try self.operations.append(allocator, op);
         }
         
         /// Add a default case to the select
@@ -190,8 +190,8 @@ pub const ConcurrencyBridge = struct {
         /// Try all operations immediately without blocking
         fn tryImmediateOperations(self: *SelectSelf) !?SelectResult {
             // Convert operations to bridge format
-            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.bridge.allocator);
-            defer bridge_ops.deinit();
+            var bridge_ops: std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }) = .empty;
+            defer bridge_ops.deinit(allocator);
             
             for (self.operations.items) |op| {
                 const bridge_op = .{
@@ -201,7 +201,7 @@ pub const ConcurrencyBridge = struct {
                         .receive => .receive,
                     },
                 };
-                try bridge_ops.append(bridge_op);
+                try bridge_ops.append(allocator, bridge_op);
             }
             
             // Try immediate readiness check (non-blocking)
@@ -242,8 +242,8 @@ pub const ConcurrencyBridge = struct {
             const start_time = std.time.nanoTimestamp();
             
             // Convert operations to bridge format
-            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.bridge.allocator);
-            defer bridge_ops.deinit();
+            var bridge_ops: std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }) = .empty;
+            defer bridge_ops.deinit(allocator);
             
             for (self.operations.items) |op| {
                 const bridge_op = .{
@@ -253,7 +253,7 @@ pub const ConcurrencyBridge = struct {
                         .receive => .receive,
                     },
                 };
-                try bridge_ops.append(bridge_op);
+                try bridge_ops.append(allocator, bridge_op);
             }
             
             while (true) {
@@ -402,7 +402,7 @@ pub fn shutdownBridge(allocator: Allocator) void {
     defer bridge_mutex.unlock();
     
     if (global_bridge) |bridge| {
-        bridge.deinit();
+        bridge.deinit(allocator);
         allocator.destroy(bridge);
         global_bridge = null;
     }
@@ -513,7 +513,7 @@ export fn cursed_bridge_select_execute(select_ptr: ?*ConcurrencyBridge.SelectOpe
 /// Destroy select operation from C
 export fn cursed_bridge_select_destroy(select_ptr: ?*ConcurrencyBridge.SelectOperation) void {
     if (select_ptr) |select_op| {
-        select_op.deinit();
+        select_op.deinit(allocator);
         std.heap.c_allocator.destroy(select_op);
     }
 }
@@ -572,7 +572,7 @@ test "concurrency bridge basic operations" {
     const allocator = std.testing.allocator;
     
     var bridge = try ConcurrencyBridge.init(allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     // Register a channel
     try bridge.registerChannel(1);
@@ -583,7 +583,7 @@ test "concurrency bridge basic operations" {
     // Create a select operation
     var select_op = try bridge.createSelect();
     defer {
-        select_op.deinit();
+        select_op.deinit(allocator);
         allocator.destroy(select_op);
     }
     
@@ -601,14 +601,14 @@ test "select with timeout" {
     const allocator = std.testing.allocator;
     
     var bridge = try ConcurrencyBridge.init(allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     try bridge.registerChannel(1);
     try bridge.updateChannelState(1, false, false, false); // Channel not ready
     
     var select_op = try bridge.createSelect();
     defer {
-        select_op.deinit();
+        select_op.deinit(allocator);
         allocator.destroy(select_op);
     }
     
@@ -623,7 +623,7 @@ test "bridge statistics" {
     const allocator = std.testing.allocator;
     
     var bridge = try ConcurrencyBridge.init(allocator);
-    defer bridge.deinit();
+    defer bridge.deinit(allocator);
     
     // Initial stats should be zero
     const stats = bridge.getStats();

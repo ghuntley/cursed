@@ -47,8 +47,8 @@ pub const EnhancedGoroutineContext = struct {
     }
     
     pub fn deinit(self: *EnhancedGoroutineContext) void {
-        self.function_executor.deinit();
-        self.function_registry.deinit();
+        self.function_executor.deinit(allocator);
+        self.function_registry.deinit(allocator);
         self.allocator.destroy(self);
     }
     
@@ -80,12 +80,12 @@ pub fn executeInterpretedFunctionSafe(
         print("Failed to create goroutine context: {}\n", .{err});
         return 0; // Safe fallback
     };
-    defer context.deinit();
+    defer context.deinit(allocator);
     
     // Convert usize arguments to Value arguments based on parameter types
-    var cursed_args = ArrayList(Value).init(allocator);
-    defer cursed_args.deinit();
-    errdefer cursed_args.deinit(); // Clean up on error
+    var cursed_args = .empty;
+    defer cursed_args.deinit(allocator);
+    errdefer cursed_args.deinit(allocator); // Clean up on error
     
     for (args, 0..) |arg, i| {
         const value = if (i < param_types.len) blk: {
@@ -120,7 +120,7 @@ pub fn executeInterpretedFunctionSafe(
             Value{ .Integer = @as(i64, @intCast(arg)) }
         };
         
-        cursed_args.append(value) catch |err| {
+        cursed_args.append(allocator, value) catch |err| {
             print("Failed to convert argument {}: {}\n", .{ i, err });
             continue;
         };
@@ -166,11 +166,11 @@ fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionState
     _ = allocator;
     
     // Create a simple function that adds its parameters
-    var parameters = ArrayList(ast.Parameter).init(allocator);
-    try parameters.append(ast.Parameter{ .name = "a", .type_name = "drip" });
-    try parameters.append(ast.Parameter{ .name = "b", .type_name = "drip" });
+    var parameters = .empty;
+    try parameters.append(allocator, ast.Parameter{ .name = "a", .type_name = "drip" });
+    try parameters.append(allocator, ast.Parameter{ .name = "b", .type_name = "drip" });
     
-    var body = ArrayList(ast.Statement).init(allocator);
+    var body = .empty;
     
     // Create return statement: return a + b
     const left_expr = try allocator.create(ast.Expression);
@@ -186,7 +186,7 @@ fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionState
         .right = right_expr,
     }};
     
-    try body.append(ast.Statement{ .Return = binary_expr });
+    try body.append(allocator, ast.Statement{ .Return = binary_expr });
     
     return ast.FunctionStatement{
         .name = name,
@@ -219,11 +219,11 @@ pub const EnhancedGoroutineRuntime = struct {
         // Clean up all goroutine contexts
         var iterator = self.goroutine_contexts.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit();
+            entry.value_ptr.*.deinit(allocator);
         }
-        self.goroutine_contexts.deinit();
+        self.goroutine_contexts.deinit(allocator);
         
-        self.base_runtime.deinit();
+        self.base_runtime.deinit(allocator);
         self.allocator.destroy(self);
     }
     
@@ -267,7 +267,7 @@ fn dummyGoroutineFunction() void {
 /// Test the integration
 pub fn testConcurrencyFunctionIntegration() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     print("Testing concurrency function integration...\n");
@@ -285,7 +285,7 @@ pub fn testConcurrencyFunctionIntegration() !void {
     
     // Test enhanced runtime
     var enhanced_runtime = try EnhancedGoroutineRuntime.init(allocator);
-    defer enhanced_runtime.deinit();
+    defer enhanced_runtime.deinit(allocator);
     
     const goroutine_id = try enhanced_runtime.spawnWithFunctions("test_function");
     print("Spawned enhanced goroutine: {}\n", .{goroutine_id});

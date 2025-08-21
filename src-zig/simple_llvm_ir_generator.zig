@@ -18,14 +18,14 @@ pub const SimpleLLVMIRGenerator = struct {
     pub fn init(allocator: Allocator) SimpleLLVMIRGenerator {
         return SimpleLLVMIRGenerator{
             .allocator = allocator,
-            .ir_buffer = ArrayList(u8).init(allocator),
+            .ir_buffer = .empty,
             .string_counter = 0,
             .verbose = false,
         };
     }
     
     pub fn deinit(self: *SimpleLLVMIRGenerator) void {
-        self.ir_buffer.deinit();
+        self.ir_buffer.deinit(allocator);
     }
     
     pub fn setVerbose(self: *SimpleLLVMIRGenerator, verbose: bool) void {
@@ -40,10 +40,10 @@ pub const SimpleLLVMIRGenerator = struct {
         var lex = lexer.Lexer.init(self.allocator, source);
         
         const tokens = try lex.tokenize();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         var parse = parser.Parser.init(self.allocator, tokens.items);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
         
         const program = try parse.parseProgram();
         
@@ -282,23 +282,23 @@ pub const SimpleLLVMIRGenerator = struct {
         
         // Handle special functions
         if (std.mem.eql(u8, func_name, "vibez.spill")) {
-            var args = ArrayList(ast.Expression).init(self.allocator);
-            defer args.deinit();
+            var args = .empty;
+            defer args.deinit(allocator);
             
             for (call.arguments.items) |arg_ptr| {
-                try args.append(arg_ptr.*);
+                try args.append(allocator, arg_ptr.*);
             }
             
             return try self.generatePrintCall(args.items);
         }
         
         // Regular function call
-        var args = ArrayList([]const u8).init(self.allocator);
-        defer args.deinit();
+        var args = .empty;
+        defer args.deinit(allocator);
         
         for (call.arguments.items) |arg_ptr| {
             const arg_result = try self.generateExpression(arg_ptr.*);
-            try args.append(arg_result);
+            try args.append(self.allocator, arg_result);
         }
         
         const call_result = try std.fmt.allocPrint(self.allocator, "call_result_{d}", .{self.string_counter});

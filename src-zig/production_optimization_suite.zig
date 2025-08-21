@@ -207,7 +207,7 @@ pub const ProductionOptimizationSuite = struct {
         }
         
         pub fn deinit(self: *SuiteMetrics) void {
-            self.phase_times_ms.deinit();
+            self.phase_times_ms.deinit(allocator);
         }
         
         pub fn printComprehensiveReport(self: *const SuiteMetrics) void {
@@ -266,7 +266,7 @@ pub const ProductionOptimizationSuite = struct {
             .context = null,
             .module = null,
             .suite_metrics = SuiteMetrics.init(allocator),
-            .optimization_phases = std.ArrayList(OptimizationPhase).init(allocator),
+            .optimization_phases = .{},
         };
         
         // Initialize optimization phases
@@ -287,27 +287,27 @@ pub const ProductionOptimizationSuite = struct {
     pub fn deinit(self: *Self) void {
         // Cleanup subsystems
         if (self.llvm_optimizer) |optimizer| {
-            optimizer.deinit();
+            optimizer.deinit(allocator);
             self.allocator.destroy(optimizer);
         }
         
         if (self.pgo_system) |pgo| {
-            pgo.deinit();
+            pgo.deinit(allocator);
             self.allocator.destroy(pgo);
         }
         
         if (self.lto_system) |lto| {
-            lto.deinit();
+            lto.deinit(allocator);
             self.allocator.destroy(lto);
         }
         
         if (self.cross_platform_optimizer) |cross_opt| {
-            cross_opt.deinit();
+            cross_opt.deinit(allocator);
             self.allocator.destroy(cross_opt);
         }
         
-        self.suite_metrics.deinit();
-        self.optimization_phases.deinit();
+        self.suite_metrics.deinit(allocator);
+        self.optimization_phases.deinit(allocator);
         
         print("✅ Production Optimization Suite cleaned up\n");
     }
@@ -576,11 +576,11 @@ pub const ProductionOptimizationSuite = struct {
     
     /// Initialize optimization phases
     fn initializeOptimizationPhases(self: *Self) !void {
-        try self.optimization_phases.append(OptimizationPhase.init("PGO Analysis"));
-        try self.optimization_phases.append(OptimizationPhase.init("LLVM Optimization"));
-        try self.optimization_phases.append(OptimizationPhase.init("Cross-Platform"));
-        try self.optimization_phases.append(OptimizationPhase.init("Link-Time Optimization"));
-        try self.optimization_phases.append(OptimizationPhase.init("Verification"));
+        try self.optimization_phases.append(allocator, OptimizationPhase.init("PGO Analysis"));
+        try self.optimization_phases.append(allocator, OptimizationPhase.init("LLVM Optimization"));
+        try self.optimization_phases.append(allocator, OptimizationPhase.init("Cross-Platform"));
+        try self.optimization_phases.append(allocator, OptimizationPhase.init("Link-Time Optimization"));
+        try self.optimization_phases.append(allocator, OptimizationPhase.init("Verification"));
     }
     
     /// Create LLVM configuration from suite configuration
@@ -708,10 +708,10 @@ pub const OptimizationSuiteResult = struct {
     
     pub fn deinit(self: *OptimizationSuiteResult) void {
         if (self.pgo_result) |*result| {
-            result.deinit();
+            result.deinit(allocator);
         }
         if (self.cross_platform_result) |*result| {
-            result.deinit();
+            result.deinit(allocator);
         }
     }
     

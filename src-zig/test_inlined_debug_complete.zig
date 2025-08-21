@@ -40,10 +40,10 @@ pub const InlinedDebugTestSuite = struct {
         
         // Initialize debug generators
         var debug_generator = try debug_info.DebugInfoGenerator.init(self.allocator, context, module);
-        defer debug_generator.deinit();
+        defer debug_generator.deinit(allocator);
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         // Test creating inline context
         const inline_context = inlined_debug.InlineContext.init(
@@ -76,7 +76,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         // Create nested inline contexts
         const context1 = inlined_debug.InlineContext.init("helper", "main", 10, 5, 1, 1, "test.csd");
@@ -109,7 +109,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.csd");
         
@@ -139,17 +139,17 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var debug_generator = try debug_info.DebugInfoGenerator.init(self.allocator, context, module);
-        defer debug_generator.deinit();
+        defer debug_generator.deinit(allocator);
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         var integration = llvm_integration.LLVMInlinedDebugIntegration.init(
             self.allocator, 
             &debug_generator, 
             &inlined_debug_generator
         );
-        defer integration.deinit();
+        defer integration.deinit(allocator);
         
         // Test module analysis
         try integration.analyzeModuleForInlining(module);
@@ -171,7 +171,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         // Test validation with empty state (should be valid)
         const is_valid_empty = inlined_debug_generator.validateInlinedDebugInfo();
@@ -196,7 +196,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         // Add some test data
         const inline_context = inlined_debug.InlineContext.init("test_func", "main", 10, 5, 1, 1, "test.csd");
@@ -223,7 +223,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         const inline_context = inlined_debug.InlineContext.init("func", "main", 15, 8, 3, 1, "test.csd");
         const mock_instruction: c.LLVMValueRef = null;
@@ -251,7 +251,7 @@ pub const InlinedDebugTestSuite = struct {
         const di_builder: c.LLVMDIBuilderRef = null;
         
         var inlined_debug_generator = try inlined_debug.InlinedFunctionDebugGenerator.init(self.allocator, context, di_builder);
-        defer inlined_debug_generator.deinit();
+        defer inlined_debug_generator.deinit(allocator);
         
         // Add some test data
         const inline_context = inlined_debug.InlineContext.init("func", "main", 10, 5, 1, 1, "test.csd");
@@ -271,7 +271,7 @@ pub const InlinedDebugTestSuite = struct {
         const module: c.LLVMModuleRef = null;
         
         var debug_generator = try debug_info.DebugInfoGenerator.init(self.allocator, context, module);
-        defer debug_generator.deinit();
+        defer debug_generator.deinit(allocator);
         
         // Test the new inlined debug methods
         const mock_instruction: c.LLVMValueRef = null;
@@ -321,7 +321,7 @@ pub fn testInlinedDebugComplete() !void {
     print("🎯 Starting comprehensive inlined function debug tests...\n", .{});
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = InlinedDebugTestSuite.init(allocator);
@@ -343,7 +343,7 @@ export fn run_inlined_debug_tests() void {
 
 test "inlined function debug info basic" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = InlinedDebugTestSuite.init(allocator);
@@ -352,7 +352,7 @@ test "inlined function debug info basic" {
 
 test "inlined function debug info nested" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = InlinedDebugTestSuite.init(allocator);
@@ -361,7 +361,7 @@ test "inlined function debug info nested" {
 
 test "inlined function debug info variable mapping" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = InlinedDebugTestSuite.init(allocator);
@@ -370,7 +370,7 @@ test "inlined function debug info variable mapping" {
 
 test "inlined function debug info integration" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = InlinedDebugTestSuite.init(allocator);

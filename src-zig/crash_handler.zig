@@ -64,7 +64,7 @@ pub const CrashTelemetry = struct {
     pub fn init(allocator: Allocator, enable_telemetry: bool, max_crashes: usize) CrashTelemetry {
         return CrashTelemetry{
             .allocator = allocator,
-            .crash_log = ArrayList(CrashContext).init(allocator),
+            .crash_log = .empty,
             .enable_telemetry = enable_telemetry,
             .max_crashes = max_crashes,
             .crash_file_path = null,
@@ -74,9 +74,9 @@ pub const CrashTelemetry = struct {
     pub fn deinit(self: *CrashTelemetry) void {
         // Clean up crash log items
         for (self.crash_log.items) |*crash| {
-            crash.deinit(self.allocator);
+            crash.deinit(allocator);
         }
-        self.crash_log.deinit();
+        self.crash_log.deinit(allocator);
         
         // Clean up crash file path
         if (self.crash_file_path) |path| {
@@ -92,7 +92,7 @@ pub const CrashTelemetry = struct {
         // Limit crash log size
         if (self.crash_log.items.len >= self.max_crashes) {
             var oldest = self.crash_log.orderedRemove(0);
-            oldest.deinit(self.allocator);
+            oldest.deinit(allocator);
         }
         
         // Create a deep copy of the context for storage
@@ -118,7 +118,7 @@ pub const CrashTelemetry = struct {
             context_copy.stack_trace = new_trace;
         }
         
-        try self.crash_log.append(context_copy);
+        try self.crash_log.append(self.allocator, context_copy);
         
         // Write to crash file if configured
         if (self.crash_file_path) |path| {
@@ -168,12 +168,12 @@ pub const FatalErrorHandler = struct {
             .allocator = allocator,
             .telemetry = telemetry,
             .panic_handler_installed = false,
-            .recovery_strategies = ArrayList(RecoveryStrategy).init(allocator),
+            .recovery_strategies = .empty,
         };
     }
     
     pub fn deinit(self: *FatalErrorHandler) void {
-        self.recovery_strategies.deinit();
+        self.recovery_strategies.deinit(allocator);
     }
     
     pub fn installPanicHandler(self: *FatalErrorHandler) void {
@@ -186,7 +186,7 @@ pub const FatalErrorHandler = struct {
     
     pub fn handleFatalError(self: *FatalErrorHandler, severity: CrashSeverity, message: []const u8, source_file: []const u8, source_line: u32, source_column: u32, function_name: []const u8) !void {
         var context = try CrashContext.init(self.allocator, severity, message, source_file, source_line, source_column, function_name);
-        defer context.deinit(self.allocator);
+        defer context.deinit(allocator);
         
         // Capture stack trace
         context.stack_trace = try self.captureStackTrace();
@@ -214,8 +214,8 @@ pub const FatalErrorHandler = struct {
     }
     
     fn captureStackTrace(self: *FatalErrorHandler) !?[][]const u8 {
-        var stack_trace = ArrayList([]const u8).init(self.allocator);
-        defer stack_trace.deinit();
+        var stack_trace = .empty;
+        defer stack_trace.deinit(allocator);
         
         // Use builtin stack trace if available
         if (builtin.mode == .Debug) {
@@ -226,14 +226,14 @@ pub const FatalErrorHandler = struct {
                 if (frame_count >= 10) break; // Limit frames
                 
                 const frame_str = try std.fmt.allocPrint(self.allocator, "0x{x}", .{frame});
-                try stack_trace.append(frame_str);
+                try stack_trace.append(self.allocator, frame_str);
                 frame_count += 1;
             }
         }
         
         if (stack_trace.items.len == 0) return null;
         
-        return try stack_trace.toOwnedSlice();
+        return try stack_trace.toOwnedSlice(self.allocator);
     }
     
     fn getCurrentMemoryUsage(self: *FatalErrorHandler) ?usize {
@@ -304,7 +304,7 @@ pub const FatalErrorHandler = struct {
             .error_type = try self.allocator.dupe(u8, error_type),
             .recovery_fn = recovery_fn,
         };
-        try self.recovery_strategies.append(strategy);
+        try self.recovery_strategies.append(self.allocator, strategy);
     }
 };
 
@@ -352,7 +352,7 @@ pub const MemoryErrorDetector = struct {
     }
     
     pub fn deinit(self: *MemoryErrorDetector) void {
-        self.allocations.deinit();
+        self.allocations.deinit(allocator);
     }
     
     pub fn trackAllocation(self: *MemoryErrorDetector, ptr: usize, size: usize, file: []const u8, line: u32) !void {
@@ -381,14 +381,14 @@ pub const MemoryErrorDetector = struct {
     }
     
     pub fn detectLeaks(self: *MemoryErrorDetector) ![]AllocationInfo {
-        var leaks = ArrayList(AllocationInfo).init(self.allocator);
+        var leaks = .empty;
         
         var iter = self.allocations.iterator();
         while (iter.next()) |entry| {
-            try leaks.append(entry.value_ptr.*);
+            try leaks.append(self.allocator, entry.value_ptr.*);
         }
         
-        return try leaks.toOwnedSlice();
+        return try leaks.toOwnedSlice(allocator);
     }
     
     pub fn getCurrentUsage(self: *MemoryErrorDetector) usize {
@@ -421,18 +421,18 @@ pub fn attemptGracefulRecovery(allocator: Allocator, context: CrashContext) !voi
 /// Convenience macros for error handling
 pub fn CURSED_FATAL(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     try handler.handleFatalError(.Fatal, message, file, line, 0, function);
 }
 
 pub fn CURSED_ERROR(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     try handler.handleFatalError(.Error, message, file, line, 0, function);
 }
 
 pub fn CURSED_WARNING(allocator: Allocator, telemetry: *CrashTelemetry, comptime message: []const u8, comptime file: []const u8, comptime line: u32, comptime function: []const u8) !void {
     var handler = FatalErrorHandler.init(allocator, telemetry);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     try handler.handleFatalError(.Warning, message, file, line, 0, function);
 }

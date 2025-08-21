@@ -39,18 +39,18 @@ pub const TokenCollection = struct {
         const arena_allocator = arena.allocator();
         
         return TokenCollection{
-            .tokens = ArrayList(Token).init(arena_allocator),
+            .tokens = .empty,
             .arena = arena,
         };
     }
     
     pub fn deinit(self: *TokenCollection) void {
         // Arena automatically cleans up all allocated memory including token lexemes
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
     
     pub fn append(self: *TokenCollection, token: Token) !void {
-        try self.tokens.append(token);
+        try self.tokens.append(allocator, token);
     }
     
     pub fn toSlice(self: *TokenCollection) []const Token {
@@ -87,7 +87,7 @@ pub const Lexer = struct {
             const token = try self.nextToken();
             // Skip comments and newlines like the Rust version
             if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
             if (token.kind == .Eof) break;
         }
@@ -568,11 +568,11 @@ test "memory safe lexer" {
     const allocator = std.testing.allocator;
     
     var arena = ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     var lexer = Lexer.init(&arena, "slay main_character() { }");
     var tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items().len >= 5);
     try std.testing.expect(tokens.items()[0].kind == .Slay);

@@ -14,8 +14,8 @@ pub const Program = struct {
         const arena_allocator = arena.allocator();
         
         return Program{
-            .statements = ArrayList(*Statement).init(arena_allocator),
-            .imports = ArrayList(*ImportStatement).init(arena_allocator),
+            .statements = .empty,
+            .imports = .empty,
             .package = null,
             .arena = arena,
         };
@@ -24,7 +24,7 @@ pub const Program = struct {
     pub fn deinit(self: *Program) void {
         // Arena allocator automatically cleans up all allocated memory
         // No need to manually free individual statements/imports/package
-        self.arena.deinit();
+        self.arena.deinit(allocator);
     }
 
     pub fn allocator(self: *Program) Allocator {
@@ -151,12 +151,12 @@ pub const FunctionStatement = struct {
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
         return FunctionStatement{
             .name = name,
-            .parameters = ArrayList(Parameter).init(allocator),
+            .parameters = .empty,
             .return_type = null,
-            .body = ArrayList(*Statement).init(allocator),
+            .body = .empty,
             .visibility = .Private,
             .is_async = false,
-            .type_parameters = ArrayList(TypeParameter).init(allocator),
+            .type_parameters = .empty,
         };
     }
 };

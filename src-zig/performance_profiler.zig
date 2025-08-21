@@ -55,7 +55,7 @@ pub const PerformanceProfiler = struct {
                 .inclusive_time_ns = 0,
                 .exclusive_time_ns = 0,
                 .last_call_timestamp = std.time.timestamp(),
-                .samples = std.ArrayList(SamplePoint).init(allocator),
+                .samples = .{},
                 .call_stack_depth = 0,
             };
         }
@@ -78,11 +78,11 @@ pub const PerformanceProfiler = struct {
                 .cpu_usage_percent = 0.0, // TODO: Get actual CPU usage
             };
             
-            try self.samples.append(sample);
+            try self.samples.append(allocator, sample);
         }
         
         pub fn deinit(self: *FunctionProfile) void {
-            self.samples.deinit();
+            self.samples.deinit(allocator);
         }
         
         pub fn isHotFunction(self: *const FunctionProfile) bool {
@@ -196,13 +196,13 @@ pub const PerformanceProfiler = struct {
                 .execution_count = 0,
                 .total_time_ns = 0,
                 .average_time_ns = 0,
-                .function_sequence = std.ArrayList([]const u8).init(allocator),
+                .function_sequence = .{},
                 .optimization_applied = false,
             };
         }
         
         pub fn deinit(self: *HotPath) void {
-            self.function_sequence.deinit();
+            self.function_sequence.deinit(allocator);
         }
         
         pub fn addExecution(self: *HotPath, time_ns: u64) void {
@@ -238,9 +238,9 @@ pub const PerformanceProfiler = struct {
             .profiling_enabled = config.enabled,
             .sampling_rate_hz = config.sampling_rate_hz,
             .function_profiles = std.HashMap([]const u8, FunctionProfile, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .memory_profiles = std.ArrayList(MemorySnapshot).init(allocator),
-            .cpu_profiles = std.ArrayList(CPUSnapshot).init(allocator),
-            .compilation_profiles = std.ArrayList(CompilationPhaseProfile).init(allocator),
+            .memory_profiles = .{},
+            .cpu_profiles = .{},
+            .compilation_profiles = .{},
             .hot_paths = std.HashMap(u64, HotPath, std.hash_map.DefaultHashContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .hot_path_threshold = config.hot_path_threshold,
             .total_samples = 0,
@@ -275,19 +275,19 @@ pub const PerformanceProfiler = struct {
         // Cleanup data structures
         var func_iter = self.function_profiles.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.function_profiles.deinit();
+        self.function_profiles.deinit(allocator);
         
         var hot_path_iter = self.hot_paths.iterator();
         while (hot_path_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.hot_paths.deinit();
+        self.hot_paths.deinit(allocator);
         
-        self.memory_profiles.deinit();
-        self.cpu_profiles.deinit();
-        self.compilation_profiles.deinit();
+        self.memory_profiles.deinit(allocator);
+        self.cpu_profiles.deinit(allocator);
+        self.compilation_profiles.deinit(allocator);
         
         if (self.output_file) |file| {
             self.allocator.free(file);
@@ -337,7 +337,7 @@ pub const PerformanceProfiler = struct {
         snapshot.heap_size_bytes = 1024 * 1024; // 1MB placeholder
         snapshot.stack_size_bytes = 8 * 1024;   // 8KB placeholder
         
-        try self.memory_profiles.append(snapshot);
+        try self.memory_profiles.append(allocator, snapshot);
     }
     
     /// Take CPU snapshot
@@ -350,7 +350,7 @@ pub const PerformanceProfiler = struct {
         // For now, use placeholder values
         snapshot.cpu_usage_percent = 50.0; // Placeholder
         
-        try self.cpu_profiles.append(snapshot);
+        try self.cpu_profiles.append(self.allocator, snapshot);
     }
     
     /// Start profiling a compilation phase
@@ -363,7 +363,7 @@ pub const PerformanceProfiler = struct {
         }
         
         const profile = CompilationPhaseProfile.init(phase_name);
-        try self.compilation_profiles.append(profile);
+        try self.compilation_profiles.append(self.allocator, profile);
         
         return &self.compilation_profiles.items[self.compilation_profiles.items.len - 1];
     }
@@ -384,7 +384,7 @@ pub const PerformanceProfiler = struct {
             // Update function sequence
             path.function_sequence.clearRetainingCapacity();
             for (function_sequence) |func| {
-                try path.function_sequence.append(func);
+                try path.function_sequence.append(self.allocator, func);
             }
         }
     }
@@ -400,7 +400,7 @@ pub const PerformanceProfiler = struct {
         while (func_iter.next()) |entry| {
             const profile = entry.value_ptr;
             if (profile.call_count >= self.hot_path_threshold) {
-                try analysis.hot_functions.append(profile.name);
+                try analysis.hot_functions.append(self.allocator, profile.name);
                 print("  🔥 Hot function: {s} ({} calls, {:.2} ms avg)\n", .{
                     profile.name,
                     profile.call_count,
@@ -414,7 +414,7 @@ pub const PerformanceProfiler = struct {
         while (hot_path_iter.next()) |entry| {
             const path = entry.value_ptr;
             if (path.execution_count >= self.hot_path_threshold) {
-                try analysis.hot_paths.append(path.*);
+                try analysis.hot_paths.append(allocator, path.*);
                 print("  🛤️ Hot path {}: {} executions, {:.2} ms avg\n", .{
                     path.path_id,
                     path.execution_count,
@@ -457,7 +457,7 @@ pub const PerformanceProfiler = struct {
     
     /// Save results in text format
     fn saveTextFormat(self: *Self, file: std.fs.File) !void {
-        var writer = file.writer();
+        var writer = file.writer(&[_]u8{});
         
         try writer.print("CURSED Compiler Performance Profile\n");
         try writer.print("===================================\n\n");
@@ -488,7 +488,7 @@ pub const PerformanceProfiler = struct {
     
     /// Save results in JSON format
     fn saveJSONFormat(self: *Self, file: std.fs.File) !void {
-        var writer = file.writer();
+        var writer = file.writer(&[_]u8{});
         
         try writer.print("{{\n");
         try writer.print("  \"profiling_duration_ns\": {},\n", .{std.time.nanoTimestamp() - self.start_time});
@@ -519,7 +519,7 @@ pub const PerformanceProfiler = struct {
     
     /// Save results in CSV format
     fn saveCSVFormat(self: *Self, file: std.fs.File) !void {
-        var writer = file.writer();
+        var writer = file.writer(&[_]u8{});
         
         try writer.print("function_name,call_count,total_time_ns,average_time_ns,min_time_ns,max_time_ns\n");
         
@@ -539,7 +539,7 @@ pub const PerformanceProfiler = struct {
     
     /// Save results in flamegraph format
     fn saveFlamegraphFormat(self: *Self, file: std.fs.File) !void {
-        var writer = file.writer();
+        var writer = file.writer(&[_]u8{});
         
         // TODO: Generate proper flamegraph SVG
         try writer.print("<!-- Flamegraph for CURSED Compiler Performance -->\n");
@@ -557,7 +557,7 @@ pub const PerformanceProfiler = struct {
     
     /// Save results in Chrome tracing format
     fn saveChromeTracingFormat(self: *Self, file: std.fs.File) !void {
-        var writer = file.writer();
+        var writer = file.writer(&[_]u8{});
         
         try writer.print("{{\n");
         try writer.print("  \"traceEvents\": [\n");
@@ -704,14 +704,14 @@ pub const HotPathAnalysis = struct {
     pub fn init(allocator: std.mem.Allocator) HotPathAnalysis {
         return HotPathAnalysis{
             .allocator = allocator,
-            .hot_functions = std.ArrayList([]const u8).init(allocator),
-            .hot_paths = std.ArrayList(PerformanceProfiler.HotPath).init(allocator),
+            .hot_functions = .{},
+            .hot_paths = .{},
         };
     }
     
     pub fn deinit(self: *HotPathAnalysis) void {
-        self.hot_functions.deinit();
-        self.hot_paths.deinit();
+        self.hot_functions.deinit(allocator);
+        self.hot_paths.deinit(allocator);
     }
 };
 

@@ -36,9 +36,9 @@ pub const EnhancedParser = struct {
     }
 
     pub fn deinit(self: *EnhancedParser) void {
-        self.error_runtime.deinit();
+        self.error_runtime.deinit(allocator);
         self.allocator.destroy(self.error_runtime);
-        self.base_parser.deinit();
+        self.base_parser.deinit(allocator);
     }
 
     /// Parse with enhanced error handling and recovery
@@ -68,7 +68,7 @@ pub const EnhancedParser = struct {
     fn parseWithRecovery(self: *EnhancedParser) ShookResult {
         // Create fam block for error recovery
         var fam_block = FamBlock.init(self.allocator);
-        defer fam_block.deinit();
+        defer fam_block.deinit(allocator);
 
         // Add try handler
         const try_handler = struct {
@@ -111,7 +111,7 @@ pub const EnhancedParser = struct {
                         // Create empty program as fallback
                         const allocator = error_obj.allocator;
                         const empty_program = ast.Program{
-                            .statements = ArrayList(ast.Statement).init(allocator),
+                            .statements = .empty,
                         };
                         
                         const program_ptr = allocator.create(ast.Program) catch unreachable;
@@ -200,16 +200,16 @@ pub const EnhancedParser = struct {
         // Parse fam { try_body } catch(...) { catch_body } finally { finally_body }
         try self.base_parser.consume(.LeftBrace, "Expected '{' after 'fam'");
         
-        var try_body = ArrayList(ast.Statement).init(self.allocator);
+        var try_body = .empty;
         while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
             const stmt = try self.parseStatement();
-            try try_body.append(stmt);
+            try try_body.append(allocator, stmt);
         }
         
         try self.base_parser.consume(.RightBrace, "Expected '}' after try body");
 
         // Parse catch blocks
-        var catch_blocks = ArrayList(ast.FamStatement.CatchBlock).init(self.allocator);
+        var catch_blocks = .empty;
         while (self.base_parser.match(.Catch) or self.base_parser.check(.Identifier)) {
             if (self.base_parser.previous().type == .Identifier and 
                 std.mem.eql(u8, self.base_parser.previous().lexeme, "catch")) {
@@ -226,10 +226,10 @@ pub const EnhancedParser = struct {
 
                 try self.base_parser.consume(.LeftBrace, "Expected '{' after catch clause");
                 
-                var catch_body = ArrayList(ast.Statement).init(self.allocator);
+                var catch_body = .empty;
                 while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
                     const stmt = try self.parseStatement();
-                    try catch_body.append(stmt);
+                    try catch_body.append(allocator, stmt);
                 }
                 
                 try self.base_parser.consume(.RightBrace, "Expected '}' after catch body");
@@ -240,7 +240,7 @@ pub const EnhancedParser = struct {
                     .body = catch_body,
                 };
                 
-                try catch_blocks.append(catch_block);
+                try catch_blocks.append(allocator, catch_block);
             } else {
                 break;
             }
@@ -257,10 +257,10 @@ pub const EnhancedParser = struct {
             
             try self.base_parser.consume(.LeftBrace, "Expected '{' after 'finally'");
             
-            var finally_body = ArrayList(ast.Statement).init(self.allocator);
+            var finally_body = .empty;
             while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
                 const stmt = try self.parseStatement();
-                try finally_body.append(stmt);
+                try finally_body.append(allocator, stmt);
             }
             
             try self.base_parser.consume(.RightBrace, "Expected '}' after finally body");
@@ -295,9 +295,9 @@ pub const EnhancedInterpreter = struct {
     }
 
     pub fn deinit(self: *EnhancedInterpreter) void {
-        self.error_runtime.deinit();
+        self.error_runtime.deinit(allocator);
         self.allocator.destroy(self.error_runtime);
-        self.base_interpreter.deinit();
+        self.base_interpreter.deinit(allocator);
     }
 
     pub fn interpret(self: *EnhancedInterpreter, program: ast.Program) !void {
@@ -388,7 +388,7 @@ pub const EnhancedInterpreter = struct {
 
         // Create fam block
         var fam_block = FamBlock.init(self.allocator);
-        defer fam_block.deinit();
+        defer fam_block.deinit(allocator);
 
         // Enter fam block in runtime
         try self.error_runtime.famEnter(&fam_block);
@@ -618,11 +618,11 @@ test "enhanced error handling integration" {
     };
     
     var enhanced_parser = try EnhancedParser.init(allocator, &tokens);
-    defer enhanced_parser.deinit();
+    defer enhanced_parser.deinit(allocator);
     
     // Test enhanced interpreter
     var enhanced_interpreter = try EnhancedInterpreter.init(allocator);
-    defer enhanced_interpreter.deinit();
+    defer enhanced_interpreter.deinit(allocator);
     
     // Test error runtime functionality
     const location = YikesError.SourceLocation{

@@ -173,7 +173,7 @@ pub const Lexer = struct {
             .file_path = file_path,
             .allocator = allocator,
             .error_reporter = error_reporter,
-            .tokens = ArrayList(Token).init(allocator),
+            .tokens = .empty,
             .keywords = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
         
@@ -182,8 +182,8 @@ pub const Lexer = struct {
     }
     
     pub fn deinit(self: *Lexer) void {
-        self.tokens.deinit();
-        self.keywords.deinit();
+        self.tokens.deinit(allocator);
+        self.keywords.deinit(allocator);
     }
     
     fn initKeywords(self: *Lexer) !void {
@@ -238,9 +238,9 @@ pub const Lexer = struct {
         
         // Add EOF token
         const eof_location = SourceLocation.init(self.file_path, self.line, self.column, @intCast(self.char_offset));
-        try self.tokens.append(Token.init(.EOF, "", eof_location));
+        try self.tokens.append(allocator, Token.init(.EOF, "", eof_location));
         
-        return self.tokens.toOwnedSlice();
+        return self.tokens.toOwnedSlice(allocator);
     }
     
     fn scanToken(self: *Lexer) !void {
@@ -254,7 +254,7 @@ pub const Lexer = struct {
             },
             '\n' => {
                 const location = SourceLocation.init(self.file_path, self.line, start_column, @intCast(start_offset));
-                try self.tokens.append(Token.init(.Newline, self.source[start_offset..self.char_offset], location));
+                try self.tokens.append(allocator, Token.init(.Newline, self.source[start_offset..self.char_offset], location));
                 self.line += 1;
                 self.column = 1;
             },
@@ -378,7 +378,7 @@ pub const Lexer = struct {
     fn addToken(self: *Lexer, kind: TokenKind, start_column: u32, start_offset: usize) !void {
         const lexeme = self.source[start_offset..self.char_offset];
         const location = SourceLocation.init(self.file_path, self.line, start_column, @intCast(start_offset));
-        try self.tokens.append(Token.init(kind, lexeme, location));
+        try self.tokens.append(self.allocator, Token.init(kind, lexeme, location));
     }
     
     fn string(self: *Lexer, start_column: u32, start_offset: usize) !void {
@@ -630,12 +630,12 @@ test "enhanced lexer with error reporting" {
     const allocator = std.testing.allocator;
     
     var error_reporter = ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     // Test valid tokens
     const source = "slay main() { sus x normie = 42; vibez.spill(\"Hello!\"); }";
     var lexer = try Lexer.init(allocator, source, "test.csd", &error_reporter);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
@@ -647,7 +647,7 @@ test "enhanced lexer with error reporting" {
     // Test error recovery
     const invalid_source = "slay main() { sus x = \"unterminated string; }";
     var error_lexer = try Lexer.init(allocator, invalid_source, "error_test.csd", &error_reporter);
-    defer error_lexer.deinit();
+    defer error_lexer.deinit(allocator);
     
     const error_tokens = try error_lexer.tokenize();
     defer allocator.free(error_tokens);

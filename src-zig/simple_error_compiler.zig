@@ -8,7 +8,7 @@ const Allocator = std.mem.Allocator;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -38,12 +38,12 @@ pub fn main() !void {
     var line_number: u32 = 0;
     var has_errors = false;
     var in_fam_block = false;
-    var errors_created = ArrayList([]const u8).init(allocator);
+    var errors_created = .empty;
     defer {
         for (errors_created.items) |error_name| {
             allocator.free(error_name);
         }
-        errors_created.deinit();
+        errors_created.deinit(allocator);
     }
 
     print("🔍 Parsing CURSED error handling statements...\n", .{});
@@ -104,7 +104,7 @@ fn processYikesStatement(allocator: Allocator, line: []const u8, line_number: u3
     
     if (parts.next()) |error_name| {
         const name_copy = try allocator.dupe(u8, error_name);
-        try errors_created.append(name_copy);
+        try errors_created.append(allocator, name_copy);
         
         if (std.mem.indexOf(u8, line, "=")) |_| {
             print("   ✨ Error '{s}' created with initial value\n", .{error_name});

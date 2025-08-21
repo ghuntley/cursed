@@ -88,7 +88,7 @@ pub const StackFrame = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.locals.deinit();
+        self.locals.deinit(allocator);
     }
 
     pub fn addLocal(self: *StackFrame, name: []const u8, value: []const u8) !void {
@@ -190,9 +190,9 @@ pub const YikesError = struct {
         
         if (self.stack_trace) |*trace| {
             for (trace.items) |*frame| {
-                frame.deinit();
+                frame.deinit(allocator);
             }
-            trace.deinit();
+            trace.deinit(allocator);
         }
         
         var iterator = self.context_data.iterator();
@@ -200,10 +200,10 @@ pub const YikesError = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.context_data.deinit();
+        self.context_data.deinit(allocator);
         
         if (self.inner_error) |inner| {
-            inner.deinit();
+            inner.deinit(allocator);
             self.allocator.destroy(inner);
         }
     }
@@ -348,7 +348,7 @@ pub const ShookResult = union(enum) {
                     else => {},
                 }
             },
-            .Error => |*error_value| error_value.deinit(),
+            .Error => |*error_value| error_value.deinit(allocator),
         }
     }
 };
@@ -367,7 +367,7 @@ pub const DeferStack = struct {
 
     pub fn init(allocator: Allocator) DeferStack {
         return DeferStack{
-            .entries = ArrayList(DeferEntry).init(allocator),
+            .entries = .empty,
             .current_scope = 0,
             .allocator = allocator,
         };
@@ -375,7 +375,7 @@ pub const DeferStack = struct {
 
     pub fn deinit(self: *DeferStack) void {
         self.executeAll();
-        self.entries.deinit();
+        self.entries.deinit(allocator);
     }
 
     pub fn push(self: *DeferStack, cleanup_func: *const fn () void, context: []const u8) !void {
@@ -384,7 +384,7 @@ pub const DeferStack = struct {
             .scope_id = self.current_scope,
             .context = try self.allocator.dupe(u8, context),
         };
-        try self.entries.append(entry);
+        try self.entries.append(self.allocator, entry);
     }
 
     pub fn enterScope(self: *DeferStack) void {
@@ -441,8 +441,8 @@ pub const FamBlock = struct {
 
     pub fn init(allocator: Allocator) FamBlock {
         return FamBlock{
-            .try_handlers = ArrayList(TryHandler).init(allocator),
-            .catch_handlers = ArrayList(CatchHandler).init(allocator),
+            .try_handlers = .empty,
+            .catch_handlers = .empty,
             .finally_handler = null,
             .defer_stack = DeferStack.init(allocator),
             .allocator = allocator,
@@ -450,13 +450,13 @@ pub const FamBlock = struct {
     }
 
     pub fn deinit(self: *FamBlock) void {
-        self.try_handlers.deinit();
-        self.catch_handlers.deinit();
-        self.defer_stack.deinit();
+        self.try_handlers.deinit(allocator);
+        self.catch_handlers.deinit(allocator);
+        self.defer_stack.deinit(allocator);
     }
 
     pub fn addTryHandler(self: *FamBlock, handler: *const fn (*ErrorRuntime) ShookResult) !void {
-        try self.try_handlers.append(TryHandler{ .try_func = handler });
+        try self.try_handlers.append(allocator, TryHandler{ .try_func = handler });
     }
 
     pub fn addCatchHandler(
@@ -465,7 +465,7 @@ pub const FamBlock = struct {
         pattern: ?[]const u8,
         handler: *const fn (YikesError, *ErrorRuntime) ShookResult
     ) !void {
-        try self.catch_handlers.append(CatchHandler{
+        try self.catch_handlers.append(allocator, CatchHandler{
             .error_type = error_type,
             .pattern = pattern,
             .handler_func = handler,
@@ -536,10 +536,10 @@ pub const ErrorRuntime = struct {
 
     pub fn init(allocator: Allocator) ErrorRuntime {
         return ErrorRuntime{
-            .call_stack = ArrayList(StackFrame).init(allocator),
-            .error_stack = ArrayList(YikesError).init(allocator),
+            .call_stack = .empty,
+            .error_stack = .empty,
             .defer_stack = DeferStack.init(allocator),
-            .fam_stack = ArrayList(*FamBlock).init(allocator),
+            .fam_stack = .empty,
             .error_handlers = HashMap(ErrorType, ArrayList(*const fn (YikesError) void), std.hash_map.AutoContext(ErrorType), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -548,25 +548,25 @@ pub const ErrorRuntime = struct {
     pub fn deinit(self: *ErrorRuntime) void {
         // Clean up call stack
         for (self.call_stack.items) |*frame| {
-            frame.deinit();
+            frame.deinit(allocator);
         }
-        self.call_stack.deinit();
+        self.call_stack.deinit(allocator);
 
         // Clean up error stack
         for (self.error_stack.items) |*error_value| {
-            error_value.deinit();
+            error_value.deinit(allocator);
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(allocator);
 
-        self.defer_stack.deinit();
-        self.fam_stack.deinit();
+        self.defer_stack.deinit(allocator);
+        self.fam_stack.deinit(allocator);
 
         // Clean up error handlers
         var iterator = self.error_handlers.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.error_handlers.deinit();
+        self.error_handlers.deinit(allocator);
     }
 
     // YIKES - Error creation and throwing
@@ -587,7 +587,7 @@ pub const ErrorRuntime = struct {
         try error_obj.captureStackTrace(self);
 
         // Add to error stack for tracking
-        try self.error_stack.append(error_obj);
+        try self.error_stack.append(self.allocator, error_obj);
 
         // Call registered error handlers
         if (self.error_handlers.get(error_type)) |handlers| {
@@ -622,7 +622,7 @@ pub const ErrorRuntime = struct {
 
     // FAM - Enter error recovery block
     pub fn famEnter(self: *ErrorRuntime, fam_block: *FamBlock) !void {
-        try self.fam_stack.append(fam_block);
+        try self.fam_stack.append(allocator, fam_block);
         self.defer_stack.enterScope();
     }
 
@@ -636,7 +636,7 @@ pub const ErrorRuntime = struct {
 
     // Stack trace capture
     pub fn captureCurrentStackTrace(self: *ErrorRuntime) !ArrayList(StackFrame) {
-        var trace = ArrayList(StackFrame).init(self.allocator);
+        var trace = .empty;
         
         // Copy current call stack
         for (self.call_stack.items) |frame| {
@@ -654,7 +654,7 @@ pub const ErrorRuntime = struct {
                 try frame_copy.addLocal(entry.key_ptr.*, entry.value_ptr.*);
             }
             
-            try trace.append(frame_copy);
+            try trace.append(self.allocator, frame_copy);
         }
         
         return trace;
@@ -663,13 +663,13 @@ pub const ErrorRuntime = struct {
     // Function call tracking
     pub fn enterFunction(self: *ErrorRuntime, function: []const u8, file: []const u8, line: u32, column: u32) !void {
         const frame = try StackFrame.init(self.allocator, function, file, line, column);
-        try self.call_stack.append(frame);
+        try self.call_stack.append(self.allocator, frame);
     }
 
     pub fn exitFunction(self: *ErrorRuntime) void {
         if (self.call_stack.items.len > 0) {
             var frame = self.call_stack.pop();
-            frame.deinit();
+            frame.deinit(allocator);
         }
     }
 
@@ -693,7 +693,7 @@ pub const ErrorRuntime = struct {
     // Error handler registration
     pub fn registerErrorHandler(self: *ErrorRuntime, error_type: ErrorType, handler: *const fn (YikesError) void) !void {
         var handlers = self.error_handlers.get(error_type) orelse ArrayList(*const fn (YikesError) void).init(self.allocator);
-        try handlers.append(handler);
+        try handlers.append(self.allocator, handler);
         try self.error_handlers.put(error_type, handlers);
     }
 
@@ -829,8 +829,8 @@ pub const ErrorRuntime = struct {
         }
         
         pub fn deinit(self: *ErrorStats) void {
-            self.errors_by_type.deinit();
-            self.errors_by_severity.deinit();
+            self.errors_by_type.deinit(allocator);
+            self.errors_by_severity.deinit(allocator);
         }
         
         pub fn recordError(self: *ErrorStats, error_obj: YikesError) void {
@@ -868,7 +868,7 @@ export fn cursed_error_runtime_create(allocator_ptr: ?*anyopaque) ?*ErrorRuntime
 export fn cursed_error_runtime_destroy(runtime_ptr: ?*ErrorRuntime) void {
     if (runtime_ptr) |runtime| {
         const allocator = runtime.allocator;
-        runtime.deinit();
+        runtime.deinit(allocator);
         allocator.destroy(runtime);
     }
 }
@@ -914,7 +914,7 @@ export fn cursed_yikes_create(
 export fn cursed_yikes_destroy(error_ptr: ?*YikesError) void {
     if (error_ptr) |err| {
         const allocator = err.allocator;
-        err.deinit();
+        err.deinit(allocator);
         allocator.destroy(err);
     }
 }
@@ -949,7 +949,7 @@ export fn cursed_fam_create(runtime_ptr: ?*ErrorRuntime) ?*FamBlock {
 export fn cursed_fam_destroy(fam_ptr: ?*FamBlock) void {
     if (fam_ptr) |fam| {
         const allocator = fam.allocator;
-        fam.deinit();
+        fam.deinit(allocator);
         allocator.destroy(fam);
     }
 }
@@ -960,7 +960,7 @@ test "comprehensive error handling system" {
     
     // Test error runtime initialization
     var runtime = ErrorRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     // Test YIKES error creation
     const location = YikesError.SourceLocation{
@@ -991,7 +991,7 @@ test "comprehensive error handling system" {
     
     // Test FAM block
     var fam_block = FamBlock.init(allocator);
-    defer fam_block.deinit();
+    defer fam_block.deinit(allocator);
     
     // Test function call tracking
     try runtime.enterFunction("test_function", "test.csd", 1, 1);
@@ -1011,7 +1011,7 @@ test "comprehensive error handling system" {
     
     // Test error stats
     var stats = runtime.getErrorStats();
-    defer stats.deinit();
+    defer stats.deinit(allocator);
     
     try std.testing.expect(stats.total_errors > 0);
 }
@@ -1020,7 +1020,7 @@ test "error recovery patterns" {
     const allocator = std.testing.allocator;
     
     var runtime = ErrorRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     // Test retry operation
     const operation = struct {
@@ -1074,7 +1074,7 @@ test "memory safety during error conditions" {
     const allocator = std.testing.allocator;
     
     var runtime = ErrorRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     // Test that errors are properly cleaned up
     {

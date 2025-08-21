@@ -113,16 +113,16 @@ pub const PerformanceOptimizationSuite = struct {
             return PGOData{
                 .function_call_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
                 .branch_probabilities = std.HashMap(u64, f64, std.hash_map.DefaultHashContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
-                .hot_functions = std.ArrayList([]const u8).init(allocator),
-                .cold_functions = std.ArrayList([]const u8).init(allocator),
+                .hot_functions = .{},
+                .cold_functions = .{},
             };
         }
         
         pub fn deinit(self: *PGOData) void {
-            self.function_call_counts.deinit();
-            self.branch_probabilities.deinit();
-            self.hot_functions.deinit();
-            self.cold_functions.deinit();
+            self.function_call_counts.deinit(allocator);
+            self.branch_probabilities.deinit(allocator);
+            self.hot_functions.deinit(allocator);
+            self.cold_functions.deinit(allocator);
         }
     };
     
@@ -189,11 +189,11 @@ pub const PerformanceOptimizationSuite = struct {
     
     /// Deinitialize and cleanup resources
     pub fn deinit(self: *Self) void {
-        self.string_pool.deinit();
-        self.ast_node_pool.deinit();
-        self.token_pool.deinit();
-        self.hot_path_cache.deinit();
-        self.pgo_data.deinit();
+        self.string_pool.deinit(allocator);
+        self.ast_node_pool.deinit(allocator);
+        self.token_pool.deinit(allocator);
+        self.hot_path_cache.deinit(allocator);
+        self.pgo_data.deinit(allocator);
         
         // Save PGO data for future runs
         if (self.pgo_enabled) {

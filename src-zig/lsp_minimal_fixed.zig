@@ -74,11 +74,13 @@ pub const CursedLSP = struct {
     pub fn run(self: *CursedLSP) !void {
         std.log.info("CURSED Language Server starting (crash-resistant minimal version)...", .{});
         
-        const stdin = std.io.getStdIn().reader();
-        const stdout = std.io.getStdOut().writer();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = std.ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        var buffer: std.ArrayList(u8) = .empty;
+        defer buffer.deinit(allocator);
         
         while (true) {
             // Read Content-Length header
@@ -145,7 +147,7 @@ pub const CursedLSP = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var server = CursedLSP.init(allocator);

@@ -86,9 +86,9 @@ const SimpleLSPHandler = struct {
     pub fn deinit(self: *SimpleLSPHandler) void {
         var iterator = self.documents.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.documents.deinit();
+        self.documents.deinit(allocator);
     }
     
     pub fn handleMessage(self: *SimpleLSPHandler, message: []const u8) !?[]u8 {
@@ -148,14 +148,14 @@ const SimpleLSPHandler = struct {
         _ = message;
         
         var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        defer result.deinit(allocator);
         
         try result.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[");
         
         // Add keywords
         for (CursedKeywords, 0..) |keyword, i| {
             if (i > 0) try result.appendSlice(",");
-            try result.writer().print("{{\"label\":\"{s}\",\"kind\":14,\"detail\":\"CURSED keyword\"}}", .{keyword});
+            try result.writer(&[_]u8{}).print("{{\"label\":\"{s}\",\"kind\":14,\"detail\":\"CURSED keyword\"}}", .{keyword});
         }
         
         try result.appendSlice(",");
@@ -163,7 +163,7 @@ const SimpleLSPHandler = struct {
         // Add stdlib functions
         for (CursedStdlibFunctions, 0..) |func, i| {
             if (i > 0) try result.appendSlice(",");
-            try result.writer().print("{{\"label\":\"{s}\",\"kind\":3,\"detail\":\"CURSED function\"}}", .{func});
+            try result.writer(&[_]u8{}).print("{{\"label\":\"{s}\",\"kind\":3,\"detail\":\"CURSED function\"}}", .{func});
         }
         
         try result.appendSlice(",");
@@ -171,7 +171,7 @@ const SimpleLSPHandler = struct {
         // Add types
         for (CursedTypes, 0..) |type_name, i| {
             if (i > 0) try result.appendSlice(",");
-            try result.writer().print("{{\"label\":\"{s}\",\"kind\":25,\"detail\":\"CURSED type\"}}", .{type_name});
+            try result.writer(&[_]u8{}).print("{{\"label\":\"{s}\",\"kind\":25,\"detail\":\"CURSED type\"}}", .{type_name});
         }
         
         try result.appendSlice("]}");
@@ -199,9 +199,9 @@ const SimpleLSPHandler = struct {
     fn sendDiagnostics(self: *SimpleLSPHandler, uri: []const u8, content: []const u8) !void {
         // Simple syntax check - look for basic errors
         var diagnostics = ArrayList(u8).init(self.allocator);
-        defer diagnostics.deinit();
+        defer diagnostics.deinit(allocator);
         
-        try diagnostics.writer().print("Content-Length: 200\r\n\r\n{{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{{\"uri\":\"{s}\",\"diagnostics\":[", .{uri});
+        try diagnostics.writer(&[_]u8{}).print("Content-Length: 200\r\n\r\n{{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{{\"uri\":\"{s}\",\"diagnostics\":[", .{uri});
         
         var line: u32 = 0;
         var column: u32 = 0;
@@ -219,7 +219,7 @@ const SimpleLSPHandler = struct {
                 '\n' => {
                     if (in_string) {
                         if (has_errors) try diagnostics.appendSlice(",");
-                        try diagnostics.writer().print("{{\"range\":{{\"start\":{{\"line\":{},\"character\":{}}},\"end\":{{\"line\":{},\"character\":{}}}}},\"severity\":1,\"source\":\"cursed-lsp\",\"message\":\"Unterminated string literal\"}}", .{line, column, line, column + 1});
+                        try diagnostics.writer(&[_]u8{}).print("{{\"range\":{{\"start\":{{\"line\":{},\"character\":{}}},\"end\":{{\"line\":{},\"character\":{}}}}},\"severity\":1,\"source\":\"cursed-lsp\",\"message\":\"Unterminated string literal\"}}", .{line, column, line, column + 1});
                         has_errors = true;
                         in_string = false;
                     }
@@ -255,17 +255,18 @@ fn extractJsonString(json_text: []const u8, key: []const u8) ?[]const u8 {
 // Main LSP Server
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var handler = SimpleLSPHandler.init(allocator);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     std.log.info("CURSED Simple Language Server starting...", .{});
     
-    const stdin = std.io.getStdIn().reader();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit();
+    defer buffer.deinit(allocator);
     
     // Main LSP loop
     while (true) {
@@ -302,11 +303,11 @@ pub fn main() !void {
 // Test function for development
 pub fn testSimpleLSP() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var handler = SimpleLSPHandler.init(allocator);
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     // Test initialize
     const init_message = 

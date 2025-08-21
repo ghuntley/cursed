@@ -84,7 +84,7 @@ pub const CursedError = struct {
         }
         
         if (self.inner_error) |inner| {
-            inner.deinit();
+            inner.deinit(allocator);
             self.allocator.destroy(inner);
         }
         
@@ -118,10 +118,10 @@ pub const CursedError = struct {
     }
     
     pub fn toString(self: *const CursedError) ![]u8 {
-        var buffer = ArrayList(u8).init(self.allocator);
-        defer buffer.deinit();
+        var buffer = .empty;
+        defer buffer.deinit(allocator);
         
-        const writer = buffer.writer();
+        const writer = buffer.writer(&[_]u8{});
         try self.format(writer);
         
         return try self.allocator.dupe(u8, buffer.items);
@@ -137,26 +137,26 @@ pub const ErrorHandler = struct {
     pub fn init(allocator: Allocator, file: []const u8) ErrorHandler {
         return ErrorHandler{
             .allocator = allocator,
-            .error_stack = ArrayList(*CursedError).init(allocator),
-            .function_stack = ArrayList([]const u8).init(allocator),
+            .error_stack = .empty,
+            .function_stack = .empty,
             .current_file = file,
         };
     }
     
     pub fn deinit(self: *ErrorHandler) void {
         for (self.error_stack.items) |error_obj| {
-            error_obj.deinit();
+            error_obj.deinit(allocator);
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(allocator);
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit();
+        self.function_stack.deinit(allocator);
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
-        try self.function_stack.append(try self.allocator.dupe(u8, function_name));
+        try self.function_stack.append(self.allocator, try self.allocator.dupe(u8, function_name));
     }
     
     pub fn popFunction(self: *ErrorHandler) void {
@@ -166,7 +166,7 @@ pub const ErrorHandler = struct {
         }
     }
     
-    /// YIKES - Create and throw an error
+    /// YIKES - Create and throw an error with enhanced line number tracking
     pub fn yikes(
         self: *ErrorHandler, 
         message: []const u8, 
@@ -175,16 +175,33 @@ pub const ErrorHandler = struct {
         line: u32,
         column: u32
     ) !*CursedError {
-        // Capture current stack trace
-        var stack_trace = ArrayList(CursedError.StackFrame).init(self.allocator);
+        // Capture current stack trace with accurate line numbers
+        var stack_trace = .empty;
         
-        for (self.function_stack.items) |func_name| {
-            try stack_trace.append(CursedError.StackFrame{
-                .function_name = try self.allocator.dupe(u8, func_name),
+        // Add current execution point as the top of stack trace
+        if (self.function_stack.items.len > 0) {
+            const current_function = self.function_stack.items[self.function_stack.items.len - 1];
+            try stack_trace.append(self.allocator, CursedError.StackFrame{
+                .function_name = try self.allocator.dupe(u8, current_function),
                 .file_name = try self.allocator.dupe(u8, self.current_file),
                 .line = line,
                 .column = column,
             });
+        }
+        
+        // Add remaining stack frames with estimated line numbers
+        if (self.function_stack.items.len > 1) {
+            var i = self.function_stack.items.len - 1;
+            while (i > 0) {
+                i -= 1;
+                const func_name = self.function_stack.items[i];
+                try stack_trace.append(self.allocator, CursedError.StackFrame{
+                    .function_name = try self.allocator.dupe(u8, func_name),
+                    .file_name = try self.allocator.dupe(u8, self.current_file),
+                    .line = 0, // Previous functions - line numbers not tracked here
+                    .column = 0,
+                });
+            }
         }
         
         const error_obj = try CursedError.initWithStackTrace(
@@ -195,9 +212,25 @@ pub const ErrorHandler = struct {
             stack_trace.items
         );
         
-        stack_trace.deinit();
+        // Add contextual information
+        var context = .empty;
+        defer context.deinit(allocator);
         
-        try self.error_stack.append(error_obj);
+        try context.append(self.allocator, CursedError.Context{
+            .key = try self.allocator.dupe(u8, "error_location"),
+            .value = try std.fmt.allocPrint(self.allocator, "{}:{}", .{ line, column }),
+        });
+        
+        try context.append(self.allocator, CursedError.Context{
+            .key = try self.allocator.dupe(u8, "stack_depth"),
+            .value = try std.fmt.allocPrint(self.allocator, "{}", .{self.function_stack.items.len}),
+        });
+        
+        error_obj.context = try self.allocator.dupe(CursedError.Context, context.items);
+        
+        stack_trace.deinit(allocator);
+        
+        try self.error_stack.append(self.allocator, error_obj);
         return error_obj;
     }
     
@@ -209,11 +242,11 @@ pub const ErrorHandler = struct {
             
             // Create new stack frame for current location
             if (error_obj.stack_trace) |trace| {
-                var new_trace = ArrayList(CursedError.StackFrame).init(self.allocator);
+                var new_trace = .empty;
                 
                 // Add existing trace
                 for (trace) |frame| {
-                    try new_trace.append(CursedError.StackFrame{
+                    try new_trace.append(self.allocator, CursedError.StackFrame{
                         .function_name = try self.allocator.dupe(u8, frame.function_name),
                         .file_name = try self.allocator.dupe(u8, frame.file_name),
                         .line = frame.line,
@@ -222,7 +255,7 @@ pub const ErrorHandler = struct {
                 }
                 
                 // Add current function
-                try new_trace.append(CursedError.StackFrame{
+                try new_trace.append(self.allocator, CursedError.StackFrame{
                     .function_name = try self.allocator.dupe(u8, current_func),
                     .file_name = try self.allocator.dupe(u8, self.current_file),
                     .line = 0, // TODO: Get actual line from parser context
@@ -237,7 +270,7 @@ pub const ErrorHandler = struct {
                 self.allocator.free(trace);
                 
                 error_obj.stack_trace = try self.allocator.dupe(CursedError.StackFrame, new_trace.items);
-                new_trace.deinit();
+                new_trace.deinit(allocator);
             }
         }
         
@@ -287,7 +320,8 @@ pub const ErrorHandler = struct {
         
         // Re-throw unhandled error
         if (caught_error != null) {
-            const stdout = std.io.getStdOut().writer();
+            var stdout_buffer: [4096]u8 = undefined;
+            const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
             try caught_error.?.format(stdout);
             return error.UnhandledError;
         }
@@ -305,7 +339,8 @@ pub const ErrorHandler = struct {
     }
     
     pub fn printAllErrors(self: *ErrorHandler) !void {
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         for (self.error_stack.items) |error_obj| {
             try error_obj.format(stdout);
             try stdout.print("\n", .{});
@@ -329,7 +364,8 @@ export fn cursed_is_error(value: ?*anyopaque) callconv(.C) bool {
 
 export fn cursed_propagate_error(error_obj: ?*CursedError) callconv(.C) void {
     if (error_obj) |err| {
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         err.format(stdout) catch {};
     }
 }
@@ -368,7 +404,7 @@ export fn cursed_init_error_propagation(file_name: [*:0]const u8) callconv(.C) v
 /// Cleanup global error handler
 export fn cursed_cleanup_error_propagation() callconv(.C) void {
     if (global_error_handler) |handler| {
-        handler.deinit();
+        handler.deinit(allocator);
         std.heap.c_allocator.destroy(handler);
         global_error_handler = null;
     }
@@ -416,7 +452,8 @@ export fn cursed_try_catch_end(
     _ = context;
     if (had_error and error_obj != null) {
         const err: *CursedError = @ptrCast(@alignCast(error_obj.?));
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         err.format(stdout) catch {};
     }
 }
@@ -458,7 +495,7 @@ test "CURSED error handling system" {
     
     // Test error creation
     var handler = ErrorHandler.init(allocator, "test.csd");
-    defer handler.deinit();
+    defer handler.deinit(allocator);
     
     const error_obj = try handler.yikes("Test error", .Runtime, 100, 1, 10);
     
