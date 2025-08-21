@@ -115,7 +115,7 @@ pub const AdvancedFeaturesCompiler = struct {
         });
         
         // Phase 6: Compile advanced language constructs
-        var compilation_units = ArrayList(CompilationUnit).init(self.allocator);
+        var compilation_units = .empty;
         
         // Compile pattern matching
         const pattern_units = try self.compilePatternMatching(ast_tree);
@@ -153,19 +153,19 @@ pub const AdvancedFeaturesCompiler = struct {
         return CompilationResult{
             .success = true,
             .generated_code = generated_code,
-            .compilation_units = compilation_units.toOwnedSlice(),
+            .compilation_units = compilation_units.toOwnedSlice(allocator),
             .runtime_requirements = RuntimeRequirements{
                 .requires_async_runtime = ast_tree.hasAsyncFeatures(),
                 .requires_actor_system = ast_tree.hasActorFeatures(),
                 .requires_reflection = ast_tree.hasReflectionFeatures(),
                 .requires_pattern_matching = ast_tree.hasPatternMatching(),
             },
-            .diagnostics = ArrayList(Diagnostic).init(self.allocator),
+            .diagnostics = .empty,
         };
     }
     
     fn compilePatternMatching(self: *AdvancedFeaturesCompiler, ast_tree: *ast.Program) ![]CompilationUnit {
-        var units = ArrayList(CompilationUnit).init(self.allocator);
+        var units = .empty;
         
         // Find all pattern matching expressions in the AST
         var pattern_finder = PatternMatchingFinder.init(self.allocator);
@@ -186,14 +186,14 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractPatternDependencies(compiled_match),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
-        return units.toOwnedSlice();
+        return units.toOwnedSlice(self.allocator);
     }
     
     fn compileAsyncAwait(self: *AdvancedFeaturesCompiler, ast_tree: *ast.Program) ![]CompilationUnit {
-        var units = ArrayList(CompilationUnit).init(self.allocator);
+        var units = .empty;
         
         // Find async functions and await expressions
         var async_finder = AsyncFinder.init(self.allocator);
@@ -209,7 +209,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractAsyncDependencies(compiled_async),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
         for (async_items.await_expressions) |await_expr| {
@@ -222,14 +222,14 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractAwaitDependencies(compiled_await),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
-        return units.toOwnedSlice();
+        return units.toOwnedSlice(self.allocator);
     }
     
     fn compileActorSystem(self: *AdvancedFeaturesCompiler, ast_tree: *ast.Program) ![]CompilationUnit {
-        var units = ArrayList(CompilationUnit).init(self.allocator);
+        var units = .empty;
         
         // Find actor definitions and message passing
         var actor_finder = ActorFinder.init(self.allocator);
@@ -245,14 +245,14 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractActorDependencies(compiled_actor),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
-        return units.toOwnedSlice();
+        return units.toOwnedSlice(self.allocator);
     }
     
     fn compileTestingSyntax(self: *AdvancedFeaturesCompiler, ast_tree: *ast.Program) ![]CompilationUnit {
-        var units = ArrayList(CompilationUnit).init(self.allocator);
+        var units = .empty;
         
         // Find test and benchmark declarations
         var test_finder = TestFinder.init(self.allocator);
@@ -268,7 +268,7 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractTestDependencies(compiled_test),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
         for (test_items.benchmark_cases) |benchmark_case| {
@@ -281,14 +281,14 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractBenchmarkDependencies(compiled_benchmark),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
-        return units.toOwnedSlice();
+        return units.toOwnedSlice(self.allocator);
     }
     
     fn compileReflection(self: *AdvancedFeaturesCompiler, ast_tree: *ast.Program) ![]CompilationUnit {
-        var units = ArrayList(CompilationUnit).init(self.allocator);
+        var units = .empty;
         
         // Find reflection usage
         var reflection_finder = ReflectionFinder.init(self.allocator);
@@ -304,10 +304,10 @@ pub const AdvancedFeaturesCompiler = struct {
                 .dependencies = try self.extractReflectionDependencies(compiled_reflection),
             };
             
-            try units.append(unit);
+            try units.append(allocator, unit);
         }
         
-        return units.toOwnedSlice();
+        return units.toOwnedSlice(allocator);
     }
     
     // Helper functions for compilation phases

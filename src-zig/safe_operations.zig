@@ -44,7 +44,7 @@ pub const SafeMemoryManager = struct {
     }
     
     pub fn deinit(self: *SafeMemoryManager) void {
-        self.memory_detector.deinit();
+        self.memory_detector.deinit(allocator);
     }
     
     /// Safe memory allocation with error tracking
@@ -107,7 +107,7 @@ pub const SafeMemoryManager = struct {
             0,
             "SafeMemoryManager"
         );
-        defer context.deinit(self.allocator);
+        defer context.deinit(allocator);
         
         try self.telemetry.recordCrash(context);
     }
@@ -218,7 +218,7 @@ pub const SafeFileOperations = struct {
             0,
             "SafeFileOperations"
         );
-        defer context.deinit(self.allocator);
+        defer context.deinit(allocator);
         
         try self.telemetry.recordCrash(context);
     }
@@ -233,7 +233,7 @@ pub const SafeFileOperations = struct {
             0,
             "SafeFileOperations"
         );
-        defer context.deinit(self.allocator);
+        defer context.deinit(allocator);
         
         try self.telemetry.recordCrash(context);
     }
@@ -304,7 +304,7 @@ pub const SafeParserOperations = struct {
             0,
             "SafeParserOperations"
         );
-        defer context.deinit(self.allocator);
+        defer context.deinit(allocator);
         
         try self.telemetry.recordCrash(context);
     }

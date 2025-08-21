@@ -47,13 +47,13 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 const import_stmt = try self.parseImportStatement();
-                try program.imports.append(import_stmt);
+                try program.imports.append(allocator, import_stmt);
                 continue;
             }
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(stmt);
+            try program.statements.append(allocator, stmt);
         }
 
         return program;

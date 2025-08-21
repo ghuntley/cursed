@@ -56,7 +56,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
             }
             if (i < content.len) i += 1; // Skip closing quote
             
-            try tokens.append(Token{
+            try tokens.append(allocator, Token{
                 .type = .StringLiteral,
                 .value = content[start..i],
                 .line = line,
@@ -73,7 +73,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
                 i += 1;
             }
             
-            try tokens.append(Token{
+            try tokens.append(allocator, Token{
                 .type = .NumberLiteral,
                 .value = content[start..i],
                 .line = line,
@@ -90,7 +90,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
                 i += 1;
             }
             
-            try tokens.append(Token{
+            try tokens.append(allocator, Token{
                 .type = .Identifier,
                 .value = content[start..i],
                 .line = line,
@@ -114,7 +114,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
             },
         };
         
-        try tokens.append(Token{
+        try tokens.append(allocator, Token{
             .type = token_type,
             .value = content[i..i+1],
             .line = line,
@@ -125,7 +125,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
         column += 1;
     }
     
-    try tokens.append(Token{
+    try tokens.append(allocator, Token{
         .type = .EOF,
         .value = "",
         .line = line,
@@ -135,7 +135,7 @@ fn tokenizeBasic(content: []const u8, tokens: *ArrayList(Token)) !void {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -171,8 +171,8 @@ pub fn main() !void {
     defer allocator.free(file_content);
 
     // Basic lexer
-    var tokens = ArrayList(Token).init(allocator);
-    defer tokens.deinit();
+    var tokens = .empty;
+    defer tokens.deinit(allocator);
     
     tokenizeBasic(file_content, &tokens) catch |err| {
         std.debug.print("Lexing error: {}\n", .{err});

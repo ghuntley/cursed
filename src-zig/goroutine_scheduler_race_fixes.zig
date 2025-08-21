@@ -257,7 +257,7 @@ pub const WorkStealingDeque = struct {
     
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .items = ArrayList(*Goroutine).init(allocator),
+            .items = .empty,
             .allocator = allocator,
         };
     }
@@ -267,7 +267,7 @@ pub const WorkStealingDeque = struct {
         while (self.popBottom()) |goroutine| {
             goroutine.context.release(self.allocator);
         }
-        self.items.deinit();
+        self.items.deinit(allocator);
     }
     
     /// Push to bottom (owner thread only)
@@ -283,7 +283,7 @@ pub const WorkStealingDeque = struct {
         
         // Atomic append with proper ordering
         const old_tail = self.tail.load(.acquire);
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.tail.store(old_tail + 1, .release);
     }
     
@@ -298,30 +298,35 @@ pub const WorkStealingDeque = struct {
         
         // Optimistically decrement tail
         const new_tail = tail - 1;
-        self.tail.store(new_tail, .seq_cst);
+        self.tail.store(new_tail, .release);
         
         // Double-check after tail update
-        const new_head = self.head.load(.acquire);
+        const final_head = self.head.load(.acquire);
         
-        if (new_tail < new_head) {
-            // Empty after all, restore tail
-            self.tail.store(tail, .release);
-            return null;
-        }
-        
-        if (new_tail == new_head) {
-            // Last element - race with steal
-            const result = self.head.cmpxchgStrong(new_head, new_head + 1, .seq_cst, .acquire);
-            self.tail.store(tail, .release);
+        if (new_tail > final_head) {
+            // Safe to pop
+            if (new_tail < self.items.items.len) {
+                const goroutine = self.items.items[new_tail];
+                return goroutine;
+            }
+        } else if (new_tail == final_head) {
+            // Last item, need CAS to avoid race with steal
+            self.tail.store(final_head, .release);
             
-            if (result != null) {
-                // Lost race with steal
+            if (self.head.cmpxchgWeak(final_head, final_head + 1, .acq_rel, .acquire)) |_| {
+                // Another thread stole it
                 return null;
+            }
+            
+            if (final_head < self.items.items.len) {
+                const goroutine = self.items.items[final_head];
+                return goroutine;
             }
         }
         
-        // Safe to pop
-        return self.items.pop();
+        // Failed, restore tail
+        self.tail.store(tail, .release);
+        return null;
     }
     
     /// Steal from top (other threads)
@@ -333,31 +338,310 @@ pub const WorkStealingDeque = struct {
             return null; // Empty
         }
         
-        // Try to increment head atomically
-        const result = self.head.cmpxchgWeak(head, head + 1, .seq_cst, .acquire);
-        if (result != null) {
-            return null; // Lost race
+        // Try to steal atomically
+        if (self.head.cmpxchgWeak(head, head + 1, .acq_rel, .acquire)) |_| {
+            // Another thread got it first
+            return null;
         }
         
-        // Successfully reserved element
         if (head < self.items.items.len) {
-            return self.items.items[head];
+            const goroutine = self.items.items[head];
+            return goroutine;
         }
         
         return null;
     }
     
-    /// Get current length (approximate)
-    pub fn length(self: *const Self) usize {
-        const tail = self.tail.load(.acquire);
+    pub fn isEmpty(self: *const Self) bool {
         const head = self.head.load(.acquire);
-        return if (tail > head) tail - head else 0;
+        const tail = self.tail.load(.acquire);
+        return head >= tail;
     }
     
-    /// Check if deque is empty (approximate)
-    pub fn isEmpty(self: *const Self) bool {
-        return self.length() == 0;
+    pub fn length(self: *const Self) usize {
+        const head = self.head.load(.acquire);
+        const tail = self.tail.load(.acquire);
+        return if (tail > head) tail - head else 0;
     }
+};
+
+/// Worker thread for the scheduler
+pub const Worker = struct {
+    const Self = @This();
+    
+    id: WorkerId,
+    deque: WorkStealingDeque,
+    thread: ?Thread = null,
+    scheduler: *Scheduler,
+    
+    // Worker state
+    running: Atomic(bool) = Atomic(bool).init(false),
+    idle: Atomic(bool) = Atomic(bool).init(true),
+    
+    // Statistics
+    tasks_executed: Atomic(u64) = Atomic(u64).init(0),
+    tasks_stolen: Atomic(u64) = Atomic(u64).init(0),
+    
+    pub fn init(id: WorkerId, allocator: Allocator, scheduler: *Scheduler) Self {
+        return Self{
+            .id = id,
+            .deque = WorkStealingDeque.init(allocator),
+            .scheduler = scheduler,
+        };
+    }
+    
+    pub fn deinit(self: *Self) void {
+        self.stop();
+        self.deque.deinit(allocator);
+    }
+    
+    pub fn start(self: *Self) !void {
+        if (self.running.load(.acquire)) {
+            return; // Already running
+        }
+        
+        self.running.store(true, .release);
+        self.thread = try Thread.spawn(.{}, Worker.run, .{self});
+    }
+    
+    pub fn stop(self: *Self) void {
+        self.running.store(false, .release);
+        
+        if (self.thread) |thread| {
+            thread.join();
+            self.thread = null;
+        }
+    }
+    
+    fn run(self: *Self) void {
+        print("[WORKER-{}] Started\n", .{self.id});
+        
+        while (self.running.load(.acquire)) {
+            // Try to get work from own deque first
+            var goroutine = self.deque.popBottom();
+            
+            // If no work, try to steal from other workers
+            if (goroutine == null) {
+                goroutine = self.scheduler.tryStealWork(self.id);
+                if (goroutine != null) {
+                    _ = self.tasks_stolen.fetchAdd(1, .acq_rel);
+                }
+            }
+            
+            if (goroutine) |g| {
+                self.idle.store(false, .release);
+                
+                // Execute the goroutine
+                g.execute();
+                _ = self.tasks_executed.fetchAdd(1, .acq_rel);
+                
+                // Check if goroutine is completed
+                if (g.context.getState() == .completed) {
+                    // Clean up completed goroutine
+                    g.context.release(self.scheduler.allocator);
+                } else {
+                    // Reschedule if not completed
+                    self.scheduler.scheduleGoroutine(g) catch {
+                        print("[WORKER-{}] Failed to reschedule goroutine {}\n", .{ self.id, g.id });
+                    };
+                }
+                
+                self.idle.store(true, .release);
+            } else {
+                // No work available, sleep briefly
+                std.time.sleep(1_000_000); // 1ms
+            }
+        }
+        
+        print("[WORKER-{}] Stopped\n", .{self.id});
+    }
+    
+    pub fn scheduleGoroutine(self: *Self, goroutine: *Goroutine) !void {
+        try self.deque.pushBottom(goroutine);
+    }
+    
+    pub fn getStats(self: *const Self) WorkerStats {
+        return WorkerStats{
+            .id = self.id,
+            .running = self.running.load(.acquire),
+            .idle = self.idle.load(.acquire),
+            .tasks_executed = self.tasks_executed.load(.acquire),
+            .tasks_stolen = self.tasks_stolen.load(.acquire),
+            .queue_length = self.deque.length(),
+        };
+    }
+};
+
+/// Worker statistics
+pub const WorkerStats = struct {
+    id: WorkerId,
+    running: bool,
+    idle: bool,
+    tasks_executed: u64,
+    tasks_stolen: u64,
+    queue_length: usize,
+};
+
+/// Configuration for the scheduler
+pub const SchedulerConfig = struct {
+    num_workers: usize = 4,
+    work_stealing_enabled: bool = true,
+    preemption_enabled: bool = true,
+    gc_integration_enabled: bool = true,
+    
+    pub fn default() SchedulerConfig {
+        const cpu_count = std.Thread.getCpuCount() catch 4;
+        return SchedulerConfig{
+            .num_workers = @max(1, cpu_count),
+        };
+    }
+};
+
+/// Main scheduler implementing M:N threading
+pub const Scheduler = struct {
+    const Self = @This();
+    
+    workers: ArrayList(Worker),
+    config: SchedulerConfig,
+    allocator: Allocator,
+    
+    // Global scheduler state
+    running: Atomic(bool) = Atomic(bool).init(false),
+    next_worker: Atomic(usize) = Atomic(usize).init(0),
+    
+    // Statistics
+    total_goroutines_scheduled: Atomic(u64) = Atomic(u64).init(0),
+    
+    pub fn init(allocator: Allocator, config: SchedulerConfig) !Self {
+        var workers = .empty;
+        try workers.ensureTotalCapacity(allocator, config.num_workers);
+        
+        // Create workers
+        for (0..config.num_workers) |i| {
+            try workers.append(Worker.init(i, allocator, undefined)); // Will set scheduler pointer later
+        }
+        
+        return Self{
+            .workers = workers,
+            .config = config,
+            .allocator = allocator,
+        };
+    }
+    
+    pub fn deinit(self: *Self) void {
+        self.stop();
+        
+        for (self.workers.items) |*worker| {
+            worker.deinit(allocator);
+        }
+        self.workers.deinit(allocator);
+    }
+    
+    pub fn start(self: *Self) !void {
+        if (self.running.load(.acquire)) {
+            return; // Already running
+        }
+        
+        // Fix scheduler pointers in workers
+        for (self.workers.items) |*worker| {
+            worker.scheduler = self;
+        }
+        
+        // Start all workers
+        for (self.workers.items) |*worker| {
+            try worker.start();
+        }
+        
+        self.running.store(true, .release);
+        print("[SCHEDULER] Started with {} workers\n", .{self.config.num_workers});
+    }
+    
+    pub fn stop(self: *Self) void {
+        if (!self.running.load(.acquire)) {
+            return; // Already stopped
+        }
+        
+        self.running.store(false, .release);
+        
+        // Stop all workers
+        for (self.workers.items) |*worker| {
+            worker.stop();
+        }
+        
+        print("[SCHEDULER] Stopped\n");
+    }
+    
+    pub fn scheduleGoroutine(self: *Self, goroutine: *Goroutine) !void {
+        if (!self.running.load(.acquire)) {
+            return error.SchedulerNotRunning;
+        }
+        
+        // Use round-robin to distribute work
+        const worker_index = self.next_worker.fetchAdd(1, .acq_rel) % self.workers.items.len;
+        try self.workers.items[worker_index].scheduleGoroutine(goroutine);
+        
+        _ = self.total_goroutines_scheduled.fetchAdd(1, .acq_rel);
+    }
+    
+    /// Try to steal work for the given worker
+    pub fn tryStealWork(self: *Self, requesting_worker_id: WorkerId) ?*Goroutine {
+        if (!self.config.work_stealing_enabled) {
+            return null;
+        }
+        
+        // Try to steal from other workers in random order
+        var attempts: usize = 0;
+        const max_attempts = self.workers.items.len;
+        
+        while (attempts < max_attempts) {
+            const target_worker_id = (requesting_worker_id + attempts + 1) % self.workers.items.len;
+            
+            if (target_worker_id != requesting_worker_id) {
+                const stolen = self.workers.items[target_worker_id].deque.steal();
+                if (stolen != null) {
+                    return stolen;
+                }
+            }
+            
+            attempts += 1;
+        }
+        
+        return null;
+    }
+    
+    pub fn getActiveGoroutineCount(self: *const Self) u32 {
+        var total: u32 = 0;
+        for (self.workers.items) |*worker| {
+            total += @intCast(worker.deque.length());
+        }
+        return total;
+    }
+    
+    pub fn getSchedulerStats(self: *const Self) SchedulerStats {
+        var worker_stats = .empty;
+        defer worker_stats.deinit(allocator);
+        
+        for (self.workers.items) |*worker| {
+            worker_stats.append(allocator, worker.getStats()) catch {};
+        }
+        
+        return SchedulerStats{
+            .running = self.running.load(.acquire),
+            .num_workers = self.workers.items.len,
+            .total_goroutines_scheduled = self.total_goroutines_scheduled.load(.acquire),
+            .active_goroutines = self.getActiveGoroutineCount(),
+            .worker_stats = worker_stats.toOwnedSlice(allocator) catch &.{},
+        };
+    }
+};
+
+/// Scheduler statistics
+pub const SchedulerStats = struct {
+    running: bool,
+    num_workers: usize,
+    total_goroutines_scheduled: u64,
+    active_goroutines: u32,
+    worker_stats: []WorkerStats,
 };
 
 /// Worker thread with proper synchronization
@@ -396,7 +680,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(allocator);
     }
     
     /// Start worker thread
@@ -539,7 +823,7 @@ pub const Scheduler = struct {
         var scheduler = Self{
             .allocator = allocator,
             .config = config,
-            .workers = ArrayList(Worker).init(allocator),
+            .workers = .empty,
         };
         
         // Create worker threads
@@ -548,11 +832,11 @@ pub const Scheduler = struct {
         else 
             config.num_workers;
             
-        try scheduler.workers.ensureTotalCapacity(num_workers);
+        try scheduler.workers.ensureTotalCapacity(allocator, num_workers);
         
         for (0..num_workers) |i| {
             const worker = Worker.init(allocator, @intCast(i), &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
         
         return scheduler;
@@ -563,9 +847,9 @@ pub const Scheduler = struct {
         
         // Clean up workers
         for (self.workers.items) |*worker| {
-            worker.deinit();
+            worker.deinit(allocator);
         }
-        self.workers.deinit();
+        self.workers.deinit(allocator);
     }
     
     /// Start the scheduler
@@ -628,11 +912,11 @@ pub const Scheduler = struct {
     
     /// Get scheduler statistics
     pub fn getStats(self: *const Self) SchedulerStats {
-        var worker_stats = ArrayList(WorkerStats).init(self.allocator);
-        defer worker_stats.deinit();
+        var worker_stats = .empty;
+        defer worker_stats.deinit(allocator);
         
         for (self.workers.items) |*worker| {
-            worker_stats.append(worker.stats) catch {};
+            worker_stats.append(allocator, worker.stats) catch {};
         }
         
         return SchedulerStats{
@@ -640,7 +924,7 @@ pub const Scheduler = struct {
             .num_workers = @intCast(self.workers.items.len),
             .active_goroutines = self.active_goroutines.load(.acquire),
             .total_goroutines = self.total_goroutines.load(.acquire),
-            .worker_stats = worker_stats.toOwnedSlice() catch &[_]WorkerStats{},
+            .worker_stats = worker_stats.toOwnedSlice(allocator) catch &[_]WorkerStats{},
         };
     }
 };
@@ -781,7 +1065,7 @@ pub fn shutdownScheduler(allocator: Allocator) void {
     defer global_scheduler_mutex.unlock();
     
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         allocator.destroy(scheduler);
         global_scheduler = null;
     }
@@ -883,7 +1167,7 @@ test "work stealing deque" {
     const allocator = std.testing.allocator;
     
     var deque = WorkStealingDeque.init(allocator);
-    defer deque.deinit();
+    defer deque.deinit(allocator);
     
     var goroutine = try allocator.create(Goroutine);
     defer allocator.destroy(goroutine);
@@ -912,7 +1196,7 @@ test "multiple workers and work stealing" {
     };
     
     var scheduler = try Scheduler.init(allocator, config);
-    defer scheduler.deinit();
+    defer scheduler.deinit(allocator);
     
     try scheduler.start();
     

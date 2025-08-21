@@ -20,7 +20,7 @@ pub const ArchitectureMismatchDetector = struct {
             .expected_interpreter = null,
             .actual_interpreter = null,
             .target_arch = null,
-            .issues = std.ArrayList([]const u8).init(self.allocator),
+            .issues = .{},
         };
         
         // Use `file` command to analyze the binary
@@ -48,7 +48,7 @@ pub const ArchitectureMismatchDetector = struct {
             analysis.actual_interpreter = try self.allocator.dupe(u8, "/lib/ld-musl-x86_64.so.1");
             analysis.expected_interpreter = try self.allocator.dupe(u8, "/lib64/ld-linux-x86-64.so.2");
             analysis.has_mismatch = true;
-            try analysis.issues.append(try self.allocator.dupe(u8, "Binary compiled with musl libc but system uses glibc"));
+            try analysis.issues.append(self.allocator, try self.allocator.dupe(u8, "Binary compiled with musl libc but system uses glibc"));
         } else if (std.mem.containsAtLeast(u8, output, 1, "ld-linux-x86-64")) {
             analysis.actual_interpreter = try self.allocator.dupe(u8, "/lib64/ld-linux-x86-64.so.2");
             analysis.expected_interpreter = try self.allocator.dupe(u8, "/lib64/ld-linux-x86-64.so.2");
@@ -69,8 +69,8 @@ pub const ArchitectureMismatchDetector = struct {
         var compat = SystemCompatibility{
             .has_musl = false,
             .has_glibc = false,
-            .supported_arches = std.ArrayList([]const u8).init(self.allocator),
-            .dynamic_linkers = std.ArrayList([]const u8).init(self.allocator),
+            .supported_arches = .{},
+            .dynamic_linkers = .{},
         };
         
         // Check for glibc
@@ -80,11 +80,11 @@ pub const ArchitectureMismatchDetector = struct {
                 // glibc not found
             } else {
                 compat.has_glibc = true;
-                try compat.dynamic_linkers.append(try self.allocator.dupe(u8, "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"));
+                try compat.dynamic_linkers.append(self.allocator, try self.allocator.dupe(u8, "/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2"));
             };
         } else {
             compat.has_glibc = true;
-            try compat.dynamic_linkers.append(try self.allocator.dupe(u8, "/lib64/ld-linux-x86-64.so.2"));
+            try compat.dynamic_linkers.append(self.allocator, try self.allocator.dupe(u8, "/lib64/ld-linux-x86-64.so.2"));
         }
         
         // Check for musl
@@ -92,18 +92,18 @@ pub const ArchitectureMismatchDetector = struct {
             // musl not found
         } else {
             compat.has_musl = true;
-            try compat.dynamic_linkers.append(try self.allocator.dupe(u8, "/lib/ld-musl-x86_64.so.1"));
+            try compat.dynamic_linkers.append(self.allocator, try self.allocator.dupe(u8, "/lib/ld-musl-x86_64.so.1"));
         }
         
         // Determine supported architectures from current system
-        try compat.supported_arches.append(try self.allocator.dupe(u8, @tagName(@import("builtin").target.cpu.arch)));
+        try compat.supported_arches.append(self.allocator, try self.allocator.dupe(u8, @tagName(@import("builtin").target.cpu.arch)));
         
         return compat;
     }
     
     /// Provide fix recommendations for architecture mismatches
     pub fn provideFix(self: Self, analysis: BinaryAnalysis, system: SystemCompatibility) ![]const u8 {
-        var fix_message = std.ArrayList(u8).init(self.allocator);
+        var fix_message: std.ArrayList(u8) = .empty;
         const writer = fix_message.writer();
         
         try writer.writeAll("🔧 Architecture Mismatch Fix Recommendations:\n\n");
@@ -145,7 +145,7 @@ pub const ArchitectureMismatchDetector = struct {
             try writer.print("   - {s}\n", .{linker});
         }
         
-        return fix_message.toOwnedSlice();
+        return fix_message.toOwnedSlice(allocator);
     }
 };
 
@@ -164,7 +164,7 @@ pub const BinaryAnalysis = struct {
         for (self.issues.items) |issue| {
             allocator.free(issue);
         }
-        self.issues.deinit();
+        self.issues.deinit(self);
     }
 };
 
@@ -178,11 +178,11 @@ pub const SystemCompatibility = struct {
         for (self.supported_arches.items) |arch| {
             allocator.free(arch);
         }
-        self.supported_arches.deinit();
+        self.supported_arches.deinit(self);
         
         for (self.dynamic_linkers.items) |linker| {
             allocator.free(linker);
         }
-        self.dynamic_linkers.deinit();
+        self.dynamic_linkers.deinit(self);
     }
 };

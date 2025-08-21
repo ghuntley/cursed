@@ -110,7 +110,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
         pub fn init(allocator: Allocator, id: u64, capacity: usize, priority: ChannelPriority) Self {
             return Self{
                 .id = id,
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .capacity = capacity,
                 .allocator = allocator,
                 .mutex = Mutex{},
@@ -128,7 +128,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
         
         pub fn deinit(self: *Self) void {
             self.close();
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
         
         /// Send with comprehensive deadlock prevention
@@ -180,7 +180,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                 
                 // For buffered channels, check capacity
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(value);
+                    try self.buffer.append(allocator, value);
                     self.notifyReceivers();
                     self.stats.recordOperation(.success);
                     return SendResult.sent;
@@ -316,7 +316,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
                 
                 // Check for waiting receivers
                 if (self.receiver_count.load(.acquire) > 0) {
-                    try self.buffer.append(value);
+                    try self.buffer.append(allocator, value);
                     self.notifyReceivers();
                     return SendResult.sent;
                 }
@@ -337,7 +337,7 @@ pub fn DeadlockFreeChannel(comptime T: type) type {
             
             while (@as(i64, @intCast(std.time.nanoTimestamp())) < end_time and !self.closed.load(.acquire)) {
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(value);
+                    try self.buffer.append(allocator, value);
                     self.notifyReceivers();
                     return SendResult.sent;
                 }
@@ -469,7 +469,7 @@ pub const DeadlockDetector = struct {
     
     pub fn init(allocator: Allocator) DeadlockDetector {
         return DeadlockDetector{
-            .channels = ArrayList(*anyopaque).init(allocator),
+            .channels = .empty,
             .mutex = Mutex{},
             .running = Atomic(bool).init(false),
             .thread = null,
@@ -479,7 +479,7 @@ pub const DeadlockDetector = struct {
     
     pub fn deinit(self: *DeadlockDetector) void {
         self.stop();
-        self.channels.deinit();
+        self.channels.deinit(allocator);
     }
     
     pub fn start(self: *DeadlockDetector) !void {
@@ -519,7 +519,7 @@ pub const DeadlockDetector = struct {
     pub fn registerChannel(self: *DeadlockDetector, channel: *anyopaque) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        try self.channels.append(channel);
+        try self.channels.append(allocator, channel);
     }
 };
 
@@ -545,7 +545,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     }
     defer {
         for (channels) |ch| {
-            ch.deinit();
+            ch.deinit(allocator);
             allocator.destroy(ch);
         }
     }
@@ -553,7 +553,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     // Start deadlock detector
     var detector = DeadlockDetector.init(allocator);
     try detector.start();
-    defer detector.deinit();
+    defer detector.deinit(allocator);
     
     for (channels) |ch| {
         try detector.registerChannel(ch);
@@ -562,12 +562,12 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
     print("🚀 Starting high-contention test with {} channels, {} goroutines, {} ops each\n", .{ num_channels, num_goroutines, operations_per_goroutine });
     
     // Spawn sender and receiver threads
-    var threads = ArrayList(Thread).init(allocator);
+    var threads = .empty;
     defer {
         for (threads.items) |thread| {
             thread.join();
         }
-        threads.deinit();
+        threads.deinit(allocator);
     }
     
     const TestContext = struct {
@@ -586,7 +586,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         };
         
         const thread = try Thread.spawn(.{}, senderWorker, .{context});
-        try threads.append(thread);
+        try threads.append(allocator, thread);
     }
     
     // Spawn receiver threads
@@ -599,7 +599,7 @@ pub fn runHighContentionTest(allocator: Allocator) !void {
         };
         
         const thread = try Thread.spawn(.{}, receiverWorker, .{context});
-        try threads.append(thread);
+        try threads.append(allocator, thread);
     }
     
     print("⏳ Waiting for {} goroutines to complete...\n", .{threads.items.len});

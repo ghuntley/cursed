@@ -131,7 +131,7 @@ pub const ErrorContext = struct {
             self.allocator.free(trace);
         }
         if (self.inner_error) |inner| {
-            inner.deinit();
+            inner.deinit(allocator);
             self.allocator.destroy(inner);
         }
     }
@@ -157,10 +157,10 @@ pub const ErrorContext = struct {
     }
     
     pub fn toString(self: ErrorContext, allocator: Allocator) ![]u8 {
-        var buffer = ArrayList(u8).init(allocator);
-        defer buffer.deinit();
+        var buffer = .empty;
+        defer buffer.deinit(allocator);
         
-        const writer = buffer.writer();
+        const writer = buffer.writer(&[_]u8{});
         try self.format(writer);
         
         return try allocator.dupe(u8, buffer.items);
@@ -376,18 +376,18 @@ pub const ErrorRecovery = struct {
     pub fn init(allocator: Allocator, max_errors: usize) ErrorRecovery {
         return ErrorRecovery{
             .allocator = allocator,
-            .errors = ArrayList(ErrorContext).init(allocator),
+            .errors = .empty,
             .max_errors = max_errors,
-            .stack_traces = ArrayList([][]const u8).init(allocator),
-            .current_function_stack = ArrayList([]const u8).init(allocator),
+            .stack_traces = .empty,
+            .current_function_stack = .empty,
         };
     }
     
     pub fn deinit(self: *ErrorRecovery) void {
         for (self.errors.items) |*error_ctx| {
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
-        self.errors.deinit();
+        self.errors.deinit(allocator);
         
         for (self.stack_traces.items) |trace| {
             for (trace) |frame| {
@@ -395,16 +395,16 @@ pub const ErrorRecovery = struct {
             }
             self.allocator.free(trace);
         }
-        self.stack_traces.deinit();
+        self.stack_traces.deinit(allocator);
         
         for (self.current_function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.current_function_stack.deinit();
+        self.current_function_stack.deinit(allocator);
     }
     
     pub fn pushFunction(self: *ErrorRecovery, function_name: []const u8) !void {
-        try self.current_function_stack.append(try self.allocator.dupe(u8, function_name));
+        try self.current_function_stack.append(self.allocator, try self.allocator.dupe(u8, function_name));
     }
     
     pub fn popFunction(self: *ErrorRecovery) void {
@@ -431,7 +431,7 @@ pub const ErrorRecovery = struct {
         // Capture current stack trace
         ctx.stack_trace = try self.captureStackTrace();
         
-        try self.errors.append(ctx);
+        try self.errors.append(allocator, ctx);
     }
     
     pub fn hasErrors(self: *ErrorRecovery) bool {
@@ -688,14 +688,14 @@ test "error handling system" {
     
     // Test basic error context
     var ctx = try ErrorContext.init(allocator, CursedError.OutOfMemory, "Test error message");
-    defer ctx.deinit();
+    defer ctx.deinit(allocator);
     
     try std.testing.expect(ctx.error_code == CursedError.OutOfMemory);
     try std.testing.expect(std.mem.eql(u8, ctx.message, "Test error message"));
     
     // Test error recovery
     var recovery = ErrorRecovery.init(allocator, 10);
-    defer recovery.deinit();
+    defer recovery.deinit(allocator);
     
     const error1 = try ErrorContext.init(allocator, CursedError.ParseError, "Parse failed");
     try recovery.addError(error1);

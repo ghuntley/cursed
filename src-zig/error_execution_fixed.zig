@@ -20,7 +20,7 @@ pub const ErrorState = struct {
     
     pub fn deinit(self: *ErrorState) void {
         if (self.current_error) |*err| {
-            err.deinit();
+            err.deinit(allocator);
         }
     }
     
@@ -40,7 +40,7 @@ pub const ErrorState = struct {
     
     pub fn clearError(self: *ErrorState) void {
         if (self.current_error) |*err| {
-            err.deinit();
+            err.deinit(allocator);
         }
         self.current_error = null;
     }

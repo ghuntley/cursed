@@ -100,9 +100,9 @@ pub const PackageManifest = struct {
     }
     
     pub fn deinit(self: *PackageManifest) void {
-        self.dependencies.deinit();
-        self.dev_dependencies.deinit();
-        self.exports.deinit();
+        self.dependencies.deinit(allocator);
+        self.dev_dependencies.deinit(allocator);
+        self.exports.deinit(allocator);
     }
     
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -127,7 +127,7 @@ pub const PackageManifest = struct {
     
     fn parseFromString(allocator: Allocator, content: []const u8) !PackageManifest {
         var parsed = try json.parseFromSlice(json.Value, allocator, content, .{});
-        defer parsed.deinit();
+        defer parsed.deinit(allocator);
         
         var manifest = PackageManifest.init(allocator);
         
@@ -162,7 +162,7 @@ pub const PackageManifest = struct {
     
     fn toJsonString(self: *const PackageManifest, allocator: Allocator) ![]const u8 {
         var json_obj = std.json.ObjectMap.init(allocator);
-        defer json_obj.deinit();
+        defer json_obj.deinit(allocator);
         
         try json_obj.put("name", json.Value{ .string = self.name });
         
@@ -176,7 +176,7 @@ pub const PackageManifest = struct {
         
         // Serialize dependencies
         var deps_obj = std.json.ObjectMap.init(allocator);
-        defer deps_obj.deinit();
+        defer deps_obj.deinit(allocator);
         
         var dep_iterator = self.dependencies.iterator();
         while (dep_iterator.next()) |entry| {
@@ -186,7 +186,7 @@ pub const PackageManifest = struct {
         try json_obj.put("dependencies", json.Value{ .object = deps_obj });
         
         var json_string = ArrayList(u8).init(allocator);
-        defer json_string.deinit();
+        defer json_string.deinit(allocator);
         
         try json.stringify(json.Value{ .object = json_obj }, .{}, json_string.writer());
         return try json_string.toOwnedSlice();
@@ -212,7 +212,7 @@ pub const LockFile = struct {
     }
     
     pub fn deinit(self: *LockFile) void {
-        self.packages.deinit();
+        self.packages.deinit(allocator);
     }
 };
 
@@ -387,7 +387,7 @@ pub const PackageManager = struct {
     
     pub fn initProject(self: *PackageManager, name: []const u8) !void {
         var manifest = PackageManifest.init(self.allocator);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         manifest.name = try self.allocator.dupe(u8, name);
         manifest.version = Version{ .major = 0, .minor = 1, .patch = 0 };
@@ -431,7 +431,7 @@ pub const PackageManager = struct {
             std.log.warn("No package.json found, creating new one", .{});
             break :blk PackageManifest.init(self.allocator);
         };
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         const dependency = Dependency{
             .name = try self.allocator.dupe(u8, name),
@@ -450,7 +450,7 @@ pub const PackageManager = struct {
         defer self.allocator.free(manifest_path);
         
         var manifest = try PackageManifest.loadFromFile(self.allocator, manifest_path);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         _ = manifest.dependencies.remove(name);
         try manifest.saveToFile(self.allocator, manifest_path);
@@ -463,7 +463,7 @@ pub const PackageManager = struct {
         defer self.allocator.free(manifest_path);
         
         var manifest = try PackageManifest.loadFromFile(self.allocator, manifest_path);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         const modules_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ self.project_root, "node_modules" });
         defer self.allocator.free(modules_dir);
@@ -503,7 +503,7 @@ pub const PackageManager = struct {
         defer self.allocator.free(manifest_path);
         
         var manifest = try PackageManifest.loadFromFile(self.allocator, manifest_path);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         // Package validation
         if (manifest.name.len == 0) {
@@ -565,7 +565,7 @@ pub fn cmdInit(allocator: Allocator, args: [][:0]u8) !void {
     const project_name = if (args.len > 0) args[0] else "my-cursed-project";
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.initProject(project_name);
 }
@@ -580,7 +580,7 @@ pub fn cmdAdd(allocator: Allocator, args: [][:0]u8) !void {
     const version_req = if (args.len > 1) args[1] else "^1.0.0";
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.addDependency(package_name, version_req);
 }
@@ -594,7 +594,7 @@ pub fn cmdRemove(allocator: Allocator, args: [][:0]u8) !void {
     const package_name = args[0];
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.removeDependency(package_name);
 }
@@ -603,7 +603,7 @@ pub fn cmdInstall(allocator: Allocator, args: [][:0]u8) !void {
     _ = args;
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.installDependencies();
 }
@@ -612,7 +612,7 @@ pub fn cmdUpdate(allocator: Allocator, args: [][:0]u8) !void {
     _ = args;
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.updateDependencies();
 }
@@ -626,7 +626,7 @@ pub fn cmdSearch(allocator: Allocator, args: [][:0]u8) !void {
     const query = args[0];
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.searchPackages(query);
 }
@@ -635,7 +635,7 @@ pub fn cmdPublish(allocator: Allocator, args: [][:0]u8) !void {
     _ = args;
     
     var pkg_manager = try PackageManager.init(allocator, ".");
-    defer pkg_manager.deinit();
+    defer pkg_manager.deinit(allocator);
     
     try pkg_manager.publishPackage();
 }
@@ -643,7 +643,7 @@ pub fn cmdPublish(allocator: Allocator, args: [][:0]u8) !void {
 // Main package manager entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

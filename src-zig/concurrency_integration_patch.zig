@@ -62,11 +62,11 @@ pub const EnhancedScheduler = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.core_scheduler.deinit();
+        self.core_scheduler.deinit(allocator);
         self.allocator.destroy(self.core_scheduler);
         
         if (self.legacy_scheduler) |legacy| {
-            legacy.deinit();
+            legacy.deinit(allocator);
             self.allocator.destroy(legacy);
         }
     }
@@ -237,7 +237,7 @@ pub fn EnhancedChannel(comptime T: type) type {
         }
         
         pub fn deinit(self: *Self, allocator: Allocator) void {
-            self.core_channel.deinit();
+            self.core_channel.deinit(allocator);
             allocator.destroy(self.core_channel);
         }
         
@@ -415,7 +415,7 @@ pub fn shutdownEnhancedScheduler(allocator: Allocator) void {
     
     if (global_enhanced_scheduler) |scheduler| {
         scheduler.shutdown();
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         allocator.destroy(scheduler);
         global_enhanced_scheduler = null;
         print("✅ Enhanced scheduler shutdown complete\n", .{});

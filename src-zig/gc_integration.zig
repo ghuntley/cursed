@@ -98,7 +98,7 @@ pub const GCIntegration = struct {
     
     /// Clean up GC integration
     pub fn deinit(self: *GCIntegration) void {
-        self.function_root_tables.deinit();
+        self.function_root_tables.deinit(allocator);
         self.allocator.destroy(self);
     }
     
@@ -548,7 +548,7 @@ export fn cursed_gc_runtime_init(initial_heap_size: usize) c_int {
 /// Cleanup the global GC instance
 export fn cursed_gc_runtime_deinit() void {
     if (global_gc) |gc| {
-        gc.deinit();
+        gc.deinit(allocator);
         global_gc = null;
     }
 }

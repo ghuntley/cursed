@@ -18,6 +18,11 @@ comptime {
 
 const windows = std.os.windows;
 
+// Additional Windows API functions for async I/O cancellation
+extern "kernel32" fn CancelIo(
+    hFile: windows.HANDLE,
+) callconv(windows.WINAPI) windows.BOOL;
+
 // Global async runtime instance
 var global_async_runtime: ?*WindowsAsyncRuntime = null;
 var runtime_mutex = std.Thread.Mutex{};
@@ -49,8 +54,8 @@ pub const WindowsAsyncRuntime = struct {
         if (self.initialized.load(.acquire)) {
             self.stop();
         }
-        self.network_runtime.deinit();
-        self.iocp_runtime.deinit();
+        self.network_runtime.deinit(allocator);
+        self.iocp_runtime.deinit(allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -80,7 +85,7 @@ pub const WindowsAsyncRuntime = struct {
         self.iocp_runtime.integrateWithScheduler(scheduler);
     }
     
-    // High-level async file operations  
+    // High-level async file operations with enhanced timeout protection
     pub fn readFileAsync(self: *Self, file_path: []const u8, buffer: []u8) !iocp.AsyncResult {
         // P0 Issue #12 Fix: Enhanced error handling to prevent hanging promises
         const file_handle = self.openFileForAsync(file_path, .read) catch |err| {
@@ -100,8 +105,45 @@ pub const WindowsAsyncRuntime = struct {
         };
         defer windows.CloseHandle(file_handle);
         
-        // Perform async read with timeout protection
-        return self.iocp_runtime.asyncRead(file_handle, buffer);
+        // Create operation with timeout handling
+        var operation = iocp.AsyncOperation.init(.read_file, file_handle);
+        operation.setBuffer(buffer);
+        
+        // Add timeout mechanism to prevent infinite hangs
+        const timeout_ms: u32 = 30000; // 30 second timeout
+        
+        var timeout_reached = std.atomic.Value(bool).init(false);
+        const timeout_thread = try std.Thread.spawn(.{}, struct {
+            fn timeoutMonitor(timeout_flag: *std.atomic.Value(bool), handle: windows.HANDLE, delay_ms: u32) void {
+                std.time.sleep(delay_ms * std.time.ns_per_ms);
+                timeout_flag.store(true, .release);
+                
+                // Cancel the I/O operation if it's still pending
+                _ = CancelIo(handle);
+                std.log.warn("Async read operation timed out and was cancelled");
+            }
+        }.timeoutMonitor, .{ &timeout_reached, file_handle, timeout_ms });
+        defer timeout_thread.join();
+        
+        // Perform async read with enhanced error handling
+        const result = self.iocp_runtime.asyncRead(file_handle, buffer) catch |err| {
+            if (timeout_reached.load(.acquire)) {
+                return iocp.AsyncResult{
+                    .success = false,
+                    .bytes_transferred = 0,
+                    .error_code = @intFromEnum(windows.Win32Error.WAIT_TIMEOUT),
+                    .operation = &operation,
+                };
+            }
+            return err;
+        };
+        
+        // Check if operation completed before timeout
+        if (timeout_reached.load(.acquire)) {
+            std.log.warn("Async read completed but timeout was reached - potential race condition");
+        }
+        
+        return result;
     }
     
     pub fn writeFileAsync(self: *Self, file_path: []const u8, data: []const u8) !iocp.AsyncResult {
@@ -210,7 +252,7 @@ pub fn deinitGlobalAsyncRuntime(allocator: std.mem.Allocator) void {
     defer runtime_mutex.unlock();
     
     if (global_async_runtime) |runtime| {
-        runtime.deinit();
+        runtime.deinit(allocator);
         allocator.destroy(runtime);
         global_async_runtime = null;
         
@@ -311,7 +353,7 @@ pub const CursedAsyncBindings = struct {
         const connect_addr = net.NetAddress.fromString(ip_str, port) catch return -2; // Invalid address
         
         var client = runtime.createTcpClient() catch return -3; // Client creation failed
-        defer client.deinit();
+        defer client.deinit(allocator);
         
         client.connect(connect_addr) catch return -4; // Connection failed
         

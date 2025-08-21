@@ -116,9 +116,9 @@ pub const Scope = struct {
             .scope_type = scope_type,
             .depth = depth,
             .parent = parent,
-            .children = ArrayList(*Scope).init(allocator),
+            .children = .empty,
             .variables = HashMap([]const u8, Variable).init(allocator),
-            .captured_variables = ArrayList([]const u8).init(allocator),
+            .captured_variables = .empty,
             .start_line = start_line,
             .start_column = start_column,
             .end_line = 0,
@@ -133,22 +133,22 @@ pub const Scope = struct {
         // Clean up variables
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(allocator);
         
         // Clean up children
         for (self.children.items) |child| {
-            child.deinit();
+            child.deinit(allocator);
             self.allocator.destroy(child);
         }
-        self.children.deinit();
+        self.children.deinit(allocator);
         
-        self.captured_variables.deinit();
+        self.captured_variables.deinit(allocator);
     }
     
     pub fn addChild(self: *Scope, child: *Scope) !void {
-        try self.children.append(child);
+        try self.children.append(self.allocator, child);
     }
     
     pub fn declareVariable(self: *Scope, variable: Variable) ScopeError!void {
@@ -186,7 +186,7 @@ pub const Scope = struct {
                 // Mark as captured if accessed from child scope
                 if (self.depth > scope.depth and scope.is_function_scope) {
                     variable.is_captured = true;
-                    scope.captured_variables.append(name) catch {};
+                    scope.captured_variables.append(allocator, name) catch {};
                 }
                 return variable;
             }
@@ -218,7 +218,7 @@ pub const Scope = struct {
         if (self.depth == target_depth) {
             var var_iter = self.variables.iterator();
             while (var_iter.next()) |entry| {
-                try result.append(entry.value_ptr.*);
+                try result.append(allocator, entry.value_ptr.*);
             }
         }
         
@@ -251,8 +251,8 @@ pub const ScopeManager = struct {
         const global_scope = try allocator.create(Scope);
         global_scope.* = Scope.init(allocator, .Global, 0, null, 0, 0);
         
-        var scope_stack = ArrayList(*Scope).init(allocator);
-        try scope_stack.append(global_scope);
+        var scope_stack = .empty;
+        try scope_stack.append(allocator, global_scope);
         
         return ScopeManager{
             .global_scope = global_scope,
@@ -260,16 +260,16 @@ pub const ScopeManager = struct {
             .scope_stack = scope_stack,
             .current_depth = 0,
             .max_depth = 0,
-            .function_scopes = ArrayList(*Scope).init(allocator),
+            .function_scopes = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *ScopeManager) void {
-        self.global_scope.deinit();
+        self.global_scope.deinit(allocator);
         self.allocator.destroy(self.global_scope);
-        self.scope_stack.deinit();
-        self.function_scopes.deinit();
+        self.scope_stack.deinit(allocator);
+        self.function_scopes.deinit(allocator);
     }
     
     pub fn enterScope(self: *ScopeManager, scope_type: ScopeType, start_line: u32, start_column: u32) !*Scope {
@@ -283,11 +283,11 @@ pub const ScopeManager = struct {
                                 self.current_scope, start_line, start_column);
         
         try self.current_scope.addChild(new_scope);
-        try self.scope_stack.append(new_scope);
+        try self.scope_stack.append(self.allocator, new_scope);
         self.current_scope = new_scope;
         
         if (scope_type == .Function) {
-            try self.function_scopes.append(new_scope);
+            try self.function_scopes.append(self.allocator, new_scope);
         }
         
         return new_scope;
@@ -379,8 +379,8 @@ pub const ScopeManager = struct {
         try writer.print("Current depth: {}\n", .{self.current_depth});
         try writer.print("Function scopes: {}\n", .{self.function_scopes.items.len});
         
-        var all_variables = ArrayList(Variable).init(self.allocator);
-        defer all_variables.deinit();
+        var all_variables = .empty;
+        defer all_variables.deinit(allocator);
         
         for (0..self.max_depth + 1) |depth| {
             try self.global_scope.getVariablesAtDepth(@intCast(depth), &all_variables);
@@ -408,7 +408,7 @@ pub fn initScopeManagement(allocator: Allocator) !void {
 
 pub fn deinitScopeManagement() void {
     if (global_scope_manager) |*manager| {
-        manager.deinit();
+        manager.deinit(allocator);
         global_scope_manager = null;
     }
 }
@@ -458,11 +458,11 @@ pub fn testScopeManagement() !void {
     print("Testing variable scope management...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var manager = try ScopeManager.init(allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     // Test global scope
     try manager.declareVariable("global_var", "normie", 1, 1);

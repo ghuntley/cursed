@@ -16,7 +16,7 @@ const ErrorReporter = memory_safe_error_reporting.ErrorReporter;
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -45,7 +45,7 @@ pub fn main() !void {
 
     // Initialize error reporter with memory safety
     var error_reporter = ErrorReporter.init(allocator, 50);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
@@ -74,7 +74,7 @@ pub fn main() !void {
 
     // Initialize arena for lexing
     var lexer_arena = ArenaAllocator.init(allocator);
-    defer lexer_arena.deinit();
+    defer lexer_arena.deinit(allocator);
 
     // Tokenize with memory safety
     var lexer_instance = Lexer.init(&lexer_arena, source);
@@ -85,10 +85,10 @@ pub fn main() !void {
             memory_safe_error_reporting.SourceLocation.init(filename, 1, 1, 0)
         );
         print("Lexing error: {}\n", .{err});
-        try error_reporter.printDiagnostics(std.io.getStdOut().writer());
+        try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (verbose_mode) {
         print("Tokenized successfully: {d} tokens\n", .{tokens.items().len});
@@ -101,7 +101,7 @@ pub fn main() !void {
 
     // Parse with memory safety
     var parser_instance = Parser.initWithFile(allocator, tokens.items(), filename);
-    defer parser_instance.deinit();
+    defer parser_instance.deinit(allocator);
     
     // Connect error reporter to parser
     parser_instance.setErrorReporter(&error_reporter);
@@ -113,7 +113,7 @@ pub fn main() !void {
             memory_safe_error_reporting.SourceLocation.init(filename, 1, 1, 0)
         );
         print("Parsing error: {}\n", .{err});
-        try error_reporter.printDiagnostics(std.io.getStdOut().writer());
+        try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         return;
     };
 
@@ -124,13 +124,13 @@ pub fn main() !void {
     // Check for compilation errors
     if (error_reporter.hasErrors()) {
         print("Compilation failed with errors:\n");
-        try error_reporter.printDiagnostics(std.io.getStdOut().writer());
+        try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         return;
     }
 
     if (error_reporter.hasWarnings()) {
         print("Compilation completed with warnings:\n");
-        try error_reporter.printDiagnostics(std.io.getStdOut().writer());
+        try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
     }
 
     if (compile_mode) {

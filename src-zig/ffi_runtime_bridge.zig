@@ -18,7 +18,7 @@ pub fn initializeFfiRuntime(allocator: Allocator) !void {
 }
 
 pub fn deinitializeFfiRuntime() void {
-    mock_pixel_colors.deinit();
+    mock_pixel_colors.deinit(allocator);
 }
 
 // Mock graphics library functions

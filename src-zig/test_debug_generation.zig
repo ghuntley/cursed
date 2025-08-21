@@ -3,7 +3,7 @@ const DebugEnabledCodeGen = @import("debug_enabled_codegen.zig").DebugEnabledCod
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     std.debug.print("🚀 CURSED DWARF Debug Information Generation Test\n", .{});
@@ -14,7 +14,7 @@ pub fn main() !void {
         std.debug.print("❌ Failed to initialize debug codegen: {any}\n", .{err});
         return;
     };
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Generate comprehensive debug program
     std.debug.print("📝 Generating LLVM IR with comprehensive DWARF debug info...\n", .{});

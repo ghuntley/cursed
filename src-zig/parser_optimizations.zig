@@ -45,7 +45,7 @@ const TokenPool = struct {
     
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .tokens = ArrayList(Token).init(allocator),
+            .tokens = .empty,
             .token_cache = undefined,
             .cache_index = 0,
             .allocator = allocator,
@@ -53,7 +53,7 @@ const TokenPool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.tokens.deinit();
+        self.tokens.deinit(allocator);
     }
     
     pub fn getToken(self: *Self) *Token {
@@ -64,7 +64,7 @@ const TokenPool = struct {
         }
         
         // Fallback to heap allocation if cache is full
-        self.tokens.append(Token{
+        self.tokens.append(allocator, Token{
             .kind = .invalid,
             .lexeme = "",
             .line = 0,
@@ -135,8 +135,8 @@ const FastTokenizer = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.token_pool.deinit();
-        self.keyword_map.deinit();
+        self.token_pool.deinit(allocator);
+        self.keyword_map.deinit(allocator);
     }
     
     // Fast character classification using lookup tables
@@ -460,7 +460,7 @@ const ASTNodePool = struct {
     
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .nodes = ArrayList(ASTNode).init(allocator),
+            .nodes = .empty,
             .node_cache = undefined,
             .cache_index = 0,
             .allocator = allocator,
@@ -468,7 +468,7 @@ const ASTNodePool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.nodes.deinit();
+        self.nodes.deinit(allocator);
     }
     
     pub fn getNode(self: *Self) *ASTNode {
@@ -481,7 +481,7 @@ const ASTNodePool = struct {
         }
         
         // Fallback to heap allocation
-        self.nodes.append(ASTNode{
+        self.nodes.append(allocator, ASTNode{
             .kind = .expression,
             .value = "",
             .children = [_]?*ASTNode{null} ** 8,
@@ -525,7 +525,7 @@ pub const FastParser = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.ast_pool.deinit();
+        self.ast_pool.deinit(allocator);
     }
     
     pub fn parse(self: *Self) !*ASTNodePool.ASTNode {

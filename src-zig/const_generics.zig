@@ -78,13 +78,13 @@ pub const ConstGenericBounds = struct {
     
     pub fn init(allocator: Allocator) ConstGenericBounds {
         return ConstGenericBounds{
-            .allowed_values = ArrayList(ConstGenericValue).init(allocator),
+            .allowed_values = .empty,
         };
     }
     
     pub fn deinit(self: *ConstGenericBounds) void {
         if (self.allowed_values) |*values| {
-            values.deinit();
+            values.deinit(allocator);
         }
     }
     
@@ -202,7 +202,7 @@ pub const ConstGenericParam = struct {
     }
     
     pub fn deinit(self: *ConstGenericParam) void {
-        self.bounds.deinit();
+        self.bounds.deinit(allocator);
     }
     
     pub fn validate(self: ConstGenericParam, value: ConstGenericValue) ConstGenericError!void {
@@ -254,10 +254,10 @@ pub const ConstGenericInstantiation = struct {
         var param_iter = self.parameters.iterator();
         while (param_iter.next()) |entry| {
             var param = entry.value_ptr;
-            param.deinit();
+            param.deinit(allocator);
         }
-        self.parameters.deinit();
-        self.values.deinit();
+        self.parameters.deinit(allocator);
+        self.values.deinit(allocator);
     }
     
     /// Add a const generic parameter with bounds
@@ -557,7 +557,7 @@ pub const ConstGenericEvaluator = struct {
         const bounds = ConstGenericBounds.init(self.allocator);
         defer {
             var mut_bounds = bounds;
-            mut_bounds.deinit();
+            mut_bounds.deinit(allocator);
         }
         
         return switch (left) {
@@ -647,12 +647,12 @@ pub const ConstGenericLLVMIntegration = struct {
                 return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
             },
             .Array => |arr_val| {
-                var llvm_elements = ArrayList(c.LLVMValueRef).init(self.allocator);
-                defer llvm_elements.deinit();
+                var llvm_elements = .empty;
+                defer llvm_elements.deinit(allocator);
                 
                 for (arr_val.elements) |elem| {
                     const llvm_elem = try self.generateLLVMConstant(elem);
-                    try llvm_elements.append(llvm_elem);
+                    try llvm_elements.append(allocator, llvm_elem);
                 }
                 
                 const element_type = try self.constGenericKindToLLVMType(arr_val.element_type);
@@ -737,7 +737,7 @@ pub const ConstGenericsManager = struct {
     }
     
     pub fn deinit(self: *ConstGenericsManager) void {
-        self.instantiation.deinit();
+        self.instantiation.deinit(allocator);
     }
     
     /// Process const generic declaration with bounds checking
@@ -836,11 +836,11 @@ pub const ConstGenericsManager = struct {
 // Tests
 test "const generic bounds validation" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const allocator = arena.allocator();
     
     var bounds = ConstGenericBounds.init(allocator);
-    defer bounds.deinit();
+    defer bounds.deinit(allocator);
     
     bounds.min_value = ConstGenericValue{ .Integer = 0 };
     bounds.max_value = ConstGenericValue{ .Integer = 100 };
@@ -857,11 +857,11 @@ test "const generic bounds validation" {
 
 test "const generic expression evaluation" {
     var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const allocator = arena.allocator();
     
     var instantiation = ConstGenericInstantiation.init(allocator);
-    defer instantiation.deinit();
+    defer instantiation.deinit(allocator);
     
     // Add a parameter
     const param = ConstGenericParam.init(allocator, "N", .Integer);

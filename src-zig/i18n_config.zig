@@ -67,9 +67,9 @@ pub const I18nConfig = struct {
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             var rule = entry.value_ptr;
-            rule.custom_placeholders.deinit();
+            rule.custom_placeholders.deinit(allocator);
         }
-        self.custom_formatting.deinit();
+        self.custom_formatting.deinit(allocator);
     }
 
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !I18nConfig {
@@ -152,8 +152,8 @@ pub const I18nConfig = struct {
     }
 
     fn serialize(self: I18nConfig) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         try result.appendSlice("{\n");
         try result.appendSlice("  \"default_locale\": \"");
@@ -485,8 +485,8 @@ pub const LanguagePackGenerator = struct {
     }
 
     fn generateLanguagePackContent(allocator: Allocator, locale: Locale) ![]u8 {
-        var result = ArrayList(u8).init(allocator);
-        defer result.deinit();
+        var result = .empty;
+        defer result.deinit(allocator);
 
         try result.appendSlice("{\n");
         try result.appendSlice("  \"meta\": {\n");
@@ -611,7 +611,7 @@ test "i18n config creation and serialization" {
     const allocator = std.testing.allocator;
     
     var config = I18nConfig.init(allocator);
-    defer config.deinit();
+    defer config.deinit(allocator);
 
     config.default_locale = .fr_FR;
     config.fallback_locale = .en_US;
@@ -632,7 +632,7 @@ test "language pack loader default creation" {
     const loader = LanguagePackLoader.init(allocator, config);
     
     var pack = try loader.createDefaultLanguagePack(.es_ES);
-    defer pack.deinit();
+    defer pack.deinit(allocator);
 
     const template = pack.getMessage("panic.yikes");
     try std.testing.expect(template != null);

@@ -135,16 +135,16 @@ pub const StdlibIntegration = struct {
     }
 
     pub fn deinit(self: *StdlibIntegration) void {
-        self.runtime.deinit();
-        self.jit_engine.deinit();
-        self.function_registry.deinit();
+        self.runtime.deinit(allocator);
+        self.jit_engine.deinit(allocator);
+        self.function_registry.deinit(allocator);
         
         // Clean up function metadata
         var metadata_iter = self.function_metadata.iterator();
         while (metadata_iter.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.function_metadata.deinit();
+        self.function_metadata.deinit(allocator);
         
         // Clean up module dependencies
         var deps_iter = self.module_dependencies.iterator();
@@ -152,9 +152,9 @@ pub const StdlibIntegration = struct {
             for (entry.value_ptr.items) |dep| {
                 self.allocator.free(dep);
             }
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.module_dependencies.deinit();
+        self.module_dependencies.deinit(allocator);
     }
 
     /// Resolve a stdlib function call at compile time
@@ -333,7 +333,7 @@ pub const StdlibIntegration = struct {
             for (modules.items) |module_name| {
                 self.allocator.free(module_name);
             }
-            modules.deinit();
+            modules.deinit(allocator);
         }
         
         for (modules.items) |module_name| {
@@ -356,7 +356,7 @@ pub const StdlibIntegration = struct {
         };
         defer self.allocator.free(source_code);
         
-        var dependencies = ArrayList([]const u8).init(self.allocator);
+        var dependencies = .empty;
         
         // Simple dependency analysis - look for 'yeet' statements
         var lines = std.mem.split(u8, source_code, "\n");
@@ -369,7 +369,7 @@ pub const StdlibIntegration = struct {
                     if (end_quote) |end| {
                         const dep_name = trimmed[6..6+end];
                         const dep_copy = try self.allocator.dupe(u8, dep_name);
-                        try dependencies.append(dep_copy);
+                        try dependencies.append(self.allocator, dep_copy);
                         
                         if (self.debug_mode) {
                             print("  📦 {s} depends on {s}\n", .{ module_name, dep_name });
@@ -487,7 +487,7 @@ pub fn testStdlibIntegration(allocator: Allocator) !void {
     print("===================================\n", .{});
     
     var integration = try createStdlibIntegration(allocator, "stdlib");
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     // Test function resolution
     const test_calls = [_]StdlibCall{

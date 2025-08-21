@@ -8,11 +8,13 @@ const Allocator = std.mem.Allocator;
 // Simple LSP server that responds to basic requests
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     _ = gpa.allocator();
     
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     std.log.info("CURSED Language Server starting...", .{});
     

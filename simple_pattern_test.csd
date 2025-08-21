@@ -1,2 +1,1 @@
-sus x drip = 5
-ready (x) { 1 => vibez.spill("one"); 5 => vibez.spill("five"); _ => vibez.spill("other") }
+sus x drip = 42; vibe_check x { mood 42: vibez.spill("matched"); basic: vibez.spill("not matched"); }

@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const print = std.debug.print;
@@ -95,18 +96,18 @@ pub const CrossCompilationManager = struct {
         // Clean up toolchain cache
         var toolchain_iter = self.toolchain_cache.iterator();
         while (toolchain_iter.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.toolchain_cache.deinit();
+        self.toolchain_cache.deinit(allocator);
         
         // Clean up compilation cache
         var compilation_iter = self.compilation_cache.iterator();
         while (compilation_iter.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.compilation_cache.deinit();
+        self.compilation_cache.deinit(allocator);
         
-        self.normalizer.deinit();
+        self.normalizer.deinit(allocator);
     }
     
     /// Discover and cache available toolchains for cross-compilation
@@ -286,8 +287,8 @@ pub const CrossCompilationManager = struct {
     fn setupMingwPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
         _ = normalized;
         
-        var lib_paths = ArrayList([]const u8).init(self.allocator);
-        var include_paths = ArrayList([]const u8).init(self.allocator);
+        var lib_paths: std.ArrayList([]const u8) = .empty;
+        var include_paths: std.ArrayList([]const u8) = .empty;
         
         // Common MinGW paths
         const mingw_prefixes = [_][]const u8{
@@ -303,35 +304,198 @@ pub const CrossCompilationManager = struct {
             
             // Check if paths exist
             if (std.fs.accessAbsolute(lib_path, .{})) {
-                try lib_paths.append(lib_path);
+                try lib_paths.append(self.allocator, lib_path);
             } else |_| {
                 self.allocator.free(lib_path);
             }
             
             if (std.fs.accessAbsolute(include_path, .{})) {
-                try include_paths.append(include_path);
+                try include_paths.append(self.allocator, include_path);
             } else |_| {
                 self.allocator.free(include_path);
             }
         }
         
-        toolchain.library_paths = try lib_paths.toOwnedSlice();
-        toolchain.include_paths = try include_paths.toOwnedSlice();
+        toolchain.library_paths = try lib_paths.toOwnedSlice(self.allocator);
+        toolchain.include_paths = try include_paths.toOwnedSlice(self.allocator);
     }
     
-    /// Setup MSVC paths and libraries
+    /// Setup MSVC paths and libraries with proper Visual Studio detection
     fn setupMsvcPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        _ = self;
-        // This would typically involve finding Visual Studio installation
-        // For now, we'll use minimal setup
-        toolchain.library_paths = &.{};
-        toolchain.include_paths = &.{};
+        var lib_paths: std.ArrayList([]const u8) = .empty;
+        var include_paths: std.ArrayList([]const u8) = .empty;
+        
+        // Try to find Visual Studio installations
+        const vs_paths = [_][]const u8{
+            "C:\\Program Files\\Microsoft Visual Studio\\2022\\Professional",
+            "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community",
+            "C:\\Program Files\\Microsoft Visual Studio\\2022\\Enterprise",
+            "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Professional",
+            "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community",
+            "C:\\Program Files\\Microsoft Visual Studio\\2019\\Enterprise",
+        };
+        
+        var vs_root: ?[]const u8 = null;
+        for (vs_paths) |vs_path| {
+            if (std.fs.accessAbsolute(vs_path, .{})) |_| {
+                vs_root = try self.allocator.dupe(u8, vs_path);
+                break;
+            } else |_| {}
+        }
+        
+        // Try Windows SDK paths
+        const sdk_paths = [_][]const u8{
+            "C:\\Program Files (x86)\\Windows Kits\\10",
+            "C:\\Program Files\\Windows Kits\\10",
+        };
+        
+        var sdk_root: ?[]const u8 = null;
+        for (sdk_paths) |sdk_path| {
+            if (std.fs.accessAbsolute(sdk_path, .{})) |_| {
+                sdk_root = try self.allocator.dupe(u8, sdk_path);
+                break;
+            } else |_| {}
+        }
+        
+        // Add Visual Studio paths if found
+        if (vs_root) |vs_path| {
+            // Find MSVC version directory
+            const msvc_dir = try std.fmt.allocPrint(self.allocator, "{s}\\VC\\Tools\\MSVC", .{vs_path});
+            defer self.allocator.free(msvc_dir);
+            
+            // Try to find the latest MSVC version
+            if (std.fs.openDirAbsolute(msvc_dir, .{ .iterate = true })) |dir| {
+                defer dir.close();
+                
+                var iter = dir.iterate();
+                var latest_version: ?[]const u8 = null;
+                
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind == .directory) {
+                        if (latest_version == null or std.mem.order(u8, entry.name, latest_version.?) == .gt) {
+                            if (latest_version) |old_version| {
+                                self.allocator.free(old_version);
+                            }
+                            latest_version = try self.allocator.dupe(u8, entry.name);
+                        }
+                    }
+                }
+                
+                if (latest_version) |version| {
+                    defer self.allocator.free(version);
+                    
+                    // Add MSVC library paths
+                    const lib_path = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\VC\\Tools\\MSVC\\{s}\\lib\\x64",
+                        .{ vs_path, version }
+                    );
+                    try lib_paths.append(self.allocator, lib_path);
+                    
+                    // Add MSVC include paths
+                    const include_path = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\VC\\Tools\\MSVC\\{s}\\include",
+                        .{ vs_path, version }
+                    );
+                    try include_paths.append(self.allocator, include_path);
+                }
+            } else |_| {}
+        }
+        
+        // Add Windows SDK paths if found
+        if (sdk_root) |sdk_path| {
+            // Find latest Windows SDK version
+            const lib_dir = try std.fmt.allocPrint(self.allocator, "{s}\\Lib", .{sdk_path});
+            defer self.allocator.free(lib_dir);
+            
+            if (std.fs.openDirAbsolute(lib_dir, .{ .iterate = true })) |dir| {
+                defer dir.close();
+                
+                var iter = dir.iterate();
+                var latest_version: ?[]const u8 = null;
+                
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind == .directory and std.mem.startsWith(u8, entry.name, "10.")) {
+                        if (latest_version == null or std.mem.order(u8, entry.name, latest_version.?) == .gt) {
+                            if (latest_version) |old_version| {
+                                self.allocator.free(old_version);
+                            }
+                            latest_version = try self.allocator.dupe(u8, entry.name);
+                        }
+                    }
+                }
+                
+                if (latest_version) |version| {
+                    defer self.allocator.free(version);
+                    
+                    // Add Windows SDK library paths
+                    const sdk_lib_path = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\Lib\\{s}\\um\\x64",
+                        .{ sdk_path, version }
+                    );
+                    try lib_paths.append(self.allocator, sdk_lib_path);
+                    
+                    const sdk_lib_path2 = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\Lib\\{s}\\ucrt\\x64",
+                        .{ sdk_path, version }
+                    );
+                    try lib_paths.append(self.allocator, sdk_lib_path2);
+                    
+                    // Add Windows SDK include paths
+                    const sdk_include_path = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\Include\\{s}\\um",
+                        .{ sdk_path, version }
+                    );
+                    try include_paths.append(self.allocator, sdk_include_path);
+                    
+                    const sdk_include_path2 = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\Include\\{s}\\ucrt",
+                        .{ sdk_path, version }
+                    );
+                    try include_paths.append(self.allocator, sdk_include_path2);
+                    
+                    const sdk_include_path3 = try std.fmt.allocPrint(
+                        self.allocator,
+                        "{s}\\Include\\{s}\\shared",
+                        .{ sdk_path, version }
+                    );
+                    try include_paths.append(self.allocator, sdk_include_path3);
+                }
+            } else |_| {}
+        }
+        
+        // Add fallback system paths
+        if (lib_paths.items.len == 0) {
+            // Fallback MSVC paths for standard installations
+            const fallback_libs = [_][]const u8{
+                "C:\\Program Files (x86)\\Microsoft Visual Studio\\2019\\Community\\VC\\Tools\\MSVC\\14.29.30133\\lib\\x64",
+                "C:\\Program Files\\Microsoft Visual Studio\\2022\\Community\\VC\\Tools\\MSVC\\14.36.32532\\lib\\x64",
+                "C:\\Windows\\System32",
+                "C:\\Windows\\SysWOW64",
+            };
+            
+            for (fallback_libs) |fallback_path| {
+                if (std.fs.accessAbsolute(fallback_path, .{})) |_| {
+                    try lib_paths.append(self.allocator, try self.allocator.dupe(u8, fallback_path));
+                } else |_| {}
+            }
+        }
+        
+        toolchain.library_paths = try lib_paths.toOwnedSlice(self.allocator);
+        toolchain.include_paths = try include_paths.toOwnedSlice(self.allocator);
+        
+        std.log.info("MSVC setup complete: {} lib paths, {} include paths", .{ toolchain.library_paths.len, toolchain.include_paths.len });
     }
     
     /// Setup Apple Silicon specific paths
     fn setupAppleSiliconPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        var lib_paths = ArrayList([]const u8).init(self.allocator);
-        var include_paths = ArrayList([]const u8).init(self.allocator);
+        var lib_paths: std.ArrayList([]const u8) = .empty;
+        var include_paths: std.ArrayList([]const u8) = .empty;
         
         // Apple Silicon SDK paths
         const sdk_paths = [_][]const u8{
@@ -344,16 +508,16 @@ pub const CrossCompilationManager = struct {
                 const lib_path = try std.fmt.allocPrint(self.allocator, "{s}/usr/lib", .{sdk_path});
                 const include_path = try std.fmt.allocPrint(self.allocator, "{s}/usr/include", .{sdk_path});
                 
-                try lib_paths.append(lib_path);
-                try include_paths.append(include_path);
+                try lib_paths.append(self.allocator, lib_path);
+                try include_paths.append(self.allocator, include_path);
                 
                 toolchain.sysroot = try self.allocator.dupe(u8, sdk_path);
                 break;
             } else |_| {}
         }
         
-        toolchain.library_paths = try lib_paths.toOwnedSlice();
-        toolchain.include_paths = try include_paths.toOwnedSlice();
+        toolchain.library_paths = try lib_paths.toOwnedSlice(self.allocator);
+        toolchain.include_paths = try include_paths.toOwnedSlice(self.allocator);
     }
     
     /// Setup Apple Intel specific paths
@@ -362,46 +526,197 @@ pub const CrossCompilationManager = struct {
         try self.setupAppleSiliconPaths(toolchain);
     }
     
-    /// Setup Linux system paths for cross-compilation
+    /// Setup Linux system paths for cross-compilation with enhanced ARM64 support
     fn setupLinuxSystemPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
-        var lib_paths = ArrayList([]const u8).init(self.allocator);
-        var include_paths = ArrayList([]const u8).init(self.allocator);
+        var lib_paths: std.ArrayList([]const u8) = .empty;
+        var include_paths: std.ArrayList([]const u8) = .empty;
         
-        const arch_paths = if (normalized.isARM64())
-            [_][]const u8{ "/usr/aarch64-linux-gnu", "/usr/lib/aarch64-linux-gnu" }
-        else
-            [_][]const u8{ "/usr/lib/x86_64-linux-gnu", "/usr/lib64" };
-        
-        for (arch_paths) |base_path| {
-            if (std.fs.accessAbsolute(base_path, .{})) |_| {
-                const lib_path = if (std.mem.endsWith(u8, base_path, "lib"))
-                    try self.allocator.dupe(u8, base_path)
-                else
-                    try std.fmt.allocPrint(self.allocator, "{s}/lib", .{base_path});
+        if (normalized.isARM64()) {
+            // Enhanced ARM64 cross-compilation library paths
+            const arm64_lib_paths = [_][]const u8{
+                // Primary ARM64 cross-compilation paths
+                "/usr/aarch64-linux-gnu/lib",
+                "/usr/lib/aarch64-linux-gnu",
+                "/lib/aarch64-linux-gnu",
                 
-                try lib_paths.append(lib_path);
+                // Cross-compiler toolchain paths
+                "/usr/lib/gcc-cross/aarch64-linux-gnu",
+                "/usr/aarch64-linux-gnu/lib64",
                 
-                if (!std.mem.endsWith(u8, base_path, "lib")) {
-                    const include_path = try std.fmt.allocPrint(self.allocator, "{s}/include", .{base_path});
+                // Alternative cross-compilation installations
+                "/opt/cross/aarch64-linux-gnu/lib",
+                "/usr/local/aarch64-linux-gnu/lib",
+                
+                // Musl libc paths for Alpine/embedded
+                "/usr/aarch64-linux-musl/lib",
+                "/usr/lib/aarch64-linux-musl",
+                
+                // Container-based cross-compilation
+                "/usr/lib/llvm-*/lib/clang/*/lib/linux",
+                "/usr/lib/gcc/aarch64-linux-gnu/*/",
+            };
+            
+            const arm64_include_paths = [_][]const u8{
+                // Primary ARM64 headers
+                "/usr/aarch64-linux-gnu/include",
+                "/usr/include/aarch64-linux-gnu",
+                
+                // Cross-compiler headers  
+                "/usr/lib/gcc-cross/aarch64-linux-gnu/*/include",
+                "/usr/aarch64-linux-gnu/include/c++/*",
+                
+                // Alternative toolchain headers
+                "/opt/cross/aarch64-linux-gnu/include",
+                "/usr/local/aarch64-linux-gnu/include",
+                
+                // Musl headers
+                "/usr/aarch64-linux-musl/include",
+            };
+            
+            // Check and add ARM64 library paths
+            for (arm64_lib_paths) |lib_path| {
+                if (std.mem.containsAtLeast(u8, lib_path, 1, "*")) {
+                    // Handle glob patterns for version-specific paths
+                    try self.addGlobPaths(&lib_paths, lib_path);
+                } else {
+                    if (std.fs.accessAbsolute(lib_path, .{})) |_| {
+                        try lib_paths.append(self.allocator, try self.allocator.dupe(u8, lib_path));
+                        std.log.debug("Added ARM64 lib path: {s}", .{lib_path});
+                    } else |_| {}
+                }
+            }
+            
+            // Check and add ARM64 include paths
+            for (arm64_include_paths) |include_path| {
+                if (std.mem.containsAtLeast(u8, include_path, 1, "*")) {
+                    // Handle glob patterns for version-specific paths
+                    try self.addGlobPaths(&include_paths, include_path);
+                } else {
                     if (std.fs.accessAbsolute(include_path, .{})) |_| {
-                        try include_paths.append(include_path);
-                    } else |_| {
-                        self.allocator.free(include_path);
+                        try include_paths.append(self.allocator, try self.allocator.dupe(u8, include_path));
+                        std.log.debug("Added ARM64 include path: {s}", .{include_path});
+                    } else |_| {}
+                }
+            }
+            
+            // Add GCC multilib paths if available
+            const gcc_multilib_cmd = [_][]const u8{ "aarch64-linux-gnu-gcc", "-print-multi-lib" };
+            if (self.executeSimpleCommand(&gcc_multilib_cmd)) |output| {
+                defer self.allocator.free(output);
+                var lines = std.mem.splitScalar(u8, output, '\n');
+                while (lines.next()) |line| {
+                    if (line.len > 0 and !std.mem.eql(u8, line, ".;")) {
+                        if (std.mem.indexOf(u8, line, ";")) |sep_pos| {
+                            const multilib_path = line[0..sep_pos];
+                            const full_path = try std.fmt.allocPrint(
+                                self.allocator,
+                                "/usr/lib/gcc-cross/aarch64-linux-gnu/*/{}",
+                                .{multilib_path}
+                            );
+                            try self.addGlobPaths(&lib_paths, full_path);
+                            self.allocator.free(full_path);
+                        }
+                    }
+                }
+            } else |_| {}
+            
+        } else {
+            // x86_64 paths (existing logic)
+            const arch_paths = [_][]const u8{ "/usr/lib/x86_64-linux-gnu", "/usr/lib64", "/usr/lib", "/lib64", "/lib" };
+            
+            for (arch_paths) |lib_path| {
+                if (std.fs.accessAbsolute(lib_path, .{})) |_| {
+                    try lib_paths.append(self.allocator, try self.allocator.dupe(u8, lib_path));
+                } else |_| {}
+            }
+        }
+        
+        // Add standard system include paths for all architectures
+        const system_includes = [_][]const u8{ 
+            "/usr/include", 
+            "/usr/local/include", 
+            "/usr/include/linux",  // Kernel headers
+            "/usr/src/linux-headers-*/include", // Version-specific kernel headers
+        };
+        
+        for (system_includes) |include_path| {
+            if (std.mem.containsAtLeast(u8, include_path, 1, "*")) {
+                try self.addGlobPaths(&include_paths, include_path);
+            } else {
+                if (std.fs.accessAbsolute(include_path, .{})) |_| {
+                    try include_paths.append(self.allocator, try self.allocator.dupe(u8, include_path));
+                } else |_| {}
+            }
+        }
+        
+        toolchain.library_paths = try lib_paths.toOwnedSlice(self.allocator);
+        toolchain.include_paths = try include_paths.toOwnedSlice(self.allocator);
+        
+        std.log.info("Linux {} setup: {} lib paths, {} include paths", .{
+            if (normalized.isARM64()) "ARM64" else "x86_64", 
+            toolchain.library_paths.len, 
+            toolchain.include_paths.len 
+        });
+    }
+    
+    /// Helper to add glob-pattern paths by expanding wildcards
+    fn addGlobPaths(self: *CrossCompilationManager, paths: *std.ArrayList([]const u8), pattern: []const u8) !void {
+        if (std.mem.indexOf(u8, pattern, "*")) |star_pos| {
+            const prefix = pattern[0..star_pos];
+            const suffix = pattern[star_pos + 1..];
+            
+            // Extract directory to search
+            const dir_end = if (std.mem.lastIndexOfScalar(u8, prefix, '/')) |pos| pos else 0;
+            const search_dir = if (dir_end > 0) prefix[0..dir_end] else "/";
+            
+            if (std.fs.openDirAbsolute(search_dir, .{ .iterate = true })) |dir| {
+                defer dir.close();
+                
+                var iter = dir.iterate();
+                while (iter.next() catch null) |entry| {
+                    if (entry.kind == .directory) {
+                        const full_pattern_path = try std.fmt.allocPrint(
+                            self.allocator, 
+                            "{s}{s}{s}",
+                            .{ prefix[0..dir_end], entry.name, suffix }
+                        );
+                        defer self.allocator.free(full_pattern_path);
+                        
+                        if (std.fs.accessAbsolute(full_pattern_path, .{})) |_| {
+                            try paths.append(self.allocator, try self.allocator.dupe(u8, full_pattern_path));
+                        } else |_| {}
                     }
                 }
             } else |_| {}
         }
+    }
+    
+    /// Execute a simple command and return output (helper for toolchain detection)
+    fn executeSimpleCommand(self: *CrossCompilationManager, command: []const []const u8) ![]const u8 {
+        var child = std.process.Child.init(command, self.allocator);
+        child.stdout_behavior = .Pipe;
+        child.stderr_behavior = .Ignore;
         
-        // Add standard system paths
-        const system_includes = [_][]const u8{ "/usr/include", "/usr/local/include" };
-        for (system_includes) |include_path| {
-            if (std.fs.accessAbsolute(include_path, .{})) |_| {
-                try include_paths.append(try self.allocator.dupe(u8, include_path));
-            } else |_| {}
+        try child.spawn();
+        
+        const stdout = try child.stdout.?.readToEndAlloc(self.allocator, 1024);
+        
+        const exit_status = try child.wait();
+        
+        switch (exit_status) {
+            .Exited => |code| {
+                if (code == 0) {
+                    return stdout;
+                } else {
+                    self.allocator.free(stdout);
+                    return error.CommandFailed;
+                }
+            },
+            else => {
+                self.allocator.free(stdout);
+                return error.CommandFailed;
+            },
         }
-        
-        toolchain.library_paths = try lib_paths.toOwnedSlice();
-        toolchain.include_paths = try include_paths.toOwnedSlice();
     }
     
     /// Compile for a specific target with comprehensive error handling
@@ -452,33 +767,33 @@ pub const CrossCompilationManager = struct {
         toolchain: ToolchainInfo,
         normalized: TargetTripleNormalizer.NormalizedTriple,
     ) ![][]const u8 {
-        var command = ArrayList([]const u8).init(self.allocator);
+        var command: std.ArrayList([]const u8) = .empty;
         
         // Compiler
-        try command.append(try self.allocator.dupe(u8, toolchain.compiler_path));
+        try command.append(self.allocator, try self.allocator.dupe(u8, toolchain.compiler_path));
         
         // Source files
         for (options.source_files) |source| {
-            try command.append(try self.allocator.dupe(u8, source));
+            try command.append(self.allocator, try self.allocator.dupe(u8, source));
         }
         
         // Output name
-        try command.append(try self.allocator.dupe(u8, "-o"));
+        try command.append(self.allocator, try self.allocator.dupe(u8, "-o"));
         const output_name = try std.fmt.allocPrint(
             self.allocator,
             "{s}{s}",
             .{ options.output_name, normalized.getFileExtension() },
         );
-        try command.append(output_name);
+        try command.append(self.allocator, output_name);
         
         // Target specification
         if (!std.mem.containsAtLeast(u8, toolchain.compiler_path, 1, "zig")) {
             const target_flag = try std.fmt.allocPrint(self.allocator, "--target={s}", .{options.target_triple});
-            try command.append(target_flag);
+            try command.append(self.allocator, target_flag);
         } else {
             // Zig-specific target format
             const target_flag = try std.fmt.allocPrint(self.allocator, "-target={s}", .{options.target_triple});
-            try command.append(target_flag);
+            try command.append(self.allocator, target_flag);
         }
         
         // Optimization flags
@@ -488,65 +803,65 @@ pub const CrossCompilationManager = struct {
             .release_fast => try self.allocator.dupe(u8, "-O3"),
             .release_small => try self.allocator.dupe(u8, "-Os"),
         };
-        try command.append(opt_flag);
+        try command.append(self.allocator, opt_flag);
         
         // Debug information
         if (options.enable_debug_info) {
-            try command.append(try self.allocator.dupe(u8, "-g"));
+            try command.append(self.allocator, try self.allocator.dupe(u8, "-g"));
         }
         
         // Link mode
         switch (options.link_mode) {
-            .static => try command.append(try self.allocator.dupe(u8, "-static")),
-            .pie => try command.append(try self.allocator.dupe(u8, "-pie")),
+            .static => try command.append(self.allocator, try self.allocator.dupe(u8, "-static")),
+            .pie => try command.append(self.allocator, try self.allocator.dupe(u8, "-pie")),
             .dynamic => {}, // Default
         }
         
         // LTO
         if (options.enable_lto) {
-            try command.append(try self.allocator.dupe(u8, "-flto"));
+            try command.append(self.allocator, try self.allocator.dupe(u8, "-flto"));
         }
         
         // Sanitizers
         if (options.enable_sanitizers and !normalized.isWebAssembly()) {
-            try command.append(try self.allocator.dupe(u8, "-fsanitize=address"));
-            try command.append(try self.allocator.dupe(u8, "-fsanitize=undefined"));
+            try command.append(self.allocator, try self.allocator.dupe(u8, "-fsanitize=address"));
+            try command.append(self.allocator, try self.allocator.dupe(u8, "-fsanitize=undefined"));
         }
         
         // Include directories
         for (options.include_directories) |include_dir| {
             const include_flag = try std.fmt.allocPrint(self.allocator, "-I{s}", .{include_dir});
-            try command.append(include_flag);
+            try command.append(self.allocator, include_flag);
         }
         
         // System include directories from toolchain
         for (toolchain.include_paths) |include_dir| {
             const include_flag = try std.fmt.allocPrint(self.allocator, "-I{s}", .{include_dir});
-            try command.append(include_flag);
+            try command.append(self.allocator, include_flag);
         }
         
         // Library directories from toolchain
         for (toolchain.library_paths) |lib_dir| {
             const lib_flag = try std.fmt.allocPrint(self.allocator, "-L{s}", .{lib_dir});
-            try command.append(lib_flag);
+            try command.append(self.allocator, lib_flag);
         }
         
         // Library dependencies
         for (options.library_dependencies) |lib| {
             const lib_flag = try std.fmt.allocPrint(self.allocator, "-l{s}", .{lib});
-            try command.append(lib_flag);
+            try command.append(self.allocator, lib_flag);
         }
         
         // Define macros
         for (options.define_macros) |macro| {
             const define_flag = try std.fmt.allocPrint(self.allocator, "-D{s}", .{macro});
-            try command.append(define_flag);
+            try command.append(self.allocator, define_flag);
         }
         
         // Sysroot
         if (toolchain.sysroot) |sysroot| {
             const sysroot_flag = try std.fmt.allocPrint(self.allocator, "--sysroot={s}", .{sysroot});
-            try command.append(sysroot_flag);
+            try command.append(self.allocator, sysroot_flag);
         }
         
         // Target-specific flags
@@ -557,32 +872,82 @@ pub const CrossCompilationManager = struct {
         }
         
         for (target_flags) |flag| {
-            try command.append(try self.allocator.dupe(u8, flag));
+            try command.append(self.allocator, try self.allocator.dupe(u8, flag));
         }
         
         // Additional user flags
         for (options.additional_flags) |flag| {
-            try command.append(try self.allocator.dupe(u8, flag));
+            try command.append(self.allocator, try self.allocator.dupe(u8, flag));
         }
         
-        return command.toOwnedSlice();
+        return command.toOwnedSlice(self.allocator);
     }
     
-    /// Execute the compilation command and capture results
+    /// Execute the compilation command with timeout and capture results
     fn executeCompilation(self: *CrossCompilationManager, command: [][]const u8, options: CompilationOptions) !CompilationResult {
         var child = std.process.Child.init(command, self.allocator);
         child.stdout_behavior = .Pipe;
         child.stderr_behavior = .Pipe;
         
+        // Set up timeout handling to prevent hanging
+        const timeout_ms = 300_000; // 5 minutes timeout for cross-compilation
+        
         try child.spawn();
         
-        const stdout = try child.stdout.?.readToEndAlloc(self.allocator, 1024 * 1024);
+        // Create a thread to monitor timeout
+        const child_pid = child.id;
+        var timeout_reached = std.atomic.Value(bool).init(false);
+        
+        const TimeoutMonitor = struct {
+            fn monitor(timeout_flag: *std.atomic.Value(bool), pid: std.process.Child.Id, timeout: u64) void {
+                std.time.sleep(timeout * std.time.ns_per_ms);
+                timeout_flag.store(true, .release);
+                
+                // Try to kill the hung process
+                if (builtin.os.tag == .linux or builtin.os.tag == .macos) {
+                    _ = std.posix.kill(@intCast(pid), std.posix.SIG.TERM) catch {};
+                } else if (builtin.os.tag == .windows) {
+                    // Windows process termination would go here
+                    std.log.warn("Windows process timeout handling not implemented");
+                }
+            }
+        };
+        
+        const timeout_thread = try std.Thread.spawn(.{}, TimeoutMonitor.monitor, .{ &timeout_reached, child_pid, timeout_ms });
+        defer timeout_thread.join();
+        
+        // Read output with smaller buffer sizes to avoid hanging
+        const stdout = child.stdout.?.readToEndAlloc(self.allocator, 512 * 1024) catch |err| {
+            if (timeout_reached.load(.acquire)) {
+                std.log.err("Cross-compilation timed out after {}ms for target {s}", .{ timeout_ms, options.target_triple });
+                return error.CompilationTimeout;
+            }
+            return err;
+        };
         defer self.allocator.free(stdout);
         
-        const stderr = try child.stderr.?.readToEndAlloc(self.allocator, 1024 * 1024);
+        const stderr = child.stderr.?.readToEndAlloc(self.allocator, 512 * 1024) catch |err| {
+            if (timeout_reached.load(.acquire)) {
+                std.log.err("Cross-compilation timed out after {}ms for target {s}", .{ timeout_ms, options.target_triple });
+                return error.CompilationTimeout;
+            }
+            return err;
+        };
         defer self.allocator.free(stderr);
         
-        const exit_status = try child.wait();
+        const exit_status = child.wait() catch |err| {
+            if (timeout_reached.load(.acquire)) {
+                std.log.err("Cross-compilation timed out after {}ms for target {s}", .{ timeout_ms, options.target_triple });
+                return error.CompilationTimeout;
+            }
+            return err;
+        };
+        
+        // Check if timeout was reached during execution
+        if (timeout_reached.load(.acquire)) {
+            std.log.err("Cross-compilation process was terminated due to timeout for target {s}", .{options.target_triple});
+            return error.CompilationTimeout;
+        }
         
         const success = switch (exit_status) {
             .Exited => |code| code == 0,
@@ -590,17 +955,17 @@ pub const CrossCompilationManager = struct {
         };
         
         // Parse warnings and errors from stderr
-        var warnings = ArrayList([]const u8).init(self.allocator);
-        var errors = ArrayList([]const u8).init(self.allocator);
+        var warnings: std.ArrayList([]const u8) = .empty;
+        var errors: std.ArrayList([]const u8) = .empty;
         
         var lines = std.mem.splitScalar(u8, stderr, '\n');
         while (lines.next()) |line| {
             if (line.len == 0) continue;
             
             if (std.mem.containsAtLeast(u8, line, 1, "warning:")) {
-                try warnings.append(try self.allocator.dupe(u8, line));
+                try warnings.append(self.allocator, try self.allocator.dupe(u8, line));
             } else if (std.mem.containsAtLeast(u8, line, 1, "error:")) {
-                try errors.append(try self.allocator.dupe(u8, line));
+                try errors.append(self.allocator, try self.allocator.dupe(u8, line));
             }
         }
         
@@ -623,8 +988,8 @@ pub const CrossCompilationManager = struct {
             .success = success,
             .build_time_ms = 0, // Will be set by caller
             .output_size_bytes = output_size,
-            .warnings = try warnings.toOwnedSlice(),
-            .errors = try errors.toOwnedSlice(),
+            .warnings = try warnings.toOwnedSlice(self.allocator),
+            .errors = try errors.toOwnedSlice(self.allocator),
         };
     }
     
@@ -694,7 +1059,7 @@ pub const CrossCompilationManager = struct {
         base_options: CompilationOptions,
     ) ![]CompilationResult {
         _ = project_path;
-        var results = ArrayList(CompilationResult).init(self.allocator);
+        var results: std.ArrayList(CompilationResult) = .empty;
         
         for (targets) |target| {
             var options = base_options;
@@ -706,7 +1071,7 @@ pub const CrossCompilationManager = struct {
                 print("  ❌ Failed: {}\n", .{err});
                 
                 // Create a failed result
-                try results.append(CompilationResult{
+                try results.append(self.allocator, CompilationResult{
                     .target_triple = try self.allocator.dupe(u8, target),
                     .output_path = try self.allocator.dupe(u8, ""),
                     .success = false,
@@ -724,16 +1089,17 @@ pub const CrossCompilationManager = struct {
                 print("  ❌ Failed: {} errors\n", .{result.errors.len});
             }
             
-            try results.append(result);
+            try results.append(allocator, result);
         }
         
-        return results.toOwnedSlice();
+        return results.toOwnedSlice(allocator);
     }
     
     /// Generate a comprehensive cross-compilation report
     pub fn generateCompilationReport(self: *CrossCompilationManager, results: []const CompilationResult) !void {
         _ = self;
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
         try stdout.print("\n=== Cross-Compilation Report ===\n\n");
         

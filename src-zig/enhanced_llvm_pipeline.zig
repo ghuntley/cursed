@@ -405,7 +405,7 @@ pub const EnhancedLLVMPipeline = struct {
         
         // Create advanced codegen instance
         var adv_codegen = try advanced_codegen.AdvancedCodeGen.init(self.allocator);
-        defer adv_codegen.deinit();
+        defer adv_codegen.deinit(allocator);
         
         // Configure advanced codegen
         adv_codegen.base_codegen.context = self.context;
@@ -607,7 +607,7 @@ test "enhanced llvm pipeline initialization" {
     const allocator = std.testing.allocator;
     
     var pipeline = try EnhancedLLVMPipeline.init(allocator, "test_module");
-    defer pipeline.deinit();
+    defer pipeline.deinit(allocator);
     
     try std.testing.expect(pipeline.optimization_level == .Default);
     try std.testing.expect(pipeline.debug_enabled == false);
@@ -617,7 +617,7 @@ test "optimization level configuration" {
     const allocator = std.testing.allocator;
     
     var pipeline = try EnhancedLLVMPipeline.init(allocator, "test_module");
-    defer pipeline.deinit();
+    defer pipeline.deinit(allocator);
     
     try pipeline.setOptimizationLevel(.Aggressive);
     try std.testing.expect(pipeline.optimization_level == .Aggressive);

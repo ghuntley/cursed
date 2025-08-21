@@ -50,9 +50,9 @@ pub const EnhancedFFIManager = struct {
     }
     
     pub fn deinit(self: *EnhancedFFIManager) void {
-        self.cabi_bridge.deinit();
-        self.variadic_integration.deinit();
-        self.standard_functions.deinit();
+        self.cabi_bridge.deinit(allocator);
+        self.variadic_integration.deinit(allocator);
+        self.standard_functions.deinit(allocator);
     }
     
     /// Initialize common C standard library functions
@@ -172,8 +172,8 @@ pub const EnhancedFFIManager = struct {
     
     /// Generate comprehensive FFI module for CURSED
     pub fn generateFFIModule(self: *EnhancedFFIManager) ![]const u8 {
-        var module = ArrayList(u8).init(self.allocator);
-        defer module.deinit();
+        var module = .empty;
+        defer module.deinit(allocator);
         
         try module.writer().print("//! Auto-generated CURSED FFI Module with Variadic Support\n");
         try module.writer().print("//! Provides safe wrappers for C standard library functions\n\n");
@@ -231,7 +231,7 @@ pub const EnhancedFFIManager = struct {
         // Generate utility functions
         try self.generateUtilityFunctions(&module);
         
-        return module.toOwnedSlice();
+        return module.toOwnedSlice(self.allocator);
     }
     
     /// Generate wrapper for non-variadic function
@@ -329,8 +329,8 @@ pub const EnhancedFFIManager = struct {
     
     /// Generate LLVM backend integration
     pub fn generateLLVMIntegration(self: *EnhancedFFIManager) ![]const u8 {
-        var code = ArrayList(u8).init(self.allocator);
-        defer code.deinit();
+        var code = .empty;
+        defer code.deinit(allocator);
         
         try code.writer().print("//! LLVM Backend Integration for Enhanced FFI\n\n");
         try code.writer().print("const std = @import(\"std\");\n");
@@ -355,7 +355,7 @@ pub const EnhancedFFIManager = struct {
         try code.writer().print("    }}\n\n");
         
         try code.writer().print("    pub fn deinit(self: *EnhancedFFIBackend) void {{\n");
-        try code.writer().print("        self.declared_functions.deinit();\n");
+        try code.writer().print("        self.declared_functions.deinit(allocator);\n");
         try code.writer().print("    }}\n\n");
         
         // Generate function declaration methods
@@ -394,7 +394,7 @@ pub const EnhancedFFIManager = struct {
         
         try code.writer().print("}};\n");
         
-        return code.toOwnedSlice();
+        return code.toOwnedSlice(allocator);
     }
     
     /// Generate LLVM function declaration
@@ -459,10 +459,10 @@ pub const EnhancedFFIManager = struct {
         if (input.len == 0) return input;
         
         // This is a simplified version - in practice you'd want proper memory management
-        var result = std.ArrayList(u8).init(std.heap.page_allocator);
-        result.append(std.ascii.toUpper(input[0])) catch return input;
+        var result: std.ArrayList(u8) = .empty;
+        result.append(allocator, std.ascii.toUpper(input[0])) catch return input;
         result.appendSlice(input[1..]) catch return input;
-        return result.toOwnedSlice() catch input;
+        return result.toOwnedSlice(allocator) catch input;
     }
     
     /// Check if function is variadic
@@ -490,7 +490,7 @@ pub const EnhancedFFIManager = struct {
 // Test integration
 test "enhanced FFI manager initialization" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     // Test that standard functions are registered
     try std.testing.expect(manager.isVariadicFunction("printf"));
@@ -508,7 +508,7 @@ test "enhanced FFI manager initialization" {
 
 test "FFI module generation" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     const module = try manager.generateFFIModule();
     defer std.testing.allocator.free(module);
@@ -522,7 +522,7 @@ test "FFI module generation" {
 
 test "LLVM integration generation" {
     var manager = EnhancedFFIManager.init(std.testing.allocator);
-    defer manager.deinit();
+    defer manager.deinit(allocator);
     
     const llvm_code = try manager.generateLLVMIntegration();
     defer std.testing.allocator.free(llvm_code);

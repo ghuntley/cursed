@@ -29,7 +29,7 @@ const VariableStore = HashMap([]const u8, Variable, std.hash_map.StringContext, 
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -91,7 +91,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -129,7 +129,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 else => {},
             }
         }
-        variables.deinit();
+        variables.deinit(allocator);
     }
     
     // Process imports first
@@ -141,7 +141,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
     
     // Validate all imported modules

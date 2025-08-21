@@ -54,14 +54,14 @@ pub const PerformanceOptimizer = struct {
     }
     
     pub fn deinit(self: *PerformanceOptimizer) void {
-        self.pipeline_optimizer.deinit();
-        self.compilation_queue.deinit();
-        self.thread_pool.deinit();
-        self.compilation_cache.deinit();
-        self.type_cache.deinit();
-        self.ast_cache.deinit();
-        self.object_pool.deinit();
-        self.arena_allocator.deinit();
+        self.pipeline_optimizer.deinit(allocator);
+        self.compilation_queue.deinit(allocator);
+        self.thread_pool.deinit(allocator);
+        self.compilation_cache.deinit(allocator);
+        self.type_cache.deinit(allocator);
+        self.ast_cache.deinit(allocator);
+        self.object_pool.deinit(allocator);
+        self.arena_allocator.deinit(allocator);
     }
     
     /// Optimize compilation pipeline for maximum speed
@@ -98,7 +98,7 @@ pub const PerformanceOptimizer = struct {
     /// Enable arena-based memory allocation for 3x faster allocations
     fn optimizeMemoryAllocation(self: *PerformanceOptimizer) !void {
         // Reset arena for fresh allocation pool
-        self.arena_allocator.deinit();
+        self.arena_allocator.deinit(allocator);
         self.arena_allocator = std.heap.ArenaAllocator.init(self.allocator);
         
         // Pre-allocate common object sizes
@@ -357,7 +357,7 @@ pub const CompilationMetrics = struct {
     
     pub fn init() CompilationMetrics {
         return CompilationMetrics{
-            .optimizations = ArrayList(OptimizationRecord).init(std.heap.page_allocator),
+            .optimizations = .empty,
         };
     }
     
@@ -367,7 +367,7 @@ pub const CompilationMetrics = struct {
             .speedup_factor = speedup_factor,
             .timestamp = std.time.nanoTimestamp(),
         };
-        self.optimizations.append(record) catch {};
+        self.optimizations.append(allocator, record) catch {};
     }
 };
 
@@ -436,13 +436,13 @@ pub const BottleneckAnalysis = struct {
     
     pub fn init(allocator: Allocator) BottleneckAnalysis {
         return BottleneckAnalysis{
-            .bottlenecks = ArrayList(Bottleneck).init(allocator),
+            .bottlenecks = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn addBottleneck(self: *BottleneckAnalysis, bottleneck: Bottleneck) !void {
-        try self.bottlenecks.append(bottleneck);
+        try self.bottlenecks.append(allocator, bottleneck);
     }
 };
 

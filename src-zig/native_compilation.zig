@@ -133,7 +133,7 @@ pub const NativeCompiler = struct {
         if (self.target_machine) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.codegen.deinit();
+        self.codegen.deinit(allocator);
     }
     
     pub fn setOptimizationLevel(self: *NativeCompiler, level: OptimizationLevel) void {
@@ -335,7 +335,7 @@ pub const NativeCompiler = struct {
             error.OutOfMemory => return CompilationError.OutOfMemory,
             else => return CompilationError.DebugInfoError,
         };
-        defer debug_gen.deinit();
+        defer debug_gen.deinit(allocator);
         
         // Initialize debug compilation unit
         debug_gen.createCompileUnit("main.csd", ".") catch |err| switch (err) {
@@ -437,7 +437,7 @@ pub const NativeCompiler = struct {
                 std.debug.print("Failed to initialize compiler for {s}: {}\n", .{ target.getTriple(), err });
                 continue;
             };
-            defer compiler.deinit();
+            defer compiler.deinit(allocator);
             
             const output_name = try std.fmt.allocPrint(allocator, "{s}/cursed_{s}", .{ 
                 output_dir, 
@@ -720,8 +720,8 @@ pub const NativeCompiler = struct {
         defer c.LLVMDisposePassManager(pass_manager);
         
         // Parse profile data to identify hot functions
-        var hot_functions = std.ArrayList([]const u8).init(self.allocator);
-        defer hot_functions.deinit();
+        var hot_functions: std.ArrayList([]const u8) = .empty;
+        defer hot_functions.deinit(allocator);
         
         try self.parseProfileData(profile_data, &hot_functions);
         
@@ -769,7 +769,7 @@ pub const NativeCompiler = struct {
                     // Consider functions with count > 5 as hot
                     if (count > 5) {
                         const owned_name = try self.allocator.dupe(u8, func_name);
-                        try hot_functions.append(owned_name);
+                        try hot_functions.append(self.allocator, owned_name);
                     }
                 }
             }
@@ -871,7 +871,7 @@ pub const PerformanceBenchmark = struct {
         const start_time = std.time.nanoTimestamp();
         
         var compiler = try NativeCompiler.init(self.allocator, target);
-        defer compiler.deinit();
+        defer compiler.deinit(allocator);
         
         const temp_output = "/tmp/cursed_benchmark";
         try compiler.compileProgram(program, temp_output);
@@ -902,7 +902,7 @@ test "native compiler initialization" {
     const allocator = std.testing.allocator;
     
     var compiler = try NativeCompiler.init(allocator, .Linux_x64);
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
     
     try std.testing.expect(compiler.target_machine != null);
     try std.testing.expect(compiler.optimization_level == .Default);

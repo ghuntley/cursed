@@ -57,8 +57,8 @@ pub const PerformanceTester = struct {
     }
 
     pub fn deinit(self: *PerformanceTester) void {
-        self.results.deinit();
-        self.baseline_data.deinit();
+        self.results.deinit(allocator);
+        self.baseline_data.deinit(allocator);
     }
 
     pub fn runBenchmark(self: *PerformanceTester, suite: PerformanceTestSuite) !void {
@@ -158,21 +158,21 @@ pub const PerformanceTester = struct {
 
         // Lexer
         var lex = try lexer.Lexer.init(self.allocator, source_code);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
 
         const tokens = try lex.tokenize();
         defer self.allocator.free(tokens);
 
         // Parser
         var parse = try parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
 
         const program = try parse.parseProgram();
-        defer program.deinit(self.allocator);
+        defer program.deinit(allocator);
 
         // Codegen
         var generator = try codegen.CodeGenerator.init(self.allocator);
-        defer generator.deinit();
+        defer generator.deinit(allocator);
 
         const c_code = try generator.generateC(program);
         defer self.allocator.free(c_code);
@@ -184,7 +184,7 @@ pub const PerformanceTester = struct {
         const exec_start = std.time.nanoTimestamp();
 
         var interpreter = try runtime.Interpreter.init(self.allocator);
-        defer interpreter.deinit();
+        defer interpreter.deinit(allocator);
 
         _ = interpreter.executeString(source_code) catch |err| {
             std.debug.print("Execution error: {}\n", .{err});
@@ -426,7 +426,7 @@ pub fn runAllPerformanceTests(allocator: Allocator) !void {
     std.debug.print("=" ** 60 ++ "\n");
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit();
+    defer tester.deinit(allocator);
 
     // Run standard performance tests
     for (performance_test_suites) |suite| {
@@ -444,7 +444,7 @@ pub fn runAllPerformanceTests(allocator: Allocator) !void {
 // Zig test integration
 test "Performance Benchmarks" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     try runAllPerformanceTests(allocator);
@@ -452,22 +452,22 @@ test "Performance Benchmarks" {
 
 test "Memory Usage Benchmark" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit();
+    defer tester.deinit(allocator);
 
     try tester.runBenchmark(memory_stress_test);
 }
 
 test "Compiler Performance Benchmark" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     var tester = PerformanceTester.init(allocator);
-    defer tester.deinit();
+    defer tester.deinit(allocator);
 
     try tester.runBenchmark(compiler_stress_test);
 }

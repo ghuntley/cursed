@@ -31,36 +31,36 @@ pub const BuildDependency = struct {
             .name = name,
             .version = version,
             .path = path,
-            .include_dirs = ArrayList([]const u8).init(allocator),
-            .lib_dirs = ArrayList([]const u8).init(allocator),
-            .system_libs = ArrayList([]const u8).init(allocator),
-            .frameworks = ArrayList([]const u8).init(allocator),
+            .include_dirs = .empty,
+            .lib_dirs = .empty,
+            .system_libs = .empty,
+            .frameworks = .empty,
             .defines = HashMap([]const u8, ?[]const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
     
     pub fn deinit(self: *BuildDependency) void {
-        self.include_dirs.deinit();
-        self.lib_dirs.deinit();
-        self.system_libs.deinit();
-        self.frameworks.deinit();
-        self.defines.deinit();
+        self.include_dirs.deinit(allocator);
+        self.lib_dirs.deinit(allocator);
+        self.system_libs.deinit(allocator);
+        self.frameworks.deinit(allocator);
+        self.defines.deinit(allocator);
     }
     
     pub fn addIncludeDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.include_dirs.append(dir);
+        try self.include_dirs.append(allocator, dir);
     }
     
     pub fn addLibDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.lib_dirs.append(dir);
+        try self.lib_dirs.append(allocator, dir);
     }
     
     pub fn addSystemLib(self: *BuildDependency, lib: []const u8) !void {
-        try self.system_libs.append(lib);
+        try self.system_libs.append(allocator, lib);
     }
     
     pub fn addFramework(self: *BuildDependency, framework: []const u8) !void {
-        try self.frameworks.append(framework);
+        try self.frameworks.append(allocator, framework);
     }
     
     pub fn addDefine(self: *BuildDependency, name: []const u8, value: ?[]const u8) !void {
@@ -82,22 +82,22 @@ pub const BuildIntegration = struct {
         return BuildIntegration{
             .allocator = allocator,
             .cache_dir = cache_dir,
-            .dependencies = ArrayList(BuildDependency).init(allocator),
+            .dependencies = .empty,
         };
     }
     
     pub fn deinit(self: *BuildIntegration) void {
         for (self.dependencies.items) |*dep| {
-            dep.deinit();
+            dep.deinit(allocator);
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(allocator);
         
         if (self.manifest) |*manifest| {
-            manifest.deinit(self.allocator);
+            manifest.deinit(allocator);
         }
         
         if (self.lock_file) |*lock_file| {
-            lock_file.deinit();
+            lock_file.deinit(allocator);
         }
     }
     
@@ -152,7 +152,7 @@ pub const BuildIntegration = struct {
             // Load package-specific build configuration if it exists
             try self.loadPackageBuildConfig(&build_dep, pkg_path);
             
-            try self.dependencies.append(build_dep);
+            try self.dependencies.append(self.allocator, build_dep);
         }
     }
     
@@ -171,7 +171,7 @@ pub const BuildIntegration = struct {
         
         var parser = package_manager.TomlParser.init(self.allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit(self.allocator);
+        defer toml.deinit(allocator);
         
         if (toml.table.get("build")) |build_val| {
             if (build_val == .table) {
@@ -352,8 +352,8 @@ pub const BuildIntegration = struct {
         const src_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ dep.path, "src" });
         defer self.allocator.free(src_dir);
         
-        var src_files = ArrayList([]const u8).init(self.allocator);
-        defer src_files.deinit();
+        var src_files = .empty;
+        defer src_files.deinit(allocator);
         
         // Look for main library file
         const main_lib_files = [_][]const u8{ "lib.zig", "main.zig", "mod.zig" };
@@ -472,7 +472,7 @@ pub const BuildIntegration = struct {
     
     // Check if dependencies need to be updated
     pub fn checkForUpdates(self: *BuildIntegration) !ArrayList(struct { name: []const u8, current: package_manager.Version, available: package_manager.Version }) {
-        const updates = ArrayList(struct { name: []const u8, current: package_manager.Version, available: package_manager.Version }).init(self.allocator);
+        const updates = .empty;
         
         // TODO: Implement update checking by querying package registry
         // This would involve:
@@ -487,7 +487,7 @@ pub const BuildIntegration = struct {
 // Helper function to integrate with build.zig
 pub fn integrateBuildSystem(b: *std.Build, exe: *std.Build.Step.Compile, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !void {
     var integration = BuildIntegration.init(b.allocator, ".cursed/cache");
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     try integration.loadProject();
     
@@ -511,7 +511,7 @@ test "build integration initialization" {
     const allocator = std.testing.allocator;
     
     var integration = BuildIntegration.init(allocator, "test_cache");
-    defer integration.deinit();
+    defer integration.deinit(allocator);
     
     try std.testing.expect(integration.dependencies.items.len == 0);
     try std.testing.expectEqualStrings("test_cache", integration.cache_dir);
@@ -522,7 +522,7 @@ test "build dependency management" {
     
     const version = package_manager.Version{ .major = 1, .minor = 0, .patch = 0 };
     var dep = BuildDependency.init(allocator, "test-dep", version, "/path/to/dep");
-    defer dep.deinit();
+    defer dep.deinit(allocator);
     
     try dep.addIncludeDir("/path/to/include");
     try dep.addSystemLib("m");

@@ -8,7 +8,7 @@ const print = std.debug.print;
 /// Main debugger demonstration
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     // Get command line arguments
@@ -124,19 +124,20 @@ fn runInteractiveMode(allocator: std.mem.Allocator, source_file: []const u8, sou
     print("Type 'help' for available commands\n\n", .{});
     
     // Parse source into lines
-    var lines = std.ArrayList([]const u8).init(allocator);
-    defer lines.deinit();
+    var lines: std.ArrayList([]const u8) = .empty;
+    defer lines.deinit(allocator);
     
     var line_iter = std.mem.split(u8, source_content, "\n");
     while (line_iter.next()) |line| {
-        try lines.append(line);
+        try lines.append(allocator, line);
     }
     
     var current_line: u32 = 1;
-    var breakpoints = std.ArrayList(u32).init(allocator);
-    defer breakpoints.deinit();
+    var breakpoints: std.ArrayList(u32) = .empty;
+    defer breakpoints.deinit(allocator);
     
-    const stdin = std.io.getStdIn().reader();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var input_buffer: [256]u8 = undefined;
     
     // Interactive command loop
@@ -158,7 +159,7 @@ fn runInteractiveMode(allocator: std.mem.Allocator, source_file: []const u8, sou
             } else if (std.mem.eql(u8, command, "break") or std.mem.eql(u8, command, "b")) {
                 if (args.next()) |line_str| {
                     if (std.fmt.parseInt(u32, line_str, 10)) |line_num| {
-                        try breakpoints.append(line_num);
+                        try breakpoints.append(allocator, line_num);
                         print("🔴 Breakpoint set at line {}\n", .{line_num});
                     } else |_| {
                         print("❌ Invalid line number: {s}\n", .{line_str});

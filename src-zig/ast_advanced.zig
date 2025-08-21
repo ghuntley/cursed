@@ -24,14 +24,14 @@ pub const Program = struct {
     pub fn init(allocator: Allocator) Program {
         return Program{
             .package = null,
-            .imports = ArrayList(ImportStatement).init(allocator),
-            .statements = ArrayList(Statement).init(allocator),
+            .imports = .empty,
+            .statements = .empty,
         };
     }
     
     pub fn deinit(self: *Program) void {
-        self.imports.deinit();
-        self.statements.deinit();
+        self.imports.deinit(allocator);
+        self.statements.deinit(allocator);
     }
 };
 

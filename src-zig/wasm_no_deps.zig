@@ -69,7 +69,7 @@ const WasmLexer = struct {
     }
     
     pub fn tokenize(self: *Self) !std.ArrayList(Token) {
-        var tokens = std.ArrayList(Token).init(self.allocator);
+        var tokens: std.ArrayList(Token) = .empty;
         
         while (!self.isAtEnd()) {
             self.skipWhitespace();
@@ -82,7 +82,7 @@ const WasmLexer = struct {
             const token_type = self.scanToken();
             const lexeme = self.source[start..self.current];
             
-            try tokens.append(Token{
+            try tokens.append(allocator, Token{
                 .type = token_type,
                 .lexeme = lexeme,
                 .line = start_line,
@@ -90,7 +90,7 @@ const WasmLexer = struct {
             });
         }
         
-        try tokens.append(Token{
+        try tokens.append(allocator, Token{
             .type = .eof,
             .lexeme = "",
             .line = self.line,
@@ -248,14 +248,14 @@ const WasmLexer = struct {
 // WASM exports with no dependencies
 export fn cursed_wasm_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const source = source_ptr[0..source_len];
     
     var lexer = WasmLexer.init(allocator, source);
     const tokens = lexer.tokenize() catch return -1;
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     return @intCast(tokens.items.len);
 }

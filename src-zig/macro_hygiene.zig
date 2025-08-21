@@ -57,7 +57,7 @@ pub const MacroHygieneContext = struct {
         }
         
         pub fn deinit(self: *Scope) void {
-            self.symbols.deinit();
+            self.symbols.deinit(allocator);
         }
     };
     
@@ -96,12 +96,12 @@ pub const MacroHygieneContext = struct {
                 .expansion_location = location,
                 .parent_expansion = null,
                 .scope_before = 0,
-                .symbols_introduced = ArrayList([]const u8).init(allocator),
+                .symbols_introduced = .empty,
             };
         }
         
         pub fn deinit(self: *MacroExpansion) void {
-            self.symbols_introduced.deinit();
+            self.symbols_introduced.deinit(allocator);
         }
     };
     
@@ -122,18 +122,18 @@ pub const MacroHygieneContext = struct {
     pub fn init(allocator: Allocator) !MacroHygieneContext {
         var context = MacroHygieneContext{
             .allocator = allocator,
-            .scope_stack = ArrayList(Scope).init(allocator),
+            .scope_stack = .empty,
             .global_scope = undefined,
             .current_scope_id = 0,
             .renamed_symbols = HashMap(SymbolKey, []const u8, SymbolKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .rename_counter = 0,
-            .expansion_stack = ArrayList(MacroExpansion).init(allocator),
-            .hygiene_violations = ArrayList(HygieneViolation).init(allocator),
+            .expansion_stack = .empty,
+            .hygiene_violations = .empty,
         };
         
         // Create global scope
         const global_scope = Scope.init(allocator, 0, null, false);
-        try context.scope_stack.append(global_scope);
+        try context.scope_stack.append(allocator, global_scope);
         context.global_scope = &context.scope_stack.items[0];
         
         return context;
@@ -141,22 +141,22 @@ pub const MacroHygieneContext = struct {
     
     pub fn deinit(self: *MacroHygieneContext) void {
         for (self.scope_stack.items) |*scope| {
-            scope.deinit();
+            scope.deinit(allocator);
         }
-        self.scope_stack.deinit();
+        self.scope_stack.deinit(allocator);
         
         var renamed_iterator = self.renamed_symbols.iterator();
         while (renamed_iterator.next()) |entry| {
             self.allocator.free(entry.value_ptr.*);
         }
-        self.renamed_symbols.deinit();
+        self.renamed_symbols.deinit(allocator);
         
         for (self.expansion_stack.items) |*expansion| {
-            expansion.deinit();
+            expansion.deinit(allocator);
         }
-        self.expansion_stack.deinit();
+        self.expansion_stack.deinit(allocator);
         
-        self.hygiene_violations.deinit();
+        self.hygiene_violations.deinit(allocator);
     }
     
     /// Begin macro expansion with hygiene tracking
@@ -169,7 +169,7 @@ pub const MacroHygieneContext = struct {
             expansion.parent_expansion = @intCast(self.expansion_stack.items.len - 1);
         }
         
-        try self.expansion_stack.append(expansion);
+        try self.expansion_stack.append(self.allocator, expansion);
         
         // Create new scope for macro expansion
         try self.pushScope(true);
@@ -184,7 +184,7 @@ pub const MacroHygieneContext = struct {
         }
         
         const expansion = self.expansion_stack.pop();
-        defer expansion.deinit();
+        defer expansion.deinit(allocator);
         
         // Check for hygiene violations in this expansion
         try self.checkHygieneViolations(expansion);
@@ -203,14 +203,14 @@ pub const MacroHygieneContext = struct {
             new_scope.expansion_id = @intCast(self.expansion_stack.items.len - 1);
         }
         
-        try self.scope_stack.append(new_scope);
+        try self.scope_stack.append(self.allocator, new_scope);
     }
     
     /// Pop current scope
     fn popScope(self: *MacroHygieneContext) void {
         if (self.scope_stack.items.len > 1) { // Don't pop global scope
             var scope = self.scope_stack.pop();
-            scope.deinit();
+            scope.deinit(allocator);
         }
     }
     
@@ -226,7 +226,7 @@ pub const MacroHygieneContext = struct {
             // Check if this symbol would shadow an outer scope variable
             if (self.findSymbolInOuterScopes(name, current_scope)) |_| {
                 // This is a potential shadowing violation
-                try self.hygiene_violations.append(HygieneViolation{
+                try self.hygiene_violations.append(allocator, HygieneViolation{
                     .kind = .SymbolShadowing,
                     .symbol_name = name,
                     .macro_name = self.expansion_stack.items[self.expansion_stack.items.len - 1].macro_name,
@@ -251,7 +251,7 @@ pub const MacroHygieneContext = struct {
         
         // Track symbols introduced by macro
         if (is_macro_context) {
-            try self.expansion_stack.items[self.expansion_stack.items.len - 1].symbols_introduced.append(try self.allocator.dupe(u8, final_name));
+            try self.expansion_stack.items[self.expansion_stack.items.len - 1].symbols_introduced.append(self.allocator, try self.allocator.dupe(u8, final_name));
         }
         
         return final_name;
@@ -284,7 +284,7 @@ pub const MacroHygieneContext = struct {
                     
                     // Check if this is an intended capture or accidental
                     if (self.isAccidentalCapture(name, current_expansion)) {
-                        try self.hygiene_violations.append(HygieneViolation{
+                        try self.hygiene_violations.append(allocator, HygieneViolation{
                             .kind = .VariableCapture,
                             .symbol_name = name,
                             .macro_name = current_expansion.macro_name,
@@ -390,7 +390,7 @@ pub const MacroHygieneContext = struct {
         // Check if any symbols introduced by the macro escape their intended scope
         for (expansion.symbols_introduced.items) |symbol_name| {
             if (self.symbolEscapesScope(symbol_name, &expansion)) {
-                try self.hygiene_violations.append(HygieneViolation{
+                try self.hygiene_violations.append(allocator, HygieneViolation{
                     .kind = .ScopeEscape,
                     .symbol_name = symbol_name,
                     .macro_name = expansion.macro_name,
@@ -537,8 +537,8 @@ pub const MacroHygieneContext = struct {
     
     /// Generate hygiene report
     pub fn generateHygieneReport(self: *MacroHygieneContext) ![]const u8 {
-        var report = ArrayList(u8).init(self.allocator);
-        defer report.deinit();
+        var report = .empty;
+        defer report.deinit(allocator);
         
         try report.writer().print("Macro Hygiene Report\n");
         try report.writer().print("===================\n\n");
@@ -560,7 +560,7 @@ pub const MacroHygieneContext = struct {
             }
         }
         
-        return report.toOwnedSlice();
+        return report.toOwnedSlice(allocator);
     }
     
     /// Get resolution description for violation type
@@ -766,7 +766,7 @@ pub const MacroHygieneContext = struct {
 // Test cases for macro hygiene
 test "basic hygiene violation detection" {
     var hygiene_ctx = try MacroHygieneContext.init(std.testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     // Declare a variable in global scope
     _ = try hygiene_ctx.declareSymbol("x", .Variable);
@@ -787,7 +787,7 @@ test "basic hygiene violation detection" {
 
 test "symbol resolution with renaming" {
     var hygiene_ctx = try MacroHygieneContext.init(std.testing.allocator);
-    defer hygiene_ctx.deinit();
+    defer hygiene_ctx.deinit(allocator);
     
     // Begin macro expansion
     _ = try hygiene_ctx.beginMacroExpansion("test_macro", "test.csd:5");

@@ -77,8 +77,8 @@ pub const DeferLLVMCodeGen = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .defer_stack = ArrayList(DeferEntry).init(allocator),
-            .scope_stack = ArrayList(ScopeInfo).init(allocator),
+            .defer_stack = .empty,
+            .scope_stack = .empty,
             .current_function = null,
             .current_function_name = null,
             .error_unwind_block = null,
@@ -92,9 +92,9 @@ pub const DeferLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *DeferLLVMCodeGen) void {
-        self.defer_stack.deinit();
-        self.scope_stack.deinit();
-        self.defer_runtime_functions.deinit();
+        self.defer_stack.deinit(allocator);
+        self.scope_stack.deinit(allocator);
+        self.defer_runtime_functions.deinit(allocator);
     }
     
     /// Declare runtime defer functions for LLVM integration
@@ -234,7 +234,7 @@ pub const DeferLLVMCodeGen = struct {
             .is_error_safe = true, // Mark as error-safe by default
         };
         
-        try self.defer_stack.append(defer_entry);
+        try self.defer_stack.append(self.allocator, defer_entry);
         
         std.debug.print("✅ Defer statement compiled: {s} (scope: {d})\n", .{ cleanup_func_name, scope_id });
     }
@@ -280,7 +280,7 @@ pub const DeferLLVMCodeGen = struct {
             .parent_scope = parent_scope,
         };
         
-        try self.scope_stack.append(scope_info);
+        try self.scope_stack.append(allocator, scope_info);
         
         // Call runtime scope management
         const enter_scope_func = self.defer_runtime_functions.get("cursed_defer_enter_scope") orelse
@@ -485,7 +485,7 @@ pub fn testDeferLLVMImplementation() !void {
     std.debug.print("🧪 Testing Defer LLVM Implementation...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Initialize LLVM
@@ -500,7 +500,7 @@ pub fn testDeferLLVMImplementation() !void {
     
     // Create defer codegen
     var defer_codegen = try DeferLLVMCodeGen.init(allocator, context, module, builder);
-    defer defer_codegen.deinit();
+    defer defer_codegen.deinit(allocator);
     
     // Test function creation
     const test_func_type = c.LLVMFunctionType(

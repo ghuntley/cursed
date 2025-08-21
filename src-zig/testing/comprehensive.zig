@@ -64,7 +64,7 @@ pub const TestRunner = struct {
     }
 
     pub fn deinit(self: *TestRunner) void {
-        self.results.deinit();
+        self.results.deinit(allocator);
     }
 
     pub fn runSuite(self: *TestRunner, suite: TestSuite) !void {
@@ -155,7 +155,7 @@ fn testLexerBasicTokens(allocator: Allocator) !void {
     const input = "sus x drip = 42; vibez.spill(\"Hello CURSED!\");";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
@@ -188,7 +188,7 @@ fn testLexerStringLiterals(allocator: Allocator) !void {
     const input = "\"Hello CURSED!\" 'Single quoted' \"Escaped \\\"string\\\"\"";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
@@ -213,7 +213,7 @@ fn testLexerCommentHandling(allocator: Allocator) !void {
     ;
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
@@ -236,13 +236,13 @@ fn testParserBasicExpressions(allocator: Allocator) !void {
     const input = "sus x drip = 42 + 24;";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
 
     var parse = try parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    defer parse.deinit(allocator);
 
     const program = try parse.parseProgram();
     defer program.deinit(allocator);
@@ -254,13 +254,13 @@ fn testParserFunctionDefinitions(allocator: Allocator) !void {
     const input = "slay greet(name tea) tea { damn \"Hello \" + name; }";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
 
     var parse = try parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    defer parse.deinit(allocator);
 
     const program = try parse.parseProgram();
     defer program.deinit(allocator);
@@ -283,13 +283,13 @@ fn testParserStructDefinitions(allocator: Allocator) !void {
     const input = "squad Point { spill x drip; spill y drip; }";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
 
     var parse = try parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    defer parse.deinit(allocator);
 
     const program = try parse.parseProgram();
     defer program.deinit(allocator);
@@ -314,19 +314,19 @@ fn testCodegenBasicOutput(allocator: Allocator) !void {
     const input = "vibez.spill(\"Hello from codegen test!\");";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
 
     var parse = try parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    defer parse.deinit(allocator);
 
     const program = try parse.parseProgram();
     defer program.deinit(allocator);
 
     var generator = try codegen.CodeGenerator.init(allocator);
-    defer generator.deinit();
+    defer generator.deinit(allocator);
 
     const c_code = try generator.generateC(program);
     defer allocator.free(c_code);
@@ -340,19 +340,19 @@ fn testCodegenFunctionGeneration(allocator: Allocator) !void {
     const input = "slay add(a drip, b drip) drip { damn a + b; }";
     
     var lex = try lexer.Lexer.init(allocator, input);
-    defer lex.deinit();
+    defer lex.deinit(allocator);
 
     const tokens = try lex.tokenize();
     defer allocator.free(tokens);
 
     var parse = try parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    defer parse.deinit(allocator);
 
     const program = try parse.parseProgram();
     defer program.deinit(allocator);
 
     var generator = try codegen.CodeGenerator.init(allocator);
-    defer generator.deinit();
+    defer generator.deinit(allocator);
 
     const c_code = try generator.generateC(program);
     defer allocator.free(c_code);
@@ -369,7 +369,7 @@ fn testRuntimeBasicExecution(allocator: Allocator) !void {
     const input = "sus x drip = 42; vibez.spill(x);";
     
     var interpreter = try runtime.Interpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     const result = interpreter.executeString(input);
     
@@ -404,7 +404,7 @@ fn benchmarkLexerPerformance(allocator: Allocator) !u64 {
     var i: u32 = 0;
     while (i < 100) : (i += 1) {
         var lex = try lexer.Lexer.init(allocator, large_input);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
         
         const tokens = try lex.tokenize();
         allocator.free(tokens);
@@ -432,13 +432,13 @@ fn benchmarkParserPerformance(allocator: Allocator) !u64 {
     var i: u32 = 0;
     while (i < 50) : (i += 1) {
         var lex = try lexer.Lexer.init(allocator, complex_input);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
 
         const tokens = try lex.tokenize();
         defer allocator.free(tokens);
 
         var parse = try parser.Parser.init(allocator, tokens);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
 
         const program = try parse.parseProgram();
         defer program.deinit(allocator);
@@ -461,7 +461,7 @@ fn testStdlibTestzIntegration(allocator: Allocator) !void {
     ;
     
     var interpreter = try runtime.Interpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     // Execute testz program - should not crash
     const result = interpreter.executeString(testz_program);
@@ -478,7 +478,7 @@ fn testStdlibMathIntegration(allocator: Allocator) !void {
     ;
     
     var interpreter = try runtime.Interpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     const result = interpreter.executeString(math_program);
     _ = result;
@@ -534,7 +534,7 @@ pub fn runAllTests(allocator: Allocator) !void {
     std.debug.print("=" ** 50 ++ "\n", .{});
 
     var runner = TestRunner.init(allocator);
-    defer runner.deinit();
+    defer runner.deinit(allocator);
 
     // Run all test suites
     const suites = [_]TestSuite{
@@ -568,7 +568,7 @@ pub fn runAllTests(allocator: Allocator) !void {
 
 test "CURSED Comprehensive Test Suite" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     try runAllTests(allocator);

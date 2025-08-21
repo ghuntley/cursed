@@ -137,14 +137,14 @@ pub const CompilerResult = struct {
     
     pub fn deinit(self: *CompilerResult) void {
         if (self.debug_info) |*debug| {
-            debug.deinit();
+            debug.deinit(allocator);
         }
     }
 };
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Parse command line arguments
@@ -165,7 +165,7 @@ pub fn main() !void {
     const input_file = args[args.len - 1]; // Last argument is input file
     
     // Initialize logging
-    var logger = Logger.init(std.io.getStdErr().writer(), options.log_level, options.use_colors);
+    var logger = Logger.init(std.io.getStdErr().writer(&[_]u8{}), options.log_level, options.use_colors);
     logger.info("Starting CURSED compilation of {s}", .{input_file});
     
     // Compile the file
@@ -173,7 +173,7 @@ pub fn main() !void {
         std.debug.print("Compilation failed with error: {any}\n", .{err});
         std.process.exit(1);
     };
-    defer result.deinit();
+    defer result.deinit(allocator);
     
     // Print summary
     if (result.success) {
@@ -204,7 +204,7 @@ fn compileFile(allocator: Allocator, file_path: []const u8, options: CompilerOpt
     
     // Initialize error reporter
     var error_reporter = ErrorReporter.init(allocator, options.max_errors);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     error_reporter.setColors(options.use_colors);
     error_reporter.setVerbose(options.verbose);
@@ -214,7 +214,7 @@ fn compileFile(allocator: Allocator, file_path: []const u8, options: CompilerOpt
     
     // Initialize debug info
     var debug_info = DebugInfo.init(allocator, options.debug_level);
-    defer debug_info.deinit();
+    defer debug_info.deinit(allocator);
     
     logger.debug("Starting lexical analysis");
     
@@ -223,7 +223,7 @@ fn compileFile(allocator: Allocator, file_path: []const u8, options: CompilerOpt
         std.debug.print("Failed to initialize lexer: {any}\n", .{err});
         return err;
     };
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = lexer.tokenize() catch |err| {
         std.debug.print("Lexical analysis failed: {any}\n", .{err});
@@ -246,12 +246,12 @@ fn compileFile(allocator: Allocator, file_path: []const u8, options: CompilerOpt
         std.debug.print("Syntax analysis failed: {any}\n", .{err});
         // Continue to show all accumulated errors
     };
-    defer if (!error_reporter.hasErrors()) program.deinit();
+    defer if (!error_reporter.hasErrors()) program.deinit(allocator);
     
     logger.debug("Syntax analysis complete");
     
     // Print all diagnostics
-    try error_reporter.printDiagnostics(std.io.getStdErr().writer());
+    try error_reporter.printDiagnostics(std.io.getStdErr().writer(&[_]u8{}));
     
     // Semantic analysis
     if (!error_reporter.hasErrors()) {
@@ -299,7 +299,7 @@ fn compileFile(allocator: Allocator, file_path: []const u8, options: CompilerOpt
                 .debug_info = if (options.debug_level != .None) debug_info else null,
             };
         };
-        defer codegen.deinit();
+        defer codegen.deinit(allocator);
         
         // Enable debug information if requested
         if (options.emit_debug_info) {
@@ -394,14 +394,14 @@ fn demonstrateErrorReporting(allocator: Allocator) !void {
         std.debug.print("--- Test Case: {s} ---\n", .{test_case.name});
         
         var error_reporter = ErrorReporter.init(allocator, 10);
-        defer error_reporter.deinit();
+        defer error_reporter.deinit(allocator);
         
         error_reporter.setColors(true);
         
         try error_reporter.addSourceFile("demo.csd", test_case.source);
         
         var lexer = enhanced_lexer.Lexer.init(allocator, test_case.source, "demo.csd", &error_reporter) catch continue;
-        defer lexer.deinit();
+        defer lexer.deinit(allocator);
         
         const tokens = lexer.tokenize() catch &[_]enhanced_lexer.Token{};
         defer if (tokens.len > 0) allocator.free(tokens);
@@ -409,7 +409,7 @@ fn demonstrateErrorReporting(allocator: Allocator) !void {
         var parser = enhanced_parser.Parser.init(allocator, tokens, &error_reporter);
         _ = parser.parseProgram() catch {};
         
-        try error_reporter.printDiagnostics(std.io.getStdOut().writer());
+        try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         std.debug.print("\n", .{});
     }
     
@@ -423,19 +423,19 @@ test "enhanced compiler integration" {
     const source = "slay main() normie { sus x normie = 42; damn x; }";
     
     var error_reporter = ErrorReporter.init(allocator, 10);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     try error_reporter.addSourceFile("test.csd", source);
     
     var lexer = try enhanced_lexer.Lexer.init(allocator, source, "test.csd", &error_reporter);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
     
     var parser = enhanced_parser.Parser.init(allocator, tokens, &error_reporter);
     const program = try parser.parseProgram();
-    defer program.deinit();
+    defer program.deinit(allocator);
     
     try std.testing.expect(!error_reporter.hasErrors());
     try std.testing.expect(program.statements.len > 0);

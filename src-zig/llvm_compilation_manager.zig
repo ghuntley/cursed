@@ -76,15 +76,15 @@ pub const LLVMCompilationManager = struct {
         // Parse the source into AST
         var lex = lexer.Lexer.init(self.allocator, source);
         const tokens = try lex.tokenize();
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         var parse = parser.Parser.init(self.allocator, tokens.items);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
         
         const program = try parse.parseProgram();
         defer {
             var mut_program = program;
-            mut_program.deinit(self.allocator);
+            mut_program.deinit(allocator);
         }
         
         // Initialize real LLVM codegen
@@ -92,7 +92,7 @@ pub const LLVMCompilationManager = struct {
             if (self.verbose) print("❌ Failed to initialize real LLVM backend: {any}\n", .{err});
             return err;
         };
-        defer codegen.deinit();
+        defer codegen.deinit(allocator);
         
         // Generate program
         try codegen.generateProgram(program);
@@ -166,7 +166,7 @@ pub const LLVMCompilationManager = struct {
         
         // Create LLVM IR generator
         var generator = SimpleLLVMIRGenerator.init(self.allocator);
-        defer generator.deinit();
+        defer generator.deinit(allocator);
         
         generator.setVerbose(self.verbose);
         
@@ -196,7 +196,7 @@ pub const LLVMCompilationManager = struct {
         
         // Create LLVM IR generator
         var generator = SimpleLLVMIRGenerator.init(self.allocator);
-        defer generator.deinit();
+        defer generator.deinit(allocator);
         
         generator.setVerbose(self.verbose);
         
@@ -292,7 +292,7 @@ pub fn testLLVMCompilation() !void {
     print("🔥 Testing LLVM IR Pipeline Integration...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var manager = LLVMCompilationManager.init(allocator);

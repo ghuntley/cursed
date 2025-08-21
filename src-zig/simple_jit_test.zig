@@ -5,7 +5,7 @@ const Allocator = std.mem.Allocator;
 /// Simple demonstration of a working JIT execution that actually compiles and executes CURSED code
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     print("🚀 Simple JIT Execution Demo\n", .{});
@@ -22,7 +22,7 @@ pub fn main() !void {
 
     // Create a simple JIT engine
     var jit = SimpleJIT.init(allocator);
-    defer jit.deinit();
+    defer jit.deinit(allocator);
 
     try jit.execute(test_program);
 
@@ -42,7 +42,7 @@ const SimpleJIT = struct {
     }
 
     pub fn deinit(self: *SimpleJIT) void {
-        self.variables.deinit();
+        self.variables.deinit(allocator);
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {

@@ -13,7 +13,7 @@ const has_llvm = @import("builtin").link_libc and @hasDecl(@import("std"), "c");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -89,7 +89,7 @@ pub fn main() !void {
 
     // Parse
     var p = parser.Parser.init(allocator, tokens);
-    defer p.deinit();
+    defer p.deinit(allocator);
 
     const program = p.parseProgram() catch |err| {
         print("Parser error: {}\n", .{err});
@@ -116,7 +116,7 @@ pub fn main() !void {
         print("🚀 Executing CURSED program via interpreter...\n", .{});
         
         var simple_interp = simple_interpreter.SimpleInterpreter.init(allocator);
-        defer simple_interp.deinit();
+        defer simple_interp.deinit(allocator);
         
         simple_interp.execute(tokens.items) catch |err| {
             print("Interpreter error: {}\n", .{err});
@@ -137,7 +137,7 @@ fn compileWithLLVM(allocator: Allocator, filename: []const u8, source: []const u
     defer allocator.free(output_name);
     
     var compiler = try complete_compiler.CursedCompiler.init(allocator, filename, output_name);
-    defer compiler.deinit();
+    defer compiler.deinit(allocator);
 
     const stats = try compiler.compileToExecutable(source);
     

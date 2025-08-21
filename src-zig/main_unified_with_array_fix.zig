@@ -54,7 +54,7 @@ const StructInstance = struct {
             allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
     }
 };
 
@@ -86,7 +86,7 @@ const InterfaceInstance = struct {
                     // Execute the method with the struct instance as 'self'
                     const self_var = Variable{ .Struct = self.underlying_struct.* };
                     var method_variables = VariableStore.init(allocator);
-                    defer method_variables.deinit();
+                    defer method_variables.deinit(allocator);
                     
                     // Add 'self' parameter
                     const self_key = try allocator.dupe(u8, "self");
@@ -238,21 +238,21 @@ pub const Variable = union(enum) {
             .Array => |arr| {
                 // Use arena allocator for temporary strings to avoid leaks on errors
                 var arena = std.heap.ArenaAllocator.init(allocator);
-                defer arena.deinit();
+                defer arena.deinit(allocator);
                 const arena_allocator = arena.allocator();
                 
-                var result = std.ArrayList(u8).init(allocator);
-                errdefer result.deinit(); // Clean up on error
+                var result: std.ArrayList(u8) = .empty;
+                errdefer result.deinit(allocator); // Clean up on error
                 
-                try result.append('[');
+                try result.append(allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
                     // Use arena allocator for temporary item strings - automatically cleaned up
                     const item_str = try item.toString(arena_allocator);
                     try result.appendSlice(item_str);
                 }
-                try result.append(']');
-                return result.toOwnedSlice();
+                try result.append(allocator, ']');
+                return result.toOwnedSlice(allocator);
             },
             .Struct => |struct_instance| {
                 return std.fmt.allocPrint(allocator, "struct {s}", .{struct_instance.type_name});
@@ -275,11 +275,11 @@ pub const Variable = union(enum) {
                 return Variable{ .String = ManagedString.fromOwned(copy) };
             },
             .Array => |arr| {
-                var new_arr = std.ArrayList(Variable).init(allocator);
-                try new_arr.ensureTotalCapacity(arr.items.len);
+                var new_arr: std.ArrayList(Variable) = .empty;
+                try new_arr.ensureTotalCapacity(allocator, arr.items.len);
                 for (arr.items) |item| {
                     const cloned = try item.clone(allocator);
-                    try new_arr.append(cloned);
+                    try new_arr.append(allocator, cloned);
                 }
                 return Variable{ .Array = new_arr };
             },
@@ -344,7 +344,7 @@ pub const Variable = union(enum) {
                         item.deinit(allocator);
                     }
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             .YikesError => |*err| {
                 err.deinit(allocator);
@@ -396,7 +396,7 @@ const StructDefinition = struct {
     pub fn init(allocator: Allocator, name: []const u8) StructDefinition {
         return StructDefinition{
             .name = name,
-            .fields = ArrayList(StructField).init(allocator),
+            .fields = .empty,
         };
     }
     
@@ -404,7 +404,7 @@ const StructDefinition = struct {
         for (self.fields.items) |*field| {
             field.deinit(allocator);
         }
-        self.fields.deinit();
+        self.fields.deinit(allocator);
         allocator.free(self.name);
     }
 };
@@ -418,7 +418,7 @@ const InterfaceMethod = struct {
     pub fn init(allocator: Allocator, name: []const u8) InterfaceMethod {
         return InterfaceMethod{
             .name = name,
-            .parameters = ArrayList(FunctionParameter).init(allocator),
+            .parameters = .empty,
             .return_type = null,
         };
     }
@@ -428,7 +428,7 @@ const InterfaceMethod = struct {
             allocator.free(param.name);
             allocator.free(param.param_type);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -450,12 +450,12 @@ pub const FunctionDefinition = struct {
     pub fn init(allocator: Allocator, name: []const u8) FunctionDefinition {
         return FunctionDefinition{
             .name = name,
-            .parameters = ArrayList(FunctionParameter).init(allocator),
-            .body = ArrayList([]const u8).init(allocator),
+            .parameters = .empty,
+            .body = .empty,
             .return_type = null,
-            .type_parameters = ArrayList([]const u8).init(allocator),
+            .type_parameters = .empty,
             .is_interface = false,
-            .interface_methods = ArrayList(InterfaceMethod).init(allocator),
+            .interface_methods = .empty,
         };
     }
     
@@ -464,22 +464,22 @@ pub const FunctionDefinition = struct {
             allocator.free(param.name);
             allocator.free(param.param_type);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         
         for (self.body.items) |line| {
             allocator.free(line);
         }
-        self.body.deinit();
+        self.body.deinit(allocator);
         
         for (self.type_parameters.items) |type_param| {
             allocator.free(type_param);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(allocator);
         
         for (self.interface_methods.items) |*method| {
             method.deinit(allocator);
         }
-        self.interface_methods.deinit();
+        self.interface_methods.deinit(allocator);
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -514,7 +514,7 @@ fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
             } };
         },
         .Function => |func| {
-            var new_params = ArrayList(ast.Type).init(allocator);
+            var new_params = .empty;
             for (func.parameters.items) |param| {
                 try new_params.append(try copyType(allocator, param));
             }
@@ -534,7 +534,7 @@ fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
             return ast.Type{ .Optional = ast.OptionalType{ .inner_type = inner_type } };
         },
         .Union => |union_type| {
-            var new_types = ArrayList(ast.Type).init(allocator);
+            var new_types = .empty;
             for (union_type.types.items) |t| {
                 try new_types.append(try copyType(allocator, t));
             }
@@ -553,7 +553,7 @@ pub fn main() !void {
         .retain_metadata = false,
         .verbose_log = false,
     }){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Initialize Windows async I/O runtime if on Windows
@@ -702,7 +702,7 @@ pub fn main() !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -765,21 +765,21 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     
     // Create enhanced error handling system
     var error_handler = error_diagnostics.ErrorHandler.init(allocator, 100);
-    defer error_handler.deinit();
+    defer error_handler.deinit(allocator);
     
     var error_recovery = error_handling.ErrorRecovery.init(allocator, 50);
-    defer error_recovery.deinit();
+    defer error_recovery.deinit(allocator);
     
     // Initialize fixed error state for proper yikes/shook/fam handling
     var error_state = error_execution_fixed.ErrorState.init(allocator);
-    defer error_state.deinit();
+    defer error_state.deinit(allocator);
     
     // Set current file for error reporting
     try error_handler.setCurrentFile("main.csd", source);
     
     // Create arena for variable names and temporary allocations
     var variable_arena = std.heap.ArenaAllocator.init(allocator);
-    defer variable_arena.deinit();
+    defer variable_arena.deinit(allocator);
     const variable_allocator = variable_arena.allocator();
     
     // Create variable store
@@ -790,12 +790,12 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         while (iterator.next()) |entry| {
             switch (entry.value_ptr.*) {
                 .String => |str| str.deinit(allocator),  // Free string values with ownership tracking
-                .Array => |arr| arr.deinit(),  // Free array allocations
+                .Array => |arr| arr.deinit(allocator),  // Free array allocations
                 .YikesError => |*err| err.deinit(allocator),  // Free error data
                 else => {},
             }
         }
-        variables.deinit();
+        variables.deinit(allocator);
     }
     
     // Create function store
@@ -810,7 +810,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             var func_def = entry.value_ptr;
             func_def.deinit(allocator);
         }
-        functions.deinit();
+        functions.deinit(allocator);
     }
     
     // Create struct store
@@ -825,7 +825,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             var struct_def = entry.value_ptr;
             struct_def.deinit(allocator);
         }
-        structs.deinit();
+        structs.deinit(allocator);
     }
     
     // Initialize module loader for module imports with stdlib path if provided
@@ -833,7 +833,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         module_loader.ModuleLoader.initWithStdlibPath(allocator, verbose, stdlib_path)
     else 
         module_loader.ModuleLoader.init(allocator, verbose);
-    defer simple_loader.deinit();
+    defer simple_loader.deinit(allocator);
     
     // Initialize concurrency system for potential Windows async I/O integration
     concurrency_handlers.initGlobalConcurrency(allocator);
@@ -856,7 +856,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
     
     // Load functions from imported modules using the new module loader
@@ -903,7 +903,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                     .name = try allocator.dupe(u8, param.name),
                     .param_type = try allocator.dupe(u8, type_str),
                     };
-                    try func_def.parameters.append(param_copy);
+                    try func_def.parameters.append(allocator, param_copy);
                     }
                     
                     // Set return type if available
@@ -951,12 +951,12 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
 
     
     // Split source into lines for processing
-    var source_lines = std.ArrayList([]const u8).init(allocator);
-    defer source_lines.deinit();
+    var source_lines: std.ArrayList([]const u8) = .empty;
+    defer source_lines.deinit(allocator);
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
-        try source_lines.append(line);
+        try source_lines.append(allocator, line);
     }
     
     // Statement-by-statement interpretation with proper control flow
@@ -979,16 +979,16 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             // Check if it's a single-line or multi-line stan block
             if (std.mem.indexOf(u8, trimmed, "}") == null) {
                 // Multi-line stan block - collect all lines until closing brace
-                var block_lines = std.ArrayList([]const u8).init(allocator);
-                defer block_lines.deinit();
+                var block_lines: std.ArrayList([]const u8) = .empty;
+                defer block_lines.deinit(allocator);
                 
-                try block_lines.append(trimmed); // Add the opening line
+                try block_lines.append(allocator, trimmed); // Add the opening line
                 line_index += 1;
                 
                 var brace_depth: i32 = 1;
                 while (line_index < source_lines.items.len and brace_depth > 0) {
                     const block_line = source_lines.items[line_index];
-                    try block_lines.append(block_line);
+                    try block_lines.append(allocator, block_line);
                     
                     // Count braces to find the end
                     for (block_line) |char| {
@@ -1000,15 +1000,15 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 }
                 
                 // Reconstruct the full stan statement
-                var full_statement = std.ArrayList(u8).init(allocator);
-                defer full_statement.deinit();
+                var full_statement: std.ArrayList(u8) = .empty;
+                defer full_statement.deinit(allocator);
                 
                 for (block_lines.items, 0..) |block_line, i| {
-                    if (i > 0) try full_statement.append('\n');
+                    if (i > 0) try full_statement.append(allocator, '\n');
                     try full_statement.appendSlice(block_line);
                 }
                 
-                const full_stan = try full_statement.toOwnedSlice();
+                const full_stan = try full_statement.toOwnedSlice(allocator);
                 defer allocator.free(full_stan);
                 
                 if (verbose) print("🔍 Processing multi-line goroutine spawn: {s}\n", .{full_stan});
@@ -1037,13 +1037,13 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 if (verbose) print("🔍 Single-line function detected. Function: '{s}', Remaining: '{s}'\n", .{ func_part, remaining_part });
                 
                 // Create a temporary source_lines with just the function part
-                var temp_source_lines = ArrayList([]const u8).init(allocator);
-                defer temp_source_lines.deinit();
+                var temp_source_lines = .empty;
+                defer temp_source_lines.deinit(allocator);
                 
                 // Copy the function part as a new line
                 const func_part_copy = try allocator.dupe(u8, func_part);
                 defer allocator.free(func_part_copy);
-                try temp_source_lines.append(func_part_copy);
+                try temp_source_lines.append(allocator, func_part_copy);
                 
                 // Process the function declaration
                 _ = try handleFunctionDeclaration(&functions, allocator, temp_source_lines, 0, verbose);
@@ -1231,8 +1231,8 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     
     // Split line by semicolons to handle multiple statements on one line
     // But be careful not to split inside braces
-    var statements = std.ArrayList([]const u8).init(allocator);
-    defer statements.deinit();
+    var statements: std.ArrayList([]const u8) = .empty;
+    defer statements.deinit(allocator);
     
     var start: usize = 0;
     var brace_count: i32 = 0;
@@ -1250,7 +1250,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
                 // Found a semicolon outside of braces, split here
                 const statement = std.mem.trim(u8, line[start..i], " \t\r\n");
                 if (statement.len > 0) {
-                    try statements.append(statement);
+                    try statements.append(allocator, statement);
                 }
                 start = i + 1;
             }
@@ -1260,7 +1260,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     // Add the final statement
     const final_statement = std.mem.trim(u8, line[start..], " \t\r\n");
     if (final_statement.len > 0) {
-        try statements.append(final_statement);
+        try statements.append(allocator, final_statement);
     }
     
     for (statements.items) |statement| {
@@ -2027,7 +2027,7 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
                                     
                                     // Create a temporary variable store with the nested struct
                                     var temp_vars = VariableStore.init(allocator);
-                                    defer temp_vars.deinit();
+                                    defer temp_vars.deinit(allocator);
                                     try temp_vars.put(first_field, nested_struct_value);
                                     
                                     if (verbose) print("🔍 Evaluating nested: '{s}'\n", .{nested_expression});
@@ -2323,10 +2323,10 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
         if (elements_str.len == 0) {
             // Empty array
             if (verbose) print("📊 Created empty array\n", .{});
-            return Variable{ .Array = ArrayList(Variable).init(allocator) };
+            return Variable{ .Array = .empty };
         }
         
-        var array = ArrayList(Variable).init(allocator);
+        var array = .empty;
         var iterator = std.mem.split(u8, elements_str, ",");
         
         while (iterator.next()) |element| {
@@ -2339,10 +2339,10 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
                     for (array.items) |*item| {
                         item.deinit(allocator);
                     }
-                    array.deinit();
+                    array.deinit(allocator);
                     return err;
                 };
-                try array.append(evaluated_element);
+                try array.append(allocator, evaluated_element);
                 if (verbose) print("📊 Added array element: {any}\n", .{evaluated_element});
             }
         }
@@ -2629,7 +2629,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         
         if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
             // Parse array literal [1, 2, 3]
-            var array = ArrayList(Variable).init(allocator);
+            var array = .empty;
             const content = trimmed_val[1..trimmed_val.len - 1];
             
             if (content.len > 0) {
@@ -2642,7 +2642,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Integer = int_val });
+                        try array.append(allocator, Variable{ .Integer = int_val });
                     } else if (std.mem.eql(u8, element_type, "tea")) {
                         // String elements - handle quoted strings
                         var clean_element = trimmed_element;
@@ -2650,16 +2650,16 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             clean_element = clean_element[1..clean_element.len - 1];
                         }
                         const string_copy = try allocator.dupe(u8, clean_element);
-                        try array.append(Variable{ .String = ManagedString.fromOwned(string_copy) });
+                        try array.append(allocator, Variable{ .String = ManagedString.fromOwned(string_copy) });
                     } else if (std.mem.eql(u8, element_type, "meal")) {
                         const float_val = std.fmt.parseFloat(f64, trimmed_element) catch {
                             if (verbose) print("❌ Error parsing float array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Float = float_val });
+                        try array.append(allocator, Variable{ .Float = float_val });
                     } else if (std.mem.eql(u8, element_type, "lit")) {
                         const bool_val = std.mem.eql(u8, trimmed_element, "based");
-                        try array.append(Variable{ .Boolean = bool_val });
+                        try array.append(allocator, Variable{ .Boolean = bool_val });
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -2775,7 +2775,7 @@ pub fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, al
             if (has_comma) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
-                defer args.deinit();
+                defer args.deinit(allocator);
                 
                 var first_arg = true;
                 for (args.items) |arg| {
@@ -2817,7 +2817,7 @@ pub fn handleFacts(variables: *VariableStore, functions: *FunctionStore, allocat
             if (has_comma) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
-                defer args.deinit();
+                defer args.deinit(allocator);
                 
                 var first_arg = true;
                 for (args.items) |arg| {
@@ -3000,7 +3000,7 @@ fn hasCommaOutsideQuotes(text: []const u8) bool {
 }
 
 fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8) {
-    var args = ArrayList([]const u8).init(allocator);
+    var args = .empty;
     var start: usize = 0;
     var in_quotes = false;
     var paren_depth: usize = 0;
@@ -3015,7 +3015,7 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
                 if (paren_depth > 0) paren_depth -= 1;
             } else if (char == ',' and paren_depth == 0) {
                 const arg = std.mem.trim(u8, text[start..i], " \t");
-                try args.append(arg);
+                try args.append(allocator, arg);
                 start = i + 1;
             }
         }
@@ -3023,7 +3023,7 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
     
     // Add the last argument
     const arg = std.mem.trim(u8, text[start..], " \t");
-    try args.append(arg);
+    try args.append(allocator, arg);
     
     return args;
 }
@@ -3085,7 +3085,7 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
                     // Execute the statement in goroutine context (no verbose to prevent duplicate output)
                     // Create a temporary struct store for goroutine context
                     var temp_structs = StructStore.init(goroutine_ctx.allocator);
-                    defer temp_structs.deinit();
+                    defer temp_structs.deinit(ctx.allocator);
                     
                     processStatements(goroutine_ctx.variables, goroutine_ctx.functions, &temp_structs, goroutine_ctx.allocator, goroutine_ctx.allocator, trimmed_line, false) catch |err| {
                         print("❌ Goroutine error on line '{s}': {any}\n", .{trimmed_line, err});
@@ -3372,10 +3372,10 @@ fn handleLintCommand(allocator: Allocator, args: [][:0]u8) !void {
     }
 
     var config = linter.LinterConfig.init(allocator);
-    defer config.deinit();
+    defer config.deinit(allocator);
 
     var cursed_linter = linter.Linter.init(allocator, config);
-    defer cursed_linter.deinit();
+    defer cursed_linter.deinit(allocator);
 
     // Check if target is file or directory
     const stat = std.fs.cwd().statFile(target) catch |err| {
@@ -3432,7 +3432,7 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
         print("❌ Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
 
@@ -3512,7 +3512,7 @@ fn checkFileFormatting(allocator: Allocator, file_path: []const u8, config: form
     defer allocator.free(source);
 
     var fmt = formatter.Formatter.init(allocator, config);
-    defer fmt.deinit();
+    defer fmt.deinit(allocator);
 
     const formatted = try fmt.format(source);
     defer allocator.free(formatted);
@@ -4369,8 +4369,8 @@ fn handleStdlibFunctionCall(allocator: Allocator, variables: *VariableStore, mod
 
 fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
     // Parse arguments and expand variables
-    var output = std.ArrayList(u8).init(allocator);
-    defer output.deinit();
+    var output: std.ArrayList(u8) = .empty;
+    defer output.deinit(allocator);
     
     // Split by commas and process each argument
     var arg_iter = std.mem.splitScalar(u8, args, ',');
@@ -4599,7 +4599,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     // Create arena allocator for function parsing - ensures cleanup on error
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     
     // Get the current line (function signature)
     const line = source_lines.items[start_line];
@@ -4615,8 +4615,8 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     // Check for generic type parameters: func_name<T, U>
     var func_name = func_declaration;
-    var type_params = std.ArrayList([]const u8).init(allocator);
-    defer type_params.deinit();
+    var type_params: std.ArrayList([]const u8) = .empty;
+    defer type_params.deinit(allocator);
     
     if (std.mem.indexOf(u8, func_declaration, "<")) |angle_start| {
         if (std.mem.lastIndexOf(u8, func_declaration, ">")) |angle_end| {
@@ -4627,7 +4627,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             var type_iter = std.mem.splitScalar(u8, type_params_str, ',');
             while (type_iter.next()) |type_param| {
                 const trimmed_type = std.mem.trim(u8, type_param, " \t");
-                try type_params.append(trimmed_type);
+                try type_params.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Parsing generic function: {s}<{s}>\n", .{func_name, type_params_str});
@@ -4646,7 +4646,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     // Store type parameters
     for (type_params.items) |type_param| {
         const type_param_copy = try allocator.dupe(u8, type_param);
-        try func_def.type_parameters.append(type_param_copy);
+        try func_def.type_parameters.append(allocator, type_param_copy);
         if (verbose) print("  📝 Type parameter: {s}\n", .{type_param});
     }
     
@@ -4679,7 +4679,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
                     .param_type = param_type_copy,
                 };
                 
-                try func_def.parameters.append(parameter);
+                try func_def.parameters.append(allocator, parameter);
                 if (verbose) print("  📝 Parameter: {s} {s}\n", .{ param_name, param_type });
             }
         }
@@ -4694,7 +4694,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
                 const body_line_copy = try allocator.dupe(u8, body_content);
                 errdefer allocator.free(body_line_copy);
                 
-                try func_def.body.append(body_line_copy);
+                try func_def.body.append(allocator, body_line_copy);
                 if (verbose) print("  📝 Single-line body: {s}\n", .{body_content});
             }
             
@@ -4725,7 +4725,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             const body_line_copy = try allocator.dupe(u8, body_trimmed);
             errdefer allocator.free(body_line_copy);
             
-            try func_def.body.append(body_line_copy);
+            try func_def.body.append(allocator, body_line_copy);
             if (verbose) print("  📝 Body line: {s}\n", .{body_trimmed});
         }
         
@@ -4752,8 +4752,8 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     // Check for generic function call syntax: func_name<T>
     var is_generic_call = false;
     var generic_base_name: []const u8 = func_name;
-    var type_args = std.ArrayList([]const u8).init(allocator);
-    defer type_args.deinit();
+    var type_args: std.ArrayList([]const u8) = .empty;
+    defer type_args.deinit(allocator);
     
     // Check for both angle brackets <> and square brackets [] for generic syntax
     if (std.mem.indexOf(u8, func_name, "<")) |angle_start| {
@@ -4766,7 +4766,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
             while (type_iter.next()) |type_arg| {
                 const trimmed_type = std.mem.trim(u8, type_arg, " \t");
-                try type_args.append(trimmed_type);
+                try type_args.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Generic function call detected: {s}<{s}>\n", .{generic_base_name, type_args_str});
@@ -4781,7 +4781,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
             while (type_iter.next()) |type_arg| {
                 const trimmed_type = std.mem.trim(u8, type_arg, " \t");
-                try type_args.append(trimmed_type);
+                try type_args.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Generic function call detected: {s}[{s}]\n", .{generic_base_name, type_args_str});
@@ -4840,7 +4840,7 @@ fn executeFunctionWithScope(
 ) !?Variable {
     // Create local variable scope for function execution - each call gets its own arena
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const arena_allocator = arena.allocator();
     
     var local_variables = VariableStore.init(arena_allocator);
@@ -5117,7 +5117,7 @@ fn executeFunctionBodyLine(variables: *VariableStore, functions: *FunctionStore,
     if (std.mem.startsWith(u8, trimmed, "sus ")) {
         if (verbose) print("  🔍 Processing local variable declaration: {s}\n", .{trimmed});
         var temp_structs = StructStore.init(allocator);
-        defer temp_structs.deinit();
+        defer temp_structs.deinit(allocator);
         try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, trimmed, verbose);
         return;
     }
@@ -5348,11 +5348,11 @@ fn handleFamBlock(
     }
     
     // Collect try and catch statements for execution
-    var try_statements = ArrayList([]const u8).init(allocator);
-    defer try_statements.deinit();
+    var try_statements = .empty;
+    defer try_statements.deinit(allocator);
     
-    var catch_statements = ArrayList([]const u8).init(allocator);
-    defer catch_statements.deinit();
+    var catch_statements = .empty;
+    defer catch_statements.deinit(allocator);
     
     // Collect try block statements
     if (try_start_line > 0) {
@@ -5362,7 +5362,7 @@ fn handleFamBlock(
             const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
-            try try_statements.append(exec_line);
+            try try_statements.append(allocator, exec_line);
             if (verbose) print("  📝 Collected try statement: {s}\n", .{exec_line});
         }
     }
@@ -5375,7 +5375,7 @@ fn handleFamBlock(
             const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
-            try catch_statements.append(exec_line);
+            try catch_statements.append(allocator, exec_line);
             if (verbose) print("  📝 Collected catch statement: {s}\n", .{exec_line});
         }
     }
@@ -5409,7 +5409,7 @@ fn executeStatementWrapper(
         try handleVibesSpill(variables, functions, allocator, statement, start, verbose);
     } else if (std.mem.startsWith(u8, statement, "sus ")) {
         var temp_structs = StructStore.init(allocator);
-        defer temp_structs.deinit();
+        defer temp_structs.deinit(allocator);
         try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, statement, verbose);
     } else if (std.mem.startsWith(u8, statement, "yikes ")) {
         const message_expr = std.mem.trim(u8, statement[6..], " \t");
@@ -5578,8 +5578,8 @@ fn handleReadyOtherwiseBlock(
     }
     
     // First, collect all lines to check if this is pattern matching
-    var block_content = std.ArrayList(u8).init(allocator);
-    defer block_content.deinit();
+    var block_content: std.ArrayList(u8) = .empty;
+    defer block_content.deinit(allocator);
     
     var has_pattern_matching = false;
     for (if_block_start..if_block_end) |line_idx| {
@@ -5593,7 +5593,7 @@ fn handleReadyOtherwiseBlock(
         }
         
         try block_content.appendSlice(exec_line);
-        try block_content.append(';');
+        try block_content.append(allocator, ';');
     }
     
     if (has_pattern_matching) {
@@ -5681,7 +5681,7 @@ fn handleSingleLineReadyInContext(
                     // For control flow blocks, use a temporary null structs parameter
                     // TODO: Properly pass structs through the call chain
                     var temp_structs = StructStore.init(allocator);
-                    defer temp_structs.deinit();
+                    defer temp_structs.deinit(allocator);
                     try handleVariableDeclaration(variables, functions, &temp_structs, allocator, variable_allocator, stmt_trimmed, verbose);
                     continue;
                 }
@@ -5776,11 +5776,11 @@ fn matchesPattern(
         
         // Create a temporary variable store for the guard scope
         var guard_variables = VariableStore.init(allocator);
-        defer guard_variables.deinit();
+        defer guard_variables.deinit(allocator);
         
         // Create an empty function store for the guard scope
         var guard_functions = FunctionStore.init(allocator);
-        defer guard_functions.deinit();
+        defer guard_functions.deinit(allocator);
         
         // Bind the matched value to the variable name
         try guard_variables.put(var_name, try value.clone(allocator));
@@ -6206,8 +6206,8 @@ fn handleInlineBestieLoop(
         
         // Execute loop body - split by semicolons and process each statement
         // Parse body statements manually to avoid circular dependency
-        var body_statements = std.ArrayList([]const u8).init(allocator);
-        defer body_statements.deinit();
+        var body_statements: std.ArrayList([]const u8) = .empty;
+        defer body_statements.deinit(allocator);
         
         var start: usize = 0;
         var brace_count: i32 = 0;
@@ -6224,7 +6224,7 @@ fn handleInlineBestieLoop(
                 } else if (char == ';' and brace_count == 0) {
                     const stmt = std.mem.trim(u8, body_text[start..i], " \t\r\n");
                     if (stmt.len > 0) {
-                        try body_statements.append(stmt);
+                        try body_statements.append(allocator, stmt);
                     }
                     start = i + 1;
                 }
@@ -6234,7 +6234,7 @@ fn handleInlineBestieLoop(
         // Add the final statement
         const final_stmt = std.mem.trim(u8, body_text[start..], " \t\r\n");
         if (final_stmt.len > 0) {
-            try body_statements.append(final_stmt);
+            try body_statements.append(allocator, final_stmt);
         }
         
         // Execute each statement
@@ -6407,13 +6407,13 @@ fn handleBestieLoop(
         if (verbose) print("🐛 DEBUG: Executing loop body lines {} to {}\n", .{loop_body_start, loop_body_end});
         
         // Create a sub-array of lines for the loop body
-        var body_lines = std.ArrayList([]const u8).init(allocator);
-        defer body_lines.deinit();
+        var body_lines: std.ArrayList([]const u8) = .empty;
+        defer body_lines.deinit(allocator);
         
         for (loop_body_start..loop_body_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            try body_lines.append(exec_line);
+            try body_lines.append(allocator, exec_line);
         }
         
         // Execute the body using the main interpreter logic
@@ -6480,7 +6480,7 @@ fn executeBlockLine(
     
     // Parse the line as a CURSED statement and execute it
     var stmt_arena = std.heap.ArenaAllocator.init(allocator);
-    defer stmt_arena.deinit();
+    defer stmt_arena.deinit(allocator);
     _ = stmt_arena.allocator(); // Reserved for future use
     
     // Simple parsing for common statement types
@@ -6554,7 +6554,7 @@ fn executeVariableDeclaration(
     verbose: bool
 ) !void {
     var temp_structs = StructStore.init(allocator);
-    defer temp_structs.deinit();
+    defer temp_structs.deinit(allocator);
     try handleVariableDeclaration(variables, functions, &temp_structs, allocator, allocator, line, verbose);
 }
 
@@ -6835,12 +6835,12 @@ fn handleInterfaceDefinition(variables: *VariableStore, functions: *FunctionStor
         
         const interface_def = FunctionDefinition{
             .name = try allocator.dupe(u8, interface_name),
-            .parameters = std.ArrayList(FunctionParameter).init(allocator),
+            .parameters = .{},
             .return_type = try allocator.dupe(u8, "interface"),
-            .body = std.ArrayList([]const u8).init(allocator),
-            .type_parameters = std.ArrayList([]const u8).init(allocator),
+            .body = .{},
+            .type_parameters = .{},
             .is_interface = true,
-            .interface_methods = std.ArrayList(InterfaceMethod).init(allocator),
+            .interface_methods = .{},
         };
         
         const name_copy = try allocator.dupe(u8, interface_key);
@@ -6894,7 +6894,7 @@ fn handleInterfaceMethodDeclaration(functions: *FunctionStore, allocator: Alloca
                                 .name = try allocator.dupe(u8, param_name),
                                 .param_type = try allocator.dupe(u8, param_type),
                             };
-                            try method.parameters.append(param);
+                            try method.parameters.append(allocator, param);
                         }
                     }
                 }
@@ -6990,7 +6990,7 @@ fn handleStructFieldDeclaration(structs: *StructStore, allocator: Allocator, lin
             .field_type = try allocator.dupe(u8, field_type),
         };
         
-        try struct_def.fields.append(field);
+        try struct_def.fields.append(allocator, field);
         if (verbose) print("✅ Added field '{s}' to struct '{s}'\n", .{ field_name, struct_def.name });
     } else {
         if (verbose) print("❌ No struct definition found for field declaration\n", .{});
@@ -7068,7 +7068,7 @@ fn handleMethodCallExpression(variables: *VariableStore, functions: *FunctionSto
                         
                         // Create a temporary variable store with the struct's fields and 'this' reference
                         var method_variables = VariableStore.init(allocator);
-                        defer method_variables.deinit();
+                        defer method_variables.deinit(allocator);
                         
                         // Add the struct as 'this' context
                         try method_variables.put("this", Variable{ .Struct = struct_instance });

@@ -213,7 +213,7 @@ pub const TLSContext = struct {
     }
     
     pub fn deinit(self: *TLSContext) void {
-        self.session_cache.deinit();
+        self.session_cache.deinit(allocator);
     }
     
     pub fn loadCACertificates(self: *TLSContext, ca_bundle_path: []const u8) !void {
@@ -247,9 +247,9 @@ pub const TLSContext = struct {
             .is_ca = true,
         };
         
-        var ca_list = std.ArrayList(X509Certificate).init(self.allocator);
-        try ca_list.append(example_ca);
-        self.ca_certificates = try ca_list.toOwnedSlice();
+        var ca_list: std.ArrayList(X509Certificate) = .empty;
+        try ca_list.append(allocator, example_ca);
+        self.ca_certificates = try ca_list.toOwnedSlice(allocator);
     }
     
     pub fn validateCertificateChain(self: *TLSContext, cert_chain: []const X509Certificate, hostname: []const u8) CertificateValidationError!void {
@@ -415,40 +415,40 @@ pub const TLSContext = struct {
 
 /// Security audit function to check for common TLS misconfigurations
 pub fn auditTLSConfiguration(config: TLSSecurityConfig) []const []const u8 {
-    var warnings = std.ArrayList([]const u8).init(std.heap.page_allocator);
+    var warnings: std.ArrayList([]const u8) = .empty;
     
     // Check minimum TLS version
     if (@intFromEnum(config.min_tls_version) < @intFromEnum(TLSVersion.tls_1_2)) {
-        warnings.append("Warning: Minimum TLS version below 1.2 is deprecated") catch {};
+        warnings.append(allocator, "Warning: Minimum TLS version below 1.2 is deprecated") catch {};
     }
     
     // Check certificate validation
     if (!config.verify_certificates) {
-        warnings.append("CRITICAL: Certificate validation is disabled") catch {};
+        warnings.append(allocator, "CRITICAL: Certificate validation is disabled") catch {};
     }
     
     if (!config.verify_hostname) {
-        warnings.append("CRITICAL: Hostname verification is disabled") catch {};
+        warnings.append(allocator, "CRITICAL: Hostname verification is disabled") catch {};
     }
     
     if (config.allow_self_signed) {
-        warnings.append("Warning: Self-signed certificates are allowed") catch {};
+        warnings.append(allocator, "Warning: Self-signed certificates are allowed") catch {};
     }
     
     // Check security features
     if (!config.require_perfect_forward_secrecy) {
-        warnings.append("Warning: Perfect forward secrecy not required") catch {};
+        warnings.append(allocator, "Warning: Perfect forward secrecy not required") catch {};
     }
     
     if (!config.disable_compression) {
-        warnings.append("Warning: TLS compression enabled (CRIME vulnerability)") catch {};
+        warnings.append(allocator, "Warning: TLS compression enabled (CRIME vulnerability)") catch {};
     }
     
     if (!config.disable_renegotiation) {
-        warnings.append("Warning: TLS renegotiation enabled (potential DoS)") catch {};
+        warnings.append(allocator, "Warning: TLS renegotiation enabled (potential DoS)") catch {};
     }
     
-    return warnings.toOwnedSlice() catch &[_][]const u8{};
+    return warnings.toOwnedSlice(allocator) catch &[_][]const u8{};
 }
 
 /// Runtime function for CURSED language TLS operations
@@ -482,7 +482,7 @@ pub fn runTLSSecurityTests() !void {
     print("Running TLS Security Tests...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test 1: Default configuration
@@ -497,7 +497,7 @@ pub fn runTLSSecurityTests() !void {
     
     // Test 3: Create TLS context
     var context = try TLSContext.init(allocator, default_config);
-    defer context.deinit();
+    defer context.deinit(allocator);
     
     // Test 4: Certificate validation
     const mock_cert = X509Certificate{

@@ -38,7 +38,7 @@ fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
     
     testFn() catch |err| {
         const end_time = std.time.milliTimestamp();
-        test_results.append(TestResult{
+        test_results.append(allocator, TestResult{
             .passed = false,
             .name = name,
             .duration_ms = @as(u64, @intCast(end_time - start_time)),
@@ -49,7 +49,7 @@ fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
     };
     
     const end_time = std.time.milliTimestamp();
-    test_results.append(TestResult{
+    test_results.append(allocator, TestResult{
         .passed = true,
         .name = name,
         .duration_ms = @as(u64, @intCast(end_time - start_time)),
@@ -59,15 +59,15 @@ fn runTest(comptime name: []const u8, testFn: *const fn () anyerror!void) void {
 
 // Comprehensive test suite
 pub fn main() !void {
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     print("🚀 CURSED Concurrency System Test Suite\n", .{});
     print("=====================================\n\n", .{});
 
     // Initialize test results
-    test_results = std.ArrayList(TestResult).init(allocator);
-    defer test_results.deinit();
+    test_results = .{};
+    defer test_results.deinit(allocator);
 
     // Basic functionality tests
     runTest("Basic Goroutine Creation", testBasicGoroutineCreation);
@@ -204,7 +204,7 @@ fn testBasicChannelOperations() !void {
     
     var channel = try concurrency.makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -230,7 +230,7 @@ fn testBufferedChannel() !void {
     
     var channel = try concurrency.makeChannel(i32, allocator, 5);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -261,7 +261,7 @@ fn testUnbufferedChannel() !void {
     
     var channel = try concurrency.makeUnbufferedChannel(i32, allocator);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -316,7 +316,7 @@ fn testChannelClosing() !void {
     
     var channel = try concurrency.makeChannel(i32, allocator, 2);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -344,7 +344,7 @@ fn testChannelIterator() !void {
     
     var channel = try concurrency.makeChannel(i32, allocator, 5);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -356,11 +356,11 @@ fn testChannelIterator() !void {
     channel.close();
     
     // Collect all values
-    var values = std.ArrayList(i32).init(allocator);
-    defer values.deinit();
+    var values: std.ArrayList(i32) = .empty;
+    defer values.deinit(allocator);
     
     while (try channel.receive()) |value| {
-        try values.append(value);
+        try values.append(allocator, value);
     }
     
     try testing.expect(values.items.len == 5);
@@ -431,10 +431,10 @@ fn testWorkStealing() !void {
     const allocator = gpa.allocator();
     
     var deque1 = WorkStealingDeque.init(allocator);
-    defer deque1.deinit();
+    defer deque1.deinit(allocator);
     
     var deque2 = WorkStealingDeque.init(allocator);
-    defer deque2.deinit();
+    defer deque2.deinit(allocator);
 
     // Create test goroutines
     var goroutine1 = Goroutine.init(allocator, 1, undefined, null);
@@ -491,7 +491,7 @@ fn testSelectDefaultCase() !void {
     const allocator = gpa.allocator();
     
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     try select_stmt.addDefault(0);
     
@@ -504,12 +504,12 @@ fn testSelectSendReceive() !void {
     
     var channel = try concurrency.makeChannel(i32, allocator, 1);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     try select_stmt.addSend(channel.id, 0);
     try select_stmt.addDefault(1);
@@ -523,7 +523,7 @@ fn testSelectTimeout() !void {
     const allocator = gpa.allocator();
     
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     select_stmt.setTimeout(10); // 10ms timeout
     
@@ -540,13 +540,13 @@ fn testSelectMultipleChannels() !void {
     
     var channel1 = try concurrency.makeChannel(i32, allocator, 1);
     defer {
-        channel1.deinit();
+        channel1.deinit(allocator);
         allocator.destroy(channel1);
     }
     
     var channel2 = try concurrency.makeChannel(i32, allocator, 1);
     defer {
-        channel2.deinit();
+        channel2.deinit(allocator);
         allocator.destroy(channel2);
     }
 
@@ -554,7 +554,7 @@ fn testSelectMultipleChannels() !void {
     try testing.expect(try channel1.send(42) == concurrency.SendResult.sent);
 
     var select_stmt = Select.init(allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
 
     try select_stmt.addReceive(channel1.id, 0);
     try select_stmt.addReceive(channel2.id, 1);
@@ -626,7 +626,7 @@ fn testChannelThroughput() !void {
     
     var channel = try concurrency.makeChannel(u64, allocator, 1000);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -768,7 +768,7 @@ fn testProducerConsumer() !void {
 
     var channel = try concurrency.makeChannel(u32, allocator, 10);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
 
@@ -841,7 +841,7 @@ fn testFanInPattern() !void {
 
     var output_channel = try concurrency.makeChannel(u32, allocator, 50);
     defer {
-        output_channel.deinit();
+        output_channel.deinit(allocator);
         allocator.destroy(output_channel);
     }
 
@@ -927,7 +927,7 @@ fn testFanOutPattern() !void {
 
     var input_channel = try concurrency.makeChannel(u32, allocator, 50);
     defer {
-        input_channel.deinit();
+        input_channel.deinit(allocator);
         allocator.destroy(input_channel);
     }
 
@@ -1015,13 +1015,13 @@ fn testWorkerPool() !void {
 
     var job_channel = try concurrency.makeChannel(u32, allocator, 20);
     defer {
-        job_channel.deinit();
+        job_channel.deinit(allocator);
         allocator.destroy(job_channel);
     }
     
     var result_channel = try concurrency.makeChannel(u32, allocator, 20);
     defer {
-        result_channel.deinit();
+        result_channel.deinit(allocator);
         allocator.destroy(result_channel);
     }
 
@@ -1124,7 +1124,7 @@ fn testMemorySafety() !void {
         _ = try channel.receive();
         
         // Clean up
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
     

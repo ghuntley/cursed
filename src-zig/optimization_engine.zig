@@ -98,11 +98,11 @@ pub const OptimizationEngine = struct {
     }
 
     pub fn deinit(self: *OptimizationEngine) void {
-        self.inlining_analyzer.deinit();
-        self.dead_code_tracker.deinit();
-        self.constant_folder.deinit();
-        self.loop_optimizer.deinit();
-        self.memory_optimizer.deinit();
+        self.inlining_analyzer.deinit(allocator);
+        self.dead_code_tracker.deinit(allocator);
+        self.constant_folder.deinit(allocator);
+        self.loop_optimizer.deinit(allocator);
+        self.memory_optimizer.deinit(allocator);
         
         if (self.pass_manager) |pm| {
             c.LLVMDisposePassManager(pm);
@@ -796,18 +796,18 @@ pub const ProfileData = struct {
     
     pub fn init(allocator: Allocator) ProfileData {
         return ProfileData{
-            .hot_functions = ArrayList([]const u8).init(allocator),
-            .cold_functions = ArrayList([]const u8).init(allocator),
+            .hot_functions = .empty,
+            .cold_functions = .empty,
             .call_frequencies = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .branch_probabilities = HashMap([]const u8, f64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
     }
     
     pub fn deinit(self: *ProfileData) void {
-        self.hot_functions.deinit();
-        self.cold_functions.deinit();
-        self.call_frequencies.deinit();
-        self.branch_probabilities.deinit();
+        self.hot_functions.deinit(allocator);
+        self.cold_functions.deinit(allocator);
+        self.call_frequencies.deinit(allocator);
+        self.branch_probabilities.deinit(allocator);
     }
 };
 
@@ -829,7 +829,7 @@ test "optimization engine initialization" {
     defer c.LLVMDisposeModule(module);
     
     var engine = try OptimizationEngine.init(allocator, context, module);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     try std.testing.expect(engine.config.optimization_level == 2);
     try std.testing.expect(engine.config.aggressive_optimizations == true);
@@ -845,7 +845,7 @@ test "optimization level configuration" {
     defer c.LLVMDisposeModule(module);
     
     var engine = try OptimizationEngine.init(allocator, context, module);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     engine.setOptimizationLevel(3);
     try std.testing.expect(engine.config.optimization_level == 3);

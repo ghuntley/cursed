@@ -80,8 +80,8 @@ pub const BuildJob = struct {
             .name = allocator.dupe(u8, name) catch name,
             .state = AtomicU32.init(@intFromEnum(JobState.pending)),
             .priority = priority,
-            .dependencies = ArrayList(JobId).init(allocator),
-            .dependents = ArrayList(JobId).init(allocator),
+            .dependencies = .empty,
+            .dependents = .empty,
             .resource_requirements = &[_][]const u8{},
             .estimated_duration_ms = 1000, // Default 1 second
             .actual_start_time = 0,
@@ -94,8 +94,8 @@ pub const BuildJob = struct {
     }
 
     pub fn deinit(self: *BuildJob) void {
-        self.dependencies.deinit();
-        self.dependents.deinit();
+        self.dependencies.deinit(self.allocator);
+        self.dependents.deinit(self.allocator);
         if (self.name.ptr != "unnamed".ptr) {
             self.allocator.free(self.name);
         }
@@ -110,11 +110,11 @@ pub const BuildJob = struct {
     }
 
     pub fn addDependency(self: *BuildJob, dep_id: JobId) !void {
-        try self.dependencies.append(dep_id);
+        try self.dependencies.append(self.allocator, dep_id);
     }
 
     pub fn addDependent(self: *BuildJob, dependent_id: JobId) !void {
-        try self.dependents.append(dependent_id);
+        try self.dependents.append(self.allocator, dependent_id);
     }
 };
 
@@ -143,9 +143,9 @@ pub const ResourcePool = struct {
     pub fn deinit(self: *ResourcePool) void {
         var iterator = self.resources.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.waiting_jobs.deinit();
+            entry.value_ptr.waiting_jobs.deinit(self.allocator);
         }
-        self.resources.deinit();
+        self.resources.deinit(self.allocator);
     }
 
     pub fn addResource(self: *ResourcePool, name: []const u8, count: u32) !void {
@@ -157,7 +157,7 @@ pub const ResourcePool = struct {
             .name = owned_name,
             .available = AtomicU32.init(count),
             .total = count,
-            .waiting_jobs = ArrayList(JobId).init(self.allocator),
+            .waiting_jobs = .empty,
             .mutex = Mutex{},
         });
     }
@@ -175,7 +175,7 @@ pub const ResourcePool = struct {
                 resource.available.store(available - 1, .release);
                 return true;
             } else {
-                resource.waiting_jobs.append(job_id) catch {};
+                resource.waiting_jobs.append(self.allocator, job_id) catch {};
                 return false;
             }
         }
@@ -217,13 +217,13 @@ pub const DeadlockDetector = struct {
     /// Detect circular dependencies using DFS with color marking
     pub fn detectCircularDependencies(self: *DeadlockDetector) !?ArrayList(JobId) {
         var visited = HashMap(JobId, u8, std.hash_map.AutoContext(JobId), 80).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(self.allocator);
 
         var recursion_stack = HashMap(JobId, bool, std.hash_map.AutoContext(JobId), 80).init(self.allocator);
-        defer recursion_stack.deinit();
+        defer recursion_stack.deinit(self.allocator);
 
-        var path = ArrayList(JobId).init(self.allocator);
-        defer path.deinit();
+        var path = .empty;
+        defer path.deinit(self.allocator);
 
         var job_iterator = self.jobs.iterator();
         while (job_iterator.next()) |entry| {
@@ -232,9 +232,9 @@ pub const DeadlockDetector = struct {
             if (!visited.contains(job_id)) {
                 if (try self.dfsDetectCycle(job_id, &visited, &recursion_stack, &path)) {
                     // Found a cycle, return the path
-                    var cycle = ArrayList(JobId).init(self.allocator);
+                    var cycle = .empty;
                     for (path.items) |id| {
-                        try cycle.append(id);
+                        try cycle.append(self.allocator, id);
                     }
                     return cycle;
                 }
@@ -253,7 +253,7 @@ pub const DeadlockDetector = struct {
     ) !bool {
         try visited.put(job_id, 1);
         try recursion_stack.put(job_id, true);
-        try path.append(job_id);
+        try path.append(self.allocator, job_id);
 
         if (self.jobs.get(job_id)) |job| {
             for (job.dependencies.items) |dep_id| {
@@ -276,12 +276,12 @@ pub const DeadlockDetector = struct {
     /// Perform topological sort to get safe execution order
     pub fn topologicalSort(self: *DeadlockDetector) !ArrayList(JobId) {
         var in_degree = HashMap(JobId, u32, std.hash_map.AutoContext(JobId), 80).init(self.allocator);
-        defer in_degree.deinit();
+        defer in_degree.deinit(self.allocator);
 
-        var queue = ArrayList(JobId).init(self.allocator);
-        defer queue.deinit();
+        var queue = .empty;
+        defer queue.deinit(self.allocator);
 
-        var result = ArrayList(JobId).init(self.allocator);
+        var result = .empty;
 
         // Calculate in-degrees
         var job_iterator = self.jobs.iterator();
@@ -304,21 +304,21 @@ pub const DeadlockDetector = struct {
         var degree_iterator = in_degree.iterator();
         while (degree_iterator.next()) |entry| {
             if (entry.value_ptr.* == 0) {
-                try queue.append(entry.key_ptr.*);
+                try queue.append(self.allocator, entry.key_ptr.*);
             }
         }
 
         // Process queue
         while (queue.items.len > 0) {
             const current_job_id = queue.orderedRemove(0);
-            try result.append(current_job_id);
+            try result.append(self.allocator, current_job_id);
 
             if (self.jobs.get(current_job_id)) |current_job| {
                 for (current_job.dependents.items) |dependent_id| {
                     if (in_degree.getPtr(dependent_id)) |count| {
                         count.* -= 1;
                         if (count.* == 0) {
-                            try queue.append(dependent_id);
+                            try queue.append(self.allocator, dependent_id);
                         }
                     }
                 }
@@ -359,10 +359,10 @@ pub const BuildScheduler = struct {
             .jobs = HashMap(JobId, BuildJob, std.hash_map.AutoContext(JobId), 80).init(allocator),
             .resources = ResourcePool.init(allocator),
             .deadlock_detector = undefined,
-            .ready_queue = ArrayList(JobId).init(allocator),
+            .ready_queue = .empty,
             .running_jobs = HashMap(JobId, u32, std.hash_map.AutoContext(JobId), 80).init(allocator),
-            .completed_jobs = ArrayList(JobId).init(allocator),
-            .failed_jobs = ArrayList(JobId).init(allocator),
+            .completed_jobs = .empty,
+            .failed_jobs = .empty,
             .allocator = allocator,
             .mutex = Mutex{},
             .condition = Condition{},
@@ -382,15 +382,15 @@ pub const BuildScheduler = struct {
         // Clean up jobs
         var job_iterator = self.jobs.iterator();
         while (job_iterator.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(self.allocator);
         }
-        self.jobs.deinit();
+        self.jobs.deinit(self.allocator);
         
-        self.resources.deinit();
-        self.ready_queue.deinit();
-        self.running_jobs.deinit();
-        self.completed_jobs.deinit();
-        self.failed_jobs.deinit();
+        self.resources.deinit(self.allocator);
+        self.ready_queue.deinit(self.allocator);
+        self.running_jobs.deinit(self.allocator);
+        self.completed_jobs.deinit(self.allocator);
+        self.failed_jobs.deinit(self.allocator);
     }
 
     /// Add a new build job to the scheduler
@@ -426,7 +426,7 @@ pub const BuildScheduler = struct {
 
         // Check for circular dependencies
         if (try self.deadlock_detector.detectCircularDependencies()) |cycle| {
-            defer cycle.deinit();
+            defer cycle.deinit(self.allocator);
             
             std.debug.print("🚨 Circular dependency detected in build jobs:\n", .{});
             for (cycle.items, 0..) |job_id, i| {
@@ -439,7 +439,7 @@ pub const BuildScheduler = struct {
 
         // Get topological order
         const execution_order = try self.deadlock_detector.topologicalSort();
-        defer execution_order.deinit();
+        defer execution_order.deinit(self.allocator);
 
         std.debug.print("✅ Build execution order validated (no deadlocks):\n", .{});
         for (execution_order.items, 0..) |job_id, i| {
@@ -453,7 +453,7 @@ pub const BuildScheduler = struct {
             if (self.jobs.getPtr(job_id)) |job| {
                 if (job.dependencies.items.len == 0) {
                     job.setState(JobState.ready);
-                    try self.ready_queue.append(job_id);
+                    try self.ready_queue.append(self.allocator, job_id);
                 } else {
                     job.setState(JobState.waiting_deps);
                 }
@@ -494,14 +494,14 @@ pub const BuildScheduler = struct {
             
             if (success) {
                 job.setState(JobState.completed);
-                try self.completed_jobs.append(job_id);
+                try self.completed_jobs.append(self.allocator, job_id);
                 
                 // Check if dependents are ready
                 for (job.dependents.items) |dependent_id| {
                     if (self.jobs.getPtr(dependent_id)) |dependent_job| {
                         if (self.areDependenciesSatisfied(dependent_id)) {
                             dependent_job.setState(JobState.ready);
-                            try self.ready_queue.append(dependent_id);
+                            try self.ready_queue.append(self.allocator, dependent_id);
                         }
                     }
                 }
@@ -509,10 +509,10 @@ pub const BuildScheduler = struct {
                 if (job.retry_count < job.max_retries) {
                     job.retry_count += 1;
                     job.setState(JobState.ready);
-                    try self.ready_queue.append(job_id);
+                    try self.ready_queue.append(self.allocator, job_id);
                 } else {
                     job.setState(JobState.failed);
-                    try self.failed_jobs.append(job_id);
+                    try self.failed_jobs.append(self.allocator, job_id);
                 }
             }
         }
@@ -667,7 +667,7 @@ test "deadlock detection and prevention" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 4);
-    defer scheduler.deinit();
+    defer scheduler.deinit(self.allocator);
 
     // Create jobs with potential circular dependency
     const job1 = try scheduler.addJob("compile_main", JobPriority.normal);
@@ -690,7 +690,7 @@ test "circular dependency detection" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 4);
-    defer scheduler.deinit();
+    defer scheduler.deinit(self.allocator);
 
     // Create jobs with circular dependency
     const job1 = try scheduler.addJob("job_a", JobPriority.normal);
@@ -715,7 +715,7 @@ test "parallel job execution" {
     const allocator = gpa.allocator();
 
     var scheduler = BuildScheduler.init(allocator, 2);
-    defer scheduler.deinit();
+    defer scheduler.deinit(self.allocator);
 
     // Create independent jobs that can run in parallel
     const job1 = try scheduler.addJob("parallel_task_1", JobPriority.normal);

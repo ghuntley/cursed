@@ -20,8 +20,8 @@ const SimpleLexer = struct {
     }
     
     pub fn tokenize(self: *SimpleLexer, allocator: Allocator) ![][]const u8 {
-        var tokens = ArrayList([]const u8).init(allocator);
-        defer tokens.deinit();
+        var tokens = .empty;
+        defer tokens.deinit(allocator);
         
         var current_pos: usize = 0;
         while (current_pos < self.input.len) {
@@ -46,20 +46,20 @@ const SimpleLexer = struct {
             }
             
             if (current_pos > start) {
-                try tokens.append(self.input[start..current_pos]);
+                try tokens.append(allocator, self.input[start..current_pos]);
             }
             
             // Handle single character tokens
             if (current_pos < self.input.len) {
                 const ch = self.input[current_pos];
                 if (ch == '(' or ch == ')' or ch == '{' or ch == '}' or ch == ';') {
-                    try tokens.append(self.input[current_pos..current_pos + 1]);
+                    try tokens.append(allocator, self.input[current_pos..current_pos + 1]);
                     current_pos += 1;
                 }
             }
         }
         
-        return tokens.toOwnedSlice();
+        return tokens.toOwnedSlice(allocator);
     }
 };
 
@@ -122,7 +122,7 @@ const CursedLspServer = struct {
             std.log.err("JSON parse error: {}", .{err});
             return;
         };
-        defer parsed.deinit();
+        defer parsed.deinit(allocator);
         
         const root = parsed.value;
         
@@ -167,12 +167,12 @@ const CursedLspServer = struct {
         const text = text_document.get("text").?.string;
         
         // Simple syntax checking
-        var diagnostics = ArrayList(Diagnostic).init(self.allocator);
-        defer diagnostics.deinit();
+        var diagnostics = .empty;
+        defer diagnostics.deinit(allocator);
         
         var lexer = SimpleLexer.init(text);
         const tokens = lexer.tokenize(self.allocator) catch {
-            try diagnostics.append(Diagnostic{
+            try diagnostics.append(self.allocator, Diagnostic{
                 .range = Range{
                     .start = Position{ .line = 0, .character = 0 },
                     .end = Position{ .line = 0, .character = 10 },
@@ -199,12 +199,12 @@ const CursedLspServer = struct {
     fn handleCompletion(self: *CursedLspServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var completions = ArrayList(CompletionItem).init(self.allocator);
-        defer completions.deinit();
+        var completions = .empty;
+        defer completions.deinit(allocator);
         
         // Add CURSED keywords as completions
         for (self.keywords) |keyword| {
-            try completions.append(CompletionItem{
+            try completions.append(self.allocator, CompletionItem{
                 .label = keyword,
                 .kind = 14, // Keyword
                 .detail = "CURSED keyword",
@@ -256,14 +256,16 @@ const CursedLspServer = struct {
 pub fn runLspServer(allocator: Allocator) !void {
     var server = CursedLspServer.init(allocator);
     
-    const stdin = std.io.getStdIn().reader();
-    const stdout = std.io.getStdOut().writer();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     const writer = stdout.any();
     
     std.log.info("CURSED LSP Server starting...", .{});
     
-    var buffer = ArrayList(u8).init(allocator);
-    defer buffer.deinit();
+    var buffer = .empty;
+    defer buffer.deinit(allocator);
     
     while (true) {
         // Read Content-Length header

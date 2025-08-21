@@ -21,16 +21,16 @@ pub const ProjectTemplate = struct {
         return ProjectTemplate{
             .name = name,
             .description = description,
-            .files = ArrayList(TemplateFile).init(allocator),
+            .files = .empty,
         };
     }
     
     pub fn deinit(self: *ProjectTemplate) void {
-        self.files.deinit();
+        self.files.deinit(allocator);
     }
     
     pub fn addFile(self: *ProjectTemplate, path: []const u8, content: []const u8, executable: bool) !void {
-        try self.files.append(TemplateFile{
+        try self.files.append(allocator, TemplateFile{
             .path = path,
             .content = content,
             .executable = executable,
@@ -627,7 +627,7 @@ pub const TemplateManager = struct {
         const template = try self.getTemplate(template_name, project_name);
         defer {
             var mut_template = template;
-            mut_template.deinit();
+            mut_template.deinit(allocator);
         }
         
         print("Creating {s} project '{s}' in {s}\n", .{ template_name, project_name, target_dir });
@@ -709,7 +709,7 @@ test "template creation" {
     const template = try manager.getTemplate("executable", "test-project");
     defer {
         var mut_template = template;
-        mut_template.deinit();
+        mut_template.deinit(allocator);
     }
     
     try std.testing.expect(template.files.items.len > 0);

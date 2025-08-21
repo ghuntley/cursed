@@ -75,10 +75,10 @@ const GoroutineTracker = struct {
 
         var iterator = self.goroutines.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit();
+            entry.value_ptr.*.deinit(allocator);
             self.goroutines.allocator.destroy(entry.value_ptr.*);
         }
-        self.goroutines.deinit();
+        self.goroutines.deinit(allocator);
     }
 
     pub fn registerGoroutine(self: *Self, id: concurrency.GoroutineId, function_ptr: ?*anyopaque, context: ?*anyopaque) !void {
@@ -122,7 +122,7 @@ const GoroutineTracker = struct {
         defer self.mutex.unlock();
 
         if (self.goroutines.fetchRemove(id)) |kv| {
-            kv.value.deinit();
+            kv.value.deinit(allocator);
             self.goroutines.allocator.destroy(kv.value);
         }
     }
@@ -179,7 +179,7 @@ pub export fn cursed_concurrency_cleanup() void {
     
     // Clean up goroutine tracker
     if (goroutine_tracker) |*tracker| {
-        tracker.deinit();
+        tracker.deinit(allocator);
         goroutine_tracker = null;
     }
     
@@ -466,7 +466,7 @@ pub export fn cursed_ready_select(operations_ptr: ?*anyopaque, operation_count: 
     const ops_slice = operations[0..operation_count];
     
     var select_stmt = concurrency.Select.init(global_allocator);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
     
     // Check for immediate readiness (non-blocking pass)
     for (ops_slice, 0..) |op, i| {
@@ -857,17 +857,17 @@ pub export fn cursed_dm_destroy(channel_ptr: ?*anyopaque) void {
     switch (wrapper.metadata.channel_type) {
         .i32_channel => {
             const channel: *concurrency.Channel(i32) = @ptrCast(@alignCast(wrapper.channel_ptr));
-            channel.deinit();
+            channel.deinit(allocator);
             global_allocator.destroy(channel);
         },
         .f64_channel => {
             const channel: *concurrency.Channel(f64) = @ptrCast(@alignCast(wrapper.channel_ptr));
-            channel.deinit();
+            channel.deinit(allocator);
             global_allocator.destroy(channel);
         },
         else => {
             const channel: *concurrency.Channel(i32) = @ptrCast(@alignCast(wrapper.channel_ptr));
-            channel.deinit();
+            channel.deinit(allocator);
             global_allocator.destroy(channel);
         },
     }

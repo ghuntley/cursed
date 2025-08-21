@@ -24,7 +24,7 @@ const Token = lexer_advanced.Token;
 /// Test helper to tokenize and parse code
 fn parseCode(allocator: std.mem.Allocator, code: []const u8) !ast_simple.Program {
     var lexer = try AdvancedLexer.init(allocator, code);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenize();
     defer allocator.free(tokens);
@@ -39,7 +39,7 @@ fn expectParseSuccess(allocator: std.mem.Allocator, code: []const u8) !void {
         std.debug.print("Failed to parse code: {s}\nError: {}\n", .{ code, err });
         return err;
     };
-    defer program.deinit();
+    defer program.deinit(allocator);
 }
 
 /// Test helper to check if parsing fails
@@ -47,7 +47,7 @@ fn expectParseFailure(allocator: std.mem.Allocator, code: []const u8) !void {
     var program = parseCode(allocator, code) catch {
         return; // Expected failure
     };
-    defer program.deinit();
+    defer program.deinit(allocator);
     return error.UnexpectedSuccess;
 }
 
@@ -1153,8 +1153,8 @@ test "stress - deeply nested expressions" {
     const allocator = testing.allocator;
     
     // Generate deeply nested expression
-    var code = ArrayList(u8).init(allocator);
-    defer code.deinit();
+    var code = .empty;
+    defer code.deinit(allocator);
     
     try code.appendSlice("sus result = ");
     
@@ -1179,8 +1179,8 @@ test "stress - deeply nested expressions" {
 test "stress - large number of declarations" {
     const allocator = testing.allocator;
     
-    var code = ArrayList(u8).init(allocator);
-    defer code.deinit();
+    var code = .empty;
+    defer code.deinit(allocator);
     
     const count = 1000;
     var i: u32 = 0;
@@ -1195,8 +1195,8 @@ test "stress - large number of declarations" {
 test "stress - complex pattern matching" {
     const allocator = testing.allocator;
     
-    var code = ArrayList(u8).init(allocator);
-    defer code.deinit();
+    var code = .empty;
+    defer code.deinit(allocator);
     
     try code.appendSlice("vibe_check value {\n");
     

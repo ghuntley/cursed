@@ -246,7 +246,7 @@ pub const CrossPlatformOptimizer = struct {
             return TargetPlatform{
                 .platform = platform,
                 .target_machine = null,
-                .optimization_passes = std.ArrayList(OptimizationPass).init(allocator),
+                .optimization_passes = .{},
             };
         }
         
@@ -254,7 +254,7 @@ pub const CrossPlatformOptimizer = struct {
             if (self.target_machine) |tm| {
                 c.LLVMDisposeTargetMachine(tm);
             }
-            self.optimization_passes.deinit();
+            self.optimization_passes.deinit(allocator);
         }
     };
     
@@ -556,7 +556,7 @@ pub const CrossPlatformOptimizer = struct {
         }
         
         pub fn deinit(self: *CrossPlatformMetrics) void {
-            self.estimated_speedup_by_platform.deinit();
+            self.estimated_speedup_by_platform.deinit(allocator);
         }
         
         pub fn printSummary(self: *const CrossPlatformMetrics) void {
@@ -582,7 +582,7 @@ pub const CrossPlatformOptimizer = struct {
     pub fn init(allocator: std.mem.Allocator) !Self {
         var optimizer = Self{
             .allocator = allocator,
-            .target_platforms = std.ArrayList(TargetPlatform).init(allocator),
+            .target_platforms = .{},
             .current_platform = null,
             .optimization_strategies = std.HashMap(Platform, OptimizationStrategy, std.hash_map.DefaultHashContext(Platform), std.hash_map.default_max_load_percentage).init(allocator),
             .vectorization_configs = std.HashMap(Platform, VectorizationConfig, std.hash_map.DefaultHashContext(Platform), std.hash_map.default_max_load_percentage).init(allocator),
@@ -607,14 +607,14 @@ pub const CrossPlatformOptimizer = struct {
     /// Cleanup the cross-platform optimizer
     pub fn deinit(self: *Self) void {
         for (self.target_platforms.items) |*platform| {
-            platform.deinit();
+            platform.deinit(allocator);
         }
-        self.target_platforms.deinit();
-        self.optimization_strategies.deinit();
-        self.vectorization_configs.deinit();
-        self.memory_configs.deinit();
-        self.platform_characteristics.deinit();
-        self.optimization_metrics.deinit();
+        self.target_platforms.deinit(allocator);
+        self.optimization_strategies.deinit(allocator);
+        self.vectorization_configs.deinit(allocator);
+        self.memory_configs.deinit(allocator);
+        self.platform_characteristics.deinit(allocator);
+        self.optimization_metrics.deinit(allocator);
         
         print("✅ Cross-Platform Optimizer cleaned up\n");
     }
@@ -629,7 +629,7 @@ pub const CrossPlatformOptimizer = struct {
         // Add platform-specific optimization passes
         try self.configurePlatformOptimizations(&target_platform);
         
-        try self.target_platforms.append(target_platform);
+        try self.target_platforms.append(self.allocator, target_platform);
         
         print("🎯 Added target platform: {}\n", .{platform});
     }
@@ -761,7 +761,7 @@ pub const CrossPlatformOptimizer = struct {
             .estimated_speedup = estimated_speedup,
             .vectorization_opportunities = if (strategy.vectorization_priority > 0.5) 10 else 0,
         };
-        try result.platform_results.append(platform_result);
+        try result.platform_results.append(allocator, platform_result);
         
         print("      Applied {} optimizations, estimated speedup: {:.2}x\n", .{ platform_result.optimizations_applied, estimated_speedup });
     }
@@ -867,7 +867,7 @@ pub const CrossPlatformOptimizer = struct {
                     .confidence = 0.8,
                     .description = "Vectorization shows best results on this platform",
                 };
-                try result.recommendations.append(recommendation);
+                try result.recommendations.append(allocator, recommendation);
             }
         }
         
@@ -923,10 +923,10 @@ pub const CrossPlatformOptimizer = struct {
         const arch = platform.platform.getArchitecture();
         
         // Add vectorization pass
-        try platform.optimization_passes.append(OptimizationPass.createVectorizationPass(arch));
+        try platform.optimization_passes.append(allocator, OptimizationPass.createVectorizationPass(arch));
         
         // Add inlining pass
-        try platform.optimization_passes.append(OptimizationPass.createInliningPass(arch));
+        try platform.optimization_passes.append(allocator, OptimizationPass.createInliningPass(arch));
         
         _ = self; // TODO: Use for additional configuration
     }
@@ -979,17 +979,17 @@ pub const CrossPlatformOptimizationResult = struct {
     pub fn init(allocator: std.mem.Allocator) CrossPlatformOptimizationResult {
         return CrossPlatformOptimizationResult{
             .allocator = allocator,
-            .platform_results = std.ArrayList(PlatformOptimizationResult).init(allocator),
+            .platform_results = .{},
             .universal_optimizations_applied = 0,
             .total_optimization_time_ms = 0,
             .average_speedup_across_platforms = 1.0,
-            .recommendations = std.ArrayList(CrossPlatformRecommendation).init(allocator),
+            .recommendations = .{},
         };
     }
     
     pub fn deinit(self: *CrossPlatformOptimizationResult) void {
-        self.platform_results.deinit();
-        self.recommendations.deinit();
+        self.platform_results.deinit(allocator);
+        self.recommendations.deinit(allocator);
     }
 };
 

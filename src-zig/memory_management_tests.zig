@@ -75,7 +75,7 @@ test "JIT execution engine memory safety" {
     // Test 1: Basic allocation and cleanup
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         const simple_program = 
             \\vibez.spill("Memory test")
@@ -90,7 +90,7 @@ test "JIT execution engine memory safety" {
     // Test 2: Repeated execution (memory leak test)
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         const config = TestConfig{};
         for (0..config.stress_iterations) |i| {
@@ -113,7 +113,7 @@ test "JIT execution engine memory safety" {
     // Test 3: Function calls and recursion
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         const recursive_program = 
             \\slay fibonacci(n drip) drip {
@@ -132,7 +132,7 @@ test "JIT execution engine memory safety" {
     // Test 4: Error handling and recovery
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         // Test division by zero error handling
         const error_program = 
@@ -271,7 +271,7 @@ test "garbage collector memory safety" {
         config.young_gen_size = 512 * 1024;     // 512KB
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit();
+        defer gc_instance.deinit(allocator);
         
         tracker.update();
         
@@ -289,7 +289,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 2 * 1024 * 1024; // 2MB
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit();
+        defer gc_instance.deinit(allocator);
         
         // Allocate many small objects
         var objects: [1000]*anyopaque = undefined;
@@ -312,7 +312,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 1024 * 1024;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit();
+        defer gc_instance.deinit(allocator);
         
         var root: ?*anyopaque = null;
         try gc_instance.addRoot(&root);
@@ -332,7 +332,7 @@ test "garbage collector memory safety" {
         config.initial_heap_size = 1024 * 1024;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-        defer gc_instance.deinit();
+        defer gc_instance.deinit(allocator);
         
         const obj = try gc_instance.alloc(128, 1);
         const weak_ref = try gc_instance.createWeakRef(obj);
@@ -414,13 +414,13 @@ test "integrated memory management" {
     config.initial_heap_size = 4 * 1024 * 1024; // 4MB
     
     const gc_instance = try gc_fixed.FixedGC.init(allocator, config);
-    defer gc_instance.deinit();
+    defer gc_instance.deinit(allocator);
     
     try concurrency_fixed.initializeScheduler(allocator, 2);
     defer concurrency_fixed.shutdownScheduler();
     
     var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     tracker.update();
     
@@ -503,13 +503,13 @@ test "memory management stress test" {
     gc_config.initial_heap_size = 8 * 1024 * 1024; // 8MB
     
     const gc_instance = try gc_fixed.FixedGC.init(allocator, gc_config);
-    defer gc_instance.deinit();
+    defer gc_instance.deinit(allocator);
     
     try concurrency_fixed.initializeScheduler(allocator, 4);
     defer concurrency_fixed.shutdownScheduler();
     
     var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     tracker.update();
     
@@ -589,7 +589,7 @@ test "memory management error handling" {
         small_config.young_gen_size = 512;
         
         const gc_instance = try gc_fixed.FixedGC.init(allocator, small_config);
-        defer gc_instance.deinit();
+        defer gc_instance.deinit(allocator);
         
         // Try to allocate more than available
         var allocations: usize = 0;
@@ -609,7 +609,7 @@ test "memory management error handling" {
     // Test 2: Invalid operations
     {
         var engine = try jit_fixed.JITExecutionEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         // Test invalid syntax
         const invalid_program = "this is not valid CURSED syntax @#$%";

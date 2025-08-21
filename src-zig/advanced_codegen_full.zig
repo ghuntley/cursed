@@ -26,7 +26,7 @@ pub const AdvancedCodeGenFull = struct {
     }
     
     pub fn deinit(self: *AdvancedCodeGenFull) void {
-        self.llvm_backend.deinit();
+        self.llvm_backend.deinit(allocator);
     }
     
     pub fn compileProgram(self: *AdvancedCodeGenFull, statements: []const ast.Statement, variables: std.StringHashMap(Variable)) !void {
@@ -176,17 +176,17 @@ pub const AdvancedCodeGenFull = struct {
         const printf_func = try self.llvm_backend.createFunction("printf", int32_type, &printf_func_type, true);
         
         // Compile print arguments
-        var args = ArrayList(anyopaque).init(self.allocator);
-        defer args.deinit();
+        var args = .empty;
+        defer args.deinit(allocator);
         
         // Format string - for now just use "%s\n" or "%d\n" 
         const format_str = try self.llvm_backend.buildConstString("%d\n", "fmt_str");
-        try args.append(format_str);
+        try args.append(allocator, format_str);
         
         // Add the value to print
         for (print_stmt.arguments) |arg| {
             const arg_value = try self.compileExpression(arg, variables);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         // Generate printf call
@@ -199,11 +199,11 @@ pub fn testAdvancedCodeGenFull(allocator: Allocator) !void {
     std.debug.print("Testing advanced codegen with full LLVM backend...\n", .{});
     
     var codegen = try AdvancedCodeGenFull.init(allocator, "test_full_codegen", "test_full_codegen.ll");
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Create a simple test program
     var variables = std.StringHashMap(Variable).init(allocator);
-    defer variables.deinit();
+    defer variables.deinit(allocator);
     
     try variables.put("x", Variable{ .Integer = 42 });
     

@@ -14,8 +14,8 @@ pub const AST = struct {
 
     pub fn init(allocator: Allocator) AST {
         return AST{
-            .expressions = ArrayList(Expression).init(allocator),
-            .statements = ArrayList(Statement).init(allocator),
+            .expressions = .empty,
+            .statements = .empty,
             .allocator = allocator,
         };
     }
@@ -27,7 +27,7 @@ pub const AST = struct {
             i -= 1;
             self.expressions.items[i].deinit(self.allocator, self);
         }
-        self.expressions.deinit();
+        self.expressions.deinit(allocator);
 
         // Clean up all statements
         i = self.statements.items.len;
@@ -35,12 +35,12 @@ pub const AST = struct {
             i -= 1;
             self.statements.items[i].deinit(self.allocator, self);
         }
-        self.statements.deinit();
+        self.statements.deinit(allocator);
     }
 
     pub fn addExpression(self: *AST, expr: Expression) !NodeIndex {
         const index = @as(NodeIndex, @intCast(self.expressions.items.len));
-        try self.expressions.append(expr);
+        try self.expressions.append(self.allocator, expr);
         return index;
     }
 
@@ -51,7 +51,7 @@ pub const AST = struct {
     
     pub fn addStatement(self: *AST, stmt: Statement) !NodeIndex {
         const index = @as(NodeIndex, @intCast(self.statements.items.len));
-        try self.statements.append(stmt);
+        try self.statements.append(allocator, stmt);
         return index;
     }
 };
@@ -89,7 +89,7 @@ pub const CallExpression = struct {
     pub fn deinit(self: *CallExpression, allocator: Allocator, ast: *AST) void {
         _ = allocator;
         _ = ast;
-        self.arguments.deinit();
+        self.arguments.deinit(allocator);
     }
 };
 
@@ -181,11 +181,11 @@ pub const Program = struct {
     
     pub fn init(allocator: Allocator) Program {
         return Program{
-            .statements = ArrayList(Statement).init(allocator),
+            .statements = .empty,
         };
     }
 
     pub fn deinit(self: *Program) void {
-        self.statements.deinit();
+        self.statements.deinit(allocator);
     }
 };

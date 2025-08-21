@@ -7,7 +7,7 @@ const ArrayList = std.ArrayList;
 /// Simple regression test runner that tests basic compilation without parser dependencies
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

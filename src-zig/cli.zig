@@ -619,9 +619,9 @@ pub const ArgParser = struct {
     fn parseCoverageArgs(self: *ArgParser, args: [][]const u8) !Subcommand.CoverageArgs {
         _ = args;
         return Subcommand.CoverageArgs{ .subcmd = Subcommand.CoverageSubcommand{ .run = Subcommand.CoverageSubcommand.CoverageRunArgs{
-            .source_dirs = ArrayList([]const u8).init(self.allocator),
-            .exclude_patterns = ArrayList([]const u8).init(self.allocator),
-            .formats = ArrayList([]const u8).init(self.allocator),
+            .source_dirs = .empty,
+            .exclude_patterns = .empty,
+            .formats = .empty,
         } } };
     }
     
@@ -629,8 +629,8 @@ pub const ArgParser = struct {
         _ = args;
         return Subcommand.DebugArgs{
             .input = "",
-            .breakpoints = ArrayList([]const u8).init(self.allocator),
-            .watch_vars = ArrayList([]const u8).init(self.allocator),
+            .breakpoints = .empty,
+            .watch_vars = .empty,
         };
     }
     
@@ -672,7 +672,7 @@ pub const ArgParser = struct {
     
     fn parseBuildArgs(self: *ArgParser, args: [][]const u8) !Subcommand.BuildArgs {
         _ = args;
-        return Subcommand.BuildArgs{ .features = ArrayList([]const u8).init(self.allocator) };
+        return Subcommand.BuildArgs{ .features = .empty };
     }
     
     fn parseCleanArgs(self: *ArgParser, args: [][]const u8) !Subcommand.CleanArgs {
@@ -971,7 +971,7 @@ pub fn printVersionInfo() void {
 /// Test the CLI framework
 pub fn testCLI() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var parser = ArgParser.init(allocator, "cursed");

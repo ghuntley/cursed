@@ -21,11 +21,11 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     // Initialize performance tracking
     var perf_stats = performance_optimizations.PerformanceStats.init();
     var string_interner = performance_optimizations.StringInterner.init(allocator);
-    defer string_interner.deinit();
+    defer string_interner.deinit(allocator);
     
     // Optimized tokenization
     var fast_tokenizer = parser_optimizations.FastTokenizer.init(allocator, source) catch return;
-    defer fast_tokenizer.deinit();
+    defer fast_tokenizer.deinit(allocator);
     
     const tokenize_start = timer.read();
     const tokens = fast_tokenizer.tokenize() catch return;
@@ -36,7 +36,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     
     // Optimized parsing
     var fast_parser = parser_optimizations.FastParser.init(allocator, tokens);
-    defer fast_parser.deinit();
+    defer fast_parser.deinit(allocator);
     
     const parse_start = timer.read();
     const ast = fast_parser.parse() catch return;
@@ -50,7 +50,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     defer optimized_scope.deinit(allocator);
     
     var function_context = performance_optimizations.OptimizedFunctionContext.init(allocator);
-    defer function_context.deinit();
+    defer function_context.deinit(allocator);
     
     // Execute with optimizations
     const execution_start = timer.read();
@@ -97,16 +97,16 @@ pub fn optimizedCompile(allocator: Allocator, source: []const u8, filename: []co
     };
     
     var llvm_optimizer = llvm_optimizations.LLVMOptimizer.init(allocator, optimization_level, inline_threshold);
-    defer llvm_optimizer.deinit();
+    defer llvm_optimizer.deinit(allocator);
     
     // Fast tokenization and parsing
     var fast_tokenizer = parser_optimizations.FastTokenizer.init(allocator, source) catch return;
-    defer fast_tokenizer.deinit();
+    defer fast_tokenizer.deinit(allocator);
     
     const tokens = fast_tokenizer.tokenize() catch return;
     
     var fast_parser = parser_optimizations.FastParser.init(allocator, tokens);
-    defer fast_parser.deinit();
+    defer fast_parser.deinit(allocator);
     
     const ast = fast_parser.parse() catch return;
     
@@ -184,7 +184,7 @@ fn generateBasicLLVMIR(
     llvm_optimizer: *llvm_optimizations.LLVMOptimizer,
     verbose: bool
 ) ![]u8 {
-    var ir = std.ArrayList(u8).init(allocator);
+    var ir: std.ArrayList(u8) = .empty;
     
     // Add basic LLVM IR structure
     try ir.appendSlice("; CURSED Optimized LLVM IR\n");
@@ -220,13 +220,13 @@ fn generateBasicLLVMIR(
     
     if (verbose) print("📝 Generated basic LLVM IR ({} bytes)\n", .{ir.items.len});
     
-    return ir.toOwnedSlice();
+    return ir.toOwnedSlice(allocator);
 }
 
 // Main entry point with optimization flags
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

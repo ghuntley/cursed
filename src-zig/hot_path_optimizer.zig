@@ -72,12 +72,12 @@ pub const HotPathOptimizer = struct {
                 .inlining_candidate = false,
                 .vectorization_candidate = false,
                 .optimization_priority = .medium,
-                .caller_functions = std.ArrayList([]const u8).init(allocator),
+                .caller_functions = .{},
             };
         }
         
         pub fn deinit(self: *HotFunctionInfo) void {
-            self.caller_functions.deinit();
+            self.caller_functions.deinit(allocator);
         }
         
         pub fn addCall(self: *HotFunctionInfo, execution_time_ns: u64, caller: ?[]const u8) !void {
@@ -96,7 +96,7 @@ pub const HotPathOptimizer = struct {
                         return; // Already tracked
                     }
                 }
-                try self.caller_functions.append(caller_name);
+                try self.caller_functions.append(allocator, caller_name);
             }
         }
         
@@ -133,7 +133,7 @@ pub const HotPathOptimizer = struct {
         pub fn init(allocator: std.mem.Allocator, chain_hash: u64) CallChain {
             return CallChain{
                 .chain_hash = chain_hash,
-                .function_sequence = std.ArrayList([]const u8).init(allocator),
+                .function_sequence = .{},
                 .execution_count = 0,
                 .total_time_ns = 0,
                 .optimization_applied = false,
@@ -141,7 +141,7 @@ pub const HotPathOptimizer = struct {
         }
         
         pub fn deinit(self: *CallChain) void {
-            self.function_sequence.deinit();
+            self.function_sequence.deinit(allocator);
         }
         
         pub fn addExecution(self: *CallChain, execution_time_ns: u64) void {
@@ -212,19 +212,19 @@ pub const HotPathOptimizer = struct {
             self.printStatistics();
         }
         
-        self.execution_counts.deinit();
+        self.execution_counts.deinit(allocator);
         
         var func_iter = self.hot_functions.iterator();
         while (func_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.hot_functions.deinit();
+        self.hot_functions.deinit(allocator);
         
         var chain_iter = self.call_chains.iterator();
         while (chain_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.call_chains.deinit();
+        self.call_chains.deinit(allocator);
     }
     
     /// Record function execution for hot path detection
@@ -454,7 +454,7 @@ pub const HotPathOptimizer = struct {
         while (func_iter.next()) |entry| {
             const func = entry.value_ptr;
             if (func.call_count >= self.hot_function_threshold) {
-                try analysis.hot_functions.append(HotFunctionSummary{
+                try analysis.hot_functions.append(self.allocator, HotFunctionSummary{
                     .name = func.name,
                     .call_count = func.call_count,
                     .total_time_ns = func.total_execution_time_ns,
@@ -469,7 +469,7 @@ pub const HotPathOptimizer = struct {
         while (path_iter.next()) |entry| {
             const exec_info = entry.value_ptr;
             if (exec_info.isHot(self.hot_path_threshold)) {
-                try analysis.hot_paths.append(HotPathSummary{
+                try analysis.hot_paths.append(allocator, HotPathSummary{
                     .path_hash = exec_info.path_hash,
                     .execution_count = exec_info.execution_count,
                     .total_time_ns = exec_info.total_time_ns,
@@ -492,7 +492,7 @@ pub const HotPathOptimizer = struct {
     
     /// Generate optimization recommendations
     pub fn generateOptimizationRecommendations(self: *Self) !std.ArrayList(OptimizationRecommendation) {
-        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
+        var recommendations: std.ArrayList(OptimizationRecommendation) = .empty;
         
         // Analyze hot functions for recommendations
         var func_iter = self.hot_functions.iterator();
@@ -509,7 +509,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.85,
                         .description = "High-frequency small function suitable for inlining",
                     };
-                    try recommendations.append(recommendation);
+                    try recommendations.append(allocator, recommendation);
                 }
                 
                 if (func.vectorization_candidate) {
@@ -521,7 +521,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.70,
                         .description = "Function with loop patterns suitable for SIMD vectorization",
                     };
-                    try recommendations.append(recommendation);
+                    try recommendations.append(allocator, recommendation);
                 }
             }
         }
@@ -612,14 +612,14 @@ pub const HotPathAnalysis = struct {
     pub fn init(allocator: std.mem.Allocator) HotPathAnalysis {
         return HotPathAnalysis{
             .allocator = allocator,
-            .hot_functions = std.ArrayList(HotFunctionSummary).init(allocator),
-            .hot_paths = std.ArrayList(HotPathSummary).init(allocator),
+            .hot_functions = .{},
+            .hot_paths = .{},
         };
     }
     
     pub fn deinit(self: *HotPathAnalysis) void {
-        self.hot_functions.deinit();
-        self.hot_paths.deinit();
+        self.hot_functions.deinit(allocator);
+        self.hot_paths.deinit(allocator);
     }
     
     pub fn printSummary(self: *const HotPathAnalysis) void {

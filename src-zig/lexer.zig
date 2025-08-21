@@ -230,14 +230,14 @@ pub const Lexer = struct {
     }
 
     pub fn tokenize(self: *Lexer) !ArrayList(Token) {
-        var tokens = ArrayList(Token).init(self.allocator);
-        errdefer tokens.deinit(); // Clean up on error
+        var tokens = .empty;
+        errdefer tokens.deinit(allocator); // Clean up on error
         
         while (!self.isAtEnd()) {
             const token = try self.nextToken();
             // Skip comments and newlines like the Rust version
             if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
             if (token.kind == .Eof) break;
         }
@@ -867,7 +867,7 @@ test "lexer basic tokens" {
     
     var lexer = Lexer.init(allocator, "slay main_character() { }");
     const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 5);
     try std.testing.expect(tokens.items[0].kind == .Slay);
@@ -882,7 +882,7 @@ test "lexer numbers" {
     
     var lexer = Lexer.init(allocator, "42 3.14");
     const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 2);
     try std.testing.expect(tokens.items[0].kind == .Number);
@@ -894,7 +894,7 @@ test "lexer strings" {
     
     var lexer = Lexer.init(allocator, "\"hello world\"");
     const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 1);
     try std.testing.expect(tokens.items[0].kind == .StringLiteral);
@@ -905,7 +905,7 @@ test "lexer bitwise operators" {
     
     var lexer = Lexer.init(allocator, "& | ^ << >>");
     const tokens = try lexer.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     try std.testing.expect(tokens.items.len >= 5);
     try std.testing.expect(tokens.items[0].kind == .Amp);
@@ -936,7 +936,7 @@ test "lexer hash character support" {
     // Test hash comment followed by code (filtered in tokenize)
     var lexer4 = Lexer.init(allocator, "# comment\nvibez.spill");
     const tokens4 = try lexer4.tokenize();
-    defer tokens4.deinit();
+    defer tokens4.deinit(allocator);
     try std.testing.expect(tokens4.items.len >= 2);
     try std.testing.expect(tokens4.items[0].kind == .Identifier); // vibez
 }

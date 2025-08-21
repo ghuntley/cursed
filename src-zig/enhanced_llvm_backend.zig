@@ -133,7 +133,7 @@ pub const EnhancedLLVMBackend = struct {
             .variables = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
             .debug_enabled = false,
             .source_file = null,
-            .allocated_strings = ArrayList([]const u8).init(arena_allocator),
+            .allocated_strings = .empty,
         };
         
         // Set module target triple
@@ -151,7 +151,7 @@ pub const EnhancedLLVMBackend = struct {
         if (self.context) |ctx| c.LLVMContextDispose(ctx);
         
         // Arena allocator cleans up all allocations automatically
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
     
@@ -215,11 +215,11 @@ pub const EnhancedLLVMBackend = struct {
         const function = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
         
         // Create blocks for each pattern case
-        var case_blocks = ArrayList(LLVMBasicBlockRef).init(self.arena.allocator());
+        var case_blocks = .empty);
         for (cases, 0..) |_, i| {
             const block_name = try std.fmt.allocPrintZ(self.arena.allocator(), "pattern_case_{d}", .{i});
             const block = c.LLVMAppendBasicBlockInContext(self.context, function, block_name.ptr);
-            try case_blocks.append(block);
+            try case_blocks.append(allocator, block);
         }
         
         const merge_block = c.LLVMAppendBasicBlockInContext(self.context, function, "pattern_merge");
@@ -553,7 +553,7 @@ pub fn compileToEnhancedLLVM(allocator: Allocator, source: []const u8, output_fi
     print("🚀 Enhanced LLVM compilation with memory safety and optimization...\n", .{});
     
     var backend = try EnhancedLLVMBackend.init(allocator, "cursed_program");
-    defer backend.deinit(); // Proper cleanup prevents all memory leaks
+    defer backend.deinit(allocator); // Proper cleanup prevents all memory leaks
     
     // Enable debug info
     try backend.enableDebugInfo("source.csd");
@@ -631,7 +631,7 @@ pub fn crossCompileToLLVM(allocator: Allocator, source: []const u8, output_file:
     print("🌍 Cross-compiling to target: {s}\n", .{target.getTriple()});
     
     var backend = try EnhancedLLVMBackend.init(allocator, "cursed_program");
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     // Check if target supports threading
     const supports_threading = switch (target) {
@@ -653,7 +653,7 @@ test "enhanced llvm backend memory safety" {
     const allocator = std.testing.allocator;
     
     var backend = try EnhancedLLVMBackend.init(allocator, "test_module");
-    defer backend.deinit();
+    defer backend.deinit(allocator);
     
     // Test that all resources are properly cleaned up
     try std.testing.expect(backend.context != null);

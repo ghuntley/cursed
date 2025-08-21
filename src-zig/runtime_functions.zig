@@ -78,7 +78,7 @@ pub const Variable = union(enum) {
     pub fn deinit(self: *Variable, allocator: Allocator) void {
         switch (self.*) {
             .String => |str| allocator.free(str),
-            .Array => |*arr| arr.deinit(),
+            .Array => |*arr| arr.deinit(allocator),
             else => {},
         }
     }
@@ -90,9 +90,9 @@ pub const Variable = union(enum) {
             .String => |str| Variable{ .String = try allocator.dupe(u8, str) },
             .Boolean => |val| Variable{ .Boolean = val },
             .Array => |arr| {
-                var new_array = ArrayList(Variable).init(allocator);
+                var new_array = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(try item.clone(allocator));
+                    try new_array.append(allocator, try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -105,7 +105,7 @@ pub fn array_length(array: []const Variable) i64 {
 }
 
 pub fn array_push(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(item);
+    try array.append(allocator, item);
 }
 
 pub fn array_pop(array: *ArrayList(Variable)) ?Variable {
@@ -118,7 +118,7 @@ pub fn array_sort(allocator: Allocator, array: *ArrayList(Variable)) !void {
 }
 
 pub fn array_append(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(item);
+    try array.append(allocator, item);
 }
 
 pub fn array_contains(array: []const Variable, item: Variable) bool {
@@ -136,14 +136,14 @@ pub fn array_find(array: []const Variable, item: Variable) i64 {
 }
 
 pub fn array_slice(allocator: Allocator, array: []const Variable, start: i64, end: i64) !ArrayList(Variable) {
-    var result = ArrayList(Variable).init(allocator);
+    var result = .empty;
     if (start < 0 or start >= array.len or end <= start) return result;
     
     const start_idx: usize = @intCast(start);
     const end_idx = @min(@as(usize, @intCast(end)), array.len);
     
     for (array[start_idx..end_idx]) |item| {
-        try result.append(try item.clone(allocator));
+        try result.append(allocator, try item.clone(allocator));
     }
     return result;
 }
@@ -482,7 +482,7 @@ pub fn registerStdlibFunctions() void {
 // Test function to verify runtime functions work
 pub fn test_runtime_functions() !void {
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const allocator = arena.allocator();
     
     // Test string functions

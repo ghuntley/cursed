@@ -61,7 +61,7 @@ pub const OptimizedJsonLogger = struct {
             .buffer_index = Atomic(usize).init(0),
             .json_template_cache = try JsonTemplateCache.init(allocator),
             .batch_size = 100,
-            .batch_buffer = ArrayList(LogEntry).init(allocator),
+            .batch_buffer = .empty,
             .config = PerformanceConfig.highThroughput(),
             .performance_metrics = PerformanceMetrics.init(),
         };
@@ -74,9 +74,9 @@ pub const OptimizedJsonLogger = struct {
         }
         self.allocator.free(self.message_buffer);
         
-        self.json_template_cache.deinit();
-        self.batch_buffer.deinit();
-        _ = self.direct_allocator.deinit();
+        self.json_template_cache.deinit(allocator);
+        self.batch_buffer.deinit(allocator);
+        _ = self.direct_allocator.deinit(allocator);
     }
     
     /// Ultra-fast JSON formatting bypassing memory pools
@@ -373,7 +373,7 @@ const JsonTemplateCache = struct {
     }
     
     fn deinit(self: *JsonTemplateCache) void {
-        self.templates.deinit();
+        self.templates.deinit(allocator);
     }
     
     fn getTemplate(self: *JsonTemplateCache, level: LogLevel, attr_count: usize) []const u8 {
@@ -507,7 +507,7 @@ fn fastF64ToString(buffer: []u8, value: f64) !usize {
 /// Benchmark function for performance testing
 pub fn benchmarkOptimizedLogger(allocator: Allocator, iterations: usize) !PerformanceMetrics {
     var logger = try OptimizedJsonLogger.init(allocator);
-    defer logger.deinit();
+    defer logger.deinit(allocator);
     
     logger.enableHighPerformanceMode();
     

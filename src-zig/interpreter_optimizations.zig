@@ -39,8 +39,8 @@ pub const VariableCache = struct {
             self.allocator.free(entry.key_ptr.*);
         }
         
-        self.cache.deinit();
-        self.string_to_hash.deinit();
+        self.cache.deinit(allocator);
+        self.string_to_hash.deinit(allocator);
     }
     
     pub fn getVariablePtr(self: *Self, name: []const u8) ?*const anyopaque {
@@ -191,7 +191,7 @@ pub const ExpressionCache = struct {
             }
         }
         
-        self.cache.deinit();
+        self.cache.deinit(allocator);
     }
     
     pub fn getHash(expression: []const u8) u64 {
@@ -260,7 +260,7 @@ pub const StringInterner = struct {
     
     pub fn init(allocator: Allocator) Self {
         return Self{
-            .strings = ArrayList([]const u8).init(allocator),
+            .strings = .empty,
             .string_map = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -270,8 +270,8 @@ pub const StringInterner = struct {
         for (self.strings.items) |string| {
             self.allocator.free(string);
         }
-        self.strings.deinit();
-        self.string_map.deinit();
+        self.strings.deinit(allocator);
+        self.string_map.deinit(allocator);
     }
     
     pub fn intern(self: *Self, string: []const u8) ![]const u8 {
@@ -283,7 +283,7 @@ pub const StringInterner = struct {
         const owned_string = try self.allocator.dupe(u8, string);
         const index = @as(u32, @intCast(self.strings.items.len));
         
-        try self.strings.append(owned_string);
+        try self.strings.append(self.allocator, owned_string);
         try self.string_map.put(owned_string, index);
         
         return owned_string;
@@ -331,16 +331,16 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.variable_cache.deinit();
-        self.expression_cache.deinit();
-        self.string_interner.deinit();
+        self.variable_cache.deinit(allocator);
+        self.expression_cache.deinit(allocator);
+        self.string_interner.deinit(allocator);
         
         // Free function call tracking
         var iter = self.function_calls.iterator();
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.function_calls.deinit();
+        self.function_calls.deinit(allocator);
     }
     
     pub fn recordVariableLookup(self: *Self) void {

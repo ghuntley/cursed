@@ -65,19 +65,19 @@ pub fn bool_to_string_impl(allocator: std.mem.Allocator, value: bool) ![]u8 {
 
 /// Convert array to string representation
 pub fn array_to_string_impl(allocator: std.mem.Allocator, array: []const i64) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
-    defer result.deinit();
+    var result: std.ArrayList(u8) = .empty;
+    defer result.deinit(allocator);
     
-    try result.append('[');
+    try result.append(allocator, '[');
     for (array, 0..) |item, i| {
         if (i > 0) try result.appendSlice(", ");
         const item_str = try std.fmt.allocPrint(allocator, "{d}", .{item});
         defer allocator.free(item_str);
         try result.appendSlice(item_str);
     }
-    try result.append(']');
+    try result.append(allocator, ']');
     
-    return result.toOwnedSlice();
+    return result.toOwnedSlice(allocator);
 }
 
 /// Missing file operations implementations
@@ -211,7 +211,7 @@ pub fn test_missing_implementations() !void {
     print("==========================================\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test math functions

@@ -17,14 +17,14 @@ test "error handling system comprehensive test" {
     
     // Test 1: Basic error context creation and management
     var ctx = try ErrorContext.init(allocator, CursedError.OutOfMemory, "Test out of memory error");
-    defer ctx.deinit();
+    defer ctx.deinit(allocator);
     
     try testing.expect(ctx.error_code == CursedError.OutOfMemory);
     try testing.expect(std.mem.eql(u8, ctx.message, "Test out of memory error"));
     
     // Test 2: Error recovery system
     var recovery = ErrorRecovery.init(allocator, 5);
-    defer recovery.deinit();
+    defer recovery.deinit(allocator);
     
     const error1 = try ErrorContext.init(allocator, CursedError.ParseError, "Parse failed");
     const error2 = try ErrorContext.init(allocator, CursedError.TypeMismatch, "Type mismatch");
@@ -55,7 +55,7 @@ test "error handling system comprehensive test" {
         "Variable 'x' not found",
         location
     );
-    defer ctx_with_loc.deinit();
+    defer ctx_with_loc.deinit(allocator);
     
     try testing.expect(ctx_with_loc.location != null);
     try testing.expect(ctx_with_loc.location.?.line == 42);
@@ -71,7 +71,7 @@ test "error handling system comprehensive test" {
         "Compilation failed due to missing input",
         inner_ptr
     );
-    defer outer_ctx.deinit();
+    defer outer_ctx.deinit(allocator);
     
     try testing.expect(outer_ctx.inner_error != null);
     try testing.expect(outer_ctx.inner_error.?.error_code == CursedError.FileNotFound);
@@ -85,7 +85,7 @@ test "interpreter error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer struct_instance.deinit();
+    defer struct_instance.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, struct_instance.type_name, "TestStruct"));
     
@@ -94,7 +94,7 @@ test "interpreter error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer vtable.deinit();
+    defer vtable.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, vtable.interface_name, "TestInterface"));
     
@@ -103,7 +103,7 @@ test "interpreter error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer error_value.deinit();
+    defer error_value.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, error_value.message, "Test error message"));
     try testing.expect(error_value.code == 404);
@@ -117,7 +117,7 @@ test "simple interpreter error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer struct_instance.deinit();
+    defer struct_instance.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, struct_instance.type_name, "SimpleStruct"));
     
@@ -126,7 +126,7 @@ test "simple interpreter error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer struct_type.deinit();
+    defer struct_type.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, struct_type.name, "SimpleStructType"));
 }
@@ -144,7 +144,7 @@ test "type system runtime error handling integration" {
         try testing.expect(err == CursedError.OutOfMemory);
         return;
     };
-    defer type_info.deinit();
+    defer type_info.deinit(allocator);
     
     try testing.expect(std.mem.eql(u8, type_info.type_name, "TestType"));
     try testing.expect(type_info.type_id == 1);
@@ -178,7 +178,7 @@ test "error context formatting" {
     const allocator = testing.allocator;
     
     var ctx = try ErrorContext.init(allocator, CursedError.ParseError, "Unexpected token");
-    defer ctx.deinit();
+    defer ctx.deinit(allocator);
     
     const formatted = try ctx.toString(allocator);
     defer allocator.free(formatted);

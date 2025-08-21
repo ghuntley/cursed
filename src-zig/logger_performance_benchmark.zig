@@ -14,12 +14,12 @@ pub const LoggerBenchmark = struct {
     pub fn init(allocator: Allocator) LoggerBenchmark {
         return LoggerBenchmark{
             .allocator = allocator,
-            .results = ArrayList(BenchmarkResult).init(allocator),
+            .results = .empty,
         };
     }
     
     pub fn deinit(self: *LoggerBenchmark) void {
-        self.results.deinit();
+        self.results.deinit(allocator);
     }
     
     /// Run comprehensive performance comparison
@@ -35,19 +35,19 @@ pub const LoggerBenchmark = struct {
             
             // Test 1: Optimized logger (pool bypassing)
             const optimized_result = try self.benchmarkOptimizedLogger(size);
-            try self.results.append(optimized_result);
+            try self.results.append(allocator, optimized_result);
             
             // Test 2: Standard logger (with memory pools)
             const standard_result = try self.benchmarkStandardLogger(size);
-            try self.results.append(standard_result);
+            try self.results.append(allocator, standard_result);
             
             // Test 3: Arena allocator baseline
             const arena_result = try self.benchmarkArenaLogger(size);
-            try self.results.append(arena_result);
+            try self.results.append(allocator, arena_result);
             
             // Test 4: Batch processing optimization
             const batch_result = try self.benchmarkBatchLogger(size);
-            try self.results.append(batch_result);
+            try self.results.append(allocator, batch_result);
             
             self.printComparisonResults(size, optimized_result, standard_result, arena_result, batch_result);
         }
@@ -61,7 +61,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var logger = try optimized.OptimizedJsonLogger.init(self.allocator);
-        defer logger.deinit();
+        defer logger.deinit(allocator);
         
         logger.enableHighPerformanceMode();
         
@@ -118,11 +118,11 @@ pub const LoggerBenchmark = struct {
         
         // Simulate standard logging with memory pools
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         
         // Memory pool simulation
         var memory_pool = try MemoryPool.init(self.allocator, 1024);
-        defer memory_pool.deinit();
+        defer memory_pool.deinit(allocator);
         
         var total_bytes: usize = 0;
         var allocations: usize = 0;
@@ -165,7 +165,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         var total_bytes: usize = 0;
@@ -206,7 +206,7 @@ pub const LoggerBenchmark = struct {
         const start_time = timer.read();
         
         var logger = try optimized.OptimizedJsonLogger.init(self.allocator);
-        defer logger.deinit();
+        defer logger.deinit(allocator);
         
         logger.enableHighPerformanceMode();
         
@@ -374,7 +374,7 @@ const MemoryPool = struct {
         return MemoryPool{
             .allocator = allocator,
             .pool_size = pool_size,
-            .allocated_blocks = ArrayList([]u8).init(allocator),
+            .allocated_blocks = .empty,
         };
     }
     
@@ -382,12 +382,12 @@ const MemoryPool = struct {
         for (self.allocated_blocks.items) |block| {
             self.allocator.free(block);
         }
-        self.allocated_blocks.deinit();
+        self.allocated_blocks.deinit(allocator);
     }
     
     fn allocate(self: *MemoryPool, size: usize) ![]u8 {
         const block = try self.allocator.alloc(u8, size);
-        try self.allocated_blocks.append(block);
+        try self.allocated_blocks.append(self.allocator, block);
         return block;
     }
     
@@ -414,7 +414,7 @@ fn formatJsonStandard(buffer: []u8, iteration: usize) !usize {
 /// Main benchmark runner
 pub fn runLoggerBenchmarks(allocator: Allocator) !void {
     var benchmark = LoggerBenchmark.init(allocator);
-    defer benchmark.deinit();
+    defer benchmark.deinit(allocator);
     
     try benchmark.runPerformanceComparison();
     
@@ -429,7 +429,7 @@ pub fn runStressTest(allocator: Allocator) !void {
     std.debug.print("\n");
     
     var logger = try optimized.OptimizedJsonLogger.init(allocator);
-    defer logger.deinit();
+    defer logger.deinit(allocator);
     
     logger.enableHighPerformanceMode();
     

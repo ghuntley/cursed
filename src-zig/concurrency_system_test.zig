@@ -58,7 +58,7 @@ pub const ConcurrencySystemTest = struct {
         // Test 1: Block form - stan { vibez.spill("Hello from goroutine!") }
         const block_source = "stan { vibez.spill(\"Hello from goroutine!\") }";
         const block_result = try self.parseSource(block_source);
-        defer block_result.deinit(self.allocator);
+        defer block_result.deinit(allocator);
         
         try testing.expect(block_result.statements.items.len == 1);
         switch (block_result.statements.items[0]) {
@@ -77,7 +77,7 @@ pub const ConcurrencySystemTest = struct {
         // Test 2: Expression form - stan doWork()
         const expr_source = "stan doWork()";
         const expr_result = try self.parseSource(expr_source);
-        defer expr_result.deinit(self.allocator);
+        defer expr_result.deinit(allocator);
         
         try testing.expect(expr_result.statements.items.len == 1);
         switch (expr_result.statements.items[0]) {
@@ -100,7 +100,7 @@ pub const ConcurrencySystemTest = struct {
         // Test channel type parsing: sus ch dm<normie>
         const channel_decl_source = "sus ch dm<normie>";
         const channel_result = try self.parseSource(channel_decl_source);
-        defer channel_result.deinit(self.allocator);
+        defer channel_result.deinit(allocator);
         
         try testing.expect(channel_result.statements.items.len == 1);
         switch (channel_result.statements.items[0]) {
@@ -136,7 +136,7 @@ pub const ConcurrencySystemTest = struct {
         ;
         
         const select_result = try self.parseSource(select_source);
-        defer select_result.deinit(self.allocator);
+        defer select_result.deinit(allocator);
         
         try testing.expect(select_result.statements.items.len == 1);
         switch (select_result.statements.items[0]) {
@@ -161,7 +161,7 @@ pub const ConcurrencySystemTest = struct {
         // Create channel
         var channel = try concurrency.makeChannel(i32, self.allocator, 3);
         defer {
-            channel.deinit();
+            channel.deinit(allocator);
             self.allocator.destroy(channel);
         }
         
@@ -229,13 +229,13 @@ pub const ConcurrencySystemTest = struct {
         // Create channels
         var ch1 = try concurrency.makeChannel(i32, self.allocator, 1);
         defer {
-            ch1.deinit();
+            ch1.deinit(allocator);
             self.allocator.destroy(ch1);
         }
         
         var ch2 = try concurrency.makeChannel(i32, self.allocator, 1);
         defer {
-            ch2.deinit();
+            ch2.deinit(allocator);
             self.allocator.destroy(ch2);
         }
         
@@ -244,7 +244,7 @@ pub const ConcurrencySystemTest = struct {
         
         // Create select statement
         var select_stmt = concurrency.Select.init(self.allocator);
-        defer select_stmt.deinit();
+        defer select_stmt.deinit(allocator);
         
         try select_stmt.addReceive(ch1.id, 0);
         try select_stmt.addReceive(ch2.id, 1);
@@ -319,7 +319,7 @@ pub const ConcurrencySystemTest = struct {
         
         // Parse the program
         const program = try self.parseSource(concurrency_source);
-        defer program.deinit(self.allocator);
+        defer program.deinit(allocator);
         
         // Verify parsing results
         var goroutine_count: u32 = 0;
@@ -355,7 +355,7 @@ pub const ConcurrencySystemTest = struct {
     /// Helper function to parse CURSED source code
     fn parseSource(self: *ConcurrencySystemTest, source: []const u8) !ast.Program {
         var lex = lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
         
         const tokens = try lex.tokenize();
         defer self.allocator.free(tokens);
@@ -438,7 +438,7 @@ test "comprehensive concurrency workflow" {
 // Example usage and demonstration
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var test_suite = ConcurrencySystemTest.init(allocator);

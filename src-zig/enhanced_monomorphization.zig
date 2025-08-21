@@ -104,24 +104,24 @@ pub const EnhancedMonomorphizer = struct {
         pub fn init(allocator: Allocator) InstantiationGraph {
             return InstantiationGraph{
                 .nodes = HashMap([]const u8, InstantiationNode, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-                .edges = ArrayList(InstantiationEdge).init(allocator),
+                .edges = .empty,
             };
         }
         
         pub fn deinit(self: *InstantiationGraph) void {
             var node_iter = self.nodes.iterator();
             while (node_iter.next()) |entry| {
-                entry.value_ptr.depends_on.deinit();
-                entry.value_ptr.dependents.deinit();
+                entry.value_ptr.depends_on.deinit(allocator);
+                entry.value_ptr.dependents.deinit(allocator);
             }
-            self.nodes.deinit();
-            self.edges.deinit();
+            self.nodes.deinit(allocator);
+            self.edges.deinit(allocator);
         }
         
         /// Add dependency relationship between two instantiations
         pub fn addDependency(self: *InstantiationGraph, dependent: []const u8, dependency: []const u8, weight: u32) !void {
             // Add edge
-            try self.edges.append(InstantiationEdge{
+            try self.edges.append(allocator, InstantiationEdge{
                 .from = dependent,
                 .to = dependency,
                 .weight = weight,
@@ -129,22 +129,22 @@ pub const EnhancedMonomorphizer = struct {
             
             // Update node dependency lists
             if (self.nodes.getPtr(dependent)) |dependent_node| {
-                try dependent_node.depends_on.append(dependency);
+                try dependent_node.depends_on.append(allocator, dependency);
             }
             
             if (self.nodes.getPtr(dependency)) |dependency_node| {
-                try dependency_node.dependents.append(dependent);
+                try dependency_node.dependents.append(allocator, dependent);
             }
         }
         
         /// Perform topological sort to determine instantiation order
         pub fn getInstantiationOrder(self: *InstantiationGraph, allocator: Allocator) ![][]const u8 {
-            var sorted = ArrayList([]const u8).init(allocator);
+            var sorted = .empty;
             var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-            defer visited.deinit();
+            defer visited.deinit(allocator);
             
             var temp_visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-            defer temp_visited.deinit();
+            defer temp_visited.deinit(allocator);
             
             // Initialize all nodes as unvisited
             var node_iter = self.nodes.iterator();
@@ -165,7 +165,7 @@ pub const EnhancedMonomorphizer = struct {
             // Reverse to get correct order (dependencies first)
             std.mem.reverse([]const u8, sorted.items);
             
-            return sorted.toOwnedSlice();
+            return sorted.toOwnedSlice(allocator);
         }
         
         fn topologicalSortUtil(
@@ -194,7 +194,7 @@ pub const EnhancedMonomorphizer = struct {
             
             try temp_visited.put(node_name, false);
             try visited.put(node_name, true);
-            try sorted.append(node_name);
+            try sorted.append(allocator, node_name);
         }
     };
     
@@ -255,7 +255,7 @@ pub const EnhancedMonomorphizer = struct {
         }
         
         pub fn deinit(self: *OptimizationCache) void {
-            self.cached_optimizations.deinit();
+            self.cached_optimizations.deinit(allocator);
         }
     };
     
@@ -351,31 +351,31 @@ pub const EnhancedMonomorphizer = struct {
         pub fn deinit(self: *DependencyTracker) void {
             var iter = self.dependencies.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit();
+                entry.value_ptr.deinit(allocator);
             }
-            self.dependencies.deinit();
+            self.dependencies.deinit(allocator);
             
             var rev_iter = self.reverse_dependencies.iterator();
             while (rev_iter.next()) |entry| {
-                entry.value_ptr.deinit();
+                entry.value_ptr.deinit(allocator);
             }
-            self.reverse_dependencies.deinit();
+            self.reverse_dependencies.deinit(allocator);
         }
         
         pub fn addDependency(self: *DependencyTracker, dependent: []const u8, dependency: []const u8) !void {
             // Add to forward dependencies
             const deps = try self.dependencies.getOrPut(dependent);
             if (!deps.found_existing) {
-                deps.value_ptr.* = ArrayList([]const u8).init(self.dependencies.allocator);
+                deps.value_ptr.* = .empty;
             }
-            try deps.value_ptr.append(dependency);
+            try deps.value_ptr.append(allocator, dependency);
             
             // Add to reverse dependencies
             const rev_deps = try self.reverse_dependencies.getOrPut(dependency);
             if (!rev_deps.found_existing) {
-                rev_deps.value_ptr.* = ArrayList([]const u8).init(self.reverse_dependencies.allocator);
+                rev_deps.value_ptr.* = .empty;
             }
-            try rev_deps.value_ptr.append(dependent);
+            try rev_deps.value_ptr.append(allocator, dependent);
         }
         
         pub fn getDependencies(self: *DependencyTracker, name: []const u8) ?[]const []const u8 {
@@ -417,11 +417,11 @@ pub const EnhancedMonomorphizer = struct {
     }
     
     pub fn deinit(self: *EnhancedMonomorphizer) void {
-        self.instantiation_graph.deinit();
-        self.optimization_cache.deinit();
-        self.type_inference_ctx.deinit();
-        self.monomorphization_cache.deinit();
-        self.dependency_tracker.deinit();
+        self.instantiation_graph.deinit(allocator);
+        self.optimization_cache.deinit(allocator);
+        self.type_inference_ctx.deinit(allocator);
+        self.monomorphization_cache.deinit(allocator);
+        self.dependency_tracker.deinit(allocator);
     }
     
     /// Enhanced instantiation with automatic type inference
@@ -526,8 +526,8 @@ pub const EnhancedMonomorphizer = struct {
             .kind = node_kind,
             .type_arguments = type_arguments,
             .status = .Pending,
-            .depends_on = ArrayList([]const u8).init(self.allocator),
-            .dependents = ArrayList([]const u8).init(self.allocator),
+            .depends_on = .empty,
+            .dependents = .empty,
             .priority = self.calculateInstantiationPriority(generic_name, type_arguments),
         };
         

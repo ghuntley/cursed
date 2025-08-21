@@ -76,7 +76,7 @@ pub fn Channel(comptime T: type) type {
         
         pub fn init(allocator: Allocator, capacity: usize) !Self {
             return Self{
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .buffer_mutex = std.Thread.Mutex{}, // Initialize mutex
                 .capacity = capacity,
                 .closed = Atomic(bool).init(false),
@@ -110,7 +110,7 @@ pub fn Channel(comptime T: type) type {
                 timeout_count += 1;
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
         
         /// Add reference (thread-safe)
@@ -184,7 +184,7 @@ pub fn Channel(comptime T: type) type {
                 }
                 
                 // Attempt to add to buffer atomically
-                self.buffer.append(value) catch return null;
+                self.buffer.append(allocator, value) catch return null;
                 _ = self.buffer_size.fetchAdd(1, Release);
                 _ = self.stats.total_sent.fetchAdd(1, Release);
                 
@@ -221,7 +221,7 @@ pub fn Channel(comptime T: type) type {
             }
             
             // Add to buffer with error handling
-            self.buffer.append(value) catch {
+            self.buffer.append(allocator, value) catch {
                 // Rollback size on failure
                 _ = self.buffer_size.fetchSub(1, Release);
                 return null;
@@ -398,7 +398,7 @@ pub const Scheduler = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator, worker_count: u32) !Self {
-        const workers = ArrayList(*Worker).init(allocator);
+        const workers = .empty;
         
         return Self{
             .allocator = allocator,
@@ -414,7 +414,7 @@ pub const Scheduler = struct {
     
     pub fn deinit(self: *Self) void {
         self.shutdown();
-        self.workers.deinit();
+        self.workers.deinit(allocator);
     }
     
     /// Start the scheduler
@@ -424,11 +424,11 @@ pub const Scheduler = struct {
         }
         
         // Start worker threads
-        try self.workers.ensureTotalCapacity(self.worker_count);
+        try self.workers.ensureTotalCapacity(self.allocator, self.worker_count);
         for (0..self.worker_count) |i| {
             const worker = try self.allocator.create(Worker);
             worker.* = try Worker.init(self.allocator, @intCast(i), self);
-            try self.workers.append(worker);
+            try self.workers.append(self.allocator, worker);
             try worker.start();
         }
     }
@@ -541,7 +541,7 @@ pub const Worker = struct {
             .id = id,
             .scheduler = scheduler,
             .thread = null,
-            .queue = ArrayList(*GoroutineContext).init(allocator),
+            .queue = .empty,
             .queue_mutex = std.Thread.Mutex{},
             .running = Atomic(bool).init(false),
         };
@@ -549,7 +549,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.queue.deinit();
+        self.queue.deinit(allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -571,7 +571,7 @@ pub const Worker = struct {
     pub fn schedule(self: *Self, goroutine_ctx: *GoroutineContext) !void {
         self.queue_mutex.lock();
         defer self.queue_mutex.unlock();
-        try self.queue.append(goroutine_ctx);
+        try self.queue.append(allocator, goroutine_ctx);
     }
     
     fn workerMain(self: *Self) void {
@@ -666,7 +666,7 @@ pub const ConcurrencyRuntime = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.scheduler.deinit();
+        self.scheduler.deinit(allocator);
         self.allocator.destroy(self.scheduler);
     }
     
@@ -681,7 +681,7 @@ pub const ConcurrencyRuntime = struct {
     }
     
     pub fn destroyChannel(self: *Self, channel: anytype) void {
-        channel.deinit();
+        channel.deinit(allocator);
         self.allocator.destroy(channel);
     }
 };

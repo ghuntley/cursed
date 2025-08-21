@@ -40,20 +40,20 @@ pub const BuiltInRegistry = struct {
 
         pub fn init(allocator: Allocator, capacity: usize) Channel {
             return Channel{
-                .buffer = ArrayList(Value).init(allocator),
+                .buffer = .empty,
                 .capacity = capacity,
                 .closed = false,
             };
         }
 
         pub fn deinit(self: *Channel) void {
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
 
         pub fn send(self: *Channel, value: Value) !bool {
             if (self.closed) return false;
             if (self.buffer.items.len >= self.capacity) return false;
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             return true;
         }
 
@@ -74,7 +74,7 @@ pub const BuiltInRegistry = struct {
     }
 
     pub fn deinit(self: *BuiltInRegistry) void {
-        self.functions.deinit();
+        self.functions.deinit(allocator);
     }
 
     fn registerBuiltIns(self: *BuiltInRegistry) !void {
@@ -408,7 +408,7 @@ test "built-in functions" {
     const allocator = std.testing.allocator;
     
     var registry = BuiltInRegistry.init(allocator);
-    defer registry.deinit();
+    defer registry.deinit(allocator);
     
     // Test math.add
     const args = [_]BuiltInRegistry.Value{

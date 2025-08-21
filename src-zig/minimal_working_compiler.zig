@@ -235,13 +235,13 @@ const SimpleLexer = struct {
     }
     
     fn tokenize(self: *Self) !ArrayList(Token) {
-        var tokens = ArrayList(Token).init(self.allocator);
+        var tokens = .empty;
         
         while (true) {
             const token = try self.nextToken();
             if (token.type == .EOF) break;
             if (token.type != .NEWLINE) { // Skip newlines
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
         }
         
@@ -308,8 +308,8 @@ const SimpleParser = struct {
     }
     
     fn parseFunctionCall(self: *Self) !ASTNode {
-        var name_parts = ArrayList(u8).init(self.allocator);
-        defer name_parts.deinit();
+        var name_parts = .empty;
+        defer name_parts.deinit(allocator);
         
         // Parse "vibez.spill"
         const vibez_token = self.advance();
@@ -317,23 +317,23 @@ const SimpleParser = struct {
         
         if (self.peek().type == .DOT) {
             _ = self.advance(); // consume dot
-            try name_parts.append('.');
+            try name_parts.append(allocator, '.');
             
             const spill_token = self.advance();
             try name_parts.appendSlice(spill_token.value);
         }
         
-        const name = try name_parts.toOwnedSlice();
+        const name = try name_parts.toOwnedSlice(allocator);
         
         // Parse arguments
-        var args = ArrayList(ASTNode).init(self.allocator);
+        var args = .empty;
         
         if (self.peek().type == .LPAREN) {
             _ = self.advance(); // consume (
             
             while (!self.isAtEnd() and self.peek().type != .RPAREN) {
                 const arg = try self.parseExpression();
-                try args.append(arg);
+                try args.append(allocator, arg);
                 
                 if (self.peek().type == .COMMA) {
                     _ = self.advance(); // consume comma
@@ -353,11 +353,11 @@ const SimpleParser = struct {
     }
     
     fn parse(self: *Self) !ASTNode {
-        var statements = ArrayList(ASTNode).init(self.allocator);
+        var statements = .empty;
         
         while (!self.isAtEnd()) {
             const stmt = try self.parseStatement();
-            try statements.append(stmt);
+            try statements.append(allocator, stmt);
             
             // Skip optional semicolon
             if (self.peek().type == .SEMICOLON) {
@@ -420,8 +420,8 @@ const SimpleCompiler = struct {
     
     fn compile(self: *Self, ast: ASTNode, output_path: []const u8) !void {
         // Generate a simple C program
-        var c_code = ArrayList(u8).init(self.allocator);
-        defer c_code.deinit();
+        var c_code = .empty;
+        defer c_code.deinit(allocator);
         
         try c_code.appendSlice("#include <stdio.h>\n\nint main() {\n");
         
@@ -491,7 +491,7 @@ const SimpleCompiler = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -541,7 +541,7 @@ pub fn main() !void {
         print("Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (debug_mode) {
         print("=== TOKENS ===\n", .{});

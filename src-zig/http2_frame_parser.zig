@@ -359,7 +359,7 @@ pub const DynamicTable = struct {
     
     pub fn init(allocator: Allocator, max_size: u32) DynamicTable {
         return DynamicTable{
-            .entries = ArrayList(HeaderEntry).init(allocator),
+            .entries = .empty,
             .max_size = max_size,
             .current_size = 0,
             .allocator = allocator,
@@ -368,9 +368,9 @@ pub const DynamicTable = struct {
     
     pub fn deinit(self: *DynamicTable) void {
         for (self.entries.items) |*entry| {
-            entry.deinit(self.allocator);
+            entry.deinit(allocator);
         }
-        self.entries.deinit();
+        self.entries.deinit(allocator);
     }
     
     pub fn add(self: *DynamicTable, entry: HeaderEntry) !void {
@@ -378,7 +378,7 @@ pub const DynamicTable = struct {
         while (self.current_size + entry.size > self.max_size and self.entries.items.len > 0) {
             var evicted = self.entries.pop();
             self.current_size -= evicted.size;
-            evicted.deinit(self.allocator);
+            evicted.deinit(allocator);
         }
         
         if (entry.size <= self.max_size) {
@@ -399,7 +399,7 @@ pub const DynamicTable = struct {
         while (self.current_size > self.max_size and self.entries.items.len > 0) {
             var evicted = self.entries.pop();
             self.current_size -= evicted.size;
-            evicted.deinit(self.allocator);
+            evicted.deinit(allocator);
         }
     }
 };
@@ -417,12 +417,12 @@ pub const HpackDecoder = struct {
     }
     
     pub fn deinit(self: *HpackDecoder) void {
-        self.dynamic_table.deinit();
+        self.dynamic_table.deinit(allocator);
     }
     
     /// Decode HPACK-compressed header block
     pub fn decode(self: *HpackDecoder, data: []const u8) !ArrayList(HeaderEntry) {
-        var headers = ArrayList(HeaderEntry).init(self.allocator);
+        var headers = .empty;
         var pos: usize = 0;
         
         while (pos < data.len) {
@@ -600,10 +600,10 @@ pub const ConnectionState = struct {
     }
     
     pub fn deinit(self: *ConnectionState) void {
-        self.streams.deinit();
-        self.peer_settings.deinit();
-        self.local_settings.deinit();
-        self.hpack_decoder.deinit();
+        self.streams.deinit(allocator);
+        self.peer_settings.deinit(allocator);
+        self.local_settings.deinit(allocator);
+        self.hpack_decoder.deinit(allocator);
     }
     
     pub fn getStream(self: *ConnectionState, stream_id: u31) ?*Stream {
@@ -1080,7 +1080,7 @@ pub const Http2Connection = struct {
     }
     
     pub fn deinit(self: *Http2Connection) void {
-        self.state.deinit();
+        self.state.deinit(allocator);
     }
     
     /// Process incoming data buffer containing HTTP/2 frames
@@ -1098,7 +1098,7 @@ pub const Http2Connection = struct {
             if (var frame = try self.parser.parseFrame(data[pos..])) |*f| {
                 try self.parser.validateFrame(f);
                 try self.parser.processFrame(f);
-                f.deinit(self.allocator);
+                f.deinit(allocator);
             }
             
             pos += 9 + frame_length;
@@ -1107,12 +1107,12 @@ pub const Http2Connection = struct {
     
     /// Get settings frame for connection initialization
     pub fn getInitialSettings(self: *Http2Connection) ![]u8 {
-        var params = ArrayList(SettingsParameter).init(self.allocator);
-        defer params.deinit();
+        var params = .empty;
+        defer params.deinit(allocator);
         
         var iterator = self.state.local_settings.iterator();
         while (iterator.next()) |entry| {
-            try params.append(SettingsParameter{
+            try params.append(self.allocator, SettingsParameter{
                 .id = entry.key_ptr.*,
                 .value = entry.value_ptr.*,
             });
@@ -1125,7 +1125,7 @@ pub const Http2Connection = struct {
 // Test functions
 pub fn testHttp2FrameParsing() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test SETTINGS frame creation and parsing
@@ -1139,7 +1139,7 @@ pub fn testHttp2FrameParsing() !void {
     defer allocator.free(settings_data);
     
     var connection = try Http2Connection.init(allocator, false);
-    defer connection.deinit();
+    defer connection.deinit(allocator);
     
     if (try connection.parser.parseFrame(settings_data)) |frame| {
         var f = frame;

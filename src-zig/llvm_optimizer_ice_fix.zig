@@ -337,7 +337,7 @@ pub const LLVMOptimizerICEFix = struct {
 /// Convenience function to apply all ICE fixes to a module
 pub fn fixLLVMOptimizerICE(allocator: Allocator, context: c.LLVMContextRef, module: c.LLVMModuleRef) !void {
     var fixer = LLVMOptimizerICEFix.init(allocator, context, module);
-    defer fixer.deinit();
+    defer fixer.deinit(allocator);
     
     // Apply all fixes
     try fixer.fixOptimizerICEIssues();

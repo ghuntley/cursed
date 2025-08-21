@@ -35,8 +35,8 @@ pub fn testRoundTrip(allocator: Allocator, source: []const u8) RoundTripError!vo
     defer program.deinit(allocator);
 
     // Step 2: Pretty-print AST back to source
-    var pretty_printed = ArrayList(u8).init(allocator);
-    defer pretty_printed.deinit();
+    var pretty_printed = .empty;
+    defer pretty_printed.deinit(allocator);
     
     try prettyPrintProgram(&pretty_printed, program);
     

@@ -34,12 +34,12 @@ pub const FastLexer = struct {
             .allocator = allocator,
             .source = source,
             .position = 0,
-            .tokens = ArrayList(Token).init(allocator),
+            .tokens = .empty,
         };
     }
     
     pub fn deinit(self: *FastLexer) void {
-        self.tokens.deinit();
+        self.tokens.deinit(allocator);
     }
     
     pub fn tokenizeOptimized(self: *FastLexer) ![]Token {
@@ -47,7 +47,7 @@ pub const FastLexer = struct {
         var column: usize = 1;
         
         // Pre-allocate tokens array with estimated capacity
-        try self.tokens.ensureTotalCapacity(self.source.len / 6);
+        try self.tokens.ensureTotalCapacity(allocator, self.source.len / 6);
         
         while (self.position < self.source.len) {
             const start_pos = self.position;
@@ -118,7 +118,7 @@ pub const FastLexer = struct {
         }
         
         try self.addToken(.Eof, "", line, column);
-        return self.tokens.toOwnedSlice();
+        return self.tokens.toOwnedSlice(allocator);
     }
     
     fn scanNumber(self: *FastLexer, line: *usize, column: *usize) !void {
@@ -181,7 +181,7 @@ pub const FastLexer = struct {
     }
     
     fn addToken(self: *FastLexer, kind: TokenKind, lexeme: []const u8, line: usize, column: usize) !void {
-        try self.tokens.append(Token{
+        try self.tokens.append(allocator, Token{
             .kind = kind,
             .lexeme = lexeme,
             .line = line,
@@ -243,7 +243,7 @@ pub const PerformanceProfiler = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var profiler = try PerformanceProfiler.init(allocator);
@@ -296,7 +296,7 @@ pub fn main() !void {
     profiler.startTiming();
     
     var fast_lexer = FastLexer.init(allocator, source);
-    defer fast_lexer.deinit();
+    defer fast_lexer.deinit(allocator);
     
     const tokens = try fast_lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -307,7 +307,7 @@ pub fn main() !void {
     
     // Simple interpretation - just print token statistics
     var token_counts = std.HashMap(FastLexer.TokenKind, usize, std.hash_map.AutoContext(FastLexer.TokenKind), std.hash_map.default_max_load_percentage).init(allocator);
-    defer token_counts.deinit();
+    defer token_counts.deinit(allocator);
     
     for (tokens) |token| {
         const result = try token_counts.getOrPut(token.kind);
@@ -395,7 +395,7 @@ fn runPerformanceBenchmarks(allocator: Allocator) !void {
         var i: usize = 0;
         while (i < iterations) : (i += 1) {
             var lexer = FastLexer.init(allocator, source);
-            defer lexer.deinit();
+            defer lexer.deinit(allocator);
             
             const tokens = try lexer.tokenizeOptimized();
             total_tokens += tokens.len;
@@ -441,7 +441,7 @@ test "simplified optimized main" {
     
     const source = "slay test() { vibez.spill(\"hello\") }";
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);

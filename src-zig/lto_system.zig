@@ -98,8 +98,8 @@ pub const LTOSystem = struct {
                 .module_size_bytes = 0,
                 .function_count = 0,
                 .global_count = 0,
-                .exported_symbols = std.ArrayList([]const u8).init(allocator),
-                .imported_symbols = std.ArrayList([]const u8).init(allocator),
+                .exported_symbols = .{},
+                .imported_symbols = .{},
             };
         }
         
@@ -111,8 +111,8 @@ pub const LTOSystem = struct {
             for (self.imported_symbols.items) |symbol| {
                 allocator.free(symbol);
             }
-            self.exported_symbols.deinit();
-            self.imported_symbols.deinit();
+            self.exported_symbols.deinit(self);
+            self.imported_symbols.deinit(self);
         }
         
         pub fn analyzeModule(self: *LTOModule, allocator: std.mem.Allocator) !void {
@@ -127,7 +127,7 @@ pub const LTOSystem = struct {
                     const name_ptr = c.LLVMGetValueName(function);
                     if (name_ptr != null) {
                         const name = std.mem.span(name_ptr);
-                        try self.exported_symbols.append(try allocator.dupe(u8, name));
+                        try self.exported_symbols.append(allocator, try allocator.dupe(u8, name));
                     }
                 }
                 
@@ -145,7 +145,7 @@ pub const LTOSystem = struct {
                     const name_ptr = c.LLVMGetValueName(global);
                     if (name_ptr != null) {
                         const name = std.mem.span(name_ptr);
-                        try self.exported_symbols.append(try allocator.dupe(u8, name));
+                        try self.exported_symbols.append(allocator, try allocator.dupe(u8, name));
                     }
                 }
                 
@@ -218,7 +218,7 @@ pub const LTOSystem = struct {
             .lto_mode = mode,
             .optimization_level = opt_level,
             .target_triple = try allocator.dupe(u8, target_triple),
-            .modules = std.ArrayList(LTOModule).init(allocator),
+            .modules = .{},
             .linked_module = null,
             .lto_pass_manager = null,
             .target_machine = null,
@@ -248,9 +248,9 @@ pub const LTOSystem = struct {
     pub fn deinit(self: *Self) void {
         // Cleanup modules
         for (self.modules.items) |*module| {
-            module.deinit(self.allocator);
+            module.deinit(allocator);
         }
-        self.modules.deinit();
+        self.modules.deinit(allocator);
         
         // Cleanup LLVM resources
         if (self.linked_module) |module| {
@@ -275,7 +275,7 @@ pub const LTOSystem = struct {
         var lto_module = LTOModule.init(self.allocator, module, bitcode_path);
         try lto_module.analyzeModule(self.allocator);
         
-        try self.modules.append(lto_module);
+        try self.modules.append(self.allocator, lto_module);
         
         print("📦 Added module for LTO: {s}\n", .{bitcode_path});
         print("  Functions: {}\n", .{lto_module.function_count});

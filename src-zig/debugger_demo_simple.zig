@@ -4,7 +4,7 @@ const std = @import("std");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -89,19 +89,20 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
     std.debug.print("Type 'help' for available commands\n", .{});
     std.debug.print("Note: This is a demonstration. Full interpreter integration pending.\n\n", .{});
     
-    var lines = std.ArrayList([]const u8).init(allocator);
-    defer lines.deinit();
+    var lines: std.ArrayList([]const u8) = .empty;
+    defer lines.deinit(allocator);
     
     var line_iter = std.mem.splitScalar(u8, source_content, '\n');
     while (line_iter.next()) |line| {
-        try lines.append(line);
+        try lines.append(allocator, line);
     }
     
     var current_line: u32 = 1;
-    var breakpoints = std.ArrayList(u32).init(allocator);
-    defer breakpoints.deinit();
+    var breakpoints: std.ArrayList(u32) = .empty;
+    defer breakpoints.deinit(allocator);
     
-    const stdin = std.io.getStdIn().reader();
+    var stdin_buffer: [4096]u8 = undefined;
+    const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
     var input_buffer: [256]u8 = undefined;
     
     while (true) {
@@ -121,7 +122,7 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
             } else if (std.mem.eql(u8, command, "break") or std.mem.eql(u8, command, "b")) {
                 if (args.next()) |line_str| {
                     if (std.fmt.parseInt(u32, line_str, 10)) |line_num| {
-                        try breakpoints.append(line_num);
+                        try breakpoints.append(allocator, line_num);
                         std.debug.print("🔴 Breakpoint set at line {d}\n", .{line_num});
                     } else |_| {
                         std.debug.print("❌ Invalid line number: {s}\n", .{line_str});

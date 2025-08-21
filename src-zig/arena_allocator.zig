@@ -144,7 +144,7 @@ pub const ArenaAllocator = struct {
             .pool_free_list = null,
             .pool_object_size = 0,
             .mutex = Mutex{},
-            .allocations = if (std.debug.runtime_safety) std.ArrayList(AllocationTrack).init(backing_allocator) else {},
+            .allocations = if (std.debug.runtime_safety) .{} else {},
             .allocation_count = Atomic(u64).init(0),
             .peak_usage = Atomic(usize).init(0),
         };
@@ -184,7 +184,7 @@ pub const ArenaAllocator = struct {
         
         // Clean up debug tracking
         if (std.debug.runtime_safety) {
-            self.allocations.deinit();
+            self.allocations.deinit(allocator);
         }
     }
     
@@ -456,7 +456,7 @@ pub const ArenaAllocator = struct {
                 .timestamp = @as(u64, @intCast(std.time.microTimestamp())),
                 .source_location = null, // Could be filled by caller
             };
-            self.allocations.append(track) catch {};
+            self.allocations.append(allocator, track) catch {};
         }
     }
     
@@ -552,11 +552,11 @@ pub const CursedArenaManager = struct {
     }
     
     pub fn deinit(self: *CursedArenaManager) void {
-        self.parser_arena.deinit();
-        self.ast_arena.deinit();
-        self.runtime_arena.deinit();
-        self.string_arena.deinit();
-        self.temporary_arena.deinit();
+        self.parser_arena.deinit(allocator);
+        self.ast_arena.deinit(allocator);
+        self.runtime_arena.deinit(allocator);
+        self.string_arena.deinit(allocator);
+        self.temporary_arena.deinit(allocator);
     }
     
     /// Reset all arenas (typically done between compilation units)
@@ -639,7 +639,7 @@ export fn cursed_arena_create_manager() ?*CursedArenaManager {
 
 export fn cursed_arena_destroy_manager(manager: ?*CursedArenaManager) void {
     if (manager) |m| {
-        m.deinit();
+        m.deinit(allocator);
         std.heap.page_allocator.destroy(m);
     }
 }

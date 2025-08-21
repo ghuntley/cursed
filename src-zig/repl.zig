@@ -39,7 +39,7 @@ pub const ReplSession = struct {
             .variables = VariableStore.init(allocator),
             .functions = FunctionStore.init(allocator),
             .structs = StructStore.init(allocator),
-            .history = ArrayList([]const u8).init(allocator),
+            .history = .empty,
             .allocator = allocator,
             .verbose = verbose,
             .line_number = 1,
@@ -52,31 +52,31 @@ pub const ReplSession = struct {
         var var_iter = self.variables.iterator();
         while (var_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(allocator);
         
         // Clean up functions
         var func_iter = self.functions.iterator();
         while (func_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.functions.deinit();
+        self.functions.deinit(allocator);
         
         // Clean up structs
         var struct_iter = self.structs.iterator();
         while (struct_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.structs.deinit();
+        self.structs.deinit(allocator);
         
         // Clean up history
         for (self.history.items) |line| {
             self.allocator.free(line);
         }
-        self.history.deinit();
+        self.history.deinit(allocator);
         
         // Clean up history file path
         if (self.history_file_path) |path| {
@@ -118,7 +118,7 @@ pub const ReplSession = struct {
         
         const history_path = self.history_file_path.?;
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         // Check for temporary file (indicates interrupted write)
@@ -205,7 +205,7 @@ pub const ReplSession = struct {
             }
             
             const history_line = try self.allocator.dupe(u8, trimmed);
-            try self.history.append(history_line);
+            try self.history.append(self.allocator, history_line);
             loaded_count += 1;
             
             // Prevent excessive memory usage
@@ -225,7 +225,7 @@ pub const ReplSession = struct {
         
         const history_path = self.history_file_path.?;
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         const temp_path = try std.fmt.allocPrint(arena_allocator, "{s}{s}", .{ history_path, HISTORY_TEMP_SUFFIX });
@@ -271,7 +271,7 @@ pub const ReplSession = struct {
         }
         
         const history_line = try self.allocator.dupe(u8, line);
-        try self.history.append(history_line);
+        try self.history.append(self.allocator, history_line);
         
         // Immediately persist for crash safety
         try self.saveHistory();
@@ -287,7 +287,7 @@ pub const ReplSession = struct {
         
         // Try to parse and evaluate the input
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const arena_allocator = arena.allocator();
         
         // First try: parse as a complete statement
@@ -461,7 +461,7 @@ pub const ReplSession = struct {
         
         // Update or create the variable
         if (self.variables.getPtr(var_name)) |existing| {
-            existing.deinit(self.allocator);
+            existing.deinit(allocator);
             existing.* = persistent_value;
         } else {
             const var_name_copy = try self.allocator.dupe(u8, var_name);
@@ -520,7 +520,7 @@ pub fn runRepl(allocator: Allocator, verbose: bool) !void {
 /// CURSED REPL implementation with custom history file
 pub fn runReplWithHistory(allocator: Allocator, verbose: bool, history_file: ?[]const u8) !void {
     var session = ReplSession.init(allocator, verbose);
-    defer session.deinit();
+    defer session.deinit(allocator);
     
     // Initialize robust history persistence
     session.initHistoryPersistence(history_file) catch |err| {
@@ -540,7 +540,7 @@ pub fn runReplWithHistory(allocator: Allocator, verbose: bool, history_file: ?[]
     printWelcome();
     
     // Main REPL loop
-    var stdin = std.io.getStdIn().reader();
+    var stdin = std.fs.File.stdin().reader(&[_]u8{});
     
     while (true) {
         // Print prompt

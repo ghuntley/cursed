@@ -178,14 +178,14 @@ pub const ModuleCache = struct {
         var resolved_iter = self.resolved_modules.iterator();
         while (resolved_iter.next()) |entry| {
             var import_spec = entry.value_ptr;
-            import_spec.deinit(self.allocator);
+            import_spec.deinit(allocator);
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.resolved_modules.deinit();
+        self.resolved_modules.deinit(allocator);
         
         // Clean up import graph
         var graph_iter = self.import_graph.iterator();
@@ -196,43 +196,43 @@ pub const ModuleCache = struct {
                     self.allocator.free(dep);
                 }
             }
-            deps.deinit();
+            deps.deinit(allocator);
             // Only free if the key is owned by the map
             if (entry.key_ptr.*.len > 0) {
                 self.allocator.free(entry.key_ptr.*);
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.import_graph.deinit();
+        self.import_graph.deinit(allocator);
     }
     
     pub fn addToGraph(self: *ModuleCache, from_module: []const u8, to_module: []const u8) !void {
         // Check if key already exists to avoid duplicating it
         if (self.import_graph.getPtr(from_module)) |dependencies| {
-            try dependencies.append(try self.allocator.dupe(u8, to_module));
+            try dependencies.append(self.allocator, try self.allocator.dupe(u8, to_module));
         } else {
             const from_key = try self.allocator.dupe(u8, from_module);
-            var new_deps = ArrayList([]const u8).init(self.allocator);
-            try new_deps.append(try self.allocator.dupe(u8, to_module));
+            var new_deps = .empty;
+            try new_deps.append(self.allocator, try self.allocator.dupe(u8, to_module));
             try self.import_graph.put(from_key, new_deps);
         }
     }
     
     pub fn detectCycle(self: *ModuleCache, start_module: []const u8) !?ArrayList([]const u8) {
         var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer visited.deinit();
+        defer visited.deinit(allocator);
         
         var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer rec_stack.deinit();
+        defer rec_stack.deinit(allocator);
         
-        var path = ArrayList([]const u8).init(self.allocator);
+        var path = .empty;
         
         const has_cycle = try self.detectCycleRecursive(start_module, &visited, &rec_stack, &path);
         
         if (has_cycle) {
             return path;
         } else {
-            path.deinit();
+            path.deinit(allocator);
             return null;
         }
     }
@@ -246,13 +246,13 @@ pub const ModuleCache = struct {
     ) !bool {
         try visited.put(module, true);
         try rec_stack.put(module, true);
-        try path.append(module);
+        try path.append(allocator, module);
         
         if (self.import_graph.get(module)) |dependencies| {
             for (dependencies.items) |dep| {
                 if (rec_stack.get(dep) orelse false) {
                     // Found cycle
-                    try path.append(dep);
+                    try path.append(allocator, dep);
                     return true;
                 }
                 
@@ -283,7 +283,7 @@ pub const AdvancedImportResolver = struct {
     pub fn init(allocator: Allocator) AdvancedImportResolver {
         return AdvancedImportResolver{
             .allocator = allocator,
-            .search_paths = ArrayList(ModuleSearchPath).init(allocator),
+            .search_paths = .empty,
             .module_cache = ModuleCache.init(allocator),
             .aliases = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
@@ -292,12 +292,12 @@ pub const AdvancedImportResolver = struct {
     pub fn deinit(self: *AdvancedImportResolver) void {
         // Clean up search paths
         for (self.search_paths.items) |*path| {
-            path.deinit(self.allocator);
+            path.deinit(allocator);
         }
-        self.search_paths.deinit();
+        self.search_paths.deinit(allocator);
         
         // Clean up module cache
-        self.module_cache.deinit();
+        self.module_cache.deinit(allocator);
         
         // Clean up aliases
         var alias_iter = self.aliases.iterator();
@@ -311,11 +311,11 @@ pub const AdvancedImportResolver = struct {
                 entry.value_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.aliases.deinit();
+        self.aliases.deinit(allocator);
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
-            manifest.deinit(self.allocator);
+            manifest.deinit(allocator);
             self.package_manifest = null;
         }
     }
@@ -341,19 +341,19 @@ pub const AdvancedImportResolver = struct {
         const stdlib_path = try self.findStdlibPath();
         var search_path = try ModuleSearchPath.init(self.allocator, stdlib_path, 1000);
         search_path.is_stdlib = true;
-        try self.search_paths.append(search_path);
+        try self.search_paths.append(self.allocator, search_path);
         self.allocator.free(stdlib_path);
     }
     
     pub fn addLocalPath(self: *AdvancedImportResolver, path: []const u8) !void {
         const search_path = try ModuleSearchPath.init(self.allocator, path, 500);
-        try self.search_paths.append(search_path);
+        try self.search_paths.append(self.allocator, search_path);
     }
     
     pub fn addCachePath(self: *AdvancedImportResolver, path: []const u8) !void {
         var search_path = try ModuleSearchPath.init(self.allocator, path, 100);
         search_path.is_cache = true;
-        try self.search_paths.append(search_path);
+        try self.search_paths.append(self.allocator, search_path);
     }
     
     pub fn addAlias(self: *AdvancedImportResolver, alias: []const u8, target: []const u8) !void {
@@ -394,31 +394,31 @@ pub const AdvancedImportResolver = struct {
             "AGENT.md"
         };
         
-        var path_components = ArrayList([]const u8).init(self.allocator);
-        defer path_components.deinit();
+        var path_components = .empty;
+        defer path_components.deinit(allocator);
         
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(allocator, component);
             }
         }
         
         while (path_components.items.len > 0) {
-            var test_path = ArrayList(u8).init(self.allocator);
-            defer test_path.deinit();
+            var test_path = .empty;
+            defer test_path.deinit(allocator);
             
             for (path_components.items) |component| {
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
                 try test_path.appendSlice(component);
             }
             
             for (markers) |marker| {
-                var marker_path = ArrayList(u8).init(self.allocator);
-                defer marker_path.deinit();
+                var marker_path = .empty;
+                defer marker_path.deinit(allocator);
                 
                 try marker_path.appendSlice(test_path.items);
-                try marker_path.append('/');
+                try marker_path.append(self.allocator, '/');
                 try marker_path.appendSlice(marker);
                 
                 cwd.access(marker_path.items, .{}) catch continue;
@@ -444,7 +444,7 @@ pub const AdvancedImportResolver = struct {
                 
                 var search_path = try ModuleSearchPath.init(self.allocator, cache_path, 200);
                 search_path.is_cache = true;
-                try self.search_paths.append(search_path);
+                try self.search_paths.append(self.allocator, search_path);
             }
         } else |_| {
             // No package manifest found, continue without it
@@ -485,7 +485,7 @@ pub const AdvancedImportResolver = struct {
         
         // Check for import cycles
         if (try self.module_cache.detectCycle(current_file)) |cycle| {
-            defer cycle.deinit();
+            defer cycle.deinit(allocator);
             
             print("Error: Import cycle detected:\n", .{});
             for (cycle.items, 0..) |module, i| {
@@ -496,7 +496,7 @@ pub const AdvancedImportResolver = struct {
                 }
             }
             // Clean up allocated memory in import_spec before returning error
-            import_spec.deinit(self.allocator);
+            import_spec.deinit(allocator);
             return error.ImportCycle;
         }
         
@@ -526,7 +526,7 @@ pub const AdvancedImportResolver = struct {
             import_spec.raw_path = try self.allocator.dupe(u8, module_name);
             import_spec.version_req = VersionRequirement.parse(self.allocator, version_spec) catch |err| {
                 // Clean up on error
-                import_spec.deinit(self.allocator);
+                import_spec.deinit(allocator);
                 return err;
             };
         }
@@ -627,11 +627,11 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path = std.ArrayList(u8).init(self.allocator);
-                defer test_path.deinit();
+                var test_path: std.ArrayList(u8) = .empty;
+                defer test_path.deinit(allocator);
                 
                 try test_path.appendSlice(search_path.path);
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
                 try test_path.appendSlice(import_spec.raw_path);
                 try test_path.appendSlice(format.middle);
                 
@@ -676,11 +676,11 @@ pub const AdvancedImportResolver = struct {
             };
             
             for (pattern_formats) |format| {
-                var test_path = std.ArrayList(u8).init(self.allocator);
-                defer test_path.deinit();
+                var test_path: std.ArrayList(u8) = .empty;
+                defer test_path.deinit(allocator);
                 
                 try test_path.appendSlice(search_path.path);
-                try test_path.append('/');
+                try test_path.append(self.allocator, '/');
                 try test_path.appendSlice(import_spec.raw_path);
                 try test_path.appendSlice(format.prefix);
                 
@@ -733,7 +733,7 @@ pub const AdvancedImportResolver = struct {
     
     // Extract all imports from a source file
     pub fn extractImports(self: *AdvancedImportResolver, source: []const u8) !ArrayList(ImportSpec) {
-        var imports = ArrayList(ImportSpec).init(self.allocator);
+        var imports = .empty;
         
         var line_num: u32 = 1;
         var lines = std.mem.splitScalar(u8, source, '\n');
@@ -744,10 +744,10 @@ pub const AdvancedImportResolver = struct {
             // Look for "yeet" statements
             if (std.mem.startsWith(u8, trimmed, "yeet ")) {
                 var import_specs = try self.parseYeetStatementMultiple(trimmed, line_num);
-                defer import_specs.deinit();
+                defer import_specs.deinit(allocator);
                 
                 for (import_specs.items) |import_spec| {
-                    try imports.append(import_spec);
+                    try imports.append(allocator, import_spec);
                 }
             }
             
@@ -758,7 +758,7 @@ pub const AdvancedImportResolver = struct {
     }
     
     fn parseYeetStatementMultiple(self: *AdvancedImportResolver, line: []const u8, line_num: u32) !ArrayList(ImportSpec) {
-        var imports = ArrayList(ImportSpec).init(self.allocator);
+        var imports = .empty;
         
         const import_part = line[5..]; // Skip "yeet "
         
@@ -780,7 +780,7 @@ pub const AdvancedImportResolver = struct {
                         .column = @intCast(column_offset + start_quote + 1),
                     };
                     
-                    try imports.append(import_spec);
+                    try imports.append(self.allocator, import_spec);
                     search_offset = start_quote + 1 + end_quote + 1;
                     column_offset += @intCast(start_quote + 1 + end_quote + 1);
                 } else {
@@ -837,12 +837,12 @@ pub const AdvancedImportResolver = struct {
         var extracted_imports = try self.extractImports(source);
         defer {
             for (extracted_imports.items) |*import| {
-                import.deinit(self.allocator);
+                import.deinit(allocator);
             }
-            extracted_imports.deinit();
+            extracted_imports.deinit(allocator);
         }
         
-        var resolved_imports = ArrayList(ImportSpec).init(self.allocator);
+        var resolved_imports = .empty;
         
         for (extracted_imports.items) |import| {
             const resolved = self.resolveImport(import.raw_path, file_path) catch |err| {
@@ -850,7 +850,7 @@ pub const AdvancedImportResolver = struct {
                 continue;
             };
             
-            try resolved_imports.append(resolved);
+            try resolved_imports.append(allocator, resolved);
         }
         
         return resolved_imports;
@@ -877,7 +877,7 @@ pub const AdvancedImportResolver = struct {
         print("\n=== Cycle Detection ===\n", .{});
         
         var checked = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        defer checked.deinit();
+        defer checked.deinit(allocator);
         
         var graph_iter = self.module_cache.import_graph.iterator();
         while (graph_iter.next()) |entry| {
@@ -886,7 +886,7 @@ pub const AdvancedImportResolver = struct {
             if (checked.get(module) orelse false) continue;
             
             if (try self.module_cache.detectCycle(module)) |cycle| {
-                defer cycle.deinit();
+                defer cycle.deinit(allocator);
                 
                 print("Cycle detected starting from {s}:\n", .{module});
                 for (cycle.items) |cycle_module| {
@@ -911,7 +911,7 @@ test "advanced import resolver basic functionality" {
     const allocator = std.testing.allocator;
     
     var resolver = try AdvancedImportResolver.initWithDefaults(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     // Test adding search paths
     try resolver.addLocalPath("test_modules");
@@ -926,7 +926,7 @@ test "version requirement parsing and matching" {
     const allocator = std.testing.allocator;
     
     var resolver = AdvancedImportResolver.init(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     const import_spec = try resolver.parseImportStatement("json@^1.0.0", "test.csd");
     defer {
@@ -942,7 +942,7 @@ test "cycle detection" {
     const allocator = std.testing.allocator;
     
     var resolver = AdvancedImportResolver.init(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     // Create a cycle: A -> B -> C -> A
     try resolver.module_cache.addToGraph("A", "B");
@@ -953,7 +953,7 @@ test "cycle detection" {
     try std.testing.expect(cycle != null);
     
     if (cycle) |c| {
-        defer c.deinit();
+        defer c.deinit(allocator);
         try std.testing.expect(c.items.len >= 3);
     }
 }

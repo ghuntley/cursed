@@ -248,9 +248,12 @@ fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
     c_include_paths: [][]const u8,
     found: bool,
 } {
-    var lib_paths = std.ArrayList([]const u8).init(allocator);
-    var include_paths = std.ArrayList([]const u8).init(allocator);
-    var c_include_paths = std.ArrayList([]const u8).init(allocator);
+    var lib_paths: std.ArrayList([]const u8) = .empty;
+    defer lib_paths.deinit(allocator);
+    var include_paths: std.ArrayList([]const u8) = .empty;
+    defer include_paths.deinit(allocator);
+    var c_include_paths: std.ArrayList([]const u8) = .empty;
+    defer c_include_paths.deinit(allocator);
     var found = false;
     
     // Try multiple llvm-config versions
@@ -272,7 +275,7 @@ fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
                 // Validate directory exists
                 std.fs.cwd().access(libdir, .{}) catch continue;
                 
-                lib_paths.append(b.dupe(libdir)) catch {};
+                lib_paths.append(allocator, b.dupe(libdir)) catch {};
                 found = true;
                 
                 if (b.verbose) {
@@ -297,7 +300,7 @@ fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
                 // Validate directory exists
                 std.fs.cwd().access(includedir, .{}) catch continue;
                 
-                include_paths.append(b.dupe(includedir)) catch {};
+                include_paths.append(allocator, b.dupe(includedir)) catch {};
                 
                 // Add llvm-c subdir if it exists
                 const c_include_dir = std.fmt.allocPrint(allocator, "{s}/llvm-c", .{includedir}) catch "";
@@ -306,7 +309,7 @@ fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
                         allocator.free(c_include_dir);
                         continue;
                     };
-                    c_include_paths.append(c_include_dir) catch {};
+                    c_include_paths.append(allocator, c_include_dir) catch {};
                 }
                 
                 if (b.verbose) {
@@ -343,25 +346,25 @@ fn detectLlvmPaths(b: *std.Build, allocator: std.mem.Allocator) struct {
         
         for (fallback_lib_paths) |path| {
             std.fs.cwd().access(path, .{}) catch continue;
-            lib_paths.append(b.dupe(path)) catch {};
+            lib_paths.append(allocator, b.dupe(path)) catch {};
             found = true;
         }
         
         for (fallback_include_paths) |path| {
             std.fs.cwd().access(path, .{}) catch continue;
-            include_paths.append(b.dupe(path)) catch {};
+            include_paths.append(allocator, b.dupe(path)) catch {};
         }
         
         for (fallback_c_include_paths) |path| {
             std.fs.cwd().access(path, .{}) catch continue;
-            c_include_paths.append(b.dupe(path)) catch {};
+            c_include_paths.append(allocator, b.dupe(path)) catch {};
         }
     }
     
     return .{
-        .lib_paths = lib_paths.toOwnedSlice() catch &[_][]const u8{},
-        .include_paths = include_paths.toOwnedSlice() catch &[_][]const u8{},
-        .c_include_paths = c_include_paths.toOwnedSlice() catch &[_][]const u8{},
+        .lib_paths = lib_paths.toOwnedSlice(allocator) catch &[_][]const u8{},
+        .include_paths = include_paths.toOwnedSlice(allocator) catch &[_][]const u8{},
+        .c_include_paths = c_include_paths.toOwnedSlice(allocator) catch &[_][]const u8{},
         .found = found,
     };
 }
@@ -600,9 +603,11 @@ fn addLlvmStubs(b: *std.Build, exe: *std.Build.Step.Compile) void {
     // Create a stub LLVM library using Zig instead of C for better integration
     const stub_lib = b.addObject(.{
         .name = "llvm-stub",
-        .root_source_file = b.path("src-zig/llvm_stub.zig"),
-        .target = exe.root_module.resolved_target.?,
-        .optimize = exe.root_module.optimize.?,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/llvm_stub.zig"),
+            .target = exe.root_module.resolved_target.?,
+            .optimize = exe.root_module.optimize.?,
+        }),
     });
     
     exe.addObject(stub_lib);
@@ -774,19 +779,16 @@ pub fn build(b: *std.Build) void {
     }
 
     // Create the CURSED compiler executable - use unified main with proper CLI parsing
-    const root_source = if (resolved_target.result.os.tag == .freestanding or resolved_target.result.os.tag == .wasi) 
-        b.path("src-zig/freestanding_main.zig")
-    else if (is_wasm) 
-        b.path("src-zig/wasm_minimal_compiler.zig") 
-    else 
-        b.path("src-zig/main_unified.zig");
-        
     const exe = b.addExecutable(.{
-        .name = "cursed-zig", 
-        .root_source_file = root_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .name = "cursed-zig",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/main_unified.zig"),
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
+
+
 
     // Explicitly disable debug info for ReleaseSmall builds
     if (actual_optimize == .ReleaseSmall) {
@@ -805,9 +807,11 @@ pub fn build(b: *std.Build) void {
         
     const exe_stable = b.addExecutable(.{
         .name = "cursed-stable",
-        .root_source_file = stable_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = stable_source,
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
 
     // Apply ReleaseSmall fix to stable build too
@@ -885,9 +889,11 @@ pub fn build(b: *std.Build) void {
 
     // Unit tests
     const unit_tests = b.addTest(.{
-        .root_source_file = b.path("src-zig/test_main.zig"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/test_main.zig"),
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     if (supports_libc) {
@@ -910,9 +916,11 @@ pub fn build(b: *std.Build) void {
     // Windows-specific async I/O tests
     if (resolved_target.result.os.tag == .windows) {
         const windows_async_tests = b.addTest(.{
-            .root_source_file = b.path("src-zig/windows_async_test.zig"),
-            .target = resolved_target,
-            .optimize = actual_optimize,
+            .root_module = b.createModule(.{
+                .root_source_file = b.path("src-zig/windows_async_test.zig"),
+                .target = resolved_target,
+                .optimize = actual_optimize,
+            }),
         });
         
         if (supports_libc) {
@@ -937,9 +945,11 @@ pub fn build(b: *std.Build) void {
     // Add fixed JIT execution engine
     const jit_main = b.addExecutable(.{
         .name = "cursed-jit",
-        .root_source_file = b.path("src-zig/jit_main.zig"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/jit_main.zig"),
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     // Link LLVM for JIT engine if available
@@ -963,9 +973,11 @@ pub fn build(b: *std.Build) void {
     // Create interactive debugger executable
     const debugger_exe = b.addExecutable(.{
         .name = "cursed-debug",
-        .root_source_file = b.path("src-zig/standalone_debugger_main.zig"),
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/standalone_debugger_main.zig"),
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
 
     if (supports_libc) {
@@ -1058,9 +1070,11 @@ pub fn build(b: *std.Build) void {
         
     const lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp",
-        .root_source_file = lsp_root_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = lsp_root_source,
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     if (supports_libc) {
@@ -1092,9 +1106,11 @@ pub fn build(b: *std.Build) void {
         
     const enhanced_lsp_exe = b.addExecutable(.{
         .name = "cursed-lsp-enhanced",
-        .root_source_file = enhanced_lsp_root_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = enhanced_lsp_root_source,
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     if (supports_libc) {
@@ -1142,9 +1158,11 @@ pub fn build(b: *std.Build) void {
         
     const perf_cli_exe = b.addExecutable(.{
         .name = "cursed-perf",
-        .root_source_file = perf_cli_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = perf_cli_source,
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     if (supports_libc) {
@@ -1189,9 +1207,11 @@ pub fn build(b: *std.Build) void {
         
     const pkg_cli_exe = b.addExecutable(.{
         .name = "cursed-pkg",
-        .root_source_file = pkg_cli_source,
-        .target = resolved_target,
-        .optimize = actual_optimize,
+        .root_module = b.createModule(.{
+            .root_source_file = pkg_cli_source,
+            .target = resolved_target,
+            .optimize = actual_optimize,
+        }),
     });
     
     if (supports_libc) {

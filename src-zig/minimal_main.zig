@@ -40,17 +40,17 @@ const Variable = union(enum) {
             .String => |s| try allocator.dupe(u8, s),
             .Boolean => |b| try allocator.dupe(u8, if (b) "based" else "cringe"),
             .Array => |arr| {
-                var result = std.ArrayList(u8).init(allocator);
-                defer result.deinit();
-                try result.append('[');
+                var result: std.ArrayList(u8) = .empty;
+                defer result.deinit(allocator);
+                try result.append(allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
                     const item_str = try item.toString(allocator);
                     defer allocator.free(item_str);
                     try result.appendSlice(item_str);
                 }
-                try result.append(']');
-                return try result.toOwnedSlice();
+                try result.append(allocator, ']');
+                return try result.toOwnedSlice(allocator);
             },
         };
     }
@@ -62,7 +62,7 @@ const Variable = union(enum) {
                 for (arr.items) |*item| {
                     item.deinit(allocator);
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             else => {},
         }
@@ -74,9 +74,9 @@ const Variable = union(enum) {
             .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
             .Boolean => |b| Variable{ .Boolean = b },
             .Array => |arr| {
-                var new_array = ArrayList(Variable).init(allocator);
+                var new_array = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(try item.clone(allocator));
+                    try new_array.append(allocator, try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -109,7 +109,7 @@ fn loadModuleFunctionsSafely(allocator: Allocator, module_name: []const u8) !Arr
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -169,7 +169,7 @@ pub fn main() !void {
         print("Lexer error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -193,7 +193,7 @@ fn compileToLLVM(allocator: Allocator, filename: []const u8, source: []const u8)
     
     // Use arena allocator to prevent memory leaks
     var arena = std.heap.ArenaAllocator.init(allocator);
-    defer arena.deinit();
+    defer arena.deinit(allocator);
     const arena_allocator = arena.allocator();
     
     const output_name = try getOutputName(arena_allocator, filename);
@@ -227,8 +227,8 @@ fn compileToC(allocator: Allocator, filename: []const u8, source: []const u8, to
     defer allocator.free(c_filename);
     
     // Generate C code
-    var c_code = std.ArrayList(u8).init(allocator);
-    defer c_code.deinit();
+    var c_code: std.ArrayList(u8) = .empty;
+    defer c_code.deinit(allocator);
     
     try c_code.appendSlice("#include <stdio.h>\n#include <string.h>\n\n");
     try c_code.appendSlice("int main() {\n");
@@ -391,12 +391,12 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                     for (arr.items) |*item| {
                         item.deinit(allocator);
                     }
-                    arr.deinit();
+                    arr.deinit(allocator);
                 },
                 else => {},
             }
         }
-        variables.deinit();
+        variables.deinit(allocator);
     }
     
     // Create function store for user-defined functions
@@ -414,24 +414,24 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             for (entry.value_ptr.parameters.items) |param| {
                 allocator.free(param);
             }
-            entry.value_ptr.parameters.deinit();
+            entry.value_ptr.parameters.deinit(allocator);
             
             // Free the function body
             allocator.free(entry.value_ptr.body);
         }
-        functions.deinit();
+        functions.deinit(allocator);
     }
     
     // Create simple function store for imported functions
     var loaded_functions = HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer {
         // Note: Keys are now managed by the SimpleFunctionInfo, so we don't free them here
-        loaded_functions.deinit();
+        loaded_functions.deinit(allocator);
     }
     
     // Initialize module loader
     var loader = module_loader.ModuleLoader.init(allocator, false);
-    defer loader.deinit();
+    defer loader.deinit(allocator);
     
     // Extract imports from source
     const imports = simple_import_resolver.extractImports(allocator, source) catch |err| {
@@ -442,16 +442,16 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit();
+        imports.deinit(allocator);
     }
     
     // Store function name copies for hashmap safety
-    var function_name_copies = ArrayList([]const u8).init(allocator);
+    var function_name_copies = .empty;
     defer {
         for (function_name_copies.items) |name| {
             allocator.free(name);
         }
-        function_name_copies.deinit();
+        function_name_copies.deinit(allocator);
     }
 
     // Load functions from imported modules using safe extraction
@@ -464,7 +464,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                 print("❌ Failed to load module '{s}': {}\n", .{ module_name, err });
                 continue;
             };
-            defer module_functions.deinit();
+            defer module_functions.deinit(allocator);
             
             print("✅ Loaded module: {s} with {} functions\n", .{ module_name, module_functions.items.len });
             
@@ -475,7 +475,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                     print("  ❌ Failed to copy function name '{s}': {}\n", .{func.name, err});
                     continue;
                 };
-                try function_name_copies.append(name_copy);
+                try function_name_copies.append(allocator, name_copy);
                 
                 const func_info = FunctionInfo{ .name = name_copy, .available = true };
                 loaded_functions.put(name_copy, func_info) catch |err| {
@@ -503,15 +503,15 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
     // Track multi-line function definitions
     var in_function_definition = false;
     var current_function_header: ?[]const u8 = null;
-    var current_function_body = ArrayList(u8).init(allocator);
-    defer current_function_body.deinit();
+    var current_function_body = .empty;
+    defer current_function_body.deinit(allocator);
     defer if (current_function_header) |header| allocator.free(header);
     
     // State for multiline bestie loops
     var in_bestie_loop = false;
     var bestie_condition: ?[]const u8 = null;
-    var bestie_body = ArrayList(u8).init(allocator);
-    defer bestie_body.deinit();
+    var bestie_body = .empty;
+    defer bestie_body.deinit(allocator);
     defer if (bestie_condition) |cond| allocator.free(cond);
     
     while (lines.next()) |line| {
@@ -544,8 +544,8 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                     
                     if (has_operators) {
                         // This is a boolean condition - collect the complete multi-line if statement
-                        var complete_if_statement = std.ArrayList(u8).init(allocator);
-                        defer complete_if_statement.deinit();
+                        var complete_if_statement: std.ArrayList(u8) = .empty;
+                        defer complete_if_statement.deinit(allocator);
                         
                         try complete_if_statement.appendSlice(trimmed);
                         
@@ -647,8 +647,8 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                 
                 if (current_function_header) |header| {
                     // Combine header and body to create complete function definition
-                    var complete_definition = ArrayList(u8).init(allocator);
-                    defer complete_definition.deinit();
+                    var complete_definition = .empty;
+                    defer complete_definition.deinit(allocator);
                     
                     try complete_definition.appendSlice(header);
                     try complete_definition.appendSlice(" ");
@@ -716,7 +716,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             if (std.mem.eql(u8, trimmed, "}")) {
                 // End of bestie loop, execute it
                 const condition = bestie_condition.?;
-                const body = try bestie_body.toOwnedSlice();
+                const body = try bestie_body.toOwnedSlice(allocator);
                 defer allocator.free(body);
                 
                 // Execute the loop
@@ -730,7 +730,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             } else {
                 // Add this line to the loop body
                 try bestie_body.appendSlice(trimmed);
-                try bestie_body.append('\n');
+                try bestie_body.append(allocator, '\n');
             }
             continue;
         }
@@ -897,12 +897,12 @@ fn evaluateUserFunction(variables: *VariableStore, functions: *FunctionStore, al
                     for (arr.items) |*item| {
                         item.deinit(allocator);
                     }
-                    arr.deinit();
+                    arr.deinit(allocator);
                 },
                 else => {},
             }
         }
-        local_variables.deinit();
+        local_variables.deinit(allocator);
     }
     
     // Copy global variables to local scope
@@ -914,9 +914,9 @@ fn evaluateUserFunction(variables: *VariableStore, functions: *FunctionStore, al
             .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
             .Boolean => |b| Variable{ .Boolean = b },
             .Array => |arr| blk: {
-                var new_arr = ArrayList(Variable).init(allocator);
+                var new_arr = .empty;
                 for (arr.items) |item| {
-                    try new_arr.append(switch (item) {
+                    try new_arr.append(allocator, switch (item) {
                         .Integer => |i| Variable{ .Integer = i },
                         .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
                         .Boolean => |b| Variable{ .Boolean = b },
@@ -1034,13 +1034,13 @@ fn evaluateIntegerExpression(variables: *VariableStore, expr: []const u8) !i64 {
     
     // Handle complex expressions with multiple operators
     // Parse from left to right for now (can be improved with precedence)
-    var tokens = std.ArrayList([]const u8).init(std.heap.page_allocator);
-    defer tokens.deinit();
+    var tokens: std.ArrayList([]const u8) = .empty;
+    defer tokens.deinit(allocator);
     
     // Simple tokenization by spaces
     var parts = std.mem.tokenizeScalar(u8, trimmed, ' ');
     while (parts.next()) |part| {
-        try tokens.append(part);
+        try tokens.append(allocator, part);
     }
     
     if (tokens.items.len == 1) {
@@ -1226,7 +1226,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             // Array type with integer elements
             const trimmed_val = std.mem.trim(u8, value_str, " \t");
             if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
-                var array = ArrayList(Variable).init(allocator);
+                var array = .empty;
                 const content = trimmed_val[1..trimmed_val.len - 1];
                 
                 if (content.len > 0) {
@@ -1234,7 +1234,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                     while (elements.next()) |element| {
                         const trimmed_element = std.mem.trim(u8, element, " \t");
                         const int_val = std.fmt.parseInt(i64, trimmed_element, 10) catch continue;
-                        try array.append(Variable{ .Integer = int_val });
+                        try array.append(allocator, Variable{ .Integer = int_val });
                     }
                 }
                 
@@ -1306,7 +1306,7 @@ fn handleFunctionDefinition(functions: *FunctionStore, allocator: Allocator, lin
                     const body = std.mem.trim(u8, remaining[brace_start + 1..brace_end], " \t");
                     
                     // Parse parameters
-                    var parameters = ArrayList([]const u8).init(allocator);
+                    var parameters = .empty;
                     if (params_str.len > 0) {
                         var param_iter = std.mem.splitScalar(u8, params_str, ',');
                         while (param_iter.next()) |param| {
@@ -1314,7 +1314,7 @@ fn handleFunctionDefinition(functions: *FunctionStore, allocator: Allocator, lin
                             // Extract just the parameter name (before the type)
                             if (std.mem.indexOf(u8, trimmed_param, " ")) |space_pos| {
                                 const param_name = std.mem.trim(u8, trimmed_param[0..space_pos], " \t");
-                                try parameters.append(try allocator.dupe(u8, param_name));
+                                try parameters.append(allocator, try allocator.dupe(u8, param_name));
                             }
                         }
                     }
@@ -1347,7 +1347,7 @@ fn handleVibesSpill(variables: *VariableStore, functions: *FunctionStore, alloca
                 for (arguments.items) |arg| {
                     allocator.free(arg);
                 }
-                arguments.deinit();
+                arguments.deinit(allocator);
             }
             
             if (arguments.items.len > 1) {
@@ -2062,7 +2062,7 @@ fn getOutputName(allocator: Allocator, filename: []const u8) ![]u8 {
 /// Parse arguments from a string, respecting parentheses nesting
 /// This ensures that commas inside function calls like multiply(6, 7) are not treated as argument separators
 fn parseArgumentsWithParentheses(allocator: Allocator, input: []const u8) !ArrayList([]const u8) {
-    var arguments = ArrayList([]const u8).init(allocator);
+    var arguments = .empty;
     
     if (input.len == 0) {
         return arguments;
@@ -2083,7 +2083,7 @@ fn parseArgumentsWithParentheses(allocator: Allocator, input: []const u8) !Array
             // Found a comma at top level - this is an argument separator
             const arg = std.mem.trim(u8, input[start..i], " \t");
             if (arg.len > 0) {
-                try arguments.append(try allocator.dupe(u8, arg));
+                try arguments.append(allocator, try allocator.dupe(u8, arg));
             }
             start = i + 1;
         }
@@ -2094,7 +2094,7 @@ fn parseArgumentsWithParentheses(allocator: Allocator, input: []const u8) !Array
     // Add the last argument
     const last_arg = std.mem.trim(u8, input[start..], " \t");
     if (last_arg.len > 0) {
-        try arguments.append(try allocator.dupe(u8, last_arg));
+        try arguments.append(allocator, try allocator.dupe(u8, last_arg));
     }
     
     return arguments;

@@ -58,8 +58,8 @@ pub const WorkingJITEngine = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.value_ptr.*.bytecode);
         }
-        self.compiled_functions.deinit();
-        self.variables.deinit();
+        self.compiled_functions.deinit(allocator);
+        self.variables.deinit(allocator);
     }
     
     /// Compile and execute CURSED source code via JIT
@@ -91,7 +91,7 @@ pub const WorkingJITEngine = struct {
     
     /// Parse CURSED source into simple statement structures
     fn parseStatements(self: *WorkingJITEngine, source: []const u8) ![]Statement {
-        var statements = ArrayList(Statement).init(self.allocator);
+        var statements = ArrayList(Statement){};
         
         var lines = std.mem.splitScalar(u8, source, '\n');
         while (lines.next()) |line| {
@@ -99,13 +99,13 @@ pub const WorkingJITEngine = struct {
             if (trimmed.len == 0) continue;
             
             if (std.mem.startsWith(u8, trimmed, "sus ")) {
-                try statements.append(try self.parseVariableDeclaration(trimmed));
+                try statements.append(self.allocator, try self.parseVariableDeclaration(trimmed));
             } else if (std.mem.startsWith(u8, trimmed, "vibez.spill")) {
-                try statements.append(try self.parsePrintStatement(trimmed));
+                try statements.append(self.allocator, try self.parsePrintStatement(trimmed));
             }
         }
         
-        return statements.toOwnedSlice();
+        return statements.toOwnedSlice(self.allocator);
     }
     
     const Statement = union(enum) {
@@ -173,28 +173,28 @@ pub const WorkingJITEngine = struct {
         const content = line[start + 1 .. end];
         
         // Simple parsing - split by comma
-        var args = ArrayList([]const u8).init(self.allocator);
-        defer args.deinit();
+        var args: ArrayList([]const u8) = .empty;
+        defer args.deinit(allocator);
         
         var parts = std.mem.splitScalar(u8, content, ',');
         while (parts.next()) |part| {
             const trimmed = std.mem.trim(u8, part, " \"");
             if (trimmed.len > 0) {
-                try args.append(try self.allocator.dupe(u8, trimmed));
+                try args.append(self.allocator, try self.allocator.dupe(u8, trimmed));
             }
         }
         
         return Statement{
             .print_call = PrintCall{
                 .format = if (args.items.len > 0) args.items[0] else "Result",
-                .arguments = try args.toOwnedSlice(),
+                .arguments = try args.toOwnedSlice(self.allocator),
             },
         };
     }
     
     /// Compile statements to bytecode
     fn compileToByteCode(self: *WorkingJITEngine, statements: []Statement) ![]Instruction {
-        var bytecode = ArrayList(Instruction).init(self.allocator);
+        var bytecode: ArrayList(Instruction) = .empty;
         
         for (statements) |stmt| {
             switch (stmt) {
@@ -202,62 +202,62 @@ pub const WorkingJITEngine = struct {
                     // Compile the expression
                     switch (var_decl.value) {
                         .integer => |val| {
-                            try bytecode.append(Instruction{ .load_const = val });
-                            try bytecode.append(Instruction{ .store_var = var_decl.name });
+                            try bytecode.append(self.allocator, Instruction{ .load_const = val });
+                            try bytecode.append(self.allocator, Instruction{ .store_var = var_decl.name });
                         },
                         .identifier => |id| {
-                            try bytecode.append(Instruction{ .load_var = id });
-                            try bytecode.append(Instruction{ .store_var = var_decl.name });
+                            try bytecode.append(self.allocator, Instruction{ .load_var = id });
+                            try bytecode.append(self.allocator, Instruction{ .store_var = var_decl.name });
                         },
                         .binary_op => |binop| {
                             // Load left operand
                             if (std.fmt.parseInt(i64, binop.left, 10)) |val| {
-                                try bytecode.append(Instruction{ .load_const = val });
+                                try bytecode.append(self.allocator, Instruction{ .load_const = val });
                             } else |_| {
-                                try bytecode.append(Instruction{ .load_var = binop.left });
+                                try bytecode.append(self.allocator, Instruction{ .load_var = binop.left });
                             }
                             
                             // Load right operand
                             if (std.fmt.parseInt(i64, binop.right, 10)) |val| {
-                                try bytecode.append(Instruction{ .load_const = val });
+                                try bytecode.append(self.allocator, Instruction{ .load_const = val });
                             } else |_| {
-                                try bytecode.append(Instruction{ .load_var = binop.right });
+                                try bytecode.append(self.allocator, Instruction{ .load_var = binop.right });
                             }
                             
                             // Perform operation
                             if (std.mem.eql(u8, binop.op, "+")) {
-                                try bytecode.append(Instruction.add);
+                                try bytecode.append(self.allocator, Instruction.add);
                             } else if (std.mem.eql(u8, binop.op, "-")) {
-                                try bytecode.append(Instruction.sub);
+                                try bytecode.append(self.allocator, Instruction.sub);
                             } else if (std.mem.eql(u8, binop.op, "*")) {
-                                try bytecode.append(Instruction.mul);
+                                try bytecode.append(self.allocator, Instruction.mul);
                             } else if (std.mem.eql(u8, binop.op, "/")) {
-                                try bytecode.append(Instruction.div);
+                                try bytecode.append(self.allocator, Instruction.div);
                             }
                             
-                            try bytecode.append(Instruction{ .store_var = var_decl.name });
+                            try bytecode.append(self.allocator, Instruction{ .store_var = var_decl.name });
                         },
                     }
                 },
                 .print_call => |print_call| {
-                    try bytecode.append(Instruction{ .print_str = print_call.format });
+                    try bytecode.append(self.allocator, Instruction{ .print_str = print_call.format });
                     if (print_call.arguments.len > 1) {
                         // Assume second argument is a variable to print
-                        try bytecode.append(Instruction{ .load_var = print_call.arguments[1] });
-                        try bytecode.append(Instruction{ .print_int = 0 }); // Special marker
+                        try bytecode.append(self.allocator, Instruction{ .load_var = print_call.arguments[1] });
+                        try bytecode.append(self.allocator, Instruction{ .print_int = 0 }); // Special marker
                     }
                 },
             }
         }
         
-        try bytecode.append(Instruction.ret);
-        return bytecode.toOwnedSlice();
+        try bytecode.append(self.allocator, Instruction.ret);
+        return bytecode.toOwnedSlice(self.allocator);
     }
     
     /// Execute bytecode instructions
     fn executeBytecode(self: *WorkingJITEngine, bytecode: []Instruction) !void {
-        var stack = ArrayList(i64).init(self.allocator);
-        defer stack.deinit();
+        var stack: ArrayList(i64) = .empty;
+        defer stack.deinit(allocator);
         
         var pc: usize = 0;
         
@@ -266,11 +266,11 @@ pub const WorkingJITEngine = struct {
             
             switch (instr) {
                 .load_const => |val| {
-                    try stack.append(val);
+                    try stack.append(self.allocator, val);
                 },
                 .load_var => |name| {
                     const val = self.variables.get(name) orelse return error.UndefinedVariable;
-                    try stack.append(val);
+                    try stack.append(allocator, val);
                 },
                 .store_var => |name| {
                     if (stack.items.len == 0) return error.ExecutionFailed;
@@ -283,26 +283,26 @@ pub const WorkingJITEngine = struct {
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
                     const result = a + b;
-                    try stack.append(result);
+                    try stack.append(allocator, result);
                     print("🧮 Computed {} + {} = {}\n", .{ a, b, result });
                 },
                 .sub => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(a - b);
+                    try stack.append(allocator, a - b);
                 },
                 .mul => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(a * b);
+                    try stack.append(allocator, a * b);
                 },
                 .div => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(@divTrunc(a, b));
+                    try stack.append(allocator, @divTrunc(a, b));
                 },
                 .print_str => |str| {
                     print("{s} ", .{str});
@@ -326,8 +326,8 @@ pub const WorkingJITEngine = struct {
         print("🔥 Optimizing hot code path with {} instructions...\n", .{bytecode.len});
         
         // Simple optimization: constant folding
-        var optimized = ArrayList(Instruction).init(self.allocator);
-        defer optimized.deinit();
+        var optimized = .empty;
+        defer optimized.deinit(allocator);
         
         var i: usize = 0;
         while (i < bytecode.len) {
@@ -344,10 +344,10 @@ pub const WorkingJITEngine = struct {
                 const result = a + b;
                 
                 print("🔧 Constant folded: {} + {} = {} (saved 2 instructions)\n", .{ a, b, result });
-                try optimized.append(Instruction{ .load_const = result });
+                try optimized.append(allocator, Instruction{ .load_const = result });
                 i += 3; // Skip the folded instructions
             } else {
-                try optimized.append(instr);
+                try optimized.append(allocator, instr);
                 i += 1;
             }
         }
@@ -356,7 +356,7 @@ pub const WorkingJITEngine = struct {
         
         // Store the optimized version
         const main_func = CompiledFunction{
-            .bytecode = try optimized.toOwnedSlice(),
+            .bytecode = try optimized.toOwnedSlice(allocator),
             .execution_count = self.execution_count,
             .is_hot = true,
         };
@@ -403,7 +403,7 @@ pub const WorkingJITEngine = struct {
         print("==============================\n", .{});
         
         var engine = WorkingJITEngine.init(allocator);
-        defer engine.deinit();
+        defer engine.deinit(allocator);
         
         const test_program =
             \\sus x drip = 42

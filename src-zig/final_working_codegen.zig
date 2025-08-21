@@ -35,8 +35,8 @@ pub const FinalWorkingCodeGen = struct {
         
         return FinalWorkingCodeGen{
             .allocator = allocator,
-            .ir_buffer = ArrayList(u8).init(allocator),
-            .string_constants = ArrayList([]const u8).init(allocator),
+            .ir_buffer = .empty,
+            .string_constants = .empty,
             .variables = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .context = context,
             .module = module,
@@ -49,9 +49,9 @@ pub const FinalWorkingCodeGen = struct {
         std.debug.print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
         
         // Clean up Zig data structures first
-        self.ir_buffer.deinit();
-        self.string_constants.deinit();
-        self.variables.deinit();
+        self.ir_buffer.deinit(allocator);
+        self.string_constants.deinit(allocator);
+        self.variables.deinit(allocator);
         
         // Critical: Cleanup LLVM resources in proper order
         // Builder depends on context, module depends on context
@@ -142,7 +142,7 @@ pub const FinalWorkingCodeGen = struct {
     pub fn writeExecutable(self: *FinalWorkingCodeGen, output_path: []const u8) !void {
         // First write IR to temporary file
         var arena = std.heap.ArenaAllocator.init(self.allocator);
-        defer arena.deinit();
+        defer arena.deinit(allocator);
         const temp_allocator = arena.allocator();
         
         const ir_file = try std.fmt.allocPrint(temp_allocator, "{s}.ll", .{output_path});
@@ -520,7 +520,7 @@ pub fn testFinalCodegen() !void {
     const allocator = std.heap.page_allocator;
     
     var codegen = try FinalWorkingCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     std.debug.print("Testing Final Working CURSED Codegen...\n", .{});
     
@@ -542,7 +542,7 @@ pub fn testAdvancedFeatures() !void {
     const allocator = std.heap.page_allocator;
     
     var codegen = try FinalWorkingCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     std.debug.print("Testing Advanced CURSED Features...\n", .{});
     

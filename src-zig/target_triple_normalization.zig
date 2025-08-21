@@ -444,40 +444,40 @@ pub const TargetTripleNormalizer = struct {
     /// Returns owned slice of owned strings that must be freed by caller
     pub fn getCompilationFlags(self: *TargetTripleNormalizer, triple_str: []const u8) ![][]const u8 {
         const triple = try self.normalizeTriple(triple_str);
-        var flags = std.ArrayList([]const u8).init(self.allocator);
+        var flags: std.ArrayList([]const u8) = .empty;
         
         // Architecture-specific flags
         if (triple.isARM64()) {
-            try flags.append(try self.allocator.dupe(u8, "-march=armv8-a"));
+            try flags.append(self.allocator, try self.allocator.dupe(u8, "-march=armv8-a"));
             if (triple.isApple()) {
-                try flags.append(try self.allocator.dupe(u8, "-mcpu=apple-a14"));
+                try flags.append(self.allocator, try self.allocator.dupe(u8, "-mcpu=apple-a14"));
             }
         } else if (std.mem.eql(u8, triple.arch, "x86_64")) {
-            try flags.append(try self.allocator.dupe(u8, "-march=x86-64"));
+            try flags.append(self.allocator, try self.allocator.dupe(u8, "-march=x86-64"));
         }
         
         // OS-specific flags
         if (triple.isWindows()) {
-            try flags.append(try self.allocator.dupe(u8, "-D_WIN32"));
+            try flags.append(self.allocator, try self.allocator.dupe(u8, "-D_WIN32"));
             if (triple.abi != null and std.mem.eql(u8, triple.abi.?, "msvc")) {
-                try flags.append(try self.allocator.dupe(u8, "-fms-extensions"));
+                try flags.append(self.allocator, try self.allocator.dupe(u8, "-fms-extensions"));
             }
         } else if (triple.isLinux()) {
-            try flags.append(try self.allocator.dupe(u8, "-D_GNU_SOURCE"));
+            try flags.append(self.allocator, try self.allocator.dupe(u8, "-D_GNU_SOURCE"));
         } else if (triple.isApple()) {
-            try flags.append(try self.allocator.dupe(u8, "-D_DARWIN_C_SOURCE"));
+            try flags.append(self.allocator, try self.allocator.dupe(u8, "-D_DARWIN_C_SOURCE"));
         }
         
         // ABI-specific flags
         if (triple.abi) |abi| {
             if (std.mem.eql(u8, abi, "eabihf")) {
-                try flags.append(try self.allocator.dupe(u8, "-mfloat-abi=hard"));
+                try flags.append(self.allocator, try self.allocator.dupe(u8, "-mfloat-abi=hard"));
             } else if (std.mem.eql(u8, abi, "eabi")) {
-                try flags.append(try self.allocator.dupe(u8, "-mfloat-abi=soft"));
+                try flags.append(self.allocator, try self.allocator.dupe(u8, "-mfloat-abi=soft"));
             }
         }
         
-        return flags.toOwnedSlice();
+        return flags.toOwnedSlice(self.allocator);
     }
     
     /// Free compilation flags returned by getCompilationFlags
@@ -513,7 +513,7 @@ fn normalizeABI(abi: []const u8, os: []const u8) []const u8 {
 
 test "ARM64 triple normalization" {
     var normalizer = TargetTripleNormalizer.init(testing.allocator);
-    defer normalizer.deinit();
+    defer normalizer.deinit(testing.allocator);
     
     // Test ARM64 variations
     const arm64_triple = try normalizer.normalizeTriple("arm64-apple-macos");
@@ -532,7 +532,7 @@ test "ARM64 triple normalization" {
 
 test "Windows triple normalization" {
     var normalizer = TargetTripleNormalizer.init(testing.allocator);
-    defer normalizer.deinit();
+    defer normalizer.deinit(testing.allocator);
     
     // Test Windows variations
     const windows_x64 = try normalizer.normalizeTriple("windows-x64");
@@ -550,7 +550,7 @@ test "Windows triple normalization" {
 
 test "Triple format conversion" {
     var normalizer = TargetTripleNormalizer.init(testing.allocator);
-    defer normalizer.deinit();
+    defer normalizer.deinit(testing.allocator);
     
     // Test LLVM format conversion
     const llvm_triple = try normalizer.convertTripleFormat("macos-arm64", .LLVM);
@@ -565,7 +565,7 @@ test "Triple format conversion" {
 
 test "Cross-compilation validation" {
     var normalizer = TargetTripleNormalizer.init(testing.allocator);
-    defer normalizer.deinit();
+    defer normalizer.deinit(testing.allocator);
     
     // Test supported targets
     try testing.expect(try normalizer.validateForCrossCompilation("aarch64-apple-darwin"));
@@ -578,7 +578,7 @@ test "Cross-compilation validation" {
 
 test "Target features and CPU selection" {
     var normalizer = TargetTripleNormalizer.init(testing.allocator);
-    defer normalizer.deinit();
+    defer normalizer.deinit(testing.allocator);
     
     // Test ARM64 Apple Silicon
     const apple_cpu = try normalizer.getTargetCpuAndFeatures("aarch64-apple-darwin");

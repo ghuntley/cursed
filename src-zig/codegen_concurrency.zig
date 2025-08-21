@@ -28,7 +28,7 @@ pub const ConcurrencyCodeGen = struct {
     pub fn init(allocator: Allocator) ConcurrencyCodeGen {
         return ConcurrencyCodeGen{
             .allocator = allocator,
-            .output = ArrayList(u8).init(allocator),
+            .output = .empty,
             .function_counter = 0,
             .variable_counter = 0,
             .label_counter = 0,
@@ -37,7 +37,7 @@ pub const ConcurrencyCodeGen = struct {
     }
 
     pub fn deinit(self: *ConcurrencyCodeGen) void {
-        self.output.deinit();
+        self.output.deinit(allocator);
     }
 
     /// Generate LLVM IR for entire program with concurrency support
@@ -229,12 +229,12 @@ pub const ConcurrencyCodeGen = struct {
     fn generateCallExpression(self: *ConcurrencyCodeGen, call_expr: *ast.CallExpression) ![]const u8 {
         const function_reg = try self.generateExpression(call_expr.function.*);
         
-        var arg_regs = ArrayList([]const u8).init(self.allocator);
-        defer arg_regs.deinit();
+        var arg_regs = .empty;
+        defer arg_regs.deinit(allocator);
         
         for (call_expr.arguments.items) |arg| {
             const arg_reg = try self.generateExpression(arg);
-            try arg_regs.append(arg_reg);
+            try arg_regs.append(allocator, arg_reg);
         }
         
         const result_reg = try self.nextRegister();
@@ -440,7 +440,7 @@ test "concurrency codegen initialization" {
     const allocator = std.testing.allocator;
     
     var codegen = ConcurrencyCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
 
     try std.testing.expect(codegen.function_counter == 0);
     try std.testing.expect(codegen.variable_counter == 0);
@@ -450,7 +450,7 @@ test "runtime declarations generation" {
     const allocator = std.testing.allocator;
     
     var codegen = ConcurrencyCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
 
     try codegen.generateRuntimeDeclarations();
     
@@ -463,7 +463,7 @@ test "channel literal generation" {
     const allocator = std.testing.allocator;
     
     var codegen = ConcurrencyCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
 
     try codegen.generateRuntimeDeclarations();
 
@@ -483,16 +483,16 @@ test "goroutine spawn generation" {
     const allocator = std.testing.allocator;
     
     var codegen = ConcurrencyCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
 
     try codegen.generateRuntimeDeclarations();
 
     var function_literal = ast.FunctionLiteral{
-        .parameters = ArrayList(*ast.Identifier).init(allocator),
-        .body = ast.BlockStatement{ .statements = ArrayList(ast.Statement).init(allocator) },
+        .parameters = .empty,
+        .body = ast.BlockStatement{ .statements = .empty },
     };
-    defer function_literal.parameters.deinit();
-    defer function_literal.body.statements.deinit();
+    defer function_literal.parameters.deinit(allocator);
+    defer function_literal.body.statements.deinit(allocator);
 
     var spawn_expr = ast.GoroutineSpawn{
         .function = &ast.Expression{ .function_literal = &function_literal },

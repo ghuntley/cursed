@@ -39,19 +39,19 @@ pub const JITExecutionEngine = struct {
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.global_env.deinit();
-        self.functions.deinit();
+        self.global_env.deinit(allocator);
+        self.functions.deinit(allocator);
     }
     
     /// Execute CURSED source code
     pub fn executeSource(self: *JITExecutionEngine, source: []const u8) !void {
         var lex = lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit();
+        defer lex.deinit(allocator);
         
         const tokens = try lex.tokenize();
         
         var parse = try parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit();
+        defer parse.deinit(allocator);
         
         const program = try parse.parseProgram();
         defer parse.freeProgram(program);
@@ -263,12 +263,12 @@ pub const JITExecutionEngine = struct {
         // Handle user-defined functions
         if (self.functions.get(call.function_name)) |func| {
             // Evaluate arguments
-            var args = ArrayList(Value).init(self.allocator);
-            defer args.deinit();
+            var args = .empty;
+            defer args.deinit(allocator);
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
             
             return try self.callFunction(func, args.items);
@@ -301,7 +301,7 @@ pub const JITExecutionEngine = struct {
     fn callFunction(self: *JITExecutionEngine, func: ast.FunctionStatement, args: []const Value) !Value {
         // Create new environment for function scope
         var func_env = Environment.init(self.allocator, self.current_env);
-        defer func_env.deinit();
+        defer func_env.deinit(allocator);
         
         // Bind parameters to arguments
         for (func.parameters.items, 0..) |param, i| {
@@ -512,7 +512,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     print("==============================\n");
     
     var engine = try JITExecutionEngine.init(allocator);
-    defer engine.deinit();
+    defer engine.deinit(allocator);
     
     // Test 1: Simple expression evaluation
     print("\n📝 Test 1: Simple expression\n");

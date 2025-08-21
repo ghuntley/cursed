@@ -65,7 +65,7 @@ pub const YikesError = struct {
             self.allocator.free(trace);
         }
         if (self.inner_error) |inner| {
-            inner.deinit();
+            inner.deinit(allocator);
             self.allocator.destroy(inner);
         }
     }
@@ -91,8 +91,8 @@ pub const YikesError = struct {
     }
 
     pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
-        var buffer = ArrayList(u8).init(allocator);
-        defer buffer.deinit();
+        var buffer = .empty;
+        defer buffer.deinit(allocator);
         
         const writer = buffer.writer();
         try self.format(writer);
@@ -223,7 +223,7 @@ pub const ShookResult = union(enum) {
                     else => {},
                 }
             },
-            .Error => |*error_value| error_value.deinit(),
+            .Error => |*error_value| error_value.deinit(allocator),
         }
     }
 };
@@ -288,7 +288,7 @@ pub const FamBlock = struct {
 
     pub fn init(allocator: Allocator) FamBlock {
         return FamBlock{
-            .try_body = ArrayList(Statement).init(allocator),
+            .try_body = .empty,
             .catch_handler = null,
             .finally_handler = null,
             .allocator = allocator,
@@ -300,14 +300,14 @@ pub const FamBlock = struct {
         for (self.try_body.items) |*stmt| {
             self.deinitStatement(stmt);
         }
-        self.try_body.deinit();
+        self.try_body.deinit(allocator);
 
         // Deinitialize catch handler
         if (self.catch_handler) |*catch_handler| {
             for (catch_handler.handler_body.items) |*stmt| {
                 self.deinitStatement(stmt);
             }
-            catch_handler.handler_body.deinit();
+            catch_handler.handler_body.deinit(allocator);
         }
 
         // Deinitialize finally handler
@@ -315,7 +315,7 @@ pub const FamBlock = struct {
             for (finally_handler.finally_body.items) |*stmt| {
                 self.deinitStatement(stmt);
             }
-            finally_handler.finally_body.deinit();
+            finally_handler.finally_body.deinit(allocator);
         }
     }
 
@@ -325,17 +325,17 @@ pub const FamBlock = struct {
                 for (block.statements.items) |*nested_stmt| {
                     self.deinitStatement(nested_stmt);
                 }
-                block.statements.deinit();
+                block.statements.deinit(allocator);
             },
             .FunctionCall => |*call| {
-                call.arguments.deinit();
+                call.arguments.deinit(allocator);
             },
             else => {},
         }
     }
 
     pub fn addTryStatement(self: *FamBlock, stmt: Statement) !void {
-        try self.try_body.append(stmt);
+        try self.try_body.append(allocator, stmt);
     }
 
     pub fn setCatchHandler(self: *FamBlock, error_var: []const u8, handler_body: ArrayList(Statement)) void {
@@ -441,9 +441,9 @@ pub const ExecutionContext = struct {
         var iterator = self.variables.iterator();
         while (iterator.next()) |entry| {
             var err = entry.value_ptr;
-            err.deinit();
+            err.deinit(allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(allocator);
     }
 
     pub fn setVariable(self: *ExecutionContext, name: []const u8, error_value: YikesError) void {
@@ -491,7 +491,7 @@ test "yikes error creation" {
     const allocator = std.testing.allocator;
     
     var err = try yikes(allocator, "Test error", 42);
-    defer err.deinit();
+    defer err.deinit(allocator);
     
     try std.testing.expect(err.isError());
     try std.testing.expect(err.getCode() == 42);
@@ -516,10 +516,10 @@ test "fam block execution" {
     const allocator = std.testing.allocator;
     
     var fam = famBlock(allocator);
-    defer fam.deinit();
+    defer fam.deinit(allocator);
     
     var context = ExecutionContext.init(allocator);
-    defer context.deinit();
+    defer context.deinit(allocator);
     
     const result = fam.execute(&context);
     try std.testing.expect(result.isOk());
@@ -530,7 +530,7 @@ test "complete error handling flow" {
     
     // Create yikes error
     var original_err = try yikes(allocator, "Original error", 100);
-    defer original_err.deinit();
+    defer original_err.deinit(allocator);
     
     // Create shook result
     const shook_result = ShookResult.err(original_err);
@@ -538,10 +538,10 @@ test "complete error handling flow" {
     
     // Test fam block with error handling
     var fam = famBlock(allocator);
-    defer fam.deinit();
+    defer fam.deinit(allocator);
     
     var context = ExecutionContext.init(allocator);
-    defer context.deinit();
+    defer context.deinit(allocator);
     
     // Execute fam block
     const fam_result = fam.execute(&context);

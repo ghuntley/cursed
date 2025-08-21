@@ -103,7 +103,7 @@ pub const Attribute = struct {
         return Attribute{
             .type = attr_type,
             .name = name,
-            .parameters = ArrayList(AttributeParameter).init(allocator),
+            .parameters = .empty,
             .location = location,
         };
     }
@@ -112,13 +112,13 @@ pub const Attribute = struct {
         for (self.parameters.items) |*param| {
             param.deinit(allocator);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
     }
     
     /// Add a parameter to this attribute
     pub fn addParameter(self: *Attribute, allocator: Allocator, name: []const u8, value: AttributeValue) !void {
         _ = allocator; // Suppress unused warning
-        try self.parameters.append(AttributeParameter{
+        try self.parameters.append(allocator, AttributeParameter{
             .name = name,
             .value = value,
         });
@@ -180,7 +180,7 @@ pub const AttributeList = struct {
     
     pub fn init(allocator: Allocator) AttributeList {
         return AttributeList{
-            .attributes = ArrayList(Attribute).init(allocator),
+            .attributes = .empty,
         };
     }
     
@@ -188,12 +188,12 @@ pub const AttributeList = struct {
         for (self.attributes.items) |*attr| {
             attr.deinit(allocator);
         }
-        self.attributes.deinit();
+        self.attributes.deinit(allocator);
     }
     
     /// Add an attribute to the list
     pub fn addAttribute(self: *AttributeList, attr: Attribute) !void {
-        try self.attributes.append(attr);
+        try self.attributes.append(allocator, attr);
     }
     
     /// Find attribute by type
@@ -223,10 +223,10 @@ pub const AttributeList = struct {
     
     /// Get all attributes of a specific type
     pub fn getAttributesByType(self: *const AttributeList, allocator: Allocator, attr_type: AttributeType) !ArrayList(*const Attribute) {
-        var result = ArrayList(*const Attribute).init(allocator);
+        var result = .empty;
         for (self.attributes.items) |*attr| {
             if (attr.type == attr_type) {
-                try result.append(attr);
+                try result.append(allocator, attr);
             }
         }
         return result;
@@ -394,7 +394,7 @@ pub fn createTestAttributes(allocator: Allocator) !AttributeList {
 
 test "attribute system basic functionality" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test creating attributes
@@ -417,7 +417,7 @@ test "attribute system basic functionality" {
 
 test "attribute parameter access" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var attr = try createAlignAttribute(allocator, 16, SourceLocation.unknown());

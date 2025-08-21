@@ -10,7 +10,7 @@ pub fn main() !void {
         .safety = true,
         .stack_trace_frames = 12,
     }){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Set up logging

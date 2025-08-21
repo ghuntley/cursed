@@ -44,14 +44,14 @@ pub const CursedDebugger = struct {
             .allocator = allocator,
             .interpreter = interp,
             .breakpoints = HashMap(BreakpointKey, Breakpoint).init(allocator),
-            .watch_variables = ArrayList([]const u8).init(allocator),
+            .watch_variables = .empty,
             .current_line = 0,
             .current_file = "main.csd",
             .step_mode = .Continue,
             .is_running = false,
             .is_paused = false,
-            .execution_stack = ArrayList(StackFrame).init(allocator),
-            .source_lines = ArrayList([]const u8).init(allocator),
+            .execution_stack = .empty,
+            .source_lines = .empty,
             .current_statement = null,
             .config = DebuggerConfig{
                 .auto_list_source = true,
@@ -70,19 +70,19 @@ pub const CursedDebugger = struct {
                 self.allocator.free(condition);
             }
         }
-        self.breakpoints.deinit();
+        self.breakpoints.deinit(allocator);
         
         for (self.watch_variables.items) |var_name| {
             self.allocator.free(var_name);
         }
-        self.watch_variables.deinit();
+        self.watch_variables.deinit(allocator);
         
-        self.execution_stack.deinit();
+        self.execution_stack.deinit(allocator);
         
         for (self.source_lines.items) |line| {
             self.allocator.free(line);
         }
-        self.source_lines.deinit();
+        self.source_lines.deinit(allocator);
     }
     
     /// Start interactive debugging session
@@ -112,7 +112,7 @@ pub const CursedDebugger = struct {
         var line_iter = std.mem.splitScalar(u8, content, '\n');
         while (line_iter.next()) |line| {
             const line_copy = try self.allocator.dupe(u8, line);
-            try self.source_lines.append(line_copy);
+            try self.source_lines.append(self.allocator, line_copy);
         }
         
         print("✅ Loaded {} lines from {s}\n", .{ self.source_lines.items.len, file_path });
@@ -120,7 +120,8 @@ pub const CursedDebugger = struct {
     
     /// Main command loop
     fn commandLoop(self: *Self) !void {
-        const stdin = std.io.getStdIn().reader();
+        var stdin_buffer: [4096]u8 = undefined;
+        const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
         var input_buffer: [256]u8 = undefined;
         
         while (true) {
@@ -453,7 +454,7 @@ pub const CursedDebugger = struct {
         };
         
         const name_copy = try self.allocator.dupe(u8, var_name);
-        try self.watch_variables.append(name_copy);
+        try self.watch_variables.append(self.allocator, name_copy);
         print("👁️ Watching variable: {s}\n", .{var_name});
     }
     
@@ -866,15 +867,15 @@ fn HashMap(comptime K: type, comptime V: type) type {
 test "debugger initialization" {
     const testing = std.testing;
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Create a mock interpreter (this would be a real interpreter in practice)
     var interp = interpreter.Interpreter.init(allocator);
-    defer interp.deinit();
+    defer interp.deinit(allocator);
     
     var debugger = try CursedDebugger.init(allocator, &interp);
-    defer debugger.deinit();
+    defer debugger.deinit(allocator);
     
     try testing.expect(debugger.breakpoints.count() == 0);
     try testing.expect(debugger.watch_variables.items.len == 0);

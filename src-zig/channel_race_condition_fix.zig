@@ -47,7 +47,7 @@ pub fn Channel(comptime T: type) type {
             errdefer allocator.destroy(channel);
             
             channel.* = Self{
-                .buffer = std.ArrayList(T).init(allocator),
+                .buffer = .{},
                 .capacity = capacity,
                 .closed = Atomic(bool).init(false),
                 .ref_count = Atomic(u32).init(1), // Start with 1 reference
@@ -101,7 +101,7 @@ pub fn Channel(comptime T: type) type {
                 // For complex types, would need proper cleanup
                 _ = item;
             }
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
             
             // Mark cleanup as completed
             self.cleanup_completed.store(true, .release);
@@ -169,7 +169,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
                 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 return SendResult.sent;
             }
@@ -185,7 +185,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
             
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             return SendResult.sent;
         }
@@ -287,7 +287,7 @@ pub const SafeGoroutine = struct {
     pub fn init(allocator: Allocator) Self {
         return Self{
             .thread = null,
-            .channels = std.ArrayList(*anyopaque).init(allocator),
+            .channels = .{},
             .allocator = allocator,
         };
     }
@@ -306,12 +306,12 @@ pub const SafeGoroutine = struct {
             channel.release();
         }
         
-        self.channels.deinit();
+        self.channels.deinit(allocator);
     }
     
     /// Add a channel reference to this goroutine
     pub fn addChannelRef(self: *Self, channel: *anyopaque) !void {
-        try self.channels.append(channel);
+        try self.channels.append(allocator, channel);
     }
     
     /// Start the goroutine with a function
@@ -327,10 +327,10 @@ pub fn testChannelRaceConditions() !void {
     // Test 1: Channel cleanup with early goroutine termination
     {
         var channel_guard = try ChannelGuard(i32).init(allocator, 0);
-        defer channel_guard.deinit();
+        defer channel_guard.deinit(allocator);
         
         var goroutine = SafeGoroutine.init(allocator);
-        defer goroutine.deinit();
+        defer goroutine.deinit(allocator);
         
         // Add channel reference to goroutine
         try goroutine.addChannelRef(channel_guard.channel);
@@ -359,7 +359,7 @@ pub fn testChannelRaceConditions() !void {
     // Test 2: Stress test with multiple goroutines
     {
         var channel_guard = try ChannelGuard(i32).init(allocator, 10);
-        defer channel_guard.deinit();
+        defer channel_guard.deinit(allocator);
         
         const num_goroutines = 100;
         var goroutines: [num_goroutines]SafeGoroutine = undefined;
@@ -372,7 +372,7 @@ pub fn testChannelRaceConditions() !void {
         // Cleanup goroutines
         defer {
             for (&goroutines) |*g| {
-                g.deinit();
+                g.deinit(allocator);
             }
         }
         

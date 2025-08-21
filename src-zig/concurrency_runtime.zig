@@ -40,7 +40,7 @@ pub const SimpleChannel = struct {
     pub fn init(allocator: Allocator, capacity: usize) !SimpleChannel {
         return SimpleChannel{
             .id = next_channel_id.fetchAdd(1, .acq_rel),
-            .buffer = ArrayList(Variable).init(allocator),
+            .buffer = .empty,
             .mutex = Mutex{},
             .send_condition = Condition{},
             .recv_condition = Condition{},
@@ -52,7 +52,7 @@ pub const SimpleChannel = struct {
 
     pub fn deinit(self: *SimpleChannel) void {
         self.close();
-        self.buffer.deinit();
+        self.buffer.deinit(allocator);
     }
 
     pub fn send(self: *SimpleChannel, value: Variable) !void {
@@ -74,7 +74,7 @@ pub const SimpleChannel = struct {
 
         // For unbuffered channels (capacity 0), wait for receiver
         if (self.capacity == 0) {
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             return;
         }
@@ -94,7 +94,7 @@ pub const SimpleChannel = struct {
             return RuntimeError.ChannelClosed;
         }
 
-        try self.buffer.append(value);
+        try self.buffer.append(allocator, value);
         self.recv_condition.signal();
     }
 
@@ -186,12 +186,12 @@ pub fn shutdownRuntime() void {
     if (channel_registry) |*registry| {
         var iterator = registry.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit();
+            entry.value_ptr.*.deinit(allocator);
             if (registry_allocator) |allocator| {
                 allocator.destroy(entry.value_ptr.*);
             }
         }
-        registry.deinit();
+        registry.deinit(allocator);
         channel_registry = null;
     }
 

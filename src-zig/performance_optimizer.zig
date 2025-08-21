@@ -128,7 +128,7 @@ pub const FastLexer = struct {
             .allocator = allocator,
             .source = source,
             .position = 0,
-            .tokens = ArrayList(Token).init(allocator),
+            .tokens = .empty,
             .identifier_cache = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
         };
         
@@ -139,8 +139,8 @@ pub const FastLexer = struct {
     }
     
     pub fn deinit(self: *FastLexer) void {
-        self.tokens.deinit();
-        self.identifier_cache.deinit();
+        self.tokens.deinit(allocator);
+        self.identifier_cache.deinit(allocator);
     }
     
     fn populateKeywordCache(self: *FastLexer) !void {
@@ -169,7 +169,7 @@ pub const FastLexer = struct {
         var column: usize = 1;
         
         // Pre-allocate tokens array with estimated capacity
-        try self.tokens.ensureTotalCapacity(self.source.len / 6); // Rough estimate
+        try self.tokens.ensureTotalCapacity(allocator, self.source.len / 6); // Rough estimate
         
         while (self.position < self.source.len) {
             const start_pos = self.position;
@@ -311,7 +311,7 @@ pub const FastLexer = struct {
         }
         
         try self.addToken(.Eof, "", line, column);
-        return self.tokens.toOwnedSlice();
+        return self.tokens.toOwnedSlice(allocator);
     }
     
     fn scanNumber(self: *FastLexer, line: *usize, column: *usize) !void {
@@ -390,7 +390,7 @@ pub const FastLexer = struct {
     }
     
     fn addToken(self: *FastLexer, kind: TokenKind, lexeme: []const u8, line: usize, column: usize) !void {
-        try self.tokens.append(Token{
+        try self.tokens.append(allocator, Token{
             .kind = kind,
             .lexeme = lexeme,
             .line = line,
@@ -449,7 +449,7 @@ pub const OptimizedMemoryPool = struct {
     
     pub fn deinit(self: *OptimizedMemoryPool) void {
         for (&self.pools) |*pool| {
-            pool.deinit(self.allocator);
+            pool.deinit(allocator);
         }
     }
     
@@ -557,7 +557,7 @@ pub fn benchmarkLexer(allocator: Allocator, source: []const u8, iterations: usiz
     
     while (i < iterations) : (i += 1) {
         var lexer = FastLexer.init(allocator, source);
-        defer lexer.deinit();
+        defer lexer.deinit(allocator);
         
         const tokens = try lexer.tokenizeOptimized();
         total_tokens += tokens.len;
@@ -595,7 +595,7 @@ test "FastLexer performance" {
     ;
     
     var lexer = FastLexer.init(allocator, source);
-    defer lexer.deinit();
+    defer lexer.deinit(allocator);
     
     const tokens = try lexer.tokenizeOptimized();
     defer allocator.free(tokens);
@@ -621,7 +621,7 @@ test "OptimizedMemoryPool" {
     const allocator = std.testing.allocator;
     
     var pool = try OptimizedMemoryPool.init(allocator);
-    defer pool.deinit();
+    defer pool.deinit(allocator);
     
     const small_alloc = pool.allocate(16);
     try std.testing.expect(small_alloc != null);

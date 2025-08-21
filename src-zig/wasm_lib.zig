@@ -166,5 +166,5 @@ export fn cursed_wasm_init() i32 {
 
 // Cleanup function
 export fn cursed_wasm_cleanup() void {
-    _ = gpa.deinit();
+    _ = gpa.deinit(allocator);
 }

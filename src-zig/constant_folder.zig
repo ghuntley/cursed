@@ -648,7 +648,7 @@ test "constant folder initialization" {
     const allocator = std.testing.allocator;
     
     var folder = try ConstantFolder.init(allocator);
-    defer folder.deinit();
+    defer folder.deinit(allocator);
     
     try std.testing.expect(folder.constants_folded == 0);
     try std.testing.expect(folder.expressions_simplified == 0);

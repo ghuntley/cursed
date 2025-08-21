@@ -27,7 +27,7 @@ const Variable = union(enum) {
                 for (arr.items) |*item| {
                     item.deinit(allocator);
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             else => {},
         }
@@ -39,9 +39,9 @@ const Variable = union(enum) {
             .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
             .Boolean => |b| Variable{ .Boolean = b },
             .Array => |arr| {
-                var new_array = ArrayList(Variable).init(allocator);
+                var new_array: ArrayList(Variable) = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(try item.clone(allocator));
+                    try new_array.append(allocator, try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -52,14 +52,14 @@ const Variable = union(enum) {
         _ = fmt;
         _ = options;
         switch (self) {
-            .Integer => |i| try writer.print("{}", .{i}),
+            .Integer => |i| try writer.print("{d}", .{i}),
             .String => |s| try writer.print("{s}", .{s}),
             .Boolean => |b| try writer.print("{s}", .{if (b) "based" else "cringe"}),
             .Array => |arr| {
                 try writer.print("[", .{});
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try writer.print(", ", .{});
-                    try writer.print("{}", .{item});
+                    try writer.print("{any}", .{item});
                 }
                 try writer.print("]", .{});
             },
@@ -77,7 +77,7 @@ const FunctionDef = struct {
         for (self.params.items) |param| {
             allocator.free(param);
         }
-        self.params.deinit();
+        self.params.deinit(allocator);
         allocator.free(self.body);
     }
 };
@@ -92,7 +92,7 @@ const Context = struct {
         return Context{
             .variables = std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80).init(allocator),
             .functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80).init(allocator),
-            .defer_stack = ArrayList([]const u8).init(allocator),
+            .defer_stack = .empty,
             .allocator = allocator,
         };
     }
@@ -121,7 +121,7 @@ const Context = struct {
         for (self.defer_stack.items) |statement| {
             self.allocator.free(statement);
         }
-        self.defer_stack.deinit();
+        self.defer_stack.deinit(self.allocator);
     }
     
     pub fn setVariable(self: *Context, name: []const u8, value: Variable) !void {
@@ -166,8 +166,8 @@ const Context = struct {
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+    defer _ = gpa.deinit();
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -192,13 +192,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {any}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {any}\n", .{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -211,7 +211,7 @@ pub fn main() !void {
 
     // Interpret the program
     interpretProgram(&ctx, source) catch |err| {
-        print("Runtime error: {}\n", .{err});
+        print("Runtime error: {any}\n", .{err});
         return;
     };
 }
@@ -312,7 +312,7 @@ fn interpretProgram(ctx: *Context, source: []const u8) !void {
     // Execute main_character function if it exists
     if (ctx.functions.get("main_character")) |main_func| {
         _ = evaluateUserFunction(ctx, main_func, "") catch |err| {
-            print("Error executing main_character: {}\n", .{err});
+            print("Error executing main_character: {any}\n", .{err});
         };
     }
 }
@@ -394,7 +394,7 @@ fn handleDeferStatement(ctx: *Context, statement: []const u8) ParseError!void {
     
     // Store a copy of the statement in the defer stack
     const statement_copy = try ctx.allocator.dupe(u8, deferred_statement);
-    try ctx.defer_stack.append(statement_copy);
+    try ctx.defer_stack.append(ctx.allocator, statement_copy);
     
     print("✅ Defer statement pushed to stack: '{s}' (stack size: {d})\n", .{ deferred_statement, ctx.defer_stack.items.len });
 }
@@ -402,12 +402,12 @@ fn handleDeferStatement(ctx: *Context, statement: []const u8) ParseError!void {
 fn handleVariableDeclaration(ctx: *Context, statement: []const u8) ParseError!void {
     // Parse: sus name type = value
     const parts_iter = std.mem.tokenizeAny(u8, statement[4..], " \t"); // Skip "sus "
-    var parts = ArrayList([]const u8).init(ctx.allocator);
-    defer parts.deinit();
+    var parts: ArrayList([]const u8) = .empty;
+    defer parts.deinit(ctx.allocator);
     
     var iter = parts_iter;
     while (iter.next()) |part| {
-        try parts.append(part);
+        try parts.append(ctx.allocator, part);
     }
     
     if (parts.items.len < 4) { // name, type, "=", value
@@ -423,12 +423,12 @@ fn handleVariableDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
     }
     
     // Join remaining parts as value expression
-    var value_expr = ArrayList(u8).init(ctx.allocator);
-    defer value_expr.deinit();
+    var value_expr: ArrayList(u8) = .empty;
+    defer value_expr.deinit(ctx.allocator);
     
     for (parts.items[3..], 0..) |part, i| {
-        if (i > 0) try value_expr.append(' ');
-        try value_expr.appendSlice(part);
+        if (i > 0) try value_expr.append(ctx.allocator, ' ');
+        try value_expr.appendSlice(ctx.allocator, part);
     }
     
     const value = try evaluateExpression(ctx, value_expr.items);
@@ -438,12 +438,12 @@ fn handleVariableDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
 fn handleVariableDeclarationWithGlobalContext(ctx: *Context, statement: []const u8, global_ctx: *Context) ParseError!void {
     // Parse: sus name type = value
     const parts_iter = std.mem.tokenizeAny(u8, statement[4..], " \t"); // Skip "sus "
-    var parts = ArrayList([]const u8).init(ctx.allocator);
-    defer parts.deinit();
+    var parts: ArrayList([]const u8) = .empty;
+    defer parts.deinit(ctx.allocator);
     
     var iter = parts_iter;
     while (iter.next()) |part| {
-        try parts.append(part);
+        try parts.append(ctx.allocator, part);
     }
     
     if (parts.items.len < 4) { // name, type, "=", value
@@ -459,12 +459,12 @@ fn handleVariableDeclarationWithGlobalContext(ctx: *Context, statement: []const 
     }
     
     // Join remaining parts as value expression
-    var value_expr = ArrayList(u8).init(ctx.allocator);
-    defer value_expr.deinit();
+    var value_expr: ArrayList(u8) = .empty;
+    defer value_expr.deinit(ctx.allocator);
     
     for (parts.items[3..], 0..) |part, i| {
-        if (i > 0) try value_expr.append(' ');
-        try value_expr.appendSlice(part);
+        if (i > 0) try value_expr.append(ctx.allocator, ' ');
+        try value_expr.appendSlice(ctx.allocator, part);
     }
     
     const value = try evaluateExpressionWithGlobalContext(ctx, value_expr.items, global_ctx);
@@ -502,7 +502,7 @@ fn handleFunctionDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
     const body = std.mem.trim(u8, content[brace_start + 1..brace_end], " \t\r\n");
     
     // Parse parameters correctly by handling type annotations
-    var params = ArrayList([]const u8).init(ctx.allocator);
+    var params: ArrayList([]const u8) = .empty;
     if (params_str.len > 0) {
         var param_iter = std.mem.splitSequence(u8, params_str, ",");
         while (param_iter.next()) |param| {
@@ -510,12 +510,12 @@ fn handleFunctionDeclaration(ctx: *Context, statement: []const u8) ParseError!vo
             // Extract parameter name (before type)
             const space_pos = std.mem.indexOf(u8, trimmed_param, " ") orelse {
                 // If no space, the whole thing is the parameter name (no type annotation)
-                try params.append(try ctx.allocator.dupe(u8, trimmed_param));
+                try params.append(ctx.allocator, try ctx.allocator.dupe(u8, trimmed_param));
                 continue;
             };
             const param_name = std.mem.trim(u8, trimmed_param[0..space_pos], " \t");
             if (param_name.len > 0) {
-                try params.append(try ctx.allocator.dupe(u8, param_name));
+                try params.append(ctx.allocator, try ctx.allocator.dupe(u8, param_name));
             }
         }
     }
@@ -581,7 +581,7 @@ fn handleWhileLoop(ctx: *Context, statement: []const u8) ParseError!void {
     }
     
     if (iterations >= max_iterations) {
-        print("Warning: Loop iteration limit reached ({})\n", .{max_iterations});
+        print("Warning: Loop iteration limit reached ({d})\n", .{max_iterations});
     }
 }
 
@@ -612,7 +612,7 @@ fn handlePrint(ctx: *Context, statement: []const u8) ParseError!void {
         first = false;
         
         const value = try evaluateExpression(ctx, trimmed_arg);
-        print("{}", .{value});
+        print("{any}", .{value});
         
         // Clean up temporary values
         var temp_value = value;
@@ -684,7 +684,7 @@ fn evaluateExpression(ctx: *Context, expr: []const u8) ParseError!Variable {
 }
 
 fn evaluateArrayLiteral(ctx: *Context, expr: []const u8) ParseError!Variable {
-    var array = ArrayList(Variable).init(ctx.allocator);
+    var array: ArrayList(Variable) = .empty;
     
     const content = std.mem.trim(u8, expr[1..expr.len - 1], " \t");
     if (content.len == 0) {
@@ -697,7 +697,7 @@ fn evaluateArrayLiteral(ctx: *Context, expr: []const u8) ParseError!Variable {
         if (trimmed_elem.len == 0) continue;
         
         const value = try evaluateExpression(ctx, trimmed_elem);
-        try array.append(value);
+        try array.append(ctx.allocator, value);
     }
     
     return Variable{ .Array = array };
@@ -738,12 +738,12 @@ fn evaluateBuiltinLen(ctx: *Context, args_str: []const u8) ParseError!Variable {
 
 fn evaluateUserFunction(ctx: *Context, func_def: FunctionDef, args_str: []const u8) ParseError!Variable {
     // Parse arguments
-    var args = ArrayList(Variable).init(ctx.allocator);
+    var args: ArrayList(Variable) = .empty;
     defer {
         for (args.items) |*arg| {
             arg.deinit(ctx.allocator);
         }
-        args.deinit();
+        args.deinit(ctx.allocator);
     }
     
     if (args_str.len > 0) {
@@ -753,7 +753,7 @@ fn evaluateUserFunction(ctx: *Context, func_def: FunctionDef, args_str: []const 
             if (trimmed_arg.len == 0) continue;
             
             const value = try evaluateExpression(ctx, trimmed_arg);
-            try args.append(value);
+            try args.append(ctx.allocator, value);
         }
     }
     
@@ -846,7 +846,7 @@ fn handlePrintWithGlobalContext(ctx: *Context, statement: []const u8, global_ctx
         
         const value = try evaluateExpressionWithGlobalContext(ctx, trimmed_arg, global_ctx);
         defer { var temp = value; temp.deinit(ctx.allocator); }
-        print("{}", .{value});
+        print("{any}", .{value});
     }
     print("\n", .{});
 }

@@ -17,7 +17,7 @@ const error_reporting = @import("enhanced_error_reporting.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -67,7 +67,7 @@ pub fn main() !void {
 
     // Initialize error reporter
     var error_reporter = error_reporting.ErrorReporter.init(allocator, max_errors);
-    defer error_reporter.deinit();
+    defer error_reporter.deinit(allocator);
     
     error_reporter.setColors(!no_colors);
     error_reporter.setVerbose(verbose);
@@ -89,7 +89,7 @@ pub fn main() !void {
         print("❌ Failed to initialize lexer: {any}\n", .{err});
         return;
     };
-    defer lexer_instance.deinit();
+    defer lexer_instance.deinit(allocator);
 
     const tokens = lexer_instance.tokenize() catch |err| {
         if (verbose) print("❌ Lexing failed: {any}\n", .{err});
@@ -123,7 +123,7 @@ pub fn main() !void {
         try error_reporter.printDiagnostics(std.io.getStdErr().writer());
         return;
     };
-    defer program.deinit();
+    defer program.deinit(allocator);
 
     if (verbose) print("✅ Parsed program with {} statements\n", .{program.statements.items.len});
 

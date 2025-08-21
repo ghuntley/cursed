@@ -33,8 +33,8 @@ pub const DebugInterpreter = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.debugger.deinit();
-        self.base_interpreter.deinit();
+        self.debugger.deinit(allocator);
+        self.base_interpreter.deinit(allocator);
     }
     
     /// Start interactive debugging session
@@ -69,7 +69,7 @@ pub const DebugInterpreter = struct {
                 
                 // Simple pause simulation - in a real implementation this would be event-driven
                 print("🛑 Execution paused. Press Enter to continue...\n");
-                _ = std.io.getStdIn().reader().readByte() catch {};
+                _ = std.fs.File.stdin().reader(&[_]u8{}).readByte() catch {};
             }
             
             // Execute the statement
@@ -281,7 +281,7 @@ pub const DebugInterpreter = struct {
                 .line = self.current_line,
                 .local_variables = std.StringHashMap(interpreter.Value).init(self.base_interpreter.allocator),
             };
-            try self.debugger.execution_stack.append(frame);
+            try self.debugger.execution_stack.append(allocator, frame);
         }
         
         // Call base interpreter function
@@ -358,7 +358,7 @@ pub const DebugInterpreter = struct {
 /// Create debug-enabled main entry point
 pub fn createDebugMain() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Get command line arguments
@@ -376,13 +376,13 @@ pub fn createDebugMain() !void {
     if (debug_mode) {
         // Interactive debug mode
         var debug_interpreter = try DebugInterpreter.init(allocator);
-        defer debug_interpreter.deinit();
+        defer debug_interpreter.deinit(allocator);
         
         try debug_interpreter.startDebugSession(source_file);
     } else {
         // Regular execution mode
         var regular_interpreter = try interpreter.Interpreter.init(allocator);
-        defer regular_interpreter.deinit();
+        defer regular_interpreter.deinit(allocator);
         
         // Parse and execute normally
         // TODO: Load and parse source file, then execute
@@ -394,11 +394,11 @@ pub fn createDebugMain() !void {
 test "debug integration" {
     const testing = std.testing;
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var debug_interp = try DebugInterpreter.init(allocator);
-    defer debug_interp.deinit();
+    defer debug_interp.deinit(allocator);
     
     try testing.expect(debug_interp.debug_enabled);
     try testing.expect(debug_interp.current_line == 0);

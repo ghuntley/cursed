@@ -56,7 +56,7 @@ pub const ToolConfig = struct {
     }
     
     pub fn deinit(self: *ToolConfig) void {
-        self.options.deinit();
+        self.options.deinit(allocator);
     }
 };
 
@@ -84,7 +84,7 @@ pub const ToolRunner = struct {
         std.log.info("Starting CURSED Language Server...");
         
         var handler = lsp_server.LSPHandler.init(self.allocator);
-        defer handler.deinit();
+        defer handler.deinit(allocator);
         
         // Start LSP server (this would run indefinitely)
         try lsp_server.main();
@@ -95,7 +95,7 @@ pub const ToolRunner = struct {
         
         const formatter_config = formatter.FormatterConfig{};
         var fmt = formatter.Formatter.init(self.allocator, formatter_config);
-        defer fmt.deinit();
+        defer fmt.deinit(allocator);
         
         if (config.input_files.len == 0) {
             std.log.err("No input files specified for formatting");
@@ -111,10 +111,10 @@ pub const ToolRunner = struct {
         std.log.info("Running CURSED linter...");
         
         var linter_config = linter.LinterConfig.init(self.allocator);
-        defer linter_config.deinit();
+        defer linter_config.deinit(allocator);
         
         var cursed_linter = linter.Linter.init(self.allocator, linter_config);
-        defer cursed_linter.deinit();
+        defer cursed_linter.deinit(allocator);
         
         if (config.input_files.len == 0) {
             std.log.err("No input files specified for linting");
@@ -170,7 +170,7 @@ pub const ToolRunner = struct {
         };
         
         var generator = doc_generator.DocGenerator.init(self.allocator, doc_config);
-        defer generator.deinit();
+        defer generator.deinit(allocator);
         
         if (config.input_files.len == 0) {
             std.log.err("No input directories specified for documentation generation");
@@ -206,7 +206,7 @@ pub const ToolDiscovery = struct {
     }
     
     pub fn deinit(self: *ToolDiscovery) void {
-        self.available_tools.deinit();
+        self.available_tools.deinit(allocator);
     }
     
     pub fn discoverTools(self: *ToolDiscovery) !void {
@@ -475,7 +475,7 @@ pub const ToolTester = struct {
         
         const config = formatter.FormatterConfig{};
         var fmt = formatter.Formatter.init(self.allocator, config);
-        defer fmt.deinit();
+        defer fmt.deinit(allocator);
         
         const formatted = try fmt.format(test_code);
         defer self.allocator.free(formatted);
@@ -491,10 +491,10 @@ pub const ToolTester = struct {
         ;
         
         var config = linter.LinterConfig.init(self.allocator);
-        defer config.deinit();
+        defer config.deinit(allocator);
         
         var cursed_linter = linter.Linter.init(self.allocator, config);
-        defer cursed_linter.deinit();
+        defer cursed_linter.deinit(allocator);
         
         try cursed_linter.lintSource("test.csd", test_code);
         
@@ -504,7 +504,7 @@ pub const ToolTester = struct {
     fn testPackageManager(self: *ToolTester) !void {
         // Test package manifest creation
         var manifest = package_manager.PackageManifest.init(self.allocator);
-        defer manifest.deinit();
+        defer manifest.deinit(allocator);
         
         manifest.name = "test-package";
         manifest.version = package_manager.Version{ .major = 1, .minor = 0, .patch = 0 };
@@ -515,7 +515,7 @@ pub const ToolTester = struct {
     fn testDocGenerator(self: *ToolTester) !void {
         const config = doc_generator.DocConfig{};
         var generator = doc_generator.DocGenerator.init(self.allocator, config);
-        defer generator.deinit();
+        defer generator.deinit(allocator);
         
         std.log.info("Documentation generator test passed");
     }
@@ -524,7 +524,7 @@ pub const ToolTester = struct {
 // Main tooling entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);
@@ -540,7 +540,7 @@ pub fn main() !void {
     
     if (std.mem.eql(u8, tool_name, "discover")) {
         var discovery = ToolDiscovery.init(allocator);
-        defer discovery.deinit();
+        defer discovery.deinit(allocator);
         
         try discovery.discoverTools();
         discovery.listTools();
@@ -559,7 +559,7 @@ pub fn main() !void {
         var runner = ToolRunner.init(allocator);
         
         var config = ToolConfig.init(allocator, tool_type);
-        defer config.deinit();
+        defer config.deinit(allocator);
         
         // Parse additional arguments
         config.input_files = args[2..];

@@ -127,7 +127,7 @@ pub const RegistryApiClient = struct {
     
     fn buildSearchUrl(self: *RegistryApiClient, query: registry.SearchQuery) ![]const u8 {
         var url_parts = ArrayList(u8).init(self.allocator);
-        defer url_parts.deinit();
+        defer url_parts.deinit(allocator);
         
         const writer = url_parts.writer();
         try writer.print("{s}/api/v1/search?q={s}", .{self.base_url, query.query});
@@ -516,8 +516,8 @@ pub const PackageAnalytics = struct {
     }
     
     pub fn deinit(self: *PackageAnalytics) void {
-        self.geographic_distribution.deinit();
-        self.version_distribution.deinit();
+        self.geographic_distribution.deinit(allocator);
+        self.version_distribution.deinit(allocator);
     }
 };
 
@@ -547,7 +547,7 @@ test "registry api client creation" {
     const allocator = std.testing.allocator;
     
     var client = try RegistryApiClient.init(allocator, "https://packages.cursed.dev");
-    defer client.deinit();
+    defer client.deinit(allocator);
     
     try std.testing.expect(std.mem.eql(u8, client.base_url, "https://packages.cursed.dev"));
     try std.testing.expect(client.auth_token == null);
@@ -557,10 +557,10 @@ test "search query building" {
     const allocator = std.testing.allocator;
     
     var client = try RegistryApiClient.init(allocator, "https://packages.cursed.dev");
-    defer client.deinit();
+    defer client.deinit(allocator);
     
     var query = registry.SearchQuery.init(allocator, "json parser");
-    defer query.deinit();
+    defer query.deinit(allocator);
     
     try query.categories.append(.utilities);
     query.min_quality = 80.0;

@@ -22,7 +22,7 @@ test "IOCP poller lifecycle" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit();
+    defer poller.deinit(allocator);
     
     // Verify initial state
     try testing.expect(!poller.running.load(.acquire));
@@ -81,7 +81,7 @@ test "async runtime integration lifecycle" {
     const allocator = testing.allocator;
     
     var runtime = try integration.WindowsAsyncRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     try testing.expect(!runtime.initialized.load(.acquire));
     
@@ -144,7 +144,7 @@ test "async runtime with scheduler integration" {
     
     // Initialize runtime
     var runtime = try integration.WindowsAsyncRuntime.init(allocator);
-    defer runtime.deinit();
+    defer runtime.deinit(allocator);
     
     try runtime.start();
     defer runtime.stop();
@@ -179,7 +179,7 @@ test "async operation error handling" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit();
+    defer poller.deinit(allocator);
     
     try poller.start();
     defer poller.stop();
@@ -218,7 +218,7 @@ test "async operation performance baseline" {
     const allocator = testing.allocator;
     
     var poller = try iocp.IOCPPoller.init(allocator);
-    defer poller.deinit();
+    defer poller.deinit(allocator);
     
     try poller.start();
     defer poller.stop();

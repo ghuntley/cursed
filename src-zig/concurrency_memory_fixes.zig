@@ -56,7 +56,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
             
             self.* = Self{
                 .id = generateChannelId(),
-                .buffer = ArrayList(T).init(arena_allocator),
+                .buffer = .empty,
                 .mutex = Mutex{},
                 .send_condition = Condition{},
                 .recv_condition = Condition{},
@@ -81,7 +81,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
             defer self.mutex.unlock();
             
             // Clean up arena and main allocation
-            self.arena.deinit();
+            self.arena.deinit(allocator);
             self.allocator.destroy(self);
         }
         
@@ -92,7 +92,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
         pub fn release(self: *Self) void {
             const old_count = self.ref_count.fetchSub(1, .acq_rel);
             if (old_count == 1) {
-                self.deinit();
+                self.deinit(allocator);
             }
         }
 
@@ -136,7 +136,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                self.buffer.append(value) catch return error.OutOfMemory;
+                self.buffer.append(allocator, value) catch return error.OutOfMemory;
                 self.recv_condition.signal();
                 return SendResult.sent;
             }
@@ -164,7 +164,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            self.buffer.append(value) catch return error.OutOfMemory;
+            self.buffer.append(allocator, value) catch return error.OutOfMemory;
             self.recv_condition.signal();
             return SendResult.sent;
         }
@@ -190,7 +190,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                self.buffer.append(value) catch return error.OutOfMemory;
+                self.buffer.append(allocator, value) catch return error.OutOfMemory;
                 self.recv_condition.signal();
                 return SendResult.sent;
             }
@@ -204,7 +204,7 @@ pub fn MemorySafeChannel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            self.buffer.append(value) catch return error.OutOfMemory;
+            self.buffer.append(allocator, value) catch return error.OutOfMemory;
             self.recv_condition.signal();
             return SendResult.sent;
         }
@@ -340,7 +340,7 @@ pub const MemorySafeGoroutine = struct {
         }
         
         // Clean up arena and main allocation
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
 
@@ -387,7 +387,7 @@ pub const MemorySafeWorkStealingDeque = struct {
         const arena_allocator = arena.allocator();
         
         self.* = Self{
-            .items = ArrayList(*MemorySafeGoroutine).init(arena_allocator),
+            .items = .empty,
             .mutex = Mutex{},
             .top = Atomic(usize).init(0),
             .bottom = Atomic(usize).init(0),
@@ -404,13 +404,13 @@ pub const MemorySafeWorkStealingDeque = struct {
         
         // Clean up any remaining goroutines
         for (self.items.items) |goroutine| {
-            goroutine.deinit();
+            goroutine.deinit(allocator);
         }
         
         self.mutex.unlock();
         
         // Clean up arena and main allocation
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
 
@@ -419,7 +419,7 @@ pub const MemorySafeWorkStealingDeque = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        try self.items.append(goroutine);
+        try self.items.append(self.allocator, goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -493,8 +493,8 @@ pub const MemorySafeWorker = struct {
 
     pub fn deinit(self: *MemorySafeWorker) void {
         self.stop();
-        self.deque.deinit();
-        self.arena.deinit();
+        self.deque.deinit(allocator);
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
 
@@ -578,8 +578,8 @@ pub const MemorySafeScheduler = struct {
         const arena_allocator = arena.allocator();
         
         self.* = MemorySafeScheduler{
-            .workers = ArrayList(*MemorySafeWorker).init(arena_allocator),
-            .global_queue = ArrayList(*MemorySafeGoroutine).init(arena_allocator),
+            .workers = .empty,
+            .global_queue = .empty,
             .global_mutex = Mutex{},
             .next_goroutine_id = Atomic(GoroutineId).init(1),
             .next_worker_id = Atomic(WorkerId).init(0),
@@ -592,11 +592,11 @@ pub const MemorySafeScheduler = struct {
         };
 
         // Initialize workers
-        try self.workers.ensureTotalCapacity(num_workers);
+        try self.workers.ensureTotalCapacity(allocator, num_workers);
         for (0..num_workers) |_| {
             const worker_id = self.next_worker_id.fetchAdd(1, .acq_rel);
             const worker = try MemorySafeWorker.init(arena_allocator, worker_id, self);
-            try self.workers.append(worker);
+            try self.workers.append(allocator, worker);
         }
 
         return self;
@@ -607,18 +607,18 @@ pub const MemorySafeScheduler = struct {
         
         // Clean up workers
         for (self.workers.items) |worker| {
-            worker.deinit();
+            worker.deinit(allocator);
         }
         
         // Clean up remaining goroutines in global queue
         self.global_mutex.lock();
         for (self.global_queue.items) |goroutine| {
-            goroutine.deinit();
+            goroutine.deinit(allocator);
         }
         self.global_mutex.unlock();
         
         // Clean up arena and main allocation
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         self.allocator.destroy(self);
     }
 
@@ -673,7 +673,7 @@ pub const MemorySafeScheduler = struct {
             // Fallback to global queue
             self.global_mutex.lock();
             defer self.global_mutex.unlock();
-            try self.global_queue.append(goroutine);
+            try self.global_queue.append(allocator, goroutine);
         }
     }
 
@@ -737,7 +737,7 @@ pub fn shutdownScheduler() void {
     defer scheduler_mutex.unlock();
 
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         global_scheduler = null;
     }
 }

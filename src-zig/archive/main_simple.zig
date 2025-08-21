@@ -7,7 +7,7 @@ const simple_interpreter = @import("simple_interpreter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
 
     const args = try std.process.argsAlloc(allocator);
@@ -37,7 +37,7 @@ pub fn main() !void {
     // Lexical analysis
     var lex = lexer.Lexer.init(allocator, file_content);
     const tokens = try lex.tokenize();
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     print("Lexed {} tokens\n", .{tokens.items.len});
     
@@ -50,7 +50,7 @@ pub fn main() !void {
     print("🚀 Executing CURSED program...\n", .{});
     
     var interpreter = simple_interpreter.SimpleInterpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
     
     interpreter.execute(tokens.items) catch |err| {
         print("Interpreter error: {}\n", .{err});

@@ -5,7 +5,7 @@ const lsp_server = @import("lsp_server.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     std.log.info("CURSED Language Server starting...", .{});

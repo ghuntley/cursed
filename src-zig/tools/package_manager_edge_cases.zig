@@ -47,8 +47,8 @@ pub const CircularDependencyDetector = struct {
     }
     
     pub fn deinit(self: *CircularDependencyDetector) void {
-        self.visited.deinit();
-        self.recursion_stack.deinit();
+        self.visited.deinit(allocator);
+        self.recursion_stack.deinit(allocator);
     }
     
     pub fn detectCircularDependencies(self: *CircularDependencyDetector, manifest: *const package_manager.PackageManifest) !void {
@@ -117,9 +117,9 @@ pub const VersionConflictResolver = struct {
     
     pub fn deinit(self: *VersionConflictResolver) void {
         for (self.conflicts.items) |*conflict| {
-            conflict.requirements.deinit();
+            conflict.requirements.deinit(allocator);
         }
-        self.conflicts.deinit();
+        self.conflicts.deinit(allocator);
     }
     
     pub fn resolveVersionConflicts(self: *VersionConflictResolver, dependencies: []const package_manager.Dependency) !void {
@@ -128,9 +128,9 @@ pub const VersionConflictResolver = struct {
         defer {
             var iter = package_requirements.iterator();
             while (iter.next()) |entry| {
-                entry.value_ptr.deinit();
+                entry.value_ptr.deinit(allocator);
             }
-            package_requirements.deinit();
+            package_requirements.deinit(allocator);
         }
         
         // Collect all requirements for each package
@@ -214,7 +214,7 @@ pub const NetworkResilience = struct {
     }
     
     pub fn deinit(self: *NetworkResilience) void {
-        self.fallback_registries.deinit();
+        self.fallback_registries.deinit(allocator);
     }
     
     pub fn downloadWithRetry(self: *NetworkResilience, url: []const u8, dest_path: []const u8) !void {
@@ -288,7 +288,7 @@ pub const SecurityValidator = struct {
     }
     
     pub fn deinit(self: *SecurityValidator) void {
-        self.trusted_keys.deinit();
+        self.trusted_keys.deinit(allocator);
     }
     
     pub fn validatePackageIntegrity(self: *SecurityValidator, package_path: []const u8, expected_checksum: []const u8) !void {
@@ -433,7 +433,7 @@ pub const DiskSpaceManager = struct {
         
         var iterator = cache_dir.iterate();
         var cache_entries = ArrayList(CacheEntry).init(self.allocator);
-        defer cache_entries.deinit();
+        defer cache_entries.deinit(allocator);
         
         // Collect cache entries with timestamps
         while (try iterator.next()) |entry| {
@@ -498,7 +498,7 @@ pub const ConcurrentAccessManager = struct {
     }
     
     pub fn deinit(self: *ConcurrentAccessManager) void {
-        self.package_locks.deinit();
+        self.package_locks.deinit(allocator);
     }
     
     pub fn acquirePackageLock(self: *ConcurrentAccessManager, package_name: []const u8) !void {
@@ -559,11 +559,11 @@ pub const EdgeCaseHandler = struct {
     }
     
     pub fn deinit(self: *EdgeCaseHandler) void {
-        self.circular_detector.deinit();
-        self.conflict_resolver.deinit();
-        self.network_resilience.deinit();
-        self.security_validator.deinit();
-        self.access_manager.deinit();
+        self.circular_detector.deinit(allocator);
+        self.conflict_resolver.deinit(allocator);
+        self.network_resilience.deinit(allocator);
+        self.security_validator.deinit(allocator);
+        self.access_manager.deinit(allocator);
     }
     
     pub fn validatePackageInstallation(self: *EdgeCaseHandler, manifest: *const package_manager.PackageManifest, package_name: []const u8) !void {
@@ -601,10 +601,10 @@ test "circular dependency detection" {
     const allocator = std.testing.allocator;
     
     var detector = CircularDependencyDetector.init(allocator);
-    defer detector.deinit();
+    defer detector.deinit(allocator);
     
     var manifest = package_manager.PackageManifest.init(allocator);
-    defer manifest.deinit();
+    defer manifest.deinit(allocator);
     
     // Create a circular dependency scenario
     // This would detect A -> B -> A in a real implementation
@@ -615,7 +615,7 @@ test "version conflict resolution" {
     const allocator = std.testing.allocator;
     
     var resolver = VersionConflictResolver.init(allocator);
-    defer resolver.deinit();
+    defer resolver.deinit(allocator);
     
     // Test resolving conflicts between different version requirements
     const deps = [_]package_manager.Dependency{};
@@ -626,7 +626,7 @@ test "security validation" {
     const allocator = std.testing.allocator;
     
     var validator = SecurityValidator.init(allocator);
-    defer validator.deinit();
+    defer validator.deinit(allocator);
     
     // Test path traversal detection
     const malicious_path = "../../../etc/passwd";

@@ -5,6 +5,80 @@ const ErrorContext = @import("error_handling.zig").ErrorContext;
 const CursedError = @import("error_handling.zig").CursedError;
 const ErrorPropagation = @import("error_propagation.zig").ErrorPropagation;
 
+/// Try-catch context for stack management
+const TryContext = struct {
+    error_handler: ?*const fn(*ErrorContext) void,
+    finally_handler: ?*const fn() void,
+    scope_id: u32,
+};
+
+/// Defer entry for cleanup management
+const DeferEntry = struct {
+    cleanup_fn: *const fn() void,
+    context_data: []const u8,
+    scope_id: u32,
+};
+
+/// Enhanced defer stack with proper scope management
+const DeferStack = struct {
+    entries: ArrayList(DeferEntry),
+    current_scope: u32,
+    allocator: Allocator,
+    
+    fn init(allocator: Allocator) DeferStack {
+        return DeferStack{
+            .entries = .empty,
+            .current_scope = 0,
+            .allocator = allocator,
+        };
+    }
+    
+    fn deinit(self: *DeferStack) void {
+        // Execute all remaining cleanup functions
+        self.executeAll();
+        self.entries.deinit(allocator);
+    }
+    
+    fn enterScope(self: *DeferStack) !void {
+        self.current_scope += 1;
+    }
+    
+    fn exitScope(self: *DeferStack) void {
+        // Execute all cleanup functions in current scope (LIFO order)
+        var i = self.entries.items.len;
+        while (i > 0) {
+            i -= 1;
+            const entry = self.entries.items[i];
+            if (entry.scope_id == self.current_scope) {
+                entry.cleanup_fn();
+                self.allocator.free(entry.context_data);
+                _ = self.entries.orderedRemove(i);
+            }
+        }
+        
+        if (self.current_scope > 0) {
+            self.current_scope -= 1;
+        }
+    }
+    
+    fn executeAll(self: *DeferStack) void {
+        while (self.entries.items.len > 0) {
+            const entry = self.entries.pop();
+            entry.cleanup_fn();
+            self.allocator.free(entry.context_data);
+        }
+    }
+    
+    fn push(self: *DeferStack, cleanup_fn: *const fn() void, context: []const u8) !void {
+        const context_copy = try self.allocator.dupe(u8, context);
+        try self.entries.append(self.allocator, DeferEntry{
+            .cleanup_fn = cleanup_fn,
+            .context_data = context_copy,
+            .scope_id = self.current_scope,
+        });
+    }
+};
+
 /// Runtime support for error propagation in CURSED
 /// These functions are called by LLVM-generated code
 var global_allocator: ?Allocator = null;
@@ -28,7 +102,7 @@ export fn cursed_error_runtime_init(allocator_ptr: ?*anyopaque) void {
 export fn cursed_error_runtime_deinit() void {
     if (global_error_propagator) |prop| {
         if (global_allocator) |allocator| {
-            prop.deinit();
+            prop.deinit(allocator);
             allocator.destroy(prop);
         }
         global_error_propagator = null;
@@ -65,11 +139,29 @@ export fn cursed_create_yikes_error(message_ptr: [*:0]const u8, code: i64) ?*any
 export fn cursed_is_error(value_ptr: ?*anyopaque) bool {
     if (value_ptr == null) return false;
     
-    // In a real implementation, this would check the value's type tag
-    // For now, we assume all non-null pointers are potentially errors
-    // This is a placeholder implementation
-    _ = value_ptr;
-    return false;  // TODO: Implement proper error value checking
+    // Check if the pointer points to an ErrorContext structure
+    // We use a magic header pattern to identify error values
+    const ERROR_MAGIC_HEADER: u32 = 0xCECE_DEAD; // "CURSED" error magic
+    
+    // Cast to potential error structure
+    const potential_error = @as(*align(1) const [*]u8, @ptrCast(value_ptr.?))[0..@sizeOf(u32)];
+    const magic_header = std.mem.readInt(u32, potential_error[0..4], .little);
+    
+    // Check if it matches our error magic header
+    if (magic_header == ERROR_MAGIC_HEADER) {
+        return true;
+    }
+    
+    // Additional heuristic: check if it's a valid ErrorContext pointer
+    const error_ctx: ?*ErrorContext = @alignCast(@ptrCast(value_ptr));
+    if (error_ctx) |ctx| {
+        // Validate that this looks like a proper ErrorContext
+        if (ctx.message.len > 0 and ctx.message.len < 1024 * 1024) { // Reasonable message length
+            return true;
+        }
+    }
+    
+    return false;
 }
 
 /// Propagate an error (called by LLVM IR)
@@ -83,14 +175,16 @@ export fn cursed_propagate_error(error_ptr: ?*anyopaque) void {
         const should_continue = prop.propagateError(error_ctx.*, true) catch false;
         if (!should_continue) {
             // Print error and exit/return
-            const stdout = std.io.getStdOut().writer();
+            var stdout_buffer: [4096]u8 = undefined;
+            const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
             stdout.print("Fatal error: ") catch {};
             error_ctx.format(stdout) catch {};
             // In a real implementation, this might call exit() or longjmp()
         }
     } else {
         // Fallback: print error
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         stdout.print("Error propagation system not initialized: ") catch {};
         error_ctx.format(stdout) catch {};
     }
@@ -98,24 +192,40 @@ export fn cursed_propagate_error(error_ptr: ?*anyopaque) void {
 
 /// Begin a try block (called by LLVM IR for fam statements)
 export fn cursed_try_begin() void {
-    // Set up try block context
-    // In a real implementation, this might use setjmp/longjmp or exception tables
-    
-    // For now, this is a placeholder
     if (global_error_propagator) |prop| {
-        // Mark the beginning of a try block
-        // This would typically involve stack management
-        _ = prop;
+        // Push a new try-catch context onto the stack
+        const try_context = TryContext{
+            .error_handler = null,
+            .finally_handler = null,
+            .scope_id = prop.current_scope_id,
+        };
+        prop.try_catch_stack.append(allocator, try_context) catch {};
+        prop.current_scope_id += 1;
+        
+        // Mark beginning of defer scope for this try block
+        prop.defer_entries.enterScope() catch {};
     }
 }
 
 /// End a try block (called by LLVM IR)
 export fn cursed_try_end() void {
-    // Clean up try block context
-    // Placeholder implementation
     if (global_error_propagator) |prop| {
-        // Clean up any try block state
-        _ = prop;
+        // Pop the try-catch context
+        if (prop.try_catch_stack.items.len > 0) {
+            var try_context = prop.try_catch_stack.pop();
+            
+            // Execute finally block if present
+            if (try_context.finally_handler) |finally_fn| {
+                finally_fn();
+            }
+        }
+        
+        // Exit defer scope and execute cleanup functions
+        prop.defer_entries.exitScope();
+        
+        if (prop.current_scope_id > 0) {
+            prop.current_scope_id -= 1;
+        }
     }
 }
 
@@ -153,7 +263,7 @@ export fn cursed_clear_current_error() void {
         // Remove the top error from the stack
         if (prop.error_stack.items.len > 0) {
             var error_ctx = prop.error_stack.pop();
-            error_ctx.deinit();
+            error_ctx.deinit(allocator);
         }
     }
 }
@@ -165,7 +275,7 @@ export fn cursed_format_error(error_ptr: ?*anyopaque, buffer: [*]u8, buffer_size
     const error_ctx = @as(*ErrorContext, @ptrCast(@alignCast(error_ptr)));
     
     var fbs = std.io.fixedBufferStream(buffer[0..buffer_size]);
-    const writer = fbs.writer();
+    const writer = fbs.writer(&[_]u8{});
     
     error_ctx.format(writer) catch return 0;
     
@@ -222,7 +332,7 @@ export fn cursed_add_error_to_stack(error_ptr: ?*anyopaque) void {
     const error_ctx = @as(*ErrorContext, @ptrCast(@alignCast(error_ptr)));
     
     // Add to error stack
-    global_error_propagator.?.error_stack.append(error_ctx.*) catch {};
+    global_error_propagator.?.error_stack.append(allocator, error_ctx.*) catch {};
 }
 
 /// Check if we're in a try block
@@ -244,14 +354,109 @@ export fn cursed_error_stack_depth() usize {
 /// Print error stack for debugging
 export fn cursed_print_error_stack() void {
     if (global_error_propagator) |prop| {
-        const stdout = std.io.getStdOut().writer();
+        var stdout_buffer: [4096]u8 = undefined;
+        const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         prop.formatErrorStack(stdout) catch {};
     }
 }
 
+/// Register a defer cleanup function (called by LLVM IR)
+export fn cursed_defer_register(cleanup_fn: *const fn() void, context_ptr: [*:0]const u8) void {
+    if (global_error_propagator) |prop| {
+        const context = std.mem.span(context_ptr);
+        prop.defer_entries.push(cleanup_fn, context) catch {};
+    }
+}
+
+/// Set line number context for error reporting
+export fn cursed_set_line_context(file_ptr: [*:0]const u8, line: u32, column: u32) void {
+    // Store current execution context for error reporting
+    if (global_error_propagator) |prop| {
+        const file = std.mem.span(file_ptr);
+        
+        // Update current location in error propagator
+        // This would be used when creating new errors
+        prop.current_file = prop.allocator.dupe(u8, file) catch return;
+        prop.current_line = line;
+        prop.current_column = column;
+    }
+}
+
+/// Execute error unwinding and cleanup
+export fn cursed_unwind_error(error_ptr: ?*anyopaque, target_scope: u32) void {
+    if (error_ptr == null or global_error_propagator == null) return;
+    
+    const error_ctx = @as(*ErrorContext, @ptrCast(@alignCast(error_ptr.?)));
+    const prop = global_error_propagator.?;
+    
+    // Execute cleanup functions in reverse scope order until target scope
+    while (prop.current_scope_id > target_scope) {
+        prop.defer_entries.exitScope();
+        if (prop.current_scope_id > 0) {
+            prop.current_scope_id -= 1;
+        }
+    }
+    
+    // Log unwinding for debugging
+    var stdout_buffer: [4096]u8 = undefined;
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
+    stdout.print("Error unwound to scope {}, error: ", .{target_scope}) catch {};
+    error_ctx.format(stdout) catch {};
+}
+
+/// Create error with full stack context (line number tracking)
+export fn cursed_create_contextual_error(
+    message_ptr: [*:0]const u8,
+    file_ptr: [*:0]const u8,
+    function_ptr: [*:0]const u8,
+    line: u32,
+    column: u32,
+    error_type: i32
+) ?*anyopaque {
+    const allocator = global_allocator orelse return null;
+    
+    const message = std.mem.span(message_ptr);
+    const file = std.mem.span(file_ptr);
+    const function = std.mem.span(function_ptr);
+    
+    const location = ErrorContext.SourceLocation{
+        .file = file,
+        .line = line,
+        .column = column,
+        .function = function,
+    };
+    
+    const cursed_error = switch (error_type) {
+        0 => CursedError.RuntimeError,
+        1 => CursedError.ParseError,
+        2 => CursedError.TypeMismatch,
+        3 => CursedError.DivisionByZero,
+        4 => CursedError.UndefinedVariable,
+        5 => CursedError.OutOfMemory,
+        else => CursedError.UnknownError,
+    };
+    
+    const error_ctx = ErrorContext.initWithLocation(
+        allocator,
+        cursed_error,
+        message,
+        location
+    ) catch return null;
+    
+    const error_ptr = allocator.create(ErrorContext) catch return null;
+    error_ptr.* = error_ctx;
+    
+    // Add magic header for error identification
+    const ERROR_MAGIC_HEADER: u32 = 0xCECE_DEAD;
+    const header_ptr = @as(*u32, @ptrCast(@alignCast(error_ptr)));
+    header_ptr.* = ERROR_MAGIC_HEADER;
+    
+    return @ptrCast(error_ptr);
+}
+
 test "error runtime support" {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Test runtime initialization

@@ -37,11 +37,11 @@ pub const PackageRegistry = struct {
     pub fn deinit(self: *PackageRegistry) void {
         self.allocator.free(self.registry_url);
         if (self.auth_token) |token| self.allocator.free(token);
-        self.cache.deinit();
-        self.analytics.deinit();
-        self.security_scanner.deinit();
-        self.curator.deinit();
-        self.discovery.deinit();
+        self.cache.deinit(allocator);
+        self.analytics.deinit(allocator);
+        self.security_scanner.deinit(allocator);
+        self.curator.deinit(allocator);
+        self.discovery.deinit(allocator);
     }
     
     pub fn setAuthToken(self: *PackageRegistry, token: []const u8) !void {
@@ -226,12 +226,12 @@ pub const PackageMetadata = struct {
     }
     
     pub fn deinit(self: *PackageMetadata) void {
-        self.authors.deinit();
-        self.keywords.deinit();
-        self.categories.deinit();
-        self.dependencies.deinit();
-        self.security_status.vulnerabilities.deinit();
-        self.reviews.deinit();
+        self.authors.deinit(allocator);
+        self.keywords.deinit(allocator);
+        self.categories.deinit(allocator);
+        self.dependencies.deinit(allocator);
+        self.security_status.vulnerabilities.deinit(allocator);
+        self.reviews.deinit(allocator);
     }
 };
 
@@ -258,18 +258,18 @@ pub const RegistryCache = struct {
         var package_iter = self.package_cache.iterator();
         while (package_iter.next()) |entry| {
             var metadata = entry.value_ptr;
-            metadata.deinit();
+            metadata.deinit(allocator);
         }
         
         var search_iter = self.search_cache.iterator();
         while (search_iter.next()) |entry| {
             var result = entry.value_ptr;
-            result.deinit();
+            result.deinit(allocator);
         }
         
-        self.package_cache.deinit();
-        self.search_cache.deinit();
-        self.ttl_cache.deinit();
+        self.package_cache.deinit(allocator);
+        self.search_cache.deinit(allocator);
+        self.ttl_cache.deinit(allocator);
     }
     
     pub fn get(self: *RegistryCache, key: []const u8) ?PackageMetadata {
@@ -295,7 +295,7 @@ pub const RegistryCache = struct {
     
     fn invalidate(self: *RegistryCache, key: []const u8) void {
         if (self.package_cache.getPtr(key)) |metadata| {
-            metadata.deinit();
+            metadata.deinit(allocator);
         }
         _ = self.package_cache.remove(key);
         _ = self.ttl_cache.remove(key);
@@ -330,7 +330,7 @@ pub const SearchQuery = struct {
     }
     
     pub fn deinit(self: *SearchQuery) void {
-        self.categories.deinit();
+        self.categories.deinit(allocator);
     }
 };
 
@@ -351,10 +351,10 @@ pub const SearchResult = struct {
     
     pub fn deinit(self: *SearchResult) void {
         for (self.packages.items) |*pkg| {
-            pkg.deinit();
+            pkg.deinit(allocator);
         }
-        self.packages.deinit();
-        self.suggestions.deinit();
+        self.packages.deinit(allocator);
+        self.suggestions.deinit(allocator);
     }
 };
 
@@ -384,9 +384,9 @@ pub const SecurityScanner = struct {
     pub fn deinit(self: *SecurityScanner) void {
         var iter = self.vulnerability_db.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.vulnerability_db.deinit();
+        self.vulnerability_db.deinit(allocator);
     }
     
     pub fn scanPackage(self: *SecurityScanner, package_name: []const u8, version: []const u8) !PackageMetadata.SecurityStatus {
@@ -481,7 +481,7 @@ pub const PackageCurator = struct {
     }
     
     pub fn deinit(self: *PackageCurator) void {
-        self.curation_rules.deinit();
+        self.curation_rules.deinit(allocator);
     }
     
     fn initDefaultRules(self: *PackageCurator) !void {
@@ -637,17 +637,17 @@ pub const AnalyticsEngine = struct {
     
     pub fn deinit(self: *AnalyticsEngine) void {
         for (self.events.items) |*event| {
-            event.metadata.deinit();
+            event.metadata.deinit(allocator);
         }
-        self.events.deinit();
+        self.events.deinit(allocator);
         
         var stats_iter = self.aggregated_stats.iterator();
         while (stats_iter.next()) |entry| {
             var stats = entry.value_ptr;
-            stats.daily_downloads.deinit();
-            stats.geographic_distribution.deinit();
+            stats.daily_downloads.deinit(allocator);
+            stats.geographic_distribution.deinit(allocator);
         }
-        self.aggregated_stats.deinit();
+        self.aggregated_stats.deinit(allocator);
     }
     
     pub fn recordEvent(self: *AnalyticsEngine, event: AnalyticsEvent) !void {
@@ -719,10 +719,10 @@ pub const DiscoveryEngine = struct {
     pub fn deinit(self: *DiscoveryEngine) void {
         var iter = self.recommendation_cache.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.recommendation_cache.deinit();
-        self.trending_packages.deinit();
+        self.recommendation_cache.deinit(allocator);
+        self.trending_packages.deinit(allocator);
     }
     
     pub fn getRecommendations(self: *DiscoveryEngine, context: RecommendationContext) !ArrayList([]const u8) {
@@ -733,7 +733,7 @@ pub const DiscoveryEngine = struct {
         // Category-based recommendations
         for (context.user_categories.items) |category| {
             const category_recs = try self.getCategoryRecommendations(category);
-            defer category_recs.deinit();
+            defer category_recs.deinit(allocator);
             
             for (category_recs.items) |rec| {
                 try recommendations.append(try self.allocator.dupe(u8, rec));
@@ -743,7 +743,7 @@ pub const DiscoveryEngine = struct {
         // Usage pattern recommendations
         if (context.current_dependencies.items.len > 0) {
             const pattern_recs = try self.getPatternRecommendations(context.current_dependencies);
-            defer pattern_recs.deinit();
+            defer pattern_recs.deinit(allocator);
             
             for (pattern_recs.items) |rec| {
                 try recommendations.append(try self.allocator.dupe(u8, rec));
@@ -845,8 +845,8 @@ pub const RecommendationContext = struct {
     }
     
     pub fn deinit(self: *RecommendationContext) void {
-        self.user_categories.deinit();
-        self.current_dependencies.deinit();
+        self.user_categories.deinit(allocator);
+        self.current_dependencies.deinit(allocator);
     }
 };
 

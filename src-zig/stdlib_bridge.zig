@@ -233,7 +233,7 @@ pub const StdlibBridge = struct {
         return Variable{ .type = .Integer, .integer = @intCast(length) };
     }
     
-    /// Bridge for arrayz.append() - append to array
+    /// Bridge for arrayz.append(self.allocator, ) - append to array
     pub fn arrayz_append(self: *StdlibBridge, array: Variable, item: Variable) !Variable {
         _ = self;
         
@@ -557,7 +557,7 @@ pub const StdlibBridge = struct {
             if (std.mem.eql(u8, function_name, "len")) {
                 return try function_registry.arrayz.len(self, args);
             } else if (std.mem.eql(u8, function_name, "append")) {
-                return try function_registry.arrayz.append(self, args);
+                return try function_registry.arrayz.append(allocator, self, args);
             }
         }
         
@@ -611,7 +611,7 @@ pub fn test_stdlib_bridge() !void {
     print("===============================\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     // Initialize stdlib core and bridge

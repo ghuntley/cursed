@@ -56,7 +56,7 @@ pub fn Channel(comptime T: type) type {
             return Self{
                 .mutex = Mutex{},
                 .condition = Condition{},
-                .buffer = ArrayList(T).init(allocator),
+                .buffer = .empty,
                 .capacity = capacity,
                 .closed = false,
                 .allocator = allocator,
@@ -72,7 +72,7 @@ pub fn Channel(comptime T: type) type {
             
             self.closed = true;
             self.condition.broadcast();
-            self.buffer.deinit();
+            self.buffer.deinit(allocator);
         }
         
         /// Send with timeout - all operations under single lock
@@ -98,7 +98,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For unbuffered channels - direct handoff
                 if (self.capacity == 0) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -106,7 +106,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For buffered channels - check space
                 if (self.buffer.items.len < self.capacity) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -357,7 +357,7 @@ pub fn initRuntime(allocator: Allocator) !void {
 /// Shutdown runtime
 pub fn shutdownRuntime() void {
     if (global_scheduler) |scheduler| {
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         global_allocator.?.destroy(scheduler);
         global_scheduler = null;
     }
@@ -384,7 +384,7 @@ test "channel operations without races" {
     
     var channel = try makeChannel(i32, allocator, 3);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
     
@@ -404,7 +404,7 @@ test "channel capacity management" {
     
     var channel = try makeChannel(i32, allocator, 2);
     defer {
-        channel.deinit();
+        channel.deinit(allocator);
         allocator.destroy(channel);
     }
     

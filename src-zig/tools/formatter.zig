@@ -67,7 +67,7 @@ pub const Formatter = struct {
     }
     
     pub fn deinit(self: *Formatter) void {
-        self.output.deinit();
+        self.output.deinit(allocator);
     }
     
     pub fn format(self: *Formatter, source: []const u8) ![]const u8 {
@@ -89,7 +89,7 @@ pub const Formatter = struct {
                 else => return err,
             }
         };
-        defer tokens.deinit();
+        defer tokens.deinit(allocator);
         
         // Format tokens
         var context = FormattingContext{ .config = self.config };
@@ -493,7 +493,7 @@ pub fn formatFile(allocator: Allocator, file_path: []const u8, config: Formatter
     
     // Format code
     var formatter = Formatter.init(allocator, config);
-    defer formatter.deinit();
+    defer formatter.deinit(allocator);
     
     const formatted = try formatter.format(source);
     defer allocator.free(formatted);
@@ -530,7 +530,7 @@ pub fn formatDirectory(allocator: Allocator, dir_path: []const u8, config: Forma
 // Main formatter entry point
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     const args = try std.process.argsAlloc(allocator);

@@ -32,21 +32,21 @@ pub const CommunitySystem = struct {
         var review_iter = self.reviews.iterator();
         while (review_iter.next()) |entry| {
             for (entry.value_ptr.items) |*review| {
-                review.deinit();
+                review.deinit(allocator);
             }
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.reviews.deinit();
+        self.reviews.deinit(allocator);
         
         // Clean up user profiles
         var profile_iter = self.user_profiles.iterator();
         while (profile_iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.user_profiles.deinit();
+        self.user_profiles.deinit(allocator);
         
-        self.ratings.deinit();
-        self.moderation_queue.deinit();
+        self.ratings.deinit(allocator);
+        self.moderation_queue.deinit(allocator);
     }
     
     // ===== Review System =====
@@ -362,7 +362,7 @@ pub const CommunitySystem = struct {
         if (self.reviews.get(package_name)) |package_reviews| {
             // Filter reviews
             var filtered_reviews = ArrayList(*Review).init(self.allocator);
-            defer filtered_reviews.deinit();
+            defer filtered_reviews.deinit(allocator);
             
             for (package_reviews.items) |*review| {
                 if (review.status != .approved and !options.include_pending) continue;
@@ -583,7 +583,7 @@ pub const Review = struct {
     pub const ReviewStatus = enum { pending_moderation, approved, rejected, edited, flagged };
     
     pub fn deinit(self: *Review) void {
-        self.tags.deinit();
+        self.tags.deinit(allocator);
     }
 };
 
@@ -659,7 +659,7 @@ pub const UserProfile = struct {
     }
     
     pub fn deinit(self: *UserProfile) void {
-        self.downloads.deinit();
+        self.downloads.deinit(allocator);
     }
 };
 
@@ -689,9 +689,9 @@ pub const ReviewList = struct {
     
     pub fn deinit(self: *ReviewList) void {
         for (self.reviews.items) |*review| {
-            review.deinit();
+            review.deinit(allocator);
         }
-        self.reviews.deinit();
+        self.reviews.deinit(allocator);
     }
 };
 
@@ -742,7 +742,7 @@ test "review submission validation" {
     const allocator = std.testing.allocator;
     
     var community = CommunitySystem.init(allocator);
-    defer community.deinit();
+    defer community.deinit(allocator);
     
     const invalid_review = ReviewSubmission{
         .package_name = "test-package",
@@ -771,7 +771,7 @@ test "rating statistics calculation" {
     const allocator = std.testing.allocator;
     
     var community = CommunitySystem.init(allocator);
-    defer community.deinit();
+    defer community.deinit(allocator);
     
     // Add some ratings
     try community.updateRatingStats("test-package", 5);

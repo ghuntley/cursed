@@ -58,13 +58,13 @@ pub const MemoryTracker = struct {
     pub fn init(allocator: Allocator) MemoryTracker {
         return MemoryTracker{
             .allocator = allocator,
-            .llvm_strings = ArrayList([*c]u8).init(allocator),
-            .llvm_contexts = ArrayList(LLVMContextRef).init(allocator),
-            .llvm_modules = ArrayList(LLVMModuleRef).init(allocator),
-            .llvm_builders = ArrayList(LLVMBuilderRef).init(allocator),
-            .llvm_pass_managers = ArrayList(LLVMPassManagerRef).init(allocator),
-            .llvm_target_machines = ArrayList(LLVMTargetMachineRef).init(allocator),
-            .arena_allocations = ArrayList([]u8).init(allocator),
+            .llvm_strings = .empty,
+            .llvm_contexts = .empty,
+            .llvm_modules = .empty,
+            .llvm_builders = .empty,
+            .llvm_pass_managers = .empty,
+            .llvm_target_machines = .empty,
+            .arena_allocations = .empty,
         };
     }
     
@@ -73,74 +73,74 @@ pub const MemoryTracker = struct {
         for (self.llvm_strings.items) |str| {
             c.LLVMDisposeMessage(str);
         }
-        self.llvm_strings.deinit();
+        self.llvm_strings.deinit(allocator);
         
         // Clean up LLVM target machines
         for (self.llvm_target_machines.items) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.llvm_target_machines.deinit();
+        self.llvm_target_machines.deinit(allocator);
         
         // Clean up LLVM pass managers
         for (self.llvm_pass_managers.items) |pm| {
             c.LLVMDisposePassManager(pm);
         }
-        self.llvm_pass_managers.deinit();
+        self.llvm_pass_managers.deinit(allocator);
         
         // Clean up LLVM builders
         for (self.llvm_builders.items) |builder| {
             c.LLVMDisposeBuilder(builder);
         }
-        self.llvm_builders.deinit();
+        self.llvm_builders.deinit(allocator);
         
         // Clean up LLVM modules
         for (self.llvm_modules.items) |module| {
             c.LLVMDisposeModule(module);
         }
-        self.llvm_modules.deinit();
+        self.llvm_modules.deinit(allocator);
         
         // Clean up LLVM contexts (must be last)
         for (self.llvm_contexts.items) |context| {
             c.LLVMContextDispose(context);
         }
-        self.llvm_contexts.deinit();
+        self.llvm_contexts.deinit(allocator);
         
         // Clean up arena allocations
         for (self.arena_allocations.items) |allocation| {
             self.allocator.free(allocation);
         }
-        self.arena_allocations.deinit();
+        self.arena_allocations.deinit(allocator);
         
         print("✅ Memory tracker cleanup complete - all LLVM resources disposed\n");
     }
     
     // Track LLVM allocations for proper cleanup
     pub fn trackString(self: *MemoryTracker, str: [*c]u8) !void {
-        try self.llvm_strings.append(str);
+        try self.llvm_strings.append(self.allocator, str);
     }
     
     pub fn trackContext(self: *MemoryTracker, context: LLVMContextRef) !void {
-        try self.llvm_contexts.append(context);
+        try self.llvm_contexts.append(allocator, context);
     }
     
     pub fn trackModule(self: *MemoryTracker, module: LLVMModuleRef) !void {
-        try self.llvm_modules.append(module);
+        try self.llvm_modules.append(allocator, module);
     }
     
     pub fn trackBuilder(self: *MemoryTracker, builder: LLVMBuilderRef) !void {
-        try self.llvm_builders.append(builder);
+        try self.llvm_builders.append(allocator, builder);
     }
     
     pub fn trackPassManager(self: *MemoryTracker, pm: LLVMPassManagerRef) !void {
-        try self.llvm_pass_managers.append(pm);
+        try self.llvm_pass_managers.append(allocator, pm);
     }
     
     pub fn trackTargetMachine(self: *MemoryTracker, tm: LLVMTargetMachineRef) !void {
-        try self.llvm_target_machines.append(tm);
+        try self.llvm_target_machines.append(allocator, tm);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, allocation: []u8) !void {
-        try self.arena_allocations.append(allocation);
+        try self.arena_allocations.append(allocator, allocation);
     }
 };
 
@@ -189,8 +189,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create LLVM context with error checking
         const context = c.LLVMContextCreate();
         if (context == null) {
-            arena.deinit();
-            memory_tracker.deinit();
+            arena.deinit(allocator);
+            memory_tracker.deinit(allocator);
             return LLVMBackendError.LLVMContextCreationFailed;
         }
         try memory_tracker.trackContext(context);
@@ -199,8 +199,8 @@ target_machine: ?LLVMTargetMachineRef,
         const module_name_z = try arena_allocator.dupeZ(u8, module_name);
         const module = c.LLVMModuleCreateWithNameInContext(module_name_z.ptr, context);
         if (module == null) {
-            arena.deinit();
-            memory_tracker.deinit();
+            arena.deinit(allocator);
+            memory_tracker.deinit(allocator);
             return LLVMBackendError.LLVMModuleCreationFailed;
         }
         try memory_tracker.trackModule(module);
@@ -208,8 +208,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create builder with error checking
         const builder = c.LLVMCreateBuilderInContext(context);
         if (builder == null) {
-            arena.deinit();
-            memory_tracker.deinit();
+            arena.deinit(allocator);
+            memory_tracker.deinit(allocator);
             return LLVMBackendError.LLVMBuilderCreationFailed;
         }
         try memory_tracker.trackBuilder(builder);
@@ -217,8 +217,8 @@ target_machine: ?LLVMTargetMachineRef,
         // Create pass manager with error checking
         const pass_manager = c.LLVMCreateFunctionPassManagerForModule(module);
         if (pass_manager == null) {
-            arena.deinit();
-            memory_tracker.deinit();
+            arena.deinit(allocator);
+            memory_tracker.deinit(allocator);
             return LLVMBackendError.LLVMPassManagerCreationFailed;
         }
         try memory_tracker.trackPassManager(pass_manager);
@@ -300,10 +300,10 @@ target_machine: ?LLVMTargetMachineRef,
         }
         
         // Clean up memory tracker (handles all LLVM resources)
-        self.memory_tracker.deinit();
+        self.memory_tracker.deinit(allocator);
         
         // Clean up arena allocator (handles all temporary allocations)
-        self.arena.deinit();
+        self.arena.deinit(allocator);
         
         // Destroy the backend structure itself
         self.allocator.destroy(self);
@@ -313,7 +313,7 @@ target_machine: ?LLVMTargetMachineRef,
     
     /// Register a cleanup callback to be executed before arena destruction
     pub fn registerArenaCleanup(self: *MemorySafeLLVMBackend, callback: *const fn () void) !void {
-        try self.arena_cleanup_callbacks.append(callback);
+        try self.arena_cleanup_callbacks.append(self.allocator, callback);
     }
     
     /// Enable debug information with proper memory management
@@ -565,7 +565,7 @@ pub fn compileWithMemorySafety(allocator: Allocator, source: []const u8, output_
     
     // Create backend with automatic memory management
     var backend = try MemorySafeLLVMBackend.init(allocator, "cursed_program");
-    defer backend.deinit(); // Guarantees proper cleanup
+    defer backend.deinit(allocator); // Guarantees proper cleanup
     
     // Enable debug info
     try backend.enableDebugInfo("source.csd");
@@ -616,7 +616,7 @@ pub fn testMemorySafety() !void {
     // Test 1: Basic backend creation and destruction
     {
         var backend = try MemorySafeLLVMBackend.init(allocator, "test_module");
-        defer backend.deinit();
+        defer backend.deinit(allocator);
         
         try backend.enableDebugInfo("test.csd");
         _ = try backend.createMainFunction();
@@ -627,10 +627,10 @@ pub fn testMemorySafety() !void {
     // Test 2: Multiple backends (tests resource isolation)
     {
         var backend1 = try MemorySafeLLVMBackend.init(allocator, "test1");
-        defer backend1.deinit();
+        defer backend1.deinit(allocator);
         
         var backend2 = try MemorySafeLLVMBackend.init(allocator, "test2");
-        defer backend2.deinit();
+        defer backend2.deinit(allocator);
         
         _ = try backend1.createMainFunction();
         _ = try backend2.createMainFunction();

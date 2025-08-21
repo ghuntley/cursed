@@ -161,17 +161,17 @@ pub const GCTypeRegistry = struct {
     pub fn deinit(self: *GCTypeRegistry) void {
         var iter = self.types.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.types.deinit();
+        self.types.deinit(allocator);
         
-        self.collision_resistant_registry.deinit();
+        self.collision_resistant_registry.deinit(allocator);
         
         var mapping_iter = self.legacy_id_mapping.iterator();
         while (mapping_iter.next()) |entry| {
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.legacy_id_mapping.deinit();
+        self.legacy_id_mapping.deinit(allocator);
     }
 
     /// Enhanced type registration with collision detection
@@ -367,21 +367,21 @@ pub const TypedAllocator = struct {
         return TypedAllocator{
             .allocator = allocator,
             .gc_registry = gc_registry,
-            .allocated_objects = ArrayList(*TypedObject).init(allocator),
+            .allocated_objects = .empty,
         };
     }
 
     pub fn deinit(self: *TypedAllocator) void {
         for (self.allocated_objects.items) |object| {
-            object.deinit(self.allocator);
+            object.deinit(allocator);
         }
-        self.allocated_objects.deinit();
+        self.allocated_objects.deinit(allocator);
     }
 
     pub fn allocateStruct(self: *TypedAllocator, type_id: u32) !*TypedObject {
         const type_info = self.gc_registry.getType(type_id) orelse return error.UnknownType;
         const object = try TypedObject.init(self.allocator, type_id, type_info.size);
-        try self.allocated_objects.append(object);
+        try self.allocated_objects.append(self.allocator, object);
         return object;
     }
 
@@ -405,7 +405,7 @@ pub const TypedAllocator = struct {
             const object = self.allocated_objects.items[i];
             // Atomically check reference count
             if (object.ref_count.load(.acquire) == 0) {
-                object.deinit(self.allocator);
+                object.deinit(allocator);
                 _ = self.allocated_objects.swapRemove(i);
             } else {
                 i += 1;
@@ -486,9 +486,9 @@ pub const InterfaceRegistry = struct {
     }
 
     pub fn deinit(self: *InterfaceRegistry) void {
-        self.implementations.deinit();
-        self.collision_resistant_impls.deinit();
-        self.vtable_storage.deinit();
+        self.implementations.deinit(allocator);
+        self.collision_resistant_impls.deinit(allocator);
+        self.vtable_storage.deinit(allocator);
     }
 
     /// Enhanced registration with collision detection
@@ -841,10 +841,10 @@ pub fn registerBuiltinTypes(gc_registry: *GCTypeRegistry) !void {
 test "runtime type checking with collision handling" {
     const allocator = std.testing.allocator;
     var gc_registry = GCTypeRegistry.init(allocator);
-    defer gc_registry.deinit();
+    defer gc_registry.deinit(allocator);
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit();
+    defer interface_registry.deinit(allocator);
     
     // Register built-in types
     try registerBuiltinTypes(&gc_registry);
@@ -878,10 +878,10 @@ test "runtime type checking with collision handling" {
 test "runtime expression checking" {
     const allocator = std.testing.allocator;
     var gc_registry = GCTypeRegistry.init(allocator);
-    defer gc_registry.deinit();
+    defer gc_registry.deinit(allocator);
     
     var interface_registry = InterfaceRegistry.init(allocator);
-    defer interface_registry.deinit();
+    defer interface_registry.deinit(allocator);
     
     try registerBuiltinTypes(&gc_registry);
     

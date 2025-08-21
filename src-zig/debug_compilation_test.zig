@@ -8,7 +8,7 @@ test "debug info integration" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Enable debug info for test file
     try codegen.enableDebugInfo("debug_info_comprehensive_test.csd");
@@ -26,7 +26,7 @@ test "cursed type debug info" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.enableDebugInfo("test.csd");
     
@@ -49,7 +49,7 @@ test "struct debug info" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.enableDebugInfo("test.csd");
     
@@ -68,7 +68,7 @@ test "interface debug info" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.enableDebugInfo("test.csd");
     
@@ -86,7 +86,7 @@ test "source location tracking" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.enableDebugInfo("test.csd");
     
@@ -101,7 +101,7 @@ test "debug scope management" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     try codegen.enableDebugInfo("test.csd");
     
@@ -123,7 +123,7 @@ test "complete debug compilation" {
     const allocator = testing.allocator;
     
     var codegen = try AdvancedCodeGen.init(allocator);
-    defer codegen.deinit();
+    defer codegen.deinit(allocator);
     
     // Enable debug info
     try codegen.enableDebugInfo("debug_info_comprehensive_test.csd");

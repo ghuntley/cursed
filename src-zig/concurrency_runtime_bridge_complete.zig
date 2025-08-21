@@ -59,7 +59,7 @@ export fn cursed_runtime_init() void {
     // Initialize garbage collector with proper error cleanup
     global_gc = global_allocator.?.create(gc.GC) catch |err| {
         print("[RUNTIME] Failed to create GC: {}\n", .{err});
-        channel_registry.deinit();
+        channel_registry.deinit(global_allocator);
         return;
     };
     
@@ -67,7 +67,7 @@ export fn cursed_runtime_init() void {
         print("[RUNTIME] Failed to initialize GC: {}\n", .{err});
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
-        channel_registry.deinit();
+        channel_registry.deinit(allocator);
         return;
     };
     
@@ -75,10 +75,10 @@ export fn cursed_runtime_init() void {
     const config = concurrency.SchedulerConfig.default();
     global_scheduler = global_allocator.?.create(concurrency.Scheduler) catch |err| {
         print("[RUNTIME] Failed to create scheduler: {}\n", .{err});
-        global_gc.?.deinit();
+        global_gc.?.deinit(allocator);
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
-        channel_registry.deinit();
+        channel_registry.deinit(allocator);
         return;
     };
     
@@ -86,23 +86,23 @@ export fn cursed_runtime_init() void {
         print("[RUNTIME] Failed to initialize scheduler: {}\n", .{err});
         global_allocator.?.destroy(global_scheduler.?);
         global_scheduler = null;
-        global_gc.?.deinit();
+        global_gc.?.deinit(allocator);
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
-        channel_registry.deinit();
+        channel_registry.deinit(allocator);
         return;
     };
     
     // Start scheduler with proper error cleanup
     global_scheduler.?.start() catch |err| {
         print("[RUNTIME] Failed to start scheduler: {}\n", .{err});
-        global_scheduler.?.deinit();
+        global_scheduler.?.deinit(allocator);
         global_allocator.?.destroy(global_scheduler.?);
         global_scheduler = null;
-        global_gc.?.deinit();
+        global_gc.?.deinit(allocator);
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
-        channel_registry.deinit();
+        channel_registry.deinit(allocator);
         return;
     };
     
@@ -110,13 +110,13 @@ export fn cursed_runtime_init() void {
     concurrency.initializeScheduler(global_allocator.?, config) catch |err| {
         print("[RUNTIME] Failed to initialize global scheduler: {}\n", .{err});
         global_scheduler.?.stop();
-        global_scheduler.?.deinit();
+        global_scheduler.?.deinit(allocator);
         global_allocator.?.destroy(global_scheduler.?);
         global_scheduler = null;
-        global_gc.?.deinit();
+        global_gc.?.deinit(allocator);
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
-        channel_registry.deinit();
+        channel_registry.deinit(allocator);
         return;
     };
     
@@ -141,7 +141,7 @@ export fn cursed_runtime_shutdown() void {
     // Shutdown scheduler
     if (global_scheduler) |scheduler| {
         scheduler.stop();
-        scheduler.deinit();
+        scheduler.deinit(allocator);
         global_allocator.?.destroy(scheduler);
         global_scheduler = null;
     }
@@ -157,12 +157,12 @@ export fn cursed_runtime_shutdown() void {
         // In real implementation, would call proper channel cleanup
         global_allocator.?.destroy(@as(*anyopaque, @ptrCast(entry.value_ptr.*)));
     }
-    channel_registry.deinit();
+    channel_registry.deinit(allocator);
     
     // Final GC collection
     if (global_gc) |gc_ctx| {
         gc_ctx.collectNow() catch {};
-        gc_ctx.deinit();
+        gc_ctx.deinit(allocator);
         global_allocator.?.destroy(gc_ctx);
         global_gc = null;
     }
@@ -244,7 +244,7 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
             
             channel_registry.put(channel_id, channel) catch |err| {
                 print("[RUNTIME] ❌ Failed to register channel: {}\n", .{err});
-                channel.deinit();
+                channel.deinit(allocator);
                 global_allocator.?.destroy(channel);
                 return 0;
             };
@@ -262,7 +262,7 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
             
             channel_registry.put(channel_id, channel) catch |err| {
                 print("[RUNTIME] ❌ Failed to register string channel: {}\n", .{err});
-                channel.deinit();
+                channel.deinit(allocator);
                 global_allocator.?.destroy(channel);
                 return 0;
             };
@@ -280,7 +280,7 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
             
             channel_registry.put(channel_id, channel) catch |err| {
                 print("[RUNTIME] ❌ Failed to register bool channel: {}\n", .{err});
-                channel.deinit();
+                channel.deinit(allocator);
                 global_allocator.?.destroy(channel);
                 return 0;
             };
@@ -402,7 +402,7 @@ export fn cursed_runtime_select(operations: ?*anyopaque, count: usize) i32 {
     
     // Create select statement
     var select_stmt = concurrency.Select.init(global_allocator.?);
-    defer select_stmt.deinit();
+    defer select_stmt.deinit(allocator);
     
     // In real implementation, would parse operations array
     // For now, simulate select execution

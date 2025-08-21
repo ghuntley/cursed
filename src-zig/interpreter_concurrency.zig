@@ -40,7 +40,7 @@ pub const InterpreterValue = union(enum) {
                 for (arr.items) |*item| {
                     item.deinit(allocator);
                 }
-                arr.deinit();
+                arr.deinit(allocator);
             },
             .channel_value => |*val| val.deinit(allocator),
             else => {},
@@ -79,9 +79,9 @@ pub const Environment = struct {
         var iter = self.values.iterator();
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
-            entry.value_ptr.deinit(self.allocator);
+            entry.value_ptr.deinit(allocator);
         }
-        self.values.deinit();
+        self.values.deinit(allocator);
     }
 
     pub fn define(self: *Environment, name: []const u8, value: InterpreterValue) !void {
@@ -133,7 +133,7 @@ pub const ConcurrencyInterpreter = struct {
     }
 
     pub fn deinit(self: *ConcurrencyInterpreter) void {
-        self.environment.deinit();
+        self.environment.deinit(allocator);
         self.allocator.destroy(self.environment);
         
         if (self.runtime_initialized) {
@@ -205,12 +205,12 @@ pub const ConcurrencyInterpreter = struct {
 
         if (function == .function) {
             // Execute user-defined function
-            var args = ArrayList(InterpreterValue).init(self.allocator);
-            defer args.deinit();
+            var args = .empty;
+            defer args.deinit(allocator);
 
             for (call_expr.arguments.items) |arg| {
                 const arg_value = try self.evalExpression(arg);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
 
             return try self.executeFunction(function.function, args.items);
@@ -291,8 +291,8 @@ pub const ConcurrencyInterpreter = struct {
 
     /// Evaluate select expression (ready keyword)
     fn evalSelectExpression(self: *ConcurrencyInterpreter, select_expr: *ast.SelectExpression) !InterpreterValue {
-        var operations = ArrayList(concurrency_runtime.SelectOperation).init(self.allocator);
-        defer operations.deinit();
+        var operations = .empty;
+        defer operations.deinit(allocator);
 
         for (select_expr.cases.items) |case_item| {
             switch (case_item.operation) {
@@ -305,7 +305,7 @@ pub const ConcurrencyInterpreter = struct {
                             else => concurrency_runtime.ConcurrencyValue{ .void_value = {} },
                         };
 
-                        try operations.append(concurrency_runtime.SelectOperation{
+                        try operations.append(allocator, concurrency_runtime.SelectOperation{
                             .type = .send,
                             .channel_id = channel_val.channel_id,
                             .value = concurrency_value,
@@ -315,7 +315,7 @@ pub const ConcurrencyInterpreter = struct {
                 .receive => |recv_op| {
                     const channel_val = try self.evalExpression(recv_op.channel.*);
                     if (channel_val == .channel_id) {
-                        try operations.append(concurrency_runtime.SelectOperation{
+                        try operations.append(allocator, concurrency_runtime.SelectOperation{
                             .type = .receive,
                             .channel_id = channel_val.channel_id,
                             .value = null,
@@ -323,7 +323,7 @@ pub const ConcurrencyInterpreter = struct {
                     }
                 },
                 .default => {
-                    try operations.append(concurrency_runtime.SelectOperation{
+                    try operations.append(allocator, concurrency_runtime.SelectOperation{
                         .type = .default,
                         .channel_id = 0, // Not used for default
                         .value = null,
@@ -340,7 +340,7 @@ pub const ConcurrencyInterpreter = struct {
     fn executeFunction(self: *ConcurrencyInterpreter, function: *ast.FunctionLiteral, args: []const InterpreterValue) !InterpreterValue {
         // Create new environment for function execution
         var func_env = Environment.init(self.allocator, self.environment);
-        defer func_env.deinit();
+        defer func_env.deinit(allocator);
 
         // Bind parameters to arguments
         for (function.parameters.items, 0..) |param, i| {
@@ -378,7 +378,7 @@ test "concurrency interpreter initialization" {
     const allocator = std.testing.allocator;
     
     var interpreter = try ConcurrencyInterpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     try std.testing.expect(interpreter.runtime_initialized);
 }
@@ -387,7 +387,7 @@ test "channel creation in interpreter" {
     const allocator = std.testing.allocator;
     
     var interpreter = try ConcurrencyInterpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     // Create mock channel literal
     var channel_literal = ast.ChannelLiteral{
@@ -404,15 +404,15 @@ test "goroutine spawn in interpreter" {
     const allocator = std.testing.allocator;
     
     var interpreter = try ConcurrencyInterpreter.init(allocator);
-    defer interpreter.deinit();
+    defer interpreter.deinit(allocator);
 
     // Create mock function literal
     var function_literal = ast.FunctionLiteral{
-        .parameters = ArrayList(*ast.Identifier).init(allocator),
-        .body = ast.BlockStatement{ .statements = ArrayList(ast.Statement).init(allocator) },
+        .parameters = .empty,
+        .body = ast.BlockStatement{ .statements = .empty },
     };
-    defer function_literal.parameters.deinit();
-    defer function_literal.body.statements.deinit();
+    defer function_literal.parameters.deinit(allocator);
+    defer function_literal.body.statements.deinit(allocator);
 
     var spawn_expr = ast.GoroutineSpawn{
         .function = &ast.Expression{ .function_literal = &function_literal },
@@ -427,7 +427,7 @@ test "interpreter environment operations" {
     const allocator = std.testing.allocator;
     
     var env = Environment.init(allocator, null);
-    defer env.deinit();
+    defer env.deinit(allocator);
 
     try env.define("test_var", InterpreterValue{ .integer = 42 });
     

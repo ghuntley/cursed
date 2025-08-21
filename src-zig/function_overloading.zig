@@ -73,7 +73,7 @@ pub const FunctionSignature = struct {
         const mangled = try mangleFunctionName(allocator, name, &[_]FunctionType{});
         return FunctionSignature{
             .name = name,
-            .parameters = ArrayList(Parameter).init(allocator),
+            .parameters = .empty,
             .return_type = return_type,
             .mangled_name = mangled,
             .allocator = allocator,
@@ -81,19 +81,19 @@ pub const FunctionSignature = struct {
     }
     
     pub fn deinit(self: *FunctionSignature) void {
-        self.parameters.deinit();
+        self.parameters.deinit(allocator);
         self.allocator.free(self.mangled_name);
     }
     
     pub fn addParameter(self: *FunctionSignature, param: Parameter) !void {
-        try self.parameters.append(param);
+        try self.parameters.append(self.allocator, param);
         // Update mangled name
         self.allocator.free(self.mangled_name);
-        var param_types = ArrayList(FunctionType).init(self.allocator);
-        defer param_types.deinit();
+        var param_types = .empty;
+        defer param_types.deinit(allocator);
         
         for (self.parameters.items) |p| {
-            try param_types.append(p.param_type);
+            try param_types.append(self.allocator, p.param_type);
         }
         
         self.mangled_name = try mangleFunctionName(self.allocator, self.name, param_types.items);
@@ -171,16 +171,16 @@ pub const OverloadSet = struct {
     pub fn init(allocator: Allocator, name: []const u8) OverloadSet {
         return OverloadSet{
             .name = name,
-            .overloads = ArrayList(FunctionSignature).init(allocator),
+            .overloads = .empty,
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *OverloadSet) void {
         for (self.overloads.items) |*overload| {
-            overload.deinit();
+            overload.deinit(allocator);
         }
-        self.overloads.deinit();
+        self.overloads.deinit(allocator);
     }
     
     pub fn addOverload(self: *OverloadSet, signature: FunctionSignature) !void {
@@ -200,17 +200,17 @@ pub const OverloadSet = struct {
             }
         }
         
-        try self.overloads.append(signature);
+        try self.overloads.append(allocator, signature);
     }
     
     pub fn resolveCall(self: *const OverloadSet, arg_types: []const FunctionType) OverloadingError!*const FunctionSignature {
-        var candidates = ArrayList(*const FunctionSignature).init(self.allocator);
-        defer candidates.deinit();
+        var candidates = .empty;
+        defer candidates.deinit(allocator);
         
         // Find all matching overloads
         for (self.overloads.items) |*overload| {
             if (overload.matchesCall(arg_types)) {
-                try candidates.append(overload);
+                try candidates.append(allocator, overload);
             }
         }
         
@@ -254,9 +254,9 @@ pub const FunctionRegistry = struct {
     pub fn deinit(self: *FunctionRegistry) void {
         var iter = self.overload_sets.iterator();
         while (iter.next()) |entry| {
-            entry.value_ptr.deinit();
+            entry.value_ptr.deinit(allocator);
         }
-        self.overload_sets.deinit();
+        self.overload_sets.deinit(allocator);
     }
     
     pub fn registerFunction(self: *FunctionRegistry, signature: FunctionSignature) !void {
@@ -279,12 +279,12 @@ pub const FunctionRegistry = struct {
 
 // Function name mangling for unique identification
 fn mangleFunctionName(allocator: Allocator, name: []const u8, param_types: []const FunctionType) ![]u8 {
-    var mangled = ArrayList(u8).init(allocator);
-    defer mangled.deinit();
+    var mangled = .empty;
+    defer mangled.deinit(allocator);
     
     try mangled.appendSlice("_CURSED_");
     try mangled.appendSlice(name);
-    try mangled.append('_');
+    try mangled.append(allocator, '_');
     
     for (param_types) |param_type| {
         const type_code = switch (param_type) {
@@ -305,12 +305,12 @@ fn mangleFunctionName(allocator: Allocator, name: []const u8, param_types: []con
         try mangled.appendSlice(type_code);
     }
     
-    return mangled.toOwnedSlice();
+    return mangled.toOwnedSlice(allocator);
 }
 
 // Helper functions for parser integration
 pub fn parseParameterList(allocator: Allocator, param_string: []const u8) !ArrayList(Parameter) {
-    var params = ArrayList(Parameter).init(allocator);
+    var params = .empty;
     
     // Simple parsing - split by commas and parse type annotations
     var iter = std.mem.split(u8, param_string, ",");
@@ -324,7 +324,7 @@ pub fn parseParameterList(allocator: Allocator, param_string: []const u8) !Array
         const type_str = parts.next() orelse "normie";
         
         const param_type = parseType(type_str);
-        try params.append(Parameter.init(name, param_type));
+        try params.append(allocator, Parameter.init(name, param_type));
     }
     
     return params;
@@ -351,7 +351,7 @@ pub fn initFunctionOverloading(allocator: Allocator) !void {
 
 pub fn deinitFunctionOverloading() void {
     if (global_registry) |*registry| {
-        registry.deinit();
+        registry.deinit(allocator);
         global_registry = null;
     }
 }
@@ -383,11 +383,11 @@ export fn cursed_resolve_function(name_ptr: [*]const u8, name_len: usize,
     const name = name_ptr[0..name_len];
     const arg_types_raw = arg_types_ptr[0..arg_count];
     
-    var arg_types = std.ArrayList(FunctionType).init(global_registry.?.allocator);
-    defer arg_types.deinit();
+    var arg_types: std.ArrayList(FunctionType) = .empty;
+    defer arg_types.deinit(allocator);
     
     for (arg_types_raw) |arg_type_raw| {
-        arg_types.append(@enumFromInt(arg_type_raw)) catch return null;
+        arg_types.append(allocator, @enumFromInt(arg_type_raw)) catch return null;
     }
     
     const signature = global_registry.?.resolveFunction(name, arg_types.items) catch return null;
@@ -399,11 +399,11 @@ pub fn testFunctionOverloading() !void {
     print("Testing function overloading implementation...\n");
     
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    defer _ = gpa.deinit();
+    defer _ = gpa.deinit(allocator);
     const allocator = gpa.allocator();
     
     var registry = FunctionRegistry.init(allocator);
-    defer registry.deinit();
+    defer registry.deinit(allocator);
     
     // Register multiple overloads for "add"
     var sig1 = try FunctionSignature.init(allocator, "add", .Normie);
