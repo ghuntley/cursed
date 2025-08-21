@@ -1,0 +1,580 @@
+# Docker Compose for CURSED Enterprise Microservices Platform
+# Complete production-ready stack with monitoring and security
+
+version: '3.8'
+
+services:
+  # =============================================================================
+  # DATABASE SERVICES
+  # =============================================================================
+  
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: microservices
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres-password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF8 --lc-collate=C --lc-ctype=C"
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./sql/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    command: redis-server --appendonly yes --maxmemory 512mb --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+
+  # =============================================================================
+  # MESSAGE QUEUE SERVICES
+  # =============================================================================
+  
+  zookeeper:
+    image: confluentinc/cp-zookeeper:latest
+    environment:
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+      ZOOKEEPER_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - zookeeper_data:/var/lib/zookeeper/data
+      - zookeeper_logs:/var/lib/zookeeper/log
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.25'
+
+  kafka:
+    image: confluentinc/cp-kafka:latest
+    depends_on:
+      - zookeeper
+    ports:
+      - "9092:9092"
+      - "29092:29092"
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,PLAINTEXT_HOST:PLAINTEXT
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:29092,PLAINTEXT_HOST://localhost:9092
+      KAFKA_INTER_BROKER_LISTENER_NAME: PLAINTEXT
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'true'
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+      KAFKA_LOG_RETENTION_HOURS: 24
+      KAFKA_LOG_SEGMENT_BYTES: 1073741824
+      KAFKA_LOG4J_ROOT_LOGLEVEL: WARN
+    volumes:
+      - kafka_data:/var/lib/kafka/data
+    healthcheck:
+      test: ["CMD", "kafka-broker-api-versions", "--bootstrap-server", "localhost:29092"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  kafka-ui:
+    image: provectuslabs/kafka-ui:latest
+    depends_on:
+      - kafka
+    ports:
+      - "8082:8080"
+    environment:
+      KAFKA_CLUSTERS_0_NAME: local
+      KAFKA_CLUSTERS_0_BOOTSTRAPSERVERS: kafka:29092
+      KAFKA_CLUSTERS_0_ZOOKEEPER: zookeeper:2181
+    networks:
+      - cursed-network
+
+  # =============================================================================
+  # CURSED MICROSERVICES
+  # =============================================================================
+  
+  user-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.user-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8001:8001"
+    environment:
+      SERVICE_NAME: user-service
+      PORT: 8001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: microservices
+      DB_USER: postgres
+      DB_PASSWORD: postgres-password
+      KAFKA_BROKERS: kafka:29092
+      OAUTH_CLIENT_ID: cursed-user-service
+      OAUTH_CLIENT_SECRET: user-service-secret
+      OAUTH_PROVIDER_URL: http://oauth-server:8090
+      LOG_LEVEL: info
+      PROMETHEUS_ENABLED: true
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cursed-network
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  order-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.order-service
+    depends_on:
+      postgres:
+        condition: service_healthy
+      kafka:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
+    ports:
+      - "8002:8002"
+    environment:
+      SERVICE_NAME: order-service
+      PORT: 8002
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: microservices
+      DB_USER: postgres
+      DB_PASSWORD: postgres-password
+      KAFKA_BROKERS: kafka:29092
+      USER_SERVICE_URL: http://user-service:8001
+      PAYMENT_SERVICE_URL: http://payment-service:8003
+      LOG_LEVEL: info
+      PROMETHEUS_ENABLED: true
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8002/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cursed-network
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  payment-service:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.payment-service
+    depends_on:
+      kafka:
+        condition: service_healthy
+    ports:
+      - "8003:8003"
+    environment:
+      SERVICE_NAME: payment-service
+      PORT: 8003
+      KAFKA_BROKERS: kafka:29092
+      PAYMENT_GATEWAY_URL: https://api.stripe.com
+      PAYMENT_GATEWAY_TOKEN: sk_test_your_stripe_key
+      REDIS_URL: redis://redis:6379
+      LOG_LEVEL: info
+      PROMETHEUS_ENABLED: true
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8003/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cursed-network
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.5'
+        reservations:
+          memory: 128M
+          cpus: '0.25'
+
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.api-gateway
+    depends_on:
+      - user-service
+      - order-service
+      - payment-service
+    ports:
+      - "8080:8080"
+    environment:
+      SERVICE_NAME: api-gateway
+      PORT: 8080
+      USER_SERVICE_URL: http://user-service:8001
+      ORDER_SERVICE_URL: http://order-service:8002
+      PAYMENT_SERVICE_URL: http://payment-service:8003
+      OAUTH_CLIENT_ID: cursed-api-gateway
+      OAUTH_CLIENT_SECRET: api-gateway-secret
+      OAUTH_PROVIDER_URL: http://oauth-server:8090
+      RATE_LIMIT_RPS: 1000
+      RATE_LIMIT_BURST: 2000
+      LOG_LEVEL: info
+      PROMETHEUS_ENABLED: true
+    volumes:
+      - ./config:/app/config:ro
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    networks:
+      - cursed-network
+    deploy:
+      replicas: 3
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+        reservations:
+          memory: 256M
+          cpus: '0.25'
+
+  # =============================================================================
+  # MONITORING SERVICES
+  # =============================================================================
+  
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--storage.tsdb.retention.time=15d'
+      - '--web.enable-lifecycle'
+      - '--web.enable-admin-api'
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin123
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+      GF_USERS_ALLOW_SIGN_UP: false
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"  # Jaeger UI
+      - "14268:14268"  # Accept jaeger.thrift over HTTP
+    environment:
+      COLLECTOR_OTLP_ENABLED: true
+    volumes:
+      - jaeger_data:/badger
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: '0.5'
+
+  alertmanager:
+    image: prom/alertmanager:latest
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml
+      - alertmanager_data:/alertmanager
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+      - '--storage.path=/alertmanager'
+      - '--web.external-url=http://localhost:9093'
+    networks:
+      - cursed-network
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.rootfs=/rootfs'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+    networks:
+      - cursed-network
+
+  # =============================================================================
+  # SECURITY & AUTHENTICATION
+  # =============================================================================
+  
+  oauth-server:
+    image: oryd/hydra:v2.2
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8090:4444"  # Public API
+      - "8091:4445"  # Admin API
+    environment:
+      DSN: postgres://postgres:postgres-password@postgres:5432/microservices?sslmode=disable
+      URLS_SELF_ISSUER: http://localhost:8090
+      URLS_CONSENT: http://localhost:8092/consent
+      URLS_LOGIN: http://localhost:8092/login
+      SECRETS_SYSTEM: youReallyNeedToChangeThis
+      OIDC_SUBJECT_IDENTIFIERS_SUPPORTED_TYPES: public,pairwise
+      OIDC_SUBJECT_IDENTIFIERS_PAIRWISE_SALT: youReallyNeedToChangeThis
+    command: serve all --dangerous-force-http
+    networks:
+      - cursed-network
+
+  oauth-ui:
+    image: oryd/hydra-login-consent-node:v2.2
+    ports:
+      - "8092:3000"
+    environment:
+      HYDRA_ADMIN_URL: http://oauth-server:4445
+      NODE_TLS_REJECT_UNAUTHORIZED: '0'
+    networks:
+      - cursed-network
+
+  # =============================================================================
+  # LOAD BALANCING & PROXY
+  # =============================================================================
+  
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./nginx/ssl:/etc/nginx/ssl
+      - ./nginx/static:/usr/share/nginx/html
+    depends_on:
+      - api-gateway
+      - grafana
+      - prometheus
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 256M
+          cpus: '0.25'
+
+  # =============================================================================
+  # UTILITY SERVICES
+  # =============================================================================
+  
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - cursed-network
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+
+  logstash:
+    image: docker.elastic.co/logstash/logstash:8.11.0
+    depends_on:
+      - elasticsearch
+    volumes:
+      - ./logging/logstash.conf:/usr/share/logstash/pipeline/logstash.conf
+    ports:
+      - "5044:5044"
+    networks:
+      - cursed-network
+
+  kibana:
+    image: docker.elastic.co/kibana/kibana:8.11.0
+    depends_on:
+      - elasticsearch
+    ports:
+      - "5601:5601"
+    environment:
+      ELASTICSEARCH_HOSTS: http://elasticsearch:9200
+    networks:
+      - cursed-network
+
+  # Performance testing
+  performance-tester:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.performance-tester
+    depends_on:
+      - api-gateway
+      - postgres
+      - kafka
+    volumes:
+      - ./performance-results:/app/results
+    environment:
+      TARGET_API_URL: http://api-gateway:8080
+      DB_CONNECTION: postgres://postgres:postgres-password@postgres:5432/microservices
+      KAFKA_BROKERS: kafka:29092
+      TEST_DURATION: 300  # 5 minutes
+      CONCURRENT_USERS: 100
+    networks:
+      - cursed-network
+    profiles:
+      - testing
+
+  # =============================================================================
+  # BACKUP & MAINTENANCE
+  # =============================================================================
+  
+  backup-service:
+    image: postgres:15
+    depends_on:
+      - postgres
+    volumes:
+      - backup_data:/backups
+      - ./scripts/backup.sh:/backup.sh
+    environment:
+      PGHOST: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres-password
+      PGDATABASE: microservices
+    command: /bin/bash -c "chmod +x /backup.sh && /backup.sh"
+    networks:
+      - cursed-network
+    profiles:
+      - maintenance
+
+# =============================================================================
+# NETWORKS AND VOLUMES
+# =============================================================================
+
+networks:
+  cursed-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+volumes:
+  postgres_data:
+  redis_data:
+  kafka_data:
+  zookeeper_data:
+  zookeeper_logs:
+  prometheus_data:
+  grafana_data:
+  jaeger_data:
+  alertmanager_data:
+  elasticsearch_data:
+  backup_data:
+
+# =============================================================================
+# DEVELOPMENT OVERRIDES
+# =============================================================================
+
+# Usage:
+# Development: docker-compose -f docker-compose.enterprise.yml up
+# Testing: docker-compose -f docker-compose.enterprise.yml --profile testing up
+# Maintenance: docker-compose -f docker-compose.enterprise.yml --profile maintenance up backup-service

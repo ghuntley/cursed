@@ -76,6 +76,7 @@ pub const MacroExpansionContext = struct {
         };
         
         pub fn init(allocator: Allocator, macro_id: MacroId, call_site: MacroCall, priority: ExpansionPriority) PendingExpansion {
+            _ = allocator;
             return PendingExpansion{
                 .macro_id = macro_id,
                 .call_site = call_site,
@@ -107,6 +108,7 @@ pub const MacroExpansionContext = struct {
         };
         
         pub fn init(allocator: Allocator, macro_id: MacroId, parent: ?MacroId) ActiveExpansion {
+            _ = allocator;
             return ActiveExpansion{
                 .macro_id = macro_id,
                 .start_time = std.time.milliTimestamp(),
@@ -146,6 +148,7 @@ pub const MacroExpansionContext = struct {
         max_recursion: usize,
         
         pub fn init(allocator: Allocator, name: []const u8) MacroDefinition {
+            _ = allocator;
                         return MacroDefinition{
                 .name = name,
                 .parameters = &[_][]const u8{},
@@ -190,6 +193,7 @@ pub const MacroExpansionContext = struct {
         symbol_capture_context: SymbolCaptureContext,
         
         fn deinit(self: *const NestedExpansionContext, allocator: Allocator) void {
+            _ = allocator;
             self.symbol_capture_context.deinit();
         }
     };
@@ -206,6 +210,7 @@ pub const MacroExpansionContext = struct {
         };
         
         fn init(allocator: Allocator) SymbolCaptureContext {
+            _ = allocator;
             return SymbolCaptureContext{
                 .captured_symbols = .empty,
                 .scope_boundaries = .empty,
@@ -685,7 +690,7 @@ pub const MacroExpansionContext = struct {
         }
         
         // Track current scope boundaries
-        for (self.hygiene_context.scope_stack.items, 0..) |*scope, i| {
+        for (self.hygiene_context.scope_stack.items) |*scope| {
             try context.scope_boundaries.append(self.allocator, SymbolCaptureContext.ScopeBoundary{
                 .scope_id = scope.id,
                 .symbol_count = scope.symbols.count(),
@@ -710,7 +715,7 @@ pub const MacroExpansionContext = struct {
             .call = macro_call,
             .dependencies = .empty,
             .priority = .Normal, // Could be adjusted based on nesting depth
-            .estimated_complexity = @intCast(u32, context.nesting_depth * 10), // Penalty for nesting
+            .estimated_complexity = @intCast(context.nesting_depth * 10), // Penalty for nesting
         };
         
         // Analyze dependencies considering nested context
@@ -785,6 +790,7 @@ pub const MacroExpansionContext = struct {
     
     /// Apply scope renaming for hygiene
     fn applyScopeRenaming(self: *MacroExpansionContext, tokens: []Token, hygiene_id: u32) ![]Token {
+        _ = hygiene_id;
         var result = try self.allocator.alloc(Token, tokens.len);
         
         for (tokens, 0..) |token, i| {
@@ -845,7 +851,6 @@ pub const MacroExpansionContext = struct {
             self.allocator.free(parsed_args);
         }
         
-        var arg_index: usize = 0;
         for (definition.body) |token| {
             if (token.kind == .Identifier) {
                 // Check if this is a parameter

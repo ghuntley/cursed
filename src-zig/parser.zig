@@ -7,6 +7,7 @@ const lexer = @import("lexer.zig");
 const ast = @import("ast.zig");
 const crash_handler = @import("crash_handler.zig");
 const safe_operations = @import("safe_operations.zig");
+const hygienic_macro_system = @import("hygienic_macro_system.zig");
 
 const Token = lexer.Token;
 const TokenKind = lexer.TokenKind;
@@ -76,6 +77,7 @@ pub const Parser = struct {
     file_path: []const u8,
     telemetry: ?*crash_handler.CrashTelemetry,
     error_recovery_stats: ErrorRecoveryStats,
+    macro_system: ?*hygienic_macro_system.HygienicMacroSystem,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
@@ -92,6 +94,7 @@ pub const Parser = struct {
             .file_path = "unknown",
             .telemetry = null,
             .error_recovery_stats = ErrorRecoveryStats.init(),
+            .macro_system = null,
         };
     }
 

@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CURSED Web Dashboard</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #333;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+            max-width: 1200px;
+            width: 90%;
+            min-height: 600px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 2rem;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            opacity: 0.9;
+            font-size: 1.1rem;
+        }
+
+        .content {
+            padding: 2rem;
+        }
+
+        .login-form, .dashboard {
+            max-width: 400px;
+            margin: 0 auto;
+        }
+
+        .dashboard {
+            max-width: none;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 2rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .form-group input {
+            width: 100%;
+            padding: 1rem;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .form-group input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2rem;
+            border-radius: 10px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            width: 100%;
+            margin-bottom: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .btn-secondary {
+            background: #6c757d;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+        }
+
+        .card {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .card h3 {
+            margin-bottom: 1rem;
+            color: #495057;
+            font-size: 1.25rem;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .metric-item {
+            background: white;
+            padding: 1rem;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+        }
+
+        .metric-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #667eea;
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+
+        .chat-container {
+            height: 300px;
+            border: 2px solid #e1e5e9;
+            border-radius: 10px;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .chat-messages {
+            flex: 1;
+            padding: 1rem;
+            overflow-y: auto;
+            background: white;
+        }
+
+        .chat-input-container {
+            display: flex;
+            padding: 1rem;
+            background: #f8f9fa;
+        }
+
+        .chat-input-container input {
+            flex: 1;
+            margin-right: 1rem;
+            margin-bottom: 0;
+        }
+
+        .chat-input-container button {
+            width: auto;
+            margin-bottom: 0;
+        }
+
+        .message {
+            margin-bottom: 0.5rem;
+            padding: 0.5rem;
+            background: #e3f2fd;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .alert {
+            padding: 1rem;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            display: none;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .users-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .user-item {
+            padding: 0.5rem;
+            margin-bottom: 0.5rem;
+            background: white;
+            border-radius: 5px;
+            font-size: 0.9rem;
+        }
+
+        .welcome-section {
+            grid-column: 1 / -1;
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+
+        .welcome-section h2 {
+            color: #495057;
+            margin-bottom: 1rem;
+        }
+
+        .file-upload {
+            margin-top: 1rem;
+        }
+
+        .file-upload input[type="file"] {
+            margin-bottom: 1rem;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            
+            .container {
+                width: 95%;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .content {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔥 CURSED Dashboard</h1>
+            <p>Built with CURSED Programming Language</p>
+        </div>
+        
+        <div class="content">
+            <!-- Alerts -->
+            <div id="success-alert" class="alert alert-success hidden">
+                <span id="success-message"></span>
+            </div>
+            
+            <div id="error-alert" class="alert alert-error hidden">
+                <span id="error-message"></span>
+            </div>
+            
+            <!-- Login Form -->
+            <div id="login-form" class="login-form">
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" value="admin" placeholder="Enter username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" value="admin123" placeholder="Enter password">
+                </div>
+                
+                <button class="btn" onclick="handleLogin()">Login</button>
+                
+                <hr style="margin: 2rem 0; border: none; border-top: 1px solid #e1e5e9;">
+                
+                <h3 style="text-align: center; margin-bottom: 1rem; color: #495057;">Register New Account</h3>
+                
+                <div class="form-group">
+                    <label for="reg-username">Username</label>
+                    <input type="text" id="reg-username" placeholder="Choose username">
+                </div>
+                
+                <div class="form-group">
+                    <label for="reg-email">Email</label>
+                    <input type="email" id="reg-email" placeholder="Enter email address">
+                </div>
+                
+                <div class="form-group">
+                    <label for="reg-password">Password</label>
+                    <input type="password" id="reg-password" placeholder="Choose password">
+                </div>
+                
+                <button class="btn btn-secondary" onclick="handleRegister()">Register</button>
+            </div>
+            
+            <!-- Dashboard -->
+            <div id="dashboard" class="dashboard hidden">
+                <div class="welcome-section">
+                    <h2 id="welcome-message">Welcome to the Dashboard!</h2>
+                    <button class="btn btn-danger" onclick="handleLogout()">Logout</button>
+                    <button class="btn btn-secondary" onclick="refreshData()">Refresh Data</button>
+                </div>
+                
+                <!-- System Metrics -->
+                <div class="card">
+                    <h3>📊 System Metrics</h3>
+                    <div class="metrics-grid">
+                        <div class="metric-item">
+                            <div class="metric-value" id="cpu-usage">--</div>
+                            <div class="metric-label">CPU Usage</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="memory-usage">--</div>
+                            <div class="metric-label">Memory</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="disk-usage">--</div>
+                            <div class="metric-label">Disk Usage</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="active-connections">--</div>
+                            <div class="metric-label">Connections</div>
+                        </div>
+                        <div class="metric-item">
+                            <div class="metric-value" id="requests-per-second">--</div>
+                            <div class="metric-label">Requests/sec</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Chat System -->
+                <div class="card">
+                    <h3>💬 Live Chat</h3>
+                    <div class="chat-container">
+                        <div class="chat-messages" id="chat-messages">
+                            <div class="message">System: Welcome to the CURSED Dashboard chat!</div>
+                        </div>
+                        <div class="chat-input-container">
+                            <input type="text" id="chat-input" placeholder="Type a message..." onkeypress="handleChatKeyPress(event)">
+                            <button class="btn" onclick="sendMessage()">Send</button>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- File Upload -->
+                <div class="card">
+                    <h3>📁 File Upload</h3>
+                    <div class="file-upload">
+                        <input type="file" id="file-input" accept="*/*">
+                        <button class="btn" onclick="handleFileUpload()">Upload File</button>
+                    </div>
+                </div>
+                
+                <!-- Admin Panel -->
+                <div id="admin-panel" class="card hidden">
+                    <h3>👥 User Management (Admin Only)</h3>
+                    <div class="users-list" id="users-list">
+                        <div class="user-item">admin (Administrator) - Active</div>
+                        <div class="user-item">user1 (Regular User) - Active</div>
+                        <div class="user-item">user2 (Regular User) - Inactive</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // JavaScript bridge for CURSED WebAssembly
+        let cursedApp = null;
+
+        // Utility functions for DOM manipulation
+        function setElementText(elementId, text) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.textContent = text;
+            }
+        }
+
+        function getElementValue(elementId) {
+            const element = document.getElementById(elementId);
+            return element ? element.value : '';
+        }
+
+        function showElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.remove('hidden');
+            }
+        }
+
+        function hideElement(elementId) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.classList.add('hidden');
+            }
+        }
+
+        function addToList(listId, content) {
+            const list = document.getElementById(listId);
+            if (list) {
+                const item = document.createElement('div');
+                item.className = listId === 'chat-messages' ? 'message' : 'user-item';
+                item.textContent = content;
+                list.appendChild(item);
+                
+                // Auto-scroll chat messages
+                if (listId === 'chat-messages') {
+                    list.scrollTop = list.scrollHeight;
+                }
+            }
+        }
+
+        function clearList(listId) {
+            const list = document.getElementById(listId);
+            if (list) {
+                list.innerHTML = '';
+            }
+        }
+
+        // Event handlers
+        function handleLogin() {
+            // Simulate CURSED WebAssembly function call
+            simulateLogin();
+        }
+
+        function handleRegister() {
+            simulateRegister();
+        }
+
+        function handleLogout() {
+            hideElement('dashboard');
+            hideElement('admin-panel');
+            showElement('login-form');
+            showSuccess('Logged out successfully');
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+            if (message) {
+                addToList('chat-messages', `You: ${message}`);
+                input.value = '';
+                
+                // Simulate response
+                setTimeout(() => {
+                    addToList('chat-messages', `System: Message received - "${message}"`);
+                }, 1000);
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        function handleFileUpload() {
+            const fileInput = document.getElementById('file-input');
+            if (fileInput.files.length > 0) {
+                const fileName = fileInput.files[0].name;
+                showSuccess(`File "${fileName}" uploaded successfully!`);
+                fileInput.value = '';
+            } else {
+                showError('Please select a file to upload');
+            }
+        }
+
+        function refreshData() {
+            // Simulate data refresh
+            updateMetrics();
+            showSuccess('Data refreshed successfully');
+        }
+
+        // Simulation functions (replace with actual CURSED WASM calls)
+        function simulateLogin() {
+            const username = getElementValue('username');
+            const password = getElementValue('password');
+            
+            if (username === 'admin' && password === 'admin123') {
+                hideElement('login-form');
+                showElement('dashboard');
+                showElement('admin-panel');
+                setElementText('welcome-message', `Welcome, ${username}!`);
+                updateMetrics();
+                showSuccess('Login successful!');
+                startWebSocketSimulation();
+            } else {
+                showError('Invalid username or password');
+            }
+        }
+
+        function simulateRegister() {
+            const username = getElementValue('reg-username');
+            const email = getElementValue('reg-email');
+            const password = getElementValue('reg-password');
+            
+            if (username && email && password) {
+                showSuccess('Registration successful! You can now log in.');
+                // Clear form
+                document.getElementById('reg-username').value = '';
+                document.getElementById('reg-email').value = '';
+                document.getElementById('reg-password').value = '';
+            } else {
+                showError('Please fill in all registration fields');
+            }
+        }
+
+        function updateMetrics() {
+            // Simulate real-time metrics
+            setElementText('cpu-usage', Math.floor(Math.random() * 100) + '%');
+            setElementText('memory-usage', Math.floor(Math.random() * 2000 + 500) + 'MB');
+            setElementText('disk-usage', Math.floor(Math.random() * 100 + 50) + 'GB');
+            setElementText('active-connections', Math.floor(Math.random() * 50 + 10));
+            setElementText('requests-per-second', Math.floor(Math.random() * 100 + 20));
+        }
+
+        function startWebSocketSimulation() {
+            // Simulate WebSocket updates every 5 seconds
+            setInterval(() => {
+                updateMetrics();
+                
+                // Occasionally add system messages
+                if (Math.random() < 0.3) {
+                    const messages = [
+                        'System: Metrics updated',
+                        'System: New user connected',
+                        'System: Backup completed',
+                        'System: Health check passed'
+                    ];
+                    const randomMessage = messages[Math.floor(Math.random() * messages.length)];
+                    addToList('chat-messages', randomMessage);
+                }
+            }, 5000);
+        }
+
+        // Alert functions
+        function showSuccess(message) {
+            setElementText('success-message', message);
+            showElement('success-alert');
+            hideElement('error-alert');
+            setTimeout(() => hideElement('success-alert'), 5000);
+        }
+
+        function showError(message) {
+            setElementText('error-message', message);
+            showElement('error-alert');
+            hideElement('success-alert');
+            setTimeout(() => hideElement('error-alert'), 5000);
+        }
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('CURSED Web Dashboard Frontend Initialized');
+            console.log('This demo simulates WebAssembly integration');
+            
+            // In a real implementation, we would load the CURSED WASM module here
+            // cursedApp = await loadCursedWasm();
+        });
+    </script>
+</body>
+</html>
