@@ -98,19 +98,19 @@ pub fn build(b: *std.Build) void {
     
     b.installArtifact(exe);
 
-    // Advanced LSP Server
-    const advanced_lsp_server = b.addExecutable(.{
-        .name = "cursed-lsp-advanced",
-        .root_module = b.createModule(.{
-            .root_source_file = b.path("src-zig/advanced_lsp_server.zig"),
-            .target = target,
-            .optimize = optimize,
-        }),
-    });
-    advanced_lsp_server.linkLibC();
-    b.installArtifact(advanced_lsp_server);
+    // Advanced LSP Server (temporarily disabled - API compatibility issue)
+    // const advanced_lsp_server = b.addExecutable(.{
+    //     .name = "cursed-lsp-advanced",
+    //     .root_module = b.createModule(.{
+    //         .root_source_file = b.path("src-zig/advanced_lsp_server.zig"),
+    //         .target = target,
+    //         .optimize = optimize,
+    //     }),
+    // });
+    // advanced_lsp_server.linkLibC();
+    // b.installArtifact(advanced_lsp_server);
 
-    // Standard LSP Server  
+    // Standard LSP Server
     const lsp_server = b.addExecutable(.{
         .name = "cursed-lsp",
         .root_module = b.createModule(.{
@@ -141,10 +141,10 @@ pub fn build(b: *std.Build) void {
     }
     run_step.dependOn(&run_cmd.step);
     
-    // Run LSP server
-    const run_lsp_step = b.step("run-lsp", "Run the CURSED LSP server");
-    const run_lsp_cmd = b.addRunArtifact(advanced_lsp_server);
-    run_lsp_step.dependOn(&run_lsp_cmd.step);
+    // Run LSP server (temporarily disabled - API compatibility issue)
+    // const run_lsp_step = b.step("run-lsp", "Run the CURSED LSP server");
+    // const run_lsp_cmd = b.addRunArtifact(advanced_lsp_server);
+    // run_lsp_step.dependOn(&run_lsp_cmd.step);
     
     // WASM build targets
     const wasm_browser_step = b.step("wasm-browser", "Build for WebAssembly (browser target)");

@@ -21,8 +21,8 @@ pub fn main() !void {
         // Read Content-Length header
         var content_length: usize = 0;
         while (true) {
-            const line = stdin.reader().readUntilDelimiterAlloc(allocator, '\n', 1024) catch break;
-            defer allocator.free(line);
+            var line_buf: [1024]u8 = undefined;
+            const line = stdin.reader().readUntilDelimiterOrEof(line_buf[0..], '\n') catch break orelse break;
             
             const trimmed = std.mem.trim(u8, line, "\r\n");
             if (trimmed.len == 0) break; // Empty line marks end of headers

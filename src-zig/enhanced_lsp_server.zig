@@ -1990,17 +1990,16 @@ pub fn runEnhancedLspServer(allocator: Allocator) !void {
         var content_length: usize = 0;
         
         header_loop: while (true) {
-            const line = stdin.readUntilDelimiterAlloc(allocator, '\n', 1024) catch |err| switch (err) {
-                error.EndOfStream => {
-                    std.log.info("Client disconnected", .{});
-                    return;
-                },
+            var line_buf: [1024]u8 = undefined;
+            const line = stdin.reader().readUntilDelimiterOrEof(line_buf[0..], '\n') catch |err| switch (err) {
                 else => {
                     std.log.err("Error reading header: {}", .{err});
                     continue :header_loop;
                 },
+            } orelse {
+                std.log.info("Client disconnected", .{});
+                return;
             };
-            defer allocator.free(line);
             
             const trimmed = std.mem.trim(u8, line, "\r\n");
             if (trimmed.len == 0) break; // Empty line marks end of headers
