@@ -8,6 +8,7 @@ const error_handling = @import("error_handling.zig");
 const cursed_error = @import("cursed_error_runtime.zig");
 const concurrency = @import("concurrency.zig");
 const gc = @import("gc.zig");
+const stack_trace = @import("stack_trace_runtime.zig");
 const Program = ast.Program;
 const Statement = ast.Statement;
 const Expression = ast.Expression;
@@ -152,11 +153,36 @@ pub const ErrorValue = struct {
             return err;
         };
         
+        // Capture stack trace for error
+        const stack_trace_str = stack_trace.cursed_runtime_get_stack_trace();
+        const stack_trace_copy = if (std.mem.len(stack_trace_str) > 0) 
+            allocator.dupe(u8, std.mem.span(stack_trace_str)) catch null
+        else 
+            null;
+        
+        var stack_frames: ?[][]const u8 = null;
+        if (stack_trace_copy) |trace_str| {
+            // Convert stack trace string to array of frames
+            var frame_list = std.ArrayList([]const u8).init(allocator);
+            defer frame_list.deinit();
+            
+            var lines = std.mem.split(u8, trace_str, "\n");
+            while (lines.next()) |line| {
+                if (line.len > 0) {
+                    const line_copy = allocator.dupe(u8, line) catch continue;
+                    frame_list.append(line_copy) catch continue;
+                }
+            }
+            
+            stack_frames = frame_list.toOwnedSlice() catch null;
+            allocator.free(trace_str);
+        }
+        
         return ErrorValue{
             .message = message_copy,
             .code = code,
             .context = null,
-            .stack_trace = null,
+            .stack_trace = stack_frames,
             .allocator = allocator,
         };
     }
@@ -476,6 +502,10 @@ pub const Interpreter = struct {
         // self.channel_storage.deinit();
     }
 
+    pub fn interpret(self: *Interpreter, program: Program) InterpreterError!void {
+        return self.execute(program);
+    }
+
     pub fn execute(self: *Interpreter, program: Program) InterpreterError!void {
         // First pass: collect type and function declarations
         for (program.statements.items) |stmt_ptr| {
@@ -524,6 +554,7 @@ pub const Interpreter = struct {
                 _ = try self.evaluateExpression(expr.*);
             },
             .Let => |let| try self.executeLetStatement(let),
+            .ShortDeclaration => |short_decl| try self.executeShortDeclarationStatement(short_decl),
             .Assignment => |assign| try self.executeAssignmentStatement(assign),
             .Return => |ret| {
                 // Return statements are handled in function context
@@ -592,6 +623,28 @@ pub const Interpreter = struct {
         } else {
             // Regular single variable assignment
             try self.environment.define(let.name, value);
+        }
+    }
+    
+    fn executeShortDeclarationStatement(self: *Interpreter, short_decl: ast.ShortDeclarationStatement) InterpreterError!void {
+        // Handle sus x = 5 style declarations
+        if (short_decl.names.items.len != short_decl.values.items.len) {
+            return InterpreterError.TypeMismatch;
+        }
+        
+        // Evaluate all values first
+        var evaluated_values = std.ArrayList(Value).init(self.allocator);
+        defer evaluated_values.deinit();
+        
+        for (short_decl.values.items) |value_expr| {
+            const value = try self.evaluateExpression(value_expr.*);
+            try evaluated_values.append(value);
+        }
+        
+        // Define all variables
+        for (short_decl.names.items, 0..) |name, i| {
+            try self.environment.define(name, evaluated_values.items[i]);
+            std.debug.print("DEBUG: Defined variable '{s}' = {}\n", .{name, evaluated_values.items[i]});
         }
     }
     
@@ -1048,6 +1101,291 @@ pub const Interpreter = struct {
                     // Generate unique goroutine ID
                     self.next_goroutine_id += 1;
                     return Value{ .Integer = @intCast(self.next_goroutine_id) };
+                } 
+                // Environment variable functions
+                else if (std.mem.eql(u8, name, "runtime_get_env")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const name_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const name_str = try name_arg.toString(self.allocator);
+                    defer self.allocator.free(name_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_get_env(self.allocator, name_str) catch {
+                        // Create array with two strings: empty value and error message
+                        var result_array = ArrayList(Value).init(self.allocator);
+                        try result_array.append(Value{ .String = try self.allocator.dupe(u8, "") });
+                        try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to get environment variable") });
+                        return Value{ .Array = result_array };
+                    };
+                    
+                    // Create array with two strings: value and error
+                    var result_array = ArrayList(Value).init(self.allocator);
+                    try result_array.append(Value{ .String = result[0] });
+                    try result_array.append(Value{ .String = result[1] });
+                    return Value{ .Array = result_array };
+                } else if (std.mem.eql(u8, name, "runtime_set_env")) {
+                    if (call.arguments.items.len != 2) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const name_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const value_arg = try self.evaluateExpression(call.arguments.items[1].*);
+                    const name_str = try name_arg.toString(self.allocator);
+                    defer self.allocator.free(name_str);
+                    const value_str = try value_arg.toString(self.allocator);
+                    defer self.allocator.free(value_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_set_env(self.allocator, name_str, value_str) catch |err| switch (err) {
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => "Failed to set environment variable",
+                    };
+                    
+                    return Value{ .String = try self.allocator.dupe(u8, result) };
+                } else if (std.mem.eql(u8, name, "runtime_unset_env")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const name_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const name_str = try name_arg.toString(self.allocator);
+                    defer self.allocator.free(name_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_unset_env(self.allocator, name_str) catch |err| switch (err) {
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => "Failed to unset environment variable",
+                    };
+                    
+                    return Value{ .String = try self.allocator.dupe(u8, result) };
+                } else if (std.mem.eql(u8, name, "runtime_list_env")) {
+                    if (call.arguments.items.len != 0) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_list_env(self.allocator) catch {
+                        // Create array with empty list and error message
+                        var result_array = ArrayList(Value).init(self.allocator);
+                        try result_array.append(Value{ .Array = ArrayList(Value).init(self.allocator) });
+                        try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to list environment variables") });
+                        return Value{ .Array = result_array };
+                    };
+                    
+                    // Convert ArrayList([]const u8) to ArrayList(Value)
+                    var env_values = ArrayList(Value).init(self.allocator);
+                    for (result[0].items) |env_str| {
+                        try env_values.append(Value{ .String = env_str });
+                    }
+                    
+                    // Create array with env list and error string
+                    var result_array = ArrayList(Value).init(self.allocator);
+                    try result_array.append(Value{ .Array = env_values });
+                    try result_array.append(Value{ .String = result[1] });
+                    return Value{ .Array = result_array };
+                } else if (std.mem.eql(u8, name, "runtime_expand_env")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const text_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const text_str = try text_arg.toString(self.allocator);
+                    defer self.allocator.free(text_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_expand_env(self.allocator, text_str) catch |err| switch (err) {
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => text_str,  // Return original string on error
+                    };
+                    
+                    return Value{ .String = result };
+                }
+                // Time runtime functions
+                else if (std.mem.eql(u8, name, "runtime_get_current_time_ms")) {
+                    if (call.arguments.items.len != 0) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const timestamp = runtime_functions.runtime_get_current_time_ms();
+                    return Value{ .Integer = timestamp };
+                } else if (std.mem.eql(u8, name, "runtime_sleep_ms")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    
+                    const duration_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const duration_ms = switch (duration_arg) {
+                        .Integer => |int_val| int_val,
+                        else => return InterpreterError.TypeMismatch,
+                    };
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    runtime_functions.runtime_sleep_ms(duration_ms);
+                    return Value.Null;
+                } else if (std.mem.eql(u8, name, "runtime_get_timezone_offset")) {
+                    if (call.arguments.items.len != 0) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const offset = runtime_functions.runtime_get_timezone_offset();
+                    return Value{ .Integer = offset };
+                } else if (std.mem.eql(u8, name, "runtime_get_timezone_name")) {
+                    if (call.arguments.items.len != 0) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const name_ptr = runtime_functions.runtime_get_timezone_name();
+                    const name_slice = std.mem.span(name_ptr);
+                    const name_copy = try self.allocator.dupe(u8, name_slice);
+                    return Value{ .String = name_copy };
+                } else if (std.mem.eql(u8, name, "runtime_to_lowercase")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const str_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const input_str = try str_arg.toString(self.allocator);
+                    defer self.allocator.free(input_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_to_lowercase(self.allocator, input_str) catch |err| switch (err) {
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => try self.allocator.dupe(u8, input_str),
+                    };
+                    
+                    return Value{ .String = result };
+                } else if (std.mem.eql(u8, name, "runtime_split_path")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const path_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const path_str = try path_arg.toString(self.allocator);
+                    defer self.allocator.free(path_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_split_path(self.allocator, path_str) catch |err| switch (err) {
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => ArrayList([]const u8).init(self.allocator),
+                    };
+                    
+                    // Convert ArrayList([]const u8) to ArrayList(Value)
+                    var path_values = ArrayList(Value).init(self.allocator);
+                    for (result.items) |path_str_item| {
+                        try path_values.append(Value{ .String = path_str_item });
+                    }
+                    
+                    return Value{ .Array = path_values };
+                } else if (std.mem.eql(u8, name, "runtime_parse_int")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const str_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const input_str = try str_arg.toString(self.allocator);
+                    defer self.allocator.free(input_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_parse_int(self.allocator, input_str) catch {
+                        // Create array with 0 and error message
+                        var result_array = ArrayList(Value).init(self.allocator);
+                        try result_array.append(Value{ .Integer = 0 });
+                        try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to parse integer") });
+                        return Value{ .Array = result_array };
+                    };
+                    
+                    // Create array with integer and error string
+                    var result_array = ArrayList(Value).init(self.allocator);
+                    try result_array.append(Value{ .Integer = result[0] });
+                    try result_array.append(Value{ .String = try self.allocator.dupe(u8, result[1]) });
+                    return Value{ .Array = result_array };
+                } else if (std.mem.eql(u8, name, "runtime_string_length")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const str_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const input_str = try str_arg.toString(self.allocator);
+                    defer self.allocator.free(input_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_string_length(input_str);
+                    return Value{ .Integer = result };
+                } else if (std.mem.eql(u8, name, "runtime_read_file")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_read_file(self.allocator, filename_str) catch |err| switch (err) {
+                        error.FileNotFound => "ERROR",
+                        error.AccessDenied => "ERROR",
+                        error.OutOfMemory => return InterpreterError.OutOfMemory,
+                        else => "ERROR",
+                    };
+                    return Value{ .String = result };
+                } else if (std.mem.eql(u8, name, "runtime_write_file")) {
+                    std.debug.print("DEBUG: Intercepted runtime_write_file call\n");
+                    if (call.arguments.items.len != 2) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const content_arg = try self.evaluateExpression(call.arguments.items[1].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    const content_str = try content_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    defer self.allocator.free(content_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_write_file(filename_str, content_str) catch false;
+                    return Value{ .Boolean = result };
+                } else if (std.mem.eql(u8, name, "runtime_append_file")) {
+                    if (call.arguments.items.len != 2) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const content_arg = try self.evaluateExpression(call.arguments.items[1].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    const content_str = try content_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    defer self.allocator.free(content_str);
+                    
+                    const runtime_functions = @import("runtime_functions.zig");
+                    const result = runtime_functions.runtime_append_file(filename_str, content_str) catch false;
+                    return Value{ .Boolean = result };
+                } else if (std.mem.eql(u8, name, "runtime_file_exists")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    
+                    std.fs.cwd().access(filename_str, .{}) catch return Value{ .Boolean = false };
+                    return Value{ .Boolean = true };
+                } else if (std.mem.eql(u8, name, "runtime_file_size")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    
+                    const file = std.fs.cwd().openFile(filename_str, .{}) catch return Value{ .Integer = -1 };
+                    defer file.close();
+                    const stat = file.stat() catch return Value{ .Integer = -1 };
+                    return Value{ .Integer = @intCast(stat.size) };
+                } else if (std.mem.eql(u8, name, "runtime_delete_file")) {
+                    if (call.arguments.items.len != 1) {
+                        return InterpreterError.TypeMismatch;
+                    }
+                    const filename_arg = try self.evaluateExpression(call.arguments.items[0].*);
+                    const filename_str = try filename_arg.toString(self.allocator);
+                    defer self.allocator.free(filename_str);
+                    
+                    const result = std.fs.cwd().deleteFile(filename_str) catch false;
+                    return Value{ .Boolean = result != false };
                 } else {
                     // Try to find function directly first
                     if (self.functions.get(name)) |func| {

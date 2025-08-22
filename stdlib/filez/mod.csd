@@ -9,6 +9,7 @@ fr fr Re-export all functions for backward compatibility
 yeet "stringz"
 yeet "mathz"
 yeet "vibez"
+yeet "cross_platform_paths"
 
 fr fr ===== FILE SYSTEM STRUCTURES =====
 
@@ -373,60 +374,23 @@ slay file_rename(old_path tea, new_path tea) lit {
 fr fr ===== PATH UTILITIES =====
 
 slay path_join(parts []tea) tea {
-    fr fr Join path components
-    ready (array_length(parts) == 0) {
-        damn ""
-    }
-    
-    sus result tea = parts[0]
-    sus separator tea = path_separator()
-    sus i drip = 1
-    
-    bestie (i < array_length(parts)) {
-        ready (!ends_with(result, separator) && !starts_with(parts[i], separator)) {
-            result = result + separator
-        }
-        result = result + parts[i]
-        i = i + 1
-    }
-    
-    damn result
+    fr fr Join path components with cross-platform support
+    damn cross_platform_join(parts)
 }
 
 slay path_dirname(path tea) tea {
-    fr fr Get directory name from path
-    sus separator tea = path_separator()
-    sus last_sep drip = find_last_occurrence(path, separator)
-    
-    ready (last_sep > 0) {
-        damn substring(path, 0, last_sep)
-    } otherwise {
-        damn "."
-    }
+    fr fr Get directory name from path with cross-platform support
+    damn get_parent_directory(path)
 }
 
 slay path_basename(path tea) tea {
-    fr fr Get base filename from path
-    sus separator tea = path_separator()
-    sus last_sep drip = find_last_occurrence(path, separator)
-    
-    ready (last_sep >= 0) {
-        damn substring(path, last_sep + 1, string_length(path) - last_sep - 1)
-    } otherwise {
-        damn path
-    }
+    fr fr Get base filename from path with cross-platform support
+    damn get_filename_component(path)
 }
 
 slay path_extension(path tea) tea {
-    fr fr Get file extension
-    sus filename tea = path_basename(path)
-    sus last_dot drip = find_last_occurrence(filename, ".")
-    
-    ready (last_dot > 0) {
-        damn substring(filename, last_dot, string_length(filename) - last_dot)
-    } otherwise {
-        damn ""
-    }
+    fr fr Get file extension with cross-platform support
+    damn get_extension_component(path)
 }
 
 slay path_change_extension(path tea, new_ext tea) tea {
@@ -447,53 +411,13 @@ slay path_change_extension(path tea, new_ext tea) tea {
 }
 
 slay path_absolute(relative_path tea) tea {
-    fr fr Convert relative path to absolute
-    ready (starts_with(relative_path, "/")) {
-        damn relative_path  fr fr Already absolute on Unix
-    }
-    
-    sus current_dir tea = get_current_directory()
-    damn path_join([current_dir, relative_path])
+    fr fr Convert relative path to absolute with cross-platform support
+    damn cross_platform_absolute(relative_path)
 }
 
 slay path_normalize(path tea) tea {
-    fr fr Normalize path (resolve . and ..)
-    sus parts []tea = split_path(path)
-    sus normalized_parts []tea = []
-    sus part_count drip = 0
-    sus i drip = 0
-    
-    bestie (i < array_length(parts)) {
-        sus part tea = parts[i]
-        
-        ready (part == "." || part == "") {
-            fr fr Skip current directory and empty parts
-        } otherwise ready (part == "..") {
-            fr fr Go up one directory
-            ready (part_count > 0) {
-                part_count = part_count - 1
-            }
-        } otherwise {
-            normalized_parts[part_count] = part
-            part_count = part_count + 1
-        }
-        
-        i = i + 1
-    }
-    
-    fr fr Reconstruct path
-    ready (part_count == 0) {
-        damn "."
-    }
-    
-    sus result tea = normalized_parts[0]
-    i = 1
-    bestie (i < part_count) {
-        result = result + path_separator() + normalized_parts[i]
-        i = i + 1
-    }
-    
-    damn result
+    fr fr Normalize path with comprehensive cross-platform support
+    damn cross_platform_normalize(path)
 }
 
 fr fr ===== ADVANCED FILE OPERATIONS =====
@@ -687,8 +611,8 @@ slay sync_file_descriptor(fd drip) lit {
 fr fr ===== UTILITY FUNCTIONS =====
 
 slay path_separator() tea {
-    fr fr Return OS-specific path separator
-    damn "/"  fr fr Unix/Linux
+    fr fr Return OS-specific path separator with cross-platform support
+    damn get_platform_separator()
 }
 
 slay extract_filename(path tea) tea {

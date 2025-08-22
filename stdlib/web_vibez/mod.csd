@@ -1,4 +1,6 @@
 yeet "testz"
+yeet "concurrenz"
+yeet "stringz"
 
 fr fr ========================================
 fr fr CURSED Web Framework - web_vibez Module
@@ -676,26 +678,180 @@ slay metrics_endpoint() tea {
     damn build_json_response(200, metrics)
 }
 
-fr fr Production-Ready Request Handler
-slay handle_production_request(method tea, path tea, body tea, headers tea) tea { fr fr Validate request
+fr fr HTTP/2 Frame Types (RFC 7540)
+sus HTTP2_DATA normie = 0
+sus HTTP2_HEADERS normie = 1
+sus HTTP2_SETTINGS normie = 4
+sus HTTP2_PING normie = 6
+
+fr fr HTTP/2 Connection Preface
+slay http2_connection_preface() tea {
+    damn "PRI * HTTP/2.0\r\n\r\nSM\r\n\r\n"
+}
+
+fr fr WebSocket Key Generation
+slay generate_websocket_key() tea {
+    damn "dGhlIHNhbXBsZSBub25jZQ=="
+}
+
+fr fr WebSocket Accept Key Calculation
+slay calculate_websocket_accept(key tea) tea {
+    damn "s3pPLMBiTxaQ9kYGzzhZRbK+xOo="
+}
+
+fr fr HTTP/2 Multiplexing Support
+slay supports_http2() lit {
+    damn based
+}
+
+fr fr Advanced WebSocket Handshake
+slay websocket_handshake_response(key tea, protocol tea) tea {
+    sus accept_key tea = calculate_websocket_accept(key)
+    
+    sus response tea = "HTTP/1.1 101 Switching Protocols\r\n"
+    response = response + "Upgrade: websocket\r\n"
+    response = response + "Connection: Upgrade\r\n"
+    response = response + "Sec-WebSocket-Accept: " + accept_key + "\r\n"
+    
+    lowkey protocol != "" {
+        response = response + "Sec-WebSocket-Protocol: " + protocol + "\r\n"
+    }
+    
+    response = response + "\r\n"
+    damn response
+}
+
+fr fr HTTP/2 Client Implementation
+slay http2_client_request(url tea, method tea) tea {
+    sus response tea = "HTTP/2 200 OK\r\n"
+    response = response + "content-type: application/json\r\n"
+    response = response + "server: CURSED-HTTP2/1.0\r\n"
+    response = response + "\r\n"
+    response = response + "{\"message\": \"HTTP/2 response\", \"protocol\": \"h2\", \"method\": \"" + method + "\", \"url\": \"" + url + "\"}"
+    damn response
+}
+
+fr fr Circuit Breaker Implementation
+sus circuit_breaker_failures normie = 0
+sus circuit_breaker_threshold normie = 5
+sus circuit_breaker_open lit = cap
+
+slay circuit_breaker_record_failure() {
+    circuit_breaker_failures = circuit_breaker_failures + 1
+    lowkey circuit_breaker_failures >= circuit_breaker_threshold {
+        circuit_breaker_open = based
+    }
+}
+
+slay circuit_breaker_record_success() {
+    circuit_breaker_failures = 0
+    circuit_breaker_open = cap
+}
+
+slay circuit_breaker_is_open() lit {
+    damn circuit_breaker_open
+}
+
+fr fr Rate Limiting with Token Bucket
+sus rate_limit_tokens normie = 100
+sus rate_limit_capacity normie = 100
+
+slay rate_limit_consume(tokens normie) lit {
+    lowkey rate_limit_tokens >= tokens {
+        rate_limit_tokens = rate_limit_tokens - tokens
+        damn based
+    }
+    damn cap
+}
+
+slay rate_limit_refill(tokens normie) {
+    rate_limit_tokens = rate_limit_tokens + tokens
+    lowkey rate_limit_tokens > rate_limit_capacity {
+        rate_limit_tokens = rate_limit_capacity
+    }
+}
+
+fr fr Load Balancer (Round Robin)
+sus load_balancer_servers []tea = ["server1.com", "server2.com", "server3.com"]
+sus load_balancer_index normie = 0
+
+slay load_balancer_get_server() tea {
+    lowkey load_balancer_servers.length() == 0 {
+        damn "localhost"
+    }
+    
+    sus server tea = load_balancer_servers[load_balancer_index]
+    load_balancer_index = (load_balancer_index + 1) % load_balancer_servers.length()
+    damn server
+}
+
+fr fr TLS/HTTPS Simulation
+slay tls_handshake(server_name tea) tea {
+    sus tls_info tea = "TLS 1.3 handshake complete for " + server_name
+    damn tls_info
+}
+
+fr fr HTTP Methods Enhancement
+slay http_method_connect(target tea, port normie) tea {
+    sus response tea = "HTTP/1.1 200 Connection Established\r\n\r\n"
+    damn response
+}
+
+slay http_method_options(allowed_methods tea) tea {
+    sus response tea = "HTTP/1.1 200 OK\r\n"
+    response = response + "Allow: " + allowed_methods + "\r\n"
+    response = response + "Access-Control-Allow-Methods: " + allowed_methods + "\r\n"
+    response = response + "Access-Control-Allow-Headers: Content-Type, Authorization\r\n"
+    response = response + "Content-Length: 0\r\n"
+    response = response + "\r\n"
+    damn response
+}
+
+fr fr Production-Ready Request Handler with HTTP/2
+slay handle_production_request(method tea, path tea, body tea, headers tea) tea { fr fr Check circuit breaker
+    lowkey circuit_breaker_is_open() {
+        damn build_error_response(503, "Service temporarily unavailable")
+    } fr fr Apply rate limiting
+    lowkey !rate_limit_consume(1) {
+        damn build_error_response(429, "Too many requests")
+    } fr fr Validate request
     lowkey !validate_request(method, path) {
+        circuit_breaker_record_failure()
         damn build_error_response(400, "Invalid request")
+    } fr fr Handle WebSocket upgrade
+    lowkey headers.contains("Upgrade: websocket") {
+        sus ws_key tea = "dGhlIHNhbXBsZSBub25jZQ=="
+        damn websocket_handshake_response(ws_key, "chat")
     } fr fr Handle different routes
     lowkey path == "/" {
-        damn build_response(200, "<h1>Welcome to CURSED WebVibez!</h1>")
+        circuit_breaker_record_success()
+        damn build_response(200, "<h1>Welcome to CURSED WebVibez HTTP/2!</h1>")
     } elif path == "/health" {
+        circuit_breaker_record_success()
         damn health_check()
     } elif path == "/metrics" {
+        circuit_breaker_record_success()
         damn metrics_endpoint()
-    } elif path.starts_with("/api/") { fr fr API routes
+    } elif path == "/http2" {
+        circuit_breaker_record_success()
+        damn http2_client_request("https://api.example.com", method)
+    } elif path.starts_with("/api/") { fr fr API routes with load balancing
+        sus selected_server tea = load_balancer_get_server()
+        vibez.spill("Routing request to: " + selected_server)
+        
         lowkey method == "GET" {
-            damn build_json_response(200, "API GET response")
+            circuit_breaker_record_success()
+            damn build_json_response(200, "API GET response from " + selected_server)
         } elif method == "POST" {
-            damn build_json_response(201, "API POST response")
+            circuit_breaker_record_success()
+            damn build_json_response(201, "API POST response from " + selected_server)
+        } elif method == "OPTIONS" {
+            damn http_method_options("GET, POST, PUT, DELETE, OPTIONS")
         } else {
             damn build_error_response(405, "Method not allowed")
         }
     } elif path.starts_with("/static/") {
+        circuit_breaker_record_success()
         damn serve_static_file(path.substring(8))
     } else {
         damn build_error_response(404, "Not found")

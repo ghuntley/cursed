@@ -65,6 +65,177 @@ pub fn string_concat(allocator: Allocator, a: []const u8, b: []const u8) ![]u8 {
     return std.fmt.allocPrint(allocator, "{s}{s}", .{ a, b });
 }
 
+// === ENVIRONMENT VARIABLE RUNTIME FUNCTIONS ===
+
+pub fn runtime_get_env(allocator: Allocator, name: []const u8) !struct {[]const u8, []const u8} {
+    const value = std.posix.getenv(name);
+    if (value) |v| {
+        const owned_value = try allocator.dupe(u8, v);
+        return .{owned_value, ""};
+    } else {
+        return .{"", "Environment variable not found"};
+    }
+}
+
+pub fn runtime_set_env(allocator: Allocator, name: []const u8, value: []const u8) ![]const u8 {
+    _ = allocator;
+    
+    // Create null-terminated strings for C compatibility
+    const name_z = try std.heap.c_allocator.dupeZ(u8, name);
+    defer std.heap.c_allocator.free(name_z);
+    const value_z = try std.heap.c_allocator.dupeZ(u8, value);
+    defer std.heap.c_allocator.free(value_z);
+    
+    const result = std.c.setenv(name_z, value_z, 1);
+    if (result != 0) {
+        return "Failed to set environment variable";
+    }
+    return "";
+}
+
+pub fn runtime_unset_env(allocator: Allocator, name: []const u8) ![]const u8 {
+    _ = allocator;
+    
+    const name_z = try std.heap.c_allocator.dupeZ(u8, name);
+    defer std.heap.c_allocator.free(name_z);
+    
+    const result = std.c.unsetenv(name_z);
+    if (result != 0) {
+        return "Failed to unset environment variable";
+    }
+    return "";
+}
+
+pub fn runtime_list_env(allocator: Allocator) !struct {ArrayList([]const u8), []const u8} {
+    var env_list = ArrayList([]const u8).init(allocator);
+    
+    // Use std.process.getEnvMap for cross-platform environment variable access
+    var env_map = try std.process.getEnvMap(allocator);
+    defer env_map.deinit();
+    
+    var iterator = env_map.iterator();
+    while (iterator.next()) |entry| {
+        const env_str = try std.fmt.allocPrint(allocator, "{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
+        try env_list.append(env_str);
+    }
+    
+    return .{env_list, ""};
+}
+
+pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
+    var result = std.ArrayList(u8).init(allocator);
+    defer result.deinit();
+    
+    var i: usize = 0;
+    while (i < text.len) {
+        if (text[i] == '$') {
+            if (i + 1 < text.len and text[i + 1] == '{') {
+                // Handle ${VAR} format
+                const start = i + 2;
+                var end = start;
+                while (end < text.len and text[end] != '}') {
+                    end += 1;
+                }
+                if (end < text.len and text[end] == '}') {
+                    const var_name = text[start..end];
+                    const value = std.posix.getenv(var_name) orelse "";
+                    try result.appendSlice(value);
+                    i = end + 1;
+                } else {
+                    try result.append(text[i]);
+                    i += 1;
+                }
+            } else if (i + 1 < text.len and std.ascii.isAlphabetic(text[i + 1])) {
+                // Handle $VAR format
+                const start = i + 1;
+                var end = start;
+                while (end < text.len and (std.ascii.isAlphanumeric(text[end]) or text[end] == '_')) {
+                    end += 1;
+                }
+                const var_name = text[start..end];
+                const value = std.posix.getenv(var_name) orelse "";
+                try result.appendSlice(value);
+                i = end;
+            } else {
+                try result.append(text[i]);
+                i += 1;
+            }
+        } else {
+            try result.append(text[i]);
+            i += 1;
+        }
+    }
+    
+    return result.toOwnedSlice();
+}
+
+pub fn runtime_clear_env(allocator: Allocator) ![]const u8 {
+    // Clear all environment variables by getting the current environment
+    // and unsetting each variable
+    var env_map = try std.process.getEnvMap(allocator);
+    defer env_map.deinit();
+    
+    var iterator = env_map.iterator();
+    while (iterator.next()) |entry| {
+        const name_z = try std.heap.c_allocator.dupeZ(u8, entry.key_ptr.*);
+        defer std.heap.c_allocator.free(name_z);
+        _ = std.c.unsetenv(name_z);
+    }
+    
+    return "";
+}
+
+pub fn runtime_env_for_process(allocator: Allocator) !struct {ArrayList([]const u8), []const u8} {
+    var env_strings = ArrayList([]const u8).init(allocator);
+    
+    // Use std.process.getEnvMap for cross-platform environment variable access
+    var env_map = try std.process.getEnvMap(allocator);
+    defer env_map.deinit();
+    
+    var iterator = env_map.iterator();
+    while (iterator.next()) |entry| {
+        const env_str = try std.fmt.allocPrint(allocator, "{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
+        try env_strings.append(env_str);
+    }
+    
+    return .{env_strings, ""};
+}
+
+pub fn runtime_to_lowercase(allocator: Allocator, str: []const u8) ![]const u8 {
+    var result = try allocator.alloc(u8, str.len);
+    for (str, 0..) |c, i| {
+        result[i] = std.ascii.toLower(c);
+    }
+    return result;
+}
+
+pub fn runtime_split_path(allocator: Allocator, path_str: []const u8) !ArrayList([]const u8) {
+    var paths = ArrayList([]const u8).init(allocator);
+    
+    const separator = switch (std.builtin.os.tag) {
+        .windows => ';',
+        else => ':',
+    };
+    
+    var iter = std.mem.split(u8, path_str, &[_]u8{separator});
+    while (iter.next()) |path| {
+        if (path.len > 0) {
+            const owned_path = try allocator.dupe(u8, path);
+            try paths.append(owned_path);
+        }
+    }
+    
+    return paths;
+}
+
+pub fn runtime_parse_int(allocator: Allocator, str: []const u8) !struct {i64, []const u8} {
+    _ = allocator;
+    const parsed = std.fmt.parseInt(i64, str, 10) catch {
+        return .{0, "Invalid integer format"};
+    };
+    return .{parsed, ""};
+}
+
 // === ARRAY RUNTIME FUNCTIONS ===
 
 // Note: These work with generic Variable arrays
@@ -112,7 +283,7 @@ pub fn array_pop(array: *ArrayList(Variable)) ?Variable {
     return array.popOrNull();
 }
 
-pub fn array_sort(allocator: Allocator, array: *ArrayList(Variable)) !void {
+pub fn array_sort(_: Allocator, array: *ArrayList(Variable)) !void {
     // Simple sorting for integers and floats
     std.mem.sort(Variable, array.items, {}, compareVariables);
 }
@@ -260,6 +431,77 @@ pub fn runtime_current_time_nanos() i64 {
     return timestamp * 1000000; // Convert milliseconds to nanoseconds
 }
 
+// === CORE TIME FUNCTIONS FOR CURSED STDLIB ===
+
+/// Get current UTC timestamp in milliseconds
+export fn runtime_get_current_time_ms() callconv(.C) i64 {
+    return std.time.milliTimestamp();
+}
+
+/// Sleep for specified milliseconds
+export fn runtime_sleep_ms(milliseconds: i64) callconv(.C) void {
+    const duration_ms = @max(1, milliseconds);
+    std.Thread.sleep(@intCast(duration_ms * 1000000));
+}
+
+/// Get local timezone offset in minutes from UTC
+export fn runtime_get_timezone_offset() callconv(.C) i64 {
+    // Get system timezone offset
+    const now = std.time.timestamp();
+    
+    // Get local time and UTC time
+    const local_tm = std.c.localtime(&now);
+    const utc_tm = std.c.gmtime(&now);
+    
+    if (local_tm == null or utc_tm == null) {
+        return 0; // Default to UTC if conversion fails
+    }
+    
+    // Calculate difference in minutes
+    const local_seconds = local_tm.?.tm_hour * 3600 + local_tm.?.tm_min * 60 + local_tm.?.tm_sec;
+    const utc_seconds = utc_tm.?.tm_hour * 3600 + utc_tm.?.tm_min * 60 + utc_tm.?.tm_sec;
+    
+    // Handle day boundary crossings
+    var offset_seconds = local_seconds - utc_seconds;
+    
+    // Adjust for day boundary crossings
+    if (offset_seconds > 12 * 3600) {
+        offset_seconds -= 24 * 3600;
+    } else if (offset_seconds < -12 * 3600) {
+        offset_seconds += 24 * 3600;
+    }
+    
+    return @divTrunc(offset_seconds, 60); // Convert to minutes
+}
+
+/// Get local timezone name as C string
+export fn runtime_get_timezone_name() callconv(.C) [*:0]const u8 {
+    const now = std.time.timestamp();
+    const local_tm = std.c.localtime(&now);
+    
+    if (local_tm != null and local_tm.?.tm_zone != null) {
+        return local_tm.?.tm_zone;
+    }
+    
+    // Fallback to determining timezone based on offset
+    const offset_minutes = runtime_get_timezone_offset();
+    
+    // Common timezone mappings based on offset
+    return switch (offset_minutes) {
+        -480 => "PST",  // UTC-8
+        -420 => "MST",  // UTC-7
+        -360 => "CST",  // UTC-6
+        -300 => "EST",  // UTC-5
+        0 => "UTC",     // UTC+0
+        60 => "CET",    // UTC+1
+        120 => "EET",   // UTC+2
+        480 => "CST",   // UTC+8 (China)
+        540 => "JST",   // UTC+9 (Japan)
+        600 => "AEST",  // UTC+10 (Australia)
+        else => "UTC",  // Default fallback
+    };
+}
+
 pub fn format_time(allocator: Allocator, timestamp: i64) ![]u8 {
     // Basic ISO format
     const seconds = @divTrunc(timestamp, 1000);
@@ -313,15 +555,69 @@ pub fn runtime_print_string(message: []const u8) void {
     print("{s}", .{message});
 }
 
+pub fn runtime_read_line() ![]u8 {
+    var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    defer arena.deinit();
+    const allocator = arena.allocator();
+    
+    const stdin = std.io.getStdIn().reader();
+    const line = try stdin.readUntilDelimiterAlloc(allocator, '\n', 1024);
+    
+    // Remove carriage return if present (Windows compatibility)
+    if (line.len > 0 and line[line.len - 1] == '\r') {
+        return try std.heap.page_allocator.dupe(u8, line[0..line.len - 1]);
+    }
+    return try std.heap.page_allocator.dupe(u8, line);
+}
+
+pub fn runtime_write_stdout(data: []const u8) void {
+    const stdout = std.io.getStdOut().writer();
+    stdout.writeAll(data) catch {};
+}
+
+pub fn runtime_write_stderr(data: []const u8) void {
+    const stderr = std.io.getStdErr().writer();
+    stderr.writeAll(data) catch {};
+}
+
+pub fn runtime_read_stdin() ![]u8 {
+    return runtime_read_line();
+}
+
+pub fn runtime_console_write(message: []const u8) void {
+    runtime_write_stdout(message);
+}
+
+pub fn runtime_get_current_time_iso(allocator: Allocator) ![]u8 {
+    const timestamp = std.time.milliTimestamp();
+    return format_time(allocator, timestamp);
+}
+
 pub fn runtime_read_file(allocator: Allocator, filename: []const u8) ![]u8 {
     return std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024);
 }
 
 pub fn runtime_write_file(filename: []const u8, content: []const u8) !bool {
-    const file = std.fs.cwd().createFile(filename, .{}) catch return false;
+    std.debug.print("DEBUG: runtime_write_file called with filename='{s}', content='{s}'\n", .{filename, content});
+    const file = std.fs.cwd().createFile(filename, .{}) catch |err| {
+        std.debug.print("DEBUG: Failed to create file: {}\n", .{err});
+        return false;
+    };
     defer file.close();
-    file.writeAll(content) catch return false;
+    file.writeAll(content) catch |err| {
+        std.debug.print("DEBUG: Failed to write content: {}\n", .{err});
+        return false;
+    };
+    std.debug.print("DEBUG: File written successfully\n");
     return true;
+}
+
+pub fn runtime_read_file_content(allocator: Allocator, filename: []const u8) ![]u8 {
+    return runtime_read_file(allocator, filename);
+}
+
+pub fn runtime_write_file_content(filename: []const u8, content: []const u8) !bool {
+    return runtime_write_file(filename, content);
 }
 
 pub fn runtime_append_file(filename: []const u8, content: []const u8) !bool {
@@ -382,87 +678,182 @@ pub fn runtime_rename_file(old_name: []const u8, new_name: []const u8) !bool {
     return true;
 }
 
-// === HTTP RUNTIME FUNCTIONS ===
+// === HTTP RUNTIME FUNCTIONS (Removed - see networking section below) ===
 
-pub fn runtime_http_get(allocator: Allocator, url: []const u8) ![]u8 {
-    // Parse URL to extract host and path
-    if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
-        return std.fmt.allocPrint(allocator, "{{\"status_code\": 400, \"headers\": \"\", \"body\": \"Invalid URL protocol\", \"error\": \"URL must start with http:// or https://\"}}", .{});
-    }
-    
-    // Extract protocol
-    const is_https = std.mem.startsWith(u8, url, "https://");
-    const protocol_len = if (is_https) 8 else 7;
-    const url_without_protocol = url[protocol_len..];
-    
-    // Find first slash to separate host from path
-    const slash_pos = std.mem.indexOf(u8, url_without_protocol, "/") orelse url_without_protocol.len;
-    const host = url_without_protocol[0..slash_pos];
-    const path = if (slash_pos < url_without_protocol.len) url_without_protocol[slash_pos..] else "/";
-    
-    // For now, return a simulated response based on URL patterns
-    if (std.mem.eql(u8, host, "httpbin.org")) {
-        if (std.mem.eql(u8, path, "/get")) {
-            return std.fmt.allocPrint(allocator, "{{\"status_code\": 200, \"headers\": \"Content-Type: application/json\", \"body\": \"{{\\\"args\\\": {{}}, \\\"headers\\\": {{\\\"Host\\\": \\\"httpbin.org\\\"}}, \\\"origin\\\": \\\"127.0.0.1\\\", \\\"url\\\": \\\"{s}\\\"}}\", \"error\": \"\"}}", .{url});
-        }
-    }
-    
-    if (std.mem.eql(u8, host, "example.com")) {
-        return std.fmt.allocPrint(allocator, "{{\"status_code\": 200, \"headers\": \"Content-Type: text/html\", \"body\": \"<html><body><h1>Example Domain</h1><p>This domain is for use in illustrative examples.</p></body></html>\", \"error\": \"\"}}", .{});
-    }
-    
-    // Default response for unknown hosts
-    return std.fmt.allocPrint(allocator, "{{\"status_code\": 404, \"headers\": \"\", \"body\": \"Not Found\", \"error\": \"Host not found: {s}\"}}", .{host});
-}
-
-pub fn runtime_http_post(allocator: Allocator, url: []const u8, body: []const u8, content_type: []const u8) ![]u8 {
-    // Similar to GET but with POST semantics
-    if (!std.mem.startsWith(u8, url, "http://") and !std.mem.startsWith(u8, url, "https://")) {
-        return std.fmt.allocPrint(allocator, "{{\"status_code\": 400, \"headers\": \"\", \"body\": \"Invalid URL protocol\", \"error\": \"URL must start with http:// or https://\"}}", .{});
-    }
-    
-    // Extract protocol and host
-    const is_https = std.mem.startsWith(u8, url, "https://");
-    const protocol_len = if (is_https) 8 else 7;
-    const url_without_protocol = url[protocol_len..];
-    const slash_pos = std.mem.indexOf(u8, url_without_protocol, "/") orelse url_without_protocol.len;
-    const host = url_without_protocol[0..slash_pos];
-    const path = if (slash_pos < url_without_protocol.len) url_without_protocol[slash_pos..] else "/";
-    
-    // Handle POST to httpbin.org/post
-    if (std.mem.eql(u8, host, "httpbin.org") and std.mem.eql(u8, path, "/post")) {
-        return std.fmt.allocPrint(allocator, "{{\"status_code\": 200, \"headers\": \"Content-Type: application/json\", \"body\": \"{{\\\"args\\\": {{}}, \\\"data\\\": \\\"{s}\\\", \\\"headers\\\": {{\\\"Content-Type\\\": \\\"{s}\\\", \\\"Host\\\": \\\"httpbin.org\\\"}}, \\\"origin\\\": \\\"127.0.0.1\\\", \\\"url\\\": \\\"{s}\\\"}}\", \"error\": \"\"}}", .{ body, content_type, url });
-    }
-    
-    // Default POST response
-    return std.fmt.allocPrint(allocator, "{{\"status_code\": 200, \"headers\": \"Content-Type: {s}\", \"body\": \"Posted: {s}\", \"error\": \"\"}}", .{ content_type, body });
-}
+// Old runtime_http_post removed - using real implementation below
 
 // === NETWORKING RUNTIME FUNCTIONS ===
 
+const network_runtime = @import("network_runtime.zig");
+
 pub fn runtime_tcp_connect(allocator: Allocator, host: []const u8, port: u16) ![]u8 {
-    // Simulated TCP connection
-        if (std.mem.eql(u8, host, "localhost") or std.mem.eql(u8, host, "127.0.0.1")) {
-        return std.fmt.allocPrint(allocator, "{{\"connected\": true, \"socket_id\": 12345, \"error\": \"\"}}", .{});
-    }
+    var runtime = network_runtime.NetworkRuntime.init(allocator);
+    defer runtime.deinit();
     
-    return std.fmt.allocPrint(allocator, "{{\"connected\": false, \"socket_id\": 0, \"error\": \"Connection refused to {s}:{d}\"}}", .{ host, port });
+    runtime.tcpConnectHostname(host, port) catch |err| {
+        return std.fmt.allocPrint(allocator, "{{\"connected\": false, \"socket_id\": 0, \"error\": \"{s}\"}}", .{@errorName(err)});
+    };
+    
+    return std.fmt.allocPrint(allocator, "{{\"connected\": true, \"socket_id\": 12345, \"error\": \"\"}}", .{});
 }
 
 pub fn runtime_tcp_send(allocator: Allocator, socket_id: i32, data: []const u8) ![]u8 {
-    _ = socket_id;
+    _ = socket_id; // In real implementation, would use socket registry
+    // For now, just return success (real implementation would track socket connections)
     return std.fmt.allocPrint(allocator, "{{\"bytes_sent\": {d}, \"error\": \"\"}}", .{data.len});
 }
 
 pub fn runtime_tcp_receive(allocator: Allocator, socket_id: i32, buffer_size: usize) ![]u8 {
-    _ = socket_id;
+    _ = socket_id; // In real implementation, would use socket registry
     _ = buffer_size;
+    // For now, simulate received data (real implementation would read from socket)
     return std.fmt.allocPrint(allocator, "{{\"data\": \"Hello from server\", \"bytes_received\": 17, \"error\": \"\"}}", .{});
+}
+
+pub fn runtime_http_get(allocator: Allocator, url: []const u8) ![]u8 {
+    var runtime = network_runtime.NetworkRuntime.init(allocator);
+    defer runtime.deinit();
+    
+    var response = runtime.httpGet(url) catch |err| {
+        return std.fmt.allocPrint(allocator, "HTTP/1.1 500 Internal Server Error\r\n\r\nError: {s}", .{@errorName(err)});
+    };
+    defer response.deinit();
+    
+    // Format as HTTP response
+    return std.fmt.allocPrint(allocator, "HTTP/1.1 {d} {s}\r\nContent-Length: {d}\r\n\r\n{s}", .{
+        response.status_code,
+        network_runtime.getStatusText(response.status_code),
+        response.body.len,
+        response.body,
+    });
+}
+
+pub fn runtime_http_post(allocator: Allocator, url: []const u8, body: []const u8) ![]u8 {
+    var runtime = network_runtime.NetworkRuntime.init(allocator);
+    defer runtime.deinit();
+    
+    var response = runtime.httpPost(url, body, "application/json") catch |err| {
+        return std.fmt.allocPrint(allocator, "HTTP/1.1 500 Internal Server Error\r\n\r\nError: {s}", .{@errorName(err)});
+    };
+    defer response.deinit();
+    
+    // Format as HTTP response
+    return std.fmt.allocPrint(allocator, "HTTP/1.1 {d} {s}\r\nContent-Length: {d}\r\n\r\n{s}", .{
+        response.status_code,
+        network_runtime.getStatusText(response.status_code),
+        response.body.len,
+        response.body,
+    });
 }
 
 pub fn runtime_file_exists(filename: []const u8) bool {
     std.fs.cwd().access(filename, .{}) catch return false;
     return true;
+}
+
+// === ADDITIONAL MISSING RUNTIME FUNCTIONS ===
+
+pub fn runtime_list_directory(allocator: Allocator, directory: []const u8) ![]u8 {
+    var dir = std.fs.cwd().openDir(directory, .{ .iterate = true }) catch {
+        return std.fmt.allocPrint(allocator, "[]", .{});
+    };
+    defer dir.close();
+    
+    var files = std.ArrayList([]const u8).init(allocator);
+    defer files.deinit();
+    
+    var iterator = dir.iterate();
+    while (try iterator.next()) |entry| {
+        try files.append(try allocator.dupe(u8, entry.name));
+    }
+    
+    // Convert to JSON array format
+    var result = std.ArrayList(u8).init(allocator);
+    defer result.deinit();
+    
+    try result.append('[');
+    for (files.items, 0..) |file, i| {
+        if (i > 0) try result.appendSlice(", ");
+        try result.append('"');
+        try result.appendSlice(file);
+        try result.append('"');
+    }
+    try result.append(']');
+    
+    return result.toOwnedSlice();
+}
+
+pub fn runtime_create_directory(directory: []const u8) bool {
+    std.fs.cwd().makeDir(directory) catch return false;
+    return true;
+}
+
+pub fn runtime_directory_exists(directory: []const u8) bool {
+    var dir = std.fs.cwd().openDir(directory, .{}) catch return false;
+    dir.close();
+    return true;
+}
+
+pub fn runtime_remove_directory(directory: []const u8) bool {
+    std.fs.cwd().deleteDir(directory) catch return false;
+    return true;
+}
+
+pub fn runtime_create_directory_all(_: Allocator, directory: []const u8) bool {
+    std.fs.cwd().makePath(directory) catch return false;
+    return true;
+}
+
+pub fn runtime_list_directory_files(allocator: Allocator, path: []const u8) ![]u8 {
+    return runtime_list_directory(allocator, path);
+}
+
+pub fn runtime_get_char_at_index(text: []const u8, index: i64) u8 {
+    return runtime_string_char_at(text, index);
+}
+
+pub fn runtime_substring(allocator: Allocator, text: []const u8, start: i64, end: i64) ![]u8 {
+    if (start < 0 or start >= text.len or end <= start or end > text.len) {
+        return allocator.dupe(u8, "");
+    }
+    
+    const start_idx: usize = @intCast(start);
+    const end_idx: usize = @intCast(end);
+    
+    return allocator.dupe(u8, text[start_idx..end_idx]);
+}
+
+pub fn runtime_string_to_int(text: []const u8) i64 {
+    return std.fmt.parseInt(i64, text, 10) catch 0;
+}
+
+pub fn runtime_string_to_float(text: []const u8) f64 {
+    return std.fmt.parseFloat(f64, text) catch 0.0;
+}
+
+pub fn runtime_int_to_string(allocator: Allocator, value: i64) ![]u8 {
+    return std.fmt.allocPrint(allocator, "{d}", .{value});
+}
+
+pub fn runtime_float_to_string(allocator: Allocator, value: f64) ![]u8 {
+    return std.fmt.allocPrint(allocator, "{d}", .{value});
+}
+
+pub fn runtime_get_last_error(allocator: Allocator) ![]u8 {
+    // Return empty string for no error
+    return allocator.dupe(u8, "");
+}
+
+pub fn runtime_clear_error() void {
+    // Nothing to clear in this implementation
+}
+
+pub fn runtime_clear_last_error() void {
+    runtime_clear_error();
+}
+
+pub fn runtime_get_arg_count(args: []const []const u8) i64 {
+    return @intCast(args.len);
 }
 
 // === STDLIB FUNCTION REGISTRY ===
@@ -551,4 +942,130 @@ export fn cursed_bounds_check_clamp(index: i64, length: i64) callconv(.C) i64 {
     if (index < 0) return 0;
     if (index >= length) return length - 1;
     return index;
+}
+
+// === CRYPTOGRAPHIC RUNTIME FUNCTIONS ===
+
+const crypto = std.crypto;
+const Hash = std.crypto.hash;
+
+/// Secure random number generation using system entropy
+export fn runtime_secure_random_bytes(buffer: [*]u8, count: i64) callconv(.C) void {
+    if (count <= 0) return;
+    
+    var rng = std.crypto.random;
+    const bytes = buffer[0..@intCast(count)];
+    rng.bytes(bytes);
+}
+
+/// SHA-256 hash implementation using Zig's crypto library
+export fn runtime_sha256_hash(data: [*:0]const u8, data_len: i64, output: [*]u8) callconv(.C) void {
+    if (data_len <= 0) return;
+    
+    const input_data = data[0..@intCast(data_len)];
+    var hasher = Hash.sha2.Sha256.init(.{});
+    hasher.update(input_data);
+    const hash = hasher.finalResult();
+    
+    // Copy 32-byte hash to output buffer
+    @memcpy(output[0..32], hash[0..]);
+}
+
+/// AES-GCM encryption using real cryptographic implementation
+export fn runtime_aes_gcm_encrypt(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) void {
+    // Use AES-128-GCM for now (16-byte key, 12-byte nonce)
+    const pt_len = std.mem.len(plaintext);
+    const input_data = plaintext[0..pt_len];
+    const key_bytes = key[0..16]; // AES-128 key
+    const nonce_bytes = nonce[0..12]; // 96-bit nonce
+    
+    // Initialize AES-GCM cipher
+    var cipher = crypto.aead.aes_gcm.Aes128Gcm.init(key_bytes[0..16].*);
+    
+    // Encrypt with authentication tag
+    const ciphertext = output[0..pt_len];
+    const tag = output[pt_len..pt_len + 16];
+    
+    cipher.encrypt(ciphertext, tag[0..16], input_data, "", nonce_bytes[0..12].*);
+}
+
+/// AES-GCM decryption using real cryptographic implementation
+export fn runtime_aes_gcm_decrypt(ciphertext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) bool {
+    const ct_len = std.mem.len(ciphertext);
+    if (ct_len < 16) return false; // Need at least 16 bytes for tag
+    
+    const key_bytes = key[0..16]; // AES-128 key
+    const nonce_bytes = nonce[0..12]; // 96-bit nonce
+    
+    // Split ciphertext and tag
+    const actual_ct = ciphertext[0..ct_len - 16];
+    const tag = ciphertext[ct_len - 16..ct_len];
+    
+    // Initialize AES-GCM cipher
+    var cipher = crypto.aead.aes_gcm.Aes128Gcm.init(key_bytes[0..16].*);
+    
+    // Decrypt and verify
+    const plaintext = output[0..actual_ct.len];
+    cipher.decrypt(plaintext, actual_ct, tag[0..16].*, "", nonce_bytes[0..12].*) catch return false;
+    
+    return true;
+}
+
+/// PBKDF2 key derivation using SHA-256
+export fn runtime_pbkdf2_derive(password: [*:0]const u8, salt: [*:0]const u8, iterations: i32, output: [*]u8, output_len: i32) callconv(.C) void {
+    if (iterations <= 0 or output_len <= 0) return;
+    
+    const pw_len = std.mem.len(password);
+    const salt_len = std.mem.len(salt);
+    
+    const pw_bytes = password[0..pw_len];
+    const salt_bytes = salt[0..salt_len];
+    const out_bytes = output[0..@intCast(output_len)];
+    
+    std.crypto.pwhash.pbkdf2(out_bytes, pw_bytes, salt_bytes, @intCast(iterations), std.crypto.auth.hmac.sha2.HmacSha256);
+}
+
+/// HMAC-SHA256 authentication
+export fn runtime_hmac_sha256(key: [*:0]const u8, message: [*:0]const u8, output: [*]u8) callconv(.C) void {
+    const key_len = std.mem.len(key);
+    const msg_len = std.mem.len(message);
+    
+    const key_bytes = key[0..key_len];
+    const msg_bytes = message[0..msg_len];
+    
+    var hmac = std.crypto.auth.hmac.sha2.HmacSha256.init(key_bytes);
+    hmac.update(msg_bytes);
+    const result = hmac.final();
+    
+    @memcpy(output[0..32], result[0..]);
+}
+
+/// ChaCha20 stream cipher encryption/decryption
+export fn runtime_chacha20(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) void {
+    const pt_len = std.mem.len(plaintext);
+    const input_data = plaintext[0..pt_len];
+    const key_bytes = key[0..32]; // 256-bit key
+    const nonce_bytes = nonce[0..12]; // 96-bit nonce
+    
+    const ciphertext = output[0..pt_len];
+    
+    std.crypto.stream.chacha.ChaCha20IETF.xor(ciphertext, input_data, 0, key_bytes[0..32].*, nonce_bytes[0..12].*);
+}
+
+/// Constant-time memory comparison to prevent timing attacks
+export fn runtime_constant_time_compare(a: [*:0]const u8, b: [*:0]const u8, len: i64) callconv(.C) bool {
+    if (len <= 0) return true;
+    
+    const bytes_a = a[0..@intCast(len)];
+    const bytes_b = b[0..@intCast(len)];
+    
+    return std.crypto.utils.timingSafeEql([*]const u8, bytes_a.ptr, bytes_b.ptr, @intCast(len));
+}
+
+/// Secure memory wiping to prevent data recovery
+export fn runtime_secure_wipe(ptr: [*]u8, len: i64) callconv(.C) void {
+    if (len <= 0) return;
+    
+    const bytes = ptr[0..@intCast(len)];
+    std.crypto.utils.secureZero(u8, bytes);
 }

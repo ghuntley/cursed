@@ -5,6 +5,7 @@ yeet "stringz"
 yeet "mathz" 
 yeet "vibez"
 yeet "networkz"
+yeet "sqlite_driver"
 
 fr fr ===== DATABASE STRUCTURES =====
 
@@ -179,27 +180,26 @@ slay mysql_query(connection DatabaseConnection, sql tea) QueryResult {
 fr fr ===== SQLITE IMPLEMENTATION =====
 
 slay sqlite_open(database_file tea) DatabaseConnection {
-    fr fr SQLite connection (file-based)
+    fr fr Real SQLite connection using sqlite_driver
+    sus real_connection SQLiteConnection = sqlite_real_open(database_file)
+    
+    fr fr Convert to standard DatabaseConnection interface
     sus connection DatabaseConnection = DatabaseConnection{}
     connection.database_type = "sqlite"
     connection.connection_string = "sqlite://" + database_file
+    connection.is_connected = real_connection.is_connected
+    connection.connection_id = real_connection.connection_id
+    connection.last_error = real_connection.last_error
+    connection.transaction_active = real_connection.transaction_active
     
-    fr fr Check if file exists or create new database
-    sus file_exists lit = file_exists_check(database_file)
-    ready (!file_exists) {
-        vibez.spill("Creating new SQLite database: " + database_file)
-    }
+    fr fr Store real connection handle (would need proper handle storage)
+    fr fr For now, we'll use the connection_id as a reference
     
-    fr fr SQLite connection simulation
-    connection.is_connected = based
-    connection.connection_id = generate_connection_id()
-    
-    vibez.spill("Opened SQLite database: " + database_file)
     damn connection
 }
 
 slay sqlite_query(connection DatabaseConnection, sql tea) QueryResult {
-    fr fr Execute SQLite query
+    fr fr Execute real SQLite query using sqlite_driver
     sus result QueryResult = QueryResult{}
     
     ready (!connection.is_connected) {
@@ -208,25 +208,40 @@ slay sqlite_query(connection DatabaseConnection, sql tea) QueryResult {
         damn result
     }
     
-    sus start_time drip = get_current_time_ms()
+    fr fr Get real SQLite connection (this would need proper connection management)
+    fr fr For now we'll create a temporary connection for demonstration
+    sus real_connection SQLiteConnection = sqlite_real_open(extract_database_path_from_connection_string(connection.connection_string))
     
-    fr fr SQLite uses same SQL syntax
-    ready (starts_with(sql, "SELECT")) {
-        result = execute_sqlite_select(sql)
-    } otherwise ready (starts_with(sql, "INSERT")) {
-        result = execute_sqlite_insert(sql)
-    } otherwise ready (starts_with(sql, "UPDATE")) {
-        result = execute_sqlite_update(sql)
-    } otherwise ready (starts_with(sql, "DELETE")) {
-        result = execute_sqlite_delete(sql)
-    } otherwise ready (starts_with(sql, "CREATE")) {
-        result = execute_sqlite_ddl(sql)
-    } otherwise {
-        result = execute_sqlite_other(sql)
+    ready (!real_connection.is_connected) {
+        result.success = cringe
+        result.rows = []
+        damn result
     }
     
-    result.execution_time_ms = get_current_time_ms() - start_time
-    result.success = based
+    fr fr Execute real query
+    sus real_result SQLiteResult = sqlite_real_query(&real_connection, sql)
+    
+    fr fr Convert SQLiteResult to QueryResult
+    result.success = real_result.success
+    result.execution_time_ms = real_result.execution_time_ms
+    result.rows_affected = real_result.rows_affected
+    result.last_insert_id = real_result.last_insert_id
+    
+    fr fr Convert column names
+    result.column_names = real_result.column_names
+    
+    fr fr Convert rows data (flatten 2D array to 1D with comma separation for compatibility)
+    sus formatted_rows []tea = []
+    sus i drip = 0
+    bestie (i < array_length(real_result.rows)) {
+        sus row_data tea = stringz.join(real_result.rows[i], ",")
+        formatted_rows[i] = row_data
+        i = i + 1
+    }
+    result.rows = formatted_rows
+    
+    fr fr Clean up real connection
+    sqlite_real_close(&real_connection)
     
     damn result
 }
@@ -606,54 +621,105 @@ slay create_mysql_command_packet(sql tea) tea {
     damn packet
 }
 
-fr fr ===== MOCK QUERY EXECUTION =====
+fr fr ===== REAL QUERY EXECUTION (REPLACED MOCK IMPLEMENTATIONS) =====
 
 slay execute_postgres_select(sql tea) QueryResult {
+    fr fr TODO: Replace with real PostgreSQL implementation
+    fr fr For now, return error indicating need for real implementation
     sus result QueryResult = QueryResult{}
-    result.column_names = ["id", "name", "email"]
-    result.rows = ["1,John Doe,john@example.com", "2,Jane Smith,jane@example.com"]
-    result.rows_affected = 2
+    result.column_names = []
+    result.rows = []
+    result.rows_affected = 0
+    result.success = cringe
+    vibez.spill("WARNING: PostgreSQL mock implementation - need real driver")
     damn result
 }
 
 slay execute_postgres_insert(sql tea) QueryResult {
+    fr fr TODO: Replace with real PostgreSQL implementation
     sus result QueryResult = QueryResult{}
-    result.rows_affected = 1
-    result.last_insert_id = 3
+    result.rows_affected = 0
+    result.last_insert_id = 0
+    result.success = cringe
+    vibez.spill("WARNING: PostgreSQL mock implementation - need real driver")
     damn result
 }
 
 slay execute_postgres_update(sql tea) QueryResult {
+    fr fr TODO: Replace with real PostgreSQL implementation
     sus result QueryResult = QueryResult{}
-    result.rows_affected = 1
+    result.rows_affected = 0
+    result.success = cringe
+    vibez.spill("WARNING: PostgreSQL mock implementation - need real driver")
     damn result
 }
 
 slay execute_postgres_delete(sql tea) QueryResult {
+    fr fr TODO: Replace with real PostgreSQL implementation
     sus result QueryResult = QueryResult{}
-    result.rows_affected = 1
+    result.rows_affected = 0
+    result.success = cringe
+    vibez.spill("WARNING: PostgreSQL mock implementation - need real driver")
     damn result
 }
 
 slay execute_postgres_ddl(sql tea) QueryResult {
+    fr fr TODO: Replace with real PostgreSQL implementation
     sus result QueryResult = QueryResult{}
     result.rows_affected = 0
+    result.success = cringe
+    vibez.spill("WARNING: PostgreSQL mock implementation - need real driver")
     damn result
 }
 
-fr fr Similar functions for MySQL and SQLite...
-slay execute_mysql_select(sql tea) QueryResult { damn execute_postgres_select(sql) }
-slay execute_mysql_insert(sql tea) QueryResult { damn execute_postgres_insert(sql) }
-slay execute_mysql_update(sql tea) QueryResult { damn execute_postgres_update(sql) }
-slay execute_mysql_delete(sql tea) QueryResult { damn execute_postgres_delete(sql) }
-slay execute_mysql_ddl(sql tea) QueryResult { damn execute_postgres_ddl(sql) }
+fr fr MySQL functions - also need real implementations
+slay execute_mysql_select(sql tea) QueryResult { 
+    vibez.spill("WARNING: MySQL mock implementation - need real driver")
+    damn execute_postgres_select(sql) 
+}
+slay execute_mysql_insert(sql tea) QueryResult { 
+    vibez.spill("WARNING: MySQL mock implementation - need real driver")
+    damn execute_postgres_insert(sql) 
+}
+slay execute_mysql_update(sql tea) QueryResult { 
+    vibez.spill("WARNING: MySQL mock implementation - need real driver")
+    damn execute_postgres_update(sql) 
+}
+slay execute_mysql_delete(sql tea) QueryResult { 
+    vibez.spill("WARNING: MySQL mock implementation - need real driver")
+    damn execute_postgres_delete(sql) 
+}
+slay execute_mysql_ddl(sql tea) QueryResult { 
+    vibez.spill("WARNING: MySQL mock implementation - need real driver")
+    damn execute_postgres_ddl(sql) 
+}
 
-slay execute_sqlite_select(sql tea) QueryResult { damn execute_postgres_select(sql) }
-slay execute_sqlite_insert(sql tea) QueryResult { damn execute_postgres_insert(sql) }
-slay execute_sqlite_update(sql tea) QueryResult { damn execute_postgres_update(sql) }
-slay execute_sqlite_delete(sql tea) QueryResult { damn execute_postgres_delete(sql) }
-slay execute_sqlite_ddl(sql tea) QueryResult { damn execute_postgres_ddl(sql) }
-slay execute_sqlite_other(sql tea) QueryResult { damn execute_postgres_ddl(sql) }
+fr fr SQLite functions are now handled by real implementation above
+fr fr These are kept for backward compatibility but warn about deprecation
+slay execute_sqlite_select(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_select(sql) 
+}
+slay execute_sqlite_insert(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_insert(sql) 
+}
+slay execute_sqlite_update(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_update(sql) 
+}
+slay execute_sqlite_delete(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_delete(sql) 
+}
+slay execute_sqlite_ddl(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_ddl(sql) 
+}
+slay execute_sqlite_other(sql tea) QueryResult { 
+    vibez.spill("WARNING: Deprecated SQLite mock - use sqlite_real_query instead")
+    damn execute_postgres_ddl(sql) 
+}
 
 fr fr ===== UTILITY FUNCTION IMPLEMENTATIONS =====
 
@@ -661,6 +727,15 @@ slay generate_connection_id() drip { damn 12345 }
 slay generate_statement_id() drip { damn 67890 }
 slay get_current_time_ms() drip { damn 1640995200000 }
 slay file_exists_check(path tea) lit { damn based }
+
+slay extract_database_path_from_connection_string(conn_string tea) tea {
+    fr fr Extract database path from SQLite connection string
+    ready (stringz.starts_with(conn_string, "sqlite://")) {
+        damn stringz.substring(conn_string, 9, stringz.length(conn_string))
+    }
+    fr fr Default to treating as direct path
+    damn conn_string
+}
 slay count_sql_parameters(sql tea) drip { damn 0 }
 slay substitute_sql_parameters(sql tea, params []tea) tea { damn sql }
 slay build_postgres_connection_string(host tea, port drip, db tea, user tea, pass tea) tea {

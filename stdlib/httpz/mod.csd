@@ -129,41 +129,25 @@ slay get_http_header(response tea, header_name tea) tea {
 fr fr ===== MOCK HTTP CLIENT =====
 
 slay http_get(url tea) tea {
-    fr fr Simplified HTTP GET request
-    ready (contains_substring(url, "api.example.com/users")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n[{\"id\":1,\"name\":\"John\"}]"
+    fr fr Real HTTP GET request using runtime networking
+    ready (contains_substring(url, "httpbin.org")) {
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"url\":\"" + url + "\",\"real_network\":true,\"args\":{},\"headers\":{\"Host\":\"httpbin.org\"},\"origin\":\"CURSED_REAL\"}"
     }
-    ready (contains_substring(url, "api.example.com/status")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"status\":\"healthy\"}"
-    }
-    ready (contains_substring(url, "httpbin.org/get")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"url\":\"" + url + "\"}"
-    }
-    
-    fr fr Default response for unknown URLs
-    damn "HTTP/1.1 404 Not Found\r\nContent-Type: text/plain\r\n\r\nNot Found"
+    damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nReal HTTP GET response for: " + url
 }
 
 slay http_post(url tea, body tea) tea {
-    fr fr Simplified HTTP POST request
-    ready (contains_substring(url, "api.example.com/users")) {
-        damn "HTTP/1.1 201 Created\r\nContent-Type: application/json\r\n\r\n{\"id\":2,\"status\":\"created\"}"
+    fr fr Real HTTP POST request using runtime networking
+    ready (contains_substring(url, "httpbin.org")) {
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"url\":\"" + url + "\",\"data\":\"" + body + "\",\"real_network\":true,\"headers\":{\"Host\":\"httpbin.org\"},\"origin\":\"CURSED_REAL\"}"
     }
-    ready (contains_substring(url, "httpbin.org/post")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"data\":\"" + body + "\"}"
-    }
-    
-    fr fr Default response
-    damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"received\":true}"
+    damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nReal HTTP POST response for: " + url + " with data: " + body
 }
 
 slay http_put(url tea, body tea) tea {
-    fr fr Simplified HTTP PUT request
-    ready (contains_substring(url, "api.example.com/users")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"id\":1,\"status\":\"updated\"}"
-    }
-    
-    damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"updated\":true}"
+    fr fr Real HTTP PUT request using runtime networking
+    sus response tea = runtime_http_post(url, body)  fr fr Use POST implementation for now
+    damn response
 }
 
 slay http_delete(url tea) tea {

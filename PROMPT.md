@@ -4,7 +4,7 @@
 
 0c. study fix_plan.md.
 
-1. Your task is to convert the compiler from rust to zig and produce an compiled application in the cursed language for that functionality using parrallel subagents. Follow the fix_plan.md and choose the most important 50 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
+1. Your task is to implement the standard libary (stdlib) in cursed and produce tests for the stdlib functionality in curded, and to run the tests to ensure they work. If the compiler needs improvement you may do this (see specs). Use parrallel subagents. Follow the fix_plan.md and choose the most important 200 things. Before making changes search codebase (don't assume not implemented) using subagents. You may use up to 500 parrallel subagents for all operations but only 1 subagent for build/tests of zig.
 
 2. After implementing functionality or resolving problems, run the tests for that unit of code that was improved. If functionality is missing then it's your job to add it as per the application specifications. Think hard.
 

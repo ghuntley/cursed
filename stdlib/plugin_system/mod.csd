@@ -1,7 +1,7 @@
-yeet "core"
+fr fr DEPRECATED - This simulation has been replaced with real dynamic library loading
+fr fr Please use plugin_system/real_plugin_loader for actual plugin functionality
 
-fr fr plugin_system - Pure CURSED Plugin Management Module
-fr fr Implements dynamic plugin loading, discovery, lifecycle management without FFI
+yeet "plugin_system/real_plugin_loader"
 
 fr fr Core Plugin Types
 be_like Plug = normie fr fr Plugin handle ID

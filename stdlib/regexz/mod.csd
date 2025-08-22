@@ -1,9 +1,10 @@
-fr fr REGEXZ MODULE - Complete Regular Expression Engine
-fr fr Full regex implementation with compilation, matching, and replacement
+fr fr REGEXZ MODULE - Complete Regular Expression Engine with NFA/DFA Implementation
+fr fr Full regex implementation with Thompson construction, subset construction, and Unicode support
 
 yeet "stringz"
 yeet "mathz"
 yeet "vibez"
+yeet "regexz/regex_engine"
 
 fr fr ===== REGEX STRUCTURES =====
 
@@ -36,38 +37,8 @@ squad RegexCompiler {
 fr fr ===== REGEX COMPILATION =====
 
 slay regex_compile(pattern tea, flags tea) RegexPattern {
-    fr fr Compile regex pattern into bytecode
-    sus regex RegexPattern = RegexPattern{}
-    regex.pattern = pattern
-    regex.flags = flags
-    regex.is_compiled = cringe
-    regex.error_message = ""
-    
-    ready (pattern == "") {
-        regex.error_message = "Empty pattern"
-        damn regex
-    }
-    
-    sus compiler RegexCompiler = RegexCompiler{}
-    compiler.pattern = pattern
-    compiler.position = 0
-    compiler.bytecode = []
-    compiler.bytecode_position = 0
-    compiler.has_error = cringe
-    
-    fr fr Compile pattern to bytecode
-    compile_expression(compiler)
-    
-    ready (compiler.has_error) {
-        regex.error_message = compiler.error_message
-        damn regex
-    }
-    
-    regex.compiled_bytecode = compiler.bytecode
-    regex.is_compiled = based
-    
-    vibez.spill("Compiled regex pattern: " + pattern)
-    damn regex
+    fr fr Compile regex pattern using NFA/DFA construction
+    damn regex_compile_full(pattern, flags)
 }
 
 slay compile_expression(compiler RegexCompiler) lit {
@@ -238,56 +209,31 @@ slay compile_escape_sequence(compiler RegexCompiler) lit {
 fr fr ===== REGEX MATCHING ENGINE =====
 
 slay regex_match(regex RegexPattern, text tea) RegexMatch {
-    fr fr Execute regex against text
-    sus match RegexMatch = RegexMatch{}
-    match.text = text
-    match.start_position = -1
-    match.length = 0
-    match.groups = []
-    
+    fr fr Execute regex against text using DFA engine
     ready (!regex.is_compiled) {
+        sus match RegexMatch = RegexMatch{}
+        match.text = text
+        match.start_position = -1
+        match.length = 0
+        match.groups = []
         vibez.spill("Regex not compiled: " + regex.error_message)
         damn match
     }
     
-    fr fr Try matching at each position
-    sus text_pos drip = 0
-    bestie (text_pos <= string_length(text)) {
-        sus vm_result RegexMatch = execute_bytecode(regex.compiled_bytecode, text, text_pos)
-        
-        ready (vm_result.start_position >= 0) {
-            damn vm_result
-        }
-        
-        text_pos = text_pos + 1
-    }
-    
-    damn match  fr fr No match found
+    fr fr Deserialize DFA from bytecode and match
+    sus dfa RegexDFA = deserialize_dfa(regex.compiled_bytecode)
+    damn regex_match_dfa(dfa, text)
 }
 
 slay regex_match_all(regex RegexPattern, text tea) []RegexMatch {
-    fr fr Find all matches in text
-    sus matches []RegexMatch = []
-    sus match_count drip = 0
-    sus search_pos drip = 0
-    
-    bestie (search_pos < string_length(text)) {
-        sus remaining_text tea = substring(text, search_pos, string_length(text) - search_pos)
-        sus match RegexMatch = regex_match(regex, remaining_text)
-        
-        ready (match.start_position >= 0) {
-            match.start_position = match.start_position + search_pos
-            matches[match_count] = match
-            match_count = match_count + 1
-            
-            search_pos = match.start_position + mathz.max(match.length, 1)
-        } otherwise {
-            break
-        }
+    fr fr Find all matches using advanced engine
+    ready (!regex.is_compiled) {
+        sus empty_matches []RegexMatch = []
+        damn empty_matches
     }
     
-    vibez.spill("Found " + json_number_to_string(match_count) + " matches")
-    damn matches
+    fr fr Use advanced find all function from engine
+    damn regex_find_all_advanced(regex.pattern, text)
 }
 
 slay execute_bytecode(bytecode []drip, text tea, start_pos drip) RegexMatch {
@@ -385,40 +331,23 @@ slay execute_bytecode(bytecode []drip, text tea, start_pos drip) RegexMatch {
 fr fr ===== HIGH-LEVEL REGEX OPERATIONS =====
 
 slay regex_test(pattern tea, text tea) lit {
-    fr fr Test if pattern matches text
-    sus regex RegexPattern = regex_compile(pattern, "")
-    ready (!regex.is_compiled) {
-        damn cringe
-    }
-    
-    sus match RegexMatch = regex_match(regex, text)
+    fr fr Test if pattern matches text using advanced engine
+    sus match RegexMatch = regex_match_full(pattern, text)
     damn match.start_position >= 0
 }
 
 slay regex_find(pattern tea, text tea) tea {
-    fr fr Find first match
-    sus regex RegexPattern = regex_compile(pattern, "")
-    ready (!regex.is_compiled) {
-        damn ""
-    }
-    
-    sus match RegexMatch = regex_match(regex, text)
+    fr fr Find first match using advanced engine
+    sus match RegexMatch = regex_match_full(pattern, text)
     ready (match.start_position >= 0) {
         damn substring(text, match.start_position, match.length)
     }
-    
     damn ""
 }
 
 slay regex_find_all(pattern tea, text tea) []tea {
-    fr fr Find all matches
-    sus regex RegexPattern = regex_compile(pattern, "")
-    ready (!regex.is_compiled) {
-        sus empty_results []tea = []
-        damn empty_results
-    }
-    
-    sus matches []RegexMatch = regex_match_all(regex, text)
+    fr fr Find all matches using advanced engine
+    sus matches []RegexMatch = regex_find_all_advanced(pattern, text)
     sus results []tea = []
     sus i drip = 0
     

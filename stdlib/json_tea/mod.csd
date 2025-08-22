@@ -19,9 +19,9 @@ slay Marshal(data tea) tea {
     } else bestie is_numeric_simple(data) {
         damn data
     } else bestie is_object(data) {
-        damn data fr fr Objects passed through for now
+        damn marshal_object(data)
     } else bestie is_array(data) {
-        damn data fr fr Arrays passed through for now
+        damn marshal_array(data)
     } else {
         damn "\"" + json_escape_string(data) + "\""
     }
@@ -42,9 +42,9 @@ slay Unmarshal(json_string tea) tea {
     } else bestie is_valid_json_number(trimmed) {
         damn trimmed
     } else bestie is_object(trimmed) {
-        damn trimmed fr fr Objects passed through
+        damn unmarshal_object(trimmed)
     } else bestie is_array(trimmed) {
-        damn trimmed fr fr Arrays passed through
+        damn unmarshal_array(trimmed)
     } else {
         damn "ERROR: Invalid JSON"
     }
@@ -637,4 +637,190 @@ slay string_substring(s tea, start normie, length normie) tea { fr fr Simple sub
     } else {
         damn s fr fr Return original for simplicity
     }
+}
+
+fr fr ===== OBJECT AND ARRAY SERIALIZATION =====
+
+slay marshal_object(data tea) tea {
+    fr fr Basic object marshaling - convert key-value pairs to JSON
+    ready !is_object(data) {
+        damn "ERROR: Not an object"
+    }
+    
+    fr fr For now, handle simple object formats
+    ready data == "{}" {
+        damn "{}"
+    }
+    
+    fr fr Handle basic object pattern
+    ready string_contains(data, ":") {
+        sus result tea = "{"
+        sus pairs []tea = string_split(data, ",")
+        sus i drip = 0
+        bestie i < len(pairs) {
+            ready i > 0 {
+                result = result + ","
+            }
+            sus pair tea = string_trim(pairs[i])
+            sus key_value []tea = string_split(pair, ":")
+            ready len(key_value) == 2 {
+                sus key tea = string_trim(key_value[0])
+                sus value tea = string_trim(key_value[1])
+                result = result + "\"" + key + "\":" + Marshal(value)
+            }
+            i = i + 1
+        }
+        result = result + "}"
+        damn result
+    }
+    
+    damn data
+}
+
+slay marshal_array(data tea) tea {
+    fr fr Basic array marshaling - convert array elements to JSON
+    ready !is_array(data) {
+        damn "ERROR: Not an array"
+    }
+    
+    fr fr Handle empty array
+    ready data == "[]" {
+        damn "[]"
+    }
+    
+    fr fr Handle basic array pattern
+    ready string_starts_with(data, "[") && string_ends_with(data, "]") {
+        sus content tea = string_substring(data, 1, string_length(data) - 2)
+        sus elements []tea = string_split(content, ",")
+        sus result tea = "["
+        sus i drip = 0
+        bestie i < len(elements) {
+            ready i > 0 {
+                result = result + ","
+            }
+            sus element tea = string_trim(elements[i])
+            result = result + Marshal(element)
+            i = i + 1
+        }
+        result = result + "]"
+        damn result
+    }
+    
+    damn data
+}
+
+slay unmarshal_object(json tea) tea {
+    fr fr Basic object unmarshaling
+    ready !is_object(json) {
+        damn "ERROR: Not a JSON object"
+    }
+    
+    fr fr Return object representation for now
+    damn json
+}
+
+slay unmarshal_array(json tea) tea {
+    fr fr Basic array unmarshaling
+    ready !is_array(json) {
+        damn "ERROR: Not a JSON array"
+    }
+    
+    fr fr Return array representation for now
+    damn json
+}
+
+fr fr ===== UTILITY FUNCTIONS FOR JSON =====
+
+slay string_contains(text tea, substr tea) lit {
+    sus text_len drip = string_length(text)
+    sus substr_len drip = string_length(substr)
+    ready substr_len > text_len { damn cap }
+    
+    sus i drip = 0
+    bestie i <= text_len - substr_len {
+        sus match lit = based
+        sus j drip = 0
+        bestie j < substr_len {
+            ready char_at(text, i + j) != char_at(substr, j) {
+                match = cap
+                break
+            }
+            j = j + 1
+        }
+        ready match == based {
+            damn based
+        }
+        i = i + 1
+    }
+    damn cap
+}
+
+slay string_split(text tea, delimiter tea) []tea {
+    fr fr Simple split implementation
+    sus result []tea = []
+    ready string_length(delimiter) == 0 {
+        damn result
+    }
+    
+    sus current tea = ""
+    sus i drip = 0
+    sus text_len drip = string_length(text)
+    bestie i < text_len {
+        ready char_at(text, i) == char_at(delimiter, 0) {
+            result = append_string(result, current)
+            current = ""
+        } otherwise {
+            current = current + char_to_string(char_at(text, i))
+        }
+        i = i + 1
+    }
+    result = append_string(result, current)
+    damn result
+}
+
+slay string_trim(text tea) tea {
+    sus start drip = 0
+    sus end drip = string_length(text)
+    
+    fr fr Trim leading whitespace
+    bestie start < end && is_whitespace(char_at(text, start)) {
+        start = start + 1
+    }
+    
+    fr fr Trim trailing whitespace
+    bestie end > start && is_whitespace(char_at(text, end - 1)) {
+        end = end - 1
+    }
+    
+    damn string_substring(text, start, end - start)
+}
+
+slay is_whitespace(c normie) lit {
+    damn c == ' ' || c == '\t' || c == '\n' || c == '\r'
+}
+
+slay append_string(arr []tea, value tea) []tea {
+    sus new_arr []tea = make([]tea, len(arr) + 1)
+    sus i drip = 0
+    bestie i < len(arr) {
+        new_arr[i] = arr[i]
+        i = i + 1
+    }
+    new_arr[len(arr)] = value
+    damn new_arr
+}
+
+slay char_to_string(c normie) tea {
+    sus result [2]normie = [c, 0]
+    damn string_from_bytes(result)
+}
+
+slay string_from_bytes(bytes []normie) tea {
+    sus result tea = ""
+    sus i drip = 0
+    bestie i < len(bytes) && bytes[i] != 0 {
+        result = result + char(bytes[i])
+        i = i + 1
+    }
+    damn result
 }

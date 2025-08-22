@@ -6,9 +6,15 @@ yeet "jsonz"
 yeet "arrayz"
 yeet "stringz"
 yeet "vibez"
+yeet "timez"
+yeet "cryptz"
 yeet "registry"  # Enhanced registry functionality
 yeet "resolver"  # Dependency resolution engine
 yeet "lockfile"  # Lock file management
+yeet "http_client"  # Real HTTP client implementation
+yeet "archive_handler"  # Real archive handling
+yeet "dependency_resolver_real"  # Advanced dependency resolution
+yeet "security_verification"  # Package security verification
 
 # Package registry configuration
 squad RegistryConfig {
@@ -151,18 +157,33 @@ slay compare_versions(v1 PackageVersion, v2 PackageVersion) drip {
     damn 0
 }
 
-# Search for packages in registry
+# Search for packages in registry with real HTTP client
 slay search_packages(manager PackageManager, query tea) []PackageMetadata {
-    sus search_url tea = manager.registry.config.url + "/api/v1/packages/search?q=" + query
+    sus search_url tea = manager.registry.config.url + "/api/v1/packages/search"
     
-    sus response tea = networkz.http_get(search_url)
-    ready (!networkz.http_is_success_simple(response)) {
-        vibez.spill("Failed to search packages:", response)
+    # Build query parameters
+    sus params map<tea, tea> = {}
+    params["q"] = query
+    sus query_string tea = build_query_string(params)
+    sus full_url tea = search_url + query_string
+    
+    # Create HTTP request with proper headers
+    sus request HttpRequest = create_http_request("GET", full_url)
+    request = add_user_agent(request, "cursed-pkg/1.0.0")
+    request = add_header(request, "Accept", "application/json")
+    
+    # Add authentication if configured
+    ready (manager.registry.config.api_key != "") {
+        request = add_auth_bearer(request, manager.registry.config.api_key)
+    }
+    
+    sus response HttpResponse = execute_http_request(request)
+    ready (!is_http_success(response)) {
+        vibez.spill("Failed to search packages:", response.status_code, response.status_text)
         damn []
     }
     
-    sus body tea = networkz.http_get_body(response)
-    sus json_data JsonValue = jsonz.json_parse(body)
+    sus json_data JsonValue = jsonz.json_parse(response.body)
     
     ready (!jsonz.json_has_key(json_data, "packages")) {
         damn []
@@ -252,45 +273,61 @@ slay parse_package_metadata(json JsonValue) PackageMetadata {
     }
 }
 
-# Download package from registry
+# Download package from registry with security verification
 slay download_package(manager PackageManager, name tea, version tea) tea {
     sus pkg_url tea = manager.registry.config.url + "/api/v1/packages/" + name + "/" + version
     
-    sus response tea = networkz.http_get(pkg_url)
-    ready (!networkz.http_is_success_simple(response)) {
-        vibez.spill("Failed to get package info for", name, "version", version)
+    # Get package metadata with real HTTP client
+    sus request HttpRequest = create_http_request("GET", pkg_url)
+    request = add_user_agent(request, "cursed-pkg/1.0.0")
+    request = add_header(request, "Accept", "application/json")
+    
+    ready (manager.registry.config.api_key != "") {
+        request = add_auth_bearer(request, manager.registry.config.api_key)
+    }
+    
+    sus response HttpResponse = execute_http_request(request)
+    ready (!is_http_success(response)) {
+        vibez.spill("Failed to get package info for", name, "version", version, 
+                   "Status:", response.status_code)
         damn ""
     }
     
-    sus body tea = networkz.http_get_body(response)
-    sus json_data JsonValue = jsonz.json_parse(body)
-    
+    sus json_data JsonValue = jsonz.json_parse(response.body)
     sus download_url tea = jsonz.json_get_string(json_data, "download_url")
+    sus expected_checksum tea = jsonz.json_get_string(json_data, "checksum")
+    
     ready (download_url == "") {
         vibez.spill("No download URL found for package", name)
         damn ""
     }
     
-    # Download the package archive
-    sus download_response tea = networkz.http_get(download_url)
-    ready (!networkz.http_is_success_simple(download_response)) {
+    # Download the package archive with progress tracking
+    sus temp_file tea = manager.installer.temp_dir + "/" + name + "-" + version + ".tar.gz"
+    
+    sus download_success lit = download_file(download_url, temp_file, null)
+    ready (!download_success) {
         vibez.spill("Failed to download package", name, "from", download_url)
         damn ""
     }
     
-    sus archive_data tea = networkz.http_get_body(download_response)
-    
-    # Save to temporary file
-    sus temp_file tea = manager.installer.temp_dir + "/" + name + "-" + version + ".tar.gz"
-    ready (!filez.write_file(temp_file, archive_data)) {
-        vibez.spill("Failed to save package archive to", temp_file)
-        damn ""
+    # Verify checksum if provided
+    ready (expected_checksum != "") {
+        sus computed_checksum tea = cryptz.sha256_hash(filez.read_file_binary(temp_file))
+        ready (normalize_checksum(computed_checksum) != normalize_checksum(expected_checksum)) {
+            vibez.spill("Checksum verification failed for package", name)
+            vibez.spill("Expected:", expected_checksum)
+            vibez.spill("Computed:", computed_checksum)
+            filez.remove_file(temp_file)
+            damn ""
+        }
+        vibez.spill("Checksum verified for package", name)
     }
     
     damn temp_file
 }
 
-# Install package with dependency resolution
+# Install package with advanced dependency resolution
 slay install_package(manager PackageManager, name tea, version_spec tea) lit {
     vibez.spill("Installing package:", name, "version:", version_spec)
     
@@ -323,14 +360,30 @@ slay install_package(manager PackageManager, name tea, version_spec tea) lit {
         damn cap
     }
     
-    # Resolve and install dependencies first
-    bestie (sus i drip = 0; i < arrayz.len(target_package.dependencies); i = i + 1) {
-        sus dep PackageDependency = target_package.dependencies[i]
-        ready (!dep.optional) {
-            ready (!install_package(manager, dep.name, dep.version_req)) {
-                vibez.spill("Failed to install dependency:", dep.name)
-                damn cap
-            }
+    # Use advanced dependency resolver
+    sus resolver DependencyResolver = init_dependency_resolver(manager.registry)
+    sus root_packages []tea = [name]
+    sus resolution_result ResolutionResult = resolve_dependencies_advanced(resolver, root_packages)
+    
+    ready (!resolution_result.success) {
+        vibez.spill("Dependency resolution failed for package:", name)
+        bestie (sus i drip = 0; i < arrayz.len(resolution_result.conflicts); i = i + 1) {
+            sus conflict ResolutionConflict = resolution_result.conflicts[i]
+            vibez.spill("Conflict:", conflict.package_name, "required versions:", 
+                       stringz.join(conflict.conflicting_versions, ", "))
+        }
+        damn cap
+    }
+    
+    vibez.spill("Resolved", arrayz.len(resolution_result.resolved_packages), "packages in", 
+               resolution_result.resolution_time, "ms")
+    
+    # Install resolved packages in dependency order
+    bestie (sus i drip = 0; i < arrayz.len(resolution_result.resolved_packages); i = i + 1) {
+        sus pkg PackageMetadata = resolution_result.resolved_packages[i]
+        ready (!install_single_package(manager, pkg)) {
+            vibez.spill("Failed to install resolved package:", pkg.name)
+            damn cap
         }
     }
     
@@ -370,14 +423,24 @@ slay install_package(manager PackageManager, name tea, version_spec tea) lit {
     damn based
 }
 
-# Extract package archive (simplified tar.gz extraction)
+# Extract package archive with real tar.gz handling
 slay extract_package(archive_path tea, extract_dir tea) lit {
-    # Create extraction directory
-    filez.create_dir_all(extract_dir)
+    # Create extraction options
+    sus extraction_options ExtractionOptions = ExtractionOptions {
+        destination_dir: extract_dir,
+        preserve_permissions: based,
+        overwrite_existing: based,
+        verify_checksums: cap,  # Checksums already verified during download
+        max_extract_size: 100 * 1024 * 1024  # 100MB limit
+    }
     
-    # In a real implementation, this would properly extract tar.gz files
-    # For now, we'll simulate successful extraction
-    vibez.spill("Extracting", archive_path, "to", extract_dir)
+    # Use real archive handler for extraction
+    ready (!extract_package_archive(archive_path, extraction_options)) {
+        vibez.spill("Failed to extract archive:", archive_path)
+        damn cap
+    }
+    
+    vibez.spill("Successfully extracted", archive_path, "to", extract_dir)
     damn based
 }
 
@@ -391,9 +454,98 @@ slay get_dependency_names(dependencies []PackageDependency) []tea {
     damn names
 }
 
-# Get current timestamp (simplified)
+# Get current timestamp (real implementation)
 slay get_current_time() tea {
-    damn "2025-08-21T12:00:00Z"
+    damn timez.format_iso8601(timez.current_time())
+}
+
+# Install a single resolved package (helper for dependency resolution)
+slay install_single_package(manager PackageManager, pkg PackageMetadata) lit {
+    vibez.spill("Installing resolved package:", pkg.name, "version:", pkg.version)
+    
+    # Check if already installed at correct version
+    sus installed InstalledPackage = get_installed_package(manager, pkg.name)
+    ready (installed.name != "" && installed.version == pkg.version) {
+        vibez.spill("Package", pkg.name, "already installed at correct version")
+        damn based
+    }
+    
+    # Download the package
+    sus archive_path tea = download_package(manager, pkg.name, pkg.version)
+    ready (archive_path == "") {
+        damn cap
+    }
+    
+    # Verify package integrity and security
+    sus security_policy SecurityPolicy = create_default_security_policy()
+    sus verification_result VerificationResult = verify_package_integrity(archive_path, pkg, security_policy)
+    
+    ready (!verification_result.is_valid) {
+        vibez.spill("Security verification failed for package:", pkg.name)
+        vibez.spill("Error:", verification_result.error_message)
+        bestie (sus i drip = 0; i < arrayz.len(verification_result.verification_details); i = i + 1) {
+            vibez.spill("  ", verification_result.verification_details[i])
+        }
+        filez.remove_file(archive_path)
+        damn cap
+    }
+    
+    vibez.spill("Security verification passed for:", pkg.name, "trust level:", verification_result.trust_level)
+    
+    # Extract package
+    sus extract_dir tea = manager.installer.temp_dir + "/" + pkg.name + "-" + pkg.version
+    ready (!extract_package(archive_path, extract_dir)) {
+        vibez.spill("Failed to extract package", pkg.name)
+        filez.remove_file(archive_path)
+        damn cap
+    }
+    
+    # Install to final location
+    sus install_path tea = manager.installer.install_dir + "/" + pkg.name + "-" + pkg.version
+    ready (!filez.copy_dir(extract_dir, install_path)) {
+        vibez.spill("Failed to install package to", install_path)
+        filez.remove_file(archive_path)
+        filez.remove_dir_all(extract_dir)
+        damn cap
+    }
+    
+    # Record installation
+    sus installed_package InstalledPackage = InstalledPackage {
+        name: pkg.name,
+        version: pkg.version,
+        install_path: install_path,
+        installed_at: get_current_time(),
+        dependencies: get_dependency_names(pkg.dependencies)
+    }
+    
+    # Update or add to installed packages list
+    sus updated_packages []InstalledPackage = []
+    sus found lit = cap
+    
+    bestie (sus i drip = 0; i < arrayz.len(manager.installer.installed_packages); i = i + 1) {
+        sus existing InstalledPackage = manager.installer.installed_packages[i]
+        ready (existing.name == pkg.name) {
+            # Replace existing installation
+            updated_packages = arrayz.append(updated_packages, installed_package)
+            found = based
+        } otherwise {
+            updated_packages = arrayz.append(updated_packages, existing)
+        }
+    }
+    
+    ready (!found) {
+        updated_packages = arrayz.append(updated_packages, installed_package)
+    }
+    
+    manager.installer.installed_packages = updated_packages
+    save_installed_packages(manager)
+    
+    # Clean up temporary files
+    filez.remove_file(archive_path)
+    filez.remove_dir_all(extract_dir)
+    
+    vibez.spill("Successfully installed package:", pkg.name, "version:", pkg.version)
+    damn based
 }
 
 # Uninstall package

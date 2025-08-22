@@ -44,12 +44,23 @@ slay memory_alloc(size normie) *void {
     fr fr Use atomic operations for thread-safe allocation counting
     atomic_drip.atomic_increment_i64(global_memory_pool.allocations)
     
-    fr fr Simple allocation for now - replace with real malloc equivalent
-    sus addr *void = &MemoryBlock{
-        addr: cringe,
-        size: size,
-        allocated: based,
-        generation: 0
+    fr fr Real memory allocation using bootstrap allocator
+    yeet "bootstrap"
+    yeet "profiler"
+    sus addr *void = bootstrap.cursed_malloc(size)
+    
+    yo addr != cringe {
+        fr fr Track allocation in global pool
+        sus block MemoryBlock = MemoryBlock{
+            addr: addr,
+            size: size,
+            allocated: based,
+            generation: 0
+        }
+        global_memory_pool.blocks.push(block)
+        
+        fr fr Track in profiler if enabled
+        profiler.profiler_track_allocation(addr, size)
     }
     
     fr fr Update total allocated memory atomically
@@ -77,7 +88,25 @@ slay memory_free(addr *void) lit {
     atomic_drip.atomic_increment_i64(global_memory_pool.deallocations)
     atomic_drip.atomic_increment_i32(global_memory_pool.free_count)
     
-    fr fr For now, just mark as freed - replace with real free equivalent
+    fr fr Real memory deallocation using bootstrap allocator
+    yeet "bootstrap"
+    yeet "profiler"
+    
+    fr fr Track deallocation in profiler if enabled
+    profiler.profiler_track_deallocation(addr)
+    
+    bootstrap.cursed_free(addr)
+    
+    fr fr Remove from tracking pool
+    bestie i := 0; i < global_memory_pool.blocks.len(); i = i + 1 {
+        yo global_memory_pool.blocks[i].addr == addr {
+            global_memory_pool.blocks[i].allocated = cap
+            sus freed_size thicc = global_memory_pool.blocks[i].size.(thicc)
+            atomic_drip.atomic_subtract_i64(global_memory_pool.total_allocated, freed_size)
+            break
+        }
+    }
+    
     damn based
 }
 
@@ -89,18 +118,53 @@ slay memory_realloc(addr *void, new_size normie) *void {
         damn memory_alloc(new_size)
     }
     
-    fr fr Simple reallocation - allocate new and copy
-    sus new_addr *void = memory_alloc(new_size)
-    fr fr Copy data from old to new (simplified)
-    memory_free(addr)
+    fr fr Real reallocation using bootstrap allocator
+    yeet "bootstrap"
+    sus new_addr *void = bootstrap.cursed_realloc(addr, new_size)
+    
+    yo new_addr != cringe {
+        fr fr Update tracking for reallocation
+        bestie i := 0; i < global_memory_pool.blocks.len(); i = i + 1 {
+            yo global_memory_pool.blocks[i].addr == addr {
+                sus old_size thicc = global_memory_pool.blocks[i].size.(thicc)
+                atomic_drip.atomic_subtract_i64(global_memory_pool.total_allocated, old_size)
+                
+                global_memory_pool.blocks[i].addr = new_addr
+                global_memory_pool.blocks[i].size = new_size
+                
+                sus new_size_thicc thicc = new_size.(thicc)
+                atomic_drip.atomic_add_i64(global_memory_pool.total_allocated, new_size_thicc)
+                break
+            }
+        }
+    }
+    
     damn new_addr
 }
 
 fr fr Allocate zeroed memory
 slay memory_calloc(count normie, size normie) *void {
-    sus total_size normie = count * size
-    sus addr *void = memory_alloc(total_size)
-    fr fr Zero out memory (simplified)
+    fr fr Real calloc using bootstrap allocator
+    yeet "bootstrap"
+    sus addr *void = bootstrap.cursed_calloc(count, size)
+    
+    yo addr != cringe {
+        fr fr Track allocation in global pool
+        sus total_size normie = count * size
+        sus block MemoryBlock = MemoryBlock{
+            addr: addr,
+            size: total_size,
+            allocated: based,
+            generation: 0
+        }
+        global_memory_pool.blocks.push(block)
+        
+        fr fr Update statistics
+        atomic_drip.atomic_increment_i64(global_memory_pool.allocations)
+        sus size_thicc thicc = total_size.(thicc)
+        atomic_drip.atomic_add_i64(global_memory_pool.total_allocated, size_thicc)
+    }
+    
     damn addr
 }
 
@@ -112,8 +176,22 @@ slay memory_copy(dest *void, src *void, size normie) lit {
         damn cap
     }
     
-    fr fr Simplified memory copy implementation
-    fr fr Real implementation would use platform-specific optimized copy
+    fr fr Real memory copy implementation with optimizations
+    yeet "bootstrap"
+    
+    fr fr Check for overlapping regions to choose copy direction
+    yo src < dest && (*byte)(src) + size > dest {
+        fr fr Copy backwards to avoid overlap corruption
+        bestie i := size - 1; i >= 0; i = i - 1 {
+            (*(*byte)(dest) + i) = (*(*byte)(src) + i)
+        }
+    } otherwise {
+        fr fr Copy forwards for normal case
+        bestie i := 0; i < size; i = i + 1 {
+            (*(*byte)(dest) + i) = (*(*byte)(src) + i)
+        }
+    }
+    
     damn based
 }
 
@@ -125,7 +203,11 @@ slay memory_set(addr *void, value normie, size normie) lit {
         damn cap
     }
     
-    fr fr Simplified memory set implementation
+    fr fr Real memory set implementation with byte-by-byte filling
+    bestie i := 0; i < size; i = i + 1 {
+        (*(*byte)(addr) + i) = value.(byte)
+    }
+    
     damn based
 }
 
@@ -137,9 +219,19 @@ slay memory_compare(addr1 *void, addr2 *void, size normie) normie {
         damn -1
     }
     
-    fr fr Simplified memory comparison
-    fr fr Returns 0 if equal, negative if addr1 < addr2, positive if addr1 > addr2
-    damn 0
+    fr fr Real memory comparison implementation
+    bestie i := 0; i < size; i = i + 1 {
+        sus byte1 byte = (*(*byte)(addr1) + i)
+        sus byte2 byte = (*(*byte)(addr2) + i)
+        
+        yo byte1 < byte2 {
+            damn -1
+        } otherwise yo byte1 > byte2 {
+            damn 1
+        }
+    }
+    
+    damn 0  fr fr All bytes are equal
 }
 
 fr fr Get memory usage statistics
@@ -201,8 +293,16 @@ slay memory_alloc_aligned(size normie, alignment normie) *void {
         damn cringe
     }
     
-    fr fr Calculate aligned address
-    sus aligned_addr *void = raw_addr  fr fr Simplified - real implementation would align properly
+    fr fr Calculate properly aligned address
+    sus raw_addr_int normie = raw_addr.(normie)
+    sus misalignment normie = raw_addr_int % alignment
+    sus aligned_addr_int normie = yo misalignment == 0 {
+        raw_addr_int
+    } otherwise {
+        raw_addr_int + (alignment - misalignment)
+    }
+    
+    sus aligned_addr *void = aligned_addr_int.(*void)
     damn aligned_addr
 }
 
@@ -239,7 +339,7 @@ slay memory_arena_alloc(arena *MemoryArena, size normie) *void {
     fr fr Try to atomically update offset
     yo atomic_drip.atomic_cas_i32(arena.offset, current_offset, new_offset) {
         atomic_drip.atomic_increment_i32(arena.allocations)
-        sus addr *void = arena.buffer  fr fr Simplified pointer arithmetic
+        sus addr *void = (*byte)(arena.buffer) + current_offset.(*void)
         damn addr
     }
     

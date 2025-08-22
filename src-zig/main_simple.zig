@@ -4,11 +4,15 @@ const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
 const llvm_real = @import("llvm_real.zig");
+const stack_trace = @import("stack_trace_runtime.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
+
+    // Initialize stack trace system for error handling
+    stack_trace.setGlobalAllocator(allocator);
 
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
@@ -36,7 +40,7 @@ pub fn main() !void {
     }
 
     const file = filename orelse {
-        std.debug.print("Error: No .csd file provided\n");
+        std.debug.print("Error: No .csd file provided\n", .{});
         return;
     };
 
@@ -53,7 +57,7 @@ pub fn main() !void {
         std.debug.print("Tokenization error: {}\n", .{err});
         return;
     };
-    defer tokens.deinit();
+    defer tokens.deinit(allocator);
 
     // Parse
     var p = parser.Parser.init(allocator, tokens.items);
@@ -61,7 +65,10 @@ pub fn main() !void {
         std.debug.print("Parse error: {}\n", .{err});
         return;
     };
-    defer program.deinit(allocator);
+    defer {
+        var mutable_program = program;
+        mutable_program.deinit(allocator);
+    }
 
     if (compile_mode) {
         // Compile using LLVM

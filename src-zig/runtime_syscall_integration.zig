@@ -193,6 +193,31 @@ pub const RuntimeSyscallIntegration = struct {
         );
         _ = c.LLVMAddFunction(module, "cursed_socket_listen", socket_listen_type);
         
+        // HTTP runtime functions
+        // cursed_http_get(url_ptr: [*]u8, url_len: usize) -> [*]u8
+        const http_get_type = c.LLVMFunctionType(
+            ptr_type,
+            &[_]c.LLVMTypeRef{ ptr_type, i64_type },
+            2, 0
+        );
+        _ = c.LLVMAddFunction(module, "cursed_http_get", http_get_type);
+        
+        // cursed_http_post(url_ptr: [*]u8, url_len: usize, body_ptr: [*]u8, body_len: usize) -> [*]u8
+        const http_post_type = c.LLVMFunctionType(
+            ptr_type,
+            &[_]c.LLVMTypeRef{ ptr_type, i64_type, ptr_type, i64_type },
+            4, 0
+        );
+        _ = c.LLVMAddFunction(module, "cursed_http_post", http_post_type);
+        
+        // cursed_tcp_connect(host_ptr: [*]u8, host_len: usize, port: u16) -> i32
+        const tcp_connect_type = c.LLVMFunctionType(
+            i32_type,
+            &[_]c.LLVMTypeRef{ ptr_type, i64_type, i16_type },
+            3, 0
+        );
+        _ = c.LLVMAddFunction(module, "cursed_tcp_connect", tcp_connect_type);
+        
         // cursed_socket_accept(socket_id: u32) -> i32
         const socket_accept_type = c.LLVMFunctionType(
             i32_type,
