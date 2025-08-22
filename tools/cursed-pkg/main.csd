@@ -1,12 +1,17 @@
-# CURSED Package Manager CLI
-# Command-line interface for the CURSED package manager
+# CURSED Package Manager CLI - Complete Implementation
+# Advanced command-line interface for the CURSED package manager ecosystem
 yeet "../stdlib/packagz"
+yeet "../stdlib/packagz/resolver"
+yeet "../stdlib/packagz/lockfile"
+yeet "../stdlib/packagz/build_integration"
+yeet "../stdlib/packagz/registry_client"
 yeet "../stdlib/vibez"
 yeet "../stdlib/stringz"
 yeet "../stdlib/arrayz"
 yeet "../stdlib/filez"
+yeet "../stdlib/jsonz"
 
-# CLI commands enumeration
+# CLI commands enumeration - Extended functionality  
 enum PackageCommand {
     Install,
     Uninstall,
@@ -16,6 +21,15 @@ enum PackageCommand {
     Info,
     Init,
     Publish,
+    Build,          # Generate build integration
+    Lock,           # Generate/update lock file
+    Verify,         # Verify lock file integrity
+    Clean,          # Clean package cache
+    Login,          # Authenticate with registry
+    Logout,         # Clear authentication
+    Trending,       # Show trending packages
+    Stats,          # Package statistics
+    Yank,           # Yank/deprecate version
     Help,
     Unknown
 }

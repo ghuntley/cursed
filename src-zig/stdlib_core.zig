@@ -30,7 +30,10 @@ pub const StdlibCore = struct {
     pub fn read_line(self: *StdlibCore) ![]u8 {
         var stdin_buffer: [4096]u8 = undefined;
         const stdin = std.io.stdin;
-        const line = try stdin.reader().readUntilDelimiterOrEof(stdin_buffer[0..], '\n') orelse return "";
+        const line = stdin.reader().readUntilDelimiter(stdin_buffer[0..], '\n') catch |err| switch (err) {
+            error.EndOfStream => return "",
+            else => return err,
+        };
         return try self.allocator.dupe(u8, line);
     }
     

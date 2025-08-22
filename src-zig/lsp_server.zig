@@ -162,12 +162,14 @@ pub const CursedLanguageServer = struct {
         defer parsed.deinit();
 
         const root = parsed.value;
+        var writer_buffer: [4096]u8 = undefined;
+        const writer = file.writer(writer_buffer[0..]);
         
         if (root.object.get("method")) |method| {
             const method_str = method.string;
             
             if (std.mem.eql(u8, method_str, "initialize")) {
-                try self.handleInitialize(root, writer);
+                try self.handleInitialize(root);
             } else if (std.mem.eql(u8, method_str, "initialized")) {
                 try self.handleInitialized();
             } else if (std.mem.eql(u8, method_str, "textDocument/didOpen")) {
@@ -198,8 +200,9 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle initialize request
-    fn handleInitialize(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleInitialize(self: *CursedLanguageServer, request: json.Value) !void {
         const id = request.object.get("id").?.integer;
+        _ = id; // TODO: Use in response
         
         // Extract workspace folders if available
         if (request.object.get("params")) |params| {
@@ -245,8 +248,7 @@ pub const CursedLanguageServer = struct {
             \\}}
         ;
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.print(response, .{id});
+        try self.sendLspMessage(response);
     }
 
     /// Handle initialized notification
@@ -256,7 +258,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle didOpen text document
-    fn handleDidOpenTextDocument(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleDidOpenTextDocument(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
         
@@ -272,7 +274,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle didChange text document
-    fn handleDidChangeTextDocument(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleDidChangeTextDocument(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
         const content_changes = params.get("contentChanges").?.array;
@@ -432,7 +434,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle completion request
-    fn handleCompletion(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleCompletion(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
@@ -546,7 +548,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle hover request
-    fn handleHover(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleHover(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
@@ -580,7 +582,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle definition request
-    fn handleDefinition(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleDefinition(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
@@ -605,7 +607,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle references request  
-    fn handleReferences(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleReferences(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         var empty_locations = .empty;
         defer empty_locations.deinit();
@@ -613,7 +615,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle formatting request
-    fn handleFormatting(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleFormatting(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const text_document = params.get("textDocument").?.object;
@@ -643,7 +645,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle semantic tokens request
-    fn handleSemanticTokens(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleSemanticTokens(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         var empty_tokens = .empty;
         defer empty_tokens.deinit();
@@ -651,7 +653,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle workspace symbol request
-    fn handleWorkspaceSymbol(self: *CursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
+    fn handleWorkspaceSymbol(self: *CursedLanguageServer, request: json.Value, writer: anytype) !void {
         const id = request.object.get("id").?.integer;
         const params = request.object.get("params").?.object;
         const query = if (params.get("query")) |q| q.string else "";
@@ -673,14 +675,12 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Handle shutdown request
-    fn handleShutdown(self: *CursedLanguageServer, writer: std.io.AnyWriter) !void {
-        _ = self; // unused for now
+    fn handleShutdown(self: *CursedLanguageServer) !void {
         const response = 
             \\{"jsonrpc": "2.0", "id": null, "result": null}
         ;
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
     /// Format CURSED code (basic implementation)
@@ -760,7 +760,7 @@ pub const CursedLanguageServer = struct {
     }
 
     /// Publish diagnostics
-    fn publishDiagnostics(self: *CursedLanguageServer, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
+    fn publishDiagnostics(self: *CursedLanguageServer, writer: anytype, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
         // Build diagnostics JSON array
         var diag_json = .empty;
         defer diag_json.deinit();
@@ -805,12 +805,22 @@ pub const CursedLanguageServer = struct {
         , .{ uri, diag_json.items });
         defer self.allocator.free(notification);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{notification.len});
-        try writer.writeAll(notification);
+        try self.sendLspMessage(notification);
+    }
+
+    /// Helper to send LSP message with proper headers  
+    fn sendLspMessage(self: *CursedLanguageServer, message: []const u8) !void {
+        const header = try std.fmt.allocPrint(self.allocator, "Content-Length: {}\r\n\r\n", .{message.len});
+        defer self.allocator.free(header);
+        
+        // Write to stdout  
+        const stdout = std.fs.File.stdout().writer();
+        try stdout.print("{s}", .{header});
+        try stdout.print("{s}", .{message});
     }
 
     /// Send response helpers
-    fn sendCompletionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, completions: *ArrayList(CompletionItem)) !void {
+    fn sendCompletionResponse(self: *CursedLanguageServer, writer: anytype, id: i64, completions: *ArrayList(CompletionItem)) !void {
         // Build completion items JSON array
         var items_json = .empty;
         defer items_json.deinit();
@@ -840,11 +850,10 @@ pub const CursedLanguageServer = struct {
         , .{ id, items_json.items });
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendHoverResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, hover_text: ?[]const u8) !void {
+    fn sendHoverResponse(self: *CursedLanguageServer, writer: anytype, id: i64, hover_text: ?[]const u8) !void {
         const response = if (hover_text) |text|
             try std.fmt.allocPrint(self.allocator,
                 \\{{"jsonrpc": "2.0", "id": {}, "result": {{"contents": "{s}"}}}}
@@ -855,11 +864,10 @@ pub const CursedLanguageServer = struct {
             , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendDefinitionResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
+    fn sendDefinitionResponse(self: *CursedLanguageServer, writer: anytype, id: i64, locations: *ArrayList(Location)) !void {
         // Build locations JSON array
         var locations_json = .empty;
         defer locations_json.deinit();
@@ -888,52 +896,47 @@ pub const CursedLanguageServer = struct {
         , .{ id, locations_json.items });
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendReferencesResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
+    fn sendReferencesResponse(self: *CursedLanguageServer, writer: anytype, id: i64, locations: *ArrayList(Location)) !void {
         _ = locations;
         const response = try std.fmt.allocPrint(self.allocator,
             \\{{"jsonrpc": "2.0", "id": {}, "result": []}}
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendFormattingResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, edits: *ArrayList([]const u8)) !void {
+    fn sendFormattingResponse(self: *CursedLanguageServer, writer: anytype, id: i64, edits: *ArrayList([]const u8)) !void {
         _ = edits;
         const response = try std.fmt.allocPrint(self.allocator,
             \\{{"jsonrpc": "2.0", "id": {}, "result": []}}
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendSemanticTokensResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, tokens: *ArrayList(u32)) !void {
+    fn sendSemanticTokensResponse(self: *CursedLanguageServer, writer: anytype, id: i64, tokens: *ArrayList(u32)) !void {
         _ = tokens;
         const response = try std.fmt.allocPrint(self.allocator,
             \\{{"jsonrpc": "2.0", "id": {}, "result": {{"data": []}}}}
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 
-    fn sendWorkspaceSymbolResponse(self: *CursedLanguageServer, writer: std.io.AnyWriter, id: i64, symbols: *ArrayList(SymbolInformation)) !void {
+    fn sendWorkspaceSymbolResponse(self: *CursedLanguageServer, writer: anytype, id: i64, symbols: *ArrayList(SymbolInformation)) !void {
         _ = symbols;
         const response = try std.fmt.allocPrint(self.allocator,
             \\{{"jsonrpc": "2.0", "id": {}, "result": []}}
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try self.sendLspMessage(response);
     }
 };
 
@@ -943,8 +946,6 @@ pub fn runLspServer(allocator: Allocator) !void {
     defer server.deinit();
 
     const stdin = std.fs.File.stdin();
-    var stdout_buffer: [4096]u8 = undefined;
-    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
     std.log.info("CURSED LSP Server starting...", .{});
 

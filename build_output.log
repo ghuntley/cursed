@@ -1,0 +1,61 @@
+install
++- install cursed-debug
+   +- compile exe cursed-debug Debug native 1 errors
+src-zig/debug_simple.zig:82:24: error: root source file struct 'mem' has no member named 'split'
+    var lines = std.mem.split(u8, code, "\n");
+                ~~~~~~~^~~~~~
+/snap/zig/14937/lib/std/mem.zig:1:1: note: struct declared here
+const std = @import("std.zig");
+^~~~~
+referenced by:
+    main: src-zig/debug_simple.zig:38:23
+    callMain [inlined]: /snap/zig/14937/lib/std/start.zig:627:37
+    callMainWithArgs [inlined]: /snap/zig/14937/lib/std/start.zig:587:20
+    main: /snap/zig/14937/lib/std/start.zig:602:28
+    1 reference(s) hidden; use '-freference-trace=5' to see all references
+error: the following command failed with 1 compilation errors:
+/snap/zig/14937/zig build-exe -ODebug -Mroot=/home/ghuntley/cursed/src-zig/debug_simple.zig -lc --cache-dir .zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-debug --zig-lib-dir /snap/zig/14937/lib/ --listen=-
+install
++- install cursed-lint
+   +- compile exe cursed-lint Debug native 1 errors
+src-zig/lint_simple.zig:68:42: error: struct 'array_list.Aligned(lint_simple.LintIssue,null)' has no member named 'init'
+    var issues = std.ArrayList(LintIssue).init(allocator);
+                 ~~~~~~~~~~~~~~~~~~~~~~~~^~~~~
+/snap/zig/14937/lib/std/array_list.zig:606:12: note: struct declared here
+    return struct {
+           ^~~~~~
+referenced by:
+    main: src-zig/lint_simple.zig:37:38
+    callMain [inlined]: /snap/zig/14937/lib/std/start.zig:627:37
+    callMainWithArgs [inlined]: /snap/zig/14937/lib/std/start.zig:587:20
+    main: /snap/zig/14937/lib/std/start.zig:602:28
+    1 reference(s) hidden; use '-freference-trace=5' to see all references
+error: the following command failed with 1 compilation errors:
+/snap/zig/14937/zig build-exe -ODebug -Mroot=/home/ghuntley/cursed/src-zig/lint_simple.zig -lc --cache-dir .zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-lint --zig-lib-dir /snap/zig/14937/lib/ --listen=-
+install
++- install cursed-fmt
+   +- compile exe cursed-fmt Debug native 1 errors
+src-zig/fmt_simple.zig:88:19: error: member function expected 2 argument(s), found 1
+        try result.append(' ');
+            ~~~~~~^~~~~~~
+/snap/zig/14937/lib/std/array_list.zig:893:13: note: function declared here
+        pub fn append(self: *Self, gpa: Allocator, item: T) Allocator.Error!void {
+        ~~~~^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+referenced by:
+    formatCursedCode: src-zig/fmt_simple.zig:69:32
+    main: src-zig/fmt_simple.zig:37:43
+    4 reference(s) hidden; use '-freference-trace=6' to see all references
+error: the following command failed with 1 compilation errors:
+/snap/zig/14937/zig build-exe -ODebug -Mroot=/home/ghuntley/cursed/src-zig/fmt_simple.zig -lc --cache-dir .zig-cache --global-cache-dir /home/ghuntley/.cache/zig --name cursed-fmt --zig-lib-dir /snap/zig/14937/lib/ --listen=-
+
+Build Summary: 6/13 steps succeeded; 3 failed
+install transitive failure
++- install cursed-fmt transitive failure
+|  +- compile exe cursed-fmt Debug native 1 errors
++- install cursed-lint transitive failure
+|  +- compile exe cursed-lint Debug native 1 errors
++- install cursed-debug transitive failure
+   +- compile exe cursed-debug Debug native 1 errors
+
+error: the following build command failed with exit code 1:
+.zig-cache/o/d02ae77300bd51b655f7f387c8d3ed2b/build /snap/zig/14937/zig /snap/zig/14937/lib /home/ghuntley/cursed .zig-cache /home/ghuntley/.cache/zig --seed 0xa57cdb16 -Zc23380074bd6f801

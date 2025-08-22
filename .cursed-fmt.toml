@@ -1,47 +1,37 @@
 # CURSED Formatter Configuration
-# This file configures the behavior of the CURSED code formatter
+# Professional code formatting settings for CURSED language
 
+[formatting]
 # Indentation settings
-use_tabs = false
-indent_size = 4
-
-# Line length settings
-max_line_length = 100
+indent_size = 4              # Number of spaces per indent level  
+use_spaces = true            # Use spaces instead of tabs
+max_line_length = 100        # Maximum line length before wrapping
 
 # Spacing settings
-spaces_around_operators = true
-space_before_brace = true
-space_inside_parentheses = false
-space_inside_brackets = false
-space_inside_braces = false
+space_around_operators = true        # Add spaces around +, -, =, etc.
+align_struct_fields = true          # Align struct field declarations
+newline_before_brace = false        # Put opening brace on same line
+preserve_comments = true            # Keep comment formatting
 
-# Array and structure formatting
-max_array_elements_single_line = 5
-max_map_elements_single_line = 3
-max_struct_fields_single_line = 3
-trailing_comma = true
+# CURSED-specific settings
+align_gen_z_keywords = true         # Align Gen Z keywords like "sus", "slay"
+prefer_short_form_syntax = true     # Prefer concise CURSED syntax where possible
 
-# Import settings
-group_imports = true
-sort_imports = true
+[styles]
+# Predefined formatting styles
+default = "professional"            # Default style to use
+compact = { indent_size = 2, max_line_length = 80 }
+google = { indent_size = 2, max_line_length = 120, newline_before_brace = false }
+enterprise = { indent_size = 4, max_line_length = 120, align_struct_fields = true }
 
-# Blank line settings
-blank_lines_between_statements = 0
-blank_lines_between_functions = 1
-preserve_empty_lines = true
-max_empty_lines = 2
+[validation]
+# Syntax validation settings
+check_brace_matching = true         # Validate matching braces/brackets/parentheses
+warn_on_long_lines = true          # Warn when lines exceed max_line_length
+enforce_cursed_keywords = true      # Ensure proper CURSED syntax usage
 
-# Function formatting
-break_function_parameters = true
-break_function_arguments = true
-
-# Alignment settings
-align_assignments = false
-align_struct_fields = false
-
-# Comment settings
-format_comments = true
-
-# File settings
-insert_final_newline = true
-trim_trailing_whitespace = true
+[output]
+# Output formatting settings
+show_diff_on_format = false        # Show diff when formatting
+backup_on_in_place = false         # Create backup when formatting in place
+verbose_output = false             # Enable detailed output messages

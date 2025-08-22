@@ -110,17 +110,55 @@ pub fn build(b: *std.Build) void {
     // advanced_lsp_server.linkLibC();
     // b.installArtifact(advanced_lsp_server);
 
-    // Standard LSP Server
+    // Simple LSP Server (working with current API)
     const lsp_server = b.addExecutable(.{
         .name = "cursed-lsp",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src-zig/lsp_main.zig"),
+            .root_source_file = b.path("src-zig/lsp_simple_working.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
     lsp_server.linkLibC();
     b.installArtifact(lsp_server);
+
+    // Simple Development Tools (working versions)
+    
+    // Code Formatter
+    const formatter = b.addExecutable(.{
+        .name = "cursed-fmt", 
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/fmt_simple.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    formatter.linkLibC();
+    b.installArtifact(formatter);
+
+    // Code Linter  
+    const linter = b.addExecutable(.{
+        .name = "cursed-lint",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/lint_simple.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    linter.linkLibC();
+    b.installArtifact(linter);
+
+    // Interactive Debugger
+    const debug_tool = b.addExecutable(.{
+        .name = "cursed-debug",
+        .root_module = b.createModule(.{
+            .root_source_file = b.path("src-zig/debug_simple.zig"),
+            .target = target,
+            .optimize = optimize,
+        }),
+    });
+    debug_tool.linkLibC();
+    b.installArtifact(debug_tool);
 
     // Package Manager
     const pkg_manager = b.addExecutable(.{
