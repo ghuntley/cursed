@@ -1753,21 +1753,49 @@ pub const Interpreter = struct {
                     else => return false,
                 }
             },
-            .Struct => |_| {
+            .Struct => |left_struct| {
                 switch (right) {
-                    .Struct => |_| return false, // TODO: Implement struct comparison
+                    .Struct => |right_struct| {
+                        // Compare struct types and field values
+                        if (!std.mem.eql(u8, left_struct.type_name, right_struct.type_name)) {
+                            return false;
+                        }
+                        
+                        // Compare field values
+                        var left_iter = left_struct.fields.iterator();
+                        while (left_iter.next()) |left_entry| {
+                            const field_name = left_entry.key_ptr.*;
+                            const left_value = left_entry.value_ptr.*;
+                            
+                            if (right_struct.fields.get(field_name)) |right_value| {
+                                if (!self.compareValues(left_value, right_value)) {
+                                    return false;
+                                }
+                            } else {
+                                return false;
+                            }
+                        }
+                        
+                        return left_struct.fields.count() == right_struct.fields.count();
+                    },
                     else => return false,
                 }
             },
-            .Interface => |_| {
+            .Interface => |left_interface| {
                 switch (right) {
-                    .Interface => |_| return false, // TODO: Implement interface comparison
+                    .Interface => |right_interface| {
+                        // Compare interface types - interfaces are equal if they have the same type name
+                        return std.mem.eql(u8, left_interface.type_name, right_interface.type_name);
+                    },
                     else => return false,
                 }
             },
-            .Error => |_| {
+            .Error => |left_error| {
                 switch (right) {
-                    .Error => |_| return false, // TODO: Implement error comparison
+                    .Error => |right_error| {
+                        // Compare error messages
+                        return std.mem.eql(u8, left_error.message, right_error.message);
+                    },
                     else => return false,
                 }
             },

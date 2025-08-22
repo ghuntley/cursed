@@ -1,6 +1,10 @@
-yeet "vibez"
-yeet "mathz"
-yeet "stringz"
+# CURSED Advanced Features Test
+# Testing functions, control flow, loops
+
+# Function definitions
+slay greet(name tea) tea {
+    damn "Hello, " + name + "!"
+}
 
 slay fibonacci(n drip) drip {
     ready (n <= 1) {
@@ -9,38 +13,47 @@ slay fibonacci(n drip) drip {
     damn fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-slay test_control_flow() {
-    sus x drip = 5
-    ready (x > 3) {
-        vibez.spill("x is greater than 3:", x)
+slay factorial(n drip) drip {
+    sus result drip = 1
+    bestie (sus i drip = 1; i <= n; i = i + 1) {
+        result = result * i
+    }
+    damn result
+}
+
+# Control flow testing
+slay test_control(x drip) tea {
+    ready (x > 10) {
+        damn "Large number"
+    } otherwise ready (x > 5) {
+        damn "Medium number"
     } otherwise {
-        vibez.spill("x is not greater than 3:", x)
-    }
-    
-    sus i drip = 0
-    bestie (i < 3) {
-        vibez.spill("Loop iteration:", i)
-        i = i + 1
+        damn "Small number"
     }
 }
 
-slay test_functions() {
-    sus fib_result drip = fibonacci(8)
-    vibez.spill("Fibonacci(8) =", fib_result)
-    
-    sus pi drip = mathz.PI
-    sus text tea = "Testing CURSED"
-    sus length drip = stringz.len_string(text)
-    
-    vibez.spill("PI =", pi)
-    vibez.spill("Text:", text, "Length:", length)
+# Main test execution
+spill("=== ADVANCED FEATURES TEST ===")
+
+# Test functions
+spill("Greeting:", greet("CURSED"))
+spill("Fibonacci(7):", fibonacci(7))
+spill("Factorial(5):", factorial(5))
+
+# Test control flow
+spill("Control test (15):", test_control(15))
+spill("Control test (7):", test_control(7))
+spill("Control test (3):", test_control(3))
+
+# Test loops
+spill("Loop test:")
+bestie (sus i drip = 1; i <= 5; i = i + 1) {
+    spill("  Iteration:", i)
 }
 
-slay main() {
-    vibez.spill("=== CURSED Advanced Features Test ===")
-    
-    test_control_flow()
-    test_functions()
-    
-    vibez.spill("=== All advanced features working! ===")
+# Array testing if supported
+sus numbers []drip = [1, 2, 3, 4, 5]
+spill("Array length:", len(numbers))
+bestie (sus j drip = 0; j < len(numbers); j = j + 1) {
+    spill("  numbers[" + str(j) + "] =", numbers[j])
 }

@@ -107,8 +107,8 @@ const DocumentData = struct {
     pub fn deinit(self: *DocumentData) void {
         self.allocator.free(self.uri);
         self.allocator.free(self.text);
-        self.symbols.deinit();
-        self.diagnostics.deinit();
+        self.symbols.deinit(self.allocator);
+        self.diagnostics.deinit(self.allocator);
     }
 };
 
@@ -153,8 +153,8 @@ pub const CursedLanguageServer = struct {
         }
     }
 
-    /// Handle LSP requests
-    pub fn handleRequest(self: *CursedLanguageServer, input: []const u8, writer: std.io.AnyWriter) !void {
+    /// Handle LSP requests  
+    pub fn handleRequest(self: *CursedLanguageServer, input: []const u8, file: std.fs.File) !void {
         const parsed = json.parseFromSlice(json.Value, self.allocator, input, .{}) catch |err| {
             std.log.err("Failed to parse JSON: {}", .{err});
             return;
@@ -343,7 +343,7 @@ pub const CursedLanguageServer = struct {
             });
             return;
         };
-        defer tokens.deinit();
+        defer tokens.deinit(self.allocator);
 
         // Parse
         var parse = parser.Parser.init(self.allocator, tokens.items);
@@ -943,32 +943,40 @@ pub fn runLspServer(allocator: Allocator) !void {
     defer server.deinit();
 
     const stdin = std.fs.File.stdin();
-    var stdin_buffer: [4096]u8 = undefined;
-    const stdin_reader = stdin.reader(stdin_buffer[0..]);
     var stdout_buffer: [4096]u8 = undefined;
-    const stdout_file = std.fs.File.stdout();
-    const writer = stdout_file.writer(stdout_buffer[0..]);
+    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
     std.log.info("CURSED LSP Server starting...", .{});
 
     var buffer = ArrayList(u8){};
-    defer buffer.deinit();
+    defer buffer.deinit(allocator);
 
     while (true) {
         // Read Content-Length header
         var content_length: usize = 0;
         while (true) {
-            var line_buf: [1024]u8 = undefined;
-            const line = stdin_reader.readUntilDelimiter(line_buf[0..], '\n') catch |err| switch (err) {
-                error.EndOfStream => break,
-                else => return err,
-            };
+            // Read line by line using byte-by-byte approach
+            var line_buffer = ArrayList(u8){};
+            defer line_buffer.deinit(allocator);
             
-            const trimmed = std.mem.trim(u8, line, "\r\n");
-            if (trimmed.len == 0) break; // Empty line marks end of headers
+            var single_byte: [1]u8 = undefined;
+            while (true) {
+                const bytes_read = stdin.read(single_byte[0..]) catch |err| {
+                    return err;
+                };
+                if (bytes_read == 0) break; // EOF
+                
+                const byte = single_byte[0];
+                if (byte == '\n') break; // Found newline
+                if (byte != '\r') { // Skip carriage return
+                    try line_buffer.append(allocator, byte);
+                }
+            }
             
-            if (std.mem.startsWith(u8, trimmed, "Content-Length: ")) {
-                const length_str = trimmed[16..];
+            if (line_buffer.items.len == 0) break; // Empty line marks end of headers
+            
+            if (std.mem.startsWith(u8, line_buffer.items, "Content-Length: ")) {
+                const length_str = line_buffer.items[16..];
                 content_length = try std.fmt.parseInt(usize, length_str, 10);
             }
         }
@@ -977,10 +985,11 @@ pub fn runLspServer(allocator: Allocator) !void {
 
         // Read message content
         buffer.clearRetainingCapacity();
-        try buffer.resize(content_length);
+        try buffer.resize(allocator, content_length);
         _ = try stdin.readAll(buffer.items);
 
         // Handle the request
-        try server.handleRequest(buffer.items, writer);
+        const stdout_file = std.fs.File.stdout();
+        try server.handleRequest(buffer.items, stdout_file);
     }
 }

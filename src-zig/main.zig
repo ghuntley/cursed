@@ -1291,18 +1291,18 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
         print("🌳 Generated AST with {} statements\n", .{program.statements.items.len});
     }
     
-    // TODO: Execute with proper interpreter once compilation issues are resolved
-    // const runtime_allocator = arena_manager.getRuntimeAllocator();
-    // var cursed_interpreter = interpreter.Interpreter.init(runtime_allocator);
-    // defer cursed_interpreter.deinit();
+    // Execute with proper interpreter 
+    const runtime_allocator = arena_manager.getRuntimeAllocator();
+    var cursed_interpreter = interpreter.Interpreter.init(runtime_allocator);
+    defer cursed_interpreter.deinit();
     
-    if (config.verbose) print("🚀 AST parsing completed successfully - function execution not yet implemented\n", .{});
-    // cursed_interpreter.execute(program) catch |err| {
-    //     print("❌ Execution error: {any}\n", .{err});
-    //     return;
-    // };
+    if (config.verbose) print("🚀 Starting interpreter execution\n", .{});
+    cursed_interpreter.execute(program) catch |err| {
+        print("❌ Execution error: {any}\n", .{err});
+        return;
+    };
     
-    if (config.verbose) print("✅ AST parsing completed (execution pending)\n", .{});
+    if (config.verbose) print("✅ Interpreter execution completed successfully\n", .{});
 }
 
 fn compileWithLLVM(allocator: Allocator, source: []const u8, filename: []const u8, config: Config) !void {
