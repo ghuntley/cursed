@@ -1,10 +1,79 @@
 const std = @import("std");
 const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
+const Atomic = std.atomic.Value;
 
 // Import attribute system for AST node decoration
 const attribute_system = @import("attribute_system.zig");
 const AttributeList = attribute_system.AttributeList;
+
+/// Thread-safe reference counting system for AST memory management
+pub const RefCounted = struct {
+    ref_count: Atomic(u32),
+    allocator: Allocator,
+
+    pub fn init(allocator: Allocator) RefCounted {
+        return RefCounted{
+            .ref_count = Atomic(u32).init(1),
+            .allocator = allocator,
+        };
+    }
+
+    pub fn retain(self: *RefCounted) void {
+        _ = self.ref_count.fetchAdd(1, .acq_rel);
+    }
+
+    pub fn release(self: *RefCounted, comptime T: type, deinit_fn: ?fn (*T, Allocator) void) void {
+        const old_count = self.ref_count.fetchSub(1, .acq_rel);
+        if (old_count == 1) {
+            // Last reference, safe to cleanup
+            const obj: *T = @fieldParentPtr("ref_counted", self);
+            if (deinit_fn) |deinit| {
+                deinit(obj, self.allocator);
+            }
+            self.allocator.destroy(obj);
+        }
+    }
+
+    pub fn getCount(self: *const RefCounted) u32 {
+        return self.ref_count.load(.acquire);
+    }
+};
+
+/// Managed pointer with automatic reference counting
+pub fn RefPtr(comptime T: type) type {
+    return struct {
+        const Self = @This();
+        ptr: ?*T,
+
+        pub fn init(ptr: *T) Self {
+            if (@hasField(T, "ref_counted")) {
+                ptr.ref_counted.retain();
+            }
+            return Self{ .ptr = ptr };
+        }
+
+        pub fn deinit(self: *Self, deinit_fn: ?fn (*T, Allocator) void) void {
+            if (self.ptr) |ptr| {
+                if (@hasField(T, "ref_counted")) {
+                    ptr.ref_counted.release(T, deinit_fn);
+                }
+                self.ptr = null;
+            }
+        }
+
+        pub fn get(self: *const Self) ?*T {
+            return self.ptr;
+        }
+
+        pub fn clone(self: *const Self) Self {
+            if (self.ptr) |ptr| {
+                return Self.init(ptr);
+            }
+            return Self{ .ptr = null };
+        }
+    };
+}
 
 /// Enhanced source location for error reporting and DWARF debug information
 pub const SourceLocation = struct {
@@ -347,47 +416,104 @@ pub const ChannelType = struct {
 };
 
 pub const ArrayType = struct {
-    element_type: *Type,
+    ref_counted: RefCounted,
+    element_type: RefPtr(Type),
     size: ?usize,
-    _owned: bool = true, // Track ownership to prevent double-free
+
+    pub fn create(allocator: Allocator, element_type: *Type, size: ?usize) !*ArrayType {
+        const array_type = try allocator.create(ArrayType);
+        array_type.* = ArrayType{
+            .ref_counted = RefCounted.init(allocator),
+            .element_type = RefPtr(Type).init(element_type),
+            .size = size,
+        };
+        return array_type;
+    }
 
     pub fn deinit(self: *ArrayType, allocator: Allocator) void {
-        // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
-        // The module loader manages the lifetime of these type pointers
-        // This causes a small memory leak but prevents crashes
-        _ = self;
-        _ = allocator;
-                // TODO: Implement proper reference counting system
+        self.element_type.deinit(Type.deinit);
+        _ = allocator; // Satisfied by ref_counted system
     }
 };
 
 pub const SliceType = struct {
-    element_type: *Type,
+    ref_counted: RefCounted,
+    element_type: RefPtr(Type),
+
+    pub fn create(allocator: Allocator, element_type: *Type) !*SliceType {
+        const slice_type = try allocator.create(SliceType);
+        slice_type.* = SliceType{
+            .ref_counted = RefCounted.init(allocator),
+            .element_type = RefPtr(Type).init(element_type),
+        };
+        return slice_type;
+    }
+
+    pub fn deinit(self: *SliceType, allocator: Allocator) void {
+        self.element_type.deinit(Type.deinit);
+        _ = allocator;
+    }
 };
 
 pub const MapType = struct {
-    key_type: *Type,
-    value_type: *Type,
-    _key_owned: bool = true,    // Track key ownership to prevent double-free
-    _value_owned: bool = true,  // Track value ownership to prevent double-free
+    ref_counted: RefCounted,
+    key_type: RefPtr(Type),
+    value_type: RefPtr(Type),
+
+    pub fn create(allocator: Allocator, key_type: *Type, value_type: *Type) !*MapType {
+        const map_type = try allocator.create(MapType);
+        map_type.* = MapType{
+            .ref_counted = RefCounted.init(allocator),
+            .key_type = RefPtr(Type).init(key_type),
+            .value_type = RefPtr(Type).init(value_type),
+        };
+        return map_type;
+    }
 
     pub fn deinit(self: *MapType, allocator: Allocator) void {
-        // TEMPORARY FIX: Skip cleanup entirely to prevent double-free
-        // The module loader manages the lifetime of these type pointers
-        _ = self;
+        self.key_type.deinit(Type.deinit);
+        self.value_type.deinit(Type.deinit);
         _ = allocator;
-                // TODO: Implement proper reference counting system
     }
 };
 
 pub const PointerType = struct {
-    target_type: *Type,
+    ref_counted: RefCounted,
+    target_type: RefPtr(Type),
+
+    pub fn create(allocator: Allocator, target_type: *Type) !*PointerType {
+        const pointer_type = try allocator.create(PointerType);
+        pointer_type.* = PointerType{
+            .ref_counted = RefCounted.init(allocator),
+            .target_type = RefPtr(Type).init(target_type),
+        };
+        return pointer_type;
+    }
+
+    pub fn deinit(self: *PointerType, allocator: Allocator) void {
+        self.target_type.deinit(Type.deinit);
+        _ = allocator;
+    }
 };
 
 pub const FunctionType = struct {
+    ref_counted: RefCounted,
     parameters: ArrayList(Type),
-    return_type: ?*Type,
-    _return_owned: bool = true, // Track return type ownership
+    return_type: ?RefPtr(Type),
+
+    pub fn create(allocator: Allocator) !*FunctionType {
+        const function_type = try allocator.create(FunctionType);
+        function_type.* = FunctionType{
+            .ref_counted = RefCounted.init(allocator),
+            .parameters = ArrayList(Type).init(allocator),
+            .return_type = null,
+        };
+        return function_type;
+    }
+
+    pub fn setReturnType(self: *FunctionType, return_type: *Type) void {
+        self.return_type = RefPtr(Type).init(return_type);
+    }
 
     pub fn deinit(self: *FunctionType, allocator: Allocator) void {
         // Clean up parameters (these are value types, safe to cleanup)
@@ -396,9 +522,10 @@ pub const FunctionType = struct {
         }
         self.parameters.deinit(allocator);
         
-        // TEMPORARY FIX: Skip return type cleanup to prevent double-free
-        _ = self._return_owned;
-        // TODO: Implement proper reference counting for return_type
+        // Clean up return type with proper reference counting
+        if (self.return_type) |*ret_type| {
+            ret_type.deinit(Type.deinit);
+        }
     }
 };
 

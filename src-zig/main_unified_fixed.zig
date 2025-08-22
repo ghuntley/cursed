@@ -2902,8 +2902,17 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
 
     if (verbose) print("📊 Syntax validation completed\n", .{});
 
-    // For now, we'll skip the complex type checker and just do basic validation
-    // TODO: Implement proper type checking that works with the CURSED syntax
+    // Perform comprehensive type checking
+    var type_checker = type_system.TypeChecker.init(allocator) catch |err| {
+        print("❌ Failed to initialize type checker: {any}\n", .{err});
+        return;
+    };
+    defer type_checker.deinit();
+
+    type_checker.checkProgram(parsed_ast) catch |err| {
+        print("❌ Type checking failed for {s}: {any}\n", .{ filename, err });
+        return;
+    };
 
     print("✅ Type checking passed for {s}\n", .{filename});
     if (verbose) print("🎉 All types are valid and consistent!\n", .{});

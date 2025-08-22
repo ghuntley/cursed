@@ -611,35 +611,149 @@ pub const CodeGenerator = struct {
         return try self.generateIdentifierExpression(variable);
     }
 
-    /// Generate binary expressions
+    /// Generate binary expressions with proper type checking
     fn generateBinaryExpression(self: *CodeGenerator, binary: ast.BinaryExpression) !c.LLVMValueRef {
         const left = try self.generateExpression(binary.left.*);
         const right = try self.generateExpression(binary.right.*);
         
-        // Handle string-based operators
+        // Get operand types for type-specific operations
+        const left_type = c.LLVMTypeOf(left);
+        const right_type = c.LLVMTypeOf(right);
+        const is_float_left = c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(left_type) == c.LLVMDoubleTypeKind;
+        const is_float_right = c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(right_type) == c.LLVMDoubleTypeKind;
+        
+        // Handle arithmetic operators
         if (std.mem.eql(u8, binary.operator, "+")) {
-            return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+            if (is_float_left or is_float_right) {
+                // Convert to float if needed
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFAdd(self.builder, left_f, right_f, "add_tmp");
+            } else {
+                return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "-")) {
-            return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFSub(self.builder, left_f, right_f, "sub_tmp");
+            } else {
+                return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "*")) {
-            return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFMul(self.builder, left_f, right_f, "mul_tmp");
+            } else {
+                return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "/")) {
-            return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+            // Add division by zero check
+            const zero = if (is_float_right) c.LLVMConstReal(right_type, 0.0) else c.LLVMConstInt(right_type, 0, 0);
+            const is_zero = if (is_float_right) 
+                c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, right, zero, "div_zero_check")
+            else
+                c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, right, zero, "div_zero_check");
+            
+            const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
+            const div_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "div.safe");
+            const error_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "div.error");
+            const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "div.end");
+            
+            _ = c.LLVMBuildCondBr(self.builder, is_zero, error_block, div_block);
+            
+            // Error block - could throw exception or return NaN/0
+            c.LLVMPositionBuilderAtEnd(self.builder, error_block);
+            const error_val = if (is_float_left or is_float_right) 
+                c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), std.math.nan(f64))
+            else
+                c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+            
+            // Safe division block
+            c.LLVMPositionBuilderAtEnd(self.builder, div_block);
+            const div_result = if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                c.LLVMBuildFDiv(self.builder, left_f, right_f, "div_tmp")
+            } else {
+                c.LLVMBuildSDiv(self.builder, left, right, "div_tmp")
+            };
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+            
+            // Merge block with PHI
+            c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+            const result_type = if (is_float_left or is_float_right) c.LLVMDoubleTypeInContext(self.context) else c.LLVMInt32TypeInContext(self.context);
+            const phi = c.LLVMBuildPhi(self.builder, result_type, "div_result");
+            const incoming_values = [_]c.LLVMValueRef{ error_val, div_result };
+            const incoming_blocks = [_]c.LLVMBasicBlockRef{ error_block, div_block };
+            c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
+            
+            return phi;
         } else if (std.mem.eql(u8, binary.operator, "%")) {
-            return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
-        } else if (std.mem.eql(u8, binary.operator, "==")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFRem(self.builder, left_f, right_f, "fmod_tmp");
+            } else {
+                return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
+            }
+        } 
+        
+        // Handle comparison operators
+        else if (std.mem.eql(u8, binary.operator, "==")) {
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left_f, right_f, "eq_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "!=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "neq_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealONE, left_f, right_f, "neq_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "neq_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "<")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLT, left_f, right_f, "lt_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, "<=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "lte_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLE, left_f, right_f, "lte_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "lte_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, ">")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGT, left_f, right_f, "gt_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+            }
         } else if (std.mem.eql(u8, binary.operator, ">=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "gte_tmp");
-        } else if (std.mem.eql(u8, binary.operator, "&")) {
+            if (is_float_left or is_float_right) {
+                const left_f = if (is_float_left) left else c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "itof");
+                const right_f = if (is_float_right) right else c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "itof");
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGE, left_f, right_f, "gte_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "gte_tmp");
+            }
+        }
+        
+        // Handle bitwise operators (integers only)
+        else if (std.mem.eql(u8, binary.operator, "&")) {
             return c.LLVMBuildAnd(self.builder, left, right, "and_tmp");
         } else if (std.mem.eql(u8, binary.operator, "|")) {
             return c.LLVMBuildOr(self.builder, left, right, "or_tmp");
@@ -649,22 +763,28 @@ pub const CodeGenerator = struct {
             return c.LLVMBuildShl(self.builder, left, right, "shl_tmp");
         } else if (std.mem.eql(u8, binary.operator, ">>")) {
             return c.LLVMBuildAShr(self.builder, left, right, "shr_tmp");
-        } else if (std.mem.eql(u8, binary.operator, "&&")) {
+        }
+        
+        // Handle logical operators (short-circuit)
+        else if (std.mem.eql(u8, binary.operator, "&&")) {
             // Short-circuit AND
             const current_func = c.LLVMGetBasicBlockParent(c.LLVMGetInsertBlock(self.builder));
             const and_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.rhs");
             const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "and.end");
             
-            _ = c.LLVMBuildCondBr(self.builder, left, and_block, merge_block);
+            // Convert left to boolean if needed
+            const left_bool = try self.convertToBool(left);
+            _ = c.LLVMBuildCondBr(self.builder, left_bool, and_block, merge_block);
             
             c.LLVMPositionBuilderAtEnd(self.builder, and_block);
+            const right_bool = try self.convertToBool(right);
             _ = c.LLVMBuildBr(self.builder, merge_block);
             
             c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
             const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "and_result");
             
             const false_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
-            const incoming_values = [_]c.LLVMValueRef{ false_val, right };
+            const incoming_values = [_]c.LLVMValueRef{ false_val, right_bool };
             const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(and_block), and_block };
             c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
             
@@ -675,57 +795,214 @@ pub const CodeGenerator = struct {
             const or_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.rhs");
             const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "or.end");
             
-            _ = c.LLVMBuildCondBr(self.builder, left, merge_block, or_block);
+            const left_bool = try self.convertToBool(left);
+            _ = c.LLVMBuildCondBr(self.builder, left_bool, merge_block, or_block);
             
             c.LLVMPositionBuilderAtEnd(self.builder, or_block);
+            const right_bool = try self.convertToBool(right);
             _ = c.LLVMBuildBr(self.builder, merge_block);
             
             c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
             const phi = c.LLVMBuildPhi(self.builder, c.LLVMInt1TypeInContext(self.context), "or_result");
             
             const true_val = c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
-            const incoming_values = [_]c.LLVMValueRef{ true_val, right };
+            const incoming_values = [_]c.LLVMValueRef{ true_val, right_bool };
             const incoming_blocks = [_]c.LLVMBasicBlockRef{ c.LLVMGetPreviousBasicBlock(or_block), or_block };
             c.LLVMAddIncoming(phi, &incoming_values, &incoming_blocks, 2);
             
             return phi;
         } else {
-            std.debug.print("Warning: Unimplemented binary operator: {s}\n", .{binary.operator});
+            std.debug.print("Error: Unimplemented binary operator: {s}\n", .{binary.operator});
             return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         }
     }
 
-    /// Generate unary expressions
+    /// Generate unary expressions with proper type checking
     fn generateUnaryExpression(self: *CodeGenerator, unary: ast.UnaryExpression) !c.LLVMValueRef {
-        const operand = try self.generateExpression(unary.operand.*);
+        // Get operand type for type-specific operations
+        const operand_type = c.LLVMTypeOf(try self.generateExpression(unary.operand.*));
+        const is_float = c.LLVMGetTypeKind(operand_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(operand_type) == c.LLVMDoubleTypeKind;
         
-        // Handle string-based operators
+        // Handle arithmetic unary operators
         if (std.mem.eql(u8, unary.operator, "-")) {
-            return c.LLVMBuildNeg(self.builder, operand, "neg_tmp");
-        } else if (std.mem.eql(u8, unary.operator, "!")) {
-            return c.LLVMBuildNot(self.builder, operand, "not_tmp");
-        } else if (std.mem.eql(u8, unary.operator, "~")) {
+            const operand = try self.generateExpression(unary.operand.*);
+            if (is_float) {
+                return c.LLVMBuildFNeg(self.builder, operand, "neg_tmp");
+            } else {
+                return c.LLVMBuildNeg(self.builder, operand, "neg_tmp");
+            }
+        } else if (std.mem.eql(u8, unary.operator, "+")) {
+            // Unary plus - just return the operand (identity operation)
+            return try self.generateExpression(unary.operand.*);
+        } 
+        
+        // Handle logical unary operators
+        else if (std.mem.eql(u8, unary.operator, "!") or std.mem.eql(u8, unary.operator, "not")) {
+            const operand = try self.generateExpression(unary.operand.*);
+            const operand_bool = try self.convertToBool(operand);
+            return c.LLVMBuildNot(self.builder, operand_bool, "not_tmp");
+        }
+        
+        // Handle bitwise unary operators
+        else if (std.mem.eql(u8, unary.operator, "~")) {
+            const operand = try self.generateExpression(unary.operand.*);
+            if (is_float) {
+                std.debug.print("Error: Bitwise NOT cannot be applied to floating-point numbers\n", .{});
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            }
             return c.LLVMBuildNot(self.builder, operand, "bnot_tmp");
-        } else if (std.mem.eql(u8, unary.operator, "&")) {
-            // Return the address of the operand (if it's an lvalue)
-            // For now, we'll assume operand is already an address
-            std.debug.print("Warning: AddressOf operator simplified implementation\n", .{});
-            return operand;
+        }
+        
+        // Handle pointer operations
+        else if (std.mem.eql(u8, unary.operator, "&")) {
+            // Address-of operator - return the address of the operand (if it's an lvalue)
+            // This requires proper lvalue handling
+            if (unary.operand.* == .Identifier) {
+                const identifier = unary.operand.Identifier.name;
+                if (self.variables.get(identifier)) |variable| {
+                    // Return the variable address directly
+                    return variable;
+                } else {
+                    std.debug.print("Error: Cannot take address of undefined variable '{s}'\n", .{identifier});
+                    return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+                }
+            } else {
+                std.debug.print("Error: Address-of operator can only be applied to lvalues\n", .{});
+                return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+            }
         } else if (std.mem.eql(u8, unary.operator, "*")) {
             // Dereference the pointer
+            const operand = try self.generateExpression(unary.operand.*);
+            const operand_type_kind = c.LLVMGetTypeKind(c.LLVMTypeOf(operand));
+            
+            if (operand_type_kind != c.LLVMPointerTypeKind) {
+                std.debug.print("Error: Dereference operator can only be applied to pointers\n", .{});
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            }
+            
             const element_type = c.LLVMGetElementType(c.LLVMTypeOf(operand));
             return c.LLVMBuildLoad2(self.builder, element_type, operand, "deref_tmp");
-        } else if (std.mem.eql(u8, unary.operator, "++")) {
-            // Pre-increment
-            const one = c.LLVMConstInt(c.LLVMTypeOf(operand), 1, 0);
-            return c.LLVMBuildAdd(self.builder, operand, one, "preinc_tmp");
+        }
+        
+        // Handle increment/decrement operators
+        else if (std.mem.eql(u8, unary.operator, "++")) {
+            // Pre-increment - need lvalue handling
+            if (unary.operand.* == .Identifier) {
+                const identifier = unary.operand.Identifier.name;
+                if (self.variables.get(identifier)) |variable| {
+                    const var_type = c.LLVMGetElementType(c.LLVMTypeOf(variable));
+                    const current_val = c.LLVMBuildLoad2(self.builder, var_type, variable, "load_pre_inc");
+                    
+                    const one = if (c.LLVMGetTypeKind(var_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(var_type) == c.LLVMDoubleTypeKind)
+                        c.LLVMConstReal(var_type, 1.0)
+                    else
+                        c.LLVMConstInt(var_type, 1, 0);
+                    
+                    const incremented = if (c.LLVMGetTypeKind(var_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(var_type) == c.LLVMDoubleTypeKind)
+                        c.LLVMBuildFAdd(self.builder, current_val, one, "preinc_tmp")
+                    else
+                        c.LLVMBuildAdd(self.builder, current_val, one, "preinc_tmp");
+                    
+                    _ = c.LLVMBuildStore(self.builder, incremented, variable);
+                    return incremented;
+                } else {
+                    std.debug.print("Error: Cannot increment undefined variable '{s}'\n", .{identifier});
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                }
+            } else {
+                std.debug.print("Error: Pre-increment can only be applied to variables\n", .{});
+                const operand = try self.generateExpression(unary.operand.*);
+                return operand;
+            }
         } else if (std.mem.eql(u8, unary.operator, "--")) {
-            // Pre-decrement
-            const one = c.LLVMConstInt(c.LLVMTypeOf(operand), 1, 0);
-            return c.LLVMBuildSub(self.builder, operand, one, "predec_tmp");
+            // Pre-decrement - need lvalue handling
+            if (unary.operand.* == .Identifier) {
+                const identifier = unary.operand.Identifier.name;
+                if (self.variables.get(identifier)) |variable| {
+                    const var_type = c.LLVMGetElementType(c.LLVMTypeOf(variable));
+                    const current_val = c.LLVMBuildLoad2(self.builder, var_type, variable, "load_pre_dec");
+                    
+                    const one = if (c.LLVMGetTypeKind(var_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(var_type) == c.LLVMDoubleTypeKind)
+                        c.LLVMConstReal(var_type, 1.0)
+                    else
+                        c.LLVMConstInt(var_type, 1, 0);
+                    
+                    const decremented = if (c.LLVMGetTypeKind(var_type) == c.LLVMFloatTypeKind or c.LLVMGetTypeKind(var_type) == c.LLVMDoubleTypeKind)
+                        c.LLVMBuildFSub(self.builder, current_val, one, "predec_tmp")
+                    else
+                        c.LLVMBuildSub(self.builder, current_val, one, "predec_tmp");
+                    
+                    _ = c.LLVMBuildStore(self.builder, decremented, variable);
+                    return decremented;
+                } else {
+                    std.debug.print("Error: Cannot decrement undefined variable '{s}'\n", .{identifier});
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                }
+            } else {
+                std.debug.print("Error: Pre-decrement can only be applied to variables\n", .{});
+                const operand = try self.generateExpression(unary.operand.*);
+                return operand;
+            }
+        }
+        
+        // Handle typeof operator (CURSED-specific)
+        else if (std.mem.eql(u8, unary.operator, "typeof")) {
+            const operand = try self.generateExpression(unary.operand.*);
+            const operand_llvm_type = c.LLVMTypeOf(operand);
+            
+            // Return a string representing the type (simplified implementation)
+            const type_kind = c.LLVMGetTypeKind(operand_llvm_type);
+            const type_str = switch (type_kind) {
+                c.LLVMIntegerTypeKind => "drip",
+                c.LLVMFloatTypeKind, c.LLVMDoubleTypeKind => "tea",
+                c.LLVMPointerTypeKind => "pointer",
+                c.LLVMStructTypeKind => "squad",
+                c.LLVMArrayTypeKind => "array",
+                c.LLVMFunctionTypeKind => "slay",
+                else => "unknown",
+            };
+            
+            // Create a global string constant for the type name
+            const type_string = c.LLVMBuildGlobalStringPtr(self.builder, type_str, "typeof_result");
+            return type_string;
         } else {
-            std.debug.print("Warning: Unimplemented unary operator: {s}\n", .{unary.operator});
-            return operand;
+            std.debug.print("Error: Unimplemented unary operator: {s}\n", .{unary.operator});
+            return try self.generateExpression(unary.operand.*);
+        }
+    }
+
+    /// Convert a value to boolean for logical operations
+    fn convertToBool(self: *CodeGenerator, value: c.LLVMValueRef) !c.LLVMValueRef {
+        const value_type = c.LLVMTypeOf(value);
+        const type_kind = c.LLVMGetTypeKind(value_type);
+        
+        switch (type_kind) {
+            c.LLVMIntegerTypeKind => {
+                // For integers, non-zero is true
+                const zero = c.LLVMConstInt(value_type, 0, 0);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, value, zero, "to_bool");
+            },
+            c.LLVMFloatTypeKind, c.LLVMDoubleTypeKind => {
+                // For floats, non-zero and non-NaN is true
+                const zero = c.LLVMConstReal(value_type, 0.0);
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealONE, value, zero, "to_bool");
+            },
+            c.LLVMPointerTypeKind => {
+                // For pointers, non-null is true
+                const null_ptr = c.LLVMConstNull(value_type);
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, value, null_ptr, "to_bool");
+            },
+            else => {
+                // For other types, assume already boolean or convert to boolean
+                if (c.LLVMGetIntTypeWidth(value_type) == 1) {
+                    // Already a boolean
+                    return value;
+                } else {
+                    // Convert to boolean by comparing with zero
+                    const zero = c.LLVMConstInt(value_type, 0, 0);
+                    return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, value, zero, "to_bool");
+                }
+            }
         }
     }
 

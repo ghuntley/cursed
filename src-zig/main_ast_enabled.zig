@@ -9,10 +9,16 @@ const simple_import_resolver = @import("simple_import_resolver.zig");
 const simple_compiler = @import("simple_compiler.zig");
 const cross_compilation = @import("cross_compilation.zig");
 const ast = @import("ast.zig");
-// Note: Commenting out parser for now due to API compatibility issues
-// const parser = @import("parser.zig");
+const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
 const CursedArenaManager = @import("arena_allocator.zig").CursedArenaManager;
+
+// Mixed type value for variables (strings and integers)
+const VariableValue = union(enum) {
+    integer: i64,
+    string: []const u8,
+    boolean: bool,
+};
 
 // Version information
 const VERSION = "1.0.0";
@@ -372,7 +378,7 @@ fn interpretWithAST(allocator: Allocator, source: []const u8, config: Config) !v
         }
     }
     
-    // Create basic AST nodes for interpretation
+    // Create basic AST-style interpretation
     print("🎯 Creating AST representation...\n", .{});
     
     // Simple AST-based execution - for now, just use enhanced interpretation
@@ -438,8 +444,8 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
     
     if (config.verbose) print("🚀 Using enhanced interpreter with AST support\n", .{});
     
-    // Global variable storage
-    var variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    // Global variable storage supporting both strings and integers
+    var variables = std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer {
         var iter = variables.iterator();
         while (iter.next()) |entry| {
@@ -503,42 +509,103 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
     if (config.verbose) print("✅ Enhanced AST interpretation completed\n", .{});
 }
 
-// Parse source into statements (handles both single-line and multi-statement lines)
+// Parse source into statements (handles multi-line constructs properly)
 fn parseStatements(allocator: Allocator, source: []const u8) ![][]const u8 {
     var statements = std.ArrayList([]const u8){};
     defer statements.deinit(allocator);
     
     var i: usize = 0;
-    var statement_start: usize = 0;
+    var current_statement = std.ArrayList(u8){};
+    defer current_statement.deinit(allocator);
+    
     var brace_count: i32 = 0;
+    var paren_count: i32 = 0;
+    var in_string = false;
+    var in_function = false;
     
     while (i < source.len) {
-        const char = source[i];
+        const c = source[i];
         
-        if (char == '{') {
-            brace_count += 1;
-        } else if (char == '}') {
-            brace_count -= 1;
-        } else if (char == ';' and brace_count == 0) {
-            // End of statement
-            const stmt = std.mem.trim(u8, source[statement_start..i], " \t\r\n");
-            if (stmt.len > 0) {
-                const stmt_copy = try allocator.dupe(u8, stmt);
-                try statements.append(allocator, stmt_copy);
-            }
-            statement_start = i + 1;
+        // Handle string literals
+        if (c == '"' and (i == 0 or source[i-1] != '\\')) {
+            in_string = !in_string;
+            try current_statement.append(allocator, c);
+            i += 1;
+            continue;
+        }
+        
+        if (in_string) {
+            try current_statement.append(allocator, c);
+            i += 1;
+            continue;
+        }
+        
+        // Track braces and parentheses
+        switch (c) {
+            '{' => {
+                brace_count += 1;
+                try current_statement.append(allocator, c);
+            },
+            '}' => {
+                brace_count -= 1;
+                try current_statement.append(allocator, c);
+                
+                // End of function or block
+                if (brace_count == 0 and in_function) {
+                    in_function = false;
+                    // Complete the function statement
+                    const stmt = std.mem.trim(u8, current_statement.items, " \t\r\n");
+                    if (stmt.len > 0) {
+                        const stmt_copy = try allocator.dupe(u8, stmt);
+                        try statements.append(allocator, stmt_copy);
+                    }
+                    current_statement.clearRetainingCapacity();
+                }
+            },
+            '(' => {
+                paren_count += 1;
+                try current_statement.append(allocator, c);
+            },
+            ')' => {
+                paren_count -= 1;
+                try current_statement.append(allocator, c);
+            },
+            '\n' => {
+                // Handle newlines based on context
+                if (brace_count > 0 or paren_count > 0 or in_function) {
+                    // Inside multi-line construct, replace newline with space
+                    try current_statement.append(allocator, ' ');
+                } else {
+                    // End of statement
+                    const stmt = std.mem.trim(u8, current_statement.items, " \t\r\n");
+                    if (stmt.len > 0) {
+                        const stmt_copy = try allocator.dupe(u8, stmt);
+                        try statements.append(allocator, stmt_copy);
+                    }
+                    current_statement.clearRetainingCapacity();
+                }
+            },
+            else => {
+                try current_statement.append(allocator, c);
+                
+                // Check if starting a function definition
+                if (!in_function and current_statement.items.len >= 4) {
+                    const last_4 = current_statement.items[current_statement.items.len-4..];
+                    if (std.mem.eql(u8, last_4, "slay")) {
+                        in_function = true;
+                    }
+                }
+            },
         }
         
         i += 1;
     }
     
-    // Handle final statement (if no semicolon at end)
-    if (statement_start < source.len) {
-        const stmt = std.mem.trim(u8, source[statement_start..], " \t\r\n");
-        if (stmt.len > 0) {
-            const stmt_copy = try allocator.dupe(u8, stmt);
-            try statements.append(allocator, stmt_copy);
-        }
+    // Handle remaining statement
+    const stmt = std.mem.trim(u8, current_statement.items, " \t\r\n");
+    if (stmt.len > 0) {
+        const stmt_copy = try allocator.dupe(u8, stmt);
+        try statements.append(allocator, stmt_copy);
     }
     
     return statements.toOwnedSlice(allocator);
@@ -546,21 +613,29 @@ fn parseStatements(allocator: Allocator, source: []const u8) ![][]const u8 {
 
 // Handle function definition: slay add(a drip, b drip) drip { damn a + b }
 fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
-    // Parse: slay function_name(params) return_type { body }
-    var tokens = std.mem.tokenizeAny(u8, line, " \t(){}");
+    if (verbose) print("🎯 AST Parsing function definition: {s}\n", .{line});
     
-    _ = tokens.next(); // skip 'slay'
-    const func_name = tokens.next() orelse return;
+    // Find the function name - after "slay " and before "("
+    const slay_end = std.mem.indexOf(u8, line, "slay ") orelse return;
+    const name_start = slay_end + 5; // length of "slay "
+    const paren_start = std.mem.indexOf(u8, line[name_start..], "(") orelse return;
+    const func_name = std.mem.trim(u8, line[name_start..name_start + paren_start], " \t");
+    
+    if (verbose) print("🎯 AST Function name: '{s}'\n", .{func_name});
     
     // Find parameter section
-    const paren_start = std.mem.indexOf(u8, line, "(") orelse return;
-    const paren_end = std.mem.indexOf(u8, line, ")") orelse return;
-    const param_section = line[paren_start + 1..paren_end];
+    const abs_paren_start = name_start + paren_start;
+    const paren_end = std.mem.indexOf(u8, line[abs_paren_start..], ")") orelse return;
+    const param_section = line[abs_paren_start + 1..abs_paren_start + paren_end];
+    
+    if (verbose) print("🎯 AST Parameters section: '{s}'\n", .{param_section});
     
     // Find function body
     const brace_start = std.mem.indexOf(u8, line, "{") orelse return;
     const brace_end = std.mem.lastIndexOf(u8, line, "}") orelse return;
     const body = std.mem.trim(u8, line[brace_start + 1..brace_end], " \t");
+    
+    if (verbose) print("🎯 AST Function body: '{s}'\n", .{body});
     
     // Parse parameters: "a drip, b drip" -> ["a", "b"]
     var params = std.ArrayList([]const u8){};
@@ -570,10 +645,15 @@ fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]
         var param_pairs = std.mem.splitSequence(u8, param_section, ", ");
         while (param_pairs.next()) |pair| {
             const trimmed_pair = std.mem.trim(u8, pair, " \t");
+            if (trimmed_pair.len == 0) continue;
+            
             var parts = std.mem.splitScalar(u8, trimmed_pair, ' ');
             if (parts.next()) |param_name| {
-                const name_copy = try allocator.dupe(u8, param_name);
-                try params.append(allocator, name_copy);
+                if (param_name.len > 0) {
+                    const name_copy = try allocator.dupe(u8, param_name);
+                    try params.append(allocator, name_copy);
+                    if (verbose) print("🎯 AST Parameter: '{s}'\n", .{param_name});
+                }
             }
         }
     }
@@ -589,7 +669,7 @@ fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]
     try functions.put(key_copy, func_def);
     
     if (verbose) {
-        print("🎯 AST Function defined: {s} with {} parameters\n", .{ func_name, func_def.params.len });
+        print("✅ AST Function defined: {s} with {} parameters\n", .{ func_name, func_def.params.len });
         for (func_def.params) |param| {
             print("  - Parameter: {s}\n", .{param});
         }
@@ -597,7 +677,7 @@ fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]
     }
 }
 
-fn handleAST_Variable(allocator: Allocator, variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
+fn handleAST_Variable(allocator: Allocator, variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
     // Parse: sus x drip = 42 or sus sum drip = x + y or sus result drip = add(5, 3)
     var parts = std.mem.splitSequence(u8, line[4..], " = ");
     const left_part = std.mem.trim(u8, parts.next() orelse return, " ");
@@ -606,17 +686,38 @@ fn handleAST_Variable(allocator: Allocator, variables: *std.HashMap([]const u8, 
     var name_type = std.mem.splitScalar(u8, left_part, ' ');
     const name = name_type.next() orelse return;
     
-    // Evaluate the right side with AST-style expression evaluation
-    const value = try evaluateAST_Expression(allocator, variables, functions, right_part, verbose);
+    // Determine the type of value and handle appropriately
+    const value = if (std.mem.startsWith(u8, right_part, "\"") and std.mem.endsWith(u8, right_part, "\"")) blk: {
+        // String literal - strip quotes and duplicate for storage
+        const string_content = right_part[1..right_part.len-1];
+        const string_copy = try allocator.dupe(u8, string_content);
+        break :blk VariableValue{ .string = string_copy };
+    } else if (std.mem.eql(u8, right_part, "based")) blk: {
+        // Boolean literal - true
+        break :blk VariableValue{ .boolean = true };
+    } else if (std.mem.eql(u8, right_part, "cap")) blk: {
+        // Boolean literal - false
+        break :blk VariableValue{ .boolean = false };
+    } else blk: {
+        // Integer expression - evaluate it
+        const int_result = try evaluateAST_Expression(allocator, variables, functions, right_part, verbose);
+        break :blk VariableValue{ .integer = int_result };
+    };
     
     // Store the variable
     const name_copy = try allocator.dupe(u8, name);
     try variables.put(name_copy, value);
     
-    if (verbose) print("🎯 AST Variable: {s} = {}\n", .{ name, value });
+    if (verbose) {
+        switch (value) {
+            .integer => |int_val| print("🎯 AST Variable: {s} = {}\n", .{ name, int_val }),
+            .string => |str_val| print("🎯 AST Variable: {s} = \"{s}\"\n", .{ name, str_val }),
+            .boolean => |bool_val| print("🎯 AST Variable: {s} = {}\n", .{ name, bool_val }),
+        }
+    }
 }
 
-fn evaluateAST_Expression(allocator: Allocator, variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8, verbose: bool) !i64 {
+fn evaluateAST_Expression(allocator: Allocator, variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8, verbose: bool) !i64 {
     // Handle function calls: add(5, 3)
     if (std.mem.indexOf(u8, expr, "(")) |paren_pos| {
         const func_name = std.mem.trim(u8, expr[0..paren_pos], " ");
@@ -642,23 +743,39 @@ fn evaluateAST_Expression(allocator: Allocator, variables: *std.HashMap([]const 
     return try getAST_Value(variables, expr);
 }
 
+// Function argument value (mixed types)
+const FunctionArgValue = union(enum) {
+    integer: i64,
+    string: []const u8,
+};
+
 // Execute a function call
-fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), func_name: []const u8, args_str: []const u8, verbose: bool) !i64 {
+fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), func_name: []const u8, args_str: []const u8, verbose: bool) !i64 {
     const func_def = functions.get(func_name) orelse {
         print("❌ AST: Undefined function: {s}\n", .{func_name});
         return error.UndefinedFunction;
     };
     
-    // Parse arguments: "5, 3" -> [5, 3]
-    var args = std.ArrayList(i64){};
+    // Parse arguments: "5, 3" or "10, \"test\"" -> mixed values
+    var args = std.ArrayList(FunctionArgValue){};
     defer args.deinit(allocator);
     
     if (args_str.len > 0) {
         var arg_parts = std.mem.splitSequence(u8, args_str, ", ");
         while (arg_parts.next()) |arg| {
             const trimmed_arg = std.mem.trim(u8, arg, " \t");
-            const value = try getAST_Value(variables, trimmed_arg);
-            try args.append(allocator, value);
+            
+            // Handle string literals
+            if (std.mem.startsWith(u8, trimmed_arg, "\"") and std.mem.endsWith(u8, trimmed_arg, "\"")) {
+                const string_content = trimmed_arg[1..trimmed_arg.len-1];
+                try args.append(allocator, FunctionArgValue{ .string = string_content });
+                if (verbose) print("🎯 AST String argument: \"{s}\"\n", .{string_content});
+            } else {
+                // Try as integer or variable
+                const value = try getAST_Value(variables, trimmed_arg);
+                try args.append(allocator, FunctionArgValue{ .integer = value });
+                if (verbose) print("🎯 AST Integer argument: {}\n", .{value});
+            }
         }
     }
     
@@ -672,38 +789,196 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, i6
         print("🎯 AST Function call: {s}(", .{func_name});
         for (args.items, 0..) |arg, i| {
             if (i > 0) print(", ", .{});
-            print("{}", .{arg});
+            switch (arg) {
+                .integer => |int_val| print("{}", .{int_val}),
+                .string => |str_val| print("\"{s}\"", .{str_val}),
+            }
         }
         print(")\n", .{});
     }
     
     // Create function scope with parameters
-    var func_scope = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var func_scope = std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
     defer func_scope.deinit();
     
     // Bind parameters to argument values
     for (func_def.params, args.items) |param, arg_value| {
         try func_scope.put(param, arg_value);
-        if (verbose) print("🎯 AST Parameter binding: {s} = {}\n", .{ param, arg_value });
+        if (verbose) {
+            switch (arg_value) {
+                .integer => |int_val| print("🎯 AST Parameter binding: {s} = {}\n", .{ param, int_val }),
+                .string => |str_val| print("🎯 AST Parameter binding: {s} = \"{s}\"\n", .{ param, str_val }),
+            }
+        }
     }
     
     // Execute function body with parameter scope
-    const result = try executeAST_FunctionBody(allocator, &func_scope, functions, func_def.body, verbose);
+    const result = try executeAST_FunctionBodyMixed(allocator, &func_scope, functions, func_def.body, verbose);
     
     if (verbose) print("🎯 AST Function {s} returned: {}\n", .{ func_name, result });
     return result;
 }
 
-// Execute function body: "damn a + b"
-fn executeAST_FunctionBody(allocator: Allocator, func_scope: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), body: []const u8, verbose: bool) !i64 {
-    // Handle return statement: "damn expression"
-    if (std.mem.startsWith(u8, body, "damn ")) {
-        const return_expr = std.mem.trim(u8, body[5..], " ");
-        return try evaluateAST_FunctionExpression(allocator, func_scope, functions, return_expr, verbose);
+// Execute function body with mixed-type arguments: "damn a + b" or "sus var drip = expr damn var"
+fn executeAST_FunctionBodyMixed(allocator: Allocator, func_scope: *std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), body: []const u8, verbose: bool) !i64 {
+    if (verbose) print("🎯 AST Executing function body: '{s}'\n", .{body});
+    
+    // Split body by spaces to find statements
+    var body_statements = std.mem.splitSequence(u8, body, " damn ");
+    var last_value: i64 = 0;
+    
+    // Process each statement before the final return
+    while (body_statements.next()) |stmt_part| {
+        const trimmed = std.mem.trim(u8, stmt_part, " \t");
+        if (trimmed.len == 0) continue;
+        
+        if (verbose) print("🎯 AST Processing function statement: '{s}'\n", .{trimmed});
+        
+        // Handle variable declarations in function scope: "sus var drip = expr"
+        if (std.mem.startsWith(u8, trimmed, "sus ")) {
+            try handleAST_FunctionVariableDeclarationMixed(allocator, func_scope, functions, trimmed, verbose);
+        }
+        // Handle direct return: "damn expr" or just "expr"
+        else if (std.mem.startsWith(u8, trimmed, "damn ")) {
+            const return_expr = std.mem.trim(u8, trimmed[5..], " ");
+            last_value = try evaluateAST_FunctionExpressionMixed(allocator, func_scope, functions, return_expr, verbose);
+        }
+        // Handle expression that should be returned
+        else {
+            last_value = try evaluateAST_FunctionExpressionMixed(allocator, func_scope, functions, trimmed, verbose);
+        }
     }
     
-    print("❌ AST: Unsupported function body: {s}\n", .{body});
-    return error.UnsupportedFunctionBody;
+    if (verbose) print("🎯 AST Function body returned: {}\n", .{last_value});
+    return last_value;
+}
+
+// Execute function body: "damn a + b" or "sus var drip = expr damn var" (legacy integer-only version)
+fn executeAST_FunctionBody(allocator: Allocator, func_scope: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), body: []const u8, verbose: bool) !i64 {
+    if (verbose) print("🎯 AST Executing function body: '{s}'\n", .{body});
+    
+    // Split body by spaces to find statements
+    var body_statements = std.mem.splitSequence(u8, body, " damn ");
+    var last_value: i64 = 0;
+    
+    // Process each statement before the final return
+    while (body_statements.next()) |stmt_part| {
+        const trimmed = std.mem.trim(u8, stmt_part, " \t");
+        if (trimmed.len == 0) continue;
+        
+        if (verbose) print("🎯 AST Processing function statement: '{s}'\n", .{trimmed});
+        
+        // Handle variable declarations in function scope: "sus var drip = expr"
+        if (std.mem.startsWith(u8, trimmed, "sus ")) {
+            try handleAST_FunctionVariableDeclaration(allocator, func_scope, functions, trimmed, verbose);
+        }
+        // Handle direct return: "damn expr" or just "expr"
+        else if (std.mem.startsWith(u8, trimmed, "damn ")) {
+            const return_expr = std.mem.trim(u8, trimmed[5..], " ");
+            last_value = try evaluateAST_FunctionExpression(allocator, func_scope, functions, return_expr, verbose);
+        }
+        // Handle expression that should be returned
+        else {
+            last_value = try evaluateAST_FunctionExpression(allocator, func_scope, functions, trimmed, verbose);
+        }
+    }
+    
+    if (verbose) print("🎯 AST Function body returned: {}\n", .{last_value});
+    return last_value;
+}
+
+// Handle variable declaration in function scope: "sus local_var drip = param1 + 5"
+fn handleAST_FunctionVariableDeclaration(allocator: Allocator, func_scope: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
+    // Parse: sus var_name type = expression
+    var parts = std.mem.splitSequence(u8, line[4..], " = ");
+    const left_part = std.mem.trim(u8, parts.next() orelse return, " ");
+    const right_part = std.mem.trim(u8, parts.next() orelse return, " ");
+    
+    var name_type = std.mem.splitScalar(u8, left_part, ' ');
+    const name = name_type.next() orelse return;
+    
+    if (verbose) print("🎯 AST Function variable declaration: {s} = {s}\n", .{ name, right_part });
+    
+    // Evaluate the expression in function scope
+    const value = try evaluateAST_FunctionExpression(allocator, func_scope, functions, right_part, verbose);
+    
+    // Store in function scope (no need to duplicate key since we're using string literals)
+    try func_scope.put(name, value);
+    
+    if (verbose) print("🎯 AST Function variable: {s} = {}\n", .{ name, value });
+}
+
+// Handle variable declaration in function scope with mixed types: "sus local_var drip = param1 + 5"
+fn handleAST_FunctionVariableDeclarationMixed(allocator: Allocator, func_scope: *std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), functions: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
+    // Parse: sus var_name type = expression
+    var parts = std.mem.splitSequence(u8, line[4..], " = ");
+    const left_part = std.mem.trim(u8, parts.next() orelse return, " ");
+    const right_part = std.mem.trim(u8, parts.next() orelse return, " ");
+    
+    var name_type = std.mem.splitScalar(u8, left_part, ' ');
+    const name = name_type.next() orelse return;
+    
+    if (verbose) print("🎯 AST Function variable declaration: {s} = {s}\n", .{ name, right_part });
+    
+    // Evaluate the expression in function scope
+    const value = try evaluateAST_FunctionExpressionMixed(allocator, func_scope, functions, right_part, verbose);
+    
+    // Store in function scope as integer for now (extend later for mixed types if needed)
+    try func_scope.put(name, FunctionArgValue{ .integer = value });
+    
+    if (verbose) print("🎯 AST Function variable: {s} = {}\n", .{ name, value });
+}
+
+// Evaluate expressions in function scope with mixed types (looks in function params first, then globals)
+fn evaluateAST_FunctionExpressionMixed(_: Allocator, func_scope: *std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), _: *std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8, verbose: bool) !i64 {
+    // Handle addition: a + b
+    if (std.mem.indexOf(u8, expr, " + ")) |plus_pos| {
+        const left = std.mem.trim(u8, expr[0..plus_pos], " ");
+        const right = std.mem.trim(u8, expr[plus_pos + 3..], " ");
+        
+        const left_val = try getAST_FunctionValueMixed(func_scope, left);
+        const right_val = try getAST_FunctionValueMixed(func_scope, right);
+        
+        if (verbose) print("🎯 AST Function expression: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+        return left_val + right_val;
+    }
+    
+    // Handle multiplication: a * b
+    if (std.mem.indexOf(u8, expr, " * ")) |mult_pos| {
+        const left = std.mem.trim(u8, expr[0..mult_pos], " ");
+        const right = std.mem.trim(u8, expr[mult_pos + 3..], " ");
+        
+        const left_val = try getAST_FunctionValueMixed(func_scope, left);
+        const right_val = try getAST_FunctionValueMixed(func_scope, right);
+        
+        if (verbose) print("🎯 AST Function expression: {} * {} = {}\n", .{ left_val, right_val, left_val * right_val });
+        return left_val * right_val;
+    }
+    
+    // Single value
+    return try getAST_FunctionValueMixed(func_scope, expr);
+}
+
+// Get value from function scope with mixed types first, then fall back to error
+fn getAST_FunctionValueMixed(func_scope: *std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8) !i64 {
+    // Try parsing as integer
+    if (std.fmt.parseInt(i64, expr, 10)) |value| {
+        return value;
+    } else |_| {
+        // Try as function parameter
+        if (func_scope.get(expr)) |value| {
+            switch (value) {
+                .integer => |int_val| return int_val,
+                .string => |_| {
+                    print("❌ AST: Cannot use string parameter '{s}' in integer context\n", .{expr});
+                    return error.TypeMismatch;
+                },
+            }
+        } else {
+            print("❌ AST: Undefined variable in function scope: {s}\n", .{expr});
+            return error.UndefinedVariable;
+        }
+    }
 }
 
 // Evaluate expressions in function scope (looks in function params first, then globals)
@@ -752,22 +1027,34 @@ fn getAST_FunctionValue(func_scope: *std.HashMap([]const u8, i64, std.hash_map.S
     }
 }
 
-fn getAST_Value(variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8) !i64 {
-    // Try parsing as integer
+fn getAST_Value(variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8) !i64 {
+    // Try parsing as integer literal
     if (std.fmt.parseInt(i64, expr, 10)) |value| {
         return value;
     } else |_| {
-        // Try as variable
-        if (variables.get(expr)) |value| {
-            return value;
+        // Try as variable lookup
+        if (variables.get(expr)) |var_value| {
+            switch (var_value) {
+                .integer => |int_val| return int_val,
+                .string => |_| {
+                    print("❌ AST: Cannot use string variable '{s}' in integer context\n", .{expr});
+                    return error.TypeMismatch;
+                },
+                .boolean => |bool_val| return if (bool_val) 1 else 0, // Convert boolean to integer for math
+            }
         } else {
+            // Check if it's a string literal (shouldn't happen here, but defensive)
+            if (std.mem.startsWith(u8, expr, "\"") and std.mem.endsWith(u8, expr, "\"")) {
+                print("❌ AST: String literal '{s}' used in integer context\n", .{expr});
+                return error.TypeMismatch;
+            }
             print("❌ AST: Undefined variable: {s}\n", .{expr});
             return error.UndefinedVariable;
         }
     }
 }
 
-fn handleAST_Print(variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
+fn handleAST_Print(variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), line: []const u8, verbose: bool) !void {
     const start = std.mem.indexOf(u8, line, "(") orelse return;
     const end = std.mem.lastIndexOf(u8, line, ")") orelse return;
     const content = line[start + 1 .. end];
@@ -785,10 +1072,20 @@ fn handleAST_Print(variables: *std.HashMap([]const u8, i64, std.hash_map.StringC
             first = false;
             
             // Try to get variable value
-            if (variables.get(trimmed)) |value| {
-                print("{}", .{value});
+            if (variables.get(trimmed)) |var_value| {
+                switch (var_value) {
+                    .integer => |int_val| print("{}", .{int_val}),
+                    .string => |str_val| print("{s}", .{str_val}),
+                    .boolean => |bool_val| print("{}", .{bool_val}),
+                }
             } else {
-                print("{s}", .{trimmed});
+                // Check if it's a string literal
+                if (std.mem.startsWith(u8, part, "\"") and std.mem.endsWith(u8, part, "\"")) {
+                    const string_content = part[1..part.len-1];
+                    print("{s}", .{string_content});
+                } else {
+                    print("{s}", .{trimmed});
+                }
             }
         }
     }

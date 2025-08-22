@@ -1,6 +1,0 @@
-PASS: Complex program interpretation
-PASS: Complex program compilation and execution
-PASS: Concurrency test
-PASS: Memory stress test execution
-WARNING: Potential memory leaks detected
-PASS: Feature completeness test

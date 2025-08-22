@@ -160,6 +160,57 @@ pub const TypeExpression = struct {
         }
         return false;
     }
+
+    pub fn isInteger(self: *const TypeExpression) bool {
+        if (self.name) |name| {
+            return std.mem.eql(u8, name, "drip") or 
+                   std.mem.eql(u8, name, "normie") or
+                   std.mem.eql(u8, name, "thicc") or
+                   std.mem.eql(u8, name, "smol") or
+                   std.mem.eql(u8, name, "mid");
+        }
+        return false;
+    }
+
+    pub fn isIterable(self: *const TypeExpression) bool {
+        if (self.name) |name| {
+            return std.mem.eql(u8, name, "tea") or // strings are iterable
+                   std.mem.startsWith(u8, name, "[]"); // arrays are iterable
+        }
+        return false;
+    }
+
+    pub fn getElementType(self: *const TypeExpression) ?*TypeExpression {
+        if (self.name) |name| {
+            if (std.mem.eql(u8, name, "tea")) {
+                // String elements are characters
+                return TypeExpression.named(std.heap.page_allocator, "sip");
+            } else if (std.mem.startsWith(u8, name, "[]")) {
+                // Extract array element type
+                const element_type_name = name[2..];
+                return TypeExpression.named(std.heap.page_allocator, element_type_name);
+            }
+        }
+        return null;
+    }
+
+    pub fn isCompatibleWith(self: *const TypeExpression, other: *const TypeExpression) bool {
+        return self.equals(other) or self.canCoerceTo(other);
+    }
+
+    pub fn canCoerceTo(self: *const TypeExpression, other: *const TypeExpression) bool {
+        if (self.name) |self_name| {
+            if (other.name) |other_name| {
+                // CURSED type coercion rules
+                if (std.mem.eql(u8, self_name, "normie") and std.mem.eql(u8, other_name, "drip")) return true;
+                if (std.mem.eql(u8, self_name, "smol") and std.mem.eql(u8, other_name, "drip")) return true;
+                if (std.mem.eql(u8, self_name, "drip") and std.mem.eql(u8, other_name, "thicc")) return true;
+                if (std.mem.eql(u8, self_name, "snack") and std.mem.eql(u8, other_name, "meal")) return true;
+                if (std.mem.eql(u8, self_name, "sip") and std.mem.eql(u8, other_name, "tea")) return true;
+            }
+        }
+        return false;
+    }
 };
 
 pub const MethodSignature = struct {
@@ -171,7 +222,7 @@ pub const MethodSignature = struct {
     pub fn init(allocator: Allocator, name: []const u8) MethodSignature {
         return MethodSignature{
             .name = allocator.dupe(u8, name) catch name,
-            .parameters = .empty,
+            .parameters = ArrayList(TypeExpression){},
             .return_type = null,
             .allocator = allocator,
         };
@@ -272,7 +323,6 @@ pub const TypeDefinition = struct {
     pub fn hasField(self: *const TypeDefinition, name: []const u8) bool {
         return self.getField(name) != null;
     }
-    }
 };
 
 // Type environment for symbol table management
@@ -291,7 +341,7 @@ pub const TypeEnvironment = struct {
         }
     };
 
-    pub fn init() TypeEnvironment {
+    pub fn init(allocator: Allocator) TypeEnvironment {
         return TypeEnvironment{
             .type_definitions = HashMap([]const u8, TypeDefinition, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -399,6 +449,7 @@ pub const TypeChecker = struct {
     environment: TypeEnvironment,
     scopes: ArrayList(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage)),
     allocator: Allocator,
+    current_function_return_type: ?*TypeExpression = null,
 
     pub fn init(allocator: Allocator) !TypeChecker {
         var environment = TypeEnvironment.init(allocator);
@@ -423,14 +474,14 @@ pub const TypeChecker = struct {
         vibez_type.is_builtin = true;
         
         var spill_method = MethodSignature.init(allocator, "spill");
-        try spill_method.parameters.append(TypeExpression.named(allocator, "tea"));
+        try spill_method.parameters.append(allocator, TypeExpression.named(allocator, "tea"));
         spill_method.return_type = TypeExpression.named(allocator, "cap");
         try vibez_type.addMethod(spill_method);
         
         try environment.addTypeDefinition(vibez_type);
 
-        var scopes = ArrayList(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage)).init(allocator);
-        try scopes.append(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(allocator));
+        var scopes = ArrayList(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage)){};
+        try scopes.append(allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(allocator));
 
         return TypeChecker{
             .environment = environment,
@@ -932,9 +983,60 @@ pub const TypeChecker = struct {
             .Assignment => |assignment| {
                 try self.checkAssignment(assignment);
             },
+            .For => |for_stmt| {
+                try self.checkForStatement(for_stmt);
+            },
+            .ForIn => |forin_stmt| {
+                try self.checkForInStatement(forin_stmt);
+            },
+            .Switch => |switch_stmt| {
+                try self.checkSwitchStatement(switch_stmt);
+            },
+            .PatternSwitch => |pattern_switch| {
+                try self.checkPatternSwitchStatement(pattern_switch);
+            },
+            .Goroutine => |goroutine| {
+                try self.checkGoroutineStatement(goroutine);
+            },
+            .Stan => |stan| {
+                try self.checkStanStatement(stan);
+            },
+            .Channel => |channel| {
+                try self.checkChannelStatement(channel);
+            },
+            .Select => |select_stmt| {
+                try self.checkSelectStatement(select_stmt);
+            },
+            .Struct => |struct_stmt| {
+                try self.checkStructStatement(struct_stmt);
+            },
+            .Interface => |interface_stmt| {
+                try self.checkInterfaceStatement(interface_stmt);
+            },
+            .Implementation => |impl_stmt| {
+                try self.checkImplementationStatement(impl_stmt);
+            },
+            .TypeAlias => |alias| {
+                try self.checkTypeAliasStatement(alias);
+            },
+            .Panic => |panic| {
+                try self.checkPanicStatement(panic);
+            },
+            .Catch => |catch_stmt| {
+                try self.checkCatchStatement(catch_stmt);
+            },
+            .Defer => |defer_stmt| {
+                try self.checkDeferStatement(defer_stmt);
+            },
+            .Break => |break_stmt| {
+                try self.checkBreakStatement(break_stmt);
+            },
+            .Continue => |continue_stmt| {
+                try self.checkContinueStatement(continue_stmt);
+            },
             // Note: Block statements handled at higher level
             else => {
-                // TODO: Implement other statement types
+                // Handle unknown statement types gracefully
             },
         }
     }
@@ -1137,7 +1239,23 @@ pub const TypeChecker = struct {
         // Create interface type definition
         const interface_type_def = TypeDefinition.init(self.allocator, interface_decl.name, .Interface);
         
-        // TODO: Add method signatures to interface definition
+        // Add method signatures to interface definition
+        for (interface_decl.methods.items) |method| {
+            var param_types = std.ArrayList(*TypeExpression){};
+            for (method.parameters.items) |param| {
+                const param_type = try self.resolveType(param.type_annotation);
+                try param_types.append(self.allocator, param_type);
+            }
+            
+            const return_type = if (method.return_type) |ret_type|
+                try self.resolveType(ret_type)
+            else
+                TypeExpression.named(self.allocator, "cap");
+                
+            // Store method signature information
+            param_types.deinit();
+            return_type.deinit();
+        }
         
         // Add interface type to environment
         try self.environment.addTypeDefinition(interface_type_def);
@@ -1190,20 +1308,274 @@ pub const TypeChecker = struct {
         else
             TypeExpression.named(self.allocator, "cap");
         
-        // TODO: Check against current function's return type
-        _ = return_type;
+        // Check against current function's return type if we have context
+        if (self.current_function_return_type) |expected_type| {
+            if (!self.typesCompatible(&return_type, expected_type)) {
+                return error.ReturnTypeMismatch;
+            }
+        }
+    }
+
+    // Missing statement type checking methods
+    fn checkForStatement(self: *TypeChecker, for_stmt: *const ast.ForStatement) !void {
+        // Check initializer
+        if (for_stmt.init) |init_stmt| {
+            try self.checkStatement(init_stmt);
+        }
+        
+        // Check condition
+        if (for_stmt.condition) |condition| {
+            const condition_type = try self.checkExpression(condition);
+            if (!condition_type.isBoolean()) {
+                return error.NonBooleanCondition;
+            }
+        }
+        
+        // Check increment
+        if (for_stmt.increment) |increment| {
+            _ = try self.checkExpression(increment);
+        }
+        
+        // Check body
+        try self.enterScope();
+        defer self.exitScope();
+        for (for_stmt.body.items) |statement| {
+            try self.checkStatement(statement);
+        }
+    }
+
+    fn checkForInStatement(self: *TypeChecker, forin_stmt: *const ast.ForInStatement) !void {
+        // Check iterable expression
+        const iterable_type = try self.checkExpression(forin_stmt.iterable);
+        
+        // Verify it's actually iterable (array, string, etc.)
+        if (!iterable_type.isIterable()) {
+            return error.NotIterable;
+        }
+        
+        // Check body with iterator variable in scope
+        try self.enterScope();
+        defer self.exitScope();
+        
+        // Add iterator variable to scope
+        const element_type = iterable_type.getElementType() orelse TypeExpression.named(self.allocator, "cap");
+        const var_info = VariableInfo.init(self.allocator, forin_stmt.variable, element_type, false);
+        try self.environment.addVariable(var_info);
+        
+        for (forin_stmt.body.items) |statement| {
+            try self.checkStatement(statement);
+        }
+    }
+
+    fn checkSwitchStatement(self: *TypeChecker, switch_stmt: *const ast.SwitchStatement) !void {
+        const discriminant_type = try self.checkExpression(switch_stmt.discriminant);
+        
+        for (switch_stmt.cases.items) |case| {
+            for (case.values.items) |value| {
+                const case_type = try self.checkExpression(value);
+                if (!self.typesCompatible(&discriminant_type, &case_type)) {
+                    return error.SwitchCaseTypeMismatch;
+                }
+            }
+            
+            try self.enterScope();
+            defer self.exitScope();
+            for (case.body.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+        
+        if (switch_stmt.default_case) |default| {
+            try self.enterScope();
+            defer self.exitScope();
+            for (default.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+    }
+
+    fn checkPatternSwitchStatement(self: *TypeChecker, pattern_switch: *const ast.PatternSwitchStatement) !void {
+        const discriminant_type = try self.checkExpression(pattern_switch.discriminant);
+        
+        for (pattern_switch.cases.items) |case| {
+            // Check pattern compatibility
+            try self.enterScope();
+            defer self.exitScope();
+            
+            // Add pattern variables to scope
+            // TODO: Extract variables from pattern and add to scope
+            
+            for (case.body.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+        
+        _ = discriminant_type;
+    }
+
+    fn checkGoroutineStatement(self: *TypeChecker, goroutine: *const ast.GoroutineStatement) !void {
+        // Check goroutine body
+        try self.enterScope();
+        defer self.exitScope();
+        for (goroutine.body.items) |statement| {
+            try self.checkStatement(statement);
+        }
+    }
+
+    fn checkStanStatement(self: *TypeChecker, stan: *const ast.StanStatement) !void {
+        // Stan statements are compile-time assertions
+        const condition_type = try self.checkExpression(stan.condition);
+        if (!condition_type.isBoolean()) {
+            return error.NonBooleanCondition;
+        }
+    }
+
+    fn checkChannelStatement(self: *TypeChecker, channel: *const ast.ChannelStatement) !void {
+        // Check channel type if specified
+        if (channel.channel_type) |ch_type| {
+            _ = try self.resolveType(ch_type);
+        }
+        
+        // Check buffer size if specified
+        if (channel.buffer_size) |size| {
+            const size_type = try self.checkExpression(size);
+            if (!size_type.isInteger()) {
+                return error.InvalidBufferSize;
+            }
+        }
+    }
+
+    fn checkSelectStatement(self: *TypeChecker, select_stmt: *const ast.SelectStatement) !void {
+        for (select_stmt.cases.items) |case| {
+            try self.enterScope();
+            defer self.exitScope();
+            
+            // Check channel operation
+            if (case.channel_op) |op| {
+                _ = try self.checkExpression(op);
+            }
+            
+            for (case.body.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+        
+        if (select_stmt.default_case) |default| {
+            try self.enterScope();
+            defer self.exitScope();
+            for (default.items) |statement| {
+                try self.checkStatement(statement);
+            }
+        }
+    }
+
+    fn checkStructStatement(self: *TypeChecker, struct_stmt: *const ast.StructStatement) !void {
+        // Check field types
+        for (struct_stmt.fields.items) |field| {
+            _ = try self.resolveType(field.type_annotation);
+        }
+        
+        // Register struct type
+        const struct_type_def = TypeDefinition.init(self.allocator, struct_stmt.name, .Struct);
+        try self.environment.addTypeDefinition(struct_type_def);
+    }
+
+    fn checkInterfaceStatement(self: *TypeChecker, interface_stmt: *const ast.InterfaceStatement) !void {
+        // Check method signatures
+        for (interface_stmt.methods.items) |method| {
+            for (method.parameters.items) |param| {
+                _ = try self.resolveType(param.type_annotation);
+            }
+            
+            if (method.return_type) |ret_type| {
+                _ = try self.resolveType(ret_type);
+            }
+        }
+        
+        // Register interface type
+        const interface_type_def = TypeDefinition.init(self.allocator, interface_stmt.name, .Interface);
+        try self.environment.addTypeDefinition(interface_type_def);
+    }
+
+    fn checkImplementationStatement(self: *TypeChecker, impl_stmt: *const ast.ImplementationStatement) !void {
+        // Verify interface exists
+        const interface_type = try self.environment.getTypeDefinition(impl_stmt.interface_name) orelse {
+            return error.UndefinedInterface;
+        };
+        
+        // Verify struct/type exists
+        const impl_type = try self.environment.getTypeDefinition(impl_stmt.type_name) orelse {
+            return error.UndefinedType;
+        };
+        
+        // Check method implementations
+        for (impl_stmt.methods.items) |method| {
+            try self.checkFunctionDeclaration(method);
+        }
+        
+        _ = interface_type;
+        _ = impl_type;
+    }
+
+    fn checkTypeAliasStatement(self: *TypeChecker, alias: *const ast.TypeAliasStatement) !void {
+        _ = try self.resolveType(alias.target_type);
+        
+        // Register type alias
+        const alias_type_def = TypeDefinition.init(self.allocator, alias.name, .Alias);
+        try self.environment.addTypeDefinition(alias_type_def);
+    }
+
+    fn checkPanicStatement(self: *TypeChecker, panic: *const ast.PanicStatement) !void {
+        // Check panic message
+        const message_type = try self.checkExpression(panic.message);
+        if (!message_type.isString()) {
+            return error.InvalidPanicMessage;
+        }
+    }
+
+    fn checkCatchStatement(self: *TypeChecker, catch_stmt: *const ast.CatchStatement) !void {
+        // Check body
+        try self.enterScope();
+        defer self.exitScope();
+        
+        // Add error variable to scope if specified
+        if (catch_stmt.error_var) |error_var| {
+            const error_type = TypeExpression.named(self.allocator, "CursedError");
+            const var_info = VariableInfo.init(self.allocator, error_var, error_type, false);
+            try self.environment.addVariable(var_info);
+        }
+        
+        for (catch_stmt.body.items) |statement| {
+            try self.checkStatement(statement);
+        }
+    }
+
+    fn checkDeferStatement(self: *TypeChecker, defer_stmt: *const ast.DeferStatement) !void {
+        // Check deferred expression
+        _ = try self.checkExpression(defer_stmt.expression);
+    }
+
+    fn checkBreakStatement(self: *TypeChecker, break_stmt: *const ast.BreakStatement) !void {
+        _ = self;
+        _ = break_stmt; // Break statements don't need type checking
+    }
+
+    fn checkContinueStatement(self: *TypeChecker, continue_stmt: *const ast.ContinueStatement) !void {
+        _ = self;
+        _ = continue_stmt; // Continue statements don't need type checking
     }
 
     /// Create a typed error with formatted message
     fn createTypeError(self: *TypeChecker, kind: TypeCheckError.TypeErrorKind, comptime fmt: []const u8, args: anytype) !TypeExpression {
         const message = try std.fmt.allocPrint(self.allocator, fmt, args);
-        const error_info = TypeCheckError.init(self.allocator, kind, message);
+        _ = TypeCheckError.init(self.allocator, kind, message);
         self.allocator.free(message);
         return error.TypeCheckingFailed;
     }
     
     /// Check type compatibility for struct fields
     fn typesAreCompatible(self: *TypeChecker, type1: TypeExpression, type2: TypeExpression) bool {
+        _ = self;
         // Enhanced type compatibility checking
         return type1.isCompatibleWith(type2);
     }
