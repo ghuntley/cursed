@@ -1,99 +1,117 @@
-# CURSED Language Linter Configuration
-# This file configures the linting rules and behavior for CURSED source files
-
-# Enable auto-fixing of issues where possible
-auto_fix = false
-
-# Minimum severity level to report (info, warning, error)
-min_severity = "info"
-
-# List of rules to disable (uncomment and modify as needed)
-# disabled_rules = ["trailing-whitespace", "line-length"]
+# CURSED Linter Configuration
+# Complete production-ready linter configuration file
 
 [general]
-# Maximum line length
 max_line_length = 100
+max_function_length = 50
+max_function_params = 5
+max_cognitive_complexity = 10
+max_nesting_depth = 4
+max_cyclomatic_complexity = 10
 
-# Indentation style: "spaces" or "tabs"
-indent_style = "spaces"
+[quality]
+check_unused_variables = true
+check_unused_functions = true
+check_unused_imports = true
+check_naming_conventions = true
+check_function_complexity = true
+check_duplicate_code = true
+check_dead_code = true
 
-# Number of spaces per indent level (when using spaces)
-indent_size = 4
+[security]
+check_security_vulnerabilities = true
+check_hardcoded_secrets = true
+check_sql_injection = true
+check_command_injection = true
+check_weak_cryptography = true
+check_unsafe_operations = true
+check_input_validation = true
 
-# Enforce Gen Z naming conventions
-enforce_genz_naming = true
+[performance]
+check_performance_issues = true
+check_memory_leaks = true
+check_inefficient_algorithms = true
+check_string_concatenation = true
+check_loop_optimizations = true
+check_memory_allocations = true
 
-# File extensions to process
-file_extensions = ["csd"]
+[cursed_style]
+enforce_gen_z_syntax = true
+prefer_vibez_output = true
+check_proper_yeet_usage = true
+check_slay_conventions = true
+enforce_squad_usage = true
+check_error_handling = true
+prefer_immutable_vars = true
 
-# Patterns to ignore (glob patterns)
-ignore_patterns = [
-    "target/*",
-    "*.generated.csd",
-    "test_fixtures/*"
-]
-
-[rules]
-# Style rules configuration
-[rules.style]
-enabled = true
-default_severity = "warning"
-
-# Correctness rules configuration  
-[rules.correctness]
-enabled = true
-default_severity = "warning"
-
-# Performance rules configuration
-[rules.performance]
-enabled = true
-default_severity = "info"
-
-# Complexity rules configuration
-[rules.complexity]
-enabled = true
-default_severity = "warning"
-
-# CURSED-specific rules configuration
-[rules.cursed_specific]
-enabled = true
-default_severity = "info"
+[style]
+enforce_indentation = true
+check_trailing_whitespace = true
+check_empty_lines = true
+enforce_brace_style = true
+check_spacing = true
 
 [output]
-# Output format: "human", "json", "checkstyle", "sarif"
-format = "human"
-
-# Whether to show rule names in output
-show_rule_names = true
-
-# Whether to show severity levels
-show_severity = true
-
-# Whether to show fix suggestions
+output_format = "human"  # Options: human, json, sarif
 show_suggestions = true
+show_documentation = true
+color_output = true
+verbose_output = false
 
-# Whether to use colors in output
-use_colors = true
+[rules]
+# Individual rule configuration
+# Format: rule_name = "severity_level"
+# Levels: "critical", "error", "warning", "info", "hint", "disabled"
 
-# Maximum number of issues to display per file (null for unlimited)
-# max_issues_per_file = 50
+hardcoded-secret = "critical"
+sql-injection-risk = "critical"
+command-injection-risk = "critical"
+buffer-overflow-risk = "critical"
 
-# Rule-specific parameters
-[rule_params]
-# Line length rule parameters
-line-length.max_length = 100
+unused-variable = "warning"
+unused-function = "warning"
+unused-import = "info"
 
-# Empty lines rule parameters
-empty-lines.max_consecutive = 2
+line-too-long = "warning"
+trailing-whitespace = "info"
+excessive-nesting = "warning"
+function-too-long = "warning"
+too-many-parameters = "warning"
 
-# Cyclomatic complexity rule parameters  
-cyclomatic-complexity.max_complexity = 10
+string-concat-in-loop = "info"
+inefficient-array-length = "hint"
+nested-loops = "info"
+allocation-in-loop = "warning"
 
-# Nesting depth rule parameters
-nesting-depth.max_depth = 4
+use-slay = "hint"
+use-squad = "hint"
+prefer-vibez = "hint"
+proper-yeet-usage = "hint"
 
-# Parameter count rule parameters
-parameter-count.max_params = 5
+magic-numbers = "info"
+weak-cryptography = "warning"
+weak-random = "warning"
 
-# Function length rule parameters
-function-length.max_lines = 50
+[presets]
+# Predefined configuration presets
+# Options: "strict", "recommended", "relaxed", "minimal"
+# Use: preset = "recommended" to override individual settings
+
+# strict - Production ready, strict rules
+# recommended - Balanced rules for most projects  
+# relaxed - Lenient rules for development
+# minimal - Only critical security and safety rules
+
+[ignore]
+# Files and directories to ignore
+files = [
+    "*.generated.csd",
+    "vendor/**/*.csd",
+    "third_party/**/*.csd"
+]
+
+# Specific rules to ignore for specific files
+[ignore.rules]
+"test_*.csd" = ["unused-function", "magic-numbers"]
+"demo_*.csd" = ["hardcoded-secret", "line-too-long"]
+"legacy_*.csd" = ["use-slay", "use-squad", "prefer-vibez"]

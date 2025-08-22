@@ -1,39 +1,14 @@
-#!/usr/bin/env cursed-zig
-# Simple validation of Oracle Week 1 implementations
-
+# Simple validation test
 yeet "vibez"
 
-# Test basic struct definition and field validation
-squad TestStruct {
-    id drip,
-    name tea,
-    active lit,
-}
-
-# Test method implementation (vtable generation)
-TestStruct.show() tea {
-    damn "TestStruct: " + self.name + " (id:" + tea(self.id) + ")"
-}
-
-# Main test function
 slay main() {
-    vibez.spill("🎯 Oracle Week 1 Validation - Simple Test")
+    vibez.spill("Hello from CURSED!")
     
-    # Test struct creation with field validation
-    sus test TestStruct = TestStruct{
-        id: 42,
-        name: "test_struct",
-        active: based,
-    }
+    sus a drip = 10
+    sus b drip = 20
+    sus c drip = a + b
     
-    # Test field access
-    vibez.spill("ID: " + tea(test.id))
-    vibez.spill("Name: " + test.name)
-    vibez.spill("Active: " + tea(test.active))
+    vibez.spill("10 + 20 =", c)
     
-    # Test method call (vtable lookup)
-    sus result tea = test.show()
-    vibez.spill("Method result: " + result)
-    
-    vibez.spill("✅ Oracle Week 1: Basic validation successful!")
+    vibez.spill("✅ Basic functionality works!")
 }

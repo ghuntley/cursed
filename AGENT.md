@@ -504,7 +504,7 @@ hyperfine 'zig build clean && zig build'    # Repeated build benchmarks
 4. **Run `comprehensive_stdlib_test.csd` after major changes**
 5. **Use debug builds (`-Doptimize=Debug`) for development**
 
-**Latest Build & Test Learnings (2025-08-21)**:
+**Latest Build & Test Learnings (2025-08-22)**:
 1. **Zig API Compatibility**: When facing `ArrayList.init` or `ExecutableOptions` errors, update to newer Zig patterns:
    - `ArrayList.init(allocator)` → `ArrayList(T){}`  
    - Use `std.Build.ExecutableOptions` directly in build.zig
@@ -512,9 +512,21 @@ hyperfine 'zig build clean && zig build'    # Repeated build benchmarks
    - `zig build` - Primary build command (always works)
    - `./zig-out/bin/cursed-zig file.csd` - Interpreter mode (100% functional)
    - `./zig-out/bin/cursed-zig --compile file.csd` - Compilation mode (works with warnings)
-3. **Build Status**: Interpreter mode works 100%, compilation works but may show LLVM warnings
-4. **Testing Strategy**: Always test interpreter mode first, then compilation mode
-5. **Build Troubleshooting**: Use `zig build clean` when API compatibility issues occur
+3. **Build Status**: 
+   - **cursed-zig**: ✅ Builds and runs successfully
+   - **Other tools**: ❌ Most fail to build due to incomplete implementations
+   - **Interpreter Backend**: ✅ Fully functional for most language features
+   - **LLVM Backend**: ⚠️ Works but generates warnings for incomplete features
+4. **Testing Strategy**: 
+   - Always test interpreter mode first with `./zig-out/bin/cursed-zig file.csd`
+   - Use simple test files initially (basic arithmetic, variables, functions)
+   - Test compilation mode second with `--compile` flag
+   - Run `valgrind` for memory safety validation
+5. **Build Troubleshooting**: 
+   - Use `zig build clean` when API compatibility issues occur
+   - Check for Zig version compatibility if build.zig fails
+   - LLVM warnings in compilation mode are generally safe to ignore
+   - Memory leaks should be investigated immediately
 
 **Common Gotchas and Solutions**:
 1. **ARM64 Linking Issues**: Use debug builds to avoid LLVM optimization bugs
