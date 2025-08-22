@@ -1,41 +1,43 @@
 fr fr =============================================================================
-fr fr CURSED MATHZ MODULE - Complete Mathematical Operations Library
-fr fr Version: 1.0.0 - Production Ready
-fr fr Pure CURSED implementation for maximum compatibility and performance
+fr fr CURSED MATHZ MODULE - IEEE 754 Compliant Mathematical Operations Library
+fr fr Version: 2.0.0 - IEEE 754 Production Ready
+fr fr Full floating-point precision with proper special value handling
 fr fr =============================================================================
 
-fr fr ===== MATHEMATICAL CONSTANTS =====
+yeet "../mathz/ieee754_compliant.csd"
 
-slay PI() drip {
-    damn 31416  fr fr π ≈ 3.1416 * 10000 for precision
+fr fr ===== MATHEMATICAL CONSTANTS (IEEE 754 COMPLIANT) =====
+
+slay PI() tea {
+    damn PI_PRECISE()  fr fr Full IEEE 754 precision π
 }
 
-slay E() drip {
-    damn 27183  fr fr e ≈ 2.7183 * 10000
+slay E() tea {
+    damn E_PRECISE()  fr fr Full IEEE 754 precision e
 }
 
-slay TAU() drip {
-    damn 62832  fr fr 2π ≈ 6.2832 * 10000
+slay TAU() tea {
+    damn TAU_PRECISE()  fr fr Full IEEE 754 precision 2π
 }
 
-slay SQRT_2() drip {
-    damn 14142  fr fr √2 ≈ 1.4142 * 10000
+slay SQRT_2() tea {
+    damn SQRT_2_PRECISE()  fr fr Full IEEE 754 precision √2
 }
 
-slay SQRT_3() drip {
-    damn 17321  fr fr √3 ≈ 1.7321 * 10000
+slay SQRT_3() tea {
+    damn "1.7320508075688772935274463415059"  fr fr √3 high precision
 }
 
-slay GOLDEN_RATIO() drip {
-    damn 16180  fr fr φ ≈ 1.618 * 10000
+slay GOLDEN_RATIO() tea {
+    damn "1.6180339887498948482045868343656"  fr fr φ high precision
 }
 
-slay LN_2() drip {
-    damn 6931   fr fr ln(2) ≈ 0.6931 * 10000
+slay LN_2() tea {
+    damn LN_2_PRECISE()  fr fr Full IEEE 754 precision ln(2)
 }
 
-slay LN_10() drip {
-    damn 23026  fr fr ln(10) ≈ 2.3026 * 10000
+slay LN_10() tea {
+    damn LN_10_PRECISE()  fr fr Full IEEE 754 precision ln(10)
 }
 
 slay DEGREES_TO_RADIANS_FACTOR() drip {
@@ -206,131 +208,90 @@ slay lcm(a drip, b drip) drip {
     damn abs(a * b) / gcd_result
 }
 
-fr fr ===== TRIGONOMETRIC FUNCTIONS =====
+fr fr ===== TRIGONOMETRIC FUNCTIONS (IEEE 754 COMPLIANT) =====
 
-slay degrees_to_radians(degrees drip) drip {
-    damn (degrees * DEGREES_TO_RADIANS_FACTOR()) / 10000
+slay degrees_to_radians(degrees tea) tea {
+    damn float_multiply(degrees, float_divide(PI(), "180.0"))
 }
 
-slay radians_to_degrees(radians drip) drip {
-    damn (radians * RADIANS_TO_DEGREES_FACTOR()) / 10000
+slay radians_to_degrees(radians tea) tea {
+    damn float_multiply(radians, float_divide("180.0", PI()))
 }
 
-slay sin(x drip) drip {
-    fr fr Taylor series: sin(x) = x - x³/6 + x⁵/120 - x⁷/5040
-    sus x_norm drip = x % (2 * PI())
-    
-    sus x2 drip = (x_norm * x_norm) / 10000
-    sus x3 drip = (x2 * x_norm) / 10000
-    sus x5 drip = (x3 * x2) / 10000
-    sus x7 drip = (x5 * x2) / 10000
-    
-    sus term1 drip = x_norm
-    sus term2 drip = x3 / 6
-    sus term3 drip = x5 / 120
-    sus term4 drip = x7 / 5040
-    
-    damn term1 - term2 + term3 - term4
+slay sin(x tea) tea {
+    damn sin_precise(x)
 }
 
-slay cos(x drip) drip {
-    fr fr Taylor series: cos(x) = 1 - x²/2 + x⁴/24 - x⁶/720
-    sus x_norm drip = x % (2 * PI())
-    
-    sus x2 drip = (x_norm * x_norm) / 10000
-    sus x4 drip = (x2 * x2) / 10000
-    sus x6 drip = (x4 * x2) / 10000
-    
-    sus term1 drip = 10000  fr fr 1.0 scaled
-    sus term2 drip = x2 / 2
-    sus term3 drip = x4 / 24
-    sus term4 drip = x6 / 720
-    
-    damn term1 - term2 + term3 - term4
+slay cos(x tea) tea {
+    damn cos_precise(x)
 }
 
-slay tan(x drip) drip {
-    sus sin_val drip = sin(x)
-    sus cos_val drip = cos(x)
-    ready (cos_val == 0) {
-        damn 999999999  fr fr Infinity approximation
-    }
-    damn (sin_val * 10000) / cos_val
+slay tan(x tea) tea {
+    damn tan_precise(x)
 }
 
-fr fr ===== LOGARITHMIC AND EXPONENTIAL FUNCTIONS =====
+fr fr ===== INVERSE TRIGONOMETRIC FUNCTIONS =====
 
-slay log2(x drip) drip {
-    ready (x <= 0) {
-        damn -999999999  fr fr Negative infinity approximation
-    }
-    ready (x == 1) { damn 0 }
-    ready (x == 2) { damn 10000 }
-    ready (x == 4) { damn 20000 }
-    ready (x == 8) { damn 30000 }
-    ready (x == 16) { damn 40000 }
-    ready (x == 32) { damn 50000 }
-    
-    fr fr Newton's method approximation for general case
-    sus guess drip = 0
-    sus iterations drip = 20
-    sus i drip = 0
-    
-    fr fr Simple approximation based on bit length
-    sus temp drip = x
-    sus log_approx drip = 0
-    bestie (temp > 1) {
-        temp = temp / 2
-        log_approx = log_approx + 10000
-    }
-    
-    damn log_approx
+slay asin(x tea) tea {
+    damn asin_precise(x)
 }
 
-slay log10(x drip) drip {
-    ready (x <= 0) {
-        damn -999999999
-    }
-    ready (x == 1) { damn 0 }
-    ready (x == 10) { damn 10000 }
-    ready (x == 100) { damn 20000 }
-    ready (x == 1000) { damn 30000 }
-    ready (x == 10000) { damn 40000 }
-    
-    fr fr Convert from log2: log10(x) = log2(x) / log2(10)
-    sus log2_x drip = log2(x)
-    sus log2_10 drip = 33219  fr fr log2(10) ≈ 3.3219 * 10000
-    damn (log2_x * 10000) / log2_10
+slay acos(x tea) tea {
+    damn acos_precise(x)
 }
 
-slay ln(x drip) drip {
-    ready (x <= 0) {
-        damn -999999999
-    }
-    ready (x == 1) { damn 0 }
-    ready (x == E()) { damn 10000 }
-    
-    fr fr Convert from log2: ln(x) = log2(x) * ln(2)
-    sus log2_x drip = log2(x)
-    damn (log2_x * LN_2()) / 10000
+slay atan(x tea) tea {
+    damn atan_precise(x)
 }
 
-slay exp(x drip) drip {
-    fr fr Taylor series: e^x = 1 + x + x²/2! + x³/3! + x⁴/4! + ...
-    ready (x == 0) { damn 10000 }  fr fr e^0 = 1
-    
-    sus result drip = 10000  fr fr Start with 1
-    sus term drip = x
-    sus i drip = 1
-    
-    fr fr Calculate first 10 terms of Taylor series
-    bestie (i <= 10) {
-        result = result + term
-        i = i + 1
-        term = (term * x) / (i * 10000)
-    }
-    
-    damn result
+slay atan2(y tea, x tea) tea {
+    damn runtime_atan2(y, x)
+}
+
+fr fr ===== LOGARITHMIC AND EXPONENTIAL FUNCTIONS (IEEE 754 COMPLIANT) =====
+
+slay log2(x tea) tea {
+    damn log2_precise(x)
+}
+
+slay log10(x tea) tea {
+    damn log10_precise(x)
+}
+
+slay ln(x tea) tea {
+    damn ln_precise(x)
+}
+
+slay exp(x tea) tea {
+    damn exp_precise(x)
+}
+
+fr fr ===== POWER AND ROOT FUNCTIONS (IEEE 754 COMPLIANT) =====
+
+slay pow(base tea, exponent tea) tea {
+    damn pow_precise(base, exponent)
+}
+
+slay sqrt(x tea) tea {
+    damn sqrt_precise(x)
+}
+
+slay cbrt(x tea) tea {
+    damn cbrt_precise(x)
+}
+
+fr fr ===== HYPERBOLIC FUNCTIONS =====
+
+slay sinh(x tea) tea {
+    damn sinh_precise(x)
+}
+
+slay cosh(x tea) tea {
+    damn cosh_precise(x)
+}
+
+slay tanh(x tea) tea {
+    damn tanh_precise(x)
 }
 
 fr fr ===== ROUNDING AND PRECISION FUNCTIONS =====

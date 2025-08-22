@@ -471,7 +471,7 @@ pub const BuildIntegration = struct {
     }
     
     // Check if dependencies need to be updated
-    pub fn checkForUpdates(self: *BuildIntegration) !ArrayList(struct { name: []const u8, current: package_manager.Version, available: package_manager.Version }) {
+    pub fn checkForUpdates(_: *BuildIntegration) !ArrayList(struct { name: []const u8, current: package_manager.Version, available: package_manager.Version }) {
         const updates = .empty;
         
         // TODO: Implement update checking by querying package registry

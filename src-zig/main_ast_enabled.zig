@@ -12,6 +12,7 @@ const ast = @import("ast.zig");
 const parser = @import("parser.zig");
 const interpreter = @import("interpreter.zig");
 const CursedArenaManager = @import("arena_allocator.zig").CursedArenaManager;
+const stack_trace = @import("stack_trace_runtime.zig");
 
 // Mixed type value for variables (strings and integers)
 const VariableValue = union(enum) {
@@ -136,6 +137,9 @@ pub fn main() !void {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
+    // Initialize stack trace system for error handling
+    stack_trace.setGlobalAllocator(allocator);
+    
     const args = try std.process.argsAlloc(allocator);
     defer std.process.argsFree(allocator, args);
 
@@ -501,8 +505,19 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
         // Handle print statements
         else if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
             try handleAST_Print(&variables, trimmed, config.verbose);
-        } else if (config.verbose) {
-            print("Unknown statement: {s}\n", .{trimmed});
+        }
+        // Handle expression statements (like "x + 10")
+        else {
+            // Try to evaluate as expression and print result
+            const result = evaluateAST_ExpressionStatement(&variables, trimmed) catch |err| {
+                if (config.verbose) {
+                    print("Unknown statement: {s} (error: {})\n", .{trimmed, err});
+                }
+                continue;
+            };
+            
+            if (config.verbose) print("🎯 AST Expression result: {}\n", .{result});
+            print("{}\n", .{result});
         }
     }
     
@@ -1025,6 +1040,57 @@ fn getAST_FunctionValue(func_scope: *std.HashMap([]const u8, i64, std.hash_map.S
             return error.UndefinedVariable;
         }
     }
+}
+
+// Evaluate expression statements like "x + 10" or "5 * 3"
+fn evaluateAST_ExpressionStatement(variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8) !i64 {
+    // Handle addition: x + 10
+    if (std.mem.indexOf(u8, expr, " + ")) |plus_pos| {
+        const left = std.mem.trim(u8, expr[0..plus_pos], " ");
+        const right = std.mem.trim(u8, expr[plus_pos + 3..], " ");
+        
+        const left_val = try getAST_Value(variables, left);
+        const right_val = try getAST_Value(variables, right);
+        
+        return left_val + right_val;
+    }
+    
+    // Handle subtraction: x - 5
+    if (std.mem.indexOf(u8, expr, " - ")) |minus_pos| {
+        const left = std.mem.trim(u8, expr[0..minus_pos], " ");
+        const right = std.mem.trim(u8, expr[minus_pos + 3..], " ");
+        
+        const left_val = try getAST_Value(variables, left);
+        const right_val = try getAST_Value(variables, right);
+        
+        return left_val - right_val;
+    }
+    
+    // Handle multiplication: x * 2
+    if (std.mem.indexOf(u8, expr, " * ")) |mult_pos| {
+        const left = std.mem.trim(u8, expr[0..mult_pos], " ");
+        const right = std.mem.trim(u8, expr[mult_pos + 3..], " ");
+        
+        const left_val = try getAST_Value(variables, left);
+        const right_val = try getAST_Value(variables, right);
+        
+        return left_val * right_val;
+    }
+    
+    // Handle division: x / 2
+    if (std.mem.indexOf(u8, expr, " / ")) |div_pos| {
+        const left = std.mem.trim(u8, expr[0..div_pos], " ");
+        const right = std.mem.trim(u8, expr[div_pos + 3..], " ");
+        
+        const left_val = try getAST_Value(variables, left);
+        const right_val = try getAST_Value(variables, right);
+        
+        if (right_val == 0) return error.DivisionByZero;
+        return @divTrunc(left_val, right_val);
+    }
+    
+    // Single value or variable
+    return try getAST_Value(variables, expr);
 }
 
 fn getAST_Value(variables: *std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage), expr: []const u8) !i64 {

@@ -560,8 +560,9 @@ slay get_current_time() normie {
     damn 1234567890  fr fr Simplified - return constant timestamp
 }
 
+fr fr Real stack trace implementation using Zig runtime
 slay get_stack_trace() tea {
-    damn "stack trace not implemented"  fr fr Simplified
+    damn cursed_runtime_get_stack_trace()
 }
 
 slay get_goroutine_id() normie {

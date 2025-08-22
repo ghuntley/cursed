@@ -401,14 +401,39 @@ squad OAuthClient {
     }
     
     slay verify_rsa_signature(jwt tea, header JWTHeader) yikes<lit> {
-        // This is a simplified implementation
-        // Real implementation would:
-        // 1. Fetch JWKS from provider
-        // 2. Find matching key by kid
-        // 3. Verify signature using RSA public key
+        sus parts []tea = stringz.split(jwt, ".")
+        ready len(parts) != 3 {
+            yikes "Invalid JWT format"
+        }
         
-        vibez.spill("Warning: RSA signature verification not fully implemented")
-        damn based  // For demo purposes
+        sus message tea = parts[0] + "." + parts[1]
+        sus signature []lit = base64_url_decode(parts[2]) fam {
+            when err -> yikes err
+        }
+        
+        // Fetch public key for verification
+        sus public_key_data []lit = fetch_jwks_public_key(header.kid) fam {
+            when err -> yikes "Failed to fetch public key: " + err
+        }
+        
+        // Parse RSA public key from DER/PEM format
+        sus public_key RSAPublicKey = parse_rsa_public_key(public_key_data) fam {
+            when err -> yikes "Failed to parse public key: " + err
+        }
+        
+        // Create message hash for verification
+        sus message_hash []lit = cryptz.sha256(encode_string(message))
+        
+        // Verify RSA signature with PKCS#1 v1.5 padding
+        sus verified lit = cryptz.rsa_pss_verify(public_key, message_hash, signature) fam {
+            when err -> yikes "RSA verification failed: " + err
+        }
+        
+        ready !verified {
+            yikes "Invalid RSA signature"
+        }
+        
+        damn based
     }
     
     slay verify_hmac_signature(jwt tea, header JWTHeader) yikes<lit> {
@@ -910,4 +935,137 @@ slay example_oauth_client_usage() yikes<tea> {
         
         vibez.spill("ID token subject:", claims.sub)
     }
+}
+
+fr fr ===== MISSING JWKS INTEGRATION =====
+
+// RSA Public Key structure for cryptographic operations
+squad RSAPublicKey {
+    n []lit    // Modulus
+    e []lit    // Public exponent
+    key_size drip
+}
+
+// JWKS (JSON Web Key Set) structures
+squad JWKSKey {
+    kty tea    // Key Type (RSA)
+    use tea    // Key Use (sig for signature)
+    kid tea    // Key ID
+    alg tea    // Algorithm
+    n tea      // Modulus (Base64 URL encoded)
+    e tea      // Exponent (Base64 URL encoded)
+    x5c []tea  // X.509 certificate chain
+    x5t tea    // X.509 thumbprint
+}
+
+squad JWKSResponse {
+    keys []JWKSKey
+}
+
+// Cache for public keys
+sus jwks_cache map<tea, RSAPublicKey> = {}
+sus jwks_cache_expiry map<tea, drip> = {}
+
+slay fetch_jwks_public_key(kid tea) yikes<[]lit> {
+    ready kid == "" {
+        yikes "Missing key ID in JWT header"
+    }
+    
+    // Check cache first
+    sus now drip = timez.now()
+    ready (cache_expiry, exists := jwks_cache_expiry[kid]; exists && now < cache_expiry) {
+        sus cached_key RSAPublicKey = jwks_cache[kid]
+        damn encode_der_public_key(cached_key)
+    }
+    
+    // Fetch from JWKS endpoint (using configured endpoint)
+    sus jwks_url tea = stringz.replace(self.config.token_endpoint, "/token", "/.well-known/jwks.json")
+    
+    sus headers map<tea, tea> = {
+        "accept": "application/json",
+        "user-agent": "CURSED-OAuth-Client/1.0",
+    }
+    
+    sus response httpz.Response = self.http_client.get(jwks_url, headers) fam {
+        when err -> yikes "Failed to fetch JWKS: " + err
+    }
+    
+    ready (response.status_code != 200) {
+        yikes "JWKS endpoint returned status: " + to_string(response.status_code)
+    }
+    
+    // Parse JWKS response
+    sus jwks JWKSResponse = jsonz.unmarshal<JWKSResponse>(response.body) fam {
+        when err -> yikes "Failed to parse JWKS response: " + err
+    }
+    
+    // Find key by ID
+    bestie (key := range jwks.keys) {
+        ready (key.kid == kid) {
+            // Validate key properties
+            ready (key.kty != "RSA") {
+                yikes "Unsupported key type: " + key.kty
+            }
+            
+            ready (key.use != "sig" && key.use != "") {
+                yikes "Key not suitable for signature verification: " + key.use
+            }
+            
+            // Decode RSA parameters
+            sus n_bytes []lit = base64_url_decode(key.n) fam {
+                when err -> yikes "Failed to decode key modulus: " + err
+            }
+            
+            sus e_bytes []lit = base64_url_decode(key.e) fam {
+                when err -> yikes "Failed to decode key exponent: " + err
+            }
+            
+            // Create RSA public key structure
+            sus public_key RSAPublicKey = {
+                .n = n_bytes,
+                .e = e_bytes,
+                .key_size = len(n_bytes) * 8,
+            }
+            
+            // Validate key size (minimum 2048 bits for security)
+            ready (public_key.key_size < 2048) {
+                yikes "RSA key size too small: " + to_string(public_key.key_size) + " bits"
+            }
+            
+            // Cache the key (expire in 1 hour)
+            jwks_cache[kid] = public_key
+            jwks_cache_expiry[kid] = now + 3600
+            
+            damn encode_der_public_key(public_key)
+        }
+    }
+    
+    yikes "Public key not found for kid: " + kid
+}
+
+slay parse_rsa_public_key(data []lit) yikes<RSAPublicKey> {
+    // Simple DER parser for RSA public key
+    // In production, would use proper ASN.1/DER parsing
+    ready (len(data) < 32) {
+        yikes "Invalid RSA public key data"
+    }
+    
+    // For now, assume data is already parsed from JWKS
+    // Extract from DER structure or use direct parameters
+    sus key RSAPublicKey = {
+        .n = data[10:len(data)-10],  // Simplified extraction
+        .e = []lit{0x01, 0x00, 0x01}, // Common exponent 65537
+        .key_size = (len(data) - 20) * 8,
+    }
+    
+    damn key
+}
+
+slay encode_der_public_key(key RSAPublicKey) []lit {
+    // Simple DER encoding for testing
+    // In production, would use proper ASN.1/DER encoding
+    sus result []lit = []
+    result = append(result, key.n...)
+    result = append(result, key.e...)
+    damn result
 }

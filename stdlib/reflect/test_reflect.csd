@@ -81,7 +81,7 @@ assert_eq_string(reflect.get_value_data(converted_float), "42.0")
 
 fr fr Test struct type
 sus struct_fields := []tea{"name", "age", "active"}
-sus struct_type := reflect.type_info_struct("Person", struct_fields)
+sus struct_type := reflect.type_info_struct_simple("Person", struct_fields)
 assert_true(reflect.is_struct_type(struct_type))
 assert_eq_string(reflect.get_type_name(struct_type), "Person")
 assert_eq_int(reflect.get_struct_field_count(struct_type), 3)
@@ -94,7 +94,7 @@ assert_true(reflect.has_struct_field(struct_type, "age"))
 assert_false(reflect.has_struct_field(struct_type, "unknown"))
 
 fr fr Test array type
-sus array_type := reflect.type_info_array("normie", 5)
+sus array_type := reflect.type_info_array_simple("normie", 5)
 assert_true(reflect.is_array_type(array_type))
 assert_eq_string(reflect.get_type_name(array_type), "[5]normie")
 assert_eq_string(reflect.get_array_element_type(array_type), "normie")
@@ -110,7 +110,7 @@ assert_eq_string(reflect.get_func_param_type(func_type, 1), "tea")
 
 fr fr Test interface type
 sus interface_methods := []tea{"method1", "method2"}
-sus interface_type := reflect.type_info_interface("TestInterface", interface_methods)
+sus interface_type := reflect.type_info_interface_simple("TestInterface", interface_methods)
 assert_true(reflect.is_interface_type(interface_type))
 assert_eq_int(reflect.get_interface_method_count(interface_type), 2)
 assert_eq_string(reflect.get_interface_method_name(interface_type, 0), "method1")
@@ -151,7 +151,7 @@ assert_true(reflect.is_type_registered("tea"))
 assert_true(reflect.is_type_registered("lit"))
 assert_false(reflect.is_type_registered("unknown"))
 
-reflect.register_type("CustomType")
+reflect.register_type_by_name("CustomType")
 assert_true(reflect.is_type_registered("CustomType"))
 
 sus registered := reflect.get_registered_types()

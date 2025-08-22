@@ -1,7 +1,13 @@
 fr fr ==========================================
-fr fr CURSED Enhanced Configuration Management (configz) - Minimal Version
-fr fr Core configuration management functions - simplified syntax
+fr fr CURSED Enhanced Configuration Management (configz) - Production Version
+fr fr Real TOML parsing, environment integration, and cross-platform support
 fr fr ==========================================
+
+yeet "configz/toml_parser"
+yeet "configz/env_integration"
+yeet "filez"
+yeet "stringz"
+yeet "vibez"
 
 fr fr ==========================================
 fr fr Configuration Format Constants
@@ -14,18 +20,20 @@ slay format_ini() tea { damn "ini" }
 slay format_env() tea { damn "env" }
 
 fr fr ==========================================
-fr fr Environment Variable Functions
+fr fr Environment Variable Functions - Real Implementation
 fr fr ==========================================
 
+sus global_env_context EnvContext = EnvContext{}
+sus env_context_initialized lit = cringe
+
 slay get_env_variable(key tea) tea {
-    ready (key == "HOME") { damn "/home/user" }
-    ready (key == "PATH") { damn "/usr/bin:/bin" }
-    ready (key == "USER") { damn "cursed_user" }
-    ready (key == "DEBUG") { damn "true" }
-    ready (key == "PORT") { damn "3000" }
-    ready (key == "DB_HOST") { damn "localhost" }
-    ready (key == "NODE_ENV") { damn "development" }
-    damn ""
+    fr fr Get environment variable using real implementation
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    damn get_env_variable(global_env_context, key)
 }
 
 slay expand_environment_variables(input tea) tea {
@@ -79,8 +87,15 @@ fr fr Configuration Parsing Functions
 fr fr ==========================================
 
 slay parse_json_config(content tea) tea {
+    fr fr Parse JSON with real environment variable expansion
     sus trimmed tea = trim_whitespace(content)
-    sus expanded tea = expand_environment_variables(trimmed)
+    
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
     
     ready (is_valid_json_format(expanded)) {
         damn expanded
@@ -90,14 +105,45 @@ slay parse_json_config(content tea) tea {
 }
 
 slay parse_yaml_config(content tea) tea {
+    fr fr Parse YAML with real environment variable expansion
     sus trimmed tea = trim_whitespace(content)
-    sus expanded tea = expand_environment_variables(trimmed)
+    
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
     
     ready (is_valid_yaml_format(expanded)) {
         damn convert_yaml_to_json(expanded)
     }
     
     damn "{\"error\":\"Invalid YAML format\"}"
+}
+
+slay parse_toml_config(content tea) tea {
+    fr fr Parse TOML using real TOML parser
+    sus trimmed tea = trim_whitespace(content)
+    
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    fr fr Expand environment variables first
+    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
+    
+    fr fr Parse with real TOML parser
+    sus document TomlDocument = parse_toml_string(expanded)
+    
+    ready (toml_document_has_errors(document)) {
+        sus errors []tea = toml_document_get_errors(document)
+        damn "{\"error\":\"TOML parsing failed\", \"details\":\"" + errors[0] + "\"}"
+    }
+    
+    fr fr Convert to JSON format for compatibility
+    damn convert_toml_to_config_json(document)
 }
 
 slay parse_env_config(content tea) tea {
@@ -132,6 +178,9 @@ slay load_configuration(content tea, format tea) tea {
     ready (format == format_yaml()) {
         damn parse_yaml_config(content)
     }
+    ready (format == format_toml()) {
+        damn parse_toml_config(content)
+    }
     ready (format == format_env()) {
         damn parse_env_config(content)
     }
@@ -145,14 +194,63 @@ slay load_configuration_auto(content tea) tea {
 }
 
 slay load_configuration_from_file(filename tea) tea {
-    sus content tea = simulate_file_read(filename)
-    sus format tea = detect_format_from_filename(filename)
+    fr fr Load configuration with cross-platform path resolution
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
     
+    fr fr Resolve path with environment variable expansion
+    sus path_ctx PathContext = resolve_path(global_env_context, filename)
+    
+    ready (!path_ctx.is_valid) {
+        damn "{\"error\":\"Invalid file path: " + filename + "\"}"
+    }
+    
+    sus content tea = read_file_content_safe(path_ctx.resolved_path)
+    ready (string_length(content) == 0) {
+        damn "{\"error\":\"Could not read file: " + path_ctx.resolved_path + "\"}"
+    }
+    
+    sus format tea = detect_format_from_filename(filename)
     ready (format == "auto") {
         format = auto_detect_format(content)
     }
     
     damn load_configuration(content, format)
+}
+
+slay load_configuration_from_standard_paths(app_name tea) tea {
+    fr fr Load configuration from standard platform-specific paths
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus paths []tea = get_standard_config_paths(global_env_context, app_name)
+    sus content tea = load_config_from_paths(global_env_context, paths)
+    
+    ready (string_length(content) == 0) {
+        damn "{\"error\":\"No configuration file found in standard paths\"}"
+    }
+    
+    damn load_configuration_auto(content)
+}
+
+slay load_configuration_with_env(filename tea, env_filename tea) tea {
+    fr fr Load configuration and merge with .env file
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    fr fr Load .env file first
+    global_env_context = load_dotenv_file(global_env_context, env_filename)
+    
+    fr fr Load configuration file  
+    sus config tea = load_configuration_from_file(filename)
+    
+    damn config
 }
 
 fr fr ==========================================
@@ -580,5 +678,170 @@ slay merge_configs(config1 tea, config2 tea) tea {
 }
 
 slay expand_variables(content tea) tea {
-    damn expand_environment_variables(content)
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    damn expand_env_variables_in_path(global_env_context, content)
+}
+
+fr fr ==========================================
+fr fr Advanced TOML Configuration Functions
+fr fr ==========================================
+
+slay parse_toml_advanced(content tea) tea {
+    fr fr Advanced TOML parsing with full error reporting
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus expanded tea = expand_env_variables_in_path(global_env_context, content)
+    sus document TomlDocument = parse_toml_string(expanded)
+    
+    ready (toml_document_has_errors(document)) {
+        sus errors []tea = toml_document_get_errors(document)
+        sus error_json tea = "{\"error\":\"TOML parsing failed\",\"errors\":["
+        
+        sus i drip = 0
+        bestie (i < len(errors)) {
+            ready (i > 0) { error_json = error_json + "," }
+            error_json = error_json + "\"" + errors[i] + "\""
+            i = i + 1
+        }
+        
+        error_json = error_json + "]}"
+        damn error_json
+    }
+    
+    damn convert_toml_to_config_json(document)
+}
+
+slay get_toml_value(content tea, key tea) tea {
+    fr fr Get specific value from TOML content
+    sus document TomlDocument = parse_toml_string(content)
+    
+    ready (toml_document_has_errors(document)) {
+        damn ""
+    }
+    
+    damn toml_get_string(document, key)
+}
+
+slay get_toml_integer(content tea, key tea) drip {
+    fr fr Get integer value from TOML content
+    sus document TomlDocument = parse_toml_string(content)
+    
+    ready (toml_document_has_errors(document)) {
+        damn 0
+    }
+    
+    damn toml_get_integer(document, key)
+}
+
+slay get_toml_boolean(content tea, key tea) lit {
+    fr fr Get boolean value from TOML content  
+    sus document TomlDocument = parse_toml_string(content)
+    
+    ready (toml_document_has_errors(document)) {
+        damn cringe
+    }
+    
+    damn toml_get_boolean(document, key)
+}
+
+slay validate_toml_config(content tea) tea {
+    fr fr Validate TOML configuration and return errors
+    sus document TomlDocument = parse_toml_string(content)
+    
+    ready (!toml_document_has_errors(document)) {
+        damn "{\"valid\":true,\"errors\":[]}"
+    }
+    
+    sus errors []tea = toml_document_get_errors(document)
+    sus result tea = "{\"valid\":false,\"errors\":["
+    
+    sus i drip = 0
+    bestie (i < len(errors)) {
+        ready (i > 0) { result = result + "," }
+        result = result + "\"" + errors[i] + "\""
+        i = i + 1
+    }
+    
+    result = result + "]}"
+    damn result
+}
+
+fr fr ==========================================  
+fr fr Environment and Platform Functions
+fr fr ==========================================
+
+slay get_platform_info() tea {
+    fr fr Get platform information as JSON
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus info tea = "{"
+    info = info + "\"platform\":\"" + global_env_context.platform + "\","
+    info = info + "\"home_directory\":\"" + global_env_context.home_directory + "\","
+    info = info + "\"working_directory\":\"" + global_env_context.working_directory + "\","
+    info = info + "\"path_separator\":\"" + global_env_context.path_separator + "\","
+    info = info + "\"case_sensitive\":" + bool_to_string(global_env_context.case_sensitive)
+    info = info + "}"
+    
+    damn info
+}
+
+slay resolve_config_path(path tea) tea {
+    fr fr Resolve configuration path with environment expansion
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus path_ctx PathContext = resolve_path(global_env_context, path)
+    damn path_ctx.resolved_path
+}
+
+slay get_standard_config_locations(app_name tea) tea {
+    fr fr Get standard configuration file locations as JSON array
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    sus paths []tea = get_standard_config_paths(global_env_context, app_name)
+    sus result tea = "["
+    
+    sus i drip = 0
+    bestie (i < len(paths)) {
+        ready (i > 0) { result = result + "," }
+        result = result + "\"" + paths[i] + "\""
+        i = i + 1
+    }
+    
+    result = result + "]"
+    damn result
+}
+
+slay load_env_from_file(filename tea) lit {
+    fr fr Load environment variables from .env file
+    ready (!env_context_initialized) {
+        global_env_context = create_env_context()
+        env_context_initialized = based
+    }
+    
+    global_env_context = load_dotenv_file(global_env_context, filename)
+    damn based  fr fr Success indicator
+}
+
+fr fr ==========================================
+fr fr Utility Functions
+fr fr ==========================================
+
+slay bool_to_string(value lit) tea {
+    ready (value) { damn "true" } otherwise { damn "false" }
 }

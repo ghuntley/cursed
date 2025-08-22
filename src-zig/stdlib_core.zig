@@ -1,4 +1,5 @@
 const std = @import("std");
+const builtin = @import("builtin");
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
@@ -234,6 +235,74 @@ pub const StdlibCore = struct {
         return @intCast(stat.size);
     }
     
+    /// Append content to file
+    pub fn append_file_content(self: *StdlibCore, filename: []const u8, content: []const u8) !bool {
+        _ = self;
+        const file = std.fs.cwd().openFile(filename, .{ .mode = .write_only }) catch {
+            return self.write_file_content(filename, content);
+        };
+        defer file.close();
+        try file.seekFromEnd(0);
+        file.writeAll(content) catch return false;
+        return true;
+    }
+    
+    /// Check if path is directory
+    pub fn is_directory(self: *StdlibCore, path: []const u8) bool {
+        _ = self;
+        const file = std.fs.cwd().openFile(path, .{}) catch return false;
+        defer file.close();
+        const stat = file.stat() catch return false;
+        return stat.kind == .directory;
+    }
+    
+    /// List directory contents  
+    pub fn list_directory(self: *StdlibCore, dirname: []const u8) ![]u8 {
+        var result = std.ArrayList(u8).init(self.allocator);
+        defer result.deinit();
+        
+        var dir = std.fs.cwd().openIterableDir(dirname, .{}) catch return try self.allocator.dupe(u8, "");
+        defer dir.close();
+        
+        var iter = dir.iterate();
+        var first = true;
+        while (try iter.next()) |entry| {
+            if (!first) {
+                try result.append(',');
+            }
+            try result.appendSlice(entry.name);
+            first = false;
+        }
+        
+        return try result.toOwnedSlice();
+    }
+    
+    /// Get working directory
+    pub fn get_working_directory(self: *StdlibCore) ![]u8 {
+        return try std.process.getCwd(self.allocator);
+    }
+    
+    /// Read file as bytes
+    pub fn read_file_bytes(self: *StdlibCore, filename: []const u8, max_bytes: usize) ![]u8 {
+        const file = try std.fs.cwd().openFile(filename, .{});
+        defer file.close();
+        
+        const stat = try file.stat();
+        const size = @min(stat.size, max_bytes);
+        const content = try self.allocator.alloc(u8, size);
+        _ = try file.readAll(content);
+        return content;
+    }
+    
+    /// Write bytes to file
+    pub fn write_file_bytes(self: *StdlibCore, filename: []const u8, bytes: []const u8) !bool {
+        _ = self;
+        const file = std.fs.cwd().createFile(filename, .{}) catch return false;
+        defer file.close();
+        file.writeAll(bytes) catch return false;
+        return true;
+    }
+    
     // ===== DIRECTORY OPERATIONS =====
     
     /// List directory files
@@ -430,6 +499,152 @@ export fn runtime_file_exists(filename_ptr: [*:0]const u8) bool {
     if (global_stdlib_core) |*core| {
         const filename = std.mem.span(filename_ptr);
         return core.file_exists(filename);
+    }
+    return false;
+}
+
+export fn runtime_append_file(filename_ptr: [*:0]const u8, content_ptr: [*:0]const u8) bool {
+    if (global_stdlib_core) |*core| {
+        const filename = std.mem.span(filename_ptr);
+        const content = std.mem.span(content_ptr);
+        return core.append_file_content(filename, content) catch false;
+    }
+    return false;
+}
+
+export fn runtime_file_size(filename_ptr: [*:0]const u8) i64 {
+    if (global_stdlib_core) |*core| {
+        const filename = std.mem.span(filename_ptr);
+        return core.get_file_size(filename) catch -1;
+    }
+    return -1;
+}
+
+export fn runtime_delete_file(filename_ptr: [*:0]const u8) bool {
+    if (global_stdlib_core) |*core| {
+        const filename = std.mem.span(filename_ptr);
+        return core.delete_file(filename);
+    }
+    return false;
+}
+
+export fn runtime_is_directory(path_ptr: [*:0]const u8) bool {
+    if (global_stdlib_core) |*core| {
+        const path = std.mem.span(path_ptr);
+        return core.is_directory(path);
+    }
+    return false;
+}
+
+export fn runtime_file_readable(filename_ptr: [*:0]const u8) bool {
+    const filename = std.mem.span(filename_ptr);
+    std.fs.cwd().access(filename, .{ .mode = .read_only }) catch return false;
+    return true;
+}
+
+export fn runtime_file_writable(filename_ptr: [*:0]const u8) bool {
+    const filename = std.mem.span(filename_ptr);
+    std.fs.cwd().access(filename, .{ .mode = .write_only }) catch return false;
+    return true;
+}
+
+export fn runtime_file_modified_time(filename_ptr: [*:0]const u8) i64 {
+    const filename = std.mem.span(filename_ptr);
+    const file = std.fs.cwd().openFile(filename, .{}) catch return 0;
+    defer file.close();
+    const stat = file.stat() catch return 0;
+    return @intCast(stat.mtime);
+}
+
+export fn runtime_file_permissions(filename_ptr: [*:0]const u8) i64 {
+    const filename = std.mem.span(filename_ptr);
+    const file = std.fs.cwd().openFile(filename, .{}) catch return 644;
+    defer file.close();
+    const stat = file.stat() catch return 644;
+    return @intCast(stat.mode & 0o777);
+}
+
+export fn runtime_set_file_permissions(filename_ptr: [*:0]const u8, perms: i64) bool {
+    const filename = std.mem.span(filename_ptr);
+    const file = std.fs.cwd().openFile(filename, .{}) catch return false;
+    defer file.close();
+    file.chmod(@intCast(perms)) catch return false;
+    return true;
+}
+
+export fn runtime_sync_file(filename_ptr: [*:0]const u8) bool {
+    const filename = std.mem.span(filename_ptr);
+    const file = std.fs.cwd().openFile(filename, .{}) catch return false;
+    defer file.close();
+    file.sync() catch return false;
+    return true;
+}
+
+export fn runtime_create_directory(dirname_ptr: [*:0]const u8) bool {
+    const dirname = std.mem.span(dirname_ptr);
+    std.fs.cwd().makeDir(dirname) catch return false;
+    return true;
+}
+
+export fn runtime_remove_directory(dirname_ptr: [*:0]const u8) bool {
+    const dirname = std.mem.span(dirname_ptr);
+    std.fs.cwd().deleteDir(dirname) catch return false;
+    return true;
+}
+
+export fn runtime_list_directory(dirname_ptr: [*:0]const u8) [*:0]const u8 {
+    if (global_stdlib_core) |*core| {
+        const dirname = std.mem.span(dirname_ptr);
+        const list = core.list_directory(dirname) catch return "";
+        return @ptrCast(list.ptr);
+    }
+    return "";
+}
+
+export fn runtime_directory_has_entries(dirname_ptr: [*:0]const u8) bool {
+    const dirname = std.mem.span(dirname_ptr);
+    var dir = std.fs.cwd().openIterableDir(dirname, .{}) catch return false;
+    defer dir.close();
+    var iter = dir.iterate();
+    return (iter.next() catch null) != null;
+}
+
+export fn runtime_get_working_directory() [*:0]const u8 {
+    if (global_stdlib_core) |*core| {
+        const cwd = core.get_working_directory() catch return "";
+        return @ptrCast(cwd.ptr);
+    }
+    return "";
+}
+
+export fn runtime_set_working_directory(dirname_ptr: [*:0]const u8) bool {
+    const dirname = std.mem.span(dirname_ptr);
+    std.os.chdir(dirname) catch return false;
+    return true;
+}
+
+export fn runtime_get_temp_directory() [*:0]const u8 {
+    if (builtin.os.tag == .windows) {
+        return "C:\\tmp";
+    } else {
+        return "/tmp";
+    }
+}
+
+export fn runtime_read_file_bytes(filename_ptr: [*:0]const u8, max_bytes: i64) [*:0]const u8 {
+    if (global_stdlib_core) |*core| {
+        const filename = std.mem.span(filename_ptr);
+        const bytes = core.read_file_bytes(filename, @intCast(max_bytes)) catch return "";
+        return @ptrCast(bytes.ptr);
+    }
+    return "";
+}
+
+export fn runtime_write_file_bytes(filename_ptr: [*:0]const u8, bytes_ptr: [*:0]const u8, length: i64) bool {
+    if (global_stdlib_core) |*core| {
+        const filename = std.mem.span(filename_ptr);
+        const bytes = bytes_ptr[0..@intCast(length)];
+        return core.write_file_bytes(filename, bytes) catch false;
     }
     return false;
 }

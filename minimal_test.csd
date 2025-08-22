@@ -1,8 +1,6 @@
-fr fr Simple test without modules
-sus x normie = 42
-sus y tea = "hello"
-sus z lit = based
+yeet "vibez"
 
-vibez.spill("x =", x)
-vibez.spill("y =", y)
-vibez.spill("z =", z)
+vibez.spill("Hello World!")
+
+sus result lit = runtime_write_file("minimal.txt", "test")
+vibez.spill("Write result:", result)

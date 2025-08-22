@@ -1,0 +1,89 @@
+{
+  "name": "test_plugin",
+  "version": "1.0.0", 
+  "author": "CURSED Plugin Developer",
+  "description": "Test plugin demonstrating math and string operations",
+  "api_version": 1,
+  "capabilities": ["math", "string", "io"],
+  "dependencies": [],
+  "entry_point": "plugin_init",
+  "security_level": "trusted",
+  "exported_functions": [
+    {
+      "name": "add_numbers",
+      "return_type": "int",
+      "parameters": [
+        {"name": "a", "type": "int"},
+        {"name": "b", "type": "int"}
+      ]
+    },
+    {
+      "name": "multiply_numbers", 
+      "return_type": "int",
+      "parameters": [
+        {"name": "a", "type": "int"},
+        {"name": "b", "type": "int"}
+      ]
+    },
+    {
+      "name": "calculate_pi_estimate",
+      "return_type": "double",
+      "parameters": [
+        {"name": "iterations", "type": "int"}
+      ]
+    },
+    {
+      "name": "reverse_string",
+      "return_type": "char*",
+      "parameters": [
+        {"name": "input", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "uppercase_string",
+      "return_type": "char*", 
+      "parameters": [
+        {"name": "input", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "count_vowels",
+      "return_type": "int",
+      "parameters": [
+        {"name": "input", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "write_to_file",
+      "return_type": "int",
+      "parameters": [
+        {"name": "filename", "type": "const char*"},
+        {"name": "content", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "read_from_file",
+      "return_type": "char*",
+      "parameters": [
+        {"name": "filename", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "extension_handler",
+      "return_type": "const char*",
+      "parameters": [
+        {"name": "data", "type": "const char*"}
+      ]
+    },
+    {
+      "name": "test_basic_functionality",
+      "return_type": "const char*",
+      "parameters": []
+    }
+  ],
+  "build_info": {
+    "compile_command": "gcc -shared -fPIC -o test_plugin.so test_plugin_example.c",
+    "platform": "linux",
+    "architecture": "x86_64"
+  }
+}
