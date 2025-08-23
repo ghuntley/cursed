@@ -4,6 +4,7 @@
 yeet "mathz"
 yeet "stringz"
 yeet "arrayz"
+yeet "scientificz/advanced_matrix"
 
 # Mathematical constants
 sus PI drip = 3.14159265358979323846
@@ -421,27 +422,8 @@ slay matrix_inverse(m Matrix) Matrix {
         damn create_zero_matrix(1, 1)
     }
     
-    ready (m.determinant == 0) {
-        vibez.spill("[Matrix] Error: Matrix is singular (determinant = 0)")
-        damn create_zero_matrix(1, 1)
-    }
-    
-    # Simplified 2x2 inverse
-    ready (m.rows == 2) {
-        sus det drip = m.determinant
-        sus inv_data []drip = create_array(4)
-        
-        inv_data[0] = m.data[3] / det    # d/det
-        inv_data[1] = -m.data[1] / det   # -b/det
-        inv_data[2] = -m.data[2] / det   # -c/det
-        inv_data[3] = m.data[0] / det    # a/det
-        
-        damn create_matrix(2, 2, inv_data)
-    }
-    
-    # For larger matrices, would implement Gaussian elimination
-    vibez.spill("[Matrix] Error: Inverse not implemented for matrices larger than 2x2")
-    damn create_zero_matrix(1, 1)
+    # Use advanced LU decomposition for arbitrary size matrices
+    damn matrix_inverse_lu(m)
 }
 
 slay eigenvalues(m Matrix) []drip {
@@ -450,31 +432,8 @@ slay eigenvalues(m Matrix) []drip {
         damn create_array(0)
     }
     
-    # Simplified eigenvalue calculation for 2x2 matrices
-    ready (m.rows == 2) {
-        sus a drip = m.data[0]
-        sus b drip = m.data[1]
-        sus c drip = m.data[2]
-        sus d drip = m.data[3]
-        
-        sus trace drip = a + d
-        sus det drip = m.determinant
-        sus discriminant drip = (trace * trace) - (4 * det)
-        
-        ready (discriminant >= 0) {
-            sus sqrt_disc drip = sqrt_newton(discriminant)
-            sus eigenvals []drip = create_array(2)
-            eigenvals[0] = (trace + sqrt_disc) / 2
-            eigenvals[1] = (trace - sqrt_disc) / 2
-            damn eigenvals
-        } otherwise {
-            vibez.spill("[Matrix] Warning: Complex eigenvalues detected")
-            damn create_array(0)
-        }
-    }
-    
-    vibez.spill("[Matrix] Error: Eigenvalues not implemented for matrices larger than 2x2")
-    damn create_array(0)
+    # Use advanced Jacobi method for arbitrary size matrices
+    damn eigenvalues_advanced(m)
 }
 
 # Numerical methods

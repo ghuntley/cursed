@@ -1,0 +1,54 @@
+{
+    "metadata": {
+        "total_records": 1000,
+        "generated_at": "2025-08-23T10:30:00Z",
+        "schema_version": "2.1"
+    },
+    "data": [
+        {
+            "id": 1,
+            "product": "Widget Alpha",
+            "price": 29.99,
+            "category": "Electronics",
+            "in_stock": true,
+            "tags": ["popular", "bestseller", "new"],
+            "specifications": {
+                "weight": "2.5kg",
+                "dimensions": "10x15x3cm",
+                "color": "black"
+            }
+        },
+        {
+            "id": 2,
+            "product": "Gadget Beta",
+            "price": 49.99,
+            "category": "Tools",
+            "in_stock": false,
+            "tags": ["professional", "premium"],
+            "specifications": {
+                "weight": "1.2kg",
+                "dimensions": "8x12x2cm",
+                "color": "silver"
+            }
+        },
+        {
+            "id": 3,
+            "product": "Device Gamma",
+            "price": 99.99,
+            "category": "Electronics",
+            "in_stock": true,
+            "tags": ["advanced", "wireless", "bluetooth"],
+            "specifications": {
+                "weight": "0.8kg",
+                "dimensions": "15x10x1cm",
+                "color": "white"
+            }
+        }
+    ],
+    "summary": {
+        "total_value": 179.97,
+        "categories": ["Electronics", "Tools"],
+        "in_stock_count": 2,
+        "out_of_stock_count": 1
+    }
+}

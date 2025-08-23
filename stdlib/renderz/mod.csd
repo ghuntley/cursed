@@ -951,10 +951,279 @@ slay renderz_serialize_vertices(vertices [1000]Vertex, count normie) tea { damn 
 slay renderz_serialize_indices(indices [3000]normie, count normie) tea { damn "index_data" }
 slay renderz_setup_vertex_attributes() lit { damn true }
 slay renderz_draw_indexed(primitive normie, count normie) lit { damn true }
-slay renderz_generate_cube_vertices(vertices [1000]Vertex, indices [3000]normie) lit { }
-slay renderz_generate_sphere_vertices(vertices [1000]Vertex, indices [3000]normie, radius drip, segments normie, rings normie) lit { }
-slay renderz_look_at_matrix(eye Vec3, target Vec3, up Vec3) Mat4 { damn renderz_identity_matrix() }
-slay renderz_perspective_matrix(fov drip, aspect drip, near drip, far drip) Mat4 { damn renderz_identity_matrix() }
+slay renderz_generate_cube_vertices(vertices [1000]Vertex, indices [3000]normie) lit {
+    fr fr Generate vertices for unit cube centered at origin
+    
+    fr fr Front face (z = 0.5)
+    vertices[0].position = Vec3{x: -0.5, y: -0.5, z: 0.5}
+    vertices[0].normal = Vec3{x: 0.0, y: 0.0, z: 1.0}
+    vertices[0].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    vertices[1].position = Vec3{x: 0.5, y: -0.5, z: 0.5}
+    vertices[1].normal = Vec3{x: 0.0, y: 0.0, z: 1.0}
+    vertices[1].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[2].position = Vec3{x: 0.5, y: 0.5, z: 0.5}
+    vertices[2].normal = Vec3{x: 0.0, y: 0.0, z: 1.0}
+    vertices[2].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    vertices[3].position = Vec3{x: -0.5, y: 0.5, z: 0.5}
+    vertices[3].normal = Vec3{x: 0.0, y: 0.0, z: 1.0}
+    vertices[3].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    fr fr Back face (z = -0.5)
+    vertices[4].position = Vec3{x: -0.5, y: -0.5, z: -0.5}
+    vertices[4].normal = Vec3{x: 0.0, y: 0.0, z: -1.0}
+    vertices[4].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[5].position = Vec3{x: 0.5, y: -0.5, z: -0.5}
+    vertices[5].normal = Vec3{x: 0.0, y: 0.0, z: -1.0}
+    vertices[5].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    vertices[6].position = Vec3{x: 0.5, y: 0.5, z: -0.5}
+    vertices[6].normal = Vec3{x: 0.0, y: 0.0, z: -1.0}
+    vertices[6].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    vertices[7].position = Vec3{x: -0.5, y: 0.5, z: -0.5}
+    vertices[7].normal = Vec3{x: 0.0, y: 0.0, z: -1.0}
+    vertices[7].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    fr fr Left face (x = -0.5)
+    vertices[8].position = Vec3{x: -0.5, y: -0.5, z: -0.5}
+    vertices[8].normal = Vec3{x: -1.0, y: 0.0, z: 0.0}
+    vertices[8].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    vertices[9].position = Vec3{x: -0.5, y: -0.5, z: 0.5}
+    vertices[9].normal = Vec3{x: -1.0, y: 0.0, z: 0.0}
+    vertices[9].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[10].position = Vec3{x: -0.5, y: 0.5, z: 0.5}
+    vertices[10].normal = Vec3{x: -1.0, y: 0.0, z: 0.0}
+    vertices[10].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    vertices[11].position = Vec3{x: -0.5, y: 0.5, z: -0.5}
+    vertices[11].normal = Vec3{x: -1.0, y: 0.0, z: 0.0}
+    vertices[11].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    fr fr Right face (x = 0.5)
+    vertices[12].position = Vec3{x: 0.5, y: -0.5, z: -0.5}
+    vertices[12].normal = Vec3{x: 1.0, y: 0.0, z: 0.0}
+    vertices[12].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[13].position = Vec3{x: 0.5, y: -0.5, z: 0.5}
+    vertices[13].normal = Vec3{x: 1.0, y: 0.0, z: 0.0}
+    vertices[13].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    vertices[14].position = Vec3{x: 0.5, y: 0.5, z: 0.5}
+    vertices[14].normal = Vec3{x: 1.0, y: 0.0, z: 0.0}
+    vertices[14].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    vertices[15].position = Vec3{x: 0.5, y: 0.5, z: -0.5}
+    vertices[15].normal = Vec3{x: 1.0, y: 0.0, z: 0.0}
+    vertices[15].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    fr fr Bottom face (y = -0.5)
+    vertices[16].position = Vec3{x: -0.5, y: -0.5, z: -0.5}
+    vertices[16].normal = Vec3{x: 0.0, y: -1.0, z: 0.0}
+    vertices[16].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    vertices[17].position = Vec3{x: 0.5, y: -0.5, z: -0.5}
+    vertices[17].normal = Vec3{x: 0.0, y: -1.0, z: 0.0}
+    vertices[17].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    vertices[18].position = Vec3{x: 0.5, y: -0.5, z: 0.5}
+    vertices[18].normal = Vec3{x: 0.0, y: -1.0, z: 0.0}
+    vertices[18].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[19].position = Vec3{x: -0.5, y: -0.5, z: 0.5}
+    vertices[19].normal = Vec3{x: 0.0, y: -1.0, z: 0.0}
+    vertices[19].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    fr fr Top face (y = 0.5)
+    vertices[20].position = Vec3{x: -0.5, y: 0.5, z: -0.5}
+    vertices[20].normal = Vec3{x: 0.0, y: 1.0, z: 0.0}
+    vertices[20].tex_coord = Vec2{x: 0.0, y: 0.0}
+    
+    vertices[21].position = Vec3{x: 0.5, y: 0.5, z: -0.5}
+    vertices[21].normal = Vec3{x: 0.0, y: 1.0, z: 0.0}
+    vertices[21].tex_coord = Vec2{x: 1.0, y: 0.0}
+    
+    vertices[22].position = Vec3{x: 0.5, y: 0.5, z: 0.5}
+    vertices[22].normal = Vec3{x: 0.0, y: 1.0, z: 0.0}
+    vertices[22].tex_coord = Vec2{x: 1.0, y: 1.0}
+    
+    vertices[23].position = Vec3{x: -0.5, y: 0.5, z: 0.5}
+    vertices[23].normal = Vec3{x: 0.0, y: 1.0, z: 0.0}
+    vertices[23].tex_coord = Vec2{x: 0.0, y: 1.0}
+    
+    fr fr Generate indices for triangles (36 indices for 12 triangles)
+    sus face normie = 0
+    bestie (face < 6) {
+        sus base_idx normie = face * 4
+        sus idx_offset normie = face * 6
+        
+        fr fr First triangle
+        indices[idx_offset + 0] = base_idx + 0
+        indices[idx_offset + 1] = base_idx + 1
+        indices[idx_offset + 2] = base_idx + 2
+        
+        fr fr Second triangle
+        indices[idx_offset + 3] = base_idx + 2
+        indices[idx_offset + 4] = base_idx + 3
+        indices[idx_offset + 5] = base_idx + 0
+        
+        face = face + 1
+    }
+    
+    damn true
+}
+slay renderz_generate_sphere_vertices(vertices [1000]Vertex, indices [3000]normie, radius drip, segments normie, rings normie) lit {
+    fr fr Generate vertices for UV sphere with given radius and subdivision
+    yeet "mathz"
+    
+    sus vertex_count normie = 0
+    sus index_count normie = 0
+    
+    fr fr Generate vertices
+    sus ring normie = 0
+    bestie (ring <= rings) {
+        sus ring_angle drip = 3.14159 * ring / rings  fr fr 0 to PI
+        sus y drip = mathz.cos(ring_angle) * radius
+        sus ring_radius drip = mathz.sin(ring_angle) * radius
+        
+        sus segment normie = 0
+        bestie (segment <= segments) {
+            sus segment_angle drip = 2.0 * 3.14159 * segment / segments  fr fr 0 to 2PI
+            sus x drip = mathz.cos(segment_angle) * ring_radius
+            sus z drip = mathz.sin(segment_angle) * ring_radius
+            
+            fr fr Position
+            vertices[vertex_count].position.x = x
+            vertices[vertex_count].position.y = y
+            vertices[vertex_count].position.z = z
+            
+            fr fr Normal (normalized position vector)
+            sus normal_length drip = mathz.sqrt(x*x + y*y + z*z)
+            vertices[vertex_count].normal.x = x / normal_length
+            vertices[vertex_count].normal.y = y / normal_length
+            vertices[vertex_count].normal.z = z / normal_length
+            
+            fr fr Texture coordinates
+            vertices[vertex_count].tex_coord.x = segment / segments
+            vertices[vertex_count].tex_coord.y = ring / rings
+            
+            vertex_count = vertex_count + 1
+            segment = segment + 1
+        }
+        ring = ring + 1
+    }
+    
+    fr fr Generate indices for triangles
+    ring = 0
+    bestie (ring < rings) {
+        sus next_ring normie = ring + 1
+        sus segment normie = 0
+        bestie (segment < segments) {
+            sus next_segment normie = segment + 1
+            
+            fr fr Calculate vertex indices
+            sus current normie = ring * (segments + 1) + segment
+            sus current_next normie = ring * (segments + 1) + next_segment
+            sus next_current normie = next_ring * (segments + 1) + segment
+            sus next_next normie = next_ring * (segments + 1) + next_segment
+            
+            fr fr First triangle
+            indices[index_count + 0] = current
+            indices[index_count + 1] = next_current
+            indices[index_count + 2] = current_next
+            
+            fr fr Second triangle
+            indices[index_count + 3] = current_next
+            indices[index_count + 4] = next_current
+            indices[index_count + 5] = next_next
+            
+            index_count = index_count + 6
+            segment = segment + 1
+        }
+        ring = ring + 1
+    }
+    
+    damn true
+}
+slay renderz_look_at_matrix(eye Vec3, target Vec3, up Vec3) Mat4 {
+    fr fr Create look-at view matrix
+    yeet "mathz"
+    
+    fr fr Calculate forward vector (normalized)
+    sus forward_x drip = target.x - eye.x
+    sus forward_y drip = target.y - eye.y
+    sus forward_z drip = target.z - eye.z
+    sus forward_len drip = mathz.sqrt(forward_x*forward_x + forward_y*forward_y + forward_z*forward_z)
+    forward_x = forward_x / forward_len
+    forward_y = forward_y / forward_len
+    forward_z = forward_z / forward_len
+    
+    fr fr Calculate right vector (forward cross up, normalized)
+    sus right_x drip = forward_y * up.z - forward_z * up.y
+    sus right_y drip = forward_z * up.x - forward_x * up.z
+    sus right_z drip = forward_x * up.y - forward_y * up.x
+    sus right_len drip = mathz.sqrt(right_x*right_x + right_y*right_y + right_z*right_z)
+    right_x = right_x / right_len
+    right_y = right_y / right_len
+    right_z = right_z / right_len
+    
+    fr fr Calculate actual up vector (right cross forward)
+    sus up_x drip = right_y * forward_z - right_z * forward_y
+    sus up_y drip = right_z * forward_x - right_x * forward_z
+    sus up_z drip = right_x * forward_y - right_y * forward_x
+    
+    fr fr Create matrix
+    sus result Mat4
+    result.m[0] = right_x
+    result.m[1] = up_x
+    result.m[2] = -forward_x
+    result.m[3] = 0.0
+    
+    result.m[4] = right_y
+    result.m[5] = up_y
+    result.m[6] = -forward_y
+    result.m[7] = 0.0
+    
+    result.m[8] = right_z
+    result.m[9] = up_z
+    result.m[10] = -forward_z
+    result.m[11] = 0.0
+    
+    result.m[12] = -(right_x * eye.x + right_y * eye.y + right_z * eye.z)
+    result.m[13] = -(up_x * eye.x + up_y * eye.y + up_z * eye.z)
+    result.m[14] = forward_x * eye.x + forward_y * eye.y + forward_z * eye.z
+    result.m[15] = 1.0
+    
+    damn result
+}
+slay renderz_perspective_matrix(fov drip, aspect drip, near drip, far drip) Mat4 {
+    fr fr Create perspective projection matrix
+    yeet "mathz"
+    
+    sus fov_rad drip = fov * 3.14159 / 180.0  fr fr Convert degrees to radians
+    sus tan_half_fov drip = mathz.tan(fov_rad / 2.0)
+    
+    sus result Mat4
+    fr fr Initialize to zero
+    sus i normie = 0
+    bestie (i < 16) {
+        result.m[i] = 0.0
+        i = i + 1
+    }
+    
+    result.m[0] = 1.0 / (aspect * tan_half_fov)
+    result.m[5] = 1.0 / tan_half_fov
+    result.m[10] = -(far + near) / (far - near)
+    result.m[11] = -1.0
+    result.m[14] = -(2.0 * far * near) / (far - near)
+    
+    damn result
+}
 slay renderz_orthographic_matrix(left drip, right drip, bottom drip, top drip, near drip, far drip) Mat4 { damn renderz_identity_matrix() }
 slay renderz_translation_matrix(translation Vec3) Mat4 { damn renderz_identity_matrix() }
 slay renderz_rotation_matrix(rotation Vec3) Mat4 { damn renderz_identity_matrix() }

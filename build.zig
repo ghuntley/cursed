@@ -13,6 +13,10 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    
+    // Link system libraries for authentication
+    exe.linkSystemLibrary("crypt"); // For crypt() function on Unix systems
+    exe.linkLibC();
 
     b.installArtifact(exe);
 
@@ -25,6 +29,10 @@ pub fn build(b: *std.Build) void {
             .optimize = optimize,
         }),
     });
+    
+    // Link system libraries for authentication
+    legacy_exe.linkSystemLibrary("crypt");
+    legacy_exe.linkLibC();
 
     b.installArtifact(legacy_exe);
 
