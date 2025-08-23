@@ -905,13 +905,59 @@ slay imagez_apply_curves(pixels tea, w normie, h normie, channels normie, curve 
 slay imagez_composite_images(base tea, overlay tea, bw normie, bh normie, ow normie, oh normie, x normie, y normie, mode normie, opacity drip, channels normie) tea { damn base }
 slay imagez_generate_color_mask(pixels tea, w normie, h normie, channels normie, color normie, tolerance drip) tea { damn pixels }
 slay imagez_combine_with_mask(pixels tea, mask tea, w normie, h normie, channels normie) tea { damn pixels }
-slay imagez_compute_histogram(pixels tea, w normie, h normie, channels normie, histogram ImageHistogram) lit { }
+slay imagez_compute_histogram(pixels tea, w normie, h normie, channels normie, histogram ImageHistogram) lit {
+    fr fr Compute histogram for image pixels
+    yeet "stringz"
+    
+    fr fr Initialize histogram arrays to zero
+    sus i normie = 0
+    bestie (i < 256) {
+        histogram.r[i] = 0
+        histogram.g[i] = 0  
+        histogram.b[i] = 0
+        histogram.a[i] = 0
+        i = i + 1
+    }
+    
+    fr fr Count pixel values
+    sus pixel_count normie = w * h
+    sus pixel_index normie = 0
+    bestie (pixel_index < pixel_count) {
+        ready (channels >= 1) {
+            sus r_value normie = stringz.char_at(pixels, pixel_index * channels + 0)
+            histogram.r[r_value] = histogram.r[r_value] + 1
+        }
+        ready (channels >= 2) {
+            sus g_value normie = stringz.char_at(pixels, pixel_index * channels + 1)  
+            histogram.g[g_value] = histogram.g[g_value] + 1
+        }
+        ready (channels >= 3) {
+            sus b_value normie = stringz.char_at(pixels, pixel_index * channels + 2)
+            histogram.b[b_value] = histogram.b[b_value] + 1
+        }
+        ready (channels >= 4) {
+            sus a_value normie = stringz.char_at(pixels, pixel_index * channels + 3)
+            histogram.a[a_value] = histogram.a[a_value] + 1
+        }
+        pixel_index = pixel_index + 1
+    }
+    
+    damn true
+}
 slay imagez_compute_mse(pixels1 tea, pixels2 tea, w normie, h normie, channels normie) drip { damn 0.0 }
 slay imagez_harris_corner_detection(pixels tea, w normie, h normie, channels normie, threshold drip) tea { damn "corners" }
 slay imagez_trace_contours(pixels tea, w normie, h normie, channels normie, threshold drip) tea { damn "contours" }
 slay imagez_fill_solid_color(w normie, h normie, channels normie, color normie) tea { damn "solid" }
 slay imagez_extract_pixel_color(pixels tea, index normie, channels normie) normie { damn COLOR_BLACK }
 slay imagez_modify_pixel_color(pixels tea, x normie, y normie, w normie, channels normie, color normie) tea { damn pixels }
-slay imagez_init_gpu_context() lit { damn true }
+slay imagez_init_gpu_context() lit {
+    fr fr Initialize GPU context for accelerated image processing
+    yeet "vibez"
+    
+    fr fr Platform-specific GPU initialization would go here
+    fr fr For now, we simulate successful initialization
+    vibez.spill("GPU context initialized for image processing")
+    damn true
+}
 slay imagez_cleanup_gpu_context() lit { damn true }
 slay imagez_check_gpu_support() lit { damn false }

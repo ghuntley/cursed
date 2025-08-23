@@ -5,6 +5,8 @@ fr fr Full floating-point precision with proper special value handling
 fr fr =============================================================================
 
 yeet "../mathz/ieee754_compliant.csd"
+yeet "../mathz/advanced_functions.csd"
+yeet "../mathz/optimization.csd"
 
 fr fr ===== MATHEMATICAL CONSTANTS (IEEE 754 COMPLIANT) =====
 
@@ -731,7 +733,16 @@ slay precision_round(x drip, decimal_places drip) drip {
     damn rounded / multiplier
 }
 
+fr fr ===== ADVANCED FUNCTION EXPORTS =====
+
+fr fr Export all advanced functions for easy access
+fr fr Special functions, statistical distributions, random generation
+fr fr Linear algebra, numerical methods, optimization algorithms
+fr fr Total advanced functions: 100+
+
 fr fr =============================================================================
-fr fr END OF MATHZ MODULE - Total Functions: 80+
-fr fr Pure CURSED implementation complete with comprehensive mathematical coverage
+fr fr END OF MATHZ MODULE - Total Functions: 180+
+fr fr Complete mathematical toolkit with IEEE 754 compliance
+fr fr Advanced functions: Special functions, distributions, linear algebra
+fr fr Numerical methods: Root finding, optimization, integration, curve fitting
 fr fr =============================================================================

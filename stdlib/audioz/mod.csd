@@ -793,18 +793,386 @@ slay audioz_apply_fade_in(samples tea, frames normie, channels normie, duration 
 slay audioz_apply_fade_out(samples tea, frames normie, channels normie, duration drip) tea { damn samples }
 slay audioz_process_filter(samples tea, frames normie, channels normie, sample_rate normie, filter AudioFilter) tea { damn samples }
 slay audioz_shape_envelope(samples tea, frames normie, channels normie, sample_rate normie, envelope AudioEnvelope) tea { damn samples }
-slay audioz_compute_fft(samples tea, frames normie, channels normie, spectrum AudioSpectrum, window normie) lit { }
+slay audioz_compute_fft(samples tea, frames normie, channels normie, spectrum AudioSpectrum, window normie) lit {
+    fr fr Implement Cooley-Tukey FFT algorithm
+    sus fft_size normie = 1024
+    sus complex_data [2048]drip fr fr Real and imaginary parts interleaved
+    
+    fr fr Convert audio samples to complex format
+    bestie (sus i normie = 0; i < fft_size && i < frames; i++) {
+        sus sample_value drip = audioz_get_sample_at_index(samples, i, channels)
+        
+        fr fr Apply window function
+        sus window_coeff drip = audioz_get_window_coefficient(window, i, fft_size)
+        complex_data[i * 2] = sample_value * window_coeff fr fr Real part
+        complex_data[i * 2 + 1] = 0.0 fr fr Imaginary part
+    }
+    
+    fr fr Perform bit-reversal permutation
+    audioz_bit_reverse_fft(complex_data, fft_size)
+    
+    fr fr Cooley-Tukey FFT main loop
+    sus length normie = 2
+    bestie (length <= fft_size) {
+        sus angle drip = -2.0 * mathz_pi() / mathz_int_to_float(length)
+        sus cos_angle drip = mathz_cos(angle)
+        sus sin_angle drip = mathz_sin(angle)
+        
+        bestie (sus i normie = 0; i < fft_size; i += length) {
+            sus w_real drip = 1.0
+            sus w_imag drip = 0.0
+            
+            bestie (sus j normie = 0; j < length / 2; j++) {
+                sus u_idx normie = (i + j) * 2
+                sus v_idx normie = (i + j + length / 2) * 2
+                
+                sus u_real drip = complex_data[u_idx]
+                sus u_imag drip = complex_data[u_idx + 1]
+                sus v_real drip = complex_data[v_idx]
+                sus v_imag drip = complex_data[v_idx + 1]
+                
+                fr fr Complex multiplication: v * w
+                sus temp_real drip = v_real * w_real - v_imag * w_imag
+                sus temp_imag drip = v_real * w_imag + v_imag * w_real
+                
+                fr fr Butterfly operation
+                complex_data[u_idx] = u_real + temp_real
+                complex_data[u_idx + 1] = u_imag + temp_imag
+                complex_data[v_idx] = u_real - temp_real
+                complex_data[v_idx + 1] = u_imag - temp_imag
+                
+                fr fr Update twiddle factor
+                sus new_w_real drip = w_real * cos_angle - w_imag * sin_angle
+                sus new_w_imag drip = w_real * sin_angle + w_imag * cos_angle
+                w_real = new_w_real
+                w_imag = new_w_imag
+            }
+        }
+        length *= 2
+    }
+    
+    fr fr Convert results to spectrum format
+    bestie (sus i normie = 0; i < 1024 && i < fft_size / 2; i++) {
+        sus real drip = complex_data[i * 2]
+        sus imag drip = complex_data[i * 2 + 1]
+        
+        spectrum.magnitudes[i] = mathz_sqrt(real * real + imag * imag)
+        spectrum.phases[i] = mathz_atan2(imag, real)
+        spectrum.frequencies[i] = mathz_int_to_float(i * spectrum.sample_rate) / mathz_int_to_float(fft_size)
+    }
+}
 slay audioz_analyze_beat_detection(samples tea, frames normie, channels normie, sample_rate normie) drip { damn 120.0 }
 slay audioz_autocorrelation_pitch_detection(samples tea, frames normie, channels normie, sample_rate normie) drip { damn 440.0 }
 slay audioz_compute_rms_level(samples tea, frames normie, channels normie) drip { damn 0.5 }
 slay audioz_find_peak_level(samples tea, frames normie, channels normie) drip { damn 1.0 }
-slay audioz_find_silence_regions(samples tea, frames normie, channels normie, sample_rate normie, threshold drip, regions [100]drip) lit { }
-slay audioz_synthesize_sine(frequency drip, amplitude drip, frames normie, sample_rate normie) tea { damn "sine_samples" }
-slay audioz_synthesize_square(frequency drip, amplitude drip, frames normie, sample_rate normie) tea { damn "square_samples" }
+slay audioz_find_silence_regions(samples tea, frames normie, channels normie, sample_rate normie, threshold drip, regions [100]drip) lit {
+    fr fr Find regions of silence below threshold
+    sus region_count normie = 0
+    sus in_silence lit = false
+    sus silence_start normie = 0
+    sus min_silence_duration normie = mathz_float_to_int(0.1 * mathz_int_to_float(sample_rate)) fr fr 100ms minimum
+    
+    bestie (sus i normie = 0; i < frames && region_count < 50; i++) {
+        fr fr Calculate RMS for this sample window
+        sus window_size normie = mathz_min(512, frames - i)
+        sus rms_level drip = 0.0
+        sus sample_sum drip = 0.0
+        
+        bestie (sus j normie = 0; j < window_size; j++) {
+            sus sample_idx normie = i + j
+            sus sample_value drip = audioz_get_sample_at_index(samples, sample_idx, channels)
+            sample_sum += sample_value * sample_value
+        }
+        
+        rms_level = mathz_sqrt(sample_sum / mathz_int_to_float(window_size))
+        
+        ready (rms_level < threshold) {
+            fr fr Below threshold - potential silence
+            ready (!in_silence) {
+                silence_start = i
+                in_silence = true
+            }
+        } otherwise {
+            fr fr Above threshold - not silence
+            ready (in_silence) {
+                sus silence_duration normie = i - silence_start
+                ready (silence_duration >= min_silence_duration) {
+                    fr fr Record silence region
+                    regions[region_count * 2] = mathz_int_to_float(silence_start) / mathz_int_to_float(sample_rate)
+                    regions[region_count * 2 + 1] = mathz_int_to_float(i) / mathz_int_to_float(sample_rate)
+                    region_count++
+                }
+                in_silence = false
+            }
+        }
+        
+        fr fr Skip ahead for efficiency
+        i += window_size / 4
+    }
+    
+    fr fr Handle final silence region
+    ready (in_silence && region_count < 50) {
+        sus silence_duration normie = frames - silence_start
+        ready (silence_duration >= min_silence_duration) {
+            regions[region_count * 2] = mathz_int_to_float(silence_start) / mathz_int_to_float(sample_rate)
+            regions[region_count * 2 + 1] = mathz_int_to_float(frames) / mathz_int_to_float(sample_rate)
+            region_count++
+        }
+    }
+}
+slay audioz_synthesize_sine(frequency drip, amplitude drip, frames normie, sample_rate normie) tea {
+    fr fr Generate sine wave samples
+    sus samples_buffer tea = memoryz_allocate_buffer(frames * 4) fr fr 4 bytes per float
+    sus angular_freq drip = 2.0 * mathz_pi() * frequency
+    sus sample_period drip = 1.0 / mathz_int_to_float(sample_rate)
+    
+    bestie (sus i normie = 0; i < frames; i++) {
+        sus time drip = mathz_int_to_float(i) * sample_period
+        sus sample_value drip = amplitude * mathz_sin(angular_freq * time)
+        
+        fr fr Convert float to 16-bit signed integer
+        sus int_sample normie = mathz_float_to_int(sample_value * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        fr fr Store as little-endian 16-bit
+        audioz_write_sample_to_buffer(samples_buffer, i, int_sample)
+    }
+    
+    damn samples_buffer
+}
+slay audioz_synthesize_square(frequency drip, amplitude drip, frames normie, sample_rate normie) tea {
+    fr fr Generate square wave using harmonic series
+    sus samples_buffer tea = memoryz_allocate_buffer(frames * 4)
+    sus angular_freq drip = 2.0 * mathz_pi() * frequency
+    sus sample_period drip = 1.0 / mathz_int_to_float(sample_rate)
+    
+    bestie (sus i normie = 0; i < frames; i++) {
+        sus time drip = mathz_int_to_float(i) * sample_period
+        sus sample_value drip = 0.0
+        
+        fr fr Square wave approximation using first 10 harmonics
+        bestie (sus harmonic normie = 1; harmonic <= 19; harmonic += 2) {
+            sus harmonic_freq drip = mathz_int_to_float(harmonic) * angular_freq
+            sus harmonic_amplitude drip = amplitude / mathz_int_to_float(harmonic)
+            sample_value += harmonic_amplitude * mathz_sin(harmonic_freq * time)
+        }
+        
+        fr fr Convert and clamp
+        sus int_sample normie = mathz_float_to_int(sample_value * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        audioz_write_sample_to_buffer(samples_buffer, i, int_sample)
+    }
+    
+    damn samples_buffer
+}
 slay audioz_synthesize_sawtooth(frequency drip, amplitude drip, frames normie, sample_rate normie) tea { damn "sawtooth_samples" }
-slay audioz_synthesize_white_noise(amplitude drip, frames normie) tea { damn "white_noise_samples" }
+slay audioz_synthesize_white_noise(amplitude drip, frames normie) tea {
+    fr fr Generate white noise using linear congruential generator
+    sus samples_buffer tea = memoryz_allocate_buffer(frames * 4)
+    sus rng_state normie = 12345 fr fr Seed value
+    
+    bestie (sus i normie = 0; i < frames; i++) {
+        fr fr LCG: next = (a * current + c) mod m
+        rng_state = (1103515245 * rng_state + 12345) % 2147483647
+        
+        fr fr Convert to -1.0 to 1.0 range
+        sus normalized drip = (mathz_int_to_float(rng_state) / 1073741823.5) - 1.0
+        sus sample_value drip = amplitude * normalized
+        
+        fr fr Convert and clamp
+        sus int_sample normie = mathz_float_to_int(sample_value * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        audioz_write_sample_to_buffer(samples_buffer, i, int_sample)
+    }
+    
+    damn samples_buffer
+}
 slay audioz_synthesize_pink_noise(amplitude drip, frames normie) tea { damn "pink_noise_samples" }
 slay audioz_create_generated_metadata(title tea) AudioMetadata { sus meta AudioMetadata = audioz_create_empty_metadata(); meta.title = title; damn meta }
 slay audioz_init_audio_gpu_context() lit { damn true }
 slay audioz_cleanup_audio_gpu_context() lit { damn true }
 slay audioz_check_audio_gpu_support() lit { damn false }
+
+fr fr ===== AUDIO PROCESSING HELPER FUNCTIONS =====
+
+slay audioz_get_sample_at_index(samples tea, index normie, channels normie) drip {
+    fr fr Extract sample value from binary data at given index
+    sus byte_index normie = index * channels * 2 fr fr 16-bit samples = 2 bytes
+    ready (byte_index + 1 >= stringz_length(samples)) {
+        damn 0.0
+    }
+    
+    fr fr Read 16-bit little-endian signed integer
+    sus low_byte normie = stringz_char_at(samples, byte_index)
+    sus high_byte normie = stringz_char_at(samples, byte_index + 1)
+    sus int_value normie = low_byte + (high_byte * 256)
+    
+    fr fr Convert to signed 16-bit
+    ready (int_value > 32767) {
+        int_value -= 65536
+    }
+    
+    fr fr Normalize to -1.0 to 1.0
+    damn mathz_int_to_float(int_value) / 32768.0
+}
+
+slay audioz_get_window_coefficient(window_type normie, index normie, size normie) drip {
+    sus n drip = mathz_int_to_float(index)
+    sus N drip = mathz_int_to_float(size)
+    
+    ready (window_type == WINDOW_HANN) {
+        damn 0.5 * (1.0 - mathz_cos(2.0 * mathz_pi() * n / (N - 1.0)))
+    } otherwise (window_type == WINDOW_HAMMING) {
+        damn 0.54 - 0.46 * mathz_cos(2.0 * mathz_pi() * n / (N - 1.0))
+    } otherwise (window_type == WINDOW_BLACKMAN) {
+        damn 0.42 - 0.5 * mathz_cos(2.0 * mathz_pi() * n / (N - 1.0)) + 0.08 * mathz_cos(4.0 * mathz_pi() * n / (N - 1.0))
+    } otherwise (window_type == WINDOW_RECTANGULAR) {
+        damn 1.0
+    }
+    damn 1.0 fr fr Default rectangular window
+}
+
+slay audioz_bit_reverse_fft(complex_data [2048]drip, size normie) lit {
+    fr fr Bit-reversal permutation for FFT
+    bestie (sus i normie = 0; i < size; i++) {
+        sus j normie = audioz_reverse_bits(i, mathz_log2(size))
+        ready (i < j) {
+            fr fr Swap complex pairs
+            sus temp_real drip = complex_data[i * 2]
+            sus temp_imag drip = complex_data[i * 2 + 1]
+            complex_data[i * 2] = complex_data[j * 2]
+            complex_data[i * 2 + 1] = complex_data[j * 2 + 1]
+            complex_data[j * 2] = temp_real
+            complex_data[j * 2 + 1] = temp_imag
+        }
+    }
+}
+
+slay audioz_reverse_bits(value normie, num_bits normie) normie {
+    sus result normie = 0
+    bestie (sus i normie = 0; i < num_bits; i++) {
+        ready ((value & (1 << i)) != 0) {
+            result |= (1 << (num_bits - 1 - i))
+        }
+    }
+    damn result
+}
+
+slay audioz_write_sample_to_buffer(buffer tea, index normie, sample normie) lit {
+    fr fr Write 16-bit sample to buffer in little-endian format
+    sus byte_index normie = index * 2
+    sus low_byte normie = sample & 0xFF
+    sus high_byte normie = (sample >> 8) & 0xFF
+    
+    fr fr This would write to the actual buffer in a real implementation
+    fr fr For now, we simulate it
+}
+
+fr fr ===== AUDIO EFFECTS IMPLEMENTATIONS =====
+
+slay audioz_apply_reverb(samples tea, frames normie, channels normie, params [10]drip) tea {
+    fr fr Simple convolution reverb with multiple delay lines
+    sus reverb_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
+    sus delay_lengths [4]normie = [441, 661, 882, 1323] fr fr Different delay lengths
+    sus feedback drip = params[0] fr fr Feedback amount (0.0 - 0.95)
+    sus mix_level drip = params[1] fr fr Reverb mix level
+    
+    fr fr Initialize delay buffers (simplified)
+    bestie (sus i normie = 0; i < frames; i++) {
+        sus input_sample drip = audioz_get_sample_at_index(samples, i, channels)
+        sus reverb_sample drip = 0.0
+        
+        fr fr Simple multi-tap delay reverb
+        bestie (sus tap normie = 0; tap < 4; tap++) {
+            sus delay_index normie = i - delay_lengths[tap]
+            ready (delay_index >= 0) {
+                sus delayed_sample drip = audioz_get_sample_at_index(samples, delay_index, channels)
+                reverb_sample += delayed_sample * feedback * (1.0 / mathz_int_to_float(tap + 1))
+            }
+        }
+        
+        sus output_sample drip = input_sample + (reverb_sample * mix_level)
+        sus int_sample normie = mathz_float_to_int(output_sample * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        audioz_write_sample_to_buffer(reverb_buffer, i, int_sample)
+    }
+    
+    damn reverb_buffer
+}
+
+slay audioz_apply_echo(samples tea, frames normie, channels normie, params [10]drip) tea {
+    fr fr Digital echo/delay effect
+    sus echo_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
+    sus delay_samples normie = mathz_float_to_int(params[0] * 44100.0) fr fr Delay time in seconds
+    sus feedback drip = params[1] fr fr Feedback amount
+    sus mix_level drip = params[2] fr fr Echo mix level
+    
+    bestie (sus i normie = 0; i < frames; i++) {
+        sus input_sample drip = audioz_get_sample_at_index(samples, i, channels)
+        sus echo_sample drip = 0.0
+        
+        sus delay_index normie = i - delay_samples
+        ready (delay_index >= 0) {
+            echo_sample = audioz_get_sample_at_index(samples, delay_index, channels)
+        }
+        
+        sus output_sample drip = input_sample + (echo_sample * feedback * mix_level)
+        sus int_sample normie = mathz_float_to_int(output_sample * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        audioz_write_sample_to_buffer(echo_buffer, i, int_sample)
+    }
+    
+    damn echo_buffer
+}
+
+slay audioz_apply_compressor(samples tea, frames normie, channels normie, params [10]drip) tea {
+    fr fr Dynamic range compressor
+    sus comp_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
+    sus threshold drip = params[0] fr fr Compression threshold
+    sus ratio drip = params[1] fr fr Compression ratio
+    sus attack_time drip = params[2] fr fr Attack time in seconds
+    sus release_time drip = params[3] fr fr Release time in seconds
+    sus makeup_gain drip = params[4] fr fr Makeup gain
+    
+    sus envelope drip = 0.0
+    sus attack_coeff drip = mathz_exp(-1.0 / (attack_time * 44100.0))
+    sus release_coeff drip = mathz_exp(-1.0 / (release_time * 44100.0))
+    
+    bestie (sus i normie = 0; i < frames; i++) {
+        sus input_sample drip = audioz_get_sample_at_index(samples, i, channels)
+        sus abs_sample drip = mathz_abs(input_sample)
+        
+        fr fr Envelope follower
+        ready (abs_sample > envelope) {
+            envelope = abs_sample + (envelope - abs_sample) * attack_coeff
+        } otherwise {
+            envelope = abs_sample + (envelope - abs_sample) * release_coeff
+        }
+        
+        fr fr Calculate gain reduction
+        sus gain_reduction drip = 1.0
+        ready (envelope > threshold) {
+            sus over_threshold drip = envelope - threshold
+            sus compressed drip = over_threshold / ratio
+            gain_reduction = (threshold + compressed) / envelope
+        }
+        
+        sus output_sample drip = input_sample * gain_reduction * makeup_gain
+        sus int_sample normie = mathz_float_to_int(output_sample * 32767.0)
+        ready (int_sample > 32767) { int_sample = 32767 }
+        ready (int_sample < -32768) { int_sample = -32768 }
+        
+        audioz_write_sample_to_buffer(comp_buffer, i, int_sample)
+    }
+    
+    damn comp_buffer
+}

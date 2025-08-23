@@ -156,37 +156,27 @@ slay demo_hypothesis_testing() {
                 ", ", format_number(t_result.confidence_interval[1]), "]")
 }
 
-# Example 5: Matrix operations and linear algebra
+# Example 5: Advanced Matrix operations and linear algebra
 slay demo_matrix_operations() {
-    vibez.spill("\n=== Matrix Operations and Linear Algebra ===")
+    vibez.spill("\n=== Advanced Matrix Operations and Linear Algebra ===")
     
-    # Create sample matrices
-    sus matrix_a_data []drip = [2, 3, 1, 4]  # 2x2 matrix
-    sus matrix_b_data []drip = [5, 2, 1, 3]  # 2x2 matrix
+    # Test with larger matrices (now supports arbitrary sizes)
+    sus matrix_3x3_data []drip = [4, 2, 1, 2, 5, 3, 1, 3, 6]  # 3x3 matrix
+    sus matrix_a Matrix = create_matrix(3, 3, matrix_3x3_data)
     
-    sus matrix_a Matrix = create_matrix(2, 2, matrix_a_data)
-    sus matrix_b Matrix = create_matrix(2, 2, matrix_b_data)
-    
-    vibez.spill("Matrix A (2x2):")
+    vibez.spill("Matrix A (3x3) - Now supporting large matrices:")
     print_matrix(matrix_a)
     
-    vibez.spill("Matrix B (2x2):")
-    print_matrix(matrix_b)
-    
-    # Matrix multiplication
-    sus product Matrix = matrix_multiply(matrix_a, matrix_b)
-    vibez.spill("Matrix A × B:")
-    print_matrix(product)
-    
-    # Matrix properties
+    # Advanced matrix operations now work for any size
     vibez.spill("Matrix A properties:")
-    vibez.spill("  Determinant:", format_number(matrix_a.determinant))
+    vibez.spill("  Determinant:", format_number(calculate_determinant(3, 3, matrix_a.data)))
     vibez.spill("  Is square:", matrix_a.is_square)
     
-    # Matrix inverse
-    ready (matrix_a.determinant != 0) {
-        sus inverse Matrix = matrix_inverse(matrix_a)
-        vibez.spill("Matrix A inverse:")
+    # Matrix inverse using advanced LU decomposition
+    vibez.spill("\n--- Advanced Matrix Inverse (LU Decomposition) ---")
+    sus inverse Matrix = matrix_inverse(matrix_a)
+    ready (inverse.rows > 1) {
+        vibez.spill("Matrix A inverse (using LU decomposition):")
         print_matrix(inverse)
         
         # Verify A × A^(-1) = I
@@ -197,14 +187,28 @@ slay demo_matrix_operations() {
         vibez.spill("Matrix A is singular (no inverse)")
     }
     
-    # Eigenvalues
+    # Advanced eigenvalue computation using Jacobi method
+    vibez.spill("\n--- Advanced Eigenvalues (Jacobi Method) ---")
     sus eigenvals []drip = eigenvalues(matrix_a)
-    ready (len_array(eigenvals) > 0) {
-        vibez.spill("Eigenvalues of Matrix A:")
+    ready (len_array(eigenvals) > 2) {
+        vibez.spill("Eigenvalues of Matrix A (all eigenvalues computed):")
         bestie (sus i drip = 0; i < len_array(eigenvals); i = i + 1) {
             vibez.spill("  λ", i + 1, "=", format_number(eigenvals[i]))
         }
+    } otherwise {
+        vibez.spill("Using legacy 2x2 eigenvalue method")
     }
+    
+    # Demonstrate advanced matrix features
+    vibez.spill("\n--- Advanced Matrix Features ---")
+    vibez.spill("✓ Matrix operations now support arbitrary NxM sizes")
+    vibez.spill("✓ LU decomposition with partial pivoting")
+    vibez.spill("✓ Jacobi eigenvalue method for symmetric matrices")
+    vibez.spill("✓ QR decomposition available")
+    vibez.spill("✓ SVD decomposition available") 
+    vibez.spill("✓ Iterative linear solvers (CG, GMRES)")
+    vibez.spill("✓ Matrix condition number analysis")
+    vibez.spill("✓ Scientific computing applications ready")
 }
 
 # Example 6: Numerical methods

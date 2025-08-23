@@ -5,6 +5,7 @@ yeet "stringz"
 yeet "mathz"
 yeet "vibez"
 yeet "regexz/regex_engine"
+yeet "regexz/complete_regex_vm"
 
 fr fr ===== REGEX STRUCTURES =====
 
@@ -237,95 +238,25 @@ slay regex_match_all(regex RegexPattern, text tea) []RegexMatch {
 }
 
 slay execute_bytecode(bytecode []drip, text tea, start_pos drip) RegexMatch {
-    fr fr Virtual machine to execute compiled regex bytecode
-    sus match RegexMatch = RegexMatch{}
-    match.text = text
-    match.start_position = -1
-    match.length = 0
+    fr fr Virtual machine to execute compiled regex bytecode - now with complete implementation
+    sus vm CompleteRegexVM = CompleteRegexVM{}
     
-    sus pc drip = 0  fr fr Program counter
-    sus text_pos drip = start_pos
-    sus stack []drip = []  fr fr Execution stack
-    sus stack_top drip = 0
+    fr fr Initialize VM state
+    vm.bytecode = bytecode
+    vm.pc = 0
+    vm.text = text
+    vm.text_pos = start_pos
+    vm.text_length = string_length(text)
+    vm.stack = []
+    vm.capture_stack = []
+    vm.captures = []
+    vm.backtrack_stack = []
+    vm.unicode_mode = no_cap  fr fr Default flags
+    vm.multiline_mode = no_cap
+    vm.case_insensitive = no_cap
+    vm.dot_all = no_cap
     
-    bestie (pc < array_length(bytecode)) {
-        sus opcode drip = bytecode[pc]
-        pc = pc + 1
-        
-        ready (opcode == 0) {  fr fr END
-            ready (text_pos >= start_pos) {
-                match.start_position = start_pos
-                match.length = text_pos - start_pos
-            }
-            break
-        } otherwise ready (opcode == 1) {  fr fr MATCH_START
-            ready (text_pos != 0) {
-                damn match  fr fr Fail if not at start
-            }
-        } otherwise ready (opcode == 2) {  fr fr MATCH_END
-            ready (text_pos != string_length(text)) {
-                damn match  fr fr Fail if not at end
-            }
-        } otherwise ready (opcode == 3) {  fr fr MATCH_ANY
-            ready (text_pos >= string_length(text)) {
-                damn match  fr fr Fail at end of text
-            }
-            text_pos = text_pos + 1
-        } otherwise ready (opcode == 8) {  fr fr MATCH_CHAR
-            sus expected_char drip = bytecode[pc]
-            pc = pc + 1
-            
-            ready (text_pos >= string_length(text)) {
-                damn match  fr fr Fail at end of text
-            }
-            
-            sus actual_char drip = char_to_number(substring(text, text_pos, 1))
-            ready (actual_char != expected_char) {
-                damn match  fr fr Character mismatch
-            }
-            
-            text_pos = text_pos + 1
-        } otherwise ready (opcode == 12) {  fr fr MATCH_DIGIT
-            ready (text_pos >= string_length(text)) {
-                damn match
-            }
-            
-            sus char tea = substring(text, text_pos, 1)
-            ready (!is_digit_char(char)) {
-                damn match
-            }
-            
-            text_pos = text_pos + 1
-        } otherwise ready (opcode == 13) {  fr fr MATCH_WORD
-            ready (text_pos >= string_length(text)) {
-                damn match
-            }
-            
-            sus char tea = substring(text, text_pos, 1)
-            ready (!is_word_char(char)) {
-                damn match
-            }
-            
-            text_pos = text_pos + 1
-        } otherwise ready (opcode == 14) {  fr fr MATCH_SPACE
-            ready (text_pos >= string_length(text)) {
-                damn match
-            }
-            
-            sus char tea = substring(text, text_pos, 1)
-            ready (!is_space_char(char)) {
-                damn match
-            }
-            
-            text_pos = text_pos + 1
-        } otherwise {
-            fr fr Handle other opcodes (simplified)
-            vibez.spill("Unimplemented opcode: " + json_number_to_string(opcode))
-            damn match
-        }
-    }
-    
-    damn match
+    damn execute_complete_regex(vm)
 }
 
 fr fr ===== HIGH-LEVEL REGEX OPERATIONS =====
