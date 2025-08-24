@@ -1,0 +1,6141 @@
+{
+  "timestamp": 1755997105.403286,
+  "total_modules": 262,
+  "modules_tested": 262,
+  "tests_passed": 0,
+  "tests_failed": 470,
+  "coverage_percentage": 0.0,
+  "performance_metrics": {},
+  "quality_metrics": {
+    "rust_tests": {
+      "success": false,
+      "output": "[Errno 2] No such file or directory: 'cargo'"
+    },
+    "cargo_check": {
+      "success": false,
+      "output": "[Errno 2] No such file or directory: 'cargo'"
+    },
+    "cargo_clippy": {
+      "success": false,
+      "output": ""
+    },
+    "cargo_fmt_check": {
+      "success": false,
+      "output": ""
+    }
+  },
+  "modules": {},
+  "integration_results": {},
+  "detailed_results": [
+    {
+      "module": "gc",
+      "test_file": "test_gc.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001474618911743164,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "archive_handling",
+      "test_file": "test_archive_handling.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013103485107421875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_production",
+      "test_file": "test_database_production.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016264915466308594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "parser",
+      "test_file": "test_parser_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008754730224609375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "parser",
+      "test_file": "test_parser.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017321109771728516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "parser",
+      "test_file": "test_parser_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007996559143066406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "process_real",
+      "test_file": "test_process_real.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021772384643554688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sketchy_math",
+      "test_file": "test_sketchy_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001943826675415039,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "reflect",
+      "test_file": "test_reflect.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004198789596557617,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "snapshot_testing",
+      "test_file": "test_snapshot_testing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0041887760162353516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pathz",
+      "test_file": "test_pathz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.005667924880981445,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "command_line",
+      "test_file": "test_command_line.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00560307502746582,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "plugin_vibes_simple",
+      "test_file": "test_plugin_vibes_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019996166229248047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz",
+      "test_file": "test_mathz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001911163330078125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz",
+      "test_file": "test_mathz_fixed.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020012855529785156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz",
+      "test_file": "test_mathz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017652511596679688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sys_core",
+      "test_file": "test_sys_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007624626159667969,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz",
+      "test_file": "comprehensive_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0034723281860351562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sus_log",
+      "test_file": "test_sus_log.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014486312866210938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sort_slay",
+      "test_file": "test_sort_slay.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018775463104248047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sort_slay",
+      "test_file": "test_sort_slay_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002633333206176758,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pathing",
+      "test_file": "test_pathing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001779317855834961,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_vibes",
+      "test_file": "test_test_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0036325454711914062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "hashtag",
+      "test_file": "test_hashtag.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0033397674560546875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mlz",
+      "test_file": "test_mlz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015079975128173828,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "imagez",
+      "test_file": "test_imagez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.010634660720825195,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pathing",
+      "test_file": "test_pathing_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022568702697753906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mood_map",
+      "test_file": "test_mood_map.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010528564453125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "error_core",
+      "test_file": "test_error_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0033626556396484375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mlz",
+      "test_file": "test_mlz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021915435791015625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "bytefit",
+      "test_file": "test_bytefit.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00173187255859375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_orm_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015668869018554688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_orm_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010483264923095703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_database_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002110719680786133,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_orm_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015156269073486328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_registry.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014052391052246094,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database",
+      "test_file": "test_database.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0024869441986083984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sorta_fresh",
+      "test_file": "test_sorta_fresh_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014846324920654297,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sorta_fresh",
+      "test_file": "test_sorta_fresh.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019941329956054688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_mime",
+      "test_file": "test_vibe_mime.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0006704330444335938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sorta_fresh",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018069744110107422,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compressionz",
+      "test_file": "test_compressionz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009515285491943359,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stdlib_linker",
+      "test_file": "test_stdlib_linker.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007493495941162109,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string_enhanced",
+      "test_file": "test_string_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011873245239257812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "process",
+      "test_file": "test_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013010501861572266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "process",
+      "test_file": "test_process.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012938976287841797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "coverage_runtime",
+      "test_file": "test_coverage_runtime.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012462139129638672,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_net",
+      "test_file": "test_vibe_net.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015368461608886719,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "filesystem_complete",
+      "test_file": "test_filesystem_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018911361694335938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "unicode",
+      "test_file": "test_string_integration.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001453399658203125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "unicode",
+      "test_file": "test_unicode.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012781620025634766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "binary_drip",
+      "test_file": "test_binary_drip_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012881755828857422,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "binary_drip",
+      "test_file": "test_binary_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001806020736694336,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json",
+      "test_file": "test_json.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011544227600097656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json",
+      "test_file": "test_json_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013527870178222656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "unicode",
+      "test_file": "test_string_processing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003319978713989258,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_vibez_old.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00044989585876464844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_vibez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010759830474853516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023345947265625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_vibez_complex.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018486976623535156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memoryz",
+      "test_file": "test_memoryz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004048824310302734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_vibez_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002902984619140625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_core_functions.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003523588180541992,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez",
+      "test_file": "test_core_functions_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003489971160888672,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "filez",
+      "test_file": "test_cross_platform_paths.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0029401779174804688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "filez",
+      "test_file": "test_filez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003682374954223633,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "asyncz",
+      "test_file": "test_asyncz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002036571502685547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "filez",
+      "test_file": "file_watch_integration_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0027370452880859375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fmt",
+      "test_file": "test_fmt.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002688169479370117,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "filez",
+      "test_file": "test_file_watching.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004633188247680664,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto_subtle_drip",
+      "test_file": "test_crypto_subtle_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016071796417236328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "package_manager",
+      "test_file": "test_package_manager.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015757083892822266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json_tea",
+      "test_file": "test_json_property.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009503364562988281,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json_tea",
+      "test_file": "test_json_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017201900482177734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "audioz",
+      "test_file": "test_audioz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0029976367950439453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "json_tea",
+      "test_file": "test_json_file_operations.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021364688873291016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "ipc",
+      "test_file": "test_ipc_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017681121826171875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex",
+      "test_file": "working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010280609130859375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "ipc",
+      "test_file": "test_ipc.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023047924041748047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex",
+      "test_file": "test_regex_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001997232437133789,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "asn1_mood",
+      "test_file": "test_asn1_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012049674987792969,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex",
+      "test_file": "final_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020351409912109375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "signal_handling",
+      "test_file": "test_signal_handling.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012900829315185547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex",
+      "test_file": "test_regex.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0032684803009033203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory_core",
+      "test_file": "test_memory_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015716552734375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_life",
+      "test_file": "test_vibe_life_fixed.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012943744659423828,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_life",
+      "test_file": "test_vibe_life.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016715526580810547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_vibez",
+      "test_file": "test_mod_debug.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013170242309570312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_vibez",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023126602172851562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_orm",
+      "test_file": "test_database_orm.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021796226501464844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "main_character",
+      "test_file": "test_main_character.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022592544555664062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_vibez",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003026723861694336,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_vibez",
+      "test_file": "test_debug.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004093647003173828,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015001296997070312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_with_array",
+      "test_file": "test_test_with_array.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028765201568603516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_vibez",
+      "test_file": "test_exec_vibez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004776954650878906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002148151397705078,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "beta",
+      "test_file": "test_beta.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00390625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022094249725341797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait_final.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018188953399658203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "timez",
+      "test_file": "test_timez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008883476257324219,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002860546112060547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "timez",
+      "test_file": "test_sleep.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008466243743896484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "clock_bait",
+      "test_file": "test_clock_bait_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002105712890625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "websocketz",
+      "test_file": "test_websocketz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012102127075195312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compiler_core",
+      "test_file": "test_compiler_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014803409576416016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_core",
+      "test_file": "test_collections_core_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010182857513427734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_core",
+      "test_file": "test_collections_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017597675323486328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto_secure",
+      "test_file": "test_crypto_secure.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013170242309570312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto_secure",
+      "test_file": "test_pqc_comprehensive.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015461444854736328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_simple",
+      "test_file": "test_collections_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003038644790649414,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "plugin_system",
+      "test_file": "test_plugin_system.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018308162689208984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "gamma",
+      "test_file": "test_gamma.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018489360809326172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "formatter",
+      "test_file": "test_multiline_strings.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008466243743896484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory_profiler",
+      "test_file": "test_memory_profiler.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021982192993164062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_lock",
+      "test_file": "test_vibe_lock.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002205371856689453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "type_core",
+      "test_file": "test_type_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002930879592895508,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "grammar_drip",
+      "test_file": "test_grammar_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002328157424926758,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "formatter",
+      "test_file": "test_formatter.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002276897430419922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "complex_module",
+      "test_file": "test_complex_module.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019364356994628906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "chaos_mode",
+      "test_file": "test_chaos_mode.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014729499816894531,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "async_core",
+      "test_file": "test_async_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012001991271972656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "wasm_mood",
+      "test_file": "test_wasm_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011153221130371094,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "token_vibe",
+      "test_file": "test_token_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016891956329345703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "async_core",
+      "test_file": "test_async_core_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019540786743164062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "wasm_mood",
+      "test_file": "comprehensive_wasm_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010883808135986328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "wasm_mood",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014638900756835938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "network",
+      "test_file": "test_network_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008249282836914062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "network",
+      "test_file": "test_network_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012104511260986328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "network",
+      "test_file": "test_network_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016846656799316406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "network",
+      "test_file": "test_network_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014595985412597656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "alpha",
+      "test_file": "test_alpha.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009508132934570312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "module_b",
+      "test_file": "test_module_b.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018219947814941406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "web",
+      "test_file": "test_web.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011246204376220703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "network",
+      "test_file": "test_network.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0032799243927001953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_int",
+      "test_file": "test_math_int.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019774436950683594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io",
+      "test_file": "test_io.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001405954360961914,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io",
+      "test_file": "test_io_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014781951904296875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz_optimized",
+      "test_file": "test_mathz_optimized.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022096633911132812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "panic_system",
+      "test_file": "test_panic_system.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015213489532470703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tensorz",
+      "test_file": "test_tensorz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0006544589996337891,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io",
+      "test_file": "test_io_comprehensive.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0024623870849609375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "complex_vibe",
+      "test_file": "test_complex_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016562938690185547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "result",
+      "test_file": "test_result.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003959178924560547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "async_runtime",
+      "test_file": "test_async_runtime.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012674331665039062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "trace_tea",
+      "test_file": "test_trace_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001194000244140625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "trace_tea",
+      "test_file": "test_enhanced_trace_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012819766998291016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_unicode_stringz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011777877807617188,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_comprehensive.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007946491241455078,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_property.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001470804214477539,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "trace_tea",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019550323486328125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_migration_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017857551574707031,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014836788177490234,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014553070068359375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_direct.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023717880249023438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014605522155761719,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_final.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002387523651123047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0005095005035400391,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_stringz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002568483352661133,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001878499984741211,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_unicode_vs_ascii_comparison.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007185935974121094,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012578964233398438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "debug_tea",
+      "test_file": "test_debug_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008695125579833984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rizz_template",
+      "test_file": "test_rizz_template.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001447916030883789,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rizz_template",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014798641204833984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pure_json",
+      "test_file": "test_pure_json.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012650489807128906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "configz",
+      "test_file": "test_configz_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013213157653808594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_real",
+      "test_file": "test_fs_real.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008409023284912109,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "configz",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001108407974243164,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "property_testing",
+      "test_file": "test_property_testing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002579927444458008,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "configz",
+      "test_file": "test_configz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019681453704833984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "select_core",
+      "test_file": "test_select_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0030374526977539062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io_simple",
+      "test_file": "test_io_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009181499481201172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "error_drip",
+      "test_file": "test_error_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016040802001953125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string",
+      "test_file": "test_string_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00040411949157714844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string",
+      "test_file": "test_pure_string.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007004737854003906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "module_resolver",
+      "test_file": "test_module_resolver.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007956027984619141,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string",
+      "test_file": "test_string.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.005219221115112305,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "test_fs_test_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00529932975769043,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string",
+      "test_file": "test_string_integration.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0062024593353271484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "csv_rfc4180",
+      "test_file": "test_csv_rfc4180.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010280609130859375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_float",
+      "test_file": "test_math_float.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019752979278564453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.006425619125366211,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.006464481353759766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_float",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021657943725585938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "minimal_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.006680011749267578,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.006946086883544922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs_test_vibe",
+      "test_file": "basic_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.007348775863647461,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "enhanced_error",
+      "test_file": "test_enterprise_recovery.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002414226531982422,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "text_aesthetic",
+      "test_file": "test_text_aesthetic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022258758544921875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "enhanced_error",
+      "test_file": "test_enhanced_error.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028634071350097656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "cursed_pointer",
+      "test_file": "test_cursed_pointer.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00286865234375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "web_vibez",
+      "test_file": "test_web_vibez_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020020008087158203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "web_vibez",
+      "test_file": "test_web_vibez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015971660614013672,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "signal_boost",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003245830535888672,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sus_containers",
+      "test_file": "test_sus_containers.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0036232471466064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "linter",
+      "test_file": "test_comprehensive.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001977682113647461,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "signal_boost",
+      "test_file": "test_signal_boost.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00447535514831543,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "linter",
+      "test_file": "test_linter.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002835512161254883,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regexz",
+      "test_file": "test_regexz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020208358764648438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "htmlrizzler",
+      "test_file": "test_htmlrizzler.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0027170181274414062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "performance_testing",
+      "test_file": "test_performance_testing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002641439437866211,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "linter",
+      "test_file": "integration_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0040493011474609375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "simple_test",
+      "test_file": "test_simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009989738464355469,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "core",
+      "test_file": "test_core_final.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.000812530517578125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sql_slay",
+      "test_file": "test_sql_slay.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0029036998748779297,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "ast_mood",
+      "test_file": "test_ast_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004346609115600586,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "simple_test",
+      "test_file": "test_simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002936124801635742,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibe_context",
+      "test_file": "test_vibe_context.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008323192596435547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "core",
+      "test_file": "test_core_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001544952392578125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "heap_slay",
+      "test_file": "test_heap_slay.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00536656379699707,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "core",
+      "test_file": "test_core_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0032079219818115234,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "core",
+      "test_file": "test_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002589702606201172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dropz",
+      "test_file": "test_dropz_original.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001581430435180664,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "drawz",
+      "test_file": "test_drawz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0049707889556884766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto_production",
+      "test_file": "test_crypto_production.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.006802558898925781,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dropz",
+      "test_file": "test_dropz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019333362579345703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dropz",
+      "test_file": "test_dropz_fixed.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002445220947265625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "httpz_v2",
+      "test_file": "test_httpz_v2.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002175569534301758,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dropz",
+      "test_file": "test_runtime_implementations.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0027725696563720703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dropz",
+      "test_file": "test_dropz_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003968954086303711,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tab_aesthetic",
+      "test_file": "test_tab_aesthetic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003026247024536133,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "concurrenz",
+      "test_file": "test_concurrenz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010170936584472656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "glyph_gang",
+      "test_file": "test_glyph_gang.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019190311431884766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io_test_vibe",
+      "test_file": "test_io_test_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028829574584960938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto_complete",
+      "test_file": "test_crypto_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0038335323333740234,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "renderz",
+      "test_file": "test_renderz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0033380985260009766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "concurrenz",
+      "test_file": "test_thread_safety.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018470287322998047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "signalz",
+      "test_file": "test_signalz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0033674240112304688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "test_fs_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014238357543945312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "test_fs_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001188039779663086,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "test_fs.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028345584869384766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "concurrenz",
+      "test_file": "test_concurrenz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003816843032836914,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015094280242919922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "test_fs_simple_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0036590099334716797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "test_fs_direct.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002449512481689453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016102790832519531,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "fs",
+      "test_file": "debug_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001363992691040039,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compressz",
+      "test_file": "test_compressz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015592575073242188,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "hash_drip",
+      "test_file": "test_hash_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010654926300048828,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "crypto",
+      "test_file": "test_crypto.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013689994812011719,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net_real",
+      "test_file": "test_net_real.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001039266586303711,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compression",
+      "test_file": "test_compression_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009665489196777344,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "async",
+      "test_file": "test_async.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014188289642333984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compression",
+      "test_file": "test_compression.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007879734039306641,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compression",
+      "test_file": "test_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008819103240966797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_rand_tea",
+      "test_file": "test_math_rand_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.000942230224609375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "packrat",
+      "test_file": "test_packrat.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008840560913085938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "atomic_drip",
+      "test_file": "test_atomic_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021295547485351562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "serialization",
+      "test_file": "test_serialization.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012378692626953125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "serialization",
+      "test_file": "test_serialization_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021185874938964844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "atomic_drip",
+      "test_file": "cross_platform_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0026810169219970703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_vibez_minimal",
+      "test_file": "test_test_vibez_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021355152130126953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "encoding_flex",
+      "test_file": "test_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012433528900146484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibecheck",
+      "test_file": "test_vibecheck.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001855611801147461,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "encoding_flex",
+      "test_file": "test_encoding_flex.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019652843475341797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory",
+      "test_file": "test_mod.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001161336898803711,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory",
+      "test_file": "test_pure_memory.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001195669174194336,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory",
+      "test_file": "test_advanced_pools.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001379251480102539,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "benchmark_framework",
+      "test_file": "test_benchmark_framework.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023419857025146484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "runtime_core",
+      "test_file": "test_runtime_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020279884338378906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "runtime_core",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017921924591064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net",
+      "test_file": "test_net_pure.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001558542251586914,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net",
+      "test_file": "test_net.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009675025939941406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net",
+      "test_file": "test_pure_net.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021753311157226562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "memory",
+      "test_file": "test_memory.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003761768341064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_simple",
+      "test_file": "test_math_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001567840576171875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net",
+      "test_file": "test_ffi_elimination.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002040863037109375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "concurrency",
+      "test_file": "test_concurrency.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013611316680908203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "goroutine_core",
+      "test_file": "test_goroutine_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022089481353759766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "typez",
+      "test_file": "test_typez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011289119720458984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "vibez_optimized",
+      "test_file": "test_vibez_optimized.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018329620361328125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "squish_core",
+      "test_file": "test_squish_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.000982522964477539,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_super_simple",
+      "test_file": "test_test_super_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002270221710205078,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "oglogging",
+      "test_file": "test_oglogging.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002073049545288086,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "errorz",
+      "test_file": "test_errorz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014348030090332031,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tcpz",
+      "test_file": "test_tcpz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015223026275634766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tag_core",
+      "test_file": "test_tag_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002725839614868164,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "smtp_tea",
+      "test_file": "test_smtp_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008652210235595703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "jsonz",
+      "test_file": "test_jsonz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018756389617919922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "build_system_simple",
+      "test_file": "test_build_system_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001642465591430664,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz_simple",
+      "test_file": "test_testz_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015399456024169922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "security_testing",
+      "test_file": "test_security_testing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017461776733398438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "cryptz",
+      "test_file": "test_cryptz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011687278747558594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "ioz_enhanced",
+      "test_file": "test_ioz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010962486267089844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "encode_mood",
+      "test_file": "test_encode_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010156631469726562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_no_array",
+      "test_file": "test_test_no_array.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020325183868408203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "cryptz",
+      "test_file": "test_constant_time.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023670196533203125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_result",
+      "test_file": "test_test_result.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015041828155517578,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "gob_encode_vibes",
+      "test_file": "test_gob_encode_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003927707672119141,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "macro_slay",
+      "test_file": "test_macro_slay.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016779899597167969,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "logging",
+      "test_file": "test_logging.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008726119995117188,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "error_handling",
+      "test_file": "test_error_handling.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019540786743164062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "macro_slay",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028684139251708984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001234292984008789,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "xmlz",
+      "test_file": "test_xmlz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018329620361328125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001413583755493164,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "test_rpc_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021622180938720703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "debug_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013568401336669922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "simple_working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013380050659179688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "final_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001150369644165039,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "basic_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010216236114501953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "ultra_simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015571117401123047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_slay",
+      "test_file": "test_exec_slay_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009779930114746094,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "rpc_vibes",
+      "test_file": "minimal_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0032110214233398438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time_zone_drip",
+      "test_file": "test_time_zone_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009508132934570312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "nnz",
+      "test_file": "test_nnz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023643970489501953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sqlz",
+      "test_file": "test_sqlz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015249252319335938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex_vibez",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007147789001464844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "exec_slay",
+      "test_file": "test_exec_slay.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002621889114379883,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex_vibez",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00113677978515625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tlsz",
+      "test_file": "test_tlsz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016565322875976562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex_vibez",
+      "test_file": "test_regex_vibez.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015556812286376953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "regex_vibez",
+      "test_file": "test_simple_functions.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016200542449951172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "embed_that",
+      "test_file": "test_embed_that.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007827281951904297,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "user_check",
+      "test_file": "test_user_check.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010056495666503906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dbz",
+      "test_file": "test_dbz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008006095886230469,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math_float_simple",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001516580581665039,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "data_drip",
+      "test_file": "test_data_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014824867248535156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "reflection",
+      "test_file": "test_reflection.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012357234954833984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "debugz",
+      "test_file": "test_debugz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011687278747558594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "packagz",
+      "test_file": "test_packagz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00093841552734375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "path",
+      "test_file": "test_path.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010747909545898438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "dbz",
+      "test_file": "database_comprehensive_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015511512756347656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "arrayz",
+      "test_file": "test_arrayz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001216888427734375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "jit_vibes",
+      "test_file": "test_jit_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010895729064941406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "hashz",
+      "test_file": "test_hashz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013196468353271484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "enhanced_collections",
+      "test_file": "test_enhanced_collections.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004975557327270508,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "self_hosted_builtins",
+      "test_file": "test_self_hosted_builtins.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004895925521850586,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networkz",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004088878631591797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "url_parsing",
+      "test_file": "test_url_parsing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004919528961181641,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networkz",
+      "test_file": "standalone_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004827737808227539,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networkz",
+      "test_file": "test_networkz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.005955934524536133,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "env",
+      "test_file": "test_env.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010454654693603516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string_energy",
+      "test_file": "test_string_energy.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.005360126495361328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networkz",
+      "test_file": "basic_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.005834341049194336,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string_pure",
+      "test_file": "test_string_pure.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002564668655395508,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networkz_advanced",
+      "test_file": "test_networkz_advanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0029723644256591797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "spill_facts",
+      "test_file": "test_spill_facts.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019347667694091797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "slices_on_slices",
+      "test_file": "test_slices_on_slices.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0032117366790771484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tls_vibe",
+      "test_file": "test_tls_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001744985580444336,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string_simple",
+      "test_file": "test_mod.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002296924591064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "glowup_http",
+      "test_file": "test_glowup_http.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004746913909912109,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "contract_testing",
+      "test_file": "test_contract_testing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008289813995361328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "property_test",
+      "test_file": "test_property_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0024809837341308594,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "string_simple",
+      "test_file": "test_string_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0041046142578125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "validation",
+      "test_file": "test_validation_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011162757873535156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "property_test",
+      "test_file": "test_property_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0026438236236572266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "tls_vibe",
+      "test_file": "test_tls_vibe_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0043430328369140625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "property_test",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003421783447265625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "validation",
+      "test_file": "test_validation.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013256072998046875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "module_a",
+      "test_file": "test_module_a.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0024864673614501953,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "property_test",
+      "test_file": "test_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004752397537231445,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "template_engine",
+      "test_file": "test_template_engine.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022389888763427734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "yeet_io",
+      "test_file": "test_yeet_io.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003728151321411133,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_collections_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0022966861724853516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_list.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002407550811767578,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_collections.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0027463436126708984,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018029212951660156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_pure_collections.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002978086471557617,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_advanced_collections.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002055644989013672,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_advanced_data_structures.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003686189651489258,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_collections_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023136138916015625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_hashmap.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020575523376464844,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "sysz",
+      "test_file": "test_sysz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016548633575439453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_complete",
+      "test_file": "test_database_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013070106506347656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_simple_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007889270782470703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections",
+      "test_file": "test_concurrent_collections.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028154850006103516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_enhanced_implementations.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010814666748046875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_math_pure.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010764598846435547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_pure_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013766288757324219,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_math_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001741170883178711,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_math_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00177764892578125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_trigonometry.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013794898986816406,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0027799606323242188,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "config",
+      "test_file": "test_config.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008809566497802734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_inline_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019998550415039062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "io_enhanced",
+      "test_file": "test_io_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015664100646972656,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "config",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001065969467163086,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_pure_cursed_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002898693084716797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "math",
+      "test_file": "test_math_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023539066314697266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_enhanced",
+      "test_file": "test_collections_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009348392486572266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "config",
+      "test_file": "minimal_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013484954833984375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stringz_enhanced",
+      "test_file": "test_stringz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010223388671875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "stat_flexin",
+      "test_file": "test_stat_flexin.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010271072387695312,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "big_mood",
+      "test_file": "test_big_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015835762023925781,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "lookin_glass",
+      "test_file": "test_enhanced_lookin_glass.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012941360473632812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "no_cap",
+      "test_file": "test_no_cap.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015451908111572266,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "lookin_glass",
+      "test_file": "test_lookin_glass.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012621879577636719,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compare_mood",
+      "test_file": "test_compare_mood_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0012063980102539062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "compare_mood",
+      "test_file": "test_compare_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009944438934326172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "elliptic_curve_tea",
+      "test_file": "test_elliptic_curve_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001477956771850586,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "elliptic_curve_tea",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0031747817993164062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "chadlogging",
+      "test_file": "test_chadlogging.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021371841430664062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mathz_enhanced",
+      "test_file": "test_mathz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002807140350341797,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "elliptic_curve_tea",
+      "test_file": "simple_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003238677978515625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "elliptic_curve_tea",
+      "test_file": "minimal_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0031349658966064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "networking_complete",
+      "test_file": "test_networking_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003165721893310547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_time.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008082389831542969,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "csv",
+      "test_file": "test_csv.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003721475601196289,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_pure_time.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021333694458007812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002288818359375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "chadlogging",
+      "test_file": "test_real_logging.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0048389434814453125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "csv_mood",
+      "test_file": "test_csv_mood.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013234615325927734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_ultra_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003713369369506836,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "hash_map_enhanced",
+      "test_file": "test_hash_map_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001949310302734375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_simple_working.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0033991336822509766,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "time",
+      "test_file": "test_basic_time.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004386425018310547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "channel_core",
+      "test_file": "test_channel_core.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.003726959228515625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_vibez_call",
+      "test_file": "test_test_vibez_call.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023040771484375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pure_cursed_runtime",
+      "test_file": "test_pure_cursed_runtime.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017976760864257812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "error_management",
+      "test_file": "test_error_management.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0031964778900146484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_advanced",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017614364624023438,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "plugin_vibes",
+      "test_file": "test_plugin_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002588510513305664,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "collections_advanced",
+      "test_file": "test_collections_advanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002296924591064453,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "quick_test",
+      "test_file": "test_quick_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017154216766357422,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "config_package",
+      "test_file": "test_config_package.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002026081085205078,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "envz",
+      "test_file": "test_envz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.004632711410522461,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_database_drivers_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014805793762207031,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "quick_test",
+      "test_file": "test_quick_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0034313201904296875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_mysql.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017995834350585938,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_postgresql.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0031824111938476562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_sqlite.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002193927764892578,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_database_drivers_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020127296447753906,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "database_drivers",
+      "test_file": "test_database_drivers.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028307437896728516,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "blockchainz",
+      "test_file": "test_vectors.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002060413360595703,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "test_minimal_arrayz",
+      "test_file": "test_test_minimal_arrayz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019087791442871094,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "plug_vibes",
+      "test_file": "test_plug_vibes.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017223358154296875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "x509_certs_tea",
+      "test_file": "test_x509_certs_tea.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009918212890625,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "pem_drip",
+      "test_file": "test_pem_drip.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002214670181274414,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "slay_io",
+      "test_file": "test_slay_io.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0009839534759521484,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "mime_vibe",
+      "test_file": "test_mime_vibe.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0010800361633300781,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "build_system",
+      "test_file": "test_build_system.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0007359981536865234,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "option",
+      "test_file": "test_option.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002880096435546875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "ioz",
+      "test_file": "test_ioz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001348733901977539,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "simple_math",
+      "test_file": "test_simple_math.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023348331451416016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "arrayz_optimized",
+      "test_file": "test_arrayz_optimized.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001065969467163086,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "zip_zilla",
+      "test_file": "test_zip_zilla.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.001661062240600586,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "image_processing",
+      "test_file": "test_image_processing.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008852481842041016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "coverage_analysis",
+      "test_file": "test_coverage_analysis.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0013000965118408203,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "concurrency_advanced",
+      "test_file": "test_concurrency_advanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016834735870361328,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "zip_zilla",
+      "test_file": "working_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0024220943450927734,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_test_result.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014483928680419922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "image_processing",
+      "test_file": "test_algorithms.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0020329952239990234,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_testz_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014050006866455078,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_result.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002216339111328125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_enhanced_production.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0011031627655029297,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_runner.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00121307373046875,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_testz_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014061927795410156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_enhanced_testz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002445697784423828,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_testz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.00222015380859375,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_framework_complete.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0023064613342285156,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_enhanced_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0031232833862304688,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.002760171890258789,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_testz_comprehensive.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0028464794158935547,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_property_based.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0041048526763916016,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_parallelism_control.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0030689239501953125,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_minimal.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0030641555786132812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_error_reporting.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019078254699707031,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_production.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0018954277038574219,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_simple_enhanced.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0015742778778076172,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_simple.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019843578338623047,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "test_basic.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0016415119171142578,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "simple_parallel_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0008816719055175781,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "example_stdlib_module_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014567375183105469,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "enhanced_self_hosting_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021028518676757812,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "testz",
+      "test_file": "comprehensive_test.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0021102428436279297,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "httpz",
+      "test_file": "test_ssl_tls.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0017404556274414062,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "net_protocols",
+      "test_file": "test_net_protocols.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0019617080688476562,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    },
+    {
+      "module": "httpz",
+      "test_file": "test_httpz.csd",
+      "success": false,
+      "interpretation_success": false,
+      "compilation_success": false,
+      "execution_success": false,
+      "execution_time": 0.0014941692352294922,
+      "output": "",
+      "errors": [
+        "Test error: [Errno 2] No such file or directory: 'cargo'"
+      ]
+    }
+  ]
+}

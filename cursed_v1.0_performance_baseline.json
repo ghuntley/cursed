@@ -1,13 +1,13 @@
 {
-  "timestamp": 1755751836.4849613,
+  "timestamp": 1755997114.2764452,
   "cursed_version": "1.0.0",
   "system_info": {
     "platform": "linux",
-    "python_version": "3.12.3 (main, Jun 18 2025, 17:59:45) [GCC 13.3.0]",
+    "python_version": "3.12.3 (main, Aug 14 2025, 17:47:21) [GCC 13.3.0]",
     "hostname": "cursed"
   },
   "build_info": {
-    "build_time_ms": 140.552607,
+    "build_time_ms": 150.869196,
     "build_success": true
   },
   "benchmarks": [
@@ -15,21 +15,25 @@
       "file": "benchmarks/cursed/comprehensive/intensive_arithmetic.csd",
       "successful_runs": 3,
       "compile_time_ms": {
-        "mean": 0,
-        "stdev": 0,
-        "min": 0,
-        "max": 0,
-        "runs": []
+        "mean": 0.7822976666666667,
+        "stdev": 0.12578806207797832,
+        "min": 0.637379,
+        "max": 0.863217,
+        "runs": [
+          0.863217,
+          0.637379,
+          0.846297
+        ]
       },
       "total_runtime_ms": {
-        "mean": 0.8403236666666667,
-        "stdev": 0.1379220305873334,
-        "min": 0.690121,
-        "max": 0.961271,
+        "mean": 0.9846969999999999,
+        "stdev": 0.0157553927275711,
+        "min": 0.966517,
+        "max": 0.994377,
         "runs": [
-          0.869579,
-          0.961271,
-          0.690121
+          0.966517,
+          0.994377,
+          0.993197
         ]
       },
       "benchmark_execution_us": {
@@ -44,21 +48,25 @@
       "file": "benchmarks/cursed/comprehensive/recursive_functions.csd",
       "successful_runs": 3,
       "compile_time_ms": {
-        "mean": 0,
-        "stdev": 0,
-        "min": 0,
-        "max": 0,
-        "runs": []
+        "mean": 0.7076043333333334,
+        "stdev": 0.09198161686083435,
+        "min": 0.638588,
+        "max": 0.812028,
+        "runs": [
+          0.672197,
+          0.812028,
+          0.638588
+        ]
       },
       "total_runtime_ms": {
-        "mean": 0.749447,
-        "stdev": 0.041703618272279475,
-        "min": 0.70541,
-        "max": 0.78834,
+        "mean": 0.8192766666666667,
+        "stdev": 0.015376154308972465,
+        "min": 0.806536,
+        "max": 0.836356,
         "runs": [
-          0.754591,
-          0.70541,
-          0.78834
+          0.814938,
+          0.836356,
+          0.806536
         ]
       },
       "benchmark_execution_us": {
@@ -73,21 +81,25 @@
       "file": "benchmarks/cursed/comprehensive/array_intensive.csd",
       "successful_runs": 3,
       "compile_time_ms": {
-        "mean": 0,
-        "stdev": 0,
-        "min": 0,
-        "max": 0,
-        "runs": []
+        "mean": 0.7784666666666666,
+        "stdev": 0.13467850385764363,
+        "min": 0.630368,
+        "max": 0.893606,
+        "runs": [
+          0.893606,
+          0.811426,
+          0.630368
+        ]
       },
       "total_runtime_ms": {
-        "mean": 0.83226,
-        "stdev": 0.12935616529953262,
-        "min": 0.71056,
-        "max": 0.968109,
+        "mean": 0.8525363333333333,
+        "stdev": 0.051548802908829364,
+        "min": 0.818507,
+        "max": 0.911845,
         "runs": [
-          0.71056,
-          0.968109,
-          0.818111
+          0.911845,
+          0.827257,
+          0.818507
         ]
       },
       "benchmark_execution_us": {
@@ -102,21 +114,25 @@
       "file": "benchmarks/cursed/comprehensive/complex_control_flow.csd",
       "successful_runs": 3,
       "compile_time_ms": {
-        "mean": 0,
-        "stdev": 0,
-        "min": 0,
-        "max": 0,
-        "runs": []
+        "mean": 0.645448,
+        "stdev": 0.0330476943219947,
+        "min": 0.618198,
+        "max": 0.682208,
+        "runs": [
+          0.682208,
+          0.618198,
+          0.635938
+        ]
       },
       "total_runtime_ms": {
-        "mean": 0.777933,
-        "stdev": 0.013797981627759897,
-        "min": 0.76237,
-        "max": 0.788669,
+        "mean": 0.76505,
+        "stdev": 0.04270018216588779,
+        "min": 0.716317,
+        "max": 0.795907,
         "runs": [
-          0.788669,
-          0.76237,
-          0.78276
+          0.782926,
+          0.716317,
+          0.795907
         ]
       },
       "benchmark_execution_us": {
@@ -131,21 +147,25 @@
       "file": "benchmarks/cursed/comprehensive/mixed_workload.csd",
       "successful_runs": 3,
       "compile_time_ms": {
-        "mean": 0,
-        "stdev": 0,
-        "min": 0,
-        "max": 0,
-        "runs": []
+        "mean": 0.6338303333333333,
+        "stdev": 0.054899071333979185,
+        "min": 0.577127,
+        "max": 0.686727,
+        "runs": [
+          0.686727,
+          0.637637,
+          0.577127
+        ]
       },
       "total_runtime_ms": {
-        "mean": 0.8097433333333334,
-        "stdev": 0.019821206934325007,
-        "min": 0.787821,
-        "max": 0.8264,
+        "mean": 0.745511,
+        "stdev": 0.08138667296922758,
+        "min": 0.676378,
+        "max": 0.835207,
         "runs": [
-          0.815009,
-          0.787821,
-          0.8264
+          0.835207,
+          0.724948,
+          0.676378
         ]
       },
       "benchmark_execution_us": {

@@ -36,9 +36,9 @@ slay multiply_two(a drip, b drip) drip {
     damn a * b
 }
 
-slay divide_two(a drip, b drip) drip {
-    lowkey (b == 0) {
-        damn 0
+slay divide_two(a drip, b drip) yikes<drip> {
+    ready (b == 0) {
+        yikes "division by zero"
     }
     damn a / b
 }
@@ -258,7 +258,13 @@ slay mod_multiply(a drip, b drip, mod drip) drip {
     damn result
 }
 
-slay mod_power(base drip, exponent drip, mod drip) drip {
+slay mod_power(base drip, exponent drip, mod drip) yikes<drip> {
+    ready (mod <= 0) {
+        yikes "modulus must be positive"
+    }
+    ready (exponent < 0) {
+        yikes "exponent must be non-negative"
+    }
     ready (mod == 1) {
         damn 0
     }

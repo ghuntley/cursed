@@ -785,8 +785,9 @@ pub const Interpreter = struct {
             }
             
             if (!method_found) {
-                std.debug.print("ERROR: Method '{}' not implemented for interface '{}'\n", .{interface_method.name, impl_stmt.interface_name});
-                return InterpreterError.UndefinedMethod;
+                const error_msg = try std.fmt.allocPrint(self.allocator, "Interface method '{s}' not implemented in implementation of '{s}'", .{interface_method.name, impl_stmt.interface_name});
+                defer self.allocator.free(error_msg);
+                return self.createRuntimeError("InterfaceMethodNotImplemented", error_msg);
             }
         }
         
@@ -2139,7 +2140,11 @@ pub const Interpreter = struct {
             },
             .CursedError => |_| {
                 switch (right) {
-                    .CursedError => |_| return false, // TODO: Implement cursed error comparison
+                    .CursedError => |right_err| {
+                        const left_err = left.CursedError;
+                        return std.mem.eql(u8, left_err.message, right_err.message) and 
+                               std.mem.eql(u8, left_err.error_type, right_err.error_type);
+                    },
                     else => return false,
                 }
             },
@@ -2219,7 +2224,7 @@ pub const Interpreter = struct {
             self.executeStatement(stmt) catch |err| {
                 // Create error context from interpreter error
                 const location = error_prop.ErrorContext.SourceLocation{
-                    .file = "unknown", // TODO: Get from statement location
+                    .file = if (self.current_file) |file| file else "unknown",
                     .line = 0,
                     .column = 0,
                 };
@@ -2311,8 +2316,8 @@ pub const Interpreter = struct {
             message,
             .Runtime,
             code,
-            0, // TODO: Get actual line number
-            0  // TODO: Get actual column
+            if (self.current_line) |line| line else 0, // Get current line number
+            if (self.current_column) |col| col else 0  // Get current column
         );
         
         return Value{ .CursedError = error_obj };
@@ -2603,11 +2608,38 @@ pub const Interpreter = struct {
                     }
                 }
                 
-                // Rest patterns not implemented yet
+                // Handle rest patterns by capturing remaining elements
+                if (array_pattern.rest_binding) |rest_name| {
+                    const rest_elements = try std.ArrayList(Value).initCapacity(self.allocator, array_val.items.len - array_pattern.items.len);
+                    errdefer rest_elements.deinit();
+                    
+                    for (array_val.items[array_pattern.items.len..]) |elem| {
+                        try rest_elements.append(elem);
+                    }
+                    
+                    const rest_array = Value{ .Array = rest_elements };
+                    try self.scope.variables.put(rest_name, Variable{
+                        .name = rest_name,
+                        .value = rest_array,
+                        .is_mutable = false,
+                    });
+                }
                 
                 return true;
             },
-            // Guard patterns are not implemented in current AST
+            .GuardPattern => |guard| {
+                // First check if the base pattern matches
+                if (!try self.matchPattern(guard.pattern, value)) {
+                    return false;
+                }
+                
+                // Then evaluate the guard condition
+                const guard_result = try self.evaluateExpression(guard.condition);
+                return switch (guard_result) {
+                    .Boolean => |b| b,
+                    else => false, // Non-boolean guard conditions are false
+                };
+            },
             else => {
                 std.debug.print("Unsupported pattern type: {s}\n", .{@tagName(pattern)});
                 return false;

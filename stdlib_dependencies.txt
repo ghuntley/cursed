@@ -1,0 +1,1637 @@
+CURSED Stdlib Dependency Graph (Text Format)
+==================================================
+
+alpha
+  Dependencies:
+    └── beta
+  Used by:
+    └── gamma
+
+archive_handling
+
+arrayz
+  Used by:
+    └── collections_enhanced
+    └── formatter
+    └── linter
+    └── mlz
+    └── networkz
+    └── nnz
+    └── package_manager
+    └── packagz
+    └── tensorz
+    └── tlsz
+    └── xmlz
+
+arrayz_optimized
+  Dependencies:
+    └── vibez
+
+asn1_mood
+  Dependencies:
+    └── binary_drip
+  Used by:
+    └── x509_certs_tea
+
+ast_mood
+  Dependencies:
+    └── testz
+  Used by:
+    └── macro_slay
+
+async
+  Dependencies:
+    └── atomic_drip
+    └── concurrenz
+    └── error_drip
+    └── testz
+    └── vibe_lock
+
+async_core
+  Dependencies:
+    └── testz
+
+async_runtime
+  Dependencies:
+    └── testz
+
+asyncz
+  Dependencies:
+    └── concurrenz
+    └── errorz
+    └── testz
+
+atomic_drip
+  Used by:
+    └── async
+    └── concurrency_advanced
+    └── concurrenz
+    └── database_complete
+    └── gc
+    └── memory
+    └── trace_tea
+
+audioz
+  Dependencies:
+    └── filez
+    └── mathz
+    └── memoryz
+    └── stringz
+    └── vibez
+
+benchmark_framework
+  Dependencies:
+    └── dropz
+    └── stringz
+    └── testz
+    └── timez
+
+beta
+  Dependencies:
+    └── gamma
+  Used by:
+    └── alpha
+
+big_mood
+
+binary_drip
+  Used by:
+    └── asn1_mood
+
+blockchainz
+
+build_system
+  Dependencies:
+    └── concurrenz
+    └── dropz
+    └── exec_slay
+    └── fs
+    └── json_tea
+    └── pathing
+    └── stringz
+    └── testz
+    └── timez
+
+build_system_simple
+  Dependencies:
+    └── testz
+
+bytefit
+
+chadlogging
+
+channel_core
+  Dependencies:
+    └── testz
+
+chaos_mode
+
+clock_bait
+  Dependencies:
+    └── testz
+
+cloudz
+
+collections
+  Dependencies:
+    └── testz
+  Used by:
+    └── complex_module
+    └── concurrency
+    └── template_engine
+    └── web
+
+collections_advanced
+  Dependencies:
+    └── testz
+
+collections_core
+  Dependencies:
+    └── runtime_core
+
+collections_enhanced
+  Dependencies:
+    └── arrayz
+
+collections_simple
+  Dependencies:
+    └── testz
+
+command_line
+
+compare_mood
+
+compiler_core
+  Dependencies:
+    └── runtime_core
+    └── testz
+    └── vibecheck
+
+complex_module
+  Dependencies:
+    └── collections
+    └── math
+    └── string_simple
+    └── testz
+
+complex_vibe
+
+compression
+  Dependencies:
+    └── testz
+
+compressionz
+  Dependencies:
+    └── testz
+
+compressz
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── vibez
+
+concurrency
+  Dependencies:
+    └── collections
+    └── string
+    └── testz
+    └── time
+
+concurrency_advanced
+  Dependencies:
+    └── atomic_drip
+    └── core
+    └── testz
+
+concurrenz
+  Dependencies:
+    └── atomic_drip
+    └── error_drip
+    └── memory
+    └── testz
+  Used by:
+    └── async
+    └── asyncz
+    └── build_system
+    └── database_complete
+    └── networkz_advanced
+    └── self_hosted_builtins
+    └── signalz
+    └── stat_flexin
+    └── sus_containers
+    └── sus_log
+    └── tag_core
+    └── vibe_context
+    └── web
+    └── web_vibez
+
+config
+  Dependencies:
+    └── testz
+
+config_package
+  Dependencies:
+    └── dropz
+    └── json
+    └── stringz
+    └── testz
+
+configz
+  Dependencies:
+    └── filez
+    └── stringz
+    └── vibez
+
+contract_testing
+  Dependencies:
+    └── testz
+
+core
+  Dependencies:
+    └── testz
+  Used by:
+    └── concurrency_advanced
+    └── dropz
+    └── exec_slay
+    └── filesystem_complete
+    └── parser
+    └── signal_boost
+    └── vibecheck
+
+coverage_analysis
+  Dependencies:
+    └── dropz
+    └── encode_mood
+    └── mathz
+    └── stringz
+    └── testz
+    └── timez
+
+coverage_runtime
+
+crypto
+  Dependencies:
+    └── testz
+  Used by:
+    └── elliptic_curve_tea
+    └── networking_complete
+    └── web
+    └── x509_certs_tea
+
+crypto_complete
+  Dependencies:
+    └── testz
+
+crypto_production
+  Dependencies:
+    └── testz
+  Used by:
+    └── database_production
+    └── net_protocols
+
+crypto_secure
+  Dependencies:
+    └── testz
+
+crypto_subtle_drip
+  Dependencies:
+    └── testz
+
+cryptz
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── vibez
+  Used by:
+    └── httpz_v2
+    └── packagz
+    └── tlsz
+    └── websocketz
+
+csv
+  Dependencies:
+    └── string
+
+csv_mood
+  Dependencies:
+    └── dropz
+    └── stringz
+    └── testz
+
+csv_rfc4180
+  Dependencies:
+    └── string
+
+cursed_pointer
+  Dependencies:
+    └── testz
+
+data_drip
+
+database
+  Dependencies:
+    └── testz
+
+database_complete
+  Dependencies:
+    └── atomic_drip
+    └── concurrenz
+    └── error_drip
+    └── stringz
+    └── testz
+    └── timez
+    └── vibe_life
+
+database_drivers
+  Dependencies:
+    └── testz
+
+database_orm
+  Dependencies:
+    └── testz
+
+database_production
+  Dependencies:
+    └── crypto_production
+    └── testz
+
+dbz
+  Dependencies:
+    └── mathz
+    └── networkz
+    └── stringz
+    └── vibez
+
+debug_tea
+  Dependencies:
+    └── testz
+
+debugz
+  Dependencies:
+    └── memoryz
+    └── typez
+  Used by:
+    └── sysz
+
+deploymentz
+
+drawz
+  Dependencies:
+    └── filez
+    └── mathz
+    └── memoryz
+    └── stringz
+    └── vibez
+
+dropz
+  Dependencies:
+    └── core
+    └── vibez
+  Used by:
+    └── benchmark_framework
+    └── build_system
+    └── config_package
+    └── coverage_analysis
+    └── csv_mood
+    └── io_test_vibe
+    └── squish_core
+    └── test_vibes
+    └── text_aesthetic
+    └── trace_tea
+    └── zip_zilla
+
+elliptic_curve_tea
+  Dependencies:
+    └── crypto
+
+embed_that
+
+embeddedz
+
+encode_mood
+  Dependencies:
+    └── testz
+  Used by:
+    └── coverage_analysis
+    └── networking_complete
+    └── web
+    └── websocketz
+    └── zip_zilla
+
+encoding_flex
+
+enhanced_collections
+  Dependencies:
+    └── error_core
+    └── testz
+
+enhanced_error
+  Dependencies:
+    └── testz
+
+enterprise_cloud
+
+enterprise_db
+
+enterprise_messaging
+
+enterprise_monitoring
+
+enterprise_security
+
+env
+  Dependencies:
+    └── stringz
+    └── testz
+    └── vibez
+
+envz
+  Dependencies:
+    └── testz
+
+error_core
+  Dependencies:
+    └── runtime_core
+    └── testz
+  Used by:
+    └── enhanced_collections
+    └── pure_json
+    └── string_simple
+    └── xmlz
+
+error_drip
+  Used by:
+    └── async
+    └── concurrenz
+    └── database_complete
+    └── exec_slay
+    └── gc
+    └── memory
+    └── zip_zilla
+
+error_handling
+  Dependencies:
+    └── testz
+
+error_management
+  Dependencies:
+    └── testz
+    └── timez
+
+errorz
+  Dependencies:
+    └── testz
+  Used by:
+    └── asyncz
+    └── signalz
+
+exec_slay
+  Dependencies:
+    └── core
+    └── error_drip
+    └── io
+    └── stringz
+  Used by:
+    └── build_system
+
+exec_vibez
+
+filesystem_complete
+  Dependencies:
+    └── core
+    └── testz
+    └── vibez
+
+filez
+  Dependencies:
+    └── filez
+    └── mathz
+    └── stringz
+    └── vibez
+  Used by:
+    └── audioz
+    └── configz
+    └── drawz
+    └── filez
+    └── imagez
+    └── package_manager
+    └── packagz
+    └── xmlz
+
+fmt
+  Dependencies:
+    └── stringz
+    └── testz
+  Used by:
+    └── reflect
+
+formatter
+  Dependencies:
+    └── arrayz
+    └── stringz
+    └── testz
+
+fs
+  Used by:
+    └── build_system
+
+fs_real
+  Dependencies:
+    └── testz
+
+fs_test_vibe
+
+gamma
+  Dependencies:
+    └── alpha
+  Used by:
+    └── beta
+
+gc
+  Dependencies:
+    └── atomic_drip
+    └── error_drip
+    └── memory
+
+glowup_http
+  Dependencies:
+    └── stringz
+    └── testz
+
+glyph_gang
+
+gob_encode_vibes
+  Dependencies:
+    └── testz
+
+goroutine_core
+  Dependencies:
+    └── testz
+
+grammar_drip
+
+hash_drip
+
+hash_map_enhanced
+  Dependencies:
+    └── runtime_core
+    └── testz
+
+hashtag
+  Dependencies:
+    └── testz
+
+hashz
+  Used by:
+    └── package_manager
+
+heap_slay
+
+htmlrizzler
+  Dependencies:
+    └── stringz
+    └── testz
+
+httpz
+  Dependencies:
+    └── jsonz
+    └── stringz
+    └── tls_vibe
+  Used by:
+    └── package_manager
+
+httpz_v2
+  Dependencies:
+    └── cryptz
+    └── stringz
+    └── testz
+  Used by:
+    └── networkz_advanced
+
+image_processing
+  Dependencies:
+    └── testz
+
+imagez
+  Dependencies:
+    └── filez
+    └── mathz
+    └── memoryz
+    └── stringz
+    └── vibez
+  Used by:
+    └── renderz
+
+io
+  Dependencies:
+    └── testz
+  Used by:
+    └── exec_slay
+    └── io_enhanced
+    └── ioz
+    └── sus_log
+    └── vibe_mime
+
+io_enhanced
+  Dependencies:
+    └── io
+    └── runtime_core
+    └── string_enhanced
+    └── testz
+
+io_simple
+
+io_test_vibe
+  Dependencies:
+    └── dropz
+    └── stringz
+    └── testz
+
+ioz
+  Dependencies:
+    └── io
+    └── testz
+
+ioz_enhanced
+
+ipc
+  Dependencies:
+    └── signal_boost
+
+jit_vibes
+  Dependencies:
+    └── testz
+
+json
+  Dependencies:
+    └── testz
+  Used by:
+    └── config_package
+    └── web
+
+json_tea
+  Dependencies:
+    └── testz
+  Used by:
+    └── build_system
+
+jsonz
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── vibez
+  Used by:
+    └── httpz
+    └── package_manager
+    └── packagz
+    └── tls_vibe
+
+kubernetesz
+
+linter
+  Dependencies:
+    └── arrayz
+    └── stringz
+    └── vibez
+
+logging
+
+lookin_glass
+  Dependencies:
+    └── testz
+
+macro_slay
+  Dependencies:
+    └── ast_mood
+    └── stringz
+
+main_character
+  Used by:
+    └── user_check
+
+math
+  Dependencies:
+    └── testz
+  Used by:
+    └── complex_module
+
+math_float
+
+math_float_simple
+
+math_int
+
+math_rand_tea
+
+math_simple
+  Dependencies:
+    └── testz
+
+mathz
+  Used by:
+    └── audioz
+    └── compressz
+    └── coverage_analysis
+    └── cryptz
+    └── dbz
+    └── drawz
+    └── filez
+    └── imagez
+    └── jsonz
+    └── memory_profiler
+    └── mlz
+    └── networkz
+    └── nnz
+    └── reflect
+    └── regexz
+    └── renderz
+    └── self_hosted_builtins
+    └── tensorz
+    └── timez
+
+mathz_enhanced
+
+mathz_optimized
+  Dependencies:
+    └── vibez
+
+memory
+  Dependencies:
+    └── atomic_drip
+    └── error_drip
+  Used by:
+    └── concurrenz
+    └── gc
+    └── sus_containers
+
+memory_core
+  Dependencies:
+    └── testz
+
+memory_profiler
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── testz
+    └── timez
+
+memoryz
+  Used by:
+    └── audioz
+    └── debugz
+    └── drawz
+    └── imagez
+    └── renderz
+    └── sysz
+
+mime_vibe
+  Dependencies:
+    └── testz
+
+mlz
+  Dependencies:
+    └── arrayz
+    └── mathz
+    └── tensorz
+    └── vibez
+  Used by:
+    └── nnz
+
+module_a
+  Dependencies:
+    └── module_b
+  Used by:
+    └── module_b
+
+module_b
+  Dependencies:
+    └── module_a
+  Used by:
+    └── module_a
+
+module_resolver
+  Dependencies:
+    └── testz
+
+mood_map
+  Dependencies:
+    └── testz
+
+net
+  Dependencies:
+    └── testz
+  Used by:
+    └── web
+
+net_protocols
+  Dependencies:
+    └── crypto_production
+    └── testz
+
+net_real
+  Dependencies:
+    └── testz
+
+network
+
+networking_complete
+  Dependencies:
+    └── crypto
+    └── encode_mood
+    └── stringz
+    └── testz
+    └── timez
+
+networkz
+  Dependencies:
+    └── arrayz
+    └── mathz
+    └── stringz
+  Used by:
+    └── dbz
+    └── networkz_advanced
+    └── packagz
+    └── tlsz
+
+networkz_advanced
+  Dependencies:
+    └── concurrenz
+    └── httpz_v2
+    └── networkz
+    └── stringz
+
+nnz
+  Dependencies:
+    └── arrayz
+    └── mathz
+    └── mlz
+    └── tensorz
+    └── vibez
+
+no_cap
+
+oglogging
+
+option
+  Dependencies:
+    └── testz
+
+package_manager
+  Dependencies:
+    └── arrayz
+    └── filez
+    └── hashz
+    └── httpz
+    └── jsonz
+    └── stringz
+    └── testz
+    └── vibez
+
+packagz
+  Dependencies:
+    └── arrayz
+    └── cryptz
+    └── filez
+    └── jsonz
+    └── networkz
+    └── stringz
+    └── timez
+    └── vibez
+
+packrat
+  Dependencies:
+    └── testz
+
+panic_system
+  Dependencies:
+    └── testz
+
+parser
+  Dependencies:
+    └── core
+    └── stringz
+    └── testz
+
+path
+  Dependencies:
+    └── stringz
+    └── testz
+    └── vibez
+
+pathing
+  Used by:
+    └── build_system
+
+pathz
+  Dependencies:
+    └── testz
+
+pem_drip
+  Used by:
+    └── x509_certs_tea
+
+performance_testing
+  Dependencies:
+    └── testz
+
+plug_vibes
+  Dependencies:
+    └── testz
+
+plugin_system
+
+plugin_vibes
+
+plugin_vibes_simple
+  Dependencies:
+    └── testz
+
+process
+  Dependencies:
+    └── testz
+
+process_real
+  Dependencies:
+    └── testz
+
+property_test
+  Dependencies:
+    └── testz
+
+property_testing
+  Dependencies:
+    └── testz
+
+pure_cursed_replacements
+
+pure_cursed_runtime
+  Dependencies:
+    └── testz
+
+pure_json
+  Dependencies:
+    └── error_core
+    └── string_simple
+    └── testz
+
+quick_test
+  Dependencies:
+    └── stringz
+    └── testz
+    └── timez
+
+reflect
+  Dependencies:
+    └── fmt
+    └── mathz
+    └── stringz
+    └── testz
+
+reflection
+  Dependencies:
+    └── testz
+
+regex
+  Dependencies:
+    └── testz
+
+regex_vibez
+
+regexz
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── vibez
+
+renderz
+  Dependencies:
+    └── imagez
+    └── mathz
+    └── memoryz
+    └── stringz
+    └── vibez
+
+result
+  Dependencies:
+    └── testz
+
+rizz_template
+
+rpc_vibes
+
+runtime_core
+  Dependencies:
+    └── testz
+  Used by:
+    └── collections_core
+    └── compiler_core
+    └── error_core
+    └── hash_map_enhanced
+    └── io_enhanced
+    └── string_enhanced
+
+scientificz
+
+security_testing
+  Dependencies:
+    └── testz
+
+select_core
+  Dependencies:
+    └── testz
+
+self_hosted_builtins
+  Dependencies:
+    └── concurrenz
+    └── mathz
+    └── stringz
+    └── vibez
+
+serialization
+  Dependencies:
+    └── string
+
+signal_boost
+  Dependencies:
+    └── core
+    └── testz
+  Used by:
+    └── ipc
+
+signal_handling
+
+signalz
+  Dependencies:
+    └── concurrenz
+    └── errorz
+    └── testz
+
+simple_math
+
+simple_test
+
+sketchy_math
+
+slay_io
+
+slices_on_slices
+  Dependencies:
+    └── testz
+
+smtp_tea
+  Dependencies:
+    └── testz
+
+snapshot_testing
+  Dependencies:
+    └── testz
+
+sort_slay
+
+sorta_fresh
+
+spill_facts
+
+sql_slay
+  Dependencies:
+    └── testz
+  Used by:
+    └── sqlz
+
+sqlz
+  Dependencies:
+    └── sql_slay
+
+squish_core
+  Dependencies:
+    └── dropz
+  Used by:
+    └── zip_zilla
+
+stat_flexin
+  Dependencies:
+    └── concurrenz
+    └── sys_core
+    └── testz
+    └── time
+
+stdlib_linker
+  Dependencies:
+    └── testz
+
+string
+  Dependencies:
+    └── testz
+  Used by:
+    └── concurrency
+    └── csv
+    └── csv_rfc4180
+    └── serialization
+    └── string_enhanced
+    └── tag_core
+    └── template_engine
+    └── user_check
+    └── vibe_mime
+    └── web
+    └── x509_certs_tea
+
+string_energy
+  Dependencies:
+    └── stringz
+    └── testz
+
+string_enhanced
+  Dependencies:
+    └── runtime_core
+    └── string
+    └── testz
+  Used by:
+    └── io_enhanced
+
+string_pure
+
+string_simple
+  Dependencies:
+    └── error_core
+    └── testz
+  Used by:
+    └── complex_module
+    └── pure_json
+
+stringz
+  Used by:
+    └── audioz
+    └── benchmark_framework
+    └── build_system
+    └── compressz
+    └── config_package
+    └── configz
+    └── coverage_analysis
+    └── cryptz
+    └── csv_mood
+    └── database_complete
+    └── dbz
+    └── drawz
+    └── env
+    └── exec_slay
+    └── filez
+    └── fmt
+    └── formatter
+    └── glowup_http
+    └── htmlrizzler
+    └── httpz
+    └── httpz_v2
+    └── imagez
+    └── io_test_vibe
+    └── jsonz
+    └── linter
+    └── macro_slay
+    └── memory_profiler
+    └── networking_complete
+    └── networkz
+    └── networkz_advanced
+    └── package_manager
+    └── packagz
+    └── parser
+    └── path
+    └── quick_test
+    └── reflect
+    └── regexz
+    └── renderz
+    └── self_hosted_builtins
+    └── string_energy
+    └── tab_aesthetic
+    └── tcpz
+    └── test_vibes
+    └── text_aesthetic
+    └── timez
+    └── tls_vibe
+    └── tlsz
+    └── web_vibez
+    └── websocketz
+    └── xmlz
+    └── zip_zilla
+
+stringz_enhanced
+
+sus_containers
+  Dependencies:
+    └── concurrenz
+    └── memory
+    └── testz
+    └── time
+
+sus_log
+  Dependencies:
+    └── concurrenz
+    └── io
+    └── sys_core
+    └── testz
+    └── time
+
+sys_core
+  Dependencies:
+    └── testz
+  Used by:
+    └── stat_flexin
+    └── sus_log
+
+sysz
+  Dependencies:
+    └── debugz
+    └── memoryz
+
+tab_aesthetic
+  Dependencies:
+    └── stringz
+    └── testz
+
+tag_core
+  Dependencies:
+    └── concurrenz
+    └── string
+    └── testz
+    └── time
+
+tcpz
+  Dependencies:
+    └── stringz
+    └── testz
+
+template_engine
+  Dependencies:
+    └── collections
+    └── string
+
+tensorz
+  Dependencies:
+    └── arrayz
+    └── mathz
+  Used by:
+    └── mlz
+    └── nnz
+
+test_minimal_arrayz
+
+test_no_array
+
+test_result
+
+test_super_simple
+
+test_vibes
+  Dependencies:
+    └── dropz
+    └── stringz
+    └── testz
+
+test_vibez_call
+
+test_vibez_minimal
+
+test_with_array
+
+testz
+  Used by:
+    └── ast_mood
+    └── async
+    └── async_core
+    └── async_runtime
+    └── asyncz
+    └── benchmark_framework
+    └── build_system
+    └── build_system_simple
+    └── channel_core
+    └── clock_bait
+    └── collections
+    └── collections_advanced
+    └── collections_simple
+    └── compiler_core
+    └── complex_module
+    └── compression
+    └── compressionz
+    └── concurrency
+    └── concurrency_advanced
+    └── concurrenz
+    └── config
+    └── config_package
+    └── contract_testing
+    └── core
+    └── coverage_analysis
+    └── crypto
+    └── crypto_complete
+    └── crypto_production
+    └── crypto_secure
+    └── crypto_subtle_drip
+    └── csv_mood
+    └── cursed_pointer
+    └── database
+    └── database_complete
+    └── database_drivers
+    └── database_orm
+    └── database_production
+    └── debug_tea
+    └── encode_mood
+    └── enhanced_collections
+    └── enhanced_error
+    └── env
+    └── envz
+    └── error_core
+    └── error_handling
+    └── error_management
+    └── errorz
+    └── filesystem_complete
+    └── fmt
+    └── formatter
+    └── fs_real
+    └── glowup_http
+    └── gob_encode_vibes
+    └── goroutine_core
+    └── hash_map_enhanced
+    └── hashtag
+    └── htmlrizzler
+    └── httpz_v2
+    └── image_processing
+    └── io
+    └── io_enhanced
+    └── io_test_vibe
+    └── ioz
+    └── jit_vibes
+    └── json
+    └── json_tea
+    └── lookin_glass
+    └── math
+    └── math_simple
+    └── memory_core
+    └── memory_profiler
+    └── mime_vibe
+    └── module_resolver
+    └── mood_map
+    └── net
+    └── net_protocols
+    └── net_real
+    └── networking_complete
+    └── option
+    └── package_manager
+    └── packrat
+    └── panic_system
+    └── parser
+    └── path
+    └── pathz
+    └── performance_testing
+    └── plug_vibes
+    └── plugin_vibes_simple
+    └── process
+    └── process_real
+    └── property_test
+    └── property_testing
+    └── pure_cursed_runtime
+    └── pure_json
+    └── quick_test
+    └── reflect
+    └── reflection
+    └── regex
+    └── result
+    └── runtime_core
+    └── security_testing
+    └── select_core
+    └── signal_boost
+    └── signalz
+    └── slices_on_slices
+    └── smtp_tea
+    └── snapshot_testing
+    └── sql_slay
+    └── stat_flexin
+    └── stdlib_linker
+    └── string
+    └── string_energy
+    └── string_enhanced
+    └── string_simple
+    └── sus_containers
+    └── sus_log
+    └── sys_core
+    └── tab_aesthetic
+    └── tag_core
+    └── tcpz
+    └── test_vibes
+    └── text_aesthetic
+    └── time
+    └── token_vibe
+    └── trace_tea
+    └── type_core
+    └── unicode
+    └── user_check
+    └── vibe_context
+    └── vibe_mime
+    └── vibe_net
+    └── vibecheck
+    └── web
+    └── web_vibez
+    └── websocketz
+    └── zip_zilla
+
+testz_simple
+
+text_aesthetic
+  Dependencies:
+    └── dropz
+    └── stringz
+    └── testz
+
+time
+  Dependencies:
+    └── testz
+  Used by:
+    └── concurrency
+    └── stat_flexin
+    └── sus_containers
+    └── sus_log
+    └── tag_core
+
+time_zone_drip
+
+timez
+  Dependencies:
+    └── mathz
+    └── stringz
+    └── vibez
+  Used by:
+    └── benchmark_framework
+    └── build_system
+    └── coverage_analysis
+    └── database_complete
+    └── error_management
+    └── memory_profiler
+    └── networking_complete
+    └── packagz
+    └── quick_test
+    └── tlsz
+    └── trace_tea
+    └── vibe_context
+    └── web
+
+tls_vibe
+  Dependencies:
+    └── jsonz
+    └── stringz
+  Used by:
+    └── httpz
+
+tlsz
+  Dependencies:
+    └── arrayz
+    └── cryptz
+    └── networkz
+    └── stringz
+    └── timez
+
+token_vibe
+  Dependencies:
+    └── testz
+
+trace_tea
+  Dependencies:
+    └── atomic_drip
+    └── dropz
+    └── testz
+    └── timez
+    └── vibe_context
+
+type_core
+  Dependencies:
+    └── testz
+
+typez
+  Used by:
+    └── debugz
+
+unicode
+  Dependencies:
+    └── testz
+
+url_parsing
+
+user_check
+  Dependencies:
+    └── main_character
+    └── string
+    └── testz
+
+validation
+
+vibe_context
+  Dependencies:
+    └── concurrenz
+    └── testz
+    └── timez
+  Used by:
+    └── trace_tea
+
+vibe_life
+  Used by:
+    └── database_complete
+
+vibe_lock
+  Used by:
+    └── async
+
+vibe_mime
+  Dependencies:
+    └── io
+    └── string
+    └── testz
+
+vibe_net
+  Dependencies:
+    └── testz
+
+vibecheck
+  Dependencies:
+    └── core
+    └── testz
+  Used by:
+    └── compiler_core
+
+vibez
+  Used by:
+    └── arrayz_optimized
+    └── audioz
+    └── compressz
+    └── configz
+    └── cryptz
+    └── dbz
+    └── drawz
+    └── dropz
+    └── env
+    └── filesystem_complete
+    └── filez
+    └── imagez
+    └── jsonz
+    └── linter
+    └── mathz_optimized
+    └── mlz
+    └── nnz
+    └── package_manager
+    └── packagz
+    └── path
+    └── regexz
+    └── renderz
+    └── self_hosted_builtins
+    └── timez
+    └── xmlz
+
+vibez_optimized
+
+wasm_mood
+
+web
+  Dependencies:
+    └── collections
+    └── concurrenz
+    └── crypto
+    └── encode_mood
+    └── json
+    └── net
+    └── string
+    └── testz
+    └── timez
+
+web_vibez
+  Dependencies:
+    └── concurrenz
+    └── stringz
+    └── testz
+
+websocketz
+  Dependencies:
+    └── cryptz
+    └── encode_mood
+    └── stringz
+    └── testz
+
+x509_certs_tea
+  Dependencies:
+    └── asn1_mood
+    └── crypto
+    └── pem_drip
+    └── string
+
+xmlz
+  Dependencies:
+    └── arrayz
+    └── error_core
+    └── filez
+    └── stringz
+    └── vibez
+
+yeet_io
+
+zip_zilla
+  Dependencies:
+    └── dropz
+    └── encode_mood
+    └── error_drip
+    └── squish_core
+    └── stringz
+    └── testz
+

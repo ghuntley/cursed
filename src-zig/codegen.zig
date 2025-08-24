@@ -248,7 +248,14 @@ pub const CodeGen = struct {
     
     fn generateFor(self: *CodeGen, for_stmt: ast.ForStatement) CodeGenError!void {
         // For now, implement a simple for loop similar to C-style
-        // TODO: Implement proper iterator-based for loops
+        // Support both C-style and iterator-based for loops
+        if (for_stmt.iterable != null) {
+            // Iterator-based for loop
+            try self.generateIteratorLoop(for_stmt);
+        } else {
+            // C-style for loop
+            try self.generateCStyleLoop(for_stmt);
+        }
         
         // Generate initialization
         if (for_stmt.init) |init_stmt| {

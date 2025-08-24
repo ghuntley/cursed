@@ -337,7 +337,16 @@ fn variablesEqual(a: Variable, b: Variable) bool {
             .Boolean => |b_val| a_val == b_val,
             else => false,
         },
-        .Array => false, // Array comparison not implemented
+        .Array => |arr_a| switch (b) {
+            .Array => |arr_b| {
+                if (arr_a.items.len != arr_b.items.len) return false;
+                for (arr_a.items, 0..) |item_a, i| {
+                    if (!valuesEqual(item_a, arr_b.items[i])) return false;
+                }
+                return true;
+            },
+            else => false,
+        },
     };
 }
 

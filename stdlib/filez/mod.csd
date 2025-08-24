@@ -42,8 +42,12 @@ squad DirectoryEntry {
 
 fr fr ===== CORE FILE OPERATIONS =====
 
-slay file_open(path tea, mode tea) FileHandle {
+slay file_open(path tea, mode tea) yikes<FileHandle> {
     fr fr Open file with specified mode (r, w, a, r+, w+, a+)
+    ready (path == "") {
+        yikes "file path cannot be empty"
+    }
+    
     sus handle FileHandle = FileHandle{}
     handle.path = path
     handle.mode = mode
@@ -63,45 +67,45 @@ slay file_open(path tea, mode tea) FileHandle {
     } otherwise ready (mode == "a+") {
         handle.fd = open_file_readwrite_append(path)
     } otherwise {
-        handle.fd = -1
-        vibez.spill("Invalid file mode: " + mode)
+        yikes "invalid file mode: " + mode
     }
     
     handle.is_open = handle.fd > 0
     
-    ready (handle.is_open) {
-        vibez.spill("Opened file: " + path + " (mode: " + mode + ")")
-    } otherwise {
-        vibez.spill("Failed to open file: " + path)
+    ready (!handle.is_open) {
+        yikes "failed to open file: " + path
     }
     
     damn handle
 }
 
-slay file_close(handle FileHandle) lit {
+slay file_close(handle FileHandle) yikes<lit> {
     fr fr Close file handle
     ready (!handle.is_open) {
-        damn cringe
+        yikes "file is not open"
     }
     
     sus result lit = close_file_descriptor(handle.fd)
-    ready (result) {
-        handle.is_open = cringe
-        vibez.spill("Closed file: " + handle.path)
+    ready (!result) {
+        yikes "failed to close file: " + handle.path
     }
     
-    damn result
+    handle.is_open = cringe
+    damn based
 }
 
-slay file_read(handle FileHandle, buffer_size drip) tea {
+slay file_read(handle FileHandle, buffer_size drip) yikes<tea> {
     fr fr Read data from file
     ready (!handle.is_open) {
-        damn ""
+        yikes "file is not open"
     }
     
     ready (!contains_substring(handle.mode, "r")) {
-        vibez.spill("File not opened for reading")
-        damn ""
+        yikes "file not opened for reading"
+    }
+    
+    ready (buffer_size <= 0) {
+        yikes "invalid buffer size"
     }
     
     sus data tea = read_from_file_descriptor(handle.fd, buffer_size)
@@ -110,20 +114,22 @@ slay file_read(handle FileHandle, buffer_size drip) tea {
     damn data
 }
 
-slay file_write(handle FileHandle, data tea) drip {
+slay file_write(handle FileHandle, data tea) yikes<drip> {
     fr fr Write data to file
     ready (!handle.is_open) {
-        damn 0
+        yikes "file is not open"
     }
     
     ready (!contains_substring(handle.mode, "w") && !contains_substring(handle.mode, "a") && !contains_substring(handle.mode, "+")) {
-        vibez.spill("File not opened for writing")
-        damn 0
+        yikes "file not opened for writing"
     }
     
     sus bytes_written drip = write_to_file_descriptor(handle.fd, data)
-    handle.position = handle.position + bytes_written
+    ready (bytes_written < 0) {
+        yikes "failed to write to file"
+    }
     
+    handle.position = handle.position + bytes_written
     damn bytes_written
 }
 
