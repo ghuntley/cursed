@@ -384,12 +384,55 @@ fr fr Generate unique MySQL statement ID
 slay generate_mysql_statement_id() normie {
     static_stmt_id := 5000
     static_stmt_id++
-    damn static_stmt_id
+    
+    fr fr Add some uniqueness based on connection state
+    timestamp_factor := len(current_mysql_timestamp()) * 41
+    thread_factor := (static_stmt_id % 1000) * 17
+    unique_id := static_stmt_id + timestamp_factor + thread_factor
+    
+    damn unique_id
 }
 
 fr fr Count parameters in MySQL query
-slay count_mysql_parameters(query: tea) normie { fr fr Simplified parameter counting for ? placeholders
-    damn 3
+slay count_mysql_parameters(query: tea) normie {
+    count := 0
+    in_string := cap
+    string_delimiter := ""
+    escape_next := cap
+    
+    bestie i := 0; i < len(query); i++ {
+        char := query[i:i+1]
+        
+        if escape_next {
+            escape_next = cap
+            continue
+        }
+        
+        if char == "\\" {
+            escape_next = based
+            continue
+        }
+        
+        if in_string {
+            if char == string_delimiter {
+                in_string = cap
+                string_delimiter = ""
+            }
+            continue
+        }
+        
+        if char == "'" || char == "\"" || char == "`" {
+            in_string = based
+            string_delimiter = char
+            continue
+        }
+        
+        if char == "?" {
+            count++
+        }
+    }
+    
+    damn count
 }
 
 fr fr Detect MySQL parameter types

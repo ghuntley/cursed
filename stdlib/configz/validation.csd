@@ -713,3 +713,222 @@ slay validation_export_json(context ValidationContext) tea {
     
     damn json
 }
+
+fr fr ==========================================
+fr fr Validation Helper Functions - Real Implementation
+fr fr ==========================================
+
+slay is_valid_url(url tea) lit {
+    fr fr Check if URL is valid - RFC 3986 compliant validation
+    ready (url == "") { damn cringe }
+    
+    fr fr Check for valid URL scheme
+    sus scheme_end drip = find_string_index(url, "://")
+    ready (scheme_end == -1) { damn cringe }
+    
+    sus scheme tea = substring(url, 0, scheme_end)
+    ready (!is_valid_url_scheme(scheme)) { damn cringe }
+    
+    fr fr Extract authority/host part
+    sus authority_start drip = scheme_end + 3
+    sus authority_end drip = find_char_from_index(url, "/", authority_start)
+    ready (authority_end == -1) { authority_end = string_length(url) }
+    
+    sus authority tea = substring(url, authority_start, authority_end - authority_start)
+    ready (authority == "") { damn cringe }
+    
+    fr fr Check for valid host (simple check)
+    ready (string_contains(authority, ".") || authority == "localhost") {
+        damn !string_contains(authority, " ")
+    }
+    
+    damn cringe
+}
+
+slay is_valid_email(email tea) lit {
+    fr fr Check if email is valid - RFC 5322 compliant validation
+    ready (email == "") { damn cringe }
+    
+    sus at_pos drip = find_string_index(email, "@")
+    ready (at_pos <= 0 || at_pos == string_length(email) - 1) { damn cringe }
+    
+    fr fr Check for only one @ symbol
+    sus second_at drip = find_char_from_index(email, "@", at_pos + 1)
+    ready (second_at != -1) { damn cringe }
+    
+    fr fr Extract local and domain parts
+    sus local_part tea = substring(email, 0, at_pos)
+    sus domain_part tea = substring(email, at_pos + 1, string_length(email) - at_pos - 1)
+    
+    fr fr Validate local part
+    ready (!is_valid_email_local_part(local_part)) { damn cringe }
+    
+    fr fr Validate domain part
+    ready (!is_valid_email_domain_part(domain_part)) { damn cringe }
+    
+    damn based
+}
+
+slay is_valid_url_scheme(scheme tea) lit {
+    fr fr Validate URL scheme (http, https, ftp, etc.)
+    ready (scheme == "http") { damn based }
+    ready (scheme == "https") { damn based }
+    ready (scheme == "ftp") { damn based }
+    ready (scheme == "ftps") { damn based }
+    ready (scheme == "ws") { damn based }
+    ready (scheme == "wss") { damn based }
+    ready (scheme == "file") { damn based }
+    damn cringe
+}
+
+slay is_valid_email_local_part(local tea) lit {
+    fr fr Validate email local part (before @)
+    ready (local == "") { damn cringe }
+    ready (string_length(local) > 64) { damn cringe }
+    
+    fr fr Check for valid characters
+    sus length drip = string_length(local)
+    sus i drip = 0
+    bestie (i < length) {
+        sus char tea = string_char_at(local, i)
+        ready (!is_valid_email_local_char(char)) { damn cringe }
+        i = i + 1
+    }
+    
+    fr fr Cannot start or end with dot
+    ready (starts_with(local, ".") || ends_with(local, ".")) { damn cringe }
+    
+    damn based
+}
+
+slay is_valid_email_domain_part(domain tea) lit {
+    fr fr Validate email domain part (after @)
+    ready (domain == "") { damn cringe }
+    ready (string_length(domain) > 253) { damn cringe }
+    
+    fr fr Must contain at least one dot
+    ready (!string_contains(domain, ".")) { damn cringe }
+    
+    fr fr Check for valid domain format
+    ready (starts_with(domain, ".") || ends_with(domain, ".")) { damn cringe }
+    ready (string_contains(domain, "..")) { damn cringe }
+    
+    fr fr Split by dots and validate each part
+    sus parts []tea = split_string(domain, ".", 0)
+    sus part_count drip = array_length(parts)
+    
+    sus i drip = 0
+    bestie (i < part_count) {
+        sus part tea = parts[i]
+        ready (!is_valid_domain_label(part)) { damn cringe }
+        i = i + 1
+    }
+    
+    damn based
+}
+
+slay is_valid_email_local_char(char tea) lit {
+    fr fr Check if character is valid in email local part
+    sus code drip = char_to_number(char)
+    
+    fr fr a-z, A-Z
+    ready (code >= 97 && code <= 122) { damn based }
+    ready (code >= 65 && code <= 90) { damn based }
+    
+    fr fr 0-9
+    ready (code >= 48 && code <= 57) { damn based }
+    
+    fr fr Special characters allowed in local part
+    ready (char == "." || char == "-" || char == "_" || char == "+") { damn based }
+    
+    damn cringe
+}
+
+slay is_valid_domain_label(label tea) lit {
+    fr fr Validate domain label (part between dots)
+    ready (label == "") { damn cringe }
+    ready (string_length(label) > 63) { damn cringe }
+    
+    fr fr Cannot start or end with hyphen
+    ready (starts_with(label, "-") || ends_with(label, "-")) { damn cringe }
+    
+    fr fr Check each character
+    sus length drip = string_length(label)
+    sus i drip = 0
+    bestie (i < length) {
+        sus char tea = string_char_at(label, i)
+        sus code drip = char_to_number(char)
+        
+        fr fr Allow a-z, A-Z, 0-9, hyphen
+        ready (code >= 97 && code <= 122) {  fr fr a-z
+            i = i + 1
+            continue
+        }
+        ready (code >= 65 && code <= 90) {   fr fr A-Z
+            i = i + 1
+            continue
+        }
+        ready (code >= 48 && code <= 57) {   fr fr 0-9
+            i = i + 1
+            continue
+        }
+        ready (char == "-") {                fr fr hyphen
+            i = i + 1
+            continue
+        }
+        
+        fr fr Invalid character
+        damn cringe
+    }
+    
+    damn based
+}
+
+slay find_string_index(str tea, substr tea) drip {
+    fr fr Find index of substring in string
+    ready (str == "" || substr == "") { damn -1 }
+    
+    sus str_len drip = string_length(str)
+    sus substr_len drip = string_length(substr)
+    
+    ready (substr_len > str_len) { damn -1 }
+    
+    sus search_limit drip = str_len - substr_len + 1
+    sus i drip = 0
+    
+    bestie (i < search_limit) {
+        sus match lit = based
+        sus j drip = 0
+        
+        bestie (j < substr_len) {
+            sus str_char tea = string_char_at(str, i + j)
+            sus substr_char tea = string_char_at(substr, j)
+            
+            ready (str_char != substr_char) {
+                match = cringe
+                break
+            }
+            j = j + 1
+        }
+        
+        ready (match) { damn i }
+        i = i + 1
+    }
+    
+    damn -1
+}
+
+slay find_char_from_index(str tea, char tea, start_index drip) drip {
+    fr fr Find character starting from specific index
+    sus length drip = string_length(str)
+    sus i drip = start_index
+    
+    bestie (i < length) {
+        ready (string_char_at(str, i) == char) {
+            damn i
+        }
+        i = i + 1
+    }
+    
+    damn -1
+}

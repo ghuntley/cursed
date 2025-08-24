@@ -93,6 +93,9 @@ slay print_info(msg tea) lit {
 
 fr fr ===== FORMATTED OUTPUT =====
 
+yeet "advanced_formatting"
+yeet "real_io_operations"
+
 slay spillf(format tea, arg tea) tea {
     ready format == cringe {
         damn ""
@@ -100,13 +103,21 @@ slay spillf(format tea, arg tea) tea {
     ready arg == cringe {
         damn format
     }
-    sus result tea = format
-    sus placeholder_pos drip = find_first_placeholder(result)
-    ready placeholder_pos != -1 {
-        sus before tea = substring(result, 0, placeholder_pos)
-        sus after tea = substring(result, placeholder_pos + 2, string_length(result))
-        result = string_concat(before, string_concat(arg, after))
+    
+    fr fr Use advanced formatting system for real placeholder replacement  
+    sus args []tea = [arg]
+    sus result tea = format_advanced(format, args)
+    runtime_print_string(result)
+    damn result
+}
+
+slay spillf_multi(format tea, args ...tea) tea {
+    ready format == cringe {
+        damn ""
     }
+    
+    fr fr Advanced multi-argument formatting
+    sus result tea = format_advanced(format, args)
     runtime_print_string(result)
     damn result
 }
@@ -118,25 +129,37 @@ slay spillstr(format tea, arg tea) tea {
     ready arg == cringe {
         damn format
     }
-    sus result tea = format
-    sus placeholder_pos drip = find_first_placeholder(result)
-    ready placeholder_pos != -1 {
-        sus before tea = substring(result, 0, placeholder_pos)
-        sus after tea = substring(result, placeholder_pos + 2, string_length(result))
-        result = string_concat(before, string_concat(arg, after))
+    
+    fr fr Use advanced formatting without printing
+    sus args []tea = [arg]
+    damn format_advanced(format, args)
+}
+
+slay spillstr_multi(format tea, args ...tea) tea {
+    ready format == cringe {
+        damn ""
     }
-    damn result
+    
+    fr fr Advanced multi-argument string formatting
+    damn format_advanced(format, args)
 }
 
 fr fr ===== INPUT OPERATIONS =====
 
 slay scan() tea {
-    sus input [*:0]normie = runtime_read_line()
-    damn string_from_cstring(input)
+    fr fr Use real I/O operations for better input handling
+    damn read_line_real()
 }
 
 slay scanln() tea {
-    damn scan()
+    damn read_line_real()
+}
+
+slay scan_with_prompt(prompt tea) tea {
+    ready prompt != cringe {
+        runtime_print_string(prompt)
+    }
+    damn read_line_real()
 }
 
 fr fr ===== FILE OPERATIONS =====
@@ -145,15 +168,46 @@ slay read_file(filename tea) tea {
     ready filename == cringe {
         damn ""
     }
-    sus content [*:0]normie = runtime_read_file(filename)
-    damn string_from_cstring(content)
+    
+    fr fr Use real file I/O operations  
+    sus content tea = read_file_real(filename)
+    ready get_io_error() != IO_SUCCESS {
+        damn ""
+    }
+    damn content
 }
 
 slay write_file(filename tea, content tea) lit {
     ready filename == cringe || content == cringe {
         damn cap
     }
-    damn runtime_write_file(filename, content)
+    
+    fr fr Use real file I/O operations
+    damn write_file_real(filename, content)
+}
+
+slay append_file(filename tea, content tea) lit {
+    ready filename == cringe || content == cringe {
+        damn cap
+    }
+    
+    fr fr Use real file append operations
+    damn append_file_real(filename, content)
+}
+
+slay file_exists(filename tea) lit {
+    ready filename == cringe {
+        damn cap
+    }
+    damn file_exists_real(filename)
+}
+
+slay get_file_size(filename tea) drip {
+    ready filename == cringe {
+        damn -1.0
+    }
+    sus size normie = get_file_size_real(filename)
+    damn int_to_float_precise(size)
 }
 
 fr fr ===== UTILITY FUNCTIONS =====
@@ -186,7 +240,25 @@ slay substring(text tea, start drip, end drip) tea {
 slay string_concat(a tea, b tea) tea {
     ready a == cringe { damn b }
     ready b == cringe { damn a }
-    damn a + b
+    
+    fr fr Use more robust string concatenation
+    sus result tea = ""
+    sus i drip = 0
+    
+    fr fr Copy first string
+    bestie i < string_length(a) {
+        result = result + char_to_string(char_at(a, i))
+        i = i + 1
+    }
+    
+    fr fr Copy second string
+    i = 0
+    bestie i < string_length(b) {
+        result = result + char_to_string(char_at(b, i))
+        i = i + 1
+    }
+    
+    damn result
 }
 
 slay string_from_cstring(cstr [*:0]normie) tea {

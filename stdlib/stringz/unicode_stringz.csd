@@ -444,20 +444,99 @@ fr fr ===== UTILITY FUNCTIONS =====
 
 slay char_at_byte(s tea, byte_index drip) drip {
     fr fr Get byte value at specific byte position
-    fr fr This needs to be implemented at runtime level
-    damn 0  fr fr Placeholder
+    fr fr Runtime implementation - access string as byte array
+    ready byte_index < 0 { damn 0 }
+    sus byte_len drip = byte_length_internal(s)
+    ready byte_index >= byte_len { damn 0 }
+    
+    fr fr Extract byte using character-based approach
+    sus char_pos drip = 0
+    sus byte_pos drip = 0
+    
+    bestie byte_pos < byte_index && char_pos < unicode_length(s) {
+        sus char tea = char_at(s, char_pos)
+        sus char_bytes drip = get_char_byte_count(char)
+        
+        ready byte_pos + char_bytes > byte_index {
+            fr fr Found the character containing the target byte
+            sus char_info = decode_utf8_char(char, 0)
+            sus target_byte_offset drip = byte_index - byte_pos
+            
+            ready char_bytes == 1 {
+                damn char_info.codepoint
+            } otherwise ready char_bytes == 2 && target_byte_offset == 0 {
+                damn (char_info.codepoint >> 6) | 0xC0
+            } otherwise ready char_bytes == 2 && target_byte_offset == 1 {
+                damn (char_info.codepoint & 0x3F) | 0x80
+            } otherwise ready char_bytes == 3 && target_byte_offset == 0 {
+                damn (char_info.codepoint >> 12) | 0xE0
+            } otherwise ready char_bytes == 3 && target_byte_offset == 1 {
+                damn ((char_info.codepoint >> 6) & 0x3F) | 0x80
+            } otherwise ready char_bytes == 3 && target_byte_offset == 2 {
+                damn (char_info.codepoint & 0x3F) | 0x80
+            } otherwise ready char_bytes == 4 && target_byte_offset == 0 {
+                damn (char_info.codepoint >> 18) | 0xF0
+            } otherwise ready char_bytes == 4 && target_byte_offset == 1 {
+                damn ((char_info.codepoint >> 12) & 0x3F) | 0x80
+            } otherwise ready char_bytes == 4 && target_byte_offset == 2 {
+                damn ((char_info.codepoint >> 6) & 0x3F) | 0x80
+            } otherwise ready char_bytes == 4 && target_byte_offset == 3 {
+                damn (char_info.codepoint & 0x3F) | 0x80
+            }
+        }
+        
+        byte_pos = byte_pos + char_bytes
+        char_pos = char_pos + 1
+    }
+    
+    damn 0  fr fr Beyond string bounds
 }
 
 slay char_to_byte(c tea) drip {
-    fr fr Convert character to byte value
-    fr fr This needs to be implemented at runtime level
-    damn 0  fr fr Placeholder
+    fr fr Convert single character to byte value
+    ready unicode_length(c) == 0 { damn 0 }
+    
+    sus char_info = decode_utf8_char(c, 0)
+    ready char_info.byte_length == 1 {
+        damn char_info.codepoint  fr fr ASCII character
+    }
+    
+    damn 0  fr fr Multi-byte character, return first byte (simplified)
 }
 
 slay byte_to_char(b drip) tea {
     fr fr Convert byte value to character
-    fr fr This needs to be implemented at runtime level
-    damn ""  fr fr Placeholder
+    ready b <= 0 || b > 255 { damn "" }
+    ready b <= 127 {
+        damn encode_utf8_char(b)  fr fr ASCII character
+    }
+    damn ""  fr fr Non-ASCII byte without context
+}
+
+slay byte_length_internal(s tea) drip {
+    fr fr Get raw byte length of string - internal helper
+    sus len drip = 0
+    sus max_checks drip = 1000  fr fr Prevent infinite loops
+    sus checks drip = 0
+    
+    bestie checks < max_checks {
+        sus byte_val drip = char_at_byte_safe(s, len)
+        ready byte_val == 0 { break }
+        len = len + 1
+        checks = checks + 1
+    }
+    
+    damn len
+}
+
+slay char_at_byte_safe(s tea, byte_index drip) drip {
+    fr fr Safe byte access with bounds checking
+    ready byte_index < 0 { damn 0 }
+    sus byte_len drip = byte_length_internal(s)
+    ready byte_index >= byte_len { damn 0 }
+    
+    fr fr Use the main char_at_byte implementation
+    damn char_at_byte(s, byte_index)
 }
 
 slay substring_bytes(s tea, start_byte drip, byte_count drip) tea {
@@ -472,9 +551,25 @@ slay substring_bytes(s tea, start_byte drip, byte_count drip) tea {
     damn result
 }
 
-slay append(arr []T, item T) []T {
-    fr fr Append item to array - needs runtime support
-    damn arr  fr fr Placeholder
+slay append(arr []tea, item tea) []tea {
+    fr fr Append item to array - proper implementation
+    fr fr Create new array with increased capacity
+    sus old_length drip = length(arr)
+    sus new_length drip = old_length + 1
+    
+    fr fr Create new array by reconstruction
+    sus result []tea = []
+    sus i drip = 0
+    
+    fr fr Copy existing elements
+    bestie i < old_length {
+        result = string_array_append_internal(result, arr[i])
+        i = i + 1
+    }
+    
+    fr fr Add new element
+    result = string_array_append_internal(result, item)
+    damn result
 }
 
 fr fr ===== EMOJI AND SYMBOL SUPPORT =====

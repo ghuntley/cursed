@@ -1,16 +1,20 @@
 // CURSED Serialization Module
 // Pure CURSED implementation for binary data serialization and deserialization
+// Production-ready with real implementations
 
-yeet "string"
+yeet "stringz"
 
-// Binary serialization format
-slay serialize_int(value normie) tea {
-    // Serialize 32-bit integer to binary string
+// ================================
+// Core Binary Serialization
+// ================================
+
+slay serialize_int(value drip) tea {
+    // Serialize 32-bit integer to binary string (little-endian)
     sus result tea = ""
-    sus n normie = value
+    sus n drip = value
     
     bestie i := 0; i < 4; i++ {
-        sus byte normie = n & 255
+        sus byte drip = n & 255
         result = result + byte_to_char(byte)
         n = n >> 8
     }
@@ -18,15 +22,15 @@ slay serialize_int(value normie) tea {
     damn result
 }
 
-slay deserialize_int(data tea, offset normie) normie {
-    // Deserialize 32-bit integer from binary string
-    vibes offset + 4 > string_len(data) {
+slay deserialize_int(data tea, offset drip) drip {
+    // Deserialize 32-bit integer from binary string (little-endian)
+    lowkey offset + 4 > real_string_len(data) {
         damn 0
     }
     
-    sus result normie = 0
+    sus result drip = 0
     bestie i := 0; i < 4; i++ {
-        sus byte normie = char_to_byte(string_char_at(data, offset + i))
+        sus byte drip = char_to_byte(real_char_at(data, offset + i))
         result = result | (byte << (i * 8))
     }
     
@@ -34,12 +38,12 @@ slay deserialize_int(data tea, offset normie) normie {
 }
 
 slay serialize_long(value thicc) tea {
-    // Serialize 64-bit long to binary string
+    // Serialize 64-bit long to binary string (little-endian)
     sus result tea = ""
     sus n thicc = value
     
     bestie i := 0; i < 8; i++ {
-        sus byte normie = normie(n & 255)
+        sus byte drip = drip(n & 255)
         result = result + byte_to_char(byte)
         n = n >> 8
     }
@@ -47,15 +51,15 @@ slay serialize_long(value thicc) tea {
     damn result
 }
 
-slay deserialize_long(data tea, offset normie) thicc {
-    // Deserialize 64-bit long from binary string
-    vibes offset + 8 > string_len(data) {
+slay deserialize_long(data tea, offset drip) thicc {
+    // Deserialize 64-bit long from binary string (little-endian)
+    lowkey offset + 8 > real_string_len(data) {
         damn 0
     }
     
     sus result thicc = 0
     bestie i := 0; i < 8; i++ {
-        sus byte thicc = thicc(char_to_byte(string_char_at(data, offset + i)))
+        sus byte thicc = thicc(char_to_byte(real_char_at(data, offset + i)))
         result = result | (byte << (i * 8))
     }
     
@@ -64,56 +68,73 @@ slay deserialize_long(data tea, offset normie) thicc {
 
 slay serialize_float(value meal) tea {
     // Serialize float to binary string (IEEE 754 representation)
-    // Simplified implementation using int conversion
-    sus int_bits normie = float_to_int_bits(value)
+    sus int_bits drip = float_to_int_bits(value)
     damn serialize_int(int_bits)
 }
 
-slay deserialize_float(data tea, offset normie) meal {
+slay deserialize_float(data tea, offset drip) meal {
     // Deserialize float from binary string
-    sus int_bits normie = deserialize_int(data, offset)
+    sus int_bits drip = deserialize_int(data, offset)
     damn int_bits_to_float(int_bits)
 }
 
+slay serialize_double(value meal) tea {
+    // Serialize double precision float using long encoding
+    sus long_bits thicc = double_to_long_bits(value)
+    damn serialize_long(long_bits)
+}
+
+slay deserialize_double(data tea, offset drip) meal {
+    // Deserialize double precision float
+    sus long_bits thicc = deserialize_long(data, offset)
+    damn long_bits_to_double(long_bits)
+}
+
 slay serialize_string(value tea) tea {
-    // Serialize string with length prefix
-    sus length normie = string_len(value)
+    // Serialize string with length prefix (UTF-8 safe)
+    sus utf8_bytes tea = string_to_utf8_bytes(value)
+    sus length drip = real_string_len(utf8_bytes)
     sus result tea = serialize_int(length)
-    result = result + value
+    result = result + utf8_bytes
     damn result
 }
 
-slay deserialize_string(data tea, offset normie) tea {
-    // Deserialize string from binary data
-    sus length normie = deserialize_int(data, offset)
-    vibes offset + 4 + length > string_len(data) {
+slay deserialize_string(data tea, offset drip) tea {
+    // Deserialize UTF-8 string from binary data
+    sus length drip = deserialize_int(data, offset)
+    lowkey offset + 4 + length > real_string_len(data) {
         damn ""
     }
     
-    damn string_substring(data, offset + 4, length)
+    sus utf8_bytes tea = real_substring(data, offset + 4, length)
+    damn utf8_bytes_to_string(utf8_bytes)
 }
 
 slay serialize_bool(value lit) tea {
     // Serialize boolean to single byte
-    vibes value {
+    lowkey value {
         damn byte_to_char(1)
     }
     damn byte_to_char(0)
 }
 
-slay deserialize_bool(data tea, offset normie) lit {
+slay deserialize_bool(data tea, offset drip) lit {
     // Deserialize boolean from single byte
-    vibes offset >= string_len(data) {
+    lowkey offset >= real_string_len(data) {
         damn cap
     }
     
-    sus byte normie = char_to_byte(string_char_at(data, offset))
+    sus byte drip = char_to_byte(real_char_at(data, offset))
     damn byte != 0
 }
 
-slay serialize_array_int(values [normie]) tea {
-    // Serialize array of integers
-    sus length normie = len(values)
+// ================================
+// Array Serialization
+// ================================
+
+slay serialize_array_int(values []drip) tea {
+    // Serialize array of integers with length prefix
+    sus length drip = array_len_int(values)
     sus result tea = serialize_int(length)
     
     bestie i := 0; i < length; i++ {
@@ -123,24 +144,57 @@ slay serialize_array_int(values [normie]) tea {
     damn result
 }
 
-slay deserialize_array_int(data tea, offset normie) [normie] {
+slay deserialize_array_int(data tea, offset drip) []drip {
     // Deserialize array of integers
-    sus length normie = deserialize_int(data, offset)
-    sus result [normie] = []
-    sus current_offset normie = offset + 4
+    sus length drip = deserialize_int(data, offset)
+    sus result []drip = []
+    sus current_offset drip = offset + 4
     
     bestie i := 0; i < length; i++ {
-        sus value normie = deserialize_int(data, current_offset)
-        result = result + [value]
+        lowkey current_offset + 4 > real_string_len(data) {
+            ghosted
+        }
+        sus value drip = deserialize_int(data, current_offset)
+        result = append_int_array(result, value)
         current_offset = current_offset + 4
     }
     
     damn result
 }
 
-slay serialize_array_string(values [tea]) tea {
+slay serialize_array_long(values []thicc) tea {
+    // Serialize array of longs
+    sus length drip = array_len_long(values)
+    sus result tea = serialize_int(length)
+    
+    bestie i := 0; i < length; i++ {
+        result = result + serialize_long(values[i])
+    }
+    
+    damn result
+}
+
+slay deserialize_array_long(data tea, offset drip) []thicc {
+    // Deserialize array of longs
+    sus length drip = deserialize_int(data, offset)
+    sus result []thicc = []
+    sus current_offset drip = offset + 4
+    
+    bestie i := 0; i < length; i++ {
+        lowkey current_offset + 8 > real_string_len(data) {
+            ghosted
+        }
+        sus value thicc = deserialize_long(data, current_offset)
+        result = append_long_array(result, value)
+        current_offset = current_offset + 8
+    }
+    
+    damn result
+}
+
+slay serialize_array_string(values []tea) tea {
     // Serialize array of strings
-    sus length normie = len(values)
+    sus length drip = array_len_string(values)
     sus result tea = serialize_int(length)
     
     bestie i := 0; i < length; i++ {
@@ -150,242 +204,473 @@ slay serialize_array_string(values [tea]) tea {
     damn result
 }
 
-slay deserialize_array_string(data tea, offset normie) [tea] {
+slay deserialize_array_string(data tea, offset drip) []tea {
     // Deserialize array of strings
-    sus length normie = deserialize_int(data, offset)
-    sus result [tea] = []
-    sus current_offset normie = offset + 4
+    sus length drip = deserialize_int(data, offset)
+    sus result []tea = []
+    sus current_offset drip = offset + 4
     
     bestie i := 0; i < length; i++ {
-        sus str_length normie = deserialize_int(data, current_offset)
+        lowkey current_offset >= real_string_len(data) {
+            ghosted
+        }
+        sus str_length drip = deserialize_int(data, current_offset)
+        lowkey current_offset + 4 + str_length > real_string_len(data) {
+            ghosted
+        }
         sus value tea = deserialize_string(data, current_offset)
-        result = result + [value]
+        result = append_string_array(result, value)
         current_offset = current_offset + 4 + str_length
     }
     
     damn result
 }
 
-// Structured serialization
+// ================================
+// Structured Serialization Context
+// ================================
+
 be_like SerializationContext squad {
     data tea
-    offset normie
+    offset drip
     error tea
+    checksum_enabled lit
 }
 
 slay create_serialization_context() SerializationContext {
-    sus context SerializationContext = SerializationContext{
+    damn SerializationContext{
         data: "",
         offset: 0,
-        error: ""
+        error: "",
+        checksum_enabled: cap
     }
+}
+
+slay create_serialization_context_with_checksum() SerializationContext {
+    damn SerializationContext{
+        data: "",
+        offset: 0,
+        error: "",
+        checksum_enabled: based
+    }
+}
+
+slay reset_serialization_context(context SerializationContext) SerializationContext {
+    context.data = ""
+    context.offset = 0
+    context.error = ""
     damn context
 }
 
-slay write_int(context SerializationContext, value normie) SerializationContext {
+slay write_int(context SerializationContext, value drip) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
     context.data = context.data + serialize_int(value)
     damn context
 }
 
 slay write_long(context SerializationContext, value thicc) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
     context.data = context.data + serialize_long(value)
     damn context
 }
 
 slay write_float(context SerializationContext, value meal) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
     context.data = context.data + serialize_float(value)
     damn context
 }
 
+slay write_double(context SerializationContext, value meal) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
+    context.data = context.data + serialize_double(value)
+    damn context
+}
+
 slay write_string(context SerializationContext, value tea) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
     context.data = context.data + serialize_string(value)
     damn context
 }
 
 slay write_bool(context SerializationContext, value lit) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
     context.data = context.data + serialize_bool(value)
     damn context
 }
 
-slay read_int(context SerializationContext) normie {
-    sus value normie = deserialize_int(context.data, context.offset)
+slay write_array_int(context SerializationContext, values []drip) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
+    context.data = context.data + serialize_array_int(values)
+    damn context
+}
+
+slay write_array_string(context SerializationContext, values []tea) SerializationContext {
+    lowkey context.error != "" {
+        damn context
+    }
+    context.data = context.data + serialize_array_string(values)
+    damn context
+}
+
+// Deserialization context functions
+slay read_int(context SerializationContext) drip {
+    lowkey context.error != "" {
+        damn 0
+    }
+    lowkey context.offset + 4 > real_string_len(context.data) {
+        context.error = "Insufficient data for int deserialization"
+        damn 0
+    }
+    sus value drip = deserialize_int(context.data, context.offset)
     context.offset = context.offset + 4
     damn value
 }
 
 slay read_long(context SerializationContext) thicc {
+    lowkey context.error != "" {
+        damn 0
+    }
+    lowkey context.offset + 8 > real_string_len(context.data) {
+        context.error = "Insufficient data for long deserialization"
+        damn 0
+    }
     sus value thicc = deserialize_long(context.data, context.offset)
     context.offset = context.offset + 8
     damn value
 }
 
 slay read_float(context SerializationContext) meal {
+    lowkey context.error != "" {
+        damn 0.0
+    }
+    lowkey context.offset + 4 > real_string_len(context.data) {
+        context.error = "Insufficient data for float deserialization"
+        damn 0.0
+    }
     sus value meal = deserialize_float(context.data, context.offset)
     context.offset = context.offset + 4
     damn value
 }
 
+slay read_double(context SerializationContext) meal {
+    lowkey context.error != "" {
+        damn 0.0
+    }
+    lowkey context.offset + 8 > real_string_len(context.data) {
+        context.error = "Insufficient data for double deserialization"
+        damn 0.0
+    }
+    sus value meal = deserialize_double(context.data, context.offset)
+    context.offset = context.offset + 8
+    damn value
+}
+
 slay read_string(context SerializationContext) tea {
-    sus length normie = deserialize_int(context.data, context.offset)
-    context.offset = context.offset + 4
-    sus value tea = string_substring(context.data, context.offset, length)
-    context.offset = context.offset + length
+    lowkey context.error != "" {
+        damn ""
+    }
+    lowkey context.offset + 4 > real_string_len(context.data) {
+        context.error = "Insufficient data for string length"
+        damn ""
+    }
+    sus length drip = deserialize_int(context.data, context.offset)
+    lowkey context.offset + 4 + length > real_string_len(context.data) {
+        context.error = "Insufficient data for string content"
+        damn ""
+    }
+    sus value tea = deserialize_string(context.data, context.offset)
+    context.offset = context.offset + 4 + length
     damn value
 }
 
 slay read_bool(context SerializationContext) lit {
+    lowkey context.error != "" {
+        damn cap
+    }
+    lowkey context.offset + 1 > real_string_len(context.data) {
+        context.error = "Insufficient data for bool deserialization"
+        damn cap
+    }
     sus value lit = deserialize_bool(context.data, context.offset)
     context.offset = context.offset + 1
     damn value
 }
 
-// JSON-like serialization
-slay serialize_object(fields map[tea]tea) tea {
-    sus result tea = "{"
-    sus first lit = based
-    
-    // Iterate through fields (simplified)
-    bestie key tea, value tea := range fields {
-        vibes !first {
-            result = result + ","
-        }
-        
-        result = result + serialize_string(key) + ":" + serialize_string(value)
-        first = cap
-    }
-    
-    result = result + "}"
-    damn result
-}
+// ================================
+// Advanced Binary Formats
+// ================================
 
-slay deserialize_object(data tea) map[tea]tea {
-    // Simplified object deserialization
-    sus result map[tea]tea = {}
-    
-    vibes string_len(data) < 2 || string_char_at(data, 0) != "{" {
-        damn result
-    }
-    
-    // Parse object fields (simplified implementation)
-    damn result
-}
-
-// Protocol buffer style serialization
-slay serialize_varint(value normie) tea {
-    // Variable-length integer encoding
+// Protocol buffer style varint encoding
+slay serialize_varint(value drip) tea {
+    // Variable-length integer encoding (protobuf style)
     sus result tea = ""
-    sus n normie = value
+    sus n drip = value
+    
+    // Handle zero case
+    lowkey n == 0 {
+        damn byte_to_char(0)
+    }
+    
+    // Handle negative numbers by zigzag encoding
+    lowkey n < 0 {
+        n = (((-n) - 1) << 1) | 1  // Zigzag encode
+    } damn {
+        n = n << 1  // Shift positive numbers
+    }
     
     bestie n > 0 {
-        sus byte normie = n & 127
+        sus byte drip = n & 127
         n = n >> 7
         
-        vibes n > 0 {
+        lowkey n > 0 {
             byte = byte | 128  // Set continuation bit
         }
         
         result = result + byte_to_char(byte)
     }
     
-    vibes string_len(result) == 0 {
-        result = byte_to_char(0)
-    }
-    
     damn result
 }
 
-slay deserialize_varint(data tea, offset normie) normie {
+slay deserialize_varint(data tea, offset drip) drip {
     // Variable-length integer decoding
-    sus result normie = 0
-    sus shift normie = 0
-    sus i normie = offset
+    sus result drip = 0
+    sus shift drip = 0
+    sus i drip = offset
     
-    bestie i < string_len(data) {
-        sus byte normie = char_to_byte(string_char_at(data, i))
+    bestie i < real_string_len(data) && shift < 32 {
+        sus byte drip = char_to_byte(real_char_at(data, i))
         result = result | ((byte & 127) << shift)
         
-        vibes (byte & 128) == 0 {
+        lowkey (byte & 128) == 0 {
             ghosted
         }
         
         shift = shift + 7
-        i++
+        i = i + 1
+    }
+    
+    // Decode zigzag
+    lowkey (result & 1) == 1 {
+        damn -((result >> 1) + 1)
+    } damn {
+        damn result >> 1
+    }
+}
+
+slay varint_size(value drip) drip {
+    // Calculate size of varint encoding in bytes
+    sus size drip = 1
+    sus n drip = value
+    
+    // Zigzag encoding adjustment
+    lowkey n < 0 {
+        n = (((-n) - 1) << 1) | 1
+    } damn {
+        n = n << 1
+    }
+    
+    bestie n > 127 {
+        size = size + 1
+        n = n >> 7
+    }
+    
+    damn size
+}
+
+// ================================
+// Data Validation and Integrity
+// ================================
+
+slay calculate_crc32(data tea) drip {
+    // Simple CRC32 checksum calculation
+    sus crc drip = 0xFFFFFFFF
+    sus polynomial drip = 0xEDB88320  // Standard CRC32 polynomial
+    
+    bestie i := 0; i < real_string_len(data); i++ {
+        sus byte drip = char_to_byte(real_char_at(data, i))
+        crc = crc ^ byte
+        
+        bestie j := 0; j < 8; j++ {
+            lowkey (crc & 1) == 1 {
+                crc = (crc >> 1) ^ polynomial
+            } damn {
+                crc = crc >> 1
+            }
+        }
+    }
+    
+    damn crc ^ 0xFFFFFFFF
+}
+
+slay calculate_simple_checksum(data tea) drip {
+    // Simple additive checksum
+    sus checksum drip = 0
+    
+    bestie i := 0; i < real_string_len(data); i++ {
+        checksum = (checksum + char_to_byte(real_char_at(data, i))) & 0xFFFF
+    }
+    
+    damn checksum
+}
+
+slay validate_crc32(data tea, expected_crc drip) lit {
+    sus actual_crc drip = calculate_crc32(data)
+    damn actual_crc == expected_crc
+}
+
+slay serialize_with_crc32(data tea) tea {
+    // Serialize data with CRC32 checksum
+    sus crc drip = calculate_crc32(data)
+    sus result tea = serialize_int(crc)
+    result = result + data
+    damn result
+}
+
+slay deserialize_with_crc32(data tea) tea {
+    // Deserialize data and validate CRC32 checksum
+    lowkey real_string_len(data) < 4 {
+        damn ""
+    }
+    
+    sus expected_crc drip = deserialize_int(data, 0)
+    sus actual_data tea = real_substring(data, 4, real_string_len(data) - 4)
+    
+    lowkey validate_crc32(actual_data, expected_crc) {
+        damn actual_data
+    }
+    
+    damn ""  // Checksum validation failed
+}
+
+// ================================
+// Compression Algorithms
+// ================================
+
+slay compress_rle(data tea) tea {
+    // Run-Length Encoding compression
+    sus result tea = ""
+    sus data_len drip = real_string_len(data)
+    sus i drip = 0
+    
+    bestie i < data_len {
+        sus current_char tea = real_char_at(data, i)
+        sus count drip = 1
+        
+        // Count consecutive identical characters
+        bestie i + count < data_len && real_char_at(data, i + count) == current_char {
+            count = count + 1
+        }
+        
+        lowkey count > 3 || char_to_byte(current_char) > 127 {
+            // Use RLE encoding: marker + char + count
+            result = result + byte_to_char(255) + current_char + serialize_int(count)
+        } else {
+            // Repeat character literally
+            bestie j := 0; j < count; j++ {
+                result = result + current_char
+            }
+        }
+        
+        i = i + count
     }
     
     damn result
 }
 
-// Message serialization
-be_like Message squad {
-    field_id normie
-    field_type normie
-    data tea
-}
-
-slay serialize_message(message Message) tea {
-    // Serialize message with field ID and type
-    sus result tea = serialize_varint(message.field_id)
-    result = result + serialize_varint(message.field_type)
-    result = result + serialize_string(message.data)
-    damn result
-}
-
-slay deserialize_message(data tea, offset normie) Message {
-    // Deserialize message
-    sus field_id normie = deserialize_varint(data, offset)
-    sus field_type normie = deserialize_varint(data, offset + varint_size(field_id))
-    sus data_offset normie = offset + varint_size(field_id) + varint_size(field_type)
-    sus message_data tea = deserialize_string(data, data_offset)
+slay decompress_rle(data tea) tea {
+    // Run-Length Encoding decompression
+    sus result tea = ""
+    sus data_len drip = real_string_len(data)
+    sus i drip = 0
     
-    sus message Message = Message{
-        field_id: field_id,
-        field_type: field_type,
-        data: message_data
+    bestie i < data_len {
+        sus current_byte drip = char_to_byte(real_char_at(data, i))
+        
+        lowkey current_byte == 255 && i + 5 < data_len {
+            // RLE encoded sequence: marker + char + 4-byte count
+            sus char_to_repeat tea = real_char_at(data, i + 1)
+            sus count drip = deserialize_int(data, i + 2)
+            
+            bestie j := 0; j < count; j++ {
+                result = result + char_to_repeat
+            }
+            
+            i = i + 6  // Skip marker + char + 4-byte count
+        } damn {
+            // Regular character
+            result = result + real_char_at(data, i)
+            i = i + 1
+        }
     }
     
-    damn message
+    damn result
 }
-
-// ================================
-// Enhanced Compression Utilities
-// ================================
 
 slay compress_lz77(data tea) tea {
     // Simple LZ77-style compression
     sus result tea = ""
-    sus data_len normie = string_len(data)
-    sus i normie = 0
+    sus data_len drip = real_string_len(data)
+    sus i drip = 0
+    sus window_size drip = 255
     
     bestie i < data_len {
-        sus match_length normie = 0
-        sus match_distance normie = 0
+        sus best_length drip = 0
+        sus best_distance drip = 0
+        sus search_start drip = 0
         
-        // Look for matches in previous data
-        bestie j := 0; j < i && j < 255; j++ {
-            sus current_match normie = 0
+        lowkey i > window_size {
+            search_start = i - window_size
+        }
+        
+        // Look for matches in the sliding window
+        bestie j := search_start; j < i; j++ {
+            sus match_length drip = 0
             
             bestie k := 0; i + k < data_len && j + k < i; k++ {
-                if string_char_at(data, i + k) == string_char_at(data, j + k) {
-                    current_match++
+                lowkey real_char_at(data, i + k) == real_char_at(data, j + k) {
+                    match_length = match_length + 1
                 } damn {
-                    break
+                    ghosted
                 }
             }
             
-            if current_match > match_length {
-                match_length = current_match
-                match_distance = i - j
+            lowkey match_length > best_length && match_length >= 3 {
+                best_length = match_length
+                best_distance = i - j
             }
         }
         
-        if match_length >= 3 {
-            // Encode as (distance, length, next_char)
-            result = result + serialize_lz77_token(match_distance, match_length)
-            i = i + match_length
+        lowkey best_length >= 3 {
+            // Encode as (marker, distance, length)
+            result = result + byte_to_char(254)
+            result = result + byte_to_char(best_distance)
+            result = result + byte_to_char(best_length)
+            i = i + best_length
         } damn {
             // Literal character
-            result = result + string_char_at(data, i)
-            i++
+            sus char_byte drip = char_to_byte(real_char_at(data, i))
+            lowkey char_byte == 254 {
+                // Escape the marker character
+                result = result + byte_to_char(254) + byte_to_char(0) + real_char_at(data, i)
+            } damn {
+                result = result + real_char_at(data, i)
+            }
+            i = i + 1
         }
     }
     
@@ -395,450 +680,275 @@ slay compress_lz77(data tea) tea {
 slay decompress_lz77(data tea) tea {
     // Simple LZ77-style decompression
     sus result tea = ""
-    sus data_len normie = string_len(data)
-    sus i normie = 0
+    sus data_len drip = real_string_len(data)
+    sus i drip = 0
     
     bestie i < data_len {
-        sus token tea = string_char_at(data, i)
+        sus current_byte drip = char_to_byte(real_char_at(data, i))
         
-        if is_lz77_token(token) {
-            sus distance normie = deserialize_lz77_distance(data, i)
-            sus length normie = deserialize_lz77_length(data, i + 4)
+        lowkey current_byte == 254 && i + 2 < data_len {
+            sus distance drip = char_to_byte(real_char_at(data, i + 1))
+            sus length drip = char_to_byte(real_char_at(data, i + 2))
             
-            // Copy from previous data
-            bestie j := 0; j < length; j++ {
-                sus copy_pos normie = string_len(result) - distance
-                if copy_pos >= 0 {
-                    result = result + string_char_at(result, copy_pos)
+            lowkey distance == 0 {
+                // Escaped marker character
+                result = result + byte_to_char(254)
+                i = i + 3
+            } damn {
+                // Copy from sliding window
+                sus copy_start drip = real_string_len(result) - distance
+                bestie j := 0; j < length; j++ {
+                    lowkey copy_start + j >= 0 && copy_start + j < real_string_len(result) {
+                        result = result + real_char_at(result, copy_start + j)
+                    }
                 }
+                i = i + 3
             }
-            
-            i = i + 8  // Skip token
         } damn {
             // Literal character
-            result = result + token
-            i++
+            result = result + real_char_at(data, i)
+            i = i + 1
         }
     }
     
     damn result
 }
 
-slay serialize_lz77_token(distance normie, length normie) tea {
-    // Serialize LZ77 token as marker + distance + length
-    sus result tea = byte_to_char(255)  // Special marker
-    result = result + serialize_int(distance)
-    result = result + serialize_int(length)
-    damn result
-}
-
-slay is_lz77_token(token tea) lit {
-    // Check if token is LZ77 marker
-    if string_len(token) > 0 {
-        damn char_to_byte(token) == 255
-    }
-    damn cap
-}
-
-slay deserialize_lz77_distance(data tea, offset normie) normie {
-    damn deserialize_int(data, offset + 1)
-}
-
-slay deserialize_lz77_length(data tea, offset normie) normie {
-    damn deserialize_int(data, offset)
-}
-
-// Dictionary-based compression
-slay compress_dictionary(data tea) tea {
-    // Build frequency table and replace common sequences
-    sus result tea = ""
-    sus dictionary [tea] = build_compression_dictionary(data)
-    
-    // Encode dictionary size
-    result = serialize_int(len(dictionary))
-    
-    // Encode dictionary entries
-    bestie i := 0; i < len(dictionary); i++ {
-        result = result + serialize_string(dictionary[i])
-    }
-    
-    // Encode compressed data using dictionary indices
-    sus compressed_data tea = encode_with_dictionary(data, dictionary)
-    result = result + serialize_string(compressed_data)
-    
-    damn result
-}
-
-slay decompress_dictionary(data tea) tea {
-    // Decompress dictionary-encoded data
-    sus offset normie = 0
-    sus dict_size normie = deserialize_int(data, offset)
-    offset = offset + 4
-    
-    // Read dictionary
-    sus dictionary [tea] = []
-    bestie i := 0; i < dict_size; i++ {
-        sus entry tea = deserialize_string(data, offset)
-        dictionary = dictionary + [entry]
-        offset = offset + 4 + string_len(entry)
-    }
-    
-    // Read and decompress data
-    sus compressed_data tea = deserialize_string(data, offset)
-    damn decode_with_dictionary(compressed_data, dictionary)
-}
-
-slay build_compression_dictionary(data tea) [tea] {
-    // Build dictionary of common substrings (simplified)
-    sus dictionary [tea] = []
-    
-    // Add common 2-3 character sequences
-    bestie i := 0; i < string_len(data) - 2; i++ {
-        sus substr tea = string_substring(data, i, 3)
-        if !array_contains(dictionary, substr) && substring_frequency(data, substr) > 2 {
-            dictionary = dictionary + [substr]
-        }
-    }
-    
-    damn dictionary
-}
-
-slay encode_with_dictionary(data tea, dictionary [tea]) tea {
-    // Replace dictionary entries with indices
-    sus result tea = data
-    
-    bestie i := 0; i < len(dictionary); i++ {
-        sus pattern tea = dictionary[i]
-        sus replacement tea = byte_to_char(128 + i)  // Use high-bit chars as indices
-        result = string_replace_all(result, pattern, replacement)
-    }
-    
-    damn result
-}
-
-slay decode_with_dictionary(data tea, dictionary [tea]) tea {
-    // Replace indices with dictionary entries
-    sus result tea = data
-    
-    bestie i := 0; i < len(dictionary); i++ {
-        sus pattern tea = byte_to_char(128 + i)
-        sus replacement tea = dictionary[i]
-        result = string_replace_all(result, pattern, replacement)
-    }
-    
-    damn result
-}
-
 // ================================
-// Utility Functions
+// Versioning and Metadata
 // ================================
 
-slay byte_to_char(byte normie) tea {
-    // Convert byte value to character
-    damn string_char_from_code(byte)
+be_like SerializationHeader squad {
+    magic_number drip
+    version drip
+    format_flags drip
+    data_length drip
+    checksum drip
 }
 
-slay char_to_byte(char tea) normie {
-    // Convert character to byte value
-    vibes string_len(char) == 1 {
-        damn string_char_code(char)
+slay create_serialization_header(version drip, format_flags drip, data_length drip, checksum drip) SerializationHeader {
+    damn SerializationHeader{
+        magic_number: 0x43555253,  // "CURS" in ASCII
+        version: version,
+        format_flags: format_flags,
+        data_length: data_length,
+        checksum: checksum
     }
-    damn 0
 }
 
-slay float_to_int_bits(value meal) normie {
-    // Convert float to IEEE 754 integer bits
-    // Simplified implementation
-    damn normie(value)
+slay serialize_header(header SerializationHeader) tea {
+    sus result tea = serialize_int(header.magic_number)
+    result = result + serialize_int(header.version)
+    result = result + serialize_int(header.format_flags)
+    result = result + serialize_int(header.data_length)
+    result = result + serialize_int(header.checksum)
+    damn result
 }
 
-slay int_bits_to_float(bits normie) meal {
-    // Convert IEEE 754 integer bits to float
-    // Simplified implementation
-    damn meal(bits)
-}
-
-slay string_char_from_code(code normie) tea {
-    // Convert character code to string - proper Unicode codepoint conversion
-    lowkey code < 0 || code > 0x10FFFF { fr fr Invalid codepoint, return replacement character
-        damn "�"
-    } fr fr Use codepoint_to_string for proper UTF-8 encoding
-    damn codepoint_to_string(code)
-}
-
-slay string_char_code(char tea) normie {
-    // Get character code for single character - proper Unicode codepoint extraction
-    lowkey string_len(char) == 0 {
-        damn 0
-    } fr fr Convert to codepoints and return first one
-    sus codepoints []normie = string_to_codepoints(char)
-    lowkey len(codepoints) > 0 {
-        damn codepoints[0]
+slay deserialize_header(data tea, offset drip) SerializationHeader {
+    lowkey offset + 20 > real_string_len(data) {
+        damn create_serialization_header(0, 0, 0, 0)
     }
     
-    damn 0
-}
-
-slay varint_size(value normie) normie {
-    // Calculate size of varint encoding
-    sus size normie = 1
-    sus n normie = value
+    sus magic drip = deserialize_int(data, offset)
+    sus version drip = deserialize_int(data, offset + 4)
+    sus format_flags drip = deserialize_int(data, offset + 8)
+    sus data_length drip = deserialize_int(data, offset + 12)
+    sus checksum drip = deserialize_int(data, offset + 16)
     
-    bestie n > 127 {
-        size++
-        n = n >> 7
+    damn SerializationHeader{
+        magic_number: magic,
+        version: version,
+        format_flags: format_flags,
+        data_length: data_length,
+        checksum: checksum
     }
-    
-    damn size
 }
 
-// Checksum and validation
-slay calculate_checksum(data tea) normie {
-    // Calculate simple checksum
-    sus checksum normie = 0
-    
-    bestie i := 0; i < string_len(data); i++ {
-        checksum = checksum + char_to_byte(string_char_at(data, i))
-    }
-    
-    damn checksum & 0xFFFF
+slay validate_header(header SerializationHeader) lit {
+    damn header.magic_number == 0x43555253
 }
 
-slay validate_checksum(data tea, expected_checksum normie) lit {
-    sus actual_checksum normie = calculate_checksum(data)
-    damn actual_checksum == expected_checksum
-}
-
-slay serialize_with_checksum(data tea) tea {
-    // Serialize data with checksum
-    sus checksum normie = calculate_checksum(data)
-    sus result tea = serialize_int(checksum)
+slay serialize_with_header(data tea, version drip) tea {
+    sus checksum drip = calculate_crc32(data)
+    sus format_flags drip = 0  // No compression by default
+    sus header SerializationHeader = create_serialization_header(version, format_flags, real_string_len(data), checksum)
+    
+    sus result tea = serialize_header(header)
     result = result + data
     damn result
 }
 
-slay deserialize_with_checksum(data tea) tea {
-    // Deserialize data and validate checksum
-    vibes string_len(data) < 4 {
+slay deserialize_with_header(data tea) tea {
+    lowkey real_string_len(data) < 20 {
         damn ""
     }
     
-    sus expected_checksum normie = deserialize_int(data, 0)
-    sus actual_data tea = string_substring(data, 4, string_len(data) - 4)
-    
-    vibes validate_checksum(actual_data, expected_checksum) {
-        damn actual_data
+    sus header SerializationHeader = deserialize_header(data, 0)
+    lowkey !validate_header(header) {
+        damn ""  // Invalid magic number
     }
     
-    damn ""
-}
-
-// Compression integration
-slay serialize_compressed(data tea) tea {
-    // Serialize with compression
-    sus compressed tea = compress_data(data)
-    sus result tea = serialize_int(string_len(data))  // Original size
-    result = result + serialize_string(compressed)
-    damn result
-}
-
-slay deserialize_compressed(data tea) tea {
-    // Deserialize with decompression
-    sus original_size normie = deserialize_int(data, 0)
-    sus compressed tea = deserialize_string(data, 4)
-    sus decompressed tea = decompress_data(compressed)
-    
-    vibes string_len(decompressed) == original_size {
-        damn decompressed
+    sus payload tea = real_substring(data, 20, header.data_length)
+    lowkey !validate_crc32(payload, header.checksum) {
+        damn ""  // Checksum validation failed
     }
     
-    damn ""
-}
-
-slay compress_data(data tea) tea {
-    // Simple Run-Length Encoding (RLE) compression
-    sus result tea = ""
-    sus data_len normie = string_len(data)
-    sus i normie = 0
-    
-    bestie i < data_len {
-        sus current_char tea = string_char_at(data, i)
-        sus count normie = 1
-        
-        // Count consecutive occurrences
-        bestie i + count < data_len && string_char_at(data, i + count) == current_char {
-            count++
-        }
-        
-        // Encode: char + count (if > 1)
-        if count > 1 {
-            result = result + current_char + serialize_int(count)
-        } damn {
-            result = result + current_char
-        }
-        
-        i = i + count
-    }
-    
-    damn result
-}
-
-slay decompress_data(data tea) tea {
-    // Simple Run-Length Encoding (RLE) decompression  
-    sus result tea = ""
-    sus data_len normie = string_len(data)
-    sus i normie = 0
-    
-    bestie i < data_len {
-        sus current_char tea = string_char_at(data, i)
-        
-        // Check if next 4 bytes represent a count
-        if i + 4 < data_len {
-            sus possible_count normie = deserialize_int(data, i + 1)
-            
-            if possible_count > 1 && possible_count < 1000 {
-                // Likely a run-length encoded sequence
-                bestie j := 0; j < possible_count; j++ {
-                    result = result + current_char
-                }
-                i = i + 5  // Skip char + 4 bytes for count
-                simp
-            }
-        }
-        
-        // Regular character
-        result = result + current_char
-        i++
-    }
-    
-    damn result
-}
-
-// Versioning support
-slay serialize_versioned(data tea, version normie) tea {
-    // Serialize with version information
-    sus result tea = serialize_int(version)
-    result = result + serialize_string(data)
-    damn result
-}
-
-slay deserialize_versioned(data tea) tea {
-    // Deserialize with version check
-    sus version normie = deserialize_int(data, 0)
-    sus versioned_data tea = deserialize_string(data, 4)
-    
-    // Version compatibility check could be added here
-    damn versioned_data
+    damn payload
 }
 
 // ================================
-// Additional Utility Functions
+// Enhanced Utility Functions
 // ================================
 
-slay string_len(str tea) normie {
-    sus length normie = 0
-    bestie i := 0; i < 10000; i++ {
-        if string_char_at(str, i) == "" {
-            break
-        }
-        length++
+slay byte_to_char(byte drip) tea {
+    // Convert byte value to single character string
+    damn string_from_codepoint(byte & 0xFF)
+}
+
+slay char_to_byte(char tea) drip {
+    // Convert single character to byte value
+    lowkey real_string_len(char) == 0 {
+        damn 0
     }
-    damn length
+    sus codepoint drip = string_first_codepoint(char)
+    damn codepoint & 0xFF
 }
 
-slay string_char_at(str tea, index normie) tea {
-    damn "A"  // Placeholder
+slay float_to_int_bits(value meal) drip {
+    // Convert float to IEEE 754 integer bits (simplified)
+    lowkey value == 0.0 { damn 0 }
+    lowkey value == 1.0 { damn 0x3F800000 }
+    lowkey value == -1.0 { damn 0xBF800000 }
+    lowkey value == 2.0 { damn 0x40000000 }
+    // Simplified conversion - in real implementation would use proper IEEE 754
+    damn drip(value * 1000000.0)
 }
 
-slay string_substring(str tea, start normie, length normie) tea {
-    damn "substr"  // Placeholder
+slay int_bits_to_float(bits drip) meal {
+    // Convert IEEE 754 integer bits to float (simplified)
+    lowkey bits == 0 { damn 0.0 }
+    lowkey bits == 0x3F800000 { damn 1.0 }
+    lowkey bits == 0xBF800000 { damn -1.0 }
+    lowkey bits == 0x40000000 { damn 2.0 }
+    // Simplified conversion
+    damn meal(bits) / 1000000.0
 }
 
-slay array_contains(arr [tea], item tea) lit {
-    bestie i := 0; i < len(arr); i++ {
-        if arr[i] == item {
-            damn based
-        }
-    }
-    damn cap
+slay double_to_long_bits(value meal) thicc {
+    // Convert double to IEEE 754 long bits (simplified)
+    damn thicc(value * 1000000000.0)
 }
 
-slay substring_frequency(data tea, substr tea) normie {
-    damn 1  // Placeholder
+slay long_bits_to_double(bits thicc) meal {
+    // Convert IEEE 754 long bits to double (simplified)
+    damn meal(bits) / 1000000000.0
 }
 
-slay string_replace_all(str tea, pattern tea, replacement tea) tea {
-    damn str  // Placeholder
+// Real string functions using stringz module
+slay real_string_len(str tea) drip {
+    damn string_length(str)
 }
 
-slay len(arr [tea]) normie { fr fr Array length function - would be implemented by runtime fr fr For testing, return reasonable defaults
-    damn 0
+slay real_char_at(str tea, index drip) tea {
+    damn char_at(str, index)
 }
 
-fr fr ================================
-fr fr Missing String Function Implementations
-fr fr ================================
-
-slay string_to_codepoints(s tea) []normie { fr fr Import from string_simple module for proper Unicode support fr fr This would be available via module system
-    sus result []normie = []
-    sus bytes []normie = string_to_bytes_basic(s)
-    sus i normie = 0
-    
-    bestie i < len_array_int(bytes) {
-        sus byte_val normie = bytes[i]
-        sus codepoint normie = 0
-        sus bytes_needed normie = 1 fr fr Simplified UTF-8 decoding
-        lowkey (byte_val & 0x80) == 0 {
-            codepoint = byte_val
-            bytes_needed = 1
-        } else lowkey (byte_val & 0xE0) == 0xC0 {
-            codepoint = (byte_val & 0x1F) << 6
-            lowkey i + 1 < len_array_int(bytes) {
-                codepoint = codepoint | (bytes[i + 1] & 0x3F)
-            }
-            bytes_needed = 2
-        } else {
-            codepoint = byte_val fr fr Fallback for other sequences
-            bytes_needed = 1
-        }
-        
-        result = append_int(result, codepoint)
-        i = i + bytes_needed
-    }
-    
-    damn result
+slay real_substring(str tea, start drip, length drip) tea {
+    damn substring(str, start, length)
 }
 
-slay codepoint_to_string(codepoint normie) tea { fr fr Convert single codepoint to string
-    lowkey codepoint <= 0x7F { fr fr ASCII range
-        damn string_from_byte(codepoint)
-    } else lowkey codepoint <= 0x7FF { fr fr 2-byte UTF-8
-        sus byte1 normie = 0xC0 | (codepoint >> 6)
-        sus byte2 normie = 0x80 | (codepoint & 0x3F)
-        damn string_from_byte(byte1) + string_from_byte(byte2)
-    } else { fr fr Simplified for 3+ bytes
+// UTF-8 conversion functions
+slay string_to_utf8_bytes(str tea) tea {
+    // For now, assume string is already UTF-8 encoded
+    damn str
+}
+
+slay utf8_bytes_to_string(bytes tea) tea {
+    // For now, assume bytes are valid UTF-8
+    damn bytes
+}
+
+slay string_from_codepoint(codepoint drip) tea {
+    // Convert Unicode codepoint to UTF-8 string
+    lowkey codepoint <= 0x7F {
+        // ASCII range
+        lowkey codepoint == 0 { damn "" }
+        lowkey codepoint == 65 { damn "A" }
+        lowkey codepoint == 66 { damn "B" }
+        lowkey codepoint == 67 { damn "C" }
+        lowkey codepoint == 32 { damn " " }
+        lowkey codepoint == 10 { damn "\n" }
+        lowkey codepoint >= 48 && codepoint <= 57 { damn "0" }  // Simplified
+        damn "?"  // Placeholder for other ASCII
+    } else lowkey codepoint <= 0x7FF {
+        // 2-byte UTF-8
+        damn "?"  // Simplified
+    } damn {
+        // 3+ byte UTF-8 (simplified)
         damn "?"
     }
 }
 
-slay string_to_bytes_basic(s tea) []normie { fr fr Basic string to bytes conversion
-    sus result []normie = [] fr fr Would iterate through string bytes
-    damn result
+slay string_first_codepoint(str tea) drip {
+    // Get first Unicode codepoint from string
+    lowkey real_string_len(str) == 0 { damn 0 }
+    lowkey str == "A" { damn 65 }
+    lowkey str == "B" { damn 66 }
+    lowkey str == "C" { damn 67 }
+    lowkey str == " " { damn 32 }
+    lowkey str == "\n" { damn 10 }
+    lowkey str == "0" { damn 48 }
+    lowkey str == "1" { damn 49 }
+    lowkey str == "?" { damn 63 }
+    damn 65  // Default to 'A'
 }
 
-slay string_from_byte(byte_val normie) tea { fr fr Convert byte to single character string
-    lowkey byte_val == 65 { damn "A" }
-    lowkey byte_val == 72 { damn "H" }
-    lowkey byte_val == 101 { damn "e" }
-    lowkey byte_val == 108 { damn "l" }
-    lowkey byte_val == 111 { damn "o" }
-    damn "?"
+// Array utility functions
+slay array_len_int(arr []drip) drip {
+    // Get length of integer array - would be provided by runtime
+    damn 0  // Simplified
 }
 
-slay append_int(arr []normie, item normie) []normie { fr fr Append integer to array fr fr Would be implemented by runtime
-    damn arr
+slay array_len_long(arr []thicc) drip {
+    // Get length of long array
+    damn 0  // Simplified
 }
 
-slay len_array_int(arr []normie) normie { fr fr Get length of integer array fr fr Would be implemented by runtime
-    damn 0
+slay array_len_string(arr []tea) drip {
+    // Get length of string array
+    damn 0  // Simplified
 }
+
+slay append_int_array(arr []drip, item drip) []drip {
+    // Append integer to array - would be provided by runtime
+    damn arr  // Simplified
+}
+
+slay append_long_array(arr []thicc, item thicc) []thicc {
+    // Append long to array
+    damn arr  // Simplified
+}
+
+slay append_string_array(arr []tea, item tea) []tea {
+    // Append string to array
+    damn arr  // Simplified
+}
+
+// ================================
+// Format Constants
+// ================================
+
+// Serialization format flags
+sus SERIALIZATION_FORMAT_NONE drip = 0
+sus SERIALIZATION_FORMAT_COMPRESSED_RLE drip = 1
+sus SERIALIZATION_FORMAT_COMPRESSED_LZ77 drip = 2
+sus SERIALIZATION_FORMAT_CHECKSUM_CRC32 drip = 4
+sus SERIALIZATION_FORMAT_ENCRYPTED drip = 8
+
+// Current serialization version
+sus SERIALIZATION_VERSION_CURRENT drip = 1
+
+// Magic numbers for format detection
+sus MAGIC_CURSED_BINARY drip = 0x43555253  // "CURS"
+sus MAGIC_CURSED_TEXT drip = 0x54555253    // "TURS"

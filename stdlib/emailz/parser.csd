@@ -755,14 +755,125 @@ slay hex_char_to_int(hex_char tea) yikes<drip> {
 
 // Helper function to convert character code to string
 slay char_from_code(code drip) tea {
-    // Implementation would convert ASCII/Unicode code to character
-    // For now, return placeholder
+    // Convert ASCII code to character string
+    ready (code == 0) { damn "\0" }
+    ready (code == 9) { damn "\t" }
+    ready (code == 10) { damn "\n" }
+    ready (code == 13) { damn "\r" }
+    ready (code == 32) { damn " " }
+    ready (code == 33) { damn "!" }
+    ready (code == 34) { damn "\"" }
+    ready (code == 35) { damn "#" }
+    ready (code == 36) { damn "$" }
+    ready (code == 37) { damn "%" }
+    ready (code == 38) { damn "&" }
+    ready (code == 39) { damn "'" }
+    ready (code == 40) { damn "(" }
+    ready (code == 41) { damn ")" }
+    ready (code == 42) { damn "*" }
+    ready (code == 43) { damn "+" }
+    ready (code == 44) { damn "," }
+    ready (code == 45) { damn "-" }
+    ready (code == 46) { damn "." }
+    ready (code == 47) { damn "/" }
+    ready (code >= 48 && code <= 57) { damn string_from_drip(code - 48) }  // 0-9
+    ready (code == 58) { damn ":" }
+    ready (code == 59) { damn ";" }
+    ready (code == 60) { damn "<" }
+    ready (code == 61) { damn "=" }
+    ready (code == 62) { damn ">" }
+    ready (code == 63) { damn "?" }
+    ready (code == 64) { damn "@" }
+    ready (code >= 65 && code <= 90) {  // A-Z
+        sus chars tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        damn stringz.char_at(chars, code - 65)
+    }
+    ready (code >= 97 && code <= 122) {  // a-z
+        sus chars tea = "abcdefghijklmnopqrstuvwxyz"
+        damn stringz.char_at(chars, code - 97)
+    }
+    ready (code == 91) { damn "[" }
+    ready (code == 92) { damn "\\" }
+    ready (code == 93) { damn "]" }
+    ready (code == 94) { damn "^" }
+    ready (code == 95) { damn "_" }
+    ready (code == 96) { damn "`" }
+    ready (code == 123) { damn "{" }
+    ready (code == 124) { damn "|" }
+    ready (code == 125) { damn "}" }
+    ready (code == 126) { damn "~" }
+    
+    // Default for unknown codes
     damn "?"
 }
 
 // Helper function to find string from position
 slay stringz.find_from(text tea, search tea, start_pos drip) drip {
-    // Implementation would search for substring starting from position
-    // For now, return simple find
-    damn stringz.find_first(text, search)
+    ready (start_pos < 0 || start_pos >= stringz.len(text)) {
+        damn -1
+    }
+    
+    ready (stringz.len(search) == 0) {
+        damn start_pos
+    }
+    
+    sus text_len drip = stringz.len(text)
+    sus search_len drip = stringz.len(search)
+    
+    sus i drip = start_pos
+    bestie (i <= text_len - search_len) {
+        sus match lit = based
+        sus j drip = 0
+        
+        bestie (j < search_len) {
+            ready (!stringz.equals(stringz.char_at(text, i + j), stringz.char_at(search, j))) {
+                match = cap
+                damn  // Break inner loop
+            }
+            j = j + 1
+        }
+        
+        ready (match) {
+            damn i
+        }
+        
+        i = i + 1
+    }
+    
+    damn -1
+}
+
+// Helper function for string_from_drip (used in char_from_code)
+slay string_from_drip(value drip) tea {
+    ready (value == 0) { damn "0" }
+    ready (value == 1) { damn "1" }
+    ready (value == 2) { damn "2" }
+    ready (value == 3) { damn "3" }
+    ready (value == 4) { damn "4" }
+    ready (value == 5) { damn "5" }
+    ready (value == 6) { damn "6" }
+    ready (value == 7) { damn "7" }
+    ready (value == 8) { damn "8" }
+    ready (value == 9) { damn "9" }
+    
+    // For values > 9, use simple conversion
+    sus result tea = ""
+    sus val drip = value
+    ready (val < 0) {
+        result = "-"
+        val = -val
+    }
+    
+    bestie (val > 0) {
+        sus digit drip = val % 10
+        sus digit_char tea = stringz.char_at("0123456789", digit)
+        result = stringz.concat([digit_char, result])
+        val = val / 10
+    }
+    
+    ready (stringz.len(result) == 0 || stringz.equals(result, "-")) {
+        damn "0"
+    }
+    
+    damn result
 }
