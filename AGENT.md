@@ -887,6 +887,82 @@ valgrind --leak-check=full --error-exitcode=1 \
 - **Diagnostics**: Comprehensive error reporting and performance profiling
 - **Scalability**: Support for thousands of concurrent connections
 
+### Standard Library Development Guide ✅
+
+#### Essential Stdlib Testing Commands
+```bash
+# Core stdlib validation workflow
+./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd    # Full stdlib test suite
+./zig-out/bin/cursed-zig test_module.csd                  # Individual module test
+echo 'yeet "testz"; assert_eq_int(2+2, 4)' > test.csd && ./zig-out/bin/cursed-zig test.csd
+
+# Memory safety for stdlib modules (mandatory)
+valgrind --leak-check=full --error-exitcode=1 \
+  ./zig-out/bin/cursed-zig stdlib_module_test.csd
+
+# Concurrent module stress testing
+valgrind --tool=helgrind ./zig-out/bin/cursed-zig concurrency_test.csd
+valgrind --tool=drd ./zig-out/bin/cursed-zig channel_test.csd
+```
+
+#### Memory Safety Validation Insights
+1. **Arena Allocator Pattern**: Always use arena allocators for stdlib modules to prevent leaks
+2. **Critical Commands**: Run `valgrind --error-exitcode=1` after any stdlib changes
+3. **Channel Safety**: Use `valgrind --tool=helgrind` for concurrency modules to catch race conditions
+4. **Zero-Leak Policy**: Any memory leak in stdlib testing means the module is not production-ready
+5. **Stack Overflow Detection**: Large data structures require stack overflow testing
+
+#### Reliable Build Patterns for Stdlib
+```bash
+# Stdlib development build sequence (guaranteed working)
+zig build                                    # Always start with clean build
+./zig-out/bin/cursed-zig basic_test.csd    # Test basic language features first
+./zig-out/bin/cursed-zig stdlib_test.csd   # Then test specific stdlib module
+
+# Build troubleshooting for stdlib issues
+rm -rf zig-cache/ zig-out/ && zig build    # Clean rebuild fixes 90% of stdlib issues
+zig build -Doptimize=Debug                  # Use debug builds for stdlib development
+```
+
+#### Concurrent Module Testing Patterns
+```bash
+# Channel operation testing (critical for concurrenz module)
+echo 'yeet "concurrenz"; sus ch = make_channel(); go { ch <- 42 }; vibez.spill(<-ch)' > channel_test.csd
+./zig-out/bin/cursed-zig channel_test.csd
+valgrind --tool=helgrind ./zig-out/bin/cursed-zig channel_test.csd
+
+# Goroutine stress testing
+./zig-out/bin/cursed-zig goroutine_stress_test.csd       # Run stress test
+valgrind --tool=massif ./zig-out/bin/cursed-zig goroutine_stress_test.csd  # Memory usage
+
+# Deadlock prevention validation
+timeout 30s ./zig-out/bin/cursed-zig concurrent_test.csd || echo "Deadlock detected"
+```
+
+#### New Stdlib Module Validation Process
+```bash
+# Step 1: Basic functionality test
+echo 'yeet "new_module"; basic_function_test()' > basic_module_test.csd
+./zig-out/bin/cursed-zig basic_module_test.csd
+
+# Step 2: Memory safety validation (mandatory)
+valgrind --leak-check=full --show-leak-kinds=all \
+  --error-exitcode=1 ./zig-out/bin/cursed-zig basic_module_test.csd
+
+# Step 3: Integration with comprehensive test
+./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd
+
+# Step 4: Performance baseline (for production modules)
+./zig-out/bin/cursed-zig --benchmark module_performance_test.csd
+```
+
+#### Key Stdlib Development Insights
+1. **Module Loading**: Test module import before implementing functions - `yeet "module_name"` must work first
+2. **Error Handling**: All stdlib functions must use proper `yikes`/`fam` error handling patterns
+3. **Type Safety**: Stdlib modules should never use unsafe operations or raw pointers
+4. **Concurrent Safety**: Any module touching channels/goroutines needs helgrind validation
+5. **Production Readiness**: Module must pass comprehensive stdlib test to be production-ready
+
 ### Next Steps for Contributors ✅
 
 #### Development Areas

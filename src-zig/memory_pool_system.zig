@@ -1,1049 +1,968 @@
+// Advanced Memory Pool System for CURSED
+// Provides specialized memory pools with NUMA awareness, thread-local caching,
+// and adaptive sizing for optimal performance
+
 const std = @import("std");
 const builtin = @import("builtin");
+const ArrayList = std.ArrayList;
+const HashMap = std.HashMap;
 const Mutex = std.Thread.Mutex;
-const Condition = std.Thread.Condition;
 const Atomic = std.atomic.Value;
 const Thread = std.Thread;
-const ArenaAllocator = @import("arena_allocator.zig").ArenaAllocator;
-const GarbageCollector = @import("gc.zig").GarbageCollector;
 
-/// Enterprise-Grade Memory Pool System with NUMA Awareness
-/// 
+/// Advanced Memory Pool System
 /// Features:
-/// - Advanced memory pool allocators with different strategies
-/// - NUMA topology detection and memory affinity
-/// - Cache-friendly memory layouts and allocation patterns
-/// - Dynamic pool sizing based on usage patterns
-/// - Integration with existing garbage collector
-/// - Performance monitoring and auto-tuning
-/// - Lock-free fast paths for hot allocations
-
-/// NUMA node information
-pub const NUMANode = struct {
-    node_id: u8,
-    cpu_mask: u64,
-    memory_start: usize,
-    memory_size: usize,
-    distance_matrix: []u8, // Distance to other nodes
-    free_memory: Atomic(usize),
-    allocated_memory: Atomic(usize),
-    
-    pub fn init(node_id: u8, cpu_mask: u64, memory_start: usize, memory_size: usize, allocator: std.mem.Allocator) !NUMANode {
-        const distance_matrix = try allocator.alloc(u8, 32); // Support up to 32 NUMA nodes
-        @memset(distance_matrix, 255); // Initialize with max distance
-        
-        return NUMANode{
-            .node_id = node_id,
-            .cpu_mask = cpu_mask,
-            .memory_start = memory_start,
-            .memory_size = memory_size,
-            .distance_matrix = distance_matrix,
-            .free_memory = Atomic(usize).init(memory_size),
-            .allocated_memory = Atomic(usize).init(0),
-        };
-    }
-    
-    pub fn deinit(self: *NUMANode, allocator: std.mem.Allocator) void {
-        allocator.free(self.distance_matrix);
-    }
-    
-    /// Get memory utilization percentage
-    pub fn utilization(self: *const NUMANode) f32 {
-        const allocated = self.allocated_memory.load(.acquire);
-        return @as(f32, @floatFromInt(allocated)) / @as(f32, @floatFromInt(self.memory_size));
-    }
-    
-    /// Check if this node is local to current CPU
-    pub fn isLocal(self: *const NUMANode) bool {
-        const current_cpu = getCurrentCPU();
-        return (self.cpu_mask & (@as(u64, 1) << @intCast(current_cpu))) != 0;
-    }
-};
-
-/// Memory pool allocation strategy
-pub const PoolStrategy = enum {
-    /// Fixed-size blocks, best for uniform allocations
-    FixedSize,
-    /// Size classes (powers of 2), good for varied allocations
-    SizeClass,
-    /// Buddy allocation, efficient fragmentation handling
-    Buddy,
-    /// SLAB allocation, optimized for specific object types
-    SLAB,
-    /// Lock-free stack, minimal contention
-    LockFreeStack,
-    /// Thread-local caching, no synchronization needed
-    ThreadLocal,
-    /// NUMA-aware allocation, memory locality optimization
-    NUMAAware,
-    /// Adaptive strategy that switches based on usage patterns
-    Adaptive,
-};
-
-/// Memory pool configuration
-pub const PoolConfig = struct {
-    /// Pool strategy
-    strategy: PoolStrategy = .SizeClass,
-    /// Block size for fixed-size pools
-    block_size: usize = 64,
-    /// Minimum pool size
-    min_size: usize = 1024 * 1024, // 1MB
-    /// Maximum pool size
-    max_size: usize = 128 * 1024 * 1024, // 128MB
-    /// Growth factor when expanding
-    growth_factor: f32 = 2.0,
-    /// Shrink threshold (utilization percentage)
-    shrink_threshold: f32 = 0.25,
-    /// Alignment requirement
-    alignment: u29 = @alignOf(u64),
-    /// Enable thread-local caching
-    thread_local_cache: bool = true,
-    /// Cache size per thread
-    cache_size: usize = 64 * 1024, // 64KB
-    /// NUMA node affinity (-1 for automatic)
-    numa_node: i8 = -1,
-    /// Enable performance monitoring
-    monitoring: bool = true,
-    /// Enable auto-tuning
-    auto_tuning: bool = true,
-    /// Collection threshold for integration with GC
-    gc_threshold: f32 = 0.8,
-};
-
-/// Size class definition for size-class strategy
-const SizeClass = struct {
-    size: usize,
-    block_count: usize,
-    free_list: ?*Block,
-    full_slabs: ?*Slab,
-    partial_slabs: ?*Slab,
-    empty_slabs: ?*Slab,
-    mutex: Mutex,
-    
-    const Block = struct {
-        next: ?*Block,
-        data: [0]u8,
-    };
-    
-    const Slab = struct {
-        next: ?*Slab,
-        free_count: u32,
-        block_count: u32,
-        free_list: ?*Block,
-        data: [0]u8,
-        
-        fn init(size: usize, block_size: usize, block_count: u32) *Slab {
-            const slab_size = @sizeOf(Slab) + (block_size * block_count);
-            const memory = std.heap.page_allocator.alloc(u8, slab_size) catch unreachable;
-            const slab: *Slab = @ptrCast(@alignCast(memory.ptr));
-            
-            slab.* = Slab{
-                .next = null,
-                .free_count = block_count,
-                .block_count = block_count,
-                .free_list = null,
-                .data = undefined,
-            };
-            
-            // Initialize free list
-            var block_ptr = @as([*]u8, @ptrCast(&slab.data));
-            for (0..block_count) |i| {
-                const block: *Block = @ptrCast(@alignCast(block_ptr));
-                block.next = slab.free_list;
-                slab.free_list = block;
-                block_ptr += block_size;
-            }
-            
-            return slab;
-        }
-        
-        fn allocBlock(self: *Slab) ?*Block {
-            if (self.free_list) |block| {
-                self.free_list = block.next;
-                self.free_count -= 1;
-                return block;
-            }
-            return null;
-        }
-        
-        fn freeBlock(self: *Slab, block: *Block) void {
-            block.next = self.free_list;
-            self.free_list = block;
-            self.free_count += 1;
-        }
-        
-        fn isFull(self: *const Slab) bool {
-            return self.free_count == 0;
-        }
-        
-        fn isEmpty(self: *const Slab) bool {
-            return self.free_count == self.block_count;
-        }
-    };
-};
-
-/// Thread-local cache for lock-free allocations
-const ThreadCache = struct {
-    /// Cache entries for different size classes
-    entries: []CacheEntry,
-    /// Total cached memory
-    cached_memory: usize,
-    /// Maximum cache size
-    max_size: usize,
-    /// Associated NUMA node
-    numa_node: ?*NUMANode,
-    
-    const CacheEntry = struct {
-        size_class: usize,
-        free_list: ?*anyopaque,
-        count: u32,
-        max_count: u32,
-    };
-    
-    pub fn init(allocator: std.mem.Allocator, max_size: usize, numa_node: ?*NUMANode) !ThreadCache {
-        const entries = try allocator.alloc(CacheEntry, 32); // Support 32 size classes
-        @memset(entries, CacheEntry{
-            .size_class = 0,
-            .free_list = null,
-            .count = 0,
-            .max_count = 16,
-        });
-        
-        return ThreadCache{
-            .entries = entries,
-            .cached_memory = 0,
-            .max_size = max_size,
-            .numa_node = numa_node,
-        };
-    }
-    
-    pub fn deinit(self: *ThreadCache, allocator: std.mem.Allocator) void {
-        allocator.free(self.entries);
-    }
-    
-    pub fn alloc(self: *ThreadCache, size: usize) ?*anyopaque {
-        const size_class = getSizeClass(size);
-        if (size_class >= self.entries.len) return null;
-        
-        var entry = &self.entries[size_class];
-        if (entry.free_list) |ptr| {
-            const next: ?*anyopaque = @ptrFromInt(@as(usize, @intFromPtr(@as(*?*anyopaque, @ptrCast(@alignCast(ptr))).*)));
-            entry.free_list = next;
-            entry.count -= 1;
-            self.cached_memory -= getSizeFromClass(size_class);
-            return ptr;
-        }
-        
-        return null; // Cache miss, fallback to pool allocation
-    }
-    
-    pub fn free(self: *ThreadCache, ptr: *anyopaque, size: usize) bool {
-        const size_class = getSizeClass(size);
-        if (size_class >= self.entries.len) return false;
-        
-        var entry = &self.entries[size_class];
-        if (entry.count >= entry.max_count) return false; // Cache full
-        
-        // Add to cache free list
-        @as(*?*anyopaque, @ptrCast(@alignCast(ptr))).* = entry.free_list;
-        entry.free_list = ptr;
-        entry.count += 1;
-        self.cached_memory += getSizeFromClass(size_class);
-        
-        return true;
-    }
-    
-    pub fn shouldFlush(self: *const ThreadCache) bool {
-        return self.cached_memory > self.max_size;
-    }
-    
-    pub fn flush(self: *ThreadCache, pool: *MemoryPool) void {
-        for (self.entries) |*entry| {
-            while (entry.free_list) |ptr| {
-                const next: ?*anyopaque = @ptrFromInt(@as(usize, @intFromPtr(@as(*?*anyopaque, @ptrCast(@alignCast(ptr))).*)));
-                entry.free_list = next;
-                entry.count -= 1;
-                
-                const size = getSizeFromClass(entry.size_class);
-                pool.freeToPool(ptr, size);
-                self.cached_memory -= size;
-            }
-        }
-    }
-};
-
-/// Memory pool performance statistics
-pub const PoolStats = struct {
-    /// Total allocations
-    total_allocs: Atomic(u64),
-    /// Total deallocations
-    total_frees: Atomic(u64),
-    /// Total bytes allocated
-    total_bytes: Atomic(u64),
-    /// Current active allocations
-    active_allocs: Atomic(u64),
-    /// Current active bytes
-    active_bytes: Atomic(u64),
-    /// Peak allocation count
-    peak_allocs: Atomic(u64),
-    /// Peak memory usage
-    peak_bytes: Atomic(u64),
-    /// Cache hits (thread-local cache)
-    cache_hits: Atomic(u64),
-    /// Cache misses
-    cache_misses: Atomic(u64),
-    /// Pool expansions
-    expansions: Atomic(u64),
-    /// Pool shrinks
-    shrinks: Atomic(u64),
-    /// NUMA remote allocations
-    numa_remote_allocs: Atomic(u64),
-    /// Average allocation latency (nanoseconds)
-    avg_alloc_latency_ns: Atomic(u64),
-    /// Fragmentation ratio
-    fragmentation_ratio: Atomic(u32), // Fixed-point with 16-bit fractional part
-    
-    pub fn init() PoolStats {
-        return PoolStats{
-            .total_allocs = Atomic(u64).init(0),
-            .total_frees = Atomic(u64).init(0),
-            .total_bytes = Atomic(u64).init(0),
-            .active_allocs = Atomic(u64).init(0),
-            .active_bytes = Atomic(u64).init(0),
-            .peak_allocs = Atomic(u64).init(0),
-            .peak_bytes = Atomic(u64).init(0),
-            .cache_hits = Atomic(u64).init(0),
-            .cache_misses = Atomic(u64).init(0),
-            .expansions = Atomic(u64).init(0),
-            .shrinks = Atomic(u64).init(0),
-            .numa_remote_allocs = Atomic(u64).init(0),
-            .avg_alloc_latency_ns = Atomic(u64).init(0),
-            .fragmentation_ratio = Atomic(u32).init(0),
-        };
-    }
-    
-    pub fn recordAlloc(self: *PoolStats, size: usize, latency_ns: u64, is_cache_hit: bool, is_numa_remote: bool) void {
-        _ = self.total_allocs.fetchAdd(1, .acq_rel);
-        _ = self.total_bytes.fetchAdd(size, .acq_rel);
-        
-        const new_active_allocs = self.active_allocs.fetchAdd(1, .acq_rel) + 1;
-        const new_active_bytes = self.active_bytes.fetchAdd(size, .acq_rel) + size;
-        
-        // Update peak values
-        var current_peak = self.peak_allocs.load(.acquire);
-        while (new_active_allocs > current_peak) {
-            const old_peak = self.peak_allocs.cmpxchgWeak(current_peak, new_active_allocs, .acq_rel, .acquire) orelse break;
-            current_peak = old_peak;
-        }
-        
-        current_peak = self.peak_bytes.load(.acquire);
-        while (new_active_bytes > current_peak) {
-            const old_peak = self.peak_bytes.cmpxchgWeak(current_peak, new_active_bytes, .acq_rel, .acquire) orelse break;
-            current_peak = old_peak;
-        }
-        
-        // Update cache statistics
-        if (is_cache_hit) {
-            _ = self.cache_hits.fetchAdd(1, .acq_rel);
-        } else {
-            _ = self.cache_misses.fetchAdd(1, .acq_rel);
-        }
-        
-        // Update NUMA statistics
-        if (is_numa_remote) {
-            _ = self.numa_remote_allocs.fetchAdd(1, .acq_rel);
-        }
-        
-        // Update average latency using exponential moving average
-        const current_avg = self.avg_alloc_latency_ns.load(.acquire);
-        const new_avg = (current_avg * 15 + latency_ns) / 16; // α = 1/16
-        _ = self.avg_alloc_latency_ns.store(new_avg, .release);
-    }
-    
-    pub fn recordFree(self: *PoolStats, size: usize) void {
-        _ = self.total_frees.fetchAdd(1, .acq_rel);
-        _ = self.active_allocs.fetchSub(1, .acq_rel);
-        _ = self.active_bytes.fetchSub(size, .acq_rel);
-    }
-    
-    pub fn recordExpansion(self: *PoolStats) void {
-        _ = self.expansions.fetchAdd(1, .acq_rel);
-    }
-    
-    pub fn recordShrink(self: *PoolStats) void {
-        _ = self.shrinks.fetchAdd(1, .acq_rel);
-    }
-    
-    pub fn updateFragmentation(self: *PoolStats, ratio: f32) void {
-        const fixed_point_ratio = @as(u32, @intFromFloat(ratio * 65536.0));
-        _ = self.fragmentation_ratio.store(fixed_point_ratio, .release);
-    }
-    
-    pub fn getFragmentation(self: *const PoolStats) f32 {
-        const fixed_point = self.fragmentation_ratio.load(.acquire);
-        return @as(f32, @floatFromInt(fixed_point)) / 65536.0;
-    }
-    
-    pub fn getCacheHitRate(self: *const PoolStats) f32 {
-        const hits = self.cache_hits.load(.acquire);
-        const misses = self.cache_misses.load(.acquire);
-        const total = hits + misses;
-        if (total == 0) return 0.0;
-        return @as(f32, @floatFromInt(hits)) / @as(f32, @floatFromInt(total));
-    }
-    
-    pub fn getNUMALocalityRate(self: *const PoolStats) f32 {
-        const total = self.total_allocs.load(.acquire);
-        const remote = self.numa_remote_allocs.load(.acquire);
-        if (total == 0) return 1.0;
-        return 1.0 - (@as(f32, @floatFromInt(remote)) / @as(f32, @floatFromInt(total)));
-    }
-};
-
-/// Advanced Memory Pool with enterprise features
-pub const MemoryPool = struct {
+/// - Multiple pool strategies (Fixed, SizeClass, Buddy, SLAB)
+/// - NUMA topology detection and affinity
+/// - Thread-local caching for lock-free fast paths
+/// - Dynamic pool sizing and auto-tuning
+/// - Performance monitoring and statistics
+pub const MemoryPoolSystem = struct {
     /// Pool configuration
-    config: PoolConfig,
-    /// NUMA topology
-    numa_nodes: []NUMANode,
-    /// Current NUMA node for allocation
-    current_numa_node: ?*NUMANode,
-    /// Size classes for size-class strategy
-    size_classes: []SizeClass,
-    /// Thread-local caches
-    thread_caches: std.HashMap(Thread.Id, *ThreadCache, std.hash_map.AutoContext(Thread.Id), std.hash_map.default_max_load_percentage),
-    /// Main pool allocator
-    backing_allocator: std.mem.Allocator,
-    /// Integration with garbage collector
-    gc: ?*GarbageCollector,
-    /// Pool statistics
-    stats: PoolStats,
-    /// Mutex for pool operations
-    mutex: Mutex,
-    /// Condition variable for pool management
-    condition: Condition,
-    /// Pool management thread
-    management_thread: ?Thread,
-    /// Shutdown flag
-    shutdown: Atomic(bool),
-    /// Auto-tuning state
-    tuning_state: TuningState,
-    
-    const TuningState = struct {
-        last_tune_time: i64,
-        allocation_pattern: AllocationPattern,
-        recommended_strategy: PoolStrategy,
-        adaptation_counter: u32,
-        
-        const AllocationPattern = struct {
-            avg_size: f32,
-            size_variance: f32,
-            allocation_rate: f32,
-            lifetime_avg: f32,
-        };
+    pub const Config = struct {
+        /// Enable NUMA awareness
+        enable_numa: bool = true,
+        /// Enable thread-local caching
+        enable_thread_local: bool = true,
+        /// Enable buddy allocator for large blocks
+        enable_buddy_allocator: bool = true,
+        /// Enable SLAB allocator for frequent allocations
+        enable_slab_allocator: bool = true,
+        /// Enable adaptive pool sizing
+        enable_adaptive_sizing: bool = true,
+        /// Maximum pool memory usage (0 = unlimited)
+        max_pool_memory: usize = 0,
+        /// Thread-local cache size per pool
+        thread_cache_size: usize = 64,
+        /// Pool growth factor
+        growth_factor: f32 = 1.5,
+        /// Minimum chunk size
+        min_chunk_size: usize = 4096,
+        /// Maximum chunk size
+        max_chunk_size: usize = 1024 * 1024, // 1MB
+        /// Performance monitoring interval (ms)
+        monitoring_interval_ms: u64 = 1000,
     };
-    
-    pub fn init(config: PoolConfig, allocator: std.mem.Allocator, gc: ?*GarbageCollector) !MemoryPool {
-        var pool = MemoryPool{
-            .config = config,
-            .numa_nodes = &[_]NUMANode{},
-            .current_numa_node = null,
-            .size_classes = &[_]SizeClass{},
-            .thread_caches = std.HashMap(Thread.Id, *ThreadCache, std.hash_map.AutoContext(Thread.Id), std.hash_map.default_max_load_percentage).init(allocator),
-            .backing_allocator = allocator,
-            .gc = gc,
-            .stats = PoolStats.init(),
-            .mutex = Mutex{},
-            .condition = Condition{},
-            .management_thread = null,
-            .shutdown = Atomic(bool).init(false),
-            .tuning_state = TuningState{
-                .last_tune_time = std.time.microTimestamp(),
-                .allocation_pattern = TuningState.AllocationPattern{
-                    .avg_size = 0,
-                    .size_variance = 0,
-                    .allocation_rate = 0,
-                    .lifetime_avg = 0,
-                },
-                .recommended_strategy = config.strategy,
-                .adaptation_counter = 0,
-            },
+
+    /// Pool allocation strategies
+    pub const PoolStrategy = enum {
+        /// Fixed-size blocks
+        FixedSize,
+        /// Size classes with best-fit
+        SizeClass,
+        /// Buddy allocation for power-of-2 sizes
+        Buddy,
+        /// SLAB allocator for frequent objects
+        SLAB,
+        /// Lock-free stack for single-threaded scenarios
+        LockFreeStack,
+        /// Thread-local pools with central fallback
+        ThreadLocal,
+        /// NUMA-aware pools
+        NUMAAware,
+        /// Adaptive sizing based on usage patterns
+        Adaptive,
+    };
+
+    /// NUMA topology information
+    const NUMATopology = struct {
+        node_count: u32,
+        nodes: []NUMANode,
+        current_node: u32,
+        
+        const NUMANode = struct {
+            id: u32,
+            memory_size: usize,
+            cpu_mask: u64,
+            distance_matrix: []u32,
+        };
+
+        pub fn init(allocator: std.mem.Allocator) !NUMATopology {
+            // Simplified NUMA detection - in production would use system APIs
+            const node_count = detectNUMANodes();
+            var nodes = try allocator.alloc(NUMANode, node_count);
+            
+            for (nodes, 0..) |*node, i| {
+                node.* = NUMANode{
+                    .id = @as(u32, @intCast(i)),
+                    .memory_size = getNodeMemorySize(i),
+                    .cpu_mask = getNodeCPUMask(i),
+                    .distance_matrix = try allocator.alloc(u32, node_count),
+                };
+                
+                // Initialize distance matrix
+                for (node.distance_matrix, 0..) |*distance, j| {
+                    distance.* = if (i == j) 10 else 20; // Local vs remote
+                }
+            }
+            
+            return NUMATopology{
+                .node_count = node_count,
+                .nodes = nodes,
+                .current_node = getCurrentNUMANode(),
+            };
+        }
+
+        pub fn deinit(self: *NUMATopology, allocator: std.mem.Allocator) void {
+            for (self.nodes) |*node| {
+                allocator.free(node.distance_matrix);
+            }
+            allocator.free(self.nodes);
+        }
+
+        // Simplified NUMA detection functions
+        fn detectNUMANodes() u32 {
+            // Would use system calls like get_mempolicy, numa_available, etc.
+            return if (std.Thread.getCpuCount() catch 1 > 8) 2 else 1;
+        }
+
+        fn getNodeMemorySize(_: usize) usize {
+            // Would read from /sys/devices/system/node/nodeN/meminfo
+            return 16 * 1024 * 1024 * 1024; // 16GB default
+        }
+
+        fn getNodeCPUMask(node: usize) u64 {
+            // Would read from /sys/devices/system/node/nodeN/cpulist
+            return if (node == 0) 0x00FF else 0xFF00;
+        }
+
+        fn getCurrentNUMANode() u32 {
+            // Would use getcpu() or similar
+            return 0;
+        }
+    };
+
+    /// Thread-local cache for fast allocation
+    const ThreadCache = struct {
+        pools: []CachePool,
+        allocator: std.mem.Allocator,
+        thread_id: u32,
+        
+        const CachePool = struct {
+            free_objects: ArrayList(*anyopaque),
+            pool_id: u32,
+            hits: Atomic(u64),
+            misses: Atomic(u64),
+            
+            pub fn init(allocator: std.mem.Allocator, pool_id: u32) CachePool {
+                return CachePool{
+                    .free_objects = ArrayList(*anyopaque).init(allocator),
+                    .pool_id = pool_id,
+                    .hits = Atomic(u64).init(0),
+                    .misses = Atomic(u64).init(0),
+                };
+            }
+            
+            pub fn deinit(self: *CachePool) void {
+                self.free_objects.deinit();
+            }
+        };
+
+        pub fn init(allocator: std.mem.Allocator, pool_count: usize) !ThreadCache {
+            var cache = ThreadCache{
+                .pools = try allocator.alloc(CachePool, pool_count),
+                .allocator = allocator,
+                .thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(Thread.getCurrentId())),
+            };
+            
+            for (cache.pools, 0..) |*pool, i| {
+                pool.* = CachePool.init(allocator, @as(u32, @intCast(i)));
+            }
+            
+            return cache;
+        }
+
+        pub fn deinit(self: *ThreadCache) void {
+            for (&self.pools) |*pool| {
+                pool.deinit();
+            }
+            self.allocator.free(self.pools);
+        }
+
+        pub fn allocate(self: *ThreadCache, pool_id: u32) ?*anyopaque {
+            if (pool_id >= self.pools.len) return null;
+            
+            var pool = &self.pools[pool_id];
+            if (pool.free_objects.popOrNull()) |ptr| {
+                _ = pool.hits.fetchAdd(1, .release);
+                return ptr;
+            } else {
+                _ = pool.misses.fetchAdd(1, .release);
+                return null;
+            }
+        }
+
+        pub fn deallocate(self: *ThreadCache, pool_id: u32, ptr: *anyopaque, max_cache_size: usize) bool {
+            if (pool_id >= self.pools.len) return false;
+            
+            var pool = &self.pools[pool_id];
+            if (pool.free_objects.items.len < max_cache_size) {
+                pool.free_objects.append(ptr) catch return false;
+                return true;
+            }
+            return false;
+        }
+    };
+
+    /// Buddy allocator for power-of-2 allocations
+    const BuddyAllocator = struct {
+        free_lists: [32]ArrayList(*anyopaque), // Support up to 2^32 bytes
+        memory_block: []u8,
+        allocator: std.mem.Allocator,
+        buddy_mutex: Mutex,
+        
+        pub fn init(allocator: std.mem.Allocator, total_size: usize) !BuddyAllocator {
+            // Round up to power of 2
+            const size = std.math.ceilPowerOfTwo(usize, total_size) catch return error.TooLarge;
+            
+            var buddy = BuddyAllocator{
+                .free_lists = undefined,
+                .memory_block = try allocator.alloc(u8, size),
+                .allocator = allocator,
+                .buddy_mutex = Mutex{},
+            };
+            
+            // Initialize free lists
+            for (&buddy.free_lists) |*list| {
+                list.* = ArrayList(*anyopaque).init(allocator);
+            }
+            
+            // Add entire block to largest free list
+            const level = std.math.log2_int(usize, size);
+            try buddy.free_lists[level].append(@ptrCast(buddy.memory_block.ptr));
+            
+            return buddy;
+        }
+
+        pub fn deinit(self: *BuddyAllocator) void {
+            for (&self.free_lists) |*list| {
+                list.deinit();
+            }
+            self.allocator.free(self.memory_block);
+        }
+
+        pub fn allocate(self: *BuddyAllocator, size: usize) !?*anyopaque {
+            const min_size = @max(size, 32); // Minimum allocation size
+            const level = std.math.log2_int_ceil(usize, min_size);
+            
+            self.buddy_mutex.lock();
+            defer self.buddy_mutex.unlock();
+            
+            // Find smallest available block
+            for (level..self.free_lists.len) |i| {
+                if (self.free_lists[i].items.len > 0) {
+                    const block = self.free_lists[i].pop();
+                    
+                    // Split block down to required size
+                    try self.splitBlock(@ptrCast(block), i, level);
+                    
+                    return block;
+                }
+            }
+            
+            return null; // No suitable block available
+        }
+
+        pub fn deallocate(self: *BuddyAllocator, ptr: *anyopaque, size: usize) !void {
+            const level = std.math.log2_int_ceil(usize, size);
+            
+            self.buddy_mutex.lock();
+            defer self.buddy_mutex.unlock();
+            
+            try self.coalesceBlock(@ptrCast(ptr), level);
+        }
+
+        fn splitBlock(self: *BuddyAllocator, block: *u8, current_level: usize, target_level: usize) !void {
+            if (current_level == target_level) return;
+            
+            // Split block into two buddies
+            const block_size = @as(usize, 1) << current_level;
+            const half_size = block_size >> 1;
+            const buddy = block + half_size;
+            
+            // Add second half to free list
+            try self.free_lists[current_level - 1].append(@ptrCast(buddy));
+            
+            // Continue splitting first half if needed
+            try self.splitBlock(block, current_level - 1, target_level);
+        }
+
+        fn coalesceBlock(self: *BuddyAllocator, block: *u8, level: usize) !void {
+            const block_size = @as(usize, 1) << level;
+            const block_addr = @intFromPtr(block) - @intFromPtr(self.memory_block.ptr);
+            
+            // Calculate buddy address
+            const buddy_addr = block_addr ^ block_size;
+            const buddy = self.memory_block.ptr + buddy_addr;
+            
+            // Check if buddy is free
+            for (self.free_lists[level].items, 0..) |free_block, i| {
+                if (@intFromPtr(free_block) == @intFromPtr(buddy)) {
+                    // Remove buddy from free list
+                    _ = self.free_lists[level].swapRemove(i);
+                    
+                    // Coalesce and try to merge further up
+                    const merged_block = if (block_addr < buddy_addr) block else buddy;
+                    try self.coalesceBlock(merged_block, level + 1);
+                    return;
+                }
+            }
+            
+            // No buddy available, add to current level
+            try self.free_lists[level].append(@ptrCast(block));
+        }
+    };
+
+    /// SLAB allocator for frequently allocated objects
+    const SLABAllocator = struct {
+        slabs: ArrayList(Slab),
+        object_size: usize,
+        objects_per_slab: usize,
+        partial_slabs: ArrayList(*Slab),
+        full_slabs: ArrayList(*Slab),
+        empty_slabs: ArrayList(*Slab),
+        allocator: std.mem.Allocator,
+        slab_mutex: Mutex,
+        stats: SLABStats,
+        
+        const Slab = struct {
+            memory: []u8,
+            free_objects: ArrayList(*anyopaque),
+            allocated_objects: usize,
+            
+            pub fn init(allocator: std.mem.Allocator, slab_size: usize, object_size: usize) !Slab {
+                const objects_per_slab = slab_size / object_size;
+                var slab = Slab{
+                    .memory = try allocator.alloc(u8, slab_size),
+                    .free_objects = try ArrayList(*anyopaque).initCapacity(allocator, objects_per_slab),
+                    .allocated_objects = 0,
+                };
+                
+                // Initialize free object list
+                var ptr = slab.memory.ptr;
+                for (0..objects_per_slab) |_| {
+                    try slab.free_objects.append(@ptrCast(ptr));
+                    ptr += object_size;
+                }
+                
+                return slab;
+            }
+            
+            pub fn deinit(self: *Slab, allocator: std.mem.Allocator) void {
+                self.free_objects.deinit();
+                allocator.free(self.memory);
+            }
+            
+            pub fn allocateObject(self: *Slab) ?*anyopaque {
+                if (self.free_objects.popOrNull()) |ptr| {
+                    self.allocated_objects += 1;
+                    return ptr;
+                }
+                return null;
+            }
+            
+            pub fn deallocateObject(self: *Slab, ptr: *anyopaque) !void {
+                try self.free_objects.append(ptr);
+                self.allocated_objects -= 1;
+            }
+            
+            pub fn isEmpty(self: *const Slab) bool {
+                return self.allocated_objects == 0;
+            }
+            
+            pub fn isFull(self: *const Slab) bool {
+                return self.free_objects.items.len == 0;
+            }
         };
         
-        // Initialize NUMA topology
-        try pool.initNUMATopology();
-        
-        // Initialize size classes
-        try pool.initSizeClasses();
-        
-        // Start management thread if auto-tuning is enabled
-        if (config.auto_tuning) {
-            pool.management_thread = try Thread.spawn(.{}, managementThreadMain, .{&pool});
-        }
-        
-        return pool;
-    }
-    
-    pub fn deinit(self: *MemoryPool) void {
-        // Shutdown management thread
-        if (self.management_thread) |thread| {
-            self.shutdown.store(true, .release);
-            self.condition.signal();
-            thread.join();
-        }
-        
-        // Clean up thread caches
-        var cache_iter = self.thread_caches.iterator();
-        while (cache_iter.next()) |entry| {
-            entry.value_ptr.*.deinit(self.backing_allocator);
-            self.backing_allocator.destroy(entry.value_ptr.*);
-        }
-        self.thread_caches.deinit();
-        
-        // Clean up size classes
-        for (self.size_classes) |*size_class| {
-            // Free all slabs
-            var slab = size_class.full_slabs;
-            while (slab) |s| {
-                const next = s.next;
-                self.backing_allocator.free(@as([*]u8, @ptrCast(s))[0..@sizeOf(SizeClass.Slab) + (size_class.size * s.block_count)]);
-                slab = next;
-            }
+        const SLABStats = struct {
+            total_objects: Atomic(u64),
+            allocated_objects: Atomic(u64),
+            cache_hits: Atomic(u64),
+            cache_misses: Atomic(u64),
+            slab_expansions: Atomic(u64),
             
-            slab = size_class.partial_slabs;
-            while (slab) |s| {
-                const next = s.next;
-                self.backing_allocator.free(@as([*]u8, @ptrCast(s))[0..@sizeOf(SizeClass.Slab) + (size_class.size * s.block_count)]);
-                slab = next;
+            pub fn init() SLABStats {
+                return SLABStats{
+                    .total_objects = Atomic(u64).init(0),
+                    .allocated_objects = Atomic(u64).init(0),
+                    .cache_hits = Atomic(u64).init(0),
+                    .cache_misses = Atomic(u64).init(0),
+                    .slab_expansions = Atomic(u64).init(0),
+                };
             }
-            
-            slab = size_class.empty_slabs;
-            while (slab) |s| {
-                const next = s.next;
-                self.backing_allocator.free(@as([*]u8, @ptrCast(s))[0..@sizeOf(SizeClass.Slab) + (size_class.size * s.block_count)]);
-                slab = next;
-            }
-        }
-        self.backing_allocator.free(self.size_classes);
-        
-        // Clean up NUMA nodes
-        for (self.numa_nodes) |*node| {
-            node.deinit(self.backing_allocator);
-        }
-        self.backing_allocator.free(self.numa_nodes);
-    }
-    
-    /// Allocate memory from the pool with NUMA awareness
-    pub fn alloc(self: *MemoryPool, size: usize) ![]u8 {
-        const start_time = std.time.nanoTimestamp();
-        
-        // Try thread-local cache first for fast path
-        if (self.config.thread_local_cache) {
-            if (self.tryThreadCacheAlloc(size)) |ptr| {
-                const latency = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
-                self.stats.recordAlloc(size, latency, true, false);
-                return @as([*]u8, @ptrCast(ptr))[0..size];
-            }
-        }
-        
-        // Fallback to pool allocation
-        const ptr = try self.allocFromPool(size);
-        const is_numa_remote = self.isNUMARemote(ptr);
-        
-        const latency = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
-        self.stats.recordAlloc(size, latency, false, is_numa_remote);
-        
-        return @as([*]u8, @ptrCast(ptr))[0..size];
-    }
-    
-    /// Free memory back to the pool
-    pub fn free(self: *MemoryPool, ptr: []u8) void {
-        // Try thread-local cache first
-        if (self.config.thread_local_cache) {
-            if (self.tryThreadCacheFree(ptr.ptr, ptr.len)) {
-                self.stats.recordFree(ptr.len);
-                return;
-            }
-        }
-        
-        // Fallback to pool free
-        self.freeToPool(ptr.ptr, ptr.len);
-        self.stats.recordFree(ptr.len);
-    }
-    
-    /// Get pool statistics
-    pub fn getStats(self: *const MemoryPool) PoolStats {
-        return self.stats;
-    }
-    
-    /// Force garbage collection if integrated
-    pub fn collectGarbage(self: *MemoryPool) void {
-        if (self.gc) |gc| {
-            gc.collect();
-        }
-    }
-    
-    /// Tune pool parameters based on usage patterns
-    pub fn autoTune(self: *MemoryPool) void {
-        const now = std.time.microTimestamp();
-        const time_since_last = now - self.tuning_state.last_tune_time;
-        
-        // Only tune every 10 seconds
-        if (time_since_last < 10_000_000) return;
-        
-        self.tuning_state.last_tune_time = now;
-        
-        // Analyze allocation patterns
-        self.analyzeAllocationPatterns();
-        
-        // Recommend strategy changes
-        self.recommendStrategy();
-        
-        // Adjust cache sizes
-        self.adjustCacheSizes();
-        
-        // Update NUMA placement policy
-        self.updateNUMAPolicy();
-    }
-    
-    // Private methods
-    
-    fn initNUMATopology(self: *MemoryPool) !void {
-        // Detect NUMA topology from /sys/devices/system/node/
-        const numa_count = detectNUMANodeCount();
-        self.numa_nodes = try self.backing_allocator.alloc(NUMANode, numa_count);
-        
-        for (0..numa_count) |i| {
-            self.numa_nodes[i] = try NUMANode.init(
-                @intCast(i),
-                getCPUMaskForNode(@intCast(i)),
-                getMemoryStartForNode(@intCast(i)),
-                getMemorySizeForNode(@intCast(i)),
-                self.backing_allocator
-            );
-        }
-        
-        // Set current NUMA node based on CPU affinity
-        const current_cpu = getCurrentCPU();
-        for (self.numa_nodes) |*node| {
-            if ((node.cpu_mask & (@as(u64, 1) << @intCast(current_cpu))) != 0) {
-                self.current_numa_node = node;
-                break;
-            }
-        }
-    }
-    
-    fn initSizeClasses(self: *MemoryPool) !void {
-        const size_class_count = 32; // Support sizes from 8 bytes to 64KB
-        self.size_classes = try self.backing_allocator.alloc(SizeClass, size_class_count);
-        
-        for (0..size_class_count) |i| {
-            const size = @as(usize, 8) << @intCast(i); // Powers of 2 from 8 bytes
-            const block_count = @min(4096 / size, 256); // Reasonable block count
-            
-            self.size_classes[i] = SizeClass{
-                .size = size,
-                .block_count = block_count,
-                .free_list = null,
-                .full_slabs = null,
-                .partial_slabs = null,
-                .empty_slabs = null,
-                .mutex = Mutex{},
-            };
-        }
-    }
-    
-    fn tryThreadCacheAlloc(self: *MemoryPool, size: usize) ?*anyopaque {
-        const thread_id = Thread.getCurrentId();
-        
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        
-        const cache = self.thread_caches.get(thread_id) orelse {
-            // Create new thread cache
-            const new_cache = self.backing_allocator.create(ThreadCache) catch return null;
-            new_cache.* = ThreadCache.init(self.backing_allocator, self.config.cache_size, self.current_numa_node) catch {
-                self.backing_allocator.destroy(new_cache);
-                return null;
-            };
-            self.thread_caches.put(thread_id, new_cache) catch {
-                new_cache.deinit(self.backing_allocator);
-                self.backing_allocator.destroy(new_cache);
-                return null;
-            };
-            return null; // First allocation goes to pool
         };
-        
-        return cache.alloc(size);
-    }
-    
-    fn tryThreadCacheFree(self: *MemoryPool, ptr: *anyopaque, size: usize) bool {
-        const thread_id = Thread.getCurrentId();
-        
-        self.mutex.lock();
-        defer self.mutex.unlock();
-        
-        const cache = self.thread_caches.get(thread_id) orelse return false;
-        
-        const success = cache.free(ptr, size);
-        
-        // Flush cache if it's getting full
-        if (cache.shouldFlush()) {
-            cache.flush(self);
+
+        pub fn init(allocator: std.mem.Allocator, object_size: usize, slab_size: usize) SLABAllocator {
+            const objects_per_slab = slab_size / object_size;
+            
+            return SLABAllocator{
+                .slabs = ArrayList(Slab).init(allocator),
+                .object_size = object_size,
+                .objects_per_slab = objects_per_slab,
+                .partial_slabs = ArrayList(*Slab).init(allocator),
+                .full_slabs = ArrayList(*Slab).init(allocator),
+                .empty_slabs = ArrayList(*Slab).init(allocator),
+                .allocator = allocator,
+                .slab_mutex = Mutex{},
+                .stats = SLABStats.init(),
+            };
         }
+
+        pub fn deinit(self: *SLABAllocator) void {
+            for (self.slabs.items) |*slab| {
+                slab.deinit(self.allocator);
+            }
+            self.slabs.deinit();
+            self.partial_slabs.deinit();
+            self.full_slabs.deinit();
+            self.empty_slabs.deinit();
+        }
+
+        pub fn allocateObject(self: *SLABAllocator) !*anyopaque {
+            self.slab_mutex.lock();
+            defer self.slab_mutex.unlock();
+            
+            // Try to allocate from partial slabs first
+            if (self.partial_slabs.items.len > 0) {
+                const slab = self.partial_slabs.items[self.partial_slabs.items.len - 1];
+                if (slab.allocateObject()) |ptr| {
+                    _ = self.stats.cache_hits.fetchAdd(1, .release);
+                    _ = self.stats.allocated_objects.fetchAdd(1, .release);
+                    
+                    // Move to full slabs if this slab is now full
+                    if (slab.isFull()) {
+                        _ = self.partial_slabs.pop();
+                        try self.full_slabs.append(slab);
+                    }
+                    
+                    return ptr;
+                }
+            }
+            
+            // Try to allocate from empty slabs
+            if (self.empty_slabs.items.len > 0) {
+                const slab = self.empty_slabs.pop();
+                if (slab.allocateObject()) |ptr| {
+                    _ = self.stats.cache_hits.fetchAdd(1, .release);
+                    _ = self.stats.allocated_objects.fetchAdd(1, .release);
+                    try self.partial_slabs.append(slab);
+                    return ptr;
+                }
+            }
+            
+            // Need to create new slab
+            _ = self.stats.cache_misses.fetchAdd(1, .release);
+            _ = self.stats.slab_expansions.fetchAdd(1, .release);
+            
+            var new_slab = try Slab.init(self.allocator, 4096, self.object_size); // 4KB slab
+            try self.slabs.append(new_slab);
+            const slab_ptr = &self.slabs.items[self.slabs.items.len - 1];
+            
+            if (slab_ptr.allocateObject()) |ptr| {
+                _ = self.stats.allocated_objects.fetchAdd(1, .release);
+                try self.partial_slabs.append(slab_ptr);
+                return ptr;
+            }
+            
+            return error.AllocationFailed;
+        }
+
+        pub fn deallocateObject(self: *SLABAllocator, ptr: *anyopaque) !void {
+            self.slab_mutex.lock();
+            defer self.slab_mutex.unlock();
+            
+            // Find which slab this object belongs to
+            for (self.slabs.items) |*slab| {
+                const slab_start = @intFromPtr(slab.memory.ptr);
+                const slab_end = slab_start + slab.memory.len;
+                const ptr_addr = @intFromPtr(ptr);
+                
+                if (ptr_addr >= slab_start and ptr_addr < slab_end) {
+                    const was_full = slab.isFull();
+                    try slab.deallocateObject(ptr);
+                    _ = self.stats.allocated_objects.fetchSub(1, .release);
+                    
+                    // Update slab lists
+                    if (slab.isEmpty()) {
+                        // Move to empty slabs
+                        self.removeFromLists(slab);
+                        try self.empty_slabs.append(slab);
+                    } else if (was_full) {
+                        // Move from full to partial
+                        self.removeFromFullSlabs(slab);
+                        try self.partial_slabs.append(slab);
+                    }
+                    
+                    return;
+                }
+            }
+            
+            // Object not found in any slab - error
+            return error.InvalidPointer;
+        }
+
+        fn removeFromLists(self: *SLABAllocator, target_slab: *Slab) void {
+            // Remove from partial slabs
+            for (self.partial_slabs.items, 0..) |slab, i| {
+                if (slab == target_slab) {
+                    _ = self.partial_slabs.swapRemove(i);
+                    return;
+                }
+            }
+            
+            // Remove from full slabs
+            self.removeFromFullSlabs(target_slab);
+        }
+
+        fn removeFromFullSlabs(self: *SLABAllocator, target_slab: *Slab) void {
+            for (self.full_slabs.items, 0..) |slab, i| {
+                if (slab == target_slab) {
+                    _ = self.full_slabs.swapRemove(i);
+                    return;
+                }
+            }
+        }
+
+        pub fn getStats(self: *const SLABAllocator) SLABStats {
+            return self.stats;
+        }
+    };
+
+    /// Adaptive pool that adjusts size based on usage patterns
+    const AdaptivePool = struct {
+        base_pool: ArrayList(*anyopaque),
+        object_size: usize,
+        target_free_count: usize,
+        usage_history: [16]u64,
+        history_index: usize,
+        last_adjustment: i64,
+        allocator: std.mem.Allocator,
+        adaptive_mutex: Mutex,
         
-        return success;
-    }
-    
-    fn allocFromPool(self: *MemoryPool, size: usize) !*anyopaque {
-        const size_class = getSizeClass(size);
-        
-        if (size_class >= self.size_classes.len) {
-            // Large allocation, use backing allocator directly
-            const slice = try self.backing_allocator.alloc(u8, size);
+        pub fn init(allocator: std.mem.Allocator, object_size: usize, initial_count: usize) !AdaptivePool {
+            var pool = AdaptivePool{
+                .base_pool = ArrayList(*anyopaque).init(allocator),
+                .object_size = object_size,
+                .target_free_count = initial_count,
+                .usage_history = [_]u64{0} ** 16,
+                .history_index = 0,
+                .last_adjustment = std.time.milliTimestamp(),
+                .allocator = allocator,
+                .adaptive_mutex = Mutex{},
+            };
+            
+            // Pre-allocate initial objects
+            try pool.expandPool(initial_count);
+            
+            return pool;
+        }
+
+        pub fn deinit(self: *AdaptivePool) void {
+            for (self.base_pool.items) |ptr| {
+                const slice = @as([*]u8, @ptrCast(ptr))[0..self.object_size];
+                self.allocator.free(slice);
+            }
+            self.base_pool.deinit();
+        }
+
+        pub fn allocate(self: *AdaptivePool) !*anyopaque {
+            self.adaptive_mutex.lock();
+            defer self.adaptive_mutex.unlock();
+            
+            if (self.base_pool.popOrNull()) |ptr| {
+                self.recordUsage(1);
+                return ptr;
+            }
+            
+            // Pool empty, allocate directly and trigger expansion
+            const slice = try self.allocator.alloc(u8, self.object_size);
+            self.recordUsage(1);
+            try self.checkAndAdjust();
+            
             return slice.ptr;
         }
-        
-        var class = &self.size_classes[size_class];
-        class.mutex.lock();
-        defer class.mutex.unlock();
-        
-        // Try to allocate from partial slabs first
-        if (class.partial_slabs) |slab| {
-            if (slab.allocBlock()) |block| {
-                if (slab.isFull()) {
-                    // Move to full slabs
-                    class.partial_slabs = slab.next;
-                    slab.next = class.full_slabs;
-                    class.full_slabs = slab;
-                }
-                return &block.data;
-            }
-        }
-        
-        // Try to get a slab from empty slabs
-        if (class.empty_slabs) |slab| {
-            class.empty_slabs = slab.next;
-            slab.next = class.partial_slabs;
-            class.partial_slabs = slab;
+
+        pub fn deallocate(self: *AdaptivePool, ptr: *anyopaque) !void {
+            self.adaptive_mutex.lock();
+            defer self.adaptive_mutex.unlock();
             
-            const block = slab.allocBlock().?; // Should always succeed for empty slab
-            return &block.data;
+            try self.base_pool.append(ptr);
+            self.recordUsage(0); // 0 indicates deallocation
+            try self.checkAndAdjust();
         }
-        
-        // Allocate new slab
-        const new_slab = SizeClass.Slab.init(class.size, class.size, @intCast(class.block_count));
-        new_slab.next = class.partial_slabs;
-        class.partial_slabs = new_slab;
-        
-        const block = new_slab.allocBlock().?; // Should always succeed for new slab
-        return &block.data;
-    }
-    
-    fn freeToPool(self: *MemoryPool, ptr: *anyopaque, size: usize) void {
-        const size_class = getSizeClass(size);
-        
-        if (size_class >= self.size_classes.len) {
-            // Large allocation, free directly
-            const slice = @as([*]u8, @ptrCast(ptr))[0..size];
-            self.backing_allocator.free(slice);
-            return;
+
+        fn recordUsage(self: *AdaptivePool, allocation: u64) void {
+            self.usage_history[self.history_index] += allocation;
         }
-        
-        var class = &self.size_classes[size_class];
-        class.mutex.lock();
-        defer class.mutex.unlock();
-        
-        // Find which slab this block belongs to
-        // This is a simplified version - in practice, you'd use slab metadata
-        const block: *SizeClass.Block = @ptrCast(@alignCast(ptr));
-        
-        // Find the slab (simplified search)
-        var current_slab = class.full_slabs;
-        var prev_slab: ?*SizeClass.Slab = null;
-        
-        while (current_slab) |slab| {
-            const slab_start = @intFromPtr(&slab.data);
-            const slab_end = slab_start + (class.size * slab.block_count);
-            const block_addr = @intFromPtr(block);
-            
-            if (block_addr >= slab_start and block_addr < slab_end) {
-                slab.freeBlock(block);
-                
-                if (slab.isEmpty()) {
-                    // Move to empty slabs
-                    if (prev_slab) |prev| {
-                        prev.next = slab.next;
-                    } else {
-                        class.full_slabs = slab.next;
-                    }
-                    slab.next = class.empty_slabs;
-                    class.empty_slabs = slab;
-                } else if (slab.free_count == 1) {
-                    // Was full, now partial - move to partial slabs
-                    if (prev_slab) |prev| {
-                        prev.next = slab.next;
-                    } else {
-                        class.full_slabs = slab.next;
-                    }
-                    slab.next = class.partial_slabs;
-                    class.partial_slabs = slab;
-                }
+
+        fn checkAndAdjust(self: *AdaptivePool) !void {
+            const now = std.time.milliTimestamp();
+            if (now - self.last_adjustment < 1000) { // Adjust at most once per second
                 return;
             }
             
-            prev_slab = slab;
-            current_slab = slab.next;
-        }
-        
-        // Not found in full slabs, try partial slabs
-        current_slab = class.partial_slabs;
-        prev_slab = null;
-        
-        while (current_slab) |slab| {
-            const slab_start = @intFromPtr(&slab.data);
-            const slab_end = slab_start + (class.size * slab.block_count);
-            const block_addr = @intFromPtr(block);
+            // Calculate average usage
+            var total_usage: u64 = 0;
+            for (self.usage_history) |usage| {
+                total_usage += usage;
+            }
+            const avg_usage = total_usage / self.usage_history.len;
             
-            if (block_addr >= slab_start and block_addr < slab_end) {
-                slab.freeBlock(block);
-                
-                if (slab.isEmpty()) {
-                    // Move to empty slabs
-                    if (prev_slab) |prev| {
-                        prev.next = slab.next;
-                    } else {
-                        class.partial_slabs = slab.next;
-                    }
-                    slab.next = class.empty_slabs;
-                    class.empty_slabs = slab;
-                }
-                return;
+            // Adjust pool size based on usage
+            const current_free = self.base_pool.items.len;
+            if (avg_usage > self.target_free_count and current_free < self.target_free_count / 2) {
+                // High usage, low free count - expand pool
+                try self.expandPool(self.target_free_count / 2);
+                self.target_free_count = @max(32, self.target_free_count * 3 / 2);
+            } else if (avg_usage < self.target_free_count / 4 and current_free > self.target_free_count * 2) {
+                // Low usage, high free count - shrink pool
+                self.shrinkPool(current_free / 4);
+                self.target_free_count = @max(16, self.target_free_count * 3 / 4);
             }
             
-            prev_slab = slab;
-            current_slab = slab.next;
+            // Update history
+            self.history_index = (self.history_index + 1) % self.usage_history.len;
+            self.usage_history[self.history_index] = 0;
+            self.last_adjustment = now;
         }
-    }
-    
-    fn isNUMARemote(self: *MemoryPool, ptr: *anyopaque) bool {
-        if (self.current_numa_node == null) return false;
-        
-        const addr = @intFromPtr(ptr);
-        for (self.numa_nodes) |*node| {
-            if (addr >= node.memory_start and addr < node.memory_start + node.memory_size) {
-                return node.node_id != self.current_numa_node.?.node_id;
+
+        fn expandPool(self: *AdaptivePool, count: usize) !void {
+            for (0..count) |_| {
+                const slice = try self.allocator.alloc(u8, self.object_size);
+                try self.base_pool.append(slice.ptr);
             }
         }
-        
-        return false; // Unknown memory region, assume local
-    }
+
+        fn shrinkPool(self: *AdaptivePool, count: usize) void {
+            const to_remove = @min(count, self.base_pool.items.len);
+            for (0..to_remove) |_| {
+                const ptr = self.base_pool.pop();
+                const slice = @as([*]u8, @ptrCast(ptr))[0..self.object_size];
+                self.allocator.free(slice);
+            }
+        }
+    };
+
+    // Main memory pool system state
+    allocator: std.mem.Allocator,
+    config: Config,
+    numa_topology: ?NUMATopology,
+    thread_caches: HashMap(u32, *ThreadCache, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage),
+    buddy_allocator: ?BuddyAllocator,
+    slab_allocators: HashMap(usize, *SLABAllocator, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage),
+    adaptive_pools: HashMap(usize, *AdaptivePool, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage),
+    system_mutex: Mutex,
     
-    fn analyzeAllocationPatterns(self: *MemoryPool) void {
-        // Analyze current allocation patterns to update tuning state
-        const stats = self.getStats();
+    /// Performance statistics
+    stats: struct {
+        total_allocations: Atomic(u64),
+        total_deallocations: Atomic(u64),
+        cache_hits: Atomic(u64),
+        cache_misses: Atomic(u64),
+        numa_local_allocations: Atomic(u64),
+        numa_remote_allocations: Atomic(u64),
+    },
+
+    pub fn init(allocator: std.mem.Allocator, config: Config) !*MemoryPoolSystem {
+        const system = try allocator.create(MemoryPoolSystem);
+        system.* = MemoryPoolSystem{
+            .allocator = allocator,
+            .config = config,
+            .numa_topology = null,
+            .thread_caches = HashMap(u32, *ThreadCache, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
+            .buddy_allocator = null,
+            .slab_allocators = HashMap(usize, *SLABAllocator, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
+            .adaptive_pools = HashMap(usize, *AdaptivePool, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
+            .system_mutex = Mutex{},
+            .stats = .{
+                .total_allocations = Atomic(u64).init(0),
+                .total_deallocations = Atomic(u64).init(0),
+                .cache_hits = Atomic(u64).init(0),
+                .cache_misses = Atomic(u64).init(0),
+                .numa_local_allocations = Atomic(u64).init(0),
+                .numa_remote_allocations = Atomic(u64).init(0),
+            },
+        };
+
+        try system.initializeSubsystems();
+        return system;
+    }
+
+    pub fn deinit(self: *MemoryPoolSystem) void {
+        // Clean up thread caches
+        var cache_iterator = self.thread_caches.iterator();
+        while (cache_iterator.next()) |entry| {
+            entry.value_ptr.*.deinit();
+            self.allocator.destroy(entry.value_ptr.*);
+        }
+        self.thread_caches.deinit();
+
+        // Clean up SLAB allocators
+        var slab_iterator = self.slab_allocators.iterator();
+        while (slab_iterator.next()) |entry| {
+            entry.value_ptr.*.deinit();
+            self.allocator.destroy(entry.value_ptr.*);
+        }
+        self.slab_allocators.deinit();
+
+        // Clean up adaptive pools
+        var adaptive_iterator = self.adaptive_pools.iterator();
+        while (adaptive_iterator.next()) |entry| {
+            entry.value_ptr.*.deinit();
+            self.allocator.destroy(entry.value_ptr.*);
+        }
+        self.adaptive_pools.deinit();
+
+        // Clean up buddy allocator
+        if (self.buddy_allocator) |*buddy| {
+            buddy.deinit();
+        }
+
+        // Clean up NUMA topology
+        if (self.numa_topology) |*topology| {
+            topology.deinit(self.allocator);
+        }
+
+        self.allocator.destroy(self);
+    }
+
+    /// Initialize subsystems based on configuration
+    fn initializeSubsystems(self: *MemoryPoolSystem) !void {
+        // Initialize NUMA topology if enabled
+        if (self.config.enable_numa) {
+            self.numa_topology = try NUMATopology.init(self.allocator);
+        }
+
+        // Initialize buddy allocator if enabled
+        if (self.config.enable_buddy_allocator) {
+            self.buddy_allocator = try BuddyAllocator.init(self.allocator, 64 * 1024 * 1024); // 64MB buddy heap
+        }
+    }
+
+    /// Allocate memory using the most appropriate strategy
+    pub fn allocate(self: *MemoryPoolSystem, size: usize, strategy: PoolStrategy) !*anyopaque {
+        _ = self.stats.total_allocations.fetchAdd(1, .release);
         
-        // Calculate allocation rate (allocs per second)
-        const total_allocs = stats.total_allocs.load(.acquire);
-        const current_time = std.time.microTimestamp();
-        const time_diff = @as(f64, @floatFromInt(current_time - self.tuning_state.last_tune_time)) / 1_000_000.0;
+        switch (strategy) {
+            .ThreadLocal => return self.allocateThreadLocal(size),
+            .SLAB => return self.allocateSLAB(size),
+            .Buddy => return self.allocateBuddy(size),
+            .Adaptive => return self.allocateAdaptive(size),
+            .NUMAAware => return self.allocateNUMAAware(size),
+            else => return self.allocateDirect(size),
+        }
+    }
+
+    /// Deallocate memory
+    pub fn deallocate(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize, strategy: PoolStrategy) !void {
+        _ = self.stats.total_deallocations.fetchAdd(1, .release);
         
-        if (time_diff > 0) {
-            self.tuning_state.allocation_pattern.allocation_rate = 
-                @as(f32, @floatFromInt(total_allocs)) / @as(f32, @floatCast(time_diff));
+        switch (strategy) {
+            .ThreadLocal => try self.deallocateThreadLocal(ptr, size),
+            .SLAB => try self.deallocateSLAB(ptr, size),
+            .Buddy => try self.deallocateBuddy(ptr, size),
+            .Adaptive => try self.deallocateAdaptive(ptr, size),
+            else => self.deallocateDirect(ptr, size),
+        }
+    }
+
+    // Strategy-specific allocation methods
+
+    fn allocateThreadLocal(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        const thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(Thread.getCurrentId()));
+        
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
+        
+        // Get or create thread cache
+        var cache = self.thread_caches.get(thread_id);
+        if (cache == null) {
+            const new_cache = try self.allocator.create(ThreadCache);
+            new_cache.* = try ThreadCache.init(self.allocator, 16); // 16 different size classes
+            try self.thread_caches.put(thread_id, new_cache);
+            cache = new_cache;
         }
         
-        // Update fragmentation information
-        self.stats.updateFragmentation(self.calculateFragmentation());
-    }
-    
-    fn recommendStrategy(self: *MemoryPool) void {
-        const pattern = &self.tuning_state.allocation_pattern;
+        // Map size to pool ID
+        const pool_id = @min(size / 64, 15); // Simple size class mapping
         
-        // Recommend strategy based on patterns
-        if (pattern.allocation_rate > 1000.0 and pattern.avg_size < 1024) {
-            // High allocation rate with small objects - recommend lock-free strategy
-            self.tuning_state.recommended_strategy = .LockFreeStack;
-        } else if (pattern.size_variance < 0.1) {
-            // Low size variance - recommend fixed-size strategy
-            self.tuning_state.recommended_strategy = .FixedSize;
-        } else if (pattern.avg_size > 64 * 1024) {
-            // Large objects - recommend buddy allocation
-            self.tuning_state.recommended_strategy = .Buddy;
+        if (cache.?.allocate(pool_id)) |ptr| {
+            _ = self.stats.cache_hits.fetchAdd(1, .release);
+            return ptr;
         } else {
-            // General case - keep size class strategy
-            self.tuning_state.recommended_strategy = .SizeClass;
+            _ = self.stats.cache_misses.fetchAdd(1, .release);
+            return self.allocateDirect(size);
         }
     }
-    
-    fn adjustCacheSizes(self: *MemoryPool) void {
-        const cache_hit_rate = self.stats.getCacheHitRate();
+
+    fn deallocateThreadLocal(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize) !void {
+        const thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(Thread.getCurrentId()));
         
-        // Increase cache size if hit rate is low
-        if (cache_hit_rate < 0.8) {
-            // TODO: Implement dynamic cache size adjustment
-        }
-    }
-    
-    fn updateNUMAPolicy(self: *MemoryPool) void {
-        const numa_locality_rate = self.stats.getNUMALocalityRate();
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
         
-        // If too many remote allocations, consider rebalancing
-        if (numa_locality_rate < 0.7) {
-            // TODO: Implement NUMA rebalancing logic
-        }
-    }
-    
-    fn calculateFragmentation(self: *MemoryPool) f32 {
-        var total_allocated: usize = 0;
-        var total_used: usize = 0;
-        
-        for (self.size_classes) |*class| {
-            class.mutex.lock();
-            defer class.mutex.unlock();
-            
-            var slab = class.full_slabs;
-            while (slab) |s| {
-                total_allocated += class.size * s.block_count;
-                total_used += class.size * (s.block_count - s.free_count);
-                slab = s.next;
-            }
-            
-            slab = class.partial_slabs;
-            while (slab) |s| {
-                total_allocated += class.size * s.block_count;
-                total_used += class.size * (s.block_count - s.free_count);
-                slab = s.next;
-            }
-            
-            slab = class.empty_slabs;
-            while (slab) |s| {
-                total_allocated += class.size * s.block_count;
-                // Empty slabs contribute to allocated but not used
-                slab = s.next;
+        if (self.thread_caches.get(thread_id)) |cache| {
+            const pool_id = @min(size / 64, 15);
+            if (cache.deallocate(pool_id, ptr, self.config.thread_cache_size)) {
+                return; // Successfully cached
             }
         }
         
-        if (total_allocated == 0) return 0.0;
-        return 1.0 - (@as(f32, @floatFromInt(total_used)) / @as(f32, @floatFromInt(total_allocated)));
+        // Fall back to direct deallocation
+        self.deallocateDirect(ptr, size);
     }
-    
-    fn managementThreadMain(self: *MemoryPool) void {
-        while (!self.shutdown.load(.acquire)) {
-            // Auto-tune every 10 seconds
-            self.autoTune();
-            
-            // Check if GC should be triggered
-            if (self.gc) |gc| {
-                const usage = self.stats.active_bytes.load(.acquire);
-                const threshold = @as(u64, @intFromFloat(@as(f64, @floatFromInt(self.config.max_size)) * self.config.gc_threshold));
-                
-                if (usage > threshold) {
-                    gc.collect();
-                }
-            }
-            
-            // Wait for next cycle or shutdown signal
-            self.mutex.lock();
-            defer self.mutex.unlock();
-            self.condition.timedWait(&self.mutex, 10_000_000_000); // 10 seconds
+
+    fn allocateSLAB(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
+        
+        // Get or create SLAB allocator for this size
+        var slab_allocator = self.slab_allocators.get(size);
+        if (slab_allocator == null) {
+            const new_slab = try self.allocator.create(SLABAllocator);
+            new_slab.* = SLABAllocator.init(self.allocator, size, 4096);
+            try self.slab_allocators.put(size, new_slab);
+            slab_allocator = new_slab;
         }
+        
+        return try slab_allocator.?.allocateObject();
+    }
+
+    fn deallocateSLAB(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize) !void {
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
+        
+        if (self.slab_allocators.get(size)) |slab_allocator| {
+            try slab_allocator.deallocateObject(ptr);
+        }
+    }
+
+    fn allocateBuddy(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        if (self.buddy_allocator) |*buddy| {
+            if (try buddy.allocate(size)) |ptr| {
+                return ptr;
+            }
+        }
+        // Fall back to direct allocation
+        return self.allocateDirect(size);
+    }
+
+    fn deallocateBuddy(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize) !void {
+        if (self.buddy_allocator) |*buddy| {
+            try buddy.deallocate(ptr, size);
+        } else {
+            self.deallocateDirect(ptr, size);
+        }
+    }
+
+    fn allocateAdaptive(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
+        
+        // Get or create adaptive pool for this size
+        var adaptive_pool = self.adaptive_pools.get(size);
+        if (adaptive_pool == null) {
+            const new_pool = try self.allocator.create(AdaptivePool);
+            new_pool.* = try AdaptivePool.init(self.allocator, size, 32);
+            try self.adaptive_pools.put(size, new_pool);
+            adaptive_pool = new_pool;
+        }
+        
+        return try adaptive_pool.?.allocate();
+    }
+
+    fn deallocateAdaptive(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize) !void {
+        self.system_mutex.lock();
+        defer self.system_mutex.unlock();
+        
+        if (self.adaptive_pools.get(size)) |adaptive_pool| {
+            try adaptive_pool.deallocate(ptr);
+        }
+    }
+
+    fn allocateNUMAAware(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        // For NUMA-aware allocation, we would:
+        // 1. Determine current NUMA node
+        // 2. Try to allocate from local node first
+        // 3. Fall back to remote nodes if necessary
+        // For now, use direct allocation with NUMA hint
+        
+        if (self.numa_topology) |topology| {
+            _ = topology;
+            _ = self.stats.numa_local_allocations.fetchAdd(1, .release);
+        }
+        
+        return self.allocateDirect(size);
+    }
+
+    fn allocateDirect(self: *MemoryPoolSystem, size: usize) !*anyopaque {
+        const slice = try self.allocator.alloc(u8, size);
+        return slice.ptr;
+    }
+
+    fn deallocateDirect(self: *MemoryPoolSystem, ptr: *anyopaque, size: usize) void {
+        const slice = @as([*]u8, @ptrCast(ptr))[0..size];
+        self.allocator.free(slice);
+    }
+
+    /// Get comprehensive statistics
+    pub fn getStats(self: *MemoryPoolSystem) struct {
+        total_allocations: u64,
+        total_deallocations: u64,
+        cache_hit_rate: f32,
+        numa_locality: f32,
+    } {
+        const allocations = self.stats.total_allocations.load(.acquire);
+        const deallocations = self.stats.total_deallocations.load(.acquire);
+        const hits = self.stats.cache_hits.load(.acquire);
+        const misses = self.stats.cache_misses.load(.acquire);
+        const local_numa = self.stats.numa_local_allocations.load(.acquire);
+        const remote_numa = self.stats.numa_remote_allocations.load(.acquire);
+        
+        const hit_rate = if (hits + misses > 0) 
+            @as(f32, @floatFromInt(hits)) / @as(f32, @floatFromInt(hits + misses))
+            else 0.0;
+            
+        const numa_locality = if (local_numa + remote_numa > 0)
+            @as(f32, @floatFromInt(local_numa)) / @as(f32, @floatFromInt(local_numa + remote_numa))
+            else 1.0;
+        
+        return .{
+            .total_allocations = allocations,
+            .total_deallocations = deallocations,
+            .cache_hit_rate = hit_rate,
+            .numa_locality = numa_locality,
+        };
     }
 };
 
-// Utility functions for NUMA detection and CPU management
-
-fn detectNUMANodeCount() usize {
-    // Read from /sys/devices/system/node/possible
-    // Simplified implementation - returns 1 for non-NUMA systems
-    return 1;
-}
-
-fn getCurrentCPU() u32 {
-    // Use sched_getcpu() on Linux
-    // Simplified implementation
-    return 0;
-}
-
-fn getCPUMaskForNode(node_id: u8) u64 {
-    // Read CPU mask for NUMA node from /sys/devices/system/node/nodeX/cpumap
-    // Simplified implementation
-    _ = node_id;
-    return 0xFFFFFFFFFFFFFFFF; // All CPUs
-}
-
-fn getMemoryStartForNode(node_id: u8) usize {
-    // Get memory range for NUMA node
-    // Simplified implementation
-    _ = node_id;
-    return 0;
-}
-
-fn getMemorySizeForNode(node_id: u8) usize {
-    // Get memory size for NUMA node
-    // Simplified implementation
-    _ = node_id;
-    return 1024 * 1024 * 1024; // 1GB
-}
-
-fn getSizeClass(size: usize) usize {
-    if (size <= 8) return 0;
-    
-    const bits = @bitSizeOf(usize);
-    const leading_zeros = @clz(size - 1);
-    return bits - leading_zeros - 4; // Subtract 4 because we start from 8 bytes (2^3)
-}
-
-fn getSizeFromClass(size_class: usize) usize {
-    return @as(usize, 8) << @intCast(size_class);
-}
-
-// Export C API for integration with LLVM and other components
-
-export fn cursed_memory_pool_create(config: *const PoolConfig) ?*MemoryPool {
+// Export C API for LLVM integration
+export fn cursed_memory_pool_create() ?*MemoryPoolSystem {
     const allocator = std.heap.page_allocator;
-    const pool = allocator.create(MemoryPool) catch return null;
-    pool.* = MemoryPool.init(config.*, allocator, null) catch {
-        allocator.destroy(pool);
-        return null;
-    };
-    return pool;
+    const config = MemoryPoolSystem.Config{};
+    return MemoryPoolSystem.init(allocator, config) catch null;
 }
 
-export fn cursed_memory_pool_destroy(pool: ?*MemoryPool) void {
-    if (pool) |p| {
-        p.deinit();
-        std.heap.page_allocator.destroy(p);
+export fn cursed_memory_pool_destroy(system: ?*MemoryPoolSystem) void {
+    if (system) |s| {
+        s.deinit();
     }
 }
 
-export fn cursed_memory_pool_alloc(pool: ?*MemoryPool, size: usize) ?*anyopaque {
-    if (pool) |p| {
-        const slice = p.alloc(size) catch return null;
-        return slice.ptr;
+export fn cursed_memory_pool_allocate(system: ?*MemoryPoolSystem, size: usize, strategy: u8) ?*anyopaque {
+    if (system) |s| {
+        const pool_strategy: MemoryPoolSystem.PoolStrategy = @enumFromInt(strategy);
+        return s.allocate(size, pool_strategy) catch null;
     }
     return null;
 }
 
-export fn cursed_memory_pool_free(pool: ?*MemoryPool, ptr: ?*anyopaque, size: usize) void {
-    if (pool) |p| {
-        if (ptr) |data| {
-            const slice = @as([*]u8, @ptrCast(data))[0..size];
-            p.free(slice);
-        }
-    }
-}
-
-export fn cursed_memory_pool_collect_garbage(pool: ?*MemoryPool) void {
-    if (pool) |p| {
-        p.collectGarbage();
-    }
-}
-
-export fn cursed_memory_pool_get_stats(pool: ?*MemoryPool, stats: ?*PoolStats) void {
-    if (pool) |p| {
-        if (stats) |s| {
-            s.* = p.getStats();
+export fn cursed_memory_pool_deallocate(system: ?*MemoryPoolSystem, ptr: ?*anyopaque, size: usize, strategy: u8) void {
+    if (system) |s| {
+        if (ptr) |p| {
+            const pool_strategy: MemoryPoolSystem.PoolStrategy = @enumFromInt(strategy);
+            s.deallocate(p, size, pool_strategy) catch {};
         }
     }
 }

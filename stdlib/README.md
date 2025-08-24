@@ -14,6 +14,7 @@ The CURSED standard library is a comprehensive collection of modules providing e
 - **`process`** - Process spawning, execution, signals, environment variables
 - **`regex`** - Regular expression engine with full POSIX support
 - **`error_handling`** - Comprehensive error management and propagation
+- **`mimez`** - MIME type detection from extensions and content, Content-Type headers
 
 #### Data & Collections
 - **`collections`** - Vector, HashMap, LinkedList, Set, Stack, Queue, sorting algorithms
