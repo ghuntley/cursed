@@ -437,15 +437,61 @@ slay is_algorithm_allowed(algorithm tea, allowed_algorithms []tea) lit {
 }
 
 slay get_public_key_for_signature(signature PackageSignature, result VerificationResult) tea {
-    # In a real implementation, this would:
-    # 1. Look up key by ID in keyring
-    # 2. Fetch from keyserver if not found
-    # 3. Validate key authenticity
+    # Real public key lookup implementation
+    vibez.spill("Looking up public key for signature ID:", signature.public_key_id)
     
-    # For now, return a placeholder
-    result.verification_details = arrayz.append(result.verification_details,
-        "Public key lookup not fully implemented")
-    damn ""  # Simplified
+    # Strategy 1: Check local keyring first
+    sus local_key tea = lookup_local_keyring(signature.public_key_id)
+    ready (local_key != "") {
+        result.verification_details = arrayz.append(result.verification_details,
+            "Found public key in local keyring")
+        damn local_key
+    }
+    
+    # Strategy 2: Check embedded key in signature
+    ready (signature.signature_data != "" && stringz.contains(signature.signature_data, "-----BEGIN PUBLIC KEY-----")) {
+        sus embedded_key tea = extract_embedded_public_key(signature.signature_data)
+        ready (embedded_key != "") {
+            result.verification_details = arrayz.append(result.verification_details,
+                "Using embedded public key from signature")
+            damn embedded_key
+        }
+    }
+    
+    # Strategy 3: Fetch from well-known keyservers
+    sus keyservers []tea = [
+        "https://keys.cursedlang.org",
+        "https://keyserver.ubuntu.com",
+        "https://keys.openpgp.org"
+    ]
+    
+    bestie (sus i drip = 0; i < arrayz.len(keyservers); i = i + 1) {
+        sus keyserver tea = keyservers[i]
+        sus fetched_key tea = fetch_key_from_server(keyserver, signature.public_key_id)
+        ready (fetched_key != "") {
+            # Validate key before using
+            ready (validate_public_key_format(fetched_key)) {
+                # Cache for future use
+                cache_public_key(signature.public_key_id, fetched_key)
+                result.verification_details = arrayz.append(result.verification_details,
+                    "Retrieved public key from keyserver: " + keyserver)
+                damn fetched_key
+            }
+        }
+    }
+    
+    # Strategy 4: Check for well-known publisher keys
+    ready (signature.public_key_id != "") {
+        sus builtin_key tea = get_builtin_publisher_key(signature.public_key_id)
+        ready (builtin_key != "") {
+            result.verification_details = arrayz.append(result.verification_details,
+                "Using built-in publisher key")
+            damn builtin_key
+        }
+    }
+    
+    result.error_message = "Public key not found for signature ID: " + signature.public_key_id
+    damn ""
 }
 
 slay extract_email_from_author(author tea) tea {
@@ -506,6 +552,148 @@ slay create_package_signature(data tea, publisher_info PublisherInfo) PackageSig
 }
 
 # Validate security configuration
+# Real implementations for public key management
+slay lookup_local_keyring(key_id tea) tea {
+    # Look for key in local keyring directory (~/.cursed/keys/)
+    sus keyring_dir tea = filez.get_home_dir() + "/.cursed/keys"
+    ready (!filez.dir_exists(keyring_dir)) {
+        damn ""  # No local keyring
+    }
+    
+    # Try different key file formats
+    sus key_files []tea = [
+        keyring_dir + "/" + key_id + ".pem",
+        keyring_dir + "/" + key_id + ".pub",
+        keyring_dir + "/" + stringz.substring(key_id, 0, 8) + ".pem"  # Short key ID
+    ]
+    
+    bestie (sus i drip = 0; i < arrayz.len(key_files); i = i + 1) {
+        sus key_file tea = key_files[i]
+        ready (filez.file_exists(key_file)) {
+            sus key_data tea = filez.read_file(key_file)
+            ready (validate_public_key_format(key_data)) {
+                damn key_data
+            }
+        }
+    }
+    
+    damn ""
+}
+
+slay extract_embedded_public_key(signature_data tea) tea {
+    # Extract PEM-formatted public key from signature data
+    sus start_marker tea = "-----BEGIN PUBLIC KEY-----"
+    sus end_marker tea = "-----END PUBLIC KEY-----"
+    
+    sus start_pos drip = stringz.index_of(signature_data, start_marker)
+    ready (start_pos == -1) {
+        damn ""
+    }
+    
+    sus end_pos drip = stringz.index_of(signature_data, end_marker)
+    ready (end_pos == -1 || end_pos <= start_pos) {
+        damn ""
+    }
+    
+    sus key_data tea = stringz.substring(signature_data, start_pos, end_pos + stringz.len(end_marker))
+    damn key_data
+}
+
+slay fetch_key_from_server(keyserver tea, key_id tea) tea {
+    # Fetch public key from keyserver using HTTP
+    sus search_url tea = keyserver + "/pks/lookup?op=get&search=0x" + key_id
+    
+    # Create HTTP request
+    sus request HttpRequest = create_http_request("GET", search_url)
+    request = add_user_agent(request, "cursed-pkg/1.0.0 (key-fetcher)")
+    request = add_header(request, "Accept", "text/plain, application/pgp-keys")
+    
+    sus response HttpResponse = execute_http_request(request)
+    ready (!is_http_success(response)) {
+        vibez.spill("Failed to fetch key from", keyserver, "- status:", response.status_code)
+        damn ""
+    }
+    
+    # Parse response for PEM or ASCII-armored key
+    sus key_data tea = extract_key_from_response(response.body)
+    damn key_data
+}
+
+slay extract_key_from_response(response_body tea) tea {
+    # Look for PEM format first
+    ready (stringz.contains(response_body, "-----BEGIN PUBLIC KEY-----")) {
+        damn extract_embedded_public_key(response_body)
+    }
+    
+    # Look for ASCII-armored PGP key
+    ready (stringz.contains(response_body, "-----BEGIN PGP PUBLIC KEY BLOCK-----")) {
+        sus start_marker tea = "-----BEGIN PGP PUBLIC KEY BLOCK-----"
+        sus end_marker tea = "-----END PGP PUBLIC KEY BLOCK-----"
+        
+        sus start_pos drip = stringz.index_of(response_body, start_marker)
+        sus end_pos drip = stringz.index_of(response_body, end_marker)
+        
+        ready (start_pos != -1 && end_pos != -1 && end_pos > start_pos) {
+            damn stringz.substring(response_body, start_pos, end_pos + stringz.len(end_marker))
+        }
+    }
+    
+    damn ""  # No recognizable key format
+}
+
+slay validate_public_key_format(key_data tea) lit {
+    # Basic validation of public key format
+    ready (key_data == "") {
+        damn cap
+    }
+    
+    # Check for PEM format
+    ready (stringz.contains(key_data, "-----BEGIN PUBLIC KEY-----") && 
+           stringz.contains(key_data, "-----END PUBLIC KEY-----")) {
+        damn based
+    }
+    
+    # Check for PGP ASCII armor format  
+    ready (stringz.contains(key_data, "-----BEGIN PGP PUBLIC KEY BLOCK-----") &&
+           stringz.contains(key_data, "-----END PGP PUBLIC KEY BLOCK-----")) {
+        damn based
+    }
+    
+    # Check minimum key length (reasonable PEM key should be at least 200 chars)
+    ready (stringz.len(key_data) < 200) {
+        damn cap
+    }
+    
+    damn based
+}
+
+slay cache_public_key(key_id tea, key_data tea) {
+    sus keyring_dir tea = filez.get_home_dir() + "/.cursed/keys"
+    filez.create_dir_all(keyring_dir)
+    
+    sus key_file tea = keyring_dir + "/" + key_id + ".pem"
+    filez.write_file(key_file, key_data)
+    vibez.spill("Cached public key:", key_id)
+}
+
+slay get_builtin_publisher_key(key_id tea) tea {
+    # Built-in keys for official CURSED publishers
+    sus builtin_keys map<tea, tea> = {}
+    
+    # CURSED official signing key (example)
+    builtin_keys["cursed-official-2024"] = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----"
+    
+    # Core team key (example)
+    builtin_keys["cursed-core-team"] = "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...\n-----END PUBLIC KEY-----"
+    
+    # Look up by key ID
+    ready (builtin_keys[key_id] != "") {
+        damn builtin_keys[key_id]
+    }
+    
+    damn ""
+}
+
 slay validate_security_policy(policy SecurityPolicy) []tea {
     sus warnings []tea = []
     

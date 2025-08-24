@@ -298,29 +298,60 @@ slay trigger_reload_for_file(manager HotReloadManager, event ChangeEvent) HotRel
 fr fr ===== ADVANCED CHANGE DETECTION =====
 
 slay calculate_file_hash(file_path tea) tea {
-    fr fr Calculate content hash for change detection
+    fr fr Calculate content hash for change detection - CRC32-like algorithm
     ready (!file_exists(file_path)) {
         damn "file_not_found"
     }
     
     sus content tea = read_file_safe(file_path)
-    sus hash tea = simple_hash(content)
+    sus hash tea = crc32_hash(content)
     damn hash
 }
 
-slay simple_hash(content tea) tea {
-    fr fr Simple hash function for content comparison
+slay crc32_hash(content tea) tea {
+    fr fr CRC32-like hash function for reliable change detection
     sus length drip = string_length(content)
-    sus hash_value drip = 0
+    sus hash_value drip = 0xFFFFFFFF
+    
+    fr fr CRC32 polynomial (IEEE 802.3)
+    sus polynomial drip = 0xEDB88320
     
     sus i drip = 0
     bestie (i < length) {
-        sus char_code drip = char_to_number(substring(content, i, 1))
-        hash_value = (hash_value * 31 + char_code) % 1000000
+        sus byte_value drip = char_to_byte(string_char_at(content, i))
+        hash_value = hash_value ^ byte_value
+        
+        sus bit drip = 0
+        bestie (bit < 8) {
+            ready ((hash_value & 1) == 1) {
+                hash_value = (hash_value >> 1) ^ polynomial
+            } otherwise {
+                hash_value = hash_value >> 1
+            }
+            bit = bit + 1
+        }
+        
         i = i + 1
     }
     
-    damn number_to_string(normie(hash_value))
+    hash_value = hash_value ^ 0xFFFFFFFF
+    damn hex_to_string(hash_value)
+}
+
+slay simple_hash(content tea) tea {
+    fr fr Fallback simple hash function for content comparison
+    sus length drip = string_length(content)
+    sus hash_value drip = 5381  fr fr djb2 hash algorithm
+    
+    sus i drip = 0
+    bestie (i < length) {
+        sus char_code drip = char_to_byte(string_char_at(content, i))
+        hash_value = ((hash_value << 5) + hash_value) + char_code
+        hash_value = hash_value % 2147483647  fr fr Keep within 32-bit range
+        i = i + 1
+    }
+    
+    damn integer_to_string(hash_value)
 }
 
 slay get_file_size(file_path tea) drip {
@@ -334,8 +365,9 @@ slay get_file_size(file_path tea) drip {
 }
 
 slay get_current_timestamp() drip {
-    fr fr Get current timestamp in milliseconds
-    damn 1699123456789  fr fr Placeholder timestamp
+    fr fr Get current timestamp in milliseconds - real implementation
+    sus time_result SystemTime = system_current_time()
+    damn time_result.seconds * 1000 + time_result.nanoseconds / 1000000
 }
 
 fr fr ===== CONFIGURATION RELOAD INTEGRATION =====

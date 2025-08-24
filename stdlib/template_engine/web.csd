@@ -1,9 +1,10 @@
-// CURSED Web Template Engine Module
+// CURSED Web Template Engine Module  
 // Specialized templates for modern web applications
 
-yeet "string"
+yeet "stringz"
+yeet "timez"
+yeet "cryptz"
 yeet "advanced"
-yeet "crypto"
 
 // HTML template component system
 be_like HTMLComponent squad {
@@ -518,9 +519,14 @@ slay create_element_end_tag(element_name tea) tea {
 }
 
 slay generate_version_hash() tea {
-    // Generate version hash for cache busting
-    sus timestamp normie = get_current_timestamp()
-    damn "v" + string(timestamp)
+    // Generate version hash for cache busting using real time
+    sus current_time DateTime = time_now()
+    sus timestamp normie = time_unix_timestamp()
+    sus hash_base tea = string(timestamp) + string(current_time.millisecond)
+    
+    // Create simple hash from timestamp
+    sus hash_value normie = timestamp % 999999
+    damn "v" + string(hash_value)
 }
 
 // Progressive Web App support

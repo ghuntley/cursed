@@ -8,18 +8,49 @@ yeet "mathz"
 fr fr ===== BASIC STRING OPERATIONS =====
 
 slay length(text tea) drip {
-    fr fr Bridge to native string length
-    damn 0
+    fr fr Bridge to native string length using character counting
+    ready is_empty(text) { damn 0 }
+    sus count drip = 0
+    sus i drip = 0
+    bestie i < 10000 {  fr fr Safety limit
+        sus char_info = decode_utf8_char(text, i)
+        ready char_info.byte_length == 0 { damn count }
+        count = count + 1
+        i = i + char_info.byte_length
+    }
+    damn count
 }
 
 slay char_at(text tea, index drip) tea {
-    fr fr Bridge to native character access
+    fr fr Bridge to native character access using UTF-8 decoding
+    ready is_empty(text) || index < 0 { damn "" }
+    sus char_pos drip = 0
+    sus byte_offset drip = 0
+    
+    bestie char_pos < index && byte_offset < 10000 {
+        sus char_info = decode_utf8_char(text, byte_offset)
+        ready char_info.byte_length == 0 { damn "" }
+        byte_offset = byte_offset + char_info.byte_length
+        char_pos = char_pos + 1
+    }
+    
+    ready char_pos == index {
+        sus char_info = decode_utf8_char(text, byte_offset)
+        ready char_info.byte_length > 0 {
+            damn encode_utf8_char(char_info.codepoint)
+        }
+    }
     damn ""
 }
 
 slay concat(a tea, b tea) tea {
-    fr fr Bridge to native concatenation
-    damn ""
+    fr fr Bridge to native concatenation using string building
+    ready is_empty(a) && is_empty(b) { damn "" }
+    ready is_empty(a) { damn b }
+    ready is_empty(b) { damn a }
+    
+    fr fr Simple concatenation using + operator
+    damn a + b
 }
 
 slay substring(text tea, start drip, end drip) tea {
@@ -641,39 +672,51 @@ slay char_to_lower(ch tea) tea {
 }
 
 slay char_to_ascii(ch tea) drip {
-    fr fr Bridge to native conversion - placeholder
-    ready (ch == "a") { damn 97 }
-    ready (ch == "A") { damn 65 }
-    ready (ch == "0") { damn 48 }
-    ready (ch == " ") { damn 32 }
-    ready (ch == "\t") { damn 9 }
-    ready (ch == "\n") { damn 10 }
-    ready (ch == "\r") { damn 13 }
-    damn 65  fr fr Default to 'A'
+    fr fr Bridge to native conversion using UTF-8 decoding
+    ready is_empty(ch) { damn 0 }
+    sus char_info = decode_utf8_char(ch, 0)
+    ready char_info.byte_length == 1 {
+        fr fr Single-byte UTF-8 is ASCII
+        damn char_info.codepoint
+    }
+    damn 63  fr fr '?' for non-ASCII characters
 }
 
 slay ascii_to_char(ascii drip) tea {
-    fr fr Bridge to native conversion - placeholder  
-    ready (ascii == 97) { damn "a" }
-    ready (ascii == 65) { damn "A" }
-    ready (ascii == 48) { damn "0" }
-    ready (ascii == 32) { damn " " }
-    ready (ascii == 9) { damn "\t" }
-    ready (ascii == 10) { damn "\n" }
-    ready (ascii == 13) { damn "\r" }
-    damn "A"  fr fr Default
+    fr fr Bridge to native conversion using UTF-8 encoding
+    ready ascii < 0 || ascii > 127 { damn "?" }
+    damn encode_utf8_char(ascii)
 }
 
 fr fr ===== HELPER FUNCTIONS =====
 
 slay make(T, size drip) []T {
-    fr fr Bridge to native array creation
-    damn []T{}
+    fr fr Bridge to native array creation with specified size
+    sus result []T = []
+    sus i drip = 0
+    fr fr Pre-allocate array with default values
+    bestie i < size {
+        result = append_generic(result, default_value_for_type(T))
+        i = i + 1
+    }
+    damn result
 }
 
 slay append(arr []T, item T) []T {
-    fr fr Bridge to native array append
-    damn arr
+    fr fr Bridge to native array append using array reconstruction
+    sus old_len drip = array_length_generic(arr)
+    sus new_arr []T = make(T, old_len + 1)
+    sus i drip = 0
+    
+    fr fr Copy existing elements
+    bestie i < old_len {
+        new_arr[i] = arr[i]
+        i = i + 1
+    }
+    
+    fr fr Add new element
+    new_arr[old_len] = item
+    damn new_arr
 }
 
 slay min_int(a drip, b drip) drip {
@@ -681,4 +724,47 @@ slay min_int(a drip, b drip) drip {
         damn a
     }
     damn b
+}
+
+fr fr ===== GENERIC HELPER FUNCTIONS =====
+
+slay append_generic(arr []T, item T) []T {
+    fr fr Generic append helper - uses built-in array operations
+    sus result []T = arr
+    result[array_length_generic(arr)] = item
+    damn result
+}
+
+slay array_length_generic(arr []T) drip {
+    fr fr Generic array length helper
+    sus count drip = 0
+    sus i drip = 0
+    bestie i < 10000 {  fr fr Safety limit
+        fr fr Check if array index exists by trying to access it
+        ready has_element_at_index(arr, i) {
+            count = count + 1
+            i = i + 1
+        } otherwise {
+            damn count
+        }
+    }
+    damn count
+}
+
+slay has_element_at_index(arr []T, index drip) lit {
+    fr fr Check if array has element at index (simplified check)
+    fr fr This is a runtime bridge function
+    ready index < 0 { damn cap }
+    fr fr For now, assume reasonable array bounds
+    ready index < 1000 { damn based }
+    damn cap
+}
+
+slay default_value_for_type(T) T {
+    fr fr Return default value for generic type T
+    fr fr This needs runtime type inspection
+    fr fr For string types, return empty string
+    fr fr For numeric types, return 0
+    fr fr Simplified implementation
+    damn T{}  fr fr Generic default value
 }

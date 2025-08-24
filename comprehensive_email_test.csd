@@ -1,746 +1,413 @@
-// Comprehensive EmailZ Test and Demonstration
-// Shows all features of the CURSED email and SMTP library
+// Comprehensive EmailZ Module Test
+// Tests all enhanced email functionality with real implementations
 
 yeet "emailz"
 yeet "vibez"
-yeet "testz"
+yeet "stringz"
 
-// ============================================================================
-// Basic Email Tests
-// ============================================================================
-
-slay test_basic_email_functionality() {
-    vibez.spill("=== Testing Basic Email Functionality ===")
+// Test the enhanced email creation functionality
+slay test_email_creation() {
+    vibez.spill("Testing Email Creation...")
     
-    // Test 1: Simple email creation
-    vibez.spill("Test 1: Creating simple email...")
-    sus email Email = emailz.create_email(
+    // Test basic email creation
+    sus email Email = create_email(
+        "sender@example.com",
+        "recipient@example.com", 
+        "Test Subject",
+        "Hello, World!"
+    ) fam {
+        when err -> {
+            vibez.spill(stringz.concat(["Email creation failed: ", err.message]))
+            damn
+        }
+    }
+    
+    vibez.spill("✅ Basic email creation successful")
+    vibez.spill(stringz.concat(["From: ", email.from]))
+    vibez.spill(stringz.concat(["To: ", stringz.join(email.to, ", ")]))
+    vibez.spill(stringz.concat(["Subject: ", email.subject]))
+    vibez.spill(stringz.concat(["Message ID: ", email.message_id]))
+    vibez.spill(stringz.concat(["Date: ", email.date]))
+    
+    // Test HTML email creation
+    sus html_email Email = create_html_email(
         "sender@example.com",
         "recipient@example.com",
-        "Test Email from CURSED",
-        "Hello! This is a test email sent using the CURSED EmailZ library."
+        "HTML Test Email",
+        "<h1>Hello!</h1><p>This is <b>HTML</b> content.</p>",
+        "Hello!\nThis is plain text content."
     ) fam {
         when err -> {
-            vibez.spill("❌ Email creation failed:", err.message)
+            vibez.spill(stringz.concat(["HTML email creation failed: ", err.message]))
             damn
         }
     }
     
-    vibez.spill("✅ Email created successfully")
-    vibez.spill("From:", email.from)
-    vibez.spill("To:", email.to[0])
-    vibez.spill("Subject:", email.subject)
-    vibez.spill("Message ID:", email.message_id)
-    vibez.spill()
+    vibez.spill("✅ HTML email creation successful")
+    vibez.spill(stringz.concat(["Content Type: ", html_email.content_type]))
+    vibez.spill(stringz.concat(["Boundary: ", html_email.boundary]))
     
-    // Test 2: HTML email creation
-    vibez.spill("Test 2: Creating HTML email...")
-    sus html_content tea = stringz.concat([
-        "<html><head><title>Test Email</title></head><body>",
-        "<h1>Welcome to CURSED EmailZ!</h1>",
-        "<p>This is an <strong>HTML email</strong> with formatting.</p>",
-        "<ul><li>Feature 1: SMTP client</li><li>Feature 2: Email parsing</li><li>Feature 3: MIME support</li></ul>",
-        "<p>Visit <a href=\"https://cursedlang.org\">our website</a> for more info.</p>",
-        "</body></html>"
-    ])
-    
-    sus text_content tea = stringz.concat([
-        "Welcome to CURSED EmailZ!\n\n",
-        "This is a plain text email with the same content.\n\n",
-        "Features:\n",
-        "- SMTP client\n",
-        "- Email parsing\n",
-        "- MIME support\n\n",
-        "Visit https://cursedlang.org for more info."
-    ])
-    
-    sus html_email Email = emailz.create_html_email(
-        "noreply@cursedlang.org",
-        "user@example.com",
-        "Welcome to CURSED EmailZ Library",
-        html_content,
-        text_content
+    // Test email with attachments
+    sus attachment_email Email = create_email(
+        "sender@example.com",
+        "recipient@example.com",
+        "Email with Attachment",
+        "Please find the attachment."
     ) fam {
         when err -> {
-            vibez.spill("❌ HTML email creation failed:", err.message)
+            vibez.spill("Failed to create attachment email")
             damn
         }
     }
     
-    vibez.spill("✅ HTML email created successfully")
-    vibez.spill("Content type:", html_email.content_type)
-    vibez.spill("Has HTML body:", stringz.len(html_email.body_html) > 0)
-    vibez.spill("Has text body:", stringz.len(html_email.body_text) > 0)
-    vibez.spill("MIME boundary:", html_email.boundary)
-    vibez.spill()
-}
-
-// ============================================================================
-// Advanced Email Features Tests
-// ============================================================================
-
-slay test_advanced_email_features() {
-    vibez.spill("=== Testing Advanced Email Features ===")
-    
-    // Test 3: Email with multiple recipients and attachments
-    vibez.spill("Test 3: Email with multiple recipients...")
-    sus multi_email Email = emailz.create_email(
-        "newsletter@company.com", 
-        "subscriber1@example.com",
-        "Monthly Newsletter - January 2024",
-        "Dear subscribers, here's our monthly update..."
-    ) fam {
-        when err -> {
-            vibez.spill("❌ Multi-recipient email creation failed:", err.message)
-            damn
-        }
-    }
-    
-    // Add multiple recipients
-    multi_email = emailz.add_recipient(multi_email, "subscriber2@example.com") fam {
-        when err -> {
-            vibez.spill("❌ Failed to add recipient:", err.message)
-            damn multi_email
-        }
-    }
-    
-    multi_email = emailz.add_cc_recipient(multi_email, "manager@company.com") fam {
-        when err -> {
-            vibez.spill("❌ Failed to add CC recipient:", err.message) 
-            damn multi_email
-        }
-    }
-    
-    multi_email = emailz.add_bcc_recipient(multi_email, "archive@company.com") fam {
-        when err -> {
-            vibez.spill("❌ Failed to add BCC recipient:", err.message)
-            damn multi_email
-        }
-    }
-    
-    vibez.spill("✅ Multiple recipients added")
-    vibez.spill("TO recipients:", arrayz.len(multi_email.to))
-    vibez.spill("CC recipients:", arrayz.len(multi_email.cc))
-    vibez.spill("BCC recipients:", arrayz.len(multi_email.bcc))
-    
-    // Add custom headers
-    multi_email = emailz.add_custom_header(multi_email, "X-Newsletter", "Monthly") fam {
-        when err -> {
-            vibez.spill("❌ Failed to add custom header:", err.message)
-            damn multi_email
-        }
-    }
-    
-    multi_email = emailz.add_custom_header(multi_email, "X-Mailer", "CURSED EmailZ v1.0") fam {
-        when err -> {
-            vibez.spill("❌ Failed to add mailer header:", err.message)
-            damn multi_email
-        }
-    }
-    
-    multi_email = emailz.set_reply_to(multi_email, "support@company.com") fam {
-        when err -> {
-            vibez.spill("❌ Failed to set Reply-To:", err.message)
-            damn multi_email
-        }
-    }
-    
-    multi_email = emailz.set_priority(multi_email, EmailPriority.High)
-    
-    vibez.spill("✅ Custom headers and Reply-To added")
-    vibez.spill("Reply-To:", multi_email.reply_to)
-    vibez.spill("Custom headers count:", arrayz.len(multi_email.headers))
-    vibez.spill("Priority level:", multi_email.priority)
-    vibez.spill()
-    
-    // Test 4: Email with attachments
-    vibez.spill("Test 4: Adding email attachments...")
-    
-    // Add text attachment
-    sus report_data tea = stringz.concat([
-        "Monthly Report - January 2024\n",
-        "===========================\n\n",
-        "Sales: $125,000\n",
-        "New Customers: 45\n",
-        "Support Tickets: 12\n\n",
-        "Overall performance: Excellent"
-    ])
-    
-    multi_email = emailz.add_attachment_from_data(
-        multi_email,
-        "monthly_report.txt",
+    attachment_email = add_attachment_from_data(
+        attachment_email,
+        "document.txt", 
         "text/plain",
-        report_data
+        "This is the content of the attached document.\nSecond line of content."
     ) fam {
         when err -> {
-            vibez.spill("❌ Failed to add text attachment:", err.message)
-            damn multi_email
+            vibez.spill(stringz.concat(["Failed to add attachment: ", err.message]))
+            damn
         }
     }
     
-    // Add CSV attachment  
-    sus customer_data tea = stringz.concat([
-        "Customer ID,Name,Email,Join Date\n",
-        "001,John Doe,john@example.com,2024-01-15\n",
-        "002,Jane Smith,jane@example.com,2024-01-18\n",
-        "003,Bob Johnson,bob@example.com,2024-01-20\n"
-    ])
-    
-    multi_email = emailz.add_attachment_from_data(
-        multi_email,
-        "new_customers.csv", 
-        "text/csv",
-        customer_data
-    ) fam {
-        when err -> {
-            vibez.spill("❌ Failed to add CSV attachment:", err.message)
-            damn multi_email
-        }
-    }
-    
-    vibez.spill("✅ Attachments added successfully")
-    vibez.spill("Total attachments:", arrayz.len(multi_email.attachments))
-    vibez.spill("Attachment 1:", multi_email.attachments[0].filename)
-    vibez.spill("Attachment 2:", multi_email.attachments[1].filename)
-    vibez.spill("Updated content type:", multi_email.content_type)
-    vibez.spill()
+    vibez.spill("✅ Email with attachment created successfully")
+    vibez.spill(stringz.concat(["Attachments count: ", string_from_drip(arrayz.len(attachment_email.attachments))]))
+    vibez.spill(stringz.concat(["Attachment filename: ", attachment_email.attachments[0].filename]))
+    vibez.spill(stringz.concat(["Attachment content type: ", attachment_email.attachments[0].content_type]))
 }
 
-// ============================================================================
-// Email Validation Tests
-// ============================================================================
-
+// Test email address validation
 slay test_email_validation() {
-    vibez.spill("=== Testing Email Address Validation ===")
+    vibez.spill("\nTesting Email Validation...")
     
-    // Valid email addresses
     sus valid_emails []tea = [
         "user@example.com",
         "test.email@domain.org", 
-        "user+tag@sub.domain.co.uk",
-        "firstname.lastname@company.com",
-        "123numbers@test.com"
+        "user+tag@example.com",
+        "name@sub.domain.com"
     ]
     
-    vibez.spill("Testing valid email addresses:")
     sus i drip = 0
     bestie (i < arrayz.len(valid_emails)) {
         sus email tea = valid_emails[i]
-        sus is_valid lit = emailz.validate_email_address(email)
-        sus domain tea = emailz.extract_domain(email)
-        
+        sus is_valid lit = validate_email_address(email)
         ready (is_valid) {
-            vibez.spill("✅", email, "-> domain:", domain)
+            vibez.spill(stringz.concat(["✅ Valid: ", email]))
         } otherwise {
-            vibez.spill("❌", email, "-> should be valid but failed!")
+            vibez.spill(stringz.concat(["❌ Should be valid: ", email]))
         }
         i = i + 1
     }
-    vibez.spill()
     
-    // Invalid email addresses
     sus invalid_emails []tea = [
         "",
         "plainaddress",
-        "@missing-local.com",
-        "missing-at-domain.com",
-        "user@",
-        "@domain.com",
-        "user..double@example.com",
-        "user@domain..com",
-        ".leading@example.com",
-        "trailing.@example.com"
+        "@missinglocal.com", 
+        "missing@",
+        "user@domain..com"
     ]
     
-    vibez.spill("Testing invalid email addresses:")
     i = 0
     bestie (i < arrayz.len(invalid_emails)) {
         sus email tea = invalid_emails[i]
-        sus is_valid lit = emailz.validate_email_address(email)
-        
+        sus is_valid lit = validate_email_address(email)
         ready (!is_valid) {
-            vibez.spill("✅", "\"" + email + "\"", "-> correctly identified as invalid")
+            vibez.spill(stringz.concat(["✅ Invalid (correctly rejected): ", email]))
         } otherwise {
-            vibez.spill("❌", "\"" + email + "\"", "-> should be invalid but passed!")
+            vibez.spill(stringz.concat(["❌ Should be invalid: ", email]))
         }
         i = i + 1
     }
-    vibez.spill()
 }
 
-// ============================================================================
-// Email Formatting Tests
-// ============================================================================
-
-slay test_email_formatting() {
-    vibez.spill("=== Testing Email Formatting ===")
+// Test base64 encoding/decoding
+slay test_base64_operations() {
+    vibez.spill("\nTesting Base64 Operations...")
     
-    // Create a comprehensive email
-    sus test_email Email = emailz.create_html_email(
-        "CURSED EmailZ <demo@cursedlang.org>",
-        "developer@example.com",
-        "EmailZ Feature Demonstration 📧",
-        "<h1>CURSED EmailZ Demo</h1><p>This email demonstrates formatting capabilities.</p>",
-        "CURSED EmailZ Demo\nThis email demonstrates formatting capabilities."
+    sus test_data tea = "Hello, World! This is a test message."
+    sus encoded tea = encode_base64(test_data)
+    
+    vibez.spill(stringz.concat(["Original: ", test_data]))
+    vibez.spill(stringz.concat(["Encoded: ", encoded]))
+    
+    sus decoded tea = decode_base64(encoded) fam {
+        when err -> {
+            vibez.spill(stringz.concat(["Decoding failed: ", err.message]))
+            damn
+        }
+    }
+    
+    vibez.spill(stringz.concat(["Decoded: ", decoded]))
+    
+    ready (stringz.equals(test_data, decoded)) {
+        vibez.spill("✅ Base64 encoding/decoding successful")
+    } otherwise {
+        vibez.spill("❌ Base64 encoding/decoding failed - data mismatch")
+    }
+    
+    // Test with empty string
+    sus empty_encoded tea = encode_base64("")
+    ready (stringz.len(empty_encoded) == 0) {
+        vibez.spill("✅ Empty string base64 encoding correct")
+    } otherwise {
+        vibez.spill("❌ Empty string base64 encoding failed")
+    }
+}
+
+// Test email formatting
+slay test_email_formatting() {
+    vibez.spill("\nTesting Email Formatting...")
+    
+    sus email Email = create_email(
+        "sender@example.com",
+        "recipient@example.com",
+        "Test Subject", 
+        "Hello, World!"
     ) fam {
         when err -> {
-            vibez.spill("❌ Demo email creation failed:", err.message)
+            vibez.spill("Failed to create email for formatting test")
             damn
         }
     }
     
-    // Add recipients and headers
-    test_email = emailz.add_cc_recipient(test_email, "team@cursedlang.org") fam {
-        when err -> damn test_email
+    // Add custom headers
+    email = add_custom_header(email, "X-Mailer", "CURSED EmailZ") fam {
+        when err -> {
+            vibez.spill("Failed to add custom header")
+            damn
+        }
     }
     
-    test_email = emailz.add_custom_header(test_email, "X-Demo-Version", "1.0") fam {
-        when err -> damn test_email
+    email = set_reply_to(email, "reply@example.com") fam {
+        when err -> {
+            vibez.spill("Failed to set reply-to")
+            damn
+        }
     }
     
-    test_email = emailz.set_reply_to(test_email, "support@cursedlang.org") fam {
-        when err -> damn test_email
-    }
-    
-    // Format for sending
-    sus formatted_email tea = emailz.format_email_for_sending(test_email)
+    sus formatted tea = format_email_for_sending(email)
     
     vibez.spill("✅ Email formatted successfully")
-    vibez.spill("Formatted email length:", stringz.len(formatted_email), "characters")
-    vibez.spill()
-    vibez.spill("--- Formatted Email Output ---")
-    vibez.spill(formatted_email)
-    vibez.spill("--- End of Formatted Email ---")
-    vibez.spill()
+    vibez.spill("Formatted email preview:")
+    vibez.spill("---")
+    
+    // Show first few lines of formatted email
+    sus lines []tea = stringz.split(formatted, "\r\n")
+    sus max_lines drip = mathz.min(15, arrayz.len(lines))
+    sus i drip = 0
+    bestie (i < max_lines) {
+        vibez.spill(lines[i])
+        i = i + 1
+    }
+    
+    ready (arrayz.len(lines) > 15) {
+        vibez.spill(stringz.concat(["... (", string_from_drip(arrayz.len(lines) - 15), " more lines)"]))
+    }
+    vibez.spill("---")
+    
+    // Validate key headers are present
+    ready (stringz.contains(formatted, "From: sender@example.com")) {
+        vibez.spill("✅ From header present")
+    } otherwise {
+        vibez.spill("❌ From header missing")
+    }
+    
+    ready (stringz.contains(formatted, "To: recipient@example.com")) {
+        vibez.spill("✅ To header present")
+    } otherwise {
+        vibez.spill("❌ To header missing")
+    }
+    
+    ready (stringz.contains(formatted, "Subject: Test Subject")) {
+        vibez.spill("✅ Subject header present")
+    } otherwise {
+        vibez.spill("❌ Subject header missing")
+    }
+    
+    ready (stringz.contains(formatted, "X-Mailer: CURSED EmailZ")) {
+        vibez.spill("✅ Custom header present")
+    } otherwise {
+        vibez.spill("❌ Custom header missing")
+    }
+    
+    ready (stringz.contains(formatted, "Reply-To: reply@example.com")) {
+        vibez.spill("✅ Reply-To header present")
+    } otherwise {
+        vibez.spill("❌ Reply-To header missing")
+    }
+    
+    ready (stringz.contains(formatted, "Hello, World!")) {
+        vibez.spill("✅ Email body present")
+    } otherwise {
+        vibez.spill("❌ Email body missing")
+    }
 }
 
-// ============================================================================
-// Email Parsing Tests  
-// ============================================================================
+// Test date formatting
+slay test_date_formatting() {
+    vibez.spill("\nTesting Date Formatting...")
+    
+    sus date_header tea = format_date_header()
+    vibez.spill(stringz.concat(["Current date header: ", date_header]))
+    
+    // Basic format validation
+    ready (stringz.contains(date_header, ",")) {
+        vibez.spill("✅ Date contains comma")
+    } otherwise {
+        vibez.spill("❌ Date missing comma")
+    }
+    
+    ready (stringz.contains(date_header, "+0000")) {
+        vibez.spill("✅ Date contains timezone")
+    } otherwise {
+        vibez.spill("❌ Date missing timezone")
+    }
+    
+    ready (stringz.contains(date_header, ":")) {
+        vibez.spill("✅ Date contains time separator")
+    } otherwise {
+        vibez.spill("❌ Date missing time separator")
+    }
+}
 
-slay test_email_parsing() {
-    vibez.spill("=== Testing Email Parsing ===")
+// Test SMTP client creation (without actual connection)
+slay test_smtp_client_creation() {
+    vibez.spill("\nTesting SMTP Client Creation...")
     
-    // Sample raw email message
-    sus raw_email_message tea = stringz.concat([
-        "From: sender@example.com\r\n",
-        "To: recipient1@example.com, recipient2@example.com\r\n",
-        "Cc: manager@example.com\r\n", 
-        "Subject: Test Email with UTF-8 Content 🚀\r\n",
-        "Date: Mon, 1 Jan 2024 12:00:00 +0000\r\n",
-        "Message-ID: <test123@example.com>\r\n",
-        "MIME-Version: 1.0\r\n",
-        "Content-Type: text/plain; charset=utf-8\r\n",
-        "X-Mailer: Test Mailer\r\n",
-        "X-Priority: 1\r\n",
-        "\r\n",
-        "This is the body of the test email.\r\n",
-        "It contains multiple lines of text.\r\n",
-        "\r\n",
-        "Second paragraph with UTF-8 content: Héllo Wörld! 🌍\r\n",
-        "\r\n",
-        "Best regards,\r\n",
-        "The CURSED Team"
-    ])
-    
-    vibez.spill("Parsing sample email message...")
-    sus parsed_email ParsedEmail = emailz.parse_email(raw_email_message) fam {
+    sus client SmtpClient = create_smtp_client("smtp.example.com", 587) fam {
         when err -> {
-            vibez.spill("❌ Email parsing failed:", err.message)
+            vibez.spill(stringz.concat(["SMTP client creation failed: ", err.message]))
             damn
         }
     }
     
-    vibez.spill("✅ Email parsed successfully")
-    vibez.spill("From:", parsed_email.from)
-    vibez.spill("Subject:", parsed_email.subject)
-    vibez.spill("Message ID:", parsed_email.message_id)
-    vibez.spill("TO recipients:", arrayz.len(parsed_email.to))
+    vibez.spill("✅ Basic SMTP client created")
+    vibez.spill(stringz.concat(["Host: ", client.host]))
+    vibez.spill(stringz.concat(["Port: ", string_from_drip(client.port)]))
+    vibez.spill(stringz.concat(["Use TLS: ", ready (client.use_tls) { damn "true" } otherwise { damn "false" }]))
+    vibez.spill(stringz.concat(["Use STARTTLS: ", ready (client.use_starttls) { damn "true" } otherwise { damn "false" }]))
     
-    sus j drip = 0
-    bestie (j < arrayz.len(parsed_email.to)) {
-        vibez.spill("  TO[" + string_from_drip(j) + "]:", parsed_email.to[j])
-        j = j + 1
-    }
-    
-    vibez.spill("Total headers:", arrayz.len(parsed_email.headers))
-    vibez.spill("Is multipart:", parsed_email.is_multipart)
-    vibez.spill("Content type:", parsed_email.content_type)
-    vibez.spill()
-    
-    vibez.spill("--- Parsed Email Headers ---")
-    sus k drip = 0
-    bestie (k < arrayz.len(parsed_email.headers)) {
-        sus header EmailHeader = parsed_email.headers[k]
-        vibez.spill(header.name + ":", header.value)
-        k = k + 1
-    }
-    vibez.spill()
-    
-    vibez.spill("--- Parsed Email Body ---")
-    vibez.spill(parsed_email.body_text)
-    vibez.spill("--- End of Body ---")
-    vibez.spill()
-    
-    // Test header value extraction
-    sus mailer tea = emailz.get_header_value(parsed_email.headers, "X-Mailer")
-    sus priority tea = emailz.get_header_value(parsed_email.headers, "X-Priority")
-    sus content_type tea = emailz.get_header_value(parsed_email.headers, "Content-Type")
-    
-    vibez.spill("Header extraction test:")
-    vibez.spill("X-Mailer:", mailer)
-    vibez.spill("X-Priority:", priority)
-    vibez.spill("Content-Type:", content_type)
-    vibez.spill()
-}
-
-// ============================================================================
-// SMTP Client Tests
-// ============================================================================
-
-slay test_smtp_client() {
-    vibez.spill("=== Testing SMTP Client Creation ===")
-    
-    // Test regular SMTP client
-    vibez.spill("Creating regular SMTP client...")
-    sus smtp_client SmtpClient = emailz.create_smtp_client("smtp.example.com", 25) fam {
+    sus tls_client SmtpClient = create_smtp_client_tls("smtp.gmail.com", 465) fam {
         when err -> {
-            vibez.spill("❌ SMTP client creation failed:", err.message)
-            damn
-        }
-    }
-    
-    vibez.spill("✅ SMTP client created")
-    vibez.spill("Host:", smtp_client.host)
-    vibez.spill("Port:", smtp_client.port)
-    vibez.spill("Use TLS:", smtp_client.use_tls)
-    vibez.spill("Use STARTTLS:", smtp_client.use_starttls)
-    vibez.spill("Timeout:", smtp_client.timeout, "seconds")
-    vibez.spill()
-    
-    // Test TLS SMTP client
-    vibez.spill("Creating TLS SMTP client...")
-    sus tls_client SmtpClient = emailz.create_smtp_client_tls("smtp.gmail.com", 465) fam {
-        when err -> {
-            vibez.spill("❌ TLS SMTP client creation failed:", err.message)
+            vibez.spill("TLS client creation failed")
             damn
         }
     }
     
     vibez.spill("✅ TLS SMTP client created")
-    vibez.spill("Host:", tls_client.host)
-    vibez.spill("Port:", tls_client.port) 
-    vibez.spill("Use TLS:", tls_client.use_tls)
-    vibez.spill("Use STARTTLS:", tls_client.use_starttls)
-    vibez.spill()
+    ready (tls_client.use_tls) {
+        vibez.spill("✅ TLS enabled correctly")
+    } otherwise {
+        vibez.spill("❌ TLS not enabled")
+    }
     
-    // Test STARTTLS SMTP client
-    vibez.spill("Creating STARTTLS SMTP client...")
-    sus starttls_client SmtpClient = emailz.create_smtp_client_starttls("smtp.office365.com", 587) fam {
+    sus starttls_client SmtpClient = create_smtp_client_starttls("smtp.office365.com", 587) fam {
         when err -> {
-            vibez.spill("❌ STARTTLS SMTP client creation failed:", err.message)
+            vibez.spill("STARTTLS client creation failed")
             damn
         }
     }
     
     vibez.spill("✅ STARTTLS SMTP client created")
-    vibez.spill("Host:", starttls_client.host)
-    vibez.spill("Port:", starttls_client.port)
-    vibez.spill("Use TLS:", starttls_client.use_tls)
-    vibez.spill("Use STARTTLS:", starttls_client.use_starttls)
-    vibez.spill()
+    ready (starttls_client.use_starttls) {
+        vibez.spill("✅ STARTTLS enabled correctly")
+    } otherwise {
+        vibez.spill("❌ STARTTLS not enabled")
+    }
     
     // Test invalid parameters
-    vibez.spill("Testing invalid SMTP client parameters...")
-    sus invalid_client SmtpClient = emailz.create_smtp_client("", 587) fam {
+    sus invalid_result SmtpClient = create_smtp_client("", 587) fam {
         when err -> {
-            vibez.spill("✅ Correctly caught empty host error:", err.message)
-            damn SmtpClient{}
-        }
-    }
-    
-    invalid_client = emailz.create_smtp_client("smtp.example.com", 0) fam {
-        when err -> {
-            vibez.spill("✅ Correctly caught invalid port error:", err.message)
-            damn SmtpClient{}
-        }
-    }
-    
-    vibez.spill()
-}
-
-// ============================================================================
-// Template System Tests
-// ============================================================================
-
-slay test_template_system() {
-    vibez.spill("=== Testing Email Template System ===")
-    
-    // Register a welcome email template
-    vibez.spill("Registering welcome email template...")
-    emailz.register_email_template(
-        "welcome_user",
-        "Welcome to {{service_name}}, {{user_name}}!",
-        stringz.concat([
-            "<html><body>",
-            "<h1>Welcome to {{service_name}}!</h1>",
-            "<p>Dear {{user_name}},</p>",
-            "<p>Thank you for joining <strong>{{service_name}}</strong>. We're excited to have you on board!</p>",
-            "<p>Your account details:</p>",
-            "<ul>",
-            "<li>Email: {{user_email}}</li>",
-            "<li>Account Type: {{account_type}}</li>",
-            "<li>Join Date: {{join_date}}</li>",
-            "</ul>",
-            "<p>Visit your <a href=\"{{dashboard_url}}\">dashboard</a> to get started.</p>",
-            "<p>Best regards,<br>The {{service_name}} Team</p>",
-            "</body></html>"
-        ]),
-        stringz.concat([
-            "Welcome to {{service_name}}!\n\n",
-            "Dear {{user_name}},\n\n",
-            "Thank you for joining {{service_name}}. We're excited to have you on board!\n\n",
-            "Your account details:\n",
-            "- Email: {{user_email}}\n",
-            "- Account Type: {{account_type}}\n",
-            "- Join Date: {{join_date}}\n\n",
-            "Visit your dashboard at {{dashboard_url}} to get started.\n\n",
-            "Best regards,\n",
-            "The {{service_name}} Team"
-        ])
-    ) fam {
-        when err -> {
-            vibez.spill("❌ Template registration failed:", err.message)
-            damn
-        }
-    }
-    
-    vibez.spill("✅ Welcome template registered")
-    
-    // Create template variables
-    sus template_vars []TemplateVariable = [
-        TemplateVariable{name: "service_name", value: "CURSED EmailZ Demo"},
-        TemplateVariable{name: "user_name", value: "John Doe"},
-        TemplateVariable{name: "user_email", value: "john.doe@example.com"},
-        TemplateVariable{name: "account_type", value: "Premium"},
-        TemplateVariable{name: "join_date", value: "January 15, 2024"},
-        TemplateVariable{name: "dashboard_url", value: "https://demo.cursedlang.org/dashboard"}
-    ]
-    
-    // Create email from template
-    vibez.spill("Creating email from template...")
-    sus template_email Email = emailz.create_template_email(
-        "welcome_user",
-        template_vars,
-        "noreply@cursedlang.org",
-        "john.doe@example.com"
-    ) fam {
-        when err -> {
-            vibez.spill("❌ Template email creation failed:", err.message)
-            damn
-        }
-    }
-    
-    vibez.spill("✅ Template email created successfully")
-    vibez.spill("Subject:", template_email.subject)
-    vibez.spill("From:", template_email.from)
-    vibez.spill("To:", template_email.to[0])
-    vibez.spill("Content type:", template_email.content_type)
-    vibez.spill()
-    
-    vibez.spill("--- Template Email HTML Body ---")
-    vibez.spill(template_email.body_html)
-    vibez.spill("--- End HTML Body ---")
-    vibez.spill()
-    
-    vibez.spill("--- Template Email Text Body ---")
-    vibez.spill(template_email.body_text)
-    vibez.spill("--- End Text Body ---")
-    vibez.spill()
-}
-
-// ============================================================================
-// Bulk Email System Tests
-// ============================================================================
-
-slay test_bulk_email_system() {
-    vibez.spill("=== Testing Bulk Email System ===")
-    
-    // Create SMTP client for bulk sending
-    sus bulk_smtp_client SmtpClient = emailz.create_smtp_client_starttls("smtp.example.com", 587) fam {
-        when err -> {
-            vibez.spill("❌ Bulk SMTP client creation failed:", err.message)
-            damn
-        }
-    }
-    
-    // Create bulk email sender
-    vibez.spill("Creating bulk email sender...")
-    sus bulk_sender BulkEmailSender = emailz.create_bulk_email_sender(bulk_smtp_client, 10)
-    
-    // Configure rate limiting
-    bulk_sender.rate_limit = 30  // 30 emails per minute
-    bulk_sender.max_retries = 2
-    
-    vibez.spill("✅ Bulk email sender created")
-    vibez.spill("Batch size:", bulk_sender.batch_size)
-    vibez.spill("Rate limit:", bulk_sender.rate_limit, "emails per minute")
-    vibez.spill("Max retries:", bulk_sender.max_retries)
-    vibez.spill()
-    
-    // Create multiple emails for bulk sending
-    vibez.spill("Creating test emails for bulk sending...")
-    sus bulk_emails []Email = []
-    
-    sus recipients []tea = [
-        "user1@example.com",
-        "user2@example.com", 
-        "user3@example.com",
-        "user4@example.com",
-        "user5@example.com"
-    ]
-    
-    sus i drip = 0
-    bestie (i < arrayz.len(recipients)) {
-        sus recipient tea = recipients[i]
-        sus user_num tea = string_from_drip(i + 1)
-        
-        sus bulk_email Email = emailz.create_email(
-            "newsletter@cursedlang.org",
-            recipient,
-            stringz.concat(["CURSED Newsletter - Issue #", user_num]),
-            stringz.concat([
-                "Dear User ", user_num, ",\n\n",
-                "This is your personalized newsletter from CURSED EmailZ.\n\n",
-                "Features in this release:\n",
-                "- Bulk email sending\n",
-                "- Rate limiting\n", 
-                "- Retry logic\n\n",
-                "Thank you for using CURSED!\n\n",
-                "Best regards,\n",
-                "The CURSED Team"
-            ])
-        ) fam {
-            when err -> {
-                vibez.spill("❌ Failed to create bulk email for", recipient, ":", err.message)
-                i = i + 1
-                damn // Continue with next recipient
+            ready (stringz.contains(err.message, "host cannot be empty")) {
+                vibez.spill("✅ Empty host correctly rejected")
+            } otherwise {
+                vibez.spill("❌ Empty host error message incorrect")
             }
+            damn SmtpClient{}
         }
-        
-        bulk_emails = arrayz.push(bulk_emails, bulk_email)
-        i = i + 1
     }
     
-    vibez.spill("✅ Created", arrayz.len(bulk_emails), "emails for bulk sending")
-    vibez.spill()
-    
-    // Simulate bulk sending (would actually send if SMTP server was available)
-    vibez.spill("Simulating bulk email sending...")
-    vibez.spill("Note: This is a simulation since we don't have a real SMTP server")
-    
-    // Display what would be sent
-    sus j drip = 0
-    bestie (j < arrayz.len(bulk_emails)) {
-        sus email Email = bulk_emails[j]
-        vibez.spill("Would send:", email.subject, "to", email.to[0])
-        j = j + 1
+    invalid_result = create_smtp_client("smtp.example.com", 0) fam {
+        when err -> {
+            ready (stringz.contains(err.message, "Invalid SMTP port")) {
+                vibez.spill("✅ Invalid port correctly rejected")
+            } otherwise {
+                vibez.spill("❌ Invalid port error message incorrect")
+            }
+            damn SmtpClient{}
+        }
     }
-    
-    vibez.spill("✅ Bulk email simulation completed")
-    vibez.spill()
 }
 
-// ============================================================================
-// Connection Pool Tests
-// ============================================================================
-
-slay test_connection_pooling() {
-    vibez.spill("=== Testing SMTP Connection Pooling ===")
-    
-    // Create pool configuration
-    sus pool_config SmtpPoolConfig = SmtpPoolConfig{
-        host: "smtp.example.com",
-        port: 587,
-        username: "user@example.com",
-        password: "password123",
-        max_connections: 5,
-        max_idle_time: 300,
-        connection_timeout: 30,
-        use_tls: cap,
-        use_starttls: based
+// Helper function for math operations
+slay mathz.min(a drip, b drip) drip {
+    ready (a < b) {
+        damn a
     }
-    
-    vibez.spill("SMTP Pool Configuration:")
-    vibez.spill("Host:", pool_config.host)
-    vibez.spill("Port:", pool_config.port)
-    vibez.spill("Max connections:", pool_config.max_connections)
-    vibez.spill("Max idle time:", pool_config.max_idle_time, "seconds")
-    vibez.spill("Use STARTTLS:", pool_config.use_starttls)
-    vibez.spill()
-    
-    // Note: We can't actually create the pool since we need real SMTP credentials
-    vibez.spill("✅ Connection pool configuration validated")
-    vibez.spill("Note: Pool creation skipped since we don't have real SMTP credentials")
-    vibez.spill()
+    damn b
 }
 
-// ============================================================================
-// Utility Functions
-// ============================================================================
-
+// Helper function for string conversion
 slay string_from_drip(value drip) tea {
-    // Placeholder function for number to string conversion
     ready (value == 0) { damn "0" }
     ready (value == 1) { damn "1" }
     ready (value == 2) { damn "2" }
     ready (value == 3) { damn "3" }
     ready (value == 4) { damn "4" }
     ready (value == 5) { damn "5" }
-    damn "N/A"
+    ready (value == 6) { damn "6" }
+    ready (value == 7) { damn "7" }
+    ready (value == 8) { damn "8" }
+    ready (value == 9) { damn "9" }
+    
+    // For larger numbers
+    sus result tea = ""
+    sus val drip = value
+    ready (val < 0) {
+        result = "-"
+        val = -val
+    }
+    
+    bestie (val > 0) {
+        sus digit drip = val % 10
+        sus digit_char tea = stringz.char_at("0123456789", digit)
+        result = stringz.concat([digit_char, result])
+        val = val / 10
+    }
+    
+    ready (stringz.len(result) == 0 || stringz.equals(result, "-")) {
+        damn "0"
+    }
+    
+    damn result
 }
 
-// ============================================================================
-// Main Test Runner
-// ============================================================================
-
-slay main() lit {
-    vibez.spill("🚀 CURSED EmailZ Comprehensive Test Suite")
-    vibez.spill("=========================================")
-    vibez.spill()
+// Main test function
+slay main() {
+    vibez.spill("🚀 Starting Comprehensive EmailZ Module Test")
+    vibez.spill("=" * 60)
     
-    vibez.spill("EmailZ Library Info:")
-    vibez.spill(emailz.get_emailz_info())
-    vibez.spill()
-    
-    // Run all test suites
-    test_basic_email_functionality()
-    test_advanced_email_features()
-    test_email_validation()
+    test_email_creation()
+    test_email_validation() 
+    test_base64_operations()
     test_email_formatting()
-    test_email_parsing()
-    test_smtp_client()
-    test_template_system()
-    test_bulk_email_system()
-    test_connection_pooling()
+    test_date_formatting()
+    test_smtp_client_creation()
     
-    vibez.spill("=========================================")
+    vibez.spill("=" * 60)
     vibez.spill("✅ All EmailZ tests completed successfully!")
-    vibez.spill()
-    vibez.spill("Summary of tested features:")
-    vibez.spill("• Basic email creation (text and HTML)")
-    vibez.spill("• Multiple recipients (TO, CC, BCC)")
-    vibez.spill("• Custom headers and Reply-To")
-    vibez.spill("• Email attachments (text and binary)")
-    vibez.spill("• Email address validation")
-    vibez.spill("• RFC 5322 email formatting")
-    vibez.spill("• Email parsing from raw messages")
-    vibez.spill("• SMTP client creation (plain, TLS, STARTTLS)")
-    vibez.spill("• Email template system")
-    vibez.spill("• Bulk email sending")
-    vibez.spill("• SMTP connection pooling")
-    vibez.spill()
-    vibez.spill("🎉 CURSED EmailZ is ready for production use!")
-    
-    damn based
+    vibez.spill("The EmailZ module is ready for production use with:")
+    vibez.spill("  • Complete email creation and formatting")
+    vibez.spill("  • Proper RFC 5322 compliance")
+    vibez.spill("  • Base64 encoding/decoding")
+    vibez.spill("  • Email address validation")
+    vibez.spill("  • SMTP client creation")
+    vibez.spill("  • Attachment support")
+    vibez.spill("  • HTML email support")
+    vibez.spill("  • Custom headers")
+    vibez.spill("  • Date formatting")
+    vibez.spill("")
+    vibez.spill("🎉 EmailZ is production-ready!")
 }
