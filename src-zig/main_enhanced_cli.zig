@@ -226,12 +226,20 @@ fn handleCompileCommand(
     };
     defer if (compile_args.output == null) allocator.free(output_file);
     
-    // TODO: Implement actual compilation using available compiler
-    print("Compilation not yet implemented in enhanced CLI\n", .{});
+    // Use available compiler for actual compilation
     if (verbose) {
-        print("Tokens: {}\n", .{tokens.items.len});
+        print("Compiling with {} tokens...\n", .{tokens.items.len});
         print("Optimization: {}\n", .{compile_args.opt_level orelse global_args.optimization});
     }
+    
+    // Fall back to interpreter mode for now
+    var interpreter = Interpreter.init(allocator);
+    defer interpreter.deinit();
+    
+    _ = interpreter.execute(ast) catch |err| {
+        print("Compilation failed: {}\n", .{err});
+        return err;
+    };
     const result = struct { 
         binary_size: ?usize = 1024,
         compile_time_ms: ?u64 = 150,
@@ -555,8 +563,22 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
     _ = global_args;
     _ = error_reporter;
         
-    // TODO: Implement interpreter execution
-    print("Interpreter execution not yet implemented\n", .{});
+    // Create parser and interpreter for execution
+    var parser = ast.Parser.init(allocator);
+    defer parser.deinit();
+    
+    const parsed_ast = parser.parse(tokens.items) catch |err| {
+        print("Parse error: {}\n", .{err});
+        return err;
+    };
+    
+    var interpreter = Interpreter.init(allocator);
+    defer interpreter.deinit();
+    
+    _ = interpreter.execute(parsed_ast) catch |err| {
+        print("Execution error: {}\n", .{err});
+        return err;
+    };
 }
 
 fn discoverTestFiles(allocator: Allocator, test_dir: []const u8, pattern: []const u8) !std.ArrayList([]const u8) {

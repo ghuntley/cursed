@@ -1,212 +1,784 @@
-# Concurrenz Module - Complete Synchronization Primitives
+# concurrenz - Concurrency and Parallelism
 
-The `concurrenz` module provides a comprehensive suite of concurrency primitives for CURSED programs, implementing thread-safe synchronization with hardware-level atomic operations.
+## Overview
 
-## Features
+The `concurrenz` module provides CURSED's powerful concurrency primitives, including goroutines (green threads), channels, synchronization tools, and parallel execution patterns. Built on an efficient M:N threading model, it enables scalable concurrent programming with type safety and memory safety guarantees.
 
-### Core Synchronization Primitives
+## Quick Start
 
-- **Mutexes** - Thread-safe locking with atomic compare-and-swap operations
-- **WaitGroups** - Goroutine synchronization with atomic counters  
-- **Channels** - Buffered and synchronous communication primitives
-- **Read-Write Mutexes** - Shared/exclusive locking for reader-writer scenarios
+```cursed
+yeet "concurrenz"
+
+// Simple goroutine
+go {
+    vibez.spill("Running concurrently!")
+}
+
+// Channel communication
+sus ch chan<drip> = make_channel()
+go {
+    ch <- 42
+}
+sus value drip = <-ch
+vibez.spill("Received:", value)
+```
+
+## Core Concepts
+
+### Goroutines
+Lightweight threads managed by the CURSED runtime. Goroutines use stack segmentation and efficient scheduling to support millions of concurrent operations.
+
+### Channels
+Type-safe communication primitives for passing data between goroutines. Channels enforce synchronization and prevent data races.
+
+### Select Operations
+Multi-channel operations that enable non-blocking communication and complex coordination patterns.
+
+## API Reference
+
+### Goroutines
+
+#### `go { ... }`
+Spawns a new goroutine to execute the given block concurrently.
+
+```cursed
+go {
+    vibez.spill("Hello from goroutine!")
+    sus result drip = expensive_computation()
+    vibez.spill("Computation result:", result)
+}
+
+// Multiple goroutines
+bestie (sus i drip = 0; i < 10; i++) {
+    go {
+        vibez.spill("Goroutine", i, "is running")
+    }
+}
+```
+
+#### `runtime_num_goroutines() drip`
+Returns the current number of active goroutines.
+
+```cursed
+vibez.spill("Active goroutines:", concurrenz.runtime_num_goroutines())
+```
+
+#### `runtime_gosched()`
+Yields execution to allow other goroutines to run.
+
+```cursed
+slay cpu_intensive_task() {
+    bestie (sus i drip = 0; i < 1000000; i++) {
+        // Periodically yield to be cooperative
+        ready (i % 10000 == 0) {
+            concurrenz.runtime_gosched()
+        }
+        // Do work...
+    }
+}
+```
+
+### Channels
+
+#### `chan<T>` Type
+Generic channel type for type-safe communication.
+
+```cursed
+sus int_chan chan<drip> = make_channel()
+sus string_chan chan<tea> = make_channel()
+sus bool_chan chan<lit> = make_channel()
+```
+
+#### `make_channel<T>() chan<T>`
+Creates a new unbuffered channel.
+
+```cursed
+sus ch chan<drip> = make_channel()
+```
+
+#### `make_buffered_channel<T>(capacity drip) chan<T>`
+Creates a buffered channel with the specified capacity.
+
+```cursed
+sus buffered chan<tea> = make_buffered_channel(10)
+
+// Non-blocking sends until buffer is full
+bestie (sus i drip = 0; i < 10; i++) {
+    buffered <- "message " + i.(tea)
+}
+```
+
+#### Channel Operations
+
+**Send**: `channel <- value`
+```cursed
+sus ch chan<drip> = make_channel()
+go {
+    ch <- 42
+    ch <- 24
+    close(ch)
+}
+```
+
+**Receive**: `value = <-channel`
+```cursed
+sus value drip = <-ch
+vibez.spill("Received:", value)
+
+// Check if channel is closed
+sus value drip, sus ok lit = <-ch
+ready (!ok) {
+    vibez.spill("Channel is closed")
+}
+```
+
+**Close**: `close(channel)`
+```cursed
+close(ch)  // No more sends allowed, receivers get zero values
+```
+
+#### Channel Iteration
+```cursed
+sus ch chan<drip> = make_channel()
+
+// Send data in goroutine
+go {
+    bestie (sus i drip = 1; i <= 5; i++) {
+        ch <- i
+    }
+    close(ch)
+}
+
+// Receive until closed
+ready (lit) {
+    sus value drip, sus ok lit = <-ch
+    ready (!ok) {
+        break
+    }
+    vibez.spill("Received:", value)
+}
+```
+
+### Select Operations
+
+#### `select { ... }`
+Multi-channel operations for non-blocking communication.
+
+```cursed
+sus ch1 chan<drip> = make_channel()
+sus ch2 chan<tea> = make_channel()
+
+select {
+    case value := <-ch1 {
+        vibez.spill("Got number:", value)
+    }
+    case message := <-ch2 {
+        vibez.spill("Got string:", message)
+    }
+    default {
+        vibez.spill("No channels ready")
+    }
+}
+```
+
+#### Timeout Operations
+```cursed
+yeet "timez"
+
+sus ch chan<drip> = make_channel()
+sus timeout chan<lit> = timez.after(1000) // 1 second timeout
+
+select {
+    case value := <-ch {
+        vibez.spill("Received:", value)
+    }
+    case <-timeout {
+        vibez.spill("Operation timed out")
+    }
+}
+```
+
+### Synchronization Primitives
+
+#### `Mutex`
+Mutual exclusion lock for protecting shared resources.
+
+```cursed
+struct Counter {
+    value drip,
+    mutex Mutex
+}
+
+slay (counter *Counter) increment() {
+    counter.mutex.lock()
+    shook counter.mutex.unlock()  // Ensure unlock on function exit
+    
+    counter.value++
+}
+
+slay (counter *Counter) get() drip {
+    counter.mutex.lock()
+    shook counter.mutex.unlock()
+    
+    damn counter.value
+}
+```
+
+#### `RWMutex`
+Reader-writer mutex allowing multiple readers or single writer.
+
+```cursed
+struct SafeMap {
+    data map[tea]drip,
+    rwmutex RWMutex
+}
+
+slay (sm *SafeMap) get(key tea) drip {
+    sm.rwmutex.rlock()
+    shook sm.rwmutex.runlock()
+    
+    damn sm.data[key]
+}
+
+slay (sm *SafeMap) set(key tea, value drip) {
+    sm.rwmutex.lock()
+    shook sm.rwmutex.unlock()
+    
+    sm.data[key] = value
+}
+```
+
+#### `WaitGroup`
+Waits for a collection of goroutines to finish.
+
+```cursed
+sus wg WaitGroup = WaitGroup{}
+
+bestie (sus i drip = 0; i < 5; i++) {
+    wg.add(1)
+    go {
+        shook wg.done()
+        vibez.spill("Worker", i, "finished")
+    }
+}
+
+wg.wait()
+vibez.spill("All workers finished")
+```
+
+#### `Once`
+Ensures a function is executed only once across multiple goroutines.
+
+```cursed
+sus once Once = Once{}
+
+slay initialize() {
+    vibez.spill("Initialization performed once")
+}
+
+// Multiple goroutines call this, but initialize() runs only once
+bestie (sus i drip = 0; i < 10; i++) {
+    go {
+        once.do(initialize)
+    }
+}
+```
 
 ### Atomic Operations
 
-- **32-bit & 64-bit Atomics** - Lock-free integer operations with memory ordering
-- **Atomic Booleans** - Thread-safe boolean values
-- **Compare-and-Swap** - Hardware-level atomic compare-and-exchange
-- **Fetch-and-Add/Sub** - Atomic arithmetic operations
+#### `atomic_load<T>(addr *T) T`
+Atomically loads a value.
 
-### Advanced Primitives
-
-- **Semaphores** - Resource counting with atomic permits
-- **Barriers** - Multi-goroutine synchronization points
-- **Condition Variables** - Thread coordination with signal/broadcast
-- **Thread Pools** - Concurrent task execution management
-- **Once Primitives** - One-time initialization guarantees
-
-### Memory Ordering
-
-All atomic operations support proper memory ordering semantics:
-- `RELAXED` - No ordering constraints
-- `ACQUIRE` - Acquire semantics for loads
-- `RELEASE` - Release semantics for stores  
-- `ACQREL` - Combined acquire-release
-- `SEQCST` - Sequential consistency
-
-## Core Types
-
-### Mutex Operations
-- `create_mutex()` - Create mutex with atomic state
-- `mutex_lock(mutex *Mutex)` - Lock mutex (blocking)
-- `mutex_unlock(mutex *Mutex)` - Unlock mutex  
-- `mutex_trylock(mutex *Mutex)` - Try to lock (non-blocking)
-
-### WaitGroup Operations
-- `create_waitgroup()` - Create waitgroup with atomic counters
-- `waitgroup_add(wg *WaitGroup, count normie)` - Add count atomically
-- `waitgroup_done(wg *WaitGroup)` - Mark one task done
-- `waitgroup_wait(wg *WaitGroup)` - Wait for all tasks
-
-### Channel Operations
-- `create_channel(capacity normie)` - Create buffered channel
-- `create_sync_channel()` - Create synchronous channel
-- `channel_send(ch *Channel, data normie)` - Send data (blocking)
-- `channel_receive(ch *Channel)` - Receive data (blocking)
-- `channel_close(ch *Channel)` - Close channel
-- `channel_is_closed(ch *Channel)` - Check if closed
-
-### Atomic Operations
-- `atomic_i32_new(initial normie)` - Create 32-bit atomic
-- `atomic_i64_new(initial thicc)` - Create 64-bit atomic
-- `atomic_bool_new(initial lit)` - Create atomic boolean
-- `atomic_cas_i32(atomic, expected, desired)` - Compare-and-swap
-- `atomic_increment(atomic)` - Atomic increment
-- `atomic_decrement(atomic)` - Atomic decrement
-- `atomic_load_i32(atomic)` - Load value atomically
-- `atomic_store_i32(atomic, value)` - Store value atomically
-
-### Semaphore Operations
-- `create_semaphore(initial normie)` - Create counting semaphore
-- `semaphore_acquire(sem *Semaphore)` - Acquire permit (blocking)
-- `semaphore_release(sem *Semaphore)` - Release permit
-- `semaphore_try_acquire(sem *Semaphore)` - Try acquire (non-blocking)
-
-### Barrier Operations
-- `create_barrier(count normie)` - Create barrier for N participants
-- `barrier_wait(barrier *Barrier)` - Wait at barrier
-
-### Read-Write Mutex Operations
-- `create_rwmutex()` - Create read-write mutex
-- `rwmutex_rlock(rwmutex *RWMutex)` - Acquire read lock
-- `rwmutex_runlock(rwmutex *RWMutex)` - Release read lock
-- `rwmutex_lock(rwmutex *RWMutex)` - Acquire write lock (exclusive)
-- `rwmutex_unlock(rwmutex *RWMutex)` - Release write lock
-
-### Condition Variable Operations
-- `create_condition()` - Create condition variable
-- `condition_wait(cond *CondVar, mutex *Mutex)` - Wait on condition
-- `condition_signal(cond *CondVar)` - Signal one waiting goroutine
-- `condition_broadcast(cond *CondVar)` - Signal all waiting goroutines
-
-### Thread Pool Operations
-- `create_thread_pool(workers, queue_size normie)` - Create thread pool
-- `thread_pool_submit(pool *ThreadPool, task normie)` - Submit task
-- `thread_pool_wait_all(pool *ThreadPool)` - Wait for all tasks
-- `thread_pool_shutdown(pool *ThreadPool)` - Shutdown pool
-
-### Once Operations
-- `create_once()` - Create one-time execution primitive
-- `once_do(once *Once, func_id normie)` - Execute exactly once
-
-## Usage Examples
-
-### Basic Mutex Usage
 ```cursed
-yeet "concurrenz"
-
-sus mutex := concurrenz.create_mutex()
-concurrenz.mutex_lock(mutex)
-# Critical section
-concurrenz.mutex_unlock(mutex)
+sus counter drip = 0
+sus value drip = concurrenz.atomic_load(&counter)
 ```
 
-### Atomic Operations
+#### `atomic_store<T>(addr *T, value T)`
+Atomically stores a value.
+
 ```cursed
-yeet "concurrenz"
-
-sus atomic := concurrenz.atomic_i32_new(0)
-concurrenz.atomic_increment(atomic)
-sus value := concurrenz.atomic_load_i32(atomic)
+concurrenz.atomic_store(&counter, 42)
 ```
 
-### Buffered Channel Communication
+#### `atomic_add(addr *drip, delta drip) drip`
+Atomically adds and returns the new value.
+
 ```cursed
-yeet "concurrenz"
-
-sus ch := concurrenz.create_channel(5)  # Buffered channel
-concurrenz.channel_send(ch, 42)
-sus data := concurrenz.channel_receive(ch)
+sus new_value drip = concurrenz.atomic_add(&counter, 1)
 ```
 
-### WaitGroup Synchronization
+#### `atomic_compare_and_swap<T>(addr *T, old T, new T) lit`
+Atomic compare-and-swap operation.
+
 ```cursed
-yeet "concurrenz"
-
-sus wg := concurrenz.create_waitgroup()
-concurrenz.waitgroup_add(wg, 2)
-# Start goroutines...
-concurrenz.waitgroup_done(wg)
-concurrenz.waitgroup_wait(wg)
+sus success lit = concurrenz.atomic_compare_and_swap(&counter, 10, 20)
+ready (success) {
+    vibez.spill("Successfully updated counter")
+}
 ```
 
-### Semaphore Resource Management
+## Advanced Usage Patterns
+
+### Worker Pool Pattern
 ```cursed
-yeet "concurrenz"
+struct WorkerPool {
+    workers drip,
+    jobs chan<slay()>,
+    results chan<drip>,
+    wg WaitGroup
+}
 
-sus sem := concurrenz.create_semaphore(3)
-concurrenz.semaphore_acquire(sem)
-# Use resource
-concurrenz.semaphore_release(sem)
+slay create_worker_pool(num_workers drip) WorkerPool {
+    sus pool WorkerPool = WorkerPool{
+        workers: num_workers,
+        jobs: make_channel(),
+        results: make_buffered_channel(100),
+        wg: WaitGroup{}
+    }
+    
+    // Start workers
+    bestie (sus i drip = 0; i < num_workers; i++) {
+        pool.wg.add(1)
+        go {
+            shook pool.wg.done()
+            
+            ready (lit) {
+                sus job slay(), sus ok lit = <-pool.jobs
+                ready (!ok) {
+                    break
+                }
+                
+                sus result drip = job()
+                pool.results <- result
+            }
+        }
+    }
+    
+    damn pool
+}
+
+slay (pool *WorkerPool) submit(job slay() drip) {
+    pool.jobs <- job
+}
+
+slay (pool *WorkerPool) shutdown() {
+    close(pool.jobs)
+    pool.wg.wait()
+    close(pool.results)
+}
+
+// Usage
+sus pool WorkerPool = create_worker_pool(4)
+
+bestie (sus i drip = 0; i < 10; i++) {
+    sus task_id drip = i
+    pool.submit(slay() drip {
+        // Simulate work
+        timez.sleep(100)
+        damn task_id * task_id
+    })
+}
+
+pool.shutdown()
 ```
 
-## Implementation Details
+### Pipeline Pattern
+```cursed
+// Pipeline stage
+slay pipeline_stage(input chan<drip>, output chan<drip>, transform slay(drip) drip) {
+    go {
+        ready (lit) {
+            sus value drip, sus ok lit = <-input
+            ready (!ok) {
+                close(output)
+                break
+            }
+            
+            sus result drip = transform(value)
+            output <- result
+        }
+    }
+}
 
-- **Pure CURSED** - No external dependencies except atomic_drip
-- **Hardware Atomics** - Leverages platform-specific atomic instructions
-- **Memory Safe** - Proper error handling and null pointer checks
-- **Performance Optimized** - Lock-free algorithms where possible
-- **Cross-Platform** - Works on x86_64, ARM64, and WebAssembly
+// Create pipeline
+sus input chan<drip> = make_channel()
+sus stage1 chan<drip> = make_channel()
+sus stage2 chan<drip> = make_channel()
+sus output chan<drip> = make_channel()
 
-## Integration
+// Stage 1: multiply by 2
+pipeline_stage(input, stage1, slay(x drip) drip { damn x * 2 })
 
-The module integrates with:
-- `atomic_drip` - Hardware atomic operations with memory ordering
-- `memory` - Safe memory allocation and management
-- `error_drip` - Comprehensive error handling
-- `concurrency.zig` - Runtime goroutine scheduling system
+// Stage 2: add 10
+pipeline_stage(stage1, stage2, slay(x drip) drip { damn x + 10 })
 
-## Testing
+// Stage 3: convert to string and back (just for demo)
+go {
+    ready (lit) {
+        sus value drip, sus ok lit = <-stage2
+        ready (!ok) {
+            close(output)
+            break
+        }
+        output <- value
+    }
+}
 
-Run comprehensive tests with:
-```bash
-./zig-out/bin/cursed stdlib/concurrenz/test_concurrenz.csd
+// Send data through pipeline
+go {
+    bestie (sus i drip = 1; i <= 5; i++) {
+        input <- i
+    }
+    close(input)
+}
+
+// Collect results
+ready (lit) {
+    sus result drip, sus ok lit = <-output
+    ready (!ok) {
+        break
+    }
+    vibez.spill("Pipeline result:", result)
+}
 ```
 
-The test suite covers:
-- All synchronization primitives
-- Atomic operations with different memory orderings
-- Complex multi-primitive scenarios
-- Stress testing and edge cases
-- Error conditions and boundary cases
+### Producer-Consumer Pattern
+```cursed
+struct Buffer {
+    data []drip,
+    mutex Mutex,
+    not_empty Condition,
+    not_full Condition,
+    head drip,
+    tail drip,
+    count drip,
+    capacity drip
+}
 
-## Performance Characteristics
+slay create_buffer(capacity drip) Buffer {
+    damn Buffer{
+        data: make_array(capacity),
+        head: 0,
+        tail: 0,
+        count: 0,
+        capacity: capacity
+    }
+}
 
-- **O(1)** - Mutex operations with atomic CAS
-- **O(1)** - Atomic operations (hardware-level)
-- **O(n)** - WaitGroup operations (n = waiters)
-- **O(1)** - Channel operations (amortized)
-- **Lock-free** - Atomic primitives with proper memory ordering
+slay (buf *Buffer) put(item drip) {
+    buf.mutex.lock()
+    shook buf.mutex.unlock()
+    
+    // Wait for space
+    ready (buf.count == buf.capacity) {
+        buf.not_full.wait(&buf.mutex)
+    }
+    
+    buf.data[buf.tail] = item
+    buf.tail = (buf.tail + 1) % buf.capacity
+    buf.count++
+    
+    buf.not_empty.signal()
+}
 
-## Memory Ordering Guarantees
+slay (buf *Buffer) get() drip {
+    buf.mutex.lock()
+    shook buf.mutex.unlock()
+    
+    // Wait for data
+    ready (buf.count == 0) {
+        buf.not_empty.wait(&buf.mutex)
+    }
+    
+    sus item drip = buf.data[buf.head]
+    buf.head = (buf.head + 1) % buf.capacity
+    buf.count--
+    
+    buf.not_full.signal()
+    damn item
+}
+```
 
-All atomic operations provide:
-- **Acquire-Release** - Proper synchronization semantics
-- **Sequential Consistency** - Default strong ordering
-- **Memory Barriers** - Platform-specific fence operations
-- **Cross-Platform** - Consistent behavior across architectures
+### Fan-Out/Fan-In Pattern
+```cursed
+// Fan-out: distribute work to multiple workers
+slay fan_out(input chan<drip>, workers drip) []chan<drip> {
+    sus outputs []chan<drip> = []
+    
+    bestie (sus i drip = 0; i < workers; i++) {
+        sus out chan<drip> = make_channel()
+        outputs = append(outputs, out)
+        
+        go {
+            ready (lit) {
+                sus value drip, sus ok lit = <-input
+                ready (!ok) {
+                    close(out)
+                    break
+                }
+                out <- value
+            }
+        }
+    }
+    
+    damn outputs
+}
 
-## Thread Safety
+// Fan-in: collect results from multiple workers
+slay fan_in(inputs []chan<drip>) chan<drip> {
+    sus output chan<drip> = make_channel()
+    sus wg WaitGroup = WaitGroup{}
+    
+    bestie (sus input chan<drip> : inputs) {
+        wg.add(1)
+        go {
+            shook wg.done()
+            
+            ready (lit) {
+                sus value drip, sus ok lit = <-input
+                ready (!ok) {
+                    break
+                }
+                output <- value
+            }
+        }
+    }
+    
+    // Close output when all inputs are done
+    go {
+        wg.wait()
+        close(output)
+    }
+    
+    damn output
+}
+```
 
-All functions in this module are thread-safe and can be used safely from multiple goroutines. The implementations use hardware atomic operations and memory barriers to ensure correct behavior in highly concurrent environments.
+## Error Handling and Recovery
 
-## Current Status: ✅ COMPLETE
+### Panic Recovery in Goroutines
+```cursed
+slay safe_goroutine(work slay()) {
+    go {
+        // Recover from panics to prevent crashing other goroutines
+        recover {
+            work()
+        } catch (error) {
+            vibez.spill_error("Goroutine panic:", error)
+        }
+    }
+}
 
-This implementation provides a production-ready concurrency library with:
-- ✅ Full atomic operations suite
-- ✅ All major synchronization primitives  
-- ✅ Hardware-level performance optimizations
-- ✅ Comprehensive test coverage
-- ✅ Cross-platform compatibility
-- ✅ Memory-safe implementations
+// Usage
+safe_goroutine(slay() {
+    // This might panic
+    sus result drip = risky_operation()
+    vibez.spill("Result:", result)
+})
+```
+
+### Channel Error Handling
+```cursed
+slay safe_channel_send<T>(ch chan<T>, value T, timeout drip) lit {
+    sus timeout_ch chan<lit> = timez.after(timeout)
+    
+    select {
+        case ch <- value {
+            damn based  // Success
+        }
+        case <-timeout_ch {
+            damn false  // Timeout
+        }
+    }
+}
+
+slay safe_channel_receive<T>(ch chan<T>, timeout drip) (T, lit) {
+    sus timeout_ch chan<lit> = timez.after(timeout)
+    
+    select {
+        case value := <-ch {
+            damn (value, based)  // Success
+        }
+        case <-timeout_ch {
+            damn (T{}, false)  // Timeout
+        }
+    }
+}
+```
+
+## Performance Monitoring
+
+### Goroutine Profiling
+```cursed
+struct GoroutineStats {
+    total drip,
+    running drip,
+    waiting drip,
+    sleeping drip
+}
+
+slay get_goroutine_stats() GoroutineStats {
+    damn GoroutineStats{
+        total: concurrenz.runtime_num_goroutines(),
+        running: concurrenz.runtime_num_running(),
+        waiting: concurrenz.runtime_num_waiting(),
+        sleeping: concurrenz.runtime_num_sleeping()
+    }
+}
+
+slay monitor_goroutines() {
+    go {
+        ready (lit) {
+            sus stats GoroutineStats = get_goroutine_stats()
+            vibez.spill("Goroutines - Total:", stats.total, 
+                       "Running:", stats.running,
+                       "Waiting:", stats.waiting)
+            timez.sleep(5000)  // 5 second intervals
+        }
+    }
+}
+```
+
+### Channel Monitoring
+```cursed
+struct ChannelStats {
+    buffer_size drip,
+    buffer_used drip,
+    senders_waiting drip,
+    receivers_waiting drip
+}
+
+slay get_channel_stats<T>(ch chan<T>) ChannelStats {
+    damn ChannelStats{
+        buffer_size: ch.capacity(),
+        buffer_used: ch.len(),
+        senders_waiting: ch.senders_waiting(),
+        receivers_waiting: ch.receivers_waiting()
+    }
+}
+```
+
+## Testing Concurrent Code
+
+### Race Detection
+```cursed
+// Enable race detection in tests
+#[test]
+slay test_concurrent_counter() {
+    sus counter drip = 0
+    sus iterations drip = 1000
+    sus wg WaitGroup = WaitGroup{}
+    
+    // Start multiple goroutines that increment counter
+    bestie (sus i drip = 0; i < 10; i++) {
+        wg.add(1)
+        go {
+            shook wg.done()
+            
+            bestie (sus j drip = 0; j < iterations; j++) {
+                // This will trigger race detection if not synchronized
+                counter++
+            }
+        }
+    }
+    
+    wg.wait()
+    
+    // This test will fail with race detection enabled
+    testz.assert_eq_int(counter, 10 * iterations)
+}
+```
+
+### Deadlock Detection
+```cursed
+#[test]
+slay test_no_deadlock() {
+    sus ch1 chan<drip> = make_channel()
+    sus ch2 chan<drip> = make_channel()
+    sus timeout chan<lit> = timez.after(1000)  // 1 second timeout
+    
+    go {
+        ch1 <- 1
+        <-ch2
+    }
+    
+    go {
+        ch2 <- 2
+        <-ch1
+    }
+    
+    select {
+        case <-timez.after(100) {
+            // Test passes if operations complete quickly
+        }
+        case <-timeout {
+            testz.fail("Potential deadlock detected")
+        }
+    }
+}
+```
+
+### Load Testing
+```cursed
+#[test]
+slay test_channel_throughput() {
+    sus ch chan<drip> = make_buffered_channel(1000)
+    sus messages drip = 100000
+    sus start drip = timez.get_time_microseconds()
+    
+    // Producer
+    go {
+        bestie (sus i drip = 0; i < messages; i++) {
+            ch <- i
+        }
+        close(ch)
+    }
+    
+    // Consumer
+    sus received drip = 0
+    ready (lit) {
+        sus value drip, sus ok lit = <-ch
+        ready (!ok) {
+            break
+        }
+        received++
+    }
+    
+    sus elapsed drip = timez.get_time_microseconds() - start
+    sus throughput drip = (messages * 1000000) / elapsed
+    
+    vibez.spill("Throughput:", throughput, "messages/second")
+    testz.assert_eq_int(received, messages)
+}
+```
+
+## Best Practices
+
+### Goroutine Lifecycle
+1. **Always have a way to stop goroutines** - use context or channels for cancellation
+2. **Avoid goroutine leaks** - ensure all goroutines can exit
+3. **Use WaitGroup for coordination** - wait for goroutines to complete
+4. **Handle panics** - recover from panics to prevent crashes
+
+### Channel Usage
+1. **Close channels only from sender side** - receivers should check if closed
+2. **Use buffered channels judiciously** - avoid hiding synchronization issues
+3. **Prefer channels over shared memory** - "Don't communicate by sharing memory; share memory by communicating"
+4. **Use select with default for non-blocking operations**
+
+### Synchronization
+1. **Keep critical sections small** - minimize time holding locks
+2. **Use RWMutex for read-heavy workloads** - allow concurrent readers
+3. **Prefer atomic operations for simple operations** - faster than mutexes
+4. **Avoid nested locking** - can cause deadlocks
+
+### Performance
+1. **Pool goroutines for short-lived tasks** - reduce creation overhead
+2. **Use buffered channels to reduce blocking** - but don't hide synchronization issues
+3. **Profile concurrent code** - identify bottlenecks and contention
+4. **Consider GOMAXPROCS** - tune for your hardware and workload
+
+---
+
+The `concurrenz` module enables powerful concurrent programming with safety guarantees and excellent performance. Its design follows proven patterns from languages like Go while adding CURSED's type safety and memory safety features.

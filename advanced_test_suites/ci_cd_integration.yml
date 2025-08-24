@@ -1,0 +1,699 @@
+# GitHub Actions CI/CD Integration for CURSED Advanced Test Suites
+name: CURSED Advanced Test Suite
+
+on:
+  push:
+    branches: [ main, develop, release/* ]
+  pull_request:
+    branches: [ main, develop ]
+  schedule:
+    # Run nightly builds at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      test_categories:
+        description: 'Test categories to run (comma-separated)'
+        required: false
+        default: 'all'
+      run_stress_tests:
+        description: 'Run stress tests (may be resource intensive)'
+        type: boolean
+        required: false
+        default: false
+
+env:
+  CURSED_EXECUTABLE: ./zig-out/bin/cursed-zig
+  TEST_OUTPUT_DIR: test_reports
+
+jobs:
+  # Build CURSED compiler
+  build:
+    name: Build CURSED
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        zig-version: ['0.13.0']
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Zig
+      uses: goto-bus-stop/setup-zig@v2
+      with:
+        version: ${{ matrix.zig-version }}
+    
+    - name: Cache Zig dependencies
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cache/zig
+          zig-cache/
+        key: ${{ runner.os }}-zig-${{ matrix.zig-version }}-${{ hashFiles('build.zig', 'build.zig.zon') }}
+        restore-keys: |
+          ${{ runner.os }}-zig-${{ matrix.zig-version }}-
+    
+    - name: Build CURSED (Unix)
+      if: runner.os != 'Windows'
+      run: |
+        zig build
+        chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Build CURSED (Windows)
+      if: runner.os == 'Windows'
+      run: |
+        zig build
+        # Windows executable has .exe extension
+        echo "CURSED_EXECUTABLE=./zig-out/bin/cursed-zig.exe" >> $env:GITHUB_ENV
+    
+    - name: Verify build
+      run: |
+        ls -la zig-out/bin/
+        ${{ env.CURSED_EXECUTABLE }} --version || echo "Version command not available"
+    
+    - name: Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: cursed-${{ matrix.os }}
+        path: |
+          zig-out/bin/
+          !zig-out/bin/*.pdb
+        retention-days: 7
+
+  # Basic functionality tests
+  basic-tests:
+    name: Basic Tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-${{ matrix.os }}
+        path: zig-out/bin/
+    
+    - name: Set permissions (Unix)
+      if: runner.os != 'Windows'
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Set executable path (Windows)
+      if: runner.os == 'Windows'
+      run: echo "CURSED_EXECUTABLE=./zig-out/bin/cursed-zig.exe" >> $env:GITHUB_ENV
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: |
+        pip install psutil
+    
+    - name: Run comprehensive stdlib test
+      run: |
+        ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.csd
+    
+    - name: Quick smoke tests
+      run: |
+        echo "Running quick validation tests..."
+        ${{ env.CURSED_EXECUTABLE }} basic_test.csd
+        ${{ env.CURSED_EXECUTABLE }} arithmetic_test.csd
+        ${{ env.CURSED_EXECUTABLE }} array_test.csd
+
+  # Edge case testing
+  edge-case-tests:
+    name: Edge Case Tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]  # Skip Windows for edge cases due to platform differences
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-${{ matrix.os }}
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil
+    
+    - name: Run edge case tests
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories edge_cases \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/edge_cases.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/edge_cases.xml
+    
+    - name: Upload edge case test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: edge-case-results-${{ matrix.os }}
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Performance benchmarking
+  performance-tests:
+    name: Performance Tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-${{ matrix.os }}
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil matplotlib seaborn pandas
+    
+    - name: Run performance benchmarks
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories performance \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/performance.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/performance.xml
+    
+    - name: Generate performance charts
+      run: |
+        python3 -c "
+import json
+import matplotlib.pyplot as plt
+import pandas as pd
+
+with open('${{ env.TEST_OUTPUT_DIR }}/performance.json') as f:
+    data = json.load(f)
+
+# Extract test durations
+tests = []
+durations = []
+for test in data['tests']:
+    if test['category'] == 'performance':
+        tests.append(test['name'])
+        durations.append(test['duration'])
+
+# Create performance chart
+plt.figure(figsize=(12, 6))
+plt.bar(tests, durations)
+plt.title('CURSED Performance Benchmark Results')
+plt.xlabel('Test')
+plt.ylabel('Duration (seconds)')
+plt.xticks(rotation=45, ha='right')
+plt.tight_layout()
+plt.savefig('${{ env.TEST_OUTPUT_DIR }}/performance_chart.png', dpi=300)
+print('Performance chart saved')
+"
+    
+    - name: Upload performance test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-results-${{ matrix.os }}
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Integration testing
+  integration-tests:
+    name: Integration Tests
+    needs: build
+    runs-on: ubuntu-latest
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: cursed_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-ubuntu-latest
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil
+    
+    - name: Setup test environment
+      run: |
+        # Create test directories
+        mkdir -p test_data
+        echo '{"test": "data"}' > test_data/sample.json
+    
+    - name: Run integration tests
+      env:
+        DATABASE_URL: postgresql://postgres:test@localhost:5432/cursed_test
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories integration \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/integration.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/integration.xml
+    
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: integration-results
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Stress testing (optional, resource intensive)
+  stress-tests:
+    name: Stress Tests
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event.inputs.run_stress_tests == 'true' || github.event_name == 'schedule'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-ubuntu-latest
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil
+    
+    - name: Increase system limits
+      run: |
+        ulimit -n 65536  # Increase file descriptor limit
+        ulimit -u 32768  # Increase process limit
+    
+    - name: Run stress tests
+      timeout-minutes: 30
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories stress \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/stress.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/stress.xml
+    
+    - name: Upload stress test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: stress-results
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Security testing
+  security-tests:
+    name: Security Tests
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-ubuntu-latest
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil
+    
+    - name: Run security tests
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories security \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/security.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/security.xml
+    
+    - name: Upload security test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: security-results
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Cross-platform validation
+  cross-platform-tests:
+    name: Cross-Platform Tests
+    needs: build
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-${{ matrix.os }}
+        path: zig-out/bin/
+    
+    - name: Set permissions (Unix)
+      if: runner.os != 'Windows'
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Set executable path (Windows)
+      if: runner.os == 'Windows'
+      run: echo "CURSED_EXECUTABLE=./zig-out/bin/cursed-zig.exe" >> $env:GITHUB_ENV
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install psutil
+    
+    - name: Run cross-platform tests
+      run: |
+        python3 advanced_test_suites/run_all_tests.py \
+          --categories cross_platform \
+          --json-report ${{ env.TEST_OUTPUT_DIR }}/cross_platform_${{ runner.os }}.json \
+          --junit-xml ${{ env.TEST_OUTPUT_DIR }}/cross_platform_${{ runner.os }}.xml
+    
+    - name: Upload cross-platform test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: cross-platform-results-${{ matrix.os }}
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Memory safety validation
+  memory-safety:
+    name: Memory Safety Tests
+    needs: build
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download build artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: cursed-ubuntu-latest
+        path: zig-out/bin/
+    
+    - name: Set permissions
+      run: chmod +x ${{ env.CURSED_EXECUTABLE }}
+    
+    - name: Install Valgrind
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y valgrind
+    
+    - name: Run memory safety tests
+      run: |
+        echo "Running memory safety validation with Valgrind..."
+        
+        # Test basic functionality for memory leaks
+        valgrind --leak-check=full --error-exitcode=1 \
+          ${{ env.CURSED_EXECUTABLE }} basic_test.csd
+        
+        # Test comprehensive stdlib for memory leaks
+        valgrind --leak-check=full --error-exitcode=1 \
+          --show-leak-kinds=all --track-origins=yes \
+          ${{ env.CURSED_EXECUTABLE }} comprehensive_stdlib_test.csd
+        
+        echo "Memory safety validation completed successfully!"
+    
+    - name: Generate memory report
+      if: always()
+      run: |
+        mkdir -p ${{ env.TEST_OUTPUT_DIR }}
+        echo "Memory safety validation completed at $(date)" > ${{ env.TEST_OUTPUT_DIR }}/memory_safety.log
+        valgrind --version >> ${{ env.TEST_OUTPUT_DIR }}/memory_safety.log
+    
+    - name: Upload memory safety results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: memory-safety-results
+        path: ${{ env.TEST_OUTPUT_DIR }}/
+        retention-days: 30
+
+  # Aggregate results and generate final report
+  aggregate-results:
+    name: Aggregate Test Results
+    needs: [basic-tests, edge-case-tests, performance-tests, integration-tests, security-tests, cross-platform-tests, memory-safety]
+    if: always()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Download all test results
+      uses: actions/download-artifact@v4
+      with:
+        path: all_results/
+    
+    - name: Setup Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+    
+    - name: Install Python dependencies
+      run: pip install pandas matplotlib seaborn
+    
+    - name: Aggregate results
+      run: |
+        python3 -c "
+import json
+import os
+import pandas as pd
+import matplotlib.pyplot as plt
+from pathlib import Path
+
+results_dir = Path('all_results')
+all_tests = []
+
+# Collect all JSON results
+for json_file in results_dir.glob('**/**.json'):
+    try:
+        with open(json_file) as f:
+            data = json.load(f)
+            if 'tests' in data:
+                all_tests.extend(data['tests'])
+    except:
+        continue
+
+if all_tests:
+    df = pd.DataFrame(all_tests)
+    
+    # Summary statistics
+    total_tests = len(df)
+    passed = len(df[df['status'] == 'pass'])
+    failed = len(df[df['status'] == 'fail'])
+    errors = len(df[df['status'] == 'error'])
+    
+    print(f'=== CURSED Advanced Test Suite - Final Results ===')
+    print(f'Total Tests: {total_tests}')
+    print(f'Passed: {passed} ({passed/total_tests*100:.1f}%)')
+    print(f'Failed: {failed} ({failed/total_tests*100:.1f}%)')
+    print(f'Errors: {errors} ({errors/total_tests*100:.1f}%)')
+    
+    # Results by category
+    category_stats = df.groupby('category')['status'].value_counts().unstack(fill_value=0)
+    print('\nResults by Category:')
+    print(category_stats)
+    
+    # Create final summary chart
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(15, 6))
+    
+    # Overall status pie chart
+    status_counts = df['status'].value_counts()
+    ax1.pie(status_counts.values, labels=status_counts.index, autopct='%1.1f%%')
+    ax1.set_title('Overall Test Results')
+    
+    # Category breakdown bar chart
+    category_stats.plot(kind='bar', ax=ax2, stacked=True)
+    ax2.set_title('Results by Category')
+    ax2.set_xlabel('Category')
+    ax2.set_ylabel('Number of Tests')
+    ax2.legend(title='Status')
+    plt.setp(ax2.get_xticklabels(), rotation=45, ha='right')
+    
+    plt.tight_layout()
+    plt.savefig('test_results_summary.png', dpi=300, bbox_inches='tight')
+    
+    # Generate final JSON report
+    summary = {
+        'timestamp': '$(date -Iseconds)',
+        'total_tests': total_tests,
+        'passed': passed,
+        'failed': failed,
+        'errors': errors,
+        'success_rate': passed/total_tests*100 if total_tests > 0 else 0,
+        'category_breakdown': category_stats.to_dict(),
+        'all_tests': all_tests
+    }
+    
+    with open('final_test_summary.json', 'w') as f:
+        json.dump(summary, f, indent=2)
+    
+    print('Final summary generated successfully!')
+else:
+    print('No test results found!')
+"
+    
+    - name: Upload final summary
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: final-test-summary
+        path: |
+          final_test_summary.json
+          test_results_summary.png
+        retention-days: 90
+    
+    - name: Comment PR with results
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          try {
+            const summary = JSON.parse(fs.readFileSync('final_test_summary.json', 'utf8'));
+            const comment = \`
+## CURSED Advanced Test Suite Results 🧪
+
+- **Total Tests:** \${summary.total_tests}
+- **Passed:** \${summary.passed} (\${summary.success_rate.toFixed(1)}%) ✅
+- **Failed:** \${summary.failed} ❌
+- **Errors:** \${summary.errors} ⚠️
+
+### Results by Category:
+\${Object.entries(summary.category_breakdown).map(([cat, results]) => 
+  \`- **\${cat}:** \${results.pass || 0} passed, \${results.fail || 0} failed, \${results.error || 0} errors\`
+).join('\\n')}
+
+*View detailed results in the Actions artifacts.*
+            \`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: comment
+            });
+          } catch (error) {
+            console.log('Could not post results comment:', error);
+          }
+
+  # Deployment readiness check
+  deployment-readiness:
+    name: Deployment Readiness
+    needs: aggregate-results
+    if: github.ref == 'refs/heads/main' && success()
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Download final summary
+      uses: actions/download-artifact@v4
+      with:
+        name: final-test-summary
+    
+    - name: Check deployment readiness
+      run: |
+        if [[ -f final_test_summary.json ]]; then
+          success_rate=$(jq -r '.success_rate' final_test_summary.json)
+          echo "Success rate: $success_rate%"
+          
+          if (( $(echo "$success_rate >= 95.0" | bc -l) )); then
+            echo "✅ DEPLOYMENT READY - Success rate >= 95%"
+            echo "deployment_ready=true" >> $GITHUB_ENV
+          else
+            echo "❌ NOT READY FOR DEPLOYMENT - Success rate < 95%"
+            echo "deployment_ready=false" >> $GITHUB_ENV
+          fi
+        else
+          echo "❌ NOT READY FOR DEPLOYMENT - No test results found"
+          echo "deployment_ready=false" >> $GITHUB_ENV
+        fi
+    
+    - name: Create deployment status
+      if: env.deployment_ready == 'true'
+      run: |
+        echo "🚀 CURSED is ready for production deployment!"
+        echo "All advanced test suites have passed with high success rate."

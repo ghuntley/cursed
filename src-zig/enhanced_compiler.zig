@@ -1348,10 +1348,10 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
             try writer.print("  ; Processing statement: {s}\n", .{stmt});
         }
         
-        // Handle if/else statements (ready/otherwise) - TODO: implement
-        // if (std.mem.startsWith(u8, stmt, "ready ")) {
-        //     try generateLLVMIfStatement(stmt, writer, string_literals, &variables, &variable_counter, verbose);
-        // }
+        // Handle if/else statements (ready/otherwise)
+        if (std.mem.startsWith(u8, stmt, "ready ")) {
+            try generateLLVMIfStatement(stmt, writer, string_literals, &variables, &variable_counter, verbose);
+        }
         // Handle vibez.spill() statements
         if (std.mem.indexOf(u8, stmt, "vibez.spill(")) |_| {
             try generateLLVMVibesSpill(stmt, writer, string_literals, &variables, &variable_counter, verbose);
@@ -1549,8 +1549,14 @@ fn generateFunctionCall(expr: []const u8, writer: anytype, variables: *std.HashM
                         .{ variable_counter.*, variable_counter.* });
                     variable_counter.* += 1;
                 } else |_| {
-                    // Variable argument - TODO: implement variable lookup
-                    if (verbose) try writer.print("  ; Function call with variable argument not implemented: {s}\n", .{args_str});
+                    // Variable argument - lookup in variables
+                    if (variables.get(args_str)) |var_info| {
+                        try writer.print("  %{} = load {}, {}* %{}, align 4\n", .{ variable_counter.*, var_info.llvm_type, var_info.llvm_type, var_info.name });
+                        try writer.print("  call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.{}, i64 0, i64 0), {} %{})\n", .{ string_literals.items.len, var_info.llvm_type, variable_counter.* });
+                        variable_counter.* += 1;
+                    } else {
+                        if (verbose) try writer.print("  ; Warning: Unknown variable in function call: {s}\n", .{args_str});
+                    }
                 }
             } else if (std.mem.eql(u8, func_name, "len")) {
                 // Handle len() function for arrays

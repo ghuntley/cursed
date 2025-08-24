@@ -1,0 +1,75 @@
+{
+  "system_info": {
+    "platform": "Linux",
+    "architecture": "x86_64",
+    "python_version": "3.12.3",
+    "cpu_cores": 96,
+    "memory_total": 0,
+    "timestamp": "2025-08-24T03:58:12.023046"
+  },
+  "summary": {
+    "total_tests": 7,
+    "passed": 7,
+    "failed": 0,
+    "errors": 0,
+    "total_duration": 0.009126901626586914
+  },
+  "tests": [
+    {
+      "name": "boundary_conditions.csd",
+      "category": "edge_cases",
+      "status": "pass",
+      "duration": 0.0017743110656738281,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "malformed_input.csd",
+      "category": "edge_cases",
+      "status": "pass",
+      "duration": 0.0016469955444335938,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "benchmark_suite.csd",
+      "category": "performance",
+      "status": "pass",
+      "duration": 0.001321554183959961,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "module_integration.csd",
+      "category": "integration",
+      "status": "pass",
+      "duration": 0.0012102127075195312,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "resource_exhaustion.csd",
+      "category": "stress",
+      "status": "pass",
+      "duration": 0.0009074211120605469,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "injection_prevention.csd",
+      "category": "security",
+      "status": "pass",
+      "duration": 0.0008370876312255859,
+      "error_message": null,
+      "memory_usage": null
+    },
+    {
+      "name": "platform_validation.csd",
+      "category": "cross_platform",
+      "status": "pass",
+      "duration": 0.0009067058563232422,
+      "error_message": null,
+      "memory_usage": null
+    }
+  ]
+}

@@ -47,6 +47,15 @@ pub fn build(b: *std.Build) void {
     const run_step = b.step("run", "Run the emergency CURSED interpreter");
     run_step.dependOn(&run_cmd.step);
 
+    // Performance benchmarks
+    const perf_benchmarks = b.addSystemCommand(&[_][]const u8{
+        "zig-out/bin/cursed-zig", "performance_test_suite.csd"
+    });
+    perf_benchmarks.step.dependOn(b.getInstallStep());
+
+    const benchmark_step = b.step("benchmark", "Run performance benchmarks");
+    benchmark_step.dependOn(&perf_benchmarks.step);
+
     // Create test step using working interpreter
     const test_step = b.step("test", "Run CURSED tests with working interpreter");
     
