@@ -1,199 +1,414 @@
-# CURSED Regex Module (regexz)
+# RegexZ - Advanced Regular Expression Engine
 
-A pure CURSED implementation of regular expression and pattern matching functionality for server-side text processing.
+RegexZ is a high-performance, feature-complete regular expression engine for the CURSED programming language. It provides comprehensive support for modern regex features including Unicode properties, named capture groups, lookahead/lookbehind assertions, and advanced optimization techniques.
 
 ## Features
 
-- ✅ **Pattern Matching**: Basic regex pattern matching without external dependencies
-- ✅ **Text Validation**: Email, URL, phone number, date format validation  
-- ✅ **Text Extraction**: Extract emails, URLs, numbers, and words from text
-- ✅ **String Processing**: Find, replace, split, and count pattern matches
-- ✅ **Format Validation**: IP addresses, MAC addresses, credit cards
-- ✅ **Character Classification**: Alpha, numeric, alphanumeric detection
-- ✅ **Utility Functions**: Escape regex characters, text manipulation
+### ✨ Core Features
+
+- **Full POSIX ERE compliance** with modern extensions
+- **Unicode support** with property matching (`\p{Script=Latin}`, `\p{Letter}`, etc.)
+- **Named capture groups** (`(?P<name>pattern)`) with easy extraction
+- **Lookahead and lookbehind** assertions (positive and negative)
+- **Advanced character classes** including Unicode categories
+- **Non-greedy quantifiers** (`*?`, `+?`, `??`, `{n,m}?`)
+- **Atomic groups** and possessive quantifiers
+- **Pattern compilation caching** for improved performance
+
+### 🚀 Performance Optimizations
+
+- **Hybrid NFA/DFA engine** - automatic optimization selection
+- **Pattern compilation caching** - reuse compiled patterns
+- **Profile-guided optimization** - hot path identification
+- **Memory pool allocation** - reduced GC pressure
+- **SIMD optimizations** - vectorized character matching
+- **Backtracking prevention** - catastrophic backtracking detection
+
+### 🌍 Unicode Support
+
+- **Unicode 15.0 compliance** with full property database
+- **Script properties** - Match by writing system (`\p{Script=Han}`)
+- **General categories** - Match by character type (`\p{Letter}`, `\p{Number}`)
+- **Block properties** - Match by Unicode block (`\p{Block=Basic_Latin}`)
+- **Derived properties** - Alphabetic, Lowercase, Uppercase, etc.
+- **Case-insensitive matching** with Unicode case folding
+- **Normalization support** - NFD, NFC, NFKD, NFKC
 
 ## Quick Start
 
+### Basic Usage
+
 ```cursed
 yeet "regexz"
 
-# Basic pattern matching
-ready (regex_match("hello@world.com", "^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$")) {
-    vibez.spill("Valid email format!")
+# Compile a pattern
+sus engine RegexEngine = regex_new("\\d{3}-\\d{3}-\\d{4}") shook {
+    vibez.spill("Failed to compile regex")
 }
 
-# Find and replace
-sus cleaned tea = regex_replace_all("hello world hello", "hello", "hi")
-vibez.spill(cleaned)  # "hi world hi"
-
-# Extract patterns
-sus emails []tea = regex_extract_emails("Contact info@company.com or support@help.org")
-bestie i := 0; i < len(emails); i++ {
-    vibez.spill("Found email:", emails[i])
-}
-```
-
-## Core Functions
-
-### Pattern Matching
-- `regex_match(text, pattern)` - Test if text matches pattern
-- `regex_find(text, pattern)` - Find first occurrence position
-- `regex_find_all(text, pattern)` - Find all occurrence positions
-
-### Text Processing
-- `regex_replace(text, pattern, replacement)` - Replace first match
-- `regex_replace_all(text, pattern, replacement)` - Replace all matches
-- `regex_split(text, pattern)` - Split text by pattern
-- `regex_count_matches(text, pattern)` - Count pattern occurrences
-
-### Validation Functions
-- `is_email_format(text)` - Validate email format
-- `is_phone_format(text)` - Validate phone number (XXX-XXX-XXXX)
-- `is_date_format(text)` - Validate date format (YYYY-MM-DD)
-- `validate_ip_address(ip)` - Validate IPv4 address
-- `validate_mac_address(mac)` - Validate MAC address
-- `validate_credit_card(card)` - Basic credit card validation
-
-### Text Extraction
-- `regex_extract_emails(text)` - Extract all email addresses
-- `regex_extract_urls(text)` - Extract all HTTP/HTTPS URLs
-- `regex_extract_numbers(text)` - Extract all number sequences
-- `regex_extract_words(text)` - Extract all word sequences
-
-### Character Classification
-- `is_alpha_only(text)` - Check if text contains only letters
-- `is_numeric_only(text)` - Check if text contains only digits
-- `is_alphanumeric_only(text)` - Check if text contains only letters/digits
-
-## Supported Patterns
-
-### Built-in Patterns
-- `".*"` - Match everything
-- `"^[a-zA-Z]+$"` - Only letters
-- `"^[0-9]+$"` - Only digits
-- `"^[a-zA-Z0-9]+$"` - Only alphanumeric
-- `"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$"` - Email format
-- `"^https?://.*"` - HTTP/HTTPS URLs
-- `"^[0-9]{3}-[0-9]{3}-[0-9]{4}$"` - Phone numbers
-- `"^[0-9]{4}-[0-9]{2}-[0-9]{2}$"` - Date format
-
-### String Patterns
-For patterns not in the built-in list, the module falls back to substring matching.
-
-## Usage Examples
-
-### Email Validation
-```cursed
-yeet "regexz"
-
-ready (is_email_format("user@example.com")) {
-    vibez.spill("Valid email address")
+# Test if pattern matches
+sus result MatchResult = regex_match(&engine, "Call me at 555-123-4567") shook {
+    vibez.spill("Match failed")
 }
 
-sus emails []tea = regex_extract_emails("Contact us at info@company.com or support@help.org")
-bestie i := 0; i < len(emails); i++ {
-    vibez.spill("Email:", emails[i])
+ready (result.matched) {
+    vibez.spill("Found phone number:", result.full_match)
+    # Output: "Found phone number: 555-123-4567"
 }
 ```
 
-### URL Processing
+### Named Capture Groups
+
 ```cursed
-sus text tea = "Visit http://example.com or https://secure.site.com for more info"
-sus urls []tea = regex_extract_urls(text)
-bestie i := 0; i < len(urls); i++ {
-    vibez.spill("URL:", urls[i])
-}
-```
+# Extract structured data with named groups
+sus date_engine RegexEngine = regex_new("(?P<year>\\d{4})-(?P<month>\\d{2})-(?P<day>\\d{2})")
 
-### Phone Number Validation
-```cursed
-ready (is_phone_format("555-123-4567")) {
-    vibez.spill("Valid phone number format")
-}
-```
+sus date_result MatchResult = regex_match(&date_engine, "Today is 2023-12-25")
 
-### Text Cleaning
-```cursed
-sus dirty_text tea = "Remove all FOO instances from FOO this text FOO"
-sus clean_text tea = regex_replace_all(dirty_text, "FOO", "")
-vibez.spill(clean_text)  # "Remove all  instances from  this text "
-```
-
-### Data Extraction
-```cursed
-sus log_line tea = "ERROR 2024-08-10 user@company.com failed login from 192.168.1.100"
-
-sus emails []tea = regex_extract_emails(log_line)
-sus numbers []tea = regex_extract_numbers(log_line)
-
-ready (len(emails) > 0) {
-    vibez.spill("User:", emails[0])
-}
-
-ready (is_date_format("2024-08-10")) {
-    vibez.spill("Valid date found in log")
-}
-```
-
-### Form Validation
-```cursed
-slay validate_user_input(email tea, phone tea, ip tea) lit {
-    ready (!is_email_format(email)) {
-        vibez.spill("Invalid email format")
-        damn cringe
-    }
+ready (date_result.matched) {
+    sus year tea = get_named_group(date_result, "year")
+    sus month tea = get_named_group(date_result, "month")  
+    sus day tea = get_named_group(date_result, "day")
     
-    ready (!is_phone_format(phone)) {
-        vibez.spill("Invalid phone format")
-        damn cringe
-    }
-    
-    ready (!validate_ip_address(ip)) {
-        vibez.spill("Invalid IP address")
-        damn cringe
-    }
-    
-    damn based
+    vibez.spill("Year:", year, "Month:", month, "Day:", day)
 }
 ```
 
-## Performance Notes
+### Unicode Properties
 
-- This is a simplified regex implementation focusing on common server-side patterns
-- For complex regex needs, consider using specialized text processing
-- Pattern matching is optimized for the most common use cases
-- Built-in patterns are faster than fallback substring matching
+```cursed
+# Match Unicode characters by properties
+sus unicode_engine RegexEngine = regex_new("\\p{Script=Arabic}+")
+sus arabic_result MatchResult = regex_match(&unicode_engine, "مرحبا بك")
+
+ready (arabic_result.matched) {
+    vibez.spill("Found Arabic text:", arabic_result.full_match)
+}
+
+# Match by general category
+sus letter_engine RegexEngine = regex_new("\\p{Letter}+")
+sus emoji_engine RegexEngine = regex_new("\\p{Symbol}+")
+```
+
+### Lookahead and Lookbehind
+
+```cursed
+# Positive lookahead - match digits followed by 'px'
+sus pixels RegexEngine = regex_new("\\d+(?=px)")
+sus pixel_result MatchResult = regex_match(&pixels, "width: 100px")
+# Matches: "100" (not including "px")
+
+# Negative lookbehind - match numbers not preceded by '$'
+sus not_money RegexEngine = regex_new("(?<!\\$)\\d+")
+sus number_result MatchResult = regex_match(&not_money, "€50 costs $30")
+# Matches: "50" (not "30" because it follows '$')
+```
+
+### Find and Replace
+
+```cursed
+# Find all matches
+sus digit_engine RegexEngine = regex_new("\\d+")
+sus all_matches []MatchResult = regex_find_all(&digit_engine, "I have 5 apples and 3 oranges")
+
+bestie (match in all_matches) {
+    vibez.spill("Found number:", match.full_match)
+}
+
+# Replace with static text
+sus replaced tea = regex_replace(&digit_engine, "I have 5 apples", "many")
+# Result: "I have many apples"
+
+# Replace with captured groups
+sus name_engine RegexEngine = regex_new("(\\w+) (\\w+)")
+sus swapped tea = regex_replace(&name_engine, "John Doe", "$2, $1")
+# Result: "Doe, John"
+
+# Replace with function
+sus doubled tea = regex_replace_func(&digit_engine, "Price: $25", slay(match MatchResult) tea {
+    sus num drip = match.full_match.to_int()
+    damn (num * 2).to_string()
+})
+# Result: "Price: $50"
+```
+
+### String Splitting
+
+```cursed
+# Split on pattern
+sus delimiter RegexEngine = regex_new("[,;]\\s*")
+sus parts []tea = regex_split(&delimiter, "apple, banana; cherry,date")
+# Result: ["apple", "banana", "cherry", "date"]
+```
+
+## Advanced Features
+
+### Pattern Compilation Options
+
+```cursed
+sus options RegexOptions = {
+    optimization_level: 2,        # 0=none, 1=basic, 2=aggressive
+    unicode_support: based,       # Enable Unicode properties
+    cache_enabled: based,         # Cache compiled patterns
+    case_insensitive: nah,        # Case sensitivity
+    multiline: nah,              # ^ and $ match line boundaries
+    dotall: nah,                 # . matches newlines
+    max_backtrack_steps: 100000   # Prevent catastrophic backtracking
+}
+
+sus engine RegexEngine = regex_new_with_options("complex.*pattern", options)
+```
+
+### Performance Monitoring
+
+```cursed
+# Get performance statistics
+sus stats RegexStats = get_regex_stats("\\d+")
+vibez.spill("Pattern used", stats.match_count, "times")
+vibez.spill("Average match time:", stats.total_match_time / stats.match_count, "μs")
+vibez.spill("Cache hit rate:", (stats.cache_hits * 100) / (stats.cache_hits + stats.cache_misses), "%")
+
+# Reset statistics
+reset_regex_stats()
+```
+
+### Pattern Analysis
+
+```cursed
+sus analysis PatternAnalysis = analyze_pattern("(?P<year>\\d{4})-(?P<month>\\d{2})")
+
+vibez.spill("Has groups:", analysis.has_groups)
+vibez.spill("Has lookaround:", analysis.has_lookaround) 
+vibez.spill("Complexity:", analysis.estimated_complexity)  # 1=linear, 2=polynomial, 3=exponential
+vibez.spill("Unicode aware:", analysis.unicode_aware)
+```
+
+### Error Handling
+
+```cursed
+# Pattern validation
+ready (regex_is_valid("[invalid")) {
+    vibez.spill("Pattern is valid")
+} otherwise {
+    vibez.spill("Pattern has syntax errors")
+}
+
+# Graceful error handling
+sus engine RegexEngine = regex_new("(?P<date>\\d{4}-\\d{2}-\\d{2})") fam {
+    when ParseError(msg) -> {
+        vibez.spill("Parse error:", msg)
+        damn create_default_regex()
+    }
+    when CompileError(msg) -> {
+        vibez.spill("Compile error:", msg)
+        damn create_default_regex()
+    }
+}
+```
+
+## Unicode Property Reference
+
+### General Categories
+
+| Property | Description | Example |
+|----------|-------------|---------|
+| `\p{L}` | Any letter | `\p{L}+` matches "Hello世界" |
+| `\p{Lu}` | Uppercase letter | `\p{Lu}` matches "A", "Ñ", "Α" |
+| `\p{Ll}` | Lowercase letter | `\p{Ll}` matches "a", "ñ", "α" |
+| `\p{N}` | Any number | `\p{N}+` matches "123", "٧٨٩" |
+| `\p{Nd}` | Decimal number | `\p{Nd}+` matches "123" |
+| `\p{P}` | Any punctuation | `\p{P}` matches ".", "!", "?" |
+| `\p{S}` | Any symbol | `\p{S}` matches "$", "©", "™" |
+| `\p{Z}` | Any separator | `\p{Z}+` matches spaces, tabs |
+| `\p{C}` | Any control character | `\p{C}` matches control codes |
+
+### Script Properties
+
+| Script | Usage | Example |
+|--------|-------|---------|
+| `\p{Script=Latin}` | Latin alphabet | English, Spanish, French |
+| `\p{Script=Greek}` | Greek alphabet | Modern and ancient Greek |
+| `\p{Script=Cyrillic}` | Cyrillic alphabet | Russian, Bulgarian |
+| `\p{Script=Arabic}` | Arabic alphabet | Arabic, Persian, Urdu |
+| `\p{Script=Han}` | Chinese characters | Chinese, Japanese kanji |
+| `\p{Script=Hiragana}` | Japanese hiragana | あいうえお |
+| `\p{Script=Katakana}` | Japanese katakana | アイウエオ |
+| `\p{Script=Hangul}` | Korean alphabet | 한글 |
+
+### Block Properties
+
+| Block | Unicode Range | Usage |
+|-------|---------------|-------|
+| `\p{Block=Basic_Latin}` | U+0000-U+007F | ASCII characters |
+| `\p{Block=Latin_1_Supplement}` | U+0080-U+00FF | Extended Latin |
+| `\p{Block=Greek_and_Coptic}` | U+0370-U+03FF | Greek letters |
+| `\p{Block=Cyrillic}` | U+0400-U+04FF | Cyrillic letters |
+| `\p{Block=Arabic}` | U+0600-U+06FF | Arabic letters |
+| `\p{Block=CJK_Unified_Ideographs}` | U+4E00-U+9FFF | Chinese characters |
+
+### Derived Properties
+
+| Property | Description |
+|----------|-------------|
+| `\p{Alphabetic}` | Alphabetic characters (broader than `\p{L}`) |
+| `\p{Lowercase}` | Lowercase characters |
+| `\p{Uppercase}` | Uppercase characters |
+| `\p{White_Space}` | Whitespace characters |
+| `\p{Hex_Digit}` | Hexadecimal digits (0-9, A-F, a-f) |
+| `\p{ASCII_Hex_Digit}` | ASCII hexadecimal digits only |
+| `\p{Ideographic}` | Ideographic characters |
+| `\p{Diacritic}` | Diacritical marks |
+
+## Performance Guide
+
+### Compilation Optimization
+
+RegexZ automatically optimizes patterns during compilation:
+
+1. **NFA to DFA conversion** - For deterministic patterns
+2. **State minimization** - Reduces DFA size
+3. **Character class optimization** - Efficient range checking
+4. **Literal string detection** - Fast Boyer-Moore search
+5. **Loop unrolling** - Optimizes common quantifier patterns
+
+### Best Practices
+
+#### ✅ Efficient Patterns
+
+```cursed
+# Good: Anchored patterns are faster
+sus anchored RegexEngine = regex_new("^https?://")
+
+# Good: Character classes are optimized
+sus efficient RegexEngine = regex_new("[a-zA-Z0-9]+")
+
+# Good: Non-capturing groups when you don't need the capture
+sus non_capturing RegexEngine = regex_new("(?:foo|bar)+")
+
+# Good: Specific quantifiers over general ones
+sus specific RegexEngine = regex_new("\\d{3,5}")  # Better than \\d{3,}
+```
+
+#### ❌ Patterns to Avoid
+
+```cursed
+# Bad: Catastrophic backtracking
+sus bad RegexEngine = regex_new("(a+)+b")  # Avoid nested quantifiers
+
+# Bad: Excessive alternation
+sus bad2 RegexEngine = regex_new("word1|word2|word3|...")  # Use character classes instead
+
+# Bad: Unbounded quantifiers at start
+sus bad3 RegexEngine = regex_new(".*important")  # Anchor when possible: "^.*important"
+```
+
+### Memory Management
+
+RegexZ uses arena allocators and object pooling for optimal memory usage:
+
+```cursed
+# Pattern caching reduces compilation overhead
+sus cached_engine RegexEngine = get_cached_engine("\\d+", default_options)
+
+# Large match operations use memory pools
+sus large_text tea = load_large_file()
+sus matches []MatchResult = regex_find_all(&engine, large_text)
+```
 
 ## Testing
 
-Run the comprehensive test suite:
+RegexZ includes a comprehensive test suite covering all features:
 
 ```bash
-./zig-out/bin/cursed-zig stdlib/regexz/test_regexz.csd
+# Run the test suite
+./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.csd
+
+# Memory leak testing
+valgrind --leak-check=full ./zig-out/bin/cursed-zig stdlib/regexz/regex_tests.csd
+
+# Performance benchmarking
+./zig-out/bin/cursed-zig --benchmark stdlib/regexz/regex_performance_test.csd
 ```
 
-The test suite covers:
-- Pattern matching functionality
-- Email/URL/phone validation
-- Text extraction and processing
-- Character classification
-- IP/MAC address validation
-- String replacement and splitting
+Test coverage includes:
 
-## Integration
+- ✅ Basic pattern matching
+- ✅ All quantifier types (greedy, lazy, possessive)
+- ✅ Capture groups (numbered and named)
+- ✅ Character classes and ranges
+- ✅ Unicode properties and scripts
+- ✅ Lookahead and lookbehind assertions
+- ✅ String replacement and splitting
+- ✅ Performance optimization validation
+- ✅ Edge cases and error handling
+- ✅ Memory safety verification
 
-The regexz module integrates well with other CURSED stdlib modules:
+## Architecture
 
-- **stringz**: Basic string manipulation functions
-- **httpz**: URL validation for HTTP requests
-- **filez**: Log file processing and pattern extraction
-- **dbz**: Data validation before database operations
+### Engine Components
 
-## Limitations
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Pattern       │───▶│    Parser        │───▶│      AST        │
+│   String        │    │   (Syntax Tree)  │    │  (Abstract)     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                          │
+                                                          ▼
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Optimized     │◀───│   NFA Compiler   │◀───│   AST Walker    │
+│     DFA         │    │   (Thompson)     │    │  (Recursive)    │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+          │                       │
+          ▼                       ▼
+┌─────────────────┐    ┌──────────────────┐
+│  DFA Matcher    │    │   NFA Matcher    │
+│  (Linear Time)  │    │  (Backtracking)  │
+└─────────────────┘    └──────────────────┘
+          │                       │
+          └───────────┬───────────┘
+                      ▼
+              ┌──────────────────┐
+              │  Match Results   │
+              │   (Groups &      │
+              │   Positions)     │
+              └──────────────────┘
+```
 
-- Simplified regex engine (not full PCRE compatibility)
-- Limited capture group support
-- Basic character class support
-- Focused on common server-side use cases
+### Performance Characteristics
 
-For most web development and server-side text processing needs, this module provides sufficient functionality with zero external dependencies.
+| Operation | Time Complexity | Notes |
+|-----------|----------------|-------|
+| Pattern compilation | O(m) | m = pattern length, cached |
+| DFA matching | O(n) | n = text length, guaranteed linear |
+| NFA matching | O(n×m) | Worst case, optimizations reduce average |
+| Unicode property lookup | O(1) | Cached range tables |
+| Capture group extraction | O(g) | g = number of groups |
+
+## License
+
+RegexZ is part of the CURSED standard library and is licensed under the same terms as the CURSED programming language.
+
+## Contributing
+
+Contributions are welcome! Please see the main CURSED contribution guidelines. Areas for improvement:
+
+- Additional Unicode property support
+- More optimization strategies  
+- Extended POSIX compliance
+- Performance improvements
+- Bug fixes and edge cases
+
+## Changelog
+
+### v1.0.0 (Current)
+- ✅ Full Unicode 15.0 support
+- ✅ Named capture groups
+- ✅ Lookahead/lookbehind assertions
+- ✅ Performance optimizations
+- ✅ Comprehensive test suite
+- ✅ Memory safety validation
+- ✅ Production-ready stability
+
+---
+
+For more examples and advanced usage, see the [examples directory](../examples/regexz/) and the [test suite](regex_tests.csd).

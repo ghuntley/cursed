@@ -1,9 +1,14 @@
-fr fr TIMEZ MODULE - Complete Time and Date Operations
-fr fr Production-ready datetime handling with timezone support
+fr fr CURSED TIMEZ MODULE - Advanced Time and Date Operations
+fr fr Production-ready datetime handling with timezone support, Duration arithmetic,
+fr fr Timer/Ticker functionality, and comprehensive parsing/formatting
 
 yeet "stringz"
 yeet "mathz"
 yeet "vibez"
+yeet "./advanced_duration"
+yeet "./timer_ticker"
+yeet "./parsing_formatting"
+yeet "./timezone_database"
 
 fr fr ===== TIME STRUCTURES =====
 
@@ -951,6 +956,180 @@ slay string_from_cstring(cstr [*:0]normie) tea {
     damn result
 }
 
+fr fr ===== ADVANCED TIME OPERATIONS =====
+
+slay time_duration_until(target DateTime) Duration {
+    fr fr Calculate duration until target datetime
+    sus current DateTime = time_now()
+    sus current_ts drip = datetime_to_timestamp(current)
+    sus target_ts drip = datetime_to_timestamp(target)
+    sus diff_ms drip = target_ts - current_ts
+    damn duration_milliseconds(diff_ms)
+}
+
+slay time_duration_since(past DateTime) Duration {
+    fr fr Calculate duration since past datetime
+    sus current DateTime = time_now()
+    sus current_ts drip = datetime_to_timestamp(current)
+    sus past_ts drip = datetime_to_timestamp(past)
+    sus diff_ms drip = current_ts - past_ts
+    damn duration_milliseconds(diff_ms)
+}
+
+slay time_add_duration(dt DateTime, d Duration) DateTime {
+    fr fr Add duration to datetime
+    sus timestamp_ms drip = datetime_to_timestamp(dt)
+    sus duration_ms drip = duration_milliseconds_value(d)
+    sus new_timestamp drip = timestamp_ms + duration_ms
+    
+    sus result DateTime = timestamp_to_datetime(new_timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+slay time_sub_duration(dt DateTime, d Duration) DateTime {
+    fr fr Subtract duration from datetime
+    sus timestamp_ms drip = datetime_to_timestamp(dt)
+    sus duration_ms drip = duration_milliseconds_value(d)
+    sus new_timestamp drip = timestamp_ms - duration_ms
+    
+    sus result DateTime = timestamp_to_datetime(new_timestamp)
+    result.timezone_offset = dt.timezone_offset
+    result.timezone_name = dt.timezone_name
+    damn result
+}
+
+slay time_create_with_timezone(year drip, month drip, day drip, hour drip, minute drip, second drip, tz tea) DateTime {
+    fr fr Create datetime in specific timezone
+    sus dt DateTime = time_create(year, month, day, hour, minute, second)
+    damn time_change_timezone(dt, tz)
+}
+
+slay time_sleep_until(target DateTime) {
+    fr fr Sleep until target datetime
+    sus duration Duration = time_duration_until(target)
+    ready (duration_is_positive(duration)) {
+        sleep(duration)
+    }
+}
+
+slay time_benchmark(operation_name tea) StopWatch {
+    fr fr Start benchmarking operation
+    sus sw StopWatch = new_stopwatch()
+    stopwatch_start(&sw)
+    vibez.spill("⏱️ Benchmarking:", operation_name)
+    damn sw
+}
+
+slay time_benchmark_end(sw *StopWatch, operation_name tea) Duration {
+    fr fr End benchmarking and return duration
+    sus elapsed Duration = stopwatch_stop(sw)
+    vibez.spill("🏁 Benchmark completed:", operation_name, "took", duration_string(elapsed))
+    damn elapsed
+}
+
+fr fr ===== ENHANCED TIMER INTEGRATION =====
+
+slay time_after(d Duration) chan<lit> {
+    fr fr Wrapper for timer after function
+    damn after(d)
+}
+
+slay time_tick(d Duration) chan<lit> {
+    fr fr Wrapper for ticker function
+    damn tick(d)
+}
+
+slay time_timeout(d Duration, operation tea) lit {
+    fr fr Wrapper for timeout function
+    damn with_timeout(d, operation)
+}
+
+slay time_schedule_func(d Duration, callback_name tea) Timer {
+    fr fr Schedule function with duration
+    damn after_func(d, callback_name)
+}
+
+fr fr ===== ENHANCED PARSING INTEGRATION =====
+
+slay time_parse_rfc3339(rfc_string tea) DateTime {
+    fr fr Parse RFC 3339 timestamp to DateTime
+    sus parsed ParsedTime = parse_time_advanced(LAYOUT_RFC3339, rfc_string)
+    ready (!string_empty(parsed.parse_error)) {
+        vibez.spill("⚠️ Parse error:", parsed.parse_error)
+        damn time_from_timestamp(0)
+    }
+    
+    sus dt DateTime = parsed_time_to_datetime(parsed)
+    damn dt
+}
+
+slay time_parse_iso8601(iso_string tea) DateTime {
+    fr fr Parse ISO 8601 timestamp to DateTime
+    sus parsed ParsedTime = parse_time_advanced(LAYOUT_ISO8601, iso_string)
+    ready (!string_empty(parsed.parse_error)) {
+        vibez.spill("⚠️ Parse error:", parsed.parse_error)
+        damn time_from_timestamp(0)
+    }
+    
+    sus dt DateTime = parsed_time_to_datetime(parsed)
+    damn dt
+}
+
+slay time_format_rfc3339(dt DateTime) tea {
+    fr fr Format DateTime as RFC 3339
+    sus context FormatContext = create_format_context()
+    context.include_timezone = based
+    damn format_time_advanced(dt, LAYOUT_RFC3339, context)
+}
+
+slay time_format_iso8601(dt DateTime) tea {
+    fr fr Format DateTime as ISO 8601
+    sus context FormatContext = create_format_context()
+    damn format_time_advanced(dt, LAYOUT_ISO8601, context)
+}
+
+slay time_format_kitchen(dt DateTime) tea {
+    fr fr Format DateTime as kitchen time (3:04PM)
+    sus context FormatContext = create_format_context()
+    context.use_12_hour = based
+    damn format_time_advanced(dt, LAYOUT_KITCHEN, context)
+}
+
+fr fr ===== CONVERSION HELPERS =====
+
+slay parsed_time_to_datetime(pt ParsedTime) DateTime {
+    fr fr Convert ParsedTime to DateTime
+    sus dt DateTime = DateTime{}
+    dt.year = pt.year
+    dt.month = pt.month
+    dt.day = pt.day
+    dt.hour = pt.hour
+    dt.minute = pt.minute
+    dt.second = pt.second
+    dt.millisecond = pt.nanosecond / 1000000
+    dt.timezone_offset = pt.timezone_offset
+    dt.timezone_name = pt.timezone_name
+    damn dt
+}
+
+slay datetime_to_parsed_time(dt DateTime) ParsedTime {
+    fr fr Convert DateTime to ParsedTime
+    sus pt ParsedTime = create_empty_parsed_time()
+    pt.year = dt.year
+    pt.month = dt.month
+    pt.day = dt.day
+    pt.hour = dt.hour
+    pt.minute = dt.minute
+    pt.second = dt.second
+    pt.nanosecond = dt.millisecond * 1000000
+    pt.timezone_offset = dt.timezone_offset
+    pt.timezone_name = dt.timezone_name
+    pt.weekday = calculate_weekday(dt)
+    damn pt
+}
+
 fr fr ===== ADDITIONAL STRING HELPER FUNCTIONS =====
 
 slay string_length(s tea) drip {
@@ -1050,3 +1229,18 @@ slay replace_all(text tea, search tea, replacement tea) tea {
     
     damn text  fr fr Return original if no match
 }
+
+fr fr ===== MODULE INITIALIZATION =====
+
+fr fr Initialize advanced timez features
+initialize_timer_system()
+print_timezone_database_stats()
+
+vibez.spill("🕐 Advanced Timez Module loaded with:")
+vibez.spill("  ✅ Duration arithmetic and parsing")
+vibez.spill("  ✅ Timer and Ticker functionality")
+vibez.spill("  ✅ Advanced parsing/formatting")
+vibez.spill("  ✅ Comprehensive timezone database")
+vibez.spill("  ✅ Rate limiting and scheduling")
+vibez.spill("  ✅ Stopwatch and benchmarking tools")
+vibez.spill("  🌍 Production-ready time operations")

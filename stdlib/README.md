@@ -1,5 +1,33 @@
 # CURSED Standard Library
 
+## Core Modules
+
+### contextz - Context Management 🆕
+Context cancellation, timeouts, and value passing for CURSED programs.
+
+- **Context Interface**: Core abstraction for cancellation and timeouts
+- **Cancellation**: Manual and automatic context cancellation  
+- **Timeouts & Deadlines**: Time-based context cancellation
+- **Value Passing**: Request-scoped values that propagate through call chains
+- **Goroutine Integration**: Seamless integration with CURSED concurrency
+- **Advanced Patterns**: Worker pools, pipelines, rate limiting with context
+
+```cursed
+yeet "contextz"
+
+# Basic usage
+sus ctx, cancel := with_cancel(background())
+defer cancel()
+
+# Timeout context
+sus ctx, cancel := with_timeout(background(), 5 * time.Second)
+defer cancel()
+
+# Value context
+sus ctx := with_value(background(), "user_id", "12345")
+sus user_id := ctx.value("user_id").(tea)
+```
+
 ## Overview
 
 The CURSED standard library is a comprehensive collection of modules providing essential functionality for systems programming, web development, data processing, and more. All modules are implemented in 100% pure CURSED code with no FFI dependencies.

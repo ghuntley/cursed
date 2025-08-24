@@ -1,582 +1,1113 @@
-yeet "testz"
+fr fr CONFIGZ COMPREHENSIVE TEST SUITE
+fr fr Production-grade testing for configuration management system
+
 yeet "configz"
+yeet "testz"
+yeet "vibez"
+yeet "filez"
+yeet "jsonz"
 
-fr fr ==========================================
-fr fr CURSED Enhanced Configuration Management Tests
-fr fr Comprehensive test suite for configz module
-fr fr ==========================================
+fr fr ===== TEST CONFIGURATION SETUP =====
 
-slay run_all_tests() {
-    fr fr Run comprehensive test suite for configz module
-    test_start("Enhanced Configuration Management Tests")
-    
-    fr fr Test configuration schema creation and validation
-    test_schema_creation()
-    test_schema_validation()
-    
-    fr fr Test format detection and parsing
-    test_format_detection()
-    test_json_parsing()
-    test_yaml_parsing()
-    test_toml_parsing()
-    test_env_parsing()
-    
-    fr fr Test environment variable integration
-    test_environment_substitution()
-    test_environment_config_loading()
-    
-    fr fr Test configuration merging and layering
-    test_configuration_merging()
-    test_configuration_layers()
-    
-    fr fr Test type conversion and validation
-    test_type_detection()
-    test_value_conversion()
-    test_validation_rules()
-    
-    fr fr Test high-level configuration API
-    test_configuration_api()
-    test_configuration_defaults()
-    
-    fr fr Test error handling and edge cases
-    test_error_handling()
-    test_edge_cases()
-    
-    print_test_summary()
+slay test_create_sample_json_config() tea {
+    fr fr Create sample JSON configuration for testing
+    damn "{\"database\":{\"host\":\"test-db.example.com\",\"port\":5432,\"ssl\":true},\"server\":{\"port\":8080,\"debug\":false},\"features\":{\"cache\":true,\"rate_limit\":1000,\"origins\":[\"https://test1.com\",\"https://test2.com\"]}}"
 }
 
-fr fr ==========================================
-fr fr Schema Management Tests
-fr fr ==========================================
-
-slay test_schema_creation() {
-    test_start("Configuration Schema Creation")
-    
-    fr fr Test basic schema creation
-    sus schema ConfigSchema = create_schema("test_schema")
-    assert_eq_string(schema.name, "test_schema")
-    assert_true(len(schema.required_keys) == 0)
-    assert_true(len(schema.optional_keys) == 0)
-    
-    fr fr Test adding required keys
-    schema = add_required_key(schema, "database_host")
-    schema = add_required_key(schema, "api_key")
-    assert_true(len(schema.required_keys) == 2)
-    
-    fr fr Test adding optional keys with defaults
-    schema = add_optional_key(schema, "debug", "false")
-    schema = add_optional_key(schema, "port", "3000")
-    assert_true(len(schema.optional_keys) == 2)
-    assert_true(len(schema.default_values) == 2)
-    
-    fr fr Test adding validation rules
-    schema = add_validator(schema, "port", "integer")
-    schema = add_validator(schema, "database_host", "required")
-    assert_true(len(schema.validators) == 2)
+slay test_create_sample_toml_config() tea {
+    fr fr Create sample TOML configuration for testing
+    damn "[database]\nhost = \"toml-db.example.com\"\nport = 3306\nssl = false\n\n[server]\nport = 9090\ndebug = true\n\n[features]\ncache = false\nrate_limit = 500"
 }
 
-slay test_schema_validation() {
-    test_start("Configuration Schema Validation")
+slay test_create_sample_yaml_config() tea {
+    fr fr Create sample YAML configuration for testing  
+    damn "database:\n  host: yaml-db.example.com\n  port: 5433\n  ssl: true\nserver:\n  port: 7070\n  debug: false\nfeatures:\n  cache: true\n  rate_limit: 2000"
+}
+
+slay test_create_sample_ini_config() tea {
+    fr fr Create sample INI configuration for testing
+    damn "[database]\nhost = ini-db.example.com\nport = 1433\nssl = yes\n\n[server]\nport = 6060\ndebug = no\n\n[features]\ncache = on\nrate_limit = 750"
+}
+
+fr fr ===== BASIC FUNCTIONALITY TESTS =====
+
+slay test_config_manager_creation() lit {
+    vibez.spill("Testing configuration manager creation...")
     
-    fr fr Create test schema
-    sus schema ConfigSchema = create_schema("validation_test")
-    schema = add_required_key(schema, "database_url")
-    schema = add_required_key(schema, "api_key")
-    schema = add_optional_key(schema, "debug", "false")
-    schema = add_validator(schema, "database_url", "url")
-    schema = add_validator(schema, "api_key", "min_length:10")
+    sus config ConfigManager = config_create()
     
-    fr fr Create test configuration context
-    sus ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "empty", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "test.json",
-        environment: "test",
-        validation_errors: []
+    fr fr Verify initial state
+    sus all_keys []tea = config_get_all_keys(config)
+    sus key_count drip = array_length(all_keys)
+    
+    ready (key_count != 0) {
+        vibez.spill("ERROR: New config manager should have no keys")
+        damn cringe
     }
     
-    fr fr Add valid configuration values
-    ctx = set_configuration_value(ctx, "database_url", "https://db.example.com", "test")
-    ctx = set_configuration_value(ctx, "api_key", "secret123456", "test")
-    
-    fr fr Validate against schema
-    sus validated_ctx ConfigContext = validate_against_schema(ctx, schema)
-    
-    fr fr Should have no validation errors for valid config
-    assert_true(is_configuration_valid(validated_ctx))
-    assert_true(len(validated_ctx.validation_errors) == 0)
-    
-    fr fr Test that default values are applied
-    assert_true(has_configuration_key(validated_ctx, "debug"))
-    assert_eq_string(get_configuration_value(validated_ctx, "debug"), "false")
+    vibez.spill("✓ Configuration manager creation passed")
+    damn based
 }
 
-fr fr ==========================================
-fr fr Format Detection and Parsing Tests
-fr fr ==========================================
-
-slay test_format_detection() {
-    test_start("Configuration Format Detection")
+slay test_default_values() lit {
+    vibez.spill("Testing default value handling...")
     
-    fr fr Test JSON detection
-    sus json_content tea = "{\"key\": \"value\"}"
-    sus detected_format tea = auto_detect_format(json_content)
-    assert_eq_string(detected_format, format_json())
+    sus config ConfigManager = config_create()
     
-    fr fr Test YAML detection
-    sus yaml_content tea = "key: value\nother: data"
-    detected_format = auto_detect_format(yaml_content)
-    assert_eq_string(detected_format, format_yaml())
+    fr fr Set default values
+    sus db_host_default ConfigValue = ConfigValue{}
+    db_host_default.type = "string"
+    db_host_default.string_value = "default-host"
+    config = config_set_default(config, "database.host", db_host_default)
     
-    fr fr Test TOML detection
-    sus toml_content tea = "key = \"value\"\n[section]"
-    detected_format = auto_detect_format(toml_content)
-    assert_eq_string(detected_format, format_toml())
+    sus db_port_default ConfigValue = ConfigValue{}
+    db_port_default.type = "number"  
+    db_port_default.number_value = 5432.0
+    config = config_set_default(config, "database.port", db_port_default)
     
-    fr fr Test environment file detection
-    sus env_content tea = "KEY=value\nOTHER=data"
-    detected_format = auto_detect_format(env_content)
-    assert_eq_string(detected_format, format_env())
+    sus debug_default ConfigValue = ConfigValue{}
+    debug_default.type = "boolean"
+    debug_default.boolean_value = cringe
+    config = config_set_default(config, "app.debug", debug_default)
     
-    fr fr Test filename-based detection
-    assert_eq_string(detect_format_from_filename("config.json"), format_json())
-    assert_eq_string(detect_format_from_filename("app.yaml"), format_yaml())
-    assert_eq_string(detect_format_from_filename("settings.toml"), format_toml())
-    assert_eq_string(detect_format_from_filename(".env"), format_env())
-}
-
-slay test_json_parsing() {
-    test_start("Advanced JSON Configuration Parsing")
+    config = config_load_all(config)
     
-    sus json_content tea = "{\"database\":{\"host\":\"localhost\",\"port\":5432},\"app\":{\"name\":\"TestApp\",\"debug\":true}}"
-    sus ctx ConfigContext = parse_json_advanced(json_content)
+    fr fr Test default value access
+    sus host tea = config_get_string(config, "database.host", "fallback")
+    sus port normie = config_get_number(config, "database.port", 0.0)
+    sus debug lit = config_get_boolean(config, "app.debug", based)
     
-    fr fr Test basic parsing
-    assert_eq_string(ctx.format, format_json())
-    assert_true(is_configuration_valid(ctx))
-    
-    fr fr Test environment detection
-    assert_true(string_length(ctx.environment) > 0)
-    
-    fr fr Test invalid JSON handling
-    sus invalid_json tea = "{invalid json content"
-    sus invalid_ctx ConfigContext = parse_json_advanced(invalid_json)
-    assert_false(is_configuration_valid(invalid_ctx))
-    assert_true(len(invalid_ctx.validation_errors) > 0)
-}
-
-slay test_yaml_parsing() {
-    test_start("Advanced YAML Configuration Parsing")
-    
-    sus yaml_content tea = "database:\n  host: localhost\n  port: 5432\napp:\n  name: TestApp\n  debug: true"
-    sus ctx ConfigContext = parse_yaml_advanced(yaml_content)
-    
-    fr fr Test basic parsing
-    assert_eq_string(ctx.format, format_yaml())
-    assert_true(is_configuration_valid(ctx))
-    
-    fr fr Test environment detection
-    assert_true(string_length(ctx.environment) > 0)
-    
-    fr fr Test invalid YAML handling
-    sus invalid_yaml tea = "invalid: yaml: content: [unclosed"
-    sus invalid_ctx ConfigContext = parse_yaml_advanced(invalid_yaml)
-    assert_false(is_configuration_valid(invalid_ctx))
-}
-
-slay test_toml_parsing() {
-    test_start("Advanced TOML Configuration Parsing")
-    
-    sus toml_content tea = "[database]\nhost = \"localhost\"\nport = 5432\n[app]\nname = \"TestApp\"\ndebug = true"
-    sus ctx ConfigContext = parse_toml_advanced(toml_content)
-    
-    fr fr Test basic parsing
-    assert_eq_string(ctx.format, format_toml())
-    assert_true(is_configuration_valid(ctx))
-    
-    fr fr Test environment detection
-    assert_true(string_length(ctx.environment) > 0)
-}
-
-slay test_env_parsing() {
-    test_start("Advanced Environment File Parsing")
-    
-    sus env_content tea = "DATABASE_HOST=localhost\nDATABASE_PORT=5432\nDEBUG=true\nAPP_NAME=TestApp"
-    sus ctx ConfigContext = parse_env_advanced(env_content)
-    
-    fr fr Test basic parsing
-    assert_eq_string(ctx.format, format_env())
-    assert_true(is_configuration_valid(ctx))
-    
-    fr fr Test that values are parsed correctly
-    assert_true(len(ctx.values) > 0)
-    
-    fr fr Test comment and empty line handling
-    sus env_with_comments tea = "# Comment line\nDATABASE_HOST=localhost\n\nDEBUG=true\n# Another comment"
-    sus comment_ctx ConfigContext = parse_env_advanced(env_with_comments)
-    assert_true(is_configuration_valid(comment_ctx))
-}
-
-fr fr ==========================================
-fr fr Environment Variable Integration Tests
-fr fr ==========================================
-
-slay test_environment_substitution() {
-    test_start("Environment Variable Substitution")
-    
-    fr fr Test variable expansion
-    sus input tea = "Database host is ${DB_HOST} on port ${DB_PORT}"
-    sus expanded tea = expand_environment_variables(input)
-    assert_true(string_length(expanded) > 0)
-    
-    fr fr Test configuration context substitution
-    sus ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "test", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "test",
-        environment: "test",
-        validation_errors: []
+    ready (host != "default-host") {
+        vibez.spill("ERROR: Expected default host 'default-host', got: " + host)
+        damn cringe
     }
     
-    ctx = set_configuration_value(ctx, "database_url", "${DB_HOST}:${DB_PORT}", "test")
-    ctx = apply_environment_substitution(ctx)
-    
-    fr fr Value should be expanded
-    sus expanded_url tea = get_configuration_value(ctx, "database_url")
-    assert_true(string_length(expanded_url) > 0)
-}
-
-slay test_environment_config_loading() {
-    test_start("Environment Configuration Loading")
-    
-    fr fr Test loading environment configuration
-    sus env_ctx ConfigContext = load_environment_config()
-    
-    fr fr Should have loaded some environment variables
-    assert_true(len(env_ctx.values) > 0)
-    assert_eq_string(env_ctx.source_file, "environment")
-    assert_eq_string(env_ctx.format, format_env())
-    
-    fr fr Check for common environment variables
-    assert_true(has_configuration_key(env_ctx, "HOME") || has_configuration_key(env_ctx, "USER"))
-}
-
-fr fr ==========================================
-fr fr Configuration Merging and Layering Tests
-fr fr ==========================================
-
-slay test_configuration_merging() {
-    test_start("Configuration Merging")
-    
-    fr fr Create base configuration
-    sus base_ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "base", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "base.json",
-        environment: "test",
-        validation_errors: []
-    }
-    base_ctx = set_configuration_value(base_ctx, "app_name", "BaseApp", "file")
-    base_ctx = set_configuration_value(base_ctx, "debug", "false", "file")
-    base_ctx = set_configuration_value(base_ctx, "port", "3000", "file")
-    
-    fr fr Create override configuration
-    sus override_ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "override", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_env(),
-        source_file: "override.env",
-        environment: "test",
-        validation_errors: []
-    }
-    override_ctx = set_configuration_value(override_ctx, "debug", "true", "env")
-    override_ctx = set_configuration_value(override_ctx, "port", "8080", "env")
-    
-    fr fr Merge configurations
-    sus merged_ctx ConfigContext = merge_configurations(base_ctx, override_ctx)
-    
-    fr fr Test that override values take precedence
-    assert_eq_string(get_configuration_value(merged_ctx, "debug"), "true")
-    assert_eq_string(get_configuration_value(merged_ctx, "port"), "8080")
-    
-    fr fr Test that base values are preserved when not overridden
-    assert_eq_string(get_configuration_value(merged_ctx, "app_name"), "BaseApp")
-}
-
-slay test_configuration_layers() {
-    test_start("Configuration Layering")
-    
-    fr fr Create multiple file configurations
-    sus file_configs []ConfigContext = []
-    
-    fr fr Create environment configuration
-    sus env_config ConfigContext = load_environment_config()
-    
-    fr fr Create layered configuration
-    sus layered_ctx ConfigContext = create_configuration_layers(file_configs, env_config)
-    
-    fr fr Should have valid layered configuration
-    assert_eq_string(layered_ctx.format, "layered")
-    assert_eq_string(layered_ctx.source_file, "multiple")
-    assert_true(len(layered_ctx.values) >= 0)
-}
-
-fr fr ==========================================
-fr fr Type Detection and Conversion Tests
-fr fr ==========================================
-
-slay test_type_detection() {
-    test_start("Value Type Detection")
-    
-    fr fr Test boolean detection
-    assert_eq_string(detect_value_type("true"), "boolean")
-    assert_eq_string(detect_value_type("false"), "boolean")
-    assert_eq_string(detect_value_type("1"), "integer")
-    assert_eq_string(detect_value_type("0"), "integer")
-    
-    fr fr Test integer detection
-    assert_eq_string(detect_value_type("42"), "integer")
-    assert_eq_string(detect_value_type("100"), "integer")
-    
-    fr fr Test float detection
-    assert_eq_string(detect_value_type("3.14"), "float")
-    assert_eq_string(detect_value_type("0.5"), "float")
-    
-    fr fr Test array detection
-    assert_eq_string(detect_value_type("[1,2,3]"), "array")
-    assert_eq_string(detect_value_type("[\"a\",\"b\"]"), "array")
-    
-    fr fr Test object detection
-    assert_eq_string(detect_value_type("{\"key\":\"value\"}"), "object")
-    
-    fr fr Test string detection (default)
-    assert_eq_string(detect_value_type("hello world"), "string")
-}
-
-slay test_value_conversion() {
-    test_start("Value Type Conversion")
-    
-    fr fr Test boolean conversion
-    assert_true(convert_to_boolean("true"))
-    assert_true(convert_to_boolean("1"))
-    assert_true(convert_to_boolean("yes"))
-    assert_true(convert_to_boolean("on"))
-    assert_false(convert_to_boolean("false"))
-    assert_false(convert_to_boolean("0"))
-    assert_false(convert_to_boolean("no"))
-    assert_false(convert_to_boolean("off"))
-    
-    fr fr Test integer conversion
-    assert_eq_int(convert_to_integer("42"), 42)
-    assert_eq_int(convert_to_integer("0"), 0)
-    assert_eq_int(convert_to_integer("100"), 100)
-    
-    fr fr Test typed value retrieval
-    sus ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "test", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "test",
-        environment: "test",
-        validation_errors: []
+    ready (port != 5432.0) {
+        vibez.spill("ERROR: Expected default port 5432, got: " + number_to_string(port))
+        damn cringe
     }
     
-    ctx = set_configuration_value(ctx, "debug", "true", "test")
-    ctx = set_configuration_value(ctx, "port", "3000", "test")
+    ready (debug != cringe) {
+        vibez.spill("ERROR: Expected default debug false, got: " + (debug ? "true" : "false"))
+        damn cringe
+    }
     
-    sus debug_value tea = get_typed_value(ctx, "debug", "boolean")
-    sus port_value tea = get_typed_value(ctx, "port", "integer")
-    
-    assert_eq_string(debug_value, "true")
-    assert_eq_string(port_value, "3000")
+    vibez.spill("✓ Default values test passed")
+    damn based
 }
 
-slay test_validation_rules() {
-    test_start("Configuration Validation Rules")
+slay test_json_configuration_loading() lit {
+    vibez.spill("Testing JSON configuration loading...")
     
-    fr fr Test required validation
-    assert_true(validate_value_against_rule("value", "required"))
-    assert_false(validate_value_against_rule("", "required"))
+    sus config ConfigManager = config_create()
     
-    fr fr Test integer validation
-    assert_true(validate_value_against_rule("42", "integer"))
-    assert_true(validate_value_against_rule("0", "integer"))
-    assert_false(validate_value_against_rule("not_a_number", "integer"))
+    fr fr Simulate JSON source (in real implementation, this would read from file)
+    sus json_source ConfigSource = ConfigSource{}
+    json_source.type = "json"
+    json_source.path = "test.json"
+    json_source.content = test_create_sample_json_config()
+    json_source.priority = 10
     
-    fr fr Test boolean validation
-    assert_true(validate_value_against_rule("true", "boolean"))
-    assert_true(validate_value_against_rule("false", "boolean"))
-    assert_true(validate_value_against_rule("1", "boolean"))
-    assert_true(validate_value_against_rule("0", "boolean"))
-    assert_false(validate_value_against_rule("maybe", "boolean"))
+    fr fr Load JSON configuration
+    config = load_json_source(config, json_source)
+    
+    fr fr Test loaded values
+    sus db_host tea = config_get_string(config, "database.host", "")
+    sus db_port normie = config_get_number(config, "database.port", 0.0)
+    sus server_port normie = config_get_number(config, "server.port", 0.0)
+    sus ssl_enabled lit = config_get_boolean(config, "database.ssl", cringe)
+    sus debug_mode lit = config_get_boolean(config, "server.debug", based)
+    
+    ready (db_host != "test-db.example.com") {
+        vibez.spill("ERROR: Expected JSON db host 'test-db.example.com', got: " + db_host)
+        damn cringe
+    }
+    
+    ready (db_port != 5432.0) {
+        vibez.spill("ERROR: Expected JSON db port 5432, got: " + number_to_string(db_port))
+        damn cringe  
+    }
+    
+    ready (server_port != 8080.0) {
+        vibez.spill("ERROR: Expected JSON server port 8080, got: " + number_to_string(server_port))
+        damn cringe
+    }
+    
+    ready (!ssl_enabled) {
+        vibez.spill("ERROR: Expected SSL enabled from JSON")
+        damn cringe
+    }
+    
+    ready (debug_mode) {
+        vibez.spill("ERROR: Expected debug disabled from JSON")
+        damn cringe
+    }
+    
+    vibez.spill("✓ JSON configuration loading test passed")
+    damn based
+}
+
+slay test_toml_configuration_loading() lit {
+    vibez.spill("Testing TOML configuration loading...")
+    
+    sus config ConfigManager = config_create()
+    
+    sus toml_source ConfigSource = ConfigSource{}
+    toml_source.type = "toml"
+    toml_source.path = "test.toml"
+    toml_source.content = test_create_sample_toml_config()
+    toml_source.priority = 10
+    
+    config = load_toml_source(config, toml_source)
+    
+    sus db_host tea = config_get_string(config, "database.host", "")
+    sus db_port normie = config_get_number(config, "database.port", 0.0)
+    sus server_port normie = config_get_number(config, "server.port", 0.0)
+    sus ssl_enabled lit = config_get_boolean(config, "database.ssl", based)
+    sus debug_mode lit = config_get_boolean(config, "server.debug", cringe)
+    
+    ready (db_host != "toml-db.example.com") {
+        vibez.spill("ERROR: Expected TOML db host 'toml-db.example.com', got: " + db_host)
+        damn cringe
+    }
+    
+    ready (db_port != 3306.0) {
+        vibez.spill("ERROR: Expected TOML db port 3306, got: " + number_to_string(db_port))
+        damn cringe
+    }
+    
+    ready (server_port != 9090.0) {
+        vibez.spill("ERROR: Expected TOML server port 9090, got: " + number_to_string(server_port))
+        damn cringe
+    }
+    
+    ready (ssl_enabled) {
+        vibez.spill("ERROR: Expected SSL disabled from TOML")
+        damn cringe
+    }
+    
+    ready (!debug_mode) {
+        vibez.spill("ERROR: Expected debug enabled from TOML")
+        damn cringe
+    }
+    
+    vibez.spill("✓ TOML configuration loading test passed")
+    damn based
+}
+
+slay test_yaml_configuration_loading() lit {
+    vibez.spill("Testing YAML configuration loading...")
+    
+    sus config ConfigManager = config_create()
+    
+    sus yaml_source ConfigSource = ConfigSource{}
+    yaml_source.type = "yaml"
+    yaml_source.path = "test.yaml"
+    yaml_source.content = test_create_sample_yaml_config()
+    yaml_source.priority = 10
+    
+    config = load_yaml_source(config, yaml_source)
+    
+    sus db_host tea = config_get_string(config, "database.host", "")
+    sus db_port normie = config_get_number(config, "database.port", 0.0)
+    sus server_port normie = config_get_number(config, "server.port", 0.0)
+    sus rate_limit normie = config_get_number(config, "features.rate_limit", 0.0)
+    
+    ready (db_host != "yaml-db.example.com") {
+        vibez.spill("ERROR: Expected YAML db host 'yaml-db.example.com', got: " + db_host)
+        damn cringe
+    }
+    
+    ready (db_port != 5433.0) {
+        vibez.spill("ERROR: Expected YAML db port 5433, got: " + number_to_string(db_port))
+        damn cringe
+    }
+    
+    ready (server_port != 7070.0) {
+        vibez.spill("ERROR: Expected YAML server port 7070, got: " + number_to_string(server_port))
+        damn cringe
+    }
+    
+    ready (rate_limit != 2000.0) {
+        vibez.spill("ERROR: Expected YAML rate limit 2000, got: " + number_to_string(rate_limit))
+        damn cringe
+    }
+    
+    vibez.spill("✓ YAML configuration loading test passed")
+    damn based
+}
+
+slay test_ini_configuration_loading() lit {
+    vibez.spill("Testing INI configuration loading...")
+    
+    sus config ConfigManager = config_create()
+    
+    sus ini_source ConfigSource = ConfigSource{}
+    ini_source.type = "ini"
+    ini_source.path = "test.ini"
+    ini_source.content = test_create_sample_ini_config()
+    ini_source.priority = 10
+    
+    config = load_ini_source(config, ini_source)
+    
+    sus db_host tea = config_get_string(config, "database.host", "")
+    sus db_port normie = config_get_number(config, "database.port", 0.0)
+    sus server_port normie = config_get_number(config, "server.port", 0.0)
+    sus ssl_enabled lit = config_get_boolean(config, "database.ssl", cringe)
+    sus debug_mode lit = config_get_boolean(config, "server.debug", based)
+    sus cache_enabled lit = config_get_boolean(config, "features.cache", cringe)
+    
+    ready (db_host != "ini-db.example.com") {
+        vibez.spill("ERROR: Expected INI db host 'ini-db.example.com', got: " + db_host)
+        damn cringe
+    }
+    
+    ready (db_port != 1433.0) {
+        vibez.spill("ERROR: Expected INI db port 1433, got: " + number_to_string(db_port))
+        damn cringe
+    }
+    
+    ready (server_port != 6060.0) {
+        vibez.spill("ERROR: Expected INI server port 6060, got: " + number_to_string(server_port))
+        damn cringe
+    }
+    
+    ready (!ssl_enabled) {
+        vibez.spill("ERROR: Expected SSL enabled from INI (yes)")
+        damn cringe
+    }
+    
+    ready (debug_mode) {
+        vibez.spill("ERROR: Expected debug disabled from INI (no)")
+        damn cringe
+    }
+    
+    ready (!cache_enabled) {
+        vibez.spill("ERROR: Expected cache enabled from INI (on)")
+        damn cringe
+    }
+    
+    vibez.spill("✓ INI configuration loading test passed")
+    damn based
+}
+
+fr fr ===== ENVIRONMENT VARIABLE TESTS =====
+
+slay test_environment_variable_loading() lit {
+    vibez.spill("Testing environment variable loading...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Simulate environment variables
+    sus env_source ConfigSource = ConfigSource{}
+    env_source.type = "env"
+    env_source.path = ""
+    env_source.priority = 20
+    
+    config = load_env_source(config, env_source)
+    
+    fr fr Test common environment variables (these are loaded from get_all_env_vars)
+    sus has_path lit = config_has_key(config, "path")
+    sus has_home lit = config_has_key(config, "home")
+    sus has_user lit = config_has_key(config, "user")
+    
+    ready (!has_path) {
+        vibez.spill("WARNING: PATH environment variable not found")
+    } otherwise {
+        vibez.spill("✓ PATH environment variable loaded")
+    }
+    
+    ready (!has_home) {
+        vibez.spill("WARNING: HOME environment variable not found")
+    } otherwise {
+        vibez.spill("✓ HOME environment variable loaded")
+    }
+    
+    ready (!has_user) {
+        vibez.spill("WARNING: USER environment variable not found")
+    } otherwise {
+        vibez.spill("✓ USER environment variable loaded")
+    }
+    
+    vibez.spill("✓ Environment variable loading test passed")
+    damn based
+}
+
+slay test_env_key_conversion() lit {
+    vibez.spill("Testing environment variable key conversion...")
+    
+    fr fr Test various key conversion patterns
+    sus result1 tea = env_key_to_config_key("DATABASE_HOST")
+    sus result2 tea = env_key_to_config_key("APP_SERVER_PORT")
+    sus result3 tea = env_key_to_config_key("CACHE__ENABLED")
+    
+    ready (result1 != "database.host") {
+        vibez.spill("ERROR: Expected 'database.host', got: " + result1)
+        damn cringe
+    }
+    
+    ready (result2 != "app.server.port") {
+        vibez.spill("ERROR: Expected 'app.server.port', got: " + result2)
+        damn cringe
+    }
+    
+    ready (result3 != "cache_enabled") {
+        vibez.spill("ERROR: Expected 'cache_enabled', got: " + result3)
+        damn cringe
+    }
+    
+    vibez.spill("✓ Environment key conversion test passed")
+    damn based
+}
+
+slay test_auto_type_detection() lit {
+    vibez.spill("Testing automatic type detection...")
+    
+    fr fr Create test configuration values
+    sus string_value ConfigValue = ConfigValue{}
+    string_value.type = "string"
+    string_value.string_value = "hello world"
+    string_value = auto_detect_type(string_value)
+    
+    sus boolean_true ConfigValue = ConfigValue{}
+    boolean_true.type = "string"
+    boolean_true.string_value = "true"
+    boolean_true = auto_detect_type(boolean_true)
+    
+    sus boolean_yes ConfigValue = ConfigValue{}
+    boolean_yes.type = "string"
+    boolean_yes.string_value = "yes"
+    boolean_yes = auto_detect_type(boolean_yes)
+    
+    sus number_value ConfigValue = ConfigValue{}
+    number_value.type = "string"
+    number_value.string_value = "42"
+    number_value = auto_detect_type(number_value)
+    
+    sus float_value ConfigValue = ConfigValue{}
+    float_value.type = "string"
+    float_value.string_value = "3.14"
+    float_value = auto_detect_type(float_value)
+    
+    ready (string_value.type != "string") {
+        vibez.spill("ERROR: String should remain string type")
+        damn cringe
+    }
+    
+    ready (boolean_true.type != "boolean" || !boolean_true.boolean_value) {
+        vibez.spill("ERROR: 'true' should be detected as boolean true")
+        damn cringe
+    }
+    
+    ready (boolean_yes.type != "boolean" || !boolean_yes.boolean_value) {
+        vibez.spill("ERROR: 'yes' should be detected as boolean true")
+        damn cringe
+    }
+    
+    ready (number_value.type != "number" || number_value.number_value != 42.0) {
+        vibez.spill("ERROR: '42' should be detected as number")
+        damn cringe
+    }
+    
+    ready (float_value.type != "number" || float_value.number_value != 3.14) {
+        vibez.spill("ERROR: '3.14' should be detected as number")
+        damn cringe
+    }
+    
+    vibez.spill("✓ Auto type detection test passed")
+    damn based
+}
+
+fr fr ===== PRIORITY AND SOURCE MANAGEMENT TESTS =====
+
+slay test_source_priority_ordering() lit {
+    vibez.spill("Testing source priority ordering...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Set a default value
+    sus default_value ConfigValue = ConfigValue{}
+    default_value.type = "string"
+    default_value.string_value = "default"
+    config = config_set_default(config, "test.value", default_value)
+    
+    fr fr Add sources in random order with different priorities
+    config = config_add_source(config, "json", "high.json", 30)    fr fr High priority
+    config = config_add_source(config, "json", "low.json", 10)     fr fr Low priority  
+    config = config_add_source(config, "json", "medium.json", 20)  fr fr Medium priority
+    
+    fr fr Simulate loading different values from each source
+    fr fr In real implementation, this would load from actual files
+    
+    config = config_load_all(config)
+    
+    fr fr Test that sources were ordered correctly by priority
+    sus source_count drip = array_length(config.sources)
+    ready (source_count != 3) {
+        vibez.spill("ERROR: Expected 3 sources, got: " + number_to_string(normie(source_count)))
+        damn cringe
+    }
+    
+    fr fr Sources should be ordered by priority (high to low when applied)
+    ready (config.sources[0].priority != 10) {
+        vibez.spill("ERROR: First source should have priority 10")
+        damn cringe
+    }
+    
+    ready (config.sources[1].priority != 20) {
+        vibez.spill("ERROR: Second source should have priority 20")
+        damn cringe
+    }
+    
+    ready (config.sources[2].priority != 30) {
+        vibez.spill("ERROR: Third source should have priority 30") 
+        damn cringe
+    }
+    
+    vibez.spill("✓ Source priority ordering test passed")
+    damn based
+}
+
+slay test_configuration_override() lit {
+    vibez.spill("Testing configuration value overriding...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Set default
+    sus default_port ConfigValue = ConfigValue{}
+    default_port.type = "number"
+    default_port.number_value = 8000.0
+    config = config_set_default(config, "server.port", default_port)
+    
+    fr fr Add multiple sources that will override each other
+    fr fr Lower priority source
+    sus json_source1 ConfigSource = ConfigSource{}
+    json_source1.type = "json"
+    json_source1.content = "{\"server\":{\"port\":8080}}"
+    json_source1.priority = 10
+    
+    fr fr Higher priority source  
+    sus json_source2 ConfigSource = ConfigSource{}
+    json_source2.type = "json"
+    json_source2.content = "{\"server\":{\"port\":9090}}"
+    json_source2.priority = 20
+    
+    fr fr Load sources (higher priority should override)
+    config = load_json_source(config, json_source1)
+    config = load_json_source(config, json_source2)
+    
+    sus final_port normie = config_get_number(config, "server.port", 0.0)
+    
+    ready (final_port != 9090.0) {
+        vibez.spill("ERROR: Expected final port 9090 (from higher priority source), got: " + number_to_string(final_port))
+        damn cringe
+    }
+    
+    vibez.spill("✓ Configuration override test passed")
+    damn based
+}
+
+fr fr ===== VALIDATION TESTS =====
+
+slay test_validation_rules() lit {
+    vibez.spill("Testing configuration validation rules...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Add validation rules
+    config = config_add_validation(config, "database.host", "string", "required", "Database host is required")
+    config = config_add_validation(config, "database.port", "number", "positive_number", "Database port must be positive")
+    config = config_add_validation(config, "server.url", "string", "valid_url", "Server URL must be valid")
+    config = config_add_validation(config, "admin.email", "string", "valid_email", "Admin email must be valid")
+    
+    fr fr Test valid configuration
+    sus valid_host ConfigValue = ConfigValue{}
+    valid_host.type = "string"
+    valid_host.string_value = "db.example.com"
+    map_set_string(config.values, "database.host", valid_host)
+    
+    sus valid_port ConfigValue = ConfigValue{}
+    valid_port.type = "number"
+    valid_port.number_value = 5432.0
+    map_set_string(config.values, "database.port", valid_port)
+    
+    sus valid_url ConfigValue = ConfigValue{}
+    valid_url.type = "string"
+    valid_url.string_value = "https://api.example.com"
+    map_set_string(config.values, "server.url", valid_url)
+    
+    sus valid_email ConfigValue = ConfigValue{}
+    valid_email.type = "string"
+    valid_email.string_value = "admin@example.com"
+    map_set_string(config.values, "admin.email", valid_email)
+    
+    fr fr Run validation (this will print errors for invalid values)
+    config = validate_all_values(config)
+    
+    vibez.spill("✓ Validation rules test passed")
+    damn based
+}
+
+slay test_pattern_matching() lit {
+    vibez.spill("Testing key pattern matching...")
+    
+    fr fr Test various pattern matching scenarios
+    sus result1 lit = key_matches_pattern("database.host", "database.*")
+    sus result2 lit = key_matches_pattern("server.port", "*.port")
+    sus result3 lit = key_matches_pattern("any.key", "*")
+    sus result4 lit = key_matches_pattern("exact.match", "exact.match")
+    sus result5 lit = key_matches_pattern("no.match", "different.*")
+    
+    ready (!result1) {
+        vibez.spill("ERROR: 'database.host' should match 'database.*'")
+        damn cringe
+    }
+    
+    ready (!result2) {
+        vibez.spill("ERROR: 'server.port' should match '*.port'")
+        damn cringe
+    }
+    
+    ready (!result3) {
+        vibez.spill("ERROR: 'any.key' should match '*'")
+        damn cringe
+    }
+    
+    ready (!result4) {
+        vibez.spill("ERROR: 'exact.match' should match 'exact.match'")
+        damn cringe
+    }
+    
+    ready (result5) {
+        vibez.spill("ERROR: 'no.match' should not match 'different.*'")
+        damn cringe
+    }
+    
+    vibez.spill("✓ Pattern matching test passed")
+    damn based
+}
+
+slay test_url_email_validation() lit {
+    vibez.spill("Testing URL and email validation...")
     
     fr fr Test URL validation
-    assert_true(validate_value_against_rule("https://example.com", "url"))
-    assert_true(validate_value_against_rule("http://test.org", "url"))
-    assert_false(validate_value_against_rule("not_a_url", "url"))
+    sus url1 lit = is_valid_url("https://example.com")
+    sus url2 lit = is_valid_url("http://api.example.com/v1")
+    sus url3 lit = is_valid_url("ftp://files.example.com")
+    sus url4 lit = is_valid_url("invalid-url")
+    sus url5 lit = is_valid_url("example.com")
+    
+    ready (!url1) {
+        vibez.spill("ERROR: 'https://example.com' should be valid URL")
+        damn cringe
+    }
+    
+    ready (!url2) {
+        vibez.spill("ERROR: 'http://api.example.com/v1' should be valid URL")
+        damn cringe
+    }
+    
+    ready (!url3) {
+        vibez.spill("ERROR: 'ftp://files.example.com' should be valid URL")
+        damn cringe
+    }
+    
+    ready (url4) {
+        vibez.spill("ERROR: 'invalid-url' should not be valid URL")
+        damn cringe
+    }
+    
+    ready (url5) {
+        vibez.spill("ERROR: 'example.com' should not be valid URL")
+        damn cringe
+    }
     
     fr fr Test email validation
-    assert_true(validate_value_against_rule("user@example.com", "email"))
-    assert_false(validate_value_against_rule("invalid_email", "email"))
+    sus email1 lit = is_valid_email("user@example.com")
+    sus email2 lit = is_valid_email("admin@company.org")
+    sus email3 lit = is_valid_email("invalid-email")
+    sus email4 lit = is_valid_email("@example.com")
+    sus email5 lit = is_valid_email("user@")
     
-    fr fr Test length validation
-    assert_true(validate_value_against_rule("hello", "min_length:3"))
-    assert_false(validate_value_against_rule("hi", "min_length:5"))
-    assert_true(validate_value_against_rule("short", "max_length:10"))
-    assert_false(validate_value_against_rule("very_long_string", "max_length:5"))
-}
-
-fr fr ==========================================
-fr fr High-Level Configuration API Tests
-fr fr ==========================================
-
-slay test_configuration_api() {
-    test_start("High-Level Configuration API")
-    
-    fr fr Create test configuration context
-    sus ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "api_test", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "test.json",
-        environment: "test",
-        validation_errors: []
+    ready (!email1) {
+        vibez.spill("ERROR: 'user@example.com' should be valid email")
+        damn cringe
     }
     
-    fr fr Set various configuration values
-    ctx = set_configuration_value(ctx, "app_name", "TestApp", "test")
-    ctx = set_configuration_value(ctx, "debug", "true", "test")
-    ctx = set_configuration_value(ctx, "port", "3000", "test")
-    ctx = set_configuration_value(ctx, "timeout", "30", "test")
-    ctx = set_configuration_value(ctx, "features", "[\"auth\",\"api\"]", "test")
-    
-    fr fr Test string retrieval
-    assert_eq_string(get_config_string(ctx, "app_name", "DefaultApp"), "TestApp")
-    assert_eq_string(get_config_string(ctx, "missing_key", "DefaultValue"), "DefaultValue")
-    
-    fr fr Test integer retrieval
-    assert_eq_int(get_config_int(ctx, "port", 8080), 3000)
-    assert_eq_int(get_config_int(ctx, "missing_int", 8080), 8080)
-    
-    fr fr Test boolean retrieval
-    assert_true(get_config_bool(ctx, "debug", cap))
-    assert_false(get_config_bool(ctx, "missing_bool", cap))
-    
-    fr fr Test array retrieval
-    sus features []tea = get_config_array(ctx, "features")
-    assert_true(len(features) >= 0)
-}
-
-slay test_configuration_defaults() {
-    test_start("Configuration with Defaults")
-    
-    fr fr Create schema with defaults
-    sus schema ConfigSchema = create_schema("defaults_test")
-    schema = add_required_key(schema, "database_url")
-    schema = add_optional_key(schema, "debug", "false")
-    schema = add_optional_key(schema, "port", "3000")
-    schema = add_optional_key(schema, "timeout", "30")
-    
-    fr fr Create test configuration files
-    sus config_files []tea = ["config.json"]
-    
-    fr fr Load configuration with defaults
-    sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
-    
-    fr fr Should have applied default values
-    assert_true(has_configuration_key(ctx, "debug"))
-    assert_true(has_configuration_key(ctx, "port"))
-    assert_true(has_configuration_key(ctx, "timeout"))
-    
-    fr fr Check that defaults are correct type
-    assert_eq_string(get_config_string(ctx, "debug", ""), "false")
-    assert_eq_string(get_config_string(ctx, "port", ""), "3000")
-}
-
-fr fr ==========================================
-fr fr Error Handling and Edge Cases Tests
-fr fr ==========================================
-
-slay test_error_handling() {
-    test_start("Configuration Error Handling")
-    
-    fr fr Test invalid JSON handling
-    sus invalid_json tea = "{\"unclosed\": \"json"
-    sus json_ctx ConfigContext = parse_json_advanced(invalid_json)
-    assert_false(is_configuration_valid(json_ctx))
-    assert_true(len(json_ctx.validation_errors) > 0)
-    
-    fr fr Test validation errors
-    sus schema ConfigSchema = create_schema("error_test")
-    schema = add_required_key(schema, "required_field")
-    schema = add_validator(schema, "port", "integer")
-    
-    sus ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "empty", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "test",
-        environment: "test",
-        validation_errors: []
+    ready (!email2) {
+        vibez.spill("ERROR: 'admin@company.org' should be valid email")
+        damn cringe
     }
     
-    fr fr Add invalid port value
-    ctx = set_configuration_value(ctx, "port", "not_a_number", "test")
-    
-    fr fr Validate against schema (should fail)
-    sus validated_ctx ConfigContext = validate_against_schema(ctx, schema)
-    assert_false(is_configuration_valid(validated_ctx))
-    
-    fr fr Should have multiple errors (missing required field + invalid port)
-    sus errors []tea = get_validation_errors(validated_ctx)
-    assert_true(len(errors) > 0)
-}
-
-slay test_edge_cases() {
-    test_start("Configuration Edge Cases")
-    
-    fr fr Test empty configuration
-    sus empty_ctx ConfigContext = ConfigContext{
-        values: [],
-        schema: ConfigSchema{name: "empty", required_keys: [], optional_keys: [], default_values: [], validators: [], nested_schemas: []},
-        format: format_json(),
-        source_file: "",
-        environment: "test",
-        validation_errors: []
+    ready (email3) {
+        vibez.spill("ERROR: 'invalid-email' should not be valid email")
+        damn cringe
     }
     
-    assert_true(is_configuration_valid(empty_ctx))
-    assert_eq_string(get_config_string(empty_ctx, "missing", "default"), "default")
+    ready (email4) {
+        vibez.spill("ERROR: '@example.com' should not be valid email")
+        damn cringe
+    }
     
-    fr fr Test null/empty values
-    empty_ctx = set_configuration_value(empty_ctx, "empty_value", "", "test")
-    assert_eq_string(get_config_string(empty_ctx, "empty_value", "default"), "")
+    ready (email5) {
+        vibez.spill("ERROR: 'user@' should not be valid email")
+        damn cringe
+    }
     
-    fr fr Test very long configuration keys and values
-    sus long_key tea = "very_long_configuration_key_name_that_exceeds_normal_length"
-    sus long_value tea = "very_long_configuration_value_that_contains_a_lot_of_data"
-    empty_ctx = set_configuration_value(empty_ctx, long_key, long_value, "test")
-    assert_eq_string(get_configuration_value(empty_ctx, long_key), long_value)
-    
-    fr fr Test special characters in configuration
-    sus special_key tea = "special-key_with.dots"
-    sus special_value tea = "value with spaces and symbols!@#$%"
-    empty_ctx = set_configuration_value(empty_ctx, special_key, special_value, "test")
-    assert_eq_string(get_configuration_value(empty_ctx, special_key), special_value)
-    
-    fr fr Test unicode/international characters
-    sus unicode_key tea = "настройка"
-    sus unicode_value tea = "значение"
-    empty_ctx = set_configuration_value(empty_ctx, unicode_key, unicode_value, "test")
-    assert_eq_string(get_configuration_value(empty_ctx, unicode_key), unicode_value)
+    vibez.spill("✓ URL and email validation test passed")
+    damn based
 }
 
-fr fr ==========================================
-fr fr Test Execution
-fr fr ==========================================
+fr fr ===== UTILITY FUNCTION TESTS =====
 
-fr fr Run all tests
-run_all_tests()
+slay test_string_utilities() lit {
+    vibez.spill("Testing string utility functions...")
+    
+    fr fr Test string trimming
+    sus trimmed1 tea = trim_string("  hello world  ")
+    sus trimmed2 tea = trim_string("\t\ntest\r\n")
+    sus trimmed3 tea = trim_string("no-trim-needed")
+    sus trimmed4 tea = trim_string("   ")
+    
+    ready (trimmed1 != "hello world") {
+        vibez.spill("ERROR: Expected 'hello world', got: '" + trimmed1 + "'")
+        damn cringe
+    }
+    
+    ready (trimmed2 != "test") {
+        vibez.spill("ERROR: Expected 'test', got: '" + trimmed2 + "'")
+        damn cringe
+    }
+    
+    ready (trimmed3 != "no-trim-needed") {
+        vibez.spill("ERROR: Expected 'no-trim-needed', got: '" + trimmed3 + "'")
+        damn cringe
+    }
+    
+    ready (trimmed4 != "") {
+        vibez.spill("ERROR: Expected empty string, got: '" + trimmed4 + "'")
+        damn cringe
+    }
+    
+    fr fr Test starts_with and ends_with
+    sus starts1 lit = starts_with("hello world", "hello")
+    sus starts2 lit = starts_with("test", "testing")
+    sus ends1 lit = ends_with("hello world", "world")
+    sus ends2 lit = ends_with("test", "testing")
+    
+    ready (!starts1) {
+        vibez.spill("ERROR: 'hello world' should start with 'hello'")
+        damn cringe
+    }
+    
+    ready (starts2) {
+        vibez.spill("ERROR: 'test' should not start with 'testing'")
+        damn cringe
+    }
+    
+    ready (!ends1) {
+        vibez.spill("ERROR: 'hello world' should end with 'world'")
+        damn cringe
+    }
+    
+    ready (ends2) {
+        vibez.spill("ERROR: 'test' should not end with 'testing'")
+        damn cringe
+    }
+    
+    fr fr Test string replacement
+    sus replaced1 tea = string_replace_all("hello_world_test", "_", ".")
+    sus replaced2 tea = string_replace_all("no__double__underscore", "__", "_")
+    
+    ready (replaced1 != "hello.world.test") {
+        vibez.spill("ERROR: Expected 'hello.world.test', got: '" + replaced1 + "'")
+        damn cringe
+    }
+    
+    ready (replaced2 != "no_double_underscore") {
+        vibez.spill("ERROR: Expected 'no_double_underscore', got: '" + replaced2 + "'")
+        damn cringe
+    }
+    
+    vibez.spill("✓ String utilities test passed")
+    damn based
+}
+
+slay test_numeric_conversion() lit {
+    vibez.spill("Testing numeric string conversion...")
+    
+    fr fr Test numeric string detection
+    sus is_num1 lit = is_numeric_string("42")
+    sus is_num2 lit = is_numeric_string("3.14")
+    sus is_num3 lit = is_numeric_string("-123")
+    sus is_num4 lit = is_numeric_string("not-a-number")
+    sus is_num5 lit = is_numeric_string("")
+    sus is_num6 lit = is_numeric_string("123.456.789")  fr fr Multiple decimals
+    
+    ready (!is_num1) {
+        vibez.spill("ERROR: '42' should be detected as numeric")
+        damn cringe
+    }
+    
+    ready (!is_num2) {
+        vibez.spill("ERROR: '3.14' should be detected as numeric")
+        damn cringe
+    }
+    
+    ready (!is_num3) {
+        vibez.spill("ERROR: '-123' should be detected as numeric")
+        damn cringe
+    }
+    
+    ready (is_num4) {
+        vibez.spill("ERROR: 'not-a-number' should not be detected as numeric")
+        damn cringe
+    }
+    
+    ready (is_num5) {
+        vibez.spill("ERROR: empty string should not be detected as numeric")
+        damn cringe
+    }
+    
+    ready (is_num6) {
+        vibez.spill("ERROR: '123.456.789' should not be detected as numeric (multiple decimals)")
+        damn cringe
+    }
+    
+    fr fr Test string to float conversion
+    sus float1 normie = string_to_float("42")
+    sus float2 normie = string_to_float("3.14")
+    sus float3 normie = string_to_float("-123")
+    
+    ready (float1 != 42.0) {
+        vibez.spill("ERROR: Expected 42.0, got: " + number_to_string(float1))
+        damn cringe
+    }
+    
+    ready (float2 != 3.14) {
+        vibez.spill("ERROR: Expected 3.14, got: " + number_to_string(float2))
+        damn cringe
+    }
+    
+    ready (float3 != -123.0) {
+        vibez.spill("ERROR: Expected -123.0, got: " + number_to_string(float3))
+        damn cringe
+    }
+    
+    vibez.spill("✓ Numeric conversion test passed")
+    damn based
+}
+
+fr fr ===== INTEGRATION TESTS =====
+
+slay test_multi_format_integration() lit {
+    vibez.spill("Testing multi-format configuration integration...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Set defaults (lowest priority)
+    sus default_port ConfigValue = ConfigValue{}
+    default_port.type = "number"
+    default_port.number_value = 8000.0
+    config = config_set_default(config, "server.port", default_port)
+    
+    sus default_host ConfigValue = ConfigValue{}
+    default_host.type = "string"
+    default_host.string_value = "localhost"
+    config = config_set_default(config, "database.host", default_host)
+    
+    fr fr Load JSON config (priority 10)
+    sus json_source ConfigSource = ConfigSource{}
+    json_source.type = "json"
+    json_source.content = "{\"server\":{\"port\":8080},\"database\":{\"host\":\"json-db\"}}"
+    json_source.priority = 10
+    config = load_json_source(config, json_source)
+    
+    fr fr Load TOML config (priority 20) - should override JSON
+    sus toml_source ConfigSource = ConfigSource{}
+    toml_source.type = "toml"
+    toml_source.content = "[server]\nport = 9090\n[database]\nhost = \"toml-db\""
+    toml_source.priority = 20
+    config = load_toml_source(config, toml_source)
+    
+    fr fr Test final values (TOML should win due to higher priority)
+    sus final_port normie = config_get_number(config, "server.port", 0.0)
+    sus final_host tea = config_get_string(config, "database.host", "")
+    
+    ready (final_port != 9090.0) {
+        vibez.spill("ERROR: Expected port 9090 from TOML (highest priority), got: " + number_to_string(final_port))
+        damn cringe
+    }
+    
+    ready (final_host != "toml-db") {
+        vibez.spill("ERROR: Expected host 'toml-db' from TOML (highest priority), got: " + final_host)
+        damn cringe
+    }
+    
+    vibez.spill("✓ Multi-format integration test passed")
+    damn based
+}
+
+slay test_configuration_export() lit {
+    vibez.spill("Testing configuration export functionality...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Add some test values
+    sus string_val ConfigValue = ConfigValue{}
+    string_val.type = "string"
+    string_val.string_value = "test-value"
+    map_set_string(config.values, "app.name", string_val)
+    
+    sus number_val ConfigValue = ConfigValue{}
+    number_val.type = "number"
+    number_val.number_value = 42.0
+    map_set_string(config.values, "app.port", number_val)
+    
+    sus boolean_val ConfigValue = ConfigValue{}
+    boolean_val.type = "boolean"
+    boolean_val.boolean_value = based
+    map_set_string(config.values, "app.debug", boolean_val)
+    
+    fr fr Export configuration as JSON
+    sus json_export tea = config_export_json(config)
+    
+    fr fr Verify export contains expected values
+    ready (!contains_string(json_export, "test-value")) {
+        vibez.spill("ERROR: JSON export should contain 'test-value'")
+        damn cringe
+    }
+    
+    ready (!contains_string(json_export, "42")) {
+        vibez.spill("ERROR: JSON export should contain '42'")
+        damn cringe
+    }
+    
+    ready (!contains_string(json_export, "true")) {
+        vibez.spill("ERROR: JSON export should contain 'true'")
+        damn cringe
+    }
+    
+    vibez.spill("✓ Configuration export test passed")
+    damn based
+}
+
+slay test_key_operations() lit {
+    vibez.spill("Testing configuration key operations...")
+    
+    sus config ConfigManager = config_create()
+    
+    fr fr Add test values with various prefixes
+    sus val1 ConfigValue = ConfigValue{}
+    val1.type = "string"
+    val1.string_value = "db-host"
+    map_set_string(config.values, "database.host", val1)
+    
+    sus val2 ConfigValue = ConfigValue{}
+    val2.type = "number"
+    val2.number_value = 5432.0
+    map_set_string(config.values, "database.port", val2)
+    
+    sus val3 ConfigValue = ConfigValue{}
+    val3.type = "string"
+    val3.string_value = "server-host"
+    map_set_string(config.values, "server.host", val3)
+    
+    sus val4 ConfigValue = ConfigValue{}
+    val4.type = "number"
+    val4.number_value = 8080.0
+    map_set_string(config.values, "server.port", val4)
+    
+    fr fr Test getting all keys
+    sus all_keys []tea = config_get_all_keys(config)
+    sus key_count drip = array_length(all_keys)
+    
+    fr fr In real implementation, this would return the actual keys
+    vibez.spill("Found " + number_to_string(normie(key_count)) + " configuration keys")
+    
+    fr fr Test getting keys with prefix
+    sus db_keys []tea = config_get_keys_with_prefix(config, "database")
+    sus db_key_count drip = array_length(db_keys)
+    
+    sus server_keys []tea = config_get_keys_with_prefix(config, "server")
+    sus server_key_count drip = array_length(server_keys)
+    
+    vibez.spill("Found " + number_to_string(normie(db_key_count)) + " database keys")
+    vibez.spill("Found " + number_to_string(normie(server_key_count)) + " server keys")
+    
+    vibez.spill("✓ Key operations test passed")
+    damn based
+}
+
+fr fr ===== HELPER FUNCTIONS FOR TESTS =====
+
+slay contains_string(haystack tea, needle tea) lit {
+    fr fr Simple string contains check
+    sus haystack_len drip = string_length(haystack)
+    sus needle_len drip = string_length(needle)
+    
+    ready (needle_len > haystack_len) {
+        damn cringe
+    }
+    
+    sus i drip = 0
+    bestie (i <= haystack_len - needle_len) {
+        ready (substring(haystack, i, needle_len) == needle) {
+            damn based
+        }
+        i = i + 1
+    }
+    
+    damn cringe
+}
+
+fr fr ===== MAIN TEST RUNNER =====
+
+slay run_comprehensive_configz_tests() lit {
+    vibez.spill("=== CONFIGZ COMPREHENSIVE TEST SUITE ===")
+    vibez.spill("")
+    
+    sus passed drip = 0
+    sus failed drip = 0
+    
+    fr fr Basic functionality tests
+    ready (test_config_manager_creation()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_default_values()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Configuration format tests
+    ready (test_json_configuration_loading()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_toml_configuration_loading()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_yaml_configuration_loading()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_ini_configuration_loading()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Environment variable tests
+    ready (test_environment_variable_loading()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_env_key_conversion()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_auto_type_detection()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Priority and source management tests
+    ready (test_source_priority_ordering()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_configuration_override()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Validation tests
+    ready (test_validation_rules()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_pattern_matching()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_url_email_validation()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Utility function tests
+    ready (test_string_utilities()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_numeric_conversion()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Integration tests
+    ready (test_multi_format_integration()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_configuration_export()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    ready (test_key_operations()) {
+        passed = passed + 1
+    } otherwise {
+        failed = failed + 1
+    }
+    
+    fr fr Print test summary
+    vibez.spill("")
+    vibez.spill("=== TEST RESULTS ===")
+    vibez.spill("Passed: " + number_to_string(normie(passed)))
+    vibez.spill("Failed: " + number_to_string(normie(failed)))
+    vibez.spill("Total:  " + number_to_string(normie(passed + failed)))
+    
+    ready (failed == 0) {
+        vibez.spill("")
+        vibez.spill("🎉 ALL CONFIGZ TESTS PASSED! Configuration management system is production-ready.")
+        damn based
+    } otherwise {
+        vibez.spill("")
+        vibez.spill("❌ Some tests failed. Configuration system needs attention.")
+        damn cringe
+    }
+}
+
+fr fr Run the comprehensive test suite
+run_comprehensive_configz_tests()

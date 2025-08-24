@@ -1,0 +1,610 @@
+# logz/testing.csd - Comprehensive Testing Framework for Logging System
+# Performance testing, concurrent testing, backend validation
+
+yeet "testz"
+yeet "timez"
+yeet "concurrenz"
+yeet "stringz"
+yeet "filez"
+
+# Test backend that captures log entries for verification
+squad TestBackend {
+    sus entries []LogEntry
+    sus formatter LogFormatter
+    sus write_count drip
+    sus flush_count drip
+    sus close_called lit
+    
+    slay new(formatter LogFormatter) TestBackend {
+        damn TestBackend{
+            entries: []LogEntry{},
+            formatter: formatter,
+            write_count: 0,
+            flush_count: 0,
+            close_called: nah
+        }
+    }
+    
+    slay get_entries(self TestBackend) []LogEntry {
+        damn self.entries
+    }
+    
+    slay get_last_entry(self TestBackend) LogEntry {
+        ready (len(self.entries) > 0) {
+            damn self.entries[len(self.entries) - 1]
+        }
+        damn LogEntry{}
+    }
+    
+    slay clear(mut self TestBackend) {
+        self.entries = []LogEntry{}
+        self.write_count = 0
+        self.flush_count = 0
+        self.close_called = nah
+    }
+}
+
+give TestBackend : LogBackend {
+    slay write(mut self TestBackend, entry LogEntry) yikes<tea> {
+        append(&self.entries, entry)
+        self.write_count = self.write_count + 1
+        damn ""
+    }
+    
+    slay flush(mut self TestBackend) yikes<tea> {
+        self.flush_count = self.flush_count + 1
+        damn ""
+    }
+    
+    slay close(mut self TestBackend) yikes<tea> {
+        self.close_called = based
+        damn ""
+    }
+}
+
+# Benchmark logger for performance testing
+squad BenchmarkLogger {
+    sus logger Logger
+    sus test_backend TestBackend
+    sus start_time drip
+    sus end_time drip
+    
+    slay new() BenchmarkLogger {
+        sus formatter LogFormatter = TextFormatter.default()
+        sus backend TestBackend = TestBackend.new(formatter)
+        sus logger Logger = Logger.new(formatter)
+        logger.add_backend(backend)
+        
+        damn BenchmarkLogger{
+            logger: logger,
+            test_backend: backend,
+            start_time: 0,
+            end_time: 0
+        }
+    }
+    
+    slay start_benchmark(mut self BenchmarkLogger) {
+        self.start_time = current_timestamp_nanos()
+        self.test_backend.clear()
+    }
+    
+    slay end_benchmark(mut self BenchmarkLogger) drip {
+        self.end_time = current_timestamp_nanos()
+        damn self.end_time - self.start_time
+    }
+    
+    slay log_messages(mut self BenchmarkLogger, count drip, message tea) {
+        sus i drip = 0
+        bestie (i < count) {
+            self.logger.info(message + " " + drip_to_string(i))
+            i = i + 1
+        }
+    }
+}
+
+# Core logging tests
+slay test_log_levels() {
+    test_start("log_levels")
+    
+    # Test log level comparison
+    sus debug LogLevel = LogLevel.DEBUG()
+    sus info LogLevel = LogLevel.INFO()
+    sus warn LogLevel = LogLevel.WARN()
+    sus error LogLevel = LogLevel.ERROR()
+    sus fatal LogLevel = LogLevel.FATAL()
+    
+    assert_true(debug.gte(debug))
+    assert_true(info.gte(debug))
+    assert_true(warn.gte(info))
+    assert_true(error.gte(warn))
+    assert_true(fatal.gte(error))
+    
+    assert_false(debug.gte(info))
+    assert_false(info.gte(warn))
+    
+    test_end()
+}
+
+slay test_log_entry_creation() {
+    test_start("log_entry_creation")
+    
+    sus level LogLevel = LogLevel.INFO()
+    sus entry LogEntry = LogEntry.new(level, "test message")
+    
+    assert_eq_string(entry.message, "test message")
+    assert_eq_string(entry.level.name, "INFO")
+    assert_true(entry.timestamp > 0)
+    assert_true(entry.thread_id > 0)
+    
+    # Test field addition
+    entry.with_field("key1", "value1")
+    entry.with_field("key2", "value2")
+    
+    assert_eq_string(entry.fields["key1"], "value1")
+    assert_eq_string(entry.fields["key2"], "value2")
+    
+    # Test context addition
+    entry.with_context("test_module", "test_function", 42)
+    assert_eq_string(entry.module, "test_module")
+    assert_eq_string(entry.function, "test_function")
+    assert_eq_int(entry.line, 42)
+    
+    test_end()
+}
+
+slay test_text_formatter() {
+    test_start("text_formatter")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus entry LogEntry = LogEntry.new(LogLevel.INFO(), "test message")
+    entry.with_context("test_module", "test_function", 42)
+    
+    sus formatted tea = formatter.format(entry)
+    
+    assert_true(contains(formatted, "INFO"))
+    assert_true(contains(formatted, "test message"))
+    assert_true(contains(formatted, "test_module"))
+    assert_true(contains(formatted, "test_function"))
+    assert_true(contains(formatted, "42"))
+    
+    test_end()
+}
+
+slay test_json_formatter() {
+    test_start("json_formatter")
+    
+    sus formatter JsonFormatter = JsonFormatter.new(nah)
+    sus entry LogEntry = LogEntry.new(LogLevel.WARN(), "json test")
+    entry.with_field("user_id", "123")
+    entry.with_field("action", "login")
+    
+    sus formatted tea = formatter.format(entry)
+    
+    assert_true(contains(formatted, "\"level\":\"WARN\""))
+    assert_true(contains(formatted, "\"message\":\"json test\""))
+    assert_true(contains(formatted, "\"user_id\":\"123\""))
+    assert_true(contains(formatted, "\"action\":\"login\""))
+    
+    test_end()
+}
+
+slay test_level_filter() {
+    test_start("level_filter")
+    
+    sus filter LevelFilter = LevelFilter.new(LogLevel.WARN())
+    
+    sus debug_entry LogEntry = LogEntry.new(LogLevel.DEBUG(), "debug")
+    sus info_entry LogEntry = LogEntry.new(LogLevel.INFO(), "info")
+    sus warn_entry LogEntry = LogEntry.new(LogLevel.WARN(), "warn")
+    sus error_entry LogEntry = LogEntry.new(LogLevel.ERROR(), "error")
+    
+    assert_false(filter.should_log(debug_entry))
+    assert_false(filter.should_log(info_entry))
+    assert_true(filter.should_log(warn_entry))
+    assert_true(filter.should_log(error_entry))
+    
+    test_end()
+}
+
+slay test_module_filter() {
+    test_start("module_filter")
+    
+    sus filter ModuleFilter = ModuleFilter.new()
+    filter.allow_module("auth")
+    filter.allow_module("database")
+    filter.block_module("debug")
+    
+    sus auth_entry LogEntry = LogEntry.new(LogLevel.INFO(), "auth message")
+    auth_entry.with_context("auth", "login", 10)
+    
+    sus db_entry LogEntry = LogEntry.new(LogLevel.INFO(), "db message")
+    db_entry.with_context("database", "query", 20)
+    
+    sus debug_entry LogEntry = LogEntry.new(LogLevel.DEBUG(), "debug message")
+    debug_entry.with_context("debug", "trace", 30)
+    
+    sus other_entry LogEntry = LogEntry.new(LogLevel.INFO(), "other message")
+    other_entry.with_context("other", "function", 40)
+    
+    assert_true(filter.should_log(auth_entry))
+    assert_true(filter.should_log(db_entry))
+    assert_false(filter.should_log(debug_entry))  # Blocked
+    assert_false(filter.should_log(other_entry))  # Not in allowed list
+    
+    test_end()
+}
+
+slay test_logger_basic() {
+    test_start("logger_basic")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    
+    logger.info("test info message")
+    logger.warn("test warn message")
+    logger.error("test error message")
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), 3)
+    
+    assert_eq_string(entries[0].message, "test info message")
+    assert_eq_string(entries[0].level.name, "INFO")
+    
+    assert_eq_string(entries[1].message, "test warn message")
+    assert_eq_string(entries[1].level.name, "WARN")
+    
+    assert_eq_string(entries[2].message, "test error message")
+    assert_eq_string(entries[2].level.name, "ERROR")
+    
+    test_end()
+}
+
+slay test_logger_with_fields() {
+    test_start("logger_with_fields")
+    
+    sus formatter JsonFormatter = JsonFormatter.new(nah)
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    
+    sus fields map<tea, tea> = map<tea, tea>{}
+    fields["user_id"] = "12345"
+    fields["session_id"] = "abc-def-ghi"
+    fields["ip"] = "192.168.1.100"
+    
+    logger.info_with_fields("user login successful", fields)
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), 1)
+    
+    sus entry LogEntry = entries[0]
+    assert_eq_string(entry.fields["user_id"], "12345")
+    assert_eq_string(entry.fields["session_id"], "abc-def-ghi")
+    assert_eq_string(entry.fields["ip"], "192.168.1.100")
+    
+    test_end()
+}
+
+slay test_logger_filtering() {
+    test_start("logger_filtering")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    
+    # Set minimum level to WARN
+    logger.set_level(LogLevel.WARN())
+    
+    logger.debug("debug message")
+    logger.info("info message")
+    logger.warn("warn message")
+    logger.error("error message")
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), 2)  # Only WARN and ERROR should pass
+    
+    assert_eq_string(entries[0].level.name, "WARN")
+    assert_eq_string(entries[1].level.name, "ERROR")
+    
+    test_end()
+}
+
+slay test_console_backend() {
+    test_start("console_backend")
+    
+    sus backend ConsoleBackend = console_backend()
+    sus entry LogEntry = LogEntry.new(LogLevel.INFO(), "console test")
+    
+    # This will output to console, just verify no errors
+    backend.write(entry) fam {
+        when error -> {
+            assert_fail("Console backend write failed: " + error)
+        }
+    }
+    
+    backend.flush() fam {
+        when error -> {
+            assert_fail("Console backend flush failed: " + error)
+        }
+    }
+    
+    backend.close() fam {
+        when error -> {
+            assert_fail("Console backend close failed: " + error)
+        }
+    }
+    
+    test_end()
+}
+
+slay test_file_backend() {
+    test_start("file_backend")
+    
+    sus test_file tea = "/tmp/cursed_log_test.log"
+    
+    # Clean up any existing test file
+    ready (file_exists(test_file)) {
+        delete_file(test_file) fam {
+            when error -> # Ignore cleanup errors
+        }
+    }
+    
+    sus backend FileBackend = file_backend(test_file) fam {
+        when error -> {
+            assert_fail("Failed to create file backend: " + error)
+            damn
+        }
+    }
+    
+    sus entry1 LogEntry = LogEntry.new(LogLevel.INFO(), "first log entry")
+    sus entry2 LogEntry = LogEntry.new(LogLevel.WARN(), "second log entry")
+    
+    backend.write(entry1) fam {
+        when error -> assert_fail("File write failed: " + error)
+    }
+    
+    backend.write(entry2) fam {
+        when error -> assert_fail("File write failed: " + error)
+    }
+    
+    backend.flush() fam {
+        when error -> assert_fail("File flush failed: " + error)
+    }
+    
+    backend.close() fam {
+        when error -> assert_fail("File close failed: " + error)
+    }
+    
+    # Verify file contents
+    ready (file_exists(test_file)) {
+        sus content tea = read_file_string(test_file) fam {
+            when error -> {
+                assert_fail("Failed to read log file: " + error)
+                damn
+            }
+        }
+        
+        assert_true(contains(content, "first log entry"))
+        assert_true(contains(content, "second log entry"))
+        assert_true(contains(content, "INFO"))
+        assert_true(contains(content, "WARN"))
+    } otherwise {
+        assert_fail("Log file was not created")
+    }
+    
+    # Cleanup
+    delete_file(test_file) fam {
+        when error -> # Ignore cleanup errors
+    }
+    
+    test_end()
+}
+
+slay test_multi_backend() {
+    test_start("multi_backend")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend1 TestBackend = TestBackend.new(formatter)
+    sus test_backend2 TestBackend = TestBackend.new(formatter)
+    
+    sus multi MultiBackend = MultiBackend.new()
+    multi.add(test_backend1)
+    multi.add(test_backend2)
+    
+    sus entry LogEntry = LogEntry.new(LogLevel.INFO(), "multi backend test")
+    
+    multi.write(entry) fam {
+        when error -> assert_fail("Multi backend write failed: " + error)
+    }
+    
+    # Verify both backends received the entry
+    sus entries1 []LogEntry = test_backend1.get_entries()
+    sus entries2 []LogEntry = test_backend2.get_entries()
+    
+    assert_eq_int(len(entries1), 1)
+    assert_eq_int(len(entries2), 1)
+    
+    assert_eq_string(entries1[0].message, "multi backend test")
+    assert_eq_string(entries2[0].message, "multi backend test")
+    
+    test_end()
+}
+
+# Performance tests
+slay test_logging_performance() {
+    test_start("logging_performance")
+    
+    sus benchmark BenchmarkLogger = BenchmarkLogger.new()
+    sus message_count drip = 10000
+    sus message tea = "Performance test message with some details"
+    
+    benchmark.start_benchmark()
+    benchmark.log_messages(message_count, message)
+    sus duration drip = benchmark.end_benchmark()
+    
+    # Verify all messages were logged
+    sus entries []LogEntry = benchmark.test_backend.get_entries()
+    assert_eq_int(len(entries), message_count)
+    
+    # Calculate performance metrics
+    sus messages_per_second drip = (message_count * 1_000_000_000) / duration
+    
+    spill("Logged", drip_to_string(message_count), "messages in", 
+          drip_to_string(duration / 1_000_000), "ms")
+    spill("Performance:", drip_to_string(messages_per_second), "messages/second")
+    
+    # Performance assertion - should be able to log at least 50k messages/second
+    assert_true(messages_per_second > 50000)
+    
+    test_end()
+}
+
+slay test_concurrent_logging() {
+    test_start("concurrent_logging")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    
+    sus goroutine_count drip = 10
+    sus messages_per_goroutine drip = 100
+    sus total_expected drip = goroutine_count * messages_per_goroutine
+    
+    sus wg WaitGroup = WaitGroup.new()
+    
+    sus i drip = 0
+    bestie (i < goroutine_count) {
+        wg.add(1)
+        sus goroutine_id drip = i
+        
+        go {
+            sus j drip = 0
+            bestie (j < messages_per_goroutine) {
+                logger.info("Goroutine " + drip_to_string(goroutine_id) + 
+                           " message " + drip_to_string(j))
+                j = j + 1
+            }
+            wg.done()
+        }
+        
+        i = i + 1
+    }
+    
+    wg.wait()
+    
+    # Give async logging time to complete
+    sleep_milliseconds(100)
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), total_expected)
+    
+    # Verify message content and thread safety
+    sus message_counts map<drip, drip> = map<drip, drip>{}
+    bestie (entry in entries) {
+        ready (entry.thread_id in message_counts) {
+            message_counts[entry.thread_id] = message_counts[entry.thread_id] + 1
+        } otherwise {
+            message_counts[entry.thread_id] = 1
+        }
+    }
+    
+    # Should have entries from multiple threads
+    assert_true(len(message_counts) > 1)
+    
+    test_end()
+}
+
+slay test_async_logging() {
+    test_start("async_logging")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    logger.enable_async(1000)
+    
+    sus message_count drip = 1000
+    sus i drip = 0
+    
+    bestie (i < message_count) {
+        logger.info("Async message " + drip_to_string(i))
+        i = i + 1
+    }
+    
+    # Wait for async processing
+    sleep_milliseconds(500)
+    logger.flush()
+    sleep_milliseconds(100)
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), message_count)
+    
+    test_end()
+}
+
+# Memory and resource tests
+slay test_memory_usage() {
+    test_start("memory_usage")
+    
+    sus formatter TextFormatter = TextFormatter.default()
+    sus test_backend TestBackend = TestBackend.new(formatter)
+    sus logger Logger = Logger.new(formatter)
+    logger.add_backend(test_backend)
+    
+    # Log many messages to test memory handling
+    sus large_message_count drip = 50000
+    sus i drip = 0
+    
+    bestie (i < large_message_count) {
+        logger.info("Memory test message with index " + drip_to_string(i))
+        i = i + 1
+        
+        # Periodic cleanup check
+        ready (i % 10000 == 0) {
+            spill("Logged", drip_to_string(i), "messages...")
+        }
+    }
+    
+    sus entries []LogEntry = test_backend.get_entries()
+    assert_eq_int(len(entries), large_message_count)
+    
+    spill("Successfully logged", drip_to_string(large_message_count), "messages")
+    
+    test_end()
+}
+
+# Main test runner
+slay run_all_logz_tests() {
+    test_start("logz_comprehensive_tests")
+    
+    spill("Running comprehensive logz tests...")
+    
+    # Core functionality tests
+    test_log_levels()
+    test_log_entry_creation()
+    test_text_formatter()
+    test_json_formatter()
+    test_level_filter()
+    test_module_filter()
+    test_logger_basic()
+    test_logger_with_fields()
+    test_logger_filtering()
+    
+    # Backend tests
+    test_console_backend()
+    test_file_backend()
+    test_multi_backend()
+    
+    # Performance tests
+    test_logging_performance()
+    test_concurrent_logging()
+    test_async_logging()
+    test_memory_usage()
+    
+    print_test_summary()
+    test_end()
+}
