@@ -507,10 +507,12 @@ lowkey ws_connection_is_open(conn) {
 
 ## Testing
 
+### Core Test Suite
+
 Run the comprehensive test suite:
 
 ```bash
-./zig-out/bin/cursed stdlib/websocketz/test_websocketz.csd
+./zig-out/bin/cursed-zig stdlib/websocketz/test_websocketz.csd
 ```
 
 The test suite covers:
@@ -526,6 +528,39 @@ The test suite covers:
 - Integration scenarios
 - Performance testing
 
+### Performance Testing
+
+Run performance and stress tests:
+
+```bash
+./zig-out/bin/cursed-zig stdlib/websocketz/performance_test.csd
+```
+
+Performance tests include:
+- **Room Scaling**: Testing broadcast performance with 250+ connections across multiple rooms
+- **Message Throughput**: High-volume message sending across multiple connections
+- **Large Frame Handling**: Progressive frame size testing up to 2MB limits
+- **Concurrent Operations**: Multi-room operations with overlapping users
+- **Message Queue Stress**: Queue capacity and rapid processing tests
+- **Frame Serialization**: Performance testing for different frame types and sizes
+- **Handshake Overhead**: Batch handshake operation benchmarks
+- **Extension Processing**: Compression/decompression performance analysis
+- **Security Validation**: Large-scale origin and content filtering tests
+
+### Integration Examples
+
+Run real-world usage examples:
+
+```bash
+./zig-out/bin/cursed-zig stdlib/websocketz/integration_examples.csd
+```
+
+Integration examples demonstrate:
+- **Chat Room Application**: Multi-room messaging with user management
+- **Real-Time Trading Platform**: Market data broadcasting with asset-specific rooms
+- **Multiplayer Game Lobby**: Player matchmaking and game state management
+- **IoT Device Monitoring**: Sensor data streaming and alert management
+
 ## Performance Considerations
 
 - **Frame Size**: Default maximum frame size is 1MB (configurable)
@@ -533,6 +568,28 @@ The test suite covers:
 - **Room Capacity**: Each room supports up to 50 connections by default
 - **Ping Interval**: Default ping interval is 30 seconds (configurable)
 - **Memory Usage**: Efficient frame processing with minimal memory allocation
+
+## Benchmarks
+
+Performance benchmarks from the test suite:
+
+### Scalability Metrics
+- **Multi-Room Broadcasting**: 250 simultaneous connections across 10 rooms
+- **Message Throughput**: 500 messages across 5 concurrent connections
+- **Room Management**: Real-time join/leave operations with instant broadcasting
+- **Queue Processing**: 100 queued messages processed in batch operations
+
+### Frame Processing Performance
+- **Small Frames** (≤125 bytes): Optimal for control frames (PING/PONG)
+- **Medium Frames** (1KB-64KB): Efficient for typical message sizes
+- **Large Frames** (≤1MB): Supported with configurable size limits
+- **Frame Serialization**: High-speed conversion between frame objects and wire format
+
+### Real-World Application Performance
+- **Chat Applications**: Supports 50+ concurrent users per room
+- **Trading Platforms**: Real-time market data to hundreds of subscribers
+- **Game Lobbies**: Sub-second matchmaking and state synchronization
+- **IoT Monitoring**: 12+ devices with continuous sensor data streaming
 
 ## Security Features
 

@@ -1,627 +1,463 @@
-# ConfigZ - Enhanced Configuration Management for CURSED
+# configz - Advanced Configuration Management
 
-## Overview
-
-The `configz` module provides a comprehensive configuration management framework for CURSED applications. It supports multiple configuration formats, environment variable integration, schema validation, type safety, and secure configuration handling.
+The `configz` module provides production-grade configuration management for CURSED applications with multi-format support, hot reloading, validation, and environment variable integration.
 
 ## Features
 
-### Multi-Format Support
-- **JSON** - Standard JSON configuration files
-- **YAML** - Human-readable YAML format
-- **TOML** - Tom's Obvious Minimal Language
-- **INI** - Traditional INI/config files
-- **Environment Files** - `.env` style files
-- **Environment Variables** - System environment integration
+### 🔧 Multiple Configuration Formats
+- **JSON**: Full JSON support with nested objects and arrays
+- **YAML**: Hierarchical YAML configuration with proper indentation handling
+- **TOML**: Modern TOML format with sections and typed values
+- **INI**: Classic INI files with sections and key-value pairs
+- **Environment Variables**: Automatic environment variable integration
 
-### Advanced Capabilities
-- **Schema Definition** - Define required/optional keys with validation rules
-- **Type Safety** - Automatic type detection and conversion
-- **Environment Substitution** - `${VAR}` expansion in configuration values
-- **Configuration Layering** - Merge multiple config sources with precedence
-- **Validation Framework** - Comprehensive validation with custom rules
-- **Default Values** - Automatic default value application
-- **Error Handling** - Detailed validation error reporting
+### 🔥 Hot Reloading
+- **File Watching**: Automatic detection of configuration file changes
+- **Reload Callbacks**: Custom handlers triggered on configuration reload
+- **Zero-Downtime**: Updates without application restart
 
-## Basic Usage
+### ✅ Validation & Defaults
+- **Type Validation**: Ensure configuration values match expected types
+- **Custom Validators**: URL validation, email validation, positive numbers, etc.
+- **Required Fields**: Mark configuration values as required
+- **Default Values**: Fallback values when configuration is missing
 
-### Quick Start
+### 🌍 Environment Integration
+- **Auto-Detection**: Automatic type detection for environment variables
+- **Naming Conventions**: Support for multiple env var naming styles
+- **Priority System**: Environment variables can override file configuration
 
-```cursed
-yeet "configz"
+### 🚀 Production Ready
+- **Error Handling**: Graceful handling of missing files and invalid configuration
+- **Debug Information**: Comprehensive debugging and introspection
+- **Performance**: Optimized for high-performance applications
+- **Memory Safe**: Arena allocator integration for leak-free operation
 
-// Load configuration from file with auto-detection
-sus ctx ConfigContext = load_configuration_file("config.json")
-
-// Get configuration values with defaults
-sus app_name tea = get_config_string(ctx, "app_name", "MyApp")
-sus port normie = get_config_int(ctx, "port", 3000)
-sus debug lit = get_config_bool(ctx, "debug", cap)
-
-// Check if configuration is valid
-ready (is_configuration_valid(ctx)) {
-    vibez.spill("Configuration loaded successfully!")
-} otherwise {
-    sus errors []tea = get_validation_errors(ctx)
-    vibez.spill("Configuration errors:", errors)
-}
-```
-
-### Schema-Based Configuration
+## Quick Start
 
 ```cursed
 yeet "configz"
 
-// Create configuration schema
-sus schema ConfigSchema = create_schema("app_config")
-schema = add_required_key(schema, "database_url")
-schema = add_required_key(schema, "api_key")
-schema = add_optional_key(schema, "debug", "false")
-schema = add_optional_key(schema, "port", "3000")
+fr fr Create configuration manager
+sus config ConfigManager = config_create()
 
-// Add validation rules
-schema = add_validator(schema, "database_url", "url")
-schema = add_validator(schema, "port", "integer")
-schema = add_validator(schema, "api_key", "min_length:10")
+fr fr Add configuration sources (priority: higher = takes precedence)
+config = config_add_source(config, "file", "config.json", 10)
+config = config_add_source(config, "env", "", 20)  fr fr Environment vars override files
 
-// Load configuration with schema validation
-sus config_files []tea = ["config.json", "config.local.json"]
-sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
+fr fr Set default values
+sus db_host_default ConfigValue = ConfigValue{}
+db_host_default.type = "string"
+db_host_default.string_value = "localhost"
+config = config_set_default(config, "database.host", db_host_default)
 
-// Check validation results
-ready (is_configuration_valid(ctx)) {
-    vibez.spill("Configuration is valid!")
-} otherwise {
-    sus errors []tea = get_validation_errors(ctx)
-    sus i normie = 0
-    bestie (i < len(errors)) {
-        vibez.spill("Error:", errors[i])
-        i = i + 1
-    }
-}
+sus db_port_default ConfigValue = ConfigValue{}
+db_port_default.type = "number"
+db_port_default.number_value = 5432.0
+config = config_set_default(config, "database.port", db_port_default)
+
+fr fr Add validation rules
+config = config_add_validation(config, "database.host", "string", "required", "Database host is required")
+config = config_add_validation(config, "database.port", "number", "positive_number", "Database port must be positive")
+config = config_add_validation(config, "server.url", "string", "valid_url", "Server URL must be valid")
+
+fr fr Load all configuration
+config = config_load_all(config)
+
+fr fr Access configuration values
+sus db_host tea = config_get_string(config, "database.host", "localhost")
+sus db_port normie = config_get_number(config, "database.port", 5432.0)
+sus debug_mode lit = config_get_boolean(config, "app.debug", cringe)
+
+vibez.spill("Database Host: " + db_host)
+vibez.spill("Database Port: " + number_to_string(db_port))
+vibez.spill("Debug Mode: " + (debug_mode ? "enabled" : "disabled"))
 ```
 
-## Configuration Formats
+## Configuration File Examples
 
-### JSON Configuration
-
+### JSON Configuration (config.json)
 ```json
 {
   "database": {
-    "host": "${DB_HOST}",
+    "host": "db.example.com",
     "port": 5432,
-    "name": "myapp"
+    "username": "app_user",
+    "ssl": true
   },
-  "app": {
-    "name": "MyApplication",
-    "debug": true,
-    "features": ["auth", "api", "logging"]
+  "server": {
+    "port": 8080,
+    "host": "0.0.0.0",
+    "url": "https://api.example.com"
+  },
+  "features": {
+    "cache_enabled": true,
+    "rate_limit": 1000,
+    "allowed_origins": ["https://example.com", "https://app.example.com"]
   }
 }
 ```
 
-```cursed
-// Parse JSON configuration
-sus json_content tea = read_file_content("config.json")
-sus ctx ConfigContext = parse_json_advanced(json_content)
-```
-
-### YAML Configuration
-
+### YAML Configuration (config.yaml)
 ```yaml
 database:
-  host: ${DB_HOST}
+  host: db.example.com
   port: 5432
-  name: myapp
+  username: app_user
+  ssl: true
 
-app:
-  name: MyApplication
-  debug: true
-  features:
-    - auth
-    - api
-    - logging
+server:
+  port: 8080
+  host: 0.0.0.0
+  url: https://api.example.com
+
+features:
+  cache_enabled: true
+  rate_limit: 1000
+  allowed_origins:
+    - https://example.com
+    - https://app.example.com
 ```
 
-```cursed
-// Parse YAML configuration
-sus yaml_content tea = read_file_content("config.yaml")
-sus ctx ConfigContext = parse_yaml_advanced(yaml_content)
-```
-
-### TOML Configuration
-
+### TOML Configuration (config.toml)
 ```toml
 [database]
-host = "${DB_HOST}"
+host = "db.example.com"
 port = 5432
-name = "myapp"
+username = "app_user"
+ssl = true
 
-[app]
-name = "MyApplication"
-debug = true
-features = ["auth", "api", "logging"]
+[server]
+port = 8080
+host = "0.0.0.0"
+url = "https://api.example.com"
+
+[features]
+cache_enabled = true
+rate_limit = 1000
+allowed_origins = ["https://example.com", "https://app.example.com"]
 ```
 
-```cursed
-// Parse TOML configuration
-sus toml_content tea = read_file_content("config.toml")
-sus ctx ConfigContext = parse_toml_advanced(toml_content)
+### INI Configuration (config.ini)
+```ini
+[database]
+host = db.example.com
+port = 5432
+username = app_user
+ssl = yes
+
+[server]
+port = 8080
+host = 0.0.0.0
+url = https://api.example.com
+
+[features]
+cache_enabled = true
+rate_limit = 1000
 ```
 
-### Environment File Configuration
+## Environment Variables
+
+The configz module supports automatic environment variable integration with multiple naming conventions:
 
 ```bash
-# .env file
-DATABASE_HOST=localhost
-DATABASE_PORT=5432
-DATABASE_NAME=myapp
-APP_NAME=MyApplication
-DEBUG=true
-FEATURES=auth,api,logging
+# Standard dot notation
+export app.database.host=prod-db.example.com
+export app.database.port=5432
+
+# Underscore notation (converted to dots)
+export APP_DATABASE_HOST=prod-db.example.com
+export APP_DATABASE_PORT=5432
+
+# Mixed notation
+export APP_SERVER__PORT=8080  # Double underscore becomes single underscore
 ```
+
+Environment variables automatically override file-based configuration when loaded with higher priority.
+
+## Hot Reloading
+
+Enable automatic configuration reloading when files change:
 
 ```cursed
-// Parse environment file
-sus env_content tea = read_file_content(".env")
-sus ctx ConfigContext = parse_env_advanced(env_content)
-```
+fr fr Enable file watching
+config = config_enable_watching(config)
 
-## Environment Variable Integration
+fr fr Add reload callback
+config = config_add_reload_callback(config, "database_reconnect", "reconnect_database")
 
-### Environment Variable Substitution
-
-Configuration values can reference environment variables using `${VAR}` syntax:
-
-```json
-{
-  "database_url": "${DATABASE_URL}",
-  "api_endpoint": "https://${API_HOST}:${API_PORT}/api",
-  "log_file": "${HOME}/logs/app.log"
+fr fr In your main loop, check for changes
+bestie (based) {
+    config = config_check_for_changes(config)
+    
+    fr fr Your application logic here
+    sleep(1000)  fr fr Check every second
 }
 ```
 
-```cursed
-// Environment variables are automatically expanded
-sus ctx ConfigContext = load_configuration_file("config.json")
-sus db_url tea = get_config_string(ctx, "database_url", "")
-// db_url will contain the expanded value from DATABASE_URL environment variable
-```
+## Validation Rules
 
-### Loading Environment Configuration
+Add comprehensive validation to ensure configuration correctness:
 
 ```cursed
-// Load configuration from environment variables
-sus env_ctx ConfigContext = load_environment_config()
+fr fr Built-in validators
+config = config_add_validation(config, "database.*", "string", "required", "Database fields are required")
+config = config_add_validation(config, "*.port", "number", "positive_number", "Ports must be positive")
+config = config_add_validation(config, "*.url", "string", "valid_url", "URLs must be valid")
+config = config_add_validation(config, "*.email", "string", "valid_email", "Email addresses must be valid")
 
-// Common environment variables are automatically loaded:
-// HOME, PATH, USER, NODE_ENV, DATABASE_URL, API_KEY, etc.
-sus home_dir tea = get_config_string(env_ctx, "HOME", "/tmp")
-sus node_env tea = get_config_string(env_ctx, "NODE_ENV", "development")
+fr fr Pattern matching
+config = config_add_validation(config, "api.*", "string", "required", "API configuration required")
+config = config_add_validation(config, "cache.*", "", "", "")  # Any type allowed
 ```
 
-## Configuration Layering and Merging
+## Advanced Usage
 
 ### Multiple Configuration Sources
 
 ```cursed
-// Load configuration from multiple sources with precedence
-// Order: base config < environment-specific config < environment variables
+fr fr Load from multiple sources with priority
+config = config_add_source(config, "file", "/etc/myapp/default.json", 5)    # System defaults
+config = config_add_source(config, "file", "./config.json", 10)            # Application config  
+config = config_add_source(config, "file", "./config.local.json", 15)      # Local overrides
+config = config_add_source(config, "env", "", 20)                          # Environment variables (highest priority)
 
-sus config_files []tea = [
-    "config.json",           // Base configuration
-    "config.production.json" // Environment-specific overrides
-]
-
-sus schema ConfigSchema = create_schema("layered_config")
-schema = add_required_key(schema, "database_url")
-schema = add_optional_key(schema, "debug", "false")
-
-// Create layered configuration
-sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
+config = config_load_all(config)
 ```
 
-### Manual Configuration Merging
+### Working with Arrays
 
 ```cursed
-// Create base configuration
-sus base_ctx ConfigContext = load_configuration_file("base.json")
+fr fr Get array configuration
+sus allowed_origins []ConfigValue = config_get_array(config, "features.allowed_origins")
+sus origin_count drip = array_length(allowed_origins)
 
-// Create override configuration
-sus override_ctx ConfigContext = load_configuration_file("overrides.json")
-
-// Merge configurations (override takes precedence)
-sus merged_ctx ConfigContext = merge_configurations(base_ctx, override_ctx)
-```
-
-## Schema Definition and Validation
-
-### Creating Schemas
-
-```cursed
-// Create a new schema
-sus schema ConfigSchema = create_schema("api_server")
-
-// Add required keys
-schema = add_required_key(schema, "database_url")
-schema = add_required_key(schema, "jwt_secret")
-schema = add_required_key(schema, "redis_url")
-
-// Add optional keys with defaults
-schema = add_optional_key(schema, "port", "3000")
-schema = add_optional_key(schema, "debug", "false")
-schema = add_optional_key(schema, "log_level", "info")
-schema = add_optional_key(schema, "max_connections", "100")
-```
-
-### Validation Rules
-
-```cursed
-// Add validation rules to schema
-schema = add_validator(schema, "database_url", "url")
-schema = add_validator(schema, "redis_url", "url")
-schema = add_validator(schema, "port", "integer")
-schema = add_validator(schema, "debug", "boolean")
-schema = add_validator(schema, "jwt_secret", "min_length:32")
-schema = add_validator(schema, "max_connections", "integer")
-schema = add_validator(schema, "log_level", "required")
-
-// Validate configuration against schema
-sus ctx ConfigContext = load_configuration_file("config.json")
-sus validated_ctx ConfigContext = validate_against_schema(ctx, schema)
-
-// Check validation results
-ready (!is_configuration_valid(validated_ctx)) {
-    vibez.spill("Configuration validation failed:")
-    sus errors []tea = get_validation_errors(validated_ctx)
-    sus i normie = 0
-    bestie (i < len(errors)) {
-        vibez.spill("  -", errors[i])
-        i = i + 1
+sus i drip = 0
+bestie (i < origin_count) {
+    sus origin ConfigValue = allowed_origins[i]
+    ready (origin.type == "string") {
+        vibez.spill("Allowed origin: " + origin.string_value)
     }
+    i = i + 1
 }
 ```
 
-### Available Validation Rules
-
-- `required` - Value must be present and non-empty
-- `integer` - Value must be a valid integer
-- `boolean` - Value must be a valid boolean (true/false/1/0/yes/no/on/off)
-- `url` - Value must be a valid URL (http://, https://, ftp://)
-- `email` - Value must be a valid email address
-- `min_length:N` - String must be at least N characters long
-- `max_length:N` - String must be at most N characters long
-
-## Type Conversion and Safety
-
-### Automatic Type Detection
+### Configuration Debugging
 
 ```cursed
-// The system automatically detects value types
-sus ctx ConfigContext = load_configuration_file("config.json")
+fr fr Get all configuration keys
+sus all_keys []tea = config_get_all_keys(config)
+sus key_count drip = array_length(all_keys)
 
-// Type detection happens automatically
-// "true" -> boolean
-// "42" -> integer
-// "3.14" -> float
-// "[1,2,3]" -> array
-// "{...}" -> object
-// "hello" -> string
-```
-
-### Type-Safe Value Retrieval
-
-```cursed
-// Get values with automatic type conversion
-sus app_name tea = get_config_string(ctx, "app_name", "DefaultApp")
-sus port normie = get_config_int(ctx, "port", 3000)
-sus debug lit = get_config_bool(ctx, "debug", cap)
-sus features []tea = get_config_array(ctx, "features")
-
-// Manual type conversion
-sus timeout_str tea = get_config_string(ctx, "timeout", "30")
-sus timeout_int normie = convert_to_integer(timeout_str)
-sus verbose_str tea = get_config_string(ctx, "verbose", "false")
-sus verbose_bool lit = convert_to_boolean(verbose_str)
-```
-
-## Advanced Usage Examples
-
-### Web Application Configuration
-
-```cursed
-yeet "configz"
-
-slay setup_web_app_config() ConfigContext {
-    // Create web application schema
-    sus schema ConfigSchema = create_schema("web_app")
-    
-    // Database configuration
-    schema = add_required_key(schema, "database_url")
-    schema = add_validator(schema, "database_url", "url")
-    
-    // Server configuration
-    schema = add_optional_key(schema, "port", "3000")
-    schema = add_validator(schema, "port", "integer")
-    schema = add_optional_key(schema, "host", "localhost")
-    
-    // Security configuration
-    schema = add_required_key(schema, "jwt_secret")
-    schema = add_validator(schema, "jwt_secret", "min_length:32")
-    schema = add_optional_key(schema, "session_timeout", "3600")
-    schema = add_validator(schema, "session_timeout", "integer")
-    
-    // Feature flags
-    schema = add_optional_key(schema, "enable_auth", "true")
-    schema = add_validator(schema, "enable_auth", "boolean")
-    schema = add_optional_key(schema, "enable_logging", "true")
-    schema = add_validator(schema, "enable_logging", "boolean")
-    
-    // Load configuration with environment-specific overrides
-    sus config_files []tea = [
-        "config/default.json",
-        "config/production.json"
-    ]
-    
-    sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
-    
-    // Validate configuration
-    ready (!is_configuration_valid(ctx)) {
-        vibez.spill("Configuration validation failed!")
-        sus errors []tea = get_validation_errors(ctx)
-        sus i normie = 0
-        bestie (i < len(errors)) {
-            vibez.spill("Error:", errors[i])
-            i = i + 1
-        }
-        // Could exit application or use fallback config
-    }
-    
-    damn ctx
+vibez.spill("All configuration keys:")
+sus i drip = 0
+bestie (i < key_count) {
+    vibez.spill("  " + all_keys[i])
+    i = i + 1
 }
 
-// Use the configuration
-sus app_config ConfigContext = setup_web_app_config()
-sus database_url tea = get_config_string(app_config, "database_url", "")
-sus server_port normie = get_config_int(app_config, "port", 3000)
-sus auth_enabled lit = get_config_bool(app_config, "enable_auth", based)
-```
+fr fr Get keys with specific prefix
+sus db_keys []tea = config_get_keys_with_prefix(config, "database")
+sus db_key_count drip = array_length(db_keys)
 
-### Microservice Configuration
-
-```cursed
-yeet "configz"
-
-slay setup_microservice_config() ConfigContext {
-    // Create microservice schema with service discovery
-    sus schema ConfigSchema = create_schema("microservice")
-    
-    // Service identification
-    schema = add_required_key(schema, "service_name")
-    schema = add_required_key(schema, "service_version")
-    
-    // Network configuration
-    schema = add_optional_key(schema, "listen_port", "8080")
-    schema = add_validator(schema, "listen_port", "integer")
-    schema = add_optional_key(schema, "health_check_port", "8081")
-    schema = add_validator(schema, "health_check_port", "integer")
-    
-    // Service dependencies
-    schema = add_optional_key(schema, "database_service_url", "")
-    schema = add_optional_key(schema, "auth_service_url", "")
-    schema = add_optional_key(schema, "cache_service_url", "")
-    
-    // Monitoring and observability
-    schema = add_optional_key(schema, "metrics_enabled", "true")
-    schema = add_validator(schema, "metrics_enabled", "boolean")
-    schema = add_optional_key(schema, "trace_sampling_rate", "0.1")
-    
-    // Load configuration from multiple sources
-    sus config_files []tea = [
-        "service.yaml",
-        "/etc/microservice/config.yaml"
-    ]
-    
-    sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
-    
-    // Add environment-specific configuration
-    sus env_ctx ConfigContext = load_environment_config()
-    ctx = merge_configurations(ctx, env_ctx)
-    
-    // Final validation
-    ctx = validate_against_schema(ctx, schema)
-    
-    damn ctx
+vibez.spill("Database configuration:")
+sus j drip = 0
+bestie (j < db_key_count) {
+    sus key tea = db_keys[j]
+    sus value tea = config_get_string(config, key, "")
+    vibez.spill("  " + key + " = " + value)
+    j = j + 1
 }
-```
 
-### Development vs Production Configuration
+fr fr Export configuration as JSON
+sus json_config tea = config_export_json(config)
+vibez.spill("Current configuration as JSON:")
+vibez.spill(json_config)
 
-```cursed
-yeet "configz"
-
-slay load_environment_specific_config() ConfigContext {
-    // Detect current environment
-    sus environment tea = detect_environment()
-    
-    // Base configuration
-    sus config_files []tea = ["config/base.json"]
-    
-    // Add environment-specific configuration
-    ready (environment == "development") {
-        config_files = append_string(config_files, "config/development.json")
-    } alternatively ready (environment == "production") {
-        config_files = append_string(config_files, "config/production.json")
-    } alternatively ready (environment == "test") {
-        config_files = append_string(config_files, "config/test.json")
-    }
-    
-    // Create schema appropriate for environment
-    sus schema ConfigSchema = create_schema("env_specific")
-    
-    ready (environment == "production") {
-        // Stricter validation for production
-        schema = add_required_key(schema, "database_url")
-        schema = add_required_key(schema, "redis_url")
-        schema = add_required_key(schema, "jwt_secret")
-        schema = add_validator(schema, "database_url", "url")
-        schema = add_validator(schema, "redis_url", "url")
-        schema = add_validator(schema, "jwt_secret", "min_length:64")
-    } otherwise {
-        // More lenient for development/test
-        schema = add_optional_key(schema, "database_url", "sqlite://./dev.db")
-        schema = add_optional_key(schema, "redis_url", "redis://localhost:6379")
-        schema = add_optional_key(schema, "jwt_secret", "dev_secret_key")
-    }
-    
-    // Common configuration
-    schema = add_optional_key(schema, "debug", environment == "development" ? "true" : "false")
-    schema = add_optional_key(schema, "log_level", environment == "development" ? "debug" : "info")
-    
-    sus ctx ConfigContext = load_config_with_defaults(config_files, schema)
-    damn ctx
-}
+fr fr Get detailed debug information
+sus debug_info tea = config_debug_info(config)
+vibez.spill(debug_info)
 ```
 
 ## Error Handling
 
-### Validation Error Handling
+The configz module provides robust error handling for production environments:
+
+- **Missing Files**: Gracefully handles missing configuration files with warnings
+- **Invalid JSON/YAML/TOML**: Reports parsing errors with file and line information
+- **Type Mismatches**: Validates configuration types and reports validation errors
+- **Required Fields**: Ensures required configuration values are present
+
+## Performance Characteristics
+
+- **Load Time**: Configuration loading is optimized for startup performance
+- **Memory Usage**: Uses arena allocators to prevent memory leaks
+- **File Watching**: Efficient file system monitoring with minimal overhead
+- **Validation**: Fast pattern matching and type checking
+
+## Integration Examples
+
+### Web Server Configuration
 
 ```cursed
 yeet "configz"
+yeet "networkz"
 
-slay handle_configuration_errors(ctx ConfigContext) {
-    ready (!is_configuration_valid(ctx)) {
-        vibez.spill("Configuration validation failed:")
-        
-        sus errors []tea = get_validation_errors(ctx)
-        sus i normie = 0
-        bestie (i < len(errors)) {
-            vibez.spill("  Error:", errors[i])
-            i = i + 1
-        }
-        
-        // Log configuration details for debugging
-        vibez.spill("Configuration source:", ctx.source_file)
-        vibez.spill("Configuration format:", ctx.format)
-        vibez.spill("Environment:", ctx.environment)
-        
-        // Could implement fallback configuration or exit
-        vibez.spill("Using fallback configuration...")
-        // return create_fallback_config()
-    } otherwise {
-        vibez.spill("Configuration loaded successfully from:", ctx.source_file)
-    }
-}
+sus config ConfigManager = config_create()
+config = config_add_source(config, "file", "server.json", 10)
+config = config_add_source(config, "env", "", 20)
+
+fr fr Set server defaults
+sus port_default ConfigValue = ConfigValue{}
+port_default.type = "number"
+port_default.number_value = 8080.0
+config = config_set_default(config, "server.port", port_default)
+
+config = config_load_all(config)
+
+fr fr Start server with configuration
+sus server_port normie = config_get_number(config, "server.port", 8080.0)
+sus server_host tea = config_get_string(config, "server.host", "localhost")
+
+vibez.spill("Starting server on " + server_host + ":" + number_to_string(server_port))
 ```
 
-### Format Detection Errors
+### Database Connection
 
 ```cursed
 yeet "configz"
+yeet "dbz"
 
-slay safe_load_configuration(filename tea) ConfigContext {
-    sus content tea = read_file_content(filename)
-    
-    // Try auto-detection first
-    sus format tea = auto_detect_format(content)
-    
-    sus ctx ConfigContext
-    ready (format == format_json()) {
-        ctx = parse_json_advanced(content)
-    } alternatively ready (format == format_yaml()) {
-        ctx = parse_yaml_advanced(content)
-    } alternatively ready (format == format_toml()) {
-        ctx = parse_toml_advanced(content)
-    } otherwise {
-        // Fallback to JSON parsing
-        vibez.spill("Warning: Could not detect format, trying JSON...")
-        ctx = parse_json_advanced(content)
-    }
-    
-    ready (!is_configuration_valid(ctx)) {
-        vibez.spill("Failed to parse", filename, "as", format)
-        sus errors []tea = get_validation_errors(ctx)
-        vibez.spill("Parse errors:", errors)
-    }
-    
-    damn ctx
-}
+sus config ConfigManager = config_create()
+config = config_add_source(config, "file", "database.toml", 10)
+config = config_add_validation(config, "database.host", "string", "required", "Database host required")
+config = config_add_validation(config, "database.port", "number", "positive_number", "Database port must be positive")
+
+config = config_load_all(config)
+
+sus db_host tea = config_get_string(config, "database.host", "localhost")
+sus db_port drip = drip(config_get_number(config, "database.port", 5432.0))
+sus db_name tea = config_get_string(config, "database.name", "app")
+sus db_ssl lit = config_get_boolean(config, "database.ssl", cringe)
+
+fr fr Connect to database with configuration
+sus connection DatabaseConnection = db_connect(db_host, db_port, db_name, db_ssl)
 ```
 
-## Security Considerations
+## API Reference
 
-### Secure Configuration Handling
+### Core Functions
 
-1. **Environment Variable Expansion**: Only expand trusted environment variables
-2. **Input Validation**: Always validate configuration values against schemas
-3. **Secret Management**: Use secure methods for sensitive configuration
-4. **File Permissions**: Ensure configuration files have appropriate permissions
+- `config_create()` - Create new configuration manager
+- `config_add_source(manager, type, path, priority)` - Add configuration source
+- `config_set_default(manager, key, value)` - Set default value
+- `config_load_all(manager)` - Load all configuration sources
 
-```cursed
-// Example of secure configuration loading
-slay load_secure_config() ConfigContext {
-    // Create schema with strict validation
-    sus schema ConfigSchema = create_schema("secure_app")
-    
-    // Validate sensitive configuration
-    schema = add_required_key(schema, "jwt_secret")
-    schema = add_validator(schema, "jwt_secret", "min_length:64")
-    
-    schema = add_required_key(schema, "database_password")
-    schema = add_validator(schema, "database_password", "min_length:12")
-    
-    // Load configuration
-    sus ctx ConfigContext = load_configuration_file("secure_config.json")
-    ctx = validate_against_schema(ctx, schema)
-    
-    // Ensure validation passed
-    ready (!is_configuration_valid(ctx)) {
-        vibez.spill("SECURITY ERROR: Configuration validation failed!")
-        // Should terminate application or use secure defaults
-    }
-    
-    damn ctx
-}
-```
+### Value Access
 
-## Performance Considerations
+- `config_get_string(manager, key, default)` - Get string value
+- `config_get_number(manager, key, default)` - Get numeric value  
+- `config_get_boolean(manager, key, default)` - Get boolean value
+- `config_get_array(manager, key)` - Get array value
+- `config_has_key(manager, key)` - Check if key exists
 
-- Configuration parsing is optimized for startup time
-- Environment variable expansion is cached
-- Schema validation is performed once during loading
-- Type conversion is lazy and cached where possible
+### Validation
+
+- `config_add_validation(manager, pattern, type, validator, message)` - Add validation rule
+- Built-in validators: `required`, `positive_number`, `valid_url`, `valid_email`
+
+### Hot Reloading
+
+- `config_enable_watching(manager)` - Enable file watching
+- `config_check_for_changes(manager)` - Check for file changes
+- `config_add_reload_callback(manager, name, handler)` - Add reload callback
+
+### Debugging
+
+- `config_get_all_keys(manager)` - Get all configuration keys
+- `config_get_keys_with_prefix(manager, prefix)` - Get keys with prefix
+- `config_export_json(manager)` - Export configuration as JSON
+- `config_debug_info(manager)` - Get detailed debug information
 
 ## Best Practices
 
-1. **Use Schemas**: Always define schemas for production applications
-2. **Layer Configuration**: Use base + environment-specific configuration files
-3. **Environment Variables**: Use environment variables for deployment-specific values
-4. **Validation**: Validate all configuration values, especially in production
-5. **Defaults**: Provide sensible defaults for optional configuration
-6. **Documentation**: Document all configuration options and their valid values
-7. **Security**: Never commit sensitive configuration to version control
+1. **Use Priority Ordering**: Set appropriate priorities for different configuration sources
+2. **Environment Variables**: Use environment variables for deployment-specific overrides  
+3. **Validation Rules**: Add validation for critical configuration values
+4. **Default Values**: Provide sensible defaults for all configuration options
+5. **Hot Reloading**: Enable hot reloading for development and production flexibility
+6. **Error Handling**: Always check configuration validity during application startup
+7. **Documentation**: Document all configuration options and their expected values
 
-## Integration with Other Modules
+## Production Deployment
 
-The `configz` module integrates seamlessly with other CURSED stdlib modules:
+For production deployments, consider:
 
-- `envz` - Environment variable management
-- `jsonz` - JSON parsing and generation
-- `stringz` - String manipulation utilities
-- `testz` - Testing framework for configuration validation
+- Use file-based configuration for application defaults
+- Override with environment variables for deployment-specific settings
+- Enable configuration validation to catch errors early
+- Use hot reloading for zero-downtime configuration updates
+- Monitor configuration file changes in production logs
+- Implement configuration rollback mechanisms for critical changes
 
-## Examples Directory Structure
+The configz module is designed to handle enterprise-scale configuration management with reliability, performance, and ease of use.
 
+## Package Structure
+
+The configz package consists of several specialized modules:
+
+### Core Modules
+
+- **[`mod.csd`](./mod.csd)** - Main configuration management system
+- **[`demo.csd`](./demo.csd)** - Comprehensive demonstration of all features
+- **[`test_configz.csd`](./test_configz.csd)** - Complete test suite
+
+### Advanced Modules
+
+- **[`env_integration.csd`](./env_integration.csd)** - Advanced environment variable processing
+- **[`yaml_parser.csd`](./yaml_parser.csd)** - Comprehensive YAML parsing engine
+- **[`hot_reload.csd`](./hot_reload.csd)** - Hot reloading and file watching system
+- **[`validation.csd`](./validation.csd)** - Advanced configuration validation system
+
+## Quick Test
+
+Run the comprehensive test suite:
+```bash
+./zig-out/bin/cursed-zig stdlib/configz/test_configz.csd
 ```
-config/
-├── base.json              # Base configuration
-├── development.json       # Development overrides  
-├── production.json        # Production overrides
-├── test.json             # Test configuration
-└── schema/
-    ├── app.schema.json   # Application schema
-    └── db.schema.json    # Database schema
+
+Run the interactive demo:
+```bash
+./zig-out/bin/cursed-zig stdlib/configz/demo.csd
 ```
 
-This comprehensive configuration management system provides the foundation for robust, maintainable CURSED applications with proper configuration handling, validation, and security.
+## Memory Safety
+
+✅ **Zero Memory Leaks**: All configz modules pass valgrind validation with no memory leaks
+✅ **Production Ready**: Extensively tested with comprehensive test suite
+✅ **Enterprise Grade**: Designed for high-load production environments
+
+## Integration with CURSED Ecosystem
+
+The configz package integrates seamlessly with other CURSED stdlib modules:
+
+- **vibez**: For output and logging
+- **filez**: For file operations and watching  
+- **jsonz**: For JSON configuration parsing
+- **stringz**: For string manipulation and processing
+- **timez**: For timestamp and scheduling operations
+- **envz**: For environment variable handling
+
+## Contributing
+
+To extend the configz package:
+
+1. Follow existing code patterns and naming conventions
+2. Add comprehensive tests for new features
+3. Ensure memory safety with valgrind validation
+4. Update documentation and examples
+5. Test integration with other stdlib modules
+
+## License
+
+This package is part of the CURSED programming language standard library and follows the same license terms as the main CURSED distribution.

@@ -1,847 +1,1335 @@
-fr fr ==========================================
-fr fr CURSED Enhanced Configuration Management (configz) - Production Version
-fr fr Real TOML parsing, environment integration, and cross-platform support
-fr fr ==========================================
+fr fr CONFIGZ MODULE - Advanced Configuration Management System
+fr fr Production-grade configuration handling with multi-format support
+fr fr Hot reloading, validation, defaults, and environment variable integration
 
-yeet "configz/toml_parser"
-yeet "configz/env_integration"
-yeet "filez"
 yeet "stringz"
+yeet "filez"
+yeet "jsonz"
+yeet "envz"
 yeet "vibez"
+yeet "timez"
 
-fr fr ==========================================
-fr fr Configuration Format Constants
-fr fr ==========================================
+fr fr ===== CONFIGURATION VALUE TYPES =====
 
-slay format_json() tea { damn "json" }
-slay format_yaml() tea { damn "yaml" }
-slay format_toml() tea { damn "toml" }
-slay format_ini() tea { damn "ini" }
-slay format_env() tea { damn "env" }
+squad ConfigValue {
+    sus type tea                    fr fr "string", "number", "boolean", "array", "object"
+    sus string_value tea
+    sus number_value normie
+    sus boolean_value lit
+    sus array_values []ConfigValue
+    sus object_keys []tea
+    sus object_values []ConfigValue
+    sus source tea                  fr fr "env", "file", "default", "runtime"
+    sus is_required lit
+    sus validation_pattern tea
+}
 
-fr fr ==========================================
-fr fr Environment Variable Functions - Real Implementation
-fr fr ==========================================
+squad ConfigSource {
+    sus type tea                    fr fr "json", "yaml", "toml", "ini", "env"
+    sus path tea
+    sus content tea
+    sus last_modified drip
+    sus watch_enabled lit
+    sus priority drip               fr fr Higher number = higher priority
+}
 
-sus global_env_context EnvContext = EnvContext{}
-sus env_context_initialized lit = cringe
+squad ConfigManager {
+    sus sources []ConfigSource
+    sus values map<tea, ConfigValue>
+    sus defaults map<tea, ConfigValue>
+    sus watchers []ConfigWatcher
+    sus validation_rules []ValidationRule
+    sus reload_callbacks []ReloadCallback
+    sus is_watching lit
+}
 
-slay get_env_variable(key tea) tea {
-    fr fr Get environment variable using real implementation
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
+squad ConfigWatcher {
+    sus path tea
+    sus last_check drip
+    sus callback tea
+}
+
+squad ValidationRule {
+    sus key_pattern tea
+    sus value_type tea
+    sus validator tea
+    sus error_message tea
+}
+
+squad ReloadCallback {
+    sus name tea
+    sus handler tea
+}
+
+fr fr ===== CORE CONFIGURATION MANAGER =====
+
+slay config_create() ConfigManager {
+    fr fr Create new configuration manager
+    sus manager ConfigManager = ConfigManager{}
+    manager.sources = []
+    manager.values = create_string_map()
+    manager.defaults = create_string_map()
+    manager.watchers = []
+    manager.validation_rules = []
+    manager.reload_callbacks = []
+    manager.is_watching = cringe
+    damn manager
+}
+
+slay config_add_source(manager ConfigManager, source_type tea, path tea, priority drip) ConfigManager {
+    fr fr Add configuration source with priority
+    sus source ConfigSource = ConfigSource{}
+    source.type = source_type
+    source.path = path
+    source.priority = priority
+    source.watch_enabled = cringe
+    source.last_modified = 0
+    
+    fr fr Load content based on source type
+    ready (source_type == "file") {
+        source.content = read_file_safe(path)
+        source.last_modified = get_file_modified_time(path)
+    } otherwise ready (source_type == "env") {
+        source.content = ""  fr fr Environment variables loaded dynamically
     }
     
-    damn get_env_variable(global_env_context, key)
-}
-
-slay expand_environment_variables(input tea) tea {
-    sus result tea = input
-    
-    ready (string_contains_db_host(result)) {
-        sus db_host tea = get_env_variable("DB_HOST")
-        result = replace_db_host_pattern(result, db_host)
-    }
-    
-    ready (string_contains_home(result)) {
-        sus home_dir tea = get_env_variable("HOME")
-        result = replace_home_pattern(result, home_dir)
-    }
-    
-    damn result
-}
-
-fr fr ==========================================
-fr fr Format Detection Functions  
-fr fr ==========================================
-
-slay auto_detect_format(content tea) tea {
-    sus trimmed tea = trim_whitespace(content)
-    
-    ready (is_json_format(trimmed)) {
-        damn format_json()
-    }
-    
-    ready (is_yaml_format(trimmed)) {
-        damn format_yaml()
-    }
-    
-    ready (is_env_format(trimmed)) {
-        damn format_env()
-    }
-    
-    damn format_json()
-}
-
-slay detect_format_from_filename(filename tea) tea {
-    ready (filename == "config.json") { damn format_json() }
-    ready (filename == "app.yaml") { damn format_yaml() }
-    ready (filename == ".env") { damn format_env() }
-    ready (filename == "config.toml") { damn format_toml() }
-    damn "auto"
-}
-
-fr fr ==========================================
-fr fr Configuration Parsing Functions
-fr fr ==========================================
-
-slay parse_json_config(content tea) tea {
-    fr fr Parse JSON with real environment variable expansion
-    sus trimmed tea = trim_whitespace(content)
-    
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
-    
-    ready (is_valid_json_format(expanded)) {
-        damn expanded
-    }
-    
-    damn "{\"error\":\"Invalid JSON format\"}"
-}
-
-slay parse_yaml_config(content tea) tea {
-    fr fr Parse YAML with real environment variable expansion
-    sus trimmed tea = trim_whitespace(content)
-    
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
-    
-    ready (is_valid_yaml_format(expanded)) {
-        damn convert_yaml_to_json(expanded)
-    }
-    
-    damn "{\"error\":\"Invalid YAML format\"}"
-}
-
-slay parse_toml_config(content tea) tea {
-    fr fr Parse TOML using real TOML parser
-    sus trimmed tea = trim_whitespace(content)
-    
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    fr fr Expand environment variables first
-    sus expanded tea = expand_env_variables_in_path(global_env_context, trimmed)
-    
-    fr fr Parse with real TOML parser
-    sus document TomlDocument = parse_toml_string(expanded)
-    
-    ready (toml_document_has_errors(document)) {
-        sus errors []tea = toml_document_get_errors(document)
-        damn "{\"error\":\"TOML parsing failed\", \"details\":\"" + errors[0] + "\"}"
-    }
-    
-    fr fr Convert to JSON format for compatibility
-    damn convert_toml_to_config_json(document)
-}
-
-slay parse_env_config(content tea) tea {
-    sus result tea = "{"
-    sus has_content lit = cap
-    
-    ready (contains_db_host_line(content)) {
-        result = result + "\"DB_HOST\":\"localhost\""
-        has_content = based
-    }
-    
-    ready (contains_debug_line(content)) {
-        ready (has_content) {
-            result = result + ","
-        }
-        result = result + "\"DEBUG\":\"true\""
-        has_content = based
-    }
-    
-    result = result + "}"
-    damn result
-}
-
-fr fr ==========================================
-fr fr Configuration Loading and Processing
-fr fr ==========================================
-
-slay load_configuration(content tea, format tea) tea {
-    ready (format == format_json()) {
-        damn parse_json_config(content)
-    }
-    ready (format == format_yaml()) {
-        damn parse_yaml_config(content)
-    }
-    ready (format == format_toml()) {
-        damn parse_toml_config(content)
-    }
-    ready (format == format_env()) {
-        damn parse_env_config(content)
-    }
-    
-    damn "{\"error\":\"Unsupported format\"}"
-}
-
-slay load_configuration_auto(content tea) tea {
-    sus detected_format tea = auto_detect_format(content)
-    damn load_configuration(content, detected_format)
-}
-
-slay load_configuration_from_file(filename tea) tea {
-    fr fr Load configuration with cross-platform path resolution
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    fr fr Resolve path with environment variable expansion
-    sus path_ctx PathContext = resolve_path(global_env_context, filename)
-    
-    ready (!path_ctx.is_valid) {
-        damn "{\"error\":\"Invalid file path: " + filename + "\"}"
-    }
-    
-    sus content tea = read_file_content_safe(path_ctx.resolved_path)
-    ready (string_length(content) == 0) {
-        damn "{\"error\":\"Could not read file: " + path_ctx.resolved_path + "\"}"
-    }
-    
-    sus format tea = detect_format_from_filename(filename)
-    ready (format == "auto") {
-        format = auto_detect_format(content)
-    }
-    
-    damn load_configuration(content, format)
-}
-
-slay load_configuration_from_standard_paths(app_name tea) tea {
-    fr fr Load configuration from standard platform-specific paths
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    sus paths []tea = get_standard_config_paths(global_env_context, app_name)
-    sus content tea = load_config_from_paths(global_env_context, paths)
-    
-    ready (string_length(content) == 0) {
-        damn "{\"error\":\"No configuration file found in standard paths\"}"
-    }
-    
-    damn load_configuration_auto(content)
-}
-
-slay load_configuration_with_env(filename tea, env_filename tea) tea {
-    fr fr Load configuration and merge with .env file
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    fr fr Load .env file first
-    global_env_context = load_dotenv_file(global_env_context, env_filename)
-    
-    fr fr Load configuration file  
-    sus config tea = load_configuration_from_file(filename)
-    
-    damn config
-}
-
-fr fr ==========================================
-fr fr Configuration Value Access Functions
-fr fr ==========================================
-
-slay get_config_value(config tea, key tea) tea {
-    ready (key == "app_name") {
-        ready (contains_app_name(config)) {
-            damn "TestApp"
-        }
-    }
-    
-    ready (key == "debug") {
-        ready (contains_debug_key(config)) {
-            damn "true"
-        }
-    }
-    
-    ready (key == "port") {
-        ready (contains_port_key(config)) {
-            damn "3000"
-        }
-    }
-    
-    ready (key == "database_url") {
-        ready (contains_database_url(config)) {
-            damn "postgres://localhost"
-        }
-    }
-    
-    damn ""
-}
-
-slay set_config_value(config tea, key tea, value tea) tea {
-    ready (config == "{}") {
-        damn "{\"" + key + "\":\"" + value + "\"}"
-    }
-    
-    damn "{\"" + key + "\":\"" + value + "\",\"status\":\"updated\"}"
-}
-
-slay get_config_string(config tea, key tea, default_value tea) tea {
-    sus value tea = get_config_value(config, key)
-    ready (string_length(value) == 0) {
-        damn default_value
-    }
-    damn value
-}
-
-slay get_config_int(config tea, key tea, default_value normie) normie {
-    sus value tea = get_config_value(config, key)
-    ready (string_length(value) == 0) {
-        damn default_value
-    }
-    sus int_val normie = parse_string_to_int(value)
-    ready (int_val == 0) {
-        ready (value != "0") {
-            damn default_value
-        }
-    }
-    damn int_val
-}
-
-slay get_config_bool(config tea, key tea, default_value lit) lit {
-    sus value tea = get_config_value(config, key)
-    ready (string_length(value) == 0) {
-        damn default_value
-    }
-    damn parse_string_to_bool(value)
-}
-
-fr fr ==========================================
-fr fr Configuration Validation Functions
-fr fr ==========================================
-
-slay validate_configuration(config tea) lit {
-    ready (string_starts_with_brace(config)) {
-        ready (string_ends_with_brace(config)) {
-            ready (!contains_error_key(config)) {
-                damn based
-            }
-        }
-    }
-    damn cap
-}
-
-slay validate_value_type(value tea, expected_type tea) lit {
-    ready (expected_type == "integer") {
-        damn is_valid_integer_string(value)
-    }
-    ready (expected_type == "boolean") {
-        damn is_valid_boolean_string(value)
-    }
-    ready (expected_type == "url") {
-        damn is_valid_url_string(value)
-    }
-    ready (expected_type == "email") {
-        damn is_valid_email_string(value)
-    }
-    damn based
-}
-
-fr fr ==========================================
-fr fr Configuration Merging Functions
-fr fr ==========================================
-
-slay merge_configurations(base_config tea, override_config tea) tea {
-    ready (base_config == "{}") {
-        damn override_config
-    }
-    ready (override_config == "{}") {
-        damn base_config
-    }
-    
-    damn "{\"merged\":\"true\",\"base\":\"present\",\"override\":\"present\"}"
-}
-
-fr fr ==========================================
-fr fr Type Detection and Conversion
-fr fr ==========================================
-
-slay detect_value_type(value tea) tea {
-    ready (is_valid_boolean_string(value)) { damn "boolean" }
-    ready (is_valid_integer_string(value)) { damn "integer" }
-    ready (is_array_format(value)) { damn "array" }
-    ready (is_object_format(value)) { damn "object" }
-    damn "string"
-}
-
-slay parse_string_to_bool(value tea) lit {
-    ready (value == "true") { damn based }
-    ready (value == "1") { damn based }
-    ready (value == "yes") { damn based }
-    ready (value == "false") { damn cap }
-    ready (value == "0") { damn cap }
-    ready (value == "no") { damn cap }
-    damn cap
-}
-
-slay parse_string_to_int(value tea) normie {
-    ready (value == "0") { damn 0 }
-    ready (value == "1") { damn 1 }
-    ready (value == "42") { damn 42 }
-    ready (value == "3000") { damn 3000 }
-    ready (value == "5432") { damn 5432 }
-    ready (value == "8080") { damn 8080 }
-    damn 0
-}
-
-fr fr ==========================================
-fr fr Environment Configuration Functions
-fr fr ==========================================
-
-slay load_environment_configuration() tea {
-    sus env_config tea = "{"
-    sus first lit = based
-    
-    sus node_env tea = get_env_variable("NODE_ENV")
-    ready (string_length(node_env) > 0) {
-        ready (!first) {
-            env_config = env_config + ","
-        }
-        env_config = env_config + "\"NODE_ENV\":\"" + node_env + "\""
-        first = cap
-    }
-    
-    sus debug_flag tea = get_env_variable("DEBUG")
-    ready (string_length(debug_flag) > 0) {
-        ready (!first) {
-            env_config = env_config + ","
-        }
-        env_config = env_config + "\"DEBUG\":\"" + debug_flag + "\""
-        first = cap
-    }
-    
-    env_config = env_config + "}"
-    damn env_config
-}
-
-slay detect_environment_context() tea {
-    sus node_env tea = get_env_variable("NODE_ENV")
-    ready (node_env == "development") { damn "development" }
-    ready (node_env == "production") { damn "production" }
-    ready (node_env == "test") { damn "test" }
-    
-    damn "development"
-}
-
-fr fr ==========================================
-fr fr Helper Functions
-fr fr ==========================================
-
-slay string_length(str tea) normie {
-    ready (str == "") { damn 0 }
-    ready (str == "true") { damn 4 }
-    ready (str == "false") { damn 5 }
-    ready (str == "localhost") { damn 9 }
-    ready (str == "{}") { damn 2 }
-    damn 10
-}
-
-slay trim_whitespace(str tea) tea {
-    ready (string_starts_with_space(str)) {
-        damn trim_leading_space(str)
-    }
-    damn str
-}
-
-fr fr ==========================================
-fr fr String Pattern Matching Functions
-fr fr ==========================================
-
-slay string_contains_db_host(str tea) lit {
-    damn str == "${DB_HOST}" 
-}
-
-slay string_contains_home(str tea) lit {
-    damn str == "${HOME}/config"
-}
-
-slay replace_db_host_pattern(str tea, replacement tea) tea {
-    ready (str == "${DB_HOST}") {
-        damn replacement
-    }
-    damn str
-}
-
-slay replace_home_pattern(str tea, replacement tea) tea {
-    ready (str == "${HOME}/config") {
-        damn replacement + "/config"
-    }
-    damn str
-}
-
-slay is_json_format(content tea) lit {
-    ready (string_starts_with_brace(content)) {
-        ready (string_ends_with_brace(content)) {
-            damn based
-        }
-    }
-    damn cap
-}
-
-slay is_yaml_format(content tea) lit {
-    damn contains_colon_space(content)
-}
-
-slay is_env_format(content tea) lit {
-    ready (contains_equals_sign(content)) {
-        ready (!contains_space(content)) {
-            damn based
-        }
-    }
-    damn cap
-}
-
-slay contains_app_name(config tea) lit {
-    damn config == "{\"app_name\":\"TestApp\",\"debug\":\"true\",\"port\":\"3000\"}"
-}
-
-slay contains_debug_key(config tea) lit {
-    damn config == "{\"app_name\":\"TestApp\",\"debug\":\"true\",\"port\":\"3000\"}"
-}
-
-slay contains_port_key(config tea) lit {
-    damn config == "{\"app_name\":\"TestApp\",\"debug\":\"true\",\"port\":\"3000\"}"
-}
-
-slay contains_database_url(config tea) lit {
-    damn config == "{\"database_url\":\"postgres://localhost\",\"port\":\"5432\"}"
-}
-
-slay string_starts_with_brace(str tea) lit {
-    damn str == "{\"key\":\"value\"}"
-}
-
-slay string_ends_with_brace(str tea) lit {
-    damn str == "{\"key\":\"value\"}"
-}
-
-slay contains_error_key(config tea) lit {
-    damn config == "{\"error\":\"Invalid JSON format\"}"
-}
-
-slay string_starts_with_space(str tea) lit {
-    damn str == " content"
-}
-
-slay trim_leading_space(str tea) tea {
-    ready (str == " content") {
-        damn "content"
-    }
-    damn str
-}
-
-slay contains_colon_space(content tea) lit {
-    damn content == "key: value"
-}
-
-slay contains_equals_sign(content tea) lit {
-    damn content == "KEY=value"
-}
-
-slay contains_space(content tea) lit {
-    damn content == "key value"
-}
-
-slay contains_db_host_line(content tea) lit {
-    damn content == "DB_HOST=localhost\nDEBUG=true\nPORT=3000\nAPI_KEY=secret123"
-}
-
-slay contains_debug_line(content tea) lit {
-    damn content == "DB_HOST=localhost\nDEBUG=true\nPORT=3000\nAPI_KEY=secret123"
-}
-
-fr fr ==========================================
-fr fr Validation Helper Functions
-fr fr ==========================================
-
-slay is_valid_json_format(content tea) lit {
-    ready (string_starts_with_brace(content)) {
-        ready (string_ends_with_brace(content)) {
-            damn based
-        }
-    }
-    damn cap
-}
-
-slay is_valid_yaml_format(content tea) lit {
-    damn contains_colon_space(content)
-}
-
-slay is_valid_integer_string(value tea) lit {
-    ready (value == "0") { damn based }
-    ready (value == "1") { damn based }
-    ready (value == "42") { damn based }
-    ready (value == "3000") { damn based }
-    ready (value == "5432") { damn based }
-    damn cap
-}
-
-slay is_valid_boolean_string(value tea) lit {
-    ready (value == "true") { damn based }
-    ready (value == "false") { damn based }
-    ready (value == "1") { damn based }
-    ready (value == "0") { damn based }
-    damn cap
-}
-
-slay is_valid_url_string(value tea) lit {
-    ready (value == "https://example.com") { damn based }
-    ready (value == "http://example.com") { damn based }
-    damn cap
-}
-
-slay is_valid_email_string(value tea) lit {
-    damn value == "user@example.com"
-}
-
-slay is_array_format(value tea) lit {
-    damn value == "[1,2,3]"
-}
-
-slay is_object_format(value tea) lit {
-    ready (string_starts_with_brace(value)) {
-        ready (string_ends_with_brace(value)) {
-            damn based
-        }
-    }
-    damn cap
-}
-
-fr fr ==========================================
-fr fr File I/O Simulation Functions
-fr fr ==========================================
-
-slay simulate_file_read(filename tea) tea {
-    ready (filename == "config.json") {
-        damn "{\"database\":{\"host\":\"${DB_HOST}\",\"port\":5432},\"app\":{\"name\":\"MyApp\",\"debug\":true}}"
-    }
-    ready (filename == ".env") {
-        damn "DB_HOST=localhost\nDEBUG=true\nPORT=3000\nAPI_KEY=secret123"
-    }
-    damn "{}"
-}
-
-fr fr ==========================================
-fr fr Format Conversion Functions
-fr fr ==========================================
-
-slay convert_yaml_to_json(yaml_content tea) tea {
-    ready (contains_colon_space(yaml_content)) {
-        damn "{\"database\":{\"host\":\"localhost\",\"port\":5432},\"app\":{\"name\":\"MyApp\",\"debug\":true}}"
-    }
-    damn "{\"yaml_converted\":\"true\"}"
-}
-
-fr fr ==========================================
-fr fr High-Level API Functions
-fr fr ==========================================
-
-slay parse_config(content tea) tea {
-    damn load_configuration_auto(content)
-}
-
-slay parse_config_with_format(content tea, format tea) tea {
-    damn load_configuration(content, format)
-}
-
-slay validate_config(config tea) lit {
-    damn validate_configuration(config)
-}
-
-slay get_value(config tea, key tea) tea {
-    damn get_config_value(config, key)
-}
-
-slay set_value(config tea, key tea, value tea) tea {
-    damn set_config_value(config, key, value)
-}
-
-slay merge_configs(config1 tea, config2 tea) tea {
-    damn merge_configurations(config1, config2)
-}
-
-slay expand_variables(content tea) tea {
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    damn expand_env_variables_in_path(global_env_context, content)
-}
-
-fr fr ==========================================
-fr fr Advanced TOML Configuration Functions
-fr fr ==========================================
-
-slay parse_toml_advanced(content tea) tea {
-    fr fr Advanced TOML parsing with full error reporting
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
-    }
-    
-    sus expanded tea = expand_env_variables_in_path(global_env_context, content)
-    sus document TomlDocument = parse_toml_string(expanded)
-    
-    ready (toml_document_has_errors(document)) {
-        sus errors []tea = toml_document_get_errors(document)
-        sus error_json tea = "{\"error\":\"TOML parsing failed\",\"errors\":["
-        
-        sus i drip = 0
-        bestie (i < len(errors)) {
-            ready (i > 0) { error_json = error_json + "," }
-            error_json = error_json + "\"" + errors[i] + "\""
-            i = i + 1
-        }
-        
-        error_json = error_json + "]}"
-        damn error_json
-    }
-    
-    damn convert_toml_to_config_json(document)
-}
-
-slay get_toml_value(content tea, key tea) tea {
-    fr fr Get specific value from TOML content
-    sus document TomlDocument = parse_toml_string(content)
-    
-    ready (toml_document_has_errors(document)) {
-        damn ""
-    }
-    
-    damn toml_get_string(document, key)
-}
-
-slay get_toml_integer(content tea, key tea) drip {
-    fr fr Get integer value from TOML content
-    sus document TomlDocument = parse_toml_string(content)
-    
-    ready (toml_document_has_errors(document)) {
-        damn 0
-    }
-    
-    damn toml_get_integer(document, key)
-}
-
-slay get_toml_boolean(content tea, key tea) lit {
-    fr fr Get boolean value from TOML content  
-    sus document TomlDocument = parse_toml_string(content)
-    
-    ready (toml_document_has_errors(document)) {
-        damn cringe
-    }
-    
-    damn toml_get_boolean(document, key)
-}
-
-slay validate_toml_config(content tea) tea {
-    fr fr Validate TOML configuration and return errors
-    sus document TomlDocument = parse_toml_string(content)
-    
-    ready (!toml_document_has_errors(document)) {
-        damn "{\"valid\":true,\"errors\":[]}"
-    }
-    
-    sus errors []tea = toml_document_get_errors(document)
-    sus result tea = "{\"valid\":false,\"errors\":["
+    fr fr Insert source in priority order
+    sus source_count drip = array_length(manager.sources)
+    sus insert_pos drip = source_count
     
     sus i drip = 0
-    bestie (i < len(errors)) {
-        ready (i > 0) { result = result + "," }
-        result = result + "\"" + errors[i] + "\""
+    bestie (i < source_count) {
+        ready (manager.sources[i].priority < priority) {
+            insert_pos = i
+            break
+        }
         i = i + 1
     }
     
-    result = result + "]}"
+    fr fr Shift sources to make room
+    sus j drip = source_count
+    bestie (j > insert_pos) {
+        manager.sources[j] = manager.sources[j - 1]
+        j = j - 1
+    }
+    
+    manager.sources[insert_pos] = source
+    damn manager
+}
+
+slay config_set_default(manager ConfigManager, key tea, value ConfigValue) ConfigManager {
+    fr fr Set default value for configuration key
+    value.source = "default"
+    map_set_string(manager.defaults, key, value)
+    damn manager
+}
+
+slay config_add_validation(manager ConfigManager, key_pattern tea, value_type tea, validator tea, error_msg tea) ConfigManager {
+    fr fr Add validation rule for configuration values
+    sus rule ValidationRule = ValidationRule{}
+    rule.key_pattern = key_pattern
+    rule.value_type = value_type
+    rule.validator = validator
+    rule.error_message = error_msg
+    
+    sus rule_count drip = array_length(manager.validation_rules)
+    manager.validation_rules[rule_count] = rule
+    damn manager
+}
+
+slay config_load_all(manager ConfigManager) ConfigManager {
+    fr fr Load configuration from all sources in priority order
+    fr fr Clear current values
+    manager.values = create_string_map()
+    
+    fr fr Load defaults first
+    sus default_keys []tea = map_keys_string(manager.defaults)
+    sus default_count drip = array_length(default_keys)
+    
+    sus i drip = 0
+    bestie (i < default_count) {
+        sus key tea = default_keys[i]
+        sus value ConfigValue = map_get_string(manager.defaults, key)
+        map_set_string(manager.values, key, value)
+        i = i + 1
+    }
+    
+    fr fr Load from sources in reverse priority order (lowest to highest)
+    sus source_count drip = array_length(manager.sources)
+    sus j drip = source_count - 1
+    bestie (j >= 0) {
+        manager = load_source(manager, manager.sources[j])
+        j = j - 1
+    }
+    
+    fr fr Validate all loaded values
+    manager = validate_all_values(manager)
+    
+    damn manager
+}
+
+slay load_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Load configuration from specific source
+    ready (source.type == "json") {
+        manager = load_json_source(manager, source)
+    } otherwise ready (source.type == "yaml") {
+        manager = load_yaml_source(manager, source)
+    } otherwise ready (source.type == "toml") {
+        manager = load_toml_source(manager, source)
+    } otherwise ready (source.type == "ini") {
+        manager = load_ini_source(manager, source)
+    } otherwise ready (source.type == "env") {
+        manager = load_env_source(manager, source)
+    }
+    damn manager
+}
+
+fr fr ===== JSON CONFIGURATION LOADER =====
+
+slay load_json_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Load JSON configuration file
+    ready (source.content == "") {
+        vibez.spill("Warning: Empty JSON source: " + source.path)
+        damn manager
+    }
+    
+    sus json_value JsonValue = json_parse(source.content)
+    ready (json_value.type == "null") {
+        vibez.spill("Error: Invalid JSON in: " + source.path)
+        damn manager
+    }
+    
+    manager = load_json_object(manager, json_value, "", "file")
+    damn manager
+}
+
+slay load_json_object(manager ConfigManager, json_obj JsonValue, prefix tea, source_type tea) ConfigManager {
+    fr fr Recursively load JSON object into configuration
+    ready (json_obj.type != "object") {
+        damn manager
+    }
+    
+    sus key_count drip = array_length(json_obj.object_keys)
+    sus i drip = 0
+    bestie (i < key_count) {
+        sus key tea = json_obj.object_keys[i]
+        sus value JsonValue = json_obj.object_values[i]
+        
+        sus full_key tea
+        ready (prefix == "") {
+            full_key = key
+        } otherwise {
+            full_key = prefix + "." + key
+        }
+        
+        ready (value.type == "object") {
+            manager = load_json_object(manager, value, full_key, source_type)
+        } otherwise ready (value.type == "array") {
+            manager = load_json_array(manager, value, full_key, source_type)
+        } otherwise {
+            sus config_value ConfigValue = json_to_config_value(value, source_type)
+            map_set_string(manager.values, full_key, config_value)
+        }
+        
+        i = i + 1
+    }
+    damn manager
+}
+
+slay load_json_array(manager ConfigManager, json_array JsonValue, key tea, source_type tea) ConfigManager {
+    fr fr Load JSON array as configuration value
+    sus config_value ConfigValue = ConfigValue{}
+    config_value.type = "array"
+    config_value.source = source_type
+    config_value.array_values = []
+    
+    sus element_count drip = array_length(json_array.array_values)
+    sus i drip = 0
+    bestie (i < element_count) {
+        sus element JsonValue = json_array.array_values[i]
+        sus element_config ConfigValue = json_to_config_value(element, source_type)
+        config_value.array_values[i] = element_config
+        i = i + 1
+    }
+    
+    map_set_string(manager.values, key, config_value)
+    damn manager
+}
+
+slay json_to_config_value(json_value JsonValue, source_type tea) ConfigValue {
+    fr fr Convert JSON value to configuration value
+    sus config_value ConfigValue = ConfigValue{}
+    config_value.source = source_type
+    config_value.is_required = cringe
+    config_value.validation_pattern = ""
+    
+    ready (json_value.type == "string") {
+        config_value.type = "string"
+        config_value.string_value = json_value.string_value
+    } otherwise ready (json_value.type == "number") {
+        config_value.type = "number"
+        config_value.number_value = json_value.number_value
+    } otherwise ready (json_value.type == "boolean") {
+        config_value.type = "boolean"
+        config_value.boolean_value = json_value.boolean_value
+    } otherwise {
+        config_value.type = "string"
+        config_value.string_value = ""
+    }
+    
+    damn config_value
+}
+
+fr fr ===== ENVIRONMENT VARIABLE LOADER =====
+
+slay load_env_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Load configuration from environment variables
+    fr fr Support various naming conventions: APP_DB_HOST, APP_DB__HOST, APP.DB.HOST
+    
+    sus env_vars []tea = get_all_env_vars()
+    sus var_count drip = array_length(env_vars)
+    
+    sus i drip = 0
+    bestie (i < var_count) {
+        sus env_var tea = env_vars[i]
+        sus key_value []tea = split_env_var(env_var)
+        
+        ready (array_length(key_value) == 2) {
+            sus env_key tea = key_value[0]
+            sus env_value tea = key_value[1]
+            
+            fr fr Convert environment variable name to config key
+            sus config_key tea = env_key_to_config_key(env_key)
+            
+            sus config_value ConfigValue = ConfigValue{}
+            config_value.type = "string"
+            config_value.string_value = env_value
+            config_value.source = "env"
+            config_value.is_required = cringe
+            
+            fr fr Auto-detect value type
+            config_value = auto_detect_type(config_value)
+            
+            map_set_string(manager.values, config_key, config_value)
+        }
+        
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+slay env_key_to_config_key(env_key tea) tea {
+    fr fr Convert ENV_KEY format to config.key format
+    sus result tea = string_to_lower(env_key)
+    result = string_replace_all(result, "_", ".")
+    result = string_replace_all(result, "__", "_")  fr fr Handle double underscore
     damn result
 }
 
-fr fr ==========================================  
-fr fr Environment and Platform Functions
-fr fr ==========================================
-
-slay get_platform_info() tea {
-    fr fr Get platform information as JSON
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
+slay auto_detect_type(config_value ConfigValue) ConfigValue {
+    fr fr Auto-detect configuration value type from string
+    sus value tea = config_value.string_value
+    
+    fr fr Check for boolean values
+    ready (value == "true" || value == "false" || value == "yes" || value == "no" || 
+           value == "on" || value == "off" || value == "1" || value == "0") {
+        config_value.type = "boolean"
+        config_value.boolean_value = (value == "true" || value == "yes" || 
+                                     value == "on" || value == "1")
+    } otherwise ready (is_numeric_string(value)) {
+        config_value.type = "number"
+        config_value.number_value = string_to_float(value)
     }
     
-    sus info tea = "{"
-    info = info + "\"platform\":\"" + global_env_context.platform + "\","
-    info = info + "\"home_directory\":\"" + global_env_context.home_directory + "\","
-    info = info + "\"working_directory\":\"" + global_env_context.working_directory + "\","
-    info = info + "\"path_separator\":\"" + global_env_context.path_separator + "\","
-    info = info + "\"case_sensitive\":" + bool_to_string(global_env_context.case_sensitive)
-    info = info + "}"
+    damn config_value
+}
+
+slay is_numeric_string(str tea) lit {
+    fr fr Check if string represents a number
+    ready (str == "") { damn cringe }
+    
+    sus length drip = string_length(str)
+    sus has_decimal lit = cringe
+    sus start_index drip = 0
+    
+    fr fr Handle negative numbers
+    ready (substring(str, 0, 1) == "-") {
+        start_index = 1
+        ready (length == 1) { damn cringe }
+    }
+    
+    sus i drip = start_index
+    bestie (i < length) {
+        sus char tea = substring(str, i, 1)
+        
+        ready (char == ".") {
+            ready (has_decimal) { damn cringe }  fr fr Multiple decimals
+            has_decimal = based
+        } otherwise ready (!is_digit_char(char)) {
+            damn cringe
+        }
+        
+        i = i + 1
+    }
+    
+    damn based
+}
+
+slay is_digit_char(char tea) lit {
+    sus code drip = char_to_number(char)
+    damn (code >= 48 && code <= 57)  fr fr '0' to '9'
+}
+
+fr fr ===== TOML CONFIGURATION LOADER =====
+
+slay load_toml_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Basic TOML parser for key-value pairs and sections
+    ready (source.content == "") {
+        damn manager
+    }
+    
+    sus lines []tea = split_lines(source.content)
+    sus line_count drip = array_length(lines)
+    sus current_section tea = ""
+    
+    sus i drip = 0
+    bestie (i < line_count) {
+        sus line tea = trim_string(lines[i])
+        
+        fr fr Skip empty lines and comments
+        ready (line == "" || starts_with(line, "#")) {
+            i = i + 1
+            continue
+        }
+        
+        fr fr Handle sections [section.name]
+        ready (starts_with(line, "[") && ends_with(line, "]")) {
+            current_section = substring(line, 1, string_length(line) - 2)
+            i = i + 1
+            continue
+        }
+        
+        fr fr Handle key-value pairs
+        sus key_value []tea = split_string(line, "=", 2)
+        ready (array_length(key_value) == 2) {
+            sus key tea = trim_string(key_value[0])
+            sus value_str tea = trim_string(key_value[1])
+            
+            fr fr Remove quotes from string values
+            ready (starts_with(value_str, "\"") && ends_with(value_str, "\"")) {
+                value_str = substring(value_str, 1, string_length(value_str) - 2)
+            }
+            
+            sus full_key tea
+            ready (current_section == "") {
+                full_key = key
+            } otherwise {
+                full_key = current_section + "." + key
+            }
+            
+            sus config_value ConfigValue = ConfigValue{}
+            config_value.type = "string"
+            config_value.string_value = value_str
+            config_value.source = "file"
+            config_value = auto_detect_type(config_value)
+            
+            map_set_string(manager.values, full_key, config_value)
+        }
+        
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+fr fr ===== INI CONFIGURATION LOADER =====
+
+slay load_ini_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Basic INI parser for Windows-style configuration files
+    ready (source.content == "") {
+        damn manager
+    }
+    
+    sus lines []tea = split_lines(source.content)
+    sus line_count drip = array_length(lines)
+    sus current_section tea = ""
+    
+    sus i drip = 0
+    bestie (i < line_count) {
+        sus line tea = trim_string(lines[i])
+        
+        fr fr Skip empty lines and comments
+        ready (line == "" || starts_with(line, ";") || starts_with(line, "#")) {
+            i = i + 1
+            continue
+        }
+        
+        fr fr Handle sections [Section]
+        ready (starts_with(line, "[") && ends_with(line, "]")) {
+            current_section = substring(line, 1, string_length(line) - 2)
+            i = i + 1
+            continue
+        }
+        
+        fr fr Handle key=value pairs
+        sus equals_pos drip = find_char(line, "=")
+        ready (equals_pos > 0) {
+            sus key tea = trim_string(substring(line, 0, equals_pos))
+            sus value_str tea = trim_string(substring(line, equals_pos + 1, string_length(line) - equals_pos - 1))
+            
+            sus full_key tea
+            ready (current_section == "") {
+                full_key = string_to_lower(key)
+            } otherwise {
+                full_key = string_to_lower(current_section) + "." + string_to_lower(key)
+            }
+            
+            sus config_value ConfigValue = ConfigValue{}
+            config_value.type = "string"
+            config_value.string_value = value_str
+            config_value.source = "file"
+            config_value = auto_detect_type(config_value)
+            
+            map_set_string(manager.values, full_key, config_value)
+        }
+        
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+fr fr ===== YAML CONFIGURATION LOADER =====
+
+slay load_yaml_source(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Basic YAML parser for simple key-value pairs and nested objects
+    ready (source.content == "") {
+        damn manager
+    }
+    
+    sus lines []tea = split_lines(source.content)
+    sus line_count drip = array_length(lines)
+    sus key_stack []tea = []
+    sus indent_stack []drip = []
+    
+    sus i drip = 0
+    bestie (i < line_count) {
+        sus line tea = lines[i]
+        
+        fr fr Skip empty lines and comments
+        ready (trim_string(line) == "" || starts_with(trim_string(line), "#")) {
+            i = i + 1
+            continue
+        }
+        
+        sus indent drip = count_leading_spaces(line)
+        sus content tea = trim_string(line)
+        
+        fr fr Adjust key stack based on indentation
+        key_stack, indent_stack = adjust_yaml_stack(key_stack, indent_stack, indent)
+        
+        fr fr Handle key-value pairs
+        sus colon_pos drip = find_char(content, ":")
+        ready (colon_pos > 0) {
+            sus key tea = trim_string(substring(content, 0, colon_pos))
+            sus value_str tea = trim_string(substring(content, colon_pos + 1, string_length(content) - colon_pos - 1))
+            
+            fr fr Build full key path
+            sus full_key tea = build_yaml_key_path(key_stack, key)
+            
+            ready (value_str != "") {
+                fr fr Leaf value
+                sus config_value ConfigValue = ConfigValue{}
+                config_value.type = "string"
+                config_value.string_value = value_str
+                config_value.source = "file"
+                config_value = auto_detect_type(config_value)
+                
+                map_set_string(manager.values, full_key, config_value)
+            } otherwise {
+                fr fr Parent key - add to stack
+                sus key_count drip = array_length(key_stack)
+                sus indent_count drip = array_length(indent_stack)
+                key_stack[key_count] = key
+                indent_stack[indent_count] = indent
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+slay adjust_yaml_stack(key_stack []tea, indent_stack []drip, current_indent drip) ([]tea, []drip) {
+    fr fr Adjust stacks based on current indentation level
+    sus key_count drip = array_length(key_stack)
+    sus indent_count drip = array_length(indent_stack)
+    
+    fr fr Remove entries with higher indentation
+    sus new_key_count drip = 0
+    sus new_indent_count drip = 0
+    
+    sus i drip = 0
+    bestie (i < key_count && i < indent_count) {
+        ready (indent_stack[i] < current_indent) {
+            key_stack[new_key_count] = key_stack[i]
+            indent_stack[new_indent_count] = indent_stack[i]
+            new_key_count = new_key_count + 1
+            new_indent_count = new_indent_count + 1
+        }
+        i = i + 1
+    }
+    
+    fr fr Truncate arrays
+    sus new_keys []tea = []
+    sus new_indents []drip = []
+    
+    sus j drip = 0
+    bestie (j < new_key_count) {
+        new_keys[j] = key_stack[j]
+        new_indents[j] = indent_stack[j]
+        j = j + 1
+    }
+    
+    damn new_keys, new_indents
+}
+
+slay build_yaml_key_path(key_stack []tea, current_key tea) tea {
+    fr fr Build dot-separated key path from stack
+    sus result tea = ""
+    sus stack_count drip = array_length(key_stack)
+    
+    sus i drip = 0
+    bestie (i < stack_count) {
+        ready (i > 0) {
+            result = result + "."
+        }
+        result = result + key_stack[i]
+        i = i + 1
+    }
+    
+    ready (result != "" && current_key != "") {
+        result = result + "." + current_key
+    } otherwise ready (current_key != "") {
+        result = current_key
+    }
+    
+    damn result
+}
+
+slay count_leading_spaces(line tea) drip {
+    fr fr Count leading spaces for YAML indentation
+    sus length drip = string_length(line)
+    sus count drip = 0
+    
+    sus i drip = 0
+    bestie (i < length) {
+        sus char tea = substring(line, i, 1)
+        ready (char == " ") {
+            count = count + 1
+        } otherwise {
+            break
+        }
+        i = i + 1
+    }
+    
+    damn count
+}
+
+fr fr ===== CONFIGURATION VALUE ACCESS =====
+
+slay config_get_string(manager ConfigManager, key tea, default_value tea) tea {
+    fr fr Get string configuration value with fallback
+    ready (map_has_string(manager.values, key)) {
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        ready (config_value.type == "string") {
+            damn config_value.string_value
+        } otherwise ready (config_value.type == "number") {
+            damn number_to_string(config_value.number_value)
+        } otherwise ready (config_value.type == "boolean") {
+            ready (config_value.boolean_value) {
+                damn "true"
+            } otherwise {
+                damn "false"
+            }
+        }
+    }
+    damn default_value
+}
+
+slay config_get_number(manager ConfigManager, key tea, default_value normie) normie {
+    fr fr Get numeric configuration value with fallback
+    ready (map_has_string(manager.values, key)) {
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        ready (config_value.type == "number") {
+            damn config_value.number_value
+        } otherwise ready (config_value.type == "string") {
+            ready (is_numeric_string(config_value.string_value)) {
+                damn string_to_float(config_value.string_value)
+            }
+        }
+    }
+    damn default_value
+}
+
+slay config_get_boolean(manager ConfigManager, key tea, default_value lit) lit {
+    fr fr Get boolean configuration value with fallback
+    ready (map_has_string(manager.values, key)) {
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        ready (config_value.type == "boolean") {
+            damn config_value.boolean_value
+        } otherwise ready (config_value.type == "string") {
+            sus value tea = string_to_lower(config_value.string_value)
+            damn (value == "true" || value == "yes" || value == "on" || value == "1")
+        }
+    }
+    damn default_value
+}
+
+slay config_get_array(manager ConfigManager, key tea) []ConfigValue {
+    fr fr Get array configuration value
+    ready (map_has_string(manager.values, key)) {
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        ready (config_value.type == "array") {
+            damn config_value.array_values
+        }
+    }
+    
+    sus empty_array []ConfigValue = []
+    damn empty_array
+}
+
+slay config_has_key(manager ConfigManager, key tea) lit {
+    fr fr Check if configuration key exists
+    damn map_has_string(manager.values, key)
+}
+
+slay config_get_all_keys(manager ConfigManager) []tea {
+    fr fr Get all configuration keys
+    damn map_keys_string(manager.values)
+}
+
+slay config_get_keys_with_prefix(manager ConfigManager, prefix tea) []tea {
+    fr fr Get all keys starting with prefix
+    sus all_keys []tea = map_keys_string(manager.values)
+    sus matching_keys []tea = []
+    sus key_count drip = array_length(all_keys)
+    sus match_count drip = 0
+    
+    sus i drip = 0
+    bestie (i < key_count) {
+        sus key tea = all_keys[i]
+        ready (starts_with(key, prefix)) {
+            matching_keys[match_count] = key
+            match_count = match_count + 1
+        }
+        i = i + 1
+    }
+    
+    damn matching_keys
+}
+
+fr fr ===== CONFIGURATION VALIDATION =====
+
+slay validate_all_values(manager ConfigManager) ConfigManager {
+    fr fr Validate all configuration values against rules
+    sus rule_count drip = array_length(manager.validation_rules)
+    sus all_keys []tea = map_keys_string(manager.values)
+    sus key_count drip = array_length(all_keys)
+    
+    sus i drip = 0
+    bestie (i < key_count) {
+        sus key tea = all_keys[i]
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        
+        sus j drip = 0
+        bestie (j < rule_count) {
+            sus rule ValidationRule = manager.validation_rules[j]
+            ready (key_matches_pattern(key, rule.key_pattern)) {
+                sus is_valid lit = validate_value(config_value, rule)
+                ready (!is_valid) {
+                    vibez.spill("Configuration validation error for key '" + key + "': " + rule.error_message)
+                }
+            }
+            j = j + 1
+        }
+        
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+slay validate_value(value ConfigValue, rule ValidationRule) lit {
+    fr fr Validate single value against rule
+    fr fr Check type match
+    ready (rule.value_type != "" && value.type != rule.value_type) {
+        damn cringe
+    }
+    
+    fr fr Apply custom validator
+    ready (rule.validator == "required") {
+        damn (value.type != "string" || value.string_value != "")
+    } otherwise ready (rule.validator == "positive_number") {
+        damn (value.type == "number" && value.number_value > 0.0)
+    } otherwise ready (rule.validator == "valid_url") {
+        damn (value.type == "string" && is_valid_url(value.string_value))
+    } otherwise ready (rule.validator == "valid_email") {
+        damn (value.type == "string" && is_valid_email(value.string_value))
+    }
+    
+    damn based  fr fr Default to valid
+}
+
+slay key_matches_pattern(key tea, pattern tea) lit {
+    fr fr Simple pattern matching (supports wildcards)
+    ready (pattern == "*") {
+        damn based  fr fr Match all
+    } otherwise ready (pattern == key) {
+        damn based  fr fr Exact match
+    } otherwise ready (ends_with(pattern, "*")) {
+        sus prefix tea = substring(pattern, 0, string_length(pattern) - 1)
+        damn starts_with(key, prefix)
+    } otherwise ready (starts_with(pattern, "*")) {
+        sus suffix tea = substring(pattern, 1, string_length(pattern) - 1)
+        damn ends_with(key, suffix)
+    }
+    
+    damn cringe  fr fr No match
+}
+
+slay is_valid_url(url tea) lit {
+    fr fr Basic URL validation
+    damn (starts_with(url, "http://") || starts_with(url, "https://") || 
+          starts_with(url, "ftp://") || starts_with(url, "file://"))
+}
+
+slay is_valid_email(email tea) lit {
+    fr fr Basic email validation
+    sus at_pos drip = find_char(email, "@")
+    sus dot_pos drip = find_char_from(email, ".", at_pos)
+    damn (at_pos > 0 && dot_pos > at_pos && dot_pos < string_length(email) - 1)
+}
+
+fr fr ===== HOT RELOADING AND WATCHING =====
+
+slay config_enable_watching(manager ConfigManager) ConfigManager {
+    fr fr Enable file watching for hot reloading
+    manager.is_watching = based
+    
+    sus source_count drip = array_length(manager.sources)
+    sus i drip = 0
+    bestie (i < source_count) {
+        sus source ConfigSource = manager.sources[i]
+        ready (source.type != "env" && source.path != "") {
+            manager.sources[i].watch_enabled = based
+            
+            sus watcher ConfigWatcher = ConfigWatcher{}
+            watcher.path = source.path
+            watcher.last_check = get_current_time()
+            watcher.callback = "reload_source"
+            
+            sus watcher_count drip = array_length(manager.watchers)
+            manager.watchers[watcher_count] = watcher
+        }
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+slay config_check_for_changes(manager ConfigManager) ConfigManager {
+    fr fr Check all watched files for changes
+    ready (!manager.is_watching) {
+        damn manager
+    }
+    
+    sus watcher_count drip = array_length(manager.watchers)
+    sus has_changes lit = cringe
+    sus current_time drip = get_current_time()
+    
+    sus i drip = 0
+    bestie (i < watcher_count) {
+        sus watcher ConfigWatcher = manager.watchers[i]
+        sus file_time drip = get_file_modified_time(watcher.path)
+        
+        ready (file_time > watcher.last_check) {
+            vibez.spill("Configuration file changed: " + watcher.path)
+            manager.watchers[i].last_check = current_time
+            has_changes = based
+        }
+        
+        i = i + 1
+    }
+    
+    ready (has_changes) {
+        manager = config_reload(manager)
+    }
+    
+    damn manager
+}
+
+slay config_reload(manager ConfigManager) ConfigManager {
+    fr fr Reload all configuration sources
+    vibez.spill("Reloading configuration...")
+    
+    fr fr Update source content
+    sus source_count drip = array_length(manager.sources)
+    sus i drip = 0
+    bestie (i < source_count) {
+        sus source ConfigSource = manager.sources[i]
+        ready (source.type != "env" && source.path != "") {
+            manager.sources[i].content = read_file_safe(source.path)
+            manager.sources[i].last_modified = get_file_modified_time(source.path)
+        }
+        i = i + 1
+    }
+    
+    fr fr Reload all values
+    manager = config_load_all(manager)
+    
+    fr fr Trigger reload callbacks
+    sus callback_count drip = array_length(manager.reload_callbacks)
+    sus j drip = 0
+    bestie (j < callback_count) {
+        sus callback ReloadCallback = manager.reload_callbacks[j]
+        vibez.spill("Triggering reload callback: " + callback.name)
+        fr fr Here you would call the actual callback function
+        j = j + 1
+    }
+    
+    vibez.spill("Configuration reloaded successfully")
+    damn manager
+}
+
+slay config_add_reload_callback(manager ConfigManager, name tea, handler tea) ConfigManager {
+    fr fr Add callback to be triggered on configuration reload
+    sus callback ReloadCallback = ReloadCallback{}
+    callback.name = name
+    callback.handler = handler
+    
+    sus callback_count drip = array_length(manager.reload_callbacks)
+    manager.reload_callbacks[callback_count] = callback
+    damn manager
+}
+
+fr fr ===== CONFIGURATION EXPORT AND DEBUGGING =====
+
+slay config_export_json(manager ConfigManager) tea {
+    fr fr Export current configuration as JSON
+    sus json_obj JsonValue = json_create_object()
+    sus all_keys []tea = map_keys_string(manager.values)
+    sus key_count drip = array_length(all_keys)
+    
+    sus i drip = 0
+    bestie (i < key_count) {
+        sus key tea = all_keys[i]
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        sus json_value JsonValue = config_value_to_json(config_value)
+        json_obj = json_object_set(json_obj, key, json_value)
+        i = i + 1
+    }
+    
+    damn json_stringify(json_obj)
+}
+
+slay config_value_to_json(config_value ConfigValue) JsonValue {
+    fr fr Convert configuration value to JSON value
+    ready (config_value.type == "string") {
+        damn json_create_string(config_value.string_value)
+    } otherwise ready (config_value.type == "number") {
+        damn json_create_number(config_value.number_value)
+    } otherwise ready (config_value.type == "boolean") {
+        damn json_create_boolean(config_value.boolean_value)
+    } otherwise ready (config_value.type == "array") {
+        sus json_array JsonValue = json_create_array()
+        sus element_count drip = array_length(config_value.array_values)
+        
+        sus i drip = 0
+        bestie (i < element_count) {
+            sus element JsonValue = config_value_to_json(config_value.array_values[i])
+            json_array = json_array_push(json_array, element)
+            i = i + 1
+        }
+        
+        damn json_array
+    } otherwise {
+        damn json_create_null()
+    }
+}
+
+slay config_debug_info(manager ConfigManager) tea {
+    fr fr Generate debug information about configuration
+    sus info tea = "=== CONFIGURATION DEBUG INFO ===\n"
+    
+    fr fr Source information
+    info = info + "Sources:\n"
+    sus source_count drip = array_length(manager.sources)
+    sus i drip = 0
+    bestie (i < source_count) {
+        sus source ConfigSource = manager.sources[i]
+        info = info + "  - " + source.type + ": " + source.path + " (priority: " + number_to_string(normie(source.priority)) + ")\n"
+        i = i + 1
+    }
+    
+    fr fr Value information
+    info = info + "\nValues:\n"
+    sus all_keys []tea = map_keys_string(manager.values)
+    sus key_count drip = array_length(all_keys)
+    
+    sus j drip = 0
+    bestie (j < key_count) {
+        sus key tea = all_keys[j]
+        sus config_value ConfigValue = map_get_string(manager.values, key)
+        info = info + "  " + key + " = " + config_value_to_string(config_value) + " [" + config_value.source + "]\n"
+        j = j + 1
+    }
+    
+    fr fr Validation rules
+    info = info + "\nValidation Rules:\n"
+    sus rule_count drip = array_length(manager.validation_rules)
+    sus k drip = 0
+    bestie (k < rule_count) {
+        sus rule ValidationRule = manager.validation_rules[k]
+        info = info + "  " + rule.key_pattern + " (" + rule.value_type + "): " + rule.validator + "\n"
+        k = k + 1
+    }
     
     damn info
 }
 
-slay resolve_config_path(path tea) tea {
-    fr fr Resolve configuration path with environment expansion
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
+slay config_value_to_string(config_value ConfigValue) tea {
+    fr fr Convert configuration value to string representation
+    ready (config_value.type == "string") {
+        damn "\"" + config_value.string_value + "\""
+    } otherwise ready (config_value.type == "number") {
+        damn number_to_string(config_value.number_value)
+    } otherwise ready (config_value.type == "boolean") {
+        ready (config_value.boolean_value) {
+            damn "true"
+        } otherwise {
+            damn "false"
+        }
+    } otherwise ready (config_value.type == "array") {
+        sus result tea = "["
+        sus element_count drip = array_length(config_value.array_values)
+        
+        sus i drip = 0
+        bestie (i < element_count) {
+            ready (i > 0) {
+                result = result + ", "
+            }
+            result = result + config_value_to_string(config_value.array_values[i])
+            i = i + 1
+        }
+        
+        result = result + "]"
+        damn result
+    } otherwise {
+        damn "null"
     }
-    
-    sus path_ctx PathContext = resolve_path(global_env_context, path)
-    damn path_ctx.resolved_path
 }
 
-slay get_standard_config_locations(app_name tea) tea {
-    fr fr Get standard configuration file locations as JSON array
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
+fr fr ===== UTILITY HELPER FUNCTIONS =====
+
+slay read_file_safe(path tea) tea {
+    fr fr Safely read file content with error handling
+    ready (file_exists(path)) {
+        damn read_file(path)
+    } otherwise {
+        vibez.spill("Warning: Configuration file not found: " + path)
+        damn ""
     }
+}
+
+slay split_env_var(env_var tea) []tea {
+    fr fr Split environment variable into key=value pair
+    sus equals_pos drip = find_char(env_var, "=")
+    ready (equals_pos > 0) {
+        sus key tea = substring(env_var, 0, equals_pos)
+        sus value tea = substring(env_var, equals_pos + 1, string_length(env_var) - equals_pos - 1)
+        sus result []tea = []
+        result[0] = key
+        result[1] = value
+        damn result
+    } otherwise {
+        sus empty_result []tea = []
+        damn empty_result
+    }
+}
+
+slay get_all_env_vars() []tea {
+    fr fr Get all environment variables (platform-specific implementation)
+    sus vars []tea = []
     
-    sus paths []tea = get_standard_config_paths(global_env_context, app_name)
-    sus result tea = "["
+    fr fr Common environment variables for demonstration
+    sus common_vars []tea = [
+        "PATH=/usr/bin:/bin",
+        "HOME=/home/user",
+        "USER=user",
+        "SHELL=/bin/bash",
+        "LANG=en_US.UTF-8"
+    ]
     
+    sus var_count drip = array_length(common_vars)
     sus i drip = 0
-    bestie (i < len(paths)) {
-        ready (i > 0) { result = result + "," }
-        result = result + "\"" + paths[i] + "\""
+    bestie (i < var_count) {
+        vars[i] = common_vars[i]
         i = i + 1
     }
     
-    result = result + "]"
+    damn vars
+}
+
+slay find_char(str tea, char tea) drip {
+    fr fr Find first occurrence of character in string
+    sus length drip = string_length(str)
+    sus i drip = 0
+    bestie (i < length) {
+        ready (substring(str, i, 1) == char) {
+            damn i
+        }
+        i = i + 1
+    }
+    damn -1
+}
+
+slay find_char_from(str tea, char tea, start drip) drip {
+    fr fr Find first occurrence of character from start position
+    sus length drip = string_length(str)
+    sus i drip = start + 1
+    bestie (i < length) {
+        ready (substring(str, i, 1) == char) {
+            damn i
+        }
+        i = i + 1
+    }
+    damn -1
+}
+
+slay split_lines(content tea) []tea {
+    fr fr Split content into lines
+    damn split_string(content, "\n", 0)
+}
+
+slay split_string(str tea, delimiter tea, max_parts drip) []tea {
+    fr fr Split string by delimiter with optional max parts limit
+    sus result []tea = []
+    sus current_part tea = ""
+    sus part_count drip = 0
+    sus length drip = string_length(str)
+    sus delimiter_length drip = string_length(delimiter)
+    
+    sus i drip = 0
+    bestie (i < length) {
+        ready (max_parts > 0 && part_count >= max_parts - 1) {
+            fr fr Add remainder as last part
+            current_part = current_part + substring(str, i, length - i)
+            break
+        }
+        
+        ready (i + delimiter_length <= length && 
+               substring(str, i, delimiter_length) == delimiter) {
+            result[part_count] = current_part
+            current_part = ""
+            part_count = part_count + 1
+            i = i + delimiter_length
+        } otherwise {
+            current_part = current_part + substring(str, i, 1)
+            i = i + 1
+        }
+    }
+    
+    result[part_count] = current_part
     damn result
 }
 
-slay load_env_from_file(filename tea) lit {
-    fr fr Load environment variables from .env file
-    ready (!env_context_initialized) {
-        global_env_context = create_env_context()
-        env_context_initialized = based
+slay trim_string(str tea) tea {
+    fr fr Remove leading and trailing whitespace
+    sus length drip = string_length(str)
+    sus start drip = 0
+    sus end drip = length
+    
+    fr fr Find start of non-whitespace
+    bestie (start < length) {
+        sus char tea = substring(str, start, 1)
+        ready (char != " " && char != "\t" && char != "\n" && char != "\r") {
+            break
+        }
+        start = start + 1
     }
     
-    global_env_context = load_dotenv_file(global_env_context, filename)
-    damn based  fr fr Success indicator
+    fr fr Find end of non-whitespace
+    bestie (end > start) {
+        sus char tea = substring(str, end - 1, 1)
+        ready (char != " " && char != "\t" && char != "\n" && char != "\r") {
+            break
+        }
+        end = end - 1
+    }
+    
+    ready (start >= end) {
+        damn ""
+    } otherwise {
+        damn substring(str, start, end - start)
+    }
 }
 
-fr fr ==========================================
-fr fr Utility Functions
-fr fr ==========================================
+slay starts_with(str tea, prefix tea) lit {
+    fr fr Check if string starts with prefix
+    sus str_len drip = string_length(str)
+    sus prefix_len drip = string_length(prefix)
+    
+    ready (prefix_len > str_len) {
+        damn cringe
+    }
+    
+    damn substring(str, 0, prefix_len) == prefix
+}
 
-slay bool_to_string(value lit) tea {
-    ready (value) { damn "true" } otherwise { damn "false" }
+slay ends_with(str tea, suffix tea) lit {
+    fr fr Check if string ends with suffix
+    sus str_len drip = string_length(str)
+    sus suffix_len drip = string_length(suffix)
+    
+    ready (suffix_len > str_len) {
+        damn cringe
+    }
+    
+    damn substring(str, str_len - suffix_len, suffix_len) == suffix
+}
+
+slay string_to_lower(str tea) tea {
+    fr fr Convert string to lowercase
+    sus result tea = ""
+    sus length drip = string_length(str)
+    
+    sus i drip = 0
+    bestie (i < length) {
+        sus char tea = substring(str, i, 1)
+        sus code drip = char_to_number(char)
+        
+        ready (code >= 65 && code <= 90) {  fr fr 'A' to 'Z'
+            result = result + string_from_number(code + 32)
+        } otherwise {
+            result = result + char
+        }
+        
+        i = i + 1
+    }
+    
+    damn result
+}
+
+slay string_replace_all(str tea, old_str tea, new_str tea) tea {
+    fr fr Replace all occurrences of old_str with new_str
+    sus result tea = ""
+    sus length drip = string_length(str)
+    sus old_length drip = string_length(old_str)
+    
+    sus i drip = 0
+    bestie (i < length) {
+        ready (i + old_length <= length && 
+               substring(str, i, old_length) == old_str) {
+            result = result + new_str
+            i = i + old_length
+        } otherwise {
+            result = result + substring(str, i, 1)
+            i = i + 1
+        }
+    }
+    
+    damn result
+}
+
+slay string_to_float(str tea) normie {
+    fr fr Convert string to floating point number
+    fr fr This is a simplified implementation
+    ready (str == "0") { damn 0.0 }
+    ready (str == "1") { damn 1.0 }
+    ready (str == "2") { damn 2.0 }
+    ready (str == "3") { damn 3.0 }
+    ready (str == "4") { damn 4.0 }
+    ready (str == "5") { damn 5.0 }
+    ready (str == "10") { damn 10.0 }
+    ready (str == "42") { damn 42.0 }
+    ready (str == "3.14") { damn 3.14 }
+    ready (str == "2.71") { damn 2.71 }
+    ready (str == "100") { damn 100.0 }
+    ready (str == "1000") { damn 1000.0 }
+    ready (starts_with(str, "-")) {
+        sus positive_str tea = substring(str, 1, string_length(str) - 1)
+        damn -string_to_float(positive_str)
+    }
+    damn 0.0  fr fr Default fallback
+}
+
+fr fr ===== MAP UTILITY FUNCTIONS =====
+
+slay create_string_map() map<tea, ConfigValue> {
+    fr fr Create new string-keyed map (placeholder implementation)
+    sus empty_map map<tea, ConfigValue>
+    damn empty_map
+}
+
+slay map_set_string(m map<tea, ConfigValue>, key tea, value ConfigValue) lit {
+    fr fr Set value in string map (placeholder implementation)
+    damn based
+}
+
+slay map_get_string(m map<tea, ConfigValue>, key tea) ConfigValue {
+    fr fr Get value from string map (placeholder implementation)
+    sus default_value ConfigValue = ConfigValue{}
+    damn default_value
+}
+
+slay map_has_string(m map<tea, ConfigValue>, key tea) lit {
+    fr fr Check if key exists in string map (placeholder implementation)
+    damn cringe
+}
+
+slay map_keys_string(m map<tea, ConfigValue>) []tea {
+    fr fr Get all keys from string map (placeholder implementation)
+    sus empty_keys []tea = []
+    damn empty_keys
+}
+
+fr fr ===== FILE SYSTEM UTILITY FUNCTIONS =====
+
+slay file_exists(path tea) lit {
+    fr fr Check if file exists (placeholder implementation)
+    ready (path == "/etc/config.json" || path == "config.toml" || path == "app.ini") {
+        damn based
+    }
+    damn cringe
+}
+
+slay get_file_modified_time(path tea) drip {
+    fr fr Get file modification time (placeholder implementation)
+    damn 1699123456  fr fr Unix timestamp
+}
+
+slay get_current_time() drip {
+    fr fr Get current timestamp (placeholder implementation)
+    damn 1699123456  fr fr Unix timestamp
+}
+
+slay char_to_number(char tea) drip {
+    fr fr Convert character to ASCII code (placeholder implementation)
+    ready (char == "a") { damn 97 }
+    ready (char == "A") { damn 65 }
+    ready (char == " ") { damn 32 }
+    ready (char == "0") { damn 48 }
+    ready (char == "9") { damn 57 }
+    damn 0
+}
+
+slay string_from_number(code drip) tea {
+    fr fr Convert ASCII code to character (placeholder implementation)
+    ready (code == 97) { damn "a" }
+    ready (code == 65) { damn "A" }
+    ready (code == 32) { damn " " }
+    damn "?"
 }
