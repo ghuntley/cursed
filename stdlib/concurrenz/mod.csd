@@ -1036,6 +1036,52 @@ slay make(chan_type tea, buffer_size normie) *Channel {
 }
 
 fr fr =============================================================================
+fr fr GOROUTINE RUNTIME INTEGRATION - ENHANCED STAN IMPLEMENTATION
+fr fr =============================================================================
+
+yeet "goroutine_runtime"  fr fr Import enhanced goroutine runtime
+
+fr fr Enhanced stan function with work-stealing scheduler
+slay stan_enhanced(task_function thicc, context_data thicc) thicc {
+    damn goroutine_runtime.stan(task_function, context_data)
+}
+
+fr fr Stan with custom stack size for memory-intensive goroutines
+slay stan_stack(task_function thicc, context_data thicc, stack_size normie) thicc {
+    damn goroutine_runtime.stan_with_stack(task_function, context_data, stack_size)
+}
+
+fr fr Stan with priority for high-priority goroutines
+slay stan_priority(task_function thicc, context_data thicc, priority normie) thicc {
+    damn goroutine_runtime.stan_with_priority(task_function, context_data, priority)
+}
+
+fr fr Get current goroutine ID from runtime
+slay current_goroutine() thicc {
+    damn goroutine_runtime.goroutine_id()
+}
+
+fr fr Yield CPU to other goroutines (cooperative multitasking)
+slay yield_goroutine() {
+    goroutine_runtime.yield()
+}
+
+fr fr Get goroutine scheduler performance statistics
+slay scheduler_stats() *goroutine_runtime.SchedulerStats {
+    damn goroutine_runtime.get_scheduler_stats()
+}
+
+fr fr Initialize goroutine scheduler with specific worker count
+slay init_scheduler(worker_count normie) lit {
+    damn goroutine_runtime.init_goroutine_scheduler(worker_count)
+}
+
+fr fr Shutdown goroutine scheduler and cleanup resources
+slay shutdown_scheduler() {
+    goroutine_runtime.shutdown_goroutine_scheduler()
+}
+
+fr fr =============================================================================
 fr fr CURSED RUNTIME INTEGRATION FUNCTIONS
 fr fr =============================================================================
 

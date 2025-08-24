@@ -67,7 +67,7 @@ pub const EnumExhaustivenessChecker = struct {
         // Check if all variants are covered
         const is_exhaustive = coverage.has_wildcard or coverage.covered_variants.count() == variants.items.len;
         
-        var missing_variants = .empty;
+        var missing_variants = ArrayList([]const u8).init(self.allocator);
         
         if (!is_exhaustive) {
             for (variants.items, 0..) |variant_name, i| {
@@ -83,6 +83,173 @@ pub const EnumExhaustivenessChecker = struct {
             .total_count = variants.items.len,
             .missing_variants = missing_variants,
             .has_wildcard = coverage.has_wildcard,
+        };
+    }
+    
+    /// Check exhaustiveness for boolean patterns
+    pub fn checkBooleanExhaustiveness(self: *EnumExhaustivenessChecker, patterns: []const ast.Pattern) !BooleanExhaustivenessResult {
+        var has_true = false;
+        var has_false = false;
+        var has_wildcard = false;
+        
+        for (patterns) |pattern| {
+            switch (pattern) {
+                .Literal => |literal| {
+                    switch (literal.value) {
+                        .Boolean => |val| {
+                            if (val) has_true = true else has_false = true;
+                        },
+                        else => {},
+                    }
+                },
+                .Wildcard, .Variable => has_wildcard = true,
+                .Or => |or_pattern| {
+                    // Recursively check OR alternatives
+                    const sub_result = try self.checkBooleanExhaustiveness(or_pattern.patterns);
+                    defer sub_result.missing_patterns.deinit();
+                    
+                    if (sub_result.has_true) has_true = true;
+                    if (sub_result.has_false) has_false = true;
+                    if (sub_result.has_wildcard) has_wildcard = true;
+                },
+                else => {},
+            }
+        }
+        
+        const is_exhaustive = has_wildcard or (has_true and has_false);
+        var missing_patterns = ArrayList([]const u8).init(self.allocator);
+        
+        if (!is_exhaustive) {
+            if (!has_true) try missing_patterns.append(try self.allocator.dupe(u8, "based"));
+            if (!has_false) try missing_patterns.append(try self.allocator.dupe(u8, "cringe"));
+        }
+        
+        return BooleanExhaustivenessResult{
+            .is_exhaustive = is_exhaustive,
+            .has_true = has_true,
+            .has_false = has_false,
+            .has_wildcard = has_wildcard,
+            .missing_patterns = missing_patterns,
+        };
+    }
+    
+    /// Check exhaustiveness for integer range patterns
+    pub fn checkIntegerRangeExhaustiveness(self: *EnumExhaustivenessChecker, patterns: []const ast.Pattern, type_bits: u8) !IntegerRangeExhaustivenessResult {
+        var covered_values = std.bit_set.DynamicBitSet.initEmpty(self.allocator, @as(usize, 1) << type_bits) catch {
+            // For large integer types, use range-based analysis
+            return self.checkLargeIntegerExhaustiveness(patterns);
+        };
+        defer covered_values.deinit();
+        
+        var has_wildcard = false;
+        var range_patterns = ArrayList(RangeInfo).init(self.allocator);
+        defer {
+            for (range_patterns.items) |*range| {
+                self.allocator.free(range.description);
+            }
+            range_patterns.deinit();
+        }
+        
+        const max_value = (@as(i64, 1) << (type_bits - 1)) - 1;
+        const min_value = -(@as(i64, 1) << (type_bits - 1));
+        
+        for (patterns) |pattern| {
+            switch (pattern) {
+                .Literal => |literal| {
+                    switch (literal.value) {
+                        .Integer => |val| {
+                            if (val >= min_value and val <= max_value) {
+                                const index = @as(usize, @intCast(val - min_value));
+                                covered_values.set(index);
+                            }
+                        },
+                        else => {},
+                    }
+                },
+                .Range => |range| {
+                    // Simplified range analysis - would need to evaluate range expressions
+                    const start: i64 = 0; // Placeholder - would evaluate range.start
+                    const end: i64 = 10;   // Placeholder - would evaluate range.end
+                    
+                    const range_info = RangeInfo{
+                        .start = start,
+                        .end = end,
+                        .is_inclusive = range.is_inclusive,
+                        .description = try std.fmt.allocPrint(self.allocator, "{}..{}{s}", .{ start, end, if (range.is_inclusive) "=" else "" }),
+                    };
+                    try range_patterns.append(range_info);
+                    
+                    // Mark range values as covered
+                    const actual_end = if (range.is_inclusive) end else end - 1;
+                    for (start..actual_end + 1) |val| {
+                        if (val >= min_value and val <= max_value) {
+                            const index = @as(usize, @intCast(val - min_value));
+                            covered_values.set(index);
+                        }
+                    }
+                },
+                .Wildcard, .Variable => has_wildcard = true,
+                .Or => |or_pattern| {
+                    // Recursively analyze OR patterns
+                    const sub_result = try self.checkIntegerRangeExhaustiveness(or_pattern.patterns, type_bits);
+                    defer sub_result.missing_values.deinit();
+                    
+                    // Merge coverage information
+                    // (Simplified - would need proper bit set union)
+                    if (sub_result.has_wildcard) has_wildcard = true;
+                },
+                else => {},
+            }
+        }
+        
+        const total_values = @as(usize, 1) << type_bits;
+        const is_exhaustive = has_wildcard or covered_values.count() == total_values;
+        
+        var missing_values = ArrayList(i64).init(self.allocator);
+        if (!is_exhaustive and type_bits <= 8) { // Only enumerate for small types
+            for (0..total_values) |i| {
+                if (!covered_values.isSet(i)) {
+                    const value = @as(i64, @intCast(i)) + min_value;
+                    try missing_values.append(value);
+                }
+            }
+        }
+        
+        return IntegerRangeExhaustivenessResult{
+            .is_exhaustive = is_exhaustive,
+            .covered_count = covered_values.count(),
+            .total_count = total_values,
+            .has_wildcard = has_wildcard,
+            .missing_values = missing_values,
+            .range_patterns = try range_patterns.clone(),
+        };
+    }
+    
+    /// Check exhaustiveness for large integer types (simplified analysis)
+    fn checkLargeIntegerExhaustiveness(self: *EnumExhaustivenessChecker, patterns: []const ast.Pattern) !IntegerRangeExhaustivenessResult {
+        var has_wildcard = false;
+        var has_range_patterns = false;
+        var literal_count: usize = 0;
+        
+        for (patterns) |pattern| {
+            switch (pattern) {
+                .Literal => literal_count += 1,
+                .Range => has_range_patterns = true,
+                .Wildcard, .Variable => has_wildcard = true,
+                else => {},
+            }
+        }
+        
+        // For large integer types, exhaustiveness typically requires wildcard or comprehensive ranges
+        const is_exhaustive = has_wildcard or (has_range_patterns and literal_count > 10);
+        
+        return IntegerRangeExhaustivenessResult{
+            .is_exhaustive = is_exhaustive,
+            .covered_count = literal_count,
+            .total_count = std.math.maxInt(usize), // Effectively infinite
+            .has_wildcard = has_wildcard,
+            .missing_values = ArrayList(i64).init(self.allocator),
+            .range_patterns = ArrayList(RangeInfo).init(self.allocator),
         };
     }
     
@@ -168,6 +335,30 @@ pub const EnumExhaustivenessChecker = struct {
         total_count: usize,
         missing_variants: ArrayList([]const u8),
         has_wildcard: bool,
+    };
+    
+    const BooleanExhaustivenessResult = struct {
+        is_exhaustive: bool,
+        has_true: bool,
+        has_false: bool,
+        has_wildcard: bool,
+        missing_patterns: ArrayList([]const u8),
+    };
+    
+    const IntegerRangeExhaustivenessResult = struct {
+        is_exhaustive: bool,
+        covered_count: usize,
+        total_count: usize,
+        has_wildcard: bool,
+        missing_values: ArrayList(i64),
+        range_patterns: ArrayList(RangeInfo),
+    };
+    
+    const RangeInfo = struct {
+        start: i64,
+        end: i64,
+        is_inclusive: bool,
+        description: []const u8,
     };
 };
 

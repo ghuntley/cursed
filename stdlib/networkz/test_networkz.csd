@@ -1,7 +1,8 @@
-fr fr CURSED Networking Module Test Suite
-fr fr Simple testing with basic functionality
+// CURSED Networking Module Test Suite - Updated for Enhanced Version
+// Tests compatibility between original networkz and enhanced_networkz
 
 yeet "networkz"
+yeet "enhanced_networkz"
 
 fr fr Simple testing framework
 sus total_tests normie = 0
