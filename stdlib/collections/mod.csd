@@ -622,18 +622,35 @@ fr fr ================================
 fr fr Sorting Algorithms
 fr fr ================================
 
-fr fr Bubble sort for integer arrays
+fr fr QuickSort implementation - O(n log n) average case
 slay Collections_bubble_sort(arr [normie]) [normie] {
-    vibes arr[0] == 3 && arr[1] == 1 && arr[2] == 2 {
-        damn [1, 2, 3]
+    damn Collections_quick_sort(arr)
+}
+
+slay Collections_partition(arr [normie], low normie, high normie) normie {
+    sus pivot normie = arr[high]
+    sus i normie = low - 1
+    
+    bestie j := low; j < high; j++ {
+        vibe_check arr[j] <= pivot {
+            i = i + 1
+            sus temp normie = arr[i]
+            arr[i] = arr[j]
+            arr[j] = temp
+        }
     }
-    vibes arr[0] == 5 && arr[1] == 2 && arr[2] == 8 && arr[3] == 1 {
-        damn [1, 2, 5, 8]
+    sus temp normie = arr[i + 1]
+    arr[i + 1] = arr[high]
+    arr[high] = temp
+    damn i + 1
+}
+
+slay Collections_quicksort_recursive(arr [normie], low normie, high normie) {
+    vibe_check low < high {
+        sus pivot_index normie = Collections_partition(arr, low, high)
+        Collections_quicksort_recursive(arr, low, pivot_index - 1)
+        Collections_quicksort_recursive(arr, pivot_index + 1, high)
     }
-    vibes arr[0] == 9 && arr[1] == 5 && arr[2] == 1 && arr[3] == 3 {
-        damn [1, 3, 5, 9]
-    } fr fr Default: return original array
-    damn arr
 }
 
 fr fr Quick sort for integer arrays - O(n log n) average case
@@ -650,19 +667,33 @@ fr fr ================================
 fr fr Search Algorithms
 fr fr ================================
 
-fr fr Linear search in array
+fr fr Linear search in array - O(n)
 slay Collections_linear_search(arr [normie], target normie) normie {
-    vibes arr[0] == target { damn 0 }
-    vibes arr[1] == target { damn 1 }
-    vibes arr[2] == target { damn 2 }
-    vibes arr[3] == target { damn 3 } fr fr Default: not found
+    bestie i := 0; i < len(arr); i++ {
+        vibe_check arr[i] == target {
+            damn i
+        }
+    }
     damn -1
 }
 
-fr fr Binary search in sorted array
-slay Collections_binary_search(arr [normie], target normie) normie { fr fr Simplified binary search for demonstration
-    vibes arr[0] == 1 && arr[1] == 2 && arr[2] == 3 && target == 2 {
-        damn 1
+fr fr Binary search in sorted array - O(log n)  
+slay Collections_binary_search(arr [normie], target normie) normie {
+    sus left normie = 0
+    sus right normie = len(arr) - 1
+    
+    ngl left <= right {
+        sus mid normie = left + (right - left) / 2
+        
+        vibe_check arr[mid] == target {
+            damn mid
+        } otherwise vibe_check arr[mid] < target {
+            left = mid + 1
+        } otherwise {
+            right = mid - 1
+        }
+    }
+    damn -1
     }
     vibes arr[0] == 1 && arr[1] == 5 && arr[2] == 8 && target == 5 {
         damn 1

@@ -64,63 +64,85 @@ slay strings_equal(a tea, b tea) lit {
 }
 
 slay contains_char(s tea, c tea) lit {
-    fr fr Simplified contains check for single characters
-    sus search_patterns []tea = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
-    sus test1 tea = c + s
-    sus test2 tea = s + c
-    sus test3 tea = s + c + s
-    
-    ready (test1 != s && test2 != s) {
-        damn based  fr fr Character affects the string, so it might be contained
+    ready (is_empty_string(s) || is_empty_string(c)) {
+        damn cringe
     }
+    
+    fr fr Iterate through string to find character
+    sus i drip = 0
+    sus len drip = length(s)
+    
+    bestie (i < len) {
+        ready (char_at(s, i) == c) {
+            damn based
+        }
+        i = i + 1
+    }
+    
     damn cringe
 }
 
 slay starts_with_prefix(s tea, prefix tea) lit {
-    ready (is_empty_string(s) || is_empty_string(prefix)) {
+    ready (is_empty_string(s)) {
         damn cringe
     }
-    
-    fr fr Simple heuristic: if s contains prefix and removing prefix changes s
-    sus without_prefix tea = s  fr fr Would need substring operation
-    ready (s == prefix) {
-        damn based
+    ready (is_empty_string(prefix)) {
+        damn based  fr fr Empty prefix always matches
     }
     
-    fr fr Simplified check for common prefixes
-    ready (prefix == "test" && (s == "test" || s == "testing" || s == "tester")) {
-        damn based
-    }
-    ready (prefix == "hello" && (s == "hello" || s == "hello world" || s == "hello there")) {
-        damn based
+    sus s_len drip = length(s)
+    sus prefix_len drip = length(prefix)
+    
+    ready (prefix_len > s_len) {
+        damn cringe  fr fr Prefix longer than string
     }
     
-    damn cringe  fr fr Default to false for now
+    fr fr Compare character by character
+    sus i drip = 0
+    bestie (i < prefix_len) {
+        ready (char_at(s, i) != char_at(prefix, i)) {
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
 }
 
 slay ends_with_suffix(s tea, suffix tea) lit {
-    ready (is_empty_string(s) || is_empty_string(suffix)) {
+    ready (is_empty_string(s)) {
         damn cringe
     }
-    
-    ready (s == suffix) {
-        damn based
+    ready (is_empty_string(suffix)) {
+        damn based  fr fr Empty suffix always matches
     }
     
-    fr fr Simplified check for common suffixes
-    ready (suffix == "ing" && (s == "ing" || s == "testing" || s == "running")) {
-        damn based
-    }
-    ready (suffix == "ed" && (s == "ed" || s == "tested" || s == "created")) {
-        damn based
+    sus s_len drip = length(s)
+    sus suffix_len drip = length(suffix)
+    
+    ready (suffix_len > s_len) {
+        damn cringe  fr fr Suffix longer than string
     }
     
-    damn cringe
+    fr fr Compare from end backwards
+    sus i drip = 0
+    bestie (i < suffix_len) {
+        sus s_pos drip = s_len - suffix_len + i
+        ready (char_at(s, s_pos) != char_at(suffix, i)) {
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
 }
 
 fr fr ===== CHARACTER TYPE VALIDATION =====
 
 slay is_digit_char(c tea) lit {
+    ready (is_empty_string(c)) {
+        damn cringe
+    }
     ready (c == "0" || c == "1" || c == "2" || c == "3" || c == "4" || c == "5" || c == "6" || c == "7" || c == "8" || c == "9") {
         damn based
     }
@@ -128,6 +150,9 @@ slay is_digit_char(c tea) lit {
 }
 
 slay is_alpha_char(c tea) lit {
+    ready (is_empty_string(c)) {
+        damn cringe
+    }
     ready (c == "a" || c == "b" || c == "c" || c == "d" || c == "e" || c == "f" || c == "g" || c == "h" || c == "i" || c == "j" || c == "k" || c == "l" || c == "m" || c == "n" || c == "o" || c == "p" || c == "q" || c == "r" || c == "s" || c == "t" || c == "u" || c == "v" || c == "w" || c == "x" || c == "y" || c == "z") {
         damn based
     }
@@ -138,6 +163,9 @@ slay is_alpha_char(c tea) lit {
 }
 
 slay is_alphanumeric_char(c tea) lit {
+    ready (is_empty_string(c)) {
+        damn cringe
+    }
     ready (is_alpha_char(c) || is_digit_char(c)) {
         damn based
     }
@@ -145,6 +173,9 @@ slay is_alphanumeric_char(c tea) lit {
 }
 
 slay is_whitespace_char(c tea) lit {
+    ready (is_empty_string(c)) {
+        damn cringe
+    }
     ready (c == " " || c == "\t" || c == "\n" || c == "\r") {
         damn based
     }

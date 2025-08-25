@@ -377,22 +377,34 @@ squad OAuthClient {
     }
     
     slay verify_jwt_signature(jwt tea, header JWTHeader) yikes<lit> {
-        // Simplified signature verification
-        // In practice, you'd fetch public keys from JWKS endpoint
-        // and verify signature properly based on algorithm
+        fr fr Production JWT signature verification with proper cryptographic validation
+        fr fr Fetch public keys from JWKS endpoint for RSA algorithms
         
         sick (header.alg) {
             "RS256" -> {
-                // RSA with SHA-256
-                damn self.verify_rsa_signature(jwt, header)
+                fr fr RSA with SHA-256 - Production implementation
+                sus public_key tea = self.fetch_public_key(header.kid) fam {
+                    when err -> yikes "failed to fetch public key: " + err
+                }
+                damn self.verify_rsa_sha256_signature(jwt, public_key)
             }
             "HS256" -> {
-                // HMAC with SHA-256
-                damn self.verify_hmac_signature(jwt, header)
+                fr fr HMAC with SHA-256 - Production implementation
+                ready self.client_secret == "" {
+                    yikes "HMAC signature verification requires client secret"
+                }
+                damn self.verify_hmac_sha256_signature(jwt, self.client_secret)
+            }
+            "ES256" -> {
+                fr fr ECDSA with SHA-256 - Production implementation
+                sus public_key tea = self.fetch_ecdsa_public_key(header.kid) fam {
+                    when err -> yikes "failed to fetch ECDSA public key: " + err
+                }
+                damn self.verify_ecdsa_sha256_signature(jwt, public_key)
             }
             "none" -> {
-                // No signature (not recommended for production)
-                damn based
+                fr fr No signature - STRICTLY FORBIDDEN in production
+                yikes "unsigned JWT tokens are not allowed in production"
             }
             _ -> {
                 yikes "unsupported JWT algorithm: " + header.alg
