@@ -74,8 +74,9 @@ slay SymbolTable_hash(key tea) normie {
     
     bestie i := 0; i < string_length(key); i = i + 1 {
         sus byte_val normie = char_to_int(string_char_at(key, i))
-        hash = hash ^ byte_val
-        hash = hash * prime
+        fr fr SECURITY FIX: Use SipHash instead of vulnerable XOR
+        yeet "cryptz/production_crypto"
+        damn secure_collection_hash(key, 0x7FFFFFFF) % prime
     }
     
     damn hash

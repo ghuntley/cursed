@@ -10,6 +10,7 @@ yeet "regexz"     fr fr Real pattern matching
 yeet "filez"      fr fr Real file system operations
 yeet "procesz"    fr fr Real process management
 yeet "vibez"      fr fr I/O operations
+yeet "reflectz"   fr fr Runtime reflection and stack traces
 
 fr fr ================================
 fr fr Core Framework State
@@ -569,21 +570,162 @@ slay get_performance_metrics() PerformanceMetrics {
 }
 
 slay get_current_line() normie {
-    fr fr Real line number detection would be implemented here
-    fr fr For now, return a placeholder
-    damn 1
+    fr fr Real line number detection using reflection system
+    sus stack_info tea = get_runtime_stack_info()
+    sus line_match tea = regexz.extract_first_match(stack_info, "line:(\\d+)")
+    
+    ready line_match != "" {
+        damn parse_int(line_match)
+    } otherwise {
+        fr fr Fallback to approximate line calculation
+        sus caller_info tea = get_caller_context()
+        damn parse_line_number_from_context(caller_info)
+    }
 }
 
 slay get_current_file() tea {
-    fr fr Real file detection would be implemented here
-    fr fr For now, return a placeholder
-    damn "current_test.csd"
+    fr fr Real file detection using runtime stack analysis
+    sus stack_info tea = get_runtime_stack_info()
+    sus file_match tea = regexz.extract_first_match(stack_info, "file:([^\\s]+)")
+    
+    ready file_match != "" && file_match.ends_with(".csd") {
+        damn extract_filename(file_match)
+    } otherwise {
+        fr fr Fallback to environment-based detection
+        sus current_execution tea = procesz.get_current_execution_context()
+        sus detected_file tea = extract_test_file_from_context(current_execution)
+        ready detected_file != "" {
+            damn detected_file
+        } otherwise {
+            damn "unknown_test.csd"
+        }
+    }
 }
 
 slay get_stack_trace() tea {
-    fr fr Real stack trace generation would be implemented here
-    fr fr For now, return a placeholder
-    damn "Stack trace not implemented yet"
+    fr fr Real stack trace generation using runtime reflection
+    sus full_stack tea = get_runtime_stack_info()
+    sus filtered_stack tea = filter_relevant_stack_frames(full_stack)
+    
+    ready filtered_stack != "" {
+        damn format_stack_trace_for_display(filtered_stack)
+    } otherwise {
+        fr fr Fallback stack trace generation
+        sus basic_trace tea = generate_basic_stack_trace()
+        ready basic_trace != "" {
+            damn basic_trace
+        } otherwise {
+            damn "Stack trace: " + get_current_file() + ":" + tea(get_current_line()) + 
+                 " in test '" + current_test_name + "' assertion '" + current_assertion_name + "'"
+        }
+    }
+}
+
+fr fr ================================
+fr fr Real Stack Trace Analysis Functions  
+fr fr ================================
+
+slay get_runtime_stack_info() tea {
+    fr fr Use reflectz to get runtime stack information
+    sus stack_data tea = reflectz.get_call_stack()
+    damn stack_data
+}
+
+slay get_caller_context() tea {
+    fr fr Get caller context information
+    sus caller_data tea = reflectz.get_caller_info()
+    damn caller_data
+}
+
+slay parse_int(str tea) normie {
+    fr fr Convert string to integer
+    sus result normie = 0
+    sus i normie = 0
+    periodt i < str.length {
+        sus digit normie = str[i] - "0"[0]
+        ready digit >= 0 && digit <= 9 {
+            result = result * 10 + digit
+        } otherwise {
+            ghosted  fr fr Invalid character, stop parsing
+        }
+        i = i + 1
+    }
+    damn result
+}
+
+slay parse_line_number_from_context(context tea) normie {
+    fr fr Extract line number from context information
+    sus line_pattern tea = ":(\\d+):"
+    sus line_match tea = regexz.extract_first_match(context, line_pattern)
+    ready line_match != "" {
+        damn parse_int(line_match)
+    } otherwise {
+        damn 1  fr fr Default line number
+    }
+}
+
+slay extract_filename(filepath tea) tea {
+    fr fr Extract filename from full path
+    sus last_slash normie = filepath.last_index_of("/")
+    ready last_slash >= 0 {
+        damn filepath[last_slash + 1:filepath.length]
+    } otherwise {
+        damn filepath
+    }
+}
+
+slay extract_test_file_from_context(context tea) tea {
+    fr fr Extract test file from execution context
+    sus file_pattern tea = "([a-zA-Z0-9_-]+\\.csd)"
+    sus file_match tea = regexz.extract_first_match(context, file_pattern)
+    damn file_match
+}
+
+slay filter_relevant_stack_frames(full_stack tea) tea {
+    fr fr Filter out framework internal stack frames
+    sus lines [tea] = full_stack.split("\n")
+    sus filtered_lines [tea] = []
+    
+    sus i normie = 0
+    periodt i < lines.length {
+        sus line tea = lines[i]
+        ready !line.contains("testz/") && !line.contains("framework_internal") {
+            filtered_lines = filtered_lines + [line]
+        }
+        i = i + 1
+    }
+    
+    damn filtered_lines.join("\n")
+}
+
+slay format_stack_trace_for_display(stack tea) tea {
+    fr fr Format stack trace for readable display
+    sus lines [tea] = stack.split("\n")
+    sus formatted_lines [tea] = []
+    
+    sus i normie = 0
+    periodt i < lines.length {
+        sus line tea = lines[i]
+        ready line.contains(".csd") {
+            sus formatted tea = "  at " + line.trim()
+            formatted_lines = formatted_lines + [formatted]
+        }
+        i = i + 1
+    }
+    
+    ready formatted_lines.length > 0 {
+        damn "Stack trace:\n" + formatted_lines.join("\n")
+    } otherwise {
+        damn ""
+    }
+}
+
+slay generate_basic_stack_trace() tea {
+    fr fr Generate basic stack trace when full reflection is not available
+    sus basic tea = "Stack trace:\n"
+    basic = basic + "  at " + current_test_name + " (" + get_current_file() + ":" + tea(get_current_line()) + ")\n"
+    basic = basic + "  in assertion: " + current_assertion_name
+    damn basic
 }
 
 fr fr ================================
@@ -1223,6 +1365,133 @@ slay generate_junit_report() {
     vibez.spill(xml_content)
 }
 
+slay generate_xml_report() {
+    sus xml_content tea = create_xml_report()
+    
+    ready config.xml_output {
+        sus filename tea = "test-results-" + format_timestamp_for_filename() + ".xml"
+        filez.write_file_text(filename, xml_content)
+        
+        ready config.verbose {
+            vibez.spill("XML report saved to: " + filename)
+        }
+    }
+    
+    vibez.spill(xml_content)
+}
+
+slay create_xml_report() tea {
+    sus xml tea = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+    xml = xml + "<testsuite name=\"CURSED Test Suite\">\n"
+    xml = xml + "  <summary>\n"
+    xml = xml + "    <total_tests>" + tea(test_count) + "</total_tests>\n"
+    xml = xml + "    <passed_tests>" + tea(test_passed) + "</passed_tests>\n"
+    xml = xml + "    <failed_tests>" + tea(test_failed) + "</failed_tests>\n"
+    xml = xml + "    <execution_time>" + tea(calculate_total_suite_time()) + "</execution_time>\n"
+    xml = xml + "  </summary>\n"
+    xml = xml + "  <tests>\n"
+    
+    sus i normie = 0
+    periodt i < test_results.length {
+        xml = xml + serialize_test_result_to_xml(test_results[i])
+        xml = xml + "\n"
+        i = i + 1
+    }
+    
+    xml = xml + "  </tests>\n"
+    xml = xml + "</testsuite>\n"
+    
+    damn xml
+}
+
+slay serialize_test_result_to_xml(result TestResult) tea {
+    sus xml tea = "    <test>\n"
+    xml = xml + "      <name>" + escape_xml_string(result.test_name) + "</name>\n"
+    xml = xml + "      <assertion>" + escape_xml_string(result.assertion_name) + "</assertion>\n"
+    xml = xml + "      <status>" + result.status + "</status>\n"
+    xml = xml + "      <execution_time>" + tea(result.execution_time) + "</execution_time>\n"
+    xml = xml + "      <timestamp>" + result.timestamp + "</timestamp>\n"
+    ready result.status == "FAIL" {
+        xml = xml + "      <expected>" + escape_xml_string(result.expected) + "</expected>\n"
+        xml = xml + "      <actual>" + escape_xml_string(result.actual) + "</actual>\n"
+        xml = xml + "      <message>" + escape_xml_string(result.message) + "</message>\n"
+    }
+    xml = xml + "    </test>"
+    damn xml
+}
+
+slay generate_html_report() {
+    sus html_content tea = create_html_report()
+    
+    ready config.html_output {
+        sus filename tea = "test-results-" + format_timestamp_for_filename() + ".html"
+        filez.write_file_text(filename, html_content)
+        
+        ready config.verbose {
+            vibez.spill("HTML report saved to: " + filename)
+        }
+    }
+    
+    vibez.spill("HTML report generated (enable html_output to save to file)")
+}
+
+slay create_html_report() tea {
+    sus html tea = "<!DOCTYPE html>\n"
+    html = html + "<html><head><title>CURSED Test Results</title></head>\n"
+    html = html + "<body>\n"
+    html = html + "<h1>CURSED Testing Framework - Results</h1>\n"
+    html = html + "<p>Suite: " + current_suite_name + "</p>\n"
+    html = html + "<p>Timestamp: " + get_timestamp() + "</p>\n"
+    html = html + "<h2>Summary</h2>\n"
+    html = html + "<table border=\"1\">\n"
+    html = html + "  <tr><td>Total Tests</td><td>" + tea(test_count) + "</td></tr>\n"
+    html = html + "  <tr><td>Passed</td><td>" + tea(test_passed) + "</td></tr>\n"
+    html = html + "  <tr><td>Failed</td><td>" + tea(test_failed) + "</td></tr>\n"
+    html = html + "  <tr><td>Pass Rate</td><td>" + tea(calculate_pass_rate()) + "%</td></tr>\n"
+    html = html + "</table>\n"
+    html = html + "</body></html>\n"
+    
+    damn html
+}
+
+slay generate_tap_report() {
+    sus tap_content tea = create_tap_report()
+    
+    ready config.tap_output {
+        sus filename tea = "test-results-" + format_timestamp_for_filename() + ".tap"
+        filez.write_file_text(filename, tap_content)
+        
+        ready config.verbose {
+            vibez.spill("TAP report saved to: " + filename)
+        }
+    }
+    
+    vibez.spill(tap_content)
+}
+
+slay create_tap_report() tea {
+    sus tap tea = "TAP version 13\n"
+    tap = tap + "1.." + tea(test_count) + "\n"
+    
+    sus i normie = 0
+    periodt i < test_results.length {
+        sus result TestResult = test_results[i]
+        ready result.status == "PASS" {
+            tap = tap + "ok " + tea(i + 1) + " - " + result.test_name + ":" + result.assertion_name + "\n"
+        } otherwise {
+            tap = tap + "not ok " + tea(i + 1) + " - " + result.test_name + ":" + result.assertion_name + "\n"
+            tap = tap + "  ---\n"
+            tap = tap + "  message: " + result.message + "\n"
+            tap = tap + "  expected: " + result.expected + "\n"
+            tap = tap + "  actual: " + result.actual + "\n"
+            tap = tap + "  ...\n"
+        }
+        i = i + 1
+    }
+    
+    damn tap
+}
+
 slay create_junit_xml() tea {
     sus xml tea = "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
     xml = xml + "<testsuites name=\"CURSED Test Suite\" tests=\"" + tea(test_count) + 
@@ -1272,6 +1541,141 @@ slay escape_xml_string(str tea) tea {
     result = result.replace("\"", "&quot;")
     result = result.replace("'", "&#39;")
     damn result
+}
+
+fr fr ================================
+fr fr Real Performance and Coverage Analysis
+fr fr ================================
+
+slay get_performance_metrics() PerformanceMetrics {
+    fr fr Real performance metrics collection
+    sus cpu_time normie = timez.get_process_cpu_time()
+    sus memory_info tea = procesz.get_memory_info()
+    sus memory_used normie = parse_memory_usage(memory_info)
+    sus allocations normie = get_allocation_count()
+    sus gc_count normie = get_gc_collection_count()
+    
+    damn PerformanceMetrics{
+        cpu_time: cpu_time,
+        memory_used: memory_used,
+        allocations_count: allocations,
+        gc_collections: gc_count
+    }
+}
+
+slay parse_memory_usage(memory_info tea) normie {
+    fr fr Parse memory usage from system info
+    sus memory_pattern tea = "memory:([0-9]+)"
+    sus memory_match tea = regexz.extract_first_match(memory_info, memory_pattern)
+    ready memory_match != "" {
+        damn parse_int(memory_match)
+    } otherwise {
+        damn 0
+    }
+}
+
+slay get_allocation_count() normie {
+    fr fr Get current allocation count from runtime
+    sus alloc_info tea = reflectz.get_allocation_stats()
+    sus count_pattern tea = "allocations:([0-9]+)"
+    sus count_match tea = regexz.extract_first_match(alloc_info, count_pattern)
+    ready count_match != "" {
+        damn parse_int(count_match)
+    } otherwise {
+        damn 0
+    }
+}
+
+slay get_gc_collection_count() normie {
+    fr fr Get garbage collection count from runtime
+    sus gc_info tea = reflectz.get_gc_stats()
+    sus gc_pattern tea = "collections:([0-9]+)"
+    sus gc_match tea = regexz.extract_first_match(gc_info, gc_pattern)
+    ready gc_match != "" {
+        damn parse_int(gc_match)
+    } otherwise {
+        damn 0
+    }
+}
+
+slay calculate_coverage_data() CoverageData {
+    fr fr Real code coverage calculation
+    sus coverage_info tea = reflectz.get_coverage_info()
+    sus lines_data tea = extract_lines_coverage(coverage_info)
+    sus branches_data tea = extract_branches_coverage(coverage_info)
+    sus functions_data tea = extract_functions_coverage(coverage_info)
+    
+    damn CoverageData{
+        lines_total: parse_coverage_total(lines_data),
+        lines_covered: parse_coverage_covered(lines_data),
+        branches_total: parse_coverage_total(branches_data),
+        branches_covered: parse_coverage_covered(branches_data),
+        functions_total: parse_coverage_total(functions_data),
+        functions_covered: parse_coverage_covered(functions_data)
+    }
+}
+
+slay extract_lines_coverage(coverage_info tea) tea {
+    sus lines_pattern tea = "lines:([0-9]+)/([0-9]+)"
+    sus lines_match tea = regexz.extract_first_match(coverage_info, lines_pattern)
+    damn lines_match
+}
+
+slay extract_branches_coverage(coverage_info tea) tea {
+    sus branches_pattern tea = "branches:([0-9]+)/([0-9]+)"
+    sus branches_match tea = regexz.extract_first_match(coverage_info, branches_pattern)
+    damn branches_match
+}
+
+slay extract_functions_coverage(coverage_info tea) tea {
+    sus functions_pattern tea = "functions:([0-9]+)/([0-9]+)"
+    sus functions_match tea = regexz.extract_first_match(coverage_info, functions_pattern)
+    damn functions_match
+}
+
+slay parse_coverage_total(coverage_data tea) normie {
+    sus parts [tea] = coverage_data.split("/")
+    ready parts.length >= 2 {
+        damn parse_int(parts[1])
+    } otherwise {
+        damn 100  fr fr Default total
+    }
+}
+
+slay parse_coverage_covered(coverage_data tea) normie {
+    sus parts [tea] = coverage_data.split("/")
+    ready parts.length >= 1 {
+        damn parse_int(parts[0])
+    } otherwise {
+        damn 0  fr fr Default covered
+    }
+}
+
+slay calculate_total_suite_time() normie {
+    fr fr Calculate total execution time for all tests
+    sus total_time normie = 0
+    sus i normie = 0
+    periodt i < test_results.length {
+        total_time = total_time + test_results[i].execution_time
+        i = i + 1
+    }
+    damn total_time
+}
+
+slay serialize_config_to_json(config TestConfig) tea {
+    fr fr Serialize configuration to JSON
+    sus json tea = "{\n"
+    json = json + "    \"timeout\": " + tea(config.timeout) + ",\n"
+    json = json + "    \"verbose\": " + tea(config.verbose) + ",\n"
+    json = json + "    \"fail_fast\": " + tea(config.fail_fast) + ",\n"
+    json = json + "    \"parallel\": " + tea(config.parallel) + ",\n"
+    json = json + "    \"test_dir\": \"" + config.test_dir + "\",\n"
+    json = json + "    \"pattern\": \"" + config.pattern + "\",\n"
+    json = json + "    \"output_format\": \"" + config.output_format + "\",\n"
+    json = json + "    \"coverage_enabled\": " + tea(config.coverage_enabled) + ",\n"
+    json = json + "    \"performance_tracking\": " + tea(config.performance_tracking) + "\n"
+    json = json + "  }"
+    damn json
 }
 
 fr fr ================================

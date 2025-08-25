@@ -165,7 +165,7 @@ slay server_add_handler(server *HttpServer, method tea, path tea, callback slay(
         callback: callback
     }
     server.handlers = append(server.handlers, handler)
-    damn based
+    damn (array_len(server.handlers) > 0)
 }
 
 slay server_get(server *HttpServer, path tea, callback slay(HttpRequest) HttpResponse) lit {
@@ -399,7 +399,16 @@ slay set_cookie_with_options(response *HttpResponse, name tea, value tea, max_ag
 slay get_cookie(request HttpRequest, name tea) tea {
     sus cookie_header tea = get_header(request.headers, "Cookie")
     ready (is_empty(cookie_header)) {
-        damn ""
+        sus file_content tea = read_static_file(file_path)
+        ready (string_length(file_content) == 0) {
+            damn create_error_response(404, "Not Found")
+        }
+        sus response HttpResponse = HttpResponse{
+            status_code: 200,
+            headers: create_content_type_headers(file_path),
+            body: file_content
+        }
+        damn response
     }
     
     sus cookies []tea = split(cookie_header, ";")
