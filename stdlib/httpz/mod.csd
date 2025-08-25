@@ -97,24 +97,25 @@ slay parse_http_body(response tea) tea {
     sus double_crlf tea = "\r\n\r\n"
     sus header_end drip = indexOf(response, double_crlf)
     ready (header_end < 0) {
-        damn ""
+        damn response  # If no headers, entire response is body
     }
     
     sus body_start drip = header_end + 4
     sus response_len drip = string_length(response)
     ready (body_start >= response_len) {
-        damn ""
+        damn ""  # No body content
     }
     
     damn substring(response, body_start, response_len - body_start)
 }
 
 slay get_http_header(response tea, header_name tea) tea {
-    fr fr Extract specific header value
-    sus header_key tea = header_name + ": "
-    sus header_start drip = indexOf(response, header_key)
+    fr fr Extract specific header value (case-insensitive)
+    sus header_key tea = to_lowercase(header_name) + ": "
+    sus response_lower tea = to_lowercase(response)
+    sus header_start drip = indexOf(response_lower, header_key)
     ready (header_start < 0) {
-        damn ""
+        damn ""  # Header not found
     }
     
     sus value_start drip = header_start + string_length(header_key)
@@ -549,14 +550,14 @@ slay create_secure_response(status_code drip, body tea) tea {
 }
 
 slay validate_tls_version(version tea) lit {
-    fr fr Validate TLS version is secure
-    ready (version == "TLSv1.3") { damn based }
-    ready (version == "TLSv1.2") { damn based }
-    ready (version == "TLSv1.1") { damn cringe }  fr fr Deprecated
-    ready (version == "TLSv1.0") { damn cringe }  fr fr Deprecated
-    ready (version == "SSLv3") { damn cringe }    fr fr Insecure
-    ready (version == "SSLv2") { damn cringe }    fr fr Insecure
-    damn cringe
+    fr fr Validate TLS version is secure - real implementation
+    ready (equals(version, "TLSv1.3")) { damn true }
+    ready (equals(version, "TLSv1.2")) { damn true }
+    ready (equals(version, "TLSv1.1")) { damn false }  fr fr Deprecated
+    ready (equals(version, "TLSv1.0")) { damn false }  fr fr Deprecated
+    ready (equals(version, "SSLv3")) { damn false }    fr fr Insecure
+    ready (equals(version, "SSLv2")) { damn false }    fr fr Insecure
+    damn false
 }
 
 slay generate_ssl_certificate(domain tea, days_valid drip) tea {

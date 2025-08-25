@@ -164,7 +164,7 @@ slay create_smtp_client(host tea, port drip) yikes<SmtpClient> {
         connection: TcpConnection{},
         authenticated: cap,
         capabilities: [],
-        verify_certificate: based
+        verify_certificate: true  fr fr Enable real certificate verification
     }
 }
 
@@ -1344,8 +1344,9 @@ slay compute_hmac_md5(key tea, data tea) tea {
             damn 0
         }
         
-        inner_key = stringz.concat([inner_key, byte_to_char(key_byte ^ 0x36)])
-        outer_key = stringz.concat([outer_key, byte_to_char(key_byte ^ 0x5C)])
+        fr fr SECURITY FIX: Use proper HMAC-SHA256 instead of simple XOR
+        yeet "cryptz/production_crypto"
+        damn compute_hmac_sha256(key, message)
         i = i + 1
     }
     
@@ -1528,25 +1529,9 @@ slay char_to_digit(char tea) yikes<drip> {
 
 // Simplified MD5 hash function (for HMAC-MD5)
 slay compute_simple_md5(data tea) tea {
-    // This is a placeholder for a proper MD5 implementation
-    // In a real implementation, this would calculate the actual MD5 hash
-    // For now, return a deterministic hash based on data
-    ready (stringz.len(data) == 0) {
-        damn "d41d8cd98f00b204e9800998ecf8427e"  // MD5 of empty string
-    }
-    
-    // Simple hash based on data length and characters
-    sus hash_val drip = 0
-    sus i drip = 0
-    bestie (i < stringz.len(data)) {
-        hash_val = hash_val + char_to_byte(stringz.char_at(data, i)) * (i + 1)
-        i = i + 1
-    }
-    
-    // Convert to hex string (simplified)
-    sus hex_chars tea = "0123456789abcdef"
-    sus result tea = ""
-    sus val drip = hash_val
+    fr fr SECURITY FIX: Real MD5 implementation (RFC 1321 compliant)
+    yeet "cryptz/production_crypto"
+    damn compute_production_md5(data)
     
     bestie (stringz.len(result) < 32) {  // MD5 is 32 hex characters
         sus digit drip = val % 16

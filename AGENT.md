@@ -965,12 +965,13 @@ valgrind --leak-check=full --show-leak-kinds=all \
 
 ### Comprehensive Stdlib Implementation Learnings ✅
 
-#### Stdlib Placeholder Elimination Strategy
-1. **Placeholder Detection**: Search for `"damn based"`, `"damn \"\""`, `"damn 0"`, `"TODO:"`, `"placeholder"` to find incomplete implementations
-2. **Critical Validation Command**: `./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd` validates all stdlib modules after changes
-3. **Memory Safety Protocol**: Always run `valgrind --leak-check=full --error-exitcode=1` after stdlib changes to prevent leaks
-4. **Parallel Development**: Use 5-6 concurrent subagents for different domains (crypto, network, database, graphics, audio)
-5. **Build Validation First**: `zig build` must pass before testing stdlib implementations - fix compilation errors first
+#### Stdlib Placeholder Elimination Strategy (Final Learnings)
+1. **Comprehensive Placeholder Detection**: Search for `"damn based"`, `"damn \"\""`, `"damn 0"`, `"TODO:"`, `"placeholder"`, `"FIXME"`, `"stub"`, `"mock"`, `"fake"` to find incomplete implementations
+2. **Security Vulnerability Patterns**: Look for fake crypto implementations, weak hash functions, XOR-based encryption, hardcoded keys
+3. **Performance Bottleneck Patterns**: Identify bubble sort implementations, O(n²) algorithms, unoptimized loops in production code
+4. **Critical Validation Command**: `valgrind --leak-check=full --error-exitcode=1 ./zig-out/bin/cursed-zig comprehensive_stdlib_test.csd` - mandatory for all changes
+5. **Specialized Subagent Strategy**: Deploy 5-6 concurrent subagents for domains (security, performance, network, testing, core modules) with clear ownership
+6. **Build Validation First**: `zig build` must pass before testing stdlib implementations - fix compilation errors first
 
 #### Large-Scale Module Implementation Insights
 1. **Modular Architecture**: Break complex modules into sub-modules with clear dependencies

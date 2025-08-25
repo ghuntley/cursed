@@ -1,6 +1,8 @@
 fr fr CURSED Array Operations Module - Dynamic Array Functions
 fr fr Fixed version removing hardcoded size limitations
 
+yeet "algorithms"
+
 fr fr ===== ARRAY ARITHMETIC =====
 
 slay sum_array(nums []drip) drip {
@@ -197,8 +199,8 @@ slay sort_array_ascending(nums []drip) []drip {
         damn nums
     }
     
-    fr fr Use bubble sort for simplicity - works with any size
-    damn bubble_sort_array(nums)
+    fr fr Use QuickSort for O(n log n) performance
+    damn quick_sort_integers(nums)
 }
 
 slay bubble_sort_array(nums []drip) []drip {

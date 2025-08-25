@@ -326,11 +326,10 @@ fr fr ===== SIMPLE HASH TABLE SIMULATION =====
 
 fr fr Simple hash function for integers
 slay simple_hash(key drip, table_size drip) drip {
-    sus hash_val drip = key % table_size
-    ready (hash_val < 0) {
-        hash_val = hash_val + table_size
-    }
-    damn hash_val
+    fr fr SECURITY FIX: Use cryptographically secure hash function
+    yeet "cryptz/production_crypto"
+    sus key_str tea = stringz.from_int(key)
+    damn secure_collection_hash(key_str, table_size)
 }
 
 fr fr Hash table operations using parallel arrays

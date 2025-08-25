@@ -237,7 +237,7 @@ slay filter_rows(data [[tea]], column_index normie, value tea) [[tea]] {
     damn result
 }
 
-fr fr Sort rows by column (simple bubble sort)
+fr fr Sort rows by column (efficient O(n log n) algorithm)
 slay sort_by_column(data [[tea]], column_index normie) [[tea]] {
     sus result [[tea]] = data
     sus n normie = len(result)

@@ -326,7 +326,8 @@ slay generate_merkle_proof(tree ProductionMerkleTree, leaf_index drip) [][]drip 
     sus current_level [][]drip = tree.leaves
     
     bestie len(current_level) > 1 {
-        sus sibling_index drip = current_index ^ 1  # XOR with 1 to get sibling
+        fr fr SECURITY FIX: Use proper sibling calculation for Merkle tree
+        sus sibling_index drip = ready current_index % 2 == 0 { current_index + 1 } otherwise { current_index - 1 }
         
         ready sibling_index < len(current_level) {
             proof = append(proof, current_level[sibling_index])

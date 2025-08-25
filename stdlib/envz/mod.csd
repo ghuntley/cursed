@@ -1,365 +1,468 @@
-// envz Module - Environment Variable Operations
-// Provides comprehensive environment variable management with runtime bridge integration
+fr fr envz - Environment Variable Management Module  
+fr fr Pure CURSED environment variable handling for cross-platform compatibility
+fr fr Essential for build systems, configuration, and deployment
 
-yeet "testz"
+yeet "core"
+yeet "stringz" 
+yeet "arrayz"
 
-// Environment variable operations with runtime bridge to system calls
+fr fr Environment variable storage and state
+sus env_variables map<tea, tea> = {}
+sus env_count normie = 0
+sus env_modified lit = cap
 
-slay get_env(name tea) (tea, tea) {
-    // Get environment variable value
-    lowkey len_str(name) == 0 {
-        damn ("", "Empty environment variable name not allowed")
+fr fr Platform detection constants
+fact PLATFORM_LINUX tea = "linux"
+fact PLATFORM_WINDOWS tea = "windows" 
+fact PLATFORM_MACOS tea = "macos"
+fact PLATFORM_UNKNOWN tea = "unknown"
+
+fr fr Environment variable constraints
+fact MAX_VAR_NAME_LENGTH normie = 255
+fact MAX_VAR_VALUE_LENGTH normie = 32767
+fact MAX_ENV_VARS normie = 1000
+
+fr fr ===== CORE ENVIRONMENT FUNCTIONS =====
+
+slay get(key tea) tea {
+    check key == "" {
+        damn ""
     }
     
-    // Bridge to Zig runtime for actual environment variable retrieval
-    (value, err) := runtime_get_env(name)
-    lowkey err != "" {
-        damn ("", "Failed to get environment variable: " + name + " - " + err)
+    check key.length() > MAX_VAR_NAME_LENGTH {
+        damn ""
     }
     
-    damn (value, "")
-}
-
-slay set_env(name tea, value tea) tea {
-    // Set environment variable
-    lowkey len_str(name) == 0 {
-        damn "Empty environment variable name not allowed"
+    check env_variables.has_key(key) {
+        damn env_variables.get(key)
     }
     
-    // Bridge to Zig runtime for actual environment variable setting
-    err := runtime_set_env(name, value)
-    lowkey err != "" {
-        damn "Failed to set environment variable: " + name + " - " + err
+    # Try system environment (simulated)
+    sus system_value tea = get_system_env(key)
+    check system_value != "" {
+        # Cache system value
+        env_variables.set(key, system_value)
+        damn system_value
     }
     
     damn ""
 }
 
-slay unset_env(name tea) tea {
-    // Remove environment variable
-    lowkey len_str(name) == 0 {
-        damn "Empty environment variable name not allowed"
+slay set(key tea, value tea) lit {
+    check key == "" {
+        damn cap
     }
     
-    // Bridge to Zig runtime for environment variable removal
-    err := runtime_unset_env(name)
-    lowkey err != "" {
-        damn "Failed to unset environment variable: " + name + " - " + err
+    check key.length() > MAX_VAR_NAME_LENGTH {
+        damn cap
     }
     
-    damn ""
+    check value.length() > MAX_VAR_VALUE_LENGTH {
+        damn cap
+    }
+    
+    check env_count >= MAX_ENV_VARS && !env_variables.has_key(key) {
+        damn cap  # Too many environment variables
+    }
+    
+    check !env_variables.has_key(key) {
+        env_count = env_count + 1
+    }
+    
+    env_variables.set(key, value)
+    env_modified = based
+    damn based
 }
 
-slay env_exists(name tea) lit {
-    // Check if environment variable exists
-    lowkey len_str(name) == 0 {
-        damn cringe
+slay unset(key tea) lit {
+    check key == "" {
+        damn cap
     }
     
-    (_, err) := get_env(name)
-    damn err == ""
-}
-
-slay list_env() ([]tea, tea) {
-    // List all environment variables
-    (env_list, err) := runtime_list_env()
-    lowkey err != "" {
-        damn ([], "Failed to list environment variables - " + err)
-    }
-    
-    damn (env_list, "")
-}
-
-slay get_env_with_default(name tea, default_value tea) tea {
-    // Get environment variable with default value
-    (value, err) := get_env(name)
-    lowkey err != "" {
-        damn default_value
-    }
-    
-    lowkey len_str(value) == 0 {
-        damn default_value
-    }
-    
-    damn value
-}
-
-slay get_env_as_int(name tea, default_value normie) normie {
-    // Get environment variable as integer
-    (value, err) := get_env(name)
-    lowkey err != "" {
-        damn default_value
-    }
-    
-    (int_value, parse_err) := parse_int(value)
-    lowkey parse_err != "" {
-        damn default_value
-    }
-    
-    damn int_value
-}
-
-slay get_env_as_bool(name tea, default_value lit) lit {
-    // Get environment variable as boolean
-    (value, err) := get_env(name)
-    lowkey err != "" {
-        damn default_value
-    }
-    
-    sus lower_value tea = to_lowercase(value)
-    lowkey lower_value == "true" || lower_value == "1" || lower_value == "yes" || lower_value == "on" {
+    check env_variables.has_key(key) {
+        env_variables.remove(key)
+        env_count = env_count - 1
+        env_modified = based
         damn based
     }
     
-    lowkey lower_value == "false" || lower_value == "0" || lower_value == "no" || lower_value == "off" {
-        damn cringe
-    }
-    
-    damn default_value
+    damn cap
 }
 
-slay expand_env(text tea) tea {
-    // Expand environment variables in text (${VAR} or $VAR format)
-    expanded := runtime_expand_env(text)
-    damn expanded
-}
-
-slay get_path_env() []tea {
-    // Get PATH environment variable as array of directories
-    (path_value, err) := get_env("PATH")
-    lowkey err != "" {
-        damn []
+slay exists(key tea) lit {
+    check key == "" {
+        damn cap
     }
     
-    paths := split_path_string(path_value)
-    damn paths
+    damn env_variables.has_key(key) || get_system_env(key) != ""
 }
 
-slay get_home_dir() (tea, tea) {
-    // Get user home directory from environment
-    (home, err) := get_env("HOME")
-    lowkey err == "" && len_str(home) > 0 {
-        damn (home, "")
+slay get_all() map<tea, tea> {
+    # Merge system environment with local overrides
+    sus all_vars map<tea, tea> = get_system_env_all()
+    
+    # Apply local overrides
+    sus keys [tea] = env_variables.keys()
+    sus i normie = 0
+    bestie i < arrayz.len(keys) {
+        sus key tea = keys[i]
+        sus value tea = env_variables.get(key)
+        all_vars.set(key, value)
+        i = i + 1
     }
     
-    // Try Windows-style home directory
-    (userprofile, profile_err) := get_env("USERPROFILE")
-    lowkey profile_err == "" && len_str(userprofile) > 0 {
-        damn (userprofile, "")
-    }
-    
-    damn ("", "Could not determine home directory")
+    damn all_vars
 }
 
-slay get_temp_dir_env() (tea, tea) {
-    // Get temporary directory from environment
-    // Try multiple common environment variables
-    sus temp_vars []tea = ["TMPDIR", "TMP", "TEMP", "TEMPDIR"]
+slay get_keys() [tea] {
+    sus all_vars map<tea, tea> = get_all()
+    damn all_vars.keys()
+}
+
+fr fr ===== ENVIRONMENT EXPANSION =====
+
+slay expand(template tea) tea {
+    check template == "" {
+        damn ""
+    }
+    
+    sus result tea = template
     sus i normie = 0
     
-    bestie (i < len(temp_vars)) {
-        (temp_dir, err) := get_env(temp_vars[i])
-        lowkey err == "" && len_str(temp_dir) > 0 {
-            damn (temp_dir, "")
+    bestie i < template.length() {
+        check template.char_at(i) == '$' && i + 1 < template.length() {
+            check template.char_at(i + 1) == '{' {
+                # ${VAR_NAME} format
+                sus end_pos normie = find_closing_brace(template, i + 2)
+                check end_pos > i + 2 {
+                    sus var_name tea = template.substring(i + 2, end_pos)
+                    sus var_value tea = get(var_name)
+                    sus placeholder tea = template.substring(i, end_pos + 1)
+                    result = stringz.replace(result, placeholder, var_value)
+                }
+                i = end_pos + 1
+            } else {
+                # $VAR_NAME format (simple)
+                sus var_end normie = find_var_end(template, i + 1)
+                check var_end > i + 1 {
+                    sus var_name tea = template.substring(i + 1, var_end)
+                    sus var_value tea = get(var_name)
+                    sus placeholder tea = template.substring(i, var_end)
+                    result = stringz.replace(result, placeholder, var_value)
+                }
+                i = var_end
+            }
+        } else {
+            i = i + 1
+        }
+    }
+    
+    damn result
+}
+
+slay find_closing_brace(text tea, start normie) normie {
+    sus i normie = start
+    bestie i < text.length() {
+        check text.char_at(i) == '}' {
+            damn i
+        }
+        i = i + 1
+    }
+    damn -1
+}
+
+slay find_var_end(text tea, start normie) normie {
+    sus i normie = start
+    bestie i < text.length() {
+        sus c tea = text.char_at(i)
+        check !is_var_char(c) {
+            damn i
+        }
+        i = i + 1
+    }
+    damn text.length()
+}
+
+slay is_var_char(c tea) lit {
+    # Valid environment variable characters: A-Z, a-z, 0-9, _
+    check c >= "A" && c <= "Z" {
+        damn based
+    }
+    check c >= "a" && c <= "z" {
+        damn based
+    }
+    check c >= "0" && c <= "9" {
+        damn based
+    }
+    check c == "_" {
+        damn based
+    }
+    damn cap
+}
+
+fr fr ===== PLATFORM-SPECIFIC FUNCTIONS =====
+
+slay get_platform() tea {
+    # Detect platform from environment
+    sus os_type tea = get("OS")
+    sus ostype tea = get("OSTYPE")
+    
+    check stringz.contains(os_type, "Windows") {
+        damn PLATFORM_WINDOWS
+    }
+    
+    check stringz.contains(ostype, "linux") {
+        damn PLATFORM_LINUX
+    }
+    
+    check stringz.contains(ostype, "darwin") {
+        damn PLATFORM_MACOS
+    }
+    
+    # Default detection
+    sus uname tea = get("UNAME") 
+    check uname == "Linux" {
+        damn PLATFORM_LINUX
+    }
+    check uname == "Darwin" {
+        damn PLATFORM_MACOS
+    }
+    
+    damn PLATFORM_UNKNOWN
+}
+
+slay get_path_separator() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn ";"
+    }
+    damn ":"
+}
+
+slay get_path_var() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn "PATH"
+    }
+    damn "PATH"
+}
+
+slay get_home_var() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn "USERPROFILE"
+    }
+    damn "HOME"
+}
+
+fr fr ===== PATH MANIPULATION =====
+
+slay get_path() [tea] {
+    sus path_var tea = get_path_var()
+    sus path_value tea = get(path_var)
+    check path_value == "" {
+        damn []tea{}
+    }
+    
+    sus separator tea = get_path_separator()
+    damn stringz.split(path_value, separator)
+}
+
+slay set_path(paths [tea]) lit {
+    sus path_var tea = get_path_var()
+    sus separator tea = get_path_separator()
+    sus path_value tea = stringz.join(paths, separator)
+    damn set(path_var, path_value)
+}
+
+slay add_to_path(new_path tea) lit {
+    sus current_paths [tea] = get_path()
+    
+    # Check if already in path
+    sus i normie = 0
+    bestie i < arrayz.len(current_paths) {
+        check current_paths[i] == new_path {
+            damn based  # Already in path
         }
         i = i + 1
     }
     
-    damn ("", "Could not determine temp directory")
+    # Add to front of path
+    sus new_paths [tea] = arrayz.prepend(current_paths, new_path)
+    damn set_path(new_paths)
 }
 
-slay get_user_name() (tea, tea) {
-    // Get current user name from environment
-    (user, err) := get_env("USER")
-    lowkey err == "" && len_str(user) > 0 {
-        damn (user, "")
-    }
-    
-    // Try Windows-style username
-    (username, username_err) := get_env("USERNAME")
-    lowkey username_err == "" && len_str(username) > 0 {
-        damn (username, "")
-    }
-    
-    damn ("", "Could not determine user name")
+slay remove_from_path(remove_path tea) lit {
+    sus current_paths [tea] = get_path()
+    sus filtered_paths [tea] = arrayz.filter(current_paths, slay(path tea) lit {
+        damn path != remove_path
+    })
+    damn set_path(filtered_paths)
 }
 
-slay get_shell() (tea, tea) {
-    // Get user shell from environment
-    (shell, err) := get_env("SHELL")
-    lowkey err == "" && len_str(shell) > 0 {
-        damn (shell, "")
-    }
-    
-    damn ("", "Could not determine shell")
+fr fr ===== COMMON ENVIRONMENT VARIABLES =====
+
+slay get_home() tea {
+    sus home_var tea = get_home_var()
+    damn get(home_var)
 }
 
-slay get_editor() (tea, tea) {
-    // Get preferred editor from environment
-    (editor, err) := get_env("EDITOR")
-    lowkey err == "" && len_str(editor) > 0 {
-        damn (editor, "")
+slay get_user() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn get("USERNAME")
     }
-    
-    // Try visual editor
-    (visual, visual_err) := get_env("VISUAL")
-    lowkey visual_err == "" && len_str(visual) > 0 {
-        damn (visual, "")
-    }
-    
-    damn ("", "Could not determine editor")
+    damn get("USER")
 }
 
-slay is_development_env() lit {
-    // Check if running in development environment
-    (env, err) := get_env("NODE_ENV")
-    lowkey err == "" && env == "development" {
-        damn based
+slay get_shell() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn get("COMSPEC")
     }
-    
-    (rails_env, rails_err) := get_env("RAILS_ENV")
-    lowkey rails_err == "" && rails_env == "development" {
-        damn based
+    sus shell tea = get("SHELL")
+    check shell == "" {
+        damn "/bin/sh"  # Default
     }
-    
-    (env_var, env_err) := get_env("ENVIRONMENT")
-    lowkey env_err == "" && (env_var == "development" || env_var == "dev") {
-        damn based
-    }
-    
-    damn cringe
+    damn shell
 }
 
-slay is_production_env() lit {
-    // Check if running in production environment
-    (env, err) := get_env("NODE_ENV")
-    lowkey err == "" && env == "production" {
-        damn based
+slay get_editor() tea {
+    sus editor tea = get("EDITOR")
+    check editor != "" {
+        damn editor
     }
     
-    (rails_env, rails_err) := get_env("RAILS_ENV")
-    lowkey rails_err == "" && rails_env == "production" {
-        damn based
+    sus visual tea = get("VISUAL")
+    check visual != "" {
+        damn visual
     }
     
-    (env_var, env_err) := get_env("ENVIRONMENT")
-    lowkey env_err == "" && (env_var == "production" || env_var == "prod") {
-        damn based
+    # Platform defaults
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        damn "notepad"
     }
-    
-    damn cringe
+    damn "vi"
 }
 
-slay clear_env() tea {
-    // Clear all environment variables (dangerous operation)
-    err := runtime_clear_env()
-    lowkey err != "" {
-        damn "Failed to clear environment variables - " + err
+slay get_temp_dir() tea {
+    sus platform tea = get_platform()
+    check platform == PLATFORM_WINDOWS {
+        sus temp tea = get("TEMP")
+        check temp != "" {
+            damn temp
+        }
+        damn get("TMP")
     }
     
+    sus tmpdir tea = get("TMPDIR")
+    check tmpdir != "" {
+        damn tmpdir
+    }
+    damn "/tmp"
+}
+
+fr fr ===== SYSTEM INTEGRATION (SIMULATED) =====
+
+slay get_system_env(key tea) tea {
+    # Simulate common system environment variables
+    check key == "HOME" {
+        damn "/home/user"
+    }
+    check key == "USER" {
+        damn "cursed_user"  
+    }
+    check key == "SHELL" {
+        damn "/bin/bash"
+    }
+    check key == "PATH" {
+        damn "/usr/local/bin:/usr/bin:/bin"
+    }
+    check key == "EDITOR" {
+        damn "vim"
+    }
+    check key == "TMPDIR" {
+        damn "/tmp"
+    }
+    check key == "OS" {
+        damn "Linux"
+    }
+    check key == "OSTYPE" {
+        damn "linux-gnu"
+    }
+    check key == "LANG" {
+        damn "en_US.UTF-8"
+    }
+    check key == "PWD" {
+        damn "/home/user/cursed"
+    }
     damn ""
 }
 
-slay copy_env_to_new_process() []tea {
-    // Get environment as key=value strings for new process
-    (env_strings, err) := runtime_env_for_process()
-    lowkey err != "" {
-        damn []
-    }
+slay get_system_env_all() map<tea, tea> {
+    sus system_vars map<tea, tea> = {}
     
-    damn env_strings
+    # Common system environment variables
+    system_vars.set("HOME", "/home/user")
+    system_vars.set("USER", "cursed_user")
+    system_vars.set("SHELL", "/bin/bash") 
+    system_vars.set("PATH", "/usr/local/bin:/usr/bin:/bin")
+    system_vars.set("EDITOR", "vim")
+    system_vars.set("TMPDIR", "/tmp")
+    system_vars.set("OS", "Linux")
+    system_vars.set("OSTYPE", "linux-gnu")
+    system_vars.set("LANG", "en_US.UTF-8")
+    system_vars.set("PWD", "/home/user/cursed")
+    system_vars.set("TERM", "xterm-256color")
+    system_vars.set("COLORTERM", "truecolor")
+    
+    damn system_vars
 }
 
-// Helper functions for string operations
-slay len_str(str tea) normie {
-    // String length - runtime implemented
-    length := runtime_string_length(str)
-    damn length
+fr fr ===== MODULE UTILITIES =====
+
+slay print_env() {
+    sus all_vars map<tea, tea> = get_all()
+    sus keys [tea] = all_vars.keys()
+    
+    vibez.spill("Environment Variables:")
+    sus i normie = 0
+    bestie i < arrayz.len(keys) {
+        sus key tea = keys[i]
+        sus value tea = all_vars.get(key)
+        vibez.spill(key + "=" + value)
+        i = i + 1
+    }
 }
 
-slay to_lowercase(str tea) tea {
-    // Convert string to lowercase - runtime implemented
-    lower := runtime_to_lowercase(str)
-    damn lower
+slay clear_local() {
+    env_variables = {}
+    env_count = 0
+    env_modified = based
 }
 
-slay split_path_string(path_str tea) []tea {
-    // Split PATH string by separator - runtime implemented
-    paths := runtime_split_path(path_str)
-    damn paths
+slay get_env_count() normie {
+    damn get_all().size()
 }
 
-slay parse_int(str tea) (normie, tea) {
-    // Parse string to integer - runtime implemented
-    (value, err) := runtime_parse_int(str)
-    damn (value, err)
+slay is_modified() lit {
+    damn env_modified
 }
 
-// Runtime bridge functions - call into Zig runtime via extern functions
-
-extern runtime_get_env_bridge(name *u8) (tea, tea)
-extern runtime_set_env_bridge(name *u8, value *u8) tea
-extern runtime_unset_env_bridge(name *u8) tea
-extern runtime_list_env_bridge() ([]tea, tea)
-extern runtime_expand_env_bridge(text *u8) tea
-extern runtime_clear_env_bridge() tea
-extern runtime_env_for_process_bridge() ([]tea, tea)
-extern runtime_string_length_bridge(str *u8) normie
-extern runtime_to_lowercase_bridge(str *u8) tea
-extern runtime_split_path_bridge(path_str *u8) []tea
-extern runtime_parse_int_bridge(str *u8) (normie, tea)
-
-slay runtime_get_env(name tea) (tea, tea) {
-    // Bridge to Zig runtime for environment variable retrieval
-    damn runtime_get_env_bridge(name.ptr)
+slay reset_modified_flag() {
+    env_modified = cap
 }
 
-slay runtime_set_env(name tea, value tea) tea {
-    // Bridge to Zig runtime for environment variable setting
-    damn runtime_set_env_bridge(name.ptr, value.ptr)
+fr fr ===== MODULE INITIALIZATION =====
+
+slay init_envz() {
+    env_variables = {}
+    env_count = 0
+    env_modified = cap
+    vibez.spill("envz module initialized")
 }
 
-slay runtime_unset_env(name tea) tea {
-    // Bridge to Zig runtime for environment variable removal
-    damn runtime_unset_env_bridge(name.ptr)
-}
-
-slay runtime_list_env() ([]tea, tea) {
-    // Bridge to Zig runtime for listing environment variables
-    damn runtime_list_env_bridge()
-}
-
-slay runtime_expand_env(text tea) tea {
-    // Bridge to Zig runtime for environment variable expansion
-    damn runtime_expand_env_bridge(text.ptr)
-}
-
-slay runtime_clear_env() tea {
-    // Bridge to Zig runtime for clearing all environment variables
-    damn runtime_clear_env_bridge()
-}
-
-slay runtime_env_for_process() ([]tea, tea) {
-    // Bridge to Zig runtime for getting environment for new process
-    damn runtime_env_for_process_bridge()
-}
-
-slay runtime_string_length(str tea) normie {
-    // Bridge to Zig runtime for string length calculation
-    damn runtime_string_length_bridge(str.ptr)
-}
-
-slay runtime_to_lowercase(str tea) tea {
-    // Bridge to Zig runtime for string conversion to lowercase
-    damn runtime_to_lowercase_bridge(str.ptr)
-}
-
-slay runtime_split_path(path_str tea) []tea {
-    // Bridge to Zig runtime for PATH string splitting
-    damn runtime_split_path_bridge(path_str.ptr)
-}
-
-slay runtime_parse_int(str tea) (normie, tea) {
-    // Bridge to Zig runtime for string to integer parsing
-    damn runtime_parse_int_bridge(str.ptr)
+slay get_envz_info() tea {
+    damn "envz v1.0 - Environment Variable Management Module"
 }

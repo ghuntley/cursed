@@ -1,4 +1,5 @@
 yeet "testz"
+yeet "algorithms"
 yeet "stdlib/collections/production_collections"
 
 fr fr ========================================
@@ -635,14 +636,14 @@ slay Collections_bubble_sort(arr [normie]) [normie] {
     damn arr
 }
 
-fr fr Quick sort for integer arrays
-slay Collections_quick_sort(arr [normie]) [normie] { fr fr Use bubble sort implementation for simplicity
-    damn Collections_bubble_sort(arr)
+fr fr Quick sort for integer arrays - O(n log n) average case
+slay Collections_quick_sort(arr [normie]) [normie] {
+    damn quick_sort_integers(arr)
 }
 
-fr fr Merge sort for integer arrays
-slay Collections_merge_sort(arr [normie]) [normie] { fr fr Use bubble sort implementation for simplicity
-    damn Collections_bubble_sort(arr)
+fr fr Merge sort for integer arrays - O(n log n) guaranteed
+slay Collections_merge_sort(arr [normie]) [normie] {
+    damn merge_sort_integers(arr)
 }
 
 fr fr ================================

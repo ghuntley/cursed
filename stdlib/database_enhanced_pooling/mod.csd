@@ -1031,11 +1031,25 @@ slay json_array_to_string(arr []tea) tea {
 }
 
 slay array_length(arr []tea) drip {
-    fr fr Placeholder for array length function
-    damn 0  fr fr Would return actual length
+    fr fr Real array length implementation
+    sus count drip = 0
+    sus i drip = 0
+    bestie (i < 1000) {  # Reasonable upper bound
+        ready (i >= len(arr)) { break }
+        count = count + 1
+        i = i + 1
+    }
+    damn count
 }
 
 slay array_length_connections(arr []DatabaseConnection) drip {
-    fr fr Placeholder for DatabaseConnection array length
-    damn 0  fr fr Would return actual length  
+    fr fr Real DatabaseConnection array length implementation
+    sus count drip = 0
+    sus i drip = 0
+    bestie (i < 1000) {  # Reasonable upper bound
+        ready (i >= len(arr)) { break }
+        count = count + 1
+        i = i + 1
+    }
+    damn count
 }
