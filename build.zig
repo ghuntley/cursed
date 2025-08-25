@@ -33,6 +33,11 @@ pub fn build(b: *std.Build) void {
     // Link system libraries for authentication
     legacy_exe.linkSystemLibrary("crypt");
     legacy_exe.linkLibC();
+    
+    // Add system interface bridge module
+    legacy_exe.root_module.addAnonymousImport("system_interface_bridge", .{
+        .root_source_file = b.path("src-zig/system_interface_bridge.zig")
+    });
 
     b.installArtifact(legacy_exe);
 

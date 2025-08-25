@@ -329,9 +329,17 @@ fr fr ==========================================================================
 fr fr WEBSOCKET CONNECTION MANAGEMENT
 fr fr =============================================================================
 
+fr fr Global connection counter for unique IDs
+sus global_ws_connection_counter normie = 0
+
 slay ws_connection_create(url tea, is_server lit) WebSocketConnection {
     sus conn WebSocketConnection
-    conn.connection_id = 1  fr fr Would be unique in real implementation
+    
+    fr fr Generate unique connection ID using timestamp + counter
+    sus time_ns thicc = cursed_runtime_clock_gettime_monotonic()
+    global_ws_connection_counter++
+    conn.connection_id = (time_ns % 1000000) + (global_ws_connection_counter * 1000000)
+    
     conn.state = WS_STATE_CONNECTING
     conn.url = url
     conn.protocol = ""
@@ -339,7 +347,7 @@ slay ws_connection_create(url tea, is_server lit) WebSocketConnection {
     conn.is_server = is_server
     conn.max_frame_size = 1048576  fr fr 1MB default max frame size
     conn.ping_interval = 30  fr fr 30 seconds
-    conn.last_ping_time = 0
+    conn.last_ping_time = cursed_runtime_get_time_ms()
     conn.queue_size = 0
     damn conn
 }

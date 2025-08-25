@@ -1167,8 +1167,9 @@ slay audioz_write_sample_to_buffer(buffer tea, index normie, sample normie) lit 
     sus low_byte normie = sample & 0xFF
     sus high_byte normie = (sample >> 8) & 0xFF
     
-    fr fr This would write to the actual buffer in a real implementation
-    fr fr For now, we simulate it
+    fr fr Real buffer writing via runtime
+    cursed_runtime_write_audio_buffer_byte(buffer, byte_index, low_byte)
+    cursed_runtime_write_audio_buffer_byte(buffer, byte_index + 1, high_byte)
 }
 
 fr fr ===== AUDIO EFFECTS IMPLEMENTATIONS =====

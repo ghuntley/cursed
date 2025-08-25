@@ -295,58 +295,71 @@ slay parse_int(str tea) (normie, tea) {
     damn (value, err)
 }
 
-// Runtime bridge functions - implemented in Zig runtime
+// Runtime bridge functions - call into Zig runtime via extern functions
+
+extern runtime_get_env_bridge(name *u8) (tea, tea)
+extern runtime_set_env_bridge(name *u8, value *u8) tea
+extern runtime_unset_env_bridge(name *u8) tea
+extern runtime_list_env_bridge() ([]tea, tea)
+extern runtime_expand_env_bridge(text *u8) tea
+extern runtime_clear_env_bridge() tea
+extern runtime_env_for_process_bridge() ([]tea, tea)
+extern runtime_string_length_bridge(str *u8) normie
+extern runtime_to_lowercase_bridge(str *u8) tea
+extern runtime_split_path_bridge(path_str *u8) []tea
+extern runtime_parse_int_bridge(str *u8) (normie, tea)
+
 slay runtime_get_env(name tea) (tea, tea) {
-    // Get environment variable - implemented in Zig runtime
-    damn ("", "Runtime binding required")
+    // Bridge to Zig runtime for environment variable retrieval
+    damn runtime_get_env_bridge(name.ptr)
 }
 
 slay runtime_set_env(name tea, value tea) tea {
-    // Set environment variable - implemented in Zig runtime
-    damn "Runtime binding required"
+    // Bridge to Zig runtime for environment variable setting
+    damn runtime_set_env_bridge(name.ptr, value.ptr)
 }
 
 slay runtime_unset_env(name tea) tea {
-    // Unset environment variable - implemented in Zig runtime
-    damn "Runtime binding required"
+    // Bridge to Zig runtime for environment variable removal
+    damn runtime_unset_env_bridge(name.ptr)
 }
 
 slay runtime_list_env() ([]tea, tea) {
-    // List all environment variables - implemented in Zig runtime
-    damn ([], "Runtime binding required")
+    // Bridge to Zig runtime for listing environment variables
+    damn runtime_list_env_bridge()
 }
 
 slay runtime_expand_env(text tea) tea {
-    // Expand environment variables in text - implemented in Zig runtime
-    damn text // Fallback: return text unchanged
+    // Bridge to Zig runtime for environment variable expansion
+    damn runtime_expand_env_bridge(text.ptr)
 }
 
 slay runtime_clear_env() tea {
-    // Clear all environment variables - implemented in Zig runtime
-    damn "Runtime binding required"
+    // Bridge to Zig runtime for clearing all environment variables
+    damn runtime_clear_env_bridge()
 }
 
 slay runtime_env_for_process() ([]tea, tea) {
-    // Get environment for new process - implemented in Zig runtime
-    damn ([], "Runtime binding required")
+    // Bridge to Zig runtime for getting environment for new process
+    damn runtime_env_for_process_bridge()
 }
 
 slay runtime_string_length(str tea) normie {
-    // String length - implemented in Zig runtime
-    damn 0
+    // Bridge to Zig runtime for string length calculation
+    damn runtime_string_length_bridge(str.ptr)
 }
 
 slay runtime_to_lowercase(str tea) tea {
-    // Convert to lowercase - implemented in Zig runtime
-    damn str
+    // Bridge to Zig runtime for string conversion to lowercase
+    damn runtime_to_lowercase_bridge(str.ptr)
 }
 
 slay runtime_split_path(path_str tea) []tea {
-    // Split PATH string - implemented in Zig runtime
-    damn []
+    // Bridge to Zig runtime for PATH string splitting
+    damn runtime_split_path_bridge(path_str.ptr)
 }
 
 slay runtime_parse_int(str tea) (normie, tea) {
-    // Parse string to integer - implemented in Zig runtime
-    damn (0, "Runtime binding required")
+    // Bridge to Zig runtime for string to integer parsing
+    damn runtime_parse_int_bridge(str.ptr)
 }

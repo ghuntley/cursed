@@ -304,13 +304,20 @@ slay stringify_object(value JsonValue) tea {
         damn "{}"
     }
     
-    fr fr Extract object data from value - simplified approach
-    sus result tea = "{"
-    sus first lit = based
+    # Extract object data from value.value which contains serialized JSON
+    ready (value.value == "" || value.value == "{}") {
+        damn "{}"
+    }
     
-    fr fr For now, return empty object - full implementation would need
-    fr fr proper object field access or restructuring
-    damn "{}"
+    # Parse the embedded object data and reconstruct
+    sus obj_data tea = value.value
+    ready (obj_data == "{}") {
+        damn "{}"
+    }
+    
+    # For now, return the stored value - in a full implementation,
+    # this would access actual object fields from JsonObject structure
+    damn obj_data
 }
 
 slay stringify_array(value JsonValue) tea {
@@ -318,13 +325,20 @@ slay stringify_array(value JsonValue) tea {
         damn "[]"
     }
     
-    fr fr Extract array data from value - simplified approach
-    sus result tea = "["
-    sus first lit = based
+    # Extract array data from value.value which contains serialized JSON
+    ready (value.value == "" || value.value == "[]") {
+        damn "[]"
+    }
     
-    fr fr For now, return empty array - full implementation would need
-    fr fr proper array field access or restructuring
-    damn "[]"
+    # Parse the embedded array data and reconstruct
+    sus arr_data tea = value.value
+    ready (arr_data == "[]") {
+        damn "[]"
+    }
+    
+    # For now, return the stored value - in a full implementation,
+    # this would access actual array items from JsonArray structure
+    damn arr_data
 }
 
 slay escape_string(str tea) tea {
@@ -388,18 +402,57 @@ slay create_string(val tea) JsonValue {
 }
 
 slay create_object(obj JsonObject) JsonValue {
-    fr fr Simplified - would need proper object serialization
+    # Serialize object to JSON string
+    sus result tea = "{"
+    sus first lit = based
+    
+    sus i drip = 0
+    bestie (i < len(obj.keys)) {
+        ready (!first) {
+            result = concat(result, ",")
+        }
+        first = cap
+        
+        # Add key-value pair
+        result = concat(result, "\"")
+        result = concat(result, obj.keys[i])
+        result = concat(result, "\":")
+        result = concat(result, stringify(obj.values[i]))
+        
+        i = i + 1
+    }
+    
+    result = concat(result, "}")
+    
     damn JsonValue{
         type: JSON_TYPE_OBJECT,
-        value: "{}"
+        value: result
     }
 }
 
 slay create_array(arr JsonArray) JsonValue {
-    fr fr Simplified - would need proper array serialization
+    # Serialize array to JSON string
+    sus result tea = "["
+    sus first lit = based
+    
+    sus i drip = 0
+    bestie (i < len(arr.items)) {
+        ready (!first) {
+            result = concat(result, ",")
+        }
+        first = cap
+        
+        # Add array item
+        result = concat(result, stringify(arr.items[i]))
+        
+        i = i + 1
+    }
+    
+    result = concat(result, "]")
+    
     damn JsonValue{
         type: JSON_TYPE_ARRAY,
-        value: "[]"
+        value: result
     }
 }
 

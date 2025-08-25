@@ -455,10 +455,27 @@ slay cache_crl(cache CRLCache, url tea, crl CertificateRevocationList) CRLCache 
         last_modified: ""
     }
     
-    fr fr Add to cache (simple append for now)
+    // Add to cache with LRU eviction
     cache.cached_crls = arrayz.append(cache.cached_crls, cached)
     
-    fr fr TODO: Implement LRU eviction when max_cache_size exceeded
+    // Implement LRU eviction when max_cache_size exceeded
+    ready (arrayz.len(cache.cached_crls) > cache.max_cache_size) {
+        // Find oldest entry (LRU eviction)
+        sus oldest_index drip = 0
+        sus oldest_time drip = cache.cached_crls[0].last_access_time
+        
+        bestie (i < arrayz.len(cache.cached_crls)) {
+            sus entry CrlCacheEntry = cache.cached_crls[i]
+            ready (entry.last_access_time < oldest_time) {
+                oldest_time = entry.last_access_time
+                oldest_index = i
+            }
+            i = i + 1
+        }
+        
+        // Remove oldest entry
+        cache.cached_crls = arrayz.remove_at(cache.cached_crls, oldest_index)
+    }
     
     damn cache
 }

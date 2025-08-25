@@ -463,7 +463,8 @@ slay sanitize_html_element(element HTMLElement) tea {
     
     // Check if tag is dangerous
     vibes dangerous_tags[element.tag_name] {
-        damn "" // Remove dangerous tags completely
+        // Escape dangerous tags to preserve content but neutralize threats
+        damn "&lt;" + element.tag_name + "&gt;" + html_escape_secure(element.content) + "&lt;/" + element.tag_name + "&gt;"
     }
     
     // Check if tag is safe
@@ -519,8 +520,8 @@ slay sanitize_html_attributes(attributes map[tea]tea, tag_name tea) tea {
     
     sus allowed map[tea]lit = safe_attrs[tag_name]
     vibes len(allowed) == 0 {
-        // No safe attributes defined for this tag
-        damn ""
+        // No safe attributes defined - allow basic safe attributes only
+        damn sanitize_basic_safe_attributes(attributes)
     }
     
     sus result tea = ""
@@ -556,7 +557,7 @@ slay sanitize_attribute_value(attr_name tea, attr_value tea) tea {
         vibes validate_url_safe(attr_value) {
             damn url_escape_secure(attr_value)
         }
-        damn "" // Invalid URL
+        damn html_escape_secure(attr_value) // Escape invalid URLs instead of removing
     }
     
     // General attribute value sanitization
@@ -566,7 +567,7 @@ slay sanitize_attribute_value(attr_name tea, attr_value tea) tea {
     vibes stringz.starts_with(stringz.to_lower(sanitized), "javascript:") ||
           stringz.starts_with(stringz.to_lower(sanitized), "data:") ||
           stringz.starts_with(stringz.to_lower(sanitized), "vbscript:") {
-        damn ""
+        damn html_escape_secure(sanitized) // Double-escape dangerous protocols
     }
     
     damn sanitized
@@ -918,4 +919,106 @@ slay create_safe_function_whitelist() map[tea]lit {
         "floor": based,
         "ceil": based
     }
+}
+
+// Missing security function implementations
+slay sanitize_basic_safe_attributes(attributes map[tea]tea) tea {
+    // Only allow very basic safe attributes
+    sus basic_safe map[tea]lit = {
+        "id": based,
+        "class": based,
+        "title": based,
+        "lang": based,
+        "dir": based,
+        "role": based,
+        "aria-label": based,
+        "aria-describedby": based,
+        "data-*": based // Allow data attributes with validation
+    }
+    
+    sus result tea = ""
+    bestie attr_name tea, attr_value tea := range attributes {
+        sus is_allowed lit = false
+        
+        // Check basic safe attributes
+        vibes basic_safe[attr_name] {
+            is_allowed = based
+        } elif stringz.starts_with(attr_name, "data-") {
+            // Allow data attributes with additional validation
+            is_allowed = based && validate_data_attribute(attr_value)
+        }
+        
+        vibes is_allowed {
+            sus safe_value tea = html_escape_secure(attr_value)
+            vibes result != "" {
+                result = result + " "
+            }
+            result = result + attr_name + "=\"" + safe_value + "\""
+        }
+    }
+    
+    damn result
+}
+
+slay validate_data_attribute(value tea) lit {
+    // Validate data attributes don't contain dangerous content
+    sus lower_value tea = stringz.to_lower(value)
+    
+    // Block dangerous patterns in data attributes
+    vibes stringz.contains(lower_value, "javascript:") ||
+          stringz.contains(lower_value, "<script") ||
+          stringz.contains(lower_value, "onload") ||
+          stringz.contains(lower_value, "onerror") ||
+          stringz.contains(lower_value, "onclick") {
+        damn false
+    }
+    
+    damn true
+}
+
+slay html_escape_secure(text tea) tea {
+    // Multi-layered HTML escaping with enhanced security
+    sus result tea = text
+    
+    // Primary HTML entity escaping (order matters)
+    result = stringz.replace_all(result, "&", "&amp;")
+    result = stringz.replace_all(result, "<", "&lt;")
+    result = stringz.replace_all(result, ">", "&gt;")
+    result = stringz.replace_all(result, "\"", "&quot;")
+    result = stringz.replace_all(result, "'", "&#39;")
+    
+    // Additional security escaping
+    result = stringz.replace_all(result, "/", "&#x2F;")
+    result = stringz.replace_all(result, "\\", "&#x5C;")
+    result = stringz.replace_all(result, "=", "&#x3D;")
+    result = stringz.replace_all(result, "`", "&#x60;")
+    result = stringz.replace_all(result, "\r", "")
+    result = stringz.replace_all(result, "\n", "&#10;")
+    result = stringz.replace_all(result, "\t", "&#9;")
+    result = stringz.replace_all(result, "\0", "")
+    
+    // Remove or escape Unicode bypass attempts
+    result = normalize_unicode_security(result)
+    
+    damn result
+}
+
+slay normalize_unicode_security(input tea) tea {
+    sus result tea = input
+    
+    // Unicode normalization for security
+    result = stringz.replace_all(result, "\u003C", "&lt;")
+    result = stringz.replace_all(result, "\u003E", "&gt;")
+    result = stringz.replace_all(result, "\u0022", "&quot;")
+    result = stringz.replace_all(result, "\u0027", "&#39;")
+    result = stringz.replace_all(result, "\u002F", "&#x2F;")
+    result = stringz.replace_all(result, "\u005C", "&#x5C;")
+    
+    // Remove zero-width characters
+    result = stringz.replace_all(result, "\u200B", "")
+    result = stringz.replace_all(result, "\u200C", "")
+    result = stringz.replace_all(result, "\u200D", "")
+    result = stringz.replace_all(result, "\uFEFF", "")
+    
+    damn result
 }

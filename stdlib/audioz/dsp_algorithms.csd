@@ -405,11 +405,15 @@ slay audioz_next_power_of_two(n normie) normie {
 
 slay audioz_get_sample_float(buffer tea, frame normie, channel normie, channels normie) drip {
     fr fr Extract float sample from buffer
-    damn 0.0 fr fr Placeholder implementation
+    sus sample_index normie = (frame * channels) + channel
+    sus sample_value drip = cursed_runtime_read_audio_buffer_float(buffer, sample_index)
+    damn sample_value
 }
 
 slay audioz_set_sample_float(buffer tea, frame normie, channel normie, channels normie, value drip) lit {
     fr fr Set float sample in buffer
+    sus sample_index normie = (frame * channels) + channel
+    cursed_runtime_write_audio_buffer_float(buffer, sample_index, value)
 }
 
 slay audioz_apply_band_filter(sample drip, band normie, channel normie, filter_state [8]drip, crossovers [3]drip) drip {

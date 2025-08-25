@@ -3,6 +3,7 @@ fr fr Complete process management using actual system calls
 fr fr Replaces mock operations with real process spawning and management
 
 yeet "testz"
+yeet "runtime_os_bridge"
 
 fr fr ================================
 fr fr Core Data Structures
@@ -312,11 +313,19 @@ slay cursed_fork() normie {
     fr fr Real fork() implementation using Linux syscall number 57
     fr fr Creates child process, returns 0 in child, child PID in parent
     
-    fr fr For simulation, return child PID (would be 0 in actual child)
-    sus child_pid normie = process_registry.next_process_id
-    process_registry.next_process_id++
+    sus child_pid normie = cursed_runtime_syscall(SYS_FORK, 0, 0, 0, 0, 0, 0)
+    lowkey child_pid < 0 {
+        damn -1 fr fr Fork failed
+    }
     
-    damn child_pid
+    lowkey child_pid == 0 {
+        fr fr In child process
+        damn 0
+    } otherwise {
+        fr fr In parent process - register child
+        process_registry.next_process_id = child_pid + 1
+        damn child_pid
+    }
 }
 
 slay cursed_execve(filename [*:0]normie, argv [*][*:0]normie, envp [*][*:0]normie) normie {
@@ -327,9 +336,11 @@ slay cursed_execve(filename [*:0]normie, argv [*][*:0]normie, envp [*][*:0]normi
         damn -1
     }
     
-    fr fr In real implementation, would replace current process
-    fr fr For simulation, just return success
-    damn 0
+    fr fr Real execve syscall - this should not return on success
+    sus result normie = cursed_runtime_syscall(SYS_EXECVE, filename, argv, envp, 0, 0, 0)
+    
+    fr fr If we reach here, execve failed
+    damn result  fr fr Return error code from syscall
 }
 
 slay cursed_waitpid(pid normie, status [*]normie, options normie) normie {
@@ -340,23 +351,23 @@ slay cursed_waitpid(pid normie, status [*]normie, options normie) normie {
         damn -1 fr fr Invalid PID
     }
     
-    fr fr Find process in registry
-    frfr i normie = 0; i < process_registry.active_count; i++ {
-        lowkey process_registry.processes[i].process_id == pid {
-            fr fr Mark as completed
-            process_registry.processes[i].is_running = false
-            process_registry.processes[i].exit_code = 0
-            
-            fr fr Set exit status if buffer provided
-            lowkey status != nil {
-                status[0] = 0 fr fr Normal exit
+    fr fr Real waitpid syscall
+    sus result normie = cursed_runtime_syscall(SYS_WAIT4, pid, status, options, 0, 0, 0)
+    
+    lowkey result > 0 {
+        fr fr Update process registry if we're tracking this process
+        frfr i normie = 0; i < process_registry.active_count; i++ {
+            lowkey process_registry.processes[i].process_id == result {
+                process_registry.processes[i].is_running = false
+                lowkey status != nil {
+                    process_registry.processes[i].exit_code = status[0]
+                }
+                break
             }
-            
-            damn pid
         }
     }
     
-    damn -1 fr fr Process not found
+    damn result  fr fr Return actual waitpid result
 }
 
 fr fr ================================

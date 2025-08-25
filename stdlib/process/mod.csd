@@ -212,6 +212,12 @@ slay start_process_execution(process Process, options ProcessOptions) lit {
 }
 
 fr fr Execute process via shell
+// System process execution extern bridges
+extern runtime_spawn_process_bridge(command *u8, args **u8, args_len drip, env **u8, env_len drip, working_dir *u8) drip
+extern runtime_wait_process_bridge(pid drip) drip
+extern runtime_kill_process_bridge(pid drip, signal drip) lit
+extern runtime_read_process_output_bridge(pid drip) (tea, tea)
+
 slay execute_via_shell(process Process, options ProcessOptions, env map<tea, tea>) {
     sus shell tea = env.get("SHELL", "/bin/sh")
     sus full_command tea = process.command
@@ -222,13 +228,42 @@ slay execute_via_shell(process Process, options ProcessOptions, env map<tea, tea
         full_command = stringz.concat(full_command, escape_shell_arg(process.args[i]))
     }
     
-    fr fr Redirect input/output if needed
-    ready options.stdin_source != "" {
-        write_to_pipe(process.stdin_pipe, options.stdin_source)
-    }
+    fr fr Execute via real system shell
+    process.state = 1  fr fr running
     
-    fr fr Simulate shell execution with enhanced output
-    simulate_shell_execution(process, full_command)
+    fr fr Prepare environment for system call
+    sus env_array []*u8 = allocate_env_array(env)
+    sus shell_args []*u8 = [shell.ptr, "-c", full_command.ptr]
+    
+    fr fr Spawn real shell process
+    sus spawned_pid drip = runtime_spawn_process_bridge(
+        shell.ptr,
+        shell_args.ptr,
+        len(shell_args),
+        env_array.ptr,
+        len(env),
+        options.working_directory.ptr
+    )
+    
+    ready spawned_pid > 0 {
+        process.pid = spawned_pid
+        
+        fr fr Read process output
+        (stdout_data, stderr_data) := runtime_read_process_output_bridge(spawned_pid)
+        process.stdout = stdout_data
+        process.stderr = stderr_data
+        
+        fr fr Wait for process completion
+        sus exit_code drip = runtime_wait_process_bridge(spawned_pid)
+        process.exit_code = exit_code
+        process.state = 2  fr fr finished
+        process.end_time = get_current_timestamp()
+    } otherwise {
+        process.state = 3  fr fr failed
+        process.exit_code = 1
+        process.stderr = "Failed to spawn shell process"
+        process.end_time = get_current_timestamp()
+    }
 }
 
 fr fr Execute process directly (no shell)

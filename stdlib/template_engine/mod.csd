@@ -837,41 +837,101 @@ slay create_html_parser() HTMLParser {
 
 // Complete HTML sanitization with parser
 slay html_escape_secure(input tea) tea {
+    // First pass: comprehensive character escaping for maximum security
+    sus result tea = escape_dangerous_characters(input)
+    
+    // Second pass: parse and sanitize any remaining HTML structures
     sus parser HTMLParser = create_html_parser()
-    parser.input = input
-    parser.length = stringz.length(input)
+    parser.input = result
+    parser.length = stringz.length(result)
     parser.position = 0
     
-    sus result tea = ""
+    sus sanitized tea = ""
     
-    // Parse and sanitize HTML
+    // Parse and sanitize HTML with strict security rules
     bestie parser.position < parser.length {
-        sus char tea = stringz.char_at(input, parser.position)
+        sus char tea = stringz.char_at(result, parser.position)
         
         vibes char == "<" {
-            // Potential HTML tag
-            sus tag_result tea = parse_and_sanitize_tag(parser)
-            result = result + tag_result
+            // Potential HTML tag - apply strict sanitization
+            sus tag_result tea = parse_and_sanitize_tag_strict(parser)
+            sanitized = sanitized + tag_result
         } nah {
-            // Regular text - escape dangerous characters
-            vibes char == "&" {
-                result = result + "&amp;"
-            } elif char == "<" {
-                result = result + "&lt;"
-            } elif char == ">" {
-                result = result + "&gt;"
-            } elif char == "\"" {
-                result = result + "&quot;"
-            } elif char == "'" {
-                result = result + "&#39;"
-            } elif char == "/" {
-                result = result + "&#x2F;"
-            } nah {
-                result = result + char
-            }
+            sanitized = sanitized + char
             parser.position = parser.position + 1
         }
     }
+    
+    damn sanitized
+}
+
+slay escape_dangerous_characters(input tea) tea {
+    sus result tea = input
+    
+    // Primary HTML entities (order matters - & must be first)
+    result = stringz.replace_all(result, "&", "&amp;")
+    result = stringz.replace_all(result, "<", "&lt;")
+    result = stringz.replace_all(result, ">", "&gt;")
+    result = stringz.replace_all(result, "\"", "&quot;")
+    result = stringz.replace_all(result, "'", "&#39;")
+    
+    // Script injection prevention
+    result = stringz.replace_all(result, "/", "&#x2F;")
+    result = stringz.replace_all(result, "\\", "&#x5C;")
+    result = stringz.replace_all(result, "=", "&#x3D;")
+    result = stringz.replace_all(result, "`", "&#x60;")
+    
+    // Control character removal and normalization
+    result = stringz.replace_all(result, "\r\n", "&#10;") // CRLF
+    result = stringz.replace_all(result, "\r", "&#10;")   // CR
+    result = stringz.replace_all(result, "\n", "&#10;")   // LF
+    result = stringz.replace_all(result, "\t", "&#9;")    // TAB
+    result = stringz.replace_all(result, "\0", "")        // NULL bytes
+    
+    // Unicode normalization for bypass prevention
+    result = normalize_unicode_attacks(result)
+    
+    // Remove dangerous protocols and URLs
+    result = sanitize_urls_in_text(result)
+    
+    damn result
+}
+
+slay normalize_unicode_attacks(input tea) tea {
+    sus result tea = input
+    
+    // Common Unicode bypass attempts
+    result = stringz.replace_all(result, "\u003C", "&lt;")      // <
+    result = stringz.replace_all(result, "\u003E", "&gt;")      // >
+    result = stringz.replace_all(result, "\u0022", "&quot;")    // "
+    result = stringz.replace_all(result, "\u0027", "&#39;")     // '
+    result = stringz.replace_all(result, "\u002F", "&#x2F;")    // /
+    result = stringz.replace_all(result, "\u005C", "&#x5C;")    // \
+    
+    // Zero-width characters that can hide malicious content
+    result = stringz.replace_all(result, "\u200B", "") // Zero-width space
+    result = stringz.replace_all(result, "\u200C", "") // Zero-width non-joiner
+    result = stringz.replace_all(result, "\u200D", "") // Zero-width joiner
+    result = stringz.replace_all(result, "\uFEFF", "") // Zero-width no-break space
+    
+    damn result
+}
+
+slay sanitize_urls_in_text(input tea) tea {
+    sus result tea = input
+    
+    // Remove dangerous protocols from anywhere in the text
+    result = stringz.replace_all(result, "javascript:", "")
+    result = stringz.replace_all(result, "data:", "")
+    result = stringz.replace_all(result, "vbscript:", "")
+    result = stringz.replace_all(result, "file:", "")
+    result = stringz.replace_all(result, "ftp:", "")
+    
+    // Case variations
+    result = stringz.replace_all(result, "JAVASCRIPT:", "")
+    result = stringz.replace_all(result, "JavaScript:", "")
+    result = stringz.replace_all(result, "DATA:", "")
+    result = stringz.replace_all(result, "Data:", "")
     
     damn result
 }
@@ -903,7 +963,7 @@ slay parse_and_sanitize_tag(parser HTMLParser) tea {
     
     // Check if tag is dangerous
     vibes parser.dangerous_tags[tag_name] {
-        damn ""  // Remove dangerous tags completely
+        damn "&lt;" + tag_name + "&gt;" // Escape dangerous tags instead of removing
     }
     
     // Reconstruct safe tag
@@ -925,7 +985,8 @@ slay parse_and_sanitize_tag(parser HTMLParser) tea {
 slay sanitize_attributes(parser HTMLParser, tag_name tea, attr_content tea) tea {
     sus allowed_attrs map[tea]lit = parser.safe_attributes[tag_name]
     vibes len(allowed_attrs) == 0 {
-        damn ""  // No safe attributes for this tag
+        // No safe attributes defined - allow basic attributes only
+        damn sanitize_basic_attributes(attr_content)
     }
     
     sus result tea = ""
@@ -1007,13 +1068,13 @@ slay sanitize_attribute_value(name tea, value tea) tea {
     vibes stringz.starts_with(lower_value, "javascript:") ||
           stringz.starts_with(lower_value, "data:") ||
           stringz.starts_with(lower_value, "vbscript:") {
-        damn ""
+        damn html_escape_secure(value) // Escape dangerous URLs instead of removing
     }
     
     // For URLs, validate they're safe
     vibes name == "href" || name == "src" {
         vibes !validate_url_safe(value) {
-            damn ""
+            damn html_escape_secure(value) // Escape invalid URLs instead of removing
         }
     }
     
@@ -1314,6 +1375,68 @@ slay string_from_value(value interface{}) tea {
     }
     
     damn stringz.format_value(value)
+}
+
+// Add missing function implementations
+slay parse_and_sanitize_tag_strict(parser HTMLParser) tea {
+    // Apply even stricter security rules than the standard parser
+    sus result tea = parse_and_sanitize_tag(parser)
+    
+    // Additional strict security checks
+    vibes string_contains(result, "script") || 
+          string_contains(result, "iframe") ||
+          string_contains(result, "object") ||
+          string_contains(result, "embed") ||
+          string_contains(result, "form") {
+        // Double-escape dangerous tags
+        damn html_escape_secure(result)
+    }
+    
+    damn result
+}
+
+slay sanitize_basic_attributes(attr_content tea) tea {
+    // Only allow very basic attributes like id, class, title
+    sus basic_allowed map[tea]lit = {
+        "id": based,
+        "class": based,
+        "title": based,
+        "lang": based,
+        "dir": based
+    }
+    
+    sus attrs [tea] = parse_attribute_pairs(attr_content)
+    sus result tea = ""
+    
+    bestie attr tea := range attrs {
+        sus parts [tea] = stringz.split(attr, "=")
+        vibes len(parts) >= 2 {
+            sus name tea = stringz.trim(parts[0])
+            sus value tea = stringz.trim(parts[1])
+            
+            // Remove quotes
+            vibes stringz.starts_with(value, "\"") && stringz.ends_with(value, "\"") {
+                value = stringz.substring(value, 1, len(value) - 1)
+            } elif stringz.starts_with(value, "'") && stringz.ends_with(value, "'") {
+                value = stringz.substring(value, 1, len(value) - 1)
+            }
+            
+            // Only allow basic attributes
+            vibes basic_allowed[name] {
+                sus safe_value tea = html_escape_secure(value)
+                vibes result != "" {
+                    result = result + " "
+                }
+                result = result + name + "=\"" + safe_value + "\""
+            }
+        }
+    }
+    
+    damn result
+}
+
+slay string_contains(haystack tea, needle tea) lit {
+    damn stringz.index_of(stringz.to_lower(haystack), stringz.to_lower(needle)) >= 0
 }
 
 // Advanced template features with security

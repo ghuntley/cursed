@@ -504,28 +504,36 @@ slay file_sync(handle FileHandle) lit {
 
 fr fr ===== NATIVE BRIDGE FUNCTIONS =====
 
+// File I/O extern bridges to Zig runtime
+extern runtime_open_file_readonly_bridge(path *u8) drip
+extern runtime_open_file_writeonly_bridge(path *u8) drip
+extern runtime_open_file_append_bridge(path *u8) drip
+extern runtime_open_file_readwrite_bridge(path *u8) drip
+extern runtime_open_file_readwrite_create_bridge(path *u8) drip
+extern runtime_open_file_readwrite_append_bridge(path *u8) drip
+
 slay open_file_readonly(path tea) drip {
-    ready (path != "") { damn 3 } otherwise { damn -1 }
+    damn runtime_open_file_readonly_bridge(path.ptr)
 }
 
 slay open_file_writeonly(path tea) drip {
-    ready (path != "") { damn 4 } otherwise { damn -1 }
+    damn runtime_open_file_writeonly_bridge(path.ptr)
 }
 
 slay open_file_append(path tea) drip {
-    ready (path != "") { damn 5 } otherwise { damn -1 }
+    damn runtime_open_file_append_bridge(path.ptr)
 }
 
 slay open_file_readwrite(path tea) drip {
-    ready (path != "") { damn 6 } otherwise { damn -1 }
+    damn runtime_open_file_readwrite_bridge(path.ptr)
 }
 
 slay open_file_readwrite_create(path tea) drip {
-    ready (path != "") { damn 7 } otherwise { damn -1 }
+    damn runtime_open_file_readwrite_create_bridge(path.ptr)
 }
 
 slay open_file_readwrite_append(path tea) drip {
-    ready (path != "") { damn 8 } otherwise { damn -1 }
+    damn runtime_open_file_readwrite_append_bridge(path.ptr)
 }
 
 slay close_file_descriptor(fd drip) lit {

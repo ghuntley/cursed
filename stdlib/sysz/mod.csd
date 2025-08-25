@@ -1,6 +1,7 @@
 yeet "atomic_drip"
 yeet "memory"
 yeet "vibez"
+yeet "runtime_os_bridge"
 
 fr fr =============================================================================
 fr fr SYSZ MODULE - OS System Calls and Platform Abstraction Layer
@@ -138,25 +139,29 @@ fr fr ==========================================================================
 fr fr LINUX SYSTEM CALLS - Direct syscall interface
 fr fr =============================================================================
 
-fr fr Low-level system call wrapper (would be implemented in assembly/FFI)
+fr fr Low-level system call wrapper - Direct OS integration
 slay syscall(syscall_number normie, arg1 thicc, arg2 thicc, arg3 thicc, arg4 thicc, arg5 thicc, arg6 thicc) thicc {
-    fr fr In real implementation, this would use inline assembly:
-    fr fr asm volatile ("syscall" : "=a" (result) : "a" (syscall_number), "D" (arg1), "S" (arg2), "d" (arg3), "r10" (arg4), "r8" (arg5), "r9" (arg6) : "rcx", "r11", "memory");
-    fr fr For now, we simulate the syscall behavior
+    fr fr Direct system call via runtime bridge
+    sus result thicc = cursed_runtime_syscall(syscall_number, arg1, arg2, arg3, arg4, arg5, arg6)
     
+    fr fr Handle special case syscalls
     ready syscall_number == SYS_GETTID {
-        damn get_current_thread_id_fallback()
+        damn cursed_runtime_gettid()
     }
     otherwise ready syscall_number == SYS_SCHED_YIELD {
-        fr fr Simulate yield by returning 0 (success)
-        damn 0
+        damn cursed_runtime_sched_yield()
     }
     otherwise ready syscall_number == SYS_CLOCK_GETTIME {
-        fr fr Return simulated monotonic time
-        damn get_simulated_monotonic_time()
+        damn cursed_runtime_clock_gettime_monotonic()
+    }
+    otherwise ready syscall_number == SYS_FUTEX {
+        damn cursed_runtime_futex(arg1, arg2, arg3, arg4, arg5, arg6)
+    }
+    otherwise ready syscall_number == SYS_CLONE {
+        damn cursed_runtime_clone(arg1, arg2, arg3, arg4, arg5, arg6)
     }
     otherwise {
-        damn -1  // ENOSYS - not implemented
+        damn result  fr fr Return actual syscall result
     }
 }
 
@@ -181,10 +186,18 @@ slay sched_yield() normie {
 
 fr fr Get monotonic time using clock_gettime()
 slay clock_gettime_monotonic_ns() thicc {
-    fr fr In real implementation would use clock_gettime(CLOCK_MONOTONIC, &timespec)
-    fr fr and convert to nanoseconds
-    sus result thicc = syscall(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, 0, 0, 0, 0, 0)
-    damn result * 1000000000 + 123456789  // Simulated nanoseconds
+    fr fr Real monotonic time via runtime bridge
+    sus timespec_ptr thicc = cursed_runtime_alloc_timespec()
+    sus result normie = syscall(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, timespec_ptr, 0, 0, 0, 0)
+    
+    lowkey result != 0 {
+        cursed_runtime_free_timespec(timespec_ptr)
+        damn -1  fr fr Clock gettime failed
+    }
+    
+    sus nanoseconds thicc = cursed_runtime_timespec_to_ns(timespec_ptr)
+    cursed_runtime_free_timespec(timespec_ptr)
+    damn nanoseconds
 }
 
 fr fr Linux thread creation using clone()
