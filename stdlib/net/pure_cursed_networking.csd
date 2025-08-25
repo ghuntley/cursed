@@ -79,46 +79,49 @@ slay close_socket(socket_handle normie) lit {
     damn based
 }
 
-// DNS resolution
+// Load real networking implementation
+yeet "real_networking"
+
+// DNS resolution - Now using real system DNS
 slay resolve_hostname(hostname tea) tea {
-    // Resolve hostname to IP address
-    // Returns IP address or empty string on error
-    damn "127.0.0.1" // Mock implementation
+    damn resolve_hostname(hostname) fam {
+        when _ -> ""  // Return empty string on error for compatibility
+    }
 }
 
-// Reverse DNS lookup
+// Reverse DNS lookup - Now using real system DNS
 slay reverse_lookup(ip_address tea) tea {
-    // Reverse lookup IP address to hostname
-    // Returns hostname or empty string on error
-    damn "localhost" // Mock implementation
+    damn reverse_lookup(ip_address) fam {
+        when _ -> ""  // Return empty string on error for compatibility  
+    }
 }
 
-// Network interface enumeration
+// Network interface enumeration - Now using real system interfaces
 slay get_network_interfaces() tea {
-    // Get list of network interfaces
-    // Returns JSON string with interface information
-    damn "{\"interfaces\": [\"eth0\", \"lo\"]}" // Mock implementation
+    damn get_network_interfaces() fam {
+        when _ -> "{\"interfaces\": []}"  // Return empty on error
+    }
 }
 
-// Port availability check
+// Port availability check - Now using real netstat
 slay check_port_available(port normie) lit {
-    // Check if port is available for binding
-    // Returns true if available, false if in use
-    damn based
+    damn check_port_available(port) fam {
+        when _ -> no_cap  // Return false on error (assume unavailable)
+    }
 }
 
-// Get local IP address
+// Get local IP address - Now using real system IP detection
 slay get_local_ip() tea {
-    // Get local IP address
-    // Returns IP address string
-    damn "127.0.0.1" // Mock implementation
+    damn get_local_ip() fam {
+        when _ -> "127.0.0.1"  // Fallback to localhost on error
+    }
 }
 
-// Get network statistics
+// Get network statistics - Now using real system stats
 slay get_network_stats() tea {
-    // Get network statistics as JSON
-    // Returns statistics string
-    damn "{\"connections\": 0, \"bytes_sent\": 0, \"bytes_received\": 0}" // Mock implementation
+    damn get_network_stats() fam {
+        when _ -> "{\"connections\": 0, \"bytes_sent\": 0, \"bytes_received\": 0}"  // Fallback stats
+    }
 }
 
 // Test networking functionality

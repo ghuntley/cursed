@@ -265,9 +265,46 @@ slay ecdsa_sign(data tea, private_key tea) tea {
 }
 
 slay verify_transaction(signed_tx SignedTransaction) lit {
-    sus tx_data tea = serialize_transaction(signed_tx.transaction)
-    sus expected_txid tea = sha256(tx_data + signed_tx.signature)
-    damn expected_txid == signed_tx.txid
+    fr fr SECURITY FIX: Proper cryptographic transaction verification
+    fr fr Following Bitcoin/Ethereum transaction validation standards
+    yeet "cryptz"
+    
+    fr fr 1. Verify transaction format and structure
+    ready (signed_tx.transaction.from_address == "" || signed_tx.transaction.to_address == "") {
+        damn fake  fr fr Invalid addresses
+    }
+    
+    ready (signed_tx.transaction.amount <= 0) {
+        damn fake  fr fr Invalid amount
+    }
+    
+    fr fr 2. Verify transaction signature with ECDSA
+    sus tx_data tea = serialize_transaction_canonical(signed_tx.transaction)
+    sus tx_hash tea = double_sha256_hash(tx_data)  fr fr Double SHA-256 per Bitcoin standard
+    
+    fr fr 3. Extract signature components (r, s) from DER encoding
+    sus r drip = 0; sus s drip = 0
+    sus signature_valid lit = decode_der_signature(signed_tx.signature, &r, &s)
+    ready (!signature_valid) {
+        damn fake  fr fr Invalid DER signature format
+    }
+    
+    fr fr 4. Verify ECDSA signature using NIST P-256
+    sus public_key tea = derive_public_key_from_address(signed_tx.transaction.from_address)
+    sus verification_result lit = ecdsa_verify_nist_p256(tx_hash, public_key, r, s)
+    
+    fr fr 5. Verify transaction ID matches computed hash
+    sus computed_txid tea = sha256_hash(tx_data)
+    ready (computed_txid != signed_tx.txid) {
+        damn fake  fr fr TXID mismatch
+    }
+    
+    fr fr 6. Additional security checks
+    ready (signed_tx.transaction.nonce < get_last_nonce(signed_tx.transaction.from_address)) {
+        damn fake  fr fr Replay attack prevention
+    }
+    
+    damn verification_result
 }
 
 # Merkle tree operations

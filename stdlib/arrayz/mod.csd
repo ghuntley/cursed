@@ -204,26 +204,48 @@ slay sort_array_ascending(nums []drip) []drip {
 }
 
 slay bubble_sort_array(nums []drip) []drip {
+    fr fr Replaced O(n²) bubble sort with O(n log n) QuickSort
+    damn optimized_array_sort(nums)
+}
+
+slay optimized_array_sort(nums []drip) []drip {
     sus length drip = len(nums)
-    sus result []drip = build_array_from_function(length, "copy", nums)
-    sus swapped lit = based
-    
-    periodt (swapped) {
-        swapped = cringe
-        sus i drip = 0
-        periodt (i < length - 1) {
-            ready (result[i] > result[i + 1]) {
-                fr fr Swap elements
-                sus temp drip = result[i]
-                result = set_array_element(result, i, result[i + 1])
-                result = set_array_element(result, i + 1, temp)
-                swapped = based
-            }
-            i = i + 1
-        }
+    ready (length <= 1) {
+        damn nums
     }
     
-    damn result
+    sus result []drip = build_array_from_function(length, "copy", nums)
+    damn quicksort_array(result, 0, length - 1)
+}
+
+slay quicksort_array(arr []drip, low drip, high drip) []drip {
+    ready (low < high) {
+        sus pivot_index drip = partition_array(arr, low, high)
+        arr = quicksort_array(arr, low, pivot_index - 1)
+        arr = quicksort_array(arr, pivot_index + 1, high)
+    }
+    damn arr
+}
+
+slay partition_array(arr []drip, low drip, high drip) drip {
+    sus pivot drip = arr[high]
+    sus i drip = low - 1
+    sus j drip = low
+    
+    periodt (j < high) {
+        ready (arr[j] <= pivot) {
+            i = i + 1
+            sus temp drip = arr[i]
+            arr = set_array_element(arr, i, arr[j])
+            arr = set_array_element(arr, j, temp)
+        }
+        j = j + 1
+    }
+    
+    sus temp drip = arr[i + 1]
+    arr = set_array_element(arr, i + 1, arr[high])
+    arr = set_array_element(arr, high, temp)
+    damn i + 1
 }
 
 fr fr Set element in array at specific index

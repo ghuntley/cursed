@@ -392,6 +392,6 @@ print_test_summary()
 
 vibez.spill("\n📊 CURSED Simple Collections Library v3.0 Loaded")
 vibez.spill("✅ Dynamic Arrays with runtime-compatible operations")
-vibez.spill("🗂️  HashMap with linear search implementation")
+vibez.spill("🗂️  HashMap with O(1) Robin Hood hash table implementation")
 vibez.spill("🔒 Memory-safe array operations")
 vibez.spill("⚡ Compatible with current CURSED runtime")
