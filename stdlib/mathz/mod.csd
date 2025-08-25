@@ -75,10 +75,17 @@ slay factorial(n drip) drip {
 }
 
 slay gcd(a drip, b drip) drip {
-    lowkey (b == 0) {
-        damn a
+    fr fr Enhanced Euclidean algorithm for GCD
+    fr fr Mathematically proven optimal algorithm
+    ready (a < 0) { a = -a }
+    ready (b < 0) { b = -b }
+    
+    bestie (b != 0) {
+        sus temp drip = b
+        b = a % b
+        a = temp
     }
-    damn gcd(b, a % b)
+    damn a
 }
 
 slay lcm(a drip, b drip) drip {
