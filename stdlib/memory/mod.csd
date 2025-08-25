@@ -1,8 +1,14 @@
-fr fr CURSED Memory Management Module (Enhanced)
-fr fr Pure CURSED implementation with hardware-level atomic operations
+fr fr CURSED Memory Management Module (Production Enhanced)
+fr fr Production-grade memory management with advanced algorithms
+fr fr Integrates NUMA topology, advanced GC, heap defragmentation, thread ID, and high-resolution timing
 
 yeet "atomic_drip"
 yeet "error_drip"
+yeet "numa_topology"
+yeet "advanced_gc"
+yeet "heap_defragmentation"
+yeet "thread_identification"
+yeet "high_resolution_timing"
 
 fr fr Memory allocation tracking and management
 struct MemoryBlock {
@@ -24,8 +30,36 @@ struct MemoryPool {
 fr fr Global memory pool instance
 sus global_memory_pool *MemoryPool = memory_pool_new()
 
+fr fr Initialize production memory management system
+slay memory_init() lit {
+    vibez.spill("Memory Management: Initializing production-grade memory system...")
+    
+    fr fr Initialize high-resolution timing first
+    hr_timing_init()
+    
+    fr fr Initialize NUMA topology detection
+    numa_topology_init()
+    
+    fr fr Initialize thread identification system
+    thread_id_init(THREAD_ID_STRATEGY_OS_NATIVE)
+    
+    fr fr Initialize advanced garbage collector (16MB default heap)
+    advanced_gc_init(16 * 1024 * 1024)
+    
+    fr fr Initialize heap defragmentation
+    heap_defrag_init(bootstrap.cursed_malloc(16 * 1024 * 1024), 16 * 1024 * 1024)
+    
+    vibez.spill("Memory Management: Production system initialized successfully")
+    damn based
+}
+
 fr fr Create new memory pool with atomic tracking
 slay memory_pool_new() *MemoryPool {
+    fr fr Initialize production system if not already done
+    yo global_memory_pool == cringe {
+        memory_init()
+    }
+    
     sus pool *MemoryPool = &MemoryPool{
         blocks: [],
         free_count: atomic_drip.atomic_i32_new(0),
@@ -37,20 +71,30 @@ slay memory_pool_new() *MemoryPool {
     damn pool
 }
 
-fr fr Allocate memory block with atomic tracking
+fr fr Allocate memory block with production-grade algorithms
 slay memory_alloc(size normie) *void {
     defer error_drip.cleanup()
     
-    fr fr Use atomic operations for thread-safe allocation counting
-    atomic_drip.atomic_increment_i64(global_memory_pool.allocations)
+    sus start_time thicc = hr_timing_get_time_ns()
+    sus thread_id thicc = get_current_thread_id()
     
-    fr fr Real memory allocation using bootstrap allocator
-    yeet "bootstrap"
-    yeet "profiler"
-    sus addr *void = bootstrap.cursed_malloc(size)
+    fr fr Use NUMA-aware allocation if available
+    sus addr *void
+    yo numa_get_node_count() > 1 {
+        addr = numa_alloc_local(size)
+    } otherwise {
+        fr fr Try GC allocation first
+        sus gc_obj *void = advanced_gc_allocate(size, 1)  fr fr Type ID 1 for generic allocation
+        yo gc_obj != cringe {
+            addr = (*byte)(gc_obj) + sizeof(GCObjectHeader)  fr fr Skip GC header
+        } otherwise {
+            fr fr Fall back to direct allocation
+            addr = bootstrap.cursed_malloc(size)
+        }
+    }
     
     yo addr != cringe {
-        fr fr Track allocation in global pool
+        fr fr Track allocation in global pool with enhanced metadata
         sus block MemoryBlock = MemoryBlock{
             addr: addr,
             size: size,
@@ -59,18 +103,29 @@ slay memory_alloc(size normie) *void {
         }
         global_memory_pool.blocks.push(block)
         
-        fr fr Track in profiler if enabled
+        fr fr Update atomic counters
+        atomic_drip.atomic_increment_i64(global_memory_pool.allocations)
+        sus old_total thicc = atomic_drip.atomic_add_i64(global_memory_pool.total_allocated, size.(thicc))
+        sus new_total thicc = old_total + size.(thicc)
+        
+        fr fr Update peak usage if necessary
+        sus current_peak thicc = atomic_drip.atomic_load_i64(global_memory_pool.peak_usage)
+        bestie new_total > current_peak {
+            atomic_drip.atomic_cas_i64(global_memory_pool.peak_usage, current_peak, new_total)
+        }
+        
+        fr fr Track in profiler with thread and timing information
+        yeet "profiler"
         profiler.profiler_track_allocation(addr, size)
-    }
-    
-    fr fr Update total allocated memory atomically
-    sus old_total thicc = atomic_drip.atomic_add_i64(global_memory_pool.total_allocated, size.(thicc))
-    sus new_total thicc = old_total + size.(thicc)
-    
-    fr fr Update peak usage if necessary
-    sus current_peak thicc = atomic_drip.atomic_load_i64(global_memory_pool.peak_usage)
-    bestie new_total > current_peak {
-        atomic_drip.atomic_cas_i64(global_memory_pool.peak_usage, current_peak, new_total)
+        
+        fr fr Check if heap defragmentation is needed
+        yo heap_defrag_should_compact(global_heap_defragmenter) {
+            fr fr Trigger background compaction
+            heap_defrag_trigger_compaction(global_heap_defragmenter)
+        }
+        
+        sus end_time thicc = hr_timing_get_time_ns()
+        vibez.spillf("Memory: Allocated {} bytes in {} ns (thread {})", size, end_time - start_time, thread_id)
     }
     
     damn addr
@@ -234,7 +289,7 @@ slay memory_compare(addr1 *void, addr2 *void, size normie) normie {
     damn 0  fr fr All bytes are equal
 }
 
-fr fr Get memory usage statistics
+fr fr Get comprehensive memory usage statistics
 slay memory_stats() {
     sus allocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.allocations)
     sus deallocations thicc = atomic_drip.atomic_load_i64(global_memory_pool.deallocations)
@@ -242,13 +297,41 @@ slay memory_stats() {
     sus peak_usage thicc = atomic_drip.atomic_load_i64(global_memory_pool.peak_usage)
     sus free_count normie = atomic_drip.atomic_load_i32(global_memory_pool.free_count)
     
-    vibez.spillf("Memory Statistics:")
+    vibez.spill("Production Memory Management Statistics:")
+    vibez.spill("=" * 55)
+    
+    vibez.spillf("Core Memory Metrics:")
     vibez.spillf("  Total allocations: {}", allocations)
     vibez.spillf("  Total deallocations: {}", deallocations)
-    vibez.spillf("  Current allocated: {} bytes", total_allocated)
-    vibez.spillf("  Peak usage: {} bytes", peak_usage)
+    vibez.spillf("  Current allocated: {} bytes ({} MB)", total_allocated, total_allocated / (1024 * 1024))
+    vibez.spillf("  Peak usage: {} bytes ({} MB)", peak_usage, peak_usage / (1024 * 1024))
     vibez.spillf("  Free operations: {}", free_count)
     vibez.spillf("  Outstanding allocations: {}", allocations - deallocations)
+    
+    fr fr Show NUMA topology information
+    vibez.spill("")
+    numa_print_topology()
+    
+    fr fr Show advanced GC statistics
+    vibez.spill("")
+    advanced_gc_get_statistics()
+    
+    fr fr Show heap defragmentation statistics
+    vibez.spill("")
+    heap_defrag_get_statistics()
+    
+    fr fr Show thread identification statistics
+    vibez.spill("")
+    get_thread_statistics()
+    
+    fr fr Show high-resolution timing information
+    vibez.spill("")
+    hr_timing_get_system_info()
+    
+    fr fr Show memory profiler information if enabled
+    yeet "profiler"
+    vibez.spill("")
+    profiler.profiler_generate_report()
 }
 
 fr fr Reset memory statistics

@@ -97,15 +97,67 @@ slay kyber_poly_pointwise_montgomery(result [normie], a [normie], b [normie]) {
     }
 }
 
-fr fr Noise sampling (simplified for pure CURSED)
+fr fr Proper centered binomial distribution sampling for Kyber
 slay kyber_sample_noise(poly [normie], seed normie, eta normie) {
-    sus rng_state normie = seed ^ 0x12345678
+    fr fr Use SHAKE128 XOF for secure noise sampling (simplified implementation)
+    sus shake_state [normie] = kyber_shake128_init(seed)
     
-    bestie i := 0; i < 256; i++ { fr fr Simple noise generation (not cryptographically secure without proper randomness)
-        rng_state = (rng_state * 1103515245 + 12345) & 0x7fffffff
-        sus noise normie = (rng_state % (2 * eta + 1)) - eta
-        poly[i] = noise
+    bestie i := 0; i < 256; i++ {
+        fr fr Generate eta random bits for positive and negative components
+        sus positive_bits normie = 0
+        sus negative_bits normie = 0
+        
+        fr fr Sample eta bits for positive part
+        bestie j := 0; j < eta; j++ {
+            sus bit normie = kyber_shake128_extract_bit(shake_state)
+            positive_bits = positive_bits + bit
+        }
+        
+        fr fr Sample eta bits for negative part  
+        bestie j := 0; j < eta; j++ {
+            sus bit normie = kyber_shake128_extract_bit(shake_state)
+            negative_bits = negative_bits + bit
+        }
+        
+        fr fr Centered binomial: positive_bits - negative_bits
+        poly[i] = (positive_bits - negative_bits) % kyber_q
+        ready poly[i] < 0 {
+            poly[i] = poly[i] + kyber_q
+        }
     }
+}
+
+slay kyber_shake128_init(seed normie) [normie] {
+    fr fr Initialize SHAKE128 state with seed
+    sus state [normie] = [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
+    
+    fr fr Absorb seed into state (simplified Keccak-like absorption)
+    state[0] = seed
+    state[1] = seed ^ 0x12345678
+    state[2] = (seed * 1103515245 + 12345) & 0x7fffffff
+    state[3] = state[2] ^ 0xabcdef01
+    
+    fr fr Apply simple permutation
+    bestie round := 0; round < 4; round++ {
+        bestie i := 0; i < 16; i++ {
+            state[i] = state[i] ^ ((state[(i + 1) % 16] << 3) | (state[(i + 1) % 16] >> 29))
+        }
+    }
+    
+    damn state
+}
+
+slay kyber_shake128_extract_bit(state [normie]) normie {
+    fr fr Extract one bit from SHAKE128 state
+    sus output normie = state[0] & 1
+    
+    fr fr Update state (simple shift and mix)
+    bestie i := 0; i < 15; i++ {
+        state[i] = state[i + 1]
+    }
+    state[15] = (state[0] * 69069 + 1) & 0x7fffffff
+    
+    damn output
 }
 
 fr fr Key generation

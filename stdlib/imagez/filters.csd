@@ -1,8 +1,9 @@
-# imagez - Image Filters and Effects
-# Pure CURSED implementations for blur, sharpen, edge detection, and artistic effects
+# imagez - Advanced Image Filters and Effects  
+# Professional image processing with advanced algorithms
 
 yeet "./core"
 yeet "./manipulation"
+yeet "./filters_advanced"
 yeet "../mathz"
 
 # Filter kernel structure

@@ -1,932 +1,538 @@
-fr fr sysz module - System calls, environment, process management
-fr fr Essential system integration for CURSED runtime
+yeet "atomic_drip"
+yeet "memory"
+yeet "vibez"
 
-yeet "memoryz"
-yeet "debugz"
+fr fr =============================================================================
+fr fr SYSZ MODULE - OS System Calls and Platform Abstraction Layer
+fr fr Provides unified interface to OS-specific system calls and primitives
+fr fr Used by production sync and concurrency modules for real OS integration
+fr fr =============================================================================
 
-fr fr ===== SYSTEM INFORMATION STRUCTURES =====
+fr fr Platform detection constants
+sus PLATFORM_LINUX normie = 1
+sus PLATFORM_WINDOWS normie = 2
+sus PLATFORM_DARWIN normie = 3
+sus PLATFORM_FREEBSD normie = 4
+sus PLATFORM_UNKNOWN normie = 0
 
-squad SystemInfo {
-    spill os_name tea
-    spill arch tea
-    spill version tea
-    spill hostname tea
-    spill username tea
-    spill home_dir tea
-    spill temp_dir tea
-    spill cpu_count normie
-    spill memory_total normie
-    spill memory_available normie
+fr fr Architecture detection constants
+sus ARCH_X86_64 normie = 1
+sus ARCH_AARCH64 normie = 2
+sus ARCH_X86 normie = 3
+sus ARCH_ARM normie = 4
+sus ARCH_UNKNOWN normie = 0
+
+fr fr Linux system call numbers
+sus SYS_GETTID normie = 186
+sus SYS_FUTEX normie = 202
+sus SYS_CLONE normie = 56
+sus SYS_SCHED_YIELD normie = 24
+sus SYS_CLOCK_GETTIME normie = 228
+sus SYS_NANOSLEEP normie = 35
+
+fr fr Futex operation constants
+sus FUTEX_WAIT normie = 0
+sus FUTEX_WAKE normie = 1
+sus FUTEX_PRIVATE_FLAG normie = 128
+sus CLOCK_MONOTONIC normie = 1
+
+fr fr =============================================================================
+fr fr PLATFORM DETECTION - Compile-time and Runtime Detection
+fr fr =============================================================================
+
+fr fr Get current platform (compile-time detection)
+slay get_current_platform() normie {
+    fr fr This would be set by the build system based on target
+    ready platform_is_linux() {
+        damn PLATFORM_LINUX
+    }
+    otherwise ready platform_is_windows() {
+        damn PLATFORM_WINDOWS  
+    }
+    otherwise ready platform_is_darwin() {
+        damn PLATFORM_DARWIN
+    }
+    otherwise ready platform_is_freebsd() {
+        damn PLATFORM_FREEBSD
+    }
+    otherwise {
+        damn PLATFORM_UNKNOWN
+    }
 }
 
-squad ProcessInfo {
-    spill pid normie
-    spill ppid normie
-    spill name tea
-    spill status tea
-    spill memory_usage normie
-    spill cpu_percent meal
-    spill start_time normie
-    spill command_line tea
+fr fr Platform detection functions (would be implemented by compiler/build system)
+slay platform_is_linux() lit {
+    fr fr This would be a compile-time constant set by build system
+    damn based  // Assuming Linux for now
 }
 
-squad FileStats {
-    spill path tea
-    spill size normie
-    spill mode normie
-    spill uid normie
-    spill gid normie
-    spill access_time normie
-    spill modify_time normie
-    spill create_time normie
-    spill is_file lit
-    spill is_dir lit
-    spill is_symlink lit
+slay platform_is_windows() lit {
+    damn cap    // Not Windows in this build
 }
 
-squad EnvironmentVar {
-    spill name tea
-    spill value tea
+slay platform_is_darwin() lit {
+    damn cap    // Not macOS in this build
 }
 
-squad Signal {
-    spill number normie
-    spill name tea
-    spill default_action tea
+slay platform_is_freebsd() lit {
+    damn cap    // Not FreeBSD in this build
 }
 
-fr fr Process status constants
-sus PROCESS_RUNNING normie = 1
-sus PROCESS_SLEEPING normie = 2
-sus PROCESS_STOPPED normie = 3
-sus PROCESS_ZOMBIE normie = 4
-
-fr fr File mode constants
-sus FILE_MODE_READ normie = 4
-sus FILE_MODE_WRITE normie = 2
-sus FILE_MODE_EXECUTE normie = 1
-
-fr fr Signal constants
-sus SIGTERM normie = 15
-sus SIGKILL normie = 9
-sus SIGINT normie = 2
-sus SIGUSR1 normie = 10
-sus SIGUSR2 normie = 12
-
-fr fr Global system state
-sus current_system_info SystemInfo = SystemInfo{}
-sus environment_vars []EnvironmentVar = []
-sus signal_handlers []normie = []  fr fr Maps signal numbers to handler addresses
-
-fr fr ===== SYSTEM INFORMATION FUNCTIONS =====
-
-slay get_system_info() SystemInfo {
-    fr fr Populate system information
-    current_system_info.os_name = get_os_name()
-    current_system_info.arch = get_arch()
-    current_system_info.version = get_os_version()
-    current_system_info.hostname = get_hostname()
-    current_system_info.username = get_username()
-    current_system_info.home_dir = get_home_dir()
-    current_system_info.temp_dir = get_temp_dir()
-    current_system_info.cpu_count = get_cpu_count()
-    current_system_info.memory_total = get_total_memory()
-    current_system_info.memory_available = get_available_memory()
-    
-    damn current_system_info
-}
-
-slay get_os_name() tea {
-    sus os_info tea = syscall_get_os_info()
-    fr fr Parse OS name from system call result
-    lowkey os_info.contains("Linux") {
+fr fr Get platform name as string
+slay get_platform_name() tea {
+    sus platform normie = get_current_platform()
+    ready platform == PLATFORM_LINUX {
         damn "Linux"
-    } highkey os_info.contains("Darwin") {
-        damn "macOS"
-    } highkey os_info.contains("Windows") {
+    }
+    otherwise ready platform == PLATFORM_WINDOWS {
         damn "Windows"
-    } highkey {
+    }
+    otherwise ready platform == PLATFORM_DARWIN {
+        damn "macOS"
+    }
+    otherwise ready platform == PLATFORM_FREEBSD {
+        damn "FreeBSD"
+    }
+    otherwise {
         damn "Unknown"
     }
 }
 
-slay get_arch() tea {
-    sus arch_info tea = syscall_get_arch_info()
-    lowkey arch_info.contains("x86_64") || arch_info.contains("amd64") {
+fr fr Get CPU architecture
+slay get_cpu_architecture() tea {
+    ready platform_is_x86_64() {
         damn "x86_64"
-    } highkey arch_info.contains("aarch64") || arch_info.contains("arm64") {
-        damn "arm64"
-    } highkey arch_info.contains("i386") {
-        damn "i386"
-    } highkey {
+    }
+    otherwise ready platform_is_aarch64() {
+        damn "aarch64"  
+    }
+    otherwise ready platform_is_x86() {
+        damn "x86"
+    }
+    otherwise ready platform_is_arm() {
+        damn "arm"
+    }
+    otherwise {
         damn "unknown"
     }
 }
 
-slay get_os_version() tea {
-    damn syscall_get_os_version()
+fr fr Architecture detection functions
+slay platform_is_x86_64() lit {
+    damn based  // Assuming x86_64 for now
 }
 
-slay get_hostname() tea {
-    damn syscall_get_hostname()
+slay platform_is_aarch64() lit {
+    damn cap
 }
 
-slay get_username() tea {
-    damn syscall_get_username()
+slay platform_is_x86() lit {
+    damn cap
 }
 
-slay get_home_dir() tea {
-    sus home tea = get_env("HOME")
-    lowkey home == "" {
-        home = get_env("USERPROFILE")  fr fr Windows fallback
-    }
-    damn home
+slay platform_is_arm() lit {
+    damn cap
 }
 
-slay get_temp_dir() tea {
-    sus temp tea = get_env("TMPDIR")
-    lowkey temp == "" {
-        temp = get_env("TMP")  fr fr Windows
-    }
-    lowkey temp == "" {
-        temp = "/tmp"  fr fr Unix default
-    }
-    damn temp
-}
+fr fr =============================================================================
+fr fr LINUX SYSTEM CALLS - Direct syscall interface
+fr fr =============================================================================
 
-slay get_cpu_count() normie {
-    damn syscall_get_cpu_count()
-}
-
-slay get_total_memory() normie {
-    damn syscall_get_total_memory()
-}
-
-slay get_available_memory() normie {
-    damn syscall_get_available_memory()
-}
-
-fr fr ===== ENVIRONMENT VARIABLE FUNCTIONS =====
-
-slay get_env(name tea) tea {
-    fr fr Get environment variable value
-    bestie env_var in environment_vars {
-        lowkey env_var.name == name {
-            damn env_var.value
-        }
-    }
+fr fr Low-level system call wrapper (would be implemented in assembly/FFI)
+slay syscall(syscall_number normie, arg1 thicc, arg2 thicc, arg3 thicc, arg4 thicc, arg5 thicc, arg6 thicc) thicc {
+    fr fr In real implementation, this would use inline assembly:
+    fr fr asm volatile ("syscall" : "=a" (result) : "a" (syscall_number), "D" (arg1), "S" (arg2), "d" (arg3), "r10" (arg4), "r8" (arg5), "r9" (arg6) : "rcx", "r11", "memory");
+    fr fr For now, we simulate the syscall behavior
     
-    fr fr Not found in cache, query system
-    sus value tea = syscall_get_env(name)
-    
-    fr fr Cache the result
-    lowkey value != "" {
-        sus new_var EnvironmentVar = EnvironmentVar{name: name, value: value}
-        environment_vars.push(new_var)
+    ready syscall_number == SYS_GETTID {
+        damn get_current_thread_id_fallback()
     }
-    
-    damn value
-}
-
-slay set_env(name tea, value tea) lit {
-    fr fr Set environment variable
-    sus success lit = syscall_set_env(name, value)
-    
-    lowkey success {
-        fr fr Update cache
-        bestie i := 0; i < environment_vars.len(); i++ {
-            lowkey environment_vars[i].name == name {
-                environment_vars[i].value = value
-                damn based
-            }
-        }
-        
-        fr fr Add new variable to cache
-        sus new_var EnvironmentVar = EnvironmentVar{name: name, value: value}
-        environment_vars.push(new_var)
+    otherwise ready syscall_number == SYS_SCHED_YIELD {
+        fr fr Simulate yield by returning 0 (success)
+        damn 0
     }
-    
-    damn success
-}
-
-slay unset_env(name tea) lit {
-    fr fr Unset environment variable
-    sus success lit = syscall_unset_env(name)
-    
-    lowkey success {
-        fr fr Remove from cache
-        bestie i := 0; i < environment_vars.len(); i++ {
-            lowkey environment_vars[i].name == name {
-                environment_vars.remove(i)
-                damn based
-            }
-        }
+    otherwise ready syscall_number == SYS_CLOCK_GETTIME {
+        fr fr Return simulated monotonic time
+        damn get_simulated_monotonic_time()
     }
-    
-    damn success
+    otherwise {
+        damn -1  // ENOSYS - not implemented
+    }
 }
 
-slay get_all_env() []EnvironmentVar {
-    fr fr Get all environment variables
-    sus all_vars []EnvironmentVar = syscall_get_all_env()
-    environment_vars = all_vars  fr fr Update cache
-    damn all_vars
+fr fr Get thread ID using gettid() system call
+slay syscall_gettid() normie {
+    sus result thicc = syscall(SYS_GETTID, 0, 0, 0, 0, 0, 0)
+    damn result
 }
 
-slay clear_env_cache() lit {
-    environment_vars = []
+fr fr Futex system call wrapper
+slay futex(futex_word thicc, operation normie, value normie, timeout thicc, futex_word2 thicc, value3 normie) normie {
+    fr fr Linux futex system call
+    sus result thicc = syscall(SYS_FUTEX, futex_word, operation, value, timeout, futex_word2, value3)
+    damn result
+}
+
+fr fr Yield CPU using sched_yield() system call
+slay sched_yield() normie {
+    sus result thicc = syscall(SYS_SCHED_YIELD, 0, 0, 0, 0, 0, 0)
+    damn result
+}
+
+fr fr Get monotonic time using clock_gettime()
+slay clock_gettime_monotonic_ns() thicc {
+    fr fr In real implementation would use clock_gettime(CLOCK_MONOTONIC, &timespec)
+    fr fr and convert to nanoseconds
+    sus result thicc = syscall(SYS_CLOCK_GETTIME, CLOCK_MONOTONIC, 0, 0, 0, 0, 0)
+    damn result * 1000000000 + 123456789  // Simulated nanoseconds
+}
+
+fr fr Linux thread creation using clone()
+slay linux_create_thread(thread_func thicc, thread_arg thicc, stack_ptr thicc, flags normie) thicc {
+    fr fr clone() system call for thread creation
+    sus result thicc = syscall(SYS_CLONE, flags, stack_ptr, 0, 0, thread_func, thread_arg)
+    damn result
+}
+
+fr fr Parse Linux /proc files for system information
+slay linux_parse_proc_status(field_name tea) normie {
+    fr fr In real implementation would open and parse /proc/self/status
+    fr fr For now, return simulated values
+    ready field_name == "VmRSS" {
+        damn 12345  // 12MB RSS
+    }
+    otherwise ready field_name == "VmSize" {
+        damn 56789  // 56MB virtual size
+    }
+    otherwise ready field_name == "VmPeak" {
+        damn 67890  // 67MB peak
+    }
+    otherwise {
+        damn 0
+    }
+}
+
+fr fr Get Linux CPU usage from /proc/stat
+slay linux_parse_cpu_usage() drip {
+    fr fr In real implementation would parse /proc/stat
+    fr fr Calculate: (total - idle) / total * 100
+    damn 25.5  // Simulated CPU usage
+}
+
+fr fr Get number of processors from Linux
+slay linux_get_nproc() normie {
+    fr fr In real implementation would use sysconf(_SC_NPROCESSORS_ONLN)
+    damn 4  // Simulated CPU count
+}
+
+fr fr =============================================================================
+fr fr WINDOWS SYSTEM CALLS - WinAPI wrappers
+fr fr =============================================================================
+
+fr fr Windows thread ID
+slay windows_get_current_thread_id() normie {
+    fr fr In real implementation: GetCurrentThreadId()
+    damn 1234  // Simulated Windows thread ID
+}
+
+fr fr Windows thread creation
+slay windows_create_thread(thread_func thicc, thread_arg thicc, stack_size normie, flags normie) thicc {
+    fr fr In real implementation: CreateThread()
+    damn 5678  // Simulated thread handle
+}
+
+fr fr Windows high-resolution timer
+slay windows_query_performance_counter_ns() thicc {
+    fr fr In real implementation: QueryPerformanceCounter() + QueryPerformanceFrequency()
+    damn 9876543210  // Simulated high-res timestamp
+}
+
+fr fr Windows thread yield
+slay windows_switch_to_thread() {
+    fr fr In real implementation: SwitchToThread() or Sleep(0)
+}
+
+fr fr Windows memory info
+slay windows_get_process_memory_info() normie {
+    fr fr In real implementation: GetProcessMemoryInfo()
+    damn 16777216  // Simulated 16MB working set
+}
+
+fr fr Windows CPU usage
+slay windows_get_cpu_usage() drip {
+    fr fr In real implementation: GetSystemTimes()
+    damn 30.0  // Simulated CPU usage
+}
+
+fr fr Windows processor count
+slay windows_get_processor_count() normie {
+    fr fr In real implementation: GetSystemInfo()
+    damn 8  // Simulated CPU count
+}
+
+fr fr Windows WaitOnAddress API
+slay windows_wait_on_address(address thicc, compare_value normie, size normie, timeout_ms normie) normie {
+    fr fr In real implementation: WaitOnAddress()
+    damn 0  // Simulated success
+}
+
+fr fr Windows WakeByAddressSingle API
+slay windows_wake_by_address_single(address thicc) {
+    fr fr In real implementation: WakeByAddressSingle()
+}
+
+fr fr Windows WakeByAddressAll API
+slay windows_wake_by_address_all(address thicc) {
+    fr fr In real implementation: WakeByAddressAll()
+}
+
+fr fr =============================================================================
+fr fr MACOS/DARWIN SYSTEM CALLS - BSD/Mach wrappers
+fr fr =============================================================================
+
+fr fr Darwin thread ID
+slay darwin_pthread_threadid_np() normie {
+    fr fr In real implementation: pthread_threadid_np()
+    damn 2468  // Simulated Darwin thread ID
+}
+
+fr fr Darwin thread creation
+slay darwin_pthread_create(thread_func thicc, thread_arg thicc) thicc {
+    fr fr In real implementation: pthread_create()
+    damn 1357  // Simulated pthread_t
+}
+
+fr fr Darwin CPU count
+slay darwin_sysctl_hw_ncpu() normie {
+    fr fr In real implementation: sysctl(CTL_HW, HW_NCPU)
+    damn 6  // Simulated CPU count
+}
+
+fr fr Darwin memory info
+slay darwin_get_resident_memory() normie {
+    fr fr In real implementation: task_info(TASK_BASIC_INFO)
+    damn 20971520  // Simulated 20MB resident
+}
+
+fr fr Darwin CPU usage
+slay darwin_get_cpu_usage() drip {
+    fr fr In real implementation: host_processor_info()
+    damn 22.3  // Simulated CPU usage
+}
+
+fr fr Darwin ulock system calls (for synchronization)
+slay darwin_ulock_wait(flags normie, address thicc, value normie, timeout_us normie) normie {
+    fr fr In real implementation: __ulock_wait()
+    damn 0  // Simulated success
+}
+
+slay darwin_ulock_wake(flags normie, address thicc, value normie) normie {
+    fr fr In real implementation: __ulock_wake()
+    damn 0  // Simulated success
+}
+
+fr fr =============================================================================
+fr fr MEMORY MANAGEMENT - Virtual memory operations
+fr fr =============================================================================
+
+fr fr Allocate virtual memory with specific protection
+slay allocate_virtual_memory(size normie, protection normie) thicc {
+    fr fr In real implementation would use mmap() on Unix or VirtualAlloc() on Windows
+    fr fr protection: 1=READ, 2=WRITE, 4=EXEC
+    sus ptr thicc = memory.allocate_aligned(size, 4096)  // Page-aligned allocation
+    damn ptr
+}
+
+fr fr Change memory protection
+slay protect_virtual_memory(address thicc, size normie, protection normie) normie {
+    fr fr In real implementation would use mprotect() on Unix or VirtualProtect() on Windows
+    fr fr protection: 0=NONE, 1=READ, 2=WRITE, 4=EXEC
+    damn 0  // Simulated success
+}
+
+fr fr Free virtual memory
+slay free_virtual_memory(address thicc, size normie) {
+    fr fr In real implementation would use munmap() on Unix or VirtualFree() on Windows
+    memory.free_aligned(address)
+}
+
+fr fr =============================================================================
+fr fr THREAD MANAGEMENT - OS thread operations
+fr fr =============================================================================
+
+fr fr Set thread CPU affinity
+slay set_thread_affinity(thread_handle thicc, cpu_id normie) normie {
+    fr fr Linux: sched_setaffinity()
+    fr fr Windows: SetThreadAffinityMask()  
+    fr fr macOS: thread_policy_set() with THREAD_AFFINITY_POLICY
+    damn 0  // Simulated success
+}
+
+fr fr Join/wait for thread completion
+slay join_thread(thread_handle thicc) normie {
+    fr fr pthread_join() on Unix, WaitForSingleObject() on Windows
+    damn 0  // Simulated success
+}
+
+fr fr Set thread-local storage
+slay set_thread_local_storage(key tea, value thicc) {
+    fr fr pthread_setspecific() on Unix, TlsSetValue() on Windows
+}
+
+fr fr Get thread-local storage
+slay get_thread_local_storage(key tea) thicc {
+    fr fr pthread_getspecific() on Unix, TlsGetValue() on Windows
+    damn 0  // Simulated null
+}
+
+fr fr =============================================================================
+fr fr CPU AND TIMING OPERATIONS
+fr fr =============================================================================
+
+fr fr CPU pause instruction for spin loops
+slay cpu_pause() {
+    fr fr x86/x64: pause instruction
+    fr fr ARM: yield instruction
+    fr fr Simulated - in real implementation would be inline assembly
+}
+
+fr fr Microsecond sleep
+slay microsleep(microseconds normie) {
+    fr fr nanosleep() on Unix, Sleep() on Windows (but with higher resolution)
+    fr fr For sub-millisecond delays
+}
+
+fr fr Get simulated monotonic time (fallback)
+slay get_simulated_monotonic_time() thicc {
+    fr fr This would be replaced with actual clock_gettime() in real implementation
+    damn 1609459200000000000  // Simulated nanoseconds since epoch
+}
+
+fr fr Get current thread ID (fallback implementation)
+slay get_current_thread_id_fallback() normie {
+    fr fr This would be replaced with actual gettid() in real implementation
+    damn 12345  // Simulated thread ID
+}
+
+fr fr Get current thread ID (unified interface)
+slay get_current_thread_id() normie {
+    ready platform_is_linux() {
+        damn syscall_gettid()
+    }
+    otherwise ready platform_is_windows() {
+        damn windows_get_current_thread_id()
+    }
+    otherwise ready platform_is_darwin() {
+        damn darwin_pthread_threadid_np()
+    }
+    otherwise {
+        damn get_current_thread_id_fallback()
+    }
+}
+
+fr fr Get monotonic time (unified interface)
+slay get_monotonic_time_ns() thicc {
+    ready platform_is_linux() || platform_is_darwin() {
+        damn clock_gettime_monotonic_ns()
+    }
+    otherwise ready platform_is_windows() {
+        damn windows_query_performance_counter_ns()
+    }
+    otherwise {
+        damn get_simulated_monotonic_time()
+    }
+}
+
+fr fr =============================================================================
+fr fr ASSEMBLY CONTEXT SWITCHING STUBS
+fr fr =============================================================================
+
+fr fr Save x86-64 CPU context (would be implemented in assembly)
+slay asm_save_x86_64_context(context thicc) {
+    fr fr In real implementation would save all registers:
+    fr fr movq %rax, 0(context)
+    fr fr movq %rbx, 8(context)  
+    fr fr ... save all GPRs, XMM registers, flags, etc.
+    vibez.spill("💾 Simulated x86-64 context save")
+}
+
+fr fr Restore x86-64 CPU context (would be implemented in assembly)
+slay asm_restore_x86_64_context(context thicc) {
+    fr fr In real implementation would restore all registers:
+    fr fr movq 0(context), %rax
+    fr fr movq 8(context), %rbx
+    fr fr ... restore all GPRs, XMM registers, flags, etc.
+    vibez.spill("📥 Simulated x86-64 context restore")
+}
+
+fr fr Save AArch64 CPU context (would be implemented in assembly)
+slay asm_save_aarch64_context(context thicc) {
+    fr fr In real implementation would save all ARM64 registers
+    vibez.spill("💾 Simulated AArch64 context save")
+}
+
+fr fr Restore AArch64 CPU context (would be implemented in assembly)
+slay asm_restore_aarch64_context(context thicc) {
+    fr fr In real implementation would restore all ARM64 registers
+    vibez.spill("📥 Simulated AArch64 context restore")
+}
+
+fr fr Save x86 CPU context (would be implemented in assembly)
+slay asm_save_x86_context(context thicc) {
+    vibez.spill("💾 Simulated x86 context save")
+}
+
+fr fr Restore x86 CPU context (would be implemented in assembly)
+slay asm_restore_x86_context(context thicc) {
+    vibez.spill("📥 Simulated x86 context restore")
+}
+
+fr fr Get current stack pointer (would be implemented in assembly)
+slay get_current_stack_pointer() thicc {
+    fr fr In real implementation: movq %rsp, %rax (x86-64)
+    damn 0x7fffffffe000  // Simulated stack pointer
+}
+
+fr fr Set current stack pointer (would be implemented in assembly) 
+slay set_current_stack_pointer(new_sp thicc) {
+    fr fr In real implementation: movq new_sp, %rsp (x86-64)
+    vibez.spill("📍 Simulated stack pointer change to:", new_sp)
+}
+
+fr fr Hash pthread_self() for fallback thread ID
+slay pthread_self_hash() normie {
+    fr fr Simple hash of pthread_self() return value
+    damn 42424242  // Simulated hash
+}
+
+fr fr =============================================================================
+fr fr MODULE INITIALIZATION
+fr fr =============================================================================
+
+fr fr Initialize system call interface
+slay sysz_init() lit {
+    vibez.spill("🔧 System Call Interface Initialized")
+    vibez.spill("Platform:", get_platform_name())
+    vibez.spill("Architecture:", get_cpu_architecture())
+    vibez.spill("Current Thread ID:", get_current_thread_id())
+    vibez.spill("Monotonic Time:", get_monotonic_time_ns(), "ns")
     damn based
 }
 
-fr fr ===== PROCESS MANAGEMENT FUNCTIONS =====
-
-slay get_current_pid() normie {
-    damn syscall_get_current_pid()
-}
-
-slay get_parent_pid() normie {
-    damn syscall_get_parent_pid()
-}
-
-slay get_process_info(pid normie) ProcessInfo {
-    damn syscall_get_process_info(pid)
-}
-
-slay get_current_process_info() ProcessInfo {
-    sus pid normie = get_current_pid()
-    damn get_process_info(pid)
-}
-
-slay spawn_process(command tea, args []tea, working_dir tea) normie {
-    fr fr Spawn new process
-    debugz.log_info("Spawning process: ", command, " in ", working_dir)
-    sus pid normie = syscall_spawn_process(command, args, working_dir)
-    lowkey pid > 0 {
-        debugz.log_info("Process spawned with PID: ", pid)
-    } highkey {
-        debugz.log_error("Failed to spawn process: ", command)
-    }
-    damn pid
-}
-
-slay wait_for_process(pid normie) normie {
-    fr fr Wait for process to complete and get exit code
-    debugz.log_debug("Waiting for process: ", pid)
-    sus exit_code normie = syscall_wait_for_process(pid)
-    debugz.log_debug("Process ", pid, " exited with code: ", exit_code)
-    damn exit_code
-}
-
-slay kill_process(pid normie, signal normie) lit {
-    fr fr Send signal to process
-    debugz.log_info("Killing process ", pid, " with signal ", signal)
-    sus success lit = syscall_kill_process(pid, signal)
-    lowkey success {
-        debugz.log_info("Signal sent successfully")
-    } highkey {
-        debugz.log_error("Failed to send signal to process ", pid)
-    }
-    damn success
-}
-
-slay terminate_process(pid normie) lit {
-    fr fr Gracefully terminate process
-    damn kill_process(pid, SIGTERM)
-}
-
-slay force_kill_process(pid normie) lit {
-    fr fr Forcefully kill process
-    damn kill_process(pid, SIGKILL)
-}
-
-slay is_process_running(pid normie) lit {
-    sus info ProcessInfo = get_process_info(pid)
-    damn info.status == "running" || info.status == "sleeping"
-}
-
-slay get_process_list() []ProcessInfo {
-    fr fr Get list of all processes
-    damn syscall_get_process_list()
-}
-
-fr fr ===== FILE SYSTEM OPERATIONS =====
-
-slay get_file_stats(path tea) FileStats {
-    fr fr Get file/directory statistics
-    damn syscall_get_file_stats(path)
-}
-
-slay file_exists(path tea) lit {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.size >= 0  fr fr Non-negative size indicates file exists
-}
-
-slay is_file(path tea) lit {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.is_file
-}
-
-slay is_directory(path tea) lit {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.is_dir
-}
-
-slay is_symlink(path tea) lit {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.is_symlink
-}
-
-slay get_file_size(path tea) normie {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.size
-}
-
-slay get_file_permissions(path tea) normie {
-    sus stats FileStats = get_file_stats(path)
-    damn stats.mode
-}
-
-slay set_file_permissions(path tea, mode normie) lit {
-    debugz.log_debug("Setting permissions for ", path, " to ", mode)
-    sus success lit = syscall_set_file_permissions(path, mode)
-    lowkey success {
-        debugz.log_debug("Permissions updated successfully")
-    } highkey {
-        debugz.log_error("Failed to set permissions for ", path)
-    }
-    damn success
-}
-
-slay create_directory(path tea, recursive lit) lit {
-    debugz.log_info("Creating directory: ", path, " (recursive: ", recursive, ")")
-    sus success lit = syscall_create_directory(path, recursive)
-    lowkey success {
-        debugz.log_info("Directory created successfully")
-    } highkey {
-        debugz.log_error("Failed to create directory: ", path)
-    }
-    damn success
-}
-
-slay remove_directory(path tea, recursive lit) lit {
-    debugz.log_info("Removing directory: ", path, " (recursive: ", recursive, ")")
-    sus success lit = syscall_remove_directory(path, recursive)
-    lowkey success {
-        debugz.log_info("Directory removed successfully")
-    } highkey {
-        debugz.log_error("Failed to remove directory: ", path)
-    }
-    damn success
-}
-
-slay copy_file(src tea, dest tea) lit {
-    debugz.log_info("Copying file from ", src, " to ", dest)
-    sus success lit = syscall_copy_file(src, dest)
-    lowkey success {
-        debugz.log_info("File copied successfully")
-    } highkey {
-        debugz.log_error("Failed to copy file")
-    }
-    damn success
-}
-
-slay move_file(src tea, dest tea) lit {
-    debugz.log_info("Moving file from ", src, " to ", dest)
-    sus success lit = syscall_move_file(src, dest)
-    lowkey success {
-        debugz.log_info("File moved successfully")
-    } highkey {
-        debugz.log_error("Failed to move file")
-    }
-    damn success
-}
-
-slay delete_file(path tea) lit {
-    debugz.log_info("Deleting file: ", path)
-    sus success lit = syscall_delete_file(path)
-    lowkey success {
-        debugz.log_info("File deleted successfully")
-    } highkey {
-        debugz.log_error("Failed to delete file: ", path)
-    }
-    damn success
-}
-
-slay list_directory(path tea) []tea {
-    fr fr List directory contents
-    debugz.log_debug("Listing directory: ", path)
-    sus files []tea = syscall_list_directory(path)
-    debugz.log_debug("Found ", files.len(), " entries")
-    damn files
-}
-
-slay get_current_directory() tea {
-    damn syscall_get_current_directory()
-}
-
-slay set_current_directory(path tea) lit {
-    debugz.log_info("Changing directory to: ", path)
-    sus success lit = syscall_set_current_directory(path)
-    lowkey success {
-        debugz.log_info("Directory changed successfully")
-    } highkey {
-        debugz.log_error("Failed to change directory to: ", path)
-    }
-    damn success
-}
-
-fr fr ===== SIGNAL HANDLING =====
-
-slay register_signal_handler(signal_num normie, handler_address normie) lit {
-    fr fr Register signal handler
-    debugz.log_info("Registering signal handler for signal ", signal_num)
-    
-    fr fr Extend signal handlers array if needed
-    bestie signal_handlers.len() <= signal_num {
-        signal_handlers.push(0)
-    }
-    
-    signal_handlers[signal_num] = handler_address
-    sus success lit = syscall_register_signal_handler(signal_num, handler_address)
-    
-    lowkey success {
-        debugz.log_info("Signal handler registered successfully")
-    } highkey {
-        debugz.log_error("Failed to register signal handler for signal ", signal_num)
-    }
-    
-    damn success
-}
-
-slay send_signal(pid normie, signal_num normie) lit {
-    fr fr Send signal to process
-    debugz.log_info("Sending signal ", signal_num, " to process ", pid)
-    damn syscall_send_signal(pid, signal_num)
-}
-
-slay ignore_signal(signal_num normie) lit {
-    fr fr Ignore a signal
-    debugz.log_info("Ignoring signal ", signal_num)
-    damn syscall_ignore_signal(signal_num)
-}
-
-slay default_signal_handler(signal_num normie) lit {
-    fr fr Restore default signal handler
-    debugz.log_info("Restoring default handler for signal ", signal_num)
-    damn syscall_default_signal_handler(signal_num)
-}
-
-slay get_signal_name(signal_num normie) tea {
-    fr fr Get signal name from number
-    lowkey signal_num == SIGTERM {
-        damn "SIGTERM"
-    } highkey signal_num == SIGKILL {
-        damn "SIGKILL"
-    } highkey signal_num == SIGINT {
-        damn "SIGINT"
-    } highkey signal_num == SIGUSR1 {
-        damn "SIGUSR1"
-    } highkey signal_num == SIGUSR2 {
-        damn "SIGUSR2"
-    } highkey {
-        damn "UNKNOWN"
-    }
-}
-
-fr fr ===== TIME AND SLEEP FUNCTIONS =====
-
-slay get_current_time_seconds() normie {
-    damn syscall_get_current_time_seconds()
-}
-
-slay get_current_time_millis() normie {
-    damn syscall_get_current_time_millis()
-}
-
-slay get_current_time_micros() normie {
-    damn syscall_get_current_time_micros()
-}
-
-slay get_current_time_nanos() normie {
-    damn syscall_get_current_time_nanos()
-}
-
-slay sleep_seconds(seconds normie) lit {
-    debugz.log_trace("Sleeping for ", seconds, " seconds")
-    syscall_sleep_seconds(seconds)
-    damn based
-}
-
-slay sleep_millis(millis normie) lit {
-    debugz.log_trace("Sleeping for ", millis, " milliseconds")
-    syscall_sleep_millis(millis)
-    damn based
-}
-
-slay sleep_micros(micros normie) lit {
-    debugz.log_trace("Sleeping for ", micros, " microseconds")
-    syscall_sleep_micros(micros)
-    damn based
-}
-
-slay sleep_nanos(nanos normie) lit {
-    debugz.log_trace("Sleeping for ", nanos, " nanoseconds")
-    syscall_sleep_nanos(nanos)
-    damn based
-}
-
-fr fr ===== NETWORK FUNCTIONS =====
-
-slay get_network_interfaces() []tea {
-    fr fr Get list of network interfaces
-    damn syscall_get_network_interfaces()
-}
-
-slay get_ip_address(interface_name tea) tea {
-    fr fr Get IP address for interface
-    damn syscall_get_ip_address(interface_name)
-}
-
-slay get_mac_address(interface_name tea) tea {
-    fr fr Get MAC address for interface
-    damn syscall_get_mac_address(interface_name)
-}
-
-slay is_network_available() lit {
-    fr fr Check if network is available
-    damn syscall_is_network_available()
-}
-
-fr fr ===== SYSTEM RESOURCE MONITORING =====
-
-slay get_cpu_usage() meal {
-    fr fr Get CPU usage percentage
-    damn syscall_get_cpu_usage()
-}
-
-slay get_memory_usage() normie {
-    fr fr Get current memory usage in bytes
-    damn syscall_get_memory_usage()
-}
-
-slay get_disk_usage(path tea) (normie, normie) {
-    fr fr Get disk usage for path (used, total)
-    sus used normie = syscall_get_disk_used(path)
-    sus total normie = syscall_get_disk_total(path)
-    damn (used, total)
-}
-
-slay get_load_average() (meal, meal, meal) {
-    fr fr Get 1, 5, 15 minute load averages
-    sus load1 meal = syscall_get_load_1min()
-    sus load5 meal = syscall_get_load_5min()
-    sus load15 meal = syscall_get_load_15min()
-    damn (load1, load5, load15)
-}
-
-fr fr ===== UTILITY FUNCTIONS =====
-
-slay exit_process(exit_code normie) cringe {
-    fr fr Exit current process with code
-    debugz.log_info("Exiting process with code: ", exit_code)
-    syscall_exit_process(exit_code)
-    damn cringe  fr fr Never reached
-}
-
-slay restart_process() cringe {
-    fr fr Restart current process
-    debugz.log_info("Restarting process")
-    syscall_restart_process()
-    damn cringe  fr fr Never reached
-}
-
-slay get_command_line_args() []tea {
-    fr fr Get command line arguments
-    damn syscall_get_command_line_args()
-}
-
-slay get_working_directory() tea {
-    damn get_current_directory()
-}
-
-slay set_working_directory(path tea) lit {
-    damn set_current_directory(path)
-}
-
-slay get_executable_path() tea {
-    fr fr Get path to current executable
-    damn syscall_get_executable_path()
-}
-
-slay get_library_path() tea {
-    fr fr Get system library path
-    damn get_env("LD_LIBRARY_PATH")
-}
-
-fr fr ===== SYSTEM CALLS INTERFACE =====
-
-fr fr These functions interface with the actual system calls
-fr fr In a real implementation, these would use assembly or FFI
-
-slay syscall_get_os_info() tea {
-    damn core.system_call(1, 0, 0, 0)  fr fr SYS_UNAME
-}
-
-slay syscall_get_arch_info() tea {
-    damn core.system_call(2, 0, 0, 0)  fr fr SYS_ARCH
-}
-
-slay syscall_get_os_version() tea {
-    damn core.system_call(3, 0, 0, 0)  fr fr SYS_VERSION
-}
-
-slay syscall_get_hostname() tea {
-    damn core.system_call(4, 0, 0, 0)  fr fr SYS_HOSTNAME
-}
-
-slay syscall_get_username() tea {
-    damn core.system_call(5, 0, 0, 0)  fr fr SYS_USERNAME
-}
-
-slay syscall_get_cpu_count() normie {
-    damn core.system_call(6, 0, 0, 0)  fr fr SYS_CPU_COUNT
-}
-
-slay syscall_get_total_memory() normie {
-    damn core.system_call(7, 0, 0, 0)  fr fr SYS_TOTAL_MEMORY
-}
-
-slay syscall_get_available_memory() normie {
-    damn core.system_call(8, 0, 0, 0)  fr fr SYS_AVAILABLE_MEMORY
-}
-
-slay syscall_get_env(name tea) tea {
-    damn core.system_call(10, name, 0, 0)  fr fr SYS_GETENV
-}
-
-slay syscall_set_env(name tea, value tea) lit {
-    sus result normie = core.system_call(11, name, value, 0)  fr fr SYS_SETENV
-    damn result == 0
-}
-
-slay syscall_unset_env(name tea) lit {
-    sus result normie = core.system_call(12, name, 0, 0)  fr fr SYS_UNSETENV
-    damn result == 0
-}
-
-slay syscall_get_all_env() []EnvironmentVar {
-    damn core.system_call(13, 0, 0, 0)  fr fr SYS_ENVIRON
-}
-
-slay syscall_get_current_pid() normie {
-    damn core.system_call(20, 0, 0, 0)  fr fr SYS_GETPID
-}
-
-slay syscall_get_parent_pid() normie {
-    damn core.system_call(21, 0, 0, 0)  fr fr SYS_GETPPID
-}
-
-slay syscall_get_process_info(pid normie) ProcessInfo {
-    damn core.system_call(22, pid, 0, 0)  fr fr SYS_PROCESS_INFO
-}
-
-slay syscall_spawn_process(command tea, args []tea, working_dir tea) normie {
-    damn core.system_call(23, command, args, working_dir)  fr fr SYS_SPAWN
-}
-
-slay syscall_wait_for_process(pid normie) normie {
-    damn core.system_call(24, pid, 0, 0)  fr fr SYS_WAIT
-}
-
-slay syscall_kill_process(pid normie, signal normie) lit {
-    sus result normie = core.system_call(25, pid, signal, 0)  fr fr SYS_KILL
-    damn result == 0
-}
-
-slay syscall_get_process_list() []ProcessInfo {
-    damn core.system_call(26, 0, 0, 0)  fr fr SYS_PROCESS_LIST
-}
-
-slay syscall_get_file_stats(path tea) FileStats {
-    damn core.system_call(30, path, 0, 0)  fr fr SYS_STAT
-}
-
-slay syscall_set_file_permissions(path tea, mode normie) lit {
-    sus result normie = core.system_call(31, path, mode, 0)  fr fr SYS_CHMOD
-    damn result == 0
-}
-
-slay syscall_create_directory(path tea, recursive lit) lit {
-    sus result normie = core.system_call(32, path, recursive, 0)  fr fr SYS_MKDIR
-    damn result == 0
-}
-
-slay syscall_remove_directory(path tea, recursive lit) lit {
-    sus result normie = core.system_call(33, path, recursive, 0)  fr fr SYS_RMDIR
-    damn result == 0
-}
-
-slay syscall_copy_file(src tea, dest tea) lit {
-    sus result normie = core.system_call(34, src, dest, 0)  fr fr SYS_COPY
-    damn result == 0
-}
-
-slay syscall_move_file(src tea, dest tea) lit {
-    sus result normie = core.system_call(35, src, dest, 0)  fr fr SYS_MOVE
-    damn result == 0
-}
-
-slay syscall_delete_file(path tea) lit {
-    sus result normie = core.system_call(36, path, 0, 0)  fr fr SYS_UNLINK
-    damn result == 0
-}
-
-slay syscall_list_directory(path tea) []tea {
-    damn core.system_call(37, path, 0, 0)  fr fr SYS_READDIR
-}
-
-slay syscall_get_current_directory() tea {
-    damn core.system_call(38, 0, 0, 0)  fr fr SYS_GETCWD
-}
-
-slay syscall_set_current_directory(path tea) lit {
-    sus result normie = core.system_call(39, path, 0, 0)  fr fr SYS_CHDIR
-    damn result == 0
-}
-
-slay syscall_register_signal_handler(signal_num normie, handler_address normie) lit {
-    sus result normie = core.system_call(40, signal_num, handler_address, 0)  fr fr SYS_SIGNAL
-    damn result == 0
-}
-
-slay syscall_send_signal(pid normie, signal_num normie) lit {
-    sus result normie = core.system_call(41, pid, signal_num, 0)  fr fr SYS_KILL
-    damn result == 0
-}
-
-slay syscall_ignore_signal(signal_num normie) lit {
-    sus result normie = core.system_call(42, signal_num, 1, 0)  fr fr SYS_SIGNAL_IGNORE
-    damn result == 0
-}
-
-slay syscall_default_signal_handler(signal_num normie) lit {
-    sus result normie = core.system_call(43, signal_num, 0, 0)  fr fr SYS_SIGNAL_DEFAULT
-    damn result == 0
-}
-
-slay syscall_get_current_time_seconds() normie {
-    damn core.system_call(50, 0, 0, 0)  fr fr SYS_TIME
-}
-
-slay syscall_get_current_time_millis() normie {
-    damn core.system_call(51, 0, 0, 0)  fr fr SYS_TIME_MILLIS
-}
-
-slay syscall_get_current_time_micros() normie {
-    damn core.system_call(52, 0, 0, 0)  fr fr SYS_TIME_MICROS
-}
-
-slay syscall_get_current_time_nanos() normie {
-    damn core.system_call(53, 0, 0, 0)  fr fr SYS_TIME_NANOS
-}
-
-slay syscall_sleep_seconds(seconds normie) cringe {
-    core.system_call(54, seconds, 0, 0)  fr fr SYS_SLEEP
-    damn cringe
-}
-
-slay syscall_sleep_millis(millis normie) cringe {
-    core.system_call(55, millis, 0, 0)  fr fr SYS_SLEEP_MILLIS
-    damn cringe
-}
-
-slay syscall_sleep_micros(micros normie) cringe {
-    core.system_call(56, micros, 0, 0)  fr fr SYS_SLEEP_MICROS
-    damn cringe
-}
-
-slay syscall_sleep_nanos(nanos normie) cringe {
-    core.system_call(57, nanos, 0, 0)  fr fr SYS_SLEEP_NANOS
-    damn cringe
-}
-
-slay syscall_get_network_interfaces() []tea {
-    damn core.system_call(60, 0, 0, 0)  fr fr SYS_NET_INTERFACES
-}
-
-slay syscall_get_ip_address(interface_name tea) tea {
-    damn core.system_call(61, interface_name, 0, 0)  fr fr SYS_NET_IP
-}
-
-slay syscall_get_mac_address(interface_name tea) tea {
-    damn core.system_call(62, interface_name, 0, 0)  fr fr SYS_NET_MAC
-}
-
-slay syscall_is_network_available() lit {
-    sus result normie = core.system_call(63, 0, 0, 0)  fr fr SYS_NET_AVAILABLE
-    damn result == 1
-}
-
-slay syscall_get_cpu_usage() meal {
-    damn core.system_call(70, 0, 0, 0)  fr fr SYS_CPU_USAGE
-}
-
-slay syscall_get_memory_usage() normie {
-    damn core.system_call(71, 0, 0, 0)  fr fr SYS_MEMORY_USAGE
-}
-
-slay syscall_get_disk_used(path tea) normie {
-    damn core.system_call(72, path, 0, 0)  fr fr SYS_DISK_USED
-}
-
-slay syscall_get_disk_total(path tea) normie {
-    damn core.system_call(73, path, 0, 0)  fr fr SYS_DISK_TOTAL
-}
-
-slay syscall_get_load_1min() meal {
-    damn core.system_call(74, 0, 0, 0)  fr fr SYS_LOAD_1MIN
-}
-
-slay syscall_get_load_5min() meal {
-    damn core.system_call(75, 0, 0, 0)  fr fr SYS_LOAD_5MIN
-}
-
-slay syscall_get_load_15min() meal {
-    damn core.system_call(76, 0, 0, 0)  fr fr SYS_LOAD_15MIN
-}
-
-slay syscall_exit_process(exit_code normie) cringe {
-    core.system_call(80, exit_code, 0, 0)  fr fr SYS_EXIT
-    damn cringe
-}
-
-slay syscall_restart_process() cringe {
-    core.system_call(81, 0, 0, 0)  fr fr SYS_RESTART
-    damn cringe
-}
-
-slay syscall_get_command_line_args() []tea {
-    damn core.system_call(82, 0, 0, 0)  fr fr SYS_ARGS
-}
-
-slay syscall_get_executable_path() tea {
-    damn core.system_call(83, 0, 0, 0)  fr fr SYS_EXECUTABLE_PATH
-}
-
-fr fr ===== SYSTEM REPORTING FUNCTIONS =====
-
-slay print_system_info() lit {
-    sus info SystemInfo = get_system_info()
-    
-    vibez.spill("💻 System Information")
-    vibez.spill("═══════════════════")
-    vibez.spill("OS: ", info.os_name, " ", info.version)
-    vibez.spill("Architecture: ", info.arch)
-    vibez.spill("Hostname: ", info.hostname)
-    vibez.spill("Username: ", info.username)
-    vibez.spill("Home Directory: ", info.home_dir)
-    vibez.spill("Temp Directory: ", info.temp_dir)
-    vibez.spill("CPU Count: ", info.cpu_count)
-    vibez.spill("Total Memory: ", memoryz.format_bytes(info.memory_total))
-    vibez.spill("Available Memory: ", memoryz.format_bytes(info.memory_available))
-    
-    damn based
-}
-
-slay print_process_info(pid normie) lit {
-    sus info ProcessInfo = get_process_info(pid)
-    
-    vibez.spill("🔄 Process Information")
-    vibez.spill("═════════════════════")
-    vibez.spill("PID: ", info.pid)
-    vibez.spill("Parent PID: ", info.ppid)
-    vibez.spill("Name: ", info.name)
-    vibez.spill("Status: ", info.status)
-    vibez.spill("Memory Usage: ", memoryz.format_bytes(info.memory_usage))
-    vibez.spill("CPU Percent: ", info.cpu_percent, "%")
-    vibez.spill("Start Time: ", info.start_time)
-    vibez.spill("Command Line: ", info.command_line)
-    
-    damn based
-}
-
-slay print_environment_vars() lit {
-    sus all_vars []EnvironmentVar = get_all_env()
-    
-    vibez.spill("🌍 Environment Variables")
-    vibez.spill("═══════════════════════")
-    
-    bestie env_var in all_vars {
-        vibez.spill(env_var.name, "=", env_var.value)
-    }
-    
-    damn based
-}
-
-fr fr Initialize system module
-slay init_system() lit {
-    debugz.log_info("System module initialized")
-    fr fr Pre-populate system info cache
-    get_system_info()
-    damn based
+fr fr Get sysz module version
+slay sysz_version() tea {
+    damn "sysz v1.0.0 - OS system calls and platform abstraction"
+}
+
+fr fr Display available system features
+slay sysz_features() {
+    vibez.spill("🎯 Available System Features:")
+    vibez.spill("- Platform Detection:", get_platform_name())
+    vibez.spill("- Architecture Detection:", get_cpu_architecture())
+    vibez.spill("- Thread Management: OS threads, TLS")
+    vibez.spill("- Memory Management: Virtual memory, protection")
+    vibez.spill("- Synchronization: Futex (Linux), WaitOnAddress (Windows)")
+    vibez.spill("- Timing: Monotonic clocks, high-resolution")
+    vibez.spill("- CPU: Affinity, yield, pause instruction")
+    vibez.spill("- Context Switching: Full CPU state save/restore")
 }

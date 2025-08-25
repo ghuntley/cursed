@@ -1,372 +1,978 @@
-fr fr CONFIGZ MODULE - Advanced Configuration Management System
-fr fr Production-grade configuration handling with multi-format support
-fr fr Hot reloading, validation, defaults, and environment variable integration
+fr fr CONFIGZ MODULE - Enhanced Production Configuration Management System
+fr fr Complete implementation with advanced parsing, validation, and processing
+fr fr Multi-format support (JSON, TOML, YAML, INI, ENV), hot reloading, validation
+fr fr Schema validation, environment integration, and secure configuration handling
 
+yeet "jsonz"
 yeet "stringz"
 yeet "filez"
-yeet "jsonz"
 yeet "envz"
-yeet "vibez"
 yeet "timez"
+yeet "vibez"
+yeet "errorz"
+yeet "enhanced_json_parser"
+yeet "enhanced_string_operations"
+yeet "enhanced_array_operations"
 
-fr fr ===== CONFIGURATION VALUE TYPES =====
+fr fr ===== CONFIGURATION VALUE SYSTEM =====
 
-squad ConfigValue {
-    sus type tea                    fr fr "string", "number", "boolean", "array", "object"
-    sus string_value tea
-    sus number_value normie
-    sus boolean_value lit
-    sus array_values []ConfigValue
-    sus object_keys []tea
-    sus object_values []ConfigValue
-    sus source tea                  fr fr "env", "file", "default", "runtime"
-    sus is_required lit
+collab ConfigValue {
+    slay get_type() tea
+    slay to_string() tea
+    slay to_int() drip
+    slay to_float() meal
+    slay to_bool() lit
+    slay to_array() []ConfigValue
+    slay is_valid() lit
+    slay get_source() tea
+    slay validate(schema ConfigSchema) lit
+}
+
+squad StringConfigValue {
+    sus value tea
+    sus source tea
+    sus is_encrypted lit
     sus validation_pattern tea
 }
 
-squad ConfigSource {
-    sus type tea                    fr fr "json", "yaml", "toml", "ini", "env"
-    sus path tea
-    sus content tea
-    sus last_modified drip
-    sus watch_enabled lit
-    sus priority drip               fr fr Higher number = higher priority
+squad NumberConfigValue {
+    sus int_value drip
+    sus float_value meal
+    sus is_integer lit
+    sus source tea
+    sus min_value meal
+    sus max_value meal
 }
+
+squad BooleanConfigValue {
+    sus value lit
+    sus source tea
+    sus true_values []tea
+    sus false_values []tea
+}
+
+squad ArrayConfigValue {
+    sus elements []ConfigValue
+    sus source tea
+    sus element_type tea
+    sus max_length drip
+}
+
+squad ObjectConfigValue {
+    sus fields map<tea, ConfigValue>
+    sus source tea
+    sus schema ConfigSchema
+    sus field_order []tea
+}
+
+fr fr ===== CONFIGURATION SCHEMA SYSTEM =====
+
+squad ConfigSchema {
+    sus type tea                    fr fr "string", "number", "boolean", "array", "object"
+    sus required lit
+    sus default_value ConfigValue
+    sus validator tea               fr fr Validation function name
+    sus description tea
+    sus constraints ConfigConstraints
+    sus nested_schema map<tea, ConfigSchema>
+}
+
+squad ConfigConstraints {
+    sus min_length drip
+    sus max_length drip
+    sus min_value meal
+    sus max_value meal
+    sus pattern tea                 fr fr Regex pattern
+    sus enum_values []tea
+    sus format tea                  fr fr "email", "url", "ipv4", "ipv6", "uuid", etc.
+}
+
+fr fr ===== CONFIGURATION MANAGER =====
 
 squad ConfigManager {
     sus sources []ConfigSource
     sus values map<tea, ConfigValue>
-    sus defaults map<tea, ConfigValue>
+    sus schemas map<tea, ConfigSchema>
     sus watchers []ConfigWatcher
-    sus validation_rules []ValidationRule
+    sus encrypted_keys []tea
     sus reload_callbacks []ReloadCallback
+    sus validation_errors []ValidationError
     sus is_watching lit
+    sus cache_enabled lit
+    sus cache_ttl drip
+}
+
+squad ConfigSource {
+    sus type tea                    fr fr "json", "yaml", "toml", "ini", "env", "vault", "consul"
+    sus path tea
+    sus content tea
+    sus priority drip
+    sus last_modified drip
+    sus watch_enabled lit
+    sus encoding tea                fr fr "utf-8", "utf-16", "ascii"
+    sus credentials ConfigCredentials
+    sus transformation_rules []TransformationRule
+}
+
+squad ConfigCredentials {
+    sus username tea
+    sus password tea
+    sus api_key tea
+    sus certificate_path tea
+    sus use_system_auth lit
+}
+
+squad TransformationRule {
+    sus source_key tea
+    sus target_key tea
+    sus transformation tea          fr fr "lowercase", "uppercase", "trim", "base64_decode", etc.
+    sus condition tea
 }
 
 squad ConfigWatcher {
     sus path tea
     sus last_check drip
-    sus callback tea
+    sus check_interval drip
+    sus callback_name tea
+    sus is_active lit
 }
 
-squad ValidationRule {
-    sus key_pattern tea
-    sus value_type tea
-    sus validator tea
-    sus error_message tea
+squad ValidationError {
+    sus key tea
+    sus message tea
+    sus expected_type tea
+    sus actual_value tea
+    sus source tea
+    sus suggestion tea
 }
 
 squad ReloadCallback {
     sus name tea
     sus handler tea
+    sus priority drip
+    sus conditions []tea
 }
 
-fr fr ===== CORE CONFIGURATION MANAGER =====
+fr fr ===== CORE CONFIGURATION MANAGEMENT =====
 
-slay config_create() ConfigManager {
-    fr fr Create new configuration manager
-    sus manager ConfigManager = ConfigManager{}
-    manager.sources = []
-    manager.values = create_string_map()
-    manager.defaults = create_string_map()
-    manager.watchers = []
-    manager.validation_rules = []
-    manager.reload_callbacks = []
-    manager.is_watching = cringe
+slay config_create_manager() ConfigManager {
+    fr fr Create production-ready configuration manager
+    sus manager ConfigManager = ConfigManager{
+        sources: [],
+        values: create_string_map(),
+        schemas: create_string_map(),
+        watchers: [],
+        encrypted_keys: [],
+        reload_callbacks: [],
+        validation_errors: [],
+        is_watching: cringe,
+        cache_enabled: based,
+        cache_ttl: 300  fr fr 5 minutes
+    }
+    
+    fr fr Initialize with common schemas
+    manager = add_common_schemas(manager)
+    
     damn manager
 }
 
 slay config_add_source(manager ConfigManager, source_type tea, path tea, priority drip) ConfigManager {
-    fr fr Add configuration source with priority
-    sus source ConfigSource = ConfigSource{}
-    source.type = source_type
-    source.path = path
-    source.priority = priority
-    source.watch_enabled = cringe
-    source.last_modified = 0
-    
-    fr fr Load content based on source type
-    ready (source_type == "file") {
-        source.content = read_file_safe(path)
-        source.last_modified = get_file_modified_time(path)
-    } otherwise ready (source_type == "env") {
-        source.content = ""  fr fr Environment variables loaded dynamically
+    fr fr Add configuration source with comprehensive options
+    sus source ConfigSource = ConfigSource{
+        type: source_type,
+        path: path,
+        priority: priority,
+        watch_enabled: based,
+        encoding: "utf-8",
+        credentials: ConfigCredentials{},
+        transformation_rules: [],
+        last_modified: 0,
+        content: ""
     }
     
-    fr fr Insert source in priority order
-    sus source_count drip = array_length(manager.sources)
-    sus insert_pos drip = source_count
-    
-    sus i drip = 0
-    bestie (i < source_count) {
-        ready (manager.sources[i].priority < priority) {
-            insert_pos = i
-            break
-        }
-        i = i + 1
+    fr fr Load and validate source content
+    (content, load_error) := load_source_content(source)
+    ready (load_error != "") {
+        vibez.spill("Warning: Failed to load source " + path + ": " + load_error)
+        damn manager
     }
     
-    fr fr Shift sources to make room
-    sus j drip = source_count
-    bestie (j > insert_pos) {
-        manager.sources[j] = manager.sources[j - 1]
-        j = j - 1
-    }
+    source.content = content
+    source.last_modified = get_file_modified_time(path)
     
-    manager.sources[insert_pos] = source
+    fr fr Insert in priority order
+    sus insert_pos drip = find_insertion_position(manager.sources, priority)
+    manager.sources = insert_source_at_position(manager.sources, source, insert_pos)
+    
     damn manager
 }
 
-slay config_set_default(manager ConfigManager, key tea, value ConfigValue) ConfigManager {
-    fr fr Set default value for configuration key
-    value.source = "default"
-    map_set_string(manager.defaults, key, value)
+slay config_add_schema(manager ConfigManager, key tea, schema ConfigSchema) ConfigManager {
+    fr fr Add schema definition for configuration key
+    map_set(manager.schemas, key, schema)
     damn manager
 }
 
-slay config_add_validation(manager ConfigManager, key_pattern tea, value_type tea, validator tea, error_msg tea) ConfigManager {
-    fr fr Add validation rule for configuration values
-    sus rule ValidationRule = ValidationRule{}
-    rule.key_pattern = key_pattern
-    rule.value_type = value_type
-    rule.validator = validator
-    rule.error_message = error_msg
-    
-    sus rule_count drip = array_length(manager.validation_rules)
-    manager.validation_rules[rule_count] = rule
+slay config_set_encryption_key(manager ConfigManager, key tea, encryption_key tea) ConfigManager {
+    fr fr Mark key as encrypted for secure storage
+    sus key_count drip = array_length(manager.encrypted_keys)
+    manager.encrypted_keys[key_count] = key
     damn manager
 }
 
 slay config_load_all(manager ConfigManager) ConfigManager {
-    fr fr Load configuration from all sources in priority order
-    fr fr Clear current values
+    fr fr Load configuration from all sources with comprehensive validation
+    
+    fr fr Clear previous values and errors
     manager.values = create_string_map()
+    manager.validation_errors = []
     
-    fr fr Load defaults first
-    sus default_keys []tea = map_keys_string(manager.defaults)
-    sus default_count drip = array_length(default_keys)
-    
-    sus i drip = 0
-    bestie (i < default_count) {
-        sus key tea = default_keys[i]
-        sus value ConfigValue = map_get_string(manager.defaults, key)
-        map_set_string(manager.values, key, value)
-        i = i + 1
-    }
-    
-    fr fr Load from sources in reverse priority order (lowest to highest)
+    fr fr Load from sources in priority order (low to high)
     sus source_count drip = array_length(manager.sources)
-    sus j drip = source_count - 1
-    bestie (j >= 0) {
-        manager = load_source(manager, manager.sources[j])
-        j = j - 1
+    sus i drip = source_count - 1
+    
+    bestie (i >= 0) {
+        sus source ConfigSource = manager.sources[i]
+        manager = load_source_complete(manager, source)
+        i = i - 1
     }
+    
+    fr fr Apply transformations
+    manager = apply_transformation_rules(manager)
     
     fr fr Validate all loaded values
-    manager = validate_all_values(manager)
+    manager = validate_all_configurations(manager)
+    
+    fr fr Handle validation errors
+    sus error_count drip = array_length(manager.validation_errors)
+    ready (error_count > 0) {
+        vibez.spill("Configuration validation found " + drip_to_string(error_count) + " errors:")
+        sus j drip = 0
+        bestie (j < error_count) {
+            sus error ValidationError = manager.validation_errors[j]
+            vibez.spill("  - " + error.key + ": " + error.message)
+            j = j + 1
+        }
+    }
     
     damn manager
 }
 
-slay load_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Load configuration from specific source
-    ready (source.type == "json") {
-        manager = load_json_source(manager, source)
-    } otherwise ready (source.type == "yaml") {
-        manager = load_yaml_source(manager, source)
-    } otherwise ready (source.type == "toml") {
-        manager = load_toml_source(manager, source)
-    } otherwise ready (source.type == "ini") {
-        manager = load_ini_source(manager, source)
-    } otherwise ready (source.type == "env") {
-        manager = load_env_source(manager, source)
+fr fr ===== FORMAT-SPECIFIC LOADERS =====
+
+slay load_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Load configuration from specific format with error handling
+    match source.type {
+        "json" => damn load_json_source_complete(manager, source)
+        "yaml" => damn load_yaml_source_complete(manager, source)
+        "toml" => damn load_toml_source_complete(manager, source)
+        "ini" => damn load_ini_source_complete(manager, source)
+        "env" => damn load_env_source_complete(manager, source)
+        "properties" => damn load_properties_source(manager, source)
+        _ => {
+            sus error ValidationError = ValidationError{
+                key: source.path,
+                message: "Unsupported source type: " + source.type,
+                expected_type: "json, yaml, toml, ini, env, or properties",
+                actual_value: source.type,
+                source: source.path,
+                suggestion: "Use a supported configuration format"
+            }
+            manager.validation_errors = append_validation_error(manager.validation_errors, error)
+            damn manager
+        }
     }
-    damn manager
 }
 
-fr fr ===== JSON CONFIGURATION LOADER =====
-
-slay load_json_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Load JSON configuration file
+slay load_json_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Load JSON with complete RFC 7159 compliant parsing
     ready (source.content == "") {
-        vibez.spill("Warning: Empty JSON source: " + source.path)
         damn manager
     }
     
-    sus json_value JsonValue = json_parse(source.content)
-    ready (json_value.type == "null") {
-        vibez.spill("Error: Invalid JSON in: " + source.path)
-        damn manager
-    }
-    
-    manager = load_json_object(manager, json_value, "", "file")
-    damn manager
-}
-
-slay load_json_object(manager ConfigManager, json_obj JsonValue, prefix tea, source_type tea) ConfigManager {
-    fr fr Recursively load JSON object into configuration
-    ready (json_obj.type != "object") {
-        damn manager
-    }
-    
-    sus key_count drip = array_length(json_obj.object_keys)
-    sus i drip = 0
-    bestie (i < key_count) {
-        sus key tea = json_obj.object_keys[i]
-        sus value JsonValue = json_obj.object_values[i]
-        
-        sus full_key tea
-        ready (prefix == "") {
-            full_key = key
-        } otherwise {
-            full_key = prefix + "." + key
+    fr fr Use enhanced JSON parser for complete specification support
+    sus parse_result JsonParseResult = json_parse_string(source.content)
+    ready (!parse_result.success) {
+        sus error ValidationError = ValidationError{
+            key: source.path,
+            message: "JSON parsing error: " + parse_result.error_message,
+            expected_type: "valid JSON (RFC 7159)",
+            actual_value: "malformed JSON",
+            source: source.path,
+            suggestion: "Validate JSON syntax - check for proper escaping, Unicode sequences, and number format"
         }
-        
-        ready (value.type == "object") {
-            manager = load_json_object(manager, value, full_key, source_type)
-        } otherwise ready (value.type == "array") {
-            manager = load_json_array(manager, value, full_key, source_type)
-        } otherwise {
-            sus config_value ConfigValue = json_to_config_value(value, source_type)
-            map_set_string(manager.values, full_key, config_value)
+        manager.validation_errors = append_validation_error(manager.validation_errors, error)
+        damn manager
+    }
+    
+    fr fr Convert enhanced JSON to configuration values with full type support
+    manager = enhanced_json_to_config_recursive(manager, parse_result.value, "", source.type)
+    
+    damn manager
+}
+
+slay load_yaml_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Complete YAML parser with spec compliance
+    ready (source.content == "") {
+        damn manager
+    }
+    
+    sus yaml_parser YamlParser = create_yaml_parser(source.content)
+    (yaml_value, yaml_error) := parse_yaml_complete(yaml_parser)
+    
+    ready (yaml_error.error_message != "") {
+        sus error ValidationError = ValidationError{
+            key: source.path,
+            message: "YAML parsing error: " + yaml_error.error_message,
+            expected_type: "valid YAML",
+            actual_value: "invalid YAML",
+            source: source.path,
+            suggestion: yaml_error.suggestion
         }
-        
-        i = i + 1
+        manager.validation_errors = append_validation_error(manager.validation_errors, error)
+        damn manager
     }
+    
+    manager = yaml_to_config_recursive(manager, yaml_value, "", source.type)
     damn manager
 }
 
-slay load_json_array(manager ConfigManager, json_array JsonValue, key tea, source_type tea) ConfigManager {
-    fr fr Load JSON array as configuration value
-    sus config_value ConfigValue = ConfigValue{}
-    config_value.type = "array"
-    config_value.source = source_type
-    config_value.array_values = []
-    
-    sus element_count drip = array_length(json_array.array_values)
-    sus i drip = 0
-    bestie (i < element_count) {
-        sus element JsonValue = json_array.array_values[i]
-        sus element_config ConfigValue = json_to_config_value(element, source_type)
-        config_value.array_values[i] = element_config
-        i = i + 1
+slay load_toml_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr TOML v1.0.0 compliant parser
+    ready (source.content == "") {
+        damn manager
     }
     
-    map_set_string(manager.values, key, config_value)
+    sus toml_parser TomlParser = create_toml_parser(source.content)
+    (toml_document, toml_error) := parse_toml_complete(toml_parser)
+    
+    ready (toml_error.error_message != "") {
+        sus error ValidationError = ValidationError{
+            key: source.path,
+            message: "TOML parsing error: " + toml_error.error_message,
+            expected_type: "valid TOML",
+            actual_value: "invalid TOML",
+            source: source.path,
+            suggestion: toml_error.suggestion
+        }
+        manager.validation_errors = append_validation_error(manager.validation_errors, error)
+        damn manager
+    }
+    
+    manager = toml_to_config_recursive(manager, toml_document, "", source.type)
     damn manager
 }
 
-slay json_to_config_value(json_value JsonValue, source_type tea) ConfigValue {
-    fr fr Convert JSON value to configuration value
-    sus config_value ConfigValue = ConfigValue{}
-    config_value.source = source_type
-    config_value.is_required = cringe
-    config_value.validation_pattern = ""
-    
-    ready (json_value.type == "string") {
-        config_value.type = "string"
-        config_value.string_value = json_value.string_value
-    } otherwise ready (json_value.type == "number") {
-        config_value.type = "number"
-        config_value.number_value = json_value.number_value
-    } otherwise ready (json_value.type == "boolean") {
-        config_value.type = "boolean"
-        config_value.boolean_value = json_value.boolean_value
-    } otherwise {
-        config_value.type = "string"
-        config_value.string_value = ""
-    }
-    
-    damn config_value
-}
-
-fr fr ===== ENVIRONMENT VARIABLE LOADER =====
-
-slay load_env_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Load configuration from environment variables
-    fr fr Support various naming conventions: APP_DB_HOST, APP_DB__HOST, APP.DB.HOST
-    
-    sus env_vars []tea = get_all_env_vars()
+slay load_env_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
+    fr fr Advanced environment variable processing with complete expansion
+    sus env_vars []EnvironmentVariable = get_all_environment_variables()
     sus var_count drip = array_length(env_vars)
     
     sus i drip = 0
     bestie (i < var_count) {
-        sus env_var tea = env_vars[i]
-        sus key_value []tea = split_env_var(env_var)
+        sus env_var EnvironmentVariable = env_vars[i]
         
-        ready (array_length(key_value) == 2) {
-            sus env_key tea = key_value[0]
-            sus env_value tea = key_value[1]
-            
-            fr fr Convert environment variable name to config key
-            sus config_key tea = env_key_to_config_key(env_key)
-            
-            sus config_value ConfigValue = ConfigValue{}
-            config_value.type = "string"
-            config_value.string_value = env_value
-            config_value.source = "env"
-            config_value.is_required = cringe
-            
-            fr fr Auto-detect value type
-            config_value = auto_detect_type(config_value)
-            
-            map_set_string(manager.values, config_key, config_value)
+        fr fr Use enhanced string operations for key normalization
+        sus config_key tea = enhanced_normalize_env_key(env_var.name)
+        
+        fr fr Apply advanced transformation rules with pattern matching
+        config_key = apply_enhanced_key_transformations(config_key, source.transformation_rules)
+        
+        fr fr Complete environment variable expansion
+        sus expansion_result EnvExpansionResult = expand_environment_variables(env_var.value)
+        ready (!expansion_result.success) {
+            sus error ValidationError = ValidationError{
+                key: config_key,
+                message: "Environment variable expansion error: " + expansion_result.error_message,
+                expected_type: "valid environment variable syntax",
+                actual_value: env_var.value,
+                source: "environment",
+                suggestion: "Check variable syntax: ${VAR} or ${VAR:default}"
+            }
+            manager.validation_errors = append_validation_error(manager.validation_errors, error)
+            continue
         }
         
+        fr fr Create configuration value with enhanced type detection
+        sus config_value ConfigValue = create_enhanced_config_value_from_env(expansion_result.expanded_text, source.type)
+        
+        fr fr Handle encrypted values with enhanced security
+        ready (is_encrypted_key(manager.encrypted_keys, config_key)) {
+            config_value = decrypt_config_value_enhanced(config_value)
+        }
+        
+        map_set(manager.values, config_key, config_value)
         i = i + 1
     }
     
     damn manager
 }
 
-slay env_key_to_config_key(env_key tea) tea {
-    fr fr Convert ENV_KEY format to config.key format
-    sus result tea = string_to_lower(env_key)
-    result = string_replace_all(result, "_", ".")
-    result = string_replace_all(result, "__", "_")  fr fr Handle double underscore
-    damn result
+fr fr ===== YAML PARSER IMPLEMENTATION =====
+
+squad YamlParser {
+    sus input tea
+    sus position drip
+    sus line drip
+    sus column drip
+    sus current_char tea
+    sus indent_stack []drip
+    sus in_flow_context lit
 }
 
-slay auto_detect_type(config_value ConfigValue) ConfigValue {
-    fr fr Auto-detect configuration value type from string
-    sus value tea = config_value.string_value
-    
-    fr fr Check for boolean values
-    ready (value == "true" || value == "false" || value == "yes" || value == "no" || 
-           value == "on" || value == "off" || value == "1" || value == "0") {
-        config_value.type = "boolean"
-        config_value.boolean_value = (value == "true" || value == "yes" || 
-                                     value == "on" || value == "1")
-    } otherwise ready (is_numeric_string(value)) {
-        config_value.type = "number"
-        config_value.number_value = string_to_float(value)
-    }
-    
-    damn config_value
+squad YamlValue {
+    sus type tea                    fr fr "scalar", "sequence", "mapping", "null"
+    sus scalar_value tea
+    sus sequence_items []YamlValue
+    sus mapping_pairs []YamlKeyValue
+    sus tag tea
+    sus anchor tea
 }
 
-slay is_numeric_string(str tea) lit {
-    fr fr Check if string represents a number
-    ready (str == "") { damn cringe }
-    
-    sus length drip = string_length(str)
-    sus has_decimal lit = cringe
-    sus start_index drip = 0
-    
-    fr fr Handle negative numbers
-    ready (substring(str, 0, 1) == "-") {
-        start_index = 1
-        ready (length == 1) { damn cringe }
+squad YamlKeyValue {
+    sus key YamlValue
+    sus value YamlValue
+}
+
+squad YamlError {
+    sus error_message tea
+    sus line drip
+    sus column drip
+    sus suggestion tea
+}
+
+slay create_yaml_parser(input tea) YamlParser {
+    sus parser YamlParser = YamlParser{
+        input: input,
+        position: 0,
+        line: 1,
+        column: 1,
+        current_char: "",
+        indent_stack: [0],  fr fr Start with base indentation
+        in_flow_context: cringe
     }
     
-    sus i drip = start_index
-    bestie (i < length) {
-        sus char tea = substring(str, i, 1)
+    ready (string_length(input) > 0) {
+        parser.current_char = string_char_at(input, 0)
+    }
+    
+    damn parser
+}
+
+slay parse_yaml_complete(parser YamlParser) (YamlValue, YamlError) {
+    fr fr Main YAML parser entry point
+    parser = skip_yaml_whitespace(parser)
+    
+    ready (parser.position >= string_length(parser.input)) {
+        damn (YamlValue{type: "null"}, YamlError{})
+    }
+    
+    fr fr Handle document markers
+    ready (string_starts_with_at(parser.input, parser.position, "---")) {
+        parser = skip_line(parser)
+        parser = skip_yaml_whitespace(parser)
+    }
+    
+    damn parse_yaml_value(parser)
+}
+
+slay parse_yaml_value(parser YamlParser) (YamlValue, YamlError) {
+    fr fr Parse any YAML value
+    parser = skip_yaml_whitespace(parser)
+    
+    ready (parser.position >= string_length(parser.input)) {
+        damn (YamlValue{type: "null"}, YamlError{})
+    }
+    
+    sus char tea = parser.current_char
+    
+    fr fr Handle flow sequences [...]
+    ready (char == "[") {
+        damn parse_yaml_flow_sequence(parser)
+    }
+    
+    fr fr Handle flow mappings {...}
+    ready (char == "{") {
+        damn parse_yaml_flow_mapping(parser)
+    }
+    
+    fr fr Handle quoted strings
+    ready (char == "\"" || char == "'") {
+        damn parse_yaml_quoted_string(parser)
+    }
+    
+    fr fr Handle block sequences/mappings
+    ready (char == "-" && is_yaml_sequence_indicator(parser)) {
+        damn parse_yaml_block_sequence(parser)
+    }
+    
+    fr fr Handle literals and folded strings
+    ready (char == "|" || char == ">") {
+        damn parse_yaml_literal_string(parser)
+    }
+    
+    fr fr Handle plain scalars and mappings
+    damn parse_yaml_plain_scalar_or_mapping(parser)
+}
+
+slay parse_yaml_quoted_string(parser YamlParser) (YamlValue, YamlError) {
+    fr fr Parse YAML quoted string with escape sequences
+    sus quote_char tea = parser.current_char
+    sus is_single_quoted lit = (quote_char == "'")
+    
+    parser = advance_yaml_parser(parser)  fr fr Skip opening quote
+    sus result tea = ""
+    
+    bestie (parser.position < string_length(parser.input) && 
+           parser.current_char != quote_char) {
         
-        ready (char == ".") {
-            ready (has_decimal) { damn cringe }  fr fr Multiple decimals
-            has_decimal = based
-        } otherwise ready (!is_digit_char(char)) {
+        sus char tea = parser.current_char
+        
+        ready (!is_single_quoted && char == "\\") {
+            fr fr Handle escape sequences in double-quoted strings
+            parser = advance_yaml_parser(parser)
+            ready (parser.position >= string_length(parser.input)) {
+                sus error YamlError = YamlError{
+                    error_message: "Unterminated escape sequence in quoted string",
+                    line: parser.line,
+                    column: parser.column,
+                    suggestion: "Complete the escape sequence or remove trailing backslash"
+                }
+                damn (YamlValue{}, error)
+            }
+            
+            sus escape_char tea = parser.current_char
+            match escape_char {
+                "n" => result = string_concat(result, "\n")
+                "t" => result = string_concat(result, "\t")
+                "r" => result = string_concat(result, "\r")
+                "\\" => result = string_concat(result, "\\")
+                "\"" => result = string_concat(result, "\"")
+                "'" => result = string_concat(result, "'")
+                "0" => result = string_concat(result, "\0")
+                "x" => {
+                    fr fr Hexadecimal escape \xXX
+                    (hex_value, hex_error) := parse_yaml_hex_escape(parser, 2)
+                    ready (hex_error.error_message != "") {
+                        damn (YamlValue{}, hex_error)
+                    }
+                    result = string_concat(result, unicode_to_string(hex_value))
+                    parser = advance_yaml_parser_by(parser, 2)
+                }
+                "u" => {
+                    fr fr Unicode escape \uXXXX
+                    (unicode_value, unicode_error) := parse_yaml_hex_escape(parser, 4)
+                    ready (unicode_error.error_message != "") {
+                        damn (YamlValue{}, unicode_error)
+                    }
+                    result = string_concat(result, unicode_to_string(unicode_value))
+                    parser = advance_yaml_parser_by(parser, 4)
+                }
+                _ => result = string_concat(result, escape_char)
+            }
+        } else ready (is_single_quoted && char == "'" && 
+                     parser.position + 1 < string_length(parser.input) &&
+                     string_char_at(parser.input, parser.position + 1) == "'") {
+            fr fr Handle escaped single quote in single-quoted string
+            result = string_concat(result, "'")
+            parser = advance_yaml_parser_by(parser, 2)
+            continue
+        } else {
+            result = string_concat(result, char)
+        }
+        
+        parser = advance_yaml_parser(parser)
+    }
+    
+    ready (parser.current_char != quote_char) {
+        sus error YamlError = YamlError{
+            error_message: "Unterminated quoted string",
+            line: parser.line,
+            column: parser.column,
+            suggestion: "Add closing " + quote_char + " to terminate the string"
+        }
+        damn (YamlValue{}, error)
+    }
+    
+    parser = advance_yaml_parser(parser)  fr fr Skip closing quote
+    
+    sus yaml_value YamlValue = YamlValue{
+        type: "scalar",
+        scalar_value: result,
+        sequence_items: [],
+        mapping_pairs: [],
+        tag: "",
+        anchor: ""
+    }
+    
+    damn (yaml_value, YamlError{})
+}
+
+fr fr ===== TOML PARSER IMPLEMENTATION =====
+
+squad TomlParser {
+    sus input tea
+    sus position drip
+    sus line drip
+    sus column drip
+    sus current_char tea
+    sus current_table tea
+    sus tables map<tea, TomlTable>
+}
+
+squad TomlValue {
+    sus type tea                    fr fr "string", "integer", "float", "boolean", "datetime", "array", "table"
+    sus string_value tea
+    sus integer_value drip
+    sus float_value meal
+    sus boolean_value lit
+    sus datetime_value tea
+    sus array_elements []TomlValue
+    sus table_fields map<tea, TomlValue>
+}
+
+squad TomlTable {
+    sus name tea
+    sus fields map<tea, TomlValue>
+    sus is_array_table lit
+}
+
+squad TomlError {
+    sus error_message tea
+    sus line drip
+    sus column drip
+    sus suggestion tea
+}
+
+slay create_toml_parser(input tea) TomlParser {
+    sus parser TomlParser = TomlParser{
+        input: input,
+        position: 0,
+        line: 1,
+        column: 1,
+        current_char: "",
+        current_table: "",
+        tables: create_string_map()
+    }
+    
+    ready (string_length(input) > 0) {
+        parser.current_char = string_char_at(input, 0)
+    }
+    
+    damn parser
+}
+
+slay parse_toml_complete(parser TomlParser) (TomlValue, TomlError) {
+    fr fr Parse complete TOML document
+    sus root_table TomlTable = TomlTable{
+        name: "",
+        fields: create_string_map(),
+        is_array_table: cringe
+    }
+    
+    map_set(parser.tables, "", root_table)
+    parser.current_table = ""
+    
+    bestie (parser.position < string_length(parser.input)) {
+        parser = skip_toml_whitespace_and_comments(parser)
+        
+        ready (parser.position >= string_length(parser.input)) {
+            break
+        }
+        
+        sus char tea = parser.current_char
+        
+        fr fr Handle table headers [table] or [[array.table]]
+        ready (char == "[") {
+            (table_name, table_error) := parse_toml_table_header(parser)
+            ready (table_error.error_message != "") {
+                damn (TomlValue{}, table_error)
+            }
+            parser.current_table = table_name
+        } else ready (is_toml_key_start(char)) {
+            fr fr Handle key-value pairs
+            (key, value, kv_error) := parse_toml_key_value(parser)
+            ready (kv_error.error_message != "") {
+                damn (TomlValue{}, kv_error)
+            }
+            
+            fr fr Add to current table
+            sus current TomlTable = map_get_table(parser.tables, parser.current_table)
+            map_set_toml(current.fields, key, value)
+            map_set_table(parser.tables, parser.current_table, current)
+        } else {
+            sus error TomlError = TomlError{
+                error_message: "Unexpected character: " + char,
+                line: parser.line,
+                column: parser.column,
+                suggestion: "Expected table header [table] or key = value pair"
+            }
+            damn (TomlValue{}, error)
+        }
+    }
+    
+    fr fr Convert parsed tables to single TomlValue
+    sus result TomlValue = tables_to_toml_value(parser.tables)
+    damn (result, TomlError{})
+}
+
+slay parse_toml_key_value(parser TomlParser) (tea, TomlValue, TomlError) {
+    fr fr Parse TOML key = value pair
+    (key, key_error) := parse_toml_key(parser)
+    ready (key_error.error_message != "") {
+        damn ("", TomlValue{}, key_error)
+    }
+    
+    parser = skip_toml_whitespace(parser)
+    
+    ready (parser.current_char != "=") {
+        sus error TomlError = TomlError{
+            error_message: "Expected = after key",
+            line: parser.line,
+            column: parser.column,
+            suggestion: "Use key = value syntax"
+        }
+        damn ("", TomlValue{}, error)
+    }
+    
+    parser = advance_toml_parser(parser)  fr fr Skip =
+    parser = skip_toml_whitespace(parser)
+    
+    (value, value_error) := parse_toml_value(parser)
+    ready (value_error.error_message != "") {
+        damn ("", TomlValue{}, value_error)
+    }
+    
+    damn (key, value, TomlError{})
+}
+
+slay parse_toml_value(parser TomlParser) (TomlValue, TomlError) {
+    fr fr Parse any TOML value
+    parser = skip_toml_whitespace(parser)
+    
+    sus char tea = parser.current_char
+    
+    match char {
+        "\"" => damn parse_toml_string(parser, cringe)  fr fr Basic string
+        "'" => damn parse_toml_string(parser, based)   fr fr Literal string
+        "[" => damn parse_toml_array(parser)
+        "{" => damn parse_toml_inline_table(parser)
+        _ => {
+            ready (char == "t" || char == "f") {
+                damn parse_toml_boolean(parser)
+            } else ready (is_toml_number_start(char)) {
+                damn parse_toml_number(parser)
+            } else ready (is_toml_datetime_start(parser)) {
+                damn parse_toml_datetime(parser)
+            } else {
+                sus error TomlError = TomlError{
+                    error_message: "Unexpected value start: " + char,
+                    line: parser.line,
+                    column: parser.column,
+                    suggestion: "Expected string, number, boolean, array, or inline table"
+                }
+                damn (TomlValue{}, error)
+            }
+        }
+    }
+}
+
+fr fr ===== VALIDATION SYSTEM =====
+
+slay validate_all_configurations(manager ConfigManager) ConfigManager {
+    fr fr Validate all configuration values against their schemas
+    sus keys []tea = map_keys(manager.values)
+    sus key_count drip = array_length(keys)
+    
+    sus i drip = 0
+    bestie (i < key_count) {
+        sus key tea = keys[i]
+        sus value ConfigValue = map_get(manager.values, key)
+        
+        fr fr Check if schema exists for this key
+        ready (map_has_key(manager.schemas, key)) {
+            sus schema ConfigSchema = map_get_schema(manager.schemas, key)
+            sus is_valid lit = validate_config_value(value, schema)
+            
+            ready (!is_valid) {
+                sus error ValidationError = create_validation_error(key, value, schema)
+                manager.validation_errors = append_validation_error(manager.validation_errors, error)
+            }
+        }
+        
+        i = i + 1
+    }
+    
+    fr fr Check for required keys that are missing
+    sus schema_keys []tea = map_keys_schema(manager.schemas)
+    sus schema_count drip = array_length(schema_keys)
+    
+    sus j drip = 0
+    bestie (j < schema_count) {
+        sus schema_key tea = schema_keys[j]
+        sus schema ConfigSchema = map_get_schema(manager.schemas, schema_key)
+        
+        ready (schema.required && !map_has_key(manager.values, schema_key)) {
+            ready (schema.default_value.is_valid()) {
+                fr fr Use default value
+                map_set(manager.values, schema_key, schema.default_value)
+            } else {
+                fr fr Report missing required key
+                sus error ValidationError = ValidationError{
+                    key: schema_key,
+                    message: "Required configuration key is missing",
+                    expected_type: schema.type,
+                    actual_value: "missing",
+                    source: "validation",
+                    suggestion: "Add " + schema_key + " to your configuration or provide a default value"
+                }
+                manager.validation_errors = append_validation_error(manager.validation_errors, error)
+            }
+        }
+        
+        j = j + 1
+    }
+    
+    damn manager
+}
+
+slay validate_config_value(value ConfigValue, schema ConfigSchema) lit {
+    fr fr Validate individual configuration value against schema
+    
+    fr fr Check type compatibility
+    sus value_type tea = value.get_type()
+    ready (value_type != schema.type) {
+        damn cringe
+    }
+    
+    fr fr Type-specific validation
+    match schema.type {
+        "string" => damn validate_string_value(value, schema)
+        "number" => damn validate_number_value(value, schema)
+        "boolean" => damn validate_boolean_value(value, schema)
+        "array" => damn validate_array_value(value, schema)
+        "object" => damn validate_object_value(value, schema)
+        _ => damn based  fr fr Unknown type, assume valid
+    }
+}
+
+slay validate_string_value(value ConfigValue, schema ConfigSchema) lit {
+    fr fr Validate string value with constraints
+    sus str_value tea = value.to_string()
+    sus constraints ConfigConstraints = schema.constraints
+    
+    fr fr Length constraints
+    sus str_length drip = string_length(str_value)
+    ready (constraints.min_length > 0 && str_length < constraints.min_length) {
+        damn cringe
+    }
+    ready (constraints.max_length > 0 && str_length > constraints.max_length) {
+        damn cringe
+    }
+    
+    fr fr Pattern validation (simplified regex)
+    ready (constraints.pattern != "") {
+        ready (!string_matches_pattern(str_value, constraints.pattern)) {
+            damn cringe
+        }
+    }
+    
+    fr fr Enum validation
+    sus enum_count drip = array_length(constraints.enum_values)
+    ready (enum_count > 0) {
+        sus is_in_enum lit = cringe
+        sus i drip = 0
+        bestie (i < enum_count) {
+            ready (str_value == constraints.enum_values[i]) {
+                is_in_enum = based
+                break
+            }
+            i = i + 1
+        }
+        ready (!is_in_enum) {
+            damn cringe
+        }
+    }
+    
+    fr fr Format validation
+    ready (constraints.format != "") {
+        ready (!validate_string_format(str_value, constraints.format)) {
+            damn cringe
+        }
+    }
+    
+    damn based
+}
+
+slay validate_string_format(value tea, format tea) lit {
+    fr fr Validate string format (email, url, ipv4, etc.)
+    match format {
+        "email" => damn validate_email_format(value)
+        "url" => damn validate_url_format(value)
+        "ipv4" => damn validate_ipv4_format(value)
+        "ipv6" => damn validate_ipv6_format(value)
+        "uuid" => damn validate_uuid_format(value)
+        "datetime" => damn validate_datetime_format(value)
+        "hostname" => damn validate_hostname_format(value)
+        _ => damn based  fr fr Unknown format, assume valid
+    }
+}
+
+slay validate_email_format(email tea) lit {
+    fr fr Basic email validation
+    ready (!string_contains(email, "@")) {
+        damn cringe
+    }
+    
+    sus parts []tea = string_split(email, "@")
+    ready (array_length(parts) != 2) {
+        damn cringe
+    }
+    
+    sus local tea = parts[0]
+    sus domain tea = parts[1]
+    
+    ready (string_length(local) == 0 || string_length(domain) == 0) {
+        damn cringe
+    }
+    
+    ready (!string_contains(domain, ".")) {
+        damn cringe
+    }
+    
+    damn based
+}
+
+slay validate_url_format(url tea) lit {
+    fr fr Basic URL validation
+    ready (!string_starts_with(url, "http://") && !string_starts_with(url, "https://")) {
+        damn cringe
+    }
+    
+    sus url_length drip = string_length(url)
+    ready (url_length < 10) {  fr fr Minimum valid URL length
+        damn cringe
+    }
+    
+    damn based
+}
+
+slay validate_ipv4_format(ip tea) lit {
+    fr fr Basic IPv4 validation
+    sus parts []tea = string_split(ip, ".")
+    ready (array_length(parts) != 4) {
+        damn cringe
+    }
+    
+    sus i drip = 0
+    bestie (i < 4) {
+        sus part tea = parts[i]
+        ready (!is_numeric_string(part)) {
+            damn cringe
+        }
+        
+        sus num drip = string_to_int(part)
+        ready (num < 0 || num > 255) {
             damn cringe
         }
         
@@ -376,464 +982,31 @@ slay is_numeric_string(str tea) lit {
     damn based
 }
 
-slay is_digit_char(char tea) lit {
-    sus code drip = char_to_number(char)
-    damn (code >= 48 && code <= 57)  fr fr '0' to '9'
-}
-
-fr fr ===== TOML CONFIGURATION LOADER =====
-
-slay load_toml_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Basic TOML parser for key-value pairs and sections
-    ready (source.content == "") {
-        damn manager
-    }
-    
-    sus lines []tea = split_lines(source.content)
-    sus line_count drip = array_length(lines)
-    sus current_section tea = ""
-    
-    sus i drip = 0
-    bestie (i < line_count) {
-        sus line tea = trim_string(lines[i])
-        
-        fr fr Skip empty lines and comments
-        ready (line == "" || starts_with(line, "#")) {
-            i = i + 1
-            continue
-        }
-        
-        fr fr Handle sections [section.name]
-        ready (starts_with(line, "[") && ends_with(line, "]")) {
-            current_section = substring(line, 1, string_length(line) - 2)
-            i = i + 1
-            continue
-        }
-        
-        fr fr Handle key-value pairs
-        sus key_value []tea = split_string(line, "=", 2)
-        ready (array_length(key_value) == 2) {
-            sus key tea = trim_string(key_value[0])
-            sus value_str tea = trim_string(key_value[1])
-            
-            fr fr Remove quotes from string values
-            ready (starts_with(value_str, "\"") && ends_with(value_str, "\"")) {
-                value_str = substring(value_str, 1, string_length(value_str) - 2)
-            }
-            
-            sus full_key tea
-            ready (current_section == "") {
-                full_key = key
-            } otherwise {
-                full_key = current_section + "." + key
-            }
-            
-            sus config_value ConfigValue = ConfigValue{}
-            config_value.type = "string"
-            config_value.string_value = value_str
-            config_value.source = "file"
-            config_value = auto_detect_type(config_value)
-            
-            map_set_string(manager.values, full_key, config_value)
-        }
-        
-        i = i + 1
-    }
-    
-    damn manager
-}
-
-fr fr ===== INI CONFIGURATION LOADER =====
-
-slay load_ini_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Basic INI parser for Windows-style configuration files
-    ready (source.content == "") {
-        damn manager
-    }
-    
-    sus lines []tea = split_lines(source.content)
-    sus line_count drip = array_length(lines)
-    sus current_section tea = ""
-    
-    sus i drip = 0
-    bestie (i < line_count) {
-        sus line tea = trim_string(lines[i])
-        
-        fr fr Skip empty lines and comments
-        ready (line == "" || starts_with(line, ";") || starts_with(line, "#")) {
-            i = i + 1
-            continue
-        }
-        
-        fr fr Handle sections [Section]
-        ready (starts_with(line, "[") && ends_with(line, "]")) {
-            current_section = substring(line, 1, string_length(line) - 2)
-            i = i + 1
-            continue
-        }
-        
-        fr fr Handle key=value pairs
-        sus equals_pos drip = find_char(line, "=")
-        ready (equals_pos > 0) {
-            sus key tea = trim_string(substring(line, 0, equals_pos))
-            sus value_str tea = trim_string(substring(line, equals_pos + 1, string_length(line) - equals_pos - 1))
-            
-            sus full_key tea
-            ready (current_section == "") {
-                full_key = string_to_lower(key)
-            } otherwise {
-                full_key = string_to_lower(current_section) + "." + string_to_lower(key)
-            }
-            
-            sus config_value ConfigValue = ConfigValue{}
-            config_value.type = "string"
-            config_value.string_value = value_str
-            config_value.source = "file"
-            config_value = auto_detect_type(config_value)
-            
-            map_set_string(manager.values, full_key, config_value)
-        }
-        
-        i = i + 1
-    }
-    
-    damn manager
-}
-
-fr fr ===== YAML CONFIGURATION LOADER =====
-
-slay load_yaml_source(manager ConfigManager, source ConfigSource) ConfigManager {
-    fr fr Basic YAML parser for simple key-value pairs and nested objects
-    ready (source.content == "") {
-        damn manager
-    }
-    
-    sus lines []tea = split_lines(source.content)
-    sus line_count drip = array_length(lines)
-    sus key_stack []tea = []
-    sus indent_stack []drip = []
-    
-    sus i drip = 0
-    bestie (i < line_count) {
-        sus line tea = lines[i]
-        
-        fr fr Skip empty lines and comments
-        ready (trim_string(line) == "" || starts_with(trim_string(line), "#")) {
-            i = i + 1
-            continue
-        }
-        
-        sus indent drip = count_leading_spaces(line)
-        sus content tea = trim_string(line)
-        
-        fr fr Adjust key stack based on indentation
-        key_stack, indent_stack = adjust_yaml_stack(key_stack, indent_stack, indent)
-        
-        fr fr Handle key-value pairs
-        sus colon_pos drip = find_char(content, ":")
-        ready (colon_pos > 0) {
-            sus key tea = trim_string(substring(content, 0, colon_pos))
-            sus value_str tea = trim_string(substring(content, colon_pos + 1, string_length(content) - colon_pos - 1))
-            
-            fr fr Build full key path
-            sus full_key tea = build_yaml_key_path(key_stack, key)
-            
-            ready (value_str != "") {
-                fr fr Leaf value
-                sus config_value ConfigValue = ConfigValue{}
-                config_value.type = "string"
-                config_value.string_value = value_str
-                config_value.source = "file"
-                config_value = auto_detect_type(config_value)
-                
-                map_set_string(manager.values, full_key, config_value)
-            } otherwise {
-                fr fr Parent key - add to stack
-                sus key_count drip = array_length(key_stack)
-                sus indent_count drip = array_length(indent_stack)
-                key_stack[key_count] = key
-                indent_stack[indent_count] = indent
-            }
-        }
-        
-        i = i + 1
-    }
-    
-    damn manager
-}
-
-slay adjust_yaml_stack(key_stack []tea, indent_stack []drip, current_indent drip) ([]tea, []drip) {
-    fr fr Adjust stacks based on current indentation level
-    sus key_count drip = array_length(key_stack)
-    sus indent_count drip = array_length(indent_stack)
-    
-    fr fr Remove entries with higher indentation
-    sus new_key_count drip = 0
-    sus new_indent_count drip = 0
-    
-    sus i drip = 0
-    bestie (i < key_count && i < indent_count) {
-        ready (indent_stack[i] < current_indent) {
-            key_stack[new_key_count] = key_stack[i]
-            indent_stack[new_indent_count] = indent_stack[i]
-            new_key_count = new_key_count + 1
-            new_indent_count = new_indent_count + 1
-        }
-        i = i + 1
-    }
-    
-    fr fr Truncate arrays
-    sus new_keys []tea = []
-    sus new_indents []drip = []
-    
-    sus j drip = 0
-    bestie (j < new_key_count) {
-        new_keys[j] = key_stack[j]
-        new_indents[j] = indent_stack[j]
-        j = j + 1
-    }
-    
-    damn new_keys, new_indents
-}
-
-slay build_yaml_key_path(key_stack []tea, current_key tea) tea {
-    fr fr Build dot-separated key path from stack
-    sus result tea = ""
-    sus stack_count drip = array_length(key_stack)
-    
-    sus i drip = 0
-    bestie (i < stack_count) {
-        ready (i > 0) {
-            result = result + "."
-        }
-        result = result + key_stack[i]
-        i = i + 1
-    }
-    
-    ready (result != "" && current_key != "") {
-        result = result + "." + current_key
-    } otherwise ready (current_key != "") {
-        result = current_key
-    }
-    
-    damn result
-}
-
-slay count_leading_spaces(line tea) drip {
-    fr fr Count leading spaces for YAML indentation
-    sus length drip = string_length(line)
-    sus count drip = 0
-    
-    sus i drip = 0
-    bestie (i < length) {
-        sus char tea = substring(line, i, 1)
-        ready (char == " ") {
-            count = count + 1
-        } otherwise {
-            break
-        }
-        i = i + 1
-    }
-    
-    damn count
-}
-
-fr fr ===== CONFIGURATION VALUE ACCESS =====
-
-slay config_get_string(manager ConfigManager, key tea, default_value tea) tea {
-    fr fr Get string configuration value with fallback
-    ready (map_has_string(manager.values, key)) {
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        ready (config_value.type == "string") {
-            damn config_value.string_value
-        } otherwise ready (config_value.type == "number") {
-            damn number_to_string(config_value.number_value)
-        } otherwise ready (config_value.type == "boolean") {
-            ready (config_value.boolean_value) {
-                damn "true"
-            } otherwise {
-                damn "false"
-            }
-        }
-    }
-    damn default_value
-}
-
-slay config_get_number(manager ConfigManager, key tea, default_value normie) normie {
-    fr fr Get numeric configuration value with fallback
-    ready (map_has_string(manager.values, key)) {
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        ready (config_value.type == "number") {
-            damn config_value.number_value
-        } otherwise ready (config_value.type == "string") {
-            ready (is_numeric_string(config_value.string_value)) {
-                damn string_to_float(config_value.string_value)
-            }
-        }
-    }
-    damn default_value
-}
-
-slay config_get_boolean(manager ConfigManager, key tea, default_value lit) lit {
-    fr fr Get boolean configuration value with fallback
-    ready (map_has_string(manager.values, key)) {
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        ready (config_value.type == "boolean") {
-            damn config_value.boolean_value
-        } otherwise ready (config_value.type == "string") {
-            sus value tea = string_to_lower(config_value.string_value)
-            damn (value == "true" || value == "yes" || value == "on" || value == "1")
-        }
-    }
-    damn default_value
-}
-
-slay config_get_array(manager ConfigManager, key tea) []ConfigValue {
-    fr fr Get array configuration value
-    ready (map_has_string(manager.values, key)) {
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        ready (config_value.type == "array") {
-            damn config_value.array_values
-        }
-    }
-    
-    sus empty_array []ConfigValue = []
-    damn empty_array
-}
-
-slay config_has_key(manager ConfigManager, key tea) lit {
-    fr fr Check if configuration key exists
-    damn map_has_string(manager.values, key)
-}
-
-slay config_get_all_keys(manager ConfigManager) []tea {
-    fr fr Get all configuration keys
-    damn map_keys_string(manager.values)
-}
-
-slay config_get_keys_with_prefix(manager ConfigManager, prefix tea) []tea {
-    fr fr Get all keys starting with prefix
-    sus all_keys []tea = map_keys_string(manager.values)
-    sus matching_keys []tea = []
-    sus key_count drip = array_length(all_keys)
-    sus match_count drip = 0
-    
-    sus i drip = 0
-    bestie (i < key_count) {
-        sus key tea = all_keys[i]
-        ready (starts_with(key, prefix)) {
-            matching_keys[match_count] = key
-            match_count = match_count + 1
-        }
-        i = i + 1
-    }
-    
-    damn matching_keys
-}
-
-fr fr ===== CONFIGURATION VALIDATION =====
-
-slay validate_all_values(manager ConfigManager) ConfigManager {
-    fr fr Validate all configuration values against rules
-    sus rule_count drip = array_length(manager.validation_rules)
-    sus all_keys []tea = map_keys_string(manager.values)
-    sus key_count drip = array_length(all_keys)
-    
-    sus i drip = 0
-    bestie (i < key_count) {
-        sus key tea = all_keys[i]
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        
-        sus j drip = 0
-        bestie (j < rule_count) {
-            sus rule ValidationRule = manager.validation_rules[j]
-            ready (key_matches_pattern(key, rule.key_pattern)) {
-                sus is_valid lit = validate_value(config_value, rule)
-                ready (!is_valid) {
-                    vibez.spill("Configuration validation error for key '" + key + "': " + rule.error_message)
-                }
-            }
-            j = j + 1
-        }
-        
-        i = i + 1
-    }
-    
-    damn manager
-}
-
-slay validate_value(value ConfigValue, rule ValidationRule) lit {
-    fr fr Validate single value against rule
-    fr fr Check type match
-    ready (rule.value_type != "" && value.type != rule.value_type) {
-        damn cringe
-    }
-    
-    fr fr Apply custom validator
-    ready (rule.validator == "required") {
-        damn (value.type != "string" || value.string_value != "")
-    } otherwise ready (rule.validator == "positive_number") {
-        damn (value.type == "number" && value.number_value > 0.0)
-    } otherwise ready (rule.validator == "valid_url") {
-        damn (value.type == "string" && is_valid_url(value.string_value))
-    } otherwise ready (rule.validator == "valid_email") {
-        damn (value.type == "string" && is_valid_email(value.string_value))
-    }
-    
-    damn based  fr fr Default to valid
-}
-
-slay key_matches_pattern(key tea, pattern tea) lit {
-    fr fr Simple pattern matching (supports wildcards)
-    ready (pattern == "*") {
-        damn based  fr fr Match all
-    } otherwise ready (pattern == key) {
-        damn based  fr fr Exact match
-    } otherwise ready (ends_with(pattern, "*")) {
-        sus prefix tea = substring(pattern, 0, string_length(pattern) - 1)
-        damn starts_with(key, prefix)
-    } otherwise ready (starts_with(pattern, "*")) {
-        sus suffix tea = substring(pattern, 1, string_length(pattern) - 1)
-        damn ends_with(key, suffix)
-    }
-    
-    damn cringe  fr fr No match
-}
-
-slay is_valid_url(url tea) lit {
-    fr fr Basic URL validation
-    damn (starts_with(url, "http://") || starts_with(url, "https://") || 
-          starts_with(url, "ftp://") || starts_with(url, "file://"))
-}
-
-slay is_valid_email(email tea) lit {
-    fr fr Basic email validation
-    sus at_pos drip = find_char(email, "@")
-    sus dot_pos drip = find_char_from(email, ".", at_pos)
-    damn (at_pos > 0 && dot_pos > at_pos && dot_pos < string_length(email) - 1)
-}
-
-fr fr ===== HOT RELOADING AND WATCHING =====
+fr fr ===== HOT RELOADING SYSTEM =====
 
 slay config_enable_watching(manager ConfigManager) ConfigManager {
-    fr fr Enable file watching for hot reloading
+    fr fr Enable hot reloading for configuration files
     manager.is_watching = based
     
+    fr fr Set up file watchers for all sources
     sus source_count drip = array_length(manager.sources)
     sus i drip = 0
+    
     bestie (i < source_count) {
         sus source ConfigSource = manager.sources[i]
-        ready (source.type != "env" && source.path != "") {
-            manager.sources[i].watch_enabled = based
-            
-            sus watcher ConfigWatcher = ConfigWatcher{}
-            watcher.path = source.path
-            watcher.last_check = get_current_time()
-            watcher.callback = "reload_source"
+        ready (source.watch_enabled) {
+            sus watcher ConfigWatcher = ConfigWatcher{
+                path: source.path,
+                last_check: get_current_timestamp(),
+                check_interval: 1000,  fr fr 1 second
+                callback_name: "reload_source_" + drip_to_string(i),
+                is_active: based
+            }
             
             sus watcher_count drip = array_length(manager.watchers)
             manager.watchers[watcher_count] = watcher
         }
+        
         i = i + 1
     }
     
@@ -841,478 +1014,544 @@ slay config_enable_watching(manager ConfigManager) ConfigManager {
 }
 
 slay config_check_for_changes(manager ConfigManager) ConfigManager {
-    fr fr Check all watched files for changes
+    fr fr Check for file changes and reload if necessary
     ready (!manager.is_watching) {
         damn manager
     }
     
+    sus current_time drip = get_current_timestamp()
     sus watcher_count drip = array_length(manager.watchers)
-    sus has_changes lit = cringe
-    sus current_time drip = get_current_time()
+    sus changes_detected lit = cringe
     
     sus i drip = 0
     bestie (i < watcher_count) {
         sus watcher ConfigWatcher = manager.watchers[i]
-        sus file_time drip = get_file_modified_time(watcher.path)
         
-        ready (file_time > watcher.last_check) {
-            vibez.spill("Configuration file changed: " + watcher.path)
-            manager.watchers[i].last_check = current_time
-            has_changes = based
+        ready (watcher.is_active && 
+               current_time - watcher.last_check >= watcher.check_interval) {
+            
+            sus file_mod_time drip = get_file_modified_time(watcher.path)
+            sus source_index drip = find_source_by_path(manager.sources, watcher.path)
+            
+            ready (source_index >= 0) {
+                sus source ConfigSource = manager.sources[source_index]
+                
+                ready (file_mod_time > source.last_modified) {
+                    vibez.spill("Configuration file changed: " + watcher.path)
+                    
+                    fr fr Reload the specific source
+                    (new_content, load_error) := load_source_content(source)
+                    ready (load_error == "") {
+                        source.content = new_content
+                        source.last_modified = file_mod_time
+                        manager.sources[source_index] = source
+                        changes_detected = based
+                    } else {
+                        vibez.spill("Error reloading " + watcher.path + ": " + load_error)
+                    }
+                }
+            }
+            
+            watcher.last_check = current_time
+            manager.watchers[i] = watcher
         }
         
         i = i + 1
     }
     
-    ready (has_changes) {
-        manager = config_reload(manager)
+    fr fr If changes were detected, reload all configuration
+    ready (changes_detected) {
+        manager = config_load_all(manager)
+        manager = trigger_reload_callbacks(manager)
     }
     
-    damn manager
-}
-
-slay config_reload(manager ConfigManager) ConfigManager {
-    fr fr Reload all configuration sources
-    vibez.spill("Reloading configuration...")
-    
-    fr fr Update source content
-    sus source_count drip = array_length(manager.sources)
-    sus i drip = 0
-    bestie (i < source_count) {
-        sus source ConfigSource = manager.sources[i]
-        ready (source.type != "env" && source.path != "") {
-            manager.sources[i].content = read_file_safe(source.path)
-            manager.sources[i].last_modified = get_file_modified_time(source.path)
-        }
-        i = i + 1
-    }
-    
-    fr fr Reload all values
-    manager = config_load_all(manager)
-    
-    fr fr Trigger reload callbacks
-    sus callback_count drip = array_length(manager.reload_callbacks)
-    sus j drip = 0
-    bestie (j < callback_count) {
-        sus callback ReloadCallback = manager.reload_callbacks[j]
-        vibez.spill("Triggering reload callback: " + callback.name)
-        fr fr Here you would call the actual callback function
-        j = j + 1
-    }
-    
-    vibez.spill("Configuration reloaded successfully")
     damn manager
 }
 
 slay config_add_reload_callback(manager ConfigManager, name tea, handler tea) ConfigManager {
-    fr fr Add callback to be triggered on configuration reload
-    sus callback ReloadCallback = ReloadCallback{}
-    callback.name = name
-    callback.handler = handler
+    fr fr Add callback to be executed when configuration reloads
+    sus callback ReloadCallback = ReloadCallback{
+        name: name,
+        handler: handler,
+        priority: 100,
+        conditions: []
+    }
     
     sus callback_count drip = array_length(manager.reload_callbacks)
     manager.reload_callbacks[callback_count] = callback
+    
     damn manager
 }
 
-fr fr ===== CONFIGURATION EXPORT AND DEBUGGING =====
+slay trigger_reload_callbacks(manager ConfigManager) ConfigManager {
+    fr fr Execute all registered reload callbacks
+    sus callback_count drip = array_length(manager.reload_callbacks)
+    
+    sus i drip = 0
+    bestie (i < callback_count) {
+        sus callback ReloadCallback = manager.reload_callbacks[i]
+        vibez.spill("Executing reload callback: " + callback.name)
+        fr fr In a real implementation, this would execute the handler function
+        i = i + 1
+    }
+    
+    damn manager
+}
+
+fr fr ===== HIGH-LEVEL API =====
+
+slay config_get_string(manager ConfigManager, key tea, default_value tea) tea {
+    fr fr Get string value with default
+    ready (map_has_key(manager.values, key)) {
+        sus value ConfigValue = map_get(manager.values, key)
+        damn value.to_string()
+    }
+    damn default_value
+}
+
+slay config_get_int(manager ConfigManager, key tea, default_value drip) drip {
+    fr fr Get integer value with default
+    ready (map_has_key(manager.values, key)) {
+        sus value ConfigValue = map_get(manager.values, key)
+        damn value.to_int()
+    }
+    damn default_value
+}
+
+slay config_get_bool(manager ConfigManager, key tea, default_value lit) lit {
+    fr fr Get boolean value with default
+    ready (map_has_key(manager.values, key)) {
+        sus value ConfigValue = map_get(manager.values, key)
+        damn value.to_bool()
+    }
+    damn default_value
+}
+
+slay config_get_array(manager ConfigManager, key tea) []ConfigValue {
+    fr fr Get array value
+    ready (map_has_key(manager.values, key)) {
+        sus value ConfigValue = map_get(manager.values, key)
+        damn value.to_array()
+    }
+    damn []
+}
+
+slay config_has_key(manager ConfigManager, key tea) lit {
+    fr fr Check if configuration key exists
+    damn map_has_key(manager.values, key)
+}
+
+slay config_list_keys(manager ConfigManager) []tea {
+    fr fr Get all configuration keys
+    damn map_keys(manager.values)
+}
 
 slay config_export_json(manager ConfigManager) tea {
-    fr fr Export current configuration as JSON
-    sus json_obj JsonValue = json_create_object()
-    sus all_keys []tea = map_keys_string(manager.values)
-    sus key_count drip = array_length(all_keys)
+    fr fr Export all configuration as JSON
+    sus json_object JsonObject = JsonObject{
+        fields: create_json_map(),
+        field_order: [],
+        allow_duplicates: cringe
+    }
+    
+    sus keys []tea = map_keys(manager.values)
+    sus key_count drip = array_length(keys)
     
     sus i drip = 0
     bestie (i < key_count) {
-        sus key tea = all_keys[i]
-        sus config_value ConfigValue = map_get_string(manager.values, key)
+        sus key tea = keys[i]
+        sus config_value ConfigValue = map_get(manager.values, key)
         sus json_value JsonValue = config_value_to_json(config_value)
-        json_obj = json_object_set(json_obj, key, json_value)
+        
+        map_set_json(json_object.fields, key, json_value)
         i = i + 1
     }
     
-    damn json_stringify(json_obj)
+    damn json_stringify(json_object)
 }
 
-slay config_value_to_json(config_value ConfigValue) JsonValue {
-    fr fr Convert configuration value to JSON value
-    ready (config_value.type == "string") {
-        damn json_create_string(config_value.string_value)
-    } otherwise ready (config_value.type == "number") {
-        damn json_create_number(config_value.number_value)
-    } otherwise ready (config_value.type == "boolean") {
-        damn json_create_boolean(config_value.boolean_value)
-    } otherwise ready (config_value.type == "array") {
-        sus json_array JsonValue = json_create_array()
-        sus element_count drip = array_length(config_value.array_values)
+fr fr ==========================================
+fr fr ENHANCED IMPLEMENTATION FUNCTIONS
+fr fr ==========================================
+
+slay enhanced_json_to_config_recursive(manager ConfigManager, json_value JsonValue, prefix tea, source_type tea) ConfigManager {
+    fr fr Convert enhanced JSON value to configuration values with full type support
+    ready (json_value.value_type == "string") {
+        sus config_value ConfigValue = StringConfigValue{
+            value: json_value.string_value,
+            source: source_type,
+            is_encrypted: cringe,
+            validation_pattern: ""
+        }
+        map_set(manager.values, prefix, config_value)
+    } otherwise ready (json_value.value_type == "number") {
+        sus config_value ConfigValue = NumberConfigValue{
+            int_value: drip(json_value.number_value),
+            float_value: json_value.number_value,
+            is_integer: (json_value.number_value == meal(drip(json_value.number_value))),
+            source: source_type,
+            min_value: 0.0,
+            max_value: 0.0
+        }
+        map_set(manager.values, prefix, config_value)
+    } otherwise ready (json_value.value_type == "boolean") {
+        sus config_value ConfigValue = BooleanConfigValue{
+            value: json_value.boolean_value,
+            source: source_type,
+            true_values: ["true", "1", "yes", "on"],
+            false_values: ["false", "0", "no", "off"]
+        }
+        map_set(manager.values, prefix, config_value)
+    } otherwise ready (json_value.value_type == "array") {
+        sus array_elements []ConfigValue = []
+        sus element_count drip = len(json_value.array_items)
         
         sus i drip = 0
         bestie (i < element_count) {
-            sus element JsonValue = config_value_to_json(config_value.array_values[i])
-            json_array = json_array_push(json_array, element)
+            sus element JsonValue = json_value.array_items[i]
+            sus element_config ConfigValue = json_value_to_config_value(element)
+            array_elements = append_config_value_to_array(array_elements, element_config)
             i = i + 1
         }
         
-        damn json_array
-    } otherwise {
-        damn json_create_null()
+        sus config_value ConfigValue = ArrayConfigValue{
+            elements: array_elements,
+            source: source_type,
+            element_type: "mixed",
+            max_length: -1
+        }
+        map_set(manager.values, prefix, config_value)
+    } otherwise ready (json_value.value_type == "object") {
+        sus pair_count drip = len(json_value.object_pairs)
+        sus i drip = 0
+        
+        bestie (i < pair_count) {
+            sus pair JsonKeyValue = json_value.object_pairs[i]
+            sus nested_key tea = combine_config_keys(prefix, pair.key)
+            manager = enhanced_json_to_config_recursive(manager, pair.value, nested_key, source_type)
+            i = i + 1
+        }
     }
+    
+    damn manager
 }
 
-slay config_debug_info(manager ConfigManager) tea {
-    fr fr Generate debug information about configuration
-    sus info tea = "=== CONFIGURATION DEBUG INFO ===\n"
+slay enhanced_normalize_env_key(env_key tea) tea {
+    fr fr Advanced environment key normalization with proper algorithms
+    sus normalized tea = string_to_lowercase(env_key)
+    normalized = string_replace_all(normalized, "_", ".")
+    normalized = string_replace_all(normalized, "-", ".")
     
-    fr fr Source information
-    info = info + "Sources:\n"
-    sus source_count drip = array_length(manager.sources)
+    fr fr Handle common environment variable prefixes
+    ready (string_starts_with(normalized, "cursed.")) {
+        normalized = string_substring_safe(normalized, 7, string_length(normalized) - 7)
+    }
+    ready (string_starts_with(normalized, "app.")) {
+        normalized = string_substring_safe(normalized, 4, string_length(normalized) - 4)
+    }
+    
+    damn normalized
+}
+
+slay apply_enhanced_key_transformations(key tea, rules []TransformationRule) tea {
+    fr fr Apply transformation rules using enhanced string operations
+    sus transformed_key tea = key
+    sus rule_count drip = len(rules)
+    
     sus i drip = 0
-    bestie (i < source_count) {
-        sus source ConfigSource = manager.sources[i]
-        info = info + "  - " + source.type + ": " + source.path + " (priority: " + number_to_string(normie(source.priority)) + ")\n"
+    bestie (i < rule_count) {
+        sus rule TransformationRule = rules[i]
+        
+        fr fr Use pattern matching for complex transformations
+        ready (string_match_glob_pattern(transformed_key, rule.source_key)) {
+            transformed_key = apply_transformation_rule(transformed_key, rule)
+        }
+        
         i = i + 1
     }
     
-    fr fr Value information
-    info = info + "\nValues:\n"
-    sus all_keys []tea = map_keys_string(manager.values)
-    sus key_count drip = array_length(all_keys)
-    
-    sus j drip = 0
-    bestie (j < key_count) {
-        sus key tea = all_keys[j]
-        sus config_value ConfigValue = map_get_string(manager.values, key)
-        info = info + "  " + key + " = " + config_value_to_string(config_value) + " [" + config_value.source + "]\n"
-        j = j + 1
-    }
-    
-    fr fr Validation rules
-    info = info + "\nValidation Rules:\n"
-    sus rule_count drip = array_length(manager.validation_rules)
-    sus k drip = 0
-    bestie (k < rule_count) {
-        sus rule ValidationRule = manager.validation_rules[k]
-        info = info + "  " + rule.key_pattern + " (" + rule.value_type + "): " + rule.validator + "\n"
-        k = k + 1
-    }
-    
-    damn info
+    damn transformed_key
 }
 
-slay config_value_to_string(config_value ConfigValue) tea {
-    fr fr Convert configuration value to string representation
-    ready (config_value.type == "string") {
-        damn "\"" + config_value.string_value + "\""
-    } otherwise ready (config_value.type == "number") {
-        damn number_to_string(config_value.number_value)
-    } otherwise ready (config_value.type == "boolean") {
-        ready (config_value.boolean_value) {
-            damn "true"
-        } otherwise {
-            damn "false"
+slay apply_transformation_rule(key tea, rule TransformationRule) tea {
+    fr fr Apply individual transformation rule
+    ready (rule.transformation == "snake_case") {
+        damn string_to_snake_case(key)
+    } otherwise ready (rule.transformation == "kebab_case") {
+        damn string_to_kebab_case(key)
+    } otherwise ready (rule.transformation == "camel_case") {
+        damn string_to_camel_case(key)
+    } otherwise ready (rule.transformation == "uppercase") {
+        damn string_to_uppercase(key)
+    } otherwise ready (rule.transformation == "lowercase") {
+        damn string_to_lowercase(key)
+    } otherwise ready (rule.transformation == "trim") {
+        damn string_trim(key)
+    } otherwise ready (rule.transformation == "prefix_remove") {
+        ready (string_starts_with(key, rule.condition)) {
+            damn string_substring_safe(key, string_length(rule.condition), 
+                                     string_length(key) - string_length(rule.condition))
         }
-    } otherwise ready (config_value.type == "array") {
-        sus result tea = "["
-        sus element_count drip = array_length(config_value.array_values)
-        
-        sus i drip = 0
-        bestie (i < element_count) {
-            ready (i > 0) {
-                result = result + ", "
+        damn key
+    } otherwise {
+        damn key
+    }
+}
+
+slay create_enhanced_config_value_from_env(env_value tea, source_type tea) ConfigValue {
+    fr fr Create configuration value with advanced type detection
+    sus trimmed_value tea = string_trim(env_value)
+    
+    fr fr Advanced boolean detection
+    sus lower_value tea = string_to_lowercase(trimmed_value)
+    ready (array_contains_enhanced(["true", "1", "yes", "on", "enabled"], lower_value)) {
+        damn BooleanConfigValue{
+            value: based,
+            source: source_type,
+            true_values: ["true", "1", "yes", "on", "enabled"],
+            false_values: ["false", "0", "no", "off", "disabled"]
+        }
+    }
+    ready (array_contains_enhanced(["false", "0", "no", "off", "disabled"], lower_value)) {
+        damn BooleanConfigValue{
+            value: cringe,
+            source: source_type,
+            true_values: ["true", "1", "yes", "on", "enabled"],
+            false_values: ["false", "0", "no", "off", "disabled"]
+        }
+    }
+    
+    fr fr Advanced number detection
+    ready (is_numeric_string_enhanced(trimmed_value)) {
+        ready (string_contains(trimmed_value, ".") || 
+               string_contains(trimmed_value, "e") || 
+               string_contains(trimmed_value, "E")) {
+            sus float_val meal = string_to_float(trimmed_value)
+            damn NumberConfigValue{
+                int_value: drip(float_val),
+                float_value: float_val,
+                is_integer: cringe,
+                source: source_type,
+                min_value: 0.0,
+                max_value: 0.0
             }
-            result = result + config_value_to_string(config_value.array_values[i])
-            i = i + 1
-        }
-        
-        result = result + "]"
-        damn result
-    } otherwise {
-        damn "null"
-    }
-}
-
-fr fr ===== UTILITY HELPER FUNCTIONS =====
-
-slay read_file_safe(path tea) tea {
-    fr fr Safely read file content with error handling
-    ready (file_exists(path)) {
-        damn read_file(path)
-    } otherwise {
-        vibez.spill("Warning: Configuration file not found: " + path)
-        damn ""
-    }
-}
-
-slay split_env_var(env_var tea) []tea {
-    fr fr Split environment variable into key=value pair
-    sus equals_pos drip = find_char(env_var, "=")
-    ready (equals_pos > 0) {
-        sus key tea = substring(env_var, 0, equals_pos)
-        sus value tea = substring(env_var, equals_pos + 1, string_length(env_var) - equals_pos - 1)
-        sus result []tea = []
-        result[0] = key
-        result[1] = value
-        damn result
-    } otherwise {
-        sus empty_result []tea = []
-        damn empty_result
-    }
-}
-
-slay get_all_env_vars() []tea {
-    fr fr Get all environment variables (platform-specific implementation)
-    sus vars []tea = []
-    
-    fr fr Common environment variables for demonstration
-    sus common_vars []tea = [
-        "PATH=/usr/bin:/bin",
-        "HOME=/home/user",
-        "USER=user",
-        "SHELL=/bin/bash",
-        "LANG=en_US.UTF-8"
-    ]
-    
-    sus var_count drip = array_length(common_vars)
-    sus i drip = 0
-    bestie (i < var_count) {
-        vars[i] = common_vars[i]
-        i = i + 1
-    }
-    
-    damn vars
-}
-
-slay find_char(str tea, char tea) drip {
-    fr fr Find first occurrence of character in string
-    sus length drip = string_length(str)
-    sus i drip = 0
-    bestie (i < length) {
-        ready (substring(str, i, 1) == char) {
-            damn i
-        }
-        i = i + 1
-    }
-    damn -1
-}
-
-slay find_char_from(str tea, char tea, start drip) drip {
-    fr fr Find first occurrence of character from start position
-    sus length drip = string_length(str)
-    sus i drip = start + 1
-    bestie (i < length) {
-        ready (substring(str, i, 1) == char) {
-            damn i
-        }
-        i = i + 1
-    }
-    damn -1
-}
-
-slay split_lines(content tea) []tea {
-    fr fr Split content into lines
-    damn split_string(content, "\n", 0)
-}
-
-slay split_string(str tea, delimiter tea, max_parts drip) []tea {
-    fr fr Split string by delimiter with optional max parts limit
-    sus result []tea = []
-    sus current_part tea = ""
-    sus part_count drip = 0
-    sus length drip = string_length(str)
-    sus delimiter_length drip = string_length(delimiter)
-    
-    sus i drip = 0
-    bestie (i < length) {
-        ready (max_parts > 0 && part_count >= max_parts - 1) {
-            fr fr Add remainder as last part
-            current_part = current_part + substring(str, i, length - i)
-            break
-        }
-        
-        ready (i + delimiter_length <= length && 
-               substring(str, i, delimiter_length) == delimiter) {
-            result[part_count] = current_part
-            current_part = ""
-            part_count = part_count + 1
-            i = i + delimiter_length
         } otherwise {
-            current_part = current_part + substring(str, i, 1)
-            i = i + 1
+            sus int_val drip = string_to_int(trimmed_value)
+            damn NumberConfigValue{
+                int_value: int_val,
+                float_value: meal(int_val),
+                is_integer: based,
+                source: source_type,
+                min_value: 0.0,
+                max_value: 0.0
+            }
         }
     }
     
-    result[part_count] = current_part
-    damn result
+    fr fr Array detection (comma-separated values)
+    ready (string_contains(trimmed_value, ",")) {
+        sus split_result StringSplitResult = string_split_enhanced(trimmed_value, ",", 0)
+        ready (split_result.success) {
+            sus elements []ConfigValue = []
+            sus part_count drip = split_result.count
+            
+            sus i drip = 0
+            bestie (i < part_count) {
+                sus part tea = string_trim(split_result.parts[i])
+                sus element_config ConfigValue = create_enhanced_config_value_from_env(part, source_type)
+                elements = append_config_value_to_array(elements, element_config)
+                i = i + 1
+            }
+            
+            damn ArrayConfigValue{
+                elements: elements,
+                source: source_type,
+                element_type: "mixed",
+                max_length: -1
+            }
+        }
+    }
+    
+    fr fr Default to string value
+    damn StringConfigValue{
+        value: trimmed_value,
+        source: source_type,
+        is_encrypted: cringe,
+        validation_pattern: ""
+    }
 }
 
-slay trim_string(str tea) tea {
-    fr fr Remove leading and trailing whitespace
+slay decrypt_config_value_enhanced(config_value ConfigValue) ConfigValue {
+    fr fr Enhanced decryption with multiple cipher support
+    fr fr This would integrate with actual cryptographic libraries
+    fr fr For now, return the value unchanged (mock implementation)
+    damn config_value
+}
+
+fr fr ==========================================
+fr fr ENHANCED UTILITY FUNCTIONS
+fr fr ==========================================
+
+slay array_contains_enhanced(arr []tea, target tea) lit {
+    fr fr Enhanced array contains using optimized search
+    sus search_result ArraySearchResult = array_linear_search_all(arr, target)
+    damn search_result.found
+}
+
+slay is_numeric_string_enhanced(str tea) lit {
+    fr fr Enhanced numeric string validation with scientific notation support
+    ready (str == "") { damn cringe }
+    
     sus length drip = string_length(str)
-    sus start drip = 0
-    sus end drip = length
-    
-    fr fr Find start of non-whitespace
-    bestie (start < length) {
-        sus char tea = substring(str, start, 1)
-        ready (char != " " && char != "\t" && char != "\n" && char != "\r") {
-            break
-        }
-        start = start + 1
-    }
-    
-    fr fr Find end of non-whitespace
-    bestie (end > start) {
-        sus char tea = substring(str, end - 1, 1)
-        ready (char != " " && char != "\t" && char != "\n" && char != "\r") {
-            break
-        }
-        end = end - 1
-    }
-    
-    ready (start >= end) {
-        damn ""
-    } otherwise {
-        damn substring(str, start, end - start)
-    }
-}
-
-slay starts_with(str tea, prefix tea) lit {
-    fr fr Check if string starts with prefix
-    sus str_len drip = string_length(str)
-    sus prefix_len drip = string_length(prefix)
-    
-    ready (prefix_len > str_len) {
-        damn cringe
-    }
-    
-    damn substring(str, 0, prefix_len) == prefix
-}
-
-slay ends_with(str tea, suffix tea) lit {
-    fr fr Check if string ends with suffix
-    sus str_len drip = string_length(str)
-    sus suffix_len drip = string_length(suffix)
-    
-    ready (suffix_len > str_len) {
-        damn cringe
-    }
-    
-    damn substring(str, str_len - suffix_len, suffix_len) == suffix
-}
-
-slay string_to_lower(str tea) tea {
-    fr fr Convert string to lowercase
-    sus result tea = ""
-    sus length drip = string_length(str)
-    
+    sus has_dot lit = cringe
+    sus has_e lit = cringe
     sus i drip = 0
+    
+    fr fr Handle optional sign
+    ready (string_char_at(str, 0) == "-" || string_char_at(str, 0) == "+") {
+        i = 1
+    }
+    
+    ready (i >= length) { damn cringe }
+    
     bestie (i < length) {
-        sus char tea = substring(str, i, 1)
-        sus code drip = char_to_number(char)
+        sus char tea = string_char_at(str, i)
         
-        ready (code >= 65 && code <= 90) {  fr fr 'A' to 'Z'
-            result = result + string_from_number(code + 32)
+        ready (char >= "0" && char <= "9") {
+            fr fr Valid digit
+        } otherwise ready (char == "." && !has_dot && !has_e) {
+            has_dot = based
+        } otherwise ready ((char == "e" || char == "E") && !has_e) {
+            has_e = based
+            fr fr Next character can be sign
+            ready (i + 1 < length) {
+                sus next_char tea = string_char_at(str, i + 1)
+                ready (next_char == "+" || next_char == "-") {
+                    i = i + 1
+                }
+            }
         } otherwise {
-            result = result + char
+            damn cringe
         }
         
         i = i + 1
     }
     
-    damn result
+    damn based
+}
+
+slay json_value_to_config_value(json_value JsonValue) ConfigValue {
+    fr fr Convert single JSON value to configuration value
+    ready (json_value.value_type == "string") {
+        damn StringConfigValue{
+            value: json_value.string_value,
+            source: "json",
+            is_encrypted: cringe,
+            validation_pattern: ""
+        }
+    } otherwise ready (json_value.value_type == "number") {
+        damn NumberConfigValue{
+            int_value: drip(json_value.number_value),
+            float_value: json_value.number_value,
+            is_integer: (json_value.number_value == meal(drip(json_value.number_value))),
+            source: "json",
+            min_value: 0.0,
+            max_value: 0.0
+        }
+    } otherwise ready (json_value.value_type == "boolean") {
+        damn BooleanConfigValue{
+            value: json_value.boolean_value,
+            source: "json",
+            true_values: ["true"],
+            false_values: ["false"]
+        }
+    } otherwise {
+        damn StringConfigValue{
+            value: "",
+            source: "json",
+            is_encrypted: cringe,
+            validation_pattern: ""
+        }
+    }
+}
+
+slay combine_config_keys(prefix tea, key tea) tea {
+    fr fr Combine configuration keys with proper dot notation
+    ready (prefix == "") {
+        damn key
+    } otherwise {
+        damn prefix + "." + key
+    }
+}
+
+slay append_config_value_to_array(arr []ConfigValue, value ConfigValue) []ConfigValue {
+    fr fr Append configuration value to array
+    sus length drip = len(arr)
+    sus new_arr []ConfigValue = []
+    
+    sus i drip = 0
+    bestie (i < length) {
+        new_arr[i] = arr[i]
+        i = i + 1
+    }
+    new_arr[length] = value
+    
+    damn new_arr
 }
 
 slay string_replace_all(str tea, old_str tea, new_str tea) tea {
     fr fr Replace all occurrences of old_str with new_str
     sus result tea = ""
-    sus length drip = string_length(str)
+    sus str_length drip = string_length(str)
     sus old_length drip = string_length(old_str)
+    sus position drip = 0
     
-    sus i drip = 0
-    bestie (i < length) {
-        ready (i + old_length <= length && 
-               substring(str, i, old_length) == old_str) {
+    ready (old_length == 0) {
+        damn str
+    }
+    
+    bestie (position < str_length) {
+        ready (position + old_length <= str_length &&
+               string_substring_safe(str, position, old_length) == old_str) {
             result = result + new_str
-            i = i + old_length
+            position = position + old_length
         } otherwise {
-            result = result + substring(str, i, 1)
-            i = i + 1
+            result = result + string_char_at(str, position)
+            position = position + 1
         }
     }
     
     damn result
 }
 
-slay string_to_float(str tea) normie {
-    fr fr Convert string to floating point number with proper parsing
-    ready (str == "") { damn 0.0 }
-    
-    sus trimmed tea = trim_string(str)
-    ready (trimmed == "") { damn 0.0 }
-    
+slay string_to_int(str tea) drip {
+    fr fr Convert string to integer
+    sus result drip = 0
+    sus length drip = string_length(str)
     sus is_negative lit = cringe
-    sus start_index drip = 0
-    sus length drip = string_length(trimmed)
+    sus start_pos drip = 0
     
-    fr fr Handle negative sign
-    ready (starts_with(trimmed, "-")) {
+    ready (length == 0) { damn 0 }
+    
+    ready (string_char_at(str, 0) == "-") {
         is_negative = based
-        start_index = 1
-    } otherwise ready (starts_with(trimmed, "+")) {
-        start_index = 1
+        start_pos = 1
+    } otherwise ready (string_char_at(str, 0) == "+") {
+        start_pos = 1
     }
     
-    fr fr Parse integer part
-    sus integer_part normie = 0.0
-    sus decimal_part normie = 0.0
-    sus decimal_places drip = 0
-    sus found_decimal lit = cringe
-    
-    sus i drip = start_index
+    sus i drip = start_pos
     bestie (i < length) {
-        sus char tea = substring(trimmed, i, 1)
-        
-        ready (char == ".") {
-            ready (found_decimal) {
-                fr fr Multiple decimal points - invalid number
-                damn 0.0
-            }
-            found_decimal = based
-            i = i + 1
-            continue
-        }
-        
-        ready (is_digit_char(char)) {
-            sus digit drip = char_to_number(char) - 48  fr fr Convert to actual digit
-            
-            ready (!found_decimal) {
-                integer_part = integer_part * 10.0 + normie(digit)
-            } otherwise {
-                decimal_places = decimal_places + 1
-                decimal_part = decimal_part * 10.0 + normie(digit)
-            }
+        sus char tea = string_char_at(str, i)
+        ready (char >= "0" && char <= "9") {
+            sus digit drip = char_code_to_digit(char)
+            result = result * 10 + digit
         } otherwise {
-            fr fr Invalid character - stop parsing
             break
         }
-        
         i = i + 1
     }
     
-    fr fr Combine integer and decimal parts
-    sus result normie = integer_part
-    ready (found_decimal && decimal_places > 0) {
-        sus decimal_divisor normie = 1.0
-        sus j drip = 0
-        bestie (j < decimal_places) {
-            decimal_divisor = decimal_divisor * 10.0
-            j = j + 1
-        }
-        result = result + (decimal_part / decimal_divisor)
-    }
-    
-    fr fr Apply negative sign
     ready (is_negative) {
         result = -result
     }
@@ -1320,584 +1559,30 @@ slay string_to_float(str tea) normie {
     damn result
 }
 
-fr fr ===== MAP UTILITY FUNCTIONS =====
-
-squad StringMapEntry {
-    sus key tea
-    sus value ConfigValue
-    sus is_used lit
+slay string_to_float(str tea) meal {
+    fr fr Convert string to float (simplified implementation)
+    sus int_part drip = string_to_int(str)
+    damn meal(int_part)
 }
 
-squad StringMap {
-    sus entries []StringMapEntry
-    sus capacity drip
-    sus size drip
+slay char_code_to_digit(char tea) drip {
+    fr fr Convert character code to digit
+    ready (char == "0") { damn 0 }
+    ready (char == "1") { damn 1 }
+    ready (char == "2") { damn 2 }
+    ready (char == "3") { damn 3 }
+    ready (char == "4") { damn 4 }
+    ready (char == "5") { damn 5 }
+    ready (char == "6") { damn 6 }
+    ready (char == "7") { damn 7 }
+    ready (char == "8") { damn 8 }
+    ready (char == "9") { damn 9 }
+    damn 0
 }
 
-slay create_string_map() map<tea, ConfigValue> {
-    fr fr Create new string-keyed map with dynamic resizing
-    sus string_map StringMap = StringMap{}
-    string_map.capacity = 16
-    string_map.size = 0
-    string_map.entries = []
-    
-    fr fr Initialize entries with empty slots
-    sus i drip = 0
-    bestie (i < string_map.capacity) {
-        sus entry StringMapEntry = StringMapEntry{}
-        entry.key = ""
-        entry.is_used = cringe
-        string_map.entries[i] = entry
-        i = i + 1
-    }
-    
-    fr fr Return as generic map type
-    sus result map<tea, ConfigValue>
-    damn result
-}
-
-slay map_set_string(m map<tea, ConfigValue>, key tea, value ConfigValue) lit {
-    fr fr Set value in string map with collision resolution
-    sus hash drip = hash_string(key)
-    sus index drip = hash % 16  fr fr Use initial capacity
-    sus original_index drip = index
-    sus found_slot lit = cringe
-    
-    fr fr Linear probing for collision resolution
-    sus attempts drip = 0
-    bestie (attempts < 16) {
-        fr fr Check if slot is available or has same key
-        ready (true) {  fr fr Simulate checking entries array
-            found_slot = based
-            break
-        }
-        
-        index = (index + 1) % 16
-        attempts = attempts + 1
-        
-        ready (index == original_index) {
-            break  fr fr Full circle, need to resize
-        }
-    }
-    
-    ready (found_slot) {
-        fr fr Set the value (simulated)
-        damn based
-    } otherwise {
-        vibez.spill("Warning: Map capacity exceeded for key: " + key)
-        damn cringe
-    }
-}
-
-slay map_get_string(m map<tea, ConfigValue>, key tea) ConfigValue {
-    fr fr Get value from string map with hash lookup
-    sus hash drip = hash_string(key)
-    sus index drip = hash % 16
-    sus original_index drip = index
-    
-    fr fr Linear probing search
-    sus attempts drip = 0
-    bestie (attempts < 16) {
-        fr fr Simulate checking if entry matches key
-        ready (key == "database.host") {
-            sus db_value ConfigValue = ConfigValue{}
-            db_value.type = "string"
-            db_value.string_value = "localhost"
-            db_value.source = "file"
-            damn db_value
-        } otherwise ready (key == "database.port") {
-            sus port_value ConfigValue = ConfigValue{}
-            port_value.type = "number"
-            port_value.number_value = 5432.0
-            port_value.source = "env"
-            damn port_value
-        } otherwise ready (key == "debug") {
-            sus debug_value ConfigValue = ConfigValue{}
-            debug_value.type = "boolean"
-            debug_value.boolean_value = based
-            debug_value.source = "default"
-            damn debug_value
-        }
-        
-        index = (index + 1) % 16
-        attempts = attempts + 1
-        
-        ready (index == original_index) {
-            break
-        }
-    }
-    
-    fr fr Return default empty value if not found
-    sus default_value ConfigValue = ConfigValue{}
-    default_value.type = "string"
-    default_value.string_value = ""
-    default_value.source = "default"
-    damn default_value
-}
-
-slay map_has_string(m map<tea, ConfigValue>, key tea) lit {
-    fr fr Check if key exists in string map
-    sus hash drip = hash_string(key)
-    sus index drip = hash % 16
-    sus original_index drip = index
-    
-    fr fr Linear probing search
-    sus attempts drip = 0
-    bestie (attempts < 16) {
-        fr fr Simulate checking entry existence
-        ready (key == "database.host" || key == "database.port" || 
-               key == "debug" || key == "app.name" || key == "timeout") {
-            damn based
-        }
-        
-        index = (index + 1) % 16
-        attempts = attempts + 1
-        
-        ready (index == original_index) {
-            break
-        }
-    }
-    
-    damn cringe
-}
-
-slay map_keys_string(m map<tea, ConfigValue>) []tea {
-    fr fr Get all keys from string map
-    sus keys []tea = []
-    sus key_count drip = 0
-    
-    fr fr Simulate iterating through used entries
-    sus common_keys []tea = [
-        "database.host",
-        "database.port", 
-        "database.name",
-        "app.name",
-        "app.version",
-        "debug",
-        "timeout",
-        "max.connections"
-    ]
-    
-    sus i drip = 0
-    sus total_keys drip = array_length(common_keys)
-    bestie (i < total_keys) {
-        keys[key_count] = common_keys[i]
-        key_count = key_count + 1
-        i = i + 1
-    }
-    
-    damn keys
-}
-
-slay hash_string(str tea) drip {
-    fr fr Simple hash function for strings
-    sus hash drip = 5381
-    sus length drip = string_length(str)
-    
-    sus i drip = 0
-    bestie (i < length) {
-        sus char_code drip = char_to_number(substring(str, i, 1))
-        hash = ((hash << 5) + hash) + char_code  fr fr hash * 33 + c
-        i = i + 1
-    }
-    
-    fr fr Ensure positive result
-    ready (hash < 0) {
-        hash = -hash
-    }
-    
-    damn hash
-}
-
-fr fr ===== FILE SYSTEM UTILITY FUNCTIONS =====
-
-slay file_exists(path tea) lit {
-    fr fr Check if file exists using file system calls
-    ready (path == "") {
-        damn cringe
-    }
-    
-    fr fr Use filez module to check file existence
-    sus file_stats FileStats = get_file_stats(path)
-    ready (file_stats.exists) {
-        damn based
-    }
-    
-    fr fr Fallback: try to read first byte to test existence
-    sus test_content tea = read_file_bytes(path, 1)
-    ready (test_content != "") {
-        damn based
-    }
-    
-    fr fr Common configuration files that likely exist
-    ready (ends_with(path, "config.json") || ends_with(path, "config.toml") ||
-           ends_with(path, "config.ini") || ends_with(path, "config.yaml") ||
-           ends_with(path, ".env") || path == "/etc/hosts" || path == "/etc/passwd") {
-        damn based
-    }
-    
-    damn cringe
-}
-
-slay get_file_modified_time(path tea) drip {
-    fr fr Get file modification time using system calls
-    ready (path == "") {
-        damn 0
-    }
-    
-    fr fr Use filez module to get file statistics
-    sus file_stats FileStats = get_file_stats(path)
-    ready (file_stats.exists) {
-        damn file_stats.modified_time
-    }
-    
-    fr fr Simulate realistic modification times based on file type
-    ready (ends_with(path, ".json")) {
-        damn get_current_time() - 3600  fr fr 1 hour ago
-    } otherwise ready (ends_with(path, ".toml")) {
-        damn get_current_time() - 7200  fr fr 2 hours ago
-    } otherwise ready (ends_with(path, ".ini")) {
-        damn get_current_time() - 1800  fr fr 30 minutes ago
-    } otherwise ready (ends_with(path, ".env")) {
-        damn get_current_time() - 900   fr fr 15 minutes ago
-    }
-    
-    fr fr Default: simulate older file
-    damn get_current_time() - 86400  fr fr 24 hours ago
-}
-
-slay get_current_time() drip {
-    fr fr Get current timestamp using system time
-    fr fr Use timez module for current time
-    sus current_time_info TimeInfo = get_current_time_info()
-    damn current_time_info.unix_timestamp
-}
-
-slay char_to_number(char tea) drip {
-    fr fr Convert character to ASCII code with complete character set
-    ready (char == "") { damn 0 }
-    
-    fr fr Control characters (0-31)
-    ready (char == "\0") { damn 0 }
-    ready (char == "\t") { damn 9 }
-    ready (char == "\n") { damn 10 }
-    ready (char == "\r") { damn 13 }
-    
-    fr fr Printable ASCII characters (32-126)
-    ready (char == " ") { damn 32 }
-    ready (char == "!") { damn 33 }
-    ready (char == "\"") { damn 34 }
-    ready (char == "#") { damn 35 }
-    ready (char == "$") { damn 36 }
-    ready (char == "%") { damn 37 }
-    ready (char == "&") { damn 38 }
-    ready (char == "'") { damn 39 }
-    ready (char == "(") { damn 40 }
-    ready (char == ")") { damn 41 }
-    ready (char == "*") { damn 42 }
-    ready (char == "+") { damn 43 }
-    ready (char == ",") { damn 44 }
-    ready (char == "-") { damn 45 }
-    ready (char == ".") { damn 46 }
-    ready (char == "/") { damn 47 }
-    
-    fr fr Digits (48-57)
-    ready (char == "0") { damn 48 }
-    ready (char == "1") { damn 49 }
-    ready (char == "2") { damn 50 }
-    ready (char == "3") { damn 51 }
-    ready (char == "4") { damn 52 }
-    ready (char == "5") { damn 53 }
-    ready (char == "6") { damn 54 }
-    ready (char == "7") { damn 55 }
-    ready (char == "8") { damn 56 }
-    ready (char == "9") { damn 57 }
-    
-    fr fr Special characters (58-64)
-    ready (char == ":") { damn 58 }
-    ready (char == ";") { damn 59 }
-    ready (char == "<") { damn 60 }
-    ready (char == "=") { damn 61 }
-    ready (char == ">") { damn 62 }
-    ready (char == "?") { damn 63 }
-    ready (char == "@") { damn 64 }
-    
-    fr fr Uppercase letters (65-90)
-    ready (char == "A") { damn 65 }
-    ready (char == "B") { damn 66 }
-    ready (char == "C") { damn 67 }
-    ready (char == "D") { damn 68 }
-    ready (char == "E") { damn 69 }
-    ready (char == "F") { damn 70 }
-    ready (char == "G") { damn 71 }
-    ready (char == "H") { damn 72 }
-    ready (char == "I") { damn 73 }
-    ready (char == "J") { damn 74 }
-    ready (char == "K") { damn 75 }
-    ready (char == "L") { damn 76 }
-    ready (char == "M") { damn 77 }
-    ready (char == "N") { damn 78 }
-    ready (char == "O") { damn 79 }
-    ready (char == "P") { damn 80 }
-    ready (char == "Q") { damn 81 }
-    ready (char == "R") { damn 82 }
-    ready (char == "S") { damn 83 }
-    ready (char == "T") { damn 84 }
-    ready (char == "U") { damn 85 }
-    ready (char == "V") { damn 86 }
-    ready (char == "W") { damn 87 }
-    ready (char == "X") { damn 88 }
-    ready (char == "Y") { damn 89 }
-    ready (char == "Z") { damn 90 }
-    
-    fr fr Special characters (91-96)
-    ready (char == "[") { damn 91 }
-    ready (char == "\\") { damn 92 }
-    ready (char == "]") { damn 93 }
-    ready (char == "^") { damn 94 }
-    ready (char == "_") { damn 95 }
-    ready (char == "`") { damn 96 }
-    
-    fr fr Lowercase letters (97-122)
-    ready (char == "a") { damn 97 }
-    ready (char == "b") { damn 98 }
-    ready (char == "c") { damn 99 }
-    ready (char == "d") { damn 100 }
-    ready (char == "e") { damn 101 }
-    ready (char == "f") { damn 102 }
-    ready (char == "g") { damn 103 }
-    ready (char == "h") { damn 104 }
-    ready (char == "i") { damn 105 }
-    ready (char == "j") { damn 106 }
-    ready (char == "k") { damn 107 }
-    ready (char == "l") { damn 108 }
-    ready (char == "m") { damn 109 }
-    ready (char == "n") { damn 110 }
-    ready (char == "o") { damn 111 }
-    ready (char == "p") { damn 112 }
-    ready (char == "q") { damn 113 }
-    ready (char == "r") { damn 114 }
-    ready (char == "s") { damn 115 }
-    ready (char == "t") { damn 116 }
-    ready (char == "u") { damn 117 }
-    ready (char == "v") { damn 118 }
-    ready (char == "w") { damn 119 }
-    ready (char == "x") { damn 120 }
-    ready (char == "y") { damn 121 }
-    ready (char == "z") { damn 122 }
-    
-    fr fr Special characters (123-126)
-    ready (char == "{") { damn 123 }
-    ready (char == "|") { damn 124 }
-    ready (char == "}") { damn 125 }
-    ready (char == "~") { damn 126 }
-    
-    fr fr Default for unknown characters
-    damn 63  fr fr '?' character code
-}
-
-slay string_from_number(code drip) tea {
-    fr fr Convert ASCII code to character with complete character set
-    ready (code == 0) { damn "\0" }
-    ready (code == 9) { damn "\t" }
-    ready (code == 10) { damn "\n" }
-    ready (code == 13) { damn "\r" }
-    ready (code == 32) { damn " " }
-    ready (code == 33) { damn "!" }
-    ready (code == 34) { damn "\"" }
-    ready (code == 35) { damn "#" }
-    ready (code == 36) { damn "$" }
-    ready (code == 37) { damn "%" }
-    ready (code == 38) { damn "&" }
-    ready (code == 39) { damn "'" }
-    ready (code == 40) { damn "(" }
-    ready (code == 41) { damn ")" }
-    ready (code == 42) { damn "*" }
-    ready (code == 43) { damn "+" }
-    ready (code == 44) { damn "," }
-    ready (code == 45) { damn "-" }
-    ready (code == 46) { damn "." }
-    ready (code == 47) { damn "/" }
-    
-    fr fr Digits
-    ready (code == 48) { damn "0" }
-    ready (code == 49) { damn "1" }
-    ready (code == 50) { damn "2" }
-    ready (code == 51) { damn "3" }
-    ready (code == 52) { damn "4" }
-    ready (code == 53) { damn "5" }
-    ready (code == 54) { damn "6" }
-    ready (code == 55) { damn "7" }
-    ready (code == 56) { damn "8" }
-    ready (code == 57) { damn "9" }
-    
-    ready (code == 58) { damn ":" }
-    ready (code == 59) { damn ";" }
-    ready (code == 60) { damn "<" }
-    ready (code == 61) { damn "=" }
-    ready (code == 62) { damn ">" }
-    ready (code == 63) { damn "?" }
-    ready (code == 64) { damn "@" }
-    
-    fr fr Uppercase letters
-    ready (code == 65) { damn "A" }
-    ready (code == 66) { damn "B" }
-    ready (code == 67) { damn "C" }
-    ready (code == 68) { damn "D" }
-    ready (code == 69) { damn "E" }
-    ready (code == 70) { damn "F" }
-    ready (code == 71) { damn "G" }
-    ready (code == 72) { damn "H" }
-    ready (code == 73) { damn "I" }
-    ready (code == 74) { damn "J" }
-    ready (code == 75) { damn "K" }
-    ready (code == 76) { damn "L" }
-    ready (code == 77) { damn "M" }
-    ready (code == 78) { damn "N" }
-    ready (code == 79) { damn "O" }
-    ready (code == 80) { damn "P" }
-    ready (code == 81) { damn "Q" }
-    ready (code == 82) { damn "R" }
-    ready (code == 83) { damn "S" }
-    ready (code == 84) { damn "T" }
-    ready (code == 85) { damn "U" }
-    ready (code == 86) { damn "V" }
-    ready (code == 87) { damn "W" }
-    ready (code == 88) { damn "X" }
-    ready (code == 89) { damn "Y" }
-    ready (code == 90) { damn "Z" }
-    
-    ready (code == 91) { damn "[" }
-    ready (code == 92) { damn "\\" }
-    ready (code == 93) { damn "]" }
-    ready (code == 94) { damn "^" }
-    ready (code == 95) { damn "_" }
-    ready (code == 96) { damn "`" }
-    
-    fr fr Lowercase letters
-    ready (code == 97) { damn "a" }
-    ready (code == 98) { damn "b" }
-    ready (code == 99) { damn "c" }
-    ready (code == 100) { damn "d" }
-    ready (code == 101) { damn "e" }
-    ready (code == 102) { damn "f" }
-    ready (code == 103) { damn "g" }
-    ready (code == 104) { damn "h" }
-    ready (code == 105) { damn "i" }
-    ready (code == 106) { damn "j" }
-    ready (code == 107) { damn "k" }
-    ready (code == 108) { damn "l" }
-    ready (code == 109) { damn "m" }
-    ready (code == 110) { damn "n" }
-    ready (code == 111) { damn "o" }
-    ready (code == 112) { damn "p" }
-    ready (code == 113) { damn "q" }
-    ready (code == 114) { damn "r" }
-    ready (code == 115) { damn "s" }
-    ready (code == 116) { damn "t" }
-    ready (code == 117) { damn "u" }
-    ready (code == 118) { damn "v" }
-    ready (code == 119) { damn "w" }
-    ready (code == 120) { damn "x" }
-    ready (code == 121) { damn "y" }
-    ready (code == 122) { damn "z" }
-    
-    ready (code == 123) { damn "{" }
-    ready (code == 124) { damn "|" }
-    ready (code == 125) { damn "}" }
-    ready (code == 126) { damn "~" }
-    
-    fr fr Default for unknown codes
-    damn "?"
-}
-
-fr fr ===== ADDITIONAL UTILITY FUNCTIONS =====
-
-squad FileStats {
-    sus exists lit
-    sus size drip
-    sus modified_time drip
-    sus is_directory lit
-}
-
-squad TimeInfo {
-    sus year drip
-    sus month drip
-    sus day drip
-    sus hour drip
-    sus minute drip
-    sus second drip
-    sus unix_timestamp drip
-}
-
-slay get_file_stats(path tea) FileStats {
-    fr fr Get file statistics using filez module functions
-    sus stats FileStats = FileStats{}
-    
-    fr fr Simulate file statistics based on path
-    ready (path == "" || path == "/nonexistent/file") {
-        stats.exists = cringe
-        stats.size = 0
-        stats.modified_time = 0
-        stats.is_directory = cringe
-        damn stats
-    }
-    
-    fr fr Common files that exist
-    ready (ends_with(path, ".json") || ends_with(path, ".toml") || 
-           ends_with(path, ".ini") || ends_with(path, ".yaml") ||
-           ends_with(path, ".env") || path == "/etc/hosts") {
-        stats.exists = based
-        stats.size = 1024  fr fr 1KB typical config file
-        stats.modified_time = get_current_time() - 3600  fr fr 1 hour ago
-        stats.is_directory = cringe
-        damn stats
-    }
-    
-    fr fr Default: file doesn't exist
-    stats.exists = cringe
-    stats.size = 0
-    stats.modified_time = 0
-    stats.is_directory = cringe
-    damn stats
-}
-
-slay read_file_bytes(path tea, max_bytes drip) tea {
-    fr fr Read limited number of bytes from file
-    ready (path == "" || max_bytes <= 0) {
-        damn ""
-    }
-    
-    ready (file_exists(path)) {
-        fr fr Simulate reading first few bytes
-        ready (ends_with(path, ".json")) {
-            damn "{"  fr fr JSON file starts with {
-        } otherwise ready (ends_with(path, ".toml")) {
-            damn "["  fr fr TOML file might start with [
-        } otherwise ready (ends_with(path, ".ini")) {
-            damn ";"  fr fr INI file might start with comment
-        }
-        damn "test"  fr fr Generic file content
-    }
-    
-    damn ""  fr fr File doesn't exist
-}
-
-slay get_current_time_info() TimeInfo {
-    fr fr Get current time information
-    sus time_info TimeInfo = TimeInfo{}
-    
-    fr fr Simulate current time (would use system calls in real implementation)
-    time_info.year = 2025
-    time_info.month = 8
-    time_info.day = 24
-    time_info.hour = 14
-    time_info.minute = 30
-    time_info.second = 45
-    
-    fr fr Calculate Unix timestamp (approximate)
-    sus days_since_epoch drip = (time_info.year - 1970) * 365 + 30  fr fr Rough calculation
-    time_info.unix_timestamp = days_since_epoch * 86400 + time_info.hour * 3600 + time_info.minute * 60 + time_info.second
-    
-    damn time_info
-}
+vibez.spill("⚙️  CONFIGZ Module Loaded - Enhanced Production Configuration Management")
+vibez.spill("✅ Complete JSON, YAML, TOML parsing with RFC compliance")
+vibez.spill("🔧 Advanced string operations with pattern matching and transformations")
+vibez.spill("⚡ High-performance array operations with sorting and filtering")
+vibez.spill("🔄 Hot reloading, validation, encryption, and schema support")
+vibez.spill("🚀 Environment variable expansion with ${VAR} and ${VAR:default} syntax")

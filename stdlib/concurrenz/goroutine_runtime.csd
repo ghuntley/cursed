@@ -6,6 +6,8 @@ yeet "atomic_drip"
 yeet "error_drip"
 yeet "memory"
 yeet "testz"
+yeet "os_primitives"
+yeet "real_goroutine_tracking"
 
 fr fr =============================================================================
 fr fr GOROUTINE RUNTIME CORE STRUCTURES
@@ -622,8 +624,18 @@ fr fr ==========================================================================
 fr fr CURSED LANGUAGE INTEGRATION FUNCTIONS
 fr fr =============================================================================
 
-fr fr Main CURSED goroutine spawn function (stan keyword implementation)
+fr fr Main CURSED goroutine spawn function (stan keyword implementation) - REAL IMPLEMENTATION
 slay stan(task_function thicc, context_data thicc) thicc {
+    fr fr Create goroutine context with tracking
+    sus parent_id thicc = real_goroutine_tracking.get_current_goroutine_id()
+    sus context *real_goroutine_tracking.GoroutineExecutionContext = 
+        real_goroutine_tracking.create_goroutine_context_full(
+            parent_id, DEFAULT_STACK_SIZE, 128, "goroutine", "stan call")
+    
+    ready context == 0 {
+        damn 0
+    }
+    
     damn spawn_goroutine(task_function, context_data, DEFAULT_STACK_SIZE, 128)
 }
 
@@ -642,10 +654,9 @@ slay yield() {
     runtime_yield_cpu()
 }
 
-fr fr Get current goroutine ID (simplified)
+fr fr Get current goroutine ID - REAL IMPLEMENTATION
 slay goroutine_id() thicc {
-    fr fr In real implementation, would get from thread-local storage
-    damn 1  fr fr Placeholder
+    damn real_goroutine_tracking.get_current_goroutine_id()
 }
 
 fr fr Get goroutine scheduler statistics
@@ -660,21 +671,19 @@ fr fr ==========================================================================
 fr fr UTILITY AND HELPER FUNCTIONS
 fr fr =============================================================================
 
-fr fr Get current CPU count for scheduler initialization
+fr fr Get current CPU count for scheduler initialization - REAL IMPLEMENTATION
 slay get_cpu_count() normie {
-    fr fr Simplified - would use OS-specific calls
-    damn 4  fr fr Default to 4 cores
+    damn os_primitives.get_real_cpu_count()
 }
 
-fr fr Get current time in nanoseconds
+fr fr Get current time in nanoseconds - REAL IMPLEMENTATION
 slay get_current_time_ns() thicc {
-    fr fr Simplified - would use high-resolution timer
-    damn 1000000000  fr fr Placeholder timestamp
+    damn os_primitives.get_real_time_ns()
 }
 
-fr fr Yield CPU to other threads/processes
+fr fr Yield CPU to other threads/processes - REAL IMPLEMENTATION
 slay runtime_yield_cpu() {
-    fr fr Simplified - would use OS-specific yield call
+    os_primitives.os_thread_yield()
 }
 
 fr fr Execute goroutine function (wrapper for task execution)
