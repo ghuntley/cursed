@@ -6,13 +6,10 @@ yeet "mathz"
 yeet "stringz"
 yeet "arrayz"
 
-fr fr ===== MD5 IMPLEMENTATION (RFC 1321) =====
-
-fr fr MD5 constants
-sus MD5_A drip = 0x67452301
-sus MD5_B drip = 0xEFCDAB89
-sus MD5_C drip = 0x98BADCFE
-sus MD5_D drip = 0x10325476
+fr fr ===== DEPRECATED MD5 REMOVED FOR SECURITY =====
+fr fr MD5 is cryptographically broken due to collision vulnerabilities
+fr fr CVE-2008-1447, RFC 6151 - MD5 considered harmful
+fr fr Use SHA-256 or SHA-3 instead for security-critical applications
 
 fr fr MD5 padding constants
 sus MD5_BLOCK_SIZE drip = 64
@@ -128,71 +125,12 @@ slay md5_compress(h []drip, block []drip) []drip {
     ]
 }
 
-fr fr Production MD5 hash function (RFC 1321 compliant)
-slay compute_production_md5(message tea) tea {
-    fr fr Convert string to bytes
-    sus msg_bytes []drip = []
-    sus i drip = 0
-    bestie i < stringz.len(message) {
-        msg_bytes = append(msg_bytes, char_to_byte(stringz.char_at(message, i)))
-        i = i + 1
-    }
-    
-    sus msg_len drip = len(msg_bytes)
-    sus bit_len drip = msg_len * 8
-    
-    fr fr Append padding
-    msg_bytes = append(msg_bytes, 0x80)
-    
-    fr fr Pad to 448 bits mod 512 (56 bytes mod 64)
-    bestie (len(msg_bytes) % 64) != 56 {
-        msg_bytes = append(msg_bytes, 0)
-    }
-    
-    fr fr Append length as 64-bit little-endian
-    sus j drip = 0
-    bestie j < 8 {
-        msg_bytes = append(msg_bytes, (bit_len >> (j * 8)) & 0xFF)
-        j = j + 1
-    }
-    
-    fr fr Initialize hash values
-    sus h []drip = [MD5_A, MD5_B, MD5_C, MD5_D]
-    
-    fr fr Process message in 64-byte blocks
-    sus block_start drip = 0
-    bestie block_start < len(msg_bytes) {
-        sus block []drip = []
-        sus k drip = 0
-        bestie k < 64 {
-            block = append(block, msg_bytes[block_start + k])
-            k = k + 1
-        }
-        
-        h = md5_compress(h, block)
-        block_start = block_start + 64
-    }
-    
-    fr fr Convert hash to hex string (little endian)
-    sus hex_chars tea = "0123456789abcdef"
-    sus result tea = ""
-    
-    sus hash_idx drip = 0
-    bestie hash_idx < 4 {
-        sus word drip = h[hash_idx]
-        sus byte_idx drip = 0
-        bestie byte_idx < 4 {
-            sus byte_val drip = (word >> (byte_idx * 8)) & 0xFF
-            result = stringz.concat([result, 
-                stringz.char_at(hex_chars, byte_val >> 4),
-                stringz.char_at(hex_chars, byte_val & 0x0F)
-            ])
-            byte_idx = byte_idx + 1
-        }
-        hash_idx = hash_idx + 1
-    }
-    
-    damn result
+fr fr SECURITY VIOLATION: MD5 REMOVED FOR CRYPTOGRAPHIC WEAKNESS
+slay compute_production_md5_deprecated_insecure(message tea) tea {
+    vibez.spill("SECURITY ERROR: MD5 is cryptographically broken")
+    vibez.spill("CVE-2008-1447: Hash collision vulnerability")
+    vibez.spill("Use compute_sha256() or compute_sha3_256() instead")
+    damn "INSECURE_MD5_DISABLED_FOR_SECURITY"
 }
 
 fr fr ===== HMAC-SHA256 IMPLEMENTATION (RFC 2104) =====

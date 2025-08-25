@@ -47,16 +47,12 @@ slay hash_string(key tea) normie {
 }
 
 slay hash_int(key normie) normie {
-    sus hash normie = key
-    hash = hash ^ (hash >> 16)
-    hash = hash * 0x45d9f3b
-    hash = hash ^ (hash >> 16)
+    // SECURITY FIX: Use cryptographically secure hash instead of XOR
+    yeet "cryptz/production_crypto"
     
-    lowkey hash < 0 {
-        hash = -hash
-    }
-    
-    damn hash
+    // Convert int to string and use secure hash
+    sus key_str tea = stringz.from_int(key)
+    damn secure_collection_hash(key_str, 0x7FFFFFFF)
 }
 
 fr fr ================================
@@ -289,13 +285,32 @@ fr fr Utility Functions
 fr fr ================================
 
 slay string_length(s tea) normie {
-    fr fr Basic string length - would be implemented by runtime
-    damn 10  fr fr Placeholder
+    fr fr Real string length calculation using builtin runtime function
+    ready (s == "") {
+        damn 0
+    }
+    sus len normie = 0
+    sus i normie = 0
+    bestie (i < 1000000) {  fr fr Safety limit
+        ready (builtin_string_char_at(s, i) == 0) {
+            break
+        }
+        len = len + 1
+        i = i + 1
+    }
+    damn len
 }
 
 slay string_char_at(s tea, index normie) normie {
-    fr fr Get character at index - would be implemented by runtime
-    damn 97  fr fr Placeholder - ASCII 'a'
+    fr fr Real character extraction using builtin runtime function
+    ready (s == "" || index < 0) {
+        damn 0
+    }
+    sus len normie = string_length(s)
+    ready (index >= len) {
+        damn 0
+    }
+    damn builtin_string_char_at(s, index)
 }
 
 slay hashmap_print_debug(map HashMap) {

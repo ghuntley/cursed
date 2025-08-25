@@ -466,13 +466,71 @@ slay codepoint_to_utf8(codepoint drip) []drip {
 }
 
 slay string_to_bytes_internal(text tea) []drip {
-    # Runtime function to convert string to bytes
-    damn []  # Placeholder
+    # Real UTF-8 string to bytes conversion
+    ready (text == "") {
+        damn []
+    }
+    sus bytes []drip = []
+    sus i normie = 0
+    sus len normie = builtin_string_length(text)
+    bestie (i < len) {
+        sus char_code normie = builtin_string_char_at(text, i)
+        ready (char_code < 128) {
+            # ASCII character - single byte
+            bytes = append(bytes, char_code)
+        } otherwise ready (char_code < 2048) {
+            # 2-byte UTF-8 sequence
+            bytes = append(bytes, 192 | (char_code >> 6))
+            bytes = append(bytes, 128 | (char_code & 63))
+        } otherwise {
+            # 3-byte UTF-8 sequence (simplified)
+            bytes = append(bytes, 224 | (char_code >> 12))
+            bytes = append(bytes, 128 | ((char_code >> 6) & 63))
+            bytes = append(bytes, 128 | (char_code & 63))
+        }
+        i = i + 1
+    }
+    damn bytes
 }
 
 slay bytes_to_string_internal(bytes []drip) tea {
-    # Runtime function to convert bytes to string
-    damn ""  # Placeholder
+    # Real UTF-8 bytes to string conversion
+    ready (len(bytes) == 0) {
+        damn ""
+    }
+    sus result tea = ""
+    sus i normie = 0
+    sus byte_len normie = len(bytes)
+    bestie (i < byte_len) {
+        sus byte normie = bytes[i]
+        ready (byte < 128) {
+            # ASCII character
+            result = result + builtin_char_to_string(byte)
+            i = i + 1
+        } otherwise ready ((byte & 224) == 192) {
+            # 2-byte UTF-8 sequence
+            ready (i + 1 < byte_len) {
+                sus char_code normie = ((byte & 31) << 6) | (bytes[i + 1] & 63)
+                result = result + builtin_char_to_string(char_code)
+                i = i + 2
+            } otherwise {
+                i = i + 1  # Skip invalid sequence
+            }
+        } otherwise ready ((byte & 240) == 224) {
+            # 3-byte UTF-8 sequence
+            ready (i + 2 < byte_len) {
+                sus char_code normie = ((byte & 15) << 12) | ((bytes[i + 1] & 63) << 6) | (bytes[i + 2] & 63)
+                result = result + builtin_char_to_string(char_code)
+                i = i + 3
+            } otherwise {
+                i = i + 1  # Skip invalid sequence
+            }
+        } otherwise {
+            # Skip invalid byte
+            i = i + 1
+        }
+    }
+    damn result
 }
 
 # ===== NORMALIZATION QUICK CHECK =====

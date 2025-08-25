@@ -399,9 +399,12 @@ pub const TypedAllocator = struct {
             object.mark.store(false, .release);
         }
 
-        // Simple sweep phase - remove unreferenced objects  
+        // CRITICAL FIX: Simple sweep phase with infinite loop protection  
         var i: usize = 0;
-        while (i < self.allocated_objects.items.len) {
+        var iterations: u32 = 0;
+        const max_iterations = 10000; // Prevent infinite loops
+        
+        while (i < self.allocated_objects.items.len and iterations < max_iterations) {
             const object = self.allocated_objects.items[i];
             // Atomically check reference count
             if (object.ref_count.load(.acquire) == 0) {
@@ -410,6 +413,11 @@ pub const TypedAllocator = struct {
             } else {
                 i += 1;
             }
+            iterations += 1;
+        }
+        
+        if (iterations >= max_iterations) {
+            std.debug.print("⚠️  Type system GC sweep hit iteration limit - preventing infinite loop\n", .{});
         }
     }
 };
@@ -652,7 +660,20 @@ pub const TypeChecker = struct {
         return type_info.getMethod(method_name) != null;
     }
 
+    /// CRITICAL FIX: Type compatibility check with cycle detection
     pub fn areTypesCompatible(self: *TypeChecker, source_type_id: u32, target_type_id: u32) bool {
+        return self.areTypesCompatibleWithDepth(source_type_id, target_type_id, 0);
+    }
+    
+    /// CRITICAL FIX: Internal method with depth tracking to prevent infinite recursion
+    fn areTypesCompatibleWithDepth(self: *TypeChecker, source_type_id: u32, target_type_id: u32, depth: u32) bool {
+        const max_depth = 20; // Prevent infinite recursion in type checking
+        
+        if (depth > max_depth) {
+            std.debug.print("⚠️  Type compatibility check depth exceeded for types {d} -> {d} - preventing infinite recursion\n", .{source_type_id, target_type_id});
+            return false;
+        }
+        
         if (source_type_id == target_type_id) return true;
 
         const source_type = self.gc_registry.getType(source_type_id) orelse return false;

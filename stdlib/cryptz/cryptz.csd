@@ -2212,32 +2212,12 @@ slay combine_keys_secure(key1 []drip, key2 []drip, method tea) []drip {
     }
 }
 
-slay combine_keys_xor_secure(key1 []drip, key2 []drip) []drip {
-    fr fr XOR combination with entropy mixing
-    sus max_len drip = mathz.max(len(key1), len(key2))
-    sus result []drip = make([]drip, max_len)
-    
-    fr fr First XOR the keys
-    bestie i := 0; i < max_len; i++ {
-        sus b1 drip = 0
-        sus b2 drip = 0
-        
-        ready i < len(key1) {
-            b1 = key1[i]
-        }
-        ready i < len(key2) {
-            b2 = key2[i]
-        }
-        
-        result[i] = b1 ^ b2
-    }
-    
-    fr fr Add entropy mixing to prevent correlation attacks
-    sus entropy []drip = generate_random_bytes(32)
-    sus mixed []drip = hmac_sha256(entropy, result)
-    
-    secure_zero_memory(entropy)
-    damn mixed
+slay combine_keys_xor_secure_deprecated_vulnerable(key1 []drip, key2 []drip) []drip {
+    fr fr SECURITY VIOLATION: XOR key combination is cryptographically weak
+    vibez.spill("CRITICAL SECURITY ERROR: XOR key combination is vulnerable")
+    vibez.spill("XOR operations leak key entropy and enable correlation attacks")
+    vibez.spill("Use combine_keys_kdf_secure() or combine_keys_hkdf() instead")
+    damn []
 }
 
 slay combine_keys_kdf_secure(key1 []drip, key2 []drip) []drip {

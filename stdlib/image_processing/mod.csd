@@ -964,7 +964,11 @@ slay char_to_string(ascii_value normie) tea {
 slay string_from_char_array(chars [2]normie) tea {
     fr fr Convert character array to string (basic implementation)
     vibe_check chars[0] == 0 { damn "" }
-    damn "X" fr fr Placeholder - would convert properly
+    fr fr Convert ASCII value to character
+    vibe_check chars[0] >= 32 && chars[0] <= 126 {
+        damn char(chars[0]) fr fr Convert valid printable ASCII
+    }
+    damn "?" fr fr Non-printable character placeholder
 }
 
 fr fr Image format helper functions
@@ -1118,7 +1122,7 @@ slay string_from_byte(b byte) tea {
 
 slay char_to_string(c char) tea {
     fr fr Implementation would convert character to string
-    damn "X" fr fr Placeholder
+    damn c fr fr CURSED supports direct char to string conversion
 }
 
 slay string_concat(s1 tea, s2 tea) tea {
@@ -1128,7 +1132,7 @@ slay string_concat(s1 tea, s2 tea) tea {
 
 slay string_length(s tea) normie {
     fr fr Implementation would return actual string length
-    damn 10 fr fr Placeholder
+    damn len(s) fr fr Use built-in len function for strings
 }
 
 slay time_now() tea { fr fr Implementation would get current timestamp
@@ -1149,6 +1153,8 @@ slay array_length(arr [ImageData]) normie {
     damn count
 }
 
+fr fr Utility functions for binary data reading (consolidated)
+
 fr fr Advanced image processing algorithms (from algorithms.csd)
 slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
     vibe_check len(data) < 54 { fr fr BMP header is 54 bytes minimum
@@ -1168,13 +1174,15 @@ slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
     sus height normie = read_uint32_le(data, 22)
     sus bits_per_pixel normie = read_uint16_le(data, 28)
     
-    fr fr Only support 24-bit RGB for now
-    vibe_check bits_per_pixel != 24 {
+    fr fr Support both 24-bit and 32-bit BMP
+    vibe_check bits_per_pixel != 24 && bits_per_pixel != 32 {
         damn 0, 0, []
     }
     
+    sus bytes_per_pixel normie = bits_per_pixel / 8
+    
     fr fr Calculate row padding (BMP rows are padded to 4-byte boundary)
-    sus row_size normie = ((width * 3 + 3) / 4) * 4
+    sus row_size normie = ((width * bytes_per_pixel + 3) / 4) * 4
     sus expected_size normie = pixel_offset + row_size * height
     
     vibe_check len(data) < expected_size {
@@ -1182,7 +1190,7 @@ slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
     }
     
     fr fr Decode pixel data (BMP stores pixels bottom-to-top)
-    sus pixels []byte = make_byte_array(width * height * 3)
+    sus pixels []byte = make_byte_array(width * height * 3) fr fr Always output RGB (3 channels)
     sus pixel_index normie = 0
     
     sus y normie = height - 1 
@@ -1190,12 +1198,20 @@ slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
         sus row_start normie = pixel_offset + y * row_size
         sus x normie = 0
         bestie (x < width) {
-            sus data_index normie = row_start + x * 3
-            vibe_check data_index + 2 < len(data) {
-                fr fr BMP stores as BGR, convert to RGB
-                pixels[pixel_index] = data[data_index + 2] fr fr R
-                pixels[pixel_index + 1] = data[data_index + 1] fr fr G  
-                pixels[pixel_index + 2] = data[data_index] fr fr B
+            sus data_index normie = row_start + x * bytes_per_pixel
+            vibe_check data_index + bytes_per_pixel - 1 < len(data) {
+                vibe_check bits_per_pixel == 24 {
+                    fr fr BMP stores as BGR, convert to RGB
+                    pixels[pixel_index] = data[data_index + 2] fr fr R
+                    pixels[pixel_index + 1] = data[data_index + 1] fr fr G  
+                    pixels[pixel_index + 2] = data[data_index] fr fr B
+                } damn {
+                    fr fr 32-bit BGRA, convert to RGB
+                    pixels[pixel_index] = data[data_index + 2] fr fr R
+                    pixels[pixel_index + 1] = data[data_index + 1] fr fr G  
+                    pixels[pixel_index + 2] = data[data_index] fr fr B
+                    fr fr Skip alpha channel (data[data_index + 3])
+                }
                 pixel_index = pixel_index + 3
             }
             x = x + 1

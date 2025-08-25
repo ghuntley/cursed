@@ -546,23 +546,59 @@ fr fr CHANNEL HELPER FUNCTIONS (PLACEHOLDERS)
 fr fr =============================================================================
 
 slay channel_has_space(channel_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (channel_ptr == 0) {
+        damn cap
+    }
+    sus channel_data normie = load_channel_metadata(channel_ptr)
+    sus current_size normie = (channel_data >> 16) & 0xFFFF
+    sus capacity normie = channel_data & 0xFFFF
+    damn current_size < capacity
 }
 
 slay channel_send_nowait(channel_ptr thicc, data normie) lit {
-    damn cap  fr fr Placeholder
+    ready (channel_ptr == 0) {
+        damn cap
+    }
+    ready (!channel_has_space(channel_ptr)) {
+        damn cap
+    }
+    sus channel_data normie = load_channel_metadata(channel_ptr)
+    sus current_size normie = (channel_data >> 16) & 0xFFFF
+    store_channel_data(channel_ptr, current_size, data)
+    store_channel_metadata(channel_ptr, ((current_size + 1) << 16) | (channel_data & 0xFFFF))
+    damn based
 }
 
 slay channel_has_data(channel_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (channel_ptr == 0) {
+        damn cap
+    }
+    sus channel_data normie = load_channel_metadata(channel_ptr)
+    sus current_size normie = (channel_data >> 16) & 0xFFFF
+    damn current_size > 0
 }
 
 slay channel_receive_nowait(channel_ptr thicc) normie {
-    damn 0  fr fr Placeholder
+    ready (channel_ptr == 0) {
+        damn 0
+    }
+    ready (!channel_has_data(channel_ptr)) {
+        damn 0
+    }
+    sus channel_data normie = load_channel_metadata(channel_ptr)
+    sus current_size normie = (channel_data >> 16) & 0xFFFF
+    sus data normie = load_channel_data(channel_ptr, 0)
+    store_channel_metadata(channel_ptr, ((current_size - 1) << 16) | (channel_data & 0xFFFF))
+    damn data
 }
 
 slay channel_is_closed(channel_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (channel_ptr == 0) {
+        damn based
+    }
+    sus channel_data normie = load_channel_metadata(channel_ptr)
+    sus flags normie = (channel_data >> 24) & 0xFF
+    damn (flags & 1) != 0
 }
 
 fr fr =============================================================================
@@ -570,15 +606,36 @@ fr fr BARRIER HELPER FUNCTIONS (PLACEHOLDERS)
 fr fr =============================================================================
 
 slay barrier_record_arrival(barrier_ptr thicc, participant_id normie) lit {
-    damn based  fr fr Placeholder
+    ready (barrier_ptr == 0) {
+        damn cap
+    }
+    sus barrier_data normie = load_barrier_metadata(barrier_ptr)
+    sus arrived_count normie = (barrier_data >> 16) & 0xFFFF
+    sus total_participants normie = barrier_data & 0xFFFF
+    ready (arrived_count >= total_participants) {
+        damn cap
+    }
+    store_barrier_metadata(barrier_ptr, ((arrived_count + 1) << 16) | total_participants)
+    damn based
 }
 
 slay barrier_all_arrived(barrier_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (barrier_ptr == 0) {
+        damn cap
+    }
+    sus barrier_data normie = load_barrier_metadata(barrier_ptr)
+    sus arrived_count normie = (barrier_data >> 16) & 0xFFFF
+    sus total_participants normie = barrier_data & 0xFFFF
+    damn arrived_count >= total_participants
 }
 
 slay barrier_has_error(barrier_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (barrier_ptr == 0) {
+        damn based
+    }
+    sus barrier_data normie = load_barrier_metadata(barrier_ptr)
+    sus flags normie = (barrier_data >> 24) & 0xFF
+    damn (flags & 2) != 0
 }
 
 fr fr =============================================================================
@@ -586,11 +643,25 @@ fr fr SEMAPHORE HELPER FUNCTIONS (PLACEHOLDERS)
 fr fr =============================================================================
 
 slay semaphore_try_acquire(semaphore_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (semaphore_ptr == 0) {
+        damn cap
+    }
+    sus semaphore_data normie = load_semaphore_metadata(semaphore_ptr)
+    sus current_permits normie = (semaphore_data >> 16) & 0xFFFF
+    ready (current_permits == 0) {
+        damn cap
+    }
+    store_semaphore_metadata(semaphore_ptr, ((current_permits - 1) << 16) | (semaphore_data & 0xFFFF))
+    damn based
 }
 
 slay semaphore_is_destroyed(semaphore_ptr thicc) lit {
-    damn cap  fr fr Placeholder
+    ready (semaphore_ptr == 0) {
+        damn based
+    }
+    sus semaphore_data normie = load_semaphore_metadata(semaphore_ptr)
+    sus flags normie = (semaphore_data >> 24) & 0xFF
+    damn (flags & 4) != 0
 }
 
 fr fr =============================================================================

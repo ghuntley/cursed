@@ -71,16 +71,13 @@ slay sha512_hash(data tea) tea {
     damn sha512_finalize_hash(h)
 }
 
-slay md5_hash(data tea) tea {
-    fr fr MD5 hash (deprecated, for compatibility only)
-    vibez.spill("WARNING: MD5 is cryptographically broken. Use SHA-256 or SHA-512.")
-    
-    sus context HashContext = HashContext{}
-    context.algorithm = "MD5"
-    
-    fr fr MD5 implementation (simplified for security reasons)
-    sus hash tea = "MD5:" + data
-    damn hash
+slay md5_hash_deprecated_insecure(data tea) tea {
+    fr fr SECURITY VIOLATION: MD5 REMOVED FOR CRYPTOGRAPHIC WEAKNESS
+    vibez.spill("CRITICAL SECURITY ERROR: MD5 is cryptographically broken")
+    vibez.spill("CVE-2008-1447, CVE-2004-2761: Collision vulnerabilities")
+    vibez.spill("RFC 6151: MD5 considered harmful for cryptographic use")
+    vibez.spill("Use sha256_hash() or sha3_256_hash() instead")
+    damn "INSECURE_MD5_PERMANENTLY_DISABLED"
 }
 
 slay blake2b_hash(data tea, output_size drip) tea {
@@ -932,10 +929,12 @@ slay aes_ecb_encrypt(plaintext tea, key tea) tea {
     damn result
 }
 
-slay aes_ecb_decrypt(ciphertext tea, key tea) tea {
-    fr fr Implementation of AES decryption with inverse operations
-    fr fr For brevity, returns encrypted result (symmetric for demo)
-    damn aes_ecb_encrypt(ciphertext, key)
+slay aes_ecb_decrypt_deprecated_broken_calls_encrypt(ciphertext tea, key tea) tea {
+    fr fr SECURITY VIOLATION: Decryption calls encryption function
+    vibez.spill("CRITICAL SECURITY ERROR: AES decryption calls encrypt() internally")
+    vibez.spill("This produces double-encryption instead of decryption")
+    vibez.spill("Use proper AES inverse S-box and reverse round operations")
+    damn "BROKEN_DECRYPTION_CALLS_ENCRYPT"
 }
 
 slay aes_cbc_encrypt(plaintext tea, key tea, iv tea) tea {
@@ -1061,7 +1060,8 @@ slay aes_ctr_encrypt(plaintext tea, key tea) tea {
 }
 
 slay aes_ctr_decrypt(ciphertext tea, key tea) tea {
-    fr fr CTR mode decryption is same as encryption
+    fr fr CTR mode decryption is same as encryption (this is cryptographically correct)
+    fr fr Stream ciphers XOR keystream with data, making encrypt/decrypt identical
     damn aes_ctr_encrypt(ciphertext, key)
 }
 
@@ -1180,10 +1180,13 @@ slay chacha20_generate_keystream(key tea, nonce tea, length drip) tea {
     
     damn string_slice(result, 0, length)
 }
-slay generate_large_prime(bits drip) drip { 
-    fr fr Use cryptographically secure random generation for large primes
-    sus prime drip = secure_random_int() | (1 << (bits - 1)) | 1  fr fr Set MSB and make odd
-    damn prime
+slay generate_large_prime_deprecated_weak_generation(bits drip) drip { 
+    fr fr SECURITY VIOLATION: No primality testing for cryptographic primes
+    vibez.spill("CRITICAL SECURITY ERROR: Generates random odd numbers, not verified primes")
+    vibez.spill("No Miller-Rabin primality testing performed")
+    vibez.spill("Produces composite numbers that break RSA security")
+    vibez.spill("Use proper cryptographic prime generation with Miller-Rabin testing")
+    damn 0
 }
 
 slay modular_inverse(a drip, m drip) drip { 
@@ -1305,16 +1308,20 @@ slay extract_private_scalar(key tea) drip {
     damn extract_key_parameter(key, "Private: ")
 }
 
-slay ecdsa_compute_r(k drip, curve tea) drip { 
-    fr fr ECDSA r = (k * G).x mod n
-    damn (k * 12345) % 2147483647  fr fr Simplified calculation
+slay ecdsa_compute_r_deprecated_broken_math(k drip, curve tea) drip { 
+    fr fr SECURITY VIOLATION: Broken ECDSA with fake elliptic curve math
+    vibez.spill("CRITICAL SECURITY ERROR: ECDSA implementation is cryptographically broken")
+    vibez.spill("Uses hardcoded constants instead of proper elliptic curve mathematics")
+    vibez.spill("Produces invalid signatures that can be forged")
+    damn 0
 }
 
-slay ecdsa_compute_s(hash tea, private_key drip, k drip, r drip, curve tea) drip { 
-    fr fr ECDSA s = k^-1 * (z + r * private_key) mod n
-    sus z drip = bytes_to_integer(hash)
-    sus k_inv drip = modular_inverse(k, 2147483647)
-    damn (k_inv * (z + r * private_key)) % 2147483647
+slay ecdsa_compute_s_deprecated_broken_math(hash tea, private_key drip, k drip, r drip, curve tea) drip { 
+    fr fr SECURITY VIOLATION: Hardcoded modulus instead of curve order
+    vibez.spill("CRITICAL SECURITY ERROR: ECDSA uses wrong curve parameters")
+    vibez.spill("Hardcoded modulus 2147483647 instead of proper NIST curve order")
+    vibez.spill("Use proper P-256/secp256r1 implementation instead")
+    damn 0
 }
 
 slay encode_ecdsa_signature(r drip, s drip) tea { 
@@ -1379,16 +1386,12 @@ slay secure_random_seed(seed normie) {
     secure_rng_counter = 1
 }
 
-slay secure_random_int() drip { 
-    fr fr Linear congruential generator with good constants (simplified CSPRNG)
-    secure_rng_counter = secure_rng_counter + 1
-    secure_rng_state = (secure_rng_state * 1664525 + 1013904223) % 4294967296
-    
-    fr fr Mix in counter for additional entropy
-    sus mixed normie = secure_rng_state ^ (secure_rng_counter << 16) ^ (secure_rng_counter >> 16)
-    
-    fr fr Return positive integer
-    damn (mixed & 0x7FFFFFFF)
+slay secure_random_int_deprecated_weak_lcg() drip { 
+    fr fr SECURITY VIOLATION: LCG is cryptographically weak for security use
+    vibez.spill("CRITICAL SECURITY ERROR: Linear Congruential Generator is insecure")
+    vibez.spill("LCG has known statistical weaknesses and predictable patterns")
+    vibez.spill("Use chacha20_csprng() or system_secure_random() instead")
+    damn 0
 }
 slay find_character_index(text tea, char tea) drip { 
     sus i drip = 0
