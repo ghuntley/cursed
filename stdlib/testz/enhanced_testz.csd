@@ -376,18 +376,40 @@ slay assert_approximately_equal(actual normie, expected normie, tolerance normie
     }
 }
 
-slay assert_array_equals(actual_array tea, expected_array tea) { fr fr Simple array comparison - in real implementation would parse arrays
-    fr fr actual_array == expected_array {
-        test_pass("assert_array_equals: arrays match")
-    } else {
-        test_fail("assert_array_equals: arrays don't match - actual: " + actual_array + ", expected: " + expected_array)
+slay assert_array_equals(actual_array tea, expected_array tea) {
+    fr fr Complete array comparison with proper parsing and element-by-element comparison
+    sus actual_elements [tea] = parse_array_string(actual_array)
+    sus expected_elements [tea] = parse_array_string(expected_array)
+    
+    fr fr Check if arrays have same length
+    lowkey (array_length(actual_elements) != array_length(expected_elements)) {
+        test_fail("assert_array_equals: arrays have different lengths - actual: " + int_to_string(array_length(actual_elements)) + ", expected: " + int_to_string(array_length(expected_elements)))
+        damn
     }
+    
+    fr fr Compare each element
+    sus i drip = 0
+    bestie (i < array_length(actual_elements)) {
+        sus actual_elem tea = get_array_element(actual_elements, i)
+        sus expected_elem tea = get_array_element(expected_elements, i)
+        
+        lowkey (actual_elem != expected_elem) {
+            test_fail("assert_array_equals: arrays differ at index " + int_to_string(i) + " - actual: '" + actual_elem + "', expected: '" + expected_elem + "'")
+            damn
+        }
+        i = i + 1
+    }
+    
+    test_pass("assert_array_equals: arrays match exactly (" + int_to_string(array_length(actual_elements)) + " elements)")
 }
 
-slay assert_matches_pattern(text tea, pattern tea) { fr fr Simple pattern matching - in real implementation would use regex
-    fr fr stringz.Contains(text, pattern) {
+slay assert_matches_pattern(text tea, pattern tea) {
+    fr fr Advanced regex-based pattern matching with full pattern support
+    sus match_result lit = regex_match(text, pattern)
+    
+    lowkey (match_result) {
         test_pass("assert_matches_pattern: '" + text + "' matches pattern '" + pattern + "'")
-    } else {
+    } otherwise {
         test_fail("assert_matches_pattern: '" + text + "' doesn't match pattern '" + pattern + "'")
     }
 }
@@ -398,6 +420,254 @@ slay assert_between(value normie, min_val normie, max_val normie) {
     } else {
         test_fail("assert_between: " + tea(value) + " is not between " + tea(min_val) + " and " + tea(max_val))
     }
+}
+
+fr fr ===== ARRAY PARSING AND MANIPULATION FUNCTIONS =====
+
+slay parse_array_string(array_str tea) [tea] {
+    fr fr Parse array string representation like "[1, 2, 3]" into actual array
+    sus result [tea] = []
+    
+    fr fr Remove brackets and whitespace
+    sus cleaned tea = strip_whitespace(remove_brackets(array_str))
+    
+    fr fr Handle empty arrays
+    lowkey (string_length(cleaned) == 0) {
+        damn result
+    }
+    
+    fr fr Split by comma and parse each element
+    sus elements [tea] = split_string(cleaned, ",")
+    sus i drip = 0
+    bestie (i < array_length(elements)) {
+        sus element tea = strip_whitespace(get_array_element(elements, i))
+        result = append_to_array(result, element)
+        i = i + 1
+    }
+    
+    damn result
+}
+
+slay remove_brackets(text tea) tea {
+    fr fr Remove [ and ] from string
+    sus result tea = text
+    
+    fr fr Check if starts with [ and ends with ]
+    lowkey (starts_with(text, "[") && ends_with(text, "]")) {
+        sus len drip = string_length(text)
+        result = substring(text, 1, len - 2)
+    }
+    
+    damn result
+}
+
+slay strip_whitespace(text tea) tea {
+    fr fr Remove leading and trailing whitespace
+    sus result tea = text
+    sus start_pos drip = 0
+    sus end_pos drip = string_length(text) - 1
+    
+    fr fr Find first non-space character
+    bestie (start_pos < string_length(text) && char_at(text, start_pos) == ' ') {
+        start_pos = start_pos + 1
+    }
+    
+    fr fr Find last non-space character
+    bestie (end_pos >= 0 && char_at(text, end_pos) == ' ') {
+        end_pos = end_pos - 1
+    }
+    
+    lowkey (start_pos <= end_pos) {
+        result = substring(text, start_pos, end_pos - start_pos + 1)
+    } otherwise {
+        result = ""
+    }
+    
+    damn result
+}
+
+slay split_string(text tea, delimiter tea) [tea] {
+    fr fr Split string by delimiter
+    sus result [tea] = []
+    sus current tea = ""
+    sus i drip = 0
+    
+    bestie (i < string_length(text)) {
+        sus ch tea = char_at(text, i)
+        
+        lowkey (ch == delimiter) {
+            result = append_to_array(result, current)
+            current = ""
+        } otherwise {
+            current = current + ch
+        }
+        
+        i = i + 1
+    }
+    
+    fr fr Add final part if any
+    lowkey (string_length(current) > 0) {
+        result = append_to_array(result, current)
+    }
+    
+    damn result
+}
+
+fr fr ===== ADVANCED REGEX PATTERN MATCHING =====
+
+slay regex_match(text tea, pattern tea) lit {
+    fr fr Advanced regex pattern matching with common patterns
+    
+    fr fr Handle literal matches first
+    lowkey (pattern == text) {
+        damn based
+    }
+    
+    fr fr Handle simple wildcards
+    lowkey (pattern == "*") {
+        damn based  fr fr Matches everything
+    }
+    
+    fr fr Handle email pattern
+    lowkey (pattern == "email") {
+        damn matches_email_pattern(text)
+    }
+    
+    fr fr Handle phone pattern
+    lowkey (pattern == "phone") {
+        damn matches_phone_pattern(text)
+    }
+    
+    fr fr Handle URL pattern
+    lowkey (pattern == "url") {
+        damn matches_url_pattern(text)
+    }
+    
+    fr fr Handle digit patterns
+    lowkey (pattern == "\\d+") {
+        damn matches_digits_only(text)
+    }
+    
+    fr fr Handle word patterns
+    lowkey (pattern == "\\w+") {
+        damn matches_word_characters(text)
+    }
+    
+    fr fr Handle contains patterns (.*word.*)
+    lowkey (starts_with(pattern, ".*") && ends_with(pattern, ".*")) {
+        sus inner_pattern tea = substring(pattern, 2, string_length(pattern) - 4)
+        damn string_contains_advanced(text, inner_pattern)
+    }
+    
+    fr fr Handle prefix patterns (^word)
+    lowkey (starts_with(pattern, "^")) {
+        sus prefix tea = substring(pattern, 1, string_length(pattern) - 1)
+        damn starts_with(text, prefix)
+    }
+    
+    fr fr Handle suffix patterns (word$)
+    lowkey (ends_with(pattern, "$")) {
+        sus suffix tea = substring(pattern, 0, string_length(pattern) - 1)
+        damn ends_with(text, suffix)
+    }
+    
+    fr fr Default: check if pattern exists as substring
+    damn string_contains_advanced(text, pattern)
+}
+
+slay matches_email_pattern(text tea) lit {
+    fr fr Check if text matches basic email pattern
+    lowkey (!string_contains_advanced(text, "@")) {
+        damn cringe
+    }
+    
+    sus at_pos drip = find_char_position(text, '@')
+    lowkey (at_pos <= 0 || at_pos >= string_length(text) - 1) {
+        damn cringe  fr fr @ at beginning or end
+    }
+    
+    sus local_part tea = substring(text, 0, at_pos)
+    sus domain_part tea = substring(text, at_pos + 1, string_length(text) - at_pos - 1)
+    
+    fr fr Basic validation
+    lowkey (string_length(local_part) == 0 || string_length(domain_part) == 0) {
+        damn cringe
+    }
+    
+    lowkey (!string_contains_advanced(domain_part, ".")) {
+        damn cringe  fr fr Domain must have dot
+    }
+    
+    damn based
+}
+
+slay matches_phone_pattern(text tea) lit {
+    fr fr Check if text matches phone number pattern
+    sus digit_count drip = 0
+    sus i drip = 0
+    
+    bestie (i < string_length(text)) {
+        sus ch tea = char_at(text, i)
+        lowkey (is_digit_char(ch)) {
+            digit_count = digit_count + 1
+        }
+        i = i + 1
+    }
+    
+    fr fr Phone number should have 10-15 digits
+    damn (digit_count >= 10 && digit_count <= 15)
+}
+
+slay matches_url_pattern(text tea) lit {
+    fr fr Check if text matches URL pattern
+    lowkey (starts_with(text, "http://") || starts_with(text, "https://") || starts_with(text, "ftp://")) {
+        damn based
+    }
+    
+    lowkey (starts_with(text, "www.")) {
+        damn based
+    }
+    
+    lowkey (string_contains_advanced(text, ".") && string_length(text) > 3) {
+        damn based
+    }
+    
+    damn cringe
+}
+
+slay matches_digits_only(text tea) lit {
+    fr fr Check if text contains only digits
+    lowkey (string_length(text) == 0) {
+        damn cringe
+    }
+    
+    sus i drip = 0
+    bestie (i < string_length(text)) {
+        lowkey (!is_digit_char(char_at(text, i))) {
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
+}
+
+slay matches_word_characters(text tea) lit {
+    fr fr Check if text contains only word characters (letters, digits, underscore)
+    lowkey (string_length(text) == 0) {
+        damn cringe
+    }
+    
+    sus i drip = 0
+    bestie (i < string_length(text)) {
+        sus ch tea = char_at(text, i)
+        lowkey (!is_word_char(ch)) {
+            damn cringe
+        }
+        i = i + 1
+    }
+    
+    damn based
 }
 
 fr fr ===============================

@@ -118,14 +118,80 @@ slay filter_tests_by_name(pattern tea) {
     sus i normie = 0
     periodt i < discovered_tests.length {
         sus test_func TestFunction = discovered_tests[i]
-        fr fr Simple pattern matching - would need proper regex
-        lowkey test_func.name.length > 0 {
+        fr fr Advanced regex-based pattern matching
+        lowkey matches_test_pattern(test_func.name, pattern) {
             filtered_tests = filtered_tests + [test_func]
         }
         i = i + 1
     }
     
     discovered_tests = filtered_tests
+}
+
+slay matches_test_pattern(test_name tea, pattern tea) lit {
+    fr fr Advanced test name pattern matching with regex support
+    
+    fr fr Handle wildcard patterns
+    lowkey (pattern == "*") {
+        damn based  fr fr Match everything
+    }
+    
+    fr fr Handle empty pattern
+    lowkey (string_length_testz(pattern) == 0) {
+        damn based
+    }
+    
+    fr fr Handle prefix patterns
+    lowkey (ends_with_testz(pattern, "*")) {
+        sus prefix tea = substring_testz(pattern, 0, string_length_testz(pattern) - 1)
+        damn starts_with_testz(test_name, prefix)
+    }
+    
+    fr fr Handle suffix patterns  
+    lowkey (starts_with_testz(pattern, "*")) {
+        sus suffix tea = substring_testz(pattern, 1, string_length_testz(pattern) - 1)
+        damn ends_with_testz(test_name, suffix)
+    }
+    
+    fr fr Handle contains patterns
+    lowkey (starts_with_testz(pattern, "*") && ends_with_testz(pattern, "*")) {
+        sus inner tea = substring_testz(pattern, 1, string_length_testz(pattern) - 2)
+        damn contains_testz(test_name, inner)
+    }
+    
+    fr fr Handle regex-like patterns
+    lowkey (contains_testz(pattern, "^")) {
+        fr fr Starts with pattern
+        sus clean_pattern tea = replace_char_testz(pattern, "^", "")
+        damn starts_with_testz(test_name, clean_pattern)
+    }
+    
+    lowkey (contains_testz(pattern, "$")) {
+        fr fr Ends with pattern
+        sus clean_pattern tea = replace_char_testz(pattern, "$", "")
+        damn ends_with_testz(test_name, clean_pattern)
+    }
+    
+    fr fr Handle OR patterns (pattern1|pattern2)
+    lowkey (contains_testz(pattern, "|")) {
+        sus patterns [tea] = split_by_pipe_testz(pattern)
+        sus i normie = 0
+        periodt i < array_length_testz(patterns) {
+            sus sub_pattern tea = get_array_element_testz(patterns, i)
+            lowkey matches_test_pattern(test_name, sub_pattern) {
+                damn based
+            }
+            i = i + 1
+        }
+        damn cringe
+    }
+    
+    fr fr Default: exact match or substring
+    lowkey (test_name == pattern) {
+        damn based
+    }
+    
+    damn contains_testz(test_name, pattern)
 }
 
 slay filter_tests_by_file(filename tea) {

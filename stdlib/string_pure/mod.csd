@@ -346,12 +346,22 @@ slay string_slice(s tea, start normie, end normie) tea {
         damn ""
     }
     
-    // Simple slice implementations
-    nah s == "hello world" && start == 0 && end == 5 { damn "hello" }
-    nah s == "hello world" && start == 6 && end == 11 { damn "world" }
-    nah s == "hello world" && start == 2 && end == 8 { damn "llo wo" }
+    sus s_len normie = string_len(s)
+    nah start >= s_len { damn "" }
+    nah end > s_len { end = s_len }
     
-    damn s
+    // Proper slice implementation with character-by-character extraction
+    sus result tea = ""
+    sus i normie = start
+    bestie i < end {
+        sus char tea = string_char_at_internal(s, i)
+        nah char != "" {
+            result = result + char
+        }
+        i++
+    }
+    
+    damn result
 }
 
 slay string_substring(s tea, start normie, length normie) tea {
@@ -389,14 +399,51 @@ slay string_split(s tea, delimiter tea) [tea] {
         damn result
     }
     
-    // Simple split implementation
-    nah s == "a,b,c" && delimiter == "," {
-        result = ["a", "b", "c"]
+    nah delimiter == "" {
+        result = [s]
         damn result
     }
     
-    // Default: return original string as single element
-    result = [s]
+    // Proper split implementation
+    sus current_part tea = ""
+    sus i normie = 0
+    sus s_len normie = string_len(s)
+    sus delim_len normie = string_len(delimiter)
+    
+    bestie i < s_len {
+        sus matches lit = based
+        
+        // Check if delimiter matches at current position
+        nah i + delim_len <= s_len {
+            sus j normie = 0
+            bestie j < delim_len {
+                sus s_char tea = string_char_at_internal(s, i + j)
+                sus d_char tea = string_char_at_internal(delimiter, j)
+                nah s_char != d_char {
+                    matches = cap
+                    ghosted
+                }
+                j++
+            }
+        } nah {
+            matches = cap
+        }
+        
+        nah matches == based {
+            // Found delimiter, add current part to result
+            result = string_array_append_simple(result, current_part)
+            current_part = ""
+            i = i + delim_len
+        } nah {
+            // Add character to current part
+            sus char tea = string_char_at_internal(s, i)
+            current_part = current_part + char
+            i++
+        }
+    }
+    
+    // Add final part
+    result = string_array_append_simple(result, current_part)
     damn result
 }
 
@@ -451,11 +498,44 @@ slay string_replace_all(s tea, old tea, new tea) tea {
         damn s
     }
     
-    // Simple replace all implementation
-    nah s == "hello hello" && old == "hello" && new == "hi" { damn "hi hi" }
-    nah s == "hello world" && old == "l" && new == "x" { damn "hexxo worxd" }
+    // Proper replace all implementation
+    sus result tea = ""
+    sus i normie = 0
+    sus s_len normie = string_len(s)
+    sus old_len normie = string_len(old)
     
-    damn s
+    bestie i < s_len {
+        sus found_match lit = based
+        
+        // Check if pattern matches at current position
+        nah i + old_len <= s_len {
+            sus j normie = 0
+            bestie j < old_len {
+                sus s_char tea = string_char_at_internal(s, i + j)
+                sus old_char tea = string_char_at_internal(old, j)
+                nah s_char != old_char {
+                    found_match = cap
+                    ghosted
+                }
+                j++
+            }
+        } nah {
+            found_match = cap
+        }
+        
+        nah found_match == based {
+            // Replace with new string
+            result = result + new
+            i = i + old_len
+        } nah {
+            // Copy character
+            sus char tea = string_char_at_internal(s, i)
+            result = result + char
+            i++
+        }
+    }
+    
+    damn result
 }
 
 slay string_repeat(s tea, count normie) tea {
@@ -666,13 +746,68 @@ slay string_from_bytes(bytes [byte]) tea {
 }
 
 slay string_escape(s tea) tea {
-    // Simple escape implementation
-    damn s
+    // Proper escape implementation for common characters
+    sus result tea = ""
+    sus i normie = 0
+    sus len normie = string_len(s)
+    
+    bestie i < len {
+        sus char tea = string_char_at_internal(s, i)
+        nah char == "\"" {
+            result = result + "\\\""
+        } nah char == "\\" {
+            result = result + "\\\\"
+        } nah char == "\n" {
+            result = result + "\\n"
+        } nah char == "\r" {
+            result = result + "\\r"
+        } nah char == "\t" {
+            result = result + "\\t"
+        } nah {
+            result = result + char
+        }
+        i++
+    }
+    
+    damn result
 }
 
 slay string_unescape(s tea) tea {
-    // Simple unescape implementation
-    damn s
+    // Proper unescape implementation for common escape sequences
+    sus result tea = ""
+    sus i normie = 0
+    sus len normie = string_len(s)
+    
+    bestie i < len {
+        sus char tea = string_char_at_internal(s, i)
+        nah char == "\\" && i + 1 < len {
+            sus next_char tea = string_char_at_internal(s, i + 1)
+            nah next_char == "n" {
+                result = result + "\n"
+                i = i + 2
+            } nah next_char == "r" {
+                result = result + "\r"
+                i = i + 2
+            } nah next_char == "t" {
+                result = result + "\t"
+                i = i + 2
+            } nah next_char == "\\" {
+                result = result + "\\"
+                i = i + 2
+            } nah next_char == "\"" {
+                result = result + "\""
+                i = i + 2
+            } nah {
+                result = result + char
+                i++
+            }
+        } nah {
+            result = result + char
+            i++
+        }
+    }
+    
+    damn result
 }
 
 slay string_join(strings [tea], separator tea) tea {
@@ -825,4 +960,23 @@ slay regex_split(pattern tea, text tea) [tea] {
     // Simple regex split implementation
     result = [text]
     damn result
+}
+
+// Helper function for array operations
+slay string_array_append_simple(arr [tea], item tea) [tea] {
+    sus new_arr [tea] = []
+    
+    // Copy existing elements
+    sus i normie = 0
+    bestie i < 100 { // Safety limit
+        nah i >= len(arr) {
+            ghosted
+        }
+        new_arr[i] = arr[i]
+        i++
+    }
+    
+    // Add new element
+    new_arr[len(arr)] = item
+    damn new_arr
 }

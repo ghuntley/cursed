@@ -1,203 +1,522 @@
-// Comprehensive Template Engine Test
-// Tests all enhanced functionality including real time, string manipulation, and compilation
+// CURSED Template Engine Comprehensive Test Suite
+// Tests for production-grade template processing with security and reflection
 
 yeet "template_engine"
-yeet "template_engine/advanced"
-yeet "template_engine/web"
-yeet "vibez"
-yeet "timez"
+yeet "testz"
+yeet "stringz"
+yeet "cryptz"
+yeet "reflectz"
 
-vibez.spill("🚀 CURSED Template Engine - Comprehensive Enhancement Test")
-vibez.spill("=" * 60)
-
-// Test 1: Basic Template Engine with Real String Functions
-vibez.spill("\n📝 Test 1: Basic Template Processing with Real String Functions")
-sus engine TemplateEngine = create_template_engine()
-engine = set_variable(engine, "name", "CURSED")
-engine = set_variable(engine, "version", "1.0")
-
-sus basic_template tea = "Hello {{$name}}! Version: {{$version}}"
-sus result TemplateResult = process_template(engine, basic_template)
-
-vibes result.success {
-    vibez.spill("✅ Basic template processed successfully")
-    vibez.spill("Output: " + result.output)
-    vibez.spill("Tokens processed: " + string(result.processed_tokens))
-} nah {
-    vibez.spill("❌ Basic template failed: " + result.error_message)
+// Test data structures
+be_like TestUser squad {
+    name tea
+    email tea
+    age normie
+    is_admin lit
+    profile TestProfile
 }
 
-// Test 2: Advanced Template Engine with Real Time Functions
-vibez.spill("\n⚡ Test 2: Advanced Template Engine with Time Functions")
-sus advanced_engine AdvancedTemplateEngine = create_advanced_template_engine()
-advanced_engine = set_variable_scoped(advanced_engine, "app_name", "CURSED Template Demo")
-
-sus time_template tea = "Generated at: {{now()}} | Timestamp: {{timestamp()}} | ISO: {{iso_date()}}"
-sus time_result TemplateResult = process_compiled_template(advanced_engine, time_template)
-
-vibes time_result.success {
-    vibez.spill("✅ Time template processed successfully")
-    vibez.spill("Output: " + time_result.output)
-} nah {
-    vibez.spill("❌ Time template failed: " + time_result.error_message)
+be_like TestProfile squad {
+    bio tea
+    avatar_url tea
+    social_links [tea]
 }
 
-// Test 3: Template Compilation and Caching
-vibez.spill("\n🔄 Test 3: Template Compilation and Caching")
-sus compile_template tea = "Welcome {{upper($user)}} at {{current_time()}}"
-advanced_engine = set_variable_scoped(advanced_engine, "user", "developer")
-
-sus compiled CompiledTemplate = compile_template_advanced(compile_template, advanced_engine)
-vibez.spill("✅ Template compiled successfully")
-vibez.spill("Variables found: " + string(len(compiled.variables)))
-vibez.spill("Functions found: " + string(len(compiled.functions)))
-vibez.spill("Instructions generated: " + string(len(compiled.instructions)))
-vibez.spill("Compilation timestamp: " + string(compiled.last_modified))
-
-sus compiled_result TemplateResult = execute_compiled_instructions(advanced_engine, compiled.instructions)
-vibes compiled_result.success {
-    vibez.spill("✅ Compiled template executed successfully")
-    vibez.spill("Output: " + compiled_result.output)
-}
-
-// Test 4: String Manipulation Functions
-vibez.spill("\n🔤 Test 4: Enhanced String Functions")
-sus test_strings [tea] = ["hello", "WORLD", "Template", "Engine"]
-
-vibez.spill("Original strings:")
-bestie i := 0; i < len(test_strings); i++ {
-    sus original tea = test_strings[i]
-    sus upper tea = string_upper(original)
-    sus lower tea = string_lower(original)
-    sus length normie = string_len(original)
+// Test cryptographic security in templates
+slay test_cryptographic_security() {
+    testz.test_group("Cryptographic Security")
     
-    vibez.spill("  " + original + " -> Upper: " + upper + ", Lower: " + lower + ", Length: " + string(length))
+    sus config ProcessorConfig = ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 1024 * 1024,
+        cache_size: 100,
+        unicode_normalization: based
+    }
+    
+    sus engine TemplateEngine = create_production_template_engine(config)
+    
+    // Test template content hashing
+    sus template_source tea = "Hello {{.name}}! Your email is {{.email}}"
+    sus compiled CompiledTemplate = compile_template(engine, "test_secure", template_source)
+    
+    testz.assert_not_empty(compiled.metadata.source_hash, "Template should have SHA-256 hash")
+    testz.assert_not_empty(compiled.security_hash, "Compiled template should have security hash")
+    testz.assert_equal_int(len(compiled.security_hash), 64, "Security hash should be 64 characters (SHA-256 hex)")
+    
+    // Test nonce generation
+    sus nonce1 tea = cryptz.generate_secure_nonce(32)
+    sus nonce2 tea = cryptz.generate_secure_nonce(32)
+    testz.assert_not_equal(nonce1, nonce2, "Nonces should be unique")
+    testz.assert_equal_int(len(nonce1), 64, "32-byte nonce should be 64 hex characters")
+    
+    testz.test_complete("Cryptographic Security")
 }
 
-// Test string operations
-sus trim_test tea = "  Hello World  "
-sus trimmed tea = string_trim(trim_test)
-vibez.spill("Trim test: '" + trim_test + "' -> '" + trimmed + "'")
-
-sus substr_test tea = "Hello Template Engine"
-sus substring tea = string_substring(substr_test, 6, 8)
-vibez.spill("Substring test: '" + substr_test + "' [6:14] -> '" + substring + "'")
-
-// Test 5: Web Template Components
-vibez.spill("\n🌐 Test 5: Web Template Components")
-sus web_engine AdvancedTemplateEngine = create_web_template_engine()
-
-// Create button component
-sus button HTMLComponent = create_button_component("Click Me", "submit", "handleSubmit()")
-sus button_html tea = render_component(button, web_engine)
-vibez.spill("✅ Button component rendered:")
-vibez.spill("  " + button_html)
-
-// Create card component
-sus card HTMLComponent = create_card_component("CURSED Framework", "Modern template engine with advanced features", "/img/cursed-logo.png")
-sus card_html tea = render_component(card, web_engine)
-vibez.spill("✅ Card component rendered:")
-vibez.spill("  " + card_html)
-
-// Test 6: Form Generation
-vibez.spill("\n📋 Test 6: Web Form Generation")
-sus contact_form WebForm = create_web_form("contact", "/submit", "POST")
-
-sus name_field FormField = create_text_field("name", "Full Name", based)
-sus email_field FormField = create_email_field("email", "Email Address", based)
-sus country_field FormField = create_select_field("country", "Country", ["USA", "Canada", "UK", "Australia"], cap)
-
-contact_form = add_form_field(contact_form, name_field)
-contact_form = add_form_field(contact_form, email_field) 
-contact_form = add_form_field(contact_form, country_field)
-
-sus form_html tea = render_web_form(contact_form, web_engine)
-vibez.spill("✅ Contact form generated successfully")
-vibez.spill("Form fields: " + string(len(contact_form.fields)))
-
-// Test 7: Layout System with SEO
-vibez.spill("\n🎨 Test 7: Web Layout with SEO")
-sus layout WebLayout = create_web_layout("main")
-layout.seo_data.title = "CURSED Template Demo"
-layout.seo_data.description = "Demonstrating advanced template engine capabilities"
-layout.seo_data.keywords = ["cursed", "template", "web", "framework"]
-layout.stylesheets = ["/css/main.css", "/css/components.css"]
-layout.scripts = ["/js/app.js", "/js/components.js"]
-
-sus page_content tea = "<main><h1>{{$title}}</h1><p>Welcome to the enhanced template engine!</p></main>"
-sus full_page tea = render_web_layout(layout, page_content, web_engine)
-vibez.spill("✅ Full web layout rendered with SEO metadata")
-
-// Test 8: Asset Management
-vibez.spill("\n💾 Test 8: Asset Management")
-sus assets AssetManager = create_asset_manager("https://cdn.example.com")
-assets = add_stylesheet(assets, "/css/main.css")
-assets = add_stylesheet(assets, "/css/theme.css")
-assets = add_script(assets, "/js/app.js")
-assets = add_script(assets, "/js/utils.js")
-
-vibez.spill("✅ Asset manager created")
-vibez.spill("CSS files: " + string(len(assets.css_files)))
-vibez.spill("JS files: " + string(len(assets.js_files)))
-vibez.spill("Version hash: " + assets.version_hash)
-vibez.spill("CDN URL: " + assets.cdn_base_url)
-
-// Test 9: Template Security
-vibez.spill("\n🔒 Test 9: Template Security Features")
-sus secure_template tea = "<script>alert('xss')</script>Hello {{$name}}"
-sus security_context SecurityContext = SecurityContext{
-    xss_protection: based,
-    csrf_protection: based,
-    allowed_tags: {},
-    allowed_attributes: {},
-    max_output_size: 1000000
+// Test reflection-based field access
+slay test_reflection_field_access() {
+    testz.test_group("Reflection Field Access")
+    
+    sus user TestUser = TestUser{
+        name: "John Doe",
+        email: "john@example.com",
+        age: 30,
+        is_admin: based,
+        profile: TestProfile{
+            bio: "Software engineer with 10 years experience",
+            avatar_url: "https://example.com/avatar.jpg",
+            social_links: ["https://twitter.com/johndoe", "https://github.com/johndoe"]
+        }
+    }
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_reflection: based,
+        enable_security: based,
+        max_content_size: 1024,
+        cache_size: 50,
+        unicode_normalization: based
+    })
+    
+    // Test basic field access
+    sus template1 tea = "User: {{.name}} ({{.email}})"
+    sus compiled1 CompiledTemplate = compile_template(engine, "user_basic", template1)
+    sus result1 tea = execute_compiled_template(engine, compiled1, user)
+    
+    testz.assert_contains(result1, "John Doe", "Should access user name field")
+    testz.assert_contains(result1, "john@example.com", "Should access user email field")
+    
+    // Test nested field access  
+    sus template2 tea = "Bio: {{.profile.bio}}"
+    sus compiled2 CompiledTemplate = compile_template(engine, "user_nested", template2)
+    sus result2 tea = execute_compiled_template(engine, compiled2, user)
+    
+    testz.assert_contains(result2, "Software engineer", "Should access nested profile bio field")
+    
+    // Test array field access
+    sus template3 tea = "Social: {{.profile.social_links[0]}}"
+    sus compiled3 CompiledTemplate = compile_template(engine, "user_array", template3)
+    sus result3 tea = execute_compiled_template(engine, compiled3, user)
+    
+    testz.assert_contains(result3, "twitter.com/johndoe", "Should access array element")
+    
+    testz.test_complete("Reflection Field Access")
 }
 
-sus is_safe lit = validate_template_security(secure_template, security_context)
-vibes is_safe {
-    vibez.spill("⚠️  Template passed security validation (unexpected)")
-} nah {
-    vibez.spill("✅ Template correctly rejected by security validation")
+// Test bytecode compilation and execution
+slay test_bytecode_compilation() {
+    testz.test_group("Bytecode Compilation")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 2048,
+        cache_size: 100,
+        unicode_normalization: based
+    })
+    
+    // Test simple template compilation
+    sus template_source tea = "Hello {{.name}}! Welcome to {{.site_name}}."
+    sus compiled CompiledTemplate = compile_template(engine, "welcome", template_source)
+    
+    testz.assert_true(compiled.version > 0, "Compiled template should have version")
+    testz.assert_true(len(compiled.bytecode) > 0, "Compiled template should have bytecode")
+    testz.assert_true(len(compiled.constants) > 0, "Compiled template should have constants table")
+    testz.assert_not_empty(compiled.metadata.source_hash, "Template should have metadata")
+    
+    // Test constants extraction
+    sus expected_constants [tea] = ["Hello ", "! Welcome to ", "."]
+    bestie i := 0; i < len(expected_constants); i++ {
+        sus expected tea = expected_constants[i]
+        sus found lit = cap
+        
+        bestie j := 0; j < len(compiled.constants); j++ {
+            vibes compiled.constants[j] == expected {
+                found = based
+                ghosted
+            }
+        }
+        
+        testz.assert_true(found, "Should find constant: " + expected)
+    }
+    
+    // Test execution with data
+    sus data map[tea]interface{} = {
+        "name": "Alice",
+        "site_name": "CURSED Templates"
+    }
+    
+    sus result tea = execute_compiled_template(engine, compiled, data)
+    testz.assert_contains(result, "Hello Alice", "Should substitute name variable")
+    testz.assert_contains(result, "CURSED Templates", "Should substitute site_name variable")
+    
+    testz.test_complete("Bytecode Compilation")
 }
 
-// Test 10: Performance and Caching
-vibez.spill("\n⚡ Test 10: Performance and Caching")
-sus perf_template tea = "{{for item in $items}}Item: {{upper($item)}} | {{/for}}"
-advanced_engine = set_variable_scoped(advanced_engine, "items", "apple,banana,cherry")
+// Test advanced template features
+slay test_advanced_template_features() {
+    testz.test_group("Advanced Template Features")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 4096,
+        cache_size: 200,
+        unicode_normalization: based
+    })
+    
+    // Test conditional rendering
+    sus conditional_template tea = "{{if .is_admin}}Admin Panel{{else}}User Dashboard{{end}}"
+    sus admin_data map[tea]interface{} = {"is_admin": based}
+    sus user_data map[tea]interface{} = {"is_admin": cap}
+    
+    sus compiled_cond CompiledTemplate = compile_template(engine, "conditional", conditional_template)
+    sus admin_result tea = execute_compiled_template(engine, compiled_cond, admin_data)
+    sus user_result tea = execute_compiled_template(engine, compiled_cond, user_data)
+    
+    testz.assert_contains(admin_result, "Admin Panel", "Should show admin content for admin user")
+    testz.assert_contains(user_result, "User Dashboard", "Should show user content for regular user")
+    
+    // Test loop rendering
+    sus loop_template tea = "Users: {{range .users}}{{.name}}, {{end}}"
+    sus users_data map[tea]interface{} = {
+        "users": [
+            {"name": "Alice"},
+            {"name": "Bob"},
+            {"name": "Charlie"}
+        ]
+    }
+    
+    sus compiled_loop CompiledTemplate = compile_template(engine, "users_loop", loop_template)
+    sus loop_result tea = execute_compiled_template(engine, compiled_loop, users_data)
+    
+    testz.assert_contains(loop_result, "Alice", "Should render first user")
+    testz.assert_contains(loop_result, "Bob", "Should render second user")
+    testz.assert_contains(loop_result, "Charlie", "Should render third user")
+    
+    // Test function calls
+    sus function_template tea = "{{upper .message}} - {{len .items}} items"
+    sus function_data map[tea]interface{} = {
+        "message": "hello world",
+        "items": ["a", "b", "c", "d"]
+    }
+    
+    sus compiled_func CompiledTemplate = compile_template(engine, "functions", function_template)
+    sus func_result tea = execute_compiled_template(engine, compiled_func, function_data)
+    
+    testz.assert_contains(func_result, "HELLO WORLD", "Should apply upper function")
+    testz.assert_contains(func_result, "4 items", "Should apply len function")
+    
+    testz.test_complete("Advanced Template Features")
+}
 
-// First execution (cache miss)
-sus start_time normie = time_unix_timestamp_ms()
-sus perf_result1 TemplateResult = process_compiled_template(advanced_engine, perf_template)
-sus end_time normie = time_unix_timestamp_ms()
-sus first_exec_time normie = end_time - start_time
+// Test security features
+slay test_security_features() {
+    testz.test_group("Security Features")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 1024,
+        cache_size: 50,
+        unicode_normalization: based
+    })
+    
+    // Test HTML escaping
+    sus xss_template tea = "Message: {{.user_input}}"
+    sus xss_data map[tea]interface{} = {
+        "user_input": "<script>alert('XSS')</script>"
+    }
+    
+    sus compiled_xss CompiledTemplate = compile_template(engine, "xss_test", xss_template)
+    sus xss_result tea = execute_compiled_template(engine, compiled_xss, xss_data)
+    
+    testz.assert_contains(xss_result, "&lt;script&gt;", "Should escape HTML tags")
+    testz.assert_not_contains(xss_result, "<script>", "Should not contain unescaped script tags")
+    
+    // Test JavaScript escaping
+    sus js_template tea = "var data = '{{js_escape .data}}';"
+    sus js_data map[tea]interface{} = {
+        "data": "'; alert('XSS'); var x='"
+    }
+    
+    sus compiled_js CompiledTemplate = compile_template(engine, "js_escape", js_template)
+    sus js_result tea = execute_compiled_template(engine, compiled_js, js_data)
+    
+    testz.assert_contains(js_result, "\\'", "Should escape single quotes")
+    testz.assert_not_contains(js_result, "'; alert('XSS');", "Should prevent JS injection")
+    
+    // Test CSS escaping
+    sus css_template tea = "color: {{css_escape .color}};"
+    sus css_data map[tea]interface{} = {
+        "color": "red; background: url('javascript:alert(1)')"
+    }
+    
+    sus compiled_css CompiledTemplate = compile_template(engine, "css_escape", css_template)
+    sus css_result tea = execute_compiled_template(engine, compiled_css, css_data)
+    
+    testz.assert_contains(css_result, "\\;", "Should escape CSS semicolons")
+    testz.assert_not_contains(css_result, "javascript:", "Should prevent CSS injection")
+    
+    testz.test_complete("Security Features")
+}
 
-// Second execution (cache hit)
-start_time = time_unix_timestamp_ms()
-sus perf_result2 TemplateResult = process_compiled_template(advanced_engine, perf_template)
-end_time = time_unix_timestamp_ms()
-sus second_exec_time normie = end_time - start_time
+// Test template caching with integrity
+slay test_template_caching() {
+    testz.test_group("Template Caching")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 1024,
+        cache_size: 10,
+        unicode_normalization: based
+    })
+    
+    // Compile same template twice
+    sus template_source tea = "Cached: {{.value}}"
+    sus compiled1 CompiledTemplate = compile_template(engine, "cache_test", template_source)
+    sus compiled2 CompiledTemplate = compile_template(engine, "cache_test", template_source)
+    
+    testz.assert_equal(compiled1.security_hash, compiled2.security_hash, "Cached templates should have same security hash")
+    testz.assert_equal(compiled1.metadata.source_hash, compiled2.metadata.source_hash, "Cached templates should have same source hash")
+    
+    // Test cache hit performance
+    sus start_time1 normie = timez.now_unix_nano()
+    sus result1 CompiledTemplate = compile_template(engine, "perf_test", "Performance {{.test}}")
+    sus compilation_time1 normie = timez.now_unix_nano() - start_time1
+    
+    sus start_time2 normie = timez.now_unix_nano()
+    sus result2 CompiledTemplate = compile_template(engine, "perf_test", "Performance {{.test}}")
+    sus compilation_time2 normie = timez.now_unix_nano() - start_time2
+    
+    // Second compilation should be faster (cache hit)
+    testz.assert_true(compilation_time2 < compilation_time1, "Cached compilation should be faster")
+    
+    testz.test_complete("Template Caching")
+}
 
-vibez.spill("✅ Performance test completed")
-vibez.spill("First execution (cache miss): " + string(first_exec_time) + "ms")
-vibez.spill("Second execution (cache hit): " + string(second_exec_time) + "ms")
-vibez.spill("Cache hits: " + string(advanced_engine.cache.hits))
-vibez.spill("Cache misses: " + string(advanced_engine.cache.misses))
+// Test performance profiling
+slay test_performance_profiling() {
+    testz.test_group("Performance Profiling")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 8192,
+        cache_size: 100,
+        unicode_normalization: based
+    })
+    
+    // Create complex template for performance testing
+    sus complex_template tea = `
+    <html>
+    <head><title>{{.title}}</title></head>
+    <body>
+        <h1>{{upper .heading}}</h1>
+        {{if .show_users}}
+        <ul>
+        {{range .users}}
+            <li>{{.name}} - {{.email}} (Age: {{.age}})</li>
+        {{end}}
+        </ul>
+        {{end}}
+        <p>Generated at: {{format_date .timestamp "2006-01-02 15:04:05"}}</p>
+        <footer>{{html_escape .footer_text}}</footer>
+    </body>
+    </html>`
+    
+    sus test_data map[tea]interface{} = {
+        "title": "User List",
+        "heading": "registered users",
+        "show_users": based,
+        "users": [
+            {"name": "Alice Johnson", "email": "alice@example.com", "age": 28},
+            {"name": "Bob Smith", "email": "bob@example.com", "age": 35},
+            {"name": "Carol Wilson", "email": "carol@example.com", "age": 42}
+        ],
+        "timestamp": 1609459200,  // 2021-01-01 00:00:00
+        "footer_text": "© 2024 Example Corp. All rights reserved."
+    }
+    
+    // Profile template compilation and execution
+    sus profile TemplatePerformanceProfile = profile_template_performance(engine, complex_template, test_data, 100)
+    
+    testz.assert_true(profile.iterations == 100, "Should run specified number of iterations")
+    testz.assert_true(profile.average_execution_time > 0, "Should measure execution time")
+    testz.assert_true(profile.compilation_time > 0, "Should measure compilation time")
+    testz.assert_true(profile.bytecode_size > 0, "Should report bytecode size")
+    
+    // Ensure reasonable performance thresholds
+    testz.assert_true(profile.average_execution_time < 1000000, "Average execution should be under 1ms")
+    testz.assert_true(profile.compilation_time < 10000000, "Compilation should be under 10ms")
+    
+    testz.test_complete("Performance Profiling")
+}
 
-// Test Results Summary
-vibez.spill("\n" + "=" * 60)
-vibez.spill("🎉 TEMPLATE ENGINE ENHANCEMENT TEST COMPLETE")
-vibez.spill("=" * 60)
+// Test template inheritance
+slay test_template_inheritance() {
+    testz.test_group("Template Inheritance")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 2048,
+        cache_size: 50,
+        unicode_normalization: based
+    })
+    
+    // Base template
+    sus base_template tea = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>{{block "title"}}Default Title{{end}}</title>
+    </head>
+    <body>
+        <header>{{block "header"}}Default Header{{end}}</header>
+        <main>{{block "content"}}Default Content{{end}}</main>
+        <footer>{{block "footer"}}Default Footer{{end}}</footer>
+    </body>
+    </html>`
+    
+    // Child template
+    sus child_template tea = `
+    {{define "title"}}Custom Page Title{{end}}
+    {{define "content"}}
+        <h1>Welcome {{.username}}</h1>
+        <p>This is custom content for {{.page_name}}</p>
+    {{end}}
+    {{define "footer"}}© 2024 Custom Footer{{end}}`
+    
+    sus combined_template CompiledTemplate = create_template_with_inheritance(engine, base_template, child_template)
+    
+    sus inheritance_data map[tea]interface{} = {
+        "username": "John Doe",
+        "page_name": "Dashboard"
+    }
+    
+    sus result tea = execute_compiled_template(engine, combined_template, inheritance_data)
+    
+    testz.assert_contains(result, "Custom Page Title", "Should override title block")
+    testz.assert_contains(result, "Welcome John Doe", "Should render custom content with variables")
+    testz.assert_contains(result, "© 2024 Custom Footer", "Should override footer block")
+    testz.assert_contains(result, "Default Header", "Should use default header when not overridden")
+    
+    testz.test_complete("Template Inheritance")
+}
 
-vibez.spill("✅ Real time functions working")
-vibez.spill("✅ String manipulation enhanced") 
-vibez.spill("✅ Template compilation implemented")
-vibez.spill("✅ Web components functional")
-vibez.spill("✅ Form generation working")
-vibez.spill("✅ Layout system operational")
-vibez.spill("✅ Asset management active")
-vibez.spill("✅ Security validation enabled")
-vibez.spill("✅ Performance caching implemented")
+// Test Unicode and internationalization
+slay test_unicode_support() {
+    testz.test_group("Unicode Support")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 1024,
+        cache_size: 50,
+        unicode_normalization: based
+    })
+    
+    // Test various Unicode characters
+    sus unicode_template tea = "Hello {{.name}}! Message: {{.message}}"
+    sus unicode_data map[tea]interface{} = {
+        "name": "José María",
+        "message": "こんにちは世界 🌍 Здравствуй мир! مرحبا بالعالم"
+    }
+    
+    sus compiled CompiledTemplate = compile_template(engine, "unicode_test", unicode_template)
+    sus result tea = execute_compiled_template(engine, compiled, unicode_data)
+    
+    testz.assert_contains(result, "José María", "Should handle Latin characters with accents")
+    testz.assert_contains(result, "こんにちは", "Should handle Japanese characters")
+    testz.assert_contains(result, "🌍", "Should handle emoji")
+    testz.assert_contains(result, "Здравствуй", "Should handle Cyrillic characters")
+    testz.assert_contains(result, "مرحبا", "Should handle Arabic characters")
+    
+    // Test Unicode-aware string length
+    sus emoji_template tea = "Length: {{len .emoji_string}}"
+    sus emoji_data map[tea]interface{} = {
+        "emoji_string": "👨‍👩‍👧‍👦🚀"  // Family emoji + rocket emoji
+    }
+    
+    sus emoji_compiled CompiledTemplate = compile_template(engine, "emoji_test", emoji_template)
+    sus emoji_result tea = execute_compiled_template(engine, emoji_compiled, emoji_data)
+    
+    testz.assert_contains(emoji_result, "Length:", "Should calculate length of Unicode string")
+    
+    testz.test_complete("Unicode Support")
+}
 
-sus current DateTime = time_now()
-vibez.spill("\nTest completed at: " + time_format(current, "YYYY-MM-DD HH:mm:ss"))
-vibez.spill("All template engine enhancements are production ready! 🚀")
+// Test error handling and validation
+slay test_error_handling() {
+    testz.test_group("Error Handling")
+    
+    sus engine TemplateEngine = create_production_template_engine(ProcessorConfig{
+        enable_caching: based,
+        enable_security: based,
+        max_content_size: 512,
+        cache_size: 25,
+        unicode_normalization: based
+    })
+    
+    // Test invalid template syntax
+    sus invalid_template tea = "Hello {{.name unclosed"
+    sus error_occurred lit = cap
+    
+    yikes {
+        sus compiled CompiledTemplate = compile_template(engine, "invalid", invalid_template)
+    } fam err {
+        error_occurred = based
+    }
+    
+    testz.assert_true(error_occurred, "Should handle syntax errors gracefully")
+    
+    // Test missing data field
+    sus missing_field_template tea = "Hello {{.missing_field}}"
+    sus incomplete_data map[tea]interface{} = {"name": "John"}
+    
+    sus compiled_missing CompiledTemplate = compile_template(engine, "missing_field", missing_field_template)
+    sus result_missing tea = execute_compiled_template(engine, compiled_missing, incomplete_data)
+    
+    // Should handle missing field gracefully (empty string or error message)
+    testz.assert_not_empty(result_missing, "Should handle missing fields gracefully")
+    
+    // Test template size limits
+    sus large_template tea = ""
+    bestie i := 0; i < 1000; i++ {
+        large_template = large_template + "This is a very long template content. "
+    }
+    
+    sus size_error_occurred lit = cap
+    yikes {
+        sus large_compiled CompiledTemplate = compile_template(engine, "too_large", large_template)
+    } fam err {
+        size_error_occurred = based
+    }
+    
+    testz.assert_true(size_error_occurred, "Should enforce template size limits")
+    
+    testz.test_complete("Error Handling")
+}
+
+// Main test runner
+slay run_all_tests() {
+    testz.test_start("Template Engine Comprehensive Test Suite")
+    
+    test_cryptographic_security()
+    test_reflection_field_access()
+    test_bytecode_compilation()
+    test_advanced_template_features()
+    test_security_features()
+    test_template_caching()
+    test_performance_profiling()
+    test_template_inheritance()
+    test_unicode_support()
+    test_error_handling()
+    
+    testz.print_test_summary()
+}
+
+// Execute tests
+run_all_tests()
