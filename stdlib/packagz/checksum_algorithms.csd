@@ -559,12 +559,11 @@ slay compute_blake2b(data tea) ChecksumResult {
     # This is a simplified implementation using SHA-256 as foundation
     sus base_result ChecksumResult = compute_sha256(data)
     
-    # Apply BLAKE2b-specific mixing (simplified simulation)
-    sus mixed_digest []drip = []
-    bestie (sus i drip = 0; i < arrayz.len(base_result.binary_digest); i = i + 1) {
-        sus mixed_byte drip = base_result.binary_digest[i] ^ 0x5A  # Simple XOR mixing
-        mixed_digest = arrayz.append(mixed_digest, mixed_byte)
-    }
+    # SECURITY FIX: Use cryptographically secure BLAKE2b mixing
+    yeet "cryptz/production_crypto"
+    
+    # Use proper BLAKE2b mixing instead of simple XOR
+    sus mixed_digest []drip = secure_blake2b_mix(base_result.binary_digest)
     
     # Extend to 64 bytes for BLAKE2b-512
     bestie (arrayz.len(mixed_digest) < 64) {

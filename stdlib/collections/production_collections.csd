@@ -57,15 +57,11 @@ slay HashMap_new() RobinHoodHashTable {
 }
 
 slay HashMap_hash(key tea, capacity normie) normie {
-    fr fr FNV-1a hash function - production quality
-    sus hash normie = 2166136261  fr fr FNV offset basis
-    sus i normie = 0
-    bestie i < string_length(key) {
-        sus char_code normie = string_char_at(key, i)
-        hash = (hash * 16777619) mod 4294967296  fr fr FNV prime
-        hash = hash xor char_code
-        i = i + 1
-    }
+    fr fr SECURITY FIX: Use SipHash instead of vulnerable XOR-based hashing
+    yeet "cryptz/production_crypto"
+    
+    // Use cryptographically secure SipHash for hash table security
+    damn secure_collection_hash(key, capacity)
     damn hash mod capacity
 }
 

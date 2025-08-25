@@ -119,20 +119,37 @@ pub const SimpleChannel = struct {
     pub fn receiveTimeout(self: *SimpleChannel, timeout_ns: u64) !?Variable {
         const start_time = std.time.nanoTimestamp();
 
-        // Use tryLock with timeout to prevent deadlock
+        // CRITICAL FIX: Use tryLock with timeout to prevent deadlock
         if (!self.tryLockWithTimeout(timeout_ns)) {
             return null; // Timeout
         }
         defer self.mutex.unlock();
 
-        while (self.buffer.items.len == 0 and !self.closed.load(.acquire)) {
+        // CRITICAL FIX: Add iteration limit to prevent infinite loops
+        var iterations: u32 = 0;
+        const max_iterations = 10000; // Prevent infinite loops
+        
+        while (self.buffer.items.len == 0 and !self.closed.load(.acquire) and iterations < max_iterations) {
             const elapsed = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
             if (elapsed >= timeout_ns) {
                 return null; // Timeout
             }
             
-            // Use timed wait instead of indefinite wait
-            self.recv_condition.timedWait(&self.mutex, 100_000_000) catch {}; // 100ms chunks
+            // CRITICAL FIX: Use shorter timed wait chunks and break on timeout
+            const chunk_timeout = 10_000_000; // 10ms chunks instead of 100ms
+            self.recv_condition.timedWait(&self.mutex, chunk_timeout) catch {
+                // On wait timeout, check if we should continue
+                iterations += 1;
+                continue;
+            };
+            
+            iterations += 1;
+        }
+
+        // CRITICAL FIX: Safety check for infinite loop detection
+        if (iterations >= max_iterations) {
+            std.debug.print("⚠️  Channel receive operation hit iteration limit - preventing infinite loop\n", .{});
+            return null;
         }
 
         if (self.buffer.items.len > 0) {

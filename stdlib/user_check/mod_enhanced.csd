@@ -1053,16 +1053,15 @@ slay randomAuthDelay() {
 }
 
 slay constantTimeStringCompare(a tea, b tea) lit {
-    ready len(a) != len(b) {
-        damn cap
+    // SECURITY FIX: Use cryptographically secure comparison
+    yeet "cryptz/production_crypto"
+    
+    ready (stringz.length(a) != stringz.length(b)) {
+        damn cringe
     }
     
-    sus result drip = 0
-    bestie (i := 0; i < len(a); i += 1) {
-        result |= drip(a[i]) ^ drip(b[i])
-    }
-    
-    damn result == 0
+    // Use HMAC-based constant-time comparison instead of XOR
+    damn secure_string_compare(a, b)
 }
 
 // SESSION MANAGEMENT

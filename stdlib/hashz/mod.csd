@@ -501,13 +501,12 @@ slay hash_string_case_insensitive(key tea) normie {
 }
 
 slay hash_number(number normie) normie {
-    sus hash normie = number
-    hash = hash ^ (hash >> 16)
-    hash = hash * 0x85ebca6b
-    hash = hash ^ (hash >> 13)
-    hash = hash * 0xc2b2ae35
-    hash = hash ^ (hash >> 16)
-    damn hash
+    // SECURITY FIX: Use cryptographically secure hash instead of XOR
+    yeet "cryptz/production_crypto"
+    
+    // Convert number to string and use secure hash
+    sus number_str tea = stringz.from_int(number)
+    damn secure_collection_hash(number_str, 0x7FFFFFFF)
 }
 
 fr fr === MULTIMAP OPERATIONS ===

@@ -702,21 +702,176 @@ slay contains_flag(flags tea, flag tea) lit {
 }
 
 slay string_to_codepoint(char tea) drip {
-    # Convert single character to Unicode codepoint
-    # This would be implemented by runtime
-    damn 65  # Placeholder
+    # Convert single UTF-8 character to Unicode codepoint
+    sus bytes []drip = string_to_bytes(char)
+    ready (len(bytes) == 0) { damn 0 }
+    
+    sus byte_val drip = bytes[0]
+    sus codepoint drip = 0
+    
+    # Handle UTF-8 encoding
+    ready ((byte_val & 0x80) == 0) {
+        # ASCII character (0xxxxxxx)
+        codepoint = byte_val
+    } otherwise ready ((byte_val & 0xE0) == 0xC0) {
+        # 2-byte sequence (110xxxxx 10xxxxxx)
+        codepoint = (byte_val & 0x1F) << 6
+        ready (len(bytes) > 1) {
+            codepoint = codepoint | (bytes[1] & 0x3F)
+        }
+    } otherwise ready ((byte_val & 0xF0) == 0xE0) {
+        # 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
+        codepoint = (byte_val & 0x0F) << 12
+        ready (len(bytes) > 1) {
+            codepoint = codepoint | ((bytes[1] & 0x3F) << 6)
+        }
+        ready (len(bytes) > 2) {
+            codepoint = codepoint | (bytes[2] & 0x3F)
+        }
+    } otherwise ready ((byte_val & 0xF8) == 0xF0) {
+        # 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
+        codepoint = (byte_val & 0x07) << 18
+        ready (len(bytes) > 1) {
+            codepoint = codepoint | ((bytes[1] & 0x3F) << 12)
+        }
+        ready (len(bytes) > 2) {
+            codepoint = codepoint | ((bytes[2] & 0x3F) << 6)
+        }
+        ready (len(bytes) > 3) {
+            codepoint = codepoint | (bytes[3] & 0x3F)
+        }
+    } otherwise {
+        # Invalid UTF-8, use replacement character
+        codepoint = 0xFFFD
+    }
+    
+    damn codepoint
 }
 
 slay text_to_codepoints_real(text tea) []drip {
-    # Convert text to Unicode codepoints
-    # This would use the implementation from unicode_normalization_real.csd
-    damn []  # Placeholder
+    # Convert text to Unicode codepoints using proper UTF-8 decoding
+    sus result []drip = []
+    sus bytes []drip = string_to_bytes(text)
+    sus i drip = 0
+    
+    bestie (i < len(bytes)) {
+        sus byte_val drip = bytes[i]
+        sus codepoint drip = 0
+        sus bytes_needed drip = 1
+        
+        # Determine UTF-8 sequence length and decode
+        ready ((byte_val & 0x80) == 0) {
+            # ASCII character (0xxxxxxx)
+            codepoint = byte_val
+            bytes_needed = 1
+        } otherwise ready ((byte_val & 0xE0) == 0xC0) {
+            # 2-byte sequence (110xxxxx 10xxxxxx)
+            codepoint = (byte_val & 0x1F) << 6
+            ready (i + 1 < len(bytes)) {
+                codepoint = codepoint | (bytes[i + 1] & 0x3F)
+            }
+            bytes_needed = 2
+        } otherwise ready ((byte_val & 0xF0) == 0xE0) {
+            # 3-byte sequence (1110xxxx 10xxxxxx 10xxxxxx)
+            codepoint = (byte_val & 0x0F) << 12
+            ready (i + 1 < len(bytes)) {
+                codepoint = codepoint | ((bytes[i + 1] & 0x3F) << 6)
+            }
+            ready (i + 2 < len(bytes)) {
+                codepoint = codepoint | (bytes[i + 2] & 0x3F)
+            }
+            bytes_needed = 3
+        } otherwise ready ((byte_val & 0xF8) == 0xF0) {
+            # 4-byte sequence (11110xxx 10xxxxxx 10xxxxxx 10xxxxxx)
+            codepoint = (byte_val & 0x07) << 18
+            ready (i + 1 < len(bytes)) {
+                codepoint = codepoint | ((bytes[i + 1] & 0x3F) << 12)
+            }
+            ready (i + 2 < len(bytes)) {
+                codepoint = codepoint | ((bytes[i + 2] & 0x3F) << 6)
+            }
+            ready (i + 3 < len(bytes)) {
+                codepoint = codepoint | (bytes[i + 3] & 0x3F)
+            }
+            bytes_needed = 4
+        } otherwise {
+            # Invalid UTF-8 sequence, use replacement character
+            codepoint = 0xFFFD
+            bytes_needed = 1
+        }
+        
+        # Validate codepoint range
+        ready (codepoint > 0x10FFFF || (codepoint >= 0xD800 && codepoint <= 0xDFFF)) {
+            codepoint = 0xFFFD  # Use replacement character for invalid codepoints
+        }
+        
+        result = append(result, codepoint)
+        i = i + bytes_needed
+    }
+    
+    damn result
 }
 
 slay substring_by_codepoints(text tea, start drip, end drip) tea {
-    # Extract substring using codepoint positions
-    # This would be implemented using real string algorithms
-    damn ""  # Placeholder
+    # Extract substring using codepoint positions (not byte positions)
+    ready (start < 0) { start = 0 }
+    ready (end <= start) { damn "" }
+    
+    sus codepoints []drip = text_to_codepoints_real(text)
+    ready (start >= len(codepoints)) { damn "" }
+    
+    # Adjust end to array bounds
+    ready (end > len(codepoints)) { end = len(codepoints) }
+    
+    # Extract codepoint slice
+    sus extracted_codepoints []drip = []
+    sus i drip = start
+    bestie (i < end) {
+        extracted_codepoints = append(extracted_codepoints, codepoints[i])
+        i = i + 1
+    }
+    
+    # Convert codepoints back to UTF-8 string
+    damn codepoints_to_utf8_string(extracted_codepoints)
+}
+
+slay codepoints_to_utf8_string(codepoints []drip) tea {
+    # Helper function to convert codepoints back to UTF-8 string
+    sus result_bytes []drip = []
+    sus i drip = 0
+    
+    bestie (i < len(codepoints)) {
+        sus codepoint drip = codepoints[i]
+        
+        ready (codepoint <= 0x7F) {
+            # 1-byte sequence (ASCII)
+            result_bytes = append(result_bytes, codepoint)
+        } otherwise ready (codepoint <= 0x7FF) {
+            # 2-byte sequence
+            result_bytes = append(result_bytes, 0xC0 | (codepoint >> 6))
+            result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
+        } otherwise ready (codepoint <= 0xFFFF) {
+            # 3-byte sequence
+            result_bytes = append(result_bytes, 0xE0 | (codepoint >> 12))
+            result_bytes = append(result_bytes, 0x80 | ((codepoint >> 6) & 0x3F))
+            result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
+        } otherwise ready (codepoint <= 0x10FFFF) {
+            # 4-byte sequence
+            result_bytes = append(result_bytes, 0xF0 | (codepoint >> 18))
+            result_bytes = append(result_bytes, 0x80 | ((codepoint >> 12) & 0x3F))
+            result_bytes = append(result_bytes, 0x80 | ((codepoint >> 6) & 0x3F))
+            result_bytes = append(result_bytes, 0x80 | (codepoint & 0x3F))
+        } otherwise {
+            # Invalid codepoint, use replacement character (U+FFFD)
+            result_bytes = append(result_bytes, 0xEF)
+            result_bytes = append(result_bytes, 0xBF)
+            result_bytes = append(result_bytes, 0xBD)
+        }
+        
+        i = i + 1
+    }
+    
+    damn bytes_to_string(result_bytes)
 }
 
 # Export regex engine functions
