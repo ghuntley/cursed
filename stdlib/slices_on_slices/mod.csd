@@ -220,19 +220,40 @@ slay FlipString(s []tea) []tea {
 }
 
 slay BlenderInt(s []normie, less func(a, b normie) lit) []normie {
-    fr fr Sort slice for integers
+    fr fr Sort slice for integers using QuickSort - O(n log n)
     sus result := DupeInt(s)
-    fr fr Simple bubble sort implementation
-    bestie i := 0; i < len(result); i++ {
-        bestie j := 0; j < len(result)-1-i; j++ {
-            if !less(result[j], result[j+1]) {
-                sus temp := result[j]
-                result[j] = result[j+1]
-                result[j+1] = temp
-            }
+    vibe_check len(result) <= 1 {
+        damn result
+    }
+    
+    BlenderInt_quicksort_recursive(result, 0, len(result) - 1, less)
+    damn result
+}
+
+slay BlenderInt_quicksort_recursive(arr []normie, low normie, high normie, less func(a, b normie) lit) {
+    vibe_check low < high {
+        sus pivot_index normie = BlenderInt_partition(arr, low, high, less)
+        BlenderInt_quicksort_recursive(arr, low, pivot_index - 1, less)
+        BlenderInt_quicksort_recursive(arr, pivot_index + 1, high, less)
+    }
+}
+
+slay BlenderInt_partition(arr []normie, low normie, high normie, less func(a, b normie) lit) normie {
+    sus pivot normie = arr[high]
+    sus i normie = low - 1
+    
+    bestie j := low; j < high; j++ {
+        vibe_check less(arr[j], pivot) || arr[j] == pivot {
+            i = i + 1
+            sus temp normie = arr[i]
+            arr[i] = arr[j]
+            arr[j] = temp
         }
     }
-    damn result
+    sus temp normie = arr[i + 1]
+    arr[i + 1] = arr[high]
+    arr[high] = temp
+    damn i + 1
 }
 
 slay BlenderString(s []tea, less func(a, b tea) lit) []tea {

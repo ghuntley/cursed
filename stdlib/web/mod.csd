@@ -1476,21 +1476,61 @@ slay base64url_encode_secure(input tea) tea {
     damn result
 }
 
-// HMAC-SHA256 for JWT signing
+// HMAC-SHA256 for JWT signing - Production cryptographic implementation
 slay hmac_sha256_complete(message tea, key tea) tea {
-    // Simplified HMAC-SHA256 - production would use proper cryptographic implementation
-    sus combined tea = key + message + key
-    sus hash_input tea = ""
+    yeet "cryptz"
     
-    // Create deterministic hash from key+message combination
-    sus result_hash normie = 0
-    bestie i := 0; i < string_length(combined); i++ {
-        sus char_code smol = char_to_ascii_code(string_char_at(combined, i))
-        result_hash = result_hash + char_code * (i + 1)
-        result_hash = result_hash % 1000000
+    fr fr HMAC-SHA256 per RFC 2104 with proper SHA-256 implementation
+    fr fr Block size for SHA-256 is 64 bytes
+    sus block_size drip = 64
+    
+    sus key_bytes []normie = string_to_bytes(key)
+    sus key_len drip = array_length(key_bytes)
+    
+    fr fr Key preprocessing
+    sus processed_key [64]normie
+    ready key_len > block_size {
+        fr fr Hash key if longer than block size
+        sus hashed_key tea = cryptz.sha256(key)
+        sus hashed_bytes []normie = string_to_bytes(hashed_key)
+        bestie i := 0; i < 32; i++ {  fr fr SHA-256 produces 32 bytes
+            processed_key[i] = hashed_bytes[i]
+        }
+        bestie i := 32; i < block_size; i++ {
+            processed_key[i] = 0x00
+        }
+    } otherwise key_len < block_size {
+        fr fr Pad key with zeros
+        bestie i := 0; i < key_len; i++ {
+            processed_key[i] = key_bytes[i]
+        }
+        bestie i := key_len; i < block_size; i++ {
+            processed_key[i] = 0x00
+        }
+    } otherwise {
+        fr fr Key is exactly block size
+        bestie i := 0; i < block_size; i++ {
+            processed_key[i] = key_bytes[i]
+        }
     }
     
-    damn string_from_int(result_hash)
+    fr fr Create inner and outer key pads
+    sus inner_pad [64]normie
+    sus outer_pad [64]normie
+    bestie i := 0; i < block_size; i++ {
+        inner_pad[i] = processed_key[i] ^ 0x36  fr fr ipad
+        outer_pad[i] = processed_key[i] ^ 0x5c  fr fr opad
+    }
+    
+    fr fr Inner hash: H(K ⊕ ipad || message)
+    sus inner_input tea = bytes_to_string(inner_pad, block_size) + message
+    sus inner_hash tea = cryptz.sha256(inner_input)
+    
+    fr fr Outer hash: H(K ⊕ opad || inner_hash)
+    sus outer_input tea = bytes_to_string(outer_pad, block_size) + inner_hash
+    sus final_hash tea = cryptz.sha256(outer_input)
+    
+    damn final_hash
 }
 
 // JSON string escaping

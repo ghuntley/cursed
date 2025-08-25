@@ -491,39 +491,33 @@ slay resize_array(arr []drip, new_size drip) []drip {
 
 # Helper functions for array operations
 slay append_element(arr []drip, element drip) []drip {
-    # Build new array with appended element
+    # Build new array with appended element - scales to any size
     sus length drip = len(arr)
-    ready (length == 0) { damn [element] }
-    ready (length == 1) { damn [arr[0], element] }
-    ready (length == 2) { damn [arr[0], arr[1], element] }
-    ready (length == 3) { damn [arr[0], arr[1], arr[2], element] }
-    ready (length == 4) { damn [arr[0], arr[1], arr[2], arr[3], element] }
-    ready (length == 5) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], element] }
-    ready (length == 6) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], element] }
-    ready (length == 7) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], element] }
-    ready (length == 8) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], element] }
-    ready (length == 9) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], element] }
+    sus result []drip = []
     
-    # For larger arrays, return original array (limited support)
-    damn arr
+    # Efficiently copy all existing elements
+    bestie i := 0; i < length; i++ {
+        result = append(result, arr[i])
+    }
+    
+    # Append new element
+    result = append(result, element)
+    damn result
 }
 
 slay append_2d_element(arr [][]drip, element []drip) [][]drip {
-    # Append to 2D array
+    # Append to 2D array - scales to any size
     sus length drip = len(arr)
-    ready (length == 0) { damn [element] }
-    ready (length == 1) { damn [arr[0], element] }
-    ready (length == 2) { damn [arr[0], arr[1], element] }
-    ready (length == 3) { damn [arr[0], arr[1], arr[2], element] }
-    ready (length == 4) { damn [arr[0], arr[1], arr[2], arr[3], element] }
-    ready (length == 5) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], element] }
-    ready (length == 6) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], element] }
-    ready (length == 7) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], element] }
-    ready (length == 8) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], element] }
-    ready (length == 9) { damn [arr[0], arr[1], arr[2], arr[3], arr[4], arr[5], arr[6], arr[7], arr[8], element] }
+    sus result [][]drip = []
     
-    # For larger arrays, return original array (limited support)
-    damn arr
+    # Efficiently copy all existing elements
+    bestie i := 0; i < length; i++ {
+        result = append(result, arr[i])
+    }
+    
+    # Append new element
+    result = append(result, element)
+    damn result
 }
 
 slay create_array(size drip) []drip {

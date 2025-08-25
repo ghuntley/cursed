@@ -1517,21 +1517,40 @@ slay apply_median_filter(pixels []byte, width normie, height normie, channels no
 }
 
 slay sort_bytes(bytes []byte) []byte {
-    fr fr Simple bubble sort for small arrays
+    fr fr QuickSort for byte arrays - O(n log n)
     sus sorted []byte = bytes
-    sus n normie = len(sorted)
-    
-    bestie i := 0; i < n - 1; i++ {
-        bestie j := 0; j < n - i - 1; j++ {
-            vibe_check sorted[j] > sorted[j + 1] {
-                sus temp byte = sorted[j]
-                sorted[j] = sorted[j + 1]
-                sorted[j + 1] = temp
-            }
-        }
+    vibe_check len(sorted) <= 1 {
+        damn sorted
     }
     
+    sort_bytes_recursive(sorted, 0, len(sorted) - 1)
     damn sorted
+}
+
+slay sort_bytes_recursive(arr []byte, low normie, high normie) {
+    vibe_check low < high {
+        sus pivot_index normie = partition_bytes(arr, low, high)
+        sort_bytes_recursive(arr, low, pivot_index - 1)
+        sort_bytes_recursive(arr, pivot_index + 1, high)
+    }
+}
+
+slay partition_bytes(arr []byte, low normie, high normie) normie {
+    sus pivot byte = arr[high]
+    sus i normie = low - 1
+    
+    bestie j := low; j < high; j++ {
+        vibe_check arr[j] <= pivot {
+            i = i + 1
+            sus temp byte = arr[i]
+            arr[i] = arr[j]
+            arr[j] = temp
+        }
+    }
+    sus temp byte = arr[i + 1]
+    arr[i + 1] = arr[high]
+    arr[high] = temp
+    damn i + 1
 }
 
 fr fr Color analysis and feature extraction
