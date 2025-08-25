@@ -4,15 +4,13 @@ yeet "testz"
 yeet "string"
 yeet "main_character"
 
-// External function declarations for system authentication
-extern cursed_get_current_uid() drip
-extern cursed_lookup_user(username_ptr *lit, user_info_buffer *lit) drip
-extern cursed_authenticate_user(username_ptr *lit, password_ptr *lit) drip
-extern cursed_crypto_bcrypt_verify(password_ptr *lit, hash_ptr *lit) drip
-extern cursed_crypto_argon2_verify(password_ptr *lit, hash_ptr *lit) drip
-extern cursed_crypto_bcrypt_hash(password_ptr *lit, hash_buffer *lit, buffer_size drip) drip
-extern cursed_crypto_argon2_hash(password_ptr *lit, hash_buffer *lit, buffer_size drip) drip
-extern cursed_crypto_sha512_pbkdf2(password_ptr *lit, salt_ptr *lit, rounds drip, hash_buffer *lit, buffer_size drip) drip
+// MIGRATED TO PURE CURSED: Use user_check_pure module for implementation
+// Pure CURSED implementations replace these extern function declarations:
+// - cursed_get_current_uid() -> get_current_uid() using runtime_os_bridge
+// - cursed_lookup_user() -> lookup_user() using CURSED data structures  
+// - cursed_authenticate_user() -> authenticate_user() using cryptz module
+// - cursed_crypto_*() functions -> cryptz module equivalents
+yeet "user_check_pure"
 
 fr fr User represents a user account
 be_like User squad {
