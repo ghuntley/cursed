@@ -3,6 +3,7 @@ fr fr Simplified HTTP operations for demonstration
 
 yeet "stringz"
 yeet "jsonz"
+yeet "network_infrastructure"
 
 fr fr ===== HTTP STATUS CODES =====
 
@@ -130,19 +131,67 @@ slay get_http_header(response tea, header_name tea) tea {
 fr fr ===== MOCK HTTP CLIENT =====
 
 slay http_get(url tea) tea {
-    fr fr Real HTTP GET request using runtime networking
-    ready (contains_substring(url, "httpbin.org")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"url\":\"" + url + "\",\"real_network\":true,\"args\":{},\"headers\":{\"Host\":\"httpbin.org\"},\"origin\":\"CURSED_REAL\"}"
+    fr fr Real HTTP GET request with proper networking
+    sus parsed_url URLComponents = parse_url_components(url)
+    ready (!parsed_url.is_valid) {
+        damn create_http_error_response(400, "Invalid URL format")
     }
-    damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nReal HTTP GET response for: " + url
+    
+    fr fr Establish TCP connection
+    sus connection NetworkConnection = establish_http_connection(parsed_url)
+    ready (!connection.is_connected) {
+        damn create_http_error_response(500, "Connection failed: " + connection.error_message)
+    }
+    
+    fr fr Build and send HTTP request
+    sus request tea = build_get_request(parsed_url.host, parsed_url.path)
+    sus bytes_sent drip = send_http_data(connection, request)
+    ready (bytes_sent <= 0) {
+        close_connection(connection)
+        damn create_http_error_response(500, "Failed to send request")
+    }
+    
+    fr fr Receive response with timeout handling
+    sus response tea = receive_http_response(connection)
+    close_connection(connection)
+    
+    ready (response == "") {
+        damn create_http_error_response(408, "Request timeout")
+    }
+    
+    damn response
 }
 
 slay http_post(url tea, body tea) tea {
-    fr fr Real HTTP POST request using runtime networking
-    ready (contains_substring(url, "httpbin.org")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"url\":\"" + url + "\",\"data\":\"" + body + "\",\"real_network\":true,\"headers\":{\"Host\":\"httpbin.org\"},\"origin\":\"CURSED_REAL\"}"
+    fr fr Real HTTP POST request with proper networking
+    sus parsed_url URLComponents = parse_url_components(url)
+    ready (!parsed_url.is_valid) {
+        damn create_http_error_response(400, "Invalid URL format")
     }
-    damn "HTTP/1.1 200 OK\r\nContent-Type: text/plain\r\n\r\nReal HTTP POST response for: " + url + " with data: " + body
+    
+    fr fr Establish TCP connection
+    sus connection NetworkConnection = establish_http_connection(parsed_url)
+    ready (!connection.is_connected) {
+        damn create_http_error_response(500, "Connection failed: " + connection.error_message)
+    }
+    
+    fr fr Build and send HTTP POST request
+    sus request tea = build_post_request(parsed_url.host, parsed_url.path, body)
+    sus bytes_sent drip = send_http_data(connection, request)
+    ready (bytes_sent <= 0) {
+        close_connection(connection)
+        damn create_http_error_response(500, "Failed to send request")
+    }
+    
+    fr fr Receive response with timeout handling
+    sus response tea = receive_http_response(connection)
+    close_connection(connection)
+    
+    ready (response == "") {
+        damn create_http_error_response(408, "Request timeout")
+    }
+    
+    damn response
 }
 
 slay http_put(url tea, body tea) tea {

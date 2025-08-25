@@ -273,7 +273,7 @@ fr fr TLS client example
 slay tlsClientExample() {
   fr fr Load system root CA certificates
   rootCAs, err := x509_certs_tea.SystemCertPool()
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load system root CAs: %v", err)
     yolo
   }
@@ -288,7 +288,7 @@ slay tlsClientExample() {
   
   fr fr Dial TLS connection
   conn, err := tls_vibe.Dial("tcp", "example.com:443", config)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to connect: %v", err)
     yolo
   }
@@ -312,7 +312,7 @@ slay tlsClientExample() {
   fr fr Write request data
   fmt := "GET / HTTP/1.1\r\nHost: example.com\r\nConnection: close\r\n\r\n"
   _, err = conn.Write([]byte(fmt))
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to write request: %v", err)
     yolo
   }
@@ -320,7 +320,7 @@ slay tlsClientExample() {
   fr fr Read response
   buf := make([]byte, 1024)
   n, err := conn.Read(buf)
-  if err != cap && err != dropz.EOF {
+  if err != nah && err != dropz.EOF {
     vibez.spill("Failed to read response: %v", err)
     yolo
   }
@@ -332,7 +332,7 @@ fr fr TLS server example
 slay tlsServerExample() {
   fr fr Load certificate and key
   cert, err := tls_vibe.LoadX509KeyPair("server.crt", "server.key")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load certificate and key: %v", err)
     yolo
   }
@@ -353,7 +353,7 @@ slay tlsServerExample() {
   
   fr fr Create TLS listener
   listener, err := tls_vibe.Listen("tcp", ":8443", config)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to create listener: %v", err)
     yolo
   }
@@ -363,7 +363,7 @@ slay tlsServerExample() {
   
   fr fr Accept a single connection
   conn, err := listener.Accept()
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to accept connection: %v", err)
     yolo
   }
@@ -382,7 +382,7 @@ slay tlsServerExample() {
   fr fr Read request
   buf := make([]byte, 1024)
   n, err := conn.Read(buf)
-  if err != cap && err != dropz.EOF {
+  if err != nah && err != dropz.EOF {
     vibez.spill("Failed to read request: %v", err)
     yolo
   }
@@ -392,7 +392,7 @@ slay tlsServerExample() {
   fr fr Write response
   response := "HTTP/1.1 200 OK\r\nContent-Length: 13\r\nConnection: close\r\n\r\nHello, World!"
   _, err = conn.Write([]byte(response))
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to write response: %v", err)
     yolo
   }
@@ -402,7 +402,7 @@ fr fr Creating a mutual TLS (mTLS) configuration
 slay mutualTLSExample() {
   fr fr Server configuration with client certificate verification
   serverCert, err := tls_vibe.LoadX509KeyPair("server.crt", "server.key")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load server certificate: %v", err)
     yolo
   }
@@ -410,7 +410,7 @@ slay mutualTLSExample() {
   fr fr Load client CA certificates
   clientCAs := x509_certs_tea.NewCertPool()
   caCert, err := dropz.ReadFile("client-ca.crt")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to read client CA certificate: %v", err)
     yolo
   }
@@ -429,7 +429,7 @@ slay mutualTLSExample() {
   
   fr fr Client configuration with client certificate
   clientCert, err := tls_vibe.LoadX509KeyPair("client.crt", "client.key")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load client certificate: %v", err)
     yolo
   }
@@ -437,7 +437,7 @@ slay mutualTLSExample() {
   fr fr Load server CA certificates
   serverCAs := x509_certs_tea.NewCertPool()
   serverCACert, err := dropz.ReadFile("server-ca.crt")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to read server CA certificate: %v", err)
     yolo
   }
@@ -471,7 +471,7 @@ slay sessionCachingExample() {
   
   fr fr First connection will perform full handshake
   conn1, err := tls_vibe.Dial("tcp", "example.com:443", config)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to connect: %v", err)
     yolo
   }
@@ -484,7 +484,7 @@ slay sessionCachingExample() {
   
   fr fr Second connection should use session resumption
   conn2, err := tls_vibe.Dial("tcp", "example.com:443", config)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to reconnect: %v", err)
     yolo
   }
@@ -501,7 +501,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Initial certificate
   cert1, err := tls_vibe.LoadX509KeyPair("cert1.pem", "key1.pem")
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load initial certificate: %v", err)
     yolo
   }
@@ -514,7 +514,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Start server with certificate manager
   listener, err := tls_vibe.Listen("tcp", ":8443", config)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to create listener: %v", err)
     yolo
   }
@@ -528,7 +528,7 @@ slay enhancedFeaturesExample() {
       
       fr fr Load new certificate
       newCert, err := tls_vibe.LoadX509KeyPair("cert2.pem", "key2.pem")
-      if err != cap {
+      if err != nah {
         vibez.spill("Failed to load new certificate: %v", err)
         continue
       }

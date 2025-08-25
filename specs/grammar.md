@@ -169,7 +169,7 @@ ready x > 0 {
 **DEPRECATED (remove in v2.0):**
 ```
 // DEPRECATED: lowkey/highkey - use ready/otherwise  
-lowkey x > 0 { ... } highkey { ... }
+ready x > 0 { ... } otherwise { ... }
 ```
 
 Parentheses around the condition expression are optional:
@@ -286,10 +286,10 @@ Example:
 
 ```
 bestie {
-    lowkey someCondition() {
+    ready someCondition() {
         ghosted
     }
-    lowkey otherCondition() {
+    ready otherCondition() {
         simp
     }
 }
@@ -395,9 +395,9 @@ stan {                                // Anonymous goroutine
 
 ```
 ChannelType      = "dm" "<" Type ">" [ "[" Expression "]" ] .
-SendStmt         = Channel "<-" Expression .
-ReceiveExpr      = "<-" Channel .
-CloseStmt        = "close" "(" Channel ")" .
+SendStmt         = "dm_send" "(" Channel "," Expression ")" .
+ReceiveExpr      = "dm_recv" "(" Channel ")" .
+CloseStmt        = "dm_close" "(" Channel ")" .
 ```
 
 ### Channel Operations
@@ -413,7 +413,7 @@ value, ok := dm_recv(ch)              // Receive with closed check - CANONICAL
 dm_close(ch)                          // Close channel - CANONICAL
 
 // Legacy Go-style syntax (DEPRECATED - remove in future versions):
-// ch <- value, value := <-ch, close(ch)
+// dm_send(ch, value, value := dm_recv(ch), close(ch)
 // PARSER REQUIREMENT: New parsers SHOULD NOT implement legacy syntax.
 ```
 
@@ -526,7 +526,7 @@ slay cleanup_example() lit {
 slay defer_with_early_return() lit {
     later vibez.spill("Cleanup happens even with early return")
     
-    lowkey some_condition() {
+    ready some_condition() {
         damn based  # defer still executes
     }
     
@@ -541,14 +541,14 @@ CURSED follows Go's error handling pattern:
 
 ```
 slay doSomething() (tea, Error) {
-    lowkey err != nah {
+    ready err != nah {
         damn "", err
     }
     damn "success", nah
 }
 
 result, err := doSomething()
-lowkey err != nah {
+ready err != nah {
     handleError(err)
 }
 ``` 

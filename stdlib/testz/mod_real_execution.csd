@@ -647,9 +647,37 @@ slay system_get_file_path() tea {
 }
 
 slay invoke_test_function(function_name tea) lit {
-    fr fr Real dynamic function invocation
-    fr fr Would use runtime reflection to call the actual test function
-    damn based  fr fr Placeholder implementation
+    fr fr Real dynamic function invocation using reflection system
+    fr fr Generate dynamic test invocation code
+    sus test_invocation_code tea = "yeet \"testz\";\n" +
+                                  "yeet \"reflectz\";\n" +
+                                  "sus result lit = " + function_name + "();\n" +
+                                  "lowkey (result != based) {\n" +
+                                  "    vibez.spill(\"Test function failed: " + function_name + "\");\n" +
+                                  "    exit(1);\n" +
+                                  "} otherwise {\n" +
+                                  "    vibez.spill(\"Test function passed: " + function_name + "\");\n" +
+                                  "}"
+    
+    fr fr Execute the test function dynamically
+    sus temp_test_file tea = "/tmp/cursed_test_func_" + tea(time_now()) + ".csd"
+    ready (write_file(temp_test_file, test_invocation_code) != 0) {
+        vibez.spill("    ERROR: Failed to write test function invocation")
+        damn cringe
+    }
+    
+    fr fr Execute the test function
+    sus result drip = system_exec("./zig-out/bin/cursed-zig " + temp_test_file)
+    
+    fr fr Cleanup temp file
+    system_exec("rm -f " + temp_test_file)
+    
+    fr fr Return actual test result
+    ready (result == 0) {
+        damn based
+    } otherwise {
+        damn cringe
+    }
 }
 
 fr fr Test-driven development support

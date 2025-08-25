@@ -377,7 +377,7 @@ logger.Info("Application started", sus_log.String("version", "1.0.0"))
 logger.Debug("Config loaded", sus_log.Any("config", config))
 
 fr fr Error logging with attributes
-if err != cap {
+if err != nah {
     logger.Error("Failed to connect to database", 
         sus_log.String("database", "users"),
         sus_log.Any("tea", err),

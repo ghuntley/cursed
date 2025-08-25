@@ -10,7 +10,7 @@ pub const BuiltInRegistry = struct {
 
     const BuiltInFunction = struct {
         name: []const u8,
-        implementation: fn (args: []const Value) anyerror!Value,
+        implementation: *const fn (args: []const Value) anyerror!Value,
         arg_count: usize,
     };
 
@@ -20,6 +20,8 @@ pub const BuiltInRegistry = struct {
         String: []const u8,
         Boolean: bool,
         Channel: *Channel,
+        Array: []Value,
+        Object: *Value,
         Null,
 
         pub fn toString(self: Value, allocator: Allocator) ![]u8 {
@@ -29,6 +31,8 @@ pub const BuiltInRegistry = struct {
                 .String => |str| return allocator.dupe(u8, str),
                 .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cringe"),
                 .Channel => return allocator.dupe(u8, "<channel>"),
+                .Array => |arr| return std.fmt.allocPrint(allocator, "[array len={}]", .{arr.len}),
+                .Object => return allocator.dupe(u8, "<object>"),
                 .Null => return allocator.dupe(u8, "cap"),
             }
         }
@@ -39,7 +43,7 @@ pub const BuiltInRegistry = struct {
         capacity: usize,
         closed: bool,
 
-        pub fn init(allocator: Allocator, capacity: usize) Channel {
+        pub fn init(_: Allocator, capacity: usize) Channel {
             return Channel{
                 .buffer = .empty,
                 .capacity = capacity,
@@ -78,7 +82,7 @@ pub const BuiltInRegistry = struct {
         self.functions.deinit();
     }
 
-    fn registerBuiltIns(self: *BuiltInRegistry) !void {
+    pub fn registerBuiltIns(self: *BuiltInRegistry) !void {
         // Register vibez.spill (print function) - Now pure CURSED
         try self.functions.put("vibez.spill", BuiltInFunction{
             .name = "vibez.spill",
@@ -191,6 +195,56 @@ pub const BuiltInRegistry = struct {
             .name = "make_channel",
             .implementation = pureCursedMakeChannel,
             .arg_count = 1,
+        });
+
+        // ===== MISSING SPEC-REQUIRED BUILTINS =====
+        
+        // Generic object creation
+        try self.functions.put("new", BuiltInFunction{
+            .name = "new",
+            .implementation = pureCursedNew,
+            .arg_count = 0, // Variable args - type + optional size
+        });
+
+        // Generic array/slice creation  
+        try self.functions.put("make", BuiltInFunction{
+            .name = "make",
+            .implementation = pureCursedMake,
+            .arg_count = 0, // Variable args - type + size/capacity
+        });
+
+        // Capacity function for arrays/slices
+        try self.functions.put("cap", BuiltInFunction{
+            .name = "cap",
+            .implementation = pureCursedCap,
+            .arg_count = 1,
+        });
+
+        // Map/array deletion
+        try self.functions.put("delete", BuiltInFunction{
+            .name = "delete",
+            .implementation = pureCursedDelete,
+            .arg_count = 2, // container, key/index
+        });
+
+        // Slice copying
+        try self.functions.put("copy", BuiltInFunction{
+            .name = "copy",
+            .implementation = pureCursedCopy,
+            .arg_count = 2, // destination, source
+        });
+
+        // Panic handling
+        try self.functions.put("panic", BuiltInFunction{
+            .name = "panic",
+            .implementation = pureCursedPanic,
+            .arg_count = 1, // message
+        });
+
+        try self.functions.put("recover", BuiltInFunction{
+            .name = "recover",
+            .implementation = pureCursedRecover,
+            .arg_count = 0,
         });
     }
 
@@ -562,6 +616,175 @@ pub const BuiltInRegistry = struct {
             },
             else => return error.TypeMismatch,
         }
+    }
+
+    // ===== MISSING SPEC-REQUIRED BUILTIN IMPLEMENTATIONS =====
+
+    /// Generic object creation - new<T>()
+    fn pureCursedNew(args: []const Value) anyerror!Value {
+        const allocator = std.heap.page_allocator;
+        
+        if (args.len == 0) {
+            // Create default object/struct
+            const obj = try allocator.create(Value);
+            obj.* = Value.Null;
+            return Value{ .Object = obj };
+        } else if (args.len == 1) {
+            // Create object with initial value
+            const obj = try allocator.create(Value);
+            obj.* = args[0];
+            return Value{ .Object = obj };
+        }
+        
+        return error.ArgumentCountMismatch;
+    }
+
+    /// Generic array/slice creation - make<T>(size, capacity?)
+    fn pureCursedMake(args: []const Value) anyerror!Value {
+        const allocator = std.heap.page_allocator;
+        
+        if (args.len == 1) {
+            // make(size) - create array with given size
+            switch (args[0]) {
+                .Integer => |size| {
+                    if (size < 0) return error.NegativeSize;
+                    const array = try allocator.alloc(Value, @intCast(size));
+                    // Initialize with null values
+                    for (array) |*elem| elem.* = Value.Null;
+                    return Value{ .Array = array };
+                },
+                else => return error.TypeMismatch,
+            }
+        } else if (args.len == 2) {
+            // make(size, capacity) - create slice with size and capacity
+            const size_val = args[0];
+            const cap_val = args[1];
+            
+            if (size_val != .Integer or cap_val != .Integer) {
+                return error.TypeMismatch;
+            }
+            
+            const size = size_val.Integer;
+            const capacity = cap_val.Integer;
+            
+            if (size < 0 or capacity < 0 or size > capacity) {
+                return error.InvalidSliceSize;
+            }
+            
+            const array = try allocator.alloc(Value, @intCast(capacity));
+            // Initialize first 'size' elements
+            for (array[0..@intCast(size)]) |*elem| elem.* = Value.Null;
+            
+            return Value{ .Array = array[0..@intCast(size)] };
+        }
+        
+        return error.ArgumentCountMismatch;
+    }
+
+    /// Get capacity of array/slice - cap<T>(container)
+    fn pureCursedCap(args: []const Value) anyerror!Value {
+        if (args.len != 1) return error.ArgumentCountMismatch;
+        
+        switch (args[0]) {
+            .Array => |arr| return Value{ .Integer = @intCast(arr.len) },
+            .String => |str| return Value{ .Integer = @intCast(str.len) },
+            .Channel => |ch| return Value{ .Integer = @intCast(ch.capacity) },
+            else => return error.TypeMismatch,
+        }
+    }
+
+    /// Delete element from map/array - delete(container, key)
+    fn pureCursedDelete(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const container = args[0];
+        const key = args[1];
+        
+        switch (container) {
+            .Array => |arr| {
+                // For arrays, delete by setting to null
+                switch (key) {
+                    .Integer => |index| {
+                        if (index < 0 or index >= arr.len) {
+                            return error.IndexOutOfBounds;
+                        }
+                        // Note: This modifies in place - in real implementation
+                        // would need proper array mutation handling
+                        return Value.Null;
+                    },
+                    else => return error.TypeMismatch,
+                }
+            },
+            .Object => {
+                // For objects/maps, would delete property
+                // Placeholder implementation
+                return Value.Null;
+            },
+            else => return error.TypeMismatch,
+        }
+    }
+
+    /// Copy slice - copy(dest, src) 
+    fn pureCursedCopy(args: []const Value) anyerror!Value {
+        if (args.len != 2) return error.ArgumentCountMismatch;
+        
+        const dest = args[0];
+        const src = args[1];
+        
+        switch (dest) {
+            .Array => |dest_arr| {
+                switch (src) {
+                    .Array => |src_arr| {
+                        const copy_len = @min(dest_arr.len, src_arr.len);
+                        // Copy elements
+                        for (0..copy_len) |i| {
+                            dest_arr[i] = src_arr[i];
+                        }
+                        return Value{ .Integer = @intCast(copy_len) };
+                    },
+                    .String => |src_str| {
+                        const copy_len = @min(dest_arr.len, src_str.len);
+                        // Copy string bytes to array
+                        for (0..copy_len) |i| {
+                            dest_arr[i] = Value{ .Integer = src_str[i] };
+                        }
+                        return Value{ .Integer = @intCast(copy_len) };
+                    },
+                    else => return error.TypeMismatch,
+                }
+            },
+            else => return error.TypeMismatch,
+        }
+    }
+
+    /// Panic with message - panic(message)
+    fn pureCursedPanic(args: []const Value) anyerror!Value {
+        if (args.len != 1) return error.ArgumentCountMismatch;
+        
+        switch (args[0]) {
+            .String => |msg| {
+                std.debug.print("PANIC: {s}\n", .{msg});
+                std.debug.panic("CURSED runtime panic: {s}", .{msg});
+            },
+            .Integer => |code| {
+                std.debug.print("PANIC: Error code {}\n", .{code});
+                std.debug.panic("CURSED runtime panic: code {}", .{code});
+            },
+            else => {
+                std.debug.print("PANIC: Unknown error\n", .{});
+                std.debug.panic("CURSED runtime panic: unknown error", .{});
+            },
+        }
+    }
+
+    /// Recover from panic - recover()
+    fn pureCursedRecover(args: []const Value) anyerror!Value {
+        if (args.len != 0) return error.ArgumentCountMismatch;
+        
+        // In a real implementation, this would check if we're in a panic state
+        // and return the panic value, or null if not panicking
+        // For now, always return null (no panic recovered)
+        return Value.Null;
     }
 };
 

@@ -149,7 +149,7 @@ slay Decompress(src, dst tea) tea
 ```
 fr fr Creating a tar archive
 file, err := dropz.Create("archive.tar")
-if err != cap {
+if err != nah {
     fr fr handle tea
 }
 defer file.Close()
@@ -159,26 +159,26 @@ defer stash.Close()
 
 fr fr Add a file to the archive
 header, err := packrat.FileInfoHeader(fileInfo, "")
-if err != cap {
+if err != nah {
     fr fr handle tea
 }
 header.Name = "example.txt"
-if err := stash.WriteHeader(header); err != cap {
+if err := stash.WriteHeader(header); err != nah {
     fr fr handle tea
 }
-if _, err := stash.Write([]byte("This is an example")); err != cap {
+if _, err := stash.Write([]byte("This is an example")); err != nah {
     fr fr handle tea
 }
 
 fr fr Reading a zip archive
 zipReader, err := dropz.Open("example.zip")
-if err != cap {
+if err != nah {
     fr fr handle tea
 }
 defer zipReader.Close()
 
 hoard, err := packrat.NewHoardPack(zipReader, zipReader.Size())
-if err != cap {
+if err != nah {
     fr fr handle tea
 }
 

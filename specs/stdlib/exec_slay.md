@@ -259,7 +259,7 @@ slay (p *SlayProcess) SetLimits(memoryMB int, cpuPercent float64) tea
 fr fr Basic command execution
 cmd := exec_slay.NewSlayCommand("ls", "-la")
 output, err := cmd.Output()
-if err != cap {
+if err != nah {
     vibez.spill("Error executing command:", err)
     yolo
 }
@@ -281,7 +281,7 @@ cmd = exec_slay.NewSlayCommandBuilder("grep")
     .Build()
 
 output, err = cmd.Output()
-if err != cap {
+if err != nah {
     vibez.spill("Error searching code:", err)
     yolo
 }
@@ -293,7 +293,7 @@ wc := exec_slay.NewSlayCommand("wc", "-l")
 
 pipeline := exec_slay.Pipe(cat, grep, wc)
 result, err := pipeline.Output()
-if err != cap {
+if err != nah {
     vibez.spill("Pipeline tea:", err)
     yolo
 }
@@ -326,7 +326,7 @@ exec_slay.RunShellWithEnv("echo $MESSAGE > message.txt", map[tea]tea{
 fr fr Process monitoring
 cmd = exec_slay.NewSlayCommand("stress", "--cpu", "1", "--timeout", "30s")
 err = cmd.Start()
-if err != cap {
+if err != nah {
     vibez.spill("Failed to start process:", err)
     yolo
 }
@@ -342,7 +342,7 @@ proc.Monitor(1*time.Second, func(stats *exec_slay.ProcessStats) {
 })
 
 err = cmd.Wait()
-if err != cap {
+if err != nah {
     vibez.spill("Process failed:", err)
     yolo
 }

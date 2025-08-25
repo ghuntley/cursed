@@ -177,14 +177,14 @@ writer := squish_core.gzip.NewWriter(&buffer)
 fr fr Write data to the gzip writer
 data := "Hello, World! This is a test of the gzip compression algorithm."
 _, err := writer.Write([]byte(data))
-if err != cap {
+if err != nah {
   vibez.spill("Write tea: %v", err)
   yolo
 }
 
 fr fr Close the writer to flush any pending data
 err = writer.Close()
-if err != cap {
+if err != nah {
   vibez.spill("Close tea: %v", err)
   yolo
 }
@@ -195,21 +195,21 @@ vibez.spill("Compression ratio: %.2f%%", float64(buffer.Len()) / float64(len(dat
 
 fr fr Decompress the data
 reader, err := squish_core.gzip.NewReader(&buffer)
-if err != cap {
+if err != nah {
   vibez.spill("NewReader tea: %v", err)
   yolo
 }
 
 fr fr Read the decompressed data
 decompressed, err := dropz.ReadAll(reader)
-if err != cap {
+if err != nah {
   vibez.spill("Read tea: %v", err)
   yolo
 }
 
 fr fr Close the reader
 err = reader.Close()
-if err != cap {
+if err != nah {
   vibez.spill("Reader close tea: %v", err)
   yolo
 }
@@ -229,7 +229,7 @@ vibez.spill("Best compression size: %d bytes", len(bestCompressed))
 
 fr fr Decompress
 decompressed, err = squish_core.Decompress(bestCompressed)
-if err != cap {
+if err != nah {
   vibez.spill("Decompress tea: %v", err)
   yolo
 }
@@ -238,14 +238,14 @@ vibez.spill("Decompressed correctly: %v", tea(decompressed) == tea(input))
 
 fr fr Working with files
 inputFile, err := dropz.file.Open("large_file.txt")
-if err != cap {
+if err != nah {
   vibez.spill("File open tea: %v", err)
   yolo
 }
 defer inputFile.Close()
 
 outputFile, err := dropz.file.Create("large_file.txt.gz")
-if err != cap {
+if err != nah {
   vibez.spill("File create tea: %v", err)
   yolo
 }
@@ -257,7 +257,7 @@ defer gzWriter.Close()
 
 fr fr Copy data from input file to gzip writer
 bytesWritten, err := dropz.Copy(gzWriter, inputFile)
-if err != cap {
+if err != nah {
   vibez.spill("Copy tea: %v", err)
   yolo
 }

@@ -143,7 +143,7 @@ slay basicExample() {
   
   fr fr Encode the data
   err := encoder.Encode(original)
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -158,7 +158,7 @@ slay basicExample() {
   
   fr fr Decode the data
   err = decoder.Decode(&decoded)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decoding tea: %v", err)
     yolo
   }
@@ -224,7 +224,7 @@ slay interfacesExample() {
   fr fr Create an encoder and encode
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(original)
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -235,7 +235,7 @@ slay interfacesExample() {
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded Zoo
   err = decoder.Decode(&decoded)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decoding tea: %v", err)
     yolo
   }
@@ -262,11 +262,11 @@ slay customEncodingExample() {
   fr fr Implement GobDecoder
   slay (t *Timestamp) GobDecode(data []byte) tea {
     parsedTime, err := timez.Parse(timez.RFC3339Nano, tea(data))
-    if err != cap {
+    if err != nah {
       yolo err
     }
     t.Time = parsedTime
-    yolo cap
+    yolo nah
   }
   
   fr fr Create a record with custom type
@@ -289,7 +289,7 @@ slay customEncodingExample() {
   fr fr Encode the data
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(original)
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -300,7 +300,7 @@ slay customEncodingExample() {
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded Event
   err = decoder.Decode(&decoded)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decoding tea: %v", err)
     yolo
   }
@@ -336,7 +336,7 @@ slay cyclesExample() {
   fr fr Encode the tree
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(root)
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -347,7 +347,7 @@ slay cyclesExample() {
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decodedRoot Node
   err = decoder.Decode(&decodedRoot)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decoding tea: %v", err)
     yolo
   }
@@ -360,9 +360,9 @@ slay cyclesExample() {
   if len(decodedRoot.Children) > 0 {
     child := decodedRoot.Children[0]
     vibez.spill("  First child value: %d", child.Value)
-    vibez.spill("  Parent reference preserved: %v", child.Parent != cap)
+    vibez.spill("  Parent reference preserved: %v", child.Parent != nah)
     
-    if child.Parent != cap {
+    if child.Parent != nah {
       vibez.spill("  Parent value: %d", child.Parent.Value)
       
       fr fr Check if it's the same object
@@ -391,7 +391,7 @@ slay typeRegistrationExample() {
   fr fr Encode a value of the type
   encoder := gob_encode_vibes.NewEncoder(&buffer)
   err := encoder.Encode(MyCustomType{"Hello", 42})
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -403,7 +403,7 @@ slay typeRegistrationExample() {
   decoder := gob_encode_vibes.NewDecoder(&buffer)
   var decoded MyCustomType
   err = decoder.Decode(&decoded)
-  if err != cap {
+  if err != nah {
     vibez.spill("Decoding tea: %v", err)
     yolo
   }
@@ -423,19 +423,19 @@ slay streamExample() {
   
   fr fr Encode multiple values of different types
   err := encoder.Encode("Hello, Gob!")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding tea: %v", err)
     yolo
   }
   
   err = encoder.Encode(42)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding integer: %v", err)
     yolo
   }
   
   err = encoder.Encode([]float64{3.14, 2.71, 1.62})
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding slice: %v", err)
     yolo
   }
@@ -448,7 +448,7 @@ slay streamExample() {
   fr fr Decode the values in the same order
   var s tea
   err = decoder.Decode(&s)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error decoding tea: %v", err)
     yolo
   }
@@ -456,7 +456,7 @@ slay streamExample() {
   
   var i int
   err = decoder.Decode(&i)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error decoding integer: %v", err)
     yolo
   }
@@ -464,7 +464,7 @@ slay streamExample() {
   
   var f []float64
   err = decoder.Decode(&f)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error decoding slice: %v", err)
     yolo
   }
@@ -495,7 +495,7 @@ slay enhancedFeaturesExample() {
   }
   
   err := encoder.Encode(data)
-  if err != cap {
+  if err != nah {
     vibez.spill("Encoding tea: %v", err)
     yolo
   }
@@ -513,7 +513,7 @@ slay enhancedFeaturesExample() {
   items := []int{1, 2, 3, 4, 5}
   for _, item := range items {
     err := streamer.EncodeValue(item)
-    if err != cap {
+    if err != nah {
       vibez.spill("Streaming tea: %v", err)
       yolo
     }
@@ -521,7 +521,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Finish encoding
   err = streamer.FinishEncoding()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error finishing stream: %v", err)
     yolo
   }
@@ -536,7 +536,7 @@ slay enhancedFeaturesExample() {
   for streamer.HasMore() {
     var value int
     err := streamer.DecodeValue(&value)
-    if err != cap {
+    if err != nah {
       vibez.spill("Stream decoding tea: %v", err)
       break
     }
@@ -571,7 +571,7 @@ slay enhancedFeaturesExample() {
   oldEncoder := gob_encode_vibes.NewEncoder(&evolveBuffer)
   
   err = oldEncoder.Encode(oldData)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding old version: %v", err)
     yolo
   }
@@ -582,7 +582,7 @@ slay enhancedFeaturesExample() {
   
   var newData NewVersion
   err = decoder.Decode(&newData)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error decoding with schema evolution: %v", err)
     yolo
   }
@@ -617,7 +617,7 @@ slay enhancedFeaturesExample() {
   }
   
   err = metricEncoder.Encode(complexData)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error encoding with metrics: %v", err)
     yolo
   }

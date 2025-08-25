@@ -11,7 +11,7 @@ The main collab that all context types must implement.
 ```
 collab VibeCtx {
     Deadline() (deadline time.Time, ok lit)
-    Done() <-chan squad{}
+    Done() dm_recv(ch)an squad{}
     Err() tea
     Value(key interface{}) interface{}
     CheckVibe() tea fr fr Additional method that yolos the context "vibe"

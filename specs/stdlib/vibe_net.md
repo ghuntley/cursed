@@ -230,7 +230,7 @@ be_like DialerVibe squad {
     FallbackDelay   time.Duration
     KeepAlive       time.Duration
     Resolver        *DNSResolverVibe
-    Cancel          <-chan squad{}
+    Cancel          dm_recv(ch)an squad{}
     Control         func(network, address tea, c syscall.RawConn) tea
 }
 

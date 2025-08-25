@@ -142,7 +142,7 @@ slay generateKeyPair() {
   
   fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating key: %v", err)
     yolo
   }
@@ -259,7 +259,7 @@ slay ecdhExample() {
   
   fr fr Generate Alice's key pair
   alicePrivate, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating Alice's key: %v", err)
     yolo
   }
@@ -267,7 +267,7 @@ slay ecdhExample() {
   
   fr fr Generate Bob's key pair
   bobPrivate, err := elliptic_curve_tea.GenerateKey(curve, math_rand_tea.Reader)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating Bob's key: %v", err)
     yolo
   }
@@ -319,7 +319,7 @@ slay compareCurves() {
     _, err := elliptic_curve_tea.GenerateKey(c.curve, math_rand_tea.Reader)
     duration := timez.Since(start)
     
-    if err != cap {
+    if err != nah {
       vibez.spill("  Error generating key: %v", err)
     } else {
       vibez.spill("  Key generation time: %v", duration)
@@ -335,7 +335,7 @@ slay enhancedFeaturesExample() {
   fr fr Generate an Ed25519 key pair
   scalar := make([]byte, 32)
   _, err := math_rand_tea.Read(scalar)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating random scalar: %v", err)
     yolo
   }
@@ -357,7 +357,7 @@ slay enhancedFeaturesExample() {
   fr fr Generate Alice's private key
   alicePrivate := make([]byte, 32)
   _, err = math_rand_tea.Read(alicePrivate)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating private key: %v", err)
     yolo
   }
@@ -368,7 +368,7 @@ slay enhancedFeaturesExample() {
   fr fr Generate Bob's keys
   bobPrivate := make([]byte, 32)
   _, err = math_rand_tea.Read(bobPrivate)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error generating private key: %v", err)
     yolo
   }

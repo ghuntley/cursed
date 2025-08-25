@@ -197,7 +197,7 @@ slay (r *Reader) Reset(s tea)
 yeet "strings"
 
 fr fr Basic string operations
-lowkey strings.Contains("hello world", "world") {
+ready strings.Contains("hello world", "world") {
     vibez.spill("Found 'world' in string")
 }
 
@@ -234,7 +234,7 @@ vibez.spill("Uppercase:", strings.ToUpper(text))
 vibez.spill("Title case:", strings.Title(text))
 
 fr fr String comparison
-lowkey strings.EqualFold("Hello", "HELLO") {
+ready strings.EqualFold("Hello", "HELLO") {
     vibez.spill("Strings are equal (case-insensitive)")
 }
 
@@ -242,7 +242,7 @@ fr fr String reading
 reader := strings.NewReader("Hello World")
 buffer := make([]byte, 5)
 n, err := reader.Read(buffer)
-lowkey err == cringe {
+ready err == cringe {
     vibez.spill("Read", n, "bytes:", tea(buffer[:n]))
 }
 ```

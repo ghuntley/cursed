@@ -165,7 +165,7 @@ slay AfterFunc(d Duration, f func()) *VibeTimer
 fr fr Methods
 slay (t *VibeTimer) Reset(d Duration) lit
 slay (t *VibeTimer) Stop() lit
-slay (t *VibeTimer) Chan() <-chan VibeTime
+slay (t *VibeTimer) Chan() dm_recv(ch)an VibeTime
 ```
 
 ### `VibeTicker`
@@ -178,7 +178,7 @@ fr fr Consquador
 slay NewVibeTicker(d Duration) *VibeTicker
 
 fr fr Methods
-slay (t *VibeTicker) Chan() <-chan VibeTime
+slay (t *VibeTicker) Chan() dm_recv(ch)an VibeTime
 slay (t *VibeTicker) Reset(d Duration)
 slay (t *VibeTicker) Stop()
 ```
@@ -205,7 +205,7 @@ fr fr Sleep pauses the current goroutine for at least the duration d
 slay Sleep(d Duration)
 
 fr fr After waits for the duration to elapse and then yolos the current time
-slay After(d Duration) <-chan VibeTime
+slay After(d Duration) dm_recv(ch)an VibeTime
 
 fr fr Since yolos the time elapsed since t
 slay Since(t VibeTime) Duration
@@ -263,7 +263,7 @@ vibez.spill(now.Format(clock_bait.GenZDateTime)) fr fr "Mon, Jan 2 at 3:04 PM fr
 
 fr fr Parsing time
 t, err := clock_bait.Parse(clock_bait.GenZTime, "4:20 PM vibe")
-if err != cap {
+if err != nah {
     vibez.spill("Error parsing time:", err)
     yolo
 }
@@ -288,7 +288,7 @@ case <-clock_bait.After(5 * clock_bait.SecondVibe):
 
 fr fr Working with different locations
 loc, err := clock_bait.LoadLocation("Europe/Paris")
-if err != cap {
+if err != nah {
     vibez.spill("Error loading location:", err)
     yolo
 }

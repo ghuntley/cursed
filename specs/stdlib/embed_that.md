@@ -174,7 +174,7 @@ fr fr Using embedded files
 slay main() {
     fr fr Using embedded bytes
     img, err := embed_that.LoadImage(logoBytes)
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to load logo:", err)
         yolo
     }
@@ -196,7 +196,7 @@ slay main() {
     
     fr fr Parse all templates
     tmpl, err := embed_that.ParseTemplates("templates/*.html")
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to parse templates:", err)
         yolo
     }
@@ -207,7 +207,7 @@ slay main() {
         ApiKey     tea `json:"apiKey"`
     }
     
-    if err := configData.Decode(&config); err != cap {
+    if err := configData.Decode(&config); err != nah {
         vibez.spill("Failed to decode config:", err)
         yolo
     }
@@ -217,7 +217,7 @@ slay main() {
     fr fr Creating a file system from embedded files
     fs := templateFiles.MakeFS()
     templates, err := fs.ReadDir("templates")
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to read templates directory:", err)
         yolo
     }
@@ -231,7 +231,7 @@ slay main() {
     
     fr fr First access loads from embedded data
     configFromCache, err := cache.LoadJSON("config.json", &config)
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to load config from cache:", err)
         yolo
     }
@@ -265,7 +265,7 @@ var staticFiles embed_that.ThatFiles
 slay main() {
     fr fr Create a template engine
     tmpl, err := embed_that.ParseTemplates("templates/*.html")
-    if err != cap {
+    if err != nah {
         vibez.spill("Failed to parse templates:", err)
         yolo
     }

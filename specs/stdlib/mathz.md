@@ -180,7 +180,7 @@ Tests if a floating-point number is positive.
 - `x meal`: The value to test
 
 **Returns:**
-- `lit`: `based` if x > 0.0, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 #### Negative Test
 ```cursed
@@ -192,7 +192,7 @@ Tests if a floating-point number is negative.
 - `x meal`: The value to test
 
 **Returns:**
-- `lit`: `based` if x < 0.0, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 #### Zero Test
 ```cursed
@@ -204,7 +204,7 @@ Tests if a floating-point number is exactly zero.
 - `x meal`: The value to test
 
 **Returns:**
-- `lit`: `based` if x == 0.0, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Examples:**
 ```cursed

@@ -21,7 +21,7 @@ Converts CURSED data to JSON string representation.
 
 **Supported Conversions:**
 - `"based"` → `"true"`
-- `"cap"` → `"false"`
+- `"cringe"` → `"false"`
 - `"cringe"` → `"null"`
 - Numeric strings → Numbers (unchanged)
 - Regular strings → Quoted strings with escaping
@@ -66,7 +66,7 @@ Converts JSON string to CURSED data representation.
 
 **Supported Conversions:**
 - `"true"` → `"based"`
-- `"false"` → `"cap"`
+- `"false"` → `"cringe"`
 - `"null"` → `"cringe"`
 - Numbers → Numeric strings
 - Quoted strings → Unescaped strings
@@ -150,7 +150,7 @@ slay ValidateSchema(json_string tea, schema tea) lit
 - `schema tea`: Expected type for schema validation
 
 **Returns:**
-- `lit`: `based` if valid, `cap` if invalid
+- `lit`: `based` if valid, `cringe` if invalid
 
 **Validation Rules:**
 - Proper JSON syntax
@@ -192,7 +192,7 @@ slay is_valid_json_number(value tea) lit # Validates JSON number format
 - `value tea`: The value to test
 
 **Returns:**
-- `lit`: `based` if test passes, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Examples:**
 ```cursed
@@ -294,7 +294,7 @@ yeet "json_tea"
 
 # Convert API response to CURSED data
 slay process_api_response(json_response tea) tea {
-    lowkey !IsValidJSON(json_response) {
+    ready !IsValidJSON(json_response) {
         damn "Error: Invalid JSON response"
     }
     
@@ -313,12 +313,12 @@ slay prepare_api_request(data tea) tea {
 ```cursed
 # Parse configuration from JSON
 slay parse_config(config_json tea) tea {
-    lowkey !IsValidJSON(config_json) {
+    ready !IsValidJSON(config_json) {
         damn "Error: Invalid configuration format"
     }
     
     sus config_type := get_json_type(config_json)
-    lowkey config_type != "object" {
+    ready config_type != "object" {
         damn "Error: Configuration must be JSON object"
     }
     
@@ -337,12 +337,12 @@ slay generate_config(settings tea) tea {
 # Validate and process JSON data
 slay validate_and_process(input tea, expected_type tea) tea {
     # Step 1: Basic JSON validation
-    lowkey !IsValidJSON(input) {
+    ready !IsValidJSON(input) {
         damn "Error: Malformed JSON"
     }
     
     # Step 2: Schema validation
-    lowkey !ValidateSchema(input, expected_type) {
+    ready !ValidateSchema(input, expected_type) {
         damn "Error: Type mismatch"
     }
     
@@ -366,7 +366,7 @@ slay validate_and_process(input tea, expected_type tea) tea {
 - Self-contained string processing functions
 
 ### Type System Integration
-- Uses CURSED type conventions ("based"/"cap" for booleans)
+- Uses CURSED type conventions ("based"/"cringe" for booleans)
 - Integrates with CURSED string and array types
 - Consistent error handling patterns
 

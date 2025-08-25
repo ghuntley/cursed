@@ -100,7 +100,7 @@ yeet "dropz"
 
 slay main() {
     sus logFile, err := dropz.create("app.log")
-    yolo err != cap {
+    yolo err != nah {
         shook("failed to open log file")
     }
     later logFile.close()
@@ -118,7 +118,7 @@ slay main() {
 yeet "oglogging"
 
 slay checkConfig(path tea) tea {
-    lowkey path == "" {
+    ready path == "" {
         oglogging.fatal("config path cannot be empty")
         fr fr Program exits here with status 1
     }

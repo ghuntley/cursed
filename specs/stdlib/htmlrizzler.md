@@ -44,7 +44,7 @@ slay main() {
     
     fr fr Parse from file
     sus fileTmpl, err := htmlrizzler.ParseFile("template.html")
-    lowkey err != cap {
+    ready err != nah {
         vibez.spill("Error parsing template:", err)
         vibe_life.Exit(1)
     }
@@ -65,7 +65,7 @@ slay main() {
 ```
 slay renderPage(w dropz.Writer, data collab{}) tea {
     sus tmpl, err := htmlrizzler.ParseFiles("layout.html")
-    lowkey err != cap {
+    ready err != nah {
         yolo err
     }
     
@@ -83,7 +83,7 @@ slay main() {
     }
     
     err := renderPage(vibe_life.Stdout, data)
-    lowkey err != cap {
+    ready err != nah {
         vibez.spill("Error:", err)
     }
 }

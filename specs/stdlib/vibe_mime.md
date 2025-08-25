@@ -158,7 +158,7 @@ slay AddExtensionType(ext, mimeType tea) tea
 ```csd
 fr fr Parsing and working with MIME types
 mimeType, err := vibe_mime.ParseMediaType("text/html; charset=utf-8")
-if err != cap {
+if err != nah {
   vibez.spill("Parse tea: %v", err)
   yolo
 }
@@ -194,14 +194,14 @@ multiWriter := vibe_mime.NewMultipartWriter(&buffer)
 
 fr fr Add a text field
 err = multiWriter.WriteField("name", "Alice")
-if err != cap {
+if err != nah {
   vibez.spill("Write field tea: %v", err)
   yolo
 }
 
 fr fr Add a file
 fileWriter, err := multiWriter.CreateFormFile("profile", "profile.jpg")
-if err != cap {
+if err != nah {
   vibez.spill("Create form file tea: %v", err)
   yolo
 }
@@ -209,14 +209,14 @@ if err != cap {
 fr fr Simulate file data
 fileData := []byte("This would be the file content")
 _, err = fileWriter.Write(fileData)
-if err != cap {
+if err != nah {
   vibez.spill("Write file data tea: %v", err)
   yolo
 }
 
 fr fr Close the multipart writer
 err = multiWriter.Close()
-if err != cap {
+if err != nah {
   vibez.spill("Close tea: %v", err)
   yolo
 }
@@ -233,14 +233,14 @@ for {
   if err == dropz.EOF {
     break
   }
-  if err != cap {
+  if err != nah {
     vibez.spill("Read part tea: %v", err)
     yolo
   }
   
   fr fr Read the part data
   partData, err := dropz.ReadAll(part)
-  if err != cap {
+  if err != nah {
     vibez.spill("Read part data tea: %v", err)
     yolo
   }
@@ -253,13 +253,13 @@ fr fr Processing an uploaded file
 var req http_vibez.Request fr fr Assume this is from a handler
 maxMemory := int64(10 << 20) fr fr 10 MB
 err = req.ParseMultipartForm(maxMemory)
-if err != cap {
+if err != nah {
   vibez.spill("Parse form tea: %v", err)
   yolo
 }
 
 file, handler, err := req.FormFile("upload")
-if err != cap {
+if err != nah {
   vibez.spill("Form file tea: %v", err)
   yolo
 }
@@ -271,7 +271,7 @@ vibez.spill("MIME Header: %+v\n", handler.Header)
 
 fr fr Read the file content
 fileBytes, err := dropz.ReadAll(file)
-if err != cap {
+if err != nah {
   vibez.spill("Read file tea: %v", err)
   yolo
 }
@@ -279,7 +279,7 @@ vibez.spill("File content length: %d bytes", len(fileBytes))
 
 fr fr Create a new local file
 dst, err := main_character.Create("uploaded-" + handler.Filename)
-if err != cap {
+if err != nah {
   vibez.spill("Create file tea: %v", err)
   yolo
 }
@@ -287,7 +287,7 @@ defer dst.Close()
 
 fr fr Copy the uploaded file to the local file
 _, err = dst.Write(fileBytes)
-if err != cap {
+if err != nah {
   vibez.spill("Write file tea: %v", err)
   yolo
 }

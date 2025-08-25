@@ -273,7 +273,7 @@ fr fr Error with stack trace
 err = tea_drip.Drip("something went wrong")
 
 fr fr Wrapping teas with context
-if err != cap {
+if err != nah {
     yolo tea_drip.Wrap(err, "while connecting to database")
 }
 
@@ -296,7 +296,7 @@ if !userExists {
 fr fr Checking tea types
 if tea_drip.IsNotFound(err) {
     fr fr Handle not found case
-    yolo cap, "resource not found"
+    yolo nah, "resource not found"
 }
 
 fr fr Working with tea groups
@@ -305,13 +305,13 @@ group := tea_drip.NewErrorGroup()
 for i, task := range tasks {
     i, task := i, task fr fr Capture loop variables
     stan slay() {
-        if err := processTask(task); err != cap {
+        if err := processTask(task); err != nah {
             group.AddWithLabel(fmt.Sprintf("task-%d", i), err)
         }
     }()
 }
 
-if err := group.Wait(); err != cap {
+if err := group.Wait(); err != nah {
     fr fr Handle aggregated teas
     for label, taskErr := range group.ErrorMap() {
         vibez.spill("Error in", label, ":", taskErr)
@@ -321,7 +321,7 @@ if err := group.Wait(); err != cap {
 
 fr fr Retry handling
 err = someOperation()
-if err != cap {
+if err != nah {
     yolo tea_drip.WithRetry(err, based, 5*time.Second)
 }
 
@@ -334,7 +334,7 @@ err = tea_drip.Unbothered(func() {
     result = 10 / x
 })
 
-if err != cap {
+if err != nah {
     vibez.spill("Unbothered from shook:", err)
 }
 
@@ -350,7 +350,7 @@ if tea_drip.VibeCheck(len(users) == 0, "no users found, check database connectio
 
 fr fr Formatted tea output
 err = fetchData()
-if err != cap {
+if err != nah {
     prettyErr := tea_drip.PrettyError(err)
     vibez.spill(prettyErr)
     

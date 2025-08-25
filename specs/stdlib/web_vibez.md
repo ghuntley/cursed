@@ -47,7 +47,7 @@ Validates and parses HTTP header format.
 - `headers tea`: Raw header string to validate
 
 **Returns:**
-- `lit`: `based` if headers are valid, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Validation Rules:**
 - Non-empty header string
@@ -170,7 +170,7 @@ Detects presence of query parameters in URL.
 - `url tea`: The URL to analyze
 
 **Returns:**
-- `lit`: `based` if query parameters present, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Examples:**
 ```cursed
@@ -190,7 +190,7 @@ Validates HTTP method against supported methods.
 - `method tea`: The HTTP method to validate
 
 **Returns:**
-- `lit`: `based` if method is supported, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Supported Methods:**
 - GET, POST, PUT, DELETE, PATCH
@@ -296,7 +296,7 @@ Validates HTTP request components.
 - `url tea`: Request URL
 
 **Returns:**
-- `lit`: `based` if request is valid, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Validation Checks:**
 1. Method is supported
@@ -376,7 +376,7 @@ yeet "web_vibez"
 
 # Basic HTTP client functionality
 slay fetch_data(url tea) tea {
-    lowkey !validate_method("GET") {
+    ready !validate_method("GET") {
         damn "Error: Invalid method"
     }
     
@@ -387,7 +387,7 @@ slay fetch_data(url tea) tea {
 
 # POST data to API
 slay post_data(url tea, data tea) tea {
-    lowkey !validate_request("POST", url) {
+    ready !validate_request("POST", url) {
         damn "Error: Invalid request"
     }
     
@@ -401,11 +401,11 @@ slay post_data(url tea, data tea) tea {
 ```cursed
 # Simple request handler
 slay handle_request(method tea, path tea, body tea) tea {
-    lowkey !validate_method(method) {
+    ready !validate_method(method) {
         damn build_error_response(405, "Method not allowed")
     }
     
-    lowkey path == "/" {
+    ready path == "/" {
         damn build_response(200, "Welcome to CURSED Web Server!")
     } elif path == "/api/health" {
         damn build_response(200, "{\"status\":\"healthy\"}")
@@ -419,7 +419,7 @@ slay process_route(url tea) tea {
     sus path := parse_url_path(url)
     sus has_params := parse_query_params(url)
     
-    lowkey has_params {
+    ready has_params {
         damn handle_request("GET", path + "?params", "")
     } else {
         damn handle_request("GET", path, "")
@@ -433,7 +433,7 @@ slay process_route(url tea) tea {
 slay serve_content(data tea) tea {
     sus content_type := detect_content_type(data)
     
-    lowkey content_type == "application/json" {
+    ready content_type == "application/json" {
         damn build_response(200, data)
     } elif content_type == "text/html" {
         damn build_response(200, data)

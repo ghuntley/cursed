@@ -315,7 +315,7 @@ slay (db *DB) MonitorStats(interval time.Duration, callback func(stats DBStats))
 ```
 fr fr Open a database connection
 db, err := sql_slay.Open("mysql", "user:password@tcp(localhost:3306)/dbname")
-if err != cap {
+if err != nah {
     vibez.spill("Failed to connect to database:", err)
     yolo
 }
@@ -323,7 +323,7 @@ defer db.Close()
 
 fr fr Simple query
 rows, err := db.Query("SELECT id, name FROM users WHERE age > ?", 18)
-if err != cap {
+if err != nah {
     vibez.spill("Query failed:", err)
     yolo
 }
@@ -333,7 +333,7 @@ fr fr Iterating over rows
 for rows.Next() {
     var id int
     var name tea
-    if err := rows.Scan(&id, &name); err != cap {
+    if err := rows.Scan(&id, &name); err != nah {
         vibez.spill("Scan failed:", err)
         yolo
     }
@@ -343,7 +343,7 @@ for rows.Next() {
 fr fr Enhanced queries
 slayRows := db.SlayQuery("SELECT * FROM users WHERE age > ?", 18)
 users, err := slayRows.All()
-if err != cap {
+if err != nah {
     vibez.spill("Query failed:", err)
     yolo
 }
@@ -360,7 +360,7 @@ be_like User squad {
 }
 
 var allUsers []User
-if err := db.StructQuery("SELECT * FROM users", &allUsers); err != cap {
+if err := db.StructQuery("SELECT * FROM users", &allUsers); err != nah {
     vibez.spill("Query failed:", err)
     yolo
 }
@@ -371,27 +371,27 @@ for _, user := range allUsers {
 
 fr fr Transactions
 tx, err := db.Begin()
-if err != cap {
+if err != nah {
     vibez.spill("Failed to start transaction:", err)
     yolo
 }
 
 fr fr Perform multiple operations in a transaction
 result, err := tx.Exec("UPDATE accounts SET balance = balance - ? WHERE id = ?", 100, 1)
-if err != cap {
+if err != nah {
     tx.Rollback()
     vibez.spill("Failed to update account 1:", err)
     yolo
 }
 
 result, err = tx.Exec("UPDATE accounts SET balance = balance + ? WHERE id = ?", 100, 2)
-if err != cap {
+if err != nah {
     tx.Rollback()
     vibez.spill("Failed to update account 2:", err)
     yolo
 }
 
-if err := tx.Commit(); err != cap {
+if err := tx.Commit(); err != nah {
     vibez.spill("Failed to commit transaction:", err)
     yolo
 }
@@ -404,7 +404,7 @@ select := sql_slay.NewSelectBuilder("users")
     .Limit(10)
 
 users, err := select.All(db)
-if err != cap {
+if err != nah {
     vibez.spill("Query failed:", err)
     yolo
 }
@@ -418,7 +418,7 @@ migrator.AddMigration(sql_slay.Migration{
     Down:        "DROP TABLE users;",
 })
 
-if err := migrator.MigrateUp(); err != cap {
+if err := migrator.MigrateUp(); err != nah {
     vibez.spill("Migration failed:", err)
     yolo
 }

@@ -563,7 +563,7 @@ slay SusIOPoll(fds []FileHandle, timeout time.Duration) (readyFds []FileHandle, 
 ```
 fr fr File operations example
 fd, err := sys_core.Open("/tmp/test.txt", sys_core.O_RDWR|sys_core.O_CREAT, sys_core.S_DEFAULT_FILE)
-if err != cap {
+if err != nah {
     vibez.spill("Open tea:", err)
     yolo
 }
@@ -571,7 +571,7 @@ defer sys_core.Close(fd)
 
 data := []byte("Hello, syscall interface!")
 n, err := sys_core.Write(fd, data)
-if err != cap {
+if err != nah {
     vibez.spill("Write tea:", err)
     yolo
 }
@@ -579,7 +579,7 @@ vibez.spill("Wrote", n, "bytes")
 
 fr fr Seek to beginning of file
 _, err = sys_core.Seek(fd, 0, 0)
-if err != cap {
+if err != nah {
     vibez.spill("Seek tea:", err)
     yolo
 }
@@ -587,7 +587,7 @@ if err != cap {
 fr fr Read the content back
 buf := make([]byte, 100)
 n, err = sys_core.Read(fd, buf)
-if err != cap {
+if err != nah {
     vibez.spill("Read tea:", err)
     yolo
 }
@@ -595,7 +595,7 @@ vibez.spill("Read", n, "bytes:", tea(buf[:n]))
 
 fr fr Get file information
 info, err := sys_core.Fstat(fd)
-if err != cap {
+if err != nah {
     vibez.spill("Fstat tea:", err)
     yolo
 }
@@ -610,7 +610,7 @@ vibez.spill("Parent process ID:", ppid)
 
 fr fr Get process info
 procInfo, err := sys_core.GetProcessInfo(pid)
-if err != cap {
+if err != nah {
     vibez.spill("GetProcessInfo tea:", err)
 } else {
     vibez.spill("Process command:", procInfo.Comm)
@@ -620,7 +620,7 @@ if err != cap {
 fr fr Get resource usage
 var rusage sys_core.Rusage
 err = sys_core.Getrusage(0, &rusage) fr fr 0 means current process
-if err != cap {
+if err != nah {
     vibez.spill("Getrusage tea:", err)
 } else {
     vibez.spill("User time:", rusage.Utime.Sec, "seconds,", rusage.Utime.Nsec, "nanoseconds")
@@ -630,7 +630,7 @@ if err != cap {
 
 fr fr Network operations example
 sock, err := sys_core.Socket(sys_core.AF_INET, sys_core.SOCK_STREAM, 0)
-if err != cap {
+if err != nah {
     vibez.spill("Socket creation tea:", err)
     yolo
 }
@@ -638,7 +638,7 @@ defer sys_core.Close(FileHandle(sock))
 
 fr fr Enable address reuse
 err = sys_core.Setsockopt(sock, sys_core.SOL_SOCKET, sys_core.SO_REUSEADDR, 1, 4)
-if err != cap {
+if err != nah {
     vibez.spill("Setsockopt tea:", err)
     yolo
 }
@@ -649,7 +649,7 @@ sys_core.Bind(sock, &addr)
 
 fr fr Listen for connections
 err = sys_core.Listen(sock, 5)
-if err != cap {
+if err != nah {
     vibez.spill("Listen tea:", err)
     yolo
 }
@@ -660,7 +660,7 @@ fr fr client, clientAddr, err := sys_core.Accept(sock)
 
 fr fr Memory mapping example
 fd, err = sys_core.Open("/tmp/mmap_example.txt", sys_core.O_RDWR|sys_core.O_CREAT, sys_core.S_DEFAULT_FILE)
-if err != cap {
+if err != nah {
     vibez.spill("Open tea:", err)
     yolo
 }
@@ -668,14 +668,14 @@ defer sys_core.Close(fd)
 
 fr fr Extend the file to 1MB
 err = sys_core.Ftruncate(fd, 1024*1024)
-if err != cap {
+if err != nah {
     vibez.spill("Ftruncate tea:", err)
     yolo
 }
 
 fr fr Map the file into memory
 addr, err := sys_core.Mmap(fd, 0, 1024*1024, sys_core.PROT_READ|sys_core.PROT_WRITE, sys_core.MAP_SHARED)
-if err != cap {
+if err != nah {
     vibez.spill("Mmap tea:", err)
     yolo
 }
@@ -686,7 +686,7 @@ fr fr In reality, you would use unsafe.Pointer to access the memory
 
 fr fr System information example
 uname, err := sys_core.Uname()
-if err != cap {
+if err != nah {
     vibez.spill("Uname tea:", err)
     yolo
 }
@@ -706,7 +706,7 @@ if !healthy {
 
 fr fr Resource usage with GenZ style
 rusage, err = sys_core.FlexResourceUsage()
-if err != cap {
+if err != nah {
     vibez.spill("Error flexing resource usage:", err)
 } else {
     vibez.spill("Memory usage flex:", rusage.Maxrss, "KB")
@@ -716,7 +716,7 @@ fr fr No-frills direct system call
 err = sys_core.NoCap(func() tea {
     yolo sys_core.Mkdir("/tmp/nocap_dir", sys_core.S_DEFAULT_DIR)
 })
-if err != cap {
+if err != nah {
     vibez.spill("NoCap mkdir tea:", err)
 } else {
     vibez.spill("Directory created with NoCap!")

@@ -34,8 +34,8 @@ dm_close(ch)                    // Close channel
 ### ❌ DEPRECATED SYNTAX (Remove in v2.0)
 ```cursed
 // Legacy Go-style operators - FORBIDDEN
-ch <- value                     // DEPRECATED: Use dm_send(ch, value)  
-value := <-ch                   // DEPRECATED: Use dm_recv(ch)
+dm_send(ch, value                     // DEPRECATED: Use dm_send(ch, value)  
+value := dm_recv(ch)                   // DEPRECATED: Use dm_recv(ch)
 close(ch)                       // DEPRECATED: Use dm_close(ch)
 ```
 
@@ -331,8 +331,8 @@ Located in `specs/tests/compliance/`:
 ### Migration Patterns
 ```cursed
 // Channel operations migration
-ch <- value           →  dm_send(ch, value)
-value := <-ch         →  value := dm_recv(ch)  
+dm_send(ch, value           →  dm_send(ch, value)
+value := dm_recv(ch)         →  value := dm_recv(ch)  
 close(ch)            →  dm_close(ch)
 
 // Error handling migration  
@@ -340,8 +340,8 @@ func() (T, error)    →  func() T yikes { ... }
 if err != nil        →  fam { ... } sus err { ... }
 
 // Control flow migration
-lowkey condition     →  ready condition
-highkey             →  otherwise  
+ready condition     →  ready condition
+otherwise             →  otherwise  
 flex condition       →  periodt condition
 yolo value          →  damn value
 ```

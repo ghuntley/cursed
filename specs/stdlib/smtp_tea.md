@@ -126,7 +126,7 @@ fr fr Basic email sending
 slay sendBasicEmail() {
   fr fr Connect to the server
   client, err := smtp_tea.Dial("smtp.example.com:25")
-  if err != cap {
+  if err != nah {
     vibez.spill("Dial tea: %v", err)
     yolo
   }
@@ -134,21 +134,21 @@ slay sendBasicEmail() {
   
   fr fr Set the sender
   err = client.Mail("sender@example.com")
-  if err != cap {
+  if err != nah {
     vibez.spill("Mail tea: %v", err)
     yolo
   }
   
   fr fr Set the recipient
   err = client.Rcpt("recipient@example.com")
-  if err != cap {
+  if err != nah {
     vibez.spill("Rcpt tea: %v", err)
     yolo
   }
   
   fr fr Send the email body
   wc, err := client.Data()
-  if err != cap {
+  if err != nah {
     vibez.spill("Data tea: %v", err)
     yolo
   }
@@ -158,20 +158,20 @@ slay sendBasicEmail() {
     "Subject: Test Email\r\n"+
     "\r\n"+
     "This is a test email message.\r\n")
-  if err != cap {
+  if err != nah {
     vibez.spill("Write tea: %v", err)
     yolo
   }
   
   err = wc.Close()
-  if err != cap {
+  if err != nah {
     vibez.spill("Close tea: %v", err)
     yolo
   }
   
   fr fr Send the QUIT command
   err = client.Quit()
-  if err != cap {
+  if err != nah {
     vibez.spill("Quit tea: %v", err)
     yolo
   }
@@ -199,7 +199,7 @@ slay sendMailHelper() {
   
   fr fr Send the email
   err := smtp_tea.SendMail("smtp.example.com:587", auth, from, to, message)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error sending mail: %v", err)
     yolo
   }
@@ -217,7 +217,7 @@ slay sendWithTLS() {
   
   fr fr Connect to the server using TLS
   client, err := smtp_tea.DialTLS("smtp.example.com:465", tlsConfig)
-  if err != cap {
+  if err != nah {
     vibez.spill("DialTLS tea: %v", err)
     yolo
   }
@@ -226,7 +226,7 @@ slay sendWithTLS() {
   fr fr Authenticate
   auth := smtp_tea.PlainAuth("", "username@example.com", "password", "smtp.example.com")
   err = client.Auth(auth)
-  if err != cap {
+  if err != nah {
     vibez.spill("Auth tea: %v", err)
     yolo
   }
@@ -241,7 +241,7 @@ fr fr Connecting to a server using STARTTLS
 slay sendWithSTARTTLS() {
   fr fr Connect to the server
   client, err := smtp_tea.Dial("smtp.example.com:587")
-  if err != cap {
+  if err != nah {
     vibez.spill("Dial tea: %v", err)
     yolo
   }
@@ -262,7 +262,7 @@ slay sendWithSTARTTLS() {
   
   fr fr Start TLS
   err = client.StartTLS(tlsConfig)
-  if err != cap {
+  if err != nah {
     vibez.spill("StartTLS tea: %v", err)
     yolo
   }
@@ -276,7 +276,7 @@ slay sendWithSTARTTLS() {
   fr fr Now authenticate (usually done after STARTTLS)
   auth := smtp_tea.PlainAuth("", "username@example.com", "password", "smtp.example.com")
   err = client.Auth(auth)
-  if err != cap {
+  if err != nah {
     vibez.spill("Auth tea: %v", err)
     yolo
   }
@@ -322,7 +322,7 @@ slay sendWithAttachment() {
   auth := smtp_tea.PlainAuth("", "username@example.com", "password", "smtp.example.com")
   err := smtp_tea.SendMail("smtp.example.com:587", auth, "sender@example.com", 
                          []tea{"recipient@example.com"}, buffer.Bytes())
-  if err != cap {
+  if err != nah {
     vibez.spill("Error sending mail: %v", err)
     yolo
   }
@@ -346,7 +346,7 @@ slay authenticationExamples() {
   
   fr fr Using an authentication method with a client
   client, err := smtp_tea.Dial("smtp.example.com:587")
-  if err != cap {
+  if err != nah {
     vibez.spill("Dial tea: %v", err)
     yolo
   }
@@ -375,7 +375,7 @@ slay authenticationExamples() {
   
   fr fr Authenticate
   err = client.Auth(auth)
-  if err != cap {
+  if err != nah {
     vibez.spill("Authentication tea: %v", err)
     yolo
   }
@@ -432,7 +432,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Get a client from the pool
   client, err := pool.Get()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error getting client from pool: %v", err)
     yolo
   }
@@ -440,7 +440,7 @@ slay enhancedFeaturesExample() {
   fr fr Use the client
   auth := smtp_tea.PlainAuth("", "username", "password", "smtp.example.com")
   err = client.Auth(auth)
-  if err != cap {
+  if err != nah {
     vibez.spill("Auth tea: %v", err)
     pool.Remove(client) fr fr Remove bad connection
     yolo
@@ -448,7 +448,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Send the email
   err = client.SendMessage(message)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error sending message: %v", err)
     pool.Remove(client) fr fr Remove bad connection
     yolo
@@ -464,7 +464,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Send within rate limits (would block if rate exceeded)
   err = limiter.Send(message, auth, "smtp.example.com:587")
-  if err != cap {
+  if err != nah {
     vibez.spill("Rate limited send tea: %v", err)
     yolo
   }

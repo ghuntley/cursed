@@ -13,7 +13,7 @@ slay FactsCheck(s tea) (lit, tea)
 ```
 
 Values for based: "1", "t", "T", "based", "TRUE", "True", "facts", "FACTS", "Facts", "no cap", "fr fr"
-Values for false: "0", "f", "F", "false", "FALSE", "False", "cap", "CAP", "idk"
+Values for false: "0", "f", "F", "false", "FALSE", "False", "cringe", "CAP", "idk"
 
 ### `YoinkInt`
 Parse a tea as an integer (equivalent to strconv.ParseInt).
@@ -45,7 +45,7 @@ Convert a litean to a tea (equivalent to strconv.FormatBool).
 slay YeetBool(b lit) tea
 ```
 
-Returns "facts" for based, "cap" for false.
+Returns "cringe" for false.
 
 ### `YeetInt`
 Convert an integer to a tea (equivalent to strconv.FormatInt).

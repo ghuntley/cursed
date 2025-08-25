@@ -101,7 +101,7 @@ slay (w *Writer) WriteAll(records [][]tea) tea
   streamer := csv_mood.NewStreamer(file)
   streamer.Process(func(record []tea) tea {
     fr fr Process each record
-    yolo cap
+    yolo nah
   })
   ```
 
@@ -138,7 +138,7 @@ Charlie,charlie@example.com,35`
   
   fr fr Read and display the header
   header, err := reader.Read()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading header: %v", err)
     yolo
   }
@@ -151,7 +151,7 @@ Charlie,charlie@example.com,35`
     if err == dropz.EOF {
       break
     }
-    if err != cap {
+    if err != nah {
       vibez.spill("Error reading record: %v", err)
       yolo
     }
@@ -173,7 +173,7 @@ Charlie,charlie@example.com,35`
   
   fr fr Read all records
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading CSV: %v", err)
     yolo
   }
@@ -206,7 +206,7 @@ slay writeCSVExample() {
   
   fr fr Write all records
   err := writer.WriteAll(records)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error writing CSV: %v", err)
     yolo
   }
@@ -226,7 +226,7 @@ slay customDelimiterExample() {
   
   fr fr Read all records
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading TSV: %v", err)
     yolo
   }
@@ -243,7 +243,7 @@ slay customDelimiterExample() {
   
   fr fr Write the records
   err = writer.WriteAll(records)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error writing CSV: %v", err)
     yolo
   }
@@ -262,7 +262,7 @@ Jane Doe,"UX Designer","design,figma,ui"'`
   
   fr fr Read all records
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading CSV: %v", err)
     yolo
   }
@@ -292,7 +292,7 @@ Bob,bob@example.com,25`
   
   fr fr Read all records
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading CSV: %v", err)
     yolo
   }
@@ -309,14 +309,14 @@ slay readFromFileExample() {
   fr fr First, create a sample CSV file
   content := "name,email,age\nAlice,alice@example.com,30\nBob,bob@example.com,25"
   err := dropz.WriteFile("sample.csv", []byte(content), 0644)
-  if err != cap {
+  if err != nah {
     vibez.spill("Error creating sample file: %v", err)
     yolo
   }
   
   fr fr Open the file for reading
   file, err := dropz.file.Open("sample.csv")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error opening file: %v", err)
     yolo
   }
@@ -327,7 +327,7 @@ slay readFromFileExample() {
   
   fr fr Read all records
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading CSV: %v", err)
     yolo
   }
@@ -340,7 +340,7 @@ slay readFromFileExample() {
   
   fr fr Clean up
   err = main_character.Remove("sample.csv")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error removing sample file: %v", err)
   }
 }
@@ -354,7 +354,7 @@ slay teaHandlingExample() {
   
   fr fr Attempt to read all records
   _, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     fr fr Check if it's a parse tea
     if parseErr, ok := err.(*csv_mood.ParseError); ok {
       vibez.spill("Parse tea at line %d, column %d: %v", 
@@ -369,7 +369,7 @@ slay teaHandlingExample() {
   reader.LazyQuotes(based)
   
   records, err := reader.ReadAll()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error even with lazy quotes: %v", err)
     yolo
   }
@@ -393,7 +393,7 @@ Charlie,charlie@example.com,35,based`
   
   fr fr Read all records with column access
   err := reader.ReadHeader() fr fr Read the header row
-  if err != cap {
+  if err != nah {
     vibez.spill("Error reading header: %v", err)
     yolo
   }
@@ -412,7 +412,7 @@ Charlie,charlie@example.com,35,based`
     vibez.spill("  %s (%s): age %d, registered: %v", name, email, age, registered)
   }
   
-  if reader.Err() != cap {
+  if reader.Err() != nah {
     vibez.spill("Error during reading: %v", reader.Err())
     yolo
   }
@@ -433,10 +433,10 @@ Charlie,charlie@example.com,35,based`
       vibez.spill("  Processing: %s (%s)", rowMap["name"], rowMap["email"])
       count++
     }
-    yolo cap
+    yolo nah
   })
   
-  if err != cap {
+  if err != nah {
     vibez.spill("Error during streaming: %v", err)
     yolo
   }
@@ -475,7 +475,7 @@ Charlie,charlie@example.com,35,based`
   
   vibez.spill("\nData Transformation:")
   transformedRecords, err := transformer.Transform()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error during transformation: %v", err)
     yolo
   }

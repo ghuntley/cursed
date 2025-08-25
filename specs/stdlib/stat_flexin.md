@@ -408,7 +408,7 @@ successRate := stat_flexin.Bussin("requests.success_rate")
 successRate.Set(0.99) fr fr 99% success rate
 
 fr fr Increment tea count when an tea occurs
-if err != cap {
+if err != nah {
     teaCounter.Inc()
     fr fr Log tea details
     teaMap := stat_flexin.NewFlexMap("teas.details")

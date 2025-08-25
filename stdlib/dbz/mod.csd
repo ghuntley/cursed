@@ -11,6 +11,7 @@ yeet "mysql_driver"
 yeet "timez"
 yeet "filez"
 yeet "cryptz"
+yeet "network_infrastructure"
 
 fr fr ===== UTILITY FUNCTIONS =====
 
@@ -634,13 +635,32 @@ slay create_mysql_command_packet(sql tea) tea {
     damn packet
 }
 
-fr fr ===== REAL QUERY EXECUTION (REPLACED MOCK IMPLEMENTATIONS) =====
+fr fr ===== REAL QUERY EXECUTION (PRODUCTION IMPLEMENTATIONS) =====
 
-fr fr PostgreSQL functions - now using real implementation
+fr fr PostgreSQL functions - now using real protocol implementation
 slay execute_postgres_select(sql tea) QueryResult {
-    fr fr Use default connection string - can be overridden by setting POSTGRES_CONNECTION_STRING
+    fr fr Get connection string from environment or use default
     sus connection_string tea = get_env_var("POSTGRES_CONNECTION_STRING", "host=localhost port=5432 dbname=postgres user=postgres password=")
-    damn postgres_real_query_simple(connection_string, sql)
+    
+    fr fr Parse connection string into components
+    sus conn_params PostgresConnectionParams = parse_postgres_connection_string(connection_string)
+    
+    fr fr Establish real PostgreSQL connection
+    sus pg_connection PostgresConnection = establish_postgres_connection(conn_params)
+    ready (!pg_connection.is_connected) {
+        sus error_result QueryResult = QueryResult{}
+        error_result.success = cringe
+        error_result.last_error = "Failed to connect to PostgreSQL: " + pg_connection.error_message
+        damn error_result
+    }
+    
+    fr fr Execute query using PostgreSQL wire protocol
+    sus result QueryResult = execute_postgres_wire_protocol_query(pg_connection, sql)
+    
+    fr fr Close connection
+    close_postgres_connection(pg_connection)
+    
+    damn result
 }
 
 slay execute_postgres_insert(sql tea) QueryResult {

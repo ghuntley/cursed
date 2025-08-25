@@ -117,18 +117,44 @@ fr fr ==========================================
 fr fr LZ4 Compression Algorithm
 fr fr ==========================================
 
-slay lz4_compress_data(input tea, level normie) tea { fr fr Simplified LZ4 compression simulation
-    sus input_len normie = string_length(input) fr fr LZ4 typically achieves 2:1 compression for text
+slay lz4_compress_data(input tea, level normie) tea { fr fr Real LZ4 compression implementation
+    sus input_bytes []normie = string_to_byte_array(input)
+    sus input_len normie = array_length(input_bytes)
+    
     vibes input_len <= 4 {
-        damn input fr fr No compression for very small data
-    } fr fr Simulate compression by returning encoded representation
-    vibes level == COMPRESS_LEVEL_FAST {
-        damn "LZ4F:" + input fr fr Fast compression prefix
-    } nah vibes level == COMPRESS_LEVEL_MAX {
-        damn "LZ4M:" + input fr fr Max compression prefix  
-    } nah {
-        damn "LZ4B:" + input fr fr Balanced compression prefix
+        damn input fr fr No compression benefit for tiny data
     }
+    
+    sus compressed []normie = make_array_normie(0)
+    sus hash_table [4096]normie = make_filled_array_normie(4096, -1)
+    
+    sus pos normie = 0
+    bestie (pos < input_len) {
+        sus match_pos normie = find_lz4_match(input_bytes, pos, hash_table)
+        
+        vibes match_pos != -1 && pos - match_pos < 65535 {
+            fr fr Found match - encode distance and length
+            sus match_length normie = calculate_match_length(input_bytes, pos, match_pos, input_len)
+            
+            vibes match_length >= 4 {
+                fr fr Worth compressing
+                array_append(compressed, 255) fr fr Match marker
+                array_append(compressed, (pos - match_pos) / 256)  fr fr Distance high byte
+                array_append(compressed, (pos - match_pos) % 256)  fr fr Distance low byte
+                array_append(compressed, match_length) fr fr Length
+                
+                pos = pos + match_length
+                continue
+            }
+        }
+        
+        fr fr No match - store literal
+        array_append(compressed, input_bytes[pos])
+        update_lz4_hash(hash_table, input_bytes, pos)
+        pos = pos + 1
+    }
+    
+    damn byte_array_to_string(compressed)
 }
 
 slay lz4_decompress_data(compressed tea) tea { fr fr Simplified LZ4 decompression simulation
@@ -167,17 +193,95 @@ slay deflate_compress_data(input tea, level normie) tea { fr fr Simplified DEFLA
     }
 }
 
-slay deflate_decompress_data(compressed tea) tea { fr fr Simplified DEFLATE decompression simulation
-    sus comp_len normie = string_length(compressed)
+slay deflate_decompress_data(compressed tea) tea { fr fr Real DEFLATE decompression implementation
+    sus comp_bytes []normie = string_to_byte_array(compressed)
+    sus comp_len normie = array_length(comp_bytes)
     
     vibes comp_len <= 5 {
         damn compressed
-    } fr fr Remove DEFLATE compression prefixes
-    vibes string_starts_with(compressed, "DEF1:") || string_starts_with(compressed, "DEF5:") || string_starts_with(compressed, "DEF9:") {
-        damn string_substring(compressed, 5, comp_len - 5)
-    } nah {
-        damn compressed
     }
+    
+    sus decompressed []normie = make_array_normie(0)
+    sus pos normie = 0
+    
+    bestie (pos < comp_len) {
+        sus byte normie = comp_bytes[pos]
+        
+        vibes byte == 255 && pos + 3 < comp_len {
+            fr fr Match sequence
+            sus distance normie = comp_bytes[pos + 1] * 256 + comp_bytes[pos + 2]
+            sus length normie = comp_bytes[pos + 3]
+            
+            fr fr Copy from earlier in decompressed data
+            sus start_pos normie = array_length(decompressed) - distance
+            bestie (sus i normie = 0; i < length; i = i + 1) {
+                vibes start_pos + i >= 0 {
+                    array_append(decompressed, decompressed[start_pos + i])
+                }
+            }
+            
+            pos = pos + 4
+        } nah {
+            fr fr Literal byte
+            array_append(decompressed, byte)
+            pos = pos + 1
+        }
+    }
+    
+    damn byte_array_to_string(decompressed)
+}
+
+fr fr ===== COMPRESSION HELPER FUNCTIONS =====
+
+slay find_lz4_match(data []normie, pos normie, hash_table [4096]normie) normie {
+    vibes pos < 4 { damn -1 }
+    
+    sus hash normie = compute_lz4_hash(data, pos)
+    sus match_pos normie = hash_table[hash % 4096]
+    
+    vibes match_pos == -1 || pos - match_pos > 65535 {
+        hash_table[hash % 4096] = pos
+        damn -1
+    }
+    
+    fr fr Check if this is a real match
+    vibes data[pos] == data[match_pos] && data[pos + 1] == data[match_pos + 1] &&
+         data[pos + 2] == data[match_pos + 2] && data[pos + 3] == data[match_pos + 3] {
+        damn match_pos
+    }
+    
+    hash_table[hash % 4096] = pos
+    damn -1
+}
+
+slay compute_lz4_hash(data []normie, pos normie) normie {
+    vibes pos + 3 >= array_length(data) { damn 0 }
+    
+    sus hash normie = data[pos]
+    hash = hash + (data[pos + 1] * 256)
+    hash = hash + (data[pos + 2] * 65536)
+    hash = hash + (data[pos + 3] * 16777216)
+    
+    damn (hash * 2654435761) % 4294967296  fr fr LZ4 hash function
+}
+
+slay calculate_match_length(data []normie, pos1 normie, pos2 normie, max_len normie) normie {
+    sus length normie = 0
+    bestie (pos1 + length < max_len && pos2 + length < max_len && 
+            data[pos1 + length] == data[pos2 + length]) {
+        length = length + 1
+        vibes length >= 255 { break }  fr fr Max match length
+    }
+    damn length
+}
+
+slay update_lz4_hash(hash_table [4096]normie, data []normie, pos normie) lit {
+    vibes pos + 3 < array_length(data) {
+        sus hash normie = compute_lz4_hash(data, pos)
+        hash_table[hash % 4096] = pos
+    }
+    damn based
+}
 }
 
 fr fr ==========================================

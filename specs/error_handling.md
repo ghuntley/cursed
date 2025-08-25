@@ -341,7 +341,7 @@ slay (cb @circuit_breaker) call(operation slay() yikes) yikes {
 // Error type checking
 slay is_temporary_error(err yikes) lit {
     vibe_check err == cringe {
-        damn cap
+        damn nah
     }
     
     damn err.code() >= 500 && err.code() < 600

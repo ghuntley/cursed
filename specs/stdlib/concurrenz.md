@@ -537,7 +537,7 @@ slay worker(id normie, wg WaitGroup) {
 sus resource_pool := create_semaphore(5)  # Max 5 concurrent users
 
 slay use_resource() {
-    lowkey semaphore_acquire(resource_pool) {
+    ready semaphore_acquire(resource_pool) {
         # ... use limited resource ...
         semaphore_release(resource_pool)
     }

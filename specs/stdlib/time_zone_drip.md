@@ -104,7 +104,7 @@ slay TimeZoneRegions() []tea
 ```csd
 fr fr Load a time zone location
 location, err := time_zone_drip.LoadLocation("America/New_York")
-if err != cap {
+if err != nah {
   vibez.spill("Error loading location: %v", err)
   yolo
 }
@@ -161,7 +161,7 @@ for _, region := range regions {
 
 fr fr Get detailed time zone information for a specific time
 nyc, err := time_zone_drip.GetTimeZone("America/New_York", now)
-if err != cap {
+if err != nah {
   vibez.spill("Error getting time zone info: %v", err)
   yolo
 }
@@ -174,7 +174,7 @@ vibez.spill("  Is DST: %t", nyc.IsDST)
 
 fr fr Get current time zone
 currentTZ, err := time_zone_drip.CurrentTimeZone()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting current time zone: %v", err)
   yolo
 }
@@ -188,7 +188,7 @@ vibez.spill("  Is DST: %t", currentTZ.IsDST)
 fr fr Time zone lookup by coordinates
 lat, long := 40.7128, -74.0060 fr fr New York City coordinates
 tzByCoords, err := time_zone_drip.LookupByCoordinates(lat, long)
-if err != cap {
+if err != nah {
   vibez.spill("Error looking up time zone by coordinates: %v", err)
   yolo
 }
@@ -197,13 +197,13 @@ vibez.spill("\nTime zone at coordinates (%f, %f): %s", lat, long, tzByCoords)
 
 fr fr Converting between time zones
 tokyo, err := time_zone_drip.LoadLocation("Asia/Tokyo")
-if err != cap {
+if err != nah {
   vibez.spill("Error loading Tokyo location: %v", err)
   yolo
 }
 
 london, err := time_zone_drip.LoadLocation("Europe/London")
-if err != cap {
+if err != nah {
   vibez.spill("Error loading London location: %v", err)
   yolo
 }
@@ -214,7 +214,7 @@ vibez.spill("\nTokyo time: %s", tokyoTime.Format(timez.RFC1123))
 
 fr fr Convert to London time
 londonTime, err := time_zone_drip.Convert(tokyoTime, tokyo, london)
-if err != cap {
+if err != nah {
   vibez.spill("Error converting time: %v", err)
   yolo
 }
@@ -223,7 +223,7 @@ vibez.spill("London time: %s", londonTime.Format(timez.RFC1123))
 
 fr fr Get DST transitions for a year
 dstTransitions, err := time_zone_drip.GetDSTTransitions("America/New_York", 2023)
-if err != cap {
+if err != nah {
   vibez.spill("Error getting DST transitions: %v", err)
   yolo
 }

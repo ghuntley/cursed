@@ -297,7 +297,7 @@ safeHTML := tag_core.ToSafeHTML(sanitized)
 fr fr HTML parsing
 html := "<div id='content'><p>Hello <b>World</b></p></div>"
 doc, err := tag_core.ParseHTML(html)
-if err != cap {
+if err != nah {
     vibez.spill("Parsing tea:", err)
     yolo
 }
