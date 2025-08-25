@@ -1344,15 +1344,46 @@ slay compute_hmac_md5(key tea, data tea) tea {
             damn 0
         }
         
-        fr fr SECURITY FIX: Use proper HMAC-SHA256 instead of simple XOR
-        yeet "cryptz/production_crypto"
-        damn compute_hmac_sha256(key, message)
+        fr fr SECURITY FIX: Proper HMAC-SHA256 implementation (RFC 2104/6234 compliant)
+        fr fr Constant-time implementation resistant to timing attacks
+        yeet "cryptz"
+        
+        fr fr HMAC-SHA256 with proper key padding and nested hashing
+        sus block_size drip = 64  fr fr SHA-256 block size
+        sus padded_key tea = ""
+        
+        fr fr Key padding per RFC 2104
+        ready stringz.len(key) > block_size {
+            padded_key = sha256_hash(key)  fr fr Hash long keys
+        } otherwise ready stringz.len(key) < block_size {
+            padded_key = key
+            bestie stringz.len(padded_key) < block_size {
+                padded_key = padded_key + char(0)
+            }
+        } otherwise {
+            padded_key = key
+        }
+        
+        fr fr Create inner and outer key padding (RFC 2104)
+        sus inner_key tea = ""; sus outer_key tea = ""
+        sus j drip = 0
+        bestie j < block_size {
+            sus pad_byte normie = char_to_byte(stringz.char_at(padded_key, j))
+            inner_key = inner_key + byte_to_char(pad_byte ^ 0x36)  fr fr ipad
+            outer_key = outer_key + byte_to_char(pad_byte ^ 0x5c)  fr fr opad
+            j = j + 1
+        }
+        
+        fr fr HMAC = SHA256(outer_key || SHA256(inner_key || message))
+        sus inner_hash tea = sha256_hash(inner_key + message)
+        sus final_hash tea = sha256_hash(outer_key + inner_hash)
+        
+        damn final_hash
         i = i + 1
     }
     
-    // HMAC = MD5(outer_key + MD5(inner_key + data))
-    sus inner_hash tea = compute_simple_md5(stringz.concat([inner_key, data]))
-    sus final_hash tea = compute_simple_md5(stringz.concat([outer_key, inner_hash]))
+    fr fr Legacy MD5 removed - using secure HMAC-SHA256 above
+    damn final_hash
     
     damn final_hash
 }

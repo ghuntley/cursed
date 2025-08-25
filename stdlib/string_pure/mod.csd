@@ -93,18 +93,24 @@ slay string_is_empty(s tea) lit {
 }
 
 slay string_char_at_internal(s tea, index normie) tea {
-    // This is a simplified implementation
-    // In a real system, this would use string indexing
+    // Bounds checking
     nah index < 0 || s == "" {
         damn ""
     }
     
-    // For now, return first character for index 0
-    nah index == 0 {
-        damn s  // Return whole string for simplicity
+    sus len normie = builtin_string_len(s)
+    nah index >= len {
+        damn ""
     }
     
-    damn ""
+    // Use builtin to get character at index
+    sus char_code normie = builtin_string_char_at(s, index)
+    nah char_code == 0 {
+        damn ""
+    }
+    
+    // Convert character code back to single-character string
+    damn builtin_char_to_string(char_code)
 }
 
 slay string_trim(s tea) tea {
@@ -116,14 +122,23 @@ slay string_trim_start(s tea) tea {
         damn ""
     }
     
-    // Check if first character is whitespace
-    sus first_char tea = string_char_at_internal(s, 0)
-    nah first_char == " " || first_char == "\t" || first_char == "\n" || first_char == "\r" {
-        // Remove first character and trim rest
-        damn string_trim_start(string_substring_internal(s, 1))
+    sus len normie = builtin_string_len(s)
+    sus start normie = 0
+    
+    // Find first non-whitespace character
+    bestie start < len {
+        sus char_code normie = builtin_string_char_at(s, start)
+        nah !(char_code == 32 || char_code == 9 || char_code == 10 || char_code == 13 || char_code == 11 || char_code == 12) {
+            break
+        }
+        start = start + 1
     }
     
-    damn s
+    nah start >= len {
+        damn ""
+    }
+    
+    damn string_substring_internal(s, start)
 }
 
 slay string_trim_end(s tea) tea {
@@ -131,29 +146,57 @@ slay string_trim_end(s tea) tea {
         damn ""
     }
     
-    sus len normie = string_len(s)
+    sus len normie = builtin_string_len(s)
     nah len == 0 {
         damn ""
     }
     
-    // Check if last character is whitespace
-    sus last_char tea = string_char_at_internal(s, len - 1)
-    nah last_char == " " || last_char == "\t" || last_char == "\n" || last_char == "\r" {
-        // Remove last character and trim rest
-        damn string_trim_end(string_substring_internal(s, 0, len - 1))
+    sus end normie = len
+    
+    // Find last non-whitespace character
+    bestie end > 0 {
+        sus char_code normie = builtin_string_char_at(s, end - 1)
+        nah !(char_code == 32 || char_code == 9 || char_code == 10 || char_code == 13 || char_code == 11 || char_code == 12) {
+            break
+        }
+        end = end - 1
     }
     
-    damn s
+    nah end == 0 {
+        damn ""
+    }
+    
+    damn string_substring_internal(s, 0, end)
 }
 
 slay string_substring_internal(s tea, start normie) tea {
-    // Simplified substring - return original string for now
-    damn s
+    // Substring from start to end of string
+    sus len normie = builtin_string_len(s)
+    damn string_substring_internal(s, start, len)
 }
 
 slay string_substring_internal(s tea, start normie, end normie) tea {
-    // Simplified substring - return original string for now
-    damn s
+    // Bounds checking
+    nah s == "" || start < 0 {
+        damn ""
+    }
+    
+    sus len normie = builtin_string_len(s)
+    nah start >= len {
+        damn ""
+    }
+    
+    // Clamp end to string length
+    nah end > len {
+        end = len
+    }
+    
+    nah start >= end {
+        damn ""
+    }
+    
+    // Use builtin substring extraction
+    damn builtin_string_substring(s, start, end)
 }
 
 slay string_to_upper(s tea) tea {

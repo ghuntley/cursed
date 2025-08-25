@@ -289,16 +289,7 @@ slay string_length(s tea) normie {
     ready (s == "") {
         damn 0
     }
-    sus len normie = 0
-    sus i normie = 0
-    bestie (i < 1000000) {  fr fr Safety limit
-        ready (builtin_string_char_at(s, i) == 0) {
-            break
-        }
-        len = len + 1
-        i = i + 1
-    }
-    damn len
+    damn builtin_string_len(s)
 }
 
 slay string_char_at(s tea, index normie) normie {

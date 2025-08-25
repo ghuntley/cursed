@@ -588,29 +588,52 @@ slay median(values [meal]) meal {
     sus len normie = values.len;
     bestie (len == 0) {
         damn 0.0;
-    } fr fr Create sorted copy
-    sus sorted [meal] = values; fr fr Pure CURSED bubble sort implementation
-    bestie (len > 1) {
-        sus i normie = 0
-        bestie (i < len - 1) {
-            sus j normie = 0
-            bestie (j < len - i - 1) {
-                lowkey (sorted[j] > sorted[j + 1]) { fr fr Swap elements
-                    sus temp meal = sorted[j]
-                    sorted[j] = sorted[j + 1]
-                    sorted[j + 1] = temp
-                }
-                j = j + 1
-            }
-            i = i + 1
-        }
     }
+    bestie (len == 1) {
+        damn values[0];
+    }
+    
+    fr fr Copy array to avoid modifying original
+    sus sorted [meal] = values;
+    
+    fr fr Use efficient O(n log n) QuickSort instead of O(n²) bubble sort
+    sorted = quicksort_median(sorted, 0, len - 1);
     
     bestie (len % 2 == 0) {
         damn (sorted[len / 2 - 1] + sorted[len / 2]) / 2.0;
     } else {
         damn sorted[len / 2];
     }
+}
+
+slay quicksort_median(arr [meal], low normie, high normie) [meal] {
+    bestie (low < high) {
+        sus pivot_index normie = partition_median(arr, low, high);
+        arr = quicksort_median(arr, low, pivot_index - 1);
+        arr = quicksort_median(arr, pivot_index + 1, high);
+    }
+    damn arr;
+}
+
+slay partition_median(arr [meal], low normie, high normie) normie {
+    sus pivot meal = arr[high];
+    sus i normie = low - 1;
+    sus j normie = low;
+    
+    bestie (j < high) {
+        bestie (arr[j] <= pivot) {
+            i = i + 1;
+            sus temp meal = arr[i];
+            arr[i] = arr[j];
+            arr[j] = temp;
+        }
+        j = j + 1;
+    }
+    
+    sus temp meal = arr[i + 1];
+    arr[i + 1] = arr[high];
+    arr[high] = temp;
+    damn i + 1;
 }
 
 slay variance(values [meal]) meal {
