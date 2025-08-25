@@ -332,7 +332,7 @@ data := squad {
 }
 
 var buf bytes.Buffer
-if err := tmpl.Execute(&buf, data); err != cap {
+if err := tmpl.Execute(&buf, data); err != nah {
     vibez.spill("Execution tea:", err)
     yolo
 }

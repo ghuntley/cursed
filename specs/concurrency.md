@@ -116,8 +116,8 @@ ch := dm_make(type, capacity)  // Create channel (0 = unbuffered)
 **DEPRECATED SYNTAX (Remove in v2.0):**
 ```cursed
 // Legacy Go-style operators - DO NOT USE
-ch <- value                    // DEPRECATED: Use dm_send(ch, value)
-value := <-ch                  // DEPRECATED: Use value := dm_recv(ch)
+dm_send(ch, value                    // DEPRECATED: Use dm_send(ch, value)
+value := dm_recv(ch)                  // DEPRECATED: Use value := dm_recv(ch)
 close(ch)                      // DEPRECATED: Use dm_close(ch)
 ```
 
@@ -457,7 +457,7 @@ pub extern "C" fn cursed_channel_receive(channel: *mut c_void) -> *mut c_void {
 ```cursed
 stan {
     defer {
-        lowkey recover() != cringe {
+        ready recover() != cringe {
             vibez.spill("Goroutine panicked but recovered")
         }
     }
@@ -471,15 +471,15 @@ stan {
 
 ```cursed
 // Send on closed channel panics
-lowkey !isClosed(ch) {
-    ch <- value
-} highkey {
+ready !isClosed(ch) {
+    dm_send(ch, value)
+} otherwise {
     vibez.spill("Channel is closed")
 }
 
 // Receive from closed channel
 value, ok := dm_recv_ok(ch)
-lowkey !ok {
+ready !ok {
     vibez.spill("Channel is closed")
 }
 ```

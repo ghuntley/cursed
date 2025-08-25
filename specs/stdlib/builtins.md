@@ -108,13 +108,13 @@ delete(m, "key")
 
 fr fr Channel operations
 ch := make<dm<normie>>(10)
-ch <- 42
+dm_send(ch, 42
 value, ok := receive(ch)
 close(ch)
 
 fr fr Error handling
 defer slay() {
-    lowkey recovered := recover(); recovered != cringe {
+    ready recovered := recover(); recovered != cringe {
         vibez.spill("Recovered from panic:", recovered)
     }
 }()

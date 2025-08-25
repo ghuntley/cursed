@@ -64,8 +64,8 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | return     | damn / yolo   |
 | var        | sus           |
 | const      | facts         |
-| if         | lowkey        |
-| else       | highkey       |
+| if         | ready         |
+| else       | otherwise     |
 | for        | bestie        |
 | while      | periodt       |
 | switch     | vibe_check    |
@@ -115,7 +115,7 @@ Traditional programming keywords are replaced with Gen Z slang. Here's the mappi
 | &&                   | Logical AND                      |
 | \|\|                 | Logical OR                       |
 | !                    | Logical NOT                      |
-| <-                   | Channel send/receive             |
+| dm_send()/dm_recv()  | Channel send/receive             |
 | ()                   | Function call, grouping          |
 | []                   | Array/slice indexing             |
 | {}                   | Block statement, struct literal  |
@@ -245,7 +245,7 @@ sus arr = []normie{
     1, 2, 3          // No semicolon inserted before }
 }
 
-lowkey x > 0 {       // No semicolon inserted before {
+ready x > 0 {        // No semicolon inserted before {
     vibez.spill(x)   // Semicolon inserted after )
 }                    // Semicolon inserted after }
 ```

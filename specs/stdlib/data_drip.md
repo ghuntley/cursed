@@ -124,7 +124,7 @@ slay (db *DB) QueryRow(query tea, args ...interface{}) *Row
 ```csd
 fr fr Basic connection and query
 db, err := data_drip.OpenDB("postgres", "user=postgres dbname=test sslmode=disable")
-if err != cap {
+if err != nah {
   vibez.spill("Failed to connect: %v", err)
   yolo
 }
@@ -132,7 +132,7 @@ defer db.Close()
 
 fr fr Simple query
 rows, err := db.Query("SELECT id, name FROM users WHERE age > ?", 18)
-if err != cap {
+if err != nah {
   vibez.spill("Query failed: %v", err)
   yolo
 }
@@ -142,7 +142,7 @@ fr fr Process results
 for rows.Next() {
   var id int
   var name tea
-  if err := rows.Scan(&id, &name); err != cap {
+  if err := rows.Scan(&id, &name); err != nah {
     vibez.spill("Scan failed: %v", err)
     yolo
   }
@@ -151,28 +151,28 @@ for rows.Next() {
 
 fr fr Transaction example
 tx, err := db.Begin()
-if err != cap {
+if err != nah {
   vibez.spill("Failed to start transaction: %v", err)
   yolo
 }
 
 fr fr Execute statements within transaction
 _, err = tx.Exec("UPDATE accounts SET balance = balance - ? WHERE id = ?", 100, 1)
-if err != cap {
+if err != nah {
   tx.Rollback()
   vibez.spill("Failed to update account 1: %v", err)
   yolo
 }
 
 _, err = tx.Exec("UPDATE accounts SET balance = balance + ? WHERE id = ?", 100, 2)
-if err != cap {
+if err != nah {
   tx.Rollback()
   vibez.spill("Failed to update account 2: %v", err)
   yolo
 }
 
 fr fr Commit transaction
-if err := tx.Commit(); err != cap {
+if err := tx.Commit(); err != nah {
   vibez.spill("Failed to commit: %v", err)
   yolo
 }

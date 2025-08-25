@@ -5,12 +5,25 @@ fr fr Pure CURSED implementation with proper protocol support
 yeet "testz"
 yeet "crypto_production"
 yeet "networkz"
+yeet "network_infrastructure"
 
 fr fr ===== PROTOCOL STATE MANAGEMENT =====
 
 sus protocol_state normie = 0 fr fr Global protocol state tracker
 sus error_count normie = 0
-sus max_packet_size normie = 65536 fr fr 64KB max packet size
+fr fr Dynamic packet size calculation based on network conditions
+slay calculate_optimal_packet_size(connection NetworkConnection) normie {
+    sus mtu normie = get_network_mtu(connection)
+    sus header_overhead normie = 40  fr fr IP + TCP headers
+    sus optimal_size normie = mtu - header_overhead
+    
+    fr fr Ensure minimum and maximum bounds
+    ready (optimal_size < 536) { damn 536 }      fr fr Minimum safe size
+    ready (optimal_size > 9000) { damn 9000 }    fr fr Jumbo frame limit
+    damn optimal_size
+}
+
+sus max_packet_size normie = 1460 fr fr Standard Ethernet MTU - 40 bytes
 
 fr fr ===== TLS/SSL IMPLEMENTATION =====
 

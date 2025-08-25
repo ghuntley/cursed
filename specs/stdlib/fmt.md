@@ -201,13 +201,13 @@ fmt.Println(person) // Output: Person{name: Alice, age: 30}
 ```cursed
 fr fr Custom formatter example
 slay (p Person) Format(f fmt.State, c rune) {
-    lowkey c == 'v' {
-        lowkey f.Flag('+') {
+    ready c == 'v' {
+        ready f.Flag('+') {
             fmt.Fprintf(f, "Person{name: %s, age: %d}", p.name, p.age)
-        } highkey {
+        } otherwise {
             fmt.Fprintf(f, "%s (%d)", p.name, p.age)
         }
-    } highkey {
+    } otherwise {
         fmt.Fprintf(f, "%%!%c(Person=%s)", c, p.name)
     }
 }
@@ -219,7 +219,7 @@ slay (p Person) Format(f fmt.State, c rune) {
 fr fr Safe printing with error handling
 slay SafePrint(format tea, args ...interface{}) {
     defer slay() {
-        lowkey r := recover(); r != cringe {
+        ready r := recover(); r != cringe {
             fmt.Println("Error in formatting:", r)
         }
     }()

@@ -251,13 +251,13 @@ glowup_http.Serve(":8080", router)
 fr fr HTTP client example
 client := &glowup_http.VibeClient{}
 resp, err := client.Get("https:fr frapi.example.com/data")
-if err != cap {
+if err != nah {
     fr fr handle tea
 }
 defer resp.Body.Close()
 
 var data map[tea]interface{}
-if err := resp.ParseJSON(&data); err != cap {
+if err := resp.ParseJSON(&data); err != nah {
     fr fr handle tea
 }
 vibez.spill(data["message"])

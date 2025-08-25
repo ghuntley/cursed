@@ -16,7 +16,7 @@ Checks if string `s` contains substring `substr`.
 - `substr tea`: The needle substring to search for
 
 **Returns:**
-- `lit`: `based` if substr is found in s, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 ### Count Function
 ```cursed
@@ -239,7 +239,7 @@ slay IsWhitespace(ch sip) lit   # Tests if character is whitespace
 - `ch sip`: The character to test
 
 **Returns:**
-- `lit`: `based` if validation passes, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 **Examples:**
 ```cursed
@@ -312,7 +312,7 @@ slay clean_input(input tea) tea {
 # Extract file extension
 slay get_extension(filename tea) tea {
     sus dot_index := LastIndexOf(filename, ".")
-    lowkey dot_index == -1 {
+    ready dot_index == -1 {
         damn ""
     }
     damn Substring(filename, dot_index + 1, Length(filename) - dot_index - 1)
@@ -333,13 +333,13 @@ slay is_valid_email(email tea) lit {
 
 # Check if string is a valid identifier
 slay is_valid_identifier(name tea) lit {
-    lowkey IsEmpty(name) {
-        damn cap
+    ready IsEmpty(name) {
+        damn nah
     }
     # First character must be alphabetic
     sus first := Substring(name, 0, 1)
-    lowkey !IsAlpha(first) {
-        damn cap
+    ready !IsAlpha(first) {
+        damn nah
     }
     # Rest must be alphanumeric
     sus rest := Substring(name, 1, Length(name) - 1)

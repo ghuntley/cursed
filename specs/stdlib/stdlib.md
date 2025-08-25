@@ -78,7 +78,7 @@ slay main() {
     args := vibe_life.Args  fr fr Command-line arguments
     
     err := vibe_life.Setenv("DEBUG", "based")  fr fr Set environment variable
-    lowkey err != cringe {
+    ready err != cringe {
         vibez.spill("Failed to set env:", err)
         vibe_life.Exit(1)
     }
@@ -105,7 +105,7 @@ yeet "stringz"
 slay main() {
     tea s := "hello, world"
     
-    lowkey stringz.Contains(s, "world") {
+    ready stringz.Contains(s, "world") {
         vibez.spill("Found!")
     }
     
@@ -253,13 +253,13 @@ slay main() {
     p := Person{Name: "Alice", Age: 30}
     
     data, err := json_tea.Marshal(p)
-    lowkey err != cringe {
+    ready err != cringe {
         shook(err)
     }
     
     sus p2 Person
     err = json_tea.Unmarshal(data, &p2)
-    lowkey err != cringe {
+    ready err != cringe {
         shook(err)
     }
 }

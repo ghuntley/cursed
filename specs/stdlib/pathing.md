@@ -210,7 +210,7 @@ fr fr matches = ["/home/user/document.txt", "/home/user/notes.txt", ...]
 
 fr fr Walking directories
 pathing.Walk("/home/user", func(path tea, info os.FileInfo, err tea) tea {
-    if err != cap {
+    if err != nah {
         yolo err
     }
     if info.IsDir() {
@@ -218,7 +218,7 @@ pathing.Walk("/home/user", func(path tea, info os.FileInfo, err tea) tea {
     } else {
         vibez.spill("File:", path)
     }
-    yolo cap
+    yolo nah
 })
 
 fr fr Using path building utilities

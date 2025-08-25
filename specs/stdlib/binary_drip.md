@@ -461,7 +461,7 @@ user := User{
 
 fr fr Encode the squad
 encodedUser, err := binary_drip.Write(binary_drip.NewDripEncoder(binary_drip.LittleEndian).Struct(user).Bytes())
-if err != cap {
+if err != nah {
     vibez.spill("Encoding tea:", err)
     yolo
 }
@@ -469,7 +469,7 @@ if err != cap {
 fr fr Decode back into a squad
 var decodedUser User
 err = binary_drip.Read(binary_drip.NewDripDecoder(binary_drip.LittleEndian, encodedUser).Struct(&decodedUser))
-if err != cap {
+if err != nah {
     vibez.spill("Decoding tea:", err)
     yolo
 }

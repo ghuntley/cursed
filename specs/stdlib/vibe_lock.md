@@ -196,7 +196,7 @@ slay NewWorkerPool(numWorkers normie) *WorkerPool
 
 fr fr Methods
 slay (p *WorkerPool) Submit(task func())
-slay (p *WorkerPool) SubmitWithResult(task func() interface{}) <-chan interface{}
+slay (p *WorkerPool) SubmitWithResult(task func() interface{}) dm_recv(ch)an interface{}
 slay (p *WorkerPool) Shutdown()
 slay (p *WorkerPool) ShutdownAndWait() lit
 slay (p *WorkerPool) IsShutdown() lit
@@ -323,7 +323,7 @@ slay getUser(id tea) (User, lit) {
 fr fr Using WorkerPool
 slay processLargeDataSet(items []Item) {
     pool := vibe_lock.NewWorkerPool(10) fr fr 10 workers
-    results := make([]<-chan interface{}, len(items))
+    results := make([]dm_recv(ch)an interface{}, len(items))
     
     for i, item := range items {
         itemCopy := item fr fr Capture loop variable

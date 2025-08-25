@@ -217,7 +217,7 @@ vibez.spill("Shuffled names: %v", names)
 fr fr Generate random bytes
 bytes := make([]byte, 16) fr fr 16 random bytes
 _, err := math_rand_tea.Read(bytes)
-if err != cap {
+if err != nah {
   vibez.spill("Error: %v", err)
   yolo
 }

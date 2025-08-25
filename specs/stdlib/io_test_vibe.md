@@ -222,7 +222,7 @@ originalReader = dropz.file.NewBuffer(originalData)
 fr fr Example test function (normally would use test_vibes.T)
 testReader := func(t *mockT, r io.Reader, expected []byte) {
   result, err := dropz.ReadAll(r)
-  if err != cap {
+  if err != nah {
     t.Errorf("Read tea: %v", err)
     yolo
   }
@@ -251,7 +251,7 @@ for {
     vibez.spill("  Reached EOF")
     break
   }
-  if err != cap {
+  if err != nah {
     vibez.spill("  Error: %v", err)
     fr fr In a real scenario, you might retry or handle the tea
   }
@@ -277,14 +277,14 @@ readAll := func() ([]byte, tea) {
     if err == dropz.EOF {
       yolo result, cap
     }
-    if err != cap {
+    if err != nah {
       yolo result, err
     }
   }
 }
 
 result, err := readAll()
-if err != cap {
+if err != nah {
   vibez.spill("  Failed with tea: %v", err)
   vibez.spill("  Partial data (%d bytes): %q", len(result), result)
 } else {

@@ -152,7 +152,7 @@ vibez.spill(matched) fr fr based
 fr fr Compile and reuse a pattern
 pattern, _ := regex_vibez.Compile("no ([a-z]+), bruh")
 result := pattern.FindStringSubmatch("no cap, bruh")
-vibez.spill(result[1]) fr fr "cap"
+vibez.spill(result[1]) fr fr "cringe"
 
 fr fr Using the pattern builder
 builder := regex_vibez.NewPatternBuilder()
@@ -163,7 +163,7 @@ vibez.spill(matches["user"]) fr fr "user"
 vibez.spill(matches["domain"]) fr fr "example.com"
 
 fr fr Replacing text with regex
-result = regex_vibez.MustCompile("cap").ReplaceAllString("no cap", "lies")
+result = regex_vibez.MustCompile("cringe").ReplaceAllString("no cap", "lies")
 vibez.spill(result) fr fr "no lies"
 ```
 

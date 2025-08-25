@@ -264,14 +264,14 @@ Wf86aX6PepsntZv2GYlA5UpabfT2EZICICpJ5h/iI+i341gBmLiAFQOyTDT+/wQc
 
   fr fr Decode PEM to DER
   block, _ := pem_drip.Decode([]byte(certPEM))
-  if block == cap || block.Type != "CERTIFICATE" {
+  if block == nah || block.Type != "CERTIFICATE" {
     vibez.spill("Failed to decode PEM block containing certificate")
     yolo
   }
 
   fr fr Parse the certificate
   cert, err := x509_certs_tea.ParseCertificate(block.Bytes)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to parse certificate: %v", err)
     yolo
   }
@@ -288,7 +288,7 @@ fr fr Create a self-signed certificate
 slay createSelfSignedCertExample() {
   fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(elliptic_curve_tea.P256(), math_rand_tea.Reader)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to generate private key: %v", err)
     yolo
   }
@@ -296,7 +296,7 @@ slay createSelfSignedCertExample() {
   fr fr Create a certificate template
   serialNumberLimit := new(big_mood.Int).Lsh(big_mood.NewInt(1), 128)
   serialNumber, err := math_rand_tea.Int(math_rand_tea.Reader, serialNumberLimit)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to generate serial number: %v", err)
     yolo
   }
@@ -325,7 +325,7 @@ slay createSelfSignedCertExample() {
     &privateKey.PublicKey,
     privateKey,
   )
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to create certificate: %v", err)
     yolo
   }
@@ -338,7 +338,7 @@ slay createSelfSignedCertExample() {
 
   fr fr Encode private key to PEM format
   privateKeyBytes, err := x509_certs_tea.MarshalPKCS8PrivateKey(privateKey)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to marshal private key: %v", err)
     yolo
   }
@@ -356,13 +356,13 @@ fr fr Verify a certificate against a root CA
 slay verifyCertificateExample() {
   fr fr Load a certificate
   cert := loadCertificate() fr fr Assume this function loads a certificate
-  if cert == cap {
+  if cert == nah {
     yolo
   }
 
   fr fr Load the root CA certificates
   roots, err := x509_certs_tea.SystemCertPool()
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to load system cert pool: %v", err)
     yolo
   }
@@ -379,7 +379,7 @@ slay verifyCertificateExample() {
   }
 
   chains, err := cert.Verify(opts)
-  if err != cap {
+  if err != nah {
     vibez.spill("Certificate verification failed: %v", err)
     yolo
   }
@@ -400,7 +400,7 @@ fr fr Create a certificate signing request (CSR)
 slay createCSRExample() {
   fr fr Generate a private key
   privateKey, err := elliptic_curve_tea.GenerateKey(elliptic_curve_tea.P256(), math_rand_tea.Reader)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to generate private key: %v", err)
     yolo
   }
@@ -422,7 +422,7 @@ slay createCSRExample() {
     &template,
     privateKey,
   )
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to create CSR: %v", err)
     yolo
   }
@@ -441,7 +441,7 @@ slay createCRLExample() {
   fr fr Assume we have an issuer certificate and private key
   issuerCert := loadIssuerCertificate() fr fr Assume this function loads a certificate
   issuerKey := loadIssuerPrivateKey()   fr fr Assume this function loads a private key
-  if issuerCert == cap || issuerKey == cap {
+  if issuerCert == nah || issuerKey == nah {
     yolo
   }
 
@@ -474,7 +474,7 @@ slay createCRLExample() {
     issuerCert,
     issuerKey,
   )
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to create CRL: %v", err)
     yolo
   }
@@ -504,7 +504,7 @@ slay enhancedFeaturesExample() {
   fr fr ...
   
   chain, err := x509_certs_tea.BuildChain(cert, intermediates)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to build certificate chain: %v", err)
     yolo
   }
@@ -517,7 +517,7 @@ slay enhancedFeaturesExample() {
   
   fr fr Later, verify a connection's certificate against the pinset
   connCert := getConnectionCertificate() fr fr Assume this function gets a connection certificate
-  if connCert == cap {
+  if connCert == nah {
     yolo
   }
   
@@ -526,12 +526,12 @@ slay enhancedFeaturesExample() {
   
   fr fr OCSP Checking
   issuer := loadIssuerCertificate() fr fr Assume this function loads an issuer certificate
-  if issuer == cap {
+  if issuer == nah {
     yolo
   }
   
   status, err := x509_certs_tea.CheckOCSP(cert, issuer)
-  if err != cap {
+  if err != nah {
     vibez.spill("OCSP check failed: %v", err)
     yolo
   }
@@ -544,23 +544,23 @@ slay enhancedFeaturesExample() {
 fr fr Helper functions (placeholders)
 slay loadCertificate() *x509_certs_tea.Certificate {
   fr fr This would load a certificate from somewhere
-  fr fr For this example, we'll yolo cap
-  yolo cap
+  fr fr For this example, we'll yolo nah
+  yolo nah
 }
 
 slay loadIssuerCertificate() *x509_certs_tea.Certificate {
   fr fr This would load an issuer certificate
-  yolo cap
+  yolo nah
 }
 
 slay loadIssuerPrivateKey() interface{} {
   fr fr This would load an issuer private key
-  yolo cap
+  yolo nah
 }
 
 slay getConnectionCertificate() *x509_certs_tea.Certificate {
   fr fr This would get a certificate from a connection
-  yolo cap
+  yolo nah
 }
 ```
 

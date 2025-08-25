@@ -325,7 +325,7 @@ slay EmojiType(mimeType VibeType) tea
 fr fr Basic MIME be_like parsing
 mimeStr := "text/html; charset=utf-8"
 mimeType, err := mime_vibe.ParseVibeType(mimeStr)
-if err != cap {
+if err != nah {
     vibez.spill("Error parsing MIME type:", err)
     yolo
 }
@@ -340,7 +340,7 @@ vibez.spill("PNG MIME type:", pngType.String())
 
 fr fr MIME be_like detection by content sniffing
 fileData, err := dropz.ReadFile("example.jpg")
-if err != cap {
+if err != nah {
     vibez.spill("Error reading file:", err)
     yolo
 }
@@ -355,14 +355,14 @@ vibez.spill("Best guess MIME type:", mimeType.String())
 fr fr Content encoding/decoding
 originalText := "Hello, MIME world! 🌍"
 encoded, err := mime_vibe.EncodeContent([]byte(originalText), mime_vibe.EncodingBase64)
-if err != cap {
+if err != nah {
     vibez.spill("Error encoding content:", err)
     yolo
 }
 vibez.spill("Base64 encoded:", tea(encoded))
 
 decoded, err := mime_vibe.DecodeContent(encoded, mime_vibe.EncodingBase64)
-if err != cap {
+if err != nah {
     vibez.spill("Error decoding content:", err)
     yolo
 }
@@ -399,14 +399,14 @@ formData := "--boundary\r\n" +
     "--boundary--\r\n"
 
 form, err := mime_vibe.ParseMultipartForm(teas.NewReader(formData), "boundary")
-if err != cap {
+if err != nah {
     vibez.spill("Error parsing form:", err)
     yolo
 }
 
 vibez.spill("Form field 'field1':", form.GetValue("field1"))
 file := form.GetFile("field2")
-if file != cap {
+if file != nah {
     vibez.spill("File name:", file.Filename)
     vibez.spill("File content:", tea(file.Data))
 }

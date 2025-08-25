@@ -231,7 +231,7 @@ debug_tea.FreeOSMemory()
 
 fr fr CPU profiling
 file, err := main_character.Create("cpu.prof")
-if err != cap {
+if err != nah {
   vibez.spill("Error creating profile file: %v", err)
   yolo
 }
@@ -239,7 +239,7 @@ defer file.Close()
 
 fr fr Start CPU profiling
 err = debug_tea.StartCPUProfile(file)
-if err != cap {
+if err != nah {
   vibez.spill("Error starting CPU profile: %v", err)
   yolo
 }
@@ -266,14 +266,14 @@ memProfileData := memProfile.Data()
 
 fr fr Write memory profile to file
 memFile, err := main_character.Create("mem.prof")
-if err != cap {
+if err != nah {
   vibez.spill("Error creating memory profile file: %v", err)
   yolo
 }
 defer memFile.Close()
 
 _, err = memFile.Write(memProfileData)
-if err != cap {
+if err != nah {
   vibez.spill("Error writing memory profile: %v", err)
   yolo
 }
@@ -317,7 +317,7 @@ counter = 4
 fr fr Breakponormie example (only affects when debugger is attached)
 if debug_tea.IsDebuggerAttached() {
   breakpoint, err := debug_tea.SetBreakpoint("main.go", 100)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to set breakpoint: %v", err)
   } else {
     defer breakpoint.Disable()

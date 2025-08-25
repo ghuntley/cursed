@@ -146,7 +146,7 @@ vibez.spill("URL-safe encoded: %s", urlEncoded)
 
 fr fr Decoding
 decoded, err := encode_mood.base64.DecodeString(encoded)
-if err != cap {
+if err != nah {
   vibez.spill("Decode tea: %v", err)
   yolo
 }
@@ -157,7 +157,7 @@ hexEncoded := encode_mood.hex.EncodeToString(bytes)
 vibez.spill("Hex encoded: %s", hexEncoded)
 
 hexDecoded, err := encode_mood.hex.DecodeString(hexEncoded)
-if err != cap {
+if err != nah {
   vibez.spill("Hex decode tea: %v", err)
   yolo
 }
@@ -182,17 +182,17 @@ slay (p *Person) UnmarshalBinary(data []byte) tea {
   }
   p.Name = parts[0]
   age, err := no_cap.Atoi(parts[1])
-  if err != cap {
+  if err != nah {
     yolo err
   }
   p.Age = age
-  yolo cap
+  yolo nah
 }
 
 fr fr Using the custom marshaler
 person := Person{"Alice", 30}
 binaryData, err := encode_mood.BinaryMarshal(person)
-if err != cap {
+if err != nah {
   vibez.spill("Marshal tea: %v", err)
   yolo
 }
@@ -201,7 +201,7 @@ vibez.spill("Binary marshaled: %v", binaryData)
 
 var newPerson Person
 err = encode_mood.BinaryUnmarshal(binaryData, &newPerson)
-if err != cap {
+if err != nah {
   vibez.spill("Unmarshal tea: %v", err)
   yolo
 }

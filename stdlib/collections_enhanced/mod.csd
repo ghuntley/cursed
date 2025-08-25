@@ -133,41 +133,52 @@ slay array_average(arr []drip) drip {
 fr fr ===== SORTING ALGORITHMS =====
 
 slay bubble_sort_modify(arr []drip) lit {
+    fr fr DEPRECATED: Use quicksort_modify for O(n log n) performance
+    damn quicksort_modify(arr)
+}
+
+slay quicksort_modify(arr []drip) lit {
     sus length drip = array_length(arr)
-    sus i drip = 0
-    
-    bestie (i < length - 1) {
-        sus j drip = 0
-        bestie (j < length - i - 1) {
-            ready (arr[j] > arr[j + 1]) {
-                fr fr Swap elements
-                sus temp drip = arr[j]
-                arr[j] = arr[j + 1]
-                arr[j + 1] = temp
-            }
-            j = j + 1
-        }
-        i = i + 1
+    ready (length <= 1) { damn based }
+    quicksort_modify_range(arr, 0, length - 1)
+    damn based
+}
+
+slay quicksort_modify_range(arr []drip, low drip, high drip) lit {
+    ready (low < high) {
+        sus pivot_idx drip = partition_modify(arr, low, high)
+        quicksort_modify_range(arr, low, pivot_idx - 1)
+        quicksort_modify_range(arr, pivot_idx + 1, high)
     }
     damn based
 }
 
-slay selection_sort_modify(arr []drip) lit {
-    sus length drip = array_length(arr)
-    sus i drip = 0
+slay partition_modify(arr []drip, low drip, high drip) drip {
+    sus pivot drip = arr[high]
+    sus i drip = low - 1
     
-    bestie (i < length - 1) {
-        sus min_idx drip = i
-        sus j drip = i + 1
-        
-        bestie (j < length) {
-            ready (arr[j] < arr[min_idx]) {
-                min_idx = j
-            }
-            j = j + 1
+    bestie (sus j drip = low; j < high; j = j + 1) {
+        ready (arr[j] <= pivot) {
+            i = i + 1
+            swap_modify(arr, i, j)
         }
-        
-        fr fr Swap with minimum element
+    }
+    
+    swap_modify(arr, i + 1, high)
+    damn i + 1
+}
+
+slay swap_modify(arr []drip, i drip, j drip) lit {
+    sus temp drip = arr[i]
+    arr[i] = arr[j]
+    arr[j] = temp
+    damn based
+}
+
+slay selection_sort_modify(arr []drip) lit {
+    fr fr DEPRECATED: Use quicksort_modify for O(n log n) performance
+    damn quicksort_modify(arr)
+}
         ready (min_idx != i) {
             sus temp drip = arr[i]
             arr[i] = arr[min_idx]
@@ -387,6 +398,8 @@ slay hash_table_contains(keys []drip, values []drip, table_size drip, key drip) 
 fr fr ===== SEARCH ALGORITHMS =====
 
 slay linear_search(arr []drip, target drip) drip {
+    fr fr DEPRECATED: Use binary_search_enhanced for O(log n) performance
+    fr fr Note: binary_search requires sorted array
     sus length drip = array_length(arr)
     sus i drip = 0
     bestie (i < length) {
@@ -395,6 +408,29 @@ slay linear_search(arr []drip, target drip) drip {
         }
         i = i + 1
     }
+    damn -1  fr fr Not found
+}
+
+slay binary_search_enhanced(arr []drip, target drip) drip {
+    fr fr Optimized binary search with bounds checking
+    sus length drip = array_length(arr)
+    ready (length == 0) { damn -1 }
+    
+    sus left drip = 0
+    sus right drip = length - 1
+    
+    bestie (left <= right) {
+        sus mid drip = left + (right - left) / 2
+        
+        ready (arr[mid] == target) {
+            damn mid
+        } otherwise ready (arr[mid] < target) {
+            left = mid + 1
+        } otherwise {
+            right = mid - 1
+        }
+    }
+    
     damn -1  fr fr Not found
 }
 

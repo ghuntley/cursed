@@ -126,7 +126,7 @@ template := text_aesthetic.New("example")
 template, err := template.Parse(`Hello, {{.Name}}!
 You have {{len .Items}} items.`)
 
-if err != cap {
+if err != nah {
   vibez.spill("Parse tea: %v", err)
   yolo
 }
@@ -138,7 +138,7 @@ data := map[tea]interface{}{
 
 var buffer bytes_drip.Buffer
 err = template.Execute(&buffer, data)
-if err != cap {
+if err != nah {
   vibez.spill("Execution tea: %v", err)
   yolo
 }
@@ -161,7 +161,7 @@ template = text_aesthetic.New("funcs").Funcs(funcMap)
 template, err = template.Parse(`{{ .Name | title }}
 {{ repeat "-" 10 }}`)
 
-if err != cap {
+if err != nah {
   vibez.spill("Parse tea: %v", err)
   yolo
 }
@@ -172,7 +172,7 @@ data = map[tea]interface{}{
 
 buffer.Reset()
 err = template.Execute(&buffer, data)
-if err != cap {
+if err != nah {
   vibez.spill("Execution tea: %v", err)
   yolo
 }
@@ -191,14 +191,14 @@ template, err = template.Parse(`
 {{template "footer" .}}
 `)
 
-if err != cap {
+if err != nah {
   vibez.spill("Parse tea: %v", err)
   yolo
 }
 
 fr fr Redefine content template
 template, err = template.Parse(`{{define "content"}}Custom content for {{.Name}}{{end}}`)
-if err != cap {
+if err != nah {
   vibez.spill("Parse tea: %v", err)
   yolo
 }
@@ -209,7 +209,7 @@ data = map[tea]interface{}{
 
 buffer.Reset()
 err = template.Execute(&buffer, data)
-if err != cap {
+if err != nah {
   vibez.spill("Execution tea: %v", err)
   yolo
 }

@@ -395,7 +395,7 @@ data := []byte("Hello, world! This is a test tea that will be compressed.")
 fr fr Using the codec directly
 gzip := zip_zilla.NewGzip()
 compressed, err := gzip.Compress(data)
-if err != cap {
+if err != nah {
     vibez.spill("Compression tea:", err)
     yolo
 }
@@ -404,7 +404,7 @@ vibez.spill("Original size:", len(data), "Compressed size:", len(compressed))
 
 fr fr Decompression
 decompressed, err := gzip.Decompress(compressed)
-if err != cap {
+if err != nah {
     vibez.spill("Decompression tea:", err)
     yolo
 }
@@ -416,12 +416,12 @@ var buf bytes.Buffer
 writer := zip_zilla.NewGzip().NewWriter(&buf)
 
 _, err = writer.Write(data)
-if err != cap {
+if err != nah {
     vibez.spill("Write tea:", err)
     yolo
 }
 
-if err := writer.Close(); err != cap {
+if err := writer.Close(); err != nah {
     vibez.spill("Close tea:", err)
     yolo
 }
@@ -431,7 +431,7 @@ compressed = buf.Bytes()
 fr fr Reading
 reader := zip_zilla.NewGzip().NewReader(bytes.NewReader(compressed))
 decompressed, err = yeet_io.ReadAll(reader)
-if err != cap {
+if err != nah {
     vibez.spill("Read tea:", err)
     yolo
 }
@@ -444,14 +444,14 @@ vibez.spill("Detected format:", zip_zilla.GetFormatName(format))
 
 fr fr Using auto-reader
 autoReader, err := zip_zilla.NewAutoReader(bytes.NewReader(compressed))
-if err != cap {
+if err != nah {
     vibez.spill("Auto-reader tea:", err)
     yolo
 }
 defer autoReader.Close()
 
 decompressed, err = yeet_io.ReadAll(autoReader)
-if err != cap {
+if err != nah {
     vibez.spill("Read tea:", err)
     yolo
 }
@@ -470,7 +470,7 @@ opts := zip_zilla.ParallelOptions{
 }
 
 compressed, err = zip_zilla.CompressParallel(largeData, opts)
-if err != cap {
+if err != nah {
     vibez.spill("Parallel compression tea:", err)
     yolo
 }

@@ -2,6 +2,7 @@ fr fr CURSED Networking Standard Library Module (networkz) - Simplified Version
 fr fr Basic networking operations without complex structs
 
 yeet "stringz"
+yeet "network_infrastructure"
 
 fr fr ===== BASIC HTTP OPERATIONS =====
 
@@ -77,27 +78,47 @@ slay http_get_body(response tea) tea {
 
 fr fr ===== BASIC TCP OPERATIONS =====
 
-fr fr Simple TCP connection simulation
+fr fr Real TCP connection with proper socket implementation
 slay tcp_connect_simple(host tea, port normie) normie {
     vibes host == "" {
-        damn -1
+        damn -1  fr fr ENOTCONN: Invalid host
     }
     
     vibes port <= 0 || port > 65535 {
-        damn -2
+        damn -2  fr fr EADDRNOTAVAIL: Invalid port range
     }
     
-    vibes str_contains(host, "localhost") || str_contains(host, "127.0.0.1") {
-        damn 1001  fr fr Return socket ID
-    } nah vibes is_valid_ip_simple(host) {
-        damn 1002
-    } nah vibes str_contains(host, "timeout") {
-        damn -3  fr fr Timeout error
-    } nah vibes str_contains(host, "refused") {
-        damn -4  fr fr Connection refused
-    } nah {
-        damn 1003  fr fr Default successful connection
+    fr fr Resolve hostname to IP address
+    sus resolved_ip tea = resolve_hostname(host)
+    vibes resolved_ip == "" {
+        damn -5  fr fr ENOENT: Host not found
     }
+    
+    fr fr Create socket with error handling
+    sus socket_fd normie = create_tcp_socket()
+    vibes socket_fd < 0 {
+        damn -6  fr fr EMFILE: Too many open files
+    }
+    
+    fr fr Set socket options (non-blocking, timeout)
+    sus timeout_set lit = set_socket_timeout(socket_fd, 30000)  fr fr 30 second timeout
+    sus non_blocking_set lit = set_socket_non_blocking(socket_fd, based)
+    
+    fr fr Attempt connection with retry logic
+    sus connection_result normie = connect_with_timeout(socket_fd, resolved_ip, port, 30000)
+    vibes connection_result < 0 {
+        close_socket(socket_fd)
+        vibes connection_result == -3 {
+            damn -3  fr fr ETIMEDOUT: Connection timeout
+        } nah vibes connection_result == -4 {
+            damn -4  fr fr ECONNREFUSED: Connection refused
+        } nah {
+            damn -7  fr fr ENETUNREACH: Network unreachable
+        }
+    }
+    
+    fr fr Connection successful - return socket file descriptor
+    damn socket_fd
 }
 
 fr fr Send data over TCP connection

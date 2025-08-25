@@ -180,13 +180,13 @@ slay GetTargets(sig BoostSignal) ([]int, tea)
 
 ```
 fr fr Filter signals based on a predicate
-slay FilterSignals(in <-chan BoostSignal, predicate func(BoostSignal) lit) <-chan BoostSignal
+slay FilterSignals(in dm_recv(ch)an BoostSignal, predicate func(BoostSignal) lit) dm_recv(ch)an BoostSignal
 
 fr fr Throttle signals to prevent flooding
-slay ThrottleSignals(in <-chan BoostSignal, interval time.Duration) <-chan BoostSignal
+slay ThrottleSignals(in dm_recv(ch)an BoostSignal, interval time.Duration) dm_recv(ch)an BoostSignal
 
 fr fr Debounce signals to only process the last one in a sequence
-slay DebounceSignals(in <-chan BoostSignal, interval time.Duration) <-chan BoostSignal
+slay DebounceSignals(in dm_recv(ch)an BoostSignal, interval time.Duration) dm_recv(ch)an BoostSignal
 ```
 
 ## GenZ Themed Features
@@ -306,7 +306,7 @@ shutdown.Start()
 
 fr fr Wait for shutdown to complete in another goroutine
 stan slay() {
-    if err := shutdown.Wait(); err != cap {
+    if err := shutdown.Wait(); err != nah {
         vibez.spill("Shutdown completed with tea:", err)
     } else {
         vibez.spill("Shutdown completed successfully")

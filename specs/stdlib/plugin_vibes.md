@@ -160,7 +160,7 @@ slay send_event_to_plugin(plugin_name tea, event_name tea, data tea) lit
 
 **Returns:**
 - `normie`: Number of plugins that handled the event
-- `lit`: `based` if plugin handled event, `cap` otherwise
+- `lit`: `based` if valid, `cringe` otherwise
 
 ### Event Queue Management
 ```cursed
@@ -550,8 +550,8 @@ slay load_plugin_secure(plugin_name tea, permissions tea) lit {
     sus restrictions := "{\"memory_limit\":2048,\"time_limit\":30}"
     sus sandbox := create_plugin_sandbox(plugin_name, restrictions)
     
-    lowkey !sandbox {
-        damn cap
+    ready !sandbox {
+        damn nah
     }
     
     # Set permissions
@@ -566,16 +566,16 @@ slay load_plugin_secure(plugin_name tea, permissions tea) lit {
     # Load plugin
     sus loaded := load_plugin(plugin_name)
     
-    lowkey !loaded {
+    ready !loaded {
         destroy_plugin_sandbox(plugin_name)
-        damn cap
+        damn nah
     }
     
     # Validate security
     sus security_report := validate_plugin_security(plugin_name)
-    lowkey string_contains(security_report, "RISK") {
+    ready string_contains(security_report, "RISK") {
         quarantine_plugin(plugin_name, "security_risk")
-        damn cap
+        damn nah
     }
     
     damn based

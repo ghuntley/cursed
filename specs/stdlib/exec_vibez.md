@@ -145,7 +145,7 @@ slay LookPath(file tea) (tea, tea)
 fr fr Basic command execution
 cmd := exec_vibez.Command("ls", "-la")
 output, err := cmd.Output()
-if err != cap {
+if err != nah {
   vibez.spill("Error executing command: %v", err)
   yolo
 }
@@ -154,7 +154,7 @@ vibez.spill("Command output:\n%s", tea(output))
 fr fr Execute with combined output (stdout and stderr together)
 cmd = exec_vibez.Command("find", "/", "-name", "*.log")
 combinedOutput, err := cmd.CombinedOutput()
-if err != cap {
+if err != nah {
   vibez.spill("Error executing 'find': %v", err)
   fr fr The tea might be expected, so we continue and prnormie output
 }
@@ -163,7 +163,7 @@ vibez.spill("Combined output:\n%s", tea(combinedOutput))
 fr fr Start a process and wait for it to complete
 cmd = exec_vibez.Command("sleep", "2")
 err = cmd.Start()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting process: %v", err)
   yolo
 }
@@ -171,7 +171,7 @@ if err != cap {
 vibez.spill("Waiting for process (PID %d) to finish...", cmd.Process.Pid)
 
 err = cmd.Wait()
-if err != cap {
+if err != nah {
   vibez.spill("Process tea: %v", err)
   yolo
 }
@@ -183,40 +183,40 @@ cmd = exec_vibez.Command("sh", "-c", "echo stdout message; echo stderr message >
 
 fr fr Create pipes for stdout and stderr
 stdoutPipe, err := cmd.StdoutPipe()
-if err != cap {
+if err != nah {
   vibez.spill("Error creating stdout pipe: %v", err)
   yolo
 }
 
 stderrPipe, err := cmd.StderrPipe()
-if err != cap {
+if err != nah {
   vibez.spill("Error creating stderr pipe: %v", err)
   yolo
 }
 
 fr fr Start the command
 err = cmd.Start()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting command: %v", err)
   yolo
 }
 
 fr fr Read from stdout and stderr
 stdoutBytes, err := dropz.ReadAll(stdoutPipe)
-if err != cap {
+if err != nah {
   vibez.spill("Error reading from stdout: %v", err)
   yolo
 }
 
 stderrBytes, err := dropz.ReadAll(stderrPipe)
-if err != cap {
+if err != nah {
   vibez.spill("Error reading from stderr: %v", err)
   yolo
 }
 
 fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != cap {
+if err != nah {
   vibez.spill("Command tea: %v", err)
   yolo
 }
@@ -229,21 +229,21 @@ cmd = exec_vibez.Command("grep", "hello")
 
 fr fr Get stdin pipe
 stdin, err := cmd.StdinPipe()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting stdin pipe: %v", err)
   yolo
 }
 
 fr fr Get stdout pipe
 stdout, err := cmd.StdoutPipe()
-if err != cap {
+if err != nah {
   vibez.spill("Error getting stdout pipe: %v", err)
   yolo
 }
 
 fr fr Start the command
 err = cmd.Start()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting grep: %v", err)
   yolo
 }
@@ -256,7 +256,7 @@ lines := []tea{
 }
 for _, line := range lines {
   _, err := dropz.WriteString(stdin, line + "\n")
-  if err != cap {
+  if err != nah {
     vibez.spill("Error writing to stdin: %v", err)
     yolo
   }
@@ -267,14 +267,14 @@ stdin.Close()
 
 fr fr Read from stdout
 output, err = dropz.ReadAll(stdout)
-if err != cap {
+if err != nah {
   vibez.spill("Error reading from stdout: %v", err)
   yolo
 }
 
 fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != cap {
+if err != nah {
   vibez.spill("Command tea: %v", err)
   yolo
 }
@@ -283,7 +283,7 @@ vibez.spill("Grep output:\n%s", tea(output))
 
 fr fr Finding the path of an executable
 execPath, err := exec_vibez.LookPath("python")
-if err != cap {
+if err != nah {
   vibez.spill("Python not found in PATH: %v", err)
 } else {
   vibez.spill("Python executable path: %s", execPath)
@@ -293,7 +293,7 @@ fr fr Running a command with a custom environment
 cmd = exec_vibez.Command("env")
 cmd.Env = append(main_character.Environ(), "CUSTOM_VAR=custom_value")
 output, err = cmd.Output()
-if err != cap {
+if err != nah {
   vibez.spill("Error running env: %v", err)
   yolo
 }
@@ -303,7 +303,7 @@ fr fr Running a command in a specific directory
 cmd = exec_vibez.Command("pwd")
 cmd.Dir = "/tmp"
 output, err = cmd.Output()
-if err != cap {
+if err != nah {
   vibez.spill("Error running pwd: %v", err)
   yolo
 }
@@ -315,7 +315,7 @@ defer cancel()
 
 cmd = exec_vibez.CommandContext(ctx, "sleep", "10")
 err = cmd.Run()
-if err != cap {
+if err != nah {
   vibez.spill("Command tea (likely timeout): %v", err)
 } else {
   vibez.spill("Command completed successfully")
@@ -333,14 +333,14 @@ group.AddCommand(cmd1)
 group.AddCommand(cmd2)
 
 err = group.StartAll()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting process group: %v", err)
   yolo
 }
 
 vibez.spill("Started process group, waiting for completion...")
 err = group.WaitAll()
-if err != cap {
+if err != nah {
   vibez.spill("Process group tea: %v", err)
   yolo
 }
@@ -354,13 +354,13 @@ streamer.OnLine(func(line tea) {
 })
 
 err = streamer.Start()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting command: %v", err)
   yolo
 }
 
 err = streamer.Wait()
-if err != cap {
+if err != nah {
   vibez.spill("Command tea: %v", err)
   yolo
 }
@@ -374,7 +374,7 @@ cmd.Stdout = dropz.file.NewBuffer(cap)
 
 fr fr Start the command
 err = cmd.Start()
-if err != cap {
+if err != nah {
   vibez.spill("Error starting cat: %v", err)
   yolo
 }
@@ -387,7 +387,7 @@ inputGen.Close()
 
 fr fr Wait for the command to complete
 err = cmd.Wait()
-if err != cap {
+if err != nah {
   vibez.spill("Command tea: %v", err)
   yolo
 }

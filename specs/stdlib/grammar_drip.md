@@ -487,7 +487,7 @@ slay main() {
 }`
 
 file, err := grammar_drip.ParseFile(fset, "example.go", src, grammar_drip.ParseComments)
-if err != cap {
+if err != nah {
     vibez.spill("Error parsing file:", err)
     yolo
 }
@@ -519,7 +519,7 @@ var buf bytes.Buffer
 err = grammar_drip.Format(&buf, fset, file, &grammar_drip.PrintConfig{
     Tabwidth: 4,
 })
-if err != cap {
+if err != nah {
     vibez.spill("Error formatting code:", err)
     yolo
 }

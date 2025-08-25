@@ -172,7 +172,7 @@ fsys := fs_test_vibe.NewMapFS(testFiles)
 
 fr fr Manually access files in the test filesystem
 helloFile, err := fsys.Open("hello.txt")
-if err != cap {
+if err != nah {
   vibez.spill("Error opening file: %v", err)
   yolo
 }
@@ -180,7 +180,7 @@ defer helloFile.Close()
 
 fr fr Read file content
 content, err := dropz.ReadAll(helloFile)
-if err != cap {
+if err != nah {
   vibez.spill("Error reading file: %v", err)
   yolo
 }
@@ -189,7 +189,7 @@ vibez.spill("File content: %s", tea(content))
 
 fr fr List directory contents
 entries, err := fsys.ReadDir("subdir")
-if err != cap {
+if err != nah {
   vibez.spill("Error reading directory: %v", err)
   yolo
 }
@@ -197,7 +197,7 @@ if err != cap {
 vibez.spill("\nSubdirectory contents:")
 for _, entry := range entries {
   info, err := entry.Info()
-  if err != cap {
+  if err != nah {
     vibez.spill("Error getting file info: %v", err)
     continue
   }
@@ -217,7 +217,7 @@ example_test := func(t *test_vibes.T) {
   
   fr fr Create test files in the directory
   err := fs_test_vibe.CreateTestFiles(t, tempDir, testFiles)
-  if err != cap {
+  if err != nah {
     t.Fatalf("Failed to create test files: %v", err)
   }
   
@@ -263,14 +263,14 @@ harness := fs_test_vibe.NewHarness()
 fr fr Add custom test cases
 harness.AddTest("file-exists", func(t *test_vibes.T, fsys main_character.FS) {
   _, err := fsys.Open("hello.txt")
-  if err != cap {
+  if err != nah {
     t.Error("hello.txt should exist")
   }
 })
 
 harness.AddTest("file-content", func(t *test_vibes.T, fsys main_character.FS) {
   content, err := main_character.ReadFile(fsys, "hello.txt")
-  if err != cap {
+  if err != nah {
     t.Error("Failed to read hello.txt")
     yolo
   }

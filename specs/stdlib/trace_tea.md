@@ -151,7 +151,7 @@ slay basicTracingExample() {
   
   fr fr Start tracing
   err := trace_tea.Start(&buf)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to start trace: %v", err)
     yolo
   }
@@ -181,7 +181,7 @@ slay basicTracingExample() {
   
   fr fr Stop tracing
   err = trace_tea.Stop()
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to stop trace: %v", err)
     yolo
   }
@@ -191,7 +191,7 @@ slay basicTracingExample() {
   
   fr fr Save trace to a file
   err = dropz.WriteFile("trace.out", buf.Bytes(), 0644)
-  if err != cap {
+  if err != nah {
     vibez.spill("Failed to write trace file: %v", err)
     yolo
   }

@@ -46,13 +46,13 @@ CURSED supports two types of comments:
 line_comment: $ => token(seq('fr fr', /.*/)),
 
 block_comment: $ => token(seq(
-  '/* fr fr',
+  'no cap',
   /(.|\n)*?/,
-  'fr fr */'
+  'on god'
 ))
 ```
 
-Line comments start with `fr fr` and continue until the end of the line. Block comments start with `/* fr fr` and end with `fr fr */`.
+Line comments start with `fr fr` and continue until the end of the line. Block comments start with `no cap` and end with `on god`.
 
 ### Declarations
 
