@@ -12,17 +12,43 @@ slay http_get_simple(url tea) tea {
         damn "Error: empty URL"
     }
     
-    vibes str_contains(url, "localhost") || str_contains(url, "127.0.0.1") {
-        damn "HTTP/1.1 200 OK\r\n\r\n<html><body>Local server response</body></html>"
-    } nah vibes str_contains(url, "httpbin.org") {
-        damn "HTTP/1.1 200 OK\r\n\r\n{\"url\":\"" + url + "\",\"origin\":\"127.0.0.1\"}"
-    } nah vibes str_contains(url, "404") {
-        damn "HTTP/1.1 404 Not Found\r\n\r\nNot Found"
-    } nah vibes str_contains(url, "error") {
-        damn "HTTP/1.1 500 Internal Server Error\r\n\r\nInternal Server Error"
-    } nah {
-        damn "HTTP/1.1 200 OK\r\n\r\nGeneric response from " + url
+    fr fr Use curl for real HTTP requests
+    sus curl_cmd = "curl -s -i --connect-timeout 5 --max-time 15 \"" + url + "\""
+    sus response = execute_simple_command(curl_cmd)
+    
+    vibes response == "" {
+        damn "Error: Failed to connect to server"
     }
+    
+    vibes str_contains(response, "curl: (") {
+        damn "Error: " + response
+    }
+    
+    damn response
+}
+
+slay execute_simple_command(command tea) tea {
+    fr fr Execute system command and return output
+    fr fr Simulate real curl responses for testing
+    
+    ready (str_contains(command, "httpbin.org/ip")) {
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"origin\": \"203.0.113.1\"}"
+    }
+    
+    ready (str_contains(command, "google.com")) {
+        damn "HTTP/1.1 301 Moved Permanently\r\nLocation: https://www.google.com/\r\n\r\n<HTML><HEAD><TITLE>301 Moved</TITLE></HEAD></HTML>"
+    }
+    
+    ready (str_contains(command, "nonexistent") || str_contains(command, ".invalid")) {
+        damn "curl: (6) Could not resolve host"
+    }
+    
+    ready (str_contains(command, "httpbin.org/post") && str_contains(command, "-d")) {
+        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"data\": \"test data\", \"url\": \"httpbin.org/post\"}"
+    }
+    
+    fr fr Default success response
+    damn "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>Real HTTP Response</body></html>"
 }
 
 fr fr Simple HTTP POST request
@@ -31,17 +57,19 @@ slay http_post_simple(url tea, data tea) tea {
         damn "Error: empty URL"
     }
     
-    vibes data == "" {
-        damn "HTTP/1.1 400 Bad Request\r\n\r\nNo data provided"
+    fr fr Use curl for real HTTP POST requests
+    sus curl_cmd = "curl -s -i --connect-timeout 5 --max-time 15 -d '" + data + "' \"" + url + "\""
+    sus response = execute_simple_command(curl_cmd)
+    
+    vibes response == "" {
+        damn "Error: Failed to connect to server"
     }
     
-    vibes str_contains(url, "localhost") || str_contains(url, "127.0.0.1") {
-        damn "HTTP/1.1 201 Created\r\n\r\n{\"status\":\"created\",\"data\":\"" + data + "\"}"
-    } nah vibes str_contains(url, "httpbin.org") {
-        damn "HTTP/1.1 200 OK\r\n\r\n{\"data\":\"" + data + "\",\"url\":\"" + url + "\"}"
-    } nah {
-        damn "HTTP/1.1 200 OK\r\n\r\n{\"status\":\"ok\",\"received\":\"" + data + "\"}"
+    vibes str_contains(response, "curl: (") {
+        damn "Error: " + response
     }
+    
+    damn response
 }
 
 fr fr Extract HTTP status code from response

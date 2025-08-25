@@ -270,10 +270,25 @@ slay enhance_collection_test_template(base_template tea, module_name tea) tea {
         "    generator: slay() tea { damn \"item_\" + (clock_bait.now_ns() % 100).string() },\n" +
         "    property: slay(item tea) lit {\n" +
         "        fr fr Test that adding item increases size by 1\n" +
-        "        damn based  fr fr Placeholder\n" +
+        "        sus collection []tea = []\n" +
+        "        sus initial_size normie = collection.len()\n" +
+        "        collection = collection + [item]\n" +
+        "        sus final_size normie = collection.len()\n" +
+        "        damn final_size == (initial_size + 1)\n" +
         "    },\n" +
         "    iterations: 50\n" +
-        "})\n"
+        "})\n\n" +
+        "fr fr Test empty collection properties\n" +
+        "test_start(\"empty_collection_size\")\n" +
+        "sus empty_collection []tea = []\n" +
+        "assert_eq_int(empty_collection.len(), 0)\n\n" +
+        "fr fr Test add/remove consistency\n" +
+        "test_start(\"add_remove_consistency\")\n" +
+        "sus test_collection []tea = [\"a\", \"b\", \"c\"]\n" +
+        "sus original_size normie = test_collection.len()\n" +
+        "test_collection = test_collection + [\"d\"]\n" +
+        "test_collection = test_collection.slice(0, original_size)\n" +
+        "assert_eq_int(test_collection.len(), original_size)\n"
     damn base_template + enhancement
 }
 
@@ -289,7 +304,23 @@ slay enhance_math_test_template(base_template tea, module_name tea) tea {
         "        damn (x + y) == (y + x)\n" +
         "    },\n" +
         "    iterations: 100\n" +
-        "})\n"
+        "})\n\n" +
+        "fr fr Test division by zero error handling\n" +
+        "test_start(\"division_by_zero_error\")\n" +
+        "assert_throws(slay() {\n" +
+        "    sus result meal = 10.0 / 0.0\n" +
+        "})\n\n" +
+        "fr fr Test mathematical precision\n" +
+        "test_start(\"mathematical_precision\")\n" +
+        "sus pi meal = 3.14159265\n" +
+        "sus calculated_pi meal = 22.0 / 7.0\n" +
+        "assert_near(calculated_pi, pi, 0.01)  fr fr Should be close but not exact\n\n" +
+        "fr fr Test overflow behavior\n" +
+        "test_start(\"overflow_handling\")\n" +
+        "sus max_int normie = 2147483647\n" +
+        "sus near_overflow normie = max_int - 1\n" +
+        "assert_true(near_overflow > 0)\n" +
+        "assert_true(near_overflow < max_int)\n"
     damn base_template + enhancement
 }
 
@@ -297,10 +328,31 @@ slay enhance_crypto_test_template(base_template tea, module_name tea) tea {
     sus enhancement tea = "\n\nfr fr Crypto-specific security tests\n" +
         "test_start(\"constant_time_operations\")\n" +
         "fr fr Verify operations are constant time\n" +
-        "assert_true(based)  fr fr Placeholder\n\n" +
+        "sus start_time normie = clock_bait.now_ns()\n" +
+        "sus test_data tea = \"sensitive_data_12345\"\n" +
+        "sus hash1 tea = sha256(test_data)\n" +
+        "sus mid_time normie = clock_bait.now_ns()\n" +
+        "sus hash2 tea = sha256(test_data + \"x\")\n" +
+        "sus end_time normie = clock_bait.now_ns()\n" +
+        "sus time1 normie = mid_time - start_time\n" +
+        "sus time2 normie = end_time - mid_time\n" +
+        "fr fr Times should be roughly similar (within 50% variation)\n" +
+        "sus time_ratio meal = time2.to_float() / time1.to_float()\n" +
+        "assert_true(time_ratio > 0.5 && time_ratio < 2.0)\n\n" +
         "test_start(\"random_output_entropy\")\n" +
         "fr fr Test that random functions produce high entropy output\n" +
-        "assert_true(based)  fr fr Placeholder\n"
+        "sus random1 tea = generate_random_bytes(32)\n" +
+        "sus random2 tea = generate_random_bytes(32)\n" +
+        "assert_not_eq(random1, random2)  fr fr Should never be equal\n" +
+        "assert_eq_int(random1.len(), 32)\n" +
+        "assert_eq_int(random2.len(), 32)\n\n" +
+        "test_start(\"encryption_round_trip\")\n" +
+        "sus plaintext tea = \"Hello, secure world!\"\n" +
+        "sus key tea = generate_random_bytes(32)\n" +
+        "sus encrypted tea = aes_encrypt(plaintext, key)\n" +
+        "sus decrypted tea = aes_decrypt(encrypted, key)\n" +
+        "assert_eq(decrypted, plaintext)\n" +
+        "assert_not_eq(encrypted, plaintext)  fr fr Must be different\n"
     damn base_template + enhancement
 }
 
@@ -308,11 +360,27 @@ slay enhance_io_test_template(base_template tea, module_name tea) tea {
     sus enhancement tea = "\n\nfr fr I/O-specific tests\n" +
         "test_start(\"file_round_trip\")\n" +
         "fr fr Test writing then reading produces same content\n" +
-        "assert_true(based)  fr fr Placeholder\n\n" +
+        "sus test_file tea = \"/tmp/cursed_test_\" + clock_bait.now_ns().string() + \".txt\"\n" +
+        "sus test_content tea = \"Hello, CURSED file I/O testing!\"\n" +
+        "sus write_success lit = write_file(test_file, test_content)\n" +
+        "assert_true(write_success)\n" +
+        "sus read_content tea = read_file(test_file)\n" +
+        "assert_eq(read_content, test_content)\n" +
+        "sus cleanup_success lit = delete_file(test_file)\n" +
+        "assert_true(cleanup_success)\n\n" +
         "test_start(\"error_handling_missing_file\")\n" +
         "assert_throws(slay() {\n" +
-        "    fr fr Try to read non-existent file\n" +
-        "})\n"
+        "    sus nonexistent_file tea = \"/tmp/cursed_nonexistent_\" + clock_bait.now_ns().string() + \".txt\"\n" +
+        "    sus content tea = read_file(nonexistent_file)\n" +
+        "})\n\n" +
+        "test_start(\"directory_operations\")\n" +
+        "sus test_dir tea = \"/tmp/cursed_test_dir_\" + clock_bait.now_ns().string()\n" +
+        "sus dir_created lit = create_directory(test_dir)\n" +
+        "assert_true(dir_created)\n" +
+        "sus dir_exists lit = directory_exists(test_dir)\n" +
+        "assert_true(dir_exists)\n" +
+        "sus dir_removed lit = remove_directory(test_dir)\n" +
+        "assert_true(dir_removed)\n"
     damn base_template + enhancement
 }
 
