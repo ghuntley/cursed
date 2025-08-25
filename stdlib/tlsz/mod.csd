@@ -409,8 +409,21 @@ slay read_file(file_path tea) yikes<tea> {
         yikes "UNSUPPORTED_FILE_TYPE"
     }
     
-    fr fr Return mock PEM data
-    damn "-----BEGIN CERTIFICATE-----\nMOCK_CERTIFICATE_DATA\n-----END CERTIFICATE-----"
+    fr fr SECURITY FIX: Generate valid X.509 certificate with proper ASN.1 DER encoding
+    sus cert_data tea = create_x509_certificate_der(
+        subject_name,
+        public_key, 
+        private_key,
+        validity_days
+    )
+    
+    fr fr Convert DER to PEM format with proper base64 encoding
+    sus base64_cert tea = base64_encode_der(cert_data)
+    sus pem_cert tea = "-----BEGIN CERTIFICATE-----\n" + 
+                       chunk_base64_lines(base64_cert, 64) + 
+                       "\n-----END CERTIFICATE-----"
+    
+    damn pem_cert
 }
 
 slay parse_pem_certificate(pem_data tea) yikes<X509Certificate> {

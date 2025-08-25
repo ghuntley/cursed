@@ -1,387 +1,393 @@
-fr fr Comprehensive test suite for CONCURRENZ concurrency module
-fr fr Tests all public functions with proper validation using testz framework
-
 yeet "testz"
 yeet "concurrenz"
 
-slay main() {
-    testz.test_start("CONCURRENZ Comprehensive Test Suite")
-    
-    fr fr ===== MUTEX TESTS =====
-    testz.test_group("Mutex Synchronization")
-    
-    fr fr Test create_mutex
-    sus test_mutex concurrenz.Mutex = concurrenz.create_mutex()
-    testz.assert_eq_int(test_mutex.lock_state, 0, "New mutex should be unlocked")
-    testz.assert_eq_int(test_mutex.waiters, 0, "New mutex should have no waiters")
-    testz.assert_eq_int(test_mutex.recursive_count, 0, "New mutex should have zero recursive count")
-    
-    fr fr Test mutex_lock and mutex_unlock
-    concurrenz.mutex_lock(&test_mutex)
-    testz.assert_eq_int(test_mutex.lock_state, 1, "Locked mutex should show locked state")
-    
-    concurrenz.mutex_unlock(&test_mutex)
-    testz.assert_eq_int(test_mutex.lock_state, 0, "Unlocked mutex should show unlocked state")
-    
-    fr fr Test mutex_try_lock
-    sus try_result lit = concurrenz.mutex_try_lock(&test_mutex)
-    testz.assert_true(try_result, "mutex_try_lock should succeed on unlocked mutex")
-    testz.assert_eq_int(test_mutex.lock_state, 1, "try_lock should set locked state")
-    
-    sus try_fail lit = concurrenz.mutex_try_lock(&test_mutex)
-    testz.assert_false(try_fail, "mutex_try_lock should fail on already locked mutex")
-    
-    concurrenz.mutex_unlock(&test_mutex)
-    
-    fr fr ===== ATOMIC OPERATIONS TESTS =====
-    testz.test_group("Atomic Operations")
-    
-    fr fr Test create_atomic
-    sus test_atomic concurrenz.AtomicStruct = concurrenz.create_atomic(42)
-    testz.assert_eq_int(test_atomic.value, 42, "New atomic should have initial value")
-    testz.assert_eq_int(test_atomic.version, 0, "New atomic should have version 0")
-    
-    fr fr Test atomic_load
-    sus loaded_value normie = concurrenz.atomic_load(&test_atomic)
-    testz.assert_eq_int(loaded_value, 42, "atomic_load should return stored value")
-    
-    fr fr Test atomic_store
-    concurrenz.atomic_store(&test_atomic, 100)
-    sus stored_value normie = concurrenz.atomic_load(&test_atomic)
-    testz.assert_eq_int(stored_value, 100, "atomic_store should update value")
-    
-    fr fr Test atomic_add
-    sus add_result normie = concurrenz.atomic_add(&test_atomic, 5)
-    testz.assert_eq_int(add_result, 105, "atomic_add should return new value")
-    sus add_check normie = concurrenz.atomic_load(&test_atomic)
-    testz.assert_eq_int(add_check, 105, "atomic_add should update stored value")
-    
-    fr fr Test atomic_sub
-    sus sub_result normie = concurrenz.atomic_sub(&test_atomic, 10)
-    testz.assert_eq_int(sub_result, 95, "atomic_sub should return new value")
-    
-    fr fr Test atomic_compare_and_swap
-    sus cas_success lit = concurrenz.atomic_compare_and_swap(&test_atomic, 95, 200)
-    testz.assert_true(cas_success, "atomic_compare_and_swap should succeed with correct old value")
-    sus cas_check normie = concurrenz.atomic_load(&test_atomic)
-    testz.assert_eq_int(cas_check, 200, "atomic_compare_and_swap should update value")
-    
-    sus cas_fail lit = concurrenz.atomic_compare_and_swap(&test_atomic, 95, 300)
-    testz.assert_false(cas_fail, "atomic_compare_and_swap should fail with incorrect old value")
-    sus cas_fail_check normie = concurrenz.atomic_load(&test_atomic)
-    testz.assert_eq_int(cas_fail_check, 200, "Failed atomic_compare_and_swap should not change value")
-    
-    fr fr ===== WAITGROUP TESTS =====
-    testz.test_group("WaitGroup Synchronization")
-    
-    fr fr Test create_waitgroup
-    sus test_waitgroup concurrenz.WaitGroup = concurrenz.create_waitgroup()
-    testz.assert_eq_int(test_waitgroup.counter, 0, "New waitgroup should have counter 0")
-    testz.assert_eq_int(test_waitgroup.waiters, 0, "New waitgroup should have no waiters")
-    testz.assert_eq_int(test_waitgroup.done_flag, 0, "New waitgroup should not be done")
-    
-    fr fr Test waitgroup_add
-    concurrenz.waitgroup_add(&test_waitgroup, 3)
-    testz.assert_eq_int(test_waitgroup.counter, 3, "waitgroup_add should increase counter")
-    
-    fr fr Test waitgroup_done
-    concurrenz.waitgroup_done(&test_waitgroup)
-    testz.assert_eq_int(test_waitgroup.counter, 2, "waitgroup_done should decrease counter")
-    
-    concurrenz.waitgroup_done(&test_waitgroup)
-    concurrenz.waitgroup_done(&test_waitgroup)
-    testz.assert_eq_int(test_waitgroup.counter, 0, "waitgroup should reach zero after all done")
-    testz.assert_eq_int(test_waitgroup.done_flag, 1, "waitgroup should be marked done")
-    
-    fr fr ===== CHANNEL TESTS =====
-    testz.test_group("Channel Communication")
-    
-    fr fr Test create_channel
-    sus test_channel concurrenz.Channel = concurrenz.create_channel(5)
-    testz.assert_eq_int(test_channel.capacity, 5, "Channel should have correct capacity")
-    testz.assert_eq_int(test_channel.size, 0, "New channel should be empty")
-    testz.assert_eq_int(test_channel.closed, 0, "New channel should be open")
-    testz.assert_eq_int(test_channel.send_pos, 0, "New channel should have send_pos 0")
-    testz.assert_eq_int(test_channel.recv_pos, 0, "New channel should have recv_pos 0")
-    
-    fr fr Test channel_send (non-blocking for buffered channel)
-    sus send_result lit = concurrenz.channel_send(&test_channel, 42)
-    testz.assert_true(send_result, "channel_send should succeed on empty buffered channel")
-    testz.assert_eq_int(test_channel.size, 1, "Channel size should increase after send")
-    testz.assert_eq_int(test_channel.send_pos, 1, "Send position should advance")
-    
-    fr fr Test channel_receive
-    sus receive_result normie = concurrenz.channel_receive(&test_channel)
-    testz.assert_eq_int(receive_result, 42, "channel_receive should return sent value")
-    testz.assert_eq_int(test_channel.size, 0, "Channel size should decrease after receive")
-    testz.assert_eq_int(test_channel.recv_pos, 1, "Receive position should advance")
-    
-    fr fr Test multiple sends and receives
-    bestie i := 1; i <= 3; i++ {
-        sus multi_send lit = concurrenz.channel_send(&test_channel, i)
-        testz.assert_true(multi_send, "Multiple sends should succeed")
-    }
-    testz.assert_eq_int(test_channel.size, 3, "Channel should contain 3 items")
-    
-    sus first_recv normie = concurrenz.channel_receive(&test_channel)
-    testz.assert_eq_int(first_recv, 1, "Should receive items in FIFO order")
-    
-    sus second_recv normie = concurrenz.channel_receive(&test_channel)
-    testz.assert_eq_int(second_recv, 2, "Second receive should get second item")
-    
-    fr fr Test channel_close
-    concurrenz.channel_close(&test_channel)
-    testz.assert_eq_int(test_channel.closed, 1, "Channel should be marked as closed")
-    
-    fr fr ===== THREAD POOL TESTS =====
-    testz.test_group("Thread Pool Management")
-    
-    fr fr Test create_thread_pool
-    sus test_pool concurrenz.ThreadPool = concurrenz.create_thread_pool(4)
-    testz.assert_eq_int(test_pool.active_workers, 0, "New thread pool should have 0 active workers initially")
-    testz.assert_eq_int(test_pool.shutdown, 0, "New thread pool should not be shut down")
-    testz.assert_eq_int(test_pool.queue_size, 0, "New thread pool should have empty task queue")
-    
-    fr fr Test thread_pool_submit (simplified - just test structure)
-    sus submit_result lit = concurrenz.thread_pool_submit(&test_pool, 1001)  fr fr Using task ID
-    testz.assert_true(submit_result, "thread_pool_submit should succeed")
-    testz.assert_eq_int(test_pool.queue_size, 1, "Task queue size should increase")
-    
-    fr fr Test thread_pool_shutdown
-    concurrenz.thread_pool_shutdown(&test_pool)
-    testz.assert_eq_int(test_pool.shutdown, 1, "Thread pool should be marked for shutdown")
-    
-    fr fr ===== BARRIER TESTS =====
-    testz.test_group("Barrier Synchronization")
-    
-    fr fr Test create_barrier
-    sus test_barrier concurrenz.Barrier = concurrenz.create_barrier(3)
-    testz.assert_eq_int(test_barrier.count, 3, "Barrier should have correct participant count")
-    testz.assert_eq_int(test_barrier.arrived, 0, "New barrier should have no arrivals")
-    testz.assert_eq_int(test_barrier.generation, 0, "New barrier should have generation 0")
-    
-    fr fr Test barrier_wait (simplified - test state changes)
-    sus barrier_result lit = concurrenz.barrier_wait(&test_barrier)
-    testz.assert_eq_int(test_barrier.arrived, 1, "barrier_wait should increment arrival count")
-    
-    fr fr ===== SEMAPHORE TESTS =====
-    testz.test_group("Semaphore Resource Management")
-    
-    fr fr Test create_semaphore
-    sus test_semaphore concurrenz.Semaphore = concurrenz.create_semaphore(3)
-    testz.assert_eq_int(test_semaphore.permits, 3, "Semaphore should have initial permit count")
-    testz.assert_eq_int(test_semaphore.max_permits, 3, "Semaphore should have correct max permits")
-    testz.assert_eq_int(test_semaphore.waiter_count, 0, "New semaphore should have no waiters")
-    
-    fr fr Test semaphore_acquire
-    sus acquire_result lit = concurrenz.semaphore_acquire(&test_semaphore)
-    testz.assert_true(acquire_result, "semaphore_acquire should succeed when permits available")
-    testz.assert_eq_int(test_semaphore.permits, 2, "Semaphore permits should decrease after acquire")
-    
-    fr fr Test semaphore_release
-    concurrenz.semaphore_release(&test_semaphore)
-    testz.assert_eq_int(test_semaphore.permits, 3, "Semaphore permits should increase after release")
-    
-    fr fr Test multiple acquires
-    concurrenz.semaphore_acquire(&test_semaphore)
-    concurrenz.semaphore_acquire(&test_semaphore)
-    concurrenz.semaphore_acquire(&test_semaphore)
-    testz.assert_eq_int(test_semaphore.permits, 0, "All permits should be acquired")
-    
-    fr fr ===== READ-WRITE MUTEX TESTS =====
-    testz.test_group("Read-Write Mutex")
-    
-    fr fr Test create_rwmutex
-    sus test_rwmutex concurrenz.RWMutex = concurrenz.create_rwmutex()
-    testz.assert_eq_int(test_rwmutex.readers, 0, "New RWMutex should have no readers")
-    testz.assert_eq_int(test_rwmutex.writer, 0, "New RWMutex should have no writer")
-    testz.assert_eq_int(test_rwmutex.pending_writers, 0, "New RWMutex should have no pending writers")
-    
-    fr fr Test rwmutex_read_lock
-    sus read_lock_result lit = concurrenz.rwmutex_read_lock(&test_rwmutex)
-    testz.assert_true(read_lock_result, "Read lock should succeed on unlocked RWMutex")
-    testz.assert_eq_int(test_rwmutex.readers, 1, "Reader count should increase")
-    
-    fr fr Test multiple read locks
-    sus read_lock2 lit = concurrenz.rwmutex_read_lock(&test_rwmutex)
-    testz.assert_true(read_lock2, "Multiple read locks should be allowed")
-    testz.assert_eq_int(test_rwmutex.readers, 2, "Reader count should be 2")
-    
-    fr fr Test rwmutex_read_unlock
-    concurrenz.rwmutex_read_unlock(&test_rwmutex)
-    testz.assert_eq_int(test_rwmutex.readers, 1, "Reader count should decrease after unlock")
-    
-    concurrenz.rwmutex_read_unlock(&test_rwmutex)
-    testz.assert_eq_int(test_rwmutex.readers, 0, "All readers should be unlocked")
-    
-    fr fr Test rwmutex_write_lock
-    sus write_lock_result lit = concurrenz.rwmutex_write_lock(&test_rwmutex)
-    testz.assert_true(write_lock_result, "Write lock should succeed when no readers/writers")
-    testz.assert_eq_int(test_rwmutex.writer, 1, "Writer flag should be set")
-    
-    fr fr Test rwmutex_write_unlock
-    concurrenz.rwmutex_write_unlock(&test_rwmutex)
-    testz.assert_eq_int(test_rwmutex.writer, 0, "Writer flag should be cleared after unlock")
-    
-    fr fr ===== CONDITION VARIABLE TESTS =====
-    testz.test_group("Condition Variables")
-    
-    fr fr Test create_condvar
-    sus test_condvar concurrenz.CondVar = concurrenz.create_condvar()
-    testz.assert_eq_int(test_condvar.waiters, 0, "New CondVar should have no waiters")
-    testz.assert_eq_int(test_condvar.signals, 0, "New CondVar should have no pending signals")
-    
-    fr fr Test condvar_signal
-    concurrenz.condvar_signal(&test_condvar)
-    testz.assert_eq_int(test_condvar.signals, 1, "CondVar should have pending signal")
-    
-    fr fr Test condvar_broadcast
-    concurrenz.condvar_broadcast(&test_condvar)
-    testz.assert_gt_int(test_condvar.signals, 0, "Broadcast should set signal state")
-    
-    fr fr ===== ADVANCED SYNCHRONIZATION TESTS =====
-    testz.test_group("Advanced Synchronization Features")
-    
-    fr fr Test memory ordering constants
-    testz.assert_eq_int(concurrenz.RELAXED, 0, "RELAXED ordering should be 0")
-    testz.assert_eq_int(concurrenz.ACQUIRE, 1, "ACQUIRE ordering should be 1")
-    testz.assert_eq_int(concurrenz.RELEASE, 2, "RELEASE ordering should be 2")
-    testz.assert_eq_int(concurrenz.ACQREL, 3, "ACQREL ordering should be 3")
-    testz.assert_eq_int(concurrenz.SEQCST, 4, "SEQCST ordering should be 4")
-    
-    fr fr Test atomic operations with different values
-    sus atomic_test concurrenz.AtomicStruct = concurrenz.create_atomic(0)
-    
-    bestie i := 1; i <= 10; i++ {
-        sus atomic_inc_result normie = concurrenz.atomic_add(&atomic_test, 1)
-        testz.assert_eq_int(atomic_inc_result, i, "Atomic increment should work correctly")
-    }
-    
-    sus final_value normie = concurrenz.atomic_load(&atomic_test)
-    testz.assert_eq_int(final_value, 10, "Final atomic value should be 10")
-    
-    fr fr ===== ERROR HANDLING TESTS =====
-    testz.test_group("Error Handling and Edge Cases")
-    
-    fr fr Test operations on closed channel
-    sus closed_channel concurrenz.Channel = concurrenz.create_channel(1)
-    concurrenz.channel_close(&closed_channel)
-    
-    sus send_to_closed lit = concurrenz.channel_send(&closed_channel, 123)
-    testz.assert_false(send_to_closed, "Send to closed channel should fail")
-    
-    fr fr Test semaphore over-acquire
-    sus small_semaphore concurrenz.Semaphore = concurrenz.create_semaphore(1)
-    concurrenz.semaphore_acquire(&small_semaphore)
-    
-    sus over_acquire lit = concurrenz.semaphore_try_acquire(&small_semaphore)
-    testz.assert_false(over_acquire, "Try acquire on exhausted semaphore should fail")
-    
-    fr fr Test mutex double unlock (should not crash)
-    sus test_mutex2 concurrenz.Mutex = concurrenz.create_mutex()
-    concurrenz.mutex_lock(&test_mutex2)
-    concurrenz.mutex_unlock(&test_mutex2)
-    concurrenz.mutex_unlock(&test_mutex2)  fr fr Double unlock - should handle gracefully
-    testz.assert_eq_int(test_mutex2.lock_state, 0, "Double unlock should not change unlocked state")
-    
-    fr fr ===== PERFORMANCE AND STRESS TESTS =====
-    testz.test_group("Performance and Stress Tests")
-    
-    fr fr Test many atomic operations
-    sus stress_atomic concurrenz.AtomicStruct = concurrenz.create_atomic(0)
-    bestie stress_i := 0; stress_i < 100; stress_i++ {
-        concurrenz.atomic_add(&stress_atomic, 1)
-    }
-    sus stress_result normie = concurrenz.atomic_load(&stress_atomic)
-    testz.assert_eq_int(stress_result, 100, "Stress test: 100 atomic increments should equal 100")
-    
-    fr fr Test channel throughput
-    sus throughput_channel concurrenz.Channel = concurrenz.create_channel(10)
-    bestie throughput_i := 1; throughput_i <= 10; throughput_i++ {
-        concurrenz.channel_send(&throughput_channel, throughput_i)
-    }
-    testz.assert_eq_int(throughput_channel.size, 10, "Channel should handle 10 sends")
-    
-    sus throughput_sum normie = 0
-    bestie throughput_j := 1; throughput_j <= 10; throughput_j++ {
-        sus recv_val normie = concurrenz.channel_receive(&throughput_channel)
-        throughput_sum = throughput_sum + recv_val
-    }
-    testz.assert_eq_int(throughput_sum, 55, "Channel throughput test: sum of 1-10 should be 55")
-    
-    fr fr ===== INTEGRATION TESTS =====
-    testz.test_group("Integration Tests")
-    
-    fr fr Test mutex with waitgroup coordination
-    sus integration_mutex concurrenz.Mutex = concurrenz.create_mutex()
-    sus integration_waitgroup concurrenz.WaitGroup = concurrenz.create_waitgroup()
-    sus shared_counter concurrenz.AtomicStruct = concurrenz.create_atomic(0)
-    
-    concurrenz.waitgroup_add(&integration_waitgroup, 3)
-    
-    fr fr Simulate 3 goroutines updating shared counter
-    bestie sim_i := 0; sim_i < 3; sim_i++ {
-        concurrenz.mutex_lock(&integration_mutex)
-        concurrenz.atomic_add(&shared_counter, 10)
-        concurrenz.mutex_unlock(&integration_mutex)
-        concurrenz.waitgroup_done(&integration_waitgroup)
-    }
-    
-    testz.assert_eq_int(integration_waitgroup.counter, 0, "Integration: WaitGroup should be complete")
-    sus integration_result normie = concurrenz.atomic_load(&shared_counter)
-    testz.assert_eq_int(integration_result, 30, "Integration: Shared counter should be 30")
-    
-    fr fr ===== FINAL COMPREHENSIVE TEST =====
-    testz.test_group("Final Comprehensive Validation")
-    
-    fr fr Test all synchronization primitives work together
-    sus final_validation lit = based
-    
-    fr fr Test mutex functionality
-    sus final_mutex concurrenz.Mutex = concurrenz.create_mutex()
-    ready !concurrenz.mutex_try_lock(&final_mutex) { final_validation = cap }
-    concurrenz.mutex_unlock(&final_mutex)
-    
-    fr fr Test atomic functionality
-    sus final_atomic concurrenz.AtomicStruct = concurrenz.create_atomic(100)
-    ready concurrenz.atomic_load(&final_atomic) != 100 { final_validation = cap }
-    ready !concurrenz.atomic_compare_and_swap(&final_atomic, 100, 200) { final_validation = cap }
-    
-    fr fr Test channel functionality
-    sus final_channel concurrenz.Channel = concurrenz.create_channel(2)
-    ready !concurrenz.channel_send(&final_channel, 999) { final_validation = cap }
-    ready concurrenz.channel_receive(&final_channel) != 999 { final_validation = cap }
-    
-    fr fr Test waitgroup functionality
-    sus final_waitgroup concurrenz.WaitGroup = concurrenz.create_waitgroup()
-    concurrenz.waitgroup_add(&final_waitgroup, 1)
-    concurrenz.waitgroup_done(&final_waitgroup)
-    ready final_waitgroup.counter != 0 { final_validation = cap }
-    
-    fr fr Test semaphore functionality
-    sus final_semaphore concurrenz.Semaphore = concurrenz.create_semaphore(1)
-    ready !concurrenz.semaphore_acquire(&final_semaphore) { final_validation = cap }
-    concurrenz.semaphore_release(&final_semaphore)
-    ready final_semaphore.permits != 1 { final_validation = cap }
-    
-    testz.assert_true(final_validation, "Final: All concurrency primitives should work correctly")
-    
-    fr fr Test concurrent data consistency
-    sus consistency_check lit = based
-    sus test_data concurrenz.AtomicStruct = concurrenz.create_atomic(0)
-    
-    fr fr Simulate concurrent access pattern
-    bestie consistency_i := 0; consistency_i < 5; consistency_i++ {
-        sus old_val normie = concurrenz.atomic_load(&test_data)
-        concurrenz.atomic_add(&test_data, 2)
-        sus new_val normie = concurrenz.atomic_load(&test_data)
-        ready new_val != old_val + 2 { consistency_check = cap }
-    }
-    
-    testz.assert_true(consistency_check, "Final: Concurrent operations should maintain data consistency")
-    
-    sus final_data_value normie = concurrenz.atomic_load(&test_data)
-    testz.assert_eq_int(final_data_value, 10, "Final: Concurrent operations result should be correct")
-    
-    testz.print_test_summary()
+test_start("concurrenz Concurrency Comprehensive Tests")
+
+fr fr ===== MUTEX TESTS =====
+
+test_group("Mutex Synchronization")
+
+fr fr Test mutex creation
+sus mutex *Mutex = create_mutex()
+assert_not_null(mutex, "Mutex created successfully")
+
+fr fr Test mutex lock/unlock
+sus lock_result lit = mutex_lock(mutex)
+assert_bool(lock_result, "Mutex lock succeeded")
+
+sus unlock_result lit = mutex_unlock(mutex)
+assert_bool(unlock_result, "Mutex unlock succeeded")
+
+fr fr Test mutex try_lock
+sus try_lock_result lit = mutex_try_lock(mutex)
+assert_bool(try_lock_result, "Mutex try_lock succeeded when unlocked")
+
+unlock_result = mutex_unlock(mutex)
+assert_bool(unlock_result, "Mutex unlock after try_lock")
+
+fr fr Test null mutex handling
+sus null_result lit = mutex_lock(0)
+assert_bool(!null_result, "Null mutex lock handled safely")
+
+fr fr Cleanup mutex
+destroy_mutex(mutex)
+
+fr fr ===== WAIT GROUP TESTS =====
+
+test_group("WaitGroup Synchronization")
+
+fr fr Test wait group creation
+sus wg *WaitGroup = create_wait_group()
+assert_not_null(wg, "WaitGroup created successfully")
+
+fr fr Test wait group add/done operations
+wg_add(wg, 3)
+sus wait_result lit = wg_done(wg)
+assert_bool(wait_result, "WaitGroup done operation succeeded")
+
+wait_result = wg_done(wg)
+assert_bool(wait_result, "WaitGroup second done operation")
+
+wait_result = wg_done(wg)
+assert_bool(wait_result, "WaitGroup third done operation")
+
+fr fr Test wait group null handling
+sus null_wg_result lit = wg_add(0, 1)
+assert_bool(!null_wg_result, "Null WaitGroup add handled safely")
+
+fr fr Cleanup wait group
+destroy_wait_group(wg)
+
+fr fr ===== CHANNEL TESTS =====
+
+test_group("Channel Communication")
+
+fr fr Test unbuffered channel creation
+sus ch *Channel = create_channel(0)
+assert_not_null(ch, "Unbuffered channel created")
+
+fr fr Test buffered channel creation
+sus buffered_ch *Channel = create_channel(5)
+assert_not_null(buffered_ch, "Buffered channel created")
+
+fr fr Test channel send/receive operations
+sus send_result lit = channel_send(buffered_ch, 42)
+assert_bool(send_result, "Channel send succeeded")
+
+sus received_value normie = 0
+sus recv_result lit = channel_receive(buffered_ch, &received_value)
+assert_bool(recv_result, "Channel receive succeeded")
+assert_eq_int(received_value, 42, "Channel received correct value")
+
+fr fr Test channel buffering
+send_result = channel_send(buffered_ch, 10)
+assert_bool(send_result, "Channel send 1")
+send_result = channel_send(buffered_ch, 20)
+assert_bool(send_result, "Channel send 2")
+send_result = channel_send(buffered_ch, 30)
+assert_bool(send_result, "Channel send 3")
+
+sus val1 normie = 0
+sus val2 normie = 0
+sus val3 normie = 0
+
+recv_result = channel_receive(buffered_ch, &val1)
+assert_bool(recv_result, "Channel receive 1")
+recv_result = channel_receive(buffered_ch, &val2)
+assert_bool(recv_result, "Channel receive 2")
+recv_result = channel_receive(buffered_ch, &val3)
+assert_bool(recv_result, "Channel receive 3")
+
+assert_eq_int(val1, 10, "First value correct")
+assert_eq_int(val2, 20, "Second value correct")
+assert_eq_int(val3, 30, "Third value correct")
+
+fr fr Test channel close
+sus close_result lit = channel_close(buffered_ch)
+assert_bool(close_result, "Channel close succeeded")
+
+fr fr Test receive from closed channel
+recv_result = channel_receive(buffered_ch, &received_value)
+assert_bool(!recv_result, "Receive from closed channel returns false")
+
+fr fr Test send to closed channel
+send_result = channel_send(buffered_ch, 99)
+assert_bool(!send_result, "Send to closed channel returns false")
+
+fr fr Cleanup channels
+destroy_channel(ch)
+destroy_channel(buffered_ch)
+
+fr fr ===== ATOMIC OPERATIONS TESTS =====
+
+test_group("Atomic Operations")
+
+fr fr Test atomic i32 operations
+sus atomic_i32 *AtomicI32 = create_atomic_i32(0)
+assert_not_null(atomic_i32, "AtomicI32 created")
+
+sus load_result normie = atomic_i32_load(atomic_i32)
+assert_eq_int(load_result, 0, "AtomicI32 initial value")
+
+atomic_i32_store(atomic_i32, 42)
+load_result = atomic_i32_load(atomic_i32)
+assert_eq_int(load_result, 42, "AtomicI32 store/load")
+
+sus add_result normie = atomic_i32_fetch_add(atomic_i32, 10)
+assert_eq_int(add_result, 42, "AtomicI32 fetch_add returns old value")
+load_result = atomic_i32_load(atomic_i32)
+assert_eq_int(load_result, 52, "AtomicI32 add result correct")
+
+sus compare_result lit = atomic_i32_compare_exchange(atomic_i32, 52, 100)
+assert_bool(compare_result, "AtomicI32 compare_exchange succeeded")
+load_result = atomic_i32_load(atomic_i32)
+assert_eq_int(load_result, 100, "AtomicI32 compare_exchange value")
+
+fr fr Test failed compare_exchange
+compare_result = atomic_i32_compare_exchange(atomic_i32, 99, 200)
+assert_bool(!compare_result, "AtomicI32 compare_exchange failed correctly")
+load_result = atomic_i32_load(atomic_i32)
+assert_eq_int(load_result, 100, "AtomicI32 value unchanged after failed CAS")
+
+destroy_atomic_i32(atomic_i32)
+
+fr fr Test atomic bool operations
+sus atomic_bool *AtomicBool = create_atomic_bool(cap)
+assert_not_null(atomic_bool, "AtomicBool created")
+
+sus bool_load lit = atomic_bool_load(atomic_bool)
+assert_bool(!bool_load, "AtomicBool initial value false")
+
+atomic_bool_store(atomic_bool, no_cap)
+bool_load = atomic_bool_load(atomic_bool)
+assert_bool(bool_load, "AtomicBool store/load true")
+
+sus exchange_result lit = atomic_bool_exchange(atomic_bool, cap)
+assert_bool(exchange_result, "AtomicBool exchange returns old value")
+bool_load = atomic_bool_load(atomic_bool)
+assert_bool(!bool_load, "AtomicBool exchange result")
+
+destroy_atomic_bool(atomic_bool)
+
+fr fr ===== THREAD POOL TESTS =====
+
+test_group("Thread Pool")
+
+fr fr Test thread pool creation
+sus pool *ThreadPool = create_thread_pool(4)
+assert_not_null(pool, "ThreadPool created")
+
+fr fr Test task submission (simplified test)
+sus task_submitted lit = thread_pool_submit_task(pool, 1001)
+assert_bool(task_submitted, "Task submitted to thread pool")
+
+fr fr Test thread pool shutdown
+sus shutdown_result lit = thread_pool_shutdown(pool)
+assert_bool(shutdown_result, "ThreadPool shutdown succeeded")
+
+destroy_thread_pool(pool)
+
+fr fr ===== BARRIER TESTS =====
+
+test_group("Barrier Synchronization")
+
+fr fr Test barrier creation
+sus barrier *Barrier = create_barrier(3)
+assert_not_null(barrier, "Barrier created")
+
+fr fr Test barrier wait (simplified single-threaded test)
+sus barrier_result lit = barrier_wait(barrier)
+assert_bool(barrier_result, "Barrier wait operation")
+
+destroy_barrier(barrier)
+
+fr fr ===== SEMAPHORE TESTS =====
+
+test_group("Semaphore")
+
+fr fr Test semaphore creation
+sus sem *Semaphore = create_semaphore(2)
+assert_not_null(sem, "Semaphore created")
+
+fr fr Test semaphore acquire/release
+sus acquire_result lit = semaphore_acquire(sem)
+assert_bool(acquire_result, "Semaphore acquire succeeded")
+
+acquire_result = semaphore_acquire(sem)
+assert_bool(acquire_result, "Semaphore second acquire succeeded")
+
+sus release_result lit = semaphore_release(sem)
+assert_bool(release_result, "Semaphore release succeeded")
+
+release_result = semaphore_release(sem)
+assert_bool(release_result, "Semaphore second release succeeded")
+
+fr fr Test try_acquire
+sus try_acquire_result lit = semaphore_try_acquire(sem)
+assert_bool(try_acquire_result, "Semaphore try_acquire succeeded when permits available")
+
+destroy_semaphore(sem)
+
+fr fr ===== READ-WRITE MUTEX TESTS =====
+
+test_group("Read-Write Mutex")
+
+fr fr Test RWMutex creation
+sus rw_mutex *RWMutex = create_rw_mutex()
+assert_not_null(rw_mutex, "RWMutex created")
+
+fr fr Test read lock
+sus read_lock_result lit = rw_mutex_read_lock(rw_mutex)
+assert_bool(read_lock_result, "RWMutex read lock succeeded")
+
+sus read_unlock_result lit = rw_mutex_read_unlock(rw_mutex)
+assert_bool(read_unlock_result, "RWMutex read unlock succeeded")
+
+fr fr Test write lock
+sus write_lock_result lit = rw_mutex_write_lock(rw_mutex)
+assert_bool(write_lock_result, "RWMutex write lock succeeded")
+
+sus write_unlock_result lit = rw_mutex_write_unlock(rw_mutex)
+assert_bool(write_unlock_result, "RWMutex write unlock succeeded")
+
+destroy_rw_mutex(rw_mutex)
+
+fr fr ===== CONDITION VARIABLE TESTS =====
+
+test_group("Condition Variable")
+
+fr fr Test condition variable creation
+sus cond *CondVar = create_condition_variable()
+assert_not_null(cond, "CondVar created")
+
+fr fr Test signal/broadcast operations
+sus signal_result lit = cond_var_signal(cond)
+assert_bool(signal_result, "CondVar signal succeeded")
+
+sus broadcast_result lit = cond_var_broadcast(cond)
+assert_bool(broadcast_result, "CondVar broadcast succeeded")
+
+destroy_condition_variable(cond)
+
+fr fr ===== ONCE TESTS =====
+
+test_group("Once Synchronization")
+
+fr fr Test Once creation
+sus once *Once = create_once()
+assert_not_null(once, "Once created")
+
+fr fr Test Once do operation
+sus once_result lit = once_do(once, 12345)  fr fr Simplified function ID
+assert_bool(once_result, "Once do operation succeeded")
+
+fr fr Test Once do operation second time (should be no-op)
+once_result = once_do(once, 12345)
+assert_bool(!once_result, "Once do operation only runs once")
+
+destroy_once(once)
+
+fr fr ===== MEMORY ORDERING TESTS =====
+
+test_group("Memory Ordering and Atomics")
+
+fr fr Test memory ordering constants
+assert_eq_int(RELAXED, 0, "RELAXED memory ordering constant")
+assert_eq_int(ACQUIRE, 1, "ACQUIRE memory ordering constant")
+assert_eq_int(RELEASE, 2, "RELEASE memory ordering constant")
+assert_eq_int(ACQREL, 3, "ACQREL memory ordering constant")
+assert_eq_int(SEQCST, 4, "SEQCST memory ordering constant")
+
+fr fr Test fence operations
+sus fence_result lit = atomic_fence(SEQCST)
+assert_bool(fence_result, "Atomic fence operation")
+
+fr fr ===== ERROR HANDLING AND EDGE CASES =====
+
+test_group("Error Handling and Edge Cases")
+
+fr fr Test null pointer handling
+sus null_mutex_result lit = mutex_lock(0)
+assert_bool(!null_mutex_result, "Null mutex handled safely")
+
+sus null_channel_result lit = channel_send(0, 42)
+assert_bool(!null_channel_result, "Null channel handled safely")
+
+sus null_wg_result lit = wg_add(0, 1)
+assert_bool(!null_wg_result, "Null WaitGroup handled safely")
+
+fr fr Test invalid parameters
+sus invalid_channel *Channel = create_channel(-1)
+assert_null(invalid_channel, "Invalid channel capacity handled")
+
+sus invalid_barrier *Barrier = create_barrier(0)
+assert_null(invalid_barrier, "Invalid barrier count handled")
+
+sus invalid_sem *Semaphore = create_semaphore(-1)
+assert_null(invalid_sem, "Invalid semaphore permits handled")
+
+fr fr Test resource cleanup
+sus test_mutex *Mutex = create_mutex()
+assert_not_null(test_mutex, "Test mutex created for cleanup")
+destroy_mutex(test_mutex)
+fr fr Note: Cannot easily test post-cleanup access without memory debugging
+
+fr fr ===== STRESS TESTING =====
+
+test_group("Concurrency Stress Testing")
+
+fr fr Test channel with multiple operations
+sus stress_channel *Channel = create_channel(10)
+assert_not_null(stress_channel, "Stress test channel created")
+
+fr fr Fill channel buffer
+sus i normie = 0
+bestie (i < 10) {
+    sus fill_result lit = channel_send(stress_channel, i)
+    assert_bool(fill_result, "Channel fill operation")
+    i = i + 1
 }
+
+fr fr Empty channel buffer
+i = 0
+bestie (i < 10) {
+    sus drain_value normie = 0
+    sus drain_result lit = channel_receive(stress_channel, &drain_value)
+    assert_bool(drain_result, "Channel drain operation")
+    assert_eq_int(drain_value, i, "Channel value order preserved")
+    i = i + 1
+}
+
+destroy_channel(stress_channel)
+
+fr fr Test atomic operations stress
+sus stress_atomic *AtomicI32 = create_atomic_i32(0)
+assert_not_null(stress_atomic, "Stress test atomic created")
+
+i = 0
+bestie (i < 100) {
+    atomic_i32_fetch_add(stress_atomic, 1)
+    i = i + 1
+}
+
+sus final_value normie = atomic_i32_load(stress_atomic)
+assert_eq_int(final_value, 100, "Atomic stress test final value")
+
+destroy_atomic_i32(stress_atomic)
+
+fr fr Test multiple mutex operations
+sus stress_mutex *Mutex = create_mutex()
+assert_not_null(stress_mutex, "Stress test mutex created")
+
+i = 0
+bestie (i < 50) {
+    sus stress_lock lit = mutex_lock(stress_mutex)
+    assert_bool(stress_lock, "Stress mutex lock")
+    sus stress_unlock lit = mutex_unlock(stress_mutex)
+    assert_bool(stress_unlock, "Stress mutex unlock")
+    i = i + 1
+}
+
+destroy_mutex(stress_mutex)
+
+print_test_summary()
