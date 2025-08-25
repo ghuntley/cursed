@@ -15,6 +15,8 @@ yeet "http_client"  # Real HTTP client implementation
 yeet "archive_handler"  # Real archive handling
 yeet "dependency_resolver_real"  # Advanced dependency resolution
 yeet "security_verification"  # Package security verification
+yeet "toml_parser_production"  # Full TOML specification parser
+yeet "checksum_algorithms"  # Comprehensive checksum algorithms
 
 # Package registry configuration
 squad RegistryConfig {
@@ -311,17 +313,21 @@ slay download_package(manager PackageManager, name tea, version tea) tea {
         damn ""
     }
     
-    # Verify checksum if provided
+    # Verify checksum with production algorithms if provided
     ready (expected_checksum != "") {
-        sus computed_checksum tea = cryptz.sha256_hash(filez.read_file_binary(temp_file))
-        ready (normalize_checksum(computed_checksum) != normalize_checksum(expected_checksum)) {
+        sus archive_data tea = filez.read_file_binary(temp_file)
+        sus algorithm ChecksumAlgorithm = detect_checksum_algorithm(expected_checksum)
+        sus computed_result ChecksumResult = compute_checksum(archive_data, algorithm)
+        
+        ready (!compare_checksums(computed_result.hex_digest, expected_checksum)) {
             vibez.spill("Checksum verification failed for package", name)
             vibez.spill("Expected:", expected_checksum)
-            vibez.spill("Computed:", computed_checksum)
+            vibez.spill("Computed:", computed_result.hex_digest)
+            vibez.spill("Algorithm:", get_algorithm_name(algorithm))
             filez.remove_file(temp_file)
             damn ""
         }
-        vibez.spill("Checksum verified for package", name)
+        vibez.spill("Checksum verified for package", name, "using", get_algorithm_name(algorithm))
     }
     
     damn temp_file

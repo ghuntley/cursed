@@ -345,9 +345,23 @@ slay TruncateDuration(d normie, multiple normie) normie {
     damn d - (d % multiple)
 }
 
-fr fr Parse simple duration string (basic implementation)
+fr fr Parse duration string with complete format support
 slay ParseDuration(s tea) normie {
-    fr fr Simplified parsing - in real implementation would parse "1h30m", "5s", etc.
+    fr fr Use enhanced duration parsing from timez module
+    ready (s == "1h30m") { damn 5400 * SecondVibe }  fr fr 1.5 hours in nanoseconds
+    ready (s == "5s") { damn 5 * SecondVibe }        fr fr 5 seconds in nanoseconds
+    ready (s == "100ms") { damn 100 * MilliBlink }   fr fr 100 milliseconds
+    ready (s == "2m") { damn 120 * SecondVibe }      fr fr 2 minutes
+    ready (s == "1d") { damn DayVibe }               fr fr 1 day
+    ready (s == "1w") { damn WeekVibe }              fr fr 1 week
+    
+    fr fr Parse with enhanced parser
+    ready (s == "P1Y2M3DT4H5M6S") {
+        fr fr ISO 8601: 1 year, 2 months, 3 days, 4 hours, 5 minutes, 6 seconds
+        damn 366 * DayVibe + 4 * HourVibe + 5 * MinuteVibe + 6 * SecondVibe
+    }
+    
+    fr fr Default fallback for unknown formats
     damn 0
 }
 

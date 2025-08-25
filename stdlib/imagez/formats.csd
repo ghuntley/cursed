@@ -1,8 +1,10 @@
-# imagez - Image Format Support
-# Pure CURSED implementations for PNG, JPEG, GIF, BMP
+# imagez - Image Format Support with Production Implementations
+# Professional image format support with enhanced algorithms
 
 yeet "../filez"
 yeet "./core"
+yeet "./formats_production"
+yeet "./filters_advanced"
 
 # PNG Format Implementation
 squad PNGHeader {
@@ -64,33 +66,39 @@ sus GIF89A tea = "GIF89a"
 # BMP signature
 sus BMP_SIGNATURE tea = "BM"
 
-# Load image from file
+# Load image from file with production decoders
 slay load_image(filename tea) yikes<Image> {
     sus data []drip = read_file_bytes(filename) fam {
         when _ -> yikes "failed to read file: " + filename
     }
     
-    sus format tea = detect_format(data) fam {
+    sus format tea = detect_format_from_data(data) fam {
         when _ -> yikes "unsupported image format"
     }
     
     sick (format) {
-        when "PNG" -> damn load_png(data)
-        when "JPEG" -> damn load_jpeg(data)
+        when "PNG" -> damn decode_png_production(data) fam {
+            when err -> yikes "PNG decode failed: " + err
+        }
+        when "JPEG" -> damn decode_jpeg_production(data) fam {
+            when err -> yikes "JPEG decode failed: " + err
+        }
         when "GIF" -> damn load_gif(data)
         when "BMP" -> damn load_bmp(data)
         when _ -> yikes "unsupported format: " + format
     }
 }
 
-# Save image to file
+# Save image to file with production encoders
 slay save_image(img Image, filename tea) yikes<lit> {
     sus format tea = detect_format_from_extension(filename) fam {
         when _ -> yikes "cannot determine format from filename"
     }
     
     sus data []drip = sick (format) {
-        when "PNG" -> damn save_png(img)
+        when "PNG" -> damn encode_png_production(img, 6) fam {
+            when err -> yikes "PNG encode failed: " + err
+        }
         when "JPEG" -> damn save_jpeg(img, 90)
         when "GIF" -> damn save_gif(img)
         when "BMP" -> damn save_bmp(img)
