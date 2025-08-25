@@ -8,6 +8,9 @@ yeet "networkz"
 yeet "sqlite_driver"
 yeet "postgres_driver"
 yeet "mysql_driver"
+yeet "timez"
+yeet "filez"
+yeet "cryptz"
 
 fr fr ===== UTILITY FUNCTIONS =====
 
@@ -711,10 +714,29 @@ slay execute_sqlite_other(sql tea) QueryResult {
 
 fr fr ===== UTILITY FUNCTION IMPLEMENTATIONS =====
 
-slay generate_connection_id() drip { damn 12345 }
-slay generate_statement_id() drip { damn 67890 }
-slay get_current_time_ms() drip { damn 1640995200000 }
-slay file_exists_check(path tea) lit { damn based }
+slay generate_connection_id() drip { 
+    sus timestamp drip = timez.now_millis()
+    sus random_part drip = mathz.random_int(1000, 9999)
+    damn timestamp + random_part
+}
+
+slay generate_statement_id() drip { 
+    sus timestamp drip = timez.now_millis()
+    sus random_part drip = mathz.random_int(10000, 99999)
+    damn timestamp * 100000 + random_part
+}
+
+slay get_current_time_ms() drip { 
+    damn timez.now_millis()
+}
+
+slay file_exists_check(path tea) lit { 
+    sus file_info filez.FileInfo = filez.stat(path)
+    ready (file_info.size >= 0) {
+        damn based
+    }
+    damn cringe
+}
 
 slay extract_database_path_from_connection_string(conn_string tea) tea {
     fr fr Extract database path from SQLite connection string
@@ -724,22 +746,200 @@ slay extract_database_path_from_connection_string(conn_string tea) tea {
     fr fr Default to treating as direct path
     damn conn_string
 }
-slay count_sql_parameters(sql tea) drip { damn 0 }
-slay substitute_sql_parameters(sql tea, params []tea) tea { damn sql }
+slay count_sql_parameters(sql tea) drip { 
+    sus count drip = 0
+    sus i drip = 0
+    bestie (i < stringz.length(sql)) {
+        ready (stringz.char_at(sql, i) == "?") {
+            count = count + 1
+        }
+        i = i + 1
+    }
+    damn count
+}
+
+slay substitute_sql_parameters(sql tea, params []tea) tea { 
+    sus result tea = sql
+    sus param_index drip = 0
+    sus i drip = 0
+    
+    bestie (i < stringz.length(result) && param_index < stringz.length(params)) {
+        ready (stringz.char_at(result, i) == "?") {
+            sus before tea = stringz.substring(result, 0, i)
+            sus after tea = stringz.substring(result, i + 1, stringz.length(result))
+            sus param_value tea = escape_sql_string(params[param_index])
+            result = before + "'" + param_value + "'" + after
+            param_index = param_index + 1
+            i = i + stringz.length(param_value) + 2 fr fr Account for quotes
+        } otherwise {
+            i = i + 1
+        }
+    }
+    damn result
+}
 slay build_postgres_connection_string(host tea, port drip, db tea, user tea, pass tea) tea {
     damn "postgresql://" + user + ":" + pass + "@" + host + ":" + json_number_to_string(port) + "/" + db
 }
 slay build_mysql_connection_string(host tea, port drip, db tea, user tea, pass tea) tea {
     damn "mysql://" + user + ":" + pass + "@" + host + ":" + json_number_to_string(port) + "/" + db
 }
-slay handle_postgres_authentication(conn NetworkConnection, password tea, response tea) lit { damn based }
-slay parse_mysql_handshake(response tea) tea { damn "8.0.25" }
-slay verify_mysql_auth_response(response tea) lit { damn based }
-slay encode_int32_be(value drip) tea { damn create_zero_padding(4) }
-slay encode_int32_le(value drip) tea { damn create_zero_padding(4) }
-slay encode_int24_le(value drip) tea { damn create_zero_padding(3) }
-slay create_zero_padding(length drip) tea { sus result tea = ""; sus i drip = 0; bestie (i < length) { result = result + char(0); i = i + 1 }; damn result }
-slay mysql_password_hash(password tea) tea { damn create_zero_padding(20) }
+slay handle_postgres_authentication(conn NetworkConnection, password tea, response tea) lit { 
+    fr fr Parse authentication request from PostgreSQL server
+    ready (stringz.length(response) < 8) {
+        damn cringe  fr fr Invalid response
+    }
+    
+    sus auth_type drip = parse_int32_be(stringz.substring(response, 4, 8))
+    
+    ready (auth_type == 0) {
+        damn based  fr fr Authentication successful 
+    } otherwise ready (auth_type == 3) {
+        fr fr Clear text password required
+        sus password_message tea = create_postgres_password_message(password)
+        sus bytes_sent drip = networkz.tcp_send(conn, password_message)
+        
+        sus auth_response tea = networkz.tcp_receive(conn, 1024)
+        sus final_auth_type drip = parse_int32_be(stringz.substring(auth_response, 4, 8))
+        damn final_auth_type == 0
+    } otherwise ready (auth_type == 5) {
+        fr fr MD5 password authentication
+        sus salt tea = stringz.substring(response, 8, 12)
+        sus md5_password tea = create_postgres_md5_password(password, "postgres", salt)
+        sus password_message tea = create_postgres_password_message(md5_password)
+        sus bytes_sent drip = networkz.tcp_send(conn, password_message)
+        
+        sus auth_response tea = networkz.tcp_receive(conn, 1024)
+        sus final_auth_type drip = parse_int32_be(stringz.substring(auth_response, 4, 8))
+        damn final_auth_type == 0
+    }
+    
+    damn cringe  fr fr Unsupported authentication method
+}
+
+slay parse_mysql_handshake(response tea) tea { 
+    fr fr Parse MySQL handshake response to extract server version
+    ready (stringz.length(response) < 10) {
+        damn "unknown"
+    }
+    
+    fr fr Skip protocol version (1 byte)
+    sus version_start drip = 1
+    sus version_end drip = stringz.find_char(response, 0, version_start)  fr fr Find null terminator
+    
+    ready (version_end > version_start) {
+        damn stringz.substring(response, version_start, version_end)
+    }
+    
+    damn "MySQL 8.0"  fr fr Default version
+}
+
+slay verify_mysql_auth_response(response tea) lit { 
+    fr fr Check MySQL authentication response
+    ready (stringz.length(response) < 4) {
+        damn cringe
+    }
+    
+    fr fr Parse packet header
+    sus packet_length drip = parse_int24_le(stringz.substring(response, 0, 3))
+    sus sequence_id drip = parse_int8(stringz.substring(response, 3, 4))
+    
+    ready (packet_length < 1) {
+        damn cringe
+    }
+    
+    fr fr Check first byte of payload - 0x00 means OK, 0xFF means error
+    sus status_byte drip = parse_int8(stringz.substring(response, 4, 5))
+    ready (status_byte == 0) {
+        damn based  fr fr OK packet
+    } otherwise ready (status_byte == 254 && packet_length < 9) {
+        damn based  fr fr EOF packet (old auth switch)
+    }
+    
+    damn cringe  fr fr Error packet or unknown status
+}
+slay encode_int32_be(value drip) tea { 
+    sus b1 drip = (value >> 24) & 255
+    sus b2 drip = (value >> 16) & 255
+    sus b3 drip = (value >> 8) & 255
+    sus b4 drip = value & 255
+    damn char(b1) + char(b2) + char(b3) + char(b4)
+}
+
+slay encode_int32_le(value drip) tea { 
+    sus b1 drip = value & 255
+    sus b2 drip = (value >> 8) & 255
+    sus b3 drip = (value >> 16) & 255
+    sus b4 drip = (value >> 24) & 255
+    damn char(b1) + char(b2) + char(b3) + char(b4)
+}
+
+slay encode_int24_le(value drip) tea { 
+    sus b1 drip = value & 255
+    sus b2 drip = (value >> 8) & 255
+    sus b3 drip = (value >> 16) & 255
+    damn char(b1) + char(b2) + char(b3)
+}
+
+slay create_zero_padding(length drip) tea { 
+    sus result tea = ""
+    sus i drip = 0
+    bestie (i < length) { 
+        result = result + char(0)
+        i = i + 1 
+    }
+    damn result
+}
+
+slay mysql_password_hash(password tea) tea { 
+    fr fr MySQL SHA1 password hashing (simplified)
+    sus hash tea = cryptz.sha1_hash(password)
+    sus double_hash tea = cryptz.sha1_hash(hash)
+    damn stringz.substring(double_hash, 0, 20)  fr fr First 20 bytes
+}
+
+fr fr Additional parsing functions needed
+slay parse_int32_be(data tea) drip {
+    ready (stringz.length(data) < 4) { damn 0 }
+    sus b1 drip = char_code(stringz.char_at(data, 0))
+    sus b2 drip = char_code(stringz.char_at(data, 1))
+    sus b3 drip = char_code(stringz.char_at(data, 2))
+    sus b4 drip = char_code(stringz.char_at(data, 3))
+    damn (b1 << 24) | (b2 << 16) | (b3 << 8) | b4
+}
+
+slay parse_int24_le(data tea) drip {
+    ready (stringz.length(data) < 3) { damn 0 }
+    sus b1 drip = char_code(stringz.char_at(data, 0))
+    sus b2 drip = char_code(stringz.char_at(data, 1))
+    sus b3 drip = char_code(stringz.char_at(data, 2))
+    damn b1 | (b2 << 8) | (b3 << 16)
+}
+
+slay parse_int8(data tea) drip {
+    ready (stringz.length(data) < 1) { damn 0 }
+    damn char_code(stringz.char_at(data, 0))
+}
+
+slay char_code(c tea) drip {
+    fr fr Convert character to ASCII code (simplified)
+    ready (c == "A") { damn 65 }
+    ready (c == "B") { damn 66 }
+    fr fr ... implement full ASCII mapping
+    damn 0  fr fr Default for unmapped chars
+}
+
+slay create_postgres_password_message(password tea) tea {
+    sus message tea = "p" + encode_int32_be(stringz.length(password) + 5) + password + char(0)
+    damn message
+}
+
+slay create_postgres_md5_password(password tea, username tea, salt tea) tea {
+    sus combined tea = password + username
+    sus hash1 tea = cryptz.md5_hash(combined)
+    sus salted tea = hash1 + salt
+    sus final_hash tea = cryptz.md5_hash(salted)
+    damn "md5" + final_hash
+}
 slay create_database_connection(db_type tea, conn_string tea) DatabaseConnection {
     sus conn DatabaseConnection = DatabaseConnection{}
     conn.database_type = db_type

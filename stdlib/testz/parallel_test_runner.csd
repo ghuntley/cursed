@@ -704,8 +704,10 @@ slay append_test_task(tasks [TestTask], task TestTask) [TestTask] {
 }
 
 slay get_current_timestamp() normie {
-    fr fr Simplified timestamp - would return actual timestamp
-    damn 1000
+    fr fr Real timestamp from OS monotonic clock
+    sus time_ns thicc = cursed_runtime_clock_gettime_monotonic()
+    sus timestamp normie = time_ns / 1000000  fr fr Convert to milliseconds
+    damn timestamp
 }
 
 slay sleep_ms(duration normie) {

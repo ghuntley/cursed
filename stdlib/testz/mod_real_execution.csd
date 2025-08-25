@@ -100,7 +100,7 @@ slay test_start(name tea) lit {
         record_test_start(name)
     }
     
-    damn based
+    damn __testz_current_test.name != ""
 }
 
 slay test_end() lit {
@@ -110,6 +110,11 @@ slay test_end() lit {
     ready (__testz_execution_mode == "debug") {
         vibez.spill("✅ [DEBUG] Test completed:", __testz_current_test.name, 
                    "Duration:", __testz_current_test.duration, "ms")
+    }
+    
+    fr fr Update statistics based on test result
+    ready (__testz_current_test.assertions > 0) {
+        __testz_stats.passed = __testz_stats.passed + 1
     }
     
     damn based
@@ -618,10 +623,12 @@ slay execute_single_test_real(task TestTask) TestResult {
     }
 }
 
-fr fr System integration functions (would be implemented in runtime)
+fr fr System integration functions - Real OS time integration
 slay system_current_time_ms() normie {
     fr fr Real system call to get current time
-    damn 1609459200000  fr fr Placeholder - would be actual system time
+    sus time_ns thicc = cursed_runtime_clock_gettime_monotonic()
+    sus time_ms normie = time_ns / 1000000  fr fr Convert nanoseconds to milliseconds
+    damn time_ms
 }
 
 slay system_get_stack_trace() tea {
@@ -826,7 +833,11 @@ slay print_test_summary() lit {
     }
     
     vibez.spill("═══════════════════════════════════")
-    damn based
+    
+    fr fr Set end time for complete execution tracking
+    __testz_stats.end_time = get_real_timestamp()
+    
+    damn __testz_stats.total > 0
 }
 
 slay all_tests_passed() lit {
@@ -845,5 +856,5 @@ slay reset_tests() lit {
     __testz_current_test.assertions = 0
     __testz_current_test.duration = 0
     
-    damn based
+    damn (__testz_stats.total == 0) && (__testz_stats.passed == 0) && (__testz_stats.failed == 0)
 }

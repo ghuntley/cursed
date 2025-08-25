@@ -857,41 +857,100 @@ slay extract_template_blocks(tokens [TemplateToken]) [TemplateBlock] {
 }
 
 slay extract_extends_directive(template tea) tea {
-    // Look for {% extends "template.html" %}
-    vibes string_contains(template, "extends ") {
-        damn "base.html" // placeholder
+    // Look for {% extends "template.html" %} with proper parsing
+    sus start normie = stringz.index_of(template, "extends ")
+    vibes start >= 0 {
+        sus after_extends normie = start + 8 // length of "extends "
+        sus quote_start normie = stringz.index_of_from(template, "\"", after_extends)
+        vibes quote_start >= 0 {
+            sus quote_end normie = stringz.index_of_from(template, "\"", quote_start + 1)
+            vibes quote_end >= 0 {
+                damn stringz.substring(template, quote_start + 1, quote_end)
+            }
+        }
+        
+        // Try single quotes
+        quote_start = stringz.index_of_from(template, "'", after_extends)
+        vibes quote_start >= 0 {
+            sus quote_end normie = stringz.index_of_from(template, "'", quote_start + 1)
+            vibes quote_end >= 0 {
+                damn stringz.substring(template, quote_start + 1, quote_end)
+            }
+        }
     }
-    damn ""
+    damn "" // No parent template found
 }
 
 slay load_template_file(engine AdvancedTemplateEngine, filename tea) tea {
-    // Load template from filesystem
+    // Load template from filesystem with security validation
+    vibes filename == "" {
+        damn "" // Empty filename
+    }
+    
+    // Security check: prevent path traversal
+    vibes stringz.contains(filename, "../") || stringz.contains(filename, "..\\") {
+        damn "" // Path traversal attempt blocked
+    }
+    
+    // Load common templates from cache/filesystem
     vibes filename == "base.html" {
         damn "<!DOCTYPE html><html><head><title>{{title}}</title></head><body>{{block:content}}Default content{{/block:content}}</body></html>"
+    } elif filename == "layout.html" {
+        damn "<!DOCTYPE html><html><head><title>{{page_title}}</title><meta charset='utf-8'></head><body><main>{{block:main}}{{/block:main}}</main></body></html>"
+    } elif filename == "form.html" {
+        damn "<form method='{{method}}' action='{{action}}'>{{block:fields}}{{/block:fields}}<button type='submit'>{{submit_text}}</button></form>"
     }
-    damn ""
+    
+    // Try to load from filesystem (placeholder - would use filez module in real implementation)
+    // sus content tea = filez.read_file(engine.template_directory + "/" + filename)
+    // damn content
+    
+    damn "" // Template not found
 }
 
 // Function implementations for template functions
 slay string_upper_func(args [tea]) tea {
     vibes len(args) > 0 {
-        damn string_upper(args[0])
+        damn stringz.to_upper(args[0])
     }
-    damn ""
+    damn "" // No arguments provided
 }
 
 slay string_lower_func(args [tea]) tea {
     vibes len(args) > 0 {
-        damn string_lower(args[0])
+        damn stringz.to_lower(args[0])
     }
-    damn ""
+    damn "" // No arguments provided
 }
 
 slay string_title_func(args [tea]) tea {
     vibes len(args) > 0 {
-        damn capitalize_words(args[0])
+        damn capitalize_words_properly(args[0])
     }
-    damn ""
+    damn "" // No arguments provided
+}
+
+slay capitalize_words_properly(text tea) tea {
+    vibes text == "" {
+        damn ""
+    }
+    
+    sus words [tea] = stringz.split(text, " ")
+    sus result tea = ""
+    
+    bestie i normie := 0; i < len(words); i++ {
+        vibes i > 0 {
+            result = result + " "
+        }
+        sus word tea = words[i]
+        vibes len(word) > 0 {
+            sus first_char tea = stringz.to_upper(stringz.substring(word, 0, 1))
+            sus rest tea = stringz.to_lower(stringz.substring(word, 1, len(word)))
+            result = result + first_char + rest
+        }
+    }
+    
+    damn result
 }
 
 slay string_truncate_func(args [tea]) tea {

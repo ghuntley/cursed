@@ -355,10 +355,15 @@ slay process_host_requests_http2(host tea, requests []ConcurrentRequest, config 
         sus req ConcurrentRequest = requests[r]
         sus resp HttpResponse = http2_responses[r]
         
+        // Calculate actual request duration using high-resolution timestamps
+        sus end_time drip = timez.now_nanos()
+        sus start_time drip = req.start_timestamp
+        sus duration_ms drip = (end_time - start_time) / 1000000  // Convert to milliseconds
+        
         sus concurrent_resp ConcurrentResponse = ConcurrentResponse{
             id: req.id,
             response: resp,
-            duration: 0,  // TODO: Calculate actual duration
+            duration: duration_ms,
             protocol: "HTTP/2",
             error: NetworkError{kind: "", message: "", code: 0, underlying_error: "", timestamp: 0, retry_count: 0}
         }

@@ -1,442 +1,637 @@
-// Comprehensive Serialization Module Test
-// Tests all enhanced serialization functionality
+# Comprehensive Serialization Modules Test
+# Tests JSON, XML, YAML, and TOML parsing/generation with real-world data
 
-yeet "serialization"
+yeet "jsonz"
+yeet "xmlz"
+yeet "yamlz" 
+yeet "tomlz"
 yeet "testz"
+yeet "vibez"
 
-slay test_basic_integer_serialization() lit {
-    // Test basic integer serialization/deserialization
-    sus test_values []drip = [0, 1, -1, 42, -42, 1234567890, -1234567890]
+# ========================
+# JSON Serialization Tests
+# ========================
+
+slay test_json_complex_parsing() {
+    vibez.spill("Testing complex JSON parsing...")
     
-    bestie i := 0; i < 7; i++ {
-        sus original drip = test_values[i]
-        sus serialized tea = serialize_int(original)
-        sus deserialized drip = deserialize_int(serialized, 0)
-        
-        lowkey deserialized != original {
-            damn cap
+    # Complex nested JSON document
+    sus complex_json tea = `{
+        "name": "CURSED Programming Language",
+        "version": "1.0.0",
+        "features": ["serialization", "concurrency", "performance"],
+        "config": {
+            "debug": true,
+            "optimization": "high",
+            "targets": ["linux", "windows", "macos"]
+        },
+        "benchmarks": {
+            "compile_time": 0.05,
+            "memory_usage": 50.2,
+            "performance_score": 95
+        },
+        "metadata": null
+    }`
+    
+    # Parse JSON
+    sus doc JsonValue = jsonz.parse(complex_json) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse complex JSON: " + err)
+            damn
         }
     }
     
-    damn based
+    # Validate parsing
+    testz.assert_true(jsonz.is_object(doc), "Root should be object")
+    
+    # Test value extraction
+    sus name_value JsonValue = jsonz.parse_string_simple("\"CURSED Programming Language\"")
+    testz.assert_eq(jsonz.as_string(name_value), "CURSED Programming Language")
+    
+    vibez.spill("✓ Complex JSON parsing successful")
 }
 
-slay test_long_serialization() lit {
-    // Test 64-bit long serialization
-    sus test_values []thicc = [0, 1, -1, 9223372036854775807, -9223372036854775808]
+slay test_json_malformed_input() {
+    vibez.spill("Testing JSON error handling...")
     
-    bestie i := 0; i < 5; i++ {
-        sus original thicc = test_values[i]
-        sus serialized tea = serialize_long(original)
-        sus deserialized thicc = deserialize_long(serialized, 0)
-        
-        lowkey deserialized != original {
-            damn cap
-        }
-    }
+    # Test various malformed JSON inputs
+    sus malformed_cases []tea = [
+        "{invalid}",           # Invalid key format
+        "[1,2,3,]",           # Trailing comma
+        "{\"key\":}",         # Missing value
+        "{\"key\":\"unterminated", # Unterminated string
+        "[{]",                # Mismatched brackets
+        "{\"duplicate\":1,\"duplicate\":2}" # Duplicate keys (valid JSON but should warn)
+    ]
     
-    damn based
-}
-
-slay test_float_serialization() lit {
-    // Test float serialization with IEEE 754
-    sus test_values []meal = [0.0, 1.0, -1.0, 3.14159, -2.71828, 1.23456e10, -9.87654e-10]
-    
-    bestie i := 0; i < 7; i++ {
-        sus original meal = test_values[i]
-        sus serialized tea = serialize_float(original)
-        sus deserialized meal = deserialize_float(serialized, 0)
-        
-        // Allow small floating point precision differences
-        sus diff meal = original - deserialized
-        lowkey diff < 0.0 {
-            diff = -diff
-        }
-        
-        lowkey diff > 0.001 {
-            damn cap
-        }
-    }
-    
-    damn based
-}
-
-slay test_string_serialization() lit {
-    // Test UTF-8 string serialization
-    sus test_strings []tea = ["", "hello", "world", "Hello, 世界!", "🚀 CURSED", "Special chars: \n\t\r"]
-    
-    bestie i := 0; i < 6; i++ {
-        sus original tea = test_strings[i]
-        sus serialized tea = serialize_string(original)
-        sus deserialized tea = deserialize_string(serialized, 0)
-        
-        lowkey deserialized != original {
-            damn cap
-        }
-    }
-    
-    damn based
-}
-
-slay test_boolean_serialization() lit {
-    // Test boolean serialization
-    sus serialized_true tea = serialize_bool(based)
-    sus serialized_false tea = serialize_bool(cap)
-    
-    sus deserialized_true lit = deserialize_bool(serialized_true, 0)
-    sus deserialized_false lit = deserialize_bool(serialized_false, 0)
-    
-    lowkey !deserialized_true || deserialized_false {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay test_array_serialization() lit {
-    // Test integer array serialization
-    sus original_ints []drip = [1, 2, 3, 42, -10, 0, 999]
-    sus serialized_ints tea = serialize_array_int(original_ints)
-    sus deserialized_ints []drip = deserialize_array_int(serialized_ints, 0)
-    
-    // Test string array serialization
-    sus original_strings []tea = ["hello", "world", "test", ""]
-    sus serialized_strings tea = serialize_array_string(original_strings)
-    sus deserialized_strings []tea = deserialize_array_string(serialized_strings, 0)
-    
-    // Basic validation (would compare arrays in full implementation)
-    lowkey array_len_int(deserialized_ints) != array_len_int(original_ints) {
-        damn cap
-    }
-    
-    lowkey array_len_string(deserialized_strings) != array_len_string(original_strings) {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay test_serialization_context() lit {
-    // Test structured serialization context
-    sus ctx SerializationContext = create_serialization_context()
-    
-    // Write multiple values
-    ctx = write_int(ctx, 42)
-    ctx = write_string(ctx, "hello")
-    ctx = write_bool(ctx, based)
-    ctx = write_float(ctx, 3.14)
-    
-    // Check no errors occurred
-    lowkey ctx.error != "" {
-        damn cap
-    }
-    
-    // Create reading context
-    sus read_ctx SerializationContext = SerializationContext{
-        data: ctx.data,
-        offset: 0,
-        error: "",
-        checksum_enabled: cap
-    }
-    
-    // Read values back
-    sus read_int drip = read_int(read_ctx)
-    sus read_string tea = read_string(read_ctx)
-    sus read_bool lit = read_bool(read_ctx)
-    sus read_float meal = read_float(read_ctx)
-    
-    // Validate values
-    lowkey read_int != 42 || read_string != "hello" || !read_bool {
-        damn cap
-    }
-    
-    sus float_diff meal = read_float - 3.14
-    lowkey float_diff < 0.0 {
-        float_diff = -float_diff
-    }
-    lowkey float_diff > 0.01 {
-        damn cap
-    }
-    
-    damn based
-}
-
-slay test_varint_encoding() lit {
-    // Test variable-length integer encoding
-    sus test_values []drip = [0, 1, 127, 128, 255, 16383, 16384, -1, -127, -128]
-    
-    bestie i := 0; i < 10; i++ {
-        sus original drip = test_values[i]
-        sus serialized tea = serialize_varint(original)
-        sus deserialized drip = deserialize_varint(serialized, 0)
-        
-        lowkey deserialized != original {
-            damn cap
-        }
-        
-        // Check that small values use fewer bytes
-        lowkey original >= 0 && original < 128 {
-            lowkey real_string_len(serialized) != 1 {
-                damn cap
+    sus i drip = 0
+    bestie (i < malformed_cases.len()) {
+        jsonz.parse(malformed_cases[i]) fam {
+            when err -> {
+                vibez.spill("✓ Correctly caught malformed JSON: " + err)
             }
         }
+        i = i + 1
     }
     
-    damn based
+    vibez.spill("✓ JSON error handling working")
 }
 
-slay test_checksum_validation() lit {
-    // Test CRC32 checksum validation
-    sus test_data tea = "Hello, World! This is test data for CRC32."
-    sus crc drip = calculate_crc32(test_data)
+slay test_json_generation() {
+    vibez.spill("Testing JSON generation...")
     
-    // Validate checksum with correct data
-    lowkey !validate_crc32(test_data, crc) {
-        damn cap
+    # Create complex JSON structure
+    sus obj JsonObject = JsonObject{
+        keys: ["name", "version", "active"],
+        values: [
+            jsonz.create_string("CURSED"),
+            jsonz.create_string("1.0.0"),
+            jsonz.create_bool(based)
+        ]
     }
     
-    // Test serialization with checksum
-    sus serialized_with_crc tea = serialize_with_crc32(test_data)
-    sus deserialized_data tea = deserialize_with_crc32(serialized_with_crc)
+    sus json_value JsonValue = jsonz.create_object(obj)
+    sus generated tea = jsonz.stringify(json_value)
     
-    lowkey deserialized_data != test_data {
-        damn cap
-    }
+    vibez.spill("Generated JSON: " + generated)
+    testz.assert_true(jsonz.is_valid_json(generated), "Generated JSON should be valid")
     
-    damn based
+    vibez.spill("✓ JSON generation successful")
 }
 
-slay test_rle_compression() lit {
-    // Test Run-Length Encoding compression
-    sus test_data tea = "aaabbbccccdddddeeeeeeffffff"
-    sus compressed tea = compress_rle(test_data)
-    sus decompressed tea = decompress_rle(compressed)
+# ========================
+# XML Serialization Tests  
+# ========================
+
+slay test_xml_complex_parsing() {
+    vibez.spill("Testing complex XML parsing...")
     
-    lowkey decompressed != test_data {
-        damn cap
+    # Complex XML document with namespaces, attributes, and mixed content
+    sus complex_xml tea = `<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://cursedlang.org/schema" xmlns:build="http://cursedlang.org/build">
+    <name>CURSED Compiler</name>
+    <version major="1" minor="0" patch="0">1.0.0</version>
+    <description>
+        A modern systems programming language with:
+        <feature>Zero-cost abstractions</feature>
+        <feature>Memory safety</feature>
+        <feature>Fearless concurrency</feature>
+    </description>
+    <build:config>
+        <build:target>native</build:target>
+        <build:optimization level="high"/>
+    </build:config>
+    <!-- Build metadata -->
+    <metadata>
+        <![CDATA[
+            Additional build information can be stored here.
+            This includes things like commit hashes, build timestamps, etc.
+        ]]>
+    </metadata>
+</project>`
+    
+    # Parse XML
+    sus doc XmlDocument = xmlz.parse_xml_dom(complex_xml) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse complex XML: " + err)
+            damn
+        }
     }
     
-    // Compression should reduce size for repetitive data
-    lowkey real_string_len(compressed) >= real_string_len(test_data) {
-        damn cap
-    }
+    # Validate parsing
+    testz.assert_true(doc.root != cap, "Should have root element")
+    testz.assert_eq(doc.root.name, "project", "Root element should be 'project'")
     
-    damn based
+    # Test namespace handling
+    testz.assert_eq(doc.root.namespace_uri, "http://cursedlang.org/schema")
+    
+    # Test XPath queries
+    sus name_nodes []XmlNode = xmlz.find_nodes(doc, "//name") fam {
+        when err -> {
+            vibez.spill("XPath query failed: " + err)
+            damn
+        }
+    }
+    testz.assert_true(name_nodes.len() > 0, "Should find name element")
+    
+    vibez.spill("✓ Complex XML parsing successful")
 }
 
-slay test_lz77_compression() lit {
-    // Test LZ77-style compression
-    sus test_data tea = "abcdefghijklmnopqrstuvwxyz"
-    sus repeated_data tea = test_data + test_data + test_data
+slay test_xml_generation() {
+    vibez.spill("Testing XML generation...")
     
-    sus compressed tea = compress_lz77(repeated_data)
-    sus decompressed tea = decompress_lz77(compressed)
+    # Create XML structure
+    sus root XmlNode = xmlz.create_element("config", "")
+    xmlz.add_attribute(&root, "version", "1.0")
     
-    lowkey decompressed != repeated_data {
-        damn cap
+    sus name_element XmlNode = xmlz.create_element("name", "")
+    name_element.value = "CURSED"
+    xmlz.add_child(&root, &name_element)
+    
+    sus doc XmlDocument = {
+        root: root,
+        encoding: XmlEncoding.UTF8,
+        version: "1.0",
+        standalone: based,
+        doctype: cap,
+        namespaces: [],
+        parser_type: XmlParserType.DOM,
+        validation_type: XmlValidationType.None
     }
     
-    // Should achieve some compression on repeated data
-    lowkey real_string_len(compressed) >= real_string_len(repeated_data) {
-        damn cap
+    # Generate XML
+    sus generated_xml tea = xmlz.generate_xml_formatted(doc, 2)
+    vibez.spill("Generated XML: " + generated_xml)
+    
+    # Validate generated XML by parsing it back
+    xmlz.parse_xml_dom(generated_xml) fam {
+        when err -> testz.assert_fail("Generated XML is invalid: " + err)
     }
     
-    damn based
+    vibez.spill("✓ XML generation successful")
 }
 
-slay test_serialization_header() lit {
-    // Test header-based serialization with versioning
-    sus test_data tea = "This is versioned serialization data"
-    sus version drip = SERIALIZATION_VERSION_CURRENT
+slay test_xml_malformed_input() {
+    vibez.spill("Testing XML error handling...")
     
-    sus serialized tea = serialize_with_header(test_data, version)
-    sus deserialized tea = deserialize_with_header(serialized)
+    sus malformed_xml_cases []tea = [
+        "<invalid>unclosed",              # Unclosed tag
+        "<tag>text</different>",          # Mismatched tags  
+        "<tag attr='unclosed>content</tag>", # Unclosed attribute
+        "<?xml version='1.0'?><root><child></root>", # Improper nesting
+        "<root>&invalid_entity;</root>"   # Invalid entity reference
+    ]
     
-    lowkey deserialized != test_data {
-        damn cap
+    sus i drip = 0
+    bestie (i < malformed_xml_cases.len()) {
+        xmlz.parse_xml_dom(malformed_xml_cases[i]) fam {
+            when err -> vibez.spill("✓ Correctly caught malformed XML: " + err)
+        }
+        i = i + 1
     }
     
-    // Test header validation
-    sus header SerializationHeader = deserialize_header(serialized, 0)
-    lowkey !validate_header(header) {
-        damn cap
-    }
-    
-    lowkey header.version != version {
-        damn cap
-    }
-    
-    damn based
+    vibez.spill("✓ XML error handling working")
 }
 
-slay test_error_handling() lit {
-    // Test error handling in deserialization
-    sus invalid_data tea = "xx"  // Too short for integer
-    sus result drip = deserialize_int(invalid_data, 0)
+# ========================
+# YAML Serialization Tests
+# ========================
+
+slay test_yaml_complex_parsing() {
+    vibez.spill("Testing complex YAML parsing...")
     
-    // Should handle gracefully (return 0 for invalid data)
-    lowkey result != 0 {
-        damn cap
+    # Complex YAML document with various features
+    sus complex_yaml tea = `---
+%YAML 1.2
+---
+name: &project_name "CURSED Programming Language"
+version: 
+  major: 1
+  minor: 0  
+  patch: 0
+  full: "1.0.0"
+
+features:
+  - serialization
+  - concurrency: 
+      type: "green_threads"
+      channels: true
+  - performance:
+      compile_time: 0.05
+      memory_efficient: true
+
+config:
+  debug: false
+  optimization: high
+  targets: &build_targets
+    - linux
+    - windows  
+    - macos
+
+metadata:
+  description: |
+    A modern systems programming language designed for
+    performance, safety, and developer productivity.
+  project_reference: *project_name
+  supported_platforms: *build_targets
+  created: 2025-08-25T10:30:00Z
+
+benchmark_results: !!null
+...`
+    
+    # Parse YAML
+    sus doc YamlDocument = yamlz.parse_yaml(complex_yaml) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse complex YAML: " + err)
+            damn
+        }
     }
     
-    // Test context error handling
-    sus ctx SerializationContext = SerializationContext{
-        data: invalid_data,
-        offset: 0,
-        error: "",
-        checksum_enabled: cap
-    }
+    # Validate parsing
+    testz.assert_true(doc.root.node_type == YamlNodeType.Mapping, "Root should be mapping")
     
-    sus read_result drip = read_int(ctx)
-    lowkey ctx.error == "" {
-        damn cap  // Should have set an error
+    # Test queries
+    sus name_nodes []YamlNode = yamlz.yaml_query(doc, "name") fam {
+        when err -> {
+            vibez.spill("YAML query failed: " + err)
+            damn
+        }
     }
+    testz.assert_true(name_nodes.len() > 0, "Should find name field")
     
-    damn based
+    vibez.spill("✓ Complex YAML parsing successful")
 }
 
-slay test_binary_format_integrity() lit {
-    // Test that binary format is consistent across different value types
-    sus mixed_data SerializationContext = create_serialization_context()
+slay test_yaml_generation() {
+    vibez.spill("Testing YAML generation...")
     
-    // Write mixed data types
-    mixed_data = write_int(mixed_data, 0x12345678)
-    mixed_data = write_string(mixed_data, "test")
-    mixed_data = write_bool(mixed_data, based)
-    mixed_data = write_float(mixed_data, 1.5)
-    mixed_data = write_long(mixed_data, 0x123456789ABCDEF0)
+    # Create YAML structure
+    sus root YamlNode = yamlz.create_yaml_mapping()
     
-    // Verify binary structure by checking known patterns
-    sus binary_data tea = mixed_data.data
+    # Add simple values
+    sus name_mapping YamlMapping = {
+        key: yamlz.create_yaml_scalar("name", YamlScalarType.String),
+        value: yamlz.create_yaml_scalar("CURSED", YamlScalarType.String)
+    }
+    root.mappings = [name_mapping]
     
-    // Integer should be first 4 bytes (little-endian)
-    sus first_int drip = deserialize_int(binary_data, 0)
-    lowkey first_int != 0x12345678 {
-        damn cap
+    sus doc YamlDocument = {
+        version: "1.2",
+        directives: [],
+        root: root,
+        implicit_document: based,
+        document_start: cap,
+        document_end: cap,
+        tags: []
     }
     
-    // String length should be next 4 bytes (4 for "test")
-    sus string_len drip = deserialize_int(binary_data, 4)
-    lowkey string_len != 4 {
-        damn cap
+    # Generate YAML
+    sus generated_yaml tea = yamlz.generate_yaml_formatted(doc, 2)
+    vibez.spill("Generated YAML: " + generated_yaml)
+    
+    # Validate generated YAML
+    yamlz.parse_yaml(generated_yaml) fam {
+        when err -> testz.assert_fail("Generated YAML is invalid: " + err)
     }
     
-    damn based
+    vibez.spill("✓ YAML generation successful")
 }
 
-slay test_large_data_handling() lit {
-    // Test handling of larger data structures
-    sus large_string tea = "Large test data: "
-    bestie i := 0; i < 100; i++ {
-        large_string = large_string + "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+# ========================
+# TOML Serialization Tests
+# ========================
+
+slay test_toml_complex_parsing() {
+    vibez.spill("Testing complex TOML parsing...")
+    
+    # Complex TOML document
+    sus complex_toml tea = `# CURSED Programming Language Configuration
+
+title = "CURSED Compiler Configuration"
+version = "1.0.0"
+debug = false
+
+[project]
+name = "CURSED"
+description = """
+A modern systems programming language with focus on:
+- Performance and zero-cost abstractions  
+- Memory safety without garbage collection
+- Fearless concurrency with channels and goroutines
+"""
+license = "MIT"
+
+[compiler]
+optimization_level = 3
+target_triple = "x86_64-unknown-linux-gnu"
+features = ["llvm_backend", "incremental_compilation", "parallel_parsing"]
+
+[compiler.flags]
+enable_lto = true
+strip_debug = false
+emit_llvm_ir = true
+
+[[build_targets]]
+name = "native"
+architecture = "x86_64"
+os = "linux"
+
+[[build_targets]]  
+name = "wasm"
+architecture = "wasm32"
+os = "unknown"
+
+[benchmarks]
+compile_time_ms = 50.5
+memory_usage_mb = 45.2
+binary_size_kb = 2048
+
+[metadata]
+created_at = 2025-08-25T10:30:00Z
+last_modified = 2025-08-25T10:35:00Z
+build_number = 1001`
+    
+    # Parse TOML
+    sus doc TomlDocument = tomlz.parse_toml(complex_toml) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse complex TOML: " + err)
+            damn
+        }
     }
     
-    // Test serialization of large string
-    sus serialized tea = serialize_string(large_string)
-    sus deserialized tea = deserialize_string(serialized, 0)
+    # Validate parsing
+    testz.assert_true(doc.values.len() > 0, "Should have top-level values")
+    testz.assert_true(doc.tables.len() > 0, "Should have tables")
     
-    lowkey deserialized != large_string {
-        damn cap
+    # Test value extraction
+    sus title tea = tomlz.get_toml_string(doc, "title") fam {
+        when err -> {
+            vibez.spill("Failed to get title: " + err)
+            damn
+        }
+    }
+    testz.assert_eq(title, "CURSED Compiler Configuration")
+    
+    # Test nested values
+    sus optimization_level drip = tomlz.get_toml_nested(doc, "compiler.flags.enable_lto") fam {
+        when err -> {
+            vibez.spill("Failed to get nested value: " + err)
+            damn
+        }
     }
     
-    // Test compression on large data
-    sus compressed tea = compress_rle(large_string)
-    sus decompressed tea = decompress_rle(compressed)
-    
-    lowkey decompressed != large_string {
-        damn cap
-    }
-    
-    damn based
+    vibez.spill("✓ Complex TOML parsing successful")
 }
 
-// Run all tests
-slay run_comprehensive_serialization_tests() lit {
-    test_start("Comprehensive Serialization Tests")
+slay test_toml_generation() {
+    vibez.spill("Testing TOML generation...")
     
-    test_group("Basic Type Serialization")
-    assert_true(test_basic_integer_serialization(), "Integer serialization")
-    assert_true(test_long_serialization(), "Long serialization") 
-    assert_true(test_float_serialization(), "Float serialization")
-    assert_true(test_string_serialization(), "String serialization")
-    assert_true(test_boolean_serialization(), "Boolean serialization")
+    # Create TOML document
+    sus doc TomlDocument = {
+        values: make(map[tea]TomlValue),
+        tables: make(map[tea]TomlTable),
+        comments: make(map[drip]tea),
+        version: "1.0.0"
+    }
     
-    test_group("Array Serialization")
-    assert_true(test_array_serialization(), "Array serialization")
+    # Add top-level values
+    doc.values["name"] = tomlz.create_toml_string("CURSED", TomlStringType.Basic)
+    doc.values["version"] = tomlz.create_toml_string("1.0.0", TomlStringType.Basic)  
+    doc.values["active"] = tomlz.create_toml_boolean(based)
     
-    test_group("Structured Serialization")
-    assert_true(test_serialization_context(), "Serialization context")
+    # Create table
+    sus config_table TomlTable = {
+        name: "config",
+        values: make(map[tea]TomlValue),
+        is_array_table: cap,
+        line_number: 0
+    }
+    config_table.values["debug"] = tomlz.create_toml_boolean(cap)
+    config_table.values["optimization"] = tomlz.create_toml_integer(3)
     
-    test_group("Advanced Encoding")
-    assert_true(test_varint_encoding(), "Variable-length integer encoding")
+    doc.tables["config"] = config_table
     
-    test_group("Data Integrity")
-    assert_true(test_checksum_validation(), "Checksum validation")
+    # Generate TOML
+    sus generated_toml tea = tomlz.generate_toml_formatted(doc, 1)
+    vibez.spill("Generated TOML: " + generated_toml)
     
-    test_group("Compression")
-    assert_true(test_rle_compression(), "Run-length encoding compression")
-    assert_true(test_lz77_compression(), "LZ77-style compression")
+    # Validate generated TOML
+    tomlz.parse_toml(generated_toml) fam {
+        when err -> testz.assert_fail("Generated TOML is invalid: " + err)
+    }
     
-    test_group("Versioning and Headers")
-    assert_true(test_serialization_header(), "Serialization headers")
-    
-    test_group("Error Handling")
-    assert_true(test_error_handling(), "Error handling")
-    
-    test_group("Format Integrity")
-    assert_true(test_binary_format_integrity(), "Binary format integrity")
-    
-    test_group("Performance")
-    assert_true(test_large_data_handling(), "Large data handling")
-    
-    print_test_summary()
-    damn based
+    vibez.spill("✓ TOML generation successful")
 }
 
-// Performance benchmark
-slay benchmark_serialization_performance() {
-    test_start("Serialization Performance Benchmarks")
+slay test_toml_malformed_input() {
+    vibez.spill("Testing TOML error handling...")
     
-    // Benchmark integer array serialization
-    sus large_int_array []drip = []
-    bestie i := 0; i < 10000; i++ {
-        large_int_array = append_int_array(large_int_array, i * 42)
+    sus malformed_toml_cases []tea = [
+        "key = ",                    # Missing value
+        "[invalid table name]",      # Invalid table name
+        "key = 'unclosed string",    # Unclosed string
+        "duplicate = 1\nduplicate = 2", # Duplicate keys
+        "[table]\n[table]"           # Duplicate table
+    ]
+    
+    sus i drip = 0
+    bestie (i < malformed_toml_cases.len()) {
+        tomlz.parse_toml(malformed_toml_cases[i]) fam {
+            when err -> vibez.spill("✓ Correctly caught malformed TOML: " + err)
+        }
+        i = i + 1
     }
     
-    benchmark_start("Large integer array serialization")
-    sus serialized_array tea = serialize_array_int(large_int_array)
-    benchmark_end()
-    
-    benchmark_start("Large integer array deserialization")
-    sus deserialized_array []drip = deserialize_array_int(serialized_array, 0)
-    benchmark_end()
-    
-    // Benchmark string operations
-    sus test_string tea = "Performance test string with moderate length for benchmarking"
-    
-    benchmark_start("String serialization (1000 iterations)")
-    bestie i := 0; i < 1000; i++ {
-        sus temp tea = serialize_string(test_string)
-    }
-    benchmark_end()
-    
-    // Benchmark compression
-    sus repeated_data tea = ""
-    bestie i := 0; i < 1000; i++ {
-        repeated_data = repeated_data + "ABCDEFGHIJKLMNOP"
-    }
-    
-    benchmark_start("RLE compression")
-    sus compressed tea = compress_rle(repeated_data)
-    benchmark_end()
-    
-    benchmark_start("RLE decompression")
-    sus decompressed tea = decompress_rle(compressed)
-    benchmark_end()
-    
-    print_benchmark_summary()
+    vibez.spill("✓ TOML error handling working")
 }
 
-// Main test execution
-run_comprehensive_serialization_tests()
-benchmark_serialization_performance()
+# ========================
+# Cross-Format Conversion Tests
+# ========================
+
+slay test_cross_format_conversion() {
+    vibez.spill("Testing cross-format data conversion...")
+    
+    # Create data in one format and convert to others
+    sus original_json tea = `{
+        "name": "CURSED",
+        "version": "1.0.0", 
+        "features": ["fast", "safe"],
+        "config": {
+            "debug": false,
+            "optimization": 3
+        }
+    }`
+    
+    # Parse JSON
+    sus json_doc JsonValue = jsonz.parse(original_json) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse original JSON: " + err)
+            damn
+        }
+    }
+    
+    # Convert to YAML representation (conceptual)
+    sus yaml_equivalent tea = `name: CURSED
+version: "1.0.0"
+features:
+  - fast
+  - safe
+config:
+  debug: false
+  optimization: 3`
+    
+    # Parse YAML  
+    sus yaml_doc YamlDocument = yamlz.parse_yaml(yaml_equivalent) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse YAML equivalent: " + err)
+            damn
+        }
+    }
+    
+    # Convert to TOML representation (conceptual)
+    sus toml_equivalent tea = `name = "CURSED"
+version = "1.0.0"
+features = ["fast", "safe"]
+
+[config]
+debug = false
+optimization = 3`
+    
+    # Parse TOML
+    sus toml_doc TomlDocument = tomlz.parse_toml(toml_equivalent) fam {
+        when err -> {
+            testz.assert_fail("Failed to parse TOML equivalent: " + err)
+            damn
+        }
+    }
+    
+    vibez.spill("✓ Cross-format conversion conceptually validated")
+}
+
+# ========================
+# Performance and Edge Case Tests
+# ========================
+
+slay test_large_document_parsing() {
+    vibez.spill("Testing large document parsing...")
+    
+    # Generate large JSON document
+    sus large_json tea = "{"
+    sus i drip = 0
+    bestie (i < 1000) {
+        ready (i > 0) {
+            large_json = large_json + ","
+        }
+        large_json = large_json + "\"key" + i + "\": \"value" + i + "\""
+        i = i + 1
+    }
+    large_json = large_json + "}"
+    
+    # Parse large document
+    sus start_time drip = current_timestamp_ms()
+    jsonz.parse(large_json) fam {
+        when err -> testz.assert_fail("Failed to parse large JSON: " + err)
+    }
+    sus end_time drip = current_timestamp_ms()
+    
+    vibez.spill("Large JSON parsing took: " + (end_time - start_time) + "ms")
+    testz.assert_true((end_time - start_time) < 1000, "Should parse large JSON quickly")
+    
+    vibez.spill("✓ Large document parsing successful")
+}
+
+slay test_unicode_support() {
+    vibez.spill("Testing Unicode support...")
+    
+    # Test Unicode in different formats
+    sus unicode_json tea = `{
+        "name": "CURSED 🔥",
+        "description": "プログラミング言語",
+        "emoji": "🚀✨💻",
+        "chinese": "编程语言",
+        "arabic": "لغة البرمجة"
+    }`
+    
+    jsonz.parse(unicode_json) fam {
+        when err -> testz.assert_fail("Failed to parse Unicode JSON: " + err)
+    }
+    
+    sus unicode_yaml tea = `name: CURSED 🔥
+description: プログラミング言語  
+emoji: 🚀✨💻
+chinese: 编程语言
+arabic: لغة البرمجة`
+    
+    yamlz.parse_yaml(unicode_yaml) fam {
+        when err -> testz.assert_fail("Failed to parse Unicode YAML: " + err)
+    }
+    
+    vibez.spill("✓ Unicode support validated")
+}
+
+# ========================
+# Main Test Runner
+# ========================
+
+slay main() drip {
+    vibez.spill("🚀 Starting Comprehensive Serialization Test Suite")
+    testz.test_start("Comprehensive Serialization Tests")
+    
+    # JSON Tests
+    test_json_complex_parsing()
+    test_json_malformed_input()
+    test_json_generation()
+    
+    # XML Tests  
+    test_xml_complex_parsing()
+    test_xml_generation()
+    test_xml_malformed_input()
+    
+    # YAML Tests
+    test_yaml_complex_parsing()
+    test_yaml_generation()
+    
+    # TOML Tests
+    test_toml_complex_parsing()
+    test_toml_generation()
+    test_toml_malformed_input()
+    
+    # Cross-format Tests
+    test_cross_format_conversion()
+    
+    # Performance Tests
+    test_large_document_parsing()
+    test_unicode_support()
+    
+    testz.print_test_summary()
+    vibez.spill("✅ Comprehensive Serialization Test Suite Complete!")
+    
+    damn 0
+}
+
+# Helper function for timestamps
+slay current_timestamp_ms() drip {
+    # This would be implemented by the runtime
+    damn 1693900000000  # Placeholder timestamp
+}

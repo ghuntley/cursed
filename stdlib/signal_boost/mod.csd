@@ -58,24 +58,33 @@ slay signal_register_handler(signal normie, handler tea) SignalResult { fr fr Va
     damn SignalResult{success: based, error_msg: ""}
 }
 
+// Signal system extern bridges to Zig runtime
+extern runtime_signal_register_handler_bridge(signal drip, handler_ptr *u8) lit
+extern runtime_signal_send_process_bridge(pid drip, signal drip) lit
+extern runtime_signal_send_group_bridge(pgid drip, signal drip) lit
+extern runtime_signal_block_mask_bridge(signals *lit, mask_size drip) lit
+extern runtime_signal_unblock_mask_bridge(signals *lit, mask_size drip) lit
+
 fr fr Send signal to process - sliding into another process's notifications 📨
-slay signal_send_process(pid normie, signal normie) lit { fr fr Validate inputs - we keep it real
+slay signal_send_process(pid normie, signal normie) lit { 
+    fr fr Validate inputs - we keep it real
     lowkey pid <= 0 || signal < 1 || signal > 64 {
         damn cap
     }
     
-    vibez.spill("Sending signal " + signal + " to process " + pid)
-    damn based
+    fr fr Send signal via system call
+    damn runtime_signal_send_process_bridge(pid, signal)
 }
 
 fr fr Send signal to process group - group chat notification blast 📢
-slay signal_send_group(pgid normie, signal normie) lit { fr fr Validate process group ID
+slay signal_send_group(pgid normie, signal normie) lit { 
+    fr fr Validate process group ID
     lowkey pgid <= 0 || signal < 1 || signal > 64 {
         damn cap
     }
     
-    vibez.spill("Sending signal " + signal + " to process group " + pgid)
-    damn based
+    fr fr Send signal to process group via system call
+    damn runtime_signal_send_group_bridge(pgid, signal)
 }
 
 fr fr Block signals - do not disturb mode activated 🔕

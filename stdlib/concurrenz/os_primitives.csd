@@ -5,6 +5,7 @@ fr fr Replaces all simplified/placeholder implementations with actual OS integra
 yeet "atomic_drip"
 yeet "memory"
 yeet "error_drip"
+yeet "runtime_os_bridge"
 
 fr fr =============================================================================
 fr fr REAL TIMING PRIMITIVES - High-Resolution OS Timing
@@ -807,61 +808,70 @@ fr fr ==========================================================================
 fr fr SYSCALL WRAPPERS - Direct OS Integration
 fr fr =============================================================================
 
-fr fr Direct system call wrappers (would use actual syscall mechanism)
+fr fr Direct system call wrappers - Real OS integration
 slay syscall_clock_gettime(clock_id normie, ts *Timespec) normie {
-    fr fr Linux: sys_clock_gettime syscall
-    damn -1  fr fr Placeholder - would make real syscall
+    fr fr Linux: sys_clock_gettime syscall via runtime
+    sus result normie = cursed_runtime_syscall(SYS_CLOCK_GETTIME, clock_id, ts, 0, 0, 0, 0)
+    damn result
 }
 
 slay syscall_nanosleep(req *Timespec, rem *Timespec) normie {
-    fr fr Linux: sys_nanosleep syscall
-    damn -1  fr fr Placeholder - would make real syscall
+    fr fr Linux: sys_nanosleep syscall via runtime
+    sus result normie = cursed_runtime_syscall(SYS_NANOSLEEP, req, rem, 0, 0, 0, 0)
+    damn result
 }
 
 slay syscall_sched_yield() normie {
-    fr fr Linux: sys_sched_yield syscall
-    damn -1  fr fr Placeholder - would make real syscall
+    fr fr Linux: sys_sched_yield syscall via runtime
+    sus result normie = cursed_runtime_syscall(SYS_SCHED_YIELD, 0, 0, 0, 0, 0, 0)
+    damn result
 }
 
 slay syscall_gettid() thicc {
-    fr fr Linux: sys_gettid syscall
-    damn 1  fr fr Placeholder - would return real thread ID
+    fr fr Linux: sys_gettid syscall via runtime
+    sus tid thicc = cursed_runtime_syscall(SYS_GETTID, 0, 0, 0, 0, 0, 0)
+    damn tid
 }
 
 slay syscall_sysconf(name normie) normie {
-    fr fr POSIX: sysconf() call
-    damn 4  fr fr Placeholder - would return real value
+    fr fr POSIX: sysconf() call via runtime
+    sus value normie = cursed_runtime_sysconf(name)
+    damn value
 }
 
 slay get_errno() normie {
-    fr fr Get errno from thread-local storage
-    damn 0  fr fr Placeholder - would return real errno
+    fr fr Get errno from runtime thread-local storage
+    sus errno_value normie = cursed_runtime_get_errno()
+    damn errno_value
 }
 
 fr fr =============================================================================
 fr fr WINDOWS API WRAPPERS - Win32 Integration
 fr fr =============================================================================
 
-fr fr Windows API function wrappers (would use actual Win32 APIs)
+fr fr Windows API function wrappers - Real Win32 integration
 slay win32_create_thread(security thicc, stack_size normie, start_addr thicc, 
                         parameter thicc, flags normie, thread_id *thicc) thicc {
-    damn 0  fr fr Placeholder - would call CreateThread
+    sus handle thicc = cursed_runtime_win32_create_thread(security, stack_size, start_addr, parameter, flags, thread_id)
+    damn handle
 }
 
 slay win32_wait_for_single_object(handle thicc, timeout normie) normie {
-    damn WAIT_OBJECT_0  fr fr Placeholder - would call WaitForSingleObject
+    sus result normie = cursed_runtime_win32_wait_for_single_object(handle, timeout)
+    damn result
 }
 
 slay win32_close_handle(handle thicc) {
-    fr fr Placeholder - would call CloseHandle
+    cursed_runtime_win32_close_handle(handle)
 }
 
 slay win32_switch_to_thread() {
-    fr fr Placeholder - would call SwitchToThread
+    cursed_runtime_win32_switch_to_thread()
 }
 
 slay win32_get_current_thread_id() thicc {
-    damn 1  fr fr Placeholder - would call GetCurrentThreadId
+    sus thread_id thicc = cursed_runtime_win32_get_current_thread_id()
+    damn thread_id
 }
 
 fr fr Critical Section operations
