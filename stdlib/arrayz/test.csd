@@ -1,321 +1,302 @@
-fr fr Comprehensive test suite for ARRAYZ array operations module
-fr fr Tests all public functions with proper validation using testz framework
-
 yeet "testz"
 yeet "arrayz"
 
-slay main() {
-    testz.test_start("ARRAYZ Comprehensive Test Suite")
-    
-    fr fr ===== ARRAY ARITHMETIC TESTS =====
-    testz.test_group("Array Arithmetic Functions")
-    
-    fr fr Test sum_array
-    sus test_array []drip = [1.0, 2.0, 3.0, 4.0, 5.0]
-    sus sum_result drip = arrayz.sum_array(test_array)
-    testz.assert_eq_float(sum_result, 15.0, "sum_array should sum all elements: 1+2+3+4+5=15")
-    
-    fr fr Test sum_array with empty array
-    sus empty_array []drip = []
-    sus sum_empty drip = arrayz.sum_array(empty_array)
-    testz.assert_eq_float(sum_empty, 0.0, "sum_array should return 0 for empty array")
-    
-    fr fr Test sum_array with single element
-    sus single_array []drip = [42.0]
-    sus sum_single drip = arrayz.sum_array(single_array)
-    testz.assert_eq_float(sum_single, 42.0, "sum_array should return single element")
-    
-    fr fr Test sum_array with negative numbers
-    sus negative_array []drip = [-1.0, -2.0, 3.0]
-    sus sum_negative drip = arrayz.sum_array(negative_array)
-    testz.assert_eq_float(sum_negative, 0.0, "sum_array should handle negative numbers: -1-2+3=0")
-    
-    fr fr Test average_array
-    sus avg_result drip = arrayz.average_array(test_array)
-    testz.assert_eq_float(avg_result, 3.0, "average_array should calculate mean: 15/5=3")
-    
-    fr fr Test average_array with empty array
-    sus avg_empty drip = arrayz.average_array(empty_array)
-    testz.assert_eq_float(avg_empty, 0.0, "average_array should return 0 for empty array")
-    
-    fr fr Test product_array
-    sus product_test []drip = [2.0, 3.0, 4.0]
-    sus product_result drip = arrayz.product_array(product_test)
-    testz.assert_eq_float(product_result, 24.0, "product_array should multiply all elements: 2*3*4=24")
-    
-    fr fr Test product_array with empty array
-    sus product_empty drip = arrayz.product_array(empty_array)
-    testz.assert_eq_float(product_empty, 0.0, "product_array should return 0 for empty array")
-    
-    fr fr Test product_array with zero
-    sus product_zero_array []drip = [1.0, 0.0, 5.0]
-    sus product_zero drip = arrayz.product_array(product_zero_array)
-    testz.assert_eq_float(product_zero, 0.0, "product_array should return 0 when array contains 0")
-    
-    fr fr ===== ARRAY SEARCH TESTS =====
-    testz.test_group("Array Search Functions")
-    
-    fr fr Test find_max
-    sus mixed_array []drip = [3.0, 7.0, 1.0, 9.0, 2.0]
-    sus max_result drip = arrayz.find_max(mixed_array)
-    testz.assert_eq_float(max_result, 9.0, "find_max should find largest element")
-    
-    fr fr Test find_max with single element
-    sus max_single drip = arrayz.find_max(single_array)
-    testz.assert_eq_float(max_single, 42.0, "find_max should return single element")
-    
-    fr fr Test find_max with empty array
-    sus max_empty drip = arrayz.find_max(empty_array)
-    testz.assert_eq_float(max_empty, 0.0, "find_max should return 0 for empty array")
-    
-    fr fr Test find_max with negative numbers
-    sus neg_max_array []drip = [-5.0, -2.0, -8.0, -1.0]
-    sus neg_max_result drip = arrayz.find_max(neg_max_array)
-    testz.assert_eq_float(neg_max_result, -1.0, "find_max should find largest negative number")
-    
-    fr fr Test find_min
-    sus min_result drip = arrayz.find_min(mixed_array)
-    testz.assert_eq_float(min_result, 1.0, "find_min should find smallest element")
-    
-    fr fr Test find_min with single element
-    sus min_single drip = arrayz.find_min(single_array)
-    testz.assert_eq_float(min_single, 42.0, "find_min should return single element")
-    
-    fr fr Test find_min with empty array
-    sus min_empty drip = arrayz.find_min(empty_array)
-    testz.assert_eq_float(min_empty, 0.0, "find_min should return 0 for empty array")
-    
-    fr fr Test find_min with negative numbers
-    sus neg_min_result drip = arrayz.find_min(neg_max_array)
-    testz.assert_eq_float(neg_min_result, -8.0, "find_min should find smallest negative number")
-    
-    fr fr ===== ARRAY SEARCH VALUE TESTS =====
-    testz.test_group("Array Value Search Functions")
-    
-    fr fr Test contains_value
-    sus contains_true lit = arrayz.contains_value(mixed_array, 7.0)
-    testz.assert_true(contains_true, "contains_value should return true for existing value")
-    
-    sus contains_false lit = arrayz.contains_value(mixed_array, 99.0)
-    testz.assert_false(contains_false, "contains_value should return false for non-existing value")
-    
-    sus contains_empty lit = arrayz.contains_value(empty_array, 5.0)
-    testz.assert_false(contains_empty, "contains_value should return false for empty array")
-    
-    fr fr Test find_index
-    sus index_found drip = arrayz.find_index(mixed_array, 7.0)
-    testz.assert_eq_float(index_found, 1.0, "find_index should return correct index for existing value")
-    
-    sus index_not_found drip = arrayz.find_index(mixed_array, 99.0)
-    testz.assert_eq_float(index_not_found, -1.0, "find_index should return -1 for non-existing value")
-    
-    sus index_first drip = arrayz.find_index(mixed_array, 3.0)
-    testz.assert_eq_float(index_first, 0.0, "find_index should return 0 for first element")
-    
-    sus index_empty drip = arrayz.find_index(empty_array, 5.0)
-    testz.assert_eq_float(index_empty, -1.0, "find_index should return -1 for empty array")
-    
-    fr fr ===== EDGE CASE TESTS =====
-    testz.test_group("Edge Case Handling")
-    
-    fr fr Test with very large numbers
-    sus large_array []drip = [1000000.0, 2000000.0, 3000000.0]
-    sus large_sum drip = arrayz.sum_array(large_array)
-    testz.assert_eq_float(large_sum, 6000000.0, "sum_array should handle large numbers")
-    
-    fr fr Test with very small numbers
-    sus small_array []drip = [0.001, 0.002, 0.003]
-    sus small_sum drip = arrayz.sum_array(small_array)
-    testz.assert_gt_float(small_sum, 0.005, "sum_array should handle small decimal numbers")
-    
-    fr fr Test with identical elements
-    sus identical_array []drip = [5.0, 5.0, 5.0, 5.0]
-    sus identical_max drip = arrayz.find_max(identical_array)
-    sus identical_min drip = arrayz.find_min(identical_array)
-    testz.assert_eq_float(identical_max, 5.0, "find_max should handle identical elements")
-    testz.assert_eq_float(identical_min, 5.0, "find_min should handle identical elements")
-    
-    sus identical_avg drip = arrayz.average_array(identical_array)
-    testz.assert_eq_float(identical_avg, 5.0, "average_array should handle identical elements")
-    
-    fr fr ===== ARRAY BUILDING TESTS =====
-    testz.test_group("Dynamic Array Building")
-    
-    fr fr Test build_array_from_function if available
-    ready arrayz.build_array_from_function {
-        sus built_array []drip = arrayz.build_array_from_function(3.0, "double", [1.0, 2.0, 3.0])
-        testz.assert_gt_float(len(built_array), 0.0, "build_array_from_function should create non-empty array")
-    }
-    
-    fr fr ===== PERFORMANCE TESTS =====
-    testz.test_group("Performance Validation")
-    
-    fr fr Test with moderately large array (stress test)
-    sus performance_array []drip = [
-        1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0,
-        11.0, 12.0, 13.0, 14.0, 15.0, 16.0, 17.0, 18.0, 19.0, 20.0
-    ]
-    
-    sus perf_sum drip = arrayz.sum_array(performance_array)
-    testz.assert_eq_float(perf_sum, 210.0, "Performance test: sum of 1-20 should be 210")
-    
-    sus perf_avg drip = arrayz.average_array(performance_array)
-    testz.assert_eq_float(perf_avg, 10.5, "Performance test: average of 1-20 should be 10.5")
-    
-    sus perf_max drip = arrayz.find_max(performance_array)
-    testz.assert_eq_float(perf_max, 20.0, "Performance test: max of 1-20 should be 20")
-    
-    sus perf_min drip = arrayz.find_min(performance_array)
-    testz.assert_eq_float(perf_min, 1.0, "Performance test: min of 1-20 should be 1")
-    
-    fr fr ===== CONSISTENCY TESTS =====
-    testz.test_group("Consistency Validation")
-    
-    fr fr Test that sum and average are consistent
-    sus consistency_array []drip = [10.0, 20.0, 30.0, 40.0]
-    sus cons_sum drip = arrayz.sum_array(consistency_array)
-    sus cons_avg drip = arrayz.average_array(consistency_array)
-    sus calculated_avg drip = cons_sum / 4.0
-    testz.assert_eq_float(cons_avg, calculated_avg, "Average should equal sum divided by count")
-    
-    fr fr Test that max and min are in bounds
-    sus bounds_array []drip = [15.0, 25.0, 35.0, 45.0]
-    sus bounds_sum drip = arrayz.sum_array(bounds_array)
-    sus bounds_max drip = arrayz.find_max(bounds_array)
-    sus bounds_min drip = arrayz.find_min(bounds_array)
-    
-    testz.assert_le_float(bounds_max * 4.0, bounds_sum + bounds_max * 3.0, "Max should not exceed reasonable bound")
-    testz.assert_ge_float(bounds_min * 4.0, bounds_sum - bounds_min * 3.0, "Min should not be below reasonable bound")
-    
-    fr fr ===== MATHEMATICAL PROPERTY TESTS =====
-    testz.test_group("Mathematical Properties")
-    
-    fr fr Test sum properties
-    sus prop_array1 []drip = [1.0, 2.0, 3.0]
-    sus prop_array2 []drip = [4.0, 5.0]
-    sus sum1 drip = arrayz.sum_array(prop_array1)
-    sus sum2 drip = arrayz.sum_array(prop_array2)
-    sus total_sum drip = sum1 + sum2
-    
-    sus combined_array []drip = [1.0, 2.0, 3.0, 4.0, 5.0]
-    sus combined_sum drip = arrayz.sum_array(combined_array)
-    testz.assert_eq_float(total_sum, combined_sum, "Sum should be associative: sum(A) + sum(B) = sum(A+B)")
-    
-    fr fr Test max/min properties
-    sus max_prop1 drip = arrayz.find_max(prop_array1)
-    sus max_prop2 drip = arrayz.find_max(prop_array2)
-    sus combined_max drip = arrayz.find_max(combined_array)
-    
-    ready max_prop1 > max_prop2 {
-        testz.assert_eq_float(combined_max, max_prop1, "Combined max should be larger individual max")
-    } otherwise {
-        testz.assert_eq_float(combined_max, max_prop2, "Combined max should be larger individual max")
-    }
-    
-    fr fr ===== SEARCH ACCURACY TESTS =====
-    testz.test_group("Search Accuracy Tests")
-    
-    fr fr Test multiple occurrences of same value
-    sus duplicate_array []drip = [1.0, 3.0, 2.0, 3.0, 5.0]
-    sus dup_contains lit = arrayz.contains_value(duplicate_array, 3.0)
-    testz.assert_true(dup_contains, "contains_value should find duplicated value")
-    
-    sus dup_index drip = arrayz.find_index(duplicate_array, 3.0)
-    testz.assert_eq_float(dup_index, 1.0, "find_index should return first occurrence")
-    
-    fr fr Test boundary values
-    sus boundary_max drip = arrayz.find_max(duplicate_array)
-    sus boundary_min drip = arrayz.find_min(duplicate_array)
-    testz.assert_eq_float(boundary_max, 5.0, "find_max should find correct maximum")
-    testz.assert_eq_float(boundary_min, 1.0, "find_min should find correct minimum")
-    
-    fr fr ===== TYPE SAFETY TESTS =====
-    testz.test_group("Type Safety and Error Handling")
-    
-    fr fr Test functions return appropriate defaults for edge cases
-    sus zero_array []drip = [0.0, 0.0, 0.0]
-    sus zero_sum drip = arrayz.sum_array(zero_array)
-    sus zero_avg drip = arrayz.average_array(zero_array)
-    sus zero_product drip = arrayz.product_array(zero_array)
-    
-    testz.assert_eq_float(zero_sum, 0.0, "sum of zeros should be zero")
-    testz.assert_eq_float(zero_avg, 0.0, "average of zeros should be zero")
-    testz.assert_eq_float(zero_product, 0.0, "product including zero should be zero")
-    
-    fr fr Test search functions with non-existent values
-    sus search_array []drip = [10.0, 20.0, 30.0]
-    sus search_contains lit = arrayz.contains_value(search_array, 15.0)
-    sus search_index drip = arrayz.find_index(search_array, 15.0)
-    
-    testz.assert_false(search_contains, "contains_value should return false for non-existent value")
-    testz.assert_eq_float(search_index, -1.0, "find_index should return -1 for non-existent value")
-    
-    fr fr ===== INTEGRATION TESTS =====
-    testz.test_group("Integration Tests")
-    
-    fr fr Test using multiple functions together
-    sus integration_array []drip = [8.0, 3.0, 15.0, 1.0, 9.0, 7.0]
-    
-    sus int_sum drip = arrayz.sum_array(integration_array)
-    sus int_avg drip = arrayz.average_array(integration_array)
-    sus int_max drip = arrayz.find_max(integration_array)
-    sus int_min drip = arrayz.find_min(integration_array)
-    
-    fr fr Validate relationships between results
-    testz.assert_eq_float(int_avg, int_sum / 6.0, "Integration: average should equal sum/count")
-    testz.assert_ge_float(int_max, int_avg, "Integration: max should be >= average")
-    testz.assert_le_float(int_min, int_avg, "Integration: min should be <= average")
-    
-    fr fr Test search functions with calculated values
-    sus max_found lit = arrayz.contains_value(integration_array, int_max)
-    sus min_found lit = arrayz.contains_value(integration_array, int_min)
-    testz.assert_true(max_found, "Integration: array should contain its maximum value")
-    testz.assert_true(min_found, "Integration: array should contain its minimum value")
-    
-    sus max_index drip = arrayz.find_index(integration_array, int_max)
-    sus min_index drip = arrayz.find_index(integration_array, int_min)
-    testz.assert_ge_float(max_index, 0.0, "Integration: max value should have valid index")
-    testz.assert_ge_float(min_index, 0.0, "Integration: min value should have valid index")
-    
-    fr fr ===== FINAL COMPREHENSIVE VALIDATION =====
-    testz.test_group("Final Comprehensive Validation")
-    
-    fr fr Test all functions work with same dataset
-    sus final_test_array []drip = [4.0, 2.0, 8.0, 6.0, 1.0, 3.0, 7.0, 5.0]
-    
-    sus final_sum drip = arrayz.sum_array(final_test_array)
-    sus final_avg drip = arrayz.average_array(final_test_array)
-    sus final_product drip = arrayz.product_array(final_test_array)
-    sus final_max drip = arrayz.find_max(final_test_array)
-    sus final_min drip = arrayz.find_min(final_test_array)
-    
-    fr fr Validate expected results
-    testz.assert_eq_float(final_sum, 36.0, "Final: sum of test array should be 36")
-    testz.assert_eq_float(final_avg, 4.5, "Final: average of test array should be 4.5")
-    testz.assert_eq_float(final_max, 8.0, "Final: max of test array should be 8")
-    testz.assert_eq_float(final_min, 1.0, "Final: min of test array should be 1")
-    
-    fr fr Test comprehensive search
-    bestie i := 1.0; i <= 8.0; i += 1.0 {
-        sus found lit = arrayz.contains_value(final_test_array, i)
-        testz.assert_true(found, "Final: array should contain all values 1-8")
-    }
-    
-    fr fr Test search for non-existent values
-    sus not_found1 lit = arrayz.contains_value(final_test_array, 0.0)
-    sus not_found2 lit = arrayz.contains_value(final_test_array, 9.0)
-    testz.assert_false(not_found1, "Final: array should not contain 0")
-    testz.assert_false(not_found2, "Final: array should not contain 9")
-    
-    fr fr Validate all core functionality works together
-    sus validation_passed lit = based
-    ready final_sum <= 0.0 { validation_passed = cap }
-    ready final_avg <= 0.0 { validation_passed = cap }
-    ready final_max < final_min { validation_passed = cap }
-    ready !arrayz.contains_value(final_test_array, final_max) { validation_passed = cap }
-    ready !arrayz.contains_value(final_test_array, final_min) { validation_passed = cap }
-    
-    testz.assert_true(validation_passed, "Final: all array operations should work correctly together")
-    
-    testz.print_test_summary()
+test_start("arrayz Array Operations Comprehensive Tests")
+
+fr fr ===== ARRAY ARITHMETIC TESTS =====
+
+test_group("Array Arithmetic Operations")
+
+fr fr Test array sum
+sus test_array []drip = [1, 2, 3, 4, 5]
+sus sum_result drip = sum_array(test_array)
+assert_eq_int(sum_result, 15, "Array sum calculation")
+
+sus empty_array []drip = []
+sum_result = sum_array(empty_array)
+assert_eq_int(sum_result, 0, "Empty array sum is zero")
+
+sus single_element []drip = [42]
+sum_result = sum_array(single_element)
+assert_eq_int(sum_result, 42, "Single element sum")
+
+sus negative_array []drip = [-1, -2, -3]
+sum_result = sum_array(negative_array)
+assert_eq_int(sum_result, -6, "Negative numbers sum")
+
+fr fr Test array average
+sus average_result drip = average_array(test_array)
+assert_eq_int(average_result, 3, "Array average calculation")
+
+average_result = average_array(empty_array)
+assert_eq_int(average_result, 0, "Empty array average is zero")
+
+average_result = average_array(single_element)
+assert_eq_int(average_result, 42, "Single element average")
+
+fr fr Test array product
+sus product_result drip = product_array([2, 3, 4])
+assert_eq_int(product_result, 24, "Array product calculation")
+
+product_result = product_array(empty_array)
+assert_eq_int(product_result, 0, "Empty array product is zero")
+
+product_result = product_array(single_element)
+assert_eq_int(product_result, 42, "Single element product")
+
+sus zero_array []drip = [1, 0, 5]
+product_result = product_array(zero_array)
+assert_eq_int(product_result, 0, "Product with zero element")
+
+fr fr ===== ARRAY SEARCH TESTS =====
+
+test_group("Array Search Operations")
+
+fr fr Test find maximum
+sus max_result drip = find_max([5, 3, 9, 1, 7])
+assert_eq_int(max_result, 9, "Find maximum value")
+
+max_result = find_max(single_element)
+assert_eq_int(max_result, 42, "Single element maximum")
+
+max_result = find_max(empty_array)
+assert_eq_int(max_result, 0, "Empty array maximum default")
+
+max_result = find_max([-5, -3, -9, -1, -7])
+assert_eq_int(max_result, -1, "Maximum of negative numbers")
+
+fr fr Test find minimum
+sus min_result drip = find_min([5, 3, 9, 1, 7])
+assert_eq_int(min_result, 1, "Find minimum value")
+
+min_result = find_min(single_element)
+assert_eq_int(min_result, 42, "Single element minimum")
+
+min_result = find_min(empty_array)
+assert_eq_int(min_result, 0, "Empty array minimum default")
+
+min_result = find_min([-5, -3, -9, -1, -7])
+assert_eq_int(min_result, -9, "Minimum of negative numbers")
+
+fr fr Test linear search
+sus search_result drip = linear_search([10, 20, 30, 40, 50], 30)
+assert_eq_int(search_result, 2, "Linear search found element")
+
+search_result = linear_search([10, 20, 30, 40, 50], 99)
+assert_eq_int(search_result, -1, "Linear search element not found")
+
+search_result = linear_search(empty_array, 5)
+assert_eq_int(search_result, -1, "Linear search in empty array")
+
+search_result = linear_search([7], 7)
+assert_eq_int(search_result, 0, "Linear search single element found")
+
+fr fr ===== ARRAY MANIPULATION TESTS =====
+
+test_group("Array Manipulation")
+
+fr fr Test array reversal
+sus original_array []drip = [1, 2, 3, 4, 5]
+sus reversed_array []drip = reverse_array(original_array)
+assert_eq_int(reversed_array[0], 5, "First element after reverse")
+assert_eq_int(reversed_array[1], 4, "Second element after reverse")
+assert_eq_int(reversed_array[4], 1, "Last element after reverse")
+
+sus empty_reversed []drip = reverse_array(empty_array)
+assert_eq_int(len(empty_reversed), 0, "Empty array reverse")
+
+sus single_reversed []drip = reverse_array(single_element)
+assert_eq_int(single_reversed[0], 42, "Single element reverse")
+
+fr fr Test array copy
+sus copied_array []drip = copy_array(original_array)
+assert_eq_int(len(copied_array), len(original_array), "Copy array length")
+assert_eq_int(copied_array[0], original_array[0], "Copy first element")
+assert_eq_int(copied_array[4], original_array[4], "Copy last element")
+
+sus empty_copy []drip = copy_array(empty_array)
+assert_eq_int(len(empty_copy), 0, "Empty array copy")
+
+fr fr ===== ARRAY FILTERING TESTS =====
+
+test_group("Array Filtering")
+
+fr fr Test filter even numbers
+sus mixed_numbers []drip = [1, 2, 3, 4, 5, 6, 7, 8]
+sus even_numbers []drip = filter_even(mixed_numbers)
+assert_eq_int(len(even_numbers), 4, "Filter even numbers count")
+assert_eq_int(even_numbers[0], 2, "First even number")
+assert_eq_int(even_numbers[1], 4, "Second even number")
+assert_eq_int(even_numbers[2], 6, "Third even number")
+assert_eq_int(even_numbers[3], 8, "Fourth even number")
+
+sus odd_only []drip = [1, 3, 5, 7]
+sus no_evens []drip = filter_even(odd_only)
+assert_eq_int(len(no_evens), 0, "No even numbers to filter")
+
+sus empty_filtered []drip = filter_even(empty_array)
+assert_eq_int(len(empty_filtered), 0, "Filter even from empty array")
+
+fr fr Test filter odd numbers
+sus odd_numbers []drip = filter_odd(mixed_numbers)
+assert_eq_int(len(odd_numbers), 4, "Filter odd numbers count")
+assert_eq_int(odd_numbers[0], 1, "First odd number")
+assert_eq_int(odd_numbers[1], 3, "Second odd number")
+assert_eq_int(odd_numbers[2], 5, "Third odd number")
+assert_eq_int(odd_numbers[3], 7, "Fourth odd number")
+
+fr fr ===== ARRAY SORTING TESTS =====
+
+test_group("Array Sorting")
+
+fr fr Test bubble sort
+sus unsorted_array []drip = [5, 2, 8, 1, 9, 3]
+sus sorted_array []drip = bubble_sort(unsorted_array)
+assert_eq_int(sorted_array[0], 1, "Sorted first element")
+assert_eq_int(sorted_array[1], 2, "Sorted second element")
+assert_eq_int(sorted_array[2], 3, "Sorted third element")
+assert_eq_int(sorted_array[3], 5, "Sorted fourth element")
+assert_eq_int(sorted_array[4], 8, "Sorted fifth element")
+assert_eq_int(sorted_array[5], 9, "Sorted sixth element")
+
+sus already_sorted []drip = [1, 2, 3, 4, 5]
+sus still_sorted []drip = bubble_sort(already_sorted)
+assert_eq_int(still_sorted[0], 1, "Already sorted remains sorted")
+assert_eq_int(still_sorted[4], 5, "Already sorted last element")
+
+sus reverse_sorted []drip = [5, 4, 3, 2, 1]
+sus now_sorted []drip = bubble_sort(reverse_sorted)
+assert_eq_int(now_sorted[0], 1, "Reverse sorted now first")
+assert_eq_int(now_sorted[4], 5, "Reverse sorted now last")
+
+sus empty_sorted []drip = bubble_sort(empty_array)
+assert_eq_int(len(empty_sorted), 0, "Empty array sort")
+
+sus single_sorted []drip = bubble_sort(single_element)
+assert_eq_int(single_sorted[0], 42, "Single element sort")
+
+fr fr ===== ARRAY TRANSFORMATION TESTS =====
+
+test_group("Array Transformations")
+
+fr fr Test map operations (if available)
+sus base_array []drip = [1, 2, 3, 4, 5]
+
+fr fr Test square mapping (simulated)
+sus squared_array []drip = []
+sus i drip = 0
+bestie (i < len(base_array)) {
+    sus squared_value drip = base_array[i] * base_array[i]
+    squared_array = array_append(squared_array, squared_value)
+    i = i + 1
 }
+assert_eq_int(len(squared_array), 5, "Squared array length")
+assert_eq_int(squared_array[0], 1, "First squared value")
+assert_eq_int(squared_array[1], 4, "Second squared value")
+assert_eq_int(squared_array[4], 25, "Last squared value")
+
+fr fr Test double mapping (simulated)
+sus doubled_array []drip = []
+i = 0
+bestie (i < len(base_array)) {
+    sus doubled_value drip = base_array[i] * 2
+    doubled_array = array_append(doubled_array, doubled_value)
+    i = i + 1
+}
+assert_eq_int(doubled_array[0], 2, "First doubled value")
+assert_eq_int(doubled_array[2], 6, "Third doubled value")
+
+fr fr ===== ARRAY UTILITY TESTS =====
+
+test_group("Array Utility Functions")
+
+fr fr Test array length
+assert_eq_int(len([1, 2, 3, 4, 5]), 5, "Array length calculation")
+assert_eq_int(len([]), 0, "Empty array length")
+assert_eq_int(len([42]), 1, "Single element array length")
+
+fr fr Test array element access
+sus access_array []drip = [10, 20, 30, 40, 50]
+assert_eq_int(access_array[0], 10, "First element access")
+assert_eq_int(access_array[2], 30, "Middle element access")
+assert_eq_int(access_array[4], 50, "Last element access")
+
+fr fr Test array concatenation (if available)
+sus first_part []drip = [1, 2, 3]
+sus second_part []drip = [4, 5, 6]
+sus concatenated []drip = concat_arrays(first_part, second_part)
+assert_eq_int(len(concatenated), 6, "Concatenated array length")
+assert_eq_int(concatenated[0], 1, "Concatenated first element")
+assert_eq_int(concatenated[3], 4, "Concatenated fourth element")
+assert_eq_int(concatenated[5], 6, "Concatenated last element")
+
+fr fr ===== ARRAY BOUNDARY TESTS =====
+
+test_group("Array Boundary and Edge Cases")
+
+fr fr Test large array operations
+sus large_array []drip = []
+i = 0
+bestie (i < 100) {
+    large_array = array_append(large_array, i)
+    i = i + 1
+}
+assert_eq_int(len(large_array), 100, "Large array creation")
+assert_eq_int(large_array[0], 0, "Large array first element")
+assert_eq_int(large_array[99], 99, "Large array last element")
+
+sus large_sum drip = sum_array(large_array)
+assert_eq_int(large_sum, 4950, "Large array sum (0+1+...+99)")
+
+fr fr Test duplicate elements
+sus duplicates_array []drip = [5, 2, 5, 1, 5, 2]
+sus dup_max drip = find_max(duplicates_array)
+assert_eq_int(dup_max, 5, "Max with duplicates")
+
+sus dup_min drip = find_min(duplicates_array)
+assert_eq_int(dup_min, 1, "Min with duplicates")
+
+sus dup_search drip = linear_search(duplicates_array, 5)
+assert_eq_int(dup_search, 0, "Search finds first occurrence")
+
+fr fr Test negative numbers array
+sus negative_test []drip = [-10, -5, 0, 5, 10]
+sus neg_max drip = find_max(negative_test)
+assert_eq_int(neg_max, 10, "Max with negative numbers")
+
+sus neg_min drip = find_min(negative_test)
+assert_eq_int(neg_min, -10, "Min with negative numbers")
+
+sus neg_sum drip = sum_array(negative_test)
+assert_eq_int(neg_sum, 0, "Sum with positive and negative")
+
+fr fr ===== ARRAY PERFORMANCE TESTS =====
+
+test_group("Array Performance")
+
+fr fr Test sorting performance on larger array
+sus perf_array []drip = [9, 7, 5, 3, 1, 8, 6, 4, 2, 10]
+sus perf_sorted []drip = bubble_sort(perf_array)
+assert_eq_int(perf_sorted[0], 1, "Performance sort first")
+assert_eq_int(perf_sorted[9], 10, "Performance sort last")
+
+fr fr Test multiple operations on same array
+sus multi_ops_array []drip = [3, 1, 4, 1, 5, 9, 2, 6]
+sus multi_sum drip = sum_array(multi_ops_array)
+sus multi_max drip = find_max(multi_ops_array)
+sus multi_min drip = find_min(multi_ops_array)
+sus multi_avg drip = average_array(multi_ops_array)
+
+assert_eq_int(multi_sum, 31, "Multiple ops sum")
+assert_eq_int(multi_max, 9, "Multiple ops max")
+assert_eq_int(multi_min, 1, "Multiple ops min")
+assert_eq_int(multi_avg, 3, "Multiple ops average")
+
+fr fr Test search in various positions
+sus search_test_array []drip = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+assert_eq_int(linear_search(search_test_array, 10), 0, "Search at beginning")
+assert_eq_int(linear_search(search_test_array, 50), 4, "Search in middle")
+assert_eq_int(linear_search(search_test_array, 100), 9, "Search at end")
+assert_eq_int(linear_search(search_test_array, 999), -1, "Search not found")
+
+print_test_summary()

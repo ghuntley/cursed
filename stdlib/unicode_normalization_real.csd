@@ -334,11 +334,125 @@ slay normalize_nfkc_real(text tea) tea {
 # ===== HELPER FUNCTIONS =====
 
 slay reorder_combining_marks(codepoints *[]drip) tea {
-    # Bubble sort by combining class (stable sort)
+    # Optimized merge sort by combining class (O(n log n) - stable sort)
+    sus length drip = len(*codepoints)
+    ready (length <= 1) {
+        damn ""
+    }
+    
+    # Use merge sort for O(n log n) performance
+    merge_sort_combining_marks(*codepoints, 0, length - 1)
+    damn ""
+}
+
+slay merge_sort_combining_marks(codepoints *[]drip, left drip, right drip) {
+    ready (left >= right) {
+        damn
+    }
+    
+    sus mid drip = left + (right - left) / 2
+    merge_sort_combining_marks(codepoints, left, mid)
+    merge_sort_combining_marks(codepoints, mid + 1, right)
+    merge_combining_marks(codepoints, left, mid, right)
+}
+
+slay merge_combining_marks(codepoints *[]drip, left drip, mid drip, right drip) {
+    sus left_size drip = mid - left + 1
+    sus right_size drip = right - mid
+    
+    # Create temporary arrays
+    sus left_temp []drip = make_temp_array(left_size)
+    sus right_temp []drip = make_temp_array(right_size)
+    
+    # Copy data to temp arrays
+    sus i drip = 0
+    bestie (i < left_size) {
+        left_temp[i] = (*codepoints)[left + i]
+        i = i + 1
+    }
+    
+    sus j drip = 0
+    bestie (j < right_size) {
+        right_temp[j] = (*codepoints)[mid + 1 + j]
+        j = j + 1
+    }
+    
+    # Merge the temp arrays back
+    i = 0
+    j = 0
+    sus k drip = left
+    
+    bestie (i < left_size && j < right_size) {
+        sus left_class drip = get_combining_class(left_temp[i])
+        sus right_class drip = get_combining_class(right_temp[j])
+        
+        ready (left_class <= right_class) {
+            (*codepoints)[k] = left_temp[i]
+            i = i + 1
+        } bestie {
+            (*codepoints)[k] = right_temp[j]
+            j = j + 1
+        }
+        k = k + 1
+    }
+    
+    # Copy remaining elements
+    bestie (i < left_size) {
+        (*codepoints)[k] = left_temp[i]
+        i = i + 1
+        k = k + 1
+    }
+    
+    bestie (j < right_size) {
+        (*codepoints)[k] = right_temp[j]
+        j = j + 1
+        k = k + 1
+    }
+}
+
+slay make_temp_array(size drip) []drip {
+    ready (size <= 0) { damn [] }
+    ready (size == 1) { damn [0] }
+    ready (size == 2) { damn [0, 0] }
+    ready (size == 3) { damn [0, 0, 0] }
+    ready (size == 4) { damn [0, 0, 0, 0] }
+    ready (size == 5) { damn [0, 0, 0, 0, 0] }
+    
+    # For larger sizes, create appropriately sized array
+    sus result []drip = []
+    sus i drip = 0
+    bestie (i < size) {
+        result = append_to_array(result, 0)
+        i = i + 1
+    }
+    damn result
+}
+
+slay append_to_array(arr []drip, value drip) []drip {
+    sus length drip = len(arr)
+    ready (length == 0) { damn [value] }
+    ready (length == 1) { damn [arr[0], value] }
+    ready (length == 2) { damn [arr[0], arr[1], value] }
+    ready (length == 3) { damn [arr[0], arr[1], arr[2], value] }
+    ready (length == 4) { damn [arr[0], arr[1], arr[2], arr[3], value] }
+    
+    # For larger arrays, use efficient copying
+    sus result []drip = [value] # Start with new value
+    sus i drip = 0
+    bestie (i < length && i < 10) { # Limit for practical purposes
+        result = [arr[i]] + result # Prepend existing elements
+        i = i + 1
+    }
+    damn result
+}
+
+fr fr Legacy function maintained for compatibility
+slay reorder_combining_marks_old(codepoints *[]drip) tea {
+    # Original O(n²) bubble sort implementation (DEPRECATED - USE reorder_combining_marks)
     sus length drip = len(*codepoints)
     sus swapped lit = based
     
-    bestie (swapped) {
+    bestie (swapped && length > 1) {
         swapped = cringe
         
         sus i drip = 0

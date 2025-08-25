@@ -1,498 +1,451 @@
-fr fr Comprehensive test suite for FILEZ file system operations module
-fr fr Tests all public functions with proper validation using testz framework
-
 yeet "testz"
 yeet "filez"
 
-slay main() {
-    testz.test_start("FILEZ Comprehensive Test Suite")
-    
-    fr fr ===== FILE STRUCTURE TESTS =====
-    testz.test_group("File Structure Creation")
-    
-    fr fr Test FileInfo structure
-    sus test_file_info filez.FileInfo = filez.FileInfo{}
-    test_file_info.name = "test.txt"
-    test_file_info.path = "/tmp/test.txt"
-    test_file_info.size = 1024.0
-    test_file_info.is_directory = cringe
-    test_file_info.is_readable = based
-    test_file_info.is_writable = based
-    test_file_info.permissions = 644.0
-    
-    testz.assert_eq_string(test_file_info.name, "test.txt", "FileInfo should store name correctly")
-    testz.assert_eq_string(test_file_info.path, "/tmp/test.txt", "FileInfo should store path correctly")
-    testz.assert_eq_float(test_file_info.size, 1024.0, "FileInfo should store size correctly")
-    testz.assert_false(test_file_info.is_directory, "FileInfo should store directory flag correctly")
-    testz.assert_true(test_file_info.is_readable, "FileInfo should store readable flag correctly")
-    testz.assert_true(test_file_info.is_writable, "FileInfo should store writable flag correctly")
-    
-    fr fr Test FileHandle structure
-    sus test_file_handle filez.FileHandle = filez.FileHandle{}
-    test_file_handle.fd = 3.0
-    test_file_handle.path = "/tmp/handle_test.txt"
-    test_file_handle.mode = "r"
-    test_file_handle.position = 0.0
-    test_file_handle.is_open = based
-    test_file_handle.buffer_size = 4096.0
-    
-    testz.assert_eq_float(test_file_handle.fd, 3.0, "FileHandle should store file descriptor correctly")
-    testz.assert_eq_string(test_file_handle.path, "/tmp/handle_test.txt", "FileHandle should store path correctly")
-    testz.assert_eq_string(test_file_handle.mode, "r", "FileHandle should store mode correctly")
-    testz.assert_eq_float(test_file_handle.position, 0.0, "FileHandle should store position correctly")
-    testz.assert_true(test_file_handle.is_open, "FileHandle should store open flag correctly")
-    testz.assert_eq_float(test_file_handle.buffer_size, 4096.0, "FileHandle should store buffer size correctly")
-    
-    fr fr Test DirectoryEntry structure
-    sus test_dir_entry filez.DirectoryEntry = filez.DirectoryEntry{}
-    test_dir_entry.name = "subdir"
-    test_dir_entry.full_path = "/tmp/subdir"
-    test_dir_entry.is_directory = based
-    test_dir_entry.size = 0.0
-    
-    testz.assert_eq_string(test_dir_entry.name, "subdir", "DirectoryEntry should store name correctly")
-    testz.assert_eq_string(test_dir_entry.full_path, "/tmp/subdir", "DirectoryEntry should store full path correctly")
-    testz.assert_true(test_dir_entry.is_directory, "DirectoryEntry should store directory flag correctly")
-    testz.assert_eq_float(test_dir_entry.size, 0.0, "DirectoryEntry should store size correctly")
-    
-    fr fr ===== FILE OPEN/CLOSE TESTS =====
-    testz.test_group("File Open and Close Operations")
-    
-    fr fr Test file_open with valid parameters - read mode
-    sus open_result filez.FileHandle = filez.file_open("/tmp/cursed_test_file.txt", "r") fam {
-        when "file path cannot be empty" -> {
-            testz.assert_true(cap, "file_open should not fail with valid path")
-            damn filez.FileHandle{}
-        }
-        when "invalid file mode: r" -> {
-            testz.assert_true(cap, "file_open should accept 'r' mode")
-            damn filez.FileHandle{}
-        }
-        when "failed to open file: /tmp/cursed_test_file.txt" -> {
-            fr fr File might not exist - this is expected for non-existent files
-            damn filez.FileHandle{}
-        }
-        when _ -> {
-            fr fr File opened successfully or other error
-            sus handle filez.FileHandle = filez.FileHandle{}
-            handle.path = "/tmp/cursed_test_file.txt"
-            handle.mode = "r"
-            handle.is_open = based
-            damn handle
-        }
+test_start("filez File System Comprehensive Tests")
+
+fr fr ===== FILE CREATION AND DELETION TESTS =====
+
+test_group("File Creation and Deletion")
+
+fr fr Test file creation
+sus test_file_path tea = "test_file_creation.txt"
+sus test_content tea = "Hello, CURSED File System!"
+
+sus create_result lit = create_file(test_file_path, test_content) fam {
+    when err -> {
+        assert_fail("File creation failed: " + err)
+        damn cringe
     }
-    
-    testz.assert_eq_string(open_result.path, "/tmp/cursed_test_file.txt", "file_open should set correct path")
-    testz.assert_eq_string(open_result.mode, "r", "file_open should set correct mode")
-    
-    fr fr Test file_open with different modes
-    sus write_open filez.FileHandle = filez.file_open("/tmp/cursed_write_test.txt", "w") fam {
-        when _ -> {
-            sus handle filez.FileHandle = filez.FileHandle{}
-            handle.mode = "w"
-            handle.is_open = based
-            damn handle
-        }
-    }
-    testz.assert_eq_string(write_open.mode, "w", "file_open should support write mode")
-    
-    sus append_open filez.FileHandle = filez.file_open("/tmp/cursed_append_test.txt", "a") fam {
-        when _ -> {
-            sus handle filez.FileHandle = filez.FileHandle{}
-            handle.mode = "a"
-            handle.is_open = based
-            damn handle
-        }
-    }
-    testz.assert_eq_string(append_open.mode, "a", "file_open should support append mode")
-    
-    fr fr Test file_open error conditions
-    sus empty_path_result filez.FileHandle = filez.file_open("", "r") fam {
-        when "file path cannot be empty" -> {
-            testz.assert_true(based, "file_open should error on empty path")
-            damn filez.FileHandle{}
-        }
-        when _ -> {
-            testz.assert_true(cap, "file_open should error on empty path")
-            damn filez.FileHandle{}
-        }
-    }
-    
-    sus invalid_mode_result filez.FileHandle = filez.file_open("/tmp/test.txt", "invalid") fam {
-        when "invalid file mode: invalid" -> {
-            testz.assert_true(based, "file_open should error on invalid mode")
-            damn filez.FileHandle{}
-        }
-        when _ -> {
-            testz.assert_true(cap, "file_open should error on invalid mode")
-            damn filez.FileHandle{}
-        }
-    }
-    
-    fr fr ===== FILE READ/WRITE TESTS =====
-    testz.test_group("File Read and Write Operations")
-    
-    fr fr Test file_read with valid handle (mock)
-    sus mock_handle filez.FileHandle = filez.FileHandle{}
-    mock_handle.is_open = based
-    mock_handle.path = "/tmp/mock_test.txt"
-    
-    sus read_result tea = filez.file_read(mock_handle, 1024.0) fam {
-        when "file is not open" -> {
-            testz.assert_true(cap, "file_read should work with open handle")
-            damn ""
-        }
-        when _ -> {
-            fr fr Mock read result
-            damn "mock file content"
-        }
-    }
-    
-    fr fr Test file_read with closed handle
-    sus closed_handle filez.FileHandle = filez.FileHandle{}
-    closed_handle.is_open = cringe
-    
-    sus closed_read_result tea = filez.file_read(closed_handle, 1024.0) fam {
-        when "file is not open" -> {
-            testz.assert_true(based, "file_read should error on closed handle")
-            damn ""
-        }
-        when _ -> {
-            testz.assert_true(cap, "file_read should error on closed handle")
-            damn ""
-        }
-    }
-    testz.assert_eq_string(closed_read_result, "", "file_read should return empty string on error")
-    
-    fr fr ===== FILE INFO TESTS =====
-    testz.test_group("File Information Operations")
-    
-    fr fr Test file_exists function if available
-    ready filez.file_exists {
-        sus exists_test lit = filez.file_exists("/tmp/cursed_test_exists.txt")
-        fr fr Don't assert result since file may or may not exist
-        fr fr Just verify function can be called without crashing
-        testz.assert_true(based, "file_exists function should be callable")
-        
-        sus nonexistent_test lit = filez.file_exists("/nonexistent/path/file.txt")
-        testz.assert_false(nonexistent_test, "file_exists should return false for non-existent files")
-    }
-    
-    fr fr Test file_size function if available
-    ready filez.file_size {
-        sus size_result drip = filez.file_size("/tmp/cursed_size_test.txt")
-        fr fr Size might be -1 if file doesn't exist
-        testz.assert_ge_float(size_result, -1.0, "file_size should return valid size or -1")
-    }
-    
-    fr fr ===== PATH OPERATIONS TESTS =====
-    testz.test_group("Path Operations")
-    
-    fr fr Test path manipulation functions if available
-    ready filez.path_join {
-        sus joined_path tea = filez.path_join("/tmp", "subdir", "file.txt")
-        testz.assert_ne_string(joined_path, "", "path_join should return non-empty path")
-        
-        sus single_join tea = filez.path_join("/tmp", "file.txt")
-        testz.assert_ne_string(single_join, "", "path_join should work with two components")
-    }
-    
-    ready filez.path_dirname {
-        sus dirname_result tea = filez.path_dirname("/tmp/subdir/file.txt")
-        testz.assert_ne_string(dirname_result, "", "path_dirname should return directory name")
-        
-        sus root_dirname tea = filez.path_dirname("/file.txt")
-        testz.assert_ne_string(root_dirname, "", "path_dirname should handle root directory")
-    }
-    
-    ready filez.path_basename {
-        sus basename_result tea = filez.path_basename("/tmp/subdir/file.txt")
-        testz.assert_eq_string(basename_result, "file.txt", "path_basename should return filename")
-        
-        sus dir_basename tea = filez.path_basename("/tmp/subdir/")
-        testz.assert_ne_string(dir_basename, "", "path_basename should handle directory paths")
-    }
-    
-    fr fr ===== DIRECTORY OPERATIONS TESTS =====
-    testz.test_group("Directory Operations")
-    
-    fr fr Test directory creation if available
-    ready filez.create_directory {
-        sus create_result lit = filez.create_directory("/tmp/cursed_test_dir")
-        fr fr May succeed or fail depending on filesystem state
-        fr fr Just verify function can be called
-        testz.assert_true(based, "create_directory function should be callable")
-    }
-    
-    fr fr Test directory listing if available
-    ready filez.list_directory {
-        sus dir_contents []filez.DirectoryEntry = filez.list_directory("/tmp")
-        fr fr Directory listing may be empty or contain entries
-        testz.assert_ge_float(len(dir_contents), 0.0, "list_directory should return array")
-    }
-    
-    fr fr Test directory removal if available
-    ready filez.remove_directory {
-        sus remove_result lit = filez.remove_directory("/tmp/cursed_test_dir_to_remove")
-        fr fr May succeed or fail depending on filesystem state
-        testz.assert_true(based, "remove_directory function should be callable")
-    }
-    
-    fr fr ===== FILE MANIPULATION TESTS =====
-    testz.test_group("File Manipulation Operations")
-    
-    fr fr Test file copy if available
-    ready filez.copy_file {
-        sus copy_result lit = filez.copy_file("/tmp/source.txt", "/tmp/dest.txt")
-        fr fr May succeed or fail depending on source file existence
-        testz.assert_true(based, "copy_file function should be callable")
-    }
-    
-    fr fr Test file move if available
-    ready filez.move_file {
-        sus move_result lit = filez.move_file("/tmp/old_name.txt", "/tmp/new_name.txt")
-        testz.assert_true(based, "move_file function should be callable")
-    }
-    
-    fr fr Test file deletion if available
-    ready filez.delete_file {
-        sus delete_result lit = filez.delete_file("/tmp/file_to_delete.txt")
-        testz.assert_true(based, "delete_file function should be callable")
-    }
-    
-    fr fr ===== PERMISSION TESTS =====
-    testz.test_group("File Permissions")
-    
-    fr fr Test permission checking if available
-    ready filez.is_readable {
-        sus readable_test lit = filez.is_readable("/tmp/readable_test.txt")
-        fr fr Result depends on file existence and permissions
-        testz.assert_true(based, "is_readable function should be callable")
-    }
-    
-    ready filez.is_writable {
-        sus writable_test lit = filez.is_writable("/tmp/writable_test.txt")
-        testz.assert_true(based, "is_writable function should be callable")
-    }
-    
-    ready filez.is_executable {
-        sus executable_test lit = filez.is_executable("/tmp/executable_test.txt")
-        testz.assert_true(based, "is_executable function should be callable")
-    }
-    
-    fr fr ===== ERROR HANDLING TESTS =====
-    testz.test_group("Error Handling")
-    
-    fr fr Test various error conditions
-    sus error_test_handle filez.FileHandle = filez.file_open("", "r") fam {
-        when "file path cannot be empty" -> {
-            testz.assert_true(based, "Empty path should trigger error")
-            damn filez.FileHandle{}
-        }
-        when _ -> {
-            testz.assert_true(cap, "Empty path should trigger specific error")
-            damn filez.FileHandle{}
-        }
-    }
-    
-    fr fr Test file operations on invalid handles
-    sus invalid_handle filez.FileHandle = filez.FileHandle{}
-    invalid_handle.is_open = cringe
-    
-    sus invalid_close_result lit = filez.file_close(invalid_handle) fam {
-        when "file is not open" -> {
-            testz.assert_true(based, "Closing unopened file should error")
-            damn cringe
-        }
-        when _ -> {
-            testz.assert_true(cap, "Closing unopened file should error specifically")
-            damn cringe
-        }
-    }
-    testz.assert_false(invalid_close_result, "file_close should fail on invalid handle")
-    
-    fr fr ===== BUFFER AND PERFORMANCE TESTS =====
-    testz.test_group("Buffer and Performance Tests")
-    
-    fr fr Test different buffer sizes
-    sus large_buffer_handle filez.FileHandle = filez.FileHandle{}
-    large_buffer_handle.is_open = based
-    large_buffer_handle.buffer_size = 65536.0
-    
-    sus large_read tea = filez.file_read(large_buffer_handle, 32768.0) fam {
-        when _ -> damn "large buffer test"
-    }
-    testz.assert_ne_string(large_read, "", "Large buffer read should work")
-    
-    fr fr Test small buffer sizes
-    sus small_buffer_handle filez.FileHandle = filez.FileHandle{}
-    small_buffer_handle.is_open = based
-    small_buffer_handle.buffer_size = 512.0
-    
-    sus small_read tea = filez.file_read(small_buffer_handle, 256.0) fam {
-        when _ -> damn "small buffer test"
-    }
-    testz.assert_ne_string(small_read, "", "Small buffer read should work")
-    
-    fr fr ===== FILE MODE COMPREHENSIVE TESTS =====
-    testz.test_group("File Mode Comprehensive Tests")
-    
-    fr fr Test all supported file modes
-    sus modes []tea = ["r", "w", "a", "r+", "w+", "a+"]
-    sus mode_index drip = 0
-    bestie mode_index < len(modes) {
-        sus current_mode tea = modes[mode_index]
-        sus mode_test filez.FileHandle = filez.file_open("/tmp/mode_test.txt", current_mode) fam {
-            when _ -> {
-                sus handle filez.FileHandle = filez.FileHandle{}
-                handle.mode = current_mode
-                handle.is_open = based
-                damn handle
-            }
-        }
-        testz.assert_eq_string(mode_test.mode, current_mode, "File mode should be set correctly")
-        mode_index = mode_index + 1.0
-    }
-    
-    fr fr ===== PATH EDGE CASE TESTS =====
-    testz.test_group("Path Edge Cases")
-    
-    fr fr Test edge cases in path handling
-    sus empty_path_test lit = based
-    ready filez.path_join {
-        sus empty_join tea = filez.path_join("", "file.txt")
-        ready empty_join == "" { empty_path_test = cringe }
-        
-        sus null_join tea = filez.path_join("path", "")
-        ready null_join == "" { empty_path_test = cringe }
-    }
-    testz.assert_true(empty_path_test, "Path operations should handle empty components gracefully")
-    
-    fr fr Test special characters in paths
-    sus special_chars_test lit = based
-    ready filez.file_open {
-        sus special_handle filez.FileHandle = filez.file_open("/tmp/special chars & symbols!@#.txt", "r") fam {
-            when _ -> {
-                special_chars_test = based
-                damn filez.FileHandle{}
-            }
-        }
-    }
-    testz.assert_true(special_chars_test, "Special characters in paths should be handled")
-    
-    fr fr ===== INTEGRATION TESTS =====
-    testz.test_group("Integration Tests")
-    
-    fr fr Test complete file operation workflow
-    sus integration_test lit = based
-    
-    fr fr Step 1: Open file for writing
-    sus write_handle filez.FileHandle = filez.file_open("/tmp/integration_test.txt", "w") fam {
-        when _ -> {
-            sus handle filez.FileHandle = filez.FileHandle{}
-            handle.is_open = based
-            handle.mode = "w"
-            handle.path = "/tmp/integration_test.txt"
-            damn handle
-        }
-    }
-    
-    ready !write_handle.is_open { integration_test = cringe }
-    
-    fr fr Step 2: Close the file
-    sus close_result lit = filez.file_close(write_handle) fam {
-        when _ -> damn based
-    }
-    ready !close_result { integration_test = cringe }
-    
-    fr fr Step 3: Open same file for reading
-    sus read_handle filez.FileHandle = filez.file_open("/tmp/integration_test.txt", "r") fam {
-        when _ -> {
-            sus handle filez.FileHandle = filez.FileHandle{}
-            handle.is_open = based
-            handle.mode = "r"
-            handle.path = "/tmp/integration_test.txt"
-            damn handle
-        }
-    }
-    
-    testz.assert_true(integration_test, "Complete file operation workflow should succeed")
-    
-    fr fr ===== FINAL COMPREHENSIVE VALIDATION =====
-    testz.test_group("Final Comprehensive Validation")
-    
-    fr fr Test that all basic structures can be created and manipulated
-    sus final_validation lit = based
-    
-    fr fr Test FileInfo creation and manipulation
-    sus final_file_info filez.FileInfo = filez.FileInfo{}
-    final_file_info.name = "final_test.txt"
-    final_file_info.size = 2048.0
-    final_file_info.is_readable = based
-    
-    ready final_file_info.name != "final_test.txt" { final_validation = cringe }
-    ready final_file_info.size != 2048.0 { final_validation = cringe }
-    ready !final_file_info.is_readable { final_validation = cringe }
-    
-    fr fr Test FileHandle creation and manipulation
-    sus final_handle filez.FileHandle = filez.FileHandle{}
-    final_handle.path = "/tmp/final_test.txt"
-    final_handle.mode = "r+"
-    final_handle.is_open = based
-    final_handle.buffer_size = 8192.0
-    
-    ready final_handle.path != "/tmp/final_test.txt" { final_validation = cringe }
-    ready final_handle.mode != "r+" { final_validation = cringe }
-    ready !final_handle.is_open { final_validation = cringe }
-    
-    fr fr Test DirectoryEntry creation and manipulation
-    sus final_dir_entry filez.DirectoryEntry = filez.DirectoryEntry{}
-    final_dir_entry.name = "final_dir"
-    final_dir_entry.full_path = "/tmp/final_dir"
-    final_dir_entry.is_directory = based
-    final_dir_entry.size = 4096.0
-    
-    ready final_dir_entry.name != "final_dir" { final_validation = cringe }
-    ready !final_dir_entry.is_directory { final_validation = cringe }
-    
-    testz.assert_true(final_validation, "All file system structures should work correctly")
-    
-    fr fr Test error handling consistency
-    sus error_consistency lit = based
-    
-    fr fr Test that all error conditions return consistent results
-    sus empty_path_handle filez.FileHandle = filez.file_open("", "r") fam {
-        when "file path cannot be empty" -> {
-            error_consistency = based
-            damn filez.FileHandle{}
-        }
-        when _ -> {
-            error_consistency = cringe
-            damn filez.FileHandle{}
-        }
-    }
-    
-    testz.assert_true(error_consistency, "Error handling should be consistent across operations")
-    
-    fr fr Test that structures maintain data integrity
-    sus data_integrity lit = based
-    sus integrity_info filez.FileInfo = filez.FileInfo{}
-    
-    integrity_info.name = "integrity_test"
-    integrity_info.size = 1024.0
-    integrity_info.is_directory = cringe
-    integrity_info.is_readable = based
-    integrity_info.is_writable = based
-    integrity_info.permissions = 755.0
-    
-    ready integrity_info.name != "integrity_test" { data_integrity = cringe }
-    ready integrity_info.size != 1024.0 { data_integrity = cringe }
-    ready integrity_info.is_directory != cringe { data_integrity = cringe }
-    ready integrity_info.is_readable != based { data_integrity = cringe }
-    ready integrity_info.is_writable != based { data_integrity = cringe }
-    ready integrity_info.permissions != 755.0 { data_integrity = cringe }
-    
-    testz.assert_true(data_integrity, "File structures should maintain data integrity")
-    
-    testz.print_test_summary()
 }
+assert_bool(create_result, "File created successfully")
+
+fr fr Test file existence
+sus exists_result lit = file_exists(test_file_path)
+assert_bool(exists_result, "Created file exists")
+
+fr fr Test file deletion
+sus delete_result lit = delete_file(test_file_path) fam {
+    when err -> {
+        assert_fail("File deletion failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(delete_result, "File deleted successfully")
+
+fr fr Test file no longer exists
+exists_result = file_exists(test_file_path)
+assert_bool(!exists_result, "Deleted file no longer exists")
+
+fr fr ===== FILE READING AND WRITING TESTS =====
+
+test_group("File Reading and Writing")
+
+fr fr Test file writing and reading
+sus rw_file_path tea = "test_read_write.txt"
+sus write_content tea = "Line 1\nLine 2\nLine 3\n"
+
+fr fr Write content to file
+create_result = create_file(rw_file_path, write_content) fam {
+    when err -> {
+        assert_fail("Write file creation failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(create_result, "Write file created")
+
+fr fr Read content back
+sus read_content tea = read_file(rw_file_path) fam {
+    when err -> {
+        assert_fail("File reading failed: " + err)
+        damn ""
+    }
+}
+assert_string_equals(read_content, write_content, "File content matches written data")
+
+fr fr Test append to file
+sus append_content tea = "Line 4\nLine 5\n"
+sus append_result lit = append_to_file(rw_file_path, append_content) fam {
+    when err -> {
+        assert_fail("File append failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(append_result, "File append succeeded")
+
+fr fr Read appended content
+sus full_content tea = read_file(rw_file_path) fam {
+    when err -> {
+        assert_fail("Reading appended file failed: " + err)
+        damn ""
+    }
+}
+sus expected_full tea = write_content + append_content
+assert_string_equals(full_content, expected_full, "Appended content correct")
+
+fr fr Cleanup
+delete_file(rw_file_path) fam { when _ -> { } }
+
+fr fr ===== FILE HANDLE OPERATIONS =====
+
+test_group("File Handle Operations")
+
+fr fr Test file handle open/close
+sus handle_file_path tea = "test_handle_ops.txt"
+create_file(handle_file_path, "Handle test content") fam { when _ -> { } }
+
+sus file_handle FileHandle = file_open(handle_file_path, "r") fam {
+    when err -> {
+        assert_fail("File handle open failed: " + err)
+        damn FileHandle{}
+    }
+}
+assert_bool(file_handle.is_open, "File handle opened")
+assert_string_equals(file_handle.path, handle_file_path, "Handle path correct")
+assert_string_equals(file_handle.mode, "r", "Handle mode correct")
+
+fr fr Test file read through handle
+sus handle_content tea = file_read(file_handle, 1024) fam {
+    when err -> {
+        assert_fail("File handle read failed: " + err)
+        damn ""
+    }
+}
+assert_string_contains(handle_content, "Handle test content", "Handle read content")
+
+fr fr Test file close
+sus close_result lit = file_close(file_handle) fam {
+    when err -> {
+        assert_fail("File handle close failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(close_result, "File handle closed")
+assert_bool(!file_handle.is_open, "File handle marked as closed")
+
+fr fr Cleanup
+delete_file(handle_file_path) fam { when _ -> { } }
+
+fr fr ===== FILE WRITE HANDLE TESTS =====
+
+test_group("File Write Handle Operations")
+
+fr fr Test write handle operations
+sus write_handle_path tea = "test_write_handle.txt"
+
+sus write_handle FileHandle = file_open(write_handle_path, "w") fam {
+    when err -> {
+        assert_fail("Write handle open failed: " + err)
+        damn FileHandle{}
+    }
+}
+assert_bool(write_handle.is_open, "Write handle opened")
+
+fr fr Write data through handle
+sus write_data tea = "Written through handle"
+sus write_result lit = file_write(write_handle, write_data) fam {
+    when err -> {
+        assert_fail("File handle write failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(write_result, "File handle write succeeded")
+
+fr fr Close write handle
+close_result = file_close(write_handle) fam {
+    when err -> {
+        assert_fail("Write handle close failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(close_result, "Write handle closed")
+
+fr fr Read back written data
+sus written_content tea = read_file(write_handle_path) fam {
+    when err -> {
+        assert_fail("Reading written file failed: " + err)
+        damn ""
+    }
+}
+assert_string_equals(written_content, write_data, "Written data matches")
+
+fr fr Cleanup
+delete_file(write_handle_path) fam { when _ -> { } }
+
+fr fr ===== FILE INFO AND METADATA TESTS =====
+
+test_group("File Information and Metadata")
+
+fr fr Test file info
+sus info_file_path tea = "test_file_info.txt"
+sus info_content tea = "File info test content with some length"
+create_file(info_file_path, info_content) fam { when _ -> { } }
+
+sus file_info FileInfo = get_file_info(info_file_path) fam {
+    when err -> {
+        assert_fail("Get file info failed: " + err)
+        damn FileInfo{}
+    }
+}
+
+assert_string_equals(file_info.name, "test_file_info.txt", "File info name")
+assert_string_contains(file_info.path, "test_file_info.txt", "File info path")
+assert_bool(!file_info.is_directory, "File is not directory")
+assert_true(file_info.size > 0, "File has size")
+assert_bool(file_info.is_readable, "File is readable")
+
+fr fr Test file size
+sus file_size drip = get_file_size(info_file_path) fam {
+    when err -> {
+        assert_fail("Get file size failed: " + err)
+        damn 0
+    }
+}
+assert_true(file_size > 0, "File size greater than zero")
+assert_eq_int(file_size, string_length(info_content), "File size matches content")
+
+fr fr Cleanup
+delete_file(info_file_path) fam { when _ -> { } }
+
+fr fr ===== DIRECTORY OPERATIONS TESTS =====
+
+test_group("Directory Operations")
+
+fr fr Test directory creation
+sus test_dir_path tea = "test_directory"
+sus create_dir_result lit = create_directory(test_dir_path) fam {
+    when err -> {
+        assert_fail("Directory creation failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(create_dir_result, "Directory created")
+
+fr fr Test directory existence
+sus dir_exists_result lit = directory_exists(test_dir_path)
+assert_bool(dir_exists_result, "Created directory exists")
+
+fr fr Test directory info
+sus dir_info FileInfo = get_file_info(test_dir_path) fam {
+    when err -> {
+        assert_fail("Directory info failed: " + err)
+        damn FileInfo{}
+    }
+}
+assert_bool(dir_info.is_directory, "Info shows it's a directory")
+
+fr fr Test directory listing (empty)
+sus dir_entries []DirectoryEntry = list_directory(test_dir_path) fam {
+    when err -> {
+        assert_fail("Directory listing failed: " + err)
+        damn []
+    }
+}
+assert_eq_int(array_length(dir_entries), 0, "Empty directory has no entries")
+
+fr fr Create file in directory
+sus sub_file_path tea = test_dir_path + "/sub_file.txt"
+create_file(sub_file_path, "Sub file content") fam { when _ -> { } }
+
+fr fr Test directory listing with file
+dir_entries = list_directory(test_dir_path) fam {
+    when err -> {
+        assert_fail("Directory listing with file failed: " + err)
+        damn []
+    }
+}
+assert_eq_int(array_length(dir_entries), 1, "Directory has one entry")
+assert_string_equals(dir_entries[0].name, "sub_file.txt", "Entry name correct")
+assert_bool(!dir_entries[0].is_directory, "Entry is file not directory")
+
+fr fr Test directory deletion (recursive)
+sus delete_dir_result lit = delete_directory_recursive(test_dir_path) fam {
+    when err -> {
+        assert_fail("Recursive directory deletion failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(delete_dir_result, "Directory deleted recursively")
+
+fr fr Test directory no longer exists
+dir_exists_result = directory_exists(test_dir_path)
+assert_bool(!dir_exists_result, "Deleted directory no longer exists")
+
+fr fr ===== PATH OPERATIONS TESTS =====
+
+test_group("Path Operations")
+
+fr fr Test path joining
+sus joined_path tea = path_join("home", "user", "documents", "file.txt")
+assert_string_contains(joined_path, "home", "Path contains home")
+assert_string_contains(joined_path, "user", "Path contains user")
+assert_string_contains(joined_path, "documents", "Path contains documents")
+assert_string_contains(joined_path, "file.txt", "Path contains filename")
+
+fr fr Test path basename
+sus base_name tea = path_basename("/home/user/documents/file.txt")
+assert_string_equals(base_name, "file.txt", "Basename extraction")
+
+sus base_name_no_ext tea = path_basename("/home/user/documents/")
+assert_string_equals(base_name_no_ext, "documents", "Basename directory")
+
+fr fr Test path dirname
+sus dir_name tea = path_dirname("/home/user/documents/file.txt")
+assert_string_contains(dir_name, "documents", "Dirname extraction")
+
+fr fr Test path extension
+sus extension tea = path_extension("document.pdf")
+assert_string_equals(extension, ".pdf", "Extension extraction")
+
+sus no_extension tea = path_extension("README")
+assert_string_equals(no_extension, "", "No extension case")
+
+fr fr Test absolute path
+sus is_absolute_unix lit = path_is_absolute("/home/user/file.txt")
+assert_bool(is_absolute_unix, "Unix absolute path detection")
+
+sus is_relative lit = path_is_absolute("documents/file.txt")
+assert_bool(!is_relative, "Relative path detection")
+
+fr fr ===== WORKING DIRECTORY TESTS =====
+
+test_group("Working Directory Operations")
+
+fr fr Test get current working directory
+sus current_dir tea = get_current_directory() fam {
+    when err -> {
+        assert_fail("Get current directory failed: " + err)
+        damn ""
+    }
+}
+assert_not_empty(current_dir, "Current directory retrieved")
+assert_true(string_length(current_dir) > 0, "Current directory has length")
+
+fr fr ===== ERROR HANDLING TESTS =====
+
+test_group("Error Handling and Edge Cases")
+
+fr fr Test reading non-existent file
+sus nonexistent_content tea = read_file("nonexistent_file.txt") fam {
+    when err -> {
+        assert_string_contains(err, "not found", "Non-existent file error")
+        damn ""
+    }
+}
+
+fr fr Test creating file with invalid path
+sus invalid_create lit = create_file("", "content") fam {
+    when err -> {
+        assert_string_contains(err, "empty", "Empty path error")
+        damn cringe
+    }
+}
+
+fr fr Test deleting non-existent file
+sus nonexistent_delete lit = delete_file("nonexistent_file.txt") fam {
+    when err -> {
+        assert_string_contains(err, "not found", "Non-existent delete error")
+        damn cringe
+    }
+}
+
+fr fr Test opening file with invalid mode
+sus invalid_mode_file tea = "test_invalid_mode.txt"
+create_file(invalid_mode_file, "test") fam { when _ -> { } }
+
+sus invalid_handle FileHandle = file_open(invalid_mode_file, "invalid_mode") fam {
+    when err -> {
+        assert_string_contains(err, "invalid", "Invalid mode error")
+        damn FileHandle{}
+    }
+}
+
+fr fr Cleanup
+delete_file(invalid_mode_file) fam { when _ -> { } }
+
+fr fr ===== LARGE FILE TESTS =====
+
+test_group("Large File Operations")
+
+fr fr Test large file creation and reading
+sus large_file_path tea = "test_large_file.txt"
+sus large_content tea = create_large_string(1000)  fr fr 1KB content
+
+create_result = create_file(large_file_path, large_content) fam {
+    when err -> {
+        assert_fail("Large file creation failed: " + err)
+        damn cringe
+    }
+}
+assert_bool(create_result, "Large file created")
+
+fr fr Test reading large file
+sus read_large_content tea = read_file(large_file_path) fam {
+    when err -> {
+        assert_fail("Large file reading failed: " + err)
+        damn ""
+    }
+}
+assert_eq_int(string_length(read_large_content), string_length(large_content), "Large file content length")
+
+fr fr Test large file size
+sus large_file_size drip = get_file_size(large_file_path) fam {
+    when err -> {
+        assert_fail("Large file size failed: " + err)
+        damn 0
+    }
+}
+assert_eq_int(large_file_size, string_length(large_content), "Large file size correct")
+
+fr fr Cleanup large file
+delete_file(large_file_path) fam { when _ -> { } }
+
+fr fr ===== CONCURRENT FILE ACCESS TESTS =====
+
+test_group("Concurrent File Access")
+
+fr fr Test multiple file handles to same file
+sus concurrent_file_path tea = "test_concurrent_access.txt"
+create_file(concurrent_file_path, "Concurrent test content") fam { when _ -> { } }
+
+sus handle1 FileHandle = file_open(concurrent_file_path, "r") fam {
+    when err -> {
+        assert_fail("First concurrent handle failed: " + err)
+        damn FileHandle{}
+    }
+}
+
+sus handle2 FileHandle = file_open(concurrent_file_path, "r") fam {
+    when err -> {
+        assert_fail("Second concurrent handle failed: " + err)
+        damn FileHandle{}
+    }
+}
+
+assert_bool(handle1.is_open, "First handle opened")
+assert_bool(handle2.is_open, "Second handle opened")
+
+fr fr Read from both handles
+sus content1 tea = file_read(handle1, 1024) fam {
+    when err -> {
+        assert_fail("First handle read failed: " + err)
+        damn ""
+    }
+}
+
+sus content2 tea = file_read(handle2, 1024) fam {
+    when err -> {
+        assert_fail("Second handle read failed: " + err)
+        damn ""
+    }
+}
+
+assert_string_equals(content1, content2, "Both handles read same content")
+
+fr fr Close both handles
+file_close(handle1) fam { when _ -> { } }
+file_close(handle2) fam { when _ -> { } }
+
+fr fr Cleanup
+delete_file(concurrent_file_path) fam { when _ -> { } }
+
+print_test_summary()

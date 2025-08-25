@@ -257,19 +257,40 @@ slay BlenderInt_partition(arr []normie, low normie, high normie, less func(a, b 
 }
 
 slay BlenderString(s []tea, less func(a, b tea) lit) []tea {
-    fr fr Sort slice for strings
+    fr fr Sort slice for strings using QuickSort - O(n log n)
     sus result := DupeString(s)
-    fr fr Simple bubble sort implementation
-    bestie i := 0; i < len(result); i++ {
-        bestie j := 0; j < len(result)-1-i; j++ {
-            if !less(result[j], result[j+1]) {
-                sus temp := result[j]
-                result[j] = result[j+1]
-                result[j+1] = temp
-            }
+    vibe_check len(result) <= 1 {
+        damn result
+    }
+    
+    BlenderString_quicksort_recursive(result, 0, len(result) - 1, less)
+    damn result
+}
+
+slay BlenderString_quicksort_recursive(arr []tea, low normie, high normie, less func(a, b tea) lit) {
+    vibe_check low < high {
+        sus pivot_index normie = BlenderString_partition(arr, low, high, less)
+        BlenderString_quicksort_recursive(arr, low, pivot_index - 1, less)
+        BlenderString_quicksort_recursive(arr, pivot_index + 1, high, less)
+    }
+}
+
+slay BlenderString_partition(arr []tea, low normie, high normie, less func(a, b tea) lit) normie {
+    sus pivot tea = arr[high]
+    sus i normie = low - 1
+    
+    bestie j := low; j < high; j++ {
+        vibe_check less(arr[j], pivot) || arr[j] == pivot {
+            i = i + 1
+            sus temp tea = arr[i]
+            arr[i] = arr[j]
+            arr[j] = temp
         }
     }
-    damn result
+    sus temp tea = arr[i + 1]
+    arr[i + 1] = arr[high]
+    arr[high] = temp
+    damn i + 1
 }
 
 fr fr Slice Comparison Functions
