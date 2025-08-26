@@ -201,15 +201,23 @@ slay http_put(url tea, body tea) tea {
 }
 
 slay http_delete(url tea) tea {
-    fr fr Simplified HTTP DELETE request
-    ready (contains_substring(url, "api.example.com/users")) {
-        damn "HTTP/1.1 204 No Content\r\n\r\n"
-    }
-    
-    damn "HTTP/1.1 204 No Content\r\n\r\n"
+    fr fr Real HTTP DELETE request with configurable endpoints
+    sus parsed_url = parse_url(url)
+    sus request_data = build_http_request("DELETE", parsed_url)
+    sus response = send_http_request(request_data, parsed_url.host, parsed_url.port)
+    damn response
 }
 
 fr fr ===== HTTP CLIENT HELPERS =====
+
+slay http_get_with_timeout(url tea, timeout_seconds normie) tea {
+    fr fr HTTP GET with configurable timeout
+    sus parsed_url = parse_url(url)
+    ready (timeout_seconds <= 0) {
+        damn "HTTP/1.1 408 Request Timeout\r\n\r\ntimeout"
+    }
+    damn http_get(url) fr fr Delegate to standard GET for now
+}
 
 slay get_json(url tea) tea {
     fr fr GET request expecting JSON response

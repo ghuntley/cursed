@@ -1,31 +1,71 @@
-// Simple environment variable test
+yeet "envz"
+yeet "vibez"
 
-// Test runtime_get_env directly
-(value, err) := runtime_get_env("HOME")
+vibez.spill("=== Environment Variable System Test ===")
 
-lowkey err == "" {
-    vibez.spill("HOME directory found:", value)
-} otherwise {
-    vibez.spill("Error getting HOME:", err)
-}
+# Test 1: Get existing environment variables 
+vibez.spill("Test 1: Getting environment variables")
+sus user tea = get_env("USER")
+sus home tea = get_env("HOME") 
+sus path tea = get_env("PATH")
 
-// Test basic functionality
-vibez.spill("Testing basic environment variable functions...")
+vibez.spill("USER: " + user)
+vibez.spill("HOME: " + home)
+vibez.spill("PATH (first 80 chars): " + path.substring(0, 80))
 
-// Try setting a test variable
-test_err := runtime_set_env("TEST_VAR", "test_value")
-lowkey test_err == "" {
-    vibez.spill("Successfully set TEST_VAR")
-    
-    // Try getting it back
-    (test_val, get_err) := runtime_get_env("TEST_VAR")
-    lowkey get_err == "" {
-        vibez.spill("Retrieved TEST_VAR:", test_val)
-    } otherwise {
-        vibez.spill("Error retrieving TEST_VAR:", get_err)
-    }
-} otherwise {
-    vibez.spill("Error setting TEST_VAR:", test_err)
-}
+# Test 2: Set and get custom environment variable
+vibez.spill("Test 2: Setting custom environment variable")
+sus test_var tea = "CURSED_TEST_123"
+sus test_value tea = "cursed_works_great"
 
-vibez.spill("Environment test completed")
+sus set_success lit = set_env(test_var, test_value)
+vibez.spill("Set result: " + set_success.to_string())
+
+sus retrieved tea = get_env(test_var)
+vibez.spill("Retrieved: " + retrieved)
+
+# Test 3: Check if variable exists
+sus exists_test lit = env_exists(test_var)
+vibez.spill("Variable exists: " + exists_test.to_string())
+
+# Test 4: Get with default value
+sus nonexistent tea = get_env_default("NONEXISTENT_VAR", "default_value")
+vibez.spill("Nonexistent with default: " + nonexistent)
+
+sus existing_with_default tea = get_env_default(test_var, "ignored")
+vibez.spill("Existing with default: " + existing_with_default)
+
+# Test 5: Environment variable expansion
+vibez.spill("Test 5: Variable expansion")
+sus template tea = "User ${USER} lives in ${HOME}"
+sus expanded tea = expand(template)
+vibez.spill("Template: " + template)
+vibez.spill("Expanded: " + expanded)
+
+# Test 6: Platform detection
+sus platform tea = get_platform()
+vibez.spill("Platform: " + platform)
+
+# Test 7: Common environment helpers
+sus current_user tea = get_user()
+sus home_dir tea = get_home()
+sus shell_path tea = get_shell()
+sus temp_dir tea = get_temp_dir()
+
+vibez.spill("Current user: " + current_user)
+vibez.spill("Home dir: " + home_dir)
+vibez.spill("Shell: " + shell_path)
+vibez.spill("Temp dir: " + temp_dir)
+
+# Test 8: List all environment variables
+sus all_env map<tea, tea> = list_env()
+vibez.spill("Total environment variables: " + all_env.size().to_string())
+
+# Test 9: Unset variable
+sus unset_success lit = unset_env(test_var)
+vibez.spill("Unset result: " + unset_success.to_string())
+
+sus after_unset tea = get_env(test_var)
+vibez.spill("After unset: '" + after_unset + "'")
+
+vibez.spill("=== Environment Variable System Test Complete ===")
