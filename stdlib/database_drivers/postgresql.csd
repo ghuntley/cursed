@@ -86,10 +86,10 @@ slay PostgreSQLPool() {
     pool_created_at: tea
 }
 
-fr fr Default PostgreSQL configuration
+fr fr Default PostgreSQL configuration  
 slay create_postgresql_config() PostgreSQLConfig {
     config := PostgreSQLConfig{
-        host: "localhost",
+        host: get_env_with_default("POSTGRES_HOST", "localhost"),
         port: 5432,
         database: "postgres",
         username: "postgres",

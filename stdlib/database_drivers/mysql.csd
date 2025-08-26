@@ -102,7 +102,7 @@ slay MySQLPool() {
 fr fr Default MySQL configuration
 slay create_mysql_config() MySQLConfig {
     config := MySQLConfig{
-        host: "localhost",
+        host: get_env_with_default("MYSQL_HOST", "localhost"),
         port: 3306,
         database: "mysql",
         username: "root",

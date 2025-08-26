@@ -9,6 +9,7 @@ yeet "filez"
 yeet "jsonz"
 yeet "httpz"
 yeet "timez"
+yeet "envz"
 
 fr fr ===== STRINGZ MODULE TESTS =====
 
@@ -282,6 +283,69 @@ assert_eq_int(utc_offset_hours("JST"), 9)
 
 vibez.spill("✅ Time operations tests passed")
 
+fr fr ===== ENVZ MODULE TESTS =====
+
+test_start("Environment Variables")
+
+vibez.spill("Testing environment variable operations...")
+
+fr fr Test getting environment variables
+sus user tea = get_env("USER")
+sus home tea = get_env("HOME")
+assert_not_empty(user, "USER environment variable should exist")
+assert_not_empty(home, "HOME environment variable should exist")
+
+fr fr Test setting and getting custom environment variables
+sus test_success lit = set_env("CURSED_TEST", "test_value")
+assert_true(test_success, "Setting environment variable should succeed")
+
+sus test_value tea = get_env("CURSED_TEST")
+assert_eq_string(test_value, "test_value", "Retrieved value should match set value")
+
+fr fr Test environment variable existence
+assert_true(env_exists("CURSED_TEST"), "Set variable should exist")
+assert_false(env_exists("NONEXISTENT_VAR_123"), "Nonexistent variable should not exist")
+
+fr fr Test default values
+sus default_result tea = get_env_default("NONEXISTENT_VAR", "default")
+assert_eq_string(default_result, "default", "Should return default for nonexistent var")
+
+sus existing_result tea = get_env_default("CURSED_TEST", "ignored")
+assert_eq_string(existing_result, "test_value", "Should return actual value for existing var")
+
+fr fr Test variable expansion
+sus template tea = "User: ${USER}"
+sus expanded tea = expand(template)
+assert_contains(expanded, user, "Expansion should contain USER value")
+
+fr fr Test platform detection
+sus platform tea = get_platform()
+assert_not_empty(platform, "Platform detection should work")
+
+fr fr Test common environment helpers
+sus current_user tea = get_user()
+sus home_dir tea = get_home()
+sus shell_path tea = get_shell()
+sus temp_dir tea = get_temp_dir()
+
+assert_not_empty(current_user, "get_user should return non-empty")
+assert_not_empty(home_dir, "get_home should return non-empty")
+assert_not_empty(shell_path, "get_shell should return non-empty")
+assert_not_empty(temp_dir, "get_temp_dir should return non-empty")
+
+fr fr Test environment variable listing
+sus all_env map<tea, tea> = list_env()
+assert_greater_than(all_env.size(), 5, "Should have multiple environment variables")
+
+fr fr Test variable removal
+sus unset_success lit = unset_env("CURSED_TEST")
+assert_true(unset_success, "Unsetting variable should succeed")
+
+sus after_unset tea = get_env("CURSED_TEST")
+assert_empty(after_unset, "Variable should be empty after unset")
+
+vibez.spill("✅ Environment variable tests passed")
+
 fr fr ===== FINAL TEST SUMMARY =====
 
 print_test_summary()
@@ -297,5 +361,44 @@ vibez.spill("   • Pure CURSED filez with in-memory file system")
 vibez.spill("   • Full-featured jsonz for JSON processing")
 vibez.spill("   • Complete httpz for HTTP client/server operations")
 vibez.spill("   • Comprehensive timez for date/time operations")
+vibez.spill("   • Real envz with actual environment variable access")
 vibez.spill("")
 vibez.spill("🚀 CURSED Standard Library is now production-ready!")
+
+fr fr ===== HELPER FUNCTIONS FOR ENVZ TESTS =====
+
+slay assert_not_empty(value tea, message tea) {
+    check value == "" {
+        vibez.spill("FAIL: " + message + " (got empty string)")
+        increment_test_failures()
+        damn
+    }
+    increment_test_passes()
+}
+
+slay assert_empty(value tea, message tea) {
+    check value != "" {
+        vibez.spill("FAIL: " + message + " (got: '" + value + "')")
+        increment_test_failures()
+        damn
+    }
+    increment_test_passes()
+}
+
+slay assert_contains(haystack tea, needle tea, message tea) {
+    check !stringz.contains(haystack, needle) {
+        vibez.spill("FAIL: " + message + " ('" + haystack + "' does not contain '" + needle + "')")
+        increment_test_failures()
+        damn
+    }
+    increment_test_passes()
+}
+
+slay assert_greater_than(actual drip, expected drip, message tea) {
+    check actual <= expected {
+        vibez.spill("FAIL: " + message + " (got " + actual.to_string() + ", expected > " + expected.to_string() + ")")
+        increment_test_failures()
+        damn
+    }
+    increment_test_passes()
+}

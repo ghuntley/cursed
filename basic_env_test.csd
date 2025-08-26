@@ -1,23 +1,19 @@
-// Basic test to debug environment variables
+yeet "envz"
+yeet "vibez"
 
-vibez.spill("Testing runtime_get_env...")
+vibez.spill("Testing environment variables...")
 
-// Direct runtime call
-(home_value, home_error) := runtime_get_env("HOME")
+sus user tea = get_env("USER")
+vibez.spill("USER: " + user)
 
-lowkey home_error == "" {
-    vibez.spill("HOME is:", home_value)
-} otherwise {
-    vibez.spill("HOME error:", home_error)
-}
+sus home tea = get_env("HOME") 
+vibez.spill("HOME: " + home)
 
-// Test PATH too
-(path_value, path_error) := runtime_get_env("PATH")
+set_env("TEST_VAR", "test_value")
+sus test_result tea = get_env("TEST_VAR")
+vibez.spill("TEST_VAR: " + test_result)
 
-lowkey path_error == "" {
-    vibez.spill("PATH found, length:", len_str(path_value))
-} otherwise {
-    vibez.spill("PATH error:", path_error)
-}
+sus exists_result lit = env_exists("TEST_VAR")
+vibez.spill("TEST_VAR exists: " + exists_result.to_string())
 
-vibez.spill("Done testing")
+vibez.spill("Environment variable test complete!")

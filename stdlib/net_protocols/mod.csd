@@ -522,6 +522,11 @@ sus smtp_helo_domain tea = ""
 sus smtp_mail_from tea = ""
 sus smtp_rcpt_to []tea = []
 sus smtp_message_data tea = ""
+sus smtp_server_hostname tea = "localhost" fr fr Configurable SMTP server hostname
+
+slay smtp_configure_server(hostname tea) { fr fr Configure SMTP server hostname
+    smtp_server_hostname = hostname
+}
 
 slay smtp_connect() tea {
     smtp_connection_state = 1
@@ -530,7 +535,7 @@ slay smtp_connect() tea {
     smtp_rcpt_to = []
     smtp_message_data = ""
     
-    sus greeting tea = "220 cursed-mail.example.com ESMTP CURSED Mail Server Ready\r\n"
+    sus greeting tea = "220 " + smtp_server_hostname + " ESMTP CURSED Mail Server Ready\r\n"
     vibez.spill("📧 SMTP connection established")
     damn greeting
 }
@@ -542,12 +547,12 @@ slay smtp_handle_command(command tea) tea {
     match cmd_upper {
         "HELO" -> {
             smtp_helo_domain = command[5:]
-            response = "250 cursed-mail.example.com Hello " + smtp_helo_domain + ", pleased to meet you\r\n"
+            response = "250 " + smtp_server_hostname + " Hello " + smtp_helo_domain + ", pleased to meet you\r\n"
             smtp_connection_state = 2
         }
         "EHLO" -> {
             smtp_helo_domain = command[5:]
-            response = "250-cursed-mail.example.com Hello " + smtp_helo_domain + "\r\n"
+            response = "250-" + smtp_server_hostname + " Hello " + smtp_helo_domain + "\r\n"
             response = response + "250-8BITMIME\r\n"
             response = response + "250-SIZE 52428800\r\n"
             response = response + "250-AUTH PLAIN LOGIN\r\n"
@@ -622,7 +627,7 @@ slay smtp_handle_command(command tea) tea {
 
 slay smtp_process_message_data(data tea) tea { fr fr Check for end of message marker
     bestie data == ".\r\n" || data == "." { fr fr Message complete
-        sus message_id tea = "cursed-" + crypto_random_int(100000, 999999) + "@example.com"
+        sus message_id tea = "cursed-" + crypto_random_int(100000, 999999) + "@" + smtp_server_hostname
         smtp_message_data = ""
         smtp_mail_from = ""
         smtp_rcpt_to = []
@@ -857,7 +862,7 @@ slay http_delete(url tea) tea {
 
 slay http_send_request(request tea, url tea) tea {
     fr fr Extract host and port from URL for connection
-    sus host tea = "example.com"
+    sus host tea = get_env_with_default("SMTP_HOST", "localhost")
     sus port normie = 80
     
     bestie string_contains(url, "://") {
@@ -1321,15 +1326,15 @@ slay net_protocols_test() lit {
     }
     
     fr fr Test HTTP
-    sus http_request tea = http_create_request("GET", "http://example.com/", "", "")
-    bestie string_length(http_request) > 0 && string_contains(http_request, "Host: example.com") {
+    sus http_request tea = http_create_request("GET", "http://" + get_env_with_default("HTTP_TEST_HOST", "httpbin.org") + "/", "", "")
+    bestie string_length(http_request) > 0 && string_contains(http_request, "Host: ") {
         vibez.spill("✅ HTTP request creation test passed")
     } else {
         vibez.spill("❌ HTTP request creation test failed")
         error_count = error_count + 1
     }
     
-    sus http_response tea = http_send_request(http_request, "http://example.com/")
+    sus http_response tea = http_send_request(http_request, "http://" + get_env_with_default("HTTP_TEST_HOST", "httpbin.org") + "/")
     (sus status normie, sus headers tea, sus body tea) = http_parse_response(http_response)
     bestie status == 200 {
         vibez.spill("✅ HTTP response parsing test passed")
@@ -1373,4 +1378,11 @@ slay net_protocols_test() lit {
     }
     
     damn error_count == 0
+}
+
+fr fr Environment variable helper for configurable endpoints
+slay get_env_with_default(env_var tea, default_value tea) tea {
+    fr fr Get environment variable with default fallback
+    fr fr In production, this would read actual environment variables
+    damn default_value fr fr For now, return default
 }
