@@ -5,7 +5,7 @@ const std = @import("std");
 const ArrayList = std.ArrayList;
 const HashMap = std.HashMap;
 const Allocator = std.mem.Allocator;
-const ast = @import("ast_advanced.zig");
+const ast = @import("ast.zig");
 
 /// Macro hygiene context for variable scope tracking
 pub const MacroHygieneContext = struct {
@@ -47,6 +47,7 @@ pub const MacroHygieneContext = struct {
         };
         
         pub fn init(allocator: Allocator, id: u32, parent: ?*Scope, macro_generated: bool) Scope {
+            _ = allocator;
             return Scope{
                 .id = id,
                 .parent = parent,
@@ -121,7 +122,6 @@ pub const MacroHygieneContext = struct {
     };
     
     pub fn init(allocator: Allocator) !MacroHygieneContext {
-        _ = allocator;
         var context = MacroHygieneContext{
             .allocator = allocator,
             .scope_stack = .empty,
@@ -135,7 +135,7 @@ pub const MacroHygieneContext = struct {
         
         // Create global scope
         const global_scope = Scope.init(allocator, 0, null, false);
-        try context.scope_stack.append(allocator, global_scope);
+        try context.scope_stack.append(global_scope);
         context.global_scope = &context.scope_stack.items[0];
         
         return context;

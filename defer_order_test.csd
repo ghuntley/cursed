@@ -1,7 +1,0 @@
-vibez.spill("start")
-defer vibez.spill("cleanup 1")
-defer vibez.spill("cleanup 2") 
-defer vibez.spill("cleanup 3")
-vibez.spill("middle")
-defer vibez.spill("cleanup 4")
-vibez.spill("end")

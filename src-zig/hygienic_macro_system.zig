@@ -757,6 +757,7 @@ const Template = struct {
     }
     
     pub fn expand(self: Template, allocator: Allocator, captures: []PatternCapture) ![]Token {
+        _ = allocator;
         var result = ArrayList(Token){};
         defer result.deinit();
         
@@ -800,6 +801,7 @@ const Template = struct {
 
 /// Built-in macro expansions
 fn debugPrintExpansion(system: *HygienicMacroSystem, call: MacroCall) ![]Token {
+    _ = system;
     // Generate: ready (DEBUG_MODE) { vibez.spill("[DEBUG]", $msg) }
     var result = ArrayList(Token){};
     defer result.deinit();

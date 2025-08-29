@@ -1,1 +1,0 @@
-sus x normie = 42; sus y meal = 3.14; sus name tea = "CURSED"; sus ready lit = based; vibez.spill("Testing types:"); vibez.spill("Integer:", x); vibez.spill("Float:", y); vibez.spill("String:", name); vibez.spill("Boolean:", ready)

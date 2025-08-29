@@ -99,7 +99,7 @@ pub const Parser = struct {
     }
 
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit(self.allocator);
+        self.arena.deinit();
     }
 
     /// Check if the current token is a keyword that can be used as a method name
@@ -282,9 +282,9 @@ pub const Parser = struct {
                 errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
                 
-                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch {
+                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |parse_err| {
                     _ = self.reportErrorWithContext("Error converting statement to anyopaque", "parseProgram") catch {};
-                    return err;
+                    return parse_err;
                 };
                 
                 program.statements.append(self.allocator, anyopaque_ptr) catch {
@@ -707,26 +707,26 @@ pub const Parser = struct {
         
         // Function declaration (slay) with enhanced error recovery
         if (self.check(.Slay)) {
-            return Statement{ .Function = self.parseFunctionStatement() catch {
+            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};
                 
                 // Try to recover to the end of the function
                 self.syncToMatchingDelimiter(.LeftBrace, .RightBrace);
                 self.recoverFromStatementError();
-                return err;
+                return parse_err;
             }};
         }
         
         // Variable declaration (sus/facts) with lookahead to distinguish from function calls
         if (self.check(.Sus)) {
-            return Statement{ .Let = self.parseLetStatement() catch {
+            return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
                 
                 // Sync to semicolon for variable declarations
                 self.syncToSemicolon();
-                return err;
+                return parse_err;
             }};
         }
         
@@ -741,13 +741,13 @@ pub const Parser = struct {
                 return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
             } else {
                 // This is facts variable = value - parse as variable declaration
-                return Statement{ .Let = self.parseLetStatement() catch {
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
                     const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                     _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
                     
                     // Sync to semicolon for variable declarations
                     self.syncToSemicolon();
-                    return err;
+                    return parse_err;
                 }};
             }
         }
@@ -854,11 +854,11 @@ pub const Parser = struct {
         
         // Expression statement with enhanced error handling for complex expressions
         // CRITICAL FIX: Prevent complex expressions with braces from being parsed as function names
-        const expr = self.parseExpression() catch {
+        const expr = self.parseExpression() catch |parse_err| {
             // Enhanced error context for complex expression parsing
             _ = self.reportErrorWithContext("Error parsing complex expression statement - check for misplaced braces or operator precedence issues", "parseStatement") catch {};
             self.synchronize();
-            return err;
+            return parse_err;
         };
         
         const expr_ptr = self.allocator.create(Expression) catch {
@@ -868,9 +868,9 @@ pub const Parser = struct {
         errdefer self.allocator.destroy(expr_ptr);
         expr_ptr.* = expr;
         
-        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) catch {
+        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) catch |parse_err| {
             _ = self.reportErrorWithContext("Error converting expression to anyopaque", "parseStatement") catch {};
-            return err;
+            return parse_err;
         }};
     }
 
@@ -1570,7 +1570,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.allocator.create(Statement);
             errdefer self.allocator.destroy(stmt_ptr);
             stmt_ptr.* = stmt;
-            try try_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+            try try_body.append(try self.statementToAnyopaque(stmt_ptr));
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after try body");
@@ -1849,13 +1849,13 @@ pub const Parser = struct {
                 }};
             }
             
-            var elements = std.ArrayList(u8){};
+            var elements = std.ArrayList(Expression).init(self.allocator);
             var has_comma = false;
             
             while (true) {
                 // Parse expression with full precedence
                 const elem = try self.parseExpression();
-                try elements.append(self.allocator, elem);
+                try elements.append(elem);
                 
                 if (self.match(.Comma)) {
                     has_comma = true;
@@ -2650,7 +2650,7 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseType();
-                            try param.constraints.append(allocator, constraint);
+                            try param.constraints.append(self.allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
@@ -3873,11 +3873,11 @@ pub const Parser = struct {
     }
 
     fn convertExpressionsToPointers(self: *Parser, expressions: ArrayList(Expression)) ParserError!ArrayList(*Expression) {
-        var pointers = std.ArrayList(u8){};
+        var pointers = ArrayList(*Expression).init(self.allocator);
         
         for (expressions.items) |expr| {
             const ptr = try self.allocateExpression(expr);
-            try pointers.append(self.allocator, ptr);
+            try pointers.append(ptr);
         }
         
         expressions.deinit();
@@ -3908,14 +3908,7 @@ pub const Parser = struct {
             if (self.check(.RightShift)) {
                 // Split >> into > >
                 self.current -= 1; // Go back
-                // Create synthetic > token
-                const synthetic_greater = Token{
-                    .kind = .Greater,
-                    .lexeme = ">",
-                    .line = self.current_line(),
-                    .column = 0,
-                };
-                // Insert it (simplified - in real implementation would manipulate token stream)
+                // Handle >> as two > tokens (simplified approach)
                 _ = self.advance(); // Skip the >>
                 break;
             }
@@ -4217,7 +4210,7 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseTypeConstraint();
-                            try type_param.constraints.append(allocator, constraint);
+                            try type_param.constraints.append(self.allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }

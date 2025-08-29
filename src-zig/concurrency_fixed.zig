@@ -184,7 +184,7 @@ pub fn Channel(comptime T: type) type {
                 }
                 
                 // Attempt to add to buffer atomically
-                self.buffer.append(allocator, value) catch return null;
+                self.buffer.append(self.allocator, value) catch return null;
                 _ = self.buffer_size.fetchAdd(1, Release);
                 _ = self.stats.total_sent.fetchAdd(1, Release);
                 
@@ -221,7 +221,7 @@ pub fn Channel(comptime T: type) type {
             }
             
             // Add to buffer with error handling
-            self.buffer.append(allocator, value) catch {
+            self.buffer.append(self.allocator, value) catch {
                 // Rollback size on failure
                 _ = self.buffer_size.fetchSub(1, Release);
                 return null;
@@ -571,7 +571,7 @@ pub const Worker = struct {
     pub fn schedule(self: *Self, goroutine_ctx: *GoroutineContext) !void {
         self.queue_mutex.lock();
         defer self.queue_mutex.unlock();
-        try self.queue.append(allocator, goroutine_ctx);
+        try self.queue.append(self.allocator, goroutine_ctx);
     }
     
     fn workerMain(self: *Self) void {
@@ -655,7 +655,6 @@ pub const ConcurrencyRuntime = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator) !Self {
-        _ = allocator;
         const scheduler = try allocator.create(Scheduler);
         scheduler.* = try Scheduler.init(allocator, 4); // 4 workers by default
         try scheduler.start();

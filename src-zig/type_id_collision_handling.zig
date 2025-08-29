@@ -86,7 +86,6 @@ pub const TypeId = struct {
     }
     
     pub fn deinit(self: *TypeId, allocator: Allocator) void {
-        _ = allocator;
         allocator.free(self.canonical_name);
     }
     
@@ -307,11 +306,11 @@ pub const CollisionResistantTypeRegistry = struct {
             }
             
             // Add to existing overflow list
-            try overflow_list.append(allocator, entry);
+            try overflow_list.append(self.allocator, entry);
         } else {
             // Create new overflow list
-            var new_list = std.ArrayList(u8){};
-            try new_list.append(allocator, entry);
+            var new_list = ArrayList(TypeEntry).init(self.allocator);
+            try new_list.append(entry);
             try self.overflow_table.put(hash, new_list);
         }
         
@@ -540,7 +539,6 @@ pub const InterfaceImplRegistry = struct {
         }
         
         pub fn deinit(self: *ImplKey, allocator: Allocator) void {
-        _ = allocator;
             allocator.free(self.type_name);
             allocator.free(self.interface_name);
         }
@@ -632,10 +630,10 @@ pub const InterfaceImplRegistry = struct {
         };
         
         if (self.collision_table.getPtr(hash)) |collision_list| {
-            try collision_list.append(allocator, entry);
+            try collision_list.append(entry);
         } else {
-            var new_list = std.ArrayList(u8){};
-            try new_list.append(self.allocator, entry);
+            var new_list = ArrayList(ImplEntry).init(self.allocator);
+            try new_list.append(entry);
             try self.collision_table.put(hash, new_list);
         }
     }

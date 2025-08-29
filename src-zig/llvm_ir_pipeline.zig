@@ -342,7 +342,7 @@ pub const LLVMIRPipeline = struct {
         
         for (func_decl.parameters.items) |param| {
             const llvm_type = try self.cursedTypeToLLVM(param.param_type);
-            try param_types.append(allocator, llvm_type);
+            try param_types.append(self.allocator, llvm_type);
         }
         
         const return_type = if (func_decl.return_type) |ret_type|
@@ -534,7 +534,7 @@ pub const LLVMIRPipeline = struct {
             
             for (call.arguments.items) |arg| {
                 const arg_val = try self.generateExpression(arg);
-                try args.append(allocator, arg_val);
+                try args.append(self.allocator, arg_val);
             }
             
             const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));

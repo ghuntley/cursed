@@ -106,9 +106,9 @@ pub fn runtime_unset_env(allocator: Allocator, name: []const u8) ![]const u8 {
     return "";
 }
 
-pub fn runtime_list_env(allocator: Allocator) !struct {
-        _ = allocator;ArrayList([]const u8), []const u8} {
-    var env_list = ArrayList([]const u8){};
+pub fn runtime_list_env(allocator: Allocator) !struct { env_vars: ArrayList([]const u8), error_msg: []const u8 } {
+    _ = allocator;
+    var env_list = ArrayList([]const u8).init(allocator);
     
     // Use std.process.getEnvMap for cross-platform environment variable access
     var env_map = try std.process.getEnvMap(allocator);
@@ -120,7 +120,7 @@ pub fn runtime_list_env(allocator: Allocator) !struct {
         try env_list.append(allocator, env_str);
     }
     
-    return .{env_list, ""};
+    return .{ .env_vars = env_list, .error_msg = "" };
 }
 
 pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {

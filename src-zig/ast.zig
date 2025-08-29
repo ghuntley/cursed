@@ -262,7 +262,7 @@ pub const Program = struct {
     pub fn deinit(self: *Program, allocator: Allocator) void {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            stmt_ptr.deinit();
+            stmt_ptr.deinit(allocator);
             allocator.destroy(stmt_ptr);
         }
         self.statements.deinit(self.allocator);
@@ -316,15 +316,18 @@ pub const ImportStatement = struct {
     
     // Version specification support: yeet "module@^1.0.0"
     version: ?[]const u8,
+    
+    allocator: Allocator,
 
-    pub fn init(_: Allocator, path: []const u8) ImportStatement {
+    pub fn init(allocator: Allocator, path: []const u8) ImportStatement {
                 return ImportStatement{
             .path = path,
             .alias = null,
-            .multiple_paths = .empty,
-            .selective_items = .empty,
+            .multiple_paths = ArrayList([]const u8).init(allocator),
+            .selective_items = ArrayList(ImportItem).init(allocator),
             .is_selective = false,
             .version = null,
+            .allocator = allocator,
         };
     }
 

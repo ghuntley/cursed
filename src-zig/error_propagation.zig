@@ -99,7 +99,6 @@ pub const ErrorPropagation = struct {
     };
     
     pub fn init(allocator: Allocator) ErrorPropagation {
-        _ = allocator;
         return ErrorPropagation{
             .allocator = allocator,
             .error_stack = ArrayList(ErrorContext){},
@@ -186,7 +185,7 @@ pub const ErrorPropagation = struct {
         
         if (propagate_immediately) {
             // No try-catch frame, propagate error up the call stack
-            try self.error_stack.append(allocator, error_ctx);
+            try self.error_stack.append(self.allocator, error_ctx);
             return CursedError.RuntimeError;
         }
         

@@ -153,7 +153,7 @@ pub const Scheduler = struct {
         for (0..self.config.num_workers) |i| {
             const worker = try self.allocator.create(Worker);
             worker.* = try Worker.init(self.allocator, @intCast(i), self);
-            try self.workers.append(allocator, worker);
+            try self.workers.append(self.allocator, worker);
             try worker.start();
         }
         
@@ -177,7 +177,7 @@ pub const Scheduler = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        try self.global_queue.append(allocator, goroutine);
+        try self.global_queue.append(self.allocator, goroutine);
         
         // Try to assign to a worker with least load
         if (self.workers.items.len > 0) {
@@ -331,7 +331,7 @@ pub const Scheduler = struct {
         pub fn addWork(self: *Worker, goroutine: *Goroutine) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
-            try self.local_queue.append(allocator, goroutine);
+            try self.local_queue.append(self.allocator, goroutine);
         }
         
         pub fn getQueueSize(self: *const Worker) u32 {
@@ -366,7 +366,6 @@ pub fn initializeScheduler(allocator: Allocator, config: SchedulerConfig) !void 
 
 /// Shutdown the scheduler  
 pub fn shutdownScheduler(allocator: Allocator) void {
-        _ = allocator;
     global_mutex.lock();
     defer global_mutex.unlock();
     

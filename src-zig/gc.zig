@@ -556,10 +556,10 @@ const FinalizationQueue = struct {
         defer self.queue_mutex.unlock();
         
         switch (finalizer.priority) {
-            .Critical => try self.critical_queue.append(allocator, entry),
-            .High => try self.high_queue.append(allocator, entry),
-            .Normal => try self.normal_queue.append(allocator, entry),
-            .Low => try self.low_queue.append(allocator, entry),
+            .Critical => try self.critical_queue.append(self.allocator, entry),
+            .High => try self.high_queue.append(self.allocator, entry),
+            .Normal => try self.normal_queue.append(self.allocator, entry),
+            .Low => try self.low_queue.append(self.allocator, entry),
         }
         
         _ = self.total_queued.fetchAdd(1, .acq_rel);
@@ -600,7 +600,7 @@ const FinalizationQueue = struct {
         
         var retry_entry = entry;
         retry_entry.attempts += 1;
-        try self.retry_queue.append(allocator, retry_entry);
+        try self.retry_queue.append(self.allocator, retry_entry);
         
         _ = self.total_retried.fetchAdd(1, .acq_rel);
     }
@@ -777,7 +777,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        self.mark_stack.append(allocator, header) catch {};
+                        self.mark_stack.append(self.allocator, header) catch {};
                     }
                 }
             }
@@ -1081,8 +1081,8 @@ pub const GCImpl = struct {
             .generation = 1,
         };
         
-        try self.heap_segments.append(allocator, young_segment);
-        try self.heap_segments.append(allocator, old_segment);
+        try self.heap_segments.append(self.allocator, young_segment);
+        try self.heap_segments.append(self.allocator, old_segment);
         
         std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes ({}%), Old: {} bytes ({}%)", .{ 
             self.heap_size, young_gen_size, @as(u8, @intFromFloat(self.config.young_gen_ratio * 100)),
@@ -1384,7 +1384,7 @@ pub const GCImpl = struct {
         }
         defer self.finalization_mutex.unlock();
         
-        try self.finalizers.append(allocator, finalizer_entry);
+        try self.finalizers.append(self.allocator, finalizer_entry);
     }
     
     /// Set error handler for finalizer failures
@@ -1558,7 +1558,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(allocator, header);
+                    try self.mark_stack.append(self.allocator, header);
                 }
             }
         }
@@ -1603,7 +1603,7 @@ pub const GCImpl = struct {
                     const child_header = ObjectHeader.fromData(ptr);
                     if (child_header.color == @intFromEnum(Color.White)) {
                         child_header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(allocator, child_header);
+                        try self.mark_stack.append(self.allocator, child_header);
                     }
                 }
             }
@@ -1622,7 +1622,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(barrier.new_ref);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(allocator, header);
+                    try self.mark_stack.append(self.allocator, header);
                 }
             }
         }
@@ -1934,7 +1934,7 @@ pub const GCImpl = struct {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        try self.quarantined_objects.append(allocator, quarantine_entry);
+        try self.quarantined_objects.append(self.allocator, quarantine_entry);
         std.log.info("Object {*} quarantined for manual finalization", .{object});
     }
     
@@ -2224,7 +2224,7 @@ pub const GCImpl = struct {
         self.roots_mutex.lock();
         defer self.roots_mutex.unlock();
         
-        try self.stack_roots.append(allocator, ptr);
+        try self.stack_roots.append(self.allocator, ptr);
         std.log.debug("GC: Registered stack root at {*}", .{ptr});
     }
     
@@ -2267,7 +2267,7 @@ pub const GCImpl = struct {
                         if (header.color == @intFromEnum(Color.White)) {
                             // Mark as gray for further scanning
                             header.color = @intFromEnum(Color.Gray);
-                            self.mark_stack.append(allocator, header) catch {};
+                            self.mark_stack.append(self.allocator, header) catch {};
                         }
                     }
                 }
@@ -2429,7 +2429,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(allocator, header);
+                        try self.mark_stack.append(self.allocator, header);
                     }
                 }
             }
@@ -2485,7 +2485,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(element_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(allocator, header);
+                        try self.mark_stack.append(self.allocator, header);
                     }
                 }
             }
@@ -2507,7 +2507,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(field_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(allocator, header);
+                        try self.mark_stack.append(self.allocator, header);
                     }
                 }
             }
@@ -2529,7 +2529,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(capture_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(allocator, header);
+                        try self.mark_stack.append(self.allocator, header);
                     }
                 }
             }
@@ -2551,7 +2551,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(potential_ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(allocator, header);
+                    try self.mark_stack.append(self.allocator, header);
                 }
             }
             
@@ -2573,10 +2573,9 @@ pub const GCImpl = struct {
                 if (obj.color == @intFromEnum(Color.White)) {
                     // Object is unreachable - collect it
                     if (obj.finalize == 1) {
-                        // Add to finalization queue
-                        self.finalization_mutex.lock();
-                        try self.finalization_queue.append(allocator, obj);
-                        self.finalization_mutex.unlock();
+                        // Need finalization - for now just free directly
+                        // TODO: Properly queue for finalization
+                        self.freeObjectDirect(obj);
                     } else {
                         // Free immediately
                         self.freeObjectDirect(obj);
@@ -2631,10 +2630,9 @@ pub const GCImpl = struct {
             if (obj.color == @intFromEnum(Color.White)) {
                 // Object is unreachable - collect it
                 if (obj.finalize == 1) {
-                    // Add to finalization queue
-                    self.finalization_mutex.lock();
-                    try self.finalization_queue.append(allocator, obj);
-                    self.finalization_mutex.unlock();
+                    // Need finalization - for now just free directly
+                    // TODO: Properly queue for finalization
+                    self.freeObjectDirect(obj);
                 } else {
                     // Free immediately
                     self.freeObjectDirect(obj);
@@ -2719,7 +2717,7 @@ pub const GCImpl = struct {
     }
     
     /// Load Variable from GC-allocated memory
-    pub fn loadVariable(self: *GC, ptr: *anyopaque, allocator: std.mem.Allocator) !@import("main_unified.zig").Variable {
+    pub fn loadVariable(self: *GC, ptr: *anyopaque, _: std.mem.Allocator) !@import("main_unified.zig").Variable {
         const Variable = @import("main_unified.zig").Variable;
         const ManagedString = @import("main_unified.zig").ManagedString;
         
@@ -3063,7 +3061,7 @@ export fn cursed_gc_create_weak_ref(gc: ?*GC, target: *anyopaque) ?*WeakRef {
         };
         
         g.weak_ref_mutex.lock();
-        g.weak_refs.append(allocator, weak_ref) catch {
+        g.weak_refs.append(g.allocator, weak_ref) catch {
             g.weak_ref_mutex.unlock();
             g.allocator.destroy(weak_ref);
             return null;
@@ -3097,7 +3095,7 @@ export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: 
             
             g.finalization_mutex.lock();
             const finalizer_entry = Finalizer.init(header, @ptrCast(fn_ptr), .Normal, "c_export", 3);
-            g.finalizers.append(allocator, finalizer_entry) catch {};
+            g.finalizers.append(g.allocator, finalizer_entry) catch {};
             g.finalization_mutex.unlock();
         }
     }
@@ -3131,7 +3129,7 @@ export fn cursed_gc_scan_stack_frame(gc: ?*GC, frame_start: *anyopaque, frame_si
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        g.mark_stack.append(allocator, header) catch {};
+                        g.mark_stack.append(g.allocator, header) catch {};
                     }
                 }
             }
@@ -3386,7 +3384,7 @@ test "GC stress test - allocation and collection cycles" {
     var gc = try GC.init(gpa, config);
     defer gc.deinit();
     
-    var allocated_ptrs = std.ArrayList(*anyopaque){};
+    var allocated_ptrs = std.ArrayList(*anyopaque).init(gpa);
     defer allocated_ptrs.deinit();
     
     // Stress test: allocate many objects
@@ -3396,7 +3394,7 @@ test "GC stress test - allocation and collection cycles" {
         const type_id = @as(u16, @intCast(i % 4)); // Different types
         
         const ptr = try gc.alloc(size, type_id);
-        try allocated_ptrs.append(allocator, ptr);
+        try allocated_ptrs.append(ptr);
         
         // Add some as roots to keep them alive
         if (i % 10 == 0) {
@@ -3492,12 +3490,12 @@ test "GC generational collection" {
     defer gc.deinit();
     
     // Allocate objects in young generation
-    var young_ptrs = std.ArrayList(*anyopaque){};
+    var young_ptrs = std.ArrayList(*anyopaque).init(gpa);
     defer young_ptrs.deinit();
     
     for (0..50) |i| {
         const ptr = try gc.alloc(32 + i, 0);
-        try young_ptrs.append(allocator, ptr);
+        try young_ptrs.append(ptr);
         
         // Make some objects roots so they survive
         if (i % 5 == 0) {
@@ -3820,7 +3818,7 @@ const GCImplHelpers = struct {
     
     /// Register stack root
     pub fn registerStackRoot(self: *GC, ptr: *anyopaque) !void {
-        try self.stack_roots.append(allocator, ptr);
+        try self.stack_roots.append(self.allocator, ptr);
     }
     
     /// Unregister stack root
