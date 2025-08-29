@@ -221,7 +221,7 @@ pub const RealLLVMCodeGen = struct {
             },
             else => {
                 // Skip less common statement types for now
-                std.debug.print("Statement type {s} not implemented yet\n", .@tagName(stmt)});
+                std.debug.print("Statement type {s} not implemented yet\n", .{@tagName(stmt)});
             }
         }
     }
@@ -383,7 +383,7 @@ pub const RealLLVMCodeGen = struct {
                 return try self.generateMethodCall(method_call);
             },
             else => {
-                std.debug.print("Expression type {s} not implemented yet\n", .@tagName(expr)});
+                std.debug.print("Expression type {s} not implemented yet\n", .{@tagName(expr)});
                 return llvm_const_int(self.i32_type, 0);
             }
         }

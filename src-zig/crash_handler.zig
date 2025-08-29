@@ -148,7 +148,7 @@ pub const CrashTelemetry = struct {
         );
         defer self.allocator.free(crash_entry);
         
-        try file.writer().writeAll(crash_entry);
+        try file.writeAll(crash_entry);
     }
 };
 

@@ -1,4 +1,0 @@
-sus x drip = 10
-sus y drip = 20
-sus sum drip = x + y
-vibez.spill("Sum:", sum)

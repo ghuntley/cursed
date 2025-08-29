@@ -1,1 +1,0 @@
-sus message tea = "CURSED v1.0.0 is ready!"; vibez.spill(message); sus features []tea = ["slang syntax", "memory safety", "fast builds", "advanced types"]; vibez.spill("Key features:"); sus i normie = 0; bestie i < 4 { vibez.spill("-", features[i]); i = i + 1 }

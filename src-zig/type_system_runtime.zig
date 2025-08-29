@@ -322,7 +322,6 @@ pub const TypedAllocator = struct {
         }
 
         pub fn deinit(self: *TypedObject, allocator: Allocator) void {
-        _ = allocator;
             allocator.free(self.data);
             allocator.destroy(self);
         }

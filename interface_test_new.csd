@@ -1,1 +1,0 @@
-be_like Calculator squad { value normie } impl Calculator { slay add(self, x normie) normie { damn self.value + x } } sus calc Calculator = Calculator{value: 10}; sus result normie = calc.add(5); vibez.spill("Calculator result:", result)

@@ -440,7 +440,7 @@ pub const MacroExpansionContext = struct {
                     try result.append(self.allocator, token);
                 }
             } else {
-                try result.append(allocator, token);
+                try result.append(self.allocator, token);
             }
         }
     }
@@ -618,14 +618,14 @@ pub const MacroExpansionContext = struct {
                         .call_site_hash = 0, // Will be set when actually queued
                     };
                     
-                    try expansion.dependencies.append(allocator, dep_id);
+                    try expansion.dependencies.append(self.allocator, dep_id);
                     
                     // Add to dependency graph
                     if (!self.dependency_graph.contains(expansion.macro_id)) {
                         try self.dependency_graph.put(expansion.macro_id, .empty);
                     }
                     
-                    try self.dependency_graph.getPtr(expansion.macro_id).?.append(allocator, dep_id);
+                    try self.dependency_graph.getPtr(expansion.macro_id).?.append(self.allocator, dep_id);
                 }
             }
             i += 1;
@@ -862,7 +862,7 @@ pub const MacroExpansionContext = struct {
                             // Apply hygiene renaming to argument tokens
                             for (parsed_args[param_idx]) |arg_token| {
                                 const renamed_token = try self.applyHygieneToToken(arg_token);
-                                try result.append(allocator, renamed_token);
+                                try result.append(self.allocator, renamed_token);
                             }
                         }
                         is_parameter = true;
@@ -873,10 +873,10 @@ pub const MacroExpansionContext = struct {
                 if (!is_parameter) {
                     // Not a parameter, apply hygiene renaming
                     const renamed_token = try self.applyHygieneToToken(token);
-                    try result.append(allocator, renamed_token);
+                    try result.append(self.allocator, renamed_token);
                 }
             } else {
-                try result.append(allocator, token);
+                try result.append(self.allocator, token);
             }
         }
     }
@@ -885,7 +885,7 @@ pub const MacroExpansionContext = struct {
     fn substituteObjectLikeMacroWithHygiene(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition) !void {
         for (definition.body) |token| {
             const renamed_token = try self.applyHygieneToToken(token);
-            try result.append(allocator, renamed_token);
+            try result.append(self.allocator, renamed_token);
         }
     }
     

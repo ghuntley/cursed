@@ -74,7 +74,7 @@ pub const SimpleChannel = struct {
 
         // For unbuffered channels (capacity 0), wait for receiver
         if (self.capacity == 0) {
-            try self.buffer.append(allocator, value);
+            try self.buffer.append(self.allocator, value);
             self.recv_condition.signal();
             return;
         }
@@ -94,7 +94,7 @@ pub const SimpleChannel = struct {
             return RuntimeError.ChannelClosed;
         }
 
-        try self.buffer.append(allocator, value);
+        try self.buffer.append(self.allocator, value);
         self.recv_condition.signal();
     }
 
@@ -183,7 +183,6 @@ var registry_allocator: ?Allocator = null;
 
 /// Initialize the runtime
 pub fn initRuntime(allocator: Allocator) !void {
-        _ = allocator;
     registry_mutex.lock();
     defer registry_mutex.unlock();
 

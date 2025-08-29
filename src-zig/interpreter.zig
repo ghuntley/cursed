@@ -23,8 +23,8 @@ pub const StructInstance = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, type_name: []const u8) CursedError!StructInstance {
-        const type_name_copy = safeDupeString(allocator, type_name) catch {
-            return err;
+        const type_name_copy = safeDupeString(allocator, type_name) catch |e| {
+            return e;
         };
         
         return StructInstance{
@@ -86,8 +86,8 @@ pub const VTable = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, interface_name: []const u8) CursedError!VTable {
-        const interface_name_copy = safeDupeString(allocator, interface_name) catch {
-            return err;
+        const interface_name_copy = safeDupeString(allocator, interface_name) catch |e| {
+            return e;
         };
         
         return VTable{
@@ -120,8 +120,8 @@ pub const FunctionValue = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, name: []const u8, parameters: [][]const u8, body: []ast.Statement, env: ?*Environment) CursedError!FunctionValue {
-        const name_copy = safeDupeString(allocator, name) catch {
-            return err;
+        const name_copy = safeDupeString(allocator, name) catch |e| {
+            return e;
         };
         
         return FunctionValue{
@@ -149,8 +149,8 @@ pub const ErrorValue = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, message: []const u8, code: i64) CursedError!ErrorValue {
-        const message_copy = safeDupeString(allocator, message) catch {
-            return err;
+        const message_copy = safeDupeString(allocator, message) catch |e| {
+            return e;
         };
         
         // Capture stack trace for error
@@ -651,7 +651,7 @@ pub const Interpreter = struct {
                 try self.assignToMemberAccess(member, value);
             },
             else => {
-                std.debug.print("Unsupported assignment target: {s}\n", .@tagName(target_expr.*)});
+                std.debug.print("Unsupported assignment target: {s}\n", .{@tagName(target_expr.*)});
                 return InterpreterError.TypeMismatch;
             }
         }
@@ -677,13 +677,13 @@ pub const Interpreter = struct {
                                 ptr.pointee_value.* = Value{ .Struct = struct_inst.* };
                             },
                             else => {
-                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .@tagName(ptr.pointee_value.*)});
+                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
                                 return InterpreterError.TypeMismatch;
                             }
                         }
                     },
                     else => {
-                        std.debug.print("Cannot assign to field of non-struct type: {s}\n", .@tagName(object_value)});
+                        std.debug.print("Cannot assign to field of non-struct type: {s}\n", .{@tagName(object_value)});
                         return InterpreterError.TypeMismatch;
                     }
                 }
@@ -811,7 +811,7 @@ pub const Interpreter = struct {
     }
 
     pub fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
-        std.debug.print("DEBUG: Evaluating expression type: {s}\n", .@tagName(expr)});
+        std.debug.print("DEBUG: Evaluating expression type: {s}\n", .{@tagName(expr)});
         switch (expr) {
             .Integer => |int| return Value{ .Integer = int },
             .Float => |float| return Value{ .Float = float },
@@ -829,7 +829,7 @@ pub const Interpreter = struct {
                         switch (self_value) {
                             .Struct => |struct_inst| {
                                 if (struct_inst.fields.get(name)) |field_value| {
-                                    std.debug.print("DEBUG: Implicit field access for '{s}' resolved to: {s}\n", .name, @tagName(field_value)});
+                                    std.debug.print("DEBUG: Implicit field access for '{s}' resolved to: {s}\n", .{name, @tagName(field_value)});
                                     return field_value;
                                 }
                             },
@@ -854,7 +854,7 @@ pub const Interpreter = struct {
             .Match => |match| return try self.evaluateMatch(match),
             
             else => {
-                std.debug.print("Unsupported expression type in interpreter: {s}\n", .@tagName(expr)});
+                std.debug.print("Unsupported expression type in interpreter: {s}\n", .{@tagName(expr)});
                 return Value.Null;
             }
         }
@@ -956,7 +956,7 @@ pub const Interpreter = struct {
                     return ptr.pointee_value.*;
                 },
                 else => {
-                    std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .@tagName(operand)});
+                    std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .{@tagName(operand)});
                     return InterpreterError.TypeMismatch;
                 }
             }
@@ -1000,7 +1000,7 @@ pub const Interpreter = struct {
                     return Value.Null;
                 } else {
                     // Handle method calls on objects (structs/interfaces)
-                    std.debug.print("DEBUG: Detected method call: {s}.{s}\n", .@tagName(member.object.*), member.property});
+                    std.debug.print("DEBUG: Detected method call: {s}.{s}\n", .{@tagName(member.object.*), member.property});
                     return try self.evaluateMethodCall(member.*, call.arguments.items);
                 }
             },
@@ -1412,7 +1412,7 @@ pub const Interpreter = struct {
         switch (object) {
             .Struct => |struct_inst| {
                 if (struct_inst.fields.get(member.property)) |field_value| {
-                    std.debug.print("DEBUG: Found field '{s}' with value type: {s}\n", .member.property, @tagName(field_value)});
+                    std.debug.print("DEBUG: Found field '{s}' with value type: {s}\n", .{member.property, @tagName(field_value)});
                     return field_value;
                 } else {
                     std.debug.print("DEBUG: Field '{s}' not found in struct\n", .{member.property});
@@ -1435,21 +1435,21 @@ pub const Interpreter = struct {
                 switch (ptr.pointee_value.*) {
                     .Struct => |struct_inst| {
                         if (struct_inst.fields.get(member.property)) |field_value| {
-                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .member.property, @tagName(field_value.*)});
-                            return field_value.*;
+                        std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .{member.property, @tagName(field_value.*)});
+                        return field_value.*;
                         } else {
                             std.debug.print("DEBUG: Field '{s}' not found in dereferenced struct\n", .{member.property});
                             return InterpreterError.UndefinedField;
                         }
                     },
                     else => {
-                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .@tagName(ptr.pointee_value.*)});
+                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
                         return InterpreterError.TypeMismatch;
                     }
                 }
             },
             else => {
-                std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .@tagName(object)});
+                std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .{@tagName(object)});
                 return InterpreterError.TypeMismatch;
             }
         }
@@ -1458,7 +1458,7 @@ pub const Interpreter = struct {
     fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []*ast.Expression) InterpreterError!Value {
         std.debug.print("DEBUG: Method call - evaluating object for '{s}' method\n", .{member.property});
         const object = try self.evaluateExpression(member.object.*);
-        std.debug.print("DEBUG: Object evaluated to type: {s}\n", .@tagName(object)});
+        std.debug.print("DEBUG: Object evaluated to type: {s}\n", .{@tagName(object)});
         
         switch (object) {
             .Struct => |struct_inst| {
@@ -1546,8 +1546,8 @@ pub const Interpreter = struct {
         defer self.environment = previous_env;
         
         for (method_func.body) |stmt| {
-            self.executeStatement(stmt) catch {
-                return err;
+            self.executeStatement(stmt) catch |e| {
+                return e;
             };
         }
         
@@ -2015,7 +2015,6 @@ pub const Interpreter = struct {
                         const result = try self.evaluateExpression(expr.*);
                         // Check if this is a tuple expression (multiple values)
                         switch (result) {
-                            },
                             else => {
                                 // Single value return
                                 return_value = result;
@@ -2131,14 +2130,6 @@ pub const Interpreter = struct {
                     },
                     else => return false,
                 }
-            },
-             right_tuple.items) |left_item, right_item| {
-                            if (!self.valuesEqual(left_item, right_item)) return false;
-                        }
-                        return true;
-                    },
-                    else => return false,
-                }
             }
         }
     }
@@ -2180,8 +2171,8 @@ pub const Interpreter = struct {
             // Print the error with full context
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            error_ctx.format(stdout) catch {
-                std.debug.print("Error formatting context: {s}\n", .{err});
+            error_ctx.format(stdout) catch |e| {
+                std.debug.print("Error formatting context: {}\n", .{e});
             };
             return InterpreterError.RuntimeError;
         }
@@ -2201,7 +2192,7 @@ pub const Interpreter = struct {
         
         // Execute try body with error catching
         for (fam.try_body.items) |stmt| {
-            self.executeStatement(stmt) catch {
+            self.executeStatement(stmt) catch |e| {
                 // Create error context from interpreter error
                 const location = error_prop.ErrorContext.SourceLocation{
                     .file = if (self.current_file) |file| file else "unknown",
@@ -2211,14 +2202,14 @@ pub const Interpreter = struct {
                 
                 error_occurred = error_prop.ErrorContext.initWithLocation(
                     self.allocator,
-                    switch (err) {
+                    switch (e) {
                         InterpreterError.RuntimeError => CursedError.RuntimeError,
                         InterpreterError.UndefinedVariable => CursedError.UndefinedVariable,
                         InterpreterError.TypeMismatch => CursedError.TypeMismatch,
                         InterpreterError.DivisionByZero => CursedError.DivisionByZero,
                         else => CursedError.UnknownError,
                     },
-                    @errorName(err),
+                    @errorName(e),
                     location
                 ) catch break;
                 break;
@@ -2310,11 +2301,11 @@ pub const Interpreter = struct {
         // Execute try body
         for (fam.try_body.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-            self.executeStatement(stmt.*) catch {
+            self.executeStatement(stmt.*) catch |e| {
                 error_occurred = try self.error_handler.yikes(
-                    @errorName(err),
+                    @errorName(e),
                     .Runtime,
-                    @intFromError(err),
+                    @intFromError(e),
                     0, 0
                 );
                 break;
@@ -2378,9 +2369,9 @@ pub const Interpreter = struct {
                 // Execute all statements in the goroutine body
                 for (context.statements.items) |stmt_ptr| {
                     const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                    context.interpreter.executeStatement(stmt.*) catch {
+                    context.interpreter.executeStatement(stmt.*) catch |e| {
                         // Handle goroutine errors gracefully
-                        std.debug.print("Goroutine error: {s}\n", .{err});
+                        std.debug.print("Goroutine error: {}\n", .{e});
                         return;
                     };
                 }
@@ -2396,8 +2387,8 @@ pub const Interpreter = struct {
         };
         
         // Spawn the goroutine
-        const goroutine_id = concurrency_runtime.executeStanFromInterpreter(context, GoroutineContext.execute) catch {
-            std.debug.print("Failed to spawn goroutine: {s}\n", .{err});
+        const goroutine_id = concurrency_runtime.executeStanFromInterpreter(context, GoroutineContext.execute) catch |e| {
+            std.debug.print("Failed to spawn goroutine: {}\n", .{e});
             self.allocator.destroy(context);
             return;
         };
@@ -2553,16 +2544,6 @@ pub const Interpreter = struct {
             },
             .Wildcard => {
                 return true; // Wildcard matches anything
-            }
-        }
-                
-                // Match each element
-                for (tuple_pattern.items, 0..) |element_pattern, i| {
-                    if (!try self.matchPattern(element_pattern, array_val.items[i])) {
-                        return false;
-                    }
-                }
-                return true;
             },
             .Array => |array_pattern| {
                 if (value != .Tuple) return false;
@@ -2615,7 +2596,7 @@ pub const Interpreter = struct {
                 };
             },
             else => {
-                std.debug.print("Unsupported pattern type: {s}\n", .@tagName(pattern)});
+                std.debug.print("Unsupported pattern type: {s}\n", .{@tagName(pattern)});
                 return false;
             }
         }
@@ -2653,8 +2634,8 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch {
-                std.debug.print("Error executing deferred statement: {s}\n", .{err});
+            self.executeStatement(defer_entry.?.statement) catch |e| {
+                std.debug.print("Error executing deferred statement: {}\n", .{e});
                 // Continue with other defers even if one fails
             };
             
@@ -2676,8 +2657,8 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing scoped deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch {
-                std.debug.print("Error executing deferred statement: {s}\n", .{err});
+            self.executeStatement(defer_entry.?.statement) catch |e| {
+                std.debug.print("Error executing deferred statement: {}\n", .{e});
                 // Continue with other defers even if one fails
             };
             
@@ -2694,7 +2675,7 @@ pub const Interpreter = struct {
         defer error_propagator.deinit();
         
         // Evaluate the wrapped expression
-        const result = self.evaluateExpression(shook.expression.*) catch {
+        const result = self.evaluateExpression(shook.expression.*) catch |e| {
             // Convert caught error to error context
             const location = error_prop.ErrorContext.SourceLocation{
                 .file = "unknown", // TODO: Get from context
@@ -2704,14 +2685,14 @@ pub const Interpreter = struct {
             
             const error_ctx = try error_prop.ErrorContext.initWithLocation(
                 self.allocator,
-                switch (err) {
+                switch (e) {
                     InterpreterError.RuntimeError => CursedError.RuntimeError,
                     InterpreterError.UndefinedVariable => CursedError.UndefinedVariable,
                     InterpreterError.TypeMismatch => CursedError.TypeMismatch,
                     InterpreterError.DivisionByZero => CursedError.DivisionByZero,
                     else => CursedError.UnknownError,
                 },
-                @errorName(err),
+                @errorName(e),
                 location
             );
             

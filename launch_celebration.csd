@@ -1,1 +1,0 @@
-vibez.spill("🎉 CURSED v1.0.0-stable is LIVE!"); sus version tea = "1.0.0-stable"; sus features_completed normie = 92; sus community_ready lit = based; vibez.spill("Version:", version); vibez.spill("Completion:", features_completed, "%"); vibez.spill("Community ready:", community_ready)

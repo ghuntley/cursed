@@ -55,7 +55,6 @@ pub const RuntimeBridge = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator) !Self {
-        _ = allocator;
         // Initialize both runtime systems
         const compiled_runtime = try allocator.create(concurrency_fixed.ConcurrencyRuntime);
         compiled_runtime.* = try concurrency_fixed.ConcurrencyRuntime.init(allocator);
@@ -128,7 +127,6 @@ pub const GoroutineBridgeRegistry = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
-        _ = allocator;
         return Self{
             .registry = HashMap(GoroutineId, *GoroutineBridgeEntry, GoroutineContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.RwLock{},
@@ -145,7 +143,7 @@ pub const GoroutineBridgeRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.allocator);
         }
-        self.registry.deinit(self.allocator);
+        self.registry.deinit();
     }
     
     /// Register a goroutine from any execution mode
@@ -220,7 +218,6 @@ pub const GoroutineBridgeEntry = struct {
     }
     
     pub fn deinit(self: *Self, allocator: Allocator) void {
-        _ = allocator;
         allocator.destroy(self);
     }
     
@@ -290,7 +287,6 @@ pub const ChannelBridgeRegistry = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
-        _ = allocator;
         return Self{
             .registry = HashMap(ChannelId, *ChannelBridgeEntry, ChannelContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.RwLock{},
@@ -307,7 +303,7 @@ pub const ChannelBridgeRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.allocator);
         }
-        self.registry.deinit(self.allocator);
+        self.registry.deinit();
     }
     
     /// Register a channel bridge
@@ -369,7 +365,6 @@ pub const ChannelBridgeEntry = struct {
     }
     
     pub fn deinit(self: *Self, allocator: Allocator) void {
-        _ = allocator;
         // Cleanup channel resources based on mode
         if (self.compiled_channel) |channel| {
             channel.deinit();

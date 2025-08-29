@@ -1,1 +1,0 @@
-facts("Hello from facts!")
