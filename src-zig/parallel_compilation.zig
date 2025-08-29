@@ -81,13 +81,13 @@ pub const ParallelCompiler = struct {
         }
         
         // Cleanup work queues
-        self.lexing_queue.deinit();
-        self.parsing_queue.deinit();
-        self.type_checking_queue.deinit();
-        self.codegen_queue.deinit();
+        self.lexing_queue.deinit(self.allocator);
+        self.parsing_queue.deinit(self.allocator);
+        self.type_checking_queue.deinit(self.allocator);
+        self.codegen_queue.deinit(self.allocator);
         
-        self.worker_threads.deinit();
-        self.thread_pool.deinit();
+        self.worker_threads.deinit(self.allocator);
+        self.thread_pool.deinit(self.allocator);
     }
     
     /// Compile multiple files in parallel
@@ -575,14 +575,14 @@ fn WorkQueue(comptime T: type) type {
         }
         
         fn deinit(self: *Self) void {
-            self.items.deinit();
+            self.items.deinit(self.allocator);
         }
         
         fn enqueue(self: *Self, item: T) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
             
-            try self.items.append(item);
+            try self.items.append(allocator, item);
             self.not_empty.signal();
         }
         

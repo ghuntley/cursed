@@ -84,7 +84,7 @@ pub const DeferLLVMCodeGen = struct {
             .error_unwind_block = null,
             .normal_exit_block = null,
             .defer_cleanup_function = null,
-            .defer_runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .defer_runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         try self.declareDeferRuntimeFunctions();
@@ -92,9 +92,9 @@ pub const DeferLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *DeferLLVMCodeGen) void {
-        self.defer_stack.deinit();
-        self.scope_stack.deinit();
-        self.defer_runtime_functions.deinit();
+        self.defer_stack.deinit(self.allocator);
+        self.scope_stack.deinit(self.allocator);
+        self.defer_runtime_functions.deinit(self.allocator);
     }
     
     /// Declare runtime defer functions for LLVM integration
@@ -280,7 +280,7 @@ pub const DeferLLVMCodeGen = struct {
             .parent_scope = parent_scope,
         };
         
-        try self.scope_stack.append(scope_info);
+        try self.scope_stack.append(allocator, scope_info);
         
         // Call runtime scope management
         const enter_scope_func = self.defer_runtime_functions.get("cursed_defer_enter_scope") orelse

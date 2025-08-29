@@ -79,7 +79,7 @@ pub const CursedLSP = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = std.ArrayList(u8).init(self.allocator);
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         while (true) {
@@ -131,7 +131,7 @@ pub const CursedLSP = struct {
                         defer self.allocator.free(response);
                         
                         // Send response
-                        stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response }) catch |err| {
+                        stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response }) catch |err| {
                             std.log.warn("Failed to send response: {}", .{err});
                         };
                     }

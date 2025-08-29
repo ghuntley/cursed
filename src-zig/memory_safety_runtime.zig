@@ -89,7 +89,7 @@ pub const MemoryTracker = struct {
     
     pub fn init() MemoryTracker {
         return MemoryTracker{
-            .allocations = std.HashMap(usize, SafePointer).init(allocator),
+            .allocations = std.HashMap(usize, SafePointer){},
             .allocator = allocator,
             .total_allocated = 0,
             .peak_allocated = 0,
@@ -98,7 +98,7 @@ pub const MemoryTracker = struct {
     }
     
     pub fn deinit(self: *MemoryTracker) void {
-        self.allocations.deinit();
+        self.allocations.deinit(self.allocator);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, ptr: *anyopaque, size: usize) !void {
@@ -138,10 +138,10 @@ pub const MemoryTracker = struct {
         var leak_count: usize = 0;
         while (iter.next()) |entry| {
             leak_count += 1;
-            print("Memory leak detected: ptr=0x{x}, size={}\n", .{ entry.key_ptr.*, entry.value_ptr.size });
+            print("Memory leak detected: ptr=0x{x}, size={s}\n", .{ entry.key_ptr.*, entry.value_ptr.size });
         }
         if (leak_count > 0) {
-            print("Total memory leaks: {}\n", .{leak_count});
+            print("Total memory leaks: {s}\n", .{leak_count});
         }
     }
 };
@@ -217,7 +217,7 @@ pub fn deinitMemorySafety() void {
 export fn cursed_bounds_check(index: i64, length: i64) void {
     if (global_config.enable_bounds_checking) {
         checkArrayBounds(index, @intCast(length)) catch |err| {
-            print("Runtime error: {}\n", .{err});
+            print("Runtime error: {s}\n", .{err});
             std.process.exit(1);
         };
     }
@@ -226,7 +226,7 @@ export fn cursed_bounds_check(index: i64, length: i64) void {
 export fn cursed_null_check(ptr: ?*anyopaque) ?*anyopaque {
     if (global_config.enable_null_checks) {
         return checkNullPointer(ptr) catch |err| {
-            print("Runtime error: {}\n", .{err});
+            print("Runtime error: {s}\n", .{err});
             std.process.exit(1);
         };
     }
@@ -236,7 +236,7 @@ export fn cursed_null_check(ptr: ?*anyopaque) ?*anyopaque {
 export fn cursed_stack_check() void {
     if (global_config.enable_stack_overflow_detection) {
         checkStackOverflow() catch |err| {
-            print("Runtime error: {}\n", .{err});
+            print("Runtime error: {s}\n", .{err});
             std.process.exit(1);
         };
     }

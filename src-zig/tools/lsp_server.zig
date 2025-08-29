@@ -261,8 +261,8 @@ pub const DocumentInfo = struct {
             .version = version,
             .content = content_copy,
             .tokens = &[_]SimpleToken{},
-            .diagnostics = ArrayList(Diagnostic).init(allocator),
-            .symbols = ArrayList(DocumentSymbol).init(allocator),
+            .diagnostics = ArrayList(Diagnostic){},
+            .symbols = ArrayList(DocumentSymbol){},
             .allocator = allocator,
         };
     }
@@ -271,8 +271,8 @@ pub const DocumentInfo = struct {
         self.allocator.free(self.uri);
         self.allocator.free(self.content);
         self.allocator.free(self.tokens);
-        self.diagnostics.deinit();
-        self.symbols.deinit();
+        self.diagnostics.deinit(self.allocator);
+        self.symbols.deinit(self.allocator);
     }
 
     pub fn updateContent(self: *DocumentInfo, new_content: []const u8, new_version: i32) !void {
@@ -289,7 +289,7 @@ pub const DocumentInfo = struct {
 
     pub fn parse(self: *DocumentInfo) !void {
         // Simple tokenization for LSP features
-        var tokens = ArrayList(SimpleToken).init(self.allocator);
+        var tokens = ArrayList(SimpleToken){};
         defer tokens.deinit();
 
         var line: u32 = 0;
@@ -313,7 +313,7 @@ pub const DocumentInfo = struct {
                     .line = line,
                     .column = column,
                 };
-                try tokens.append(token);
+                try tokens.append(allocator, token);
                 line += 1;
                 column = 0;
                 i += 1;
@@ -334,7 +334,7 @@ pub const DocumentInfo = struct {
                     .line = line,
                     .column = column,
                 };
-                try tokens.append(token);
+                try tokens.append(allocator, token);
                 column += @intCast(lexeme.len);
                 continue;
             }
@@ -354,7 +354,7 @@ pub const DocumentInfo = struct {
                     .line = line,
                     .column = column,
                 };
-                try tokens.append(token);
+                try tokens.append(allocator, token);
                 column += @intCast(lexeme.len);
                 continue;
             }
@@ -372,7 +372,7 @@ pub const DocumentInfo = struct {
                     .line = line,
                     .column = column,
                 };
-                try tokens.append(token);
+                try tokens.append(allocator, token);
                 column += @intCast(lexeme.len);
                 continue;
             }
@@ -407,7 +407,7 @@ pub const DocumentInfo = struct {
                 .line = line,
                 .column = column,
             };
-            try tokens.append(token);
+            try tokens.append(allocator, token);
             column += 1;
             i += 1;
         }
@@ -419,7 +419,7 @@ pub const DocumentInfo = struct {
             .line = line,
             .column = column,
         };
-        try tokens.append(eof_token);
+        try tokens.append(allocator, eof_token);
 
         self.tokens = try tokens.toOwnedSlice();
 
@@ -485,7 +485,7 @@ pub const DocumentInfo = struct {
                         .range = createSafeRange(token.line, token.column, token.line + 1, 0),
                         .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
-                    try self.symbols.append(symbol);
+                    try self.symbols.append(allocator, symbol);
                 }
             }
             
@@ -499,7 +499,7 @@ pub const DocumentInfo = struct {
                         .range = createSafeRange(token.line, token.column, token.line + 1, 0),
                         .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
-                    try self.symbols.append(symbol);
+                    try self.symbols.append(allocator, symbol);
                 }
             }
             
@@ -513,7 +513,7 @@ pub const DocumentInfo = struct {
                         .range = createSafeRange(token.line, token.column, token.line + 1, 0),
                         .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
-                    try self.symbols.append(symbol);
+                    try self.symbols.append(allocator, symbol);
                 }
             }
             
@@ -527,7 +527,7 @@ pub const DocumentInfo = struct {
                         .range = createSafeRange(token.line, token.column, token.line + 1, 0),
                         .selectionRange = createSafeRange(next_token.line, next_token.column, next_token.line, next_token.column + next_token.lexeme.len),
                     };
-                    try self.symbols.append(symbol);
+                    try self.symbols.append(allocator, symbol);
                 }
             }
             
@@ -595,7 +595,7 @@ pub const LSPHandler = struct {
     pub fn init() LSPHandler {
         return LSPHandler{
             .allocator = allocator,
-            .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .language_data = CursedLanguageData.init(),
             .initialized = false,
             .shutdown_requested = false,
@@ -607,7 +607,7 @@ pub const LSPHandler = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
@@ -773,7 +773,7 @@ pub const LSPHandler = struct {
         _ = @as(u32, @intCast(position.get("line").?.Integer));
         _ = @as(u32, @intCast(position.get("character").?.Integer));
         
-        var items = ArrayList(CompletionItem).init(self.allocator);
+        var items = ArrayList(CompletionItem){};
         defer items.deinit();
         
         // Add keywords
@@ -1072,7 +1072,7 @@ pub const LSPHandler = struct {
             const word = try self.getWordAtPosition(doc.content, line, character);
             defer self.allocator.free(word);
             
-            var locations = ArrayList(json.Value).init(self.allocator);
+            var locations = ArrayList(json.Value){};
             defer locations.deinit();
             
             // Find all references to this word in the document
@@ -1105,7 +1105,7 @@ pub const LSPHandler = struct {
                     try range_obj.put("end", json.Value{ .Object = end_obj });
                     try location_obj.put("range", json.Value{ .Object = range_obj });
                     
-                    try locations.append(json.Value{ .Object = location_obj });
+                    try locations.append(allocator, json.Value{ .Object = location_obj });
                     
                     i += word.len;
                     current_char += @intCast(word.len);
@@ -1139,7 +1139,7 @@ pub const LSPHandler = struct {
         const params_obj = params.?.Object;
         const query = if (params_obj.get("query")) |q| q.String else "";
         
-        var symbols = ArrayList(json.Value).init(self.allocator);
+        var symbols = ArrayList(json.Value){};
         defer symbols.deinit();
         
         // Search through all documents
@@ -1178,7 +1178,7 @@ pub const LSPHandler = struct {
                     try location_obj.put("range", json.Value{ .Object = range_obj });
                     try symbol_obj.put("location", json.Value{ .Object = location_obj });
                     
-                    try symbols.append(json.Value{ .Object = symbol_obj });
+                    try symbols.append(allocator, json.Value{ .Object = symbol_obj });
                 }
             }
         }
@@ -1260,7 +1260,7 @@ pub const LSPHandler = struct {
         if (self.documents.get(uri)) |doc| {
             // Extract the range content and format it
             var lines = std.mem.split(u8, doc.content, "\n");
-            var range_content = ArrayList(u8).init(self.allocator);
+            var range_content = ArrayList(u8){};
             defer range_content.deinit();
             
             var current_line: u32 = 0;
@@ -1268,7 +1268,7 @@ pub const LSPHandler = struct {
                 if (current_line >= start_line and current_line <= end_line) {
                     try range_content.appendSlice(line);
                     if (current_line < end_line) {
-                        try range_content.append('\n');
+                        try range_content.append(allocator, '\n');
                     }
                 }
                 current_line += 1;
@@ -1313,7 +1313,7 @@ pub const LSPHandler = struct {
             const old_name = try self.getWordAtPosition(doc.content, line, character);
             defer self.allocator.free(old_name);
             
-            var edits = ArrayList(json.Value).init(self.allocator);
+            var edits = ArrayList(json.Value){};
             defer edits.deinit();
             
             // Find all occurrences and create edits
@@ -1344,7 +1344,7 @@ pub const LSPHandler = struct {
                     try edit_obj.put("range", json.Value{ .Object = range_obj });
                     try edit_obj.put("newText", json.Value{ .String = new_name });
                     
-                    try edits.append(json.Value{ .Object = edit_obj });
+                    try edits.append(allocator, json.Value{ .Object = edit_obj });
                     
                     i += old_name.len;
                     current_char += @intCast(old_name.len);
@@ -1512,7 +1512,7 @@ pub const LSPHandler = struct {
     }
 
     fn formatDocument(self: *LSPHandler, content: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var indent_level: u32 = 0;
@@ -1521,40 +1521,40 @@ pub const LSPHandler = struct {
         for (content) |c| {
             switch (c) {
                 '{' => {
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     indent_level += 1;
                     at_line_start = true;
                 },
                 '}' => {
                     if (!at_line_start) {
-                        try result.append('\n');
+                        try result.append(allocator, '\n');
                     }
                     if (indent_level > 0) indent_level -= 1;
                     for (0..indent_level * 4) |_| {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                     }
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     at_line_start = true;
                 },
                 '\n' => {
-                    try result.append(c);
+                    try result.append(allocator, c);
                     at_line_start = true;
                 },
                 ' ', '\t' => {
                     if (!at_line_start) {
-                        try result.append(c);
+                        try result.append(allocator, c);
                     }
                 },
                 else => {
                     if (at_line_start) {
                         for (0..indent_level * 4) |_| {
-                            try result.append(' ');
+                            try result.append(allocator, ' ');
                         }
                         at_line_start = false;
                     }
-                    try result.append(c);
+                    try result.append(allocator, c);
                 },
             }
         }
@@ -1563,11 +1563,11 @@ pub const LSPHandler = struct {
     }
 
     fn completionItemsToJson(self: *LSPHandler, items: []const CompletionItem) !json.Value {
-        var json_items = ArrayList(json.Value).init(self.allocator);
+        var json_items = ArrayList(json.Value){};
         defer json_items.deinit();
         
         for (items) |item| {
-            var item_obj = std.StringHashMap(json.Value).init(self.allocator);
+            var item_obj = std.StringHashMap(json.Value){};
             defer item_obj.deinit();
             
             try item_obj.put("label", json.Value{ .string = item.label });
@@ -1584,14 +1584,14 @@ pub const LSPHandler = struct {
                 try item_obj.put("insertText", json.Value{ .string = insert });
             }
             
-            try json_items.append(json.Value{ .object = item_obj });
+            try json_items.append(allocator, json.Value{ .object = item_obj });
         }
         
         return json.Value{ .array = json_items };
     }
 
     fn symbolsToJson(self: *LSPHandler, symbols: []const DocumentSymbol) !json.Value {
-        var json_symbols = ArrayList(json.Value).init(self.allocator);
+        var json_symbols = ArrayList(json.Value){};
         defer json_symbols.deinit();
         
         for (symbols) |symbol| {
@@ -1637,14 +1637,14 @@ pub const LSPHandler = struct {
             try sel_range_obj.put("end", json.Value{ .Object = sel_end_obj });
             try symbol_obj.put("selectionRange", json.Value{ .Object = sel_range_obj });
             
-            try json_symbols.append(json.Value{ .Object = symbol_obj });
+            try json_symbols.append(allocator, json.Value{ .Object = symbol_obj });
         }
         
         return json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try json_symbols.toOwnedSlice()) };
     }
 
     fn diagnosticsToJson(self: *LSPHandler, diagnostics: []const Diagnostic) !json.Value {
-        var json_diagnostics = ArrayList(json.Value).init(self.allocator);
+        var json_diagnostics = ArrayList(json.Value){};
         defer json_diagnostics.deinit();
         
         for (diagnostics) |diagnostic| {
@@ -1677,20 +1677,20 @@ pub const LSPHandler = struct {
             }
             try diag_obj.put("message", json.Value{ .String = diagnostic.message });
             
-            try json_diagnostics.append(json.Value{ .Object = diag_obj });
+            try json_diagnostics.append(allocator, json.Value{ .Object = diag_obj });
         }
         
         return json.Value{ .Array = json.Array.fromOwnedSlice(self.allocator, try json_diagnostics.toOwnedSlice()) };
     }
 
     fn createErrorResponse(self: *LSPHandler, id: json.Value, code: i32, message: []const u8) ![]u8 {
-        var response_obj = std.StringHashMap(json.Value).init(self.allocator);
+        var response_obj = std.StringHashMap(json.Value){};
         defer response_obj.deinit();
         
         try response_obj.put("jsonrpc", json.Value{ .string = "2.0" });
         try response_obj.put("id", id);
         
-        var error_obj = std.StringHashMap(json.Value).init(self.allocator);
+        var error_obj = std.StringHashMap(json.Value){};
         defer error_obj.deinit();
         try error_obj.put("code", json.Value{ .integer = code });
         try error_obj.put("message", json.Value{ .string = message });
@@ -1718,7 +1718,7 @@ pub fn main() !void {
     var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
-    var buffer = ArrayList(u8).init(allocator);
+    var buffer = ArrayList(u8){};
     defer buffer.deinit();
 
     while (!handler.shutdown_requested) {
@@ -1743,7 +1743,7 @@ pub fn main() !void {
                     defer allocator.free(response);
                     
                     // Send response
-                    try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+                    try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ response.len, response });
                 }
             }
         } else {

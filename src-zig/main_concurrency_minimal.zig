@@ -47,17 +47,17 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit(); // Fix memory leak
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     // Detect concurrency features
     const has_concurrency = detectConcurrencyFeatures(tokens.items);
@@ -100,7 +100,7 @@ fn compileProgram(allocator: Allocator, filename: []const u8, tokens: ArrayList(
     const c_filename = try std.fmt.allocPrint(allocator, "{s}.c", .{output_name});
     defer allocator.free(c_filename);
     
-    var c_code = std.ArrayList(u8).init(self.allocator);
+    var c_code = std.ArrayList(u8){};
     defer c_code.deinit();
     
     // Generate basic C code with concurrency stubs
@@ -165,7 +165,7 @@ fn compileProgram(allocator: Allocator, filename: []const u8, tokens: ArrayList(
     // Write C file
     const c_file = try std.fs.cwd().createFile(c_filename, .{});
     defer c_file.close();
-    try c_file.writeAll(c_code.items);
+    try c_file.writer().writeAll(c_code.items);
     
     if (verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -179,7 +179,7 @@ fn compileProgram(allocator: Allocator, filename: []const u8, tokens: ArrayList(
         .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", compile_cmd },
     }) catch |err| {
-        print("❌ Compilation failed: {}\n", .{err});
+        print("❌ Compilation failed: {s}\n", .{err});
         return;
     };
     defer allocator.free(result.stdout);
@@ -216,13 +216,13 @@ fn interpretProgram(_: Allocator, source: []const u8, verbose: bool) !void {
         
         // Concurrency-aware interpretation
         if (std.mem.indexOf(u8, trimmed, "stan")) |_| {
-            if (verbose) print("Line {}: Goroutine spawn detected\n", .{line_number});
+            if (verbose) print("Line {s}: Goroutine spawn detected\n", .{line_number});
             print("[Goroutine spawned]\n", .{});
         } else if (std.mem.indexOf(u8, trimmed, "dm")) |_| {
-            if (verbose) print("Line {}: Channel operation detected\n", .{line_number});
+            if (verbose) print("Line {s}: Channel operation detected\n", .{line_number});
             print("[Channel operation]\n", .{});
         } else if (std.mem.indexOf(u8, trimmed, "ready")) |_| {
-            if (verbose) print("Line {}: Select statement detected\n", .{line_number});
+            if (verbose) print("Line {s}: Select statement detected\n", .{line_number});
             print("[Select statement executed]\n", .{});
         } else if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
             if (std.mem.indexOf(u8, trimmed[start..], "(")) |paren_start| {
@@ -238,7 +238,7 @@ fn interpretProgram(_: Allocator, source: []const u8, verbose: bool) !void {
                 }
             }
         } else if (verbose) {
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     

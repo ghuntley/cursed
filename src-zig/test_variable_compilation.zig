@@ -91,7 +91,7 @@ pub fn testVariableSystem() !void {
         if (err == error.VariableNotFound) {
             std.debug.print("✅ Test 4: Scope isolation working correctly\n", .{});
         } else {
-            std.debug.print("❌ Test 4: Unexpected error: {}\n", .{err});
+            std.debug.print("❌ Test 4: Unexpected error: {s}\n", .{err});
         }
     }
     

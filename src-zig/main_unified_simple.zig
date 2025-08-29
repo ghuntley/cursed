@@ -16,6 +16,7 @@ const Variable = union(enum) {
     Boolean: bool,
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
+        _ = allocator;
         switch (self) {
             .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
             .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
@@ -82,18 +83,18 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -147,7 +148,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     // Validate all imported modules
     if (imports.items.len > 0) {
         if (verbose) {
-            print("📦 Validating {} imports...\n", .{imports.items.len});
+            print("📦 Validating {s} imports...\n", .{imports.items.len});
         }
         
         const all_valid = simple_import_resolver.validateImports(allocator, imports) catch |err| {
@@ -219,7 +220,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             try handleVibesSpill(&variables, allocator, trimmed, start, verbose);
         } else if (verbose) {
             // Show parsing for other statements in verbose mode
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     
@@ -303,7 +304,7 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             } else {
                 // Try to parse as literal value
                 if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
-                    print("{}\n", .{int_val});
+                    print("{s}\n", .{int_val});
                 } else |_| {
                     if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {
                         print("{d}\n", .{float_val});

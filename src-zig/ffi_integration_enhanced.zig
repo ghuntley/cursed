@@ -40,7 +40,7 @@ pub const EnhancedFFIManager = struct {
             .allocator = allocator,
             .cabi_bridge = extern_abi.CABIBridge.init(allocator),
             .variadic_integration = variadic_bridge.CursedVariadicIntegration.init(allocator),
-            .standard_functions = HashMap([]const u8, StandardFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .standard_functions = HashMap([]const u8, StandardFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         // Initialize standard library functions
@@ -50,9 +50,9 @@ pub const EnhancedFFIManager = struct {
     }
     
     pub fn deinit(self: *EnhancedFFIManager) void {
-        self.cabi_bridge.deinit();
-        self.variadic_integration.deinit();
-        self.standard_functions.deinit();
+        self.cabi_bridge.deinit(self.allocator);
+        self.variadic_integration.deinit(self.allocator);
+        self.standard_functions.deinit(self.allocator);
     }
     
     /// Initialize common C standard library functions
@@ -172,7 +172,7 @@ pub const EnhancedFFIManager = struct {
     
     /// Generate comprehensive FFI module for CURSED
     pub fn generateFFIModule(self: *EnhancedFFIManager) ![]const u8 {
-        var module = .empty;
+        var module = std.ArrayList(u8){};
         defer module.deinit();
         
         try module.writer().print("//! Auto-generated CURSED FFI Module with Variadic Support\n", .{});
@@ -193,7 +193,7 @@ pub const EnhancedFFIManager = struct {
                 // Fixed parameters
                 for (func.arg_types, 0..) |arg_type, i| {
                     if (i > 0) try module.writer().print(", ", .{});
-                    try module.writer().print("arg{} {s}", .{ i, arg_type });
+                    try module.writer().print("arg{s} {s}", .{ i, arg_type });
                 }
                 
                 try module.writer().print(", ...varargs) {s}\n\n", .{func.return_type});
@@ -203,7 +203,7 @@ pub const EnhancedFFIManager = struct {
                 
                 for (func.arg_types, 0..) |arg_type, i| {
                     if (i > 0) try module.writer().print(", ", .{});
-                    try module.writer().print("arg{} {s}", .{ i, arg_type });
+                    try module.writer().print("arg{s} {s}", .{ i, arg_type });
                 }
                 
                 try module.writer().print(") {s}\n\n", .{func.return_type});
@@ -242,7 +242,7 @@ pub const EnhancedFFIManager = struct {
         
         for (func.arg_types, 0..) |arg_type, i| {
             if (i > 0) try module.writer().print(", ", .{});
-            try module.writer().print("arg{} {s}", .{ i, arg_type });
+            try module.writer().print("arg{s} {s}", .{ i, arg_type });
         }
         
         try module.writer().print(") {s} {{\n", .{func.return_type});
@@ -250,7 +250,7 @@ pub const EnhancedFFIManager = struct {
         // Add basic validation
         for (func.arg_types, 0..) |arg_type, i| {
             if (std.mem.eql(u8, arg_type, "tea") or std.mem.eql(u8, arg_type, "*vibes")) {
-                try module.writer().print("    ready (arg{} == null) {{\n", .{i});
+                try module.writer().print("    ready (arg{s} == null) {{\n", .{i});
                 try module.writer().print("        yikes \"Argument {} cannot be null\"\n", .{i});
                 try module.writer().print("    }}\n", .{});
             }
@@ -267,7 +267,7 @@ pub const EnhancedFFIManager = struct {
         try module.writer().print("{s}(", .{func.name});
         for (func.arg_types, 0..) |_, i| {
             if (i > 0) try module.writer().print(", ", .{});
-            try module.writer().print("arg{}", .{i});
+            try module.writer().print("arg{s}", .{i});
         }
         try module.writer().print(")\n", .{});
         
@@ -329,7 +329,7 @@ pub const EnhancedFFIManager = struct {
     
     /// Generate LLVM backend integration
     pub fn generateLLVMIntegration(self: *EnhancedFFIManager) ![]const u8 {
-        var code = .empty;
+        var code = std.ArrayList(u8){};
         defer code.deinit();
         
         try code.writer().print("//! LLVM Backend Integration for Enhanced FFI\n\n", .{});
@@ -350,12 +350,12 @@ pub const EnhancedFFIManager = struct {
         try code.writer().print("            .context = context,\n", .{});
         try code.writer().print("            .module = module,\n", .{});
         try code.writer().print("            .builder = builder,\n", .{});
-        try code.writer().print("            .declared_functions = std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),\n", .{});
+        try code.writer().print("            .declared_functions = std.HashMap([]const u8, llvm_c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){s},\n", .{});
         try code.writer().print("        }};\n", .{});
         try code.writer().print("    }}\n\n", .{});
         
         try code.writer().print("    pub fn deinit(self: *EnhancedFFIBackend) void {{\n", .{});
-        try code.writer().print("        self.declared_functions.deinit();\n", .{});
+        try code.writer().print("        self.declared_functions.deinit(self.allocator);\n", .{});
         try code.writer().print("    }}\n\n", .{});
         
         // Generate function declaration methods
@@ -417,8 +417,8 @@ pub const EnhancedFFIManager = struct {
         try code.writer().print("        const func_type = llvm_c.LLVMFunctionType(\n", .{});
         try code.writer().print("            return_type,\n", .{});
         try code.writer().print("            @ptrCast(&param_types),\n", .{});
-        try code.writer().print("            {},\n", .{func.arg_types.len});
-        try code.writer().print("            {} // is_variadic\n", .{if (func.is_variadic) 1 else 0});
+        try code.writer().print("            {s},\n", .{func.arg_types.len});
+        try code.writer().print("            {s} // is_variadic\n", .{if (func.is_variadic) 1 else 0});
         try code.writer().print("        );\n", .{});
         
         // Add function to module
@@ -459,8 +459,8 @@ pub const EnhancedFFIManager = struct {
         if (input.len == 0) return input;
         
         // This is a simplified version - in practice you'd want proper memory management
-        var result = std.ArrayList(u8).init(self.allocator);
-        result.append(std.ascii.toUpper(input[0])) catch return input;
+        var result = std.ArrayList(u8){};
+        result.append(allocator, std.ascii.toUpper(input[0])) catch return input;
         result.appendSlice(input[1..]) catch return input;
         return result.toOwnedSlice() catch input;
     }

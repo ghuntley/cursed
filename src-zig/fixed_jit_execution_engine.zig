@@ -85,6 +85,7 @@ pub const FixedJITExecutionEngine = struct {
     functions: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     pub fn init(allocator: Allocator) !FixedJITExecutionEngine {
+        _ = allocator;
         // Initialize LLVM targets
         c.LLVMLinkInMCJIT();
         c.LLVMInitializeNativeTarget();
@@ -105,8 +106,8 @@ pub const FixedJITExecutionEngine = struct {
             .module = module,
             .builder = builder,
             .engine = null,
-            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -120,8 +121,8 @@ pub const FixedJITExecutionEngine = struct {
         if (self.context) |context| {
             c.LLVMContextDispose(context);
         }
-        self.variables.deinit();
-        self.functions.deinit();
+        self.variables.deinit(self.allocator);
+        self.functions.deinit(self.allocator);
     }
     
     /// Initialize the JIT execution engine
@@ -178,7 +179,7 @@ pub const FixedJITExecutionEngine = struct {
             // Parse vibez.spill statements
             else if (std.mem.startsWith(u8, trimmed, "vibez.spill")) {
                 const print_stmt = try self.parsePrintStatement(trimmed);
-                try program.statements.append(print_stmt);
+                try program.statements.append(allocator, print_stmt);
             }
         }
         
@@ -381,11 +382,12 @@ pub const FixedJITExecutionEngine = struct {
         
         c.LLVMDisposeGenericValue(result);
         
-        print("✅ JIT execution completed successfully! Exit code: {}\n", .{exit_code});
+        print("✅ JIT execution completed successfully! Exit code: {s}\n", .{exit_code});
     }
     
     /// Test the fixed JIT execution engine
     pub fn test_fixed_jit(allocator: Allocator) !void {
+        _ = allocator;
         print("\n🧪 Testing Fixed JIT Execution Engine\n", .{});
         print("=====================================\n", .{});
         

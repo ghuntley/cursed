@@ -260,7 +260,7 @@ pub const FixedGC = struct {
         self.allocator.free(self.heap_memory);
         
         // Clean up arena
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
         
         // Free the GC instance
         self.allocator.destroy(self);
@@ -460,7 +460,7 @@ pub const FixedGC = struct {
                     const header = FixedObjectHeader.fromData(obj_ptr) catch continue;
                     if (header.color == 0) { // White
                         header.color = 1; // Gray
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -491,7 +491,7 @@ pub const FixedGC = struct {
                         
                         if (header.color == 0) { // White
                             header.color = 1; // Gray
-                            self.mark_stack.append(header) catch {};
+                            self.mark_stack.append(allocator, header) catch {};
                         }
                     }
                 }
@@ -538,7 +538,7 @@ pub const FixedGC = struct {
                     
                     if (child_header.color == 0) { // White
                         child_header.color = 1; // Gray
-                        try self.mark_stack.append(child_header);
+                        try self.mark_stack.append(allocator, child_header);
                     }
                 }
             }
@@ -590,7 +590,7 @@ pub const FixedGC = struct {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        self.finalization_queue.append(obj) catch {
+        self.finalization_queue.append(allocator, obj) catch {
             // If we can't queue for finalization, free immediately
             self.freeObjectDirect(obj);
         };
@@ -690,7 +690,7 @@ pub const FixedGC = struct {
     pub fn addRoot(self: *FixedGC, ptr: *?*anyopaque) !void {
         self.roots_mutex.lock();
         defer self.roots_mutex.unlock();
-        try self.roots.append(ptr);
+        try self.roots.append(allocator, ptr);
     }
     
     /// Remove root reference safely  

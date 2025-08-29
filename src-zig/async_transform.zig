@@ -40,7 +40,7 @@ pub const AsyncTransform = struct {
         }
         
         pub fn deinit(self: *Self) void {
-            self.suspension_points.deinit();
+            self.suspension_points.deinit(self.allocator);
         }
     };
     
@@ -70,11 +70,11 @@ pub const AsyncTransform = struct {
     }
     
     pub fn deinit(self: *AsyncTransform) void {
-        self.suspension_points.deinit();
+        self.suspension_points.deinit(self.allocator);
         for (self.loop_stack.items) |*ctx| {
             ctx.deinit();
         }
-        self.loop_stack.deinit();
+        self.loop_stack.deinit(self.allocator);
     }
     
     /// Transform async function into state machine
@@ -112,11 +112,11 @@ pub const AsyncTransform = struct {
                     .can_suspend = true,
                 };
                 
-                try self.suspension_points.append(suspension_point);
+                try self.suspension_points.append(allocator, suspension_point);
                 
                 // If we're in a loop, record this suspension point
                 if (suspension_point.loop_context) |loop_ctx| {
-                    try loop_ctx.suspension_points.append(suspension_point.id);
+                    try loop_ctx.suspension_points.append(allocator, suspension_point.id);
                 }
                 
                 // Continue analyzing the awaited expression
@@ -292,7 +292,7 @@ pub const AsyncTransform = struct {
                     .transitions = .empty,
                 };
                 
-                try state_machine.states.append(await_state);
+                try state_machine.states.append(allocator, await_state);
                 
                 // Next state for continuation
                 current_state.* = self.nextStateId();
@@ -316,7 +316,7 @@ pub const AsyncTransform = struct {
                     .code = "// Loop entry",
                     .transitions = .empty,
                 };
-                try state_machine.states.append(entry_state);
+                try state_machine.states.append(allocator, entry_state);
                 
                 var entry_state_mut = &state_machine.states.items[state_machine.states.items.len - 1];
                 try entry_state_mut.transitions.append(StateMachine.State.Transition{
@@ -359,7 +359,7 @@ pub const AsyncTransform = struct {
                     .transitions = .empty,
                 };
                 
-                try state_machine.states.append(simple_state);
+                try state_machine.states.append(allocator, simple_state);
                 current_state.* = self.nextStateId();
                 
                 // Add transition to next state
@@ -418,7 +418,7 @@ pub const AsyncRuntime = struct {
     }
     
     pub fn deinit(self: *AsyncRuntime) void {
-        self.pending_tasks.deinit();
+        self.pending_tasks.deinit(self.allocator);
     }
     
     /// Spawn async task

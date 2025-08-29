@@ -21,14 +21,14 @@ pub const PackageManager = struct {
             .config = config,
             .registry_client = try RegistryClient.init(allocator, config.registry_url),
             .dependency_resolver = DependencyResolver.init(allocator),
-            .local_packages = HashMap([]const u8, LocalPackage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .local_packages = HashMap([]const u8, LocalPackage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *PackageManager) void {
-        self.registry_client.deinit();
-        self.dependency_resolver.deinit();
-        self.local_packages.deinit();
+        self.registry_client.deinit(self.allocator);
+        self.dependency_resolver.deinit(self.allocator);
+        self.local_packages.deinit(self.allocator);
     }
     
     // Install a package and its dependencies
@@ -43,12 +43,12 @@ pub const PackageManager = struct {
         var install_order = try self.dependency_resolver.getInstallOrder(dep_graph);
         defer install_order.deinit();
         
-        var installed_packages = ArrayList(InstalledPackage).init(self.allocator);
+        var installed_packages = ArrayList(InstalledPackage){};
         defer installed_packages.deinit();
         
         for (install_order.items) |package_spec| {
             const installed = try self.installSinglePackage(package_spec);
-            try installed_packages.append(installed);
+            try installed_packages.append(allocator, installed);
         }
         
         const end_time = std.time.milliTimestamp();
@@ -100,7 +100,7 @@ pub const PackageManager = struct {
     
     // Publish a package to registry
     pub fn publishPackage(self: *PackageManager, package_dir: []const u8, dry_run: bool) !PublishResult {
-        print("Publishing package from: {s} (dry-run: {})\n", .{ package_dir, dry_run });
+        print("Publishing package from: {s} (dry-run: {s})\n", .{{ package_dir, dry_run });
         
         // Validate package structure
         const validation_result = try self.validatePackageStructure(package_dir);
@@ -143,7 +143,7 @@ pub const PackageManager = struct {
     pub fn updateAllPackages(self: *PackageManager) !UpdateResult {
         print("Updating all packages...\n", .{});
         
-        var updated_packages = ArrayList(UpdatedPackage).init(self.allocator);
+        var updated_packages = ArrayList(UpdatedPackage){};
         defer updated_packages.deinit();
         
         var package_iterator = self.local_packages.iterator();
@@ -174,7 +174,7 @@ pub const PackageManager = struct {
     
     // List installed packages
     pub fn listInstalledPackages(self: *PackageManager) ![]InstalledPackageInfo {
-        var packages = ArrayList(InstalledPackageInfo).init(self.allocator);
+        var packages = ArrayList(InstalledPackageInfo){};
         defer packages.deinit();
         
         var package_iterator = self.local_packages.iterator();
@@ -199,7 +199,7 @@ pub const PackageManager = struct {
         
         var lock_file = LockFile{
             .version = "1.0",
-            .packages = ArrayList(LockFilePackage).init(self.allocator),
+            .packages = ArrayList(LockFilePackage){},
         };
         defer lock_file.deinit();
         
@@ -247,7 +247,7 @@ pub const PackageManager = struct {
     }
     
     fn findDependentPackages(self: *PackageManager, package_name: []const u8) ![][]const u8 {
-        var dependents = ArrayList([]const u8).init(self.allocator);
+        var dependents = ArrayList([]const u8){};
         defer dependents.deinit();
         
         // Check all installed packages for dependencies on this package
@@ -295,7 +295,7 @@ pub const PackageManager = struct {
     fn validatePackageStructure(self: *PackageManager, package_dir: []const u8) !ValidationResult {
         // Check for required files
         const required_files = [_][]const u8{ "CursedPackage.toml", "src/", "README.md" };
-        var errors = ArrayList([]const u8).init(self.allocator);
+        var errors = ArrayList([]const u8){};
         defer errors.deinit();
         
         for (required_files) |file| {
@@ -319,7 +319,7 @@ pub const PackageManager = struct {
             
             if (!exists) {
                 const error_msg = try std.fmt.allocPrint(self.allocator, "Required file/directory missing: {s}", .{file});
-                try errors.append(error_msg);
+                try errors.append(allocator, error_msg);
             }
         }
         
@@ -333,7 +333,7 @@ pub const PackageManager = struct {
         // Create a tar.gz archive of the package directory
         // For simplicity, we'll create a mock archive with directory contents
         
-        var archive_contents = ArrayList(u8).init(self.allocator);
+        var archive_contents = ArrayList(u8){};
         defer archive_contents.deinit();
         
         // Walk through the package directory and collect file contents
@@ -361,7 +361,7 @@ pub const PackageManager = struct {
                 
                 try archive_contents.appendSlice(header);
                 try archive_contents.appendSlice(file_contents);
-                try archive_contents.append('\n');
+                try archive_contents.append(allocator, '\n');
                 
                 file_count += 1;
             }
@@ -372,7 +372,7 @@ pub const PackageManager = struct {
         defer self.allocator.free(footer);
         try archive_contents.appendSlice(footer);
         
-        print("Created package archive with {} files\n", .{file_count});
+        print("Created package archive with {s} files\n", .{{file_count});
         return try archive_contents.toOwnedSlice();
     }
     
@@ -469,7 +469,7 @@ pub const PackageManager = struct {
         var current_file: ?[]const u8 = null;
         var current_file_size: usize = 0;
         var reading_file_content = false;
-        var content_buffer = ArrayList(u8).init(self.allocator);
+        var content_buffer = ArrayList(u8){};
         defer content_buffer.deinit();
         
         while (lines.next()) |line| {
@@ -533,7 +533,7 @@ pub const PackageManager = struct {
         // Write lock file as TOML format
         const lock_file_path = "CursedPackage.lock";
         
-        var file_contents = ArrayList(u8).init(self.allocator);
+        var file_contents = ArrayList(u8){};
         defer file_contents.deinit();
         
         // Write header
@@ -599,7 +599,7 @@ pub const PackageManager = struct {
     
     fn getDependencyList(self: *PackageManager, package_name: []const u8) ![][]const u8 {
         // Mock dependency list - in real implementation would read from package metadata
-        var deps = ArrayList([]const u8).init(self.allocator);
+        var deps = ArrayList([]const u8){};
         defer deps.deinit();
         
         // Return mock dependencies based on package name
@@ -643,7 +643,7 @@ pub const RegistryClient = struct {
         print("Searching registry for: {s}\n", .{query});
         
         // Mock implementation with realistic results for testing
-        var results = ArrayList(PackageSearchResult).init(self.allocator);
+        var results = ArrayList(PackageSearchResult){};
         defer results.deinit();
         
         // Mock search results based on query
@@ -691,7 +691,7 @@ pub const RegistryClient = struct {
         print("Downloading package: {s}@{s}\n", .{ name, version });
         
         // Create simple mock package data
-        var package_data = ArrayList(u8).init(self.allocator);
+        var package_data = ArrayList(u8){};
         defer package_data.deinit();
         
         // Create main source file
@@ -732,19 +732,19 @@ pub const RegistryClient = struct {
         defer self.allocator.free(header1);
         try package_data.appendSlice(header1);
         try package_data.appendSlice(main_file);
-        try package_data.append('\n');
+        try package_data.append(allocator, '\n');
         
         const header2 = try std.fmt.allocPrint(self.allocator, "FILE:CursedPackage.toml:SIZE:{}\n", .{toml_content.len});
         defer self.allocator.free(header2);
         try package_data.appendSlice(header2);
         try package_data.appendSlice(toml_content);
-        try package_data.append('\n');
+        try package_data.append(allocator, '\n');
         
         const header3 = try std.fmt.allocPrint(self.allocator, "FILE:README.md:SIZE:{}\n", .{readme_content.len});
         defer self.allocator.free(header3);
         try package_data.appendSlice(header3);
         try package_data.appendSlice(readme_content);
-        try package_data.append('\n');
+        try package_data.append(allocator, '\n');
         
         try package_data.appendSlice("ARCHIVE_END:FILES:3\n");
         
@@ -884,14 +884,14 @@ pub const DependencyResolver = struct {
         print("Resolving dependencies for: {s}\n", .{package_name});
         
         var graph = DependencyGraph{
-            .nodes = ArrayList(DependencyNode).init(self.allocator),
-            .edges = ArrayList(DependencyEdge).init(self.allocator),
+            .nodes = ArrayList(DependencyNode){},
+            .edges = ArrayList(DependencyEdge){},
         };
         
-        var visited = std.HashMap([]const u8, void, std.hash_map.StringContext, 80).init(self.allocator);
+        var visited = std.HashMap([]const u8, void, std.hash_map.StringContext, 80){};
         defer visited.deinit();
         
-        var pending = ArrayList(PendingDependency).init(self.allocator);
+        var pending = ArrayList(PendingDependency){};
         defer pending.deinit();
         
         // Add root package
@@ -964,15 +964,15 @@ pub const DependencyResolver = struct {
             }
         }
         
-        print("Resolved {} dependencies\n", .{graph.nodes.items.len});
+        print("Resolved {s} dependencies\n", .{{graph.nodes.items.len});
         return graph;
     }
     
     pub fn getInstallOrder(self: *DependencyResolver, graph: DependencyGraph) !ArrayList(PackageSpec) {
-        var install_order = ArrayList(PackageSpec).init(self.allocator);
+        var install_order = ArrayList(PackageSpec){};
         
         // Implement topological sort for proper dependency order
-        var in_degree = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var in_degree = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer in_degree.deinit();
         
         var adjacency_list = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
@@ -987,13 +987,13 @@ pub const DependencyResolver = struct {
         // Initialize in-degree and adjacency list
         for (graph.nodes.items) |node| {
             try in_degree.put(node.name, 0);
-            try adjacency_list.put(node.name, ArrayList([]const u8).init(self.allocator));
+            try adjacency_list.put(node.name, ArrayList([]const u8){});
         }
         
         // Build graph and calculate in-degrees
         for (graph.edges.items) |edge| {
             if (adjacency_list.getPtr(edge.from)) |adj_list| {
-                try adj_list.append(edge.to);
+                try adj_list.append(allocator, edge.to);
             }
             if (in_degree.getPtr(edge.to)) |degree| {
                 degree.* += 1;
@@ -1001,13 +1001,13 @@ pub const DependencyResolver = struct {
         }
         
         // Find nodes with no incoming edges
-        var queue = ArrayList([]const u8).init(self.allocator);
+        var queue = ArrayList([]const u8){};
         defer queue.deinit();
         
         var degree_iterator = in_degree.iterator();
         while (degree_iterator.next()) |entry| {
             if (entry.value_ptr.* == 0) {
-                try queue.append(entry.key_ptr.*);
+                try queue.append(allocator, entry.key_ptr.*);
             }
         }
         
@@ -1032,7 +1032,7 @@ pub const DependencyResolver = struct {
                     if (in_degree.getPtr(neighbor)) |degree| {
                         degree.* -= 1;
                         if (degree.* == 0) {
-                            try queue.append(neighbor);
+                            try queue.append(allocator, neighbor);
                         }
                     }
                 }
@@ -1126,6 +1126,7 @@ pub const PackageMetadata = struct {
     license: []const u8,
     
     pub fn deinit(self: *PackageMetadata, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         allocator.free(self.version);
         allocator.free(self.description);
@@ -1160,7 +1161,7 @@ pub const LockFile = struct {
     packages: ArrayList(LockFilePackage),
     
     pub fn deinit(self: *LockFile) void {
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
     }
 };
 
@@ -1207,16 +1208,16 @@ pub fn main() !void {
     // Test search
     const search_results = try package_manager.searchPackages("test");
     defer allocator.free(search_results);
-    print("✅ Search found {} packages\n", .{search_results.len});
+    print("✅ Search found {s} packages\n", .{{search_results.len});
     
     // Test installation (mock)
     const install_result = try package_manager.installPackage("test-package", "1.0.0");
     defer allocator.free(install_result.installed_packages);
-    print("✅ Installation result: {}\n", .{install_result.success});
+    print("✅ Installation result: {s}\n", .{{install_result.success});
     
     // Test publish (dry run)
     const publish_result = try package_manager.publishPackage("test-package-dir", true);
-    print("✅ Publish dry run: {}\n", .{publish_result.success});
+    print("✅ Publish dry run: {s}\n", .{{publish_result.success});
     
     // Test lock file generation
     try package_manager.generateLockFile();
@@ -1225,7 +1226,7 @@ pub fn main() !void {
     // Test listing packages
     const installed_packages = try package_manager.listInstalledPackages();
     defer allocator.free(installed_packages);
-    print("✅ Listed {} installed packages\n", .{installed_packages.len});
+    print("✅ Listed {s} installed packages\n", .{{installed_packages.len});
     
     print("\n🎉 Package Manager Tests Completed Successfully!\n", .{});
     print("   📦 Package installation and removal\n", .{});

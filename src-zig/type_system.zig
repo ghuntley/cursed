@@ -28,7 +28,7 @@ pub const TypeKind = enum {
             .Interface => "Interface",
             .Function => "Function",
             .Array => "Array",
-            .Tuple => "Tuple",
+            
             .Map => "Map",
             .Pointer => "Pointer",
             .Generic => "Generic",
@@ -65,7 +65,7 @@ pub const TypeExpression = struct {
         for (self.parameters.items) |*param| {
             param.deinit();
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         if (self.name) |name| {
             self.allocator.free(name);
         }
@@ -87,28 +87,28 @@ pub const TypeExpression = struct {
         var arr_type = TypeExpression.init(allocator, .Array, "Array");
         // Make a copy of the element type to avoid double free
         const element_copy = TypeExpression.init(allocator, element_type.kind, element_type.name);
-        try arr_type.parameters.append(element_copy);
+        try arr_type.parameters.append(allocator, element_copy);
         return arr_type;
     }
 
     pub fn tuple(allocator: Allocator, element_types: []const TypeExpression) !TypeExpression {
         var tuple_type = TypeExpression.init(allocator, .Tuple, "Tuple");
         for (element_types) |element| {
-            try tuple_type.parameters.append(element);
+            try tuple_type.parameters.append(allocator, element);
         }
         return tuple_type;
     }
 
     pub fn map(allocator: Allocator, key_type: TypeExpression, value_type: TypeExpression) !TypeExpression {
         var map_type = TypeExpression.init(allocator, .Map, "Map");
-        try map_type.parameters.append(key_type);
-        try map_type.parameters.append(value_type);
+        try map_type.parameters.append(allocator, key_type);
+        try map_type.parameters.append(allocator, value_type);
         return map_type;
     }
 
     pub fn pointer(allocator: Allocator, pointee_type: TypeExpression) !TypeExpression {
         var ptr_type = TypeExpression.init(allocator, .Pointer, "Pointer");
-        try ptr_type.parameters.append(pointee_type);
+        try ptr_type.parameters.append(allocator, pointee_type);
         return ptr_type;
     }
 
@@ -233,7 +233,7 @@ pub const MethodSignature = struct {
         for (self.parameters.items) |*param| {
             param.deinit();
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         if (self.return_type) |*ret_type| {
             ret_type.deinit();
         }
@@ -258,8 +258,9 @@ pub const StructFieldDefinition = struct {
     }
 
     pub fn deinit(self: *StructFieldDefinition, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
-        self.field_type.deinit();
+        self.field_type.deinit(self.allocator);
     }
 };
 
@@ -342,8 +343,9 @@ pub const TypeEnvironment = struct {
     };
 
     pub fn init(allocator: Allocator) TypeEnvironment {
+        _ = allocator;
         return TypeEnvironment{
-            .type_definitions = HashMap([]const u8, TypeDefinition, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .type_definitions = HashMap([]const u8, TypeDefinition, StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -354,7 +356,7 @@ pub const TypeEnvironment = struct {
             var type_def = entry.value_ptr;
             type_def.deinit();
         }
-        self.type_definitions.deinit();
+        self.type_definitions.deinit(self.allocator);
     }
 
     pub fn addBuiltinType(self: *TypeEnvironment, name: []const u8, kind: TypeKind) !void {
@@ -452,6 +454,7 @@ pub const TypeChecker = struct {
     current_function_return_type: ?*TypeExpression = null,
 
     pub fn init(allocator: Allocator) !TypeChecker {
+        _ = allocator;
         var environment = TypeEnvironment.init(allocator);
         
         // Add CURSED built-in types
@@ -481,7 +484,7 @@ pub const TypeChecker = struct {
         try environment.addTypeDefinition(vibez_type);
 
         var scopes = ArrayList(HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage)){};
-        try scopes.append(allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(allocator));
+        try scopes.append(allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage){});
 
         return TypeChecker{
             .environment = environment,
@@ -491,7 +494,7 @@ pub const TypeChecker = struct {
     }
 
     pub fn deinit(self: *TypeChecker) void {
-        self.environment.deinit();
+        self.environment.deinit(self.allocator);
         for (self.scopes.items) |*scope| {
             var iter = scope.iterator();
             while (iter.next()) |entry| {
@@ -500,11 +503,11 @@ pub const TypeChecker = struct {
             }
             scope.deinit();
         }
-        self.scopes.deinit();
+        self.scopes.deinit(self.allocator);
     }
 
     pub fn enterScope(self: *TypeChecker) !void {
-        try self.scopes.append(self.allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator));
+        try self.scopes.append(self.allocator, HashMap([]const u8, VariableInfo, TypeEnvironment.StringContext, std.hash_map.default_max_load_percentage){});
     }
 
     pub fn exitScope(self: *TypeChecker) void {
@@ -569,8 +572,7 @@ pub const TypeChecker = struct {
                 const element_type = try self.astTypeToTypeExpression(slice_info.element_type);
                 return TypeExpression.array(self.allocator, element_type);
             },
-            .Tuple => |tuple_info| {
-                var element_types = .empty;
+            };
                 defer element_types.deinit();
                 
                 for (tuple_info.elements.items) |*elem_type| {
@@ -622,8 +624,6 @@ pub const TypeChecker = struct {
             .Array => |array_expr| {
                 return self.checkArrayExpression(array_expr);
             },
-            .Tuple => |tuple_expr| {
-                return self.checkTupleExpression(&tuple_expr);
             },
             .StructLiteral => |struct_literal| {
                 return self.checkStructLiteral(&struct_literal);
@@ -782,7 +782,7 @@ pub const TypeChecker = struct {
     }
 
     fn checkTupleExpression(self: *TypeChecker, tuple_expr: *const ast.TupleExpression) !TypeExpression {
-        var element_types = .empty;
+        var element_types = std.ArrayList(u8){};
         defer element_types.deinit();
         
         for (tuple_expr.elements.items) |element| {
@@ -912,7 +912,7 @@ pub const TypeChecker = struct {
         try self.enterScope();
         defer self.exitScope();
         
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         // Add parameters to scope
@@ -1071,7 +1071,7 @@ pub const TypeChecker = struct {
         try self.enterScope();
         defer self.exitScope();
         
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         // Add parameters to scope and collect their types
@@ -1112,7 +1112,7 @@ pub const TypeChecker = struct {
 
     fn checkStructDeclaration(self: *TypeChecker, struct_decl: *const ast.StructDeclaration) !TypeExpression {
         // Create struct field validation table
-        var field_map = std.HashMap([]const u8, TypeExpression, std.hash_map.StringContext, 80).init(self.allocator);
+        var field_map = std.HashMap([]const u8, TypeExpression, std.hash_map.StringContext, 80){};
         defer field_map.deinit(self.allocator);
         
         // Validate field types and check for duplicates
@@ -1637,6 +1637,7 @@ pub const TypeChecker = struct {
 
 // Public interface functions
 pub fn createTypeChecker(allocator: Allocator) !*TypeChecker {
+        _ = allocator;
     const checker = try allocator.create(TypeChecker);
     checker.* = try TypeChecker.init(allocator);
     return checker;

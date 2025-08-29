@@ -43,7 +43,7 @@ pub const CursedDebugger = struct {
         return Self{
             .allocator = allocator,
             .interpreter = interp,
-            .breakpoints = HashMap(BreakpointKey, Breakpoint).init(allocator),
+            .breakpoints = HashMap(BreakpointKey, Breakpoint){},
             .watch_variables = .empty,
             .current_line = 0,
             .current_file = "main.csd",
@@ -101,7 +101,7 @@ pub const CursedDebugger = struct {
     /// Load source file for display
     fn loadSourceFile(self: *Self, file_path: []const u8) !void {
         const file = std.fs.cwd().openFile(file_path, .{}) catch |err| {
-            print("❌ Error loading source file: {}\n", .{err});
+            print("❌ Error loading source file: {s}\n", .{err});
             return;
         };
         defer file.close();
@@ -115,7 +115,7 @@ pub const CursedDebugger = struct {
             try self.source_lines.append(self.allocator, line_copy);
         }
         
-        print("✅ Loaded {} lines from {s}\n", .{ self.source_lines.items.len, file_path });
+        print("✅ Loaded {s} lines from {s}\n", .{ self.source_lines.items.len, file_path });
     }
     
     /// Main command loop
@@ -261,7 +261,7 @@ pub const CursedDebugger = struct {
             };
             
             try self.breakpoints.put(key, breakpoint);
-            print("🔴 Breakpoint {} set at line {}\n", .{ breakpoint.id, line_number });
+            print("🔴 Breakpoint {s} set at line {s}\n", .{ breakpoint.id, line_number });
         } else |_| {
             // Treat as function name
             const key = BreakpointKey{
@@ -278,7 +278,7 @@ pub const CursedDebugger = struct {
             };
             
             try self.breakpoints.put(key, breakpoint);
-            print("🔴 Breakpoint {} set at function '{s}'\n", .{ breakpoint.id, location });
+            print("🔴 Breakpoint {s} set at function '{s}'\n", .{ breakpoint.id, location });
         }
     }
     
@@ -417,8 +417,7 @@ pub const CursedDebugger = struct {
             .String => |s| print("\"{s}\"", .{s}),
             .Boolean => |b| print("{any}", .{b}),
             .Null => print("null", .{}),
-            .Tuple => |arr| {
-                print("[", .{});
+             .{});
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) print(", ", .{});
                     try self.printValueInline(item);

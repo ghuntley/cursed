@@ -62,12 +62,12 @@ pub const Formatter = struct {
         return Formatter{
             .allocator = allocator,
             .config = config,
-            .output = ArrayList(u8).init(allocator),
+            .output = ArrayList(u8){},
         };
     }
     
     pub fn deinit(self: *Formatter) void {
-        self.output.deinit();
+        self.output.deinit(self.allocator);
     }
     
     pub fn format(self: *Formatter, source: []const u8) ![]const u8 {
@@ -178,7 +178,7 @@ pub const Formatter = struct {
         
         // Ensure file ends with newline
         if (self.output.items.len > 0 and self.output.items[self.output.items.len - 1] != '\n') {
-            try self.output.append('\n');
+            try self.output.append(self.allocator, '\n');
         }
     }
     
@@ -235,7 +235,7 @@ pub const Formatter = struct {
         // Default keyword formatting
         else {
             try self.output.appendSlice(keyword);
-            try self.output.append(' ');
+            try self.output.append(self.allocator, ' ');
             context.line_length += @as(u32, @intCast(keyword.len + 1));
         }
     }
@@ -245,7 +245,7 @@ pub const Formatter = struct {
         if (self.output.items.len > 0) {
             const last_char = self.output.items[self.output.items.len - 1];
             if (last_char != ' ' and last_char != '\n' and last_char != '(' and last_char != '{') {
-                try self.output.append(' ');
+                try self.output.append(self.allocator, ' ');
                 context.line_length += 1;
             }
         }
@@ -264,17 +264,17 @@ pub const Formatter = struct {
             context.line_length = @as(u32, @intCast(indent.len));
         } else {
             if (context.line_length > 0 and self.output.items[self.output.items.len - 1] != ' ') {
-                try self.output.append(' ');
+                try self.output.append(self.allocator, ' ');
                 context.line_length += 1;
             }
         }
         
-        try self.output.append('{');
+        try self.output.append(self.allocator, '{');
         context.line_length += 1;
         context.current_indent += 1;
         
         // Add newline after opening brace
-        try self.output.append('\n');
+        try self.output.append(self.allocator, '\n');
         context.line_length = 0;
     }
     
@@ -284,13 +284,13 @@ pub const Formatter = struct {
         
         // Ensure we're on a new line
         if (context.line_length > 0) {
-            try self.output.append('\n');
+            try self.output.append(self.allocator, '\n');
         }
         
         const indent = try context.getIndent(self.allocator);
         defer self.allocator.free(indent);
         try self.output.appendSlice(indent);
-        try self.output.append('}');
+        try self.output.append(self.allocator, '}');
         
         context.line_length = @as(u32, @intCast(indent.len + 1));
         context.in_struct_definition = false;
@@ -299,14 +299,14 @@ pub const Formatter = struct {
     
     fn formatLeftParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
         _ = token;
-        try self.output.append('(');
+        try self.output.append(self.allocator, '(');
         context.line_length += 1;
         context.in_function_params = true;
     }
     
     fn formatRightParen(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
         _ = token;
-        try self.output.append(')');
+        try self.output.append(self.allocator, ')');
         context.line_length += 1;
         context.in_function_params = false;
     }
@@ -315,7 +315,7 @@ pub const Formatter = struct {
         _ = token;
         // CURSED doesn't typically use semicolons, but handle them if present
         // Replace semicolon with newline for better formatting
-        try self.output.append('\n');
+        try self.output.append(self.allocator, '\n');
         context.line_length = 0;
     }
     
@@ -324,10 +324,10 @@ pub const Formatter = struct {
         try self.output.append(',');
         
         if (context.in_function_params) {
-            try self.output.append(' ');
+            try self.output.append(self.allocator, ' ');
             context.line_length += 2;
         } else {
-            try self.output.append('\n');
+            try self.output.append(self.allocator, '\n');
             const indent = try context.getIndent(self.allocator);
             defer self.allocator.free(indent);
             try self.output.appendSlice(indent);
@@ -341,12 +341,12 @@ pub const Formatter = struct {
         if (context.config.space_around_operators) {
             // Add space before operator
             if (self.output.items.len > 0 and self.output.items[self.output.items.len - 1] != ' ') {
-                try self.output.append(' ');
+                try self.output.append(self.allocator, ' ');
                 context.line_length += 1;
             }
             
             try self.output.appendSlice(operator);
-            try self.output.append(' ');
+            try self.output.append(self.allocator, ' ');
             context.line_length += @as(u32, @intCast(operator.len + 1));
         } else {
             try self.output.appendSlice(operator);
@@ -376,13 +376,13 @@ pub const Formatter = struct {
             try self.output.appendSlice(token.lexeme);
         }
         
-        try self.output.append('\n');
+        try self.output.append(self.allocator, '\n');
         context.line_length = 0;
     }
     
     fn formatNewline(self: *Formatter, token: lexer.Token, context: *FormattingContext) !void {
         _ = token;
-        try self.output.append('\n');
+        try self.output.append(self.allocator, '\n');
         context.line_length = 0;
     }
     
@@ -418,7 +418,7 @@ pub const Formatter = struct {
             
             if (trimmed.len == 0) {
                 // Preserve empty lines
-                try self.output.append('\n');
+                try self.output.append(self.allocator, '\n');
                 continue;
             }
             
@@ -434,7 +434,7 @@ pub const Formatter = struct {
                 try self.output.appendSlice(" - formatting skipped due to syntax error\n");
                 try self.output.appendSlice(line);
             }
-            try self.output.append('\n');
+            try self.output.append(self.allocator, '\n');
         }
         
         // Add footer comment
@@ -502,7 +502,7 @@ pub fn formatFile(allocator: Allocator, file_path: []const u8, config: Formatter
     // Write back to file
     const output_file = try std.fs.cwd().createFile(file_path, .{});
     defer output_file.close();
-    try output_file.writeAll(formatted);
+    try output_file.writer().writeAll(formatted);
     
     std.log.info("Formatted: {s}", .{file_path});
 }

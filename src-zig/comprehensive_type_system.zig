@@ -47,37 +47,37 @@ pub const CursedType = union(enum) {
         _ = options;
         
         switch (self) {
-            .Drip => try writer.writeAll("drip"),
-            .Normie => try writer.writeAll("normie"),
-            .Smol => try writer.writeAll("smol"),
-            .Thicc => try writer.writeAll("thicc"),
-            .Meal => try writer.writeAll("meal"),
-            .Snack => try writer.writeAll("snack"),
-            .Tea => try writer.writeAll("tea"),
-            .Lit => try writer.writeAll("lit"),
-            .Sip => try writer.writeAll("sip"),
-            .Vibes => try writer.writeAll("vibes"),
+            .Drip => try writer.writer().writeAll("drip"),
+            .Normie => try writer.writer().writeAll("normie"),
+            .Smol => try writer.writer().writeAll("smol"),
+            .Thicc => try writer.writer().writeAll("thicc"),
+            .Meal => try writer.writer().writeAll("meal"),
+            .Snack => try writer.writer().writeAll("snack"),
+            .Tea => try writer.writer().writeAll("tea"),
+            .Lit => try writer.writer().writeAll("lit"),
+            .Sip => try writer.writer().writeAll("sip"),
+            .Vibes => try writer.writer().writeAll("vibes"),
             .Array => |arr| try writer.print("[]{any}", .{arr.element_type.*}),
             .Slice => |slice| try writer.print("[]{any}", .{slice.element_type.*}),
             .Channel => |ch| try writer.print("dm<{any}>", .{ch.element_type.*}),
             .Function => |func| {
-                try writer.writeAll("slay(");
+                try writer.writer().writeAll("slay(");
                 for (func.parameters.items, 0..) |param, i| {
-                    if (i > 0) try writer.writeAll(", ");
-                    try writer.print("{}", .{param});
+                    if (i > 0) try writer.writer().writeAll(", ");
+                    try writer.print("{s}", .{param});
                 }
-                try writer.writeAll(") ");
+                try writer.writer().writeAll(") ");
                 if (func.return_type) |ret| {
-                    try writer.print("{}", .{ret.*});
+                    try writer.print("{s}", .{ret.*});
                 } else {
-                    try writer.writeAll("vibes");
+                    try writer.writer().writeAll("vibes");
                 }
             },
-            .Generic => |gen| try writer.print("{}[{}]", .{gen.base_type.*, gen.type_args.items[0]}),
-            .TypeParameter => |param| try writer.writeAll(param.name),
-            .Unknown => |id| try writer.print("?T{}", .{id}),
-            .Error => try writer.writeAll("!ERROR"),
-            else => try writer.writeAll("unknown"),
+            .Generic => |gen| try writer.print("{s}[{s}]", .{gen.base_type.*, gen.type_args.items[0]}),
+            .TypeParameter => |param| try writer.writer().writeAll(param.name),
+            .Unknown => |id| try writer.print("?T{s}", .{id}),
+            .Error => try writer.writer().writeAll("!ERROR"),
+            else => try writer.writer().writeAll("unknown"),
         }
     }
     
@@ -246,14 +246,14 @@ pub const TypeEnvironment = struct {
         
         pub fn init() Scope {
             return Scope{
-                .variables = HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-                .types = HashMap([]const u8, CursedType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .variables = HashMap([]const u8, VariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+                .types = HashMap([]const u8, CursedType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             };
         }
         
         pub fn deinit(self: *Scope) void {
-            self.variables.deinit();
-            self.types.deinit();
+            self.variables.deinit(self.allocator);
+            self.types.deinit(self.allocator);
         }
     };
     
@@ -269,6 +269,7 @@ pub const TypeEnvironment = struct {
     };
     
     pub fn init(allocator: Allocator) !TypeEnvironment {
+        _ = allocator;
         var env = TypeEnvironment{
             .scopes = .empty,
             .type_vars = HashMap(u32, CursedType, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -288,9 +289,9 @@ pub const TypeEnvironment = struct {
         for (self.scopes.items) |*scope| {
             scope.deinit();
         }
-        self.scopes.deinit();
-        self.type_vars.deinit();
-        self.constraints.deinit();
+        self.scopes.deinit(self.allocator);
+        self.type_vars.deinit(self.allocator);
+        self.constraints.deinit(self.allocator);
     }
     
     pub fn enterScope(self: *TypeEnvironment) !void {
@@ -370,7 +371,7 @@ pub const TypeEnvironment = struct {
     
     // Occurs check to prevent infinite types
     fn occursCheck(self: *TypeEnvironment, var_id: u32, cursed_type: CursedType) bool {
-        var visited = std.AutoHashMap(u64, void).init(self.allocator);
+        var visited = std.AutoHashMap(u64, void){};
         defer visited.deinit();
         return self.occursCheckRecursive(var_id, cursed_type, &visited);
     }
@@ -405,9 +406,7 @@ pub const TypeEnvironment = struct {
                 }
                 return false;
             },
-            .Tuple => |tuple| {
-                for (tuple.elements.items) |elem_type| {
-                    if (self.occursCheckRecursive(var_id, elem_type, visited)) return true;
+             elem_type, visited)) return true;
                 }
                 return false;
             },
@@ -447,9 +446,6 @@ pub const TypeEnvironment = struct {
                 hasher.update("Generic");
                 hasher.update(gen.name);
             },
-            .Tuple => |tuple| {
-                hasher.update("Tuple");
-                hasher.update(std.mem.asBytes(&tuple.elements.items.len));
             },
             else => {
                 hasher.update("Other");
@@ -491,7 +487,7 @@ pub const TypeEnvironment = struct {
     pub fn resolveTypeRecursive(self: *TypeEnvironment, cursed_type: CursedType) CursedType {
         const MAX_RESOLUTION_DEPTH = 100;
         var current_type = cursed_type;
-        var visited = std.AutoHashMap(u32, void).init(self.allocator);
+        var visited = std.AutoHashMap(u32, void){};
         defer visited.deinit();
         var depth: u32 = 0;
         
@@ -525,7 +521,7 @@ pub const TypeEnvironment = struct {
     
     // Comprehensive validation before codegen
     pub fn validateAllTypesResolved(self: *TypeEnvironment, ast_node: *ast.ASTNode) !void {
-        var unresolved_vars = std.ArrayList(u32).init(self.allocator);
+        var unresolved_vars = std.ArrayList(u32){};
         defer unresolved_vars.deinit();
         
         self.collectUnresolvedTypeVars(ast_node, &unresolved_vars);
@@ -605,7 +601,7 @@ pub const TypeEnvironment = struct {
         const resolved = self.resolveTypeRecursive(cursed_type);
         switch (resolved) {
             .Unknown => |var_id| {
-                unresolved.append(var_id) catch {};
+                unresolved.append(allocator, var_id) catch {};
             },
             .Array => |arr| {
                 self.collectUnresolvedFromType(arr.element_type.*, unresolved);
@@ -630,9 +626,7 @@ pub const TypeEnvironment = struct {
                     self.collectUnresolvedFromType(arg_type, unresolved);
                 }
             },
-            .Tuple => |tuple| {
-                for (tuple.elements.items) |elem_type| {
-                    self.collectUnresolvedFromType(elem_type, unresolved);
+             unresolved);
                 }
             },
             else => {},
@@ -735,7 +729,7 @@ pub const TypeEnvironment = struct {
         _ = self;
         return switch (cursed_type) {
             .Drip, .Normie, .Smol, .Thicc, .Meal, .Snack, .Tea, .Lit, .Sip => true,
-            .Array, .Slice, .Struct, .Tuple => true,
+            .Array, .Slice, .Struct, 
             .Function, .Interface => false,
             else => false,
         };
@@ -747,10 +741,7 @@ pub const TypeEnvironment = struct {
             .Array => |arr| self.isSend(arr.element_type.*),
             .Slice => |slice| self.isSend(slice.element_type.*),
             .Struct => true, // Most structs are Send
-            .Tuple => |tuple| {
-                for (tuple.elements.items) |elem_type| {
-                    if (!self.isSend(elem_type)) return false;
-                }
+            }
                 return true;
             },
             .Channel => false, // Channels are not Send by default
@@ -764,10 +755,7 @@ pub const TypeEnvironment = struct {
             .Array => |arr| self.isSync(arr.element_type.*),
             .Slice => |slice| self.isSync(slice.element_type.*),
             .Struct => true, // Most structs are Sync
-            .Tuple => |tuple| {
-                for (tuple.elements.items) |elem_type| {
-                    if (!self.isSync(elem_type)) return false;
-                }
+            }
                 return true;
             },
             .Channel => false, // Channels are not Sync by default
@@ -882,7 +870,7 @@ pub const TypeInferenceEngine = struct {
     }
     
     pub fn deinit(self: *TypeInferenceEngine) void {
-        self.unification_constraints.deinit();
+        self.unification_constraints.deinit(self.allocator);
     }
     
     /// Infer type of an expression
@@ -1323,7 +1311,7 @@ pub const TypeInferenceEngine = struct {
     }
     
     fn inferTupleLiteral(self: *TypeInferenceEngine, tuple_lit: ast.TupleLiteralExpression) !InferenceResult {
-        var element_types = .empty;
+        var element_types = std.ArrayList(u8){};
         
         for (tuple_lit.elements.items) |elem| {
             const elem_result = try self.inferExpression(elem);
@@ -1621,6 +1609,7 @@ pub const ComprehensiveTypeChecker = struct {
     };
     
     pub fn init(allocator: Allocator) !ComprehensiveTypeChecker {
+        _ = allocator;
         var environment = try TypeEnvironment.init(allocator);
         const inference_engine = TypeInferenceEngine.init(allocator, &environment);
         
@@ -1633,9 +1622,9 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     pub fn deinit(self: *ComprehensiveTypeChecker) void {
-        self.environment.deinit();
-        self.inference_engine.deinit();
-        self.error_messages.deinit();
+        self.environment.deinit(self.allocator);
+        self.inference_engine.deinit(self.allocator);
+        self.error_messages.deinit(self.allocator);
     }
     
     pub fn checkProgram(self: *ComprehensiveTypeChecker, program: *const ast.Program) !bool {
@@ -1706,7 +1695,7 @@ pub const ComprehensiveTypeChecker = struct {
         defer self.environment.exitScope();
         
         // Add parameters to scope
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (func_decl.parameters.items) |param| {
@@ -1752,7 +1741,7 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     fn checkStructDeclaration(self: *ComprehensiveTypeChecker, struct_decl: ast.StructDeclaration) !bool {
-        var fields = .empty;
+        var fields = std.ArrayList(u8){};
         
         for (struct_decl.fields.items) |field| {
             const field_type = try self.inference_engine.astTypeToCursedType(field.field_type);
@@ -1775,12 +1764,12 @@ pub const ComprehensiveTypeChecker = struct {
     }
     
     fn checkInterfaceDeclaration(self: *ComprehensiveTypeChecker, interface_decl: ast.InterfaceDeclaration) !bool {
-        var methods = .empty;
+        var methods = std.ArrayList(u8){};
         
         for (interface_decl.methods.items) |method| {
-            var param_types = .empty;
+            var param_types = std.ArrayList(u8){};
             for (method.parameters.items) |param| {
-                try param_types.append(try self.inference_engine.astTypeToCursedType(param.param_type));
+                try param_types.append(self.allocator, try self.inference_engine.astTypeToCursedType(param.param_type));
             }
             
             const return_type = if (method.return_type) |ret| 

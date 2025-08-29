@@ -17,7 +17,7 @@ pub fn main() !void {
 
     // Read the file
     const file_content = std.fs.cwd().readFileAlloc(allocator, args[1], 1024 * 1024) catch |err| {
-        print("Error reading file: {}\n", .{err});
+        print("Error reading file: {s}\n", .{err});
         return;
     };
     defer allocator.free(file_content);

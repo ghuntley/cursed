@@ -23,7 +23,7 @@ pub fn main() !void {
 
     // Verify source file exists
     const file = std.fs.cwd().openFile(source_file, .{}) catch |err| {
-        std.debug.print("❌ Error: Cannot open source file '{s}': {}\n", .{ source_file, err });
+        std.debug.print("❌ Error: Cannot open source file '{s}': {s}\n", .{ source_file, err });
         return;
     };
     defer file.close();
@@ -89,16 +89,16 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
     std.debug.print("Type 'help' for available commands\n", .{});
     std.debug.print("Note: This is a demonstration. Full interpreter integration pending.\n\n", .{});
     
-    var lines = std.ArrayList([]const u8).init(self.allocator);
+    var lines = std.ArrayList([]const u8){};
     defer lines.deinit();
     
     var line_iter = std.mem.splitScalar(u8, source_content, '\n');
     while (line_iter.next()) |line| {
-        try lines.append(line);
+        try lines.append(allocator, line);
     }
     
     var current_line: u32 = 1;
-    var breakpoints = std.ArrayList(u32).init(self.allocator);
+    var breakpoints = std.ArrayList(u32){};
     defer breakpoints.deinit();
     
     var stdin_buffer: [4096]u8 = undefined;
@@ -122,7 +122,7 @@ fn runInteractive(allocator: std.mem.Allocator, source_file: []const u8, source_
             } else if (std.mem.eql(u8, command, "break") or std.mem.eql(u8, command, "b")) {
                 if (args.next()) |line_str| {
                     if (std.fmt.parseInt(u32, line_str, 10)) |line_num| {
-                        try breakpoints.append(line_num);
+                        try breakpoints.append(allocator, line_num);
                         std.debug.print("🔴 Breakpoint set at line {d}\n", .{line_num});
                     } else |_| {
                         std.debug.print("❌ Invalid line number: {s}\n", .{line_str});

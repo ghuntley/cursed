@@ -11,13 +11,13 @@ const ffi_enum = @import("ffi_enum_mapping.zig");
 // Simple C bindings (fallback when LLVM not available)
 const c = struct {
     // Function pointer types for common C signatures
-    pub const VoidFunc = *const fn () callconv(.C) void;
-    pub const IntFunc = *const fn () callconv(.C) i32;
-    pub const FloatFunc = *const fn () callconv(.C) f64;
-    pub const StringFunc = *const fn () callconv(.C) [*:0]const u8;
-    pub const IntIntFunc = *const fn (i32) callconv(.C) i32;
-    pub const FloatFloatFunc = *const fn (f64) callconv(.C) f64;
-    pub const StringStringFunc = *const fn ([*:0]const u8) callconv(.C) [*:0]const u8;
+    pub const VoidFunc = *const fn () callconv(.c) void;
+    pub const IntFunc = *const fn () callconv(.c) i32;
+    pub const FloatFunc = *const fn () callconv(.c) f64;
+    pub const StringFunc = *const fn () callconv(.c) [*:0]const u8;
+    pub const IntIntFunc = *const fn (i32) callconv(.c) i32;
+    pub const FloatFloatFunc = *const fn (f64) callconv(.c) f64;
+    pub const StringStringFunc = *const fn ([*:0]const u8) callconv(.c) [*:0]const u8;
     
     // Library loading functions (platform-specific)
     pub fn loadLibrary(name: [*:0]const u8) ?*anyopaque {
@@ -159,7 +159,7 @@ pub const CABISignature = struct {
     }
     
     pub fn deinit(self: *CABISignature) void {
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
     }
 };
 
@@ -180,7 +180,7 @@ pub const ExternLibrary = struct {
         return ExternLibrary{
             .name = name,
             .handle = null,
-            .functions = HashMap([]const u8, ExternFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, ExternFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -190,7 +190,7 @@ pub const ExternLibrary = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.signature.deinit();
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
         if (self.handle) |handle| {
             c.closeLibrary(handle);
@@ -252,8 +252,8 @@ pub const CABIBridge = struct {
     pub fn init() CABIBridge {
         var bridge = CABIBridge{
             .allocator = allocator,
-            .libraries = HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .type_mappings = HashMap([]const u8, CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .libraries = HashMap([]const u8, ExternLibrary, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .type_mappings = HashMap([]const u8, CABISignature.CABIType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .generated_wrappers = .empty,
             .enum_mapper = ffi_enum.FFIEnumMapper.init(allocator),
         };
@@ -269,17 +269,17 @@ pub const CABIBridge = struct {
         while (lib_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.libraries.deinit();
+        self.libraries.deinit(self.allocator);
         
-        self.type_mappings.deinit();
+        self.type_mappings.deinit(self.allocator);
         
         for (self.generated_wrappers.items) |wrapper| {
             self.allocator.free(wrapper);
         }
-        self.generated_wrappers.deinit();
+        self.generated_wrappers.deinit(self.allocator);
         
         // Clean up enum mapper
-        self.enum_mapper.deinit();
+        self.enum_mapper.deinit(self.allocator);
     }
     
     /// Initialize CURSED to C type mappings
@@ -372,7 +372,7 @@ pub const CABIBridge = struct {
     
     /// Generate CURSED wrapper for extern function
     pub fn generateWrapper(self: *CABIBridge, signature: CABISignature, library_name: []const u8) ![]const u8 {
-        var wrapper = .empty;
+        var wrapper = std.ArrayList(u8){};
         defer wrapper.deinit();
         
         try wrapper.writer().print("// Auto-generated wrapper for extern function {s}\n", .{signature.name});
@@ -410,7 +410,7 @@ pub const CABIBridge = struct {
         try wrapper.writer().print("}}\n\n", .{});
         
         const result = try wrapper.toOwnedSlice();
-        try self.generated_wrappers.append(result);
+        try self.generated_wrappers.append(allocator, result);
         return result;
     }
     
@@ -457,7 +457,7 @@ pub const CABIBridge = struct {
     
     /// Generate C header for CURSED functions
     pub fn generateCHeader(self: *CABIBridge, cursed_functions: []const ast.FunctionStatement) ![]const u8 {
-        var header = .empty;
+        var header = std.ArrayList(u8){};
         defer header.deinit();
         
         try header.writer().print("#ifndef CURSED_C_BINDINGS_H\n", .{});
@@ -514,7 +514,7 @@ pub const CABIBridge = struct {
     
     /// Generate FFI call implementation
     pub fn generateFFIRuntime(self: *CABIBridge) ![]const u8 {
-        var runtime = .empty;
+        var runtime = std.ArrayList(u8){};
         defer runtime.deinit();
         
         try runtime.writer().print("// Auto-generated FFI runtime for C interop\n\n", .{});

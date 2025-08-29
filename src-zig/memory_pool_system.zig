@@ -146,7 +146,7 @@ pub const MemoryPoolSystem = struct {
             
             pub fn init(allocator: std.mem.Allocator, pool_id: u32) CachePool {
                 return CachePool{
-                    .free_objects = ArrayList(*anyopaque).init(allocator),
+                    .free_objects = ArrayList(*anyopaque){},
                     .pool_id = pool_id,
                     .hits = Atomic(u64).init(0),
                     .misses = Atomic(u64).init(0),
@@ -154,7 +154,7 @@ pub const MemoryPoolSystem = struct {
             }
             
             pub fn deinit(self: *CachePool) void {
-                self.free_objects.deinit();
+                self.free_objects.deinit(self.allocator);
             }
         };
 
@@ -197,7 +197,7 @@ pub const MemoryPoolSystem = struct {
             
             var pool = &self.pools[pool_id];
             if (pool.free_objects.items.len < max_cache_size) {
-                pool.free_objects.append(ptr) catch return false;
+                pool.free_objects.append(allocator, ptr) catch return false;
                 return true;
             }
             return false;
@@ -224,12 +224,12 @@ pub const MemoryPoolSystem = struct {
             
             // Initialize free lists
             for (&buddy.free_lists) |*list| {
-                list.* = ArrayList(*anyopaque).init(allocator);
+                list.* = ArrayList(*anyopaque){};
             }
             
             // Add entire block to largest free list
             const level = std.math.log2_int(usize, size);
-            try buddy.free_lists[level].append(@ptrCast(buddy.memory_block.ptr));
+            try buddy.free_lists[level].append(allocator, @ptrCast(buddy.memory_block.ptr));
             
             return buddy;
         }
@@ -281,7 +281,7 @@ pub const MemoryPoolSystem = struct {
             const buddy = block + half_size;
             
             // Add second half to free list
-            try self.free_lists[current_level - 1].append(@ptrCast(buddy));
+            try self.free_lists[current_level - 1].append(allocator, @ptrCast(buddy));
             
             // Continue splitting first half if needed
             try self.splitBlock(block, current_level - 1, target_level);
@@ -309,7 +309,7 @@ pub const MemoryPoolSystem = struct {
             }
             
             // No buddy available, add to current level
-            try self.free_lists[level].append(@ptrCast(block));
+            try self.free_lists[level].append(allocator, @ptrCast(block));
         }
     };
 
@@ -341,7 +341,7 @@ pub const MemoryPoolSystem = struct {
                 // Initialize free object list
                 var ptr = slab.memory.ptr;
                 for (0..objects_per_slab) |_| {
-                    try slab.free_objects.append(@ptrCast(ptr));
+                    try slab.free_objects.append(allocator, @ptrCast(ptr));
                     ptr += object_size;
                 }
                 
@@ -349,7 +349,7 @@ pub const MemoryPoolSystem = struct {
             }
             
             pub fn deinit(self: *Slab, allocator: std.mem.Allocator) void {
-                self.free_objects.deinit();
+                self.free_objects.deinit(self.allocator);
                 allocator.free(self.memory);
             }
             
@@ -362,7 +362,7 @@ pub const MemoryPoolSystem = struct {
             }
             
             pub fn deallocateObject(self: *Slab, ptr: *anyopaque) !void {
-                try self.free_objects.append(ptr);
+                try self.free_objects.append(allocator, ptr);
                 self.allocated_objects -= 1;
             }
             
@@ -397,12 +397,12 @@ pub const MemoryPoolSystem = struct {
             const objects_per_slab = slab_size / object_size;
             
             return SLABAllocator{
-                .slabs = ArrayList(Slab).init(allocator),
+                .slabs = ArrayList(Slab){},
                 .object_size = object_size,
                 .objects_per_slab = objects_per_slab,
-                .partial_slabs = ArrayList(*Slab).init(allocator),
-                .full_slabs = ArrayList(*Slab).init(allocator),
-                .empty_slabs = ArrayList(*Slab).init(allocator),
+                .partial_slabs = ArrayList(*Slab){},
+                .full_slabs = ArrayList(*Slab){},
+                .empty_slabs = ArrayList(*Slab){},
                 .allocator = allocator,
                 .slab_mutex = Mutex{},
                 .stats = SLABStats.init(),
@@ -413,10 +413,10 @@ pub const MemoryPoolSystem = struct {
             for (self.slabs.items) |*slab| {
                 slab.deinit(self.allocator);
             }
-            self.slabs.deinit();
-            self.partial_slabs.deinit();
-            self.full_slabs.deinit();
-            self.empty_slabs.deinit();
+            self.slabs.deinit(self.allocator);
+            self.partial_slabs.deinit(self.allocator);
+            self.full_slabs.deinit(self.allocator);
+            self.empty_slabs.deinit(self.allocator);
         }
 
         pub fn allocateObject(self: *SLABAllocator) !*anyopaque {
@@ -433,7 +433,7 @@ pub const MemoryPoolSystem = struct {
                     // Move to full slabs if this slab is now full
                     if (slab.isFull()) {
                         _ = self.partial_slabs.pop();
-                        try self.full_slabs.append(slab);
+                        try self.full_slabs.append(allocator, slab);
                     }
                     
                     return ptr;
@@ -446,7 +446,7 @@ pub const MemoryPoolSystem = struct {
                 if (slab.allocateObject()) |ptr| {
                     _ = self.stats.cache_hits.fetchAdd(1, .release);
                     _ = self.stats.allocated_objects.fetchAdd(1, .release);
-                    try self.partial_slabs.append(slab);
+                    try self.partial_slabs.append(allocator, slab);
                     return ptr;
                 }
             }
@@ -456,12 +456,12 @@ pub const MemoryPoolSystem = struct {
             _ = self.stats.slab_expansions.fetchAdd(1, .release);
             
             var new_slab = try Slab.init(self.allocator, 4096, self.object_size); // 4KB slab
-            try self.slabs.append(new_slab);
+            try self.slabs.append(allocator, new_slab);
             const slab_ptr = &self.slabs.items[self.slabs.items.len - 1];
             
             if (slab_ptr.allocateObject()) |ptr| {
                 _ = self.stats.allocated_objects.fetchAdd(1, .release);
-                try self.partial_slabs.append(slab_ptr);
+                try self.partial_slabs.append(allocator, slab_ptr);
                 return ptr;
             }
             
@@ -487,11 +487,11 @@ pub const MemoryPoolSystem = struct {
                     if (slab.isEmpty()) {
                         // Move to empty slabs
                         self.removeFromLists(slab);
-                        try self.empty_slabs.append(slab);
+                        try self.empty_slabs.append(allocator, slab);
                     } else if (was_full) {
                         // Move from full to partial
                         self.removeFromFullSlabs(slab);
-                        try self.partial_slabs.append(slab);
+                        try self.partial_slabs.append(allocator, slab);
                     }
                     
                     return;
@@ -542,7 +542,7 @@ pub const MemoryPoolSystem = struct {
         
         pub fn init(allocator: std.mem.Allocator, object_size: usize, initial_count: usize) !AdaptivePool {
             var pool = AdaptivePool{
-                .base_pool = ArrayList(*anyopaque).init(allocator),
+                .base_pool = ArrayList(*anyopaque){},
                 .object_size = object_size,
                 .target_free_count = initial_count,
                 .usage_history = [_]u64{0} ** 16,
@@ -563,7 +563,7 @@ pub const MemoryPoolSystem = struct {
                 const slice = @as([*]u8, @ptrCast(ptr))[0..self.object_size];
                 self.allocator.free(slice);
             }
-            self.base_pool.deinit();
+            self.base_pool.deinit(self.allocator);
         }
 
         pub fn allocate(self: *AdaptivePool) !*anyopaque {
@@ -587,7 +587,7 @@ pub const MemoryPoolSystem = struct {
             self.adaptive_mutex.lock();
             defer self.adaptive_mutex.unlock();
             
-            try self.base_pool.append(ptr);
+            try self.base_pool.append(allocator, ptr);
             self.recordUsage(0); // 0 indicates deallocation
             try self.checkAndAdjust();
         }
@@ -630,7 +630,7 @@ pub const MemoryPoolSystem = struct {
         fn expandPool(self: *AdaptivePool, count: usize) !void {
             for (0..count) |_| {
                 const slice = try self.allocator.alloc(u8, self.object_size);
-                try self.base_pool.append(slice.ptr);
+                try self.base_pool.append(allocator, slice.ptr);
             }
         }
 
@@ -696,7 +696,7 @@ pub const MemoryPoolSystem = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.thread_caches.deinit();
+        self.thread_caches.deinit(self.allocator);
 
         // Clean up SLAB allocators
         var slab_iterator = self.slab_allocators.iterator();
@@ -704,7 +704,7 @@ pub const MemoryPoolSystem = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.slab_allocators.deinit();
+        self.slab_allocators.deinit(self.allocator);
 
         // Clean up adaptive pools
         var adaptive_iterator = self.adaptive_pools.iterator();
@@ -712,7 +712,7 @@ pub const MemoryPoolSystem = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.adaptive_pools.deinit();
+        self.adaptive_pools.deinit(self.allocator);
 
         // Clean up buddy allocator
         if (self.buddy_allocator) |*buddy| {

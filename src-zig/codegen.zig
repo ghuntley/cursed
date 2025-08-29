@@ -39,14 +39,15 @@ pub const CodeGen = struct {
     loop_continue_blocks: ArrayList(c.LLVMBasicBlockRef),
 
     pub fn init(allocator: Allocator) CodeGen {
+        _ = allocator;
         return CodeGen{
             .allocator = allocator,
             .context = c.LLVMContextCreate(),
             .module = null,
             .builder = null,
-            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .runtime_functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .runtime_functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .current_function = null,
             .loop_exit_blocks = ArrayList(c.LLVMBasicBlockRef){},
             .loop_continue_blocks = ArrayList(c.LLVMBasicBlockRef){},
@@ -54,9 +55,9 @@ pub const CodeGen = struct {
     }
 
     pub fn deinit(self: *CodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
-        self.runtime_functions.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
+        self.runtime_functions.deinit(self.allocator);
         self.loop_exit_blocks.deinit(self.allocator);
         self.loop_continue_blocks.deinit(self.allocator);
         
@@ -317,7 +318,7 @@ pub const CodeGen = struct {
         
         // Set up function context
         self.current_function = func;
-        self.variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        self.variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         c.LLVMPositionBuilderAtEnd(self.builder, entry_bb);
         
         // Set up parameters
@@ -340,7 +341,7 @@ pub const CodeGen = struct {
         }
         
         // Restore state
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         self.variables = old_variables;
         self.current_function = old_function;
     }
@@ -658,7 +659,7 @@ test "codegen simple program" {
     
     // Create a simple program with a variable declaration
     var program = ast.Program.init(allocator);
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     // Test that we can initialize without errors
     try std.testing.expect(program.statements.items.len == 0);

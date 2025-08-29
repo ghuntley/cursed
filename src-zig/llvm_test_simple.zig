@@ -12,7 +12,7 @@ pub fn main() !void {
 
     // Create a basic LLVM code generator
     var codegen = llvm_real.RealLLVMCodeGen.init(allocator) catch |err| {
-        std.debug.print("LLVM Initialization failed: {}\n", .{err});
+        std.debug.print("LLVM Initialization failed: {s}\n", .{err});
         std.debug.print("This indicates the C wrapper or LLVM libraries are not working.\n", .{});
         return;
     };
@@ -22,11 +22,11 @@ pub fn main() !void {
 
     // Create a minimal program with a simple function
     var program = ast.Program.init(allocator);
-    defer program.deinit(allocator);
+    defer program.deinit();
 
     // Test generateProgram
     codegen.generateProgram(program) catch |err| {
-        std.debug.print("Program generation failed: {}\n", .{err});
+        std.debug.print("Program generation failed: {s}\n", .{err});
         std.debug.print("This indicates issues with basic LLVM IR generation.\n", .{});
         return;
     };

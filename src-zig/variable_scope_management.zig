@@ -117,7 +117,7 @@ pub const Scope = struct {
             .depth = depth,
             .parent = parent,
             .children = .empty,
-            .variables = HashMap([]const u8, Variable).init(allocator),
+            .variables = HashMap([]const u8, Variable){},
             .captured_variables = .empty,
             .start_line = start_line,
             .start_column = start_column,
@@ -135,16 +135,16 @@ pub const Scope = struct {
         while (var_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         
         // Clean up children
         for (self.children.items) |child| {
             child.deinit();
             self.allocator.destroy(child);
         }
-        self.children.deinit();
+        self.children.deinit(self.allocator);
         
-        self.captured_variables.deinit();
+        self.captured_variables.deinit(self.allocator);
     }
     
     pub fn addChild(self: *Scope, child: *Scope) !void {
@@ -186,7 +186,7 @@ pub const Scope = struct {
                 // Mark as captured if accessed from child scope
                 if (self.depth > scope.depth and scope.is_function_scope) {
                     variable.is_captured = true;
-                    scope.captured_variables.append(name) catch {};
+                    scope.captured_variables.append(allocator, name) catch {};
                 }
                 return variable;
             }
@@ -218,7 +218,7 @@ pub const Scope = struct {
         if (self.depth == target_depth) {
             var var_iter = self.variables.iterator();
             while (var_iter.next()) |entry| {
-                try result.append(entry.value_ptr.*);
+                try result.append(allocator, entry.value_ptr.*);
             }
         }
         
@@ -248,11 +248,12 @@ pub const ScopeManager = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) !ScopeManager {
+        _ = allocator;
         const global_scope = try allocator.create(Scope);
         global_scope.* = Scope.init(allocator, .Global, 0, null, 0, 0);
         
-        var scope_stack = .empty;
-        try scope_stack.append(global_scope);
+        var scope_stack = std.ArrayList(u8){};
+        try scope_stack.append(allocator, global_scope);
         
         return ScopeManager{
             .global_scope = global_scope,
@@ -266,10 +267,10 @@ pub const ScopeManager = struct {
     }
     
     pub fn deinit(self: *ScopeManager) void {
-        self.global_scope.deinit();
+        self.global_scope.deinit(self.allocator);
         self.allocator.destroy(self.global_scope);
-        self.scope_stack.deinit();
-        self.function_scopes.deinit();
+        self.scope_stack.deinit(self.allocator);
+        self.function_scopes.deinit(self.allocator);
     }
     
     pub fn enterScope(self: *ScopeManager, scope_type: ScopeType, start_line: u32, start_column: u32) !*Scope {
@@ -375,18 +376,18 @@ pub const ScopeManager = struct {
     
     pub fn generateScopeReport(self: *ScopeManager, writer: anytype) !void {
         try writer.print("Scope Report:\n", .{});
-        try writer.print("Max depth: {}\n", .{self.max_depth});
-        try writer.print("Current depth: {}\n", .{self.current_depth});
-        try writer.print("Function scopes: {}\n", .{self.function_scopes.items.len});
+        try writer.print("Max depth: {s}\n", .{self.max_depth});
+        try writer.print("Current depth: {s}\n", .{self.current_depth});
+        try writer.print("Function scopes: {s}\n", .{self.function_scopes.items.len});
         
-        var all_variables = .empty;
+        var all_variables = std.ArrayList(u8){};
         defer all_variables.deinit();
         
         for (0..self.max_depth + 1) |depth| {
             try self.global_scope.getVariablesAtDepth(@intCast(depth), &all_variables);
         }
         
-        try writer.print("Total variables: {}\n", .{all_variables.items.len});
+        try writer.print("Total variables: {s}\n", .{all_variables.items.len});
         
         // Check for captured variables
         var captured_count: u32 = 0;
@@ -395,7 +396,7 @@ pub const ScopeManager = struct {
                 captured_count += 1;
             }
         }
-        try writer.print("Captured variables: {}\n", .{captured_count});
+        try writer.print("Captured variables: {s}\n", .{captured_count});
     }
 };
 
@@ -403,6 +404,7 @@ pub const ScopeManager = struct {
 var global_scope_manager: ?ScopeManager = null;
 
 pub fn initScopeManagement(allocator: Allocator) !void {
+        _ = allocator;
     global_scope_manager = try ScopeManager.init(allocator);
 }
 

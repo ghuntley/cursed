@@ -260,24 +260,24 @@ const DocumentData = struct {
             self.allocator.free(symbol.name);
             if (symbol.container_name) |name| self.allocator.free(name);
         }
-        self.symbols.deinit();
+        self.symbols.deinit(self.allocator);
         
         // Free document symbol names
         for (self.document_symbols.items) |doc_symbol| {
             self.allocator.free(doc_symbol.name);
             if (doc_symbol.detail) |detail| self.allocator.free(detail);
         }
-        self.document_symbols.deinit();
+        self.document_symbols.deinit(self.allocator);
         
         // Free diagnostic messages
         for (self.diagnostics.items) |diagnostic| {
             self.allocator.free(diagnostic.message);
             if (diagnostic.code) |code| self.allocator.free(code);
         }
-        self.diagnostics.deinit();
+        self.diagnostics.deinit(self.allocator);
         
-        self.semantic_tokens.deinit();
-        self.folding_ranges.deinit();
+        self.semantic_tokens.deinit(self.allocator);
+        self.folding_ranges.deinit(self.allocator);
     }
 
     /// Update document content and reanalyze
@@ -465,7 +465,7 @@ pub const EnhancedCursedLanguageServer = struct {
     pub fn init() EnhancedCursedLanguageServer {
         return EnhancedCursedLanguageServer{
             .allocator = allocator,
-            .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage){},
             .workspace_root = null,
             .workspace_folders = ArrayList([]const u8){},
             .client_capabilities = ClientCapabilities{
@@ -505,7 +505,7 @@ pub const EnhancedCursedLanguageServer = struct {
             var doc = entry.value_ptr;
             doc.deinit();
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
         
         // Clean up workspace data
         if (self.workspace_root) |root| {
@@ -515,7 +515,7 @@ pub const EnhancedCursedLanguageServer = struct {
         for (self.workspace_folders.items) |folder| {
             self.allocator.free(folder);
         }
-        self.workspace_folders.deinit();
+        self.workspace_folders.deinit(self.allocator);
     }
 
     /// Enhanced request handler with comprehensive message parsing
@@ -942,7 +942,7 @@ pub const EnhancedCursedLanguageServer = struct {
                     },
                     .children = null,
                 };
-                try doc_data.document_symbols.append(doc_symbol);
+                try doc_data.document_symbols.append(allocator, doc_symbol);
             }
         }
     }
@@ -967,7 +967,7 @@ pub const EnhancedCursedLanguageServer = struct {
                     },
                     .container_name = null,
                 };
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -992,7 +992,7 @@ pub const EnhancedCursedLanguageServer = struct {
                     },
                     .container_name = null,
                 };
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -1017,7 +1017,7 @@ pub const EnhancedCursedLanguageServer = struct {
                     },
                     .container_name = null,
                 };
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -1044,7 +1044,7 @@ pub const EnhancedCursedLanguageServer = struct {
                         },
                         .container_name = null,
                     };
-                    try doc_data.symbols.append(symbol);
+                    try doc_data.symbols.append(allocator, symbol);
                 }
             }
         }
@@ -1063,7 +1063,7 @@ pub const EnhancedCursedLanguageServer = struct {
         
         const lines = std.mem.splitScalar(u8, doc_data.text, '\n');
         var line_num: u32 = 0;
-        var brace_stack = .empty;
+        var brace_stack = std.ArrayList(u8){};
         defer brace_stack.deinit();
         
         var line_iter = lines;
@@ -1074,7 +1074,7 @@ pub const EnhancedCursedLanguageServer = struct {
             
             // Opening brace - start folding range
             if (std.mem.endsWith(u8, trimmed, "{")) {
-                try brace_stack.append(line_num);
+                try brace_stack.append(allocator, line_num);
             }
             
             // Closing brace - end folding range
@@ -1104,7 +1104,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const line = @as(u32, @intCast(position.object.get("line").?.integer));
         const character = @as(u32, @intCast(position.object.get("character").?.integer));
         
-        var completions = .empty;
+        var completions = std.ArrayList(u8){};
         defer {
             for (completions.items) |*item| {
                 self.allocator.free(item.label);
@@ -1520,7 +1520,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const line = @as(u32, @intCast(position.object.get("line").?.integer));
         const character = @as(u32, @intCast(position.object.get("character").?.integer));
 
-        var locations = .empty;
+        var locations = std.ArrayList(u8){};
         defer locations.deinit();
 
         if (self.documents.get(uri)) |doc_data| {
@@ -1529,7 +1529,7 @@ pub const EnhancedCursedLanguageServer = struct {
             // Find symbol at cursor position
             for (doc_data.symbols.items) |symbol| {
                 if (symbol.location.range.contains(cursor_pos)) {
-                    try locations.append(symbol.location);
+                    try locations.append(allocator, symbol.location);
                     break;
                 }
             }
@@ -1543,7 +1543,7 @@ pub const EnhancedCursedLanguageServer = struct {
         _ = request;
         const request_id = id orelse return;
         // TODO: Implement reference finding across all documents
-        var empty_locations = .empty;
+        var empty_locations = std.ArrayList(u8){};
         defer empty_locations.deinit();
         try self.sendDefinitionResponse(writer, request_id, &empty_locations);
     }
@@ -1555,7 +1555,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const text_document = params.object.get("textDocument") orelse return;
         const uri = text_document.object.get("uri").?.string;
 
-        var symbols = .empty;
+        var symbols = std.ArrayList(u8){};
         defer symbols.deinit();
 
         if (self.documents.get(uri)) |doc_data| {
@@ -1572,7 +1572,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const text_document = params.object.get("textDocument") orelse return;
         const uri = text_document.object.get("uri").?.string;
 
-        var text_edits = .empty;
+        var text_edits = std.ArrayList(u8){};
         defer {
             for (text_edits.items) |edit| {
                 self.allocator.free(edit);
@@ -1610,7 +1610,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const text_document = params.object.get("textDocument") orelse return;
         const uri = text_document.object.get("uri").?.string;
 
-        var tokens = .empty;
+        var tokens = std.ArrayList(u8){};
         defer tokens.deinit();
 
         if (self.documents.get(uri)) |doc_data| {
@@ -1650,11 +1650,11 @@ pub const EnhancedCursedLanguageServer = struct {
             const token_modifiers: u32 = 0; // No modifiers for now
             
             // Add semantic token (5 values: deltaLine, deltaStartChar, length, tokenType, tokenModifiers)
-            try semantic_tokens.append(delta_line);
-            try semantic_tokens.append(delta_char);
-            try semantic_tokens.append(length);
-            try semantic_tokens.append(token_type);
-            try semantic_tokens.append(token_modifiers);
+            try semantic_tokens.append(allocator, delta_line);
+            try semantic_tokens.append(allocator, delta_char);
+            try semantic_tokens.append(allocator, length);
+            try semantic_tokens.append(allocator, token_type);
+            try semantic_tokens.append(allocator, token_modifiers);
             
             prev_line = line;
             prev_char = char;
@@ -1667,7 +1667,7 @@ pub const EnhancedCursedLanguageServer = struct {
         const params = request.object.get("params") orelse return;
         const query = if (params.object.get("query")) |q| q.string else "";
 
-        var symbols = .empty;
+        var symbols = std.ArrayList(u8){};
         defer symbols.deinit();
 
         var doc_iterator = self.documents.iterator();
@@ -1675,7 +1675,7 @@ pub const EnhancedCursedLanguageServer = struct {
             const doc_data = entry.value_ptr;
             for (doc_data.symbols.items) |symbol| {
                 if (query.len == 0 or std.ascii.indexOfIgnoreCase(symbol.name, query) != null) {
-                    try symbols.append(symbol);
+                    try symbols.append(allocator, symbol);
                 }
             }
         }
@@ -1699,7 +1699,7 @@ pub const EnhancedCursedLanguageServer = struct {
 
     /// Enhanced CURSED code formatter
     fn formatCursedCode(self: *EnhancedCursedLanguageServer, code: []const u8) ![]u8 {
-        var formatted = .empty;
+        var formatted = std.ArrayList(u8){};
         defer formatted.deinit();
         
         var indent_level: u32 = 0;
@@ -1713,7 +1713,7 @@ pub const EnhancedCursedLanguageServer = struct {
             
             // Handle empty lines
             if (trimmed.len == 0) {
-                try formatted.append('\n');
+                try formatted.append(allocator, '\n');
                 continue;
             }
             
@@ -1723,7 +1723,7 @@ pub const EnhancedCursedLanguageServer = struct {
             }
             
             // Add proper indentation
-            if (!is_first_line) try formatted.append('\n');
+            if (!is_first_line) try formatted.append(allocator, '\n');
             
             var i: u32 = 0;
             while (i < indent_level) : (i += 1) {
@@ -1751,8 +1751,8 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Helper function to send responses
     fn sendResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, response: []const u8) !void {
         _ = self;
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     /// Send error response
@@ -1774,7 +1774,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Publish diagnostics notification
     fn publishDiagnostics(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
         // Build diagnostics JSON array
-        var diag_json = .empty;
+        var diag_json = std.ArrayList(u8){};
         defer diag_json.deinit();
         
         try diag_json.appendSlice("[");
@@ -1808,7 +1808,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Send completion response
     fn sendCompletionResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, completions: *ArrayList(CompletionItem)) !void {
         // Build completion items JSON array
-        var items_json = .empty;
+        var items_json = std.ArrayList(u8){};
         defer items_json.deinit();
         
         try items_json.appendSlice("[");
@@ -1858,7 +1858,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Send definition response
     fn sendDefinitionResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
         // Build locations JSON array
-        var locations_json = .empty;
+        var locations_json = std.ArrayList(u8){};
         defer locations_json.deinit();
         
         try locations_json.appendSlice("[");
@@ -1891,7 +1891,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Send formatting response
     fn sendFormattingResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, edits: *ArrayList([]const u8)) !void {
         // Build text edits JSON array
-        var edits_json = .empty;
+        var edits_json = std.ArrayList(u8){};
         defer edits_json.deinit();
         
         try edits_json.appendSlice("[");
@@ -1914,7 +1914,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Send semantic tokens response
     fn sendSemanticTokensResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, tokens: *ArrayList(u32)) !void {
         // Build tokens JSON array
-        var tokens_json = .empty;
+        var tokens_json = std.ArrayList(u8){};
         defer tokens_json.deinit();
         
         try tokens_json.appendSlice("[");
@@ -1939,7 +1939,7 @@ pub const EnhancedCursedLanguageServer = struct {
     /// Send workspace symbol response
     fn sendWorkspaceSymbolResponse(self: *EnhancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, symbols: *ArrayList(SymbolInformation)) !void {
         // Build symbols JSON array
-        var symbols_json = .empty;
+        var symbols_json = std.ArrayList(u8){};
         defer symbols_json.deinit();
         
         try symbols_json.appendSlice("[");
@@ -1972,6 +1972,7 @@ pub const EnhancedCursedLanguageServer = struct {
 
 /// Enhanced LSP Server main loop with comprehensive error handling
 pub fn runEnhancedLspServer(allocator: Allocator) !void {
+        _ = allocator;
     var server = EnhancedCursedLanguageServer.init(allocator);
     defer server.deinit();
 
@@ -1982,7 +1983,7 @@ pub fn runEnhancedLspServer(allocator: Allocator) !void {
 
     std.log.info("Enhanced CURSED LSP Server starting...", .{});
 
-    var buffer = .empty;
+    var buffer = std.ArrayList(u8){};
     defer buffer.deinit();
 
     while (!server.shutdown_requested) {

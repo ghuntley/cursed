@@ -77,7 +77,7 @@ pub const HotPathOptimizer = struct {
         }
         
         pub fn deinit(self: *HotFunctionInfo) void {
-            self.caller_functions.deinit();
+            self.caller_functions.deinit(self.allocator);
         }
         
         pub fn addCall(self: *HotFunctionInfo, execution_time_ns: u64, caller: ?[]const u8) !void {
@@ -96,7 +96,7 @@ pub const HotPathOptimizer = struct {
                         return; // Already tracked
                     }
                 }
-                try self.caller_functions.append(caller_name);
+                try self.caller_functions.append(allocator, caller_name);
             }
         }
         
@@ -141,7 +141,7 @@ pub const HotPathOptimizer = struct {
         }
         
         pub fn deinit(self: *CallChain) void {
-            self.function_sequence.deinit();
+            self.function_sequence.deinit(self.allocator);
         }
         
         pub fn addExecution(self: *CallChain, execution_time_ns: u64) void {
@@ -185,7 +185,7 @@ pub const HotPathOptimizer = struct {
             .allocator = allocator,
             .enabled = config.enabled,
             .execution_counts = std.HashMap(u64, ExecutionInfo, std.hash_map.DefaultHashContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
-            .hot_functions = std.HashMap([]const u8, HotFunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .hot_functions = std.HashMap([]const u8, HotFunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .call_chains = std.HashMap(u64, CallChain, std.hash_map.DefaultHashContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .hot_path_threshold = config.hot_path_threshold,
             .hot_function_threshold = config.hot_function_threshold,
@@ -198,9 +198,9 @@ pub const HotPathOptimizer = struct {
         
         if (optimizer.enabled) {
             print("🔥 Hot Path Optimizer initialized\n", .{});
-            print("  Hot path threshold: {} executions\n", .{config.hot_path_threshold});
-            print("  Hot function threshold: {} executions\n", .{config.hot_function_threshold});
-            print("  Optimization interval: {} executions\n", .{config.optimization_interval});
+            print("  Hot path threshold: {s} executions\n", .{config.hot_path_threshold});
+            print("  Hot function threshold: {s} executions\n", .{config.hot_function_threshold});
+            print("  Optimization interval: {s} executions\n", .{config.optimization_interval});
         }
         
         return optimizer;
@@ -212,19 +212,19 @@ pub const HotPathOptimizer = struct {
             self.printStatistics();
         }
         
-        self.execution_counts.deinit();
+        self.execution_counts.deinit(self.allocator);
         
         var func_iter = self.hot_functions.iterator();
         while (func_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.hot_functions.deinit();
+        self.hot_functions.deinit(self.allocator);
         
         var chain_iter = self.call_chains.iterator();
         while (chain_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.call_chains.deinit();
+        self.call_chains.deinit(self.allocator);
     }
     
     /// Record function execution for hot path detection
@@ -284,7 +284,7 @@ pub const HotPathOptimizer = struct {
             // Check if this path became hot
             if (info.needsOptimization(self.hot_path_threshold)) {
                 self.paths_identified += 1;
-                print("🔥 Hot path identified: hash={} (count={})\n", .{ path_hash, info.execution_count });
+                print("🔥 Hot path identified: hash={s} (count={s})\n", .{ path_hash, info.execution_count });
             }
         }
     }
@@ -309,7 +309,7 @@ pub const HotPathOptimizer = struct {
     fn performOptimizationPass(self: *Self) !void {
         if (!self.enabled) return;
         
-        print("⚡ Performing hot path optimization pass #{}\n", .{self.optimization_passes + 1});
+        print("⚡ Performing hot path optimization pass #{s}\n", .{self.optimization_passes + 1});
         
         self.optimization_passes += 1;
         var optimizations_applied: u32 = 0;
@@ -325,7 +325,7 @@ pub const HotPathOptimizer = struct {
         
         self.paths_optimized += optimizations_applied;
         
-        print("  ✅ Applied {} optimizations in this pass\n", .{optimizations_applied});
+        print("  ✅ Applied {s} optimizations in this pass\n", .{optimizations_applied});
     }
     
     /// Optimize hot functions
@@ -431,7 +431,7 @@ pub const HotPathOptimizer = struct {
     fn applyPathOptimization(self: *Self, path_hash: u64, optimization_type: OptimizationType) !void {
         _ = self;
         
-        print("  ⚡ Applying {} optimization to path hash: {}\n", .{ optimization_type, path_hash });
+        print("  ⚡ Applying {s} optimization to path hash: {s}\n", .{ optimization_type, path_hash });
         // TODO: Implement actual path optimization in compiler
     }
     
@@ -439,7 +439,7 @@ pub const HotPathOptimizer = struct {
     fn applyCallChainOptimization(self: *Self, chain: *CallChain) !void {
         _ = self;
         
-        print("  🔄 Applying call chain optimization to: {} functions\n", .{chain.function_sequence.items.len});
+        print("  🔄 Applying call chain optimization to: {s} functions\n", .{chain.function_sequence.items.len});
         // TODO: Implement actual call chain optimization
     }
     
@@ -484,15 +484,15 @@ pub const HotPathOptimizer = struct {
         std.mem.sort(HotFunctionSummary, analysis.hot_functions.items, {}, hotFunctionCompare);
         std.mem.sort(HotPathSummary, analysis.hot_paths.items, {}, hotPathCompare);
         
-        print("  🔥 Hot functions identified: {}\n", .{analysis.hot_functions.items.len});
-        print("  🛤️ Hot paths identified: {}\n", .{analysis.hot_paths.items.len});
+        print("  🔥 Hot functions identified: {s}\n", .{analysis.hot_functions.items.len});
+        print("  🛤️ Hot paths identified: {s}\n", .{analysis.hot_paths.items.len});
         
         return analysis;
     }
     
     /// Generate optimization recommendations
     pub fn generateOptimizationRecommendations(self: *Self) !std.ArrayList(OptimizationRecommendation) {
-        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
+        var recommendations = std.ArrayList(OptimizationRecommendation){};
         
         // Analyze hot functions for recommendations
         var func_iter = self.hot_functions.iterator();
@@ -509,7 +509,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.85,
                         .description = "High-frequency small function suitable for inlining",
                     };
-                    try recommendations.append(recommendation);
+                    try recommendations.append(allocator, recommendation);
                 }
                 
                 if (func.vectorization_candidate) {
@@ -521,7 +521,7 @@ pub const HotPathOptimizer = struct {
                         .confidence = 0.70,
                         .description = "Function with loop patterns suitable for SIMD vectorization",
                     };
-                    try recommendations.append(recommendation);
+                    try recommendations.append(allocator, recommendation);
                 }
             }
         }
@@ -536,14 +536,14 @@ pub const HotPathOptimizer = struct {
     pub fn printStatistics(self: *const Self) void {
         print("\n🔥 Hot Path Optimizer Statistics\n", .{});
         print("================================\n", .{});
-        print("Optimizer enabled: {}\n", .{self.enabled});
-        print("Hot paths identified: {}\n", .{self.paths_identified});
-        print("Optimizations applied: {}\n", .{self.paths_optimized});
-        print("Optimization passes: {}\n", .{self.optimization_passes});
+        print("Optimizer enabled: {s}\n", .{self.enabled});
+        print("Hot paths identified: {s}\n", .{self.paths_identified});
+        print("Optimizations applied: {s}\n", .{self.paths_optimized});
+        print("Optimization passes: {s}\n", .{self.optimization_passes});
         print("Estimated time saved: {:.2} ms\n", .{@as(f64, @floatFromInt(self.total_execution_time_saved_ns)) / 1_000_000.0});
         
         print("\n📊 Hot Function Summary:\n", .{});
-        print("Functions tracked: {}\n", .{self.hot_functions.count()});
+        print("Functions tracked: {s}\n", .{self.hot_functions.count()});
         
         var hot_count: u32 = 0;
         var func_iter = self.hot_functions.iterator();
@@ -553,10 +553,10 @@ pub const HotPathOptimizer = struct {
                 hot_count += 1;
             }
         }
-        print("Hot functions: {}\n", .{hot_count});
+        print("Hot functions: {s}\n", .{hot_count});
         
         print("\n🛤️ Execution Path Summary:\n", .{});
-        print("Paths tracked: {}\n", .{self.execution_counts.count()});
+        print("Paths tracked: {s}\n", .{self.execution_counts.count()});
         
         var hot_path_count: u32 = 0;
         var path_iter = self.execution_counts.iterator();
@@ -566,12 +566,12 @@ pub const HotPathOptimizer = struct {
                 hot_path_count += 1;
             }
         }
-        print("Hot paths: {}\n", .{hot_path_count});
+        print("Hot paths: {s}\n", .{hot_path_count});
         
         print("\n⚙️ Configuration:\n", .{});
-        print("Hot path threshold: {}\n", .{self.hot_path_threshold});
-        print("Hot function threshold: {}\n", .{self.hot_function_threshold});
-        print("Optimization interval: {}\n", .{self.optimization_interval});
+        print("Hot path threshold: {s}\n", .{self.hot_path_threshold});
+        print("Hot function threshold: {s}\n", .{self.hot_function_threshold});
+        print("Optimization interval: {s}\n", .{self.optimization_interval});
     }
 };
 
@@ -618,8 +618,8 @@ pub const HotPathAnalysis = struct {
     }
     
     pub fn deinit(self: *HotPathAnalysis) void {
-        self.hot_functions.deinit();
-        self.hot_paths.deinit();
+        self.hot_functions.deinit(self.allocator);
+        self.hot_paths.deinit(self.allocator);
     }
     
     pub fn printSummary(self: *const HotPathAnalysis) void {
@@ -629,7 +629,7 @@ pub const HotPathAnalysis = struct {
         if (self.hot_functions.items.len > 0) {
             print("\n🔥 Top Hot Functions:\n", .{});
             for (self.hot_functions.items[0..@min(5, self.hot_functions.items.len)]) |func| {
-                print("  {s}: {} calls, {:.2} ms total, priority: {}\n", .{
+                print("  {s}: {s} calls, {:.2} ms total, priority: {s}\n", .{
                     func.name,
                     func.call_count,
                     @as(f64, @floatFromInt(func.total_time_ns)) / 1_000_000.0,
@@ -641,7 +641,7 @@ pub const HotPathAnalysis = struct {
         if (self.hot_paths.items.len > 0) {
             print("\n🛤️ Top Hot Paths:\n", .{});
             for (self.hot_paths.items[0..@min(5, self.hot_paths.items.len)]) |path| {
-                print("  Path {}: {} executions, {:.2} ms total, optimized: {}\n", .{
+                print("  Path {s}: {s} executions, {:.2} ms total, optimized: {s}\n", .{
                     path.path_hash,
                     path.execution_count,
                     @as(f64, @floatFromInt(path.total_time_ns)) / 1_000_000.0,

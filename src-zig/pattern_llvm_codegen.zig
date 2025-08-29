@@ -74,12 +74,12 @@ pub const PatternLLVMCodeGen = struct {
             .array_length_fn = null,
             .type_check_fn = null,
             .current_function = null,
-            .pattern_bindings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .pattern_bindings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *Self) void {
-        self.pattern_bindings.deinit();
+        self.pattern_bindings.deinit(self.allocator);
     }
     
     pub fn setCurrentFunction(self: *Self, function: c.LLVMValueRef) void {
@@ -104,8 +104,8 @@ pub const PatternLLVMCodeGen = struct {
         const result_type = try self.inferMatchResultType(match_expr.cases.items);
         const result_phi = c.LLVMBuildPhi(self.builder, result_type, "match_result");
         
-        var phi_values = .empty;
-        var phi_blocks = .empty;
+        var phi_values = std.ArrayList(u8){};
+        var phi_blocks = std.ArrayList(u8){};
         defer phi_values.deinit();
         defer phi_blocks.deinit();
         
@@ -132,7 +132,7 @@ pub const PatternLLVMCodeGen = struct {
             .Literal => |literal| return self.generateLiteralPatternCheck(value, literal, success_block, fail_block),
             .Variable => |variable| return self.generateVariablePatternCheck(value, variable, success_block, fail_block),
             .Wildcard => return self.generateWildcardPattern(success_block),
-            .Tuple => |tuple| return self.generateTuplePatternCheck(value, tuple, success_block, fail_block),
+             tuple, success_block, fail_block),
             .Struct => |struct_pattern| return self.generateStructPatternCheck(value, struct_pattern, success_block, fail_block),
             .Array => |array| return self.generateArrayPatternCheck(value, array, success_block, fail_block),
             .Slice => |slice| return self.generateSlicePatternCheck(value, slice, success_block, fail_block),
@@ -451,7 +451,7 @@ pub const PatternLLVMCodeGen = struct {
             switch (case.pattern) {
                 .Literal => literal_count += 1,
                 .Guard => has_guards = true,
-                .Tuple => |tuple| max_depth = @max(max_depth, tuple.patterns.len),
+                 tuple.patterns.len),
                 .Array => |array| max_depth = @max(max_depth, array.patterns.len),
                 else => {},
             }
@@ -477,8 +477,8 @@ pub const PatternLLVMCodeGen = struct {
                 
                 c.LLVMPositionBuilderAtEnd(self.builder, case_block);
                 const result = try self.generateExpression(case.result);
-                try phi_values.append(result);
-                try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
+                try phi_values.append(allocator, result);
+                try phi_blocks.append(self.allocator, c.LLVMGetInsertBlock(self.builder));
                 _ = c.LLVMBuildBr(self.builder, merge_block);
             }
         }
@@ -498,8 +498,8 @@ pub const PatternLLVMCodeGen = struct {
             
             c.LLVMPositionBuilderAtEnd(self.builder, case_block);
             const result = try self.generateExpression(case.result);
-            try phi_values.append(result);
-            try phi_blocks.append(c.LLVMGetInsertBlock(self.builder));
+            try phi_values.append(allocator, result);
+            try phi_blocks.append(self.allocator, c.LLVMGetInsertBlock(self.builder));
             _ = c.LLVMBuildBr(self.builder, merge_block);
             
             current_block = next_block;
@@ -573,7 +573,7 @@ pub const ExhaustivenessChecker = struct {
     }
     
     pub fn deinit(self: *ExhaustivenessChecker) void {
-        self.covered_patterns.deinit();
+        self.covered_patterns.deinit(self.allocator);
     }
     
     /// Check if pattern matching is exhaustive
@@ -592,13 +592,13 @@ pub const ExhaustivenessChecker = struct {
     
     fn analyzePattern(self: *ExhaustivenessChecker, pattern: ast.Pattern) !void {
         switch (pattern) {
-            .Literal => |literal| try self.covered_patterns.append(.{ .Literal = literal.value }),
-            .Wildcard => try self.covered_patterns.append(.{ .Wildcard = {} }),
+            .Literal => |literal| try self.covered_patterns.append(allocator, .{ .Literal = literal.value }),
+            .Wildcard => try self.covered_patterns.append(allocator, .{ .Wildcard = {} }),
             .Range => |range| {
                 // Would need to extract range values from expressions
                 try self.covered_patterns.append(.{ .Range = .{ .start = 0, .end = 100, .inclusive = range.is_inclusive } });
             },
-            .Variable => try self.covered_patterns.append(.{ .Wildcard = {} }),
+            .Variable => try self.covered_patterns.append(allocator, .{ .Wildcard = {} }),
             else => {}, // Other patterns contribute to coverage differently
         }
     }

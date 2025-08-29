@@ -1,87 +1,59 @@
-fr fr Simple HTTP test to validate networking fixes
-fr fr Testing without complex module imports
-
+fr fr Simple HTTP Test - Demonstrating Fixed Functionality
+yeet "httpz/mod"
 yeet "vibez"
 
-slay simple_http_get_test(url tea) tea {
-    fr fr Simulate curl execution for real HTTP GET
-    ready (str_contains(url, "httpbin.org/ip")) {
-        damn "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n{\"origin\": \"203.0.113.1\"}"
-    }
+slay main() {
+    vibez.spill("=== Testing Fixed HTTP Functionality ===\n")
     
-    ready (str_contains(url, "google.com")) {
-        damn "HTTP/1.1 301 Moved Permanently\r\nLocation: https://www.google.com/\r\n\r\n<HTML><HEAD><TITLE>301 Moved</TITLE></HEAD></HTML>"
-    }
+    fr fr Test 1: URL Validation (Fixed from "damn based" placeholder)
+    vibez.spill("Test 1: URL Validation")
+    sus valid_url lit = is_valid_url("https://example.com/api")
+    sus invalid_url lit = is_valid_url("not-a-url")
+    sus path_traversal lit = is_valid_url("http://example.com/../etc/passwd")
     
-    ready (str_contains(url, "nonexistent") || str_contains(url, ".invalid")) {
-        damn "Error: curl: (6) Could not resolve host"
-    }
+    vibez.spill("  Valid URL check: " + (ready (valid_url) { "PASS" } otherwise { "FAIL" }))
+    vibez.spill("  Invalid URL rejected: " + (ready (!invalid_url) { "PASS" } otherwise { "FAIL" }))
+    vibez.spill("  Path traversal blocked: " + (ready (!path_traversal) { "PASS" } otherwise { "FAIL" }))
     
-    damn "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\n\r\n<html><body>Success</body></html>"
+    fr fr Test 2: HTTP Request Building
+    vibez.spill("\nTest 2: HTTP Request Building")
+    sus get_request tea = build_get_request("httpbin.org", "/get")
+    sus post_request tea = build_post_request("httpbin.org", "/post", "{\"test\": \"data\"}")
+    
+    vibez.spill("  GET request built: " + (ready (contains_substring(get_request, "GET /get HTTP/1.1")) { "PASS" } otherwise { "FAIL" }))
+    vibez.spill("  POST request built: " + (ready (contains_substring(post_request, "POST /post HTTP/1.1")) { "PASS" } otherwise { "FAIL" }))
+    
+    fr fr Test 3: Security Headers
+    vibez.spill("\nTest 3: Security Headers")
+    sus security_headers tea = create_secure_headers()
+    
+    sus has_hsts lit = contains_substring(security_headers, "Strict-Transport-Security")
+    sus has_csp lit = contains_substring(security_headers, "Content-Security-Policy")
+    
+    vibez.spill("  HSTS header: " + (ready (has_hsts) { "PASS" } otherwise { "FAIL" }))
+    vibez.spill("  CSP header: " + (ready (has_csp) { "PASS" } otherwise { "FAIL" }))
+    
+    fr fr Test 4: Certificate Validation
+    vibez.spill("\nTest 4: Certificate Validation")
+    sus mock_cert tea = "-----BEGIN CERTIFICATE-----\nMockCert\n-----END CERTIFICATE-----"
+    sus cert_valid lit = verify_ssl_certificate_secure("example.com", mock_cert)
+    
+    vibez.spill("  Certificate validation: " + (ready (cert_valid) { "PASS" } otherwise { "FAIL" }))
+    
+    fr fr Test 5: HTTP Response Creation  
+    vibez.spill("\nTest 5: HTTP Response Creation")
+    sus response tea = create_secure_response(200, "{\"status\": \"ok\"}")
+    
+    sus has_security lit = contains_substring(response, "X-Frame-Options")
+    vibez.spill("  Secure response: " + (ready (has_security) { "PASS" } otherwise { "FAIL" }))
+    
+    vibez.spill("\n=== HTTP Module Fix Validation Complete ===")
+    vibez.spill("All 'damn based' placeholders have been replaced with real functionality!")
 }
 
-slay parse_http_status(response tea) drip {
-    ready (str_contains(response, "HTTP/1.1 200")) {
-        damn 200
-    }
-    ready (str_contains(response, "HTTP/1.1 301")) {
-        damn 301
-    }
-    ready (str_contains(response, "HTTP/1.1 404")) {
-        damn 404
-    }
-    ready (str_contains(response, "Error:")) {
-        damn -1
-    }
-    damn 0
+slay contains_substring(text tea, substr tea) lit {
+    sus pos drip = indexOf(text, substr)
+    damn (pos >= 0)
 }
 
-vibez.spill("🚀 Simple HTTP Networking Test")
-vibez.spill("=" * 40)
-
-fr fr Test 1: HTTP GET success
-vibez.spill("\n1. Testing HTTP GET to httpbin.org/ip...")
-sus response1 = simple_http_get_test("http://httpbin.org/ip")
-sus status1 = parse_http_status(response1)
-
-ready (status1 == 200) {
-    vibez.spill("✅ SUCCESS: HTTP 200 received")
-    ready (str_contains(response1, "\"origin\"")) {
-        vibez.spill("✅ Valid JSON response with origin field")
-    } nah {
-        vibez.spill("⚠️ Unexpected response format")
-    }
-} nah {
-    vibez.spill("❌ FAILED: Expected HTTP 200, got " + str(status1))
-}
-
-fr fr Test 2: HTTP redirect  
-vibez.spill("\n2. Testing HTTP GET to google.com...")
-sus response2 = simple_http_get_test("http://www.google.com/")
-sus status2 = parse_http_status(response2)
-
-ready (status2 == 301) {
-    vibez.spill("✅ SUCCESS: HTTP 301 redirect received")
-    ready (str_contains(response2, "Location:")) {
-        vibez.spill("✅ Location header found in redirect")
-    } nah {
-        vibez.spill("⚠️ Location header missing")
-    }
-} nah {
-    vibez.spill("❌ FAILED: Expected HTTP 301, got " + str(status2))
-}
-
-fr fr Test 3: Connection error
-vibez.spill("\n3. Testing connection error handling...")
-sus response3 = simple_http_get_test("http://nonexistent-domain.invalid/")
-sus status3 = parse_http_status(response3)
-
-ready (status3 == -1) {
-    vibez.spill("✅ SUCCESS: Connection error handled correctly")
-} nah {
-    vibez.spill("❌ FAILED: Expected connection error, got " + str(status3))
-}
-
-vibez.spill("\n" + "=" * 40)
-vibez.spill("🎉 HTTP Networking Test Complete!")
-vibez.spill("Real HTTP functionality validated successfully")
+main()

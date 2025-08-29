@@ -24,6 +24,7 @@ pub const CrossCompilationManager = struct {
         version: []const u8,
         
         pub fn deinit(self: *ToolchainInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.target_triple);
             allocator.free(self.compiler_path);
             if (self.linker_path) |path| allocator.free(path);
@@ -46,6 +47,7 @@ pub const CrossCompilationManager = struct {
         errors: [][]const u8,
         
         pub fn deinit(self: *CompilationResult, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.target_triple);
             allocator.free(self.output_path);
             for (self.warnings) |warning| allocator.free(warning);
@@ -87,8 +89,8 @@ pub const CrossCompilationManager = struct {
         return CrossCompilationManager{
             .allocator = allocator,
             .normalizer = TargetTripleNormalizer.init(allocator),
-            .toolchain_cache = std.StringHashMap(ToolchainInfo).init(allocator),
-            .compilation_cache = std.StringHashMap(CompilationResult).init(allocator),
+            .toolchain_cache = std.StringHashMap(ToolchainInfo){},
+            .compilation_cache = std.StringHashMap(CompilationResult){},
         };
     }
     
@@ -98,16 +100,16 @@ pub const CrossCompilationManager = struct {
         while (toolchain_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.toolchain_cache.deinit();
+        self.toolchain_cache.deinit(self.allocator);
         
         // Clean up compilation cache
         var compilation_iter = self.compilation_cache.iterator();
         while (compilation_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.compilation_cache.deinit();
+        self.compilation_cache.deinit(self.allocator);
         
-        self.normalizer.deinit();
+        self.normalizer.deinit(self.allocator);
     }
     
     /// Discover and cache available toolchains for cross-compilation
@@ -126,7 +128,7 @@ pub const CrossCompilationManager = struct {
         
         for (target_priorities) |target| {
             self.discoverToolchainForTarget(target) catch |err| {
-                print("Warning: Failed to discover toolchain for {s}: {}\n", .{ target, err });
+                print("Warning: Failed to discover toolchain for {s}: {s}\n", .{ target, err });
                 continue;
             };
         }
@@ -287,8 +289,8 @@ pub const CrossCompilationManager = struct {
     fn setupMingwPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
         _ = normalized;
         
-        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
-        var include_paths = std.ArrayList([]const u8).init(self.allocator);
+        var lib_paths = std.ArrayList([]const u8){};
+        var include_paths = std.ArrayList([]const u8){};
         
         // Common MinGW paths
         const mingw_prefixes = [_][]const u8{
@@ -322,8 +324,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup MSVC paths and libraries with proper Visual Studio detection
     fn setupMsvcPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
-        var include_paths = std.ArrayList([]const u8).init(self.allocator);
+        var lib_paths = std.ArrayList([]const u8){};
+        var include_paths = std.ArrayList([]const u8){};
         
         // Try to find Visual Studio installations
         const vs_paths = [_][]const u8{
@@ -494,8 +496,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup Apple Silicon specific paths
     fn setupAppleSiliconPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo) !void {
-        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
-        var include_paths = std.ArrayList([]const u8).init(self.allocator);
+        var lib_paths = std.ArrayList([]const u8){};
+        var include_paths = std.ArrayList([]const u8){};
         
         // Apple Silicon SDK paths
         const sdk_paths = [_][]const u8{
@@ -528,8 +530,8 @@ pub const CrossCompilationManager = struct {
     
     /// Setup Linux system paths for cross-compilation with enhanced ARM64 support
     fn setupLinuxSystemPaths(self: *CrossCompilationManager, toolchain: *ToolchainInfo, normalized: TargetTripleNormalizer.NormalizedTriple) !void {
-        var lib_paths = std.ArrayList([]const u8).init(self.allocator);
-        var include_paths = std.ArrayList([]const u8).init(self.allocator);
+        var lib_paths = std.ArrayList([]const u8){};
+        var include_paths = std.ArrayList([]const u8){};
         
         if (normalized.isARM64()) {
             // Enhanced ARM64 cross-compilation library paths
@@ -767,7 +769,7 @@ pub const CrossCompilationManager = struct {
         toolchain: ToolchainInfo,
         normalized: TargetTripleNormalizer.NormalizedTriple,
     ) ![][]const u8 {
-        var command = std.ArrayList([]const u8).init(self.allocator);
+        var command = std.ArrayList([]const u8){};
         
         // Compiler
         try command.append(self.allocator, try self.allocator.dupe(u8, toolchain.compiler_path));
@@ -955,8 +957,8 @@ pub const CrossCompilationManager = struct {
         };
         
         // Parse warnings and errors from stderr
-        var warnings = std.ArrayList([]const u8).init(self.allocator);
-        var errors = std.ArrayList([]const u8).init(self.allocator);
+        var warnings = std.ArrayList([]const u8){};
+        var errors = std.ArrayList([]const u8){};
         
         var lines = std.mem.splitScalar(u8, stderr, '\n');
         while (lines.next()) |line| {
@@ -1059,7 +1061,7 @@ pub const CrossCompilationManager = struct {
         base_options: CompilationOptions,
     ) ![]CompilationResult {
         _ = project_path;
-        var results = std.ArrayList(CompilationResult).init(self.allocator);
+        var results = std.ArrayList(CompilationResult){};
         
         for (targets) |target| {
             var options = base_options;
@@ -1068,7 +1070,7 @@ pub const CrossCompilationManager = struct {
             print("Compiling for target: {s}\n", .{target});
             
             const result = self.compile(options) catch |err| {
-                print("  ❌ Failed: {}\n", .{err});
+                print("  ❌ Failed: {s}\n", .{err});
                 
                 // Create a failed result
                 try results.append(self.allocator, CompilationResult{
@@ -1084,12 +1086,12 @@ pub const CrossCompilationManager = struct {
             };
             
             if (result.success) {
-                print("  ✅ Success: {s} ({} bytes, {} ms)\n", .{ result.output_path, result.output_size_bytes, result.build_time_ms });
+                print("  ✅ Success: {s} ({s} bytes, {s} ms)\n", .{ result.output_path, result.output_size_bytes, result.build_time_ms });
             } else {
-                print("  ❌ Failed: {} errors\n", .{result.errors.len});
+                print("  ❌ Failed: {s} errors\n", .{result.errors.len});
             }
             
-            try results.append(result);
+            try results.append(allocator, result);
         }
         
         return results.toOwnedSlice();
@@ -1101,28 +1103,28 @@ pub const CrossCompilationManager = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        try stdout.print("\n=== Cross-Compilation Report ===\n\n", .{});
+        try stdout.writer().print("\n=== Cross-Compilation Report ===\n\n", .{});
         
         var successful = @as(u32, 0);
         var total_build_time = @as(u64, 0);
         var total_output_size = @as(u64, 0);
         
         for (results) |result| {
-            try stdout.print("Target: {s}\n", .{result.target_triple});
-            try stdout.print("  Status: {s}\n", .{if (result.success) "✅ Success" else "❌ Failed"});
-            try stdout.print("  Build Time: {} ms\n", .{result.build_time_ms});
-            try stdout.print("  Output Size: {} bytes\n", .{result.output_size_bytes});
-            try stdout.print("  Warnings: {}\n", .{result.warnings.len});
-            try stdout.print("  Errors: {}\n", .{result.errors.len});
+            try stdout.writer().print("Target: {s}\n", .{result.target_triple});
+            try stdout.writer().print("  Status: {s}\n", .{if (result.success) "✅ Success" else "❌ Failed"});
+            try stdout.writer().print("  Build Time: {s} ms\n", .{result.build_time_ms});
+            try stdout.writer().print("  Output Size: {s} bytes\n", .{result.output_size_bytes});
+            try stdout.writer().print("  Warnings: {s}\n", .{result.warnings.len});
+            try stdout.writer().print("  Errors: {s}\n", .{result.errors.len});
             
             if (result.errors.len > 0) {
-                try stdout.print("  Error Messages:\n", .{});
+                try stdout.writer().print("  Error Messages:\n", .{});
                 for (result.errors) |error_msg| {
-                    try stdout.print("    {s}\n", .{error_msg});
+                    try stdout.writer().print("    {s}\n", .{error_msg});
                 }
             }
             
-            try stdout.print("\n", .{});
+            try stdout.writer().print("\n", .{});
             
             if (result.success) {
                 successful += 1;
@@ -1131,14 +1133,14 @@ pub const CrossCompilationManager = struct {
             }
         }
         
-        try stdout.print("Summary:\n", .{});
-        try stdout.print("  Successful: {}/{} targets ({d:.1}%)\n", .{ successful, results.len, @as(f64, @floatFromInt(successful)) / @as(f64, @floatFromInt(results.len)) * 100.0 });
-        try stdout.print("  Total Build Time: {} ms\n", .{total_build_time});
-        try stdout.print("  Total Output Size: {} bytes\n", .{total_output_size});
+        try stdout.writer().print("Summary:\n", .{});
+        try stdout.writer().print("  Successful: {s}/{s} targets ({d:.1}%)\n", .{ successful, results.len, @as(f64, @floatFromInt(successful)) / @as(f64, @floatFromInt(results.len)) * 100.0 });
+        try stdout.writer().print("  Total Build Time: {s} ms\n", .{total_build_time});
+        try stdout.writer().print("  Total Output Size: {s} bytes\n", .{total_output_size});
         
         if (successful > 0) {
-            try stdout.print("  Average Build Time: {d:.1} ms\n", .{@as(f64, @floatFromInt(total_build_time)) / @as(f64, @floatFromInt(successful))});
-            try stdout.print("  Average Output Size: {d:.1} bytes\n", .{@as(f64, @floatFromInt(total_output_size)) / @as(f64, @floatFromInt(successful))});
+            try stdout.writer().print("  Average Build Time: {d:.1} ms\n", .{@as(f64, @floatFromInt(total_build_time)) / @as(f64, @floatFromInt(successful))});
+            try stdout.writer().print("  Average Output Size: {d:.1} bytes\n", .{@as(f64, @floatFromInt(total_output_size)) / @as(f64, @floatFromInt(successful))});
         }
     }
 };

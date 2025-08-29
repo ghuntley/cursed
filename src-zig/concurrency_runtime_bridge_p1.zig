@@ -55,6 +55,7 @@ pub const RuntimeBridge = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         // Initialize both runtime systems
         const compiled_runtime = try allocator.create(concurrency_fixed.ConcurrencyRuntime);
         compiled_runtime.* = try concurrency_fixed.ConcurrencyRuntime.init(allocator);
@@ -78,9 +79,9 @@ pub const RuntimeBridge = struct {
     pub fn deinit(self: *Self) void {
         if (!self.initialized) return;
         
-        self.channel_bridge_registry.deinit();
-        self.goroutine_bridge_registry.deinit();
-        self.compiled_runtime.deinit();
+        self.channel_bridge_registry.deinit(self.allocator);
+        self.goroutine_bridge_registry.deinit(self.allocator);
+        self.compiled_runtime.deinit(self.allocator);
         self.allocator.destroy(self.compiled_runtime);
         // TODO: Shutdown interpreter runtime when available
         // concurrency_runtime.shutdownRuntime();
@@ -127,8 +128,9 @@ pub const GoroutineBridgeRegistry = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         return Self{
-            .registry = HashMap(GoroutineId, *GoroutineBridgeEntry, GoroutineContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .registry = HashMap(GoroutineId, *GoroutineBridgeEntry, GoroutineContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.RwLock{},
             .next_id = Atomic(u64).init(1),
             .allocator = allocator,
@@ -143,7 +145,7 @@ pub const GoroutineBridgeRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.allocator);
         }
-        self.registry.deinit();
+        self.registry.deinit(self.allocator);
     }
     
     /// Register a goroutine from any execution mode
@@ -218,6 +220,7 @@ pub const GoroutineBridgeEntry = struct {
     }
     
     pub fn deinit(self: *Self, allocator: Allocator) void {
+        _ = allocator;
         allocator.destroy(self);
     }
     
@@ -287,8 +290,9 @@ pub const ChannelBridgeRegistry = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         return Self{
-            .registry = HashMap(ChannelId, *ChannelBridgeEntry, ChannelContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .registry = HashMap(ChannelId, *ChannelBridgeEntry, ChannelContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.RwLock{},
             .next_id = Atomic(u64).init(1),
             .allocator = allocator,
@@ -303,7 +307,7 @@ pub const ChannelBridgeRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.allocator);
         }
-        self.registry.deinit();
+        self.registry.deinit(self.allocator);
     }
     
     /// Register a channel bridge
@@ -365,6 +369,7 @@ pub const ChannelBridgeEntry = struct {
     }
     
     pub fn deinit(self: *Self, allocator: Allocator) void {
+        _ = allocator;
         // Cleanup channel resources based on mode
         if (self.compiled_channel) |channel| {
             channel.deinit();

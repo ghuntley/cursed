@@ -4,69 +4,42 @@ pub fn build(b: *std.Build) void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    // Create emergency interpreter that bypasses ArrayList API issues
-    const exe = b.addExecutable(.{
-        .name = "cursed-emergency",
+    // Native LLVM compiler
+    const native_exe = b.addExecutable(.{
+        .name = "cursed-compiler",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src-zig/emergency_main.zig"),
+            .root_source_file = b.path("src-zig/simple_llvm_compiler.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
     
-    // Link system libraries for authentication
-    exe.linkSystemLibrary("crypt"); // For crypt() function on Unix systems
-    exe.linkLibC();
+    // No LLVM linking needed for simple version
+    
+    b.installArtifact(native_exe);
 
-    b.installArtifact(exe);
-
-    // Create legacy cursed-zig alias that points to the working interpreter
+    // Legacy cursed-zig alias
     const legacy_exe = b.addExecutable(.{
         .name = "cursed-zig",
         .root_module = b.createModule(.{
-            .root_source_file = b.path("src-zig/emergency_main.zig"),
+            .root_source_file = b.path("src-zig/simple_llvm_compiler.zig"),
             .target = target,
             .optimize = optimize,
         }),
     });
     
-    // Link system libraries for authentication
-    legacy_exe.linkSystemLibrary("crypt");
-    legacy_exe.linkLibC();
+    // No LLVM linking needed for simple version
     
-    // Add system interface bridge module
-    legacy_exe.root_module.addAnonymousImport("system_interface_bridge", .{
-        .root_source_file = b.path("src-zig/system_interface_bridge.zig")
-    });
-
     b.installArtifact(legacy_exe);
 
-    // Create run step for emergency interpreter
-    const run_cmd = b.addRunArtifact(exe);
+    // Run step
+    const run_cmd = b.addRunArtifact(native_exe);
     run_cmd.step.dependOn(b.getInstallStep());
     
     if (b.args) |args| {
         run_cmd.addArgs(args);
     }
 
-    const run_step = b.step("run", "Run the emergency CURSED interpreter");
+    const run_step = b.step("run", "Run the native CURSED compiler");
     run_step.dependOn(&run_cmd.step);
-
-    // Performance benchmarks
-    const perf_benchmarks = b.addSystemCommand(&[_][]const u8{
-        "zig-out/bin/cursed-zig", "performance_test_suite.csd"
-    });
-    perf_benchmarks.step.dependOn(b.getInstallStep());
-
-    const benchmark_step = b.step("benchmark", "Run performance benchmarks");
-    benchmark_step.dependOn(&perf_benchmarks.step);
-
-    // Create test step using working interpreter
-    const test_step = b.step("test", "Run CURSED tests with working interpreter");
-    
-    const comprehensive_test_run = b.addSystemCommand(&[_][]const u8{
-        "zig-out/bin/cursed-zig", "comprehensive_stdlib_test.csd"
-    });
-    comprehensive_test_run.step.dependOn(b.getInstallStep());
-    test_step.dependOn(&comprehensive_test_run.step);
 }

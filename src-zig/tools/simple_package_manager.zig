@@ -19,12 +19,12 @@ const PackageManifest = struct {
             .version = "0.1.0",
             .description = "",
             .main = "src/main.csd",
-            .dependencies = std.StringHashMap([]const u8).init(allocator),
+            .dependencies = std.StringHashMap([]const u8){},
         };
     }
     
     pub fn deinit(self: *PackageManifest) void {
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
     }
 };
 
@@ -47,14 +47,14 @@ pub fn cmdInit(allocator: Allocator, project_name: []const u8) !void {
     
     const package_file = try std.fs.cwd().createFile("package.json", .{});
     defer package_file.close();
-    try package_file.writeAll(json_content);
+    try package_file.writer().writeAll(json_content);
     
     // Create basic project structure
     std.fs.cwd().makePath("src") catch {};
     
     const main_file = try std.fs.cwd().createFile("src/main.csd", .{});
     defer main_file.close();
-    try main_file.writeAll(
+    try main_file.writer().writeAll(
         \\fr fr Main entry point for CURSED project
         \\
         \\slay main() {
@@ -77,6 +77,7 @@ pub fn cmdRemove(allocator: Allocator, package_name: []const u8) !void {
 }
 
 pub fn cmdInstall(allocator: Allocator) !void {
+        _ = allocator;
         // Create node_modules directory
     std.fs.cwd().makePath("node_modules") catch {};
     std.log.info("Installing dependencies...", .{});

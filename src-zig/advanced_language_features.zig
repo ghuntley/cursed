@@ -146,7 +146,7 @@ pub const AdvancedPatternMatcher = struct {
         
         pub fn analyzeDestructuring(self: *DestructuringAnalyzer, pattern: *GuardedPattern.Pattern, target_type: *ast.Type) !DestructuringPlan {
             return switch (pattern.*) {
-                .Tuple => |tuple| try self.analyzeTupleDestructuring(tuple, target_type),
+                 target_type),
                 .Array => |array| try self.analyzeArrayDestructuring(array, target_type),
                 .Struct => |struct_pattern| try self.analyzeStructDestructuring(struct_pattern, target_type),
                 .Enum => |enum_pattern| try self.analyzeEnumDestructuring(enum_pattern, target_type),
@@ -251,7 +251,7 @@ pub const AdvancedPatternMatcher = struct {
         fn analyzeStructDestructuring(self: *DestructuringAnalyzer, struct_pattern: GuardedPattern.Pattern.StructPattern, target_type: *ast.Type) !DestructuringPlan.StructDestructuring {
             // Analyze struct field destructuring
             var field_plans = try self.allocator.alloc(DestructuringPlan.StructDestructuring.FieldDestructuring, struct_pattern.fields.len);
-            var field_offsets = HashMap([]const u8, usize, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+            var field_offsets = HashMap([]const u8, usize, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
             
             for (struct_pattern.fields, 0..) |field, i| {
                 const field_type = try self.type_checker.getFieldType(target_type, field.name);
@@ -307,11 +307,7 @@ pub const AdvancedPatternMatcher = struct {
                 .Boolean => 1,
                 .String => 16, // String slice (ptr + len)
                 .Array => |array| array.length * try self.calculateTypeSize(array.element_type),
-                .Tuple => |tuple| {
-                    var total: usize = 0;
-                    for (tuple.elements) |element| {
-                        total += try self.calculateTypeSize(element);
-                    }
+                }
                     return total;
                 },
                 .Struct => |struct_type| struct_type.size_hint orelse 64, // Default struct size
@@ -1072,7 +1068,7 @@ pub const ActorSystem = struct {
                 if (self.messages.items.len >= self.capacity) {
                     return error.MailboxFull;
                 }
-                try self.messages.append(message);
+                try self.messages.append(allocator, message);
             }
             
             pub fn receiveMessage(self: *Mailbox) ?Message {
@@ -1168,7 +1164,7 @@ pub const ActorSystem = struct {
         };
         
         pub fn dispatchMessage(self: *MessageDispatcher, message: Message) !void {
-            try self.dispatch_queue.append(message);
+            try self.dispatch_queue.append(allocator, message);
         }
     };
     

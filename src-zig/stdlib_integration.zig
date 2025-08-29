@@ -41,6 +41,7 @@ pub const StdlibCall = struct {
     call_site: ?*ast.Expression,
     
     pub fn fullName(self: StdlibCall, allocator: Allocator) ![]u8 {
+        _ = allocator;
         return std.fmt.allocPrint(allocator, "{s}.{s}", .{ self.module_name, self.function_name });
     }
 };
@@ -74,6 +75,7 @@ pub const StdlibFunctionMetadata = struct {
     }
     
     pub fn deinit(self: *StdlibFunctionMetadata, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.module_name);
         allocator.free(self.function_name);
         allocator.free(self.signature);
@@ -122,7 +124,7 @@ pub const StdlibIntegration = struct {
             .runtime = runtime,
             .jit_engine = jit_engine,
             .function_registry = function_registry,
-            .function_metadata = HashMap([]const u8, StdlibFunctionMetadata, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_metadata = HashMap([]const u8, StdlibFunctionMetadata, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .module_dependencies = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .stdlib_call_count = 0,
             .total_stdlib_time = 0,
@@ -135,16 +137,16 @@ pub const StdlibIntegration = struct {
     }
 
     pub fn deinit(self: *StdlibIntegration) void {
-        self.runtime.deinit();
-        self.jit_engine.deinit();
-        self.function_registry.deinit();
+        self.runtime.deinit(self.allocator);
+        self.jit_engine.deinit(self.allocator);
+        self.function_registry.deinit(self.allocator);
         
         // Clean up function metadata
         var metadata_iter = self.function_metadata.iterator();
         while (metadata_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.function_metadata.deinit();
+        self.function_metadata.deinit(self.allocator);
         
         // Clean up module dependencies
         var deps_iter = self.module_dependencies.iterator();
@@ -154,7 +156,7 @@ pub const StdlibIntegration = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.module_dependencies.deinit();
+        self.module_dependencies.deinit(self.allocator);
     }
 
     /// Resolve a stdlib function call at compile time
@@ -190,7 +192,7 @@ pub const StdlibIntegration = struct {
             self.total_stdlib_time += execution_time;
             
             if (self.debug_mode) {
-                print("✅ Stdlib call completed in {}μs\n", .{execution_time / 1000});
+                print("✅ Stdlib call completed in {s}μs\n", .{execution_time / 1000});
             }
             
             return result;
@@ -356,7 +358,7 @@ pub const StdlibIntegration = struct {
         };
         defer self.allocator.free(source_code);
         
-        var dependencies = .empty;
+        var dependencies = std.ArrayList(u8){};
         
         // Simple dependency analysis - look for 'yeet' statements
         var lines = std.mem.split(u8, source_code, "\n");
@@ -393,7 +395,7 @@ pub const StdlibIntegration = struct {
             const deps = entry.value_ptr.*;
             
             if (deps.items.len > 2) {
-                print("  🎯 High-dependency module: {s} ({} deps)\n", .{ module_name, deps.items.len });
+                print("  🎯 High-dependency module: {s} ({s} deps)\n", .{ module_name, deps.items.len });
             }
         }
         
@@ -403,7 +405,7 @@ pub const StdlibIntegration = struct {
         while (func_iter.next()) |entry| {
             const jit_func = entry.value_ptr;
             if (jit_func.call_count > hot_threshold) {
-                print("  🔥 Hot function: {s}.{s} ({} calls)\n", .{ 
+                print("  🔥 Hot function: {s}.{s} ({s} calls)\n", .{ 
                     jit_func.module_name, 
                     jit_func.name, 
                     jit_func.call_count 
@@ -418,8 +420,8 @@ pub const StdlibIntegration = struct {
         print("========================================\n", .{});
         
         print("📊 Overall Statistics:\n", .{});
-        print("  Total stdlib calls: {}\n", .{self.stdlib_call_count});
-        print("  Total execution time: {}ms\n", .{self.total_stdlib_time / 1_000_000});
+        print("  Total stdlib calls: {s}\n", .{self.stdlib_call_count});
+        print("  Total execution time: {s}ms\n", .{self.total_stdlib_time / 1_000_000});
         print("  Cache hit rate: {d:.2}%\n", .{
             if (self.stdlib_call_count > 0) 
                 @as(f64, @floatFromInt(self.cache_hits)) / @as(f64, @floatFromInt(self.stdlib_call_count)) * 100.0 
@@ -435,13 +437,13 @@ pub const StdlibIntegration = struct {
         print("\n🏗️ Module Dependencies:\n", .{});
         var deps_iter = self.module_dependencies.iterator();
         while (deps_iter.next()) |entry| {
-            print("  {s}: {} dependencies\n", .{ entry.key_ptr.*, entry.value_ptr.items.len });
+            print("  {s}: {s} dependencies\n", .{ entry.key_ptr.*, entry.value_ptr.items.len });
         }
         
         print("\n⚡ Performance Optimization Status:\n", .{});
-        print("  Auto-optimization: {}\n", .{if (self.auto_optimization_enabled) "enabled" else "disabled"});
-        print("  Max inline depth: {}\n", .{self.max_inline_depth});
-        print("  Debug mode: {}\n", .{if (self.debug_mode) "enabled" else "disabled"});
+        print("  Auto-optimization: {s}\n", .{if (self.auto_optimization_enabled) "enabled" else "disabled"});
+        print("  Max inline depth: {s}\n", .{self.max_inline_depth});
+        print("  Debug mode: {s}\n", .{if (self.debug_mode) "enabled" else "disabled"});
         
         // Delegate to sub-systems for detailed reports
         print("\n" ++ "=" ** 40 ++ "\n", .{});
@@ -454,14 +456,14 @@ pub const StdlibIntegration = struct {
     /// Enable/disable debug mode
     pub fn setDebugMode(self: *StdlibIntegration, enabled: bool) void {
         self.debug_mode = enabled;
-        print("🐛 Debug mode: {}\n", .{if (enabled) "enabled" else "disabled"});
+        print("🐛 Debug mode: {s}\n", .{if (enabled) "enabled" else "disabled"});
     }
 
     /// Configure auto-optimization settings
     pub fn configureOptimization(self: *StdlibIntegration, enabled: bool, max_inline_depth: u32) void {
         self.auto_optimization_enabled = enabled;
         self.max_inline_depth = max_inline_depth;
-        print("⚙️ Auto-optimization: {}, inline depth: {}\n", .{ enabled, max_inline_depth });
+        print("⚙️ Auto-optimization: {s}, inline depth: {s}\n", .{ enabled, max_inline_depth });
     }
 };
 
@@ -483,6 +485,7 @@ pub fn createStdlibIntegration(allocator: Allocator, stdlib_path: []const u8) !S
 
 /// Test the stdlib integration system
 pub fn testStdlibIntegration(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing CURSED Stdlib Integration\n", .{});
     print("===================================\n", .{});
     

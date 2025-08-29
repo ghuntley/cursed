@@ -26,8 +26,8 @@ pub const UnifiedRuntime = struct {
             const context = try allocator.create(GoroutineErrorContext);
             context.* = GoroutineErrorContext{
                 .goroutine_id = goroutine_id,
-                .error_stack = std.ArrayList(*advanced_error_handling.CursedError).init(allocator),
-                .recovery_points = std.ArrayList(usize).init(allocator),
+                .error_stack = std.ArrayList(*advanced_error_handling.CursedError){},
+                .recovery_points = std.ArrayList(usize){},
                 .allocator = allocator,
             };
             return context;
@@ -37,13 +37,14 @@ pub const UnifiedRuntime = struct {
             for (self.error_stack.items) |err| {
                 err.deinit();
             }
-            self.error_stack.deinit();
-            self.recovery_points.deinit();
+            self.error_stack.deinit(self.allocator);
+            self.recovery_points.deinit(self.allocator);
             self.allocator.destroy(self);
         }
     };
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const runtime = try allocator.create(Self);
         runtime.* = Self{
             .allocator = allocator,
@@ -65,24 +66,24 @@ pub const UnifiedRuntime = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit();
         }
-        self.active_goroutines.deinit();
+        self.active_goroutines.deinit(self.allocator);
         
-        self.error_runtime.deinit();
-        self.concurrency_runtime.deinit();
+        self.error_runtime.deinit(self.allocator);
+        self.concurrency_runtime.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
     /// Handle errors within goroutines
     fn handleGoroutineError(self: *Self, error_obj: *advanced_error_handling.CursedError) void {
         _ = self;
-        std.debug.print("Goroutine error: {}\n", .{error_obj.*});
+        std.debug.print("Goroutine error: {s}\n", .{error_obj.*});
         // In production, would route to appropriate goroutine context
     }
     
     /// Handle panics within goroutines  
     fn handleGoroutinePanic(self: *Self, error_obj: *advanced_error_handling.CursedError) void {
         _ = self;
-        std.debug.print("Goroutine panic: {}\n", .{error_obj.*});
+        std.debug.print("Goroutine panic: {s}\n", .{error_obj.*});
         // In production, would isolate panic to specific goroutine
     }
     
@@ -103,7 +104,7 @@ pub const UnifiedRuntime = struct {
         
         // Add to goroutine's error stack if it exists
         if (self.active_goroutines.get(goroutine_id)) |goroutine_context| {
-            try goroutine_context.error_stack.append(error_obj);
+            try goroutine_context.error_stack.append(allocator, error_obj);
         }
         
         return error_obj;
@@ -115,7 +116,7 @@ pub const UnifiedRuntime = struct {
         
         // Track recovery point in goroutine context
         if (self.active_goroutines.get(goroutine_id)) |goroutine_context| {
-            try goroutine_context.recovery_points.append(recovery_point);
+            try goroutine_context.recovery_points.append(allocator, recovery_point);
         }
         
         return recovery_point;
@@ -124,7 +125,7 @@ pub const UnifiedRuntime = struct {
     /// Execute shook with goroutine isolation
     pub fn shookInGoroutine(self: *Self, goroutine_id: advanced_concurrency.GoroutineId, error_obj: *advanced_error_handling.CursedError) noreturn {
         // In a goroutine, shook should be isolated and not crash the entire program
-        std.debug.print("Goroutine {} shook: {}\n", .{goroutine_id, error_obj.*});
+        std.debug.print("Goroutine {s} shook: {s}\n", .{goroutine_id, error_obj.*});
         
         // For now, we'll exit the current goroutine context
         // In production, this would properly unwind the goroutine stack
@@ -164,18 +165,18 @@ pub const InterpreterValue = union(enum) {
             .Integer => |val| try writer.print("{d}", .{val}),
             .Float => |val| try writer.print("{d}", .{val}),
             .String => |val| try writer.print("\"{}\"", .{std.fmt.fmtSliceEscapeLower(val)}),
-            .Boolean => |val| try writer.print("{}", .{val}),
+            .Boolean => |val| try writer.print("{s}", .{val}),
             .Array => |arr| {
                 try writer.print("[");
                 for (arr, 0..) |item, i| {
                     if (i > 0) try writer.print(", ");
-                    try writer.print("{}", .{item});
+                    try writer.print("{s}", .{item});
                 }
                 try writer.print("]");
             },
-            .Error => |err| try writer.print("Error({})", .{err.*}),
+            .Error => |err| try writer.print("Error({s})", .{err.*}),
             .Channel => try writer.print("Channel({*})", .{self.Channel}),
-            .Goroutine => |id| try writer.print("Goroutine({})", .{id}),
+            .Goroutine => |id| try writer.print("Goroutine({s})", .{id}),
             .Null => try writer.print("null"),
         }
     }
@@ -212,7 +213,7 @@ pub fn executeShookExpression(runtime: *UnifiedRuntime, value: InterpreterValue)
     switch (value) {
         .Error => |error_obj| {
             // In interpreter mode, we don't actually panic, just return the error
-            std.debug.print("shook executed with error: {}\n", .{error_obj.*});
+            std.debug.print("shook executed with error: {s}\n", .{error_obj.*});
             return value;
         },
         else => {
@@ -327,6 +328,7 @@ var global_unified_runtime: ?*UnifiedRuntime = null;
 
 /// Initialize global unified runtime
 pub fn initUnifiedRuntime(allocator: Allocator) !void {
+        _ = allocator;
     global_unified_runtime = try UnifiedRuntime.init(allocator);
 }
 
@@ -388,11 +390,12 @@ fn testGoroutineWithErrors(context: ?*anyopaque) void {
         3001
     ) catch return;
     
-    std.debug.print("Goroutine created error: {}\n", .{error_obj.*});
+    std.debug.print("Goroutine created error: {s}\n", .{error_obj.*});
     error_obj.deinit();
 }
 
 pub fn testIntegration(allocator: Allocator) !void {
+        _ = allocator;
     try initUnifiedRuntime(allocator);
     defer deinitUnifiedRuntime();
     
@@ -402,29 +405,29 @@ pub fn testIntegration(allocator: Allocator) !void {
     
     // Test yikes
     const error_result = try executeYikesStatement(runtime, "Test error message", .Runtime, 500);
-    std.debug.print("Created yikes: {}\n", .{error_result});
+    std.debug.print("Created yikes: {s}\n", .{error_result});
     
     // Test shook
     const shook_result = executeShookExpression(runtime, error_result);
-    std.debug.print("Shook result: {}\n", .{shook_result});
+    std.debug.print("Shook result: {s}\n", .{shook_result});
     
     std.debug.print("\n=== Testing Concurrency ===\n");
     
     // Test stan
     const goroutine_result = try executeStanStatement(runtime, testGoroutineWithErrors, null);
-    std.debug.print("Spawned goroutine: {}\n", .{goroutine_result});
+    std.debug.print("Spawned goroutine: {s}\n", .{goroutine_result});
     
     // Test dm channel
     const channel_result = try createDmChannel(runtime, i64, 5);
-    std.debug.print("Created channel: {}\n", .{channel_result});
+    std.debug.print("Created channel: {s}\n", .{channel_result});
     
     // Test dm_send
     const send_result = try dmSendOperation(runtime, channel_result, InterpreterValue{ .Integer = 42 });
-    std.debug.print("Send result: {}\n", .{send_result});
+    std.debug.print("Send result: {s}\n", .{send_result});
     
     // Test dm_recv
     const recv_result = try dmRecvOperation(runtime, channel_result);
-    std.debug.print("Received value: {}\n", .{recv_result});
+    std.debug.print("Received value: {s}\n", .{recv_result});
     
     // Give goroutine time to execute
     std.time.sleep(10_000_000); // 10ms

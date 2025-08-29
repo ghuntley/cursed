@@ -202,11 +202,7 @@ pub const PatternDecisionTreeCompiler = struct {
         return switch (pattern) {
             .Literal => 1,
             .Variable, .Wildcard => 0, // Always match
-            .Tuple => |tuple| blk: {
-                var complexity: usize = 2;
-                for (tuple.patterns) |sub_pattern| {
-                    complexity += try self.calculatePatternComplexity(sub_pattern);
-                }
+            }
                 break :blk complexity;
             },
             .Struct => |struct_pattern| blk: {
@@ -336,7 +332,7 @@ pub const PatternDecisionTreeCompiler = struct {
     
     /// Build literal switch node with jump table
     fn buildLiteralSwitchNode(self: *PatternDecisionTreeCompiler, match_value: []const u8, strategy: SplitStrategy) !*DecisionNode {
-        var cases = ArrayList(DecisionNode.SwitchCase).init(self.allocator);
+        var cases = ArrayList(DecisionNode.SwitchCase){};
         defer cases.deinit();
         
         for (self.pattern_info[strategy.split_point..]) |pattern_info| {
@@ -397,7 +393,7 @@ pub const PatternDecisionTreeCompiler = struct {
         const guard_pattern = pattern_info.pattern.Guard;
         
         // Extract variable bindings from base pattern
-        var bindings = ArrayList(DecisionNode.VariableBinding).init(self.allocator);
+        var bindings = ArrayList(DecisionNode.VariableBinding){};
         defer bindings.deinit();
         
         try self.extractVariableBindings(guard_pattern.pattern.*, &bindings);
@@ -442,7 +438,7 @@ pub const PatternDecisionTreeCompiler = struct {
     fn createActionNode(self: *PatternDecisionTreeCompiler, pattern_info: PatternInfo, match_value: []const u8) !*DecisionNode {
         _ = match_value;
         
-        var bindings = ArrayList(DecisionNode.VariableBinding).init(self.allocator);
+        var bindings = ArrayList(DecisionNode.VariableBinding){};
         defer bindings.deinit();
         
         try self.extractVariableBindings(pattern_info.pattern, &bindings);
@@ -469,10 +465,9 @@ pub const PatternDecisionTreeCompiler = struct {
                     .type_info = DecisionNode.TypeInfo{ .integer = 32 }, // Default type
                     .is_mutable = var_pattern.is_mutable,
                 };
-                try bindings.append(binding);
+                try bindings.append(allocator, binding);
             },
-            .Tuple => |tuple| {
-                for (tuple.patterns, 0..) |sub_pattern, i| {
+             0..) |sub_pattern, i| {
                     // Create tuple element access
                     _ = i;
                     try self.extractVariableBindings(sub_pattern, bindings);
@@ -553,7 +548,7 @@ pub const PatternDecisionTreeCompiler = struct {
                 try self.generateTestNodeCode(test, match_value, depth);
             },
             .Action => |action| {
-                try self.output.writer().print("{s}// Pattern {} matched - execute action\n", .{ indent, action.pattern_index });
+                try self.output.writer().print("{s}// Pattern {s} matched - execute action\n", .{ indent, action.pattern_index });
                 
                 // Generate variable bindings
                 for (action.variable_bindings) |binding| {
@@ -598,7 +593,7 @@ pub const PatternDecisionTreeCompiler = struct {
             .LiteralEqual => {
                 const literal = test.test_value.LiteralEqual;
                 switch (literal) {
-                    .Integer => |val| try self.output.writer().print("{s}if ({s} == {}) {{\n", .{ indent, match_value, val }),
+                    .Integer => |val| try self.output.writer().print("{s}if ({s} == {s}) {{\n", .{ indent, match_value, val }),
                     .Float => |val| try self.output.writer().print("{s}if (fabs({s} - {d}) < 1e-9) {{\n", .{ indent, match_value, val }),
                     .String => |val| try self.output.writer().print("{s}if (strcmp({s}, \"{s}\") == 0) {{\n", .{ indent, match_value, val }),
                     .Boolean => |val| {
@@ -609,12 +604,12 @@ pub const PatternDecisionTreeCompiler = struct {
             },
             .EnumVariant => {
                 const enum_test = test.test_value.EnumVariant;
-                try self.output.writer().print("{s}if ({s}->tag == {}) {{ // {s}::{s}\n", .{ indent, match_value, enum_test.variant_index, enum_test.enum_name, enum_test.variant_name });
+                try self.output.writer().print("{s}if ({s}->tag == {s}) {{ // {s}::{s}\n", .{ indent, match_value, enum_test.variant_index, enum_test.enum_name, enum_test.variant_name });
             },
             .RangeBounds => {
                 const range = test.test_value.RangeBounds;
                 const op = if (range.is_inclusive) "<=" else "<";
-                try self.output.writer().print("{s}if ({s} >= {} && {s} {s} {}) {{\n", .{ indent, match_value, range.start_value, match_value, op, range.end_value });
+                try self.output.writer().print("{s}if ({s} >= {s} && {s} {s} {s}) {{\n", .{ indent, match_value, range.start_value, match_value, op, range.end_value });
             },
             else => {
                 try self.output.writer().print("{s}if (pattern_test_condition) {{\n", .{indent});
@@ -642,7 +637,7 @@ pub const PatternDecisionTreeCompiler = struct {
         
         for (switch_node.cases) |case| {
             switch (case.value.LiteralEqual) {
-                .Integer => |val| try self.output.writer().print("{s}    case {}:\n", .{ indent, val }),
+                .Integer => |val| try self.output.writer().print("{s}    case {s}:\n", .{ indent, val }),
                 .String => |val| try self.output.writer().print("{s}    // String case: \"{s}\"\n", .{ indent, val }),
                 .Boolean => |val| {
                     const bool_val = if (val) "1" else "0";
@@ -687,7 +682,7 @@ pub const PatternDecisionTreeCompiler = struct {
 
 // Test cases for decision tree compiler
 test "pattern decision tree basic functionality" {
-    var output = ArrayList(u8).init(std.testing.allocator);
+    var output = ArrayList(u8){};
     defer output.deinit();
     
     var registry = pattern_matching.EnumVariantRegistry.init(std.testing.allocator);

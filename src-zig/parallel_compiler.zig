@@ -37,11 +37,11 @@ pub const ParallelCompiler = struct {
     }
     
     pub fn deinit(self: *ParallelCompiler) void {
-        self.codegen_phase.deinit();
-        self.parsing_phase.deinit();
-        self.lexing_phase.deinit();
-        self.work_queue.deinit();
-        self.thread_pool.deinit();
+        self.codegen_phase.deinit(self.allocator);
+        self.parsing_phase.deinit(self.allocator);
+        self.lexing_phase.deinit(self.allocator);
+        self.work_queue.deinit(self.allocator);
+        self.thread_pool.deinit(self.allocator);
     }
     
     /// Compile multiple files in parallel
@@ -82,7 +82,7 @@ pub const ParallelCompiler = struct {
         };
         
         std.debug.print("✅ Parallel compilation completed:\n", .{});
-        result.print();
+        result.writer().print();
         
         return result;
     }
@@ -340,14 +340,14 @@ const WorkQueue = struct {
     }
     
     fn deinit(self: *WorkQueue) void {
-        self.queue.deinit();
+        self.queue.deinit(self.allocator);
     }
     
     fn enqueue(self: *WorkQueue, item: WorkItem) !void {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        try self.queue.append(item);
+        try self.queue.append(allocator, item);
         self.condition.signal();
     }
     

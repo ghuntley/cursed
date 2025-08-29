@@ -44,6 +44,7 @@ pub const ConstantFolder = struct {
     instructions_analyzed: u32 = 0,
 
     pub fn init(allocator: Allocator) !ConstantFolder {
+        _ = allocator;
         return ConstantFolder{
             .allocator = allocator,
         };

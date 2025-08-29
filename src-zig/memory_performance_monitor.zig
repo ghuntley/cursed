@@ -277,7 +277,7 @@ pub const MemoryBenchmarkSuite = struct {
     }
     
     pub fn deinit(self: *MemoryBenchmarkSuite) void {
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
     
     /// Run comprehensive benchmark suite
@@ -309,12 +309,12 @@ pub const MemoryBenchmarkSuite = struct {
     
     /// Generate performance report
     pub fn generateReport(self: *MemoryBenchmarkSuite, writer: anytype) !void {
-        try writer.writeAll("# Memory Performance Benchmark Report\n\n");
-        try writer.print("Generated: {}\n", .{std.time.timestamp()});
-        try writer.print("Total Benchmarks: {}\n\n", .{self.results.items.len});
+        try writer.writer().writeAll("# Memory Performance Benchmark Report\n\n");
+        try writer.print("Generated: {s}\n", .{std.time.timestamp()});
+        try writer.print("Total Benchmarks: {s}\n\n", .{self.results.items.len});
         
         // Summary statistics
-        try writer.writeAll("## Summary Statistics\n\n");
+        try writer.writer().writeAll("## Summary Statistics\n\n");
         try writer.print("Average Allocation Throughput: {d:.2} ops/sec\n", .{self.statistics.mean.alloc_throughput});
         try writer.print("Average Memory Bandwidth: {d:.2} MB/sec\n", .{self.statistics.mean.bandwidth / (1024 * 1024)});
         try writer.print("Average Latency: {d:.2} μs\n", .{self.statistics.mean.avg_latency_ns / 1000.0});
@@ -322,12 +322,12 @@ pub const MemoryBenchmarkSuite = struct {
         try writer.print("NUMA Locality: {d:.1}%\n\n", .{self.statistics.mean.numa_locality * 100});
         
         // Detailed results
-        try writer.writeAll("## Detailed Results\n\n");
-        try writer.writeAll("| Benchmark | Throughput (ops/s) | Bandwidth (MB/s) | Latency (μs) | Efficiency | NUMA Locality |\n");
-        try writer.writeAll("|-----------|-------------------|------------------|--------------|------------|---------------|\n");
+        try writer.writer().writeAll("## Detailed Results\n\n");
+        try writer.writer().writeAll("| Benchmark | Throughput (ops/s) | Bandwidth (MB/s) | Latency (μs) | Efficiency | NUMA Locality |\n");
+        try writer.writer().writeAll("|-----------|-------------------|------------------|--------------|------------|---------------|\n");
         
         for (self.results.items) |result| {
-            try writer.print("| {} | {d:.0} | {d:.1} | {d:.2} | {d:.1}% | {d:.1}% |\n", .{
+            try writer.print("| {s} | {d:.0} | {d:.1} | {d:.2} | {d:.1}% | {d:.1}% |\n", .{
                 result.name,
                 result.alloc_throughput,
                 result.bandwidth / (1024 * 1024),
@@ -338,7 +338,7 @@ pub const MemoryBenchmarkSuite = struct {
         }
         
         // Performance recommendations
-        try writer.writeAll("\n## Performance Recommendations\n\n");
+        try writer.writer().writeAll("\n## Performance Recommendations\n\n");
         try self.generateRecommendations(writer);
     }
     
@@ -349,15 +349,15 @@ pub const MemoryBenchmarkSuite = struct {
         
         // Sequential allocation benchmark
         const seq_result = try self.benchmarkSequentialAllocation(pool);
-        try self.results.append(seq_result);
+        try self.results.append(allocator, seq_result);
         
         // Random size allocation benchmark
         const rand_result = try self.benchmarkRandomSizeAllocation(pool);
-        try self.results.append(rand_result);
+        try self.results.append(allocator, rand_result);
         
         // Allocation/deallocation pairs benchmark
         const pair_result = try self.benchmarkAllocationPairs(pool);
-        try self.results.append(pair_result);
+        try self.results.append(allocator, pair_result);
     }
     
     fn runMultiThreadedBenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool, numa: ?*NUMATopology) !void {
@@ -365,21 +365,21 @@ pub const MemoryBenchmarkSuite = struct {
         
         // Concurrent allocation benchmark
         const concurrent_result = try self.benchmarkConcurrentAllocation(pool);
-        try self.results.append(concurrent_result);
+        try self.results.append(allocator, concurrent_result);
         
         // Producer-consumer benchmark
         const prodcons_result = try self.benchmarkProducerConsumer(pool);
-        try self.results.append(prodcons_result);
+        try self.results.append(allocator, prodcons_result);
     }
     
     fn runNUMABenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool, numa: *NUMATopology) !void {
         // Local vs remote allocation latency
         const numa_latency_result = try self.benchmarkNUMALatency(pool, numa);
-        try self.results.append(numa_latency_result);
+        try self.results.append(allocator, numa_latency_result);
         
         // Cross-NUMA bandwidth
         const numa_bandwidth_result = try self.benchmarkNUMABandwidth(pool, numa);
-        try self.results.append(numa_bandwidth_result);
+        try self.results.append(allocator, numa_bandwidth_result);
     }
     
     fn runSizeClassBenchmarks(self: *MemoryBenchmarkSuite, pool: *MemoryPool) !void {
@@ -387,7 +387,7 @@ pub const MemoryBenchmarkSuite = struct {
         
         for (size_classes) |size| {
             const result = try self.benchmarkFixedSizeAllocation(pool, size);
-            try self.results.append(result);
+            try self.results.append(allocator, result);
         }
     }
     
@@ -553,7 +553,7 @@ pub const MemoryBenchmarkSuite = struct {
         
         const WorkerFn = struct {
             fn run(data: *ThreadData) void {
-                var allocations = std.ArrayList([]u8).init(self.allocator);
+                var allocations = std.ArrayList([]u8){};
                 defer {
                     for (allocations.items) |allocation| {
                         data.pool.free(allocation);
@@ -573,7 +573,7 @@ pub const MemoryBenchmarkSuite = struct {
                     const allocation = data.pool.alloc(size) catch continue;
                     const end = std.time.nanoTimestamp();
                     
-                    allocations.append(allocation) catch continue;
+                    allocations.append(allocator, allocation) catch continue;
                     local_latency += @as(u64, @intCast(end - start));
                     local_bytes += size;
                 }
@@ -622,7 +622,7 @@ pub const MemoryBenchmarkSuite = struct {
         // Simplified producer-consumer benchmark
         // In practice, this would use proper synchronization
         
-        var allocated_ptrs = .empty;
+        var allocated_ptrs = std.ArrayList(u8){};
         defer {
             for (allocated_ptrs.items) |ptr| {
                 pool.free(ptr);
@@ -639,7 +639,7 @@ pub const MemoryBenchmarkSuite = struct {
             const ptr = try pool.alloc(1024);
             const alloc_end = std.time.nanoTimestamp();
             
-            try allocated_ptrs.append(ptr);
+            try allocated_ptrs.append(allocator, ptr);
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
         }
         
@@ -816,7 +816,7 @@ pub const MemoryBenchmarkSuite = struct {
     
     fn benchmarkMemoryPressure(self: *MemoryBenchmarkSuite, pool: *MemoryPool) !BenchmarkResult {
         // Allocate until near memory limit
-        var allocations = .empty;
+        var allocations = std.ArrayList(u8){};
         defer {
             for (allocations.items) |allocation| {
                 pool.free(allocation);
@@ -835,7 +835,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = pool.alloc(size) catch break;
             const alloc_end = std.time.nanoTimestamp();
             
-            allocations.append(allocation) catch break;
+            allocations.append(allocator, allocation) catch break;
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
             allocation_count += 1;
             
@@ -867,7 +867,7 @@ pub const MemoryBenchmarkSuite = struct {
     
     fn benchmarkFragmentation(self: *MemoryBenchmarkSuite, pool: *MemoryPool) !BenchmarkResult {
         // Create fragmentation by alternating allocation/deallocation
-        var allocations = .empty;
+        var allocations = std.ArrayList(u8){};
         defer {
             for (allocations.items) |allocation| {
                 pool.free(allocation);
@@ -888,7 +888,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = try pool.alloc(size);
             const alloc_end = std.time.nanoTimestamp();
             
-            try allocations.append(allocation);
+            try allocations.append(allocator, allocation);
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
             
             // Randomly free some allocations to create holes
@@ -906,7 +906,7 @@ pub const MemoryBenchmarkSuite = struct {
             const allocation = pool.alloc(size) catch continue;
             const alloc_end = std.time.nanoTimestamp();
             
-            allocations.append(allocation) catch continue;
+            allocations.append(allocator, allocation) catch continue;
             total_latency += @as(u64, @intCast(alloc_end - alloc_start));
         }
         
@@ -991,30 +991,30 @@ pub const MemoryBenchmarkSuite = struct {
         
         // Analyze results and provide recommendations
         if (stats.mean.alloc_throughput < 100000) {
-            try writer.writeAll("- **Low allocation throughput detected**: Consider using thread-local caches or lock-free algorithms\n");
+            try writer.writer().writeAll("- **Low allocation throughput detected**: Consider using thread-local caches or lock-free algorithms\n");
         }
         
         if (stats.mean.avg_latency_ns > 10000) {
-            try writer.writeAll("- **High allocation latency detected**: Consider pre-allocating memory pools or using smaller allocation sizes\n");
+            try writer.writer().writeAll("- **High allocation latency detected**: Consider pre-allocating memory pools or using smaller allocation sizes\n");
         }
         
         if (stats.mean.memory_efficiency < 0.8) {
-            try writer.writeAll("- **Low memory efficiency detected**: Consider using size classes or reducing fragmentation\n");
+            try writer.writer().writeAll("- **Low memory efficiency detected**: Consider using size classes or reducing fragmentation\n");
         }
         
         if (stats.mean.numa_locality < 0.8) {
-            try writer.writeAll("- **Poor NUMA locality detected**: Consider NUMA-aware allocation strategies\n");
+            try writer.writer().writeAll("- **Poor NUMA locality detected**: Consider NUMA-aware allocation strategies\n");
         }
         
         if (stats.coefficient_of_variation > 0.3) {
-            try writer.writeAll("- **High performance variability detected**: Consider more consistent allocation patterns\n");
+            try writer.writer().writeAll("- **High performance variability detected**: Consider more consistent allocation patterns\n");
         }
         
-        try writer.writeAll("- **General recommendations**: \n");
-        try writer.writeAll("  - Use appropriate pool strategies for different allocation patterns\n");
-        try writer.writeAll("  - Enable NUMA awareness for large multi-socket systems\n");
-        try writer.writeAll("  - Monitor and tune based on actual workload characteristics\n");
-        try writer.writeAll("  - Consider memory prefetching for predictable access patterns\n");
+        try writer.writer().writeAll("- **General recommendations**: \n");
+        try writer.writer().writeAll("  - Use appropriate pool strategies for different allocation patterns\n");
+        try writer.writer().writeAll("  - Enable NUMA awareness for large multi-socket systems\n");
+        try writer.writer().writeAll("  - Monitor and tune based on actual workload characteristics\n");
+        try writer.writer().writeAll("  - Consider memory prefetching for predictable access patterns\n");
     }
 };
 
@@ -1085,10 +1085,10 @@ pub const MemoryPerformanceMonitor = struct {
             thread.join();
         }
         
-        self.event_buffer.deinit();
-        self.metrics_history.deinit();
-        self.hotspots.deinit();
-        self.regression_alerts.deinit();
+        self.event_buffer.deinit(self.allocator);
+        self.metrics_history.deinit(self.allocator);
+        self.hotspots.deinit(self.allocator);
+        self.regression_alerts.deinit(self.allocator);
     }
     
     /// Record allocation event
@@ -1119,7 +1119,7 @@ pub const MemoryPerformanceMonitor = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        var hotspots = .empty;
+        var hotspots = std.ArrayList(u8){};
         
         var iterator = self.hotspots.iterator();
         while (iterator.next()) |entry| {
@@ -1177,14 +1177,14 @@ pub const MemoryPerformanceMonitor = struct {
         metrics.window_start = @as(u64, @intCast(start_time));
         
         // Process events in the time window
-        var events = .empty;
+        var events = std.ArrayList(u8){};
         defer events.deinit();
         
         // Read all events from buffer (simplified - in practice, would filter by time)
         while (self.event_buffer.readOne()) |event| {
             if (event.timestamp >= @as(u64, @intCast(start_time)) and 
                 event.timestamp <= @as(u64, @intCast(end_time))) {
-                events.append(event) catch break;
+                events.append(allocator, event) catch break;
             }
         }
         
@@ -1195,12 +1195,12 @@ pub const MemoryPerformanceMonitor = struct {
         self.current_metrics = metrics;
         
         // Add to history
-        self.metrics_history.append(metrics) catch {
+        self.metrics_history.append(allocator, metrics) catch {
             // Remove oldest if we're at capacity
             if (self.metrics_history.items.len >= 1440) { // Keep 24 hours of minute-level data
                 _ = self.metrics_history.orderedRemove(0);
             }
-            self.metrics_history.append(metrics) catch {};
+            self.metrics_history.append(allocator, metrics) catch {};
         };
         
         // Detect regressions
@@ -1227,7 +1227,7 @@ pub const MemoryPerformanceMonitor = struct {
         var free_count: u64 = 0;
         var total_bytes: u64 = 0;
         var total_latency: u64 = 0;
-        var latencies = .empty;
+        var latencies = std.ArrayList(u8){};
         defer latencies.deinit();
         
         var min_latency: u32 = std.math.maxInt(u32);
@@ -1242,7 +1242,7 @@ pub const MemoryPerformanceMonitor = struct {
                     total_bytes += event.size;
                     total_latency += event.latency_ns;
                     
-                    latencies.append(event.latency_ns) catch {};
+                    latencies.append(allocator, event.latency_ns) catch {};
                     
                     min_latency = @min(min_latency, event.latency_ns);
                     max_latency = @max(max_latency, event.latency_ns);
@@ -1363,7 +1363,7 @@ pub const MemoryPerformanceMonitor = struct {
                     .timestamp = @as(u64, @intCast(std.time.timestamp())),
                     .severity = RegressionAlert.getSeverity(regression),
                 };
-                self.regression_alerts.append(alert) catch {};
+                self.regression_alerts.append(allocator, alert) catch {};
             }
         }
         
@@ -1380,7 +1380,7 @@ pub const MemoryPerformanceMonitor = struct {
                     .timestamp = @as(u64, @intCast(std.time.timestamp())),
                     .severity = RegressionAlert.getSeverity(regression),
                 };
-                self.regression_alerts.append(alert) catch {};
+                self.regression_alerts.append(allocator, alert) catch {};
             }
         }
         

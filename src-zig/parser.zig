@@ -53,12 +53,12 @@ pub const ErrorRecoveryStats = struct {
     pub fn reportStats(self: *const ErrorRecoveryStats) void {
         if (builtin.mode == .Debug) {
             std.debug.print("\n=== Error Recovery Statistics ===\n", .{});
-            std.debug.print("Total errors encountered: {}\n", .{self.total_errors});
-            std.debug.print("Semicolon recoveries: {}\n", .{self.semicolon_recoveries});
-            std.debug.print("Statement recoveries: {}\n", .{self.statement_recoveries});
-            std.debug.print("Expression recoveries: {}\n", .{self.expression_recoveries});
-            std.debug.print("Delimiter recoveries: {}\n", .{self.delimiter_recoveries});
-            std.debug.print("Total tokens skipped: {}\n", .{self.tokens_skipped});
+            std.debug.print("Total errors encountered: {s}\n", .{self.total_errors});
+            std.debug.print("Semicolon recoveries: {s}\n", .{self.semicolon_recoveries});
+            std.debug.print("Statement recoveries: {s}\n", .{self.statement_recoveries});
+            std.debug.print("Expression recoveries: {s}\n", .{self.expression_recoveries});
+            std.debug.print("Delimiter recoveries: {s}\n", .{self.delimiter_recoveries});
+            std.debug.print("Total tokens skipped: {s}\n", .{self.tokens_skipped});
             std.debug.print("================================\n", .{});
         }
     }
@@ -99,7 +99,7 @@ pub const Parser = struct {
     }
 
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
 
     /// Check if the current token is a keyword that can be used as a method name
@@ -282,7 +282,7 @@ pub const Parser = struct {
                 errdefer self.allocator.destroy(stmt_ptr);
                 stmt_ptr.* = stmt;
                 
-                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |err| {
+                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch {
                     _ = self.reportErrorWithContext("Error converting statement to anyopaque", "parseProgram") catch {};
                     return err;
                 };
@@ -348,7 +348,7 @@ pub const Parser = struct {
         // Validate message before printing
         if (message.len == 0 or message.len > 1024) {
             if (builtin.mode == .Debug) {
-                std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
+                std.debug.print("Error: Invalid error message (length: {s})\n", .{message.len});
             }
             self.had_error = true;
             return ParserError.SyntaxError;
@@ -359,7 +359,7 @@ pub const Parser = struct {
             if (location) |loc| {
                 // Bounds check for safe formatting
                 if (loc.line < 65536 and loc.column < 65536) {
-                    std.debug.print("Error at {s}:{}:{} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
+                    std.debug.print("Error at {s}:{s}:{s} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
                 } else {
                     std.debug.print("Error in {s} - {s} (context: {s})\n", .{ loc.file, message, context });
                 }
@@ -374,7 +374,7 @@ pub const Parser = struct {
     fn reportErrorAtToken(self: *Parser, token: Token, message: []const u8) ParserError {
         if (builtin.mode == .Debug) {
             const location = self.getSourceLocationForToken(token);
-            std.debug.print("Error at {s}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+            std.debug.print("Error at {s}:{s}:{s} - {s}\n", .{ location.file, location.line, location.column, message });
         }
         self.had_error = true;
         return ParserError.SyntaxError;
@@ -408,7 +408,7 @@ pub const Parser = struct {
                 _ = self.advance(); // consume the semicolon
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
                 if (builtin.mode == .Debug) {
-                    std.debug.print("INFO: Recovered at semicolon after skipping {} tokens\n", .{tokens_skipped});
+                    std.debug.print("INFO: Recovered at semicolon after skipping {s} tokens\n", .{tokens_skipped});
                 }
                 return;
             }
@@ -418,7 +418,7 @@ pub const Parser = struct {
                 _ = self.advance(); // consume the newline
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
                 if (builtin.mode == .Debug) {
-                    std.debug.print("INFO: Recovered at newline after skipping {} tokens\n", .{tokens_skipped});
+                    std.debug.print("INFO: Recovered at newline after skipping {s} tokens\n", .{tokens_skipped});
                 }
                 return;
             }
@@ -431,12 +431,12 @@ pub const Parser = struct {
                     // Don't consume these - let the next parsing cycle handle them
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
                     if (builtin.mode == .Debug) {
-                        std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                        std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{ @tagName(current_token.kind), tokens_skipped });
                     }
                     return;
                 },
-                else => {},
-            }
+                else => {}
+        }
             
             // Stop at block delimiters that might indicate recovery points
             switch (current_token.kind) {
@@ -444,12 +444,12 @@ pub const Parser = struct {
                     // Don't consume these - they might be needed for proper parsing
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
                     if (builtin.mode == .Debug) {
-                        std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{@tagName(current_token.kind), tokens_skipped});
+                        std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{ @tagName(current_token.kind), tokens_skipped });
                     }
                     return;
                 },
-                else => {},
-            }
+                else => {}
+        }
             
             _ = self.advance();
             tokens_skipped += 1;
@@ -707,7 +707,7 @@ pub const Parser = struct {
         
         // Function declaration (slay) with enhanced error recovery
         if (self.check(.Slay)) {
-            return Statement{ .Function = self.parseFunctionStatement() catch |err| {
+            return Statement{ .Function = self.parseFunctionStatement() catch {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing function statement") catch {};
                 
@@ -720,7 +720,7 @@ pub const Parser = struct {
         
         // Variable declaration (sus/facts) with lookahead to distinguish from function calls
         if (self.check(.Sus)) {
-            return Statement{ .Let = self.parseLetStatement() catch |err| {
+            return Statement{ .Let = self.parseLetStatement() catch {
                 const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                 _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
                 
@@ -741,7 +741,7 @@ pub const Parser = struct {
                 return Statement{ .Expression = try self.expressionToAnyopaque(expr_ptr) };
             } else {
                 // This is facts variable = value - parse as variable declaration
-                return Statement{ .Let = self.parseLetStatement() catch |err| {
+                return Statement{ .Let = self.parseLetStatement() catch {
                     const error_token = if (self.current < self.tokens.len) self.tokens[self.current] else self.tokens[self.tokens.len - 1];
                     _ = self.reportErrorAtToken(error_token, "Error parsing variable declaration") catch {};
                     
@@ -854,7 +854,7 @@ pub const Parser = struct {
         
         // Expression statement with enhanced error handling for complex expressions
         // CRITICAL FIX: Prevent complex expressions with braces from being parsed as function names
-        const expr = self.parseExpression() catch |err| {
+        const expr = self.parseExpression() catch {
             // Enhanced error context for complex expression parsing
             _ = self.reportErrorWithContext("Error parsing complex expression statement - check for misplaced braces or operator precedence issues", "parseStatement") catch {};
             self.synchronize();
@@ -868,7 +868,7 @@ pub const Parser = struct {
         errdefer self.allocator.destroy(expr_ptr);
         expr_ptr.* = expr;
         
-        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) catch |err| {
+        return Statement{ .Expression = self.expressionToAnyopaque(expr_ptr) catch {
             _ = self.reportErrorWithContext("Error converting expression to anyopaque", "parseStatement") catch {};
             return err;
         }};
@@ -1241,12 +1241,12 @@ pub const Parser = struct {
         if (self.check(.LeftParen)) {
             _ = self.advance();
             
-            var elements = .empty;
+            var elements = std.ArrayList(u8){};
             
             if (!self.check(.RightParen)) {
                 while (true) {
                     const elem_type = try self.parseType();
-                    try elements.append(elem_type);
+                    try elements.append(self.allocator, elem_type);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1587,7 +1587,7 @@ pub const Parser = struct {
                 
         _ = try self.consume(.LeftBrace, "Expected '{' for sus catch body");
             
-            var catch_body = .empty;
+            var catch_body = std.ArrayList(u8){};
             
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
@@ -1611,7 +1611,7 @@ pub const Parser = struct {
         if (self.matchKeyword("finally")) {
         _ = try self.consume(.LeftBrace, "Expected '{' for finally body");
             
-            var finally_body = .empty;
+            var finally_body = std.ArrayList(u8){};
             
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
@@ -1849,7 +1849,7 @@ pub const Parser = struct {
                 }};
             }
             
-            var elements = .empty;
+            var elements = std.ArrayList(u8){};
             var has_comma = false;
             
             while (true) {
@@ -1882,7 +1882,7 @@ pub const Parser = struct {
 
         // Map literals {key: value, ...}
         if (self.match(.LeftBrace)) {
-            var entries = .empty;
+            var entries = std.ArrayList(u8){};
             
             if (!self.check(.RightBrace)) {
                 while (true) {
@@ -1918,7 +1918,7 @@ pub const Parser = struct {
 
         // Lambda expressions |params| -> body
         if (self.match(.Pipe)) {
-            var params = .empty;
+            var params = std.ArrayList(u8){};
             
             if (!self.check(.Pipe)) {
                 while (true) {
@@ -1926,7 +1926,7 @@ pub const Parser = struct {
                         return ParserError.UnexpectedToken;
                     }
                     
-                    try params.append(self.advance().lexeme);
+                    try params.append(self.allocator, self.advance().lexeme);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -2022,7 +2022,7 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
         // Support both StructFieldAssignment (legacy) and FieldInitializer (new)
-        var fields = .empty;
+        var fields = std.ArrayList(u8){};
         
         if (!self.check(.RightBrace)) {
             while (true) {
@@ -2294,7 +2294,7 @@ pub const Parser = struct {
             
             // Struct pattern StructName{field: pattern, ...}
             if (self.match(.LeftBrace)) {
-                var fields = .empty;
+                var fields = std.ArrayList(u8){};
                 
                 if (!self.check(.RightBrace)) {
                     while (true) {
@@ -2386,7 +2386,7 @@ pub const Parser = struct {
         
         // Parse else clause (highkey/otherwise)
         if (self.match(.Highkey) or self.match(.Otherwise)) {
-            var else_stmts = .empty;
+            var else_stmts = std.ArrayList(u8){};
             
             if (self.check(.Lowkey) or self.check(.Ready)) {
                 // else if
@@ -2485,7 +2485,7 @@ pub const Parser = struct {
             
         _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = .empty;
+            var body = std.ArrayList(u8){};
             self.in_loop = true;
             defer { self.in_loop = false; }
             
@@ -2538,7 +2538,7 @@ pub const Parser = struct {
         // Parse body
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = .empty;
+        var body = std.ArrayList(u8){};
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -2573,17 +2573,17 @@ pub const Parser = struct {
 
     fn parseRangeForStatement(self: *Parser) ParserError!Statement {
         // Parse variable(s) for range-for loop
-        var variables = .empty;
+        var variables = std.ArrayList(u8){};
         
         // Parse first variable
         if (self.check(.Identifier)) {
-            try variables.append(self.advance().lexeme);
+            try variables.append(self.allocator, self.advance().lexeme);
         }
         
         // Parse second variable if comma present
         if (self.match(.Comma)) {
             if (self.check(.Identifier)) {
-                try variables.append(self.advance().lexeme);
+                try variables.append(self.allocator, self.advance().lexeme);
             }
         }
         
@@ -2603,7 +2603,7 @@ pub const Parser = struct {
         // Parse body
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = .empty;
+        var body = std.ArrayList(u8){};
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -2643,19 +2643,19 @@ pub const Parser = struct {
                     const param_name = self.advance().lexeme;
                     var param = ast.TypeParameter{
                         .name = param_name,
-                        .constraints = ArrayList(ast.Type){},
-                    };
+                        .constraints = ArrayList(ast.Type){}
+        };
                     
                     // Parse constraints (T: Interface1 + Interface2)
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseType();
-                            try param.constraints.append(constraint);
+                            try param.constraints.append(allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
                     
-                    try type_parameters.append(param);
+                    try type_parameters.append(self.allocator, param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -2670,8 +2670,8 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBrace, "Expected '{' after struct name");
         
         // Parse fields and methods
-        var fields = .empty;
-        var methods = .empty;
+        var fields = std.ArrayList(u8){};
+        var methods = std.ArrayList(u8){};
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             // Skip newlines
@@ -2698,7 +2698,7 @@ pub const Parser = struct {
             
             // Parse field
             const field = try self.parseStructField(visibility);
-            try fields.append(field);
+            try fields.append(self.allocator, field);
             
             // Optional comma
             _ = self.match(.Comma);
@@ -2747,12 +2747,12 @@ pub const Parser = struct {
         // Parse parameters
         _ = try self.consume(.LeftParen, "Expected '(' after method name");
         
-        var parameters = .empty;
+        var parameters = std.ArrayList(u8){};
         
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try parameters.append(param);
+                try parameters.append(self.allocator, param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2769,7 +2769,7 @@ pub const Parser = struct {
         // Parse method body
         _ = try self.consume(.LeftBrace, "Expected '{' before method body");
         
-        var body = .empty;
+        var body = std.ArrayList(u8){};
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) {
                 continue;
@@ -2813,9 +2813,9 @@ pub const Parser = struct {
                     const param_name = self.advance().lexeme;
                     const param = ast.TypeParameter{
                         .name = param_name,
-                        .constraints = ArrayList(ast.Type){},
-                    };
-                    try type_parameters.append(param);
+                        .constraints = ArrayList(ast.Type){}
+        };
+                    try type_parameters.append(self.allocator, param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -2827,28 +2827,28 @@ pub const Parser = struct {
         }
         
         // Parse interface inheritance (extends)
-        var extends = .empty;
+        var extends = std.ArrayList(u8){};
         if (self.match(.Extends)) {
             while (true) {
                 if (!self.check(.Identifier)) {
                     return ParserError.UnexpectedToken;
                 }
                 const parent_interface = self.advance().lexeme;
-                try extends.append(parent_interface);
+                try extends.append(self.allocator, parent_interface);
                 
                 if (!self.match(.Comma)) break;
             }
         }
         
         // Parse interface composition (with)
-        var compositions = .empty;
+        var compositions = std.ArrayList(u8){};
         if (self.match(.With)) {
             while (true) {
                 if (!self.check(.Identifier)) {
                     return ParserError.UnexpectedToken;
                 }
                 const composed_interface = self.advance().lexeme;
-                try compositions.append(composed_interface);
+                try compositions.append(self.allocator, composed_interface);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2858,7 +2858,7 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBrace, "Expected '{' after interface name");
         
         // Parse methods
-        var methods = .empty;
+        var methods = std.ArrayList(u8){};
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             // Skip newlines
@@ -2900,12 +2900,12 @@ pub const Parser = struct {
         // Parse parameters
         _ = try self.consume(.LeftParen, "Expected '('");
         
-        var parameters = .empty;
+        var parameters = std.ArrayList(u8){};
         
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try parameters.append(param);
+                try parameters.append(self.allocator, param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -3030,7 +3030,7 @@ pub const Parser = struct {
             // Block form: stan { ... }
         _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = .empty;
+            var body = std.ArrayList(u8){};
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
@@ -3043,8 +3043,8 @@ pub const Parser = struct {
         _ = try self.consume(.RightBrace, "Expected '}'");
             
             return Statement{ .Goroutine = ast.GoroutineStatement{
-                .call = Expression{ .Block = ast.BlockExpression{ .statements = body } },
-            }};
+                .call = Expression{ .Block = ast.BlockExpression{ .statements = body } }
+        }};
         } else {
             // Expression form: stan functionCall()
             const call_expr = try self.parseExpression();
@@ -3073,7 +3073,7 @@ pub const Parser = struct {
             if (self.match(.Basic)) {
         _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = .empty;
+                var default_stmts = std.ArrayList(u8){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
@@ -3099,7 +3099,7 @@ pub const Parser = struct {
                 
         _ = try self.consume(.Colon, "Expected ':' after case pattern");
                 
-                var case_body = .empty;
+                var case_body = std.ArrayList(u8){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
@@ -3145,7 +3145,7 @@ pub const Parser = struct {
             if (self.match(.Basic)) {
         _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = .empty;
+                var default_stmts = std.ArrayList(u8){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
@@ -3163,7 +3163,7 @@ pub const Parser = struct {
                 
         _ = try self.consume(.Colon, "Expected ':' after channel operation");
                 
-                var case_body = .empty;
+                var case_body = std.ArrayList(u8){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
@@ -3290,7 +3290,7 @@ pub const Parser = struct {
         _ = try self.consume(.RightBrace, "Expected '}'");
         
         // Parse catch blocks
-        var catch_blocks = .empty;
+        var catch_blocks = std.ArrayList(u8){};
         while (self.match(.Shook)) {
             var error_variable: ?[]const u8 = null;
             var error_type: ?[]const u8 = null;
@@ -3310,12 +3310,12 @@ pub const Parser = struct {
             
             // Parse catch body
             _ = try self.consume(.LeftBrace, "Expected '{'");
-            var catch_body = .empty;
+            var catch_body = std.ArrayList(u8){};
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                try catch_body.append(stmt);
+                try catch_body.append(self.allocator, stmt);
             }
             _ = try self.consume(.RightBrace, "Expected '}'");
             
@@ -3336,7 +3336,7 @@ pub const Parser = struct {
         //         if (self.match(.Newline)) continue;
         //         
         //         const stmt = try self.parseStatement();
-        //         try finally_block.?.append(stmt);
+        //         try finally_block.?.append(allocator, stmt);
         //     }
         //     _ = try self.consume(.RightBrace, "Expected '}'");
         // }
@@ -3399,7 +3399,7 @@ pub const Parser = struct {
                 return ParserError.UnexpectedToken;
             }
             
-            try names.append(self.advance().lexeme);
+            try names.append(self.allocator, self.advance().lexeme);
             
             while (self.match(.Comma)) {
                 if (!self.check(.Identifier)) {
@@ -3413,7 +3413,7 @@ pub const Parser = struct {
         _ = try self.consume(.ColonEqual, "Expected ':=' in short declaration");
         
         // Parse values
-        var values = .empty;
+        var values = std.ArrayList(u8){};
         
         if (self.match(.LeftParen)) {
             // Tuple values: (1, 2, 3)
@@ -3712,8 +3712,8 @@ pub const Parser = struct {
                     }
                 },
                 .Eof => break,
-                else => {},
-            }
+                else => {}
+        }
             pos += 1;
         }
         
@@ -3778,8 +3778,8 @@ pub const Parser = struct {
                     }
                 },
                 .Eof => break,
-                else => {},
-            }
+                else => {}
+        }
             pos += 1;
         }
         
@@ -3873,7 +3873,7 @@ pub const Parser = struct {
     }
 
     fn convertExpressionsToPointers(self: *Parser, expressions: ArrayList(Expression)) ParserError!ArrayList(*Expression) {
-        var pointers = .empty;
+        var pointers = std.ArrayList(u8){};
         
         for (expressions.items) |expr| {
             const ptr = try self.allocateExpression(expr);
@@ -3889,7 +3889,7 @@ pub const Parser = struct {
         // CRITICAL FIX: Parse generic type like Vec<T>, Map<K,V>, Vec<Vec<T>>, HashMap<K,V>
         // with proper nested generic support and crash protection
         
-        var type_arguments = .empty;
+        var type_arguments = std.ArrayList(u8){};
         var nesting_depth: u32 = 0;
         const max_depth = 10; // Prevent infinite recursion
         
@@ -3902,7 +3902,7 @@ pub const Parser = struct {
             }
             
             const type_arg = try self.parseTypeWithRecovery();
-            try type_arguments.append(type_arg);
+            try type_arguments.append(self.allocator, type_arg);
             
             // CRITICAL FIX: Handle >> token correctly for Vec<Vec<T>>
             if (self.check(.RightShift)) {
@@ -3954,7 +3954,7 @@ pub const Parser = struct {
     
     /// CRITICAL FIX: Parse type with error recovery to prevent parser crashes
     fn parseTypeWithRecovery(self: *Parser) ParserError!ast.Type {
-        return self.parseType() catch |err| {
+        return self.parseType() catch {
             // Add error recovery for type parsing
             _ = self.reportErrorWithContext("Failed to parse type argument", "parseTypeWithRecovery") catch {};
             self.recoverFromExpressionError();
@@ -4038,11 +4038,11 @@ pub const Parser = struct {
         if (self.matchIdentifier("where")) {
             // Where clause constraint: where T.method() > 0
             // For now, just consume the rest as a string
-            var where_clause = .empty;
+            var where_clause = std.ArrayList(u8){};
             while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle) and !self.isAtEnd()) {
                 const token = self.advance();
                 try where_clause.appendSlice(token.lexeme);
-                try where_clause.append(' ');
+                try where_clause.append(self.allocator, ' ');
             }
             return ast.TypeConstraint{ .WhereClause = where_clause.items };
         }
@@ -4055,12 +4055,12 @@ pub const Parser = struct {
         const base_type = try self.parseBasicType();
         
         if (self.match(.Pipe)) {
-            var union_types = .empty;
-            try union_types.append(base_type);
+            var union_types = std.ArrayList(u8){};
+            try union_types.append(self.allocator, base_type);
             
             while (true) {
                 const union_member = try self.parseBasicType();
-                try union_types.append(union_member);
+                try union_types.append(self.allocator, union_member);
                 
                 if (!self.match(.Pipe)) break;
             }
@@ -4217,7 +4217,7 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseTypeConstraint();
-                            try type_param.constraints.append(constraint);
+                            try type_param.constraints.append(allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }

@@ -21,16 +21,16 @@ pub const SimpleTestRunner = struct {
     pub fn init() SimpleTestRunner {
         return SimpleTestRunner{
             .allocator = allocator,
-            .results = std.ArrayList(SimpleTestResult).init(allocator),
+            .results = std.ArrayList(SimpleTestResult){},
         };
     }
     
     pub fn deinit(self: *SimpleTestRunner) void {
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
     
     pub fn runTest(self: *SimpleTestRunner, name: []const u8, test_fn: fn() anyerror!void) !void {
-        std.debug.print("  • {s}... ", .{name});
+        std.debug.writer().print("  • {s}... ", .{name});
         
         const start_time = std.time.milliTimestamp();
         var passed = true;
@@ -45,13 +45,13 @@ pub const SimpleTestRunner = struct {
         const duration = @as(u64, @intCast(end_time - start_time));
         
         if (passed) {
-            std.debug.print("✅ PASS\n", .{});
+            std.debug.writer().print("✅ PASS\n", .{});
         } else {
-            std.debug.print("❌ FAIL", .{});
+            std.debug.writer().print("❌ FAIL", .{});
             if (error_msg) |msg| {
-                std.debug.print(" - {s}", .{msg});
+                std.debug.writer().print(" - {s}", .{msg});
             }
-            std.debug.print("\n", .{});
+            std.debug.writer().print("\n", .{});
         }
         
         try self.results.append(SimpleTestResult{
@@ -81,22 +81,22 @@ pub const SimpleTestRunner = struct {
             (@as(f64, @floatFromInt(passed)) / @as(f64, @floatFromInt(total))) * 100.0 
         else 0.0;
             
-        std.debug.print("\n📊 Test Summary:\n", .{});
-        std.debug.print("  Total: {}\n", .{total});
-        std.debug.print("  Passed: {}\n", .{passed});
-        std.debug.print("  Failed: {}\n", .{failed});
-        std.debug.print("  Success Rate: {d:.1}%\n", .{success_rate});
-        std.debug.print("  Total Time: {}ms\n", .{total_time});
+        std.debug.writer().print("\n📊 Test Summary:\n", .{});
+        std.debug.writer().print("  Total: {s}\n", .{{total});
+        std.debug.writer().print("  Passed: {s}\n", .{{passed});
+        std.debug.writer().print("  Failed: {s}\n", .{{failed});
+        std.debug.writer().print("  Success Rate: {d:.1}%\n", .{success_rate});
+        std.debug.writer().print("  Total Time: {s}ms\n", .{{total_time});
         
         if (failed > 0) {
-            std.debug.print("\n❌ Failed Tests:\n", .{});
+            std.debug.writer().print("\n❌ Failed Tests:\n", .{});
             for (self.results.items) |result| {
                 if (!result.passed) {
-                    std.debug.print("  • {s}", .{result.name});
+                    std.debug.writer().print("  • {s}", .{result.name});
                     if (result.error_msg) |msg| {
-                        std.debug.print(" - {s}", .{msg});
+                        std.debug.writer().print(" - {s}", .{msg});
                     }
-                    std.debug.print("\n", .{});
+                    std.debug.writer().print("\n", .{});
                 }
             }
         }
@@ -225,14 +225,15 @@ fn performanceTestMemoryOperations() !void {
 
 // Main test runner function
 pub fn runDemoTests(allocator: Allocator) !void {
-    std.debug.print("🚀 CURSED Zig Testing Framework Demo\n", .{});
-    std.debug.print("=" ** 50 ++ "\n", .{});
+        _ = allocator;
+    std.debug.writer().print("🚀 CURSED Zig Testing Framework Demo\n", .{});
+    std.debug.writer().print("=" ** 50 ++ "\n", .{});
     
     var runner = SimpleTestRunner.init(allocator);
     defer runner.deinit();
     
     // Run basic functionality tests
-    std.debug.print("🧪 Basic Functionality Tests:\n", .{});
+    std.debug.writer().print("🧪 Basic Functionality Tests:\n", .{});
     try runner.runTest("Basic Math", testBasicMath);
     try runner.runTest("String Operations", testStringOperations);
     try runner.runTest("Array Operations", testArrayOperations);
@@ -244,12 +245,12 @@ pub fn runDemoTests(allocator: Allocator) !void {
     try runner.runTest("Loop Operations", testLoopOperations);
     try runner.runTest("Conditional Logic", testConditionalLogic);
     
-    std.debug.print("\n⚡ Performance Tests:\n", .{});
+    std.debug.writer().print("\n⚡ Performance Tests:\n", .{});
     try runner.runTest("Basic Operations Performance", performanceTestBasicOperations);
     try runner.runTest("Memory Operations Performance", performanceTestMemoryOperations);
     
     runner.printSummary();
-    std.debug.print("\n🎯 Demo test execution completed!\n", .{});
+    std.debug.writer().print("\n🎯 Demo test execution completed!\n", .{});
 }
 
 // Test automation demonstration
@@ -260,10 +261,10 @@ pub const AutomationConfig = struct {
 };
 
 pub fn runAutomatedTestSuite(allocator: Allocator, config: AutomationConfig) !bool {
-    std.debug.print("🤖 Automated Test Suite Starting...\n", .{});
+    std.debug.writer().print("🤖 Automated Test Suite Starting...\n", .{});
     
     if (config.verbose_output) {
-        std.debug.print("Config: Performance={}, Export={}\n", .{ config.run_performance_tests, config.export_results });
+        std.debug.writer().print("Config: Performance={s}, Export={s}\n", .{{ config.run_performance_tests, config.export_results });
     }
     
     var runner = SimpleTestRunner.init(allocator);
@@ -322,18 +323,18 @@ fn exportTestResults(allocator: Allocator, runner: *SimpleTestRunner) !void {
     , .{ total, passed, total - passed, if (total > 0) (@as(f64, @floatFromInt(passed)) / @as(f64, @floatFromInt(total))) * 100.0 else 0.0, std.time.timestamp() });
     defer allocator.free(json_content);
     
-    try file.writeAll(json_content);
-    std.debug.print("📄 Results exported to test_results_demo.json\n", .{});
+    try file.writer().writeAll(json_content);
+    std.debug.writer().print("📄 Results exported to test_results_demo.json\n", .{});
 }
 
 // Cross-platform testing capabilities
 pub fn testCrossPlatformCompatibility() !void {
-    std.debug.print("🌍 Cross-Platform Compatibility Test\n", .{});
+    std.debug.writer().print("🌍 Cross-Platform Compatibility Test\n", .{});
     
     // Test platform detection
     const platform_info = @import("builtin").target;
-    std.debug.print("  Platform: {}\n", .{platform_info.os.tag});
-    std.debug.print("  Architecture: {}\n", .{platform_info.cpu.arch});
+    std.debug.writer().print("  Platform: {s}\n", .{{platform_info.os.tag});
+    std.debug.writer().print("  Architecture: {s}\n", .{{platform_info.cpu.arch});
     
     // Test basic functionality across platforms
     try testing.expect(2 + 2 == 4); // Universal truth!

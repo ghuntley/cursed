@@ -23,7 +23,7 @@ pub const SourceLocation = struct {
     }
     
     pub fn format(self: SourceLocation, writer: anytype) !void {
-        try writer.print("{}:{}:{}", .{ self.file, self.line, self.column });
+        try writer.print("{s}:{s}:{s}", .{ self.file, self.line, self.column });
     }
 };
 
@@ -197,7 +197,7 @@ pub const DiagnosticMessage = struct {
     // No manual deinit needed - arena handles cleanup
     
     pub fn addSuggestion(self: *DiagnosticMessage, suggestion: Suggestion) !void {
-        try self.suggestions.append(suggestion);
+        try self.suggestions.append(allocator, suggestion);
     }
     
     pub fn setSourceSnippet(self: *DiagnosticMessage, snippet: []const u8) !void {
@@ -311,13 +311,13 @@ pub const ErrorReporter = struct {
             .warning_count = 0,
             .use_colors = true,
             .verbose = false,
-            .source_files = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
+            .source_files = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *ErrorReporter) void {
         // Arena automatically cleans up all allocated memory
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     pub fn addSourceFile(self: *ErrorReporter, file_path: []const u8, contents: []const u8) !void {
@@ -381,7 +381,7 @@ pub const ErrorReporter = struct {
         // Add helpful suggestions based on error code
         try self.addSuggestionsForError(&diagnostic);
         
-        try self.diagnostics.append(diagnostic);
+        try self.diagnostics.append(allocator, diagnostic);
     }
     
     fn extractSourceLine(self: *ErrorReporter, source: []const u8, line_num: u32) ![]const u8 {

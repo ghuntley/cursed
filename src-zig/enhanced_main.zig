@@ -14,19 +14,20 @@ pub const EnhancedInterpreter = struct {
     variables: std.StringHashMap(integration.InterpreterValue),
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const interpreter = try allocator.create(Self);
         interpreter.* = Self{
             .allocator = allocator,
             .runtime = try integration.UnifiedRuntime.init(allocator),
-            .variables = std.StringHashMap(integration.InterpreterValue).init(allocator),
+            .variables = std.StringHashMap(integration.InterpreterValue){},
         };
         
         return interpreter;
     }
     
     pub fn deinit(self: *Self) void {
-        self.variables.deinit();
-        self.runtime.deinit();
+        self.variables.deinit(self.allocator);
+        self.runtime.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -138,11 +139,11 @@ fn demoErrorHandling(interpreter: *EnhancedInterpreter) !void {
     
     // Test yikes
     const error_result = try interpreter.executeYikes("This is a test error");
-    std.debug.print("Created error: {}\n", .{error_result});
+    std.debug.print("Created error: {s}\n", .{error_result});
     
     // Test shook
     const shook_result = interpreter.executeShook(error_result);
-    std.debug.print("Shook result: {}\n", .{shook_result});
+    std.debug.print("Shook result: {s}\n", .{shook_result});
     
     // Test fam with success
     const success_result = interpreter.executeFam(
@@ -153,12 +154,12 @@ fn demoErrorHandling(interpreter: *EnhancedInterpreter) !void {
         }.tryIt,
         struct {
             fn catchIt(error_obj: *integration.advanced_error_handling.CursedError) integration.InterpreterValue {
-                std.debug.print("Caught error: {}\n", .{error_obj.*});
+                std.debug.print("Caught error: {s}\n", .{error_obj.*});
                 return integration.InterpreterValue{ .String = "Error handled" };
             }
         }.catchIt
     );
-    std.debug.print("Fam success result: {}\n", .{success_result});
+    std.debug.print("Fam success result: {s}\n", .{success_result});
     
     // Test fam with error
     const error_fam_result = interpreter.executeFam(
@@ -175,12 +176,12 @@ fn demoErrorHandling(interpreter: *EnhancedInterpreter) !void {
         }.tryIt,
         struct {
             fn catchIt(error_obj: *integration.advanced_error_handling.CursedError) integration.InterpreterValue {
-                std.debug.print("Fam caught error: {}\n", .{error_obj.*});
+                std.debug.print("Fam caught error: {s}\n", .{error_obj.*});
                 return integration.InterpreterValue{ .String = "Recovered from fam error" };
             }
         }.catchIt
     );
-    std.debug.print("Fam error result: {}\n", .{error_fam_result});
+    std.debug.print("Fam error result: {s}\n", .{error_fam_result});
 }
 
 /// Demo function that shows concurrency in action
@@ -189,23 +190,23 @@ fn demoConcurrency(interpreter: *EnhancedInterpreter) !void {
     
     // Create a channel
     const channel = try interpreter.createChannel(5);
-    std.debug.print("Created channel: {}\n", .{channel});
+    std.debug.print("Created channel: {s}\n", .{channel});
     
     // Test channel operations
     const send_result = try interpreter.channelSend(channel, integration.InterpreterValue{ .Integer = 123 });
-    std.debug.print("Send result: {}\n", .{send_result});
+    std.debug.print("Send result: {s}\n", .{send_result});
     
     const recv_result = try interpreter.channelRecv(channel);
-    std.debug.print("Received: {}\n", .{recv_result});
+    std.debug.print("Received: {s}\n", .{recv_result});
     
     // Test goroutine spawning
     var shared_counter: i32 = 0;
     const goroutine_result = try interpreter.executeStan(demoGoroutineEntry, &shared_counter);
-    std.debug.print("Spawned goroutine: {}\n", .{goroutine_result});
+    std.debug.print("Spawned goroutine: {s}\n", .{goroutine_result});
     
     // Give goroutine time to execute
     std.time.sleep(100_000_000); // 100ms
-    std.debug.print("Counter after goroutine: {}\n", .{shared_counter});
+    std.debug.print("Counter after goroutine: {s}\n", .{shared_counter});
 }
 
 fn demoGoroutineEntry(context: ?*anyopaque) void {
@@ -213,7 +214,7 @@ fn demoGoroutineEntry(context: ?*anyopaque) void {
         const counter_ptr = @as(*i32, @ptrCast(@alignCast(ctx)));
         for (0..10) |i| {
             counter_ptr.* += 1;
-            std.debug.print("Goroutine iteration {}, counter: {}\n", .{ i, counter_ptr.* });
+            std.debug.print("Goroutine iteration {s}, counter: {s}\n", .{ i, counter_ptr.* });
             std.time.sleep(10_000_000); // 10ms
         }
         std.debug.print("Goroutine completed\n");
@@ -242,11 +243,11 @@ fn runInteractiveDemo(interpreter: *EnhancedInterpreter) !void {
             }
             
             const result = interpreter.evaluateExpression(trimmed) catch |err| {
-                std.debug.print("Error evaluating expression: {}\n", .{err});
+                std.debug.print("Error evaluating expression: {s}\n", .{err});
                 continue;
             };
             
-            std.debug.print("=> {}\n", .{result});
+            std.debug.print("=> {s}\n", .{result});
         } else {
             break;
         }

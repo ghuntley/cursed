@@ -103,7 +103,7 @@ pub const EnhancedMonomorphizer = struct {
         
         pub fn init() InstantiationGraph {
             return InstantiationGraph{
-                .nodes = HashMap([]const u8, InstantiationNode, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .nodes = HashMap([]const u8, InstantiationNode, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
                 .edges = .empty,
             };
         }
@@ -114,8 +114,8 @@ pub const EnhancedMonomorphizer = struct {
                 entry.value_ptr.depends_on.deinit();
                 entry.value_ptr.dependents.deinit();
             }
-            self.nodes.deinit();
-            self.edges.deinit();
+            self.nodes.deinit(self.allocator);
+            self.edges.deinit(self.allocator);
         }
         
         /// Add dependency relationship between two instantiations
@@ -129,21 +129,22 @@ pub const EnhancedMonomorphizer = struct {
             
             // Update node dependency lists
             if (self.nodes.getPtr(dependent)) |dependent_node| {
-                try dependent_node.depends_on.append(dependency);
+                try dependent_node.depends_on.append(allocator, dependency);
             }
             
             if (self.nodes.getPtr(dependency)) |dependency_node| {
-                try dependency_node.dependents.append(dependent);
+                try dependency_node.dependents.append(allocator, dependent);
             }
         }
         
         /// Perform topological sort to determine instantiation order
         pub fn getInstantiationOrder(self: *InstantiationGraph, allocator: Allocator) ![][]const u8 {
-            var sorted = .empty;
-            var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+        _ = allocator;
+            var sorted = std.ArrayList(u8){};
+            var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
             defer visited.deinit();
             
-            var temp_visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+            var temp_visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
             defer temp_visited.deinit();
             
             // Initialize all nodes as unvisited
@@ -194,7 +195,7 @@ pub const EnhancedMonomorphizer = struct {
             
             try temp_visited.put(node_name, false);
             try visited.put(node_name, true);
-            try sorted.append(node_name);
+            try sorted.append(allocator, node_name);
         }
     };
     
@@ -243,7 +244,7 @@ pub const EnhancedMonomorphizer = struct {
         
         pub fn init() OptimizationCache {
             return OptimizationCache{
-                .cached_optimizations = HashMap(OptimizationKey, OptimizationResult, OptimizationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .cached_optimizations = HashMap(OptimizationKey, OptimizationResult, OptimizationKeyContext, std.hash_map.default_max_load_percentage){},
                 .optimization_stats = OptimizationStats{
                     .total_optimizations = 0,
                     .cache_hits = 0,
@@ -255,7 +256,7 @@ pub const EnhancedMonomorphizer = struct {
         }
         
         pub fn deinit(self: *OptimizationCache) void {
-            self.cached_optimizations.deinit();
+            self.cached_optimizations.deinit(self.allocator);
         }
     };
     
@@ -353,13 +354,13 @@ pub const EnhancedMonomorphizer = struct {
             while (iter.next()) |entry| {
                 entry.value_ptr.deinit();
             }
-            self.dependencies.deinit();
+            self.dependencies.deinit(self.allocator);
             
             var rev_iter = self.reverse_dependencies.iterator();
             while (rev_iter.next()) |entry| {
                 entry.value_ptr.deinit();
             }
-            self.reverse_dependencies.deinit();
+            self.reverse_dependencies.deinit(self.allocator);
         }
         
         pub fn addDependency(self: *DependencyTracker, dependent: []const u8, dependency: []const u8) !void {
@@ -368,14 +369,14 @@ pub const EnhancedMonomorphizer = struct {
             if (!deps.found_existing) {
                 deps.value_ptr.* = .empty;
             }
-            try deps.value_ptr.append(dependency);
+            try deps.value_ptr.append(allocator, dependency);
             
             // Add to reverse dependencies
             const rev_deps = try self.reverse_dependencies.getOrPut(dependency);
             if (!rev_deps.found_existing) {
                 rev_deps.value_ptr.* = .empty;
             }
-            try rev_deps.value_ptr.append(dependent);
+            try rev_deps.value_ptr.append(allocator, dependent);
         }
         
         pub fn getDependencies(self: *DependencyTracker, name: []const u8) ?[]const []const u8 {
@@ -411,17 +412,17 @@ pub const EnhancedMonomorphizer = struct {
             .optimization_cache = OptimizationCache.init(allocator),
             .specialization_metrics = SpecializationMetrics.init(),
             .type_inference_ctx = type_inference.TypeInferenceContext.init(allocator, base_monomorphizer, type_registry),
-            .monomorphization_cache = HashMap(MonomorphizationKey, CachedInstantiation, MonomorphizationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .monomorphization_cache = HashMap(MonomorphizationKey, CachedInstantiation, MonomorphizationKeyContext, std.hash_map.default_max_load_percentage){},
             .dependency_tracker = DependencyTracker.init(allocator),
         };
     }
     
     pub fn deinit(self: *EnhancedMonomorphizer) void {
-        self.instantiation_graph.deinit();
-        self.optimization_cache.deinit();
-        self.type_inference_ctx.deinit();
-        self.monomorphization_cache.deinit();
-        self.dependency_tracker.deinit();
+        self.instantiation_graph.deinit(self.allocator);
+        self.optimization_cache.deinit(self.allocator);
+        self.type_inference_ctx.deinit(self.allocator);
+        self.monomorphization_cache.deinit(self.allocator);
+        self.dependency_tracker.deinit(self.allocator);
     }
     
     /// Enhanced instantiation with automatic type inference

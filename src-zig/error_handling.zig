@@ -140,7 +140,7 @@ pub const ErrorContext = struct {
         try writer.print("Error: {s} - {s}\n", .{ @errorName(self.error_code), self.message });
         
         if (self.location) |loc| {
-            try writer.print("  at {s}:{}:{}\n", .{ loc.file, loc.line, loc.column });
+            try writer.print("  at {s}:{s}:{s}\n", .{ loc.file, loc.line, loc.column });
         }
         
         if (self.inner_error) |inner| {
@@ -157,7 +157,7 @@ pub const ErrorContext = struct {
     }
     
     pub fn toString(self: ErrorContext, allocator: Allocator) ![]u8 {
-        var buffer = .empty;
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         const writer = buffer.writer(&[_]u8{});
@@ -279,7 +279,7 @@ pub fn safeWriteFile(allocator: Allocator, path: []const u8, contents: []const u
     };
     defer file.close();
     
-    file.writeAll(contents) catch |err| {
+    file.writer().writeAll(contents) catch |err| {
         return mapFileWriteError(err);
     };
 }
@@ -387,7 +387,7 @@ pub const ErrorRecovery = struct {
         for (self.errors.items) |*error_ctx| {
             error_ctx.deinit();
         }
-        self.errors.deinit();
+        self.errors.deinit(self.allocator);
         
         for (self.stack_traces.items) |trace| {
             for (trace) |frame| {
@@ -395,12 +395,12 @@ pub const ErrorRecovery = struct {
             }
             self.allocator.free(trace);
         }
-        self.stack_traces.deinit();
+        self.stack_traces.deinit(self.allocator);
         
         for (self.current_function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.current_function_stack.deinit();
+        self.current_function_stack.deinit(self.allocator);
     }
     
     pub fn pushFunction(self: *ErrorRecovery, function_name: []const u8) !void {
@@ -431,7 +431,7 @@ pub const ErrorRecovery = struct {
         // Capture current stack trace
         ctx.stack_trace = try self.captureStackTrace();
         
-        try self.errors.append(ctx);
+        try self.errors.append(self.allocator, ctx);
     }
     
     pub fn hasErrors(self: *ErrorRecovery) bool {

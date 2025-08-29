@@ -771,13 +771,13 @@ pub const ArgParser = struct {
             print("OS: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.os.tag)});
             print("Architecture: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.cpu.arch)});
             print("Endianness: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.cpu.arch.endian())});
-            print("Pointer Width: \x1b[32m{} bits\x1b[0m\n", .{@bitSizeOf(usize)});
+            print("Pointer Width: \x1b[32m{s} bits\x1b[0m\n", .{@bitSizeOf(usize)});
         } else {
             print("Platform Information:\n", .{});
             print("OS: {s}\n", .{@tagName(builtin.os.tag)});
             print("Architecture: {s}\n", .{@tagName(builtin.cpu.arch)});
             print("Endianness: {s}\n", .{@tagName(builtin.cpu.arch.endian())});
-            print("Pointer Width: {} bits\n", .{@bitSizeOf(usize)});
+            print("Pointer Width: {s} bits\n", .{@bitSizeOf(usize)});
         }
     }
     
@@ -834,7 +834,7 @@ pub const ArgParser = struct {
         print("Runtime Statistics:\n", .{});
         print("  Memory Usage: <runtime stats not yet implemented>\n", .{});
         print("  Compilation Time: <runtime stats not yet implemented>\n", .{});
-        print("  Optimization Level: {}\n", .{self.global_args.optimization});
+        print("  Optimization Level: {s}\n", .{self.global_args.optimization});
     }
     
     pub fn printHardwareInfo(self: *ArgParser) !void {
@@ -905,10 +905,10 @@ pub const ErrorReporter = struct {
                   .{ error_code, message, file, line, column });
         } else if (self.use_color) {
             print("\x1b[1;31merror\x1b[0m[\x1b[33m{s}\x1b[0m]: {s}\n", .{ error_code, message });
-            print("  \x1b[36m-->\x1b[0m {s}:{}:{}\n", .{ file, line, column });
+            print("  \x1b[36m-->\x1b[0m {s}:{s}:{s}\n", .{ file, line, column });
         } else {
             print("error[{s}]: {s}\n", .{ error_code, message });
-            print("  --> {s}:{}:{}\n", .{ file, line, column });
+            print("  --> {s}:{s}:{s}\n", .{ file, line, column });
         }
     }
     
@@ -918,10 +918,10 @@ pub const ErrorReporter = struct {
                   .{ message, file, line, column });
         } else if (self.use_color) {
             print("\x1b[1;33mwarning\x1b[0m: {s}\n", .{message});
-            print("  \x1b[36m-->\x1b[0m {s}:{}:{}\n", .{ file, line, column });
+            print("  \x1b[36m-->\x1b[0m {s}:{s}:{s}\n", .{ file, line, column });
         } else {
             print("warning: {s}\n", .{message});
-            print("  --> {s}:{}:{}\n", .{ file, line, column });
+            print("  --> {s}:{s}:{s}\n", .{ file, line, column });
         }
     }
     

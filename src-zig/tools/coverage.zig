@@ -35,16 +35,16 @@ pub const CoverageData = struct {
             .functions_covered = 0,
             .branches_total = 0,
             .branches_covered = 0,
-            .line_coverage = std.StringHashMap(bool).init(allocator),
-            .function_coverage = std.StringHashMap(bool).init(allocator),
-            .branch_coverage = std.StringHashMap(bool).init(allocator),
+            .line_coverage = std.StringHashMap(bool){},
+            .function_coverage = std.StringHashMap(bool){},
+            .branch_coverage = std.StringHashMap(bool){},
         };
     }
     
     pub fn deinit(self: *Self) void {
-        self.line_coverage.deinit();
-        self.function_coverage.deinit();
-        self.branch_coverage.deinit();
+        self.line_coverage.deinit(self.allocator);
+        self.function_coverage.deinit(self.allocator);
+        self.branch_coverage.deinit(self.allocator);
     }
     
     pub fn getLineCoveragePercent(self: *const Self) f32 {
@@ -76,7 +76,7 @@ pub const CoverageReport = struct {
     
     pub fn init() Self {
         return Self{
-            .files = ArrayList(CoverageData).init(allocator),
+            .files = ArrayList(CoverageData){},
             .total_lines = 0,
             .covered_lines = 0,
             .total_functions = 0,
@@ -90,11 +90,11 @@ pub const CoverageReport = struct {
         for (self.files.items) |*file| {
             file.deinit();
         }
-        self.files.deinit();
+        self.files.deinit(self.allocator);
     }
     
     pub fn addFile(self: *Self, file_data: CoverageData) !void {
-        try self.files.append(file_data);
+        try self.files.append(allocator, file_data);
         self.total_lines += file_data.lines_total;
         self.covered_lines += file_data.lines_covered;
         self.total_functions += file_data.functions_total;
@@ -120,7 +120,7 @@ pub const CoverageAnalyzer = struct {
     pub fn init() Self {
         return Self{
             .allocator = allocator,
-            .coverage_data = std.StringHashMap(CoverageData).init(allocator),
+            .coverage_data = std.StringHashMap(CoverageData){},
             .runtime_data = std.StringHashMap(std.StringHashMap(bool)).init(allocator),
         };
     }
@@ -130,13 +130,13 @@ pub const CoverageAnalyzer = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.coverage_data.deinit();
+        self.coverage_data.deinit(self.allocator);
         
         var runtime_iter = self.runtime_data.iterator();
         while (runtime_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.runtime_data.deinit();
+        self.runtime_data.deinit(self.allocator);
     }
     
     pub fn analyzeFile(self: *Self, file_path: []const u8) !CoverageData {
@@ -223,11 +223,11 @@ pub const CoverageAnalyzer = struct {
         const output_file = try std.fs.cwd().createFile(output_path, .{});
         defer output_file.close();
         
-        try output_file.writeAll(instrumented);
+        try output_file.writer().writeAll(instrumented);
     }
     
     fn addCoverageInstrumentation(self: *Self, source: []const u8, file_path: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         // Add coverage runtime import at the top
@@ -250,7 +250,7 @@ pub const CoverageAnalyzer = struct {
             
             // Add original line
             try result.appendSlice(line);
-            try result.append('\n');
+            try result.append(allocator, '\n');
             
             line_number += 1;
         }
@@ -282,7 +282,7 @@ pub const CoverageAnalyzer = struct {
     
     pub fn recordExecution(self: *Self, file_path: []const u8, line: u32) !void {
         var file_data = self.runtime_data.get(file_path) orelse blk: {
-            const new_map = std.StringHashMap(bool).init(self.allocator);
+            const new_map = std.StringHashMap(bool){};
             try self.runtime_data.put(file_path, new_map);
             break :blk self.runtime_data.getPtr(file_path).?;
         };
@@ -303,7 +303,7 @@ pub const CoverageAnalyzer = struct {
     }
     
     fn generateHTMLReport(self: *Self) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         try result.appendSlice(
@@ -375,7 +375,7 @@ pub const CoverageAnalyzer = struct {
     }
     
     fn generateJSONReport(self: *Self) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         try result.appendSlice("{\n  \"coverage\": {\n");
@@ -427,7 +427,7 @@ pub const CoverageAnalyzer = struct {
     }
     
     fn generateLCOVReport(self: *Self) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var coverage_iter = self.coverage_data.iterator();
@@ -451,7 +451,7 @@ pub const CoverageAnalyzer = struct {
     }
     
     fn generateConsoleReport(self: *Self) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         try result.appendSlice("CURSED Code Coverage Report\n");
@@ -506,6 +506,7 @@ pub const CoverageRuntime = struct {
     var instance: ?*Self = null;
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const self = try allocator.create(Self);
         self.* = Self{
             .coverage_data = std.StringHashMap(std.StringHashMap(bool)).init(allocator),
@@ -520,7 +521,7 @@ pub const CoverageRuntime = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.coverage_data.deinit();
+        self.coverage_data.deinit(self.allocator);
         self.allocator.destroy(self);
         instance = null;
     }
@@ -528,14 +529,14 @@ pub const CoverageRuntime = struct {
     pub fn recordLine(file_path: []const u8, line: u32) void {
         if (instance) |self| {
             self.recordLineExecution(file_path, line) catch |err| {
-                print("Coverage recording error: {}\n", .{err});
+                print("Coverage recording error: {s}\n", .{{err});
             };
         }
     }
     
     fn recordLineExecution(self: *Self, file_path: []const u8, line: u32) !void {
         var file_data = self.coverage_data.getPtr(file_path) orelse blk: {
-            const new_map = std.StringHashMap(bool).init(self.allocator);
+            const new_map = std.StringHashMap(bool){};
             try self.coverage_data.put(file_path, new_map);
             break :blk self.coverage_data.getPtr(file_path).?;
         };
@@ -562,6 +563,6 @@ pub const CoverageRuntime = struct {
         const output_file = try std.fs.cwd().createFile(output_path, .{});
         defer output_file.close();
         
-        try output_file.writeAll(report);
+        try output_file.writer().writeAll(report);
     }
 };

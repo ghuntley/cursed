@@ -27,6 +27,7 @@ pub const AdvancedPerformanceOptimizer = struct {
     optimization_results: OptimizationResults,
 
     pub fn init(allocator: Allocator) !AdvancedPerformanceOptimizer {
+        _ = allocator;
         return AdvancedPerformanceOptimizer{
             .allocator = allocator,
             .pgo_engine = try ProfileGuidedOptimizer.init(allocator),
@@ -41,13 +42,13 @@ pub const AdvancedPerformanceOptimizer = struct {
     }
 
     pub fn deinit(self: *AdvancedPerformanceOptimizer) void {
-        self.optimization_results.deinit();
-        self.performance_tracker.deinit();
-        self.benchmark_suite.deinit();
-        self.runtime_optimizer.deinit();
-        self.llvm_optimizer.deinit();
-        self.lto_engine.deinit();
-        self.pgo_engine.deinit();
+        self.optimization_results.deinit(self.allocator);
+        self.performance_tracker.deinit(self.allocator);
+        self.benchmark_suite.deinit(self.allocator);
+        self.runtime_optimizer.deinit(self.allocator);
+        self.llvm_optimizer.deinit(self.allocator);
+        self.lto_engine.deinit(self.allocator);
+        self.pgo_engine.deinit(self.allocator);
     }
 
     /// Run complete advanced optimization pipeline
@@ -113,20 +114,20 @@ pub const AdvancedPerformanceOptimizer = struct {
 
         // 2. Hot path identification
         const hot_paths = try self.pgo_engine.identifyHotPaths(module);
-        std.debug.print("  ✓ Identified {} hot paths\n", .{hot_paths.len});
+        std.debug.print("  ✓ Identified {s} hot paths\n", .{hot_paths.len});
 
         // 3. Branch prediction optimization
         const branch_optimizations = try self.pgo_engine.optimizeBranchPrediction(module, hot_paths);
-        std.debug.print("  ✓ Optimized {} branch predictions\n", .{branch_optimizations});
+        std.debug.print("  ✓ Optimized {s} branch predictions\n", .{branch_optimizations});
 
         // 4. Function inlining decisions based on runtime data
         const inlining_decisions = try self.pgo_engine.makeInliningDecisions(module, hot_paths);
         const inlined_functions = try self.pgo_engine.performRuntimeGuidedInlining(module, inlining_decisions);
-        std.debug.print("  ✓ Inlined {} functions based on runtime data\n", .{inlined_functions});
+        std.debug.print("  ✓ Inlined {s} functions based on runtime data\n", .{inlined_functions});
 
         // 5. Code layout optimization
         const layout_optimizations = try self.pgo_engine.optimizeCodeLayout(module, hot_paths);
-        std.debug.print("  ✓ Applied {} code layout optimizations\n", .{layout_optimizations});
+        std.debug.print("  ✓ Applied {s} code layout optimizations\n", .{layout_optimizations});
 
         const end_time = timer.read();
 
@@ -147,27 +148,27 @@ pub const AdvancedPerformanceOptimizer = struct {
 
         // 1. Custom optimization passes for CURSED idioms
         const cursed_optimizations = try self.llvm_optimizer.applyCursedSpecificPasses(module);
-        std.debug.print("  ✓ Applied {} CURSED-specific optimizations\n", .{cursed_optimizations});
+        std.debug.print("  ✓ Applied {s} CURSED-specific optimizations\n", .{cursed_optimizations});
 
         // 2. Memory access pattern optimization
         const memory_optimizations = try self.llvm_optimizer.optimizeMemoryAccessPatterns(module);
-        std.debug.print("  ✓ Optimized {} memory access patterns\n", .{memory_optimizations});
+        std.debug.print("  ✓ Optimized {s} memory access patterns\n", .{memory_optimizations});
 
         // 3. Loop vectorization and unrolling
         const loop_result = try self.llvm_optimizer.optimizeLoops(module, target_config);
-        std.debug.print("  ✓ Vectorized {} loops, unrolled {} loops\n", .{ loop_result.vectorized_loops, loop_result.unrolled_loops });
+        std.debug.print("  ✓ Vectorized {s} loops, unrolled {s} loops\n", .{ loop_result.vectorized_loops, loop_result.unrolled_loops });
 
         // 4. Tail call optimization
         const tail_call_optimizations = try self.llvm_optimizer.optimizeTailCalls(module);
-        std.debug.print("  ✓ Optimized {} tail calls\n", .{tail_call_optimizations});
+        std.debug.print("  ✓ Optimized {s} tail calls\n", .{tail_call_optimizations});
 
         // 5. SIMD instruction generation
         const simd_optimizations = try self.llvm_optimizer.generateSIMDInstructions(module, target_config);
-        std.debug.print("  ✓ Generated {} SIMD instruction sequences\n", .{simd_optimizations});
+        std.debug.print("  ✓ Generated {s} SIMD instruction sequences\n", .{simd_optimizations});
 
         // 6. Target-specific optimizations
         const target_optimizations = try self.llvm_optimizer.applyTargetSpecificOptimizations(module, target_config);
-        std.debug.print("  ✓ Applied {} target-specific optimizations\n", .{target_optimizations});
+        std.debug.print("  ✓ Applied {s} target-specific optimizations\n", .{target_optimizations});
 
         const end_time = timer.read();
 
@@ -190,23 +191,23 @@ pub const AdvancedPerformanceOptimizer = struct {
 
         // 1. Cross-module optimization
         const cross_module_opts = try self.lto_engine.performCrossModuleOptimization(module);
-        std.debug.print("  ✓ Applied {} cross-module optimizations\n", .{cross_module_opts});
+        std.debug.print("  ✓ Applied {s} cross-module optimizations\n", .{cross_module_opts});
 
         // 2. Dead code elimination
         const dead_code_eliminated = try self.lto_engine.eliminateDeadCode(module);
-        std.debug.print("  ✓ Eliminated {} dead code sections\n", .{dead_code_eliminated});
+        std.debug.print("  ✓ Eliminated {s} dead code sections\n", .{dead_code_eliminated});
 
         // 3. Function specialization
         const specialized_functions = try self.lto_engine.specializeFunctions(module);
-        std.debug.print("  ✓ Specialized {} functions\n", .{specialized_functions});
+        std.debug.print("  ✓ Specialized {s} functions\n", .{specialized_functions});
 
         // 4. Global constant propagation
         const constant_propagations = try self.lto_engine.propagateGlobalConstants(module);
-        std.debug.print("  ✓ Propagated {} global constants\n", .{constant_propagations});
+        std.debug.print("  ✓ Propagated {s} global constants\n", .{constant_propagations});
 
         // 5. Whole-program analysis
         const whole_program_opts = try self.lto_engine.performWholeProgramAnalysis(module);
-        std.debug.print("  ✓ Applied {} whole-program optimizations\n", .{whole_program_opts});
+        std.debug.print("  ✓ Applied {s} whole-program optimizations\n", .{whole_program_opts});
 
         const end_time = timer.read();
 
@@ -228,23 +229,23 @@ pub const AdvancedPerformanceOptimizer = struct {
 
         // 1. Optimized memory allocation patterns
         const allocation_optimizations = try self.runtime_optimizer.optimizeAllocationPatterns(module);
-        std.debug.print("  ✓ Optimized {} memory allocation patterns\n", .{allocation_optimizations});
+        std.debug.print("  ✓ Optimized {s} memory allocation patterns\n", .{allocation_optimizations});
 
         // 2. Cache-friendly data structures
         const cache_optimizations = try self.runtime_optimizer.optimizeDataStructuresForCache(module);
-        std.debug.print("  ✓ Applied {} cache-friendly optimizations\n", .{cache_optimizations});
+        std.debug.print("  ✓ Applied {s} cache-friendly optimizations\n", .{cache_optimizations});
 
         // 3. Memory pool optimization
         const pool_optimizations = try self.runtime_optimizer.optimizeMemoryPools(module);
-        std.debug.print("  ✓ Optimized {} memory pools\n", .{pool_optimizations});
+        std.debug.print("  ✓ Optimized {s} memory pools\n", .{pool_optimizations});
 
         // 4. Garbage collection optimization
         const gc_optimizations = try self.runtime_optimizer.optimizeGarbageCollection(module);
-        std.debug.print("  ✓ Applied {} GC optimizations\n", .{gc_optimizations});
+        std.debug.print("  ✓ Applied {s} GC optimizations\n", .{gc_optimizations});
 
         // 5. Concurrency optimizations
         const concurrency_optimizations = try self.runtime_optimizer.optimizeConcurrency(module);
-        std.debug.print("  ✓ Applied {} concurrency optimizations\n", .{concurrency_optimizations});
+        std.debug.print("  ✓ Applied {s} concurrency optimizations\n", .{concurrency_optimizations});
 
         const end_time = timer.read();
 
@@ -266,19 +267,19 @@ pub const AdvancedPerformanceOptimizer = struct {
 
         // 1. Constant folding and propagation
         const constants_folded = try self.foldConstants(module);
-        std.debug.print("  ✓ Folded {} constants\n", .{constants_folded});
+        std.debug.print("  ✓ Folded {s} constants\n", .{constants_folded});
 
         // 2. Dead code elimination
         const dead_code_eliminated = try self.eliminateDeadCode(module);
-        std.debug.print("  ✓ Eliminated {} dead code instructions\n", .{dead_code_eliminated});
+        std.debug.print("  ✓ Eliminated {s} dead code instructions\n", .{dead_code_eliminated});
 
         // 3. Common subexpression elimination
         const subexpressions_eliminated = try self.eliminateCommonSubexpressions(module);
-        std.debug.print("  ✓ Eliminated {} common subexpressions\n", .{subexpressions_eliminated});
+        std.debug.print("  ✓ Eliminated {s} common subexpressions\n", .{subexpressions_eliminated});
 
         // 4. Aggressive inlining
         const functions_inlined = try self.performAggressiveInlining(module);
-        std.debug.print("  ✓ Aggressively inlined {} functions\n", .{functions_inlined});
+        std.debug.print("  ✓ Aggressively inlined {s} functions\n", .{functions_inlined});
 
         // 5. Parallel compilation support
         const parallel_speedup = try self.enableParallelCompilation();
@@ -392,28 +393,28 @@ pub const AdvancedPerformanceOptimizer = struct {
         try writer.print("⚡ Compilation Speedup: {d:.2}x\n\n", .{result.compilation_speedup});
 
         try writer.print("📊 Profile-Guided Optimization Results:\n", .{});
-        try writer.print("  • Hot paths identified: {}\n", .{result.pgo_result.hot_paths_identified});
-        try writer.print("  • Branch optimizations: {}\n", .{result.pgo_result.branch_optimizations});
-        try writer.print("  • Functions inlined: {}\n", .{result.pgo_result.functions_inlined});
+        try writer.print("  • Hot paths identified: {s}\n", .{result.pgo_result.hot_paths_identified});
+        try writer.print("  • Branch optimizations: {s}\n", .{result.pgo_result.branch_optimizations});
+        try writer.print("  • Functions inlined: {s}\n", .{result.pgo_result.functions_inlined});
         try writer.print("  • Performance gain: {d:.2}x\n\n", .{result.pgo_result.estimated_performance_gain});
 
         try writer.print("⚡ LLVM Optimization Results:\n", .{});
-        try writer.print("  • CURSED-specific optimizations: {}\n", .{result.llvm_result.cursed_optimizations});
-        try writer.print("  • Memory optimizations: {}\n", .{result.llvm_result.memory_optimizations});
-        try writer.print("  • Loops vectorized: {}\n", .{result.llvm_result.loop_result.vectorized_loops});
-        try writer.print("  • SIMD optimizations: {}\n", .{result.llvm_result.simd_optimizations});
+        try writer.print("  • CURSED-specific optimizations: {s}\n", .{result.llvm_result.cursed_optimizations});
+        try writer.print("  • Memory optimizations: {s}\n", .{result.llvm_result.memory_optimizations});
+        try writer.print("  • Loops vectorized: {s}\n", .{result.llvm_result.loop_result.vectorized_loops});
+        try writer.print("  • SIMD optimizations: {s}\n", .{result.llvm_result.simd_optimizations});
         try writer.print("  • Estimated speedup: {d:.2}x\n\n", .{result.llvm_result.estimated_speedup});
 
         try writer.print("🔗 Link-Time Optimization Results:\n", .{});
-        try writer.print("  • Cross-module optimizations: {}\n", .{result.lto_result.cross_module_optimizations});
-        try writer.print("  • Dead code eliminated: {}\n", .{result.lto_result.dead_code_eliminated});
-        try writer.print("  • Functions specialized: {}\n", .{result.lto_result.specialized_functions});
+        try writer.print("  • Cross-module optimizations: {s}\n", .{result.lto_result.cross_module_optimizations});
+        try writer.print("  • Dead code eliminated: {s}\n", .{result.lto_result.dead_code_eliminated});
+        try writer.print("  • Functions specialized: {s}\n", .{result.lto_result.specialized_functions});
         try writer.print("  • Code size reduction: {d:.1}%\n\n", .{result.lto_result.code_size_reduction_percent});
 
         try writer.print("🏃 Runtime Optimization Results:\n", .{});
-        try writer.print("  • Allocation optimizations: {}\n", .{result.runtime_result.allocation_optimizations});
-        try writer.print("  • Cache optimizations: {}\n", .{result.runtime_result.cache_optimizations});
-        try writer.print("  • GC optimizations: {}\n", .{result.runtime_result.gc_optimizations});
+        try writer.print("  • Allocation optimizations: {s}\n", .{result.runtime_result.allocation_optimizations});
+        try writer.print("  • Cache optimizations: {s}\n", .{result.runtime_result.cache_optimizations});
+        try writer.print("  • GC optimizations: {s}\n", .{result.runtime_result.gc_optimizations});
         try writer.print("  • Memory reduction: {d:.1}%\n\n", .{result.runtime_result.memory_reduction_percent});
 
         try writer.print("📈 Performance Benchmarks:\n", .{});

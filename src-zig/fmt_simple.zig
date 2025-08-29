@@ -19,19 +19,19 @@ pub fn main() !void {
 
     // Read file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("❌ Error opening file '{s}': {}\n", .{ filename, err });
+        print("❌ Error opening file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     // Read content
     const content = file.readToEndAlloc(std.heap.page_allocator, 1024 * 1024) catch |err| {
-        print("❌ Error reading file: {}\n", .{err});
+        print("❌ Error reading file: {s}\n", .{err});
         return;
     };
     defer std.heap.page_allocator.free(content);
 
-    print("✅ File read successfully ({} bytes)\n", .{content.len});
+    print("✅ File read successfully ({s} bytes)\n", .{content.len});
 
     // Simple formatting (placeholder - just outputs formatted version)
     const formatted = try formatCursedCode(content);
@@ -39,13 +39,13 @@ pub fn main() !void {
 
     // Write back to file
     const output_file = std.fs.cwd().createFile(filename, .{}) catch |err| {
-        print("❌ Error creating output file: {}\n", .{err});
+        print("❌ Error creating output file: {s}\n", .{err});
         return;
     };
     defer output_file.close();
 
-    output_file.writeAll(formatted) catch |err| {
-        print("❌ Error writing formatted code: {}\n", .{err});
+    output_file.writer().writeAll(formatted) catch |err| {
+        print("❌ Error writing formatted code: {s}\n", .{err});
         return;
     };
 

@@ -110,19 +110,19 @@ pub const DebugFunction = struct {
     }
     
     pub fn deinit(self: *DebugFunction) void {
-        self.parameters.deinit();
-        self.local_variables.deinit();
+        self.parameters.deinit(self.allocator);
+        self.local_variables.deinit(self.allocator);
     }
     
     pub fn addParameter(self: *DebugFunction, variable: DebugVariable) !void {
         var param = variable;
         param.is_parameter = true;
         param.is_local = false;
-        try self.parameters.append(param);
+        try self.parameters.append(allocator, param);
     }
     
     pub fn addLocalVariable(self: *DebugFunction, variable: DebugVariable) !void {
-        try self.local_variables.append(variable);
+        try self.local_variables.append(allocator, variable);
     }
 };
 
@@ -150,8 +150,8 @@ pub const DebugScope = struct {
             child.deinit();
             self.allocator.destroy(child);
         }
-        self.children.deinit();
-        self.variables.deinit();
+        self.children.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
     }
     
     pub fn createChildScope(self: *DebugScope, location: SourceLocation) !*DebugScope {
@@ -193,12 +193,12 @@ pub const CompilationUnit = struct {
         for (self.functions.items) |*func| {
             func.deinit();
         }
-        self.functions.deinit();
-        self.global_variables.deinit();
+        self.functions.deinit(self.allocator);
+        self.global_variables.deinit(self.allocator);
         for (self.types.items) |*debug_type| {
             debug_type.deinit();
         }
-        self.types.deinit();
+        self.types.deinit(self.allocator);
     }
 };
 
@@ -277,7 +277,7 @@ pub const DebugInfoGenerator = struct {
     }
     
     pub fn deinit(self: *DebugInfoGenerator) void {
-        self.compilation_unit.deinit();
+        self.compilation_unit.deinit(self.allocator);
         if (self.current_scope) |scope| {
             scope.deinit();
             self.allocator.destroy(scope);

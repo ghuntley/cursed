@@ -86,7 +86,7 @@ pub const MacroExpansionContext = struct {
         }
         
         pub fn deinit(self: *PendingExpansion) void {
-            self.dependencies.deinit();
+            self.dependencies.deinit(self.allocator);
         }
     };
     
@@ -120,7 +120,7 @@ pub const MacroExpansionContext = struct {
         }
         
         pub fn deinit(self: *ActiveExpansion) void {
-            self.child_expansions.deinit();
+            self.child_expansions.deinit(self.allocator);
         }
     };
     
@@ -194,7 +194,7 @@ pub const MacroExpansionContext = struct {
         
         fn deinit(self: *const NestedExpansionContext, allocator: Allocator) void {
             _ = allocator;
-            self.symbol_capture_context.deinit();
+            self.symbol_capture_context.deinit(self.allocator);
         }
     };
     
@@ -221,8 +221,8 @@ pub const MacroExpansionContext = struct {
             for (self.captured_symbols.items) |symbol| {
                 allocator.free(symbol);
             }
-            self.captured_symbols.deinit();
-            self.scope_boundaries.deinit();
+            self.captured_symbols.deinit(self.allocator);
+            self.scope_boundaries.deinit(self.allocator);
         }
     };
     
@@ -230,14 +230,14 @@ pub const MacroExpansionContext = struct {
         return MacroExpansionContext{
             .allocator = allocator,
             .expansion_queue = .empty,
-            .current_expansions = HashMap(MacroId, ActiveExpansion, MacroIdContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .current_expansions = HashMap(MacroId, ActiveExpansion, MacroIdContext, std.hash_map.default_max_load_percentage){},
             .expansion_counter = 0,
             .call_stack = .empty,
             .recursion_limit = 100,
             .dependency_graph = HashMap(MacroId, ArrayList(MacroId), MacroIdContext, std.hash_map.default_max_load_percentage).init(allocator),
             .hygiene_context = hygiene_context,
-            .macro_definitions = HashMap([]const u8, MacroDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .expansion_cache = HashMap(ExpansionKey, []Token, ExpansionKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .macro_definitions = HashMap([]const u8, MacroDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .expansion_cache = HashMap(ExpansionKey, []Token, ExpansionKeyContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -246,32 +246,32 @@ pub const MacroExpansionContext = struct {
         for (self.expansion_queue.items) |*expansion| {
             expansion.deinit();
         }
-        self.expansion_queue.deinit();
+        self.expansion_queue.deinit(self.allocator);
         
         // Clean up active expansions
         var active_iterator = self.current_expansions.iterator();
         while (active_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.current_expansions.deinit();
+        self.current_expansions.deinit(self.allocator);
         
         // Clean up dependency graph
         var dep_iterator = self.dependency_graph.iterator();
         while (dep_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.dependency_graph.deinit();
+        self.dependency_graph.deinit(self.allocator);
         
-        self.call_stack.deinit();
+        self.call_stack.deinit(self.allocator);
         
         // Clean up cached expansions
         var cache_iterator = self.expansion_cache.iterator();
         while (cache_iterator.next()) |entry| {
             self.allocator.free(entry.value_ptr.*);
         }
-        self.expansion_cache.deinit();
+        self.expansion_cache.deinit(self.allocator);
         
-        self.macro_definitions.deinit();
+        self.macro_definitions.deinit(self.allocator);
     }
     
     /// Register a macro definition
@@ -326,7 +326,7 @@ pub const MacroExpansionContext = struct {
     
     /// Process all queued macro expansions in correct order
     pub fn processExpansions(self: *MacroExpansionContext) ![]Token {
-        var result_tokens = .empty;
+        var result_tokens = std.ArrayList(u8){};
         defer result_tokens.deinit();
         
         // Process expansions by priority and dependency order
@@ -378,7 +378,7 @@ pub const MacroExpansionContext = struct {
         };
         
         // Perform macro expansion
-        var expanded_tokens = .empty;
+        var expanded_tokens = std.ArrayList(u8){};
         defer expanded_tokens.deinit();
         
         // Substitute parameters
@@ -405,7 +405,7 @@ pub const MacroExpansionContext = struct {
     /// Substitute function-like macro parameters
     fn substituteFunctionLikeMacro(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition, call: *const MacroCall) !void {
         // Create parameter substitution map
-        var substitutions = HashMap([]const u8, []Token, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var substitutions = HashMap([]const u8, []Token, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer {
             var iterator = substitutions.iterator();
             while (iterator.next()) |entry| {
@@ -440,7 +440,7 @@ pub const MacroExpansionContext = struct {
                     try result.append(self.allocator, token);
                 }
             } else {
-                try result.append(token);
+                try result.append(allocator, token);
             }
         }
     }
@@ -453,7 +453,7 @@ pub const MacroExpansionContext = struct {
     
     /// Process nested macro calls in expanded tokens with comprehensive hygiene
     fn processNestedMacros(self: *MacroExpansionContext, tokens: []Token) ![]Token {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         var i: usize = 0;
@@ -549,10 +549,10 @@ pub const MacroExpansionContext = struct {
     
     /// Check for circular dependencies in dependency graph
     fn hasCircularDependency(self: *MacroExpansionContext, start_macro: MacroId) bool {
-        var visited = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var visited = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage){};
         defer visited.deinit();
         
-        var recursion_stack = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var recursion_stack = HashMap(MacroId, void, MacroIdContext, std.hash_map.default_max_load_percentage){};
         defer recursion_stack.deinit();
         
         return self.dfsHasCycle(start_macro, &visited, &recursion_stack);
@@ -618,14 +618,14 @@ pub const MacroExpansionContext = struct {
                         .call_site_hash = 0, // Will be set when actually queued
                     };
                     
-                    try expansion.dependencies.append(dep_id);
+                    try expansion.dependencies.append(allocator, dep_id);
                     
                     // Add to dependency graph
                     if (!self.dependency_graph.contains(expansion.macro_id)) {
                         try self.dependency_graph.put(expansion.macro_id, .empty);
                     }
                     
-                    try self.dependency_graph.getPtr(expansion.macro_id).?.append(dep_id);
+                    try self.dependency_graph.getPtr(expansion.macro_id).?.append(allocator, dep_id);
                 }
             }
             i += 1;
@@ -776,7 +776,7 @@ pub const MacroExpansionContext = struct {
         const definition = self.macro_definitions.get(expansion.macro_id.name) orelse return error.MacroNotDefined;
         
         // Perform expansion with hygiene tracking
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         if (definition.is_function_like) {
@@ -862,7 +862,7 @@ pub const MacroExpansionContext = struct {
                             // Apply hygiene renaming to argument tokens
                             for (parsed_args[param_idx]) |arg_token| {
                                 const renamed_token = try self.applyHygieneToToken(arg_token);
-                                try result.append(renamed_token);
+                                try result.append(allocator, renamed_token);
                             }
                         }
                         is_parameter = true;
@@ -873,10 +873,10 @@ pub const MacroExpansionContext = struct {
                 if (!is_parameter) {
                     // Not a parameter, apply hygiene renaming
                     const renamed_token = try self.applyHygieneToToken(token);
-                    try result.append(renamed_token);
+                    try result.append(allocator, renamed_token);
                 }
             } else {
-                try result.append(token);
+                try result.append(allocator, token);
             }
         }
     }
@@ -885,7 +885,7 @@ pub const MacroExpansionContext = struct {
     fn substituteObjectLikeMacroWithHygiene(self: *MacroExpansionContext, result: *ArrayList(Token), definition: *const MacroDefinition) !void {
         for (definition.body) |token| {
             const renamed_token = try self.applyHygieneToToken(token);
-            try result.append(renamed_token);
+            try result.append(allocator, renamed_token);
         }
     }
     
@@ -907,10 +907,10 @@ pub const MacroExpansionContext = struct {
     
     fn parseArguments(self: *MacroExpansionContext, tokens: []const Token) ![][]Token {
         // Simple argument parsing - split on commas at top level
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         
-        var current_arg = .empty;
+        var current_arg = std.ArrayList(u8){};
         defer current_arg.deinit();
         
         var paren_depth: i32 = 0;

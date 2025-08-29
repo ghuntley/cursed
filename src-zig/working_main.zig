@@ -48,13 +48,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {any}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {any}\n", .{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -65,14 +65,15 @@ pub fn main() !void {
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("Lexer error: {}\n", .{err});
+        print("Lexer error: {any}\n", .{err});
         return;
     };
+    defer tokens.deinit(allocator);
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
         for (tokens.items) |token| {
-            print("{}: '{s}'\n", .{ token.kind, token.lexeme });
+            print("{any}: '{s}'\n", .{ token.kind, token.lexeme });
         }
         print("\n", .{});
     }
@@ -88,7 +89,7 @@ pub fn main() !void {
         defer simple_interp.deinit();
         
         simple_interp.execute(tokens.items) catch |err| {
-            print("Interpreter error: {}\n", .{err});
+            print("Interpreter error: {any}\n", .{err});
             return;
         };
         
@@ -150,7 +151,7 @@ fn compileToScript(allocator: Allocator, filename: []const u8, source: []const u
     }
     
     print("✅ Generated executable: {s}\n", .{output_name});
-    print("📊 Compilation stats: {} lines processed\n", .{line_count});
+    print("📊 Compilation stats: {d} lines processed\n", .{line_count});
     print("💡 Usage: ./{s}\n", .{output_name});
 }
 

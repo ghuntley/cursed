@@ -14,12 +14,13 @@ pub const StackFrame = struct {
     address: usize,
     
     pub fn deinit(self: *StackFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.function_name);
         allocator.free(self.file_name);
     }
     
     pub fn format(self: StackFrame, writer: anytype) !void {
-        try writer.print("  at {s}() in {s}:{}:{} (0x{x})\n", .{
+        try writer.print("  at {s}() in {s}:{s}:{s} (0x{x})\n", .{
             self.function_name,
             self.file_name,
             self.line_number,
@@ -46,11 +47,12 @@ pub const StackTraceCapture = struct {
         for (self.frames.items) |*frame| {
             frame.deinit(self.allocator);
         }
-        self.frames.deinit();
+        self.frames.deinit(self.allocator);
     }
     
     /// Capture current stack trace with debug information
     pub fn capture(allocator: Allocator) !StackTraceCapture {
+        _ = allocator;
         var trace_capture = StackTraceCapture.init(allocator, 50); // Limit to 50 frames
         
         // Use Zig's built-in stack trace functionality
@@ -68,7 +70,7 @@ pub const StackTraceCapture = struct {
         while (i < stack_trace.index and i < trace_capture.max_depth) : (i += 1) {
             const addr = stack_trace.instruction_addresses[i];
             const frame = try trace_capture.addressToFrame(addr);
-            try trace_capture.frames.append(frame);
+            try trace_capture.frames.append(allocator, frame);
         }
         
         return trace_capture;
@@ -127,11 +129,11 @@ pub const StackTraceCapture = struct {
     
     /// Format stack trace as a string
     pub fn toString(self: *StackTraceCapture) ![]u8 {
-        var buffer = ArrayList(u8).init(self.allocator);
+        var buffer = ArrayList(u8){};
         defer buffer.deinit();
         
         const writer = buffer.writer();
-        try writer.print("Stack trace ({} frames):\n", .{self.frames.items.len});
+        try writer.print("Stack trace ({s} frames):\n", .{self.frames.items.len});
         
         for (self.frames.items) |frame| {
             try frame.format(writer);
@@ -155,6 +157,7 @@ pub const StackTraceCapture = struct {
 var global_allocator: ?Allocator = null;
 
 pub fn setGlobalAllocator(allocator: Allocator) void {
+        _ = allocator;
     global_allocator = allocator;
 }
 

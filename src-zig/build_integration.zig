@@ -35,32 +35,32 @@ pub const BuildDependency = struct {
             .lib_dirs = .empty,
             .system_libs = .empty,
             .frameworks = .empty,
-            .defines = HashMap([]const u8, ?[]const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .defines = HashMap([]const u8, ?[]const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *BuildDependency) void {
-        self.include_dirs.deinit();
-        self.lib_dirs.deinit();
-        self.system_libs.deinit();
-        self.frameworks.deinit();
-        self.defines.deinit();
+        self.include_dirs.deinit(self.allocator);
+        self.lib_dirs.deinit(self.allocator);
+        self.system_libs.deinit(self.allocator);
+        self.frameworks.deinit(self.allocator);
+        self.defines.deinit(self.allocator);
     }
     
     pub fn addIncludeDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.include_dirs.append(dir);
+        try self.include_dirs.append(allocator, dir);
     }
     
     pub fn addLibDir(self: *BuildDependency, dir: []const u8) !void {
-        try self.lib_dirs.append(dir);
+        try self.lib_dirs.append(allocator, dir);
     }
     
     pub fn addSystemLib(self: *BuildDependency, lib: []const u8) !void {
-        try self.system_libs.append(lib);
+        try self.system_libs.append(allocator, lib);
     }
     
     pub fn addFramework(self: *BuildDependency, framework: []const u8) !void {
-        try self.frameworks.append(framework);
+        try self.frameworks.append(allocator, framework);
     }
     
     pub fn addDefine(self: *BuildDependency, name: []const u8, value: ?[]const u8) !void {
@@ -90,7 +90,7 @@ pub const BuildIntegration = struct {
         for (self.dependencies.items) |*dep| {
             dep.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         
         if (self.manifest) |*manifest| {
             manifest.deinit();
@@ -352,7 +352,7 @@ pub const BuildIntegration = struct {
         const src_dir = try std.fs.path.join(self.allocator, &[_][]const u8{ dep.path, "src" });
         defer self.allocator.free(src_dir);
         
-        var src_files = .empty;
+        var src_files = std.ArrayList(u8){};
         defer src_files.deinit();
         
         // Look for main library file
@@ -447,7 +447,7 @@ pub const BuildIntegration = struct {
     
     // Generate import path mappings for the CURSED interpreter
     pub fn generateImportMap(self: *BuildIntegration) !HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage) {
-        var import_map = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var import_map = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         
         for (self.dependencies.items) |dep| {
             // Map dependency name to its main module path

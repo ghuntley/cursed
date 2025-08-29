@@ -134,7 +134,7 @@ pub const ASTTypeChecker = struct {
     
     // Check struct declaration
     fn checkStructDeclaration(self: *ASTTypeChecker, struct_decl: *ast.StructDeclaration) !?*TypeInfo {
-        var fields = std.ArrayList(struct { name: []const u8, type_name: []const u8 }).init(self.type_checker.allocator);
+        var fields = std.ArrayList(struct { name: []const u8, type_name: []const u8 }){};
         defer fields.deinit();
         
         for (struct_decl.fields.items) |field| {
@@ -321,12 +321,12 @@ pub const ASTTypeChecker = struct {
     
     // Check function call
     fn checkFunctionCall(self: *ASTTypeChecker, func_call: *ast.FunctionCall) !*TypeInfo {
-        var arg_types = std.ArrayList(*TypeInfo).init(self.type_checker.allocator);
+        var arg_types = std.ArrayList(*TypeInfo){};
         defer arg_types.deinit();
         
         for (func_call.arguments.items) |arg| {
             const arg_type = try self.checkExpression(arg);
-            try arg_types.append(arg_type);
+            try arg_types.append(allocator, arg_type);
         }
         
         return self.type_checker.checkFunctionCall(func_call.function_name, arg_types.items);
@@ -428,7 +428,7 @@ test "AST type checker integration" {
     
     const stmt = try allocator.create(ast.Statement);
     stmt.* = ast.Statement{ .VariableDeclaration = var_decl };
-    try program.statements.append(stmt);
+    try program.statements.append(allocator, stmt);
     
     // Type check the program
     var type_checker = try typeCheckProgram(allocator, &program);

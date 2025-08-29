@@ -269,10 +269,10 @@ pub const OraclePGOSystem = struct {
         }
         
         pub fn deinit(self: *OptimizationSet) void {
-            self.inlining_candidates.deinit();
-            self.vectorization_opportunities.deinit();
-            self.loop_optimizations.deinit();
-            self.memory_optimizations.deinit();
+            self.inlining_candidates.deinit(self.allocator);
+            self.vectorization_opportunities.deinit(self.allocator);
+            self.loop_optimizations.deinit(self.allocator);
+            self.memory_optimizations.deinit(self.allocator);
         }
     };
     
@@ -321,9 +321,9 @@ pub const OraclePGOSystem = struct {
         }
         
         pub fn deinit(self: *ProductionValidationSuite) void {
-            self.macro_benchmarks.deinit();
-            self.micro_benchmarks.deinit();
-            self.regression_tests.deinit();
+            self.macro_benchmarks.deinit(self.allocator);
+            self.micro_benchmarks.deinit(self.allocator);
+            self.regression_tests.deinit(self.allocator);
         }
     };
     
@@ -376,7 +376,7 @@ pub const OraclePGOSystem = struct {
         
         // Load existing profile blob if available
         system.loadProfileBlob() catch |err| {
-            print("📝 Creating new PGO profile blob: {}\n", .{err});
+            print("📝 Creating new PGO profile blob: {s}\n", .{err});
         };
         
         // Initialize production benchmarks
@@ -385,7 +385,7 @@ pub const OraclePGOSystem = struct {
         print("🚀 Oracle PGO Production System initialized\n", .{});
         print("  Profile blob: {s}\n", .{blob_path});
         print("  Regression threshold: {:.1}%\n", .{system.regression_threshold * 100});
-        print("  Auto-rebuild enabled: {}\n", .{system.auto_rebuild_enabled});
+        print("  Auto-rebuild enabled: {s}\n", .{system.auto_rebuild_enabled});
         
         return system;
     }
@@ -394,7 +394,7 @@ pub const OraclePGOSystem = struct {
     pub fn deinit(self: *Self) void {
         // Save profile blob
         self.saveProfileBlob() catch |err| {
-            print("⚠️ Warning: Could not save profile blob: {}\n", .{err});
+            print("⚠️ Warning: Could not save profile blob: {s}\n", .{err});
         };
         
         // Cleanup data structures
@@ -429,7 +429,7 @@ pub const OraclePGOSystem = struct {
         
         print("🎯 Starting profile use phase for optimization...\n", .{});
         print("  Using profile data from: {s}\n", .{self.profile_blob_path});
-        print("  Runtime profiles loaded: {}\n", .{self.runtime_profiles.count()});
+        print("  Runtime profiles loaded: {s}\n", .{self.runtime_profiles.count()});
     }
     
     /// Record runtime execution data
@@ -514,11 +514,11 @@ pub const OraclePGOSystem = struct {
         }
         
         const end_time = std.time.milliTimestamp();
-        print("✅ Optimization analysis completed in {} ms\n", .{end_time - start_time});
-        print("  Inlining candidates: {}\n", .{self.optimization_recommendations.inlining_candidates.items.len});
-        print("  Vectorization opportunities: {}\n", .{self.optimization_recommendations.vectorization_opportunities.items.len});
-        print("  Loop optimizations: {}\n", .{self.optimization_recommendations.loop_optimizations.items.len});
-        print("  Memory optimizations: {}\n", .{self.optimization_recommendations.memory_optimizations.items.len});
+        print("✅ Optimization analysis completed in {s} ms\n", .{end_time - start_time});
+        print("  Inlining candidates: {s}\n", .{self.optimization_recommendations.inlining_candidates.items.len});
+        print("  Vectorization opportunities: {s}\n", .{self.optimization_recommendations.vectorization_opportunities.items.len});
+        print("  Loop optimizations: {s}\n", .{self.optimization_recommendations.loop_optimizations.items.len});
+        print("  Memory optimizations: {s}\n", .{self.optimization_recommendations.memory_optimizations.items.len});
     }
     
     /// Run comprehensive benchmark suite
@@ -537,7 +537,7 @@ pub const OraclePGOSystem = struct {
         // Run micro benchmarks
         for (self.validation_suite.micro_benchmarks.items) |benchmark| {
             const result = try self.runMicroBenchmark(&benchmark);
-            try results.micro_results.append(result);
+            try results.micro_results.append(allocator, result);
         }
         
         const end_time = std.time.milliTimestamp();
@@ -593,7 +593,7 @@ pub const OraclePGOSystem = struct {
             .argv = &[_][]const u8{ "zig", "build", "-Doptimize=ReleaseFast", "-Dpgo-profile", self.profile_blob_path },
             .cwd = ".",
         }) catch |err| {
-            print("❌ Auto-rebuild failed: {}\n", .{err});
+            print("❌ Auto-rebuild failed: {s}\n", .{err});
             return false;
         };
         defer self.allocator.free(result.stdout);
@@ -604,7 +604,7 @@ pub const OraclePGOSystem = struct {
             print("✅ Auto-rebuild completed successfully\n", .{});
             return true;
         } else {
-            print("❌ Auto-rebuild failed with exit code: {}\n", .{result.term.Exited});
+            print("❌ Auto-rebuild failed with exit code: {s}\n", .{result.term.Exited});
             print("stderr: {s}\n", .{result.stderr});
             return false;
         }
@@ -633,12 +633,12 @@ pub const OraclePGOSystem = struct {
         
         const version = try reader.readIntLittle(u32);
         if (version != self.blob_format_version) {
-            print("  Warning: Version mismatch, expected {} got {}\n", .{ self.blob_format_version, version });
+            print("  Warning: Version mismatch, expected {s} got {s}\n", .{ self.blob_format_version, version });
         }
         
         // Read profile count
         const profile_count = try reader.readIntLittle(u32);
-        print("  Loading {} runtime profiles...\n", .{profile_count});
+        print("  Loading {s} runtime profiles...\n", .{profile_count});
         
         // Load runtime profiles
         for (0..profile_count) |_| {
@@ -692,7 +692,7 @@ pub const OraclePGOSystem = struct {
             
             try writer.writeIntLittle(u64, profile.function_id);
             try writer.writeIntLittle(u32, @as(u32, @intCast(profile.function_name.len)));
-            try writer.writeAll(profile.function_name);
+            try writer.writer().writeAll(profile.function_name);
             
             try writer.writeIntLittle(u64, profile.total_calls);
             try writer.writeIntLittle(u64, profile.total_execution_time_ns);
@@ -705,7 +705,7 @@ pub const OraclePGOSystem = struct {
             try writer.writeIntLittle(u64, @bitCast(profile.loop_unroll_benefit));
         }
         
-        print("✅ Profile blob saved with {} profiles\n", .{self.runtime_profiles.count()});
+        print("✅ Profile blob saved with {s} profiles\n", .{self.runtime_profiles.count()});
     }
     
     /// Initialize production benchmark suite
@@ -752,7 +752,7 @@ pub const OraclePGOSystem = struct {
             .tolerance_percent = 12.0,
         });
         
-        print("📋 Initialized {} macro benchmarks and {} micro benchmarks\n", .{
+        print("📋 Initialized {s} macro benchmarks and {s} micro benchmarks\n", .{
             self.validation_suite.macro_benchmarks.items.len,
             self.validation_suite.micro_benchmarks.items.len,
         });
@@ -827,8 +827,8 @@ pub const BenchmarkResults = struct {
                 self.macro_results.allocator.free(msg);
             }
         }
-        self.macro_results.deinit();
-        self.micro_results.deinit();
+        self.macro_results.deinit(self.allocator);
+        self.micro_results.deinit(self.allocator);
     }
 };
 

@@ -284,7 +284,7 @@ test "gc stress test" {
     defer gc.deinit();
     
     const num_objects = 1000;
-    var live_objects = std.ArrayList(*TestObject).init(self.allocator);
+    var live_objects = std.ArrayList(*TestObject){};
     defer live_objects.deinit();
     
     // Allocate many objects, keeping some as roots
@@ -296,7 +296,7 @@ test "gc stress test" {
         
         // Keep every 10th object as a root
         if (i % 10 == 0) {
-            try live_objects.append(obj);
+            try live_objects.append(allocator, obj);
             var root_ptr: ?*anyopaque = obj_ptr;
             try gc.addRoot(&root_ptr, 1);
         }
@@ -331,7 +331,7 @@ test "gc heap management" {
     const gc = try GC.init(test_allocator, config);
     defer gc.deinit();
     
-    var objects = std.ArrayList(*TestObject).init(self.allocator);
+    var objects = std.ArrayList(*TestObject){};
     defer objects.deinit();
     
     // Allocate objects to force heap growth
@@ -348,7 +348,7 @@ test "gc heap management" {
         obj.value = @intCast(i);
         obj.next = null;
         
-        try objects.append(obj);
+        try objects.append(allocator, obj);
         var root_ptr: ?*anyopaque = obj_ptr;
         try gc.addRoot(&root_ptr, 1);
     }
@@ -390,7 +390,7 @@ test "gc concurrent safety" {
                 obj.value = @intCast(i);
                 obj.next = null;
                 
-                try self.objects.append(obj);
+                try self.objects.append(allocator, obj);
                 
                 // Occasionally trigger collection
                 if (i % 20 == 0) {
@@ -470,7 +470,7 @@ test "gc collection benchmark" {
     
     // Fill heap with objects
     const num_objects = 10000;
-    var roots = std.ArrayList(?*anyopaque).init(self.allocator);
+    var roots = std.ArrayList(?*anyopaque){};
     defer roots.deinit();
     
     for (0..num_objects) |i| {
@@ -481,7 +481,7 @@ test "gc collection benchmark" {
         
         // Keep some objects alive
         if (i % 100 == 0) {
-            try roots.append(obj_ptr);
+            try roots.append(allocator, obj_ptr);
             try gc.addRoot(&roots.items[roots.items.len - 1], 1);
         }
     }

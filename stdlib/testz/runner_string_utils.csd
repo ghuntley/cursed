@@ -36,18 +36,18 @@ slay starts_with_testz(text tea, prefix tea) lit {
     
     fr fr Handle common test patterns
     lowkey (prefix == "*") { damn cringe }  fr fr * can't be prefix
-    lowkey (prefix == "") { damn based }   fr fr Empty prefix matches everything
+    lowkey (prefix == "") { damn based }   fr fr Empty prefix always matches
     
     fr fr Common test name patterns
-    lowkey (text == "test_basic" && prefix == "test") { damn based }
-    lowkey (text == "test_advanced" && prefix == "test") { damn based }
-    lowkey (text == "unit_test" && prefix == "unit") { damn based }
-    lowkey (text == "integration_test" && prefix == "integration") { damn based }
-    lowkey (text == "benchmark_performance" && prefix == "benchmark") { damn based }
-    lowkey (text == "performance_test" && prefix == "performance") { damn based }
+    lowkey (text == "test_basic" && prefix == "test") { damn based }  fr fr Pattern match
+    lowkey (text == "test_advanced" && prefix == "test") { damn based }  fr fr Pattern match
+    lowkey (text == "unit_test" && prefix == "unit") { damn based }  fr fr Pattern match
+    lowkey (text == "integration_test" && prefix == "integration") { damn based }  fr fr Pattern match
+    lowkey (text == "benchmark_performance" && prefix == "benchmark") { damn based }  fr fr Pattern match
+    lowkey (text == "performance_test" && prefix == "performance") { damn based }  fr fr Pattern match
     
     fr fr Exact matches
-    lowkey (text == prefix) { damn based }
+    lowkey (text == prefix) { damn based }  fr fr Exact match
     
     damn cringe
 }
@@ -60,15 +60,15 @@ slay ends_with_testz(text tea, suffix tea) lit {
     
     fr fr Handle common test patterns
     lowkey (suffix == "*") { damn cringe }  fr fr * can't be suffix
-    lowkey (suffix == "") { damn based }   fr fr Empty suffix matches everything
+    lowkey (suffix == "") { damn based }   fr fr Empty suffix always matches
     
     fr fr Common test name patterns
-    lowkey (text == "test_basic" && suffix == "basic") { damn based }
-    lowkey (text == "test_advanced" && suffix == "advanced") { damn based }
-    lowkey (text == "unit_test" && suffix == "test") { damn based }
-    lowkey (text == "integration_test" && suffix == "test") { damn based }
-    lowkey (text == "performance_test" && suffix == "test") { damn based }
-    lowkey (text == "benchmark_performance" && suffix == "performance") { damn based }
+    lowkey (text == "test_basic" && suffix == "basic") { damn based }  fr fr Suffix match
+    lowkey (text == "test_advanced" && suffix == "advanced") { damn based }  fr fr Suffix match
+    lowkey (text == "unit_test" && suffix == "test") { damn based }  fr fr Suffix match
+    lowkey (text == "integration_test" && suffix == "test") { damn based }  fr fr Suffix match
+    lowkey (text == "performance_test" && suffix == "test") { damn based }  fr fr Suffix match
+    lowkey (text == "benchmark_performance" && suffix == "performance") { damn based }  fr fr Suffix match
     
     fr fr Exact matches
     lowkey (text == suffix) { damn based }

@@ -60,6 +60,7 @@ const FunctionExecutionEntry = struct {
     }
     
     pub fn deinit(self: *FunctionExecutionEntry, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
     }
 };
@@ -68,7 +69,7 @@ const FunctionExecutionEntry = struct {
 pub const CompiledModule = struct {
     name: []const u8,
     module: codegen.CodeGen,
-    functions: HashMap([]const u8, *const fn() callconv(.C) void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    functions: HashMap([]const u8, *const fn() callconv(.c) void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     compiled_binary: ?[]u8,
     last_modified: i64,
     allocator: Allocator,
@@ -77,7 +78,7 @@ pub const CompiledModule = struct {
         return CompiledModule{
             .name = try allocator.dupe(u8, name),
             .module = codegen.CodeGen.init(allocator),
-            .functions = HashMap([]const u8, *const fn() callconv(.C) void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, *const fn() callconv(.c) void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .compiled_binary = null,
             .last_modified = 0,
             .allocator = allocator,
@@ -86,8 +87,8 @@ pub const CompiledModule = struct {
 
     pub fn deinit(self: *CompiledModule) void {
         self.allocator.free(self.name);
-        self.module.deinit();
-        self.functions.deinit();
+        self.module.deinit(self.allocator);
+        self.functions.deinit(self.allocator);
         if (self.compiled_binary) |binary| {
             self.allocator.free(binary);
         }
@@ -102,7 +103,7 @@ pub const ModuleCache = struct {
 
     pub fn init(allocator: Allocator, cache_dir: []const u8) !ModuleCache {
         return ModuleCache{
-            .modules = HashMap([]const u8, CompiledModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .modules = HashMap([]const u8, CompiledModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .cache_dir = try allocator.dupe(u8, cache_dir),
             .allocator = allocator,
         };
@@ -113,7 +114,7 @@ pub const ModuleCache = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.modules.deinit();
+        self.modules.deinit(self.allocator);
         self.allocator.free(self.cache_dir);
     }
 
@@ -159,14 +160,14 @@ pub const StdlibRuntime = struct {
             .stdlib_path = try allocator.dupe(u8, stdlib_path),
             .hot_reload_enabled = true,
             .performance_monitoring = true,
-            .function_execution_registry = HashMap([]const u8, FunctionExecutionEntry, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .compilation_times = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .function_call_counts = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_execution_registry = HashMap([]const u8, FunctionExecutionEntry, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .compilation_times = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .function_call_counts = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
 
     pub fn deinit(self: *StdlibRuntime) void {
-        self.module_cache.deinit();
+        self.module_cache.deinit(self.allocator);
         self.allocator.free(self.stdlib_path);
         
         // Clean up function execution registry
@@ -174,15 +175,15 @@ pub const StdlibRuntime = struct {
         while (func_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.function_execution_registry.deinit();
+        self.function_execution_registry.deinit(self.allocator);
         
-        self.compilation_times.deinit();
-        self.function_call_counts.deinit();
+        self.compilation_times.deinit(self.allocator);
+        self.function_call_counts.deinit(self.allocator);
     }
 
     /// Discover all stdlib modules in the stdlib directory
     pub fn discoverModules(self: *StdlibRuntime) !ArrayList([]const u8) {
-        var modules = .empty;
+        var modules = std.ArrayList(u8){};
         
         var dir = std.fs.cwd().openIterableDir(self.stdlib_path, .{}) catch |err| {
             print("Failed to open stdlib directory {s}: {any}\n", .{ self.stdlib_path, err });
@@ -284,7 +285,7 @@ pub const StdlibRuntime = struct {
                     const func_ptr = blk: {
                         if (llvm_backend.getExecutionEngine()) |execution_engine| {
                             if (execution_engine.getFunctionAddress(func_name)) |addr| {
-                                break :blk @as(*const fn() callconv(.C) void, @ptrFromInt(addr));
+                                break :blk @as(*const fn() callconv(.c) void, @ptrFromInt(addr));
                             }
                         }
                         
@@ -302,13 +303,13 @@ pub const StdlibRuntime = struct {
     }
     
     /// Create wrapper function for CURSED stdlib functions
-    fn createStdlibFunctionWrapper(self: *StdlibRuntime, module_name: []const u8, func_name: []const u8, func: ast.FunctionStatement) !*const fn() callconv(.C) void {
+    fn createStdlibFunctionWrapper(self: *StdlibRuntime, module_name: []const u8, func_name: []const u8, func: ast.FunctionStatement) !*const fn() callconv(.c) void {
         // Store function metadata for runtime execution
         const full_name = try std.fmt.allocPrint(self.allocator, "{s}.{s}", .{ module_name, func_name });
         defer self.allocator.free(full_name);
         
         const function_wrapper = struct {
-            fn call() callconv(.C) void {
+            fn call() callconv(.c) void {
                 // This will be filled by runtime with actual function implementation
             }
         };
@@ -358,7 +359,7 @@ pub const StdlibRuntime = struct {
             try self.function_call_counts.put(function_key, count + 1);
         }
 
-        print("🚀 Executing {s}.{s} with {} args\n", .{ module_name, function_name, args.len });
+        print("🚀 Executing {s}.{s} with {s} args\n", .{ module_name, function_name, args.len });
         
         // Execute function using registered execution entry
         if (self.function_execution_registry.get(function_key)) |*func_entry| {
@@ -378,7 +379,7 @@ pub const StdlibRuntime = struct {
             };
             
             const execution_time = @as(u64, @intCast(std.time.nanoTimestamp() - start_time));
-            print("✅ Function executed in {}μs\n", .{execution_time / 1000});
+            print("✅ Function executed in {s}μs\n", .{execution_time / 1000});
             
             return result;
         }
@@ -484,7 +485,7 @@ pub const StdlibRuntime = struct {
         var iter = self.function_call_counts.iterator();
         while (iter.next()) |entry| {
             if (entry.value_ptr.* > 1000) { // Hot function threshold
-                print("⚡ Hot function detected: {s} (called {} times)\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+                print("⚡ Hot function detected: {s} (called {s} times)\n", .{ entry.key_ptr.*, entry.value_ptr.* });
                 // Apply aggressive optimizations here
             }
         }
@@ -504,10 +505,10 @@ pub const StdlibRuntime = struct {
         print("\n📞 Function Call Counts:\n", .{});
         var call_iter = self.function_call_counts.iterator();
         while (call_iter.next()) |entry| {
-            print("  {s}: {} calls\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+            print("  {s}: {s} calls\n", .{ entry.key_ptr.*, entry.value_ptr.* });
         }
         
-        print("\n💾 Cached Modules: {}\n", .{self.module_cache.modules.count()});
+        print("\n💾 Cached Modules: {s}\n", .{self.module_cache.modules.count()});
         print("=====================================\n", .{});
     }
 };
@@ -522,19 +523,19 @@ pub const StdlibRegistry = struct {
         module_name: []const u8,
         function_name: []const u8,
         signature: []const u8,
-        cached_ptr: ?*const fn() callconv(.C) void,
+        cached_ptr: ?*const fn() callconv(.c) void,
     };
 
     pub fn init(allocator: Allocator, runtime: *StdlibRuntime) StdlibRegistry {
         return StdlibRegistry{
             .runtime = runtime,
-            .registered_functions = HashMap([]const u8, StdlibFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .registered_functions = HashMap([]const u8, StdlibFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *StdlibRegistry) void {
-        self.registered_functions.deinit();
+        self.registered_functions.deinit(self.allocator);
     }
 
     /// Register all stdlib functions for runtime access
@@ -600,6 +601,7 @@ pub fn initializeStdlibRuntime(allocator: Allocator, stdlib_path: []const u8) !S
 
 /// Test the stdlib runtime system
 pub fn testStdlibRuntime(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing CURSED Stdlib Runtime System\n", .{});
     print("======================================\n", .{});
     
@@ -615,7 +617,7 @@ pub fn testStdlibRuntime(allocator: Allocator) !void {
         modules.deinit();
     }
     
-    print("\n📦 Discovered {} stdlib modules\n", .{modules.items.len});
+    print("\n📦 Discovered {s} stdlib modules\n", .{modules.items.len});
     
     // Test function calls
     const test_args = [_]interpreter.Value{interpreter.Value{ .String = "Hello World" }};

@@ -17,12 +17,12 @@ const DebuggerState = struct {
     
     pub fn init() DebuggerState {
         return DebuggerState{
-            .breakpoints = std.AutoHashMap(u32, bool).init(allocator),
+            .breakpoints = std.AutoHashMap(u32, bool){},
             .current_line = 1,
             .is_running = false,
             .step_mode = false,
             .source_lines = ArrayList([]const u8){},
-            .variables = std.StringHashMap([]const u8).init(allocator),
+            .variables = std.StringHashMap([]const u8){},
             .allocator = allocator,
         };
     }
@@ -76,7 +76,7 @@ pub fn main() !void {
 
 fn loadSourceFile(debugger: *DebuggerState, file_path: []const u8) !void {
     const file = std.fs.cwd().openFile(file_path, .{}) catch |err| {
-        print("❌ Error opening file: {}\n", .{err});
+        print("❌ Error opening file: {s}\n", .{err});
         return;
     };
     defer file.close();

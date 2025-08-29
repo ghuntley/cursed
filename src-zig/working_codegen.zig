@@ -62,6 +62,7 @@ pub const WorkingCodeGen = struct {
     current_function: ?c.LLVMValueRef,
     
     pub fn init(allocator: Allocator) !WorkingCodeGen {
+        _ = allocator;
         // Initialize LLVM targets
         _ = c.LLVMInitializeNativeTarget();
         _ = c.LLVMInitializeNativeAsmPrinter();
@@ -88,8 +89,8 @@ pub const WorkingCodeGen = struct {
     }
 
     pub fn deinit(self: *WorkingCodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
         
         if (self.builder != null) c.LLVMDisposeBuilder(self.builder);
         if (self.module != null) c.LLVMDisposeModule(self.module);
@@ -294,13 +295,13 @@ pub const WorkingCodeGen = struct {
     /// Generate a function
     fn generateFunction(self: *WorkingCodeGen, func: ast.FunctionStatement) !void {
         // Determine parameter types
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         if (func.parameters) |params| {
             for (params.items) |param| {
                 const param_type = try self.getCursedTypeToLLVM(param.param_type);
-                try param_types.append(param_type);
+                try param_types.append(allocator, param_type);
             }
         }
         
@@ -365,7 +366,7 @@ pub const WorkingCodeGen = struct {
         
         // Restore context
         self.current_function = old_function;
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         self.variables = old_variables;
     }
 
@@ -583,12 +584,12 @@ pub const WorkingCodeGen = struct {
             .Identifier => |name| {
                 // Regular function call
                 if (self.functions.get(name)) |function| {
-                    var args = .empty;
+                    var args = std.ArrayList(u8){};
                     defer args.deinit();
                     
                     for (call.arguments.items) |arg_expr| {
                         const arg = try self.generateExpression(arg_expr);
-                        try args.append(arg);
+                        try args.append(allocator, arg);
                     }
                     
                     return c.LLVMBuildCall2(
@@ -865,7 +866,7 @@ pub const WorkingCodeGen = struct {
         
         var child = std.process.Child.init(&[_][]const u8{ "sh", "-c", clang_cmd }, self.allocator);
         const result = child.spawnAndWait() catch |err| {
-            std.debug.print("Failed to run clang: {}\n", .{err});
+            std.debug.print("Failed to run clang: {s}\n", .{err});
             return CodeGenError.LLVMError;
         };
         
@@ -874,7 +875,7 @@ pub const WorkingCodeGen = struct {
                 if (code == 0) {
                     std.debug.print("Successfully compiled to: {s}\n", .{output_path});
                 } else {
-                    std.debug.print("Clang failed with exit code: {}\n", .{code});
+                    std.debug.print("Clang failed with exit code: {s}\n", .{code});
                     return CodeGenError.LLVMError;
                 }
             },
@@ -1056,14 +1057,14 @@ pub const WorkingCodeGen = struct {
         const function = c.LLVMGetBasicBlockParent(current_function);
         
         // Create blocks for each case and default/exit
-        var case_blocks = .empty;
+        var case_blocks = std.ArrayList(u8){};
         defer case_blocks.deinit();
         
         for (select_stmt.cases.items, 0..) |_, i| {
             const case_name = try std.fmt.allocPrint(self.allocator, "select_case_{d}", .{i});
             defer self.allocator.free(case_name);
             const case_block = c.LLVMAppendBasicBlockInContext(self.context, function, case_name.ptr);
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
         }
         
         const default_block = c.LLVMAppendBasicBlockInContext(self.context, function, "select_default");

@@ -28,7 +28,7 @@ pub fn main() !void {
 
     // Verify source file exists
     const file = std.fs.cwd().openFile(source_file, .{}) catch |err| {
-        print("❌ Error: Cannot open source file '{s}': {}\n", .{ source_file, err });
+        print("❌ Error: Cannot open source file '{s}': {s}\n", .{ source_file, err });
         return;
     };
     defer file.close();
@@ -123,16 +123,16 @@ fn runInteractiveMode(allocator: std.mem.Allocator, source_file: []const u8, sou
     print("Type 'help' for available commands\n\n", .{});
     
     // Parse source into lines
-    var lines = std.ArrayList([]const u8).init(self.allocator);
+    var lines = std.ArrayList([]const u8){};
     defer lines.deinit();
     
     var line_iter = std.mem.split(u8, source_content, "\n");
     while (line_iter.next()) |line| {
-        try lines.append(line);
+        try lines.append(allocator, line);
     }
     
     var current_line: u32 = 1;
-    var breakpoints = std.ArrayList(u32).init(self.allocator);
+    var breakpoints = std.ArrayList(u32){};
     defer breakpoints.deinit();
     
     var stdin_buffer: [4096]u8 = undefined;
@@ -158,15 +158,15 @@ fn runInteractiveMode(allocator: std.mem.Allocator, source_file: []const u8, sou
             } else if (std.mem.eql(u8, command, "break") or std.mem.eql(u8, command, "b")) {
                 if (args.next()) |line_str| {
                     if (std.fmt.parseInt(u32, line_str, 10)) |line_num| {
-                        try breakpoints.append(line_num);
-                        print("🔴 Breakpoint set at line {}\n", .{line_num});
+                        try breakpoints.append(allocator, line_num);
+                        print("🔴 Breakpoint set at line {s}\n", .{line_num});
                     } else |_| {
                         print("❌ Invalid line number: {s}\n", .{line_str});
                     }
                 } else {
                     print("📍 Breakpoints:\n", .{});
                     for (breakpoints.items, 0..) |bp, i| {
-                        print("  {}: line {}\n", .{ i + 1, bp });
+                        print("  {s}: line {s}\n", .{ i + 1, bp });
                     }
                 }
             } else if (std.mem.eql(u8, command, "run") or std.mem.eql(u8, command, "r")) {
@@ -174,7 +174,7 @@ fn runInteractiveMode(allocator: std.mem.Allocator, source_file: []const u8, sou
                 print("ℹ️  (Simulated execution - integrate with real interpreter)\n", .{});
             } else if (std.mem.eql(u8, command, "step") or std.mem.eql(u8, command, "s")) {
                 current_line = @min(current_line + 1, @as(u32, @intCast(lines.items.len)));
-                print("👣 Stepped to line {}\n", .{current_line});
+                print("👣 Stepped to line {s}\n", .{current_line});
                 try showCurrentLine(lines, current_line);
             } else if (std.mem.eql(u8, command, "print") or std.mem.eql(u8, command, "p")) {
                 if (args.next()) |var_name| {
@@ -216,7 +216,7 @@ fn listSource(lines: std.ArrayList([]const u8), current_line: u32) !void {
     const start = if (current_line >= 5) current_line - 5 else 1;
     const end = @min(current_line + 5, @as(u32, @intCast(lines.items.len)));
     
-    print("📄 Source code (lines {}-{}):\n", .{ start, end });
+    print("📄 Source code (lines {s}-{s}):\n", .{ start, end });
     
     var line_num = start;
     while (line_num <= end) : (line_num += 1) {

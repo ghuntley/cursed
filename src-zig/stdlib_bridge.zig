@@ -628,13 +628,13 @@ pub fn test_stdlib_bridge() !void {
     print("Testing stringz.length()...\n", .{});
     const test_string = Variable{ .type = .String, .string = "Hello" };
     const length_result = try bridge.callStdlibFunction("stringz", "length", &[_]Variable{test_string});
-    print("length() result: {}\n", .{length_result.integer});
+    print("length() result: {s}\n", .{length_result.integer});
     
     // Test mathz.abs_normie()
     print("Testing mathz.abs_normie()...\n", .{});
     const negative_int = Variable{ .type = .Integer, .integer = -42 };
     const abs_result = try bridge.callStdlibFunction("mathz", "abs_normie", &[_]Variable{negative_int});
-    print("abs_normie(-42) result: {}\n", .{abs_result.integer});
+    print("abs_normie(-42) result: {s}\n", .{abs_result.integer});
     
     // Test mathz.sqrt_meal()
     print("Testing mathz.sqrt_meal()...\n", .{});

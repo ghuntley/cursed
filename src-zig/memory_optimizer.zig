@@ -69,6 +69,7 @@ pub const MemoryOptimizer = struct {
     stats: MemoryOptimizationStats,
 
     pub fn init(allocator: Allocator) !MemoryOptimizer {
+        _ = allocator;
         return MemoryOptimizer{
             .allocator = allocator,
             .allocation_cache = HashMap(c.LLVMValueRef, AllocationInfo, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
@@ -94,8 +95,8 @@ pub const MemoryOptimizer = struct {
     }
 
     pub fn deinit(self: *MemoryOptimizer) void {
-        self.allocation_cache.deinit();
-        self.lifetime_cache.deinit();
+        self.allocation_cache.deinit(self.allocator);
+        self.lifetime_cache.deinit(self.allocator);
     }
 
     /// Optimize memory allocations in the module
@@ -203,7 +204,7 @@ pub const MemoryOptimizer = struct {
 
     /// Find all memory allocations in a function
     fn findAllocationsInFunction(self: *MemoryOptimizer, function: c.LLVMValueRef) !ArrayList(c.LLVMValueRef) {
-        var allocations = .empty;
+        var allocations = std.ArrayList(u8){};
         
         var basic_block = c.LLVMGetFirstBasicBlock(function);
         while (basic_block != null) {
@@ -211,7 +212,7 @@ pub const MemoryOptimizer = struct {
             
             while (instruction != null) {
                 if (self.isAllocationInstruction(instruction.?)) {
-                    try allocations.append(instruction.?);
+                    try allocations.append(allocator, instruction.?);
                 }
                 instruction = c.LLVMGetNextInstruction(instruction.?);
             }
@@ -478,17 +479,17 @@ pub const MemoryOptimizer = struct {
                     .EscapeReturn => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_return = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                     .EscapeCall => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_call = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                     .EscapeStore => {
                         escape_info.escapes_function = true;
                         escape_info.escapes_through_store = true;
-                        try escape_info.escape_sites.append(user);
+                        try escape_info.escape_sites.append(allocator, user);
                     },
                 }
             }

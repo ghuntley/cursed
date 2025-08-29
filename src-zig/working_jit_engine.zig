@@ -45,8 +45,8 @@ pub const WorkingJITEngine = struct {
     pub fn init() WorkingJITEngine {
         return WorkingJITEngine{
             .allocator = allocator,
-            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .compiled_functions = HashMap([]const u8, CompiledFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .compiled_functions = HashMap([]const u8, CompiledFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .execution_count = 0,
             .jit_compilation_threshold = 3,
         };
@@ -58,8 +58,8 @@ pub const WorkingJITEngine = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.value_ptr.*.bytecode);
         }
-        self.compiled_functions.deinit();
-        self.variables.deinit();
+        self.compiled_functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
     }
     
     /// Compile and execute CURSED source code via JIT
@@ -74,13 +74,13 @@ pub const WorkingJITEngine = struct {
         const bytecode = try self.compileToByteCode(statements);
         defer self.allocator.free(bytecode);
         
-        print("🔧 Generated {} bytecode instructions\n", .{bytecode.len});
+        print("🔧 Generated {s} bytecode instructions\n", .{bytecode.len});
         
         // Execute the bytecode
         try self.executeBytecode(bytecode);
         
         self.execution_count += 1;
-        print("✅ JIT execution completed! (execution #{}/{})\n", .{ self.execution_count, self.jit_compilation_threshold });
+        print("✅ JIT execution completed! (execution #{s}/{s})\n", .{ self.execution_count, self.jit_compilation_threshold });
         
         // Check if we should promote to hot code
         if (self.execution_count >= self.jit_compilation_threshold) {
@@ -270,33 +270,33 @@ pub const WorkingJITEngine = struct {
                 },
                 .load_var => |name| {
                     const val = self.variables.get(name) orelse return error.UndefinedVariable;
-                    try stack.append(val);
+                    try stack.append(allocator, val);
                 },
                 .store_var => |name| {
                     if (stack.items.len == 0) return error.ExecutionFailed;
                     const val = stack.pop() orelse return error.ExecutionFailed;
                     try self.variables.put(name, val);
-                    print("📝 Stored variable '{s}' = {}\n", .{ name, val });
+                    print("📝 Stored variable '{s}' = {s}\n", .{ name, val });
                 },
                 .add => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
                     const result = a + b;
-                    try stack.append(result);
-                    print("🧮 Computed {} + {} = {}\n", .{ a, b, result });
+                    try stack.append(allocator, result);
+                    print("🧮 Computed {s} + {s} = {s}\n", .{ a, b, result });
                 },
                 .sub => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(a - b);
+                    try stack.append(allocator, a - b);
                 },
                 .mul => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
                     const b = stack.pop() orelse return error.ExecutionFailed;
                     const a = stack.pop() orelse return error.ExecutionFailed;
-                    try stack.append(a * b);
+                    try stack.append(allocator, a * b);
                 },
                 .div => {
                     if (stack.items.len < 2) return error.ExecutionFailed;
@@ -310,7 +310,7 @@ pub const WorkingJITEngine = struct {
                 .print_int => {
                     if (stack.items.len == 0) return error.ExecutionFailed;
                     const val = stack.pop() orelse return error.ExecutionFailed;
-                    print("{}\n", .{val});
+                    print("{s}\n", .{val});
                 },
                 .ret => {
                     break;
@@ -323,10 +323,10 @@ pub const WorkingJITEngine = struct {
     
     /// Optimize hot code paths
     fn optimizeHotCode(self: *WorkingJITEngine, bytecode: []Instruction) !void {
-        print("🔥 Optimizing hot code path with {} instructions...\n", .{bytecode.len});
+        print("🔥 Optimizing hot code path with {s} instructions...\n", .{bytecode.len});
         
         // Simple optimization: constant folding
-        var optimized = .empty;
+        var optimized = std.ArrayList(u8){};
         defer optimized.deinit();
         
         var i: usize = 0;
@@ -343,16 +343,16 @@ pub const WorkingJITEngine = struct {
                 const b = bytecode[i + 1].load_const;
                 const result = a + b;
                 
-                print("🔧 Constant folded: {} + {} = {} (saved 2 instructions)\n", .{ a, b, result });
-                try optimized.append(Instruction{ .load_const = result });
+                print("🔧 Constant folded: {s} + {s} = {s} (saved 2 instructions)\n", .{ a, b, result });
+                try optimized.append(allocator, Instruction{ .load_const = result });
                 i += 3; // Skip the folded instructions
             } else {
-                try optimized.append(instr);
+                try optimized.append(allocator, instr);
                 i += 1;
             }
         }
         
-        print("✅ Optimization complete: {} -> {} instructions\n", .{ bytecode.len, optimized.items.len });
+        print("✅ Optimization complete: {s} -> {s} instructions\n", .{ bytecode.len, optimized.items.len });
         
         // Store the optimized version
         const main_func = CompiledFunction{
@@ -369,17 +369,17 @@ pub const WorkingJITEngine = struct {
     pub fn getStats(self: *WorkingJITEngine) void {
         print("\n📊 Working JIT Engine Statistics\n", .{});
         print("================================\n", .{});
-        print("🔢 Variables in scope: {}\n", .{self.variables.count()});
-        print("🚀 Total executions: {}\n", .{self.execution_count});
-        print("🔥 Compiled functions: {}\n", .{self.compiled_functions.count()});
-        print("⚡ JIT threshold: {}\n", .{self.jit_compilation_threshold});
+        print("🔢 Variables in scope: {s}\n", .{self.variables.count()});
+        print("🚀 Total executions: {s}\n", .{self.execution_count});
+        print("🔥 Compiled functions: {s}\n", .{self.compiled_functions.count()});
+        print("⚡ JIT threshold: {s}\n", .{self.jit_compilation_threshold});
         
         if (self.compiled_functions.count() > 0) {
             print("\n🎯 Compiled Functions:\n", .{});
             var iter = self.compiled_functions.iterator();
             while (iter.next()) |entry| {
                 const func = entry.value_ptr.*;
-                print("  {s}: {} instructions, {} executions{s}\n", .{ 
+                print("  {s}: {s} instructions, {s} executions{s}\n", .{ 
                     entry.key_ptr.*, 
                     func.bytecode.len, 
                     func.execution_count,
@@ -392,13 +392,14 @@ pub const WorkingJITEngine = struct {
             print("\n📋 Variables:\n", .{});
             var var_iter = self.variables.iterator();
             while (var_iter.next()) |entry| {
-                print("  {s} = {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+                print("  {s} = {s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
             }
         }
     }
     
     /// Test the working JIT engine
     pub fn test_working_jit(allocator: Allocator) !void {
+        _ = allocator;
         print("\n🧪 Testing Working JIT Engine\n", .{});
         print("==============================\n", .{});
         
@@ -417,7 +418,7 @@ pub const WorkingJITEngine = struct {
         // Execute multiple times to trigger hot code optimization
         var i: u32 = 1;
         while (i <= 5) {
-            print("\n🔄 Execution #{}\n", .{i});
+            print("\n🔄 Execution #{s}\n", .{i});
             print("---------------\n", .{});
             try engine.compileAndExecute(test_program);
             i += 1;

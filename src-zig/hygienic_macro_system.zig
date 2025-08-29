@@ -55,9 +55,9 @@ pub const HygienicMacroSystem = struct {
             .expansion_context = expansion_context,
             .pattern_matcher = try PatternMatcher.init(allocator),
             .code_generator = try CodeGenerator.init(allocator),
-            .declarative_macros = HashMap([]const u8, DeclarativeMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .procedural_macros = HashMap([]const u8, ProceduralMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .builtin_macros = HashMap([]const u8, BuiltinMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .declarative_macros = HashMap([]const u8, DeclarativeMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .procedural_macros = HashMap([]const u8, ProceduralMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .builtin_macros = HashMap([]const u8, BuiltinMacro, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .debug_context = try MacroDebugContext.init(allocator),
             .error_reporter = try MacroErrorReporter.init(allocator),
             .compile_time_executor = try CompileTimeExecutor.init(allocator),
@@ -75,29 +75,29 @@ pub const HygienicMacroSystem = struct {
         while (decl_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.declarative_macros.deinit();
+        self.declarative_macros.deinit(self.allocator);
         
         // Clean up procedural macros
         var proc_iter = self.procedural_macros.iterator();
         while (proc_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.procedural_macros.deinit();
+        self.procedural_macros.deinit(self.allocator);
         
         // Clean up builtin macros
         var builtin_iter = self.builtin_macros.iterator();
         while (builtin_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.builtin_macros.deinit();
+        self.builtin_macros.deinit(self.allocator);
         
-        self.compile_time_executor.deinit();
-        self.error_reporter.deinit();
-        self.debug_context.deinit();
-        self.code_generator.deinit();
-        self.pattern_matcher.deinit();
-        self.expansion_context.deinit();
-        self.hygiene_context.deinit();
+        self.compile_time_executor.deinit(self.allocator);
+        self.error_reporter.deinit(self.allocator);
+        self.debug_context.deinit(self.allocator);
+        self.code_generator.deinit(self.allocator);
+        self.pattern_matcher.deinit(self.allocator);
+        self.expansion_context.deinit(self.allocator);
+        self.hygiene_context.deinit(self.allocator);
     }
     
     /// Parse and register a `slay_macro!` definition
@@ -218,7 +218,7 @@ pub const HygienicMacroSystem = struct {
     /// Apply hygiene transformations to expansion
     fn applyHygiene(self: *HygienicMacroSystem, tokens: []Token, call: MacroCall) ![]Token {
         _ = call; // Mark as intentionally unused
-        var hygienic_tokens = ArrayList(Token).init(self.allocator);
+        var hygienic_tokens = ArrayList(Token){};
         defer hygienic_tokens.deinit();
         
         for (tokens) |token| {
@@ -228,12 +228,12 @@ pub const HygienicMacroSystem = struct {
                 if (resolved) |renamed| {
                     var hygienic_token = token;
                     hygienic_token.lexeme = renamed;
-                    try hygienic_tokens.append(hygienic_token);
+                    try hygienic_tokens.append(self.allocator, hygienic_token);
                 } else {
-                    try hygienic_tokens.append(token);
+                    try hygienic_tokens.append(self.allocator, token);
                 }
             } else {
-                try hygienic_tokens.append(token);
+                try hygienic_tokens.append(self.allocator, token);
             }
         }
         
@@ -291,8 +291,8 @@ pub const HygienicMacroSystem = struct {
             switch (tokens[i].kind) {
                 .LeftBrace => brace_count += 1,
                 .RightBrace => brace_count -= 1,
-                else => {},
-            }
+                else => {}
+        }
             i += 1;
         }
         
@@ -313,7 +313,7 @@ pub const HygienicMacroSystem = struct {
     }
     
     fn parsePatternRules(self: *HygienicMacroSystem, tokens: []const Token) ![]PatternRule {
-        var rules = ArrayList(PatternRule).init(self.allocator);
+        var rules = ArrayList(PatternRule){};
         defer rules.deinit();
         
         var i: usize = 0;
@@ -342,8 +342,8 @@ pub const HygienicMacroSystem = struct {
                     .LeftBrace => brace_count += 1,
                     .RightBrace => brace_count -= 1,
                     .Comma => if (brace_count == 0) break,
-                    else => {},
-                }
+                    else => {}
+        }
                 template_end += 1;
             }
             
@@ -413,8 +413,8 @@ const PatternRule = struct {
     output_template: Template,
     
     pub fn deinit(self: *PatternRule) void {
-        self.input_pattern.deinit();
-        self.output_template.deinit();
+        self.input_pattern.deinit(self.allocator);
+        self.output_template.deinit(self.allocator);
     }
 };
 
@@ -534,7 +534,7 @@ const Pattern = struct {
     };
     
     pub fn parse(allocator: Allocator, tokens: []const Token) !Pattern {
-        var elements = ArrayList(PatternElement).init(allocator);
+        var elements = ArrayList(PatternElement){};
         defer elements.deinit();
         
         var i: usize = 0;
@@ -559,8 +559,8 @@ const Pattern = struct {
                             .name = try allocator.dupe(u8, capture_name),
                             .capture_type = capture_type,
                             .value = null,
-                        },
-                    });
+                        }
+        });
                 } else {
                     return error.InvalidPatternCapture;
                 }
@@ -614,7 +614,7 @@ const Pattern = struct {
             .Alternative => {
                 // Handle alternative patterns
                 return null; // Simplified for now
-            },
+            }
         }
     }
     
@@ -633,7 +633,7 @@ const Pattern = struct {
     }
     
     pub fn extractCaptures(self: Pattern, allocator: Allocator, tokens: []const Token) ![]PatternCapture {
-        var captures = ArrayList(PatternCapture).init(allocator);
+        var captures = ArrayList(PatternCapture){};
         defer captures.deinit();
         
         var token_index: usize = 0;
@@ -645,7 +645,7 @@ const Pattern = struct {
                     if (consumed > 0) {
                         var new_capture = capture;
                         new_capture.value = try allocator.dupe(Token, tokens[token_index..token_index + consumed]);
-                        try captures.append(new_capture);
+                        try captures.append(self.allocator, new_capture);
                         token_index += consumed;
                     }
                 },
@@ -654,8 +654,8 @@ const Pattern = struct {
                 },
                 else => {
                     // Handle other pattern types
-                },
-            }
+                }
+        }
         }
         
         return captures.toOwnedSlice();
@@ -670,8 +670,8 @@ const Pattern = struct {
                         self.allocator.free(value);
                     }
                 },
-                else => {},
-            }
+                else => {}
+        }
         }
         self.allocator.free(self.elements);
     }
@@ -719,11 +719,11 @@ const Template = struct {
             capture_name: []const u8,
             template: *Template,
             separator: ?Token,
-        },
-    };
+        }
+        };
     
     pub fn parse(allocator: Allocator, tokens: []const Token) !Template {
-        var elements = ArrayList(TemplateElement).init(allocator);
+        var elements = ArrayList(TemplateElement){};
         defer elements.deinit();
         
         var i: usize = 0;
@@ -757,13 +757,13 @@ const Template = struct {
     }
     
     pub fn expand(self: Template, allocator: Allocator, captures: []PatternCapture) ![]Token {
-        var result = ArrayList(Token).init(allocator);
+        var result = ArrayList(Token){};
         defer result.deinit();
         
         for (self.elements) |element| {
             switch (element) {
                 .Literal => |literal| {
-                    try result.append(literal);
+                    try result.append(self.allocator, literal);
                 },
                 .Substitution => |capture_name| {
                     // Find capture and substitute
@@ -778,8 +778,8 @@ const Template = struct {
                 },
                 else => {
                     // Handle other template elements
-                },
-            }
+                }
+        }
         }
         
         return result.toOwnedSlice();
@@ -791,8 +791,8 @@ const Template = struct {
                 .Substitution => |capture_name| {
                     self.allocator.free(capture_name);
                 },
-                else => {},
-            }
+                else => {}
+        }
         }
         self.allocator.free(self.elements);
     }
@@ -801,7 +801,7 @@ const Template = struct {
 /// Built-in macro expansions
 fn debugPrintExpansion(system: *HygienicMacroSystem, call: MacroCall) ![]Token {
     // Generate: ready (DEBUG_MODE) { vibez.spill("[DEBUG]", $msg) }
-    var result = ArrayList(Token).init(system.allocator);
+    var result = ArrayList(Token){};
     defer result.deinit();
     
     // ready (DEBUG_MODE) {
@@ -891,13 +891,13 @@ const MacroDebugContext = struct {
     pub fn init(allocator: Allocator) !MacroDebugContext {
         return MacroDebugContext{
             .allocator = allocator,
-            .expansion_log = ArrayList(ExpansionLogEntry).init(allocator),
+            .expansion_log = ArrayList(ExpansionLogEntry){},
             .total_expansions = 0,
         };
     }
     
     pub fn deinit(self: *MacroDebugContext) void {
-        self.expansion_log.deinit();
+        self.expansion_log.deinit(self.allocator);
     }
     
     pub fn logMacroRegistration(self: *MacroDebugContext, name: []const u8, macro_type: MacroType) !void {
@@ -927,7 +927,7 @@ const MacroDebugContext = struct {
     }
     
     pub fn generateReport(self: *MacroDebugContext) ![]const u8 {
-        var report = ArrayList(u8).init(self.allocator);
+        var report = ArrayList(u8){};
         defer report.deinit();
         
         try report.writer().print("Macro Debug Report\n");
@@ -962,12 +962,12 @@ const MacroErrorReporter = struct {
     pub fn init(allocator: Allocator) !MacroErrorReporter {
         return MacroErrorReporter{
             .allocator = allocator,
-            .errors = ArrayList(MacroError).init(allocator),
+            .errors = ArrayList(MacroError){}
         };
     }
     
     pub fn deinit(self: *MacroErrorReporter) void {
-        self.errors.deinit();
+        self.errors.deinit(self.allocator);
     }
     
     pub fn reportUndefinedMacro(self: *MacroErrorReporter, name: []const u8, location: MacroCall.SourceLocation) !void {
@@ -1049,8 +1049,8 @@ test "basic declarative macro parsing" {
         Token{ .kind = .Greater, .lexeme = ">", .line = 1, .column = 29, .offset = 28 },
         Token{ .kind = .Dollar, .lexeme = "$", .line = 1, .column = 31, .offset = 30 },
         Token{ .kind = .Identifier, .lexeme = "x", .line = 1, .column = 32, .offset = 31 },
-        Token{ .kind = .RightBrace, .lexeme = "}", .line = 1, .column = 34, .offset = 33 },
-    };
+        Token{ .kind = .RightBrace, .lexeme = "}", .line = 1, .column = 34, .offset = 33 }
+        };
     
     var system = try HygienicMacroSystem.init(std.testing.allocator);
     defer system.deinit();
@@ -1068,7 +1068,7 @@ test "built-in macro expansion" {
     const call = MacroCall{
         .name = "debug_print",
         .arguments = &[_]Token{
-            Token{ .kind = .String, .lexeme = "\"Hello\"", .line = 1, .column = 1, .offset = 0 },
+            Token{ .kind = .String, .lexeme = "\"Hello\"", .line = 1, .column = 1, .offset = 0 }
         },
         .location = .{
             .file = "test.csd",
@@ -1076,8 +1076,8 @@ test "built-in macro expansion" {
             .column = 1,
             .byte_offset = 0,
         },
-        .context_tokens = &[_]Token{},
-    };
+        .context_tokens = &[_]Token{}
+        };
     
     const result = try system.expandMacro(call);
     defer system.allocator.free(result);

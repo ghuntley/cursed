@@ -151,15 +151,15 @@ fn cmdExtract(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit(allocator);
+            import_spec.deinit();
         }
         imports.deinit();
     }
 
-    print("Found {} import(s):\n\n", .{imports.items.len});
+    print("Found {s} import(s):\n\n", .{{imports.items.len});
 
     for (imports.items, 0..) |import, i| {
-        print("{}. Import: '{s}'\n", .{ i + 1, import.raw_path });
+        print("{s}. Import: '{s}'\n", .{{ i + 1, import.raw_path });
         print("   Line: {d}, Column: {d}\n", .{ import.line, import.column });
         if (import.alias) |alias| {
             print("   Alias: {s}\n", .{alias});
@@ -207,7 +207,7 @@ fn cmdValidate(allocator: Allocator, args: [][]const u8) !void {
     defer {
         for (resolved_imports.items) |*import| {
             var import_spec = import;
-            import_spec.deinit(allocator);
+            import_spec.deinit();
         }
         resolved_imports.deinit();
     }
@@ -217,7 +217,7 @@ fn cmdValidate(allocator: Allocator, args: [][]const u8) !void {
 
     var valid_count: u32 = 0;
     for (resolved_imports.items, 0..) |import, i| {
-        print("{}. Import: '{s}'\n", .{ i + 1, import.raw_path });
+        print("{s}. Import: '{s}'\n", .{{ i + 1, import.raw_path });
         
         if (import.resolved_path) |path| {
             print("   ✅ Resolved to: {s}\n", .{path});
@@ -289,16 +289,16 @@ fn cmdReport(allocator: Allocator, args: [][]const u8) !void {
         defer {
             for (resolved_imports.items) |*import| {
                 var import_spec = import;
-                import_spec.deinit(allocator);
+                import_spec.deinit();
             }
             resolved_imports.deinit();
         }
 
-        print("  Found {} imports\n", .{resolved_imports.items.len});
+        print("  Found {s} imports\n", .{{resolved_imports.items.len});
         file_count += 1;
     }
 
-    print("\nProcessed {} CURSED files\n\n", .{file_count});
+    print("\nProcessed {s} CURSED files\n\n", .{{file_count});
 
     // Generate comprehensive dependency report
     try resolver.generateDependencyReport();

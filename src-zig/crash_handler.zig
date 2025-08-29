@@ -76,7 +76,7 @@ pub const CrashTelemetry = struct {
         for (self.crash_log.items) |*crash| {
             crash.deinit();
         }
-        self.crash_log.deinit();
+        self.crash_log.deinit(self.allocator);
         
         // Clean up crash file path
         if (self.crash_file_path) |path| {
@@ -148,7 +148,7 @@ pub const CrashTelemetry = struct {
         );
         defer self.allocator.free(crash_entry);
         
-        try file.writeAll(crash_entry);
+        try file.writer().writeAll(crash_entry);
     }
 };
 
@@ -173,7 +173,7 @@ pub const FatalErrorHandler = struct {
     }
     
     pub fn deinit(self: *FatalErrorHandler) void {
-        self.recovery_strategies.deinit();
+        self.recovery_strategies.deinit(self.allocator);
     }
     
     pub fn installPanicHandler(self: *FatalErrorHandler) void {
@@ -214,7 +214,7 @@ pub const FatalErrorHandler = struct {
     }
     
     fn captureStackTrace(self: *FatalErrorHandler) !?[][]const u8 {
-        var stack_trace = .empty;
+        var stack_trace = std.ArrayList(u8){};
         defer stack_trace.deinit();
         
         // Use builtin stack trace if available
@@ -352,7 +352,7 @@ pub const MemoryErrorDetector = struct {
     }
     
     pub fn deinit(self: *MemoryErrorDetector) void {
-        self.allocations.deinit();
+        self.allocations.deinit(self.allocator);
     }
     
     pub fn trackAllocation(self: *MemoryErrorDetector, ptr: usize, size: usize, file: []const u8, line: u32) !void {
@@ -381,7 +381,7 @@ pub const MemoryErrorDetector = struct {
     }
     
     pub fn detectLeaks(self: *MemoryErrorDetector) ![]AllocationInfo {
-        var leaks = .empty;
+        var leaks = std.ArrayList(u8){};
         
         var iter = self.allocations.iterator();
         while (iter.next()) |entry| {

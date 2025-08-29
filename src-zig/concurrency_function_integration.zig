@@ -39,7 +39,7 @@ pub const EnhancedGoroutineContext = struct {
         context.* = EnhancedGoroutineContext{
             .id = id,
             .function_executor = function_executor,
-            .function_registry = StringHashMap(ast.FunctionStatement).init(allocator),
+            .function_registry = StringHashMap(ast.FunctionStatement){},
             .allocator = allocator,
         };
         
@@ -47,8 +47,8 @@ pub const EnhancedGoroutineContext = struct {
     }
     
     pub fn deinit(self: *EnhancedGoroutineContext) void {
-        self.function_executor.deinit();
-        self.function_registry.deinit();
+        self.function_executor.deinit(self.allocator);
+        self.function_registry.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -73,17 +73,17 @@ pub fn executeInterpretedFunctionSafe(
     param_types: []const []const u8,
     allocator: Allocator
 ) !usize {
-    print("Executing interpreted function '{}' in goroutine {} with {} args\n", .{ function_name, goroutine_id, args.len });
+    print("Executing interpreted function '{s}' in goroutine {s} with {s} args\n", .{ function_name, goroutine_id, args.len });
     
     // Create enhanced goroutine context
     var context = EnhancedGoroutineContext.init(allocator, goroutine_id) catch |err| {
-        print("Failed to create goroutine context: {}\n", .{err});
+        print("Failed to create goroutine context: {s}\n", .{err});
         return 0; // Safe fallback
     };
     defer context.deinit();
     
     // Convert usize arguments to Value arguments based on parameter types
-    var cursed_args = .empty;
+    var cursed_args = std.ArrayList(u8){};
     defer cursed_args.deinit();
     errdefer cursed_args.deinit(); // Clean up on error
     
@@ -112,7 +112,7 @@ pub fn executeInterpretedFunctionSafe(
                 break :blk Value{ .Character = @as(u8, @intCast(arg & 0xFF)) };
             } else {
                 // Default to integer for unknown types
-                print("Unknown parameter type '{}', defaulting to integer\n", .{param_type});
+                print("Unknown parameter type '{s}', defaulting to integer\n", .{param_type});
                 break :blk Value{ .Integer = @as(i64, @intCast(arg)) };
             }
         } else {
@@ -120,8 +120,8 @@ pub fn executeInterpretedFunctionSafe(
             Value{ .Integer = @as(i64, @intCast(arg)) }
         };
         
-        cursed_args.append(value) catch |err| {
-            print("Failed to convert argument {}: {}\n", .{ i, err });
+        cursed_args.append(allocator, value) catch |err| {
+            print("Failed to convert argument {s}: {s}\n", .{ i, err });
             continue;
         };
     }
@@ -130,19 +130,19 @@ pub fn executeInterpretedFunctionSafe(
     // In a real implementation, functions would be pre-registered
     if (!context.function_registry.contains(function_name)) {
         const test_function = createTestFunction(allocator, function_name) catch |err| {
-            print("Failed to create test function: {}\n", .{err});
+            print("Failed to create test function: {s}\n", .{err});
             return 0;
         };
         
         context.registerFunction(function_name, test_function) catch |err| {
-            print("Failed to register function: {}\n", .{err});
+            print("Failed to register function: {s}\n", .{err});
             return 0;
         };
     }
     
     // Execute the function safely
     const result = context.executeFunction(function_name, cursed_args.items) catch |err| {
-        print("Function execution failed: {}\n", .{err});
+        print("Function execution failed: {s}\n", .{err});
         return 0; // Safe fallback instead of crashing
     };
     
@@ -157,7 +157,7 @@ pub fn executeInterpretedFunctionSafe(
         else => @as(usize, 0),
     };
     
-    print("Function '{}' returned: {} (converted to usize: {})\n", .{ function_name, result, usize_result });
+    print("Function '{s}' returned: {s} (converted to usize: {s})\n", .{ function_name, result, usize_result });
     return usize_result;
 }
 
@@ -165,11 +165,11 @@ pub fn executeInterpretedFunctionSafe(
 fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionStatement {
         
     // Create a simple function that adds its parameters
-    var parameters = .empty;
+    var parameters = std.ArrayList(u8){};
     try parameters.append(ast.Parameter{ .name = "a", .type_name = "drip" });
     try parameters.append(ast.Parameter{ .name = "b", .type_name = "drip" });
     
-    var body = .empty;
+    var body = std.ArrayList(u8){};
     
     // Create return statement: return a + b
     const left_expr = try allocator.create(ast.Expression);
@@ -185,7 +185,7 @@ fn createTestFunction(allocator: Allocator, name: []const u8) !ast.FunctionState
         .right = right_expr,
     }};
     
-    try body.append(ast.Statement{ .Return = binary_expr });
+    try body.append(allocator, ast.Statement{ .Return = binary_expr });
     
     return ast.FunctionStatement{
         .name = name,
@@ -202,12 +202,13 @@ pub const EnhancedGoroutineRuntime = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) !*EnhancedGoroutineRuntime {
+        _ = allocator;
         const base_runtime = try GoroutineRuntime.init(allocator);
         
         const runtime = try allocator.create(EnhancedGoroutineRuntime);
         runtime.* = EnhancedGoroutineRuntime{
             .base_runtime = base_runtime,
-            .goroutine_contexts = std.AutoHashMap(GoroutineId, *EnhancedGoroutineContext).init(allocator),
+            .goroutine_contexts = std.AutoHashMap(GoroutineId, *EnhancedGoroutineContext){},
             .allocator = allocator,
         };
         
@@ -220,9 +221,9 @@ pub const EnhancedGoroutineRuntime = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit();
         }
-        self.goroutine_contexts.deinit();
+        self.goroutine_contexts.deinit(self.allocator);
         
-        self.base_runtime.deinit();
+        self.base_runtime.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -235,7 +236,7 @@ pub const EnhancedGoroutineRuntime = struct {
         const context = try EnhancedGoroutineContext.init(self.allocator, goroutine_id);
         try self.goroutine_contexts.put(goroutine_id, context);
         
-        print("Spawned goroutine {} with function execution capability\n", .{goroutine_id});
+        print("Spawned goroutine {s} with function execution capability\n", .{goroutine_id});
         return goroutine_id;
     }
     
@@ -276,18 +277,18 @@ pub fn testConcurrencyFunctionIntegration() !void {
     const param_types = [_][]const u8{ "drip", "drip" };
     
     const result = executeInterpretedFunctionSafe(1, "test_add", &args, &param_types, allocator) catch |err| {
-        print("Execution failed: {}\n", .{err});
+        print("Execution failed: {s}\n", .{err});
         return;
     };
     
-    print("Function execution result: {}\n", .{result});
+    print("Function execution result: {s}\n", .{result});
     
     // Test enhanced runtime
     var enhanced_runtime = try EnhancedGoroutineRuntime.init(allocator);
     defer enhanced_runtime.deinit();
     
     const goroutine_id = try enhanced_runtime.spawnWithFunctions("test_function");
-    print("Spawned enhanced goroutine: {}\n", .{goroutine_id});
+    print("Spawned enhanced goroutine: {s}\n", .{goroutine_id});
     
     print("Concurrency function integration test completed successfully\n", .{});
 }

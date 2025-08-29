@@ -21,9 +21,9 @@ pub const CommunitySystem = struct {
         return CommunitySystem{
             .allocator = allocator,
             .reviews = HashMap([]const u8, ArrayList(Review), std.hash_map.StringContext, 80).init(allocator),
-            .ratings = HashMap([]const u8, RatingStats, std.hash_map.StringContext, 80).init(allocator),
-            .user_profiles = HashMap([]const u8, UserProfile, std.hash_map.StringContext, 80).init(allocator),
-            .moderation_queue = ArrayList(ModerationItem).init(allocator),
+            .ratings = HashMap([]const u8, RatingStats, std.hash_map.StringContext, 80){},
+            .user_profiles = HashMap([]const u8, UserProfile, std.hash_map.StringContext, 80){},
+            .moderation_queue = ArrayList(ModerationItem){},
         };
     }
     
@@ -36,17 +36,17 @@ pub const CommunitySystem = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.reviews.deinit();
+        self.reviews.deinit(self.allocator);
         
         // Clean up user profiles
         var profile_iter = self.user_profiles.iterator();
         while (profile_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.user_profiles.deinit();
+        self.user_profiles.deinit(self.allocator);
         
-        self.ratings.deinit();
-        self.moderation_queue.deinit();
+        self.ratings.deinit(self.allocator);
+        self.moderation_queue.deinit(self.allocator);
     }
     
     // ===== Review System =====
@@ -89,7 +89,7 @@ pub const CommunitySystem = struct {
             .total_votes = 0,
             .verified_download = auth_check.verified_download,
             .status = .pending_moderation,
-            .tags = ArrayList([]const u8).init(self.allocator),
+            .tags = ArrayList([]const u8){},
         };
         
         // Add to moderation queue if needed
@@ -102,7 +102,7 @@ pub const CommunitySystem = struct {
                 .priority = if (review_data.rating == 1) .high else .normal,
                 .created_at = std.time.timestamp(),
             };
-            try self.moderation_queue.append(mod_item);
+            try self.moderation_queue.append(allocator, mod_item);
             print("   📋 Review queued for moderation\n", .{});
         } else {
             review.status = .approved;
@@ -111,10 +111,10 @@ pub const CommunitySystem = struct {
         // Store review
         const package_key = try self.allocator.dupe(u8, review_data.package_name);
         if (self.reviews.getPtr(package_key)) |package_reviews| {
-            try package_reviews.append(review);
+            try package_reviews.append(allocator, review);
         } else {
-            var new_reviews = ArrayList(Review).init(self.allocator);
-            try new_reviews.append(review);
+            var new_reviews = ArrayList(Review){};
+            try new_reviews.append(allocator, review);
             try self.reviews.put(package_key, new_reviews);
         }
         
@@ -361,7 +361,7 @@ pub const CommunitySystem = struct {
         
         if (self.reviews.get(package_name)) |package_reviews| {
             // Filter reviews
-            var filtered_reviews = ArrayList(*Review).init(self.allocator);
+            var filtered_reviews = ArrayList(*Review){};
             defer filtered_reviews.deinit();
             
             for (package_reviews.items) |*review| {
@@ -369,7 +369,7 @@ pub const CommunitySystem = struct {
                 if (options.min_rating) |min| if (review.rating < min) continue;
                 if (options.verified_only and !review.verified_download) continue;
                 
-                try filtered_reviews.append(review);
+                try filtered_reviews.append(allocator, review);
             }
             
             // Sort reviews
@@ -386,7 +386,7 @@ pub const CommunitySystem = struct {
             const end = @min(start + options.limit, filtered_reviews.items.len);
             
             for (filtered_reviews.items[start..end]) |review| {
-                try result.reviews.append(review.*);
+                try result.reviews.append(allocator, review.*);
             }
             
             result.total_count = @intCast(filtered_reviews.items.len);
@@ -397,7 +397,7 @@ pub const CommunitySystem = struct {
             result.rating_stats = stats;
         }
         
-        print("✅ Found {} reviews\n", .{result.reviews.items.len});
+        print("✅ Found {s} reviews\n", .{{result.reviews.items.len});
         return result;
     }
     
@@ -506,11 +506,11 @@ pub const CommunitySystem = struct {
     }
     
     pub fn getModerationQueue(self: *CommunitySystem, priority_filter: ?ModerationPriority) !ArrayList(ModerationItem) {
-        var filtered_queue = ArrayList(ModerationItem).init(self.allocator);
+        var filtered_queue = ArrayList(ModerationItem){};
         
         for (self.moderation_queue.items) |item| {
             if (priority_filter == null or item.priority == priority_filter.?) {
-                try filtered_queue.append(item);
+                try filtered_queue.append(allocator, item);
             }
         }
         
@@ -583,7 +583,7 @@ pub const Review = struct {
     pub const ReviewStatus = enum { pending_moderation, approved, rejected, edited, flagged };
     
     pub fn deinit(self: *Review) void {
-        self.tags.deinit();
+        self.tags.deinit(self.allocator);
     }
 };
 
@@ -654,12 +654,12 @@ pub const UserProfile = struct {
             .total_votes_received = 0,
             .helpful_ratio = 0.0,
             .status = .active,
-            .downloads = ArrayList([]const u8).init(allocator),
+            .downloads = ArrayList([]const u8){},
         };
     }
     
     pub fn deinit(self: *UserProfile) void {
-        self.downloads.deinit();
+        self.downloads.deinit(self.allocator);
     }
 };
 
@@ -681,7 +681,7 @@ pub const ReviewList = struct {
     
     pub fn init() ReviewList {
         return ReviewList{
-            .reviews = ArrayList(Review).init(allocator),
+            .reviews = ArrayList(Review){},
             .total_count = 0,
             .rating_stats = null,
         };
@@ -691,7 +691,7 @@ pub const ReviewList = struct {
         for (self.reviews.items) |*review| {
             review.deinit();
         }
-        self.reviews.deinit();
+        self.reviews.deinit(self.allocator);
     }
 };
 

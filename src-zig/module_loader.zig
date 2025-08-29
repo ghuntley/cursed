@@ -93,6 +93,7 @@ pub const ModuleLoader = struct {
         path: []const u8,
         
         pub fn deinit(self: *LoadedModule, allocator: Allocator) void {
+        _ = allocator;
             // Free owned strings
             if (self.name.len > 0) {
                 allocator.free(self.name);
@@ -109,7 +110,7 @@ pub const ModuleLoader = struct {
                 }
                 // Skip func.deinit() to prevent double-free crashes
             }
-            self.functions.deinit();
+            self.functions.deinit(self.allocator);
             
             // Safe cleanup of variables - skip initializer cleanup to prevent double-free
             for (self.variables.items) |*var_stmt| {
@@ -119,14 +120,14 @@ pub const ModuleLoader = struct {
                 }
                 // Skip var_stmt.deinit() to prevent double-free crashes
             }
-            self.variables.deinit();
+            self.variables.deinit(self.allocator);
         }
     };
     
     pub fn init(allocator: Allocator, verbose: bool) ModuleLoader {
         return ModuleLoader{
             .allocator = allocator,
-            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .telemetry = null,
             .safe_file_ops = undefined, // Will be initialized when telemetry is set
@@ -137,7 +138,7 @@ pub const ModuleLoader = struct {
     pub fn initWithStdlibPath(allocator: Allocator, verbose: bool, stdlib_path: ?[]const u8) ModuleLoader {
         return ModuleLoader{
             .allocator = allocator,
-            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .telemetry = null,
             .safe_file_ops = undefined, // Will be initialized when telemetry is set
@@ -148,7 +149,7 @@ pub const ModuleLoader = struct {
     pub fn initWithTelemetry(allocator: Allocator, verbose: bool, telemetry: *crash_handler.CrashTelemetry) ModuleLoader {
         return ModuleLoader{
             .allocator = allocator,
-            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .telemetry = telemetry,
             .safe_file_ops = safe_operations.SafeFileOperations.init(allocator, telemetry),
@@ -167,7 +168,7 @@ pub const ModuleLoader = struct {
                 self.allocator.free(entry.key_ptr.*);
             }
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(self.allocator);
     }
     
     /// Load a module and return the functions it exports
@@ -242,7 +243,7 @@ pub const ModuleLoader = struct {
         
         try self.loaded_modules.put(cached_name, loaded_module);
         
-        if (self.verbose) print("✅ Module '{s}' loaded with {} functions\n", .{ module_name, loaded_module.functions.items.len });
+        if (self.verbose) print("✅ Module '{s}' loaded with {s} functions\n", .{ module_name, loaded_module.functions.items.len });
         
         return loaded_module.functions.items;
     }
@@ -252,7 +253,7 @@ pub const ModuleLoader = struct {
         // Try to resolve stdlib module first with custom path if available
         if (simple_import_resolver.resolveStdlibImportWithPath(self.allocator, module_name, self.stdlib_path) catch false) {
             // Build stdlib path using consistent method
-            var path_buf = .empty;
+            var path_buf = std.ArrayList(u8){};
             defer path_buf.deinit();
             
             if (self.stdlib_path) |custom_path| {
@@ -306,14 +307,14 @@ pub const ModuleLoader = struct {
             "CursedPackage.toml"
         };
         
-        var path_components = .empty;
+        var path_components = std.ArrayList(u8){};
         defer path_components.deinit();
         
         // Split path into components
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(allocator, component);
             }
         }
         
@@ -322,20 +323,20 @@ pub const ModuleLoader = struct {
         // Walk up the directory tree
         while (path_components.items.len > 0) {
             // Build current test path
-            var test_path = .empty;
+            var test_path = std.ArrayList(u8){};
             defer test_path.deinit();
             
-            try test_path.append('/');
+            try test_path.append(allocator, '/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
             }
             
             if (self.verbose) print("🔍 Checking directory: {s}\n", .{test_path.items});
             
             // Check for marker files
             for (markers) |marker| {
-                var marker_path = .empty;
+                var marker_path = std.ArrayList(u8){};
                 defer marker_path.deinit();
                 
                 try marker_path.appendSlice(test_path.items);
@@ -396,18 +397,18 @@ pub const ModuleLoader = struct {
         
         const tokens = try module_lexer.tokenize();
         
-        if (self.verbose) print("🔍 Tokenized module '{s}' - {} tokens\n", .{ module_name, tokens.items.len });
+        if (self.verbose) print("🔍 Tokenized module '{s}' - {s} tokens\n", .{ module_name, tokens.items.len });
         
         // Parse the tokens using arena allocator
         var module_parser = parser.Parser.initWithFile(arena_allocator, tokens.items, module_path);
         
         const program = try module_parser.parseProgram();
         
-        if (self.verbose) print("🔍 Parsed module '{s}' - {} statements\n", .{ module_name, program.statements.items.len });
+        if (self.verbose) print("🔍 Parsed module '{s}' - {s} statements\n", .{ module_name, program.statements.items.len });
         
         // Extract functions and variables with proper string copying
-        var functions = .empty;
-        var variables = .empty;
+        var functions = std.ArrayList(u8){};
+        var variables = std.ArrayList(u8){};
         
         for (program.statements.items) |stmt_ptr| {
             const stmt = @as(*ast.Statement, @ptrCast(@alignCast(stmt_ptr))).*;
@@ -473,12 +474,12 @@ pub const ModuleLoader = struct {
     
     /// Get list of loaded modules
     pub fn getLoadedModules(self: *ModuleLoader) []const []const u8 {
-        var names = .empty;
+        var names = std.ArrayList(u8){};
         defer names.deinit();
         
         var iter = self.loaded_modules.iterator();
         while (iter.next()) |entry| {
-            names.append(entry.key_ptr.*) catch continue;
+            names.append(allocator, entry.key_ptr.*) catch continue;
         }
         
         return names.toOwnedSlice() catch &[_][]const u8{};

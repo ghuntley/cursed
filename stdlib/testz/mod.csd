@@ -208,7 +208,7 @@ fr fr ================================
 slay should_run_test(test_name tea, pattern tea) lit {
     fr fr Real pattern matching using regexz
     ready pattern == "*" {
-        damn based
+        damn based  fr fr Match all tests
     }
     
     ready pattern.starts_with("*") && pattern.ends_with("*") {

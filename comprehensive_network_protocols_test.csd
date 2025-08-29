@@ -1,245 +1,260 @@
-fr fr Comprehensive Network Protocols Test
-fr fr Tests enhanced TLS, SSH, FTP, SMTP, HTTP, and WebSocket implementations
-fr fr Validates production-ready networking functionality
+fr fr Comprehensive Network Protocols Testing
+fr fr Tests all major protocol implementations including TLS, SSH, FTP, SMTP, HTTP, DNS
 
-yeet "net_protocols"
 yeet "testz"
+yeet "net_protocols"
+yeet "vibez"
 
-slay main() normie {
-    vibez.spill("🌐 CURSED Network Protocols - Comprehensive Test Suite")
-    vibez.spill("=" * 60)
+slay main() {
+    vibez.spill("🌐 Starting comprehensive network protocols test suite")
+    test_start("Network Protocols Implementation")
     
-    fr fr Initialize protocols
+    fr fr Initialize network protocols
     net_protocols_initialize()
-    vibez.spill("")
     
-    fr fr Run comprehensive test suite
-    sus success lit = net_protocols_test()
-    vibez.spill("")
+    fr fr Test TLS implementation
+    test_tls_protocol()
     
-    fr fr Additional HTTP tests
-    vibez.spill("🔍 Advanced HTTP Protocol Tests")
-    test_http_methods()
-    test_http_url_parsing()
-    test_http_headers()
-    vibez.spill("")
+    fr fr Test SSH implementation
+    test_ssh_protocol()
     
-    fr fr WebSocket advanced tests
-    vibez.spill("🔄 Advanced WebSocket Tests")
-    test_websocket_frames()
-    test_websocket_protocol()
-    vibez.spill("")
+    fr fr Test FTP implementation
+    test_ftp_protocol()
     
-    fr fr TLS advanced tests
-    vibez.spill("🔐 Advanced TLS Tests")
-    test_tls_handshake()
-    test_tls_encryption()
-    vibez.spill("")
+    fr fr Test SMTP implementation  
+    test_smtp_protocol()
     
-    fr fr Protocol integration tests
-    vibez.spill("🔗 Protocol Integration Tests")
-    test_protocol_integration()
-    vibez.spill("")
+    fr fr Test HTTP implementation
+    test_http_protocol()
     
-    bestie success {
-        vibez.spill("🎉 All network protocol tests PASSED!")
-        damn 0
-    } else {
-        vibez.spill("❌ Some network protocol tests FAILED!")
-        damn 1
-    }
+    fr fr Test DNS implementation
+    test_dns_protocol()
+    
+    fr fr Test utility functions
+    test_utility_functions()
+    
+    print_test_summary()
 }
 
-slay test_http_methods() lit {
-    vibez.spill("  Testing HTTP methods...")
+slay test_tls_protocol() {
+    vibez.spill("🔒 Testing TLS protocol implementation")
     
-    fr fr Test GET request
-    sus get_request tea = http_create_request("GET", "https://api.example.com/users", "Accept: application/json\r\n", "")
-    bestie string_contains(get_request, "GET /users HTTP/1.1") && string_contains(get_request, "api.example.com") {
-        vibez.spill("    ✅ HTTP GET request creation")
-    } else {
-        vibez.spill("    ❌ HTTP GET request creation failed")
-    }
-    
-    fr fr Test POST with JSON
-    sus json_data tea = "{\"name\": \"CURSED User\", \"email\": \"user@cursed.com\"}"
-    sus post_response tea = http_post_json("https://api.example.com/users", json_data)
-    bestie string_length(post_response) > 0 {
-        vibez.spill("    ✅ HTTP POST JSON request")
-    } else {
-        vibez.spill("    ❌ HTTP POST JSON request failed")
-    }
-    
-    fr fr Test URL encoding
-    sus encoded tea = http_url_encode("Hello World! @#$%^&*()")
-    bestie string_contains(encoded, "%") && string_contains(encoded, "+") {
-        vibez.spill("    ✅ URL encoding")
-    } else {
-        vibez.spill("    ❌ URL encoding failed")
-    }
-}
-
-slay test_http_url_parsing() lit {
-    vibez.spill("  Testing HTTP URL parsing...")
-    
-    fr fr Test complex URL
-    sus request tea = http_create_request("GET", "https://api.example.com:8080/v1/users/123?filter=active", "", "")
-    
-    bestie string_contains(request, "Host: api.example.com:8080") && string_contains(request, "GET /v1/users/123?filter=active") {
-        vibez.spill("    ✅ Complex URL parsing")
-    } else {
-        vibez.spill("    ❌ Complex URL parsing failed")
-    }
-}
-
-slay test_http_headers() lit {
-    vibez.spill("  Testing HTTP headers...")
-    
-    fr fr Test response creation
-    sus headers tea = "Content-Type: application/json\r\nCache-Control: max-age=3600\r\n"
-    sus body tea = "{\"status\": \"success\", \"data\": \"test\"}"
-    sus response tea = http_create_server_response(200, headers, body)
-    
-    bestie string_contains(response, "HTTP/1.1 200 OK") && string_contains(response, "Content-Length:") {
-        vibez.spill("    ✅ HTTP server response creation")
-    } else {
-        vibez.spill("    ❌ HTTP server response creation failed")
-    }
-    
-    fr fr Test response parsing
-    (sus status normie, sus resp_headers tea, sus resp_body tea) = http_parse_response(response)
-    bestie status == 200 && string_length(resp_body) > 0 {
-        vibez.spill("    ✅ HTTP response parsing")
-    } else {
-        vibez.spill("    ❌ HTTP response parsing failed")
-    }
-}
-
-slay test_websocket_frames() lit {
-    vibez.spill("  Testing WebSocket frames...")
-    
-    fr fr Test text frame
-    sus text_frame tea = ws_send_text("Hello, WebSocket!")
-    bestie string_length(text_frame) > 2 {
-        vibez.spill("    ✅ WebSocket text frame creation")
-    } else {
-        vibez.spill("    ❌ WebSocket text frame creation failed")
-    }
-    
-    fr fr Test binary frame
-    sus binary_data tea = char(0x01) + char(0x02) + char(0x03) + char(0xFF)
-    sus binary_frame tea = ws_send_binary(binary_data)
-    bestie string_length(binary_frame) > 2 {
-        vibez.spill("    ✅ WebSocket binary frame creation")
-    } else {
-        vibez.spill("    ❌ WebSocket binary frame creation failed")
-    }
-    
-    fr fr Test control frames
-    sus ping_frame tea = ws_send_ping("ping")
-    sus pong_frame tea = ws_send_pong("pong")
-    sus close_frame tea = ws_send_close(1000, "Normal closure")
-    
-    bestie string_length(ping_frame) > 0 && string_length(pong_frame) > 0 && string_length(close_frame) > 0 {
-        vibez.spill("    ✅ WebSocket control frames")
-    } else {
-        vibez.spill("    ❌ WebSocket control frames failed")
-    }
-}
-
-slay test_websocket_protocol() lit {
-    vibez.spill("  Testing WebSocket protocol...")
-    
-    fr fr Test handshake
-    sus ws_key tea = "dGhlIHNhbXBsZSBub25jZQ=="
-    sus handshake_response tea = ws_create_handshake_response(ws_key)
-    
-    bestie string_contains(handshake_response, "101 Switching Protocols") && 
-           string_contains(handshake_response, "websocket") &&
-           string_contains(handshake_response, "Sec-WebSocket-Accept:") {
-        vibez.spill("    ✅ WebSocket handshake response")
-    } else {
-        vibez.spill("    ❌ WebSocket handshake response failed")
-    }
-}
-
-slay test_tls_handshake() lit {
-    vibez.spill("  Testing TLS handshake...")
-    
-    fr fr Test client hello structure
+    fr fr Test connection initialization
     tls_init_connection()
+    assert_true(tls_connection_state == 1)
+    
+    fr fr Test Client Hello generation
     sus client_hello tea = tls_create_client_hello()
+    assert_true(string_length(client_hello) > 100)
+    assert_true(string_contains(client_hello, char(22))) fr fr Handshake record type
     
-    fr fr Check for proper TLS record structure
-    bestie string_length(client_hello) > 100 && char_code(client_hello[0]) == 22 {
-        vibez.spill("    ✅ TLS Client Hello structure")
-    } else {
-        vibez.spill("    ❌ TLS Client Hello structure failed")
-    }
-    
-    fr fr Test extensions
-    sus extensions tea = tls_build_extensions()
-    bestie string_length(extensions) > 50 {
-        vibez.spill("    ✅ TLS extensions generation")
-    } else {
-        vibez.spill("    ❌ TLS extensions generation failed")
-    }
-}
-
-slay test_tls_encryption() lit {
-    vibez.spill("  Testing TLS encryption...")
+    fr fr Test master secret generation
+    sus pre_master tea = "test_pre_master_secret_48_bytes_exactly_for_tls"
+    tls_generate_master_secret(pre_master)
+    assert_true(tls_connection_state == 2)
     
     fr fr Test key derivation
-    tls_generate_master_secret("test_pre_master_secret")
     (sus client_key tea, sus server_key tea, sus client_iv tea, sus server_iv tea) = tls_derive_keys()
-    
-    bestie string_length(client_key) > 0 && string_length(server_key) > 0 {
-        vibez.spill("    ✅ TLS key derivation")
-    } else {
-        vibez.spill("    ❌ TLS key derivation failed")
-    }
+    assert_true(string_length(client_key) >= 16)
+    assert_true(string_length(server_key) >= 16)
     
     fr fr Test encryption/decryption
-    sus plaintext tea = "Hello, TLS World!"
+    sus plaintext tea = "Hello TLS World!"
     sus encrypted tea = tls_encrypt_application_data(plaintext, client_key, client_iv)
     sus decrypted tea = tls_decrypt_application_data(encrypted, client_key, client_iv)
+    assert_eq_string(plaintext, decrypted)
     
-    bestie string_length(encrypted) > string_length(plaintext) {
-        vibez.spill("    ✅ TLS application data encryption")
-    } else {
-        vibez.spill("    ❌ TLS application data encryption failed")
-    }
+    vibez.spill("✅ TLS protocol tests passed")
 }
 
-slay test_protocol_integration() lit {
-    vibez.spill("  Testing protocol integration...")
+slay test_ssh_protocol() {
+    vibez.spill("🔐 Testing SSH protocol implementation")
     
-    fr fr Test HTTPS simulation (TLS + HTTP)
-    sus http_request tea = http_create_request("GET", "https://secure.example.com/api", "", "")
-    bestie string_contains(http_request, "Host: secure.example.com") {
-        vibez.spill("    ✅ HTTPS request creation")
-    } else {
-        vibez.spill("    ❌ HTTPS request creation failed")
-    }
+    fr fr Test connection initialization
+    ssh_init_connection()
+    assert_true(ssh_connection_state == 1)
     
-    fr fr Test SMTPS simulation (SMTP + TLS)
-    sus smtp_greeting tea = smtp_connect()
-    sus smtp_starttls_response tea = smtp_handle_command("STARTTLS")
-    bestie string_contains(smtp_starttls_response, "220") {
-        vibez.spill("    ✅ SMTP STARTTLS integration")
-    } else {
-        vibez.spill("    ❌ SMTP STARTTLS integration failed")
-    }
+    fr fr Test version exchange
+    sus version_msg tea = ssh_create_version_exchange()
+    assert_true(string_contains(version_msg, "SSH-2.0"))
+    assert_true(string_ends_with(version_msg, "\r\n"))
     
-    fr fr Test FTPS simulation (FTP + TLS)
-    sus ftp_welcome tea = ftp_connect()
-    sus ftp_auth_response tea = ftp_handle_command("AUTH TLS")
-    bestie string_length(ftp_auth_response) > 0 {
-        vibez.spill("    ✅ FTP AUTH TLS integration")
-    } else {
-        vibez.spill("    ❌ FTP AUTH TLS integration failed")
-    }
+    fr fr Test server version parsing
+    assert_true(ssh_parse_server_version("SSH-2.0-OpenSSH_8.0\r\n"))
+    assert_false(ssh_parse_server_version("SSH-1.5-OldServer\r\n"))
+    
+    fr fr Test KEX init message
+    sus kex_msg tea = ssh_create_kex_init()
+    assert_true(string_length(kex_msg) > 50)
+    assert_true(string_contains(kex_msg, "diffie-hellman"))
+    
+    fr fr Test DH key exchange
+    sus dh_msg tea = ssh_perform_dh_key_exchange()
+    assert_true(string_length(dh_msg) > 10)
+    
+    fr fr Test password authentication
+    sus auth_msg tea = ssh_authenticate_password("testuser", "testpass")
+    assert_true(string_length(auth_msg) > 20)
+    
+    vibez.spill("✅ SSH protocol tests passed")
 }
 
-fr fr Run the test
+slay test_ftp_protocol() {
+    vibez.spill("📁 Testing FTP protocol implementation")
+    
+    fr fr Test connection establishment
+    sus welcome tea = ftp_connect()
+    assert_true(string_contains(welcome, "220"))
+    assert_true(ftp_connection_state == 1)
+    
+    fr fr Test authentication
+    sus auth_response tea = ftp_authenticate("testuser", "testpass")
+    assert_true(string_contains(auth_response, "230"))
+    
+    fr fr Test commands
+    sus pwd_response tea = ftp_handle_command("PWD")
+    assert_true(string_contains(pwd_response, "257"))
+    
+    sus list_response tea = ftp_handle_command("LIST")
+    assert_true(string_contains(list_response, "150"))
+    
+    sus pasv_response tea = ftp_handle_command("PASV")
+    assert_true(string_contains(pasv_response, "227"))
+    
+    fr fr Test FTPS commands
+    sus auth_tls_response tea = ftp_handle_command("AUTH TLS")
+    assert_true(string_contains(auth_tls_response, "234"))
+    
+    vibez.spill("✅ FTP protocol tests passed")
+}
+
+slay test_smtp_protocol() {
+    vibez.spill("📧 Testing SMTP protocol implementation")
+    
+    fr fr Test connection establishment
+    sus greeting tea = smtp_connect()
+    assert_true(string_contains(greeting, "220"))
+    assert_true(smtp_connection_state == 1)
+    
+    fr fr Test EHLO command
+    sus ehlo_response tea = smtp_handle_command("EHLO client.example.com")
+    assert_true(string_contains(ehlo_response, "250"))
+    assert_true(string_contains(ehlo_response, "8BITMIME"))
+    
+    fr fr Test mail transaction
+    sus mail_response tea = smtp_handle_command("MAIL FROM:<test@example.com>")
+    assert_true(string_contains(mail_response, "250"))
+    
+    sus rcpt_response tea = smtp_handle_command("RCPT TO:<dest@example.com>")
+    assert_true(string_contains(rcpt_response, "250"))
+    
+    sus data_response tea = smtp_handle_command("DATA")
+    assert_true(string_contains(data_response, "354"))
+    
+    fr fr Test message data processing
+    sus end_response tea = smtp_process_message_data(".\r\n")
+    assert_true(string_contains(end_response, "250"))
+    assert_true(string_contains(end_response, "cursed-"))
+    
+    fr fr Test STARTTLS
+    sus starttls_response tea = smtp_handle_command("STARTTLS")
+    assert_true(string_contains(starttls_response, "220"))
+    
+    vibez.spill("✅ SMTP protocol tests passed")
+}
+
+slay test_http_protocol() {
+    vibez.spill("🌐 Testing HTTP protocol implementation")
+    
+    fr fr Test request creation
+    sus get_request tea = http_create_request("GET", "http://example.com/test", "", "")
+    assert_true(string_contains(get_request, "GET /test HTTP/1.1"))
+    assert_true(string_contains(get_request, "Host: example.com"))
+    
+    sus post_request tea = http_create_request("POST", "http://api.example.com/data", "Content-Type: application/json\r\n", "{\"test\": true}")
+    assert_true(string_contains(post_request, "POST /data HTTP/1.1"))
+    assert_true(string_contains(post_request, "Content-Length:"))
+    
+    fr fr Test response parsing
+    sus mock_response tea = "HTTP/1.1 200 OK\r\nContent-Type: text/html\r\nContent-Length: 13\r\n\r\nHello World!\n"
+    (sus status normie, sus headers tea, sus body tea) = http_parse_response(mock_response)
+    assert_eq_int(status, 200)
+    assert_true(string_contains(headers, "text/html"))
+    assert_eq_string(body, "Hello World!\n")
+    
+    fr fr Test status text lookup
+    assert_eq_string(http_status_text(200), "OK")
+    assert_eq_string(http_status_text(404), "Not Found")
+    assert_eq_string(http_status_text(500), "Internal Server Error")
+    
+    fr fr Test URL encoding/decoding
+    sus encoded tea = http_url_encode("Hello World! @#$")
+    assert_true(string_contains(encoded, "+"))
+    assert_true(string_contains(encoded, "%"))
+    
+    sus decoded tea = http_url_decode(encoded)
+    assert_eq_string(decoded, "Hello World! @#$")
+    
+    vibez.spill("✅ HTTP protocol tests passed")
+}
+
+slay test_dns_protocol() {
+    vibez.spill("📋 Testing DNS protocol implementation")
+    
+    fr fr Test DNS query creation
+    sus query tea = dns_create_query("example.com", dns_query_type_a)
+    assert_true(string_length(query) > 12) fr fr At least header + question
+    
+    fr fr Test DNS response simulation
+    sus response tea = dns_simulate_response(query)
+    assert_true(string_length(response) > string_length(query))
+    
+    fr fr Test DNS response parsing
+    (sus success lit, sus ip tea) = dns_parse_response(response)
+    assert_true(success)
+    assert_true(string_contains(ip, "."))
+    assert_true(string_contains(ip, "203.0.113."))
+    
+    fr fr Test DNS resolution
+    sus resolved_ip tea = dns_resolve("test.example.com")
+    assert_true(string_length(resolved_ip) > 7)
+    
+    vibez.spill("✅ DNS protocol tests passed")
+}
+
+slay test_utility_functions() {
+    vibez.spill("🔧 Testing utility functions")
+    
+    fr fr Test string utilities
+    assert_eq_string(string_to_upper("hello"), "HELLO")
+    assert_eq_int(string_index_of("hello world", "world"), 6)
+    assert_eq_int(string_index_of("hello", "xyz"), -1)
+    
+    assert_true(string_contains("hello world", "world"))
+    assert_false(string_contains("hello", "world"))
+    
+    assert_true(string_ends_with("hello.txt", ".txt"))
+    assert_false(string_ends_with("hello", ".txt"))
+    
+    fr fr Test number conversion
+    assert_eq_string(string(42), "42")
+    assert_eq_string(string(-17), "-17")
+    assert_eq_string(string(0), "0")
+    
+    assert_eq_int(string_to_int("123"), 123)
+    assert_eq_int(string_to_int("-456"), -456)
+    assert_eq_int(string_to_int("0"), 0)
+    
+    fr fr Test base64 encoding
+    sus data tea = "Hello"
+    sus encoded tea = base64_encode(data)
+    assert_true(string_length(encoded) > string_length(data))
+    
+    fr fr Test environment variables
+    sus env_val tea = get_env_with_default("TEST_VAR", "default_value")
+    assert_eq_string(env_val, "default_value")
+    
+    vibez.spill("✅ Utility function tests passed")
+}
+
 main()

@@ -129,7 +129,7 @@ pub fn Channel(comptime T: type) type {
 
         pub fn deinit(self: *Self) void {
             self.close();
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
             
             // Unregister from global registry
             if (getChannelRegistry()) |registry| {
@@ -156,7 +156,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -171,7 +171,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -197,7 +197,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 self.stats.total_sent += 1;
                 return SendResult.sent;
@@ -213,7 +213,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
 
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             self.stats.total_sent += 1;
             return SendResult.sent;
@@ -392,7 +392,7 @@ pub const WorkStealingDeque = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.items.deinit();
+        self.items.deinit(self.allocator);
     }
 
     /// Push goroutine to bottom (owner thread only)
@@ -400,7 +400,7 @@ pub const WorkStealingDeque = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
 
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -464,7 +464,7 @@ pub const Worker = struct {
 
     pub fn deinit(self: *Worker) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(self.allocator);
     }
 
     pub fn start(self: *Worker) !void {
@@ -617,13 +617,13 @@ pub const Scheduler = struct {
         for (self.workers.items) |*worker| {
             worker.deinit();
         }
-        self.workers.deinit();
+        self.workers.deinit(self.allocator);
         
         // Clean up remaining goroutines
         for (self.global_queue.items) |goroutine| {
             self.allocator.destroy(goroutine);
         }
-        self.global_queue.deinit();
+        self.global_queue.deinit(self.allocator);
     }
 
     pub fn start(self: *Scheduler) !void {
@@ -688,7 +688,7 @@ pub const Scheduler = struct {
             // Fallback to global queue
             self.global_mutex.lock();
             defer self.global_mutex.unlock();
-            try self.global_queue.append(goroutine);
+            try self.global_queue.append(allocator, goroutine);
         }
     }
 
@@ -753,7 +753,7 @@ pub const Select = struct {
     }
 
     pub fn deinit(self: *Select) void {
-        self.operations.deinit();
+        self.operations.deinit(self.allocator);
     }
 
     pub fn addSend(self: *Select, channel_id: ChannelId, case_index: usize) !void {
@@ -792,7 +792,7 @@ pub const Select = struct {
             }
 
             // Try all operations
-            var ready_ops = .empty;
+            var ready_ops = std.ArrayList(u8){};
             defer ready_ops.deinit();
 
             for (self.operations.items, 0..) |op, i| {
@@ -800,17 +800,17 @@ pub const Select = struct {
                     .send => |send_op| {
                         // Check if send is possible
                         if (canSendToChannel(send_op.channel_id)) {
-                            try ready_ops.append(i);
+                            try ready_ops.append(allocator, i);
                         }
                     },
                     .receive => |recv_op| {
                         // Check if receive is possible
                         if (canReceiveFromChannel(recv_op.channel_id)) {
-                            try ready_ops.append(i);
+                            try ready_ops.append(allocator, i);
                         }
                     },
                     .default => {
-                        try ready_ops.append(i);
+                        try ready_ops.append(allocator, i);
                     },
                 }
             }
@@ -867,7 +867,7 @@ pub const ChannelRegistry = struct {
 
     pub fn init() ChannelRegistry {
         return ChannelRegistry{
-            .channels = std.AutoHashMap(ChannelId, *anyopaque).init(allocator),
+            .channels = std.AutoHashMap(ChannelId, *anyopaque){},
             .mutex = Mutex{},
             .allocator = allocator,
         };
@@ -876,7 +876,7 @@ pub const ChannelRegistry = struct {
     pub fn deinit(self: *ChannelRegistry) void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        self.channels.deinit();
+        self.channels.deinit(self.allocator);
     }
 
     pub fn register(self: *ChannelRegistry, channel_id: ChannelId, channel_ptr: *anyopaque) !void {
@@ -970,6 +970,7 @@ pub fn getScheduler() ?*Scheduler {
 
 /// Shutdown global scheduler
 pub fn shutdownScheduler(allocator: Allocator) void {
+        _ = allocator;
     scheduler_mutex.lock();
     defer scheduler_mutex.unlock();
 
@@ -1012,6 +1013,7 @@ pub fn makeChannel(comptime T: type, allocator: Allocator, capacity: usize) !*Ch
 
 /// Create unbuffered channel
 pub fn makeUnbufferedChannel(comptime T: type, allocator: Allocator) !*Channel(T) {
+        _ = allocator;
     return makeChannel(T, allocator, 0);
 }
 

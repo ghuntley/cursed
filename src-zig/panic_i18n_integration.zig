@@ -65,7 +65,7 @@ pub const I18nPanicContext = struct {
             .source_location = null,
             .error_code = code,
             .error_type = error_type,
-            .custom_data = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .custom_data = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .stack_trace = null,
             .allocator = allocator,
         };
@@ -77,7 +77,7 @@ pub const I18nPanicContext = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.custom_data.deinit();
+        self.custom_data.deinit(self.allocator);
 
         if (self.stack_trace) |trace| {
             for (trace) |frame| {
@@ -111,7 +111,7 @@ pub const I18nPanicContext = struct {
     }
 
     pub fn formatMessage(self: I18nPanicContext, i18n: *I18nManager, base_message: []const u8) ![]u8 {
-        var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer values.deinit();
 
         // Add base message
@@ -130,7 +130,7 @@ pub const I18nPanicContext = struct {
 
         // Format main error message
         const message_key = self.error_type.getMessageKey();
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         const main_message = try i18n.formatPanicMessage(message_key, values);
@@ -141,7 +141,7 @@ pub const I18nPanicContext = struct {
 
         // Add location information if available
         if (self.source_location) |loc| {
-            var location_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+            var location_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
             defer location_values.deinit();
 
             try location_values.put("function", loc.function);
@@ -164,7 +164,7 @@ pub const I18nPanicContext = struct {
 
         // Add stack trace if available
         if (self.stack_trace) |trace| {
-            var empty_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+            var empty_values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
             defer empty_values.deinit();
 
             const trace_header = try i18n.formatPanicMessage("panic.stack_trace", empty_values);
@@ -216,8 +216,8 @@ pub const I18nYikesError = struct {
     }
 
     pub fn deinit(self: *I18nYikesError) void {
-        self.base_error.deinit();
-        self.context.deinit();
+        self.base_error.deinit(self.allocator);
+        self.context.deinit(self.allocator);
         if (self.formatted_message) |msg| {
             self.context.allocator.free(msg);
         }
@@ -275,6 +275,7 @@ pub const I18nPanicUtils = struct {
     }
 
     pub fn createDivisionByZeroError(allocator: Allocator) !I18nYikesError {
+        _ = allocator;
         var err = try I18nYikesError.init(allocator, "Division by zero", 300);
         err.context.error_type = .DivisionByZero;
         return err;
@@ -299,6 +300,7 @@ pub const I18nPanicUtils = struct {
     }
 
     pub fn createNullPointerError(allocator: Allocator) !I18nYikesError {
+        _ = allocator;
         var err = try I18nYikesError.init(allocator, "Null pointer dereference", 500);
         err.context.error_type = .NullPointer;
         return err;
@@ -386,14 +388,14 @@ pub const I18nPanicHandler = struct {
     }
 
     fn cleanInvalidUTF8(self: *I18nPanicHandler, input: []const u8) ![]u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         var i: usize = 0;
         while (i < input.len) {
             if (input[i] < 128) {
                 // ASCII character, safe to include
-                try result.append(input[i]);
+                try result.append(allocator, input[i]);
                 i += 1;
             } else {
                 // Non-ASCII, try to decode as UTF-8

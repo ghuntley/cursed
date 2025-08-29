@@ -24,6 +24,7 @@ pub const JITExecutionEngine = struct {
     return_value: ?Value,
     
     pub fn init(allocator: Allocator) !JITExecutionEngine {
+        _ = allocator;
         var global_env = Environment.init(allocator, null);
         
         // Add built-in functions to global environment
@@ -33,14 +34,14 @@ pub const JITExecutionEngine = struct {
             .allocator = allocator,
             .global_env = global_env,
             .current_env = &global_env,
-            .functions = HashMap([]const u8, ast.FunctionStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, ast.FunctionStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .return_value = null,
         };
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.global_env.deinit();
-        self.functions.deinit();
+        self.global_env.deinit(self.allocator);
+        self.functions.deinit(self.allocator);
     }
     
     /// Execute CURSED source code
@@ -263,12 +264,12 @@ pub const JITExecutionEngine = struct {
         // Handle user-defined functions
         if (self.functions.get(call.function_name)) |func| {
             // Evaluate arguments
-            var args = .empty;
+            var args = std.ArrayList(u8){};
             defer args.deinit();
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
             
             return try self.callFunction(func, args.items);
@@ -508,6 +509,7 @@ pub const JITExecutionEngine = struct {
 
 /// Test the JIT execution engine with a simple CURSED program
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing JIT Execution Engine\n", .{});
     print("==============================\n", .{});
     

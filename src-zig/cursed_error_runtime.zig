@@ -95,31 +95,31 @@ pub const CursedError = struct {
         _ = fmt;
         _ = options;
         
-        _ = writer.writeAll("[CURSED ERROR] ") catch {};
-        _ = writer.writeAll(@tagName(self.error_type)) catch 0;
-        _ = writer.writeAll(": ") catch 0;
-        _ = writer.writeAll(self.message) catch 0;
-        _ = writer.writeAll("\n  Error Code: ") catch 0;
+        _ = writer.writer().writeAll("[CURSED ERROR] ") catch {};
+        _ = writer.writer().writeAll(@tagName(self.error_type)) catch 0;
+        _ = writer.writer().writeAll(": ") catch 0;
+        _ = writer.writer().writeAll(self.message) catch 0;
+        _ = writer.writer().writeAll("\n  Error Code: ") catch 0;
         
         var buf: [32]u8 = undefined;
         const code_str = std.fmt.bufPrint(buf[0..], "{}", .{self.code}) catch "?";
-        _ = writer.writeAll(code_str) catch 0;
-        _ = writer.writeAll("\n") catch 0;
+        _ = writer.writer().writeAll(code_str) catch 0;
+        _ = writer.writer().writeAll("\n") catch 0;
         
         if (self.stack_trace) |trace| {
-            _ = writer.writeAll("  Stack Trace:\n") catch 0;
+            _ = writer.writer().writeAll("  Stack Trace:\n") catch 0;
             for (trace) |frame| {
-                _ = writer.writeAll("    at ") catch 0;
-                _ = writer.writeAll(frame.function_name) catch 0;
-                _ = writer.writeAll(" (") catch 0;
-                _ = writer.writeAll(frame.file_name) catch 0;
-                _ = writer.writeAll(":") catch 0;
+                _ = writer.writer().writeAll("    at ") catch 0;
+                _ = writer.writer().writeAll(frame.function_name) catch 0;
+                _ = writer.writer().writeAll(" (") catch 0;
+                _ = writer.writer().writeAll(frame.file_name) catch 0;
+                _ = writer.writer().writeAll(":") catch 0;
                 const line_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.line}) catch "?";
-                _ = writer.writeAll(line_str) catch 0;
-                _ = writer.writeAll(":") catch 0;
+                _ = writer.writer().writeAll(line_str) catch 0;
+                _ = writer.writer().writeAll(":") catch 0;
                 const col_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.column}) catch "?";
-                _ = writer.writeAll(col_str) catch 0;
-                _ = writer.writeAll(")\n") catch 0;
+                _ = writer.writer().writeAll(col_str) catch 0;
+                _ = writer.writer().writeAll(")\n") catch 0;
             }
         }
         
@@ -141,7 +141,7 @@ pub const CursedError = struct {
     }
     
     pub fn toString(self: *const CursedError) ![]u8 {
-        var buffer = .empty;
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         const writer = buffer.writer(&[_]u8{});
@@ -369,7 +369,7 @@ pub const ErrorHandler = struct {
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         for (self.error_stack.items) |error_obj| {
             try error_obj.format(stdout);
-            try stdout.print("\n", .{});
+            try stdout.writer().print("\n", .{});
         }
     }
 };

@@ -99,7 +99,7 @@ pub fn Channel(comptime T: type) type {
                 self.mutex.lock();
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
         }
         
         /// Add reference - must be called with external synchronization
@@ -141,7 +141,7 @@ pub fn Channel(comptime T: type) type {
                 // For unbuffered channels (capacity == 0)
                 if (self.capacity == 0) {
                     // Synchronous send - add to buffer and notify
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -149,7 +149,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For buffered channels
                 if (self.buffer.items.len < self.capacity) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -334,7 +334,7 @@ pub const WorkQueue = struct {
         
         self.closed = true;
         self.condition.broadcast();
-        self.queue.deinit();
+        self.queue.deinit(self.allocator);
     }
     
     /// Add goroutine to queue
@@ -346,7 +346,7 @@ pub const WorkQueue = struct {
             return error.QueueClosed;
         }
         
-        try self.queue.append(goroutine);
+        try self.queue.append(allocator, goroutine);
         self.condition.signal(); // Wake one worker
     }
     
@@ -457,7 +457,7 @@ pub const Scheduler = struct {
         try scheduler.workers.ensureTotalCapacity(allocator, worker_count);
         for (0..worker_count) |i| {
             const worker = Worker.init(@intCast(i), &scheduler.work_queue, &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
         
         return scheduler;
@@ -465,8 +465,8 @@ pub const Scheduler = struct {
     
     pub fn deinit(self: *Self) void {
         self.shutdown();
-        self.work_queue.deinit();
-        self.workers.deinit();
+        self.work_queue.deinit(self.allocator);
+        self.workers.deinit(self.allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -550,7 +550,7 @@ pub const ChannelRegistry = struct {
     pub fn deinit(self: *Self) void {
         self.mutex.lock();
         defer self.mutex.unlock();
-        self.channels.deinit();
+        self.channels.deinit(self.allocator);
     }
     
     pub fn registerChannel(self: *Self, channel_ptr: *anyopaque) ChannelId {

@@ -73,43 +73,43 @@ pub const MemoryTracker = struct {
         for (self.llvm_strings.items) |str| {
             c.LLVMDisposeMessage(str);
         }
-        self.llvm_strings.deinit();
+        self.llvm_strings.deinit(self.allocator);
         
         // Clean up LLVM target machines
         for (self.llvm_target_machines.items) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.llvm_target_machines.deinit();
+        self.llvm_target_machines.deinit(self.allocator);
         
         // Clean up LLVM pass managers
         for (self.llvm_pass_managers.items) |pm| {
             c.LLVMDisposePassManager(pm);
         }
-        self.llvm_pass_managers.deinit();
+        self.llvm_pass_managers.deinit(self.allocator);
         
         // Clean up LLVM builders
         for (self.llvm_builders.items) |builder| {
             c.LLVMDisposeBuilder(builder);
         }
-        self.llvm_builders.deinit();
+        self.llvm_builders.deinit(self.allocator);
         
         // Clean up LLVM modules
         for (self.llvm_modules.items) |module| {
             c.LLVMDisposeModule(module);
         }
-        self.llvm_modules.deinit();
+        self.llvm_modules.deinit(self.allocator);
         
         // Clean up LLVM contexts (must be last)
         for (self.llvm_contexts.items) |context| {
             c.LLVMContextDispose(context);
         }
-        self.llvm_contexts.deinit();
+        self.llvm_contexts.deinit(self.allocator);
         
         // Clean up arena allocations
         for (self.arena_allocations.items) |allocation| {
             self.allocator.free(allocation);
         }
-        self.arena_allocations.deinit();
+        self.arena_allocations.deinit(self.allocator);
         
         print("✅ Memory tracker cleanup complete - all LLVM resources disposed\n", .{});
     }
@@ -120,27 +120,27 @@ pub const MemoryTracker = struct {
     }
     
     pub fn trackContext(self: *MemoryTracker, context: LLVMContextRef) !void {
-        try self.llvm_contexts.append(context);
+        try self.llvm_contexts.append(allocator, context);
     }
     
     pub fn trackModule(self: *MemoryTracker, module: LLVMModuleRef) !void {
-        try self.llvm_modules.append(module);
+        try self.llvm_modules.append(allocator, module);
     }
     
     pub fn trackBuilder(self: *MemoryTracker, builder: LLVMBuilderRef) !void {
-        try self.llvm_builders.append(builder);
+        try self.llvm_builders.append(allocator, builder);
     }
     
     pub fn trackPassManager(self: *MemoryTracker, pm: LLVMPassManagerRef) !void {
-        try self.llvm_pass_managers.append(pm);
+        try self.llvm_pass_managers.append(allocator, pm);
     }
     
     pub fn trackTargetMachine(self: *MemoryTracker, tm: LLVMTargetMachineRef) !void {
-        try self.llvm_target_machines.append(tm);
+        try self.llvm_target_machines.append(allocator, tm);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, allocation: []u8) !void {
-        try self.arena_allocations.append(allocation);
+        try self.arena_allocations.append(allocator, allocation);
     }
 };
 
@@ -279,8 +279,8 @@ target_machine: ?LLVMTargetMachineRef,
             .pass_manager = pass_manager,
             .target_machine = target_machine,
             .arena_cleanup_callbacks = ArrayList(*const fn () void).init(arena_allocator),
-            .type_cache = HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
-            .function_cache = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
+            .type_cache = HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .function_cache = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .debug_enabled = false,
             .source_file = null,
             .current_function = null,
@@ -300,10 +300,10 @@ target_machine: ?LLVMTargetMachineRef,
         }
         
         // Clean up memory tracker (handles all LLVM resources)
-        self.memory_tracker.deinit();
+        self.memory_tracker.deinit(self.allocator);
         
         // Clean up arena allocator (handles all temporary allocations)
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
         
         // Destroy the backend structure itself
         self.allocator.destroy(self);
@@ -540,7 +540,7 @@ target_machine: ?LLVMTargetMachineRef,
         // Execute link command
         var child = std.process.Child.init(&[_][]const u8{ "sh", "-c", link_cmd }, self.allocator);
         const result = child.spawnAndWait() catch |err| {
-            print("Failed to run linker: {}\n", .{err});
+            print("Failed to run linker: {s}\n", .{err});
             return;
         };
         
@@ -549,7 +549,7 @@ target_machine: ?LLVMTargetMachineRef,
                 if (code == 0) {
                     print("✅ Generated executable: {s}\n", .{output_file});
                 } else {
-                    print("❌ Linker failed with exit code: {}\n", .{code});
+                    print("❌ Linker failed with exit code: {s}\n", .{code});
                 }
             },
             else => {

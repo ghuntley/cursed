@@ -71,10 +71,10 @@ pub const YikesError = struct {
     }
 
     pub fn format(self: YikesError, writer: anytype) !void {
-        try writer.print("yikes: {s} (code: {})\n", .{ self.message, self.error_code });
+        try writer.print("yikes: {s} (code: {s})\n", .{ self.message, self.error_code });
         
         if (self.source_location) |loc| {
-            try writer.print("  at {s}:{}:{}\n", .{ loc.file, loc.line, loc.column });
+            try writer.print("  at {s}:{s}:{s}\n", .{ loc.file, loc.line, loc.column });
         }
         
         if (self.inner_error) |inner| {
@@ -91,7 +91,8 @@ pub const YikesError = struct {
     }
 
     pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
-        var buffer = .empty;
+        _ = allocator;
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         const writer = buffer.writer();
@@ -119,7 +120,9 @@ pub const ShookResult = union(enum) {
     Ok: Value,
     Error: YikesError,
 
-    pub const Value = union(enum) {
+    const Variable = struct { name: []const u8, value: Value };
+
+pub const Value = union(enum) {
         Integer: i64,
         Float: f64,
         String: []const u8,
@@ -216,6 +219,7 @@ pub const ShookResult = union(enum) {
     }
 
     pub fn deinit(self: *ShookResult, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Ok => |*value| {
                 switch (value.*) {
@@ -300,7 +304,7 @@ pub const FamBlock = struct {
         for (self.try_body.items) |*stmt| {
             self.deinitStatement(stmt);
         }
-        self.try_body.deinit();
+        self.try_body.deinit(self.allocator);
 
         // Deinitialize catch handler
         if (self.catch_handler) |*catch_handler| {
@@ -335,7 +339,7 @@ pub const FamBlock = struct {
     }
 
     pub fn addTryStatement(self: *FamBlock, stmt: Statement) !void {
-        try self.try_body.append(stmt);
+        try self.try_body.append(allocator, stmt);
     }
 
     pub fn setCatchHandler(self: *FamBlock, error_var: []const u8, handler_body: ArrayList(Statement)) void {
@@ -432,7 +436,7 @@ pub const ExecutionContext = struct {
 
     pub fn init() ExecutionContext {
         return ExecutionContext{
-            .variables = std.HashMap([]const u8, YikesError, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = std.HashMap([]const u8, YikesError, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -443,7 +447,7 @@ pub const ExecutionContext = struct {
             var err = entry.value_ptr;
             err.deinit();
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn setVariable(self: *ExecutionContext, name: []const u8, error_value: YikesError) void {
@@ -483,6 +487,7 @@ pub fn yikes(allocator: Allocator, message: []const u8, code: i64) !YikesError {
 }
 
 pub fn famBlock(allocator: Allocator) FamBlock {
+        _ = allocator;
     return FamBlock.init(allocator);
 }
 

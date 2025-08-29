@@ -52,7 +52,7 @@ pub const SimpleChannel = struct {
 
     pub fn deinit(self: *SimpleChannel) void {
         self.close();
-        self.buffer.deinit();
+        self.buffer.deinit(self.allocator);
     }
 
     pub fn send(self: *SimpleChannel, value: Variable) !void {
@@ -74,7 +74,7 @@ pub const SimpleChannel = struct {
 
         // For unbuffered channels (capacity 0), wait for receiver
         if (self.capacity == 0) {
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             return;
         }
@@ -94,7 +94,7 @@ pub const SimpleChannel = struct {
             return RuntimeError.ChannelClosed;
         }
 
-        try self.buffer.append(value);
+        try self.buffer.append(allocator, value);
         self.recv_condition.signal();
     }
 
@@ -183,6 +183,7 @@ var registry_allocator: ?Allocator = null;
 
 /// Initialize the runtime
 pub fn initRuntime(allocator: Allocator) !void {
+        _ = allocator;
     registry_mutex.lock();
     defer registry_mutex.unlock();
 
@@ -389,14 +390,14 @@ export fn cursed_close_channel(channel_id: u64) u32 {
 }
 
 /// C FFI export for spawning goroutines from LLVM compiled code (simple version)
-export fn cursed_spawn_goroutine_simple(func_ptr: ?*const fn () callconv(.C) void) u64 {
+export fn cursed_spawn_goroutine_simple(func_ptr: ?*const fn () callconv(.c) void) u64 {
     if (registry_allocator == null) {
         initRuntime(std.heap.page_allocator) catch return 0;
     }
     
     // Wrapper function to convert C function pointer to Zig function
     const GoroutineWrapper = struct {
-        c_func: ?*const fn () callconv(.C) void,
+        c_func: ?*const fn () callconv(.c) void,
         
         fn run(ctx: ?*anyopaque) void {
             const wrapper: *@This() = @ptrCast(@alignCast(ctx.?));

@@ -37,6 +37,7 @@ pub const SafeModuleLoader = struct {
         ref_count: u32,
         
         pub fn deinit(self: *LoadedModule, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.name);
             allocator.free(self.path);
             for (self.functions.items) |*func| {
@@ -45,8 +46,8 @@ pub const SafeModuleLoader = struct {
             for (self.variables.items) |*var_stmt| {
                 var_stmt.deinit();
             }
-            self.functions.deinit();
-            self.variables.deinit();
+            self.functions.deinit(self.allocator);
+            self.variables.deinit(self.allocator);
         }
         
         pub fn addRef(self: *LoadedModule) void {
@@ -64,10 +65,10 @@ pub const SafeModuleLoader = struct {
     pub fn init(allocator: Allocator, verbose: bool) SafeModuleLoader {
         return SafeModuleLoader{
             .allocator = allocator,
-            .module_states = HashMap([]const u8, ModuleState, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .module_states = HashMap([]const u8, ModuleState, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .loaded_modules = HashMap([]const u8, LoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .dependency_graph = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .reference_counts = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .reference_counts = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
         };
     }
@@ -78,7 +79,7 @@ pub const SafeModuleLoader = struct {
         while (states_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.module_states.deinit();
+        self.module_states.deinit(self.allocator);
         
         // Clean up loaded modules map
         var modules_iter = self.loaded_modules.iterator();
@@ -87,7 +88,7 @@ pub const SafeModuleLoader = struct {
             module.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(self.allocator);
         
         // Clean up dependency graph
         var deps_iter = self.dependency_graph.iterator();
@@ -99,14 +100,14 @@ pub const SafeModuleLoader = struct {
             deps_list.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.dependency_graph.deinit();
+        self.dependency_graph.deinit(self.allocator);
         
         // Clean up reference counts map
         var refs_iter = self.reference_counts.iterator();
         while (refs_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.reference_counts.deinit();
+        self.reference_counts.deinit(self.allocator);
     }
     
     /// Safe module loading with cycle detection and reference counting
@@ -120,7 +121,7 @@ pub const SafeModuleLoader = struct {
                 if (self.loaded_modules.getPtr(module_name)) |module| {
                     module.addRef();
                     self.incrementRefCount(module_name);
-                    if (self.verbose) print("📦 Module '{s}' already loaded (ref count: {}), returning cached functions\n", .{ module_name, module.ref_count });
+                    if (self.verbose) print("📦 Module '{s}' already loaded (ref count: {s}), returning cached functions\n", .{ module_name, module.ref_count });
                     return module.functions.items;
                 }
                 return null;
@@ -181,7 +182,7 @@ pub const SafeModuleLoader = struct {
         // Initialize reference count
         try self.setRefCount(module_name, 1);
         
-        if (self.verbose) print("✅ Module '{s}' loaded with {} functions (ref count: 1)\n", .{ module_name, loaded_module.functions.items.len });
+        if (self.verbose) print("✅ Module '{s}' loaded with {s} functions (ref count: 1)\n", .{ module_name, loaded_module.functions.items.len });
         
         // Recursively load any dependencies found in this module
         try self.loadDependenciesRecursively(module_name, source);
@@ -221,7 +222,7 @@ pub const SafeModuleLoader = struct {
             deps_list.append(self.allocator, self.allocator.dupe(u8, to_module) catch return) catch return;
         } else {
             // Create new dependency list
-            var new_deps = .empty;
+            var new_deps = std.ArrayList(u8){};
             const to_key = self.allocator.dupe(u8, to_module) catch return;
             new_deps.append(self.allocator, to_key) catch {
                 self.allocator.free(to_key);
@@ -312,7 +313,7 @@ pub const SafeModuleLoader = struct {
     /// Find the path to a module file
     fn findModulePath(self: *SafeModuleLoader, module_name: []const u8) ![]const u8 {
         // Build stdlib path
-        var path_buf = .empty;
+        var path_buf = std.ArrayList(u8){};
         defer path_buf.deinit();
         
         // Find project root
@@ -345,28 +346,28 @@ pub const SafeModuleLoader = struct {
             "stdlib"
         };
         
-        var path_components = .empty;
+        var path_components = std.ArrayList(u8){};
         defer path_components.deinit();
         
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(allocator, component);
             }
         }
         
         while (path_components.items.len > 0) {
-            var test_path = .empty;
+            var test_path = std.ArrayList(u8){};
             defer test_path.deinit();
             
-            try test_path.append('/');
+            try test_path.append(allocator, '/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
             }
             
             for (markers) |marker| {
-                var marker_path = .empty;
+                var marker_path = std.ArrayList(u8){};
                 defer marker_path.deinit();
                 
                 try marker_path.appendSlice(test_path.items);
@@ -409,17 +410,17 @@ pub const SafeModuleLoader = struct {
         var module_lexer = lexer.Lexer.init(arena_allocator, source);
         const tokens = try module_lexer.tokenize();
         
-        if (self.verbose) print("🔍 Tokenized module '{s}' - {} tokens\n", .{ module_name, tokens.items.len });
+        if (self.verbose) print("🔍 Tokenized module '{s}' - {s} tokens\n", .{ module_name, tokens.items.len });
         
         // Parse the tokens using arena allocator
         var module_parser = parser.Parser.initWithFile(arena_allocator, tokens.items, module_path);
         const program = try module_parser.parseProgram();
         
-        if (self.verbose) print("🔍 Parsed module '{s}' - {} statements\n", .{ module_name, program.statements.items.len });
+        if (self.verbose) print("🔍 Parsed module '{s}' - {s} statements\n", .{ module_name, program.statements.items.len });
         
         // Extract functions and variables with proper string copying
-        var functions = .empty;
-        var variables = .empty;
+        var functions = std.ArrayList(u8){};
+        var variables = std.ArrayList(u8){};
         
         for (program.statements.items) |stmt_ptr| {
             const stmt = @as(*ast.Statement, @ptrCast(@alignCast(stmt_ptr))).*;
@@ -479,16 +480,16 @@ pub const SafeModuleLoader = struct {
                 try self.setModuleState(module_name, .not_loaded) catch {};
             }
         } else {
-            if (self.verbose) print("📦 Module '{s}' still has {} references, keeping loaded\n", .{ module_name, ref_count });
+            if (self.verbose) print("📦 Module '{s}' still has {s} references, keeping loaded\n", .{ module_name, ref_count });
         }
     }
     
     /// Detect and report dependency cycles
     pub fn detectCycles(self: *SafeModuleLoader) !bool {
-        var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer visited.deinit();
         
-        var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer rec_stack.deinit();
         
         var has_cycles = false;
@@ -499,7 +500,7 @@ pub const SafeModuleLoader = struct {
             
             if (visited.get(module) orelse false) continue;
             
-            var path = .empty;
+            var path = std.ArrayList(u8){};
             defer path.deinit();
             
             if (try self.detectCycleRecursive(module, &visited, &rec_stack, &path)) {
@@ -529,13 +530,13 @@ pub const SafeModuleLoader = struct {
     ) !bool {
         try visited.put(module, true);
         try rec_stack.put(module, true);
-        try path.append(module);
+        try path.append(allocator, module);
         
         if (self.dependency_graph.get(module)) |dependencies| {
             for (dependencies.items) |dep| {
                 if (rec_stack.get(dep) orelse false) {
                     // Found cycle
-                    try path.append(dep);
+                    try path.append(allocator, dep);
                     return true;
                 }
                 
@@ -562,7 +563,7 @@ pub const SafeModuleLoader = struct {
             const state = entry.value_ptr.*;
             const ref_count = self.reference_counts.get(module) orelse 0;
             
-            print("Module: {s} | State: {s} | Refs: {}\n", .{ module, @tagName(state), ref_count });
+            print("Module: {s} | State: {s} | Refs: {s}\n", .{ module, @tagName(state), ref_count });
         }
         
         print("\n=== Dependency Graph ===\n", .{});

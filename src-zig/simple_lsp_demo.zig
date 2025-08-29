@@ -15,7 +15,7 @@ pub fn main() !void {
     
     // Simple LSP server loop
     var buffer: std.ArrayList(u8) = .empty;
-    defer buffer.deinit(allocator);
+    defer buffer.deinit();
     
     while (true) {
         // Read Content-Length header
@@ -174,6 +174,6 @@ fn handleShutdown(allocator: std.mem.Allocator, request: std.json.Value, writer:
 
 /// Send LSP response with proper headers
 fn sendResponse(writer: std.fs.File.Writer, response: []const u8) !void {
-    try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-    try writer.writeAll(response);
+    try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+    try writer.writer().writeAll(response);
 }

@@ -151,7 +151,7 @@ pub const GCIntegration = struct {
     
     /// Clean up GC integration
     pub fn deinit(self: *GCIntegration) void {
-        self.function_root_tables.deinit();
+        self.function_root_tables.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -435,7 +435,7 @@ pub const GCIntegration = struct {
         const stack_map_id = @as(u64, @truncate(std.hash_map.hashString(name_slice)));
         
         // Prepare stackmap arguments: ID, shadow bytes, followed by live roots
-        var total_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var total_args = std.ArrayList(c.LLVMValueRef){};
         defer total_args.deinit();
         
         // Oracle's Week 2: Precise stackmap metadata
@@ -452,7 +452,7 @@ pub const GCIntegration = struct {
             
             // Oracle's Week 2: Only track actual heap pointers for precise scanning
             if (type_kind == c.LLVMPointerTypeKind) {
-                try total_args.append(ptr);
+                try total_args.append(allocator, ptr);
                 valid_pointers += 1;
             }
         }
@@ -579,7 +579,7 @@ pub const GCIntegration = struct {
             2,
             "gc_scan_call");
             
-        std.debug.print("✅ Oracle's Week 2: Generated root scanning for {} live objects\n", .{live_objects.len});
+        std.debug.print("✅ Oracle's Week 2: Generated root scanning for {s} live objects\n", .{live_objects.len});
     }
     
     /// Generate GC statepoints for function prologue/epilogue
@@ -643,14 +643,14 @@ pub const GCIntegration = struct {
             current_block = c.LLVMGetNextBasicBlock(current_block);
         }
         
-        std.debug.print("✅ Generated GC statepoints for function '{}'\n", .{c.LLVMGetValueName(function)});
+        std.debug.print("✅ Generated GC statepoints for function '{s}'\n", .{c.LLVMGetValueName(function)});
     }
     
     /// Wire up complete GC integration for heap stress testing
     pub fn wireGCIntegration(self: *GCIntegration, module_functions: []c.LLVMValueRef) !void {
         for (module_functions) |function| {
             // Generate stackmaps for all functions
-            var live_pointers = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+            var live_pointers = std.ArrayList(c.LLVMValueRef){};
             defer live_pointers.deinit();
             
             // Collect all pointer values in function as potential GC roots
@@ -660,7 +660,7 @@ pub const GCIntegration = struct {
                 while (inst != null) {
                     const inst_type = c.LLVMTypeOf(inst);
                     if (c.LLVMGetTypeKind(inst_type) == c.LLVMPointerTypeKind) {
-                        try live_pointers.append(inst);
+                        try live_pointers.append(allocator, inst);
                     }
                     inst = c.LLVMGetNextInstruction(inst);
                 }
@@ -672,7 +672,7 @@ pub const GCIntegration = struct {
             try self.generateGCStatepoints(function);
         }
         
-        std.debug.print("✅ Wired GC integration for {} functions\n", .{module_functions.len});
+        std.debug.print("✅ Wired GC integration for {s} functions\n", .{module_functions.len});
         
         // Record stackmap for runtime GC integration
         std.debug.print("✅ Generated precise stackmap for function '{}' with {} live roots\n", 

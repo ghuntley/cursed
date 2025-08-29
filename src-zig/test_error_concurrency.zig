@@ -41,7 +41,7 @@ test "yikes error creation and formatting" {
     try testing.expect(wrapped.inner_error == error_obj);
     try testing.expect(std.mem.eql(u8, wrapped.message, "Operation failed"));
     
-    std.debug.print("Error formatting test: {}\n", .{error_obj.*});
+    std.debug.print("Error formatting test: {s}\n", .{error_obj.*});
 }
 
 // Test error runtime operations
@@ -175,7 +175,7 @@ test "concurrent dm channel operations" {
                 for (0..5) |i| {
                     const success = context.runtime.dmSend(context.channel, @intCast(i)) catch false;
                     if (success) {
-                        std.debug.print("Sent: {}\n", .{i});
+                        std.debug.print("Sent: {s}\n", .{i});
                     }
                     std.time.sleep(10_000_000); // 10ms
                 }
@@ -191,7 +191,7 @@ test "concurrent dm channel operations" {
     var received_count: usize = 0;
     while (true) {
         if (runtime.dmRecv(channel)) |value| {
-            std.debug.print("Received: {}\n", .{value});
+            std.debug.print("Received: {s}\n", .{value});
             received_count += 1;
         } else {
             break; // Channel closed and empty
@@ -199,7 +199,7 @@ test "concurrent dm channel operations" {
         std.time.sleep(5_000_000); // 5ms
     }
     
-    std.debug.print("Total received: {}\n", .{received_count});
+    std.debug.print("Total received: {s}\n", .{received_count});
     try testing.expect(received_count == 5);
 }
 
@@ -245,7 +245,7 @@ test "integrated error handling in goroutines" {
     try testing.expect(recv_result == .Integer);
     try testing.expect(recv_result.Integer == 123);
     
-    std.debug.print("Integrated test results: send={}, recv={}\n", .{ send_result, recv_result });
+    std.debug.print("Integrated test results: send={s}, recv={s}\n", .{ send_result, recv_result });
 }
 
 // Test error propagation in fam blocks
@@ -290,7 +290,7 @@ test "fam block error recovery" {
         }.tryBlock,
         struct {
             fn catchBlock(error_obj: *advanced_error_handling.CursedError) integration.InterpreterValue {
-                std.debug.print("Caught error in fam: {}\n", .{error_obj.*});
+                std.debug.print("Caught error in fam: {s}\n", .{error_obj.*});
                 return integration.InterpreterValue{ .String = "Error handled" };
             }
         }.catchBlock
@@ -314,7 +314,7 @@ test "performance and resource cleanup" {
     const runtime = integration.getUnifiedRuntime();
     
     // Create many errors and ensure proper cleanup
-    var errors = std.ArrayList(*advanced_error_handling.CursedError).init(allocator);
+    var errors = std.ArrayList(*advanced_error_handling.CursedError){};
     defer {
         for (errors.items) |err| {
             err.deinit();
@@ -328,7 +328,7 @@ test "performance and resource cleanup" {
             .Performance,
             @intCast(i)
         );
-        try errors.append(error_obj);
+        try errors.append(allocator, error_obj);
     }
     
     // Create many channels and ensure proper cleanup
@@ -342,14 +342,14 @@ test "performance and resource cleanup" {
     
     for (0..50) |_| {
         const channel = try runtime.concurrency_runtime.dmMake(i64, 5);
-        try channels.append(channel);
+        try channels.append(allocator, channel);
     }
     
     const end_time = std.time.timestamp();
     const duration = end_time - start_time;
     
-    std.debug.print("Performance test completed in {}ms\n", .{duration});
-    std.debug.print("Created {} errors and {} channels\n", .{ errors.items.len, channels.items.len });
+    std.debug.print("Performance test completed in {s}ms\n", .{duration});
+    std.debug.print("Created {s} errors and {s} channels\n", .{ errors.items.len, channels.items.len });
     
     // Verify resource counts
     try testing.expect(errors.items.len == 100);
@@ -358,6 +358,7 @@ test "performance and resource cleanup" {
 
 // Integration test runner function
 pub fn runAllTests(allocator: Allocator) !void {
+        _ = allocator;
     std.debug.print("=== Running Comprehensive Error Handling and Concurrency Tests ===\n", .{});
     
     try advanced_error_handling.testErrorHandling(allocator);

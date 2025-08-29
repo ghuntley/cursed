@@ -85,8 +85,8 @@ pub const LLVMBackend = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .error_contexts = .{},
             .current_function = null,
             .string_counter = 0,
@@ -98,10 +98,10 @@ pub const LLVMBackend = struct {
         for (self.error_contexts.items) |*error_ctx| {
             error_ctx.deinit();
         }
-        self.error_contexts.deinit();
+        self.error_contexts.deinit(self.allocator);
         
-        self.functions.deinit();
-        self.variables.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);
@@ -164,14 +164,14 @@ pub const LLVMBackend = struct {
         child.stderr_behavior = .Pipe;
         
         const result = child.spawnAndWait() catch |err| {
-            print("❌ Failed to spawn clang: {}\n", .{err});
+            print("❌ Failed to spawn clang: {s}\n", .{err});
             return LLVMBackendError.CompilationFailed;
         };
         
         switch (result) {
             .Exited => |code| {
                 if (code != 0) {
-                    print("❌ clang compilation failed with exit code: {}\n", .{code});
+                    print("❌ clang compilation failed with exit code: {s}\n", .{code});
                     return LLVMBackendError.CompilationFailed;
                 }
             },
@@ -215,7 +215,7 @@ pub const LLVMBackend = struct {
     
     fn generateFromSource(self: *LLVMBackend, source: []const u8, verbose: bool) LLVMBackendError!void {
         // First pass: collect string literals for global constants
-        var string_literals = std.ArrayList([]const u8).init(self.allocator);
+        var string_literals = std.ArrayList([]const u8){};
         defer {
             for (string_literals.items) |str| {
                 self.allocator.free(str);
@@ -400,7 +400,7 @@ pub const LLVMBackend = struct {
     }
     
     fn generateStringPrint(self: *LLVMBackend, string_index: usize, verbose: bool) LLVMBackendError!void {
-        if (verbose) print("  Generating string print for index {}\n", .{string_index});
+        if (verbose) print("  Generating string print for index {s}\n", .{string_index});
         
         // Get global string
         const global_name = try std.fmt.allocPrint(self.allocator, "str_{}", .{string_index});
@@ -440,7 +440,7 @@ pub const LLVMBackend = struct {
     }
     
     fn generateNumberPrint(self: *LLVMBackend, number: i64, verbose: bool) LLVMBackendError!void {
-        if (verbose) print("  Generating number print: {}\n", .{number});
+        if (verbose) print("  Generating number print: {s}\n", .{number});
         
         // Create format string for printf
         const format_str = "%lld\n";
@@ -627,7 +627,7 @@ pub const LLVMBackend = struct {
     /// Report structured error through proper error reporting system
     fn reportStructuredError(self: *LLVMBackend, error_ctx: error_handling.ErrorContext) !void {
         // Store error context for later retrieval by compilation pipeline
-        try self.error_contexts.append(error_ctx);
+        try self.error_contexts.append(allocator, error_ctx);
         
         // Also report to error reporter if available (can be extended)
         // For now, we store the error and let the compilation pipeline handle it
@@ -653,7 +653,7 @@ pub const LLVMBackend = struct {
     }
     
     fn applyOptimizations(self: *LLVMBackend, level: u8, verbose: bool) LLVMBackendError!void {
-        if (verbose) print("🔧 Applying O{} optimizations...\n", .{level});
+        if (verbose) print("🔧 Applying O{s} optimizations...\n", .{level});
         
         // Create pass manager
         const pass_manager = c.LLVMCreatePassManager();

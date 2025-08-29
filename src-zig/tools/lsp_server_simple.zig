@@ -32,7 +32,7 @@ pub const SimpleLSPServer = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
-        var buffer = ArrayList(u8).init(self.allocator);
+        var buffer = ArrayList(u8){};
         defer buffer.deinit();
 
         while (!self.shutdown_requested) {
@@ -57,7 +57,7 @@ pub const SimpleLSPServer = struct {
                         defer self.allocator.free(response);
                         
                         // Send response
-                        try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+                        try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ response.len, response });
                     }
                 }
             } else {

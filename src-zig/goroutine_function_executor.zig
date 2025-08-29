@@ -98,7 +98,7 @@ pub const ExecutionFrame = struct {
     }
     
     pub fn deinit(self: *ExecutionFrame) void {
-        self.env.deinit();
+        self.env.deinit(self.allocator);
     }
 };
 
@@ -139,7 +139,7 @@ pub const GoroutineFunctionExecutor = struct {
             .stack_depth = 0,
             .max_stack_depth = MAX_STACK_FRAMES,
             .total_frame_size = 0,
-            .functions = StringHashMap(ast.FunctionStatement).init(arena_allocator),
+            .functions = StringHashMap(ast.FunctionStatement){},
             .goroutine_id = goroutine_id,
             .can_yield = true,
             .yield_threshold = STACK_GROWTH_THRESHOLD,
@@ -157,7 +157,7 @@ pub const GoroutineFunctionExecutor = struct {
         }
         
         // Arena handles the rest of the cleanup
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     /// Register a function for interpreted execution
@@ -169,7 +169,7 @@ pub const GoroutineFunctionExecutor = struct {
     /// Execute an interpreted function using call trampolines to prevent stack overflow
     pub fn executeInterpretedFunction(self: *GoroutineFunctionExecutor, name: []const u8, args: []const Value) !Value {
         const function = self.functions.get(name) orelse {
-            print("Function '{}' not found in goroutine {}\n", .{ name, self.goroutine_id });
+            print("Function '{s}' not found in goroutine {s}\n", .{ name, self.goroutine_id });
             return error.FunctionNotFound;
         };
         
@@ -219,7 +219,7 @@ pub const GoroutineFunctionExecutor = struct {
                 },
                 
                 .StackOverflow => {
-                    print("Stack overflow detected in goroutine {}\n", .{self.goroutine_id});
+                    print("Stack overflow detected in goroutine {s}\n", .{self.goroutine_id});
                     return error.StackOverflow;
                 },
             }
@@ -248,7 +248,7 @@ pub const GoroutineFunctionExecutor = struct {
         };
         
         // Update stack tracking
-        try self.call_stack.append(frame);
+        try self.call_stack.append(allocator, frame);
         self.stack_depth += 1;
         self.total_frame_size += frame.frame_size;
         
@@ -275,7 +275,7 @@ pub const GoroutineFunctionExecutor = struct {
                     .args = args,
                     .env = frame.env,
                     .statement_index = i,
-                    .local_vars = StringHashMap(Value).init(self.arena_allocator),
+                    .local_vars = StringHashMap(Value){},
                 };
                 
                 return TrampolineResult{ .Yield = YieldInfo{
@@ -404,7 +404,7 @@ pub const GoroutineFunctionExecutor = struct {
             
             .Identifier => |name| {
                 return env.get(name) orelse {
-                    print("Undefined variable: {}\n", .{name});
+                    print("Undefined variable: {s}\n", .{name});
                     return error.UndefinedVariable;
                 };
             },
@@ -435,12 +435,12 @@ pub const GoroutineFunctionExecutor = struct {
     /// Handle function calls with recursion detection
     fn handleFunctionCall(self: *GoroutineFunctionExecutor, call: ast.CallExpression, env: *Environment) !Value {
         // Evaluate arguments
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         errdefer args.deinit(); // Clean up on error
         for (call.arguments.items) |arg| {
             const value = try self.evaluateExpression(arg.*, env);
-            try args.append(value);
+            try args.append(allocator, value);
         }
         
         // Check if it's a built-in function
@@ -461,7 +461,7 @@ pub const GoroutineFunctionExecutor = struct {
                 };
             }
         } else {
-            print("Function '{}' not found\n", .{call.function_name});
+            print("Function '{s}' not found\n", .{call.function_name});
             return error.FunctionNotFound;
         }
     }
@@ -499,7 +499,7 @@ pub const GoroutineFunctionExecutor = struct {
     
     /// Handle goroutine yielding
     fn yieldExecution(self: *GoroutineFunctionExecutor, function: ast.FunctionStatement, args: []const Value) !Value {
-        print("Goroutine {} yielding execution\n", .{self.goroutine_id});
+        print("Goroutine {s} yielding execution\n", .{self.goroutine_id});
         // In a real implementation, this would integrate with the goroutine scheduler
         // For now, return a special value indicating yield
         return Value{ .String = "YIELDED" };
@@ -508,7 +508,7 @@ pub const GoroutineFunctionExecutor = struct {
     /// Handle goroutine yield with continuation
     fn handleGoroutineYield(self: *GoroutineFunctionExecutor, yield_info: YieldInfo) !Value {
         _ = yield_info; // Would be used to schedule continuation
-        print("Goroutine {} yielded with continuation\n", .{self.goroutine_id});
+        print("Goroutine {s} yielded with continuation\n", .{self.goroutine_id});
         return Value{ .String = "YIELD_WITH_CONTINUATION" };
     }
     
@@ -606,10 +606,10 @@ pub const GoroutineFunctionExecutor = struct {
             for (args, 0..) |arg, i| {
                 if (i > 0) print(" ", .{});
                 switch (arg) {
-                    .Integer => |i| print("{}", .{i}),
+                    .Integer => |i| print("{s}", .{i}),
                     .Float => |f| print("{d}", .{f}),
                     .String => |s| print("{s}", .{s}),
-                    .Boolean => |b| print("{}", .{b}),
+                    .Boolean => |b| print("{s}", .{b}),
                     .Character => |c| print("{c}", .{c}),
                     .Null => print("null"),
                     else => print("[complex value]"),

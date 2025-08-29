@@ -96,8 +96,8 @@ pub const RealLLVMCodeGen = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .functions = std.HashMap([]const u8, ?*anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = std.HashMap([]const u8, ?*anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = std.HashMap([]const u8, ?*anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = std.HashMap([]const u8, ?*anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .i32_type = i32_type,
             .i8_type = i8_type,
             .i8_ptr_type = i8_ptr_type,
@@ -110,8 +110,8 @@ pub const RealLLVMCodeGen = struct {
     }
     
     pub fn deinit(self: *RealLLVMCodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
         
         if (self.builder) |builder| llvm_dispose_builder(builder);
         if (self.module) |module| llvm_dispose_module(module);
@@ -140,8 +140,8 @@ pub const RealLLVMCodeGen = struct {
                 },
                 else => {
                     try global_statements.append(self.allocator, stmt);
-                },
-            }
+                }
+        }
         }
         
         // Create main function if it doesn't exist
@@ -221,8 +221,8 @@ pub const RealLLVMCodeGen = struct {
             },
             else => {
                 // Skip less common statement types for now
-                std.debug.print("Statement type {s} not implemented yet\n", .{@tagName(stmt)});
-            },
+                std.debug.print("Statement type {s} not implemented yet\n", .@tagName(stmt)});
+            }
         }
     }
     
@@ -332,10 +332,8 @@ pub const RealLLVMCodeGen = struct {
             },
             .Lambda => |lambda| {
                 return try self.generateLambda(lambda);
-            },
-            .Tuple => |tuple| {
-                return try self.generateTuple(tuple);
-            },
+            }
+        },
             .TupleAccess => |tuple_access| {
                 return try self.generateTupleAccess(tuple_access);
             },
@@ -385,9 +383,9 @@ pub const RealLLVMCodeGen = struct {
                 return try self.generateMethodCall(method_call);
             },
             else => {
-                std.debug.print("Expression type {s} not implemented yet\n", .{@tagName(expr)});
+                std.debug.print("Expression type {s} not implemented yet\n", .@tagName(expr)});
                 return llvm_const_int(self.i32_type, 0);
-            },
+            }
         }
     }
     
@@ -414,13 +412,13 @@ pub const RealLLVMCodeGen = struct {
             // Look up function in symbol table
             if (self.functions.get(func_name)) |func| {
                 // Generate arguments
-                var args = std.ArrayList(?*anyopaque).init(self.allocator);
+                var args = std.ArrayList(?*anyopaque){};
                 defer args.deinit();
                 
                 for (call.arguments) |arg_ptr| {
                     const arg_expr: *Expression = @ptrCast(@alignCast(arg_ptr));
                     const arg_value = try self.generateExpression(arg_expr.*);
-                    try args.append(arg_value);
+                    try args.append(self.allocator, arg_value);
                 }
                 
                 const func_type = llvm_get_function_type(func);
@@ -865,8 +863,8 @@ pub const RealLLVMCodeGen = struct {
                         const printf = try self.getOrCreatePrintf();
                         const printf_type = llvm_get_function_type(printf);
                         _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
-                    },
-                }
+                    }
+        }
             }
             
             // Print newline
@@ -897,8 +895,8 @@ pub const RealLLVMCodeGen = struct {
 test "real llvm basic" {
     const allocator = std.testing.allocator;
     
-    var codegen = RealLLVMCodeGen.init(allocator) catch |err| {
-        std.debug.print("Failed to initialize LLVM: {}\n", .{err});
+    var codegen = RealLLVMCodeGen.init(allocator) catch {
+        std.debug.print("Failed to initialize LLVM: {s}\n", .{err});
         return;
     };
     defer codegen.deinit();

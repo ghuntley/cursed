@@ -15,16 +15,16 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        std.debug.print("Usage: {s} <source.csd>\n", .{args[0]});
+        std.debug.writer().print("Usage: {s} <source.csd>\n", .{args[0]});
         return;
     }
 
     const source_file = args[1];
-    std.debug.print("Parsing CURSED file: {s}\n", .{source_file});
+    std.debug.writer().print("Parsing CURSED file: {s}\n", .{source_file});
 
     // Read the source file
     const file = std.fs.cwd().openFile(source_file, .{}) catch |err| {
-        std.debug.print("Error opening file {s}: {}\n", .{ source_file, err });
+        std.debug.writer().print("Error opening file {s}: {s}\n", .{{ source_file, err });
         return;
     };
     defer file.close();
@@ -34,51 +34,51 @@ pub fn main() !void {
     defer allocator.free(source_content);
     _ = try file.readAll(source_content);
 
-    std.debug.print("Source content ({} bytes):\n{s}\n\n", .{ file_size, source_content });
+    std.debug.writer().print("Source content ({s} bytes):\n{s}\n\n", .{{ file_size, source_content });
 
     // Tokenize the source
     var lex = lexer.Lexer.init(allocator, source_content);
-    var tokens = ArrayList(lexer.Token).init(allocator);
+    var tokens = ArrayList(lexer.Token){};
     defer tokens.deinit();
 
-    std.debug.print("Tokenizing...\n", .{});
+    std.debug.writer().print("Tokenizing...\n", .{});
     while (true) {
         const token = lex.nextToken() catch |err| {
-            std.debug.print("Lexer error: {}\n", .{err});
+            std.debug.writer().print("Lexer error: {s}\n", .{{err});
             break;
         };
         
-        std.debug.print("Token: {any} '{s}'\n", .{ token.kind, token.lexeme });
-        try tokens.append(token);
+        std.debug.writer().print("Token: {any} '{s}'\n", .{ token.kind, token.lexeme });
+        try tokens.append(allocator, token);
         
         if (token.kind == .Eof) break;
     }
 
-    std.debug.print("\nParsing {} tokens...\n", .{tokens.items.len});
+    std.debug.writer().print("\nParsing {s} tokens...\n", .{{tokens.items.len});
 
     // Parse the tokens
     var parse = parser.Parser.init(allocator, tokens.items);
     var program = parse.parseProgram() catch |err| {
-        std.debug.print("Parser error: {}\n", .{err});
+        std.debug.writer().print("Parser error: {s}\n", .{{err});
         return;
     };
     defer program.deinit();
 
-    std.debug.print("\nParsing completed successfully!\n", .{});
-    std.debug.print("Program has {} statements\n", .{program.statements.items.len});
+    std.debug.writer().print("\nParsing completed successfully!\n", .{});
+    std.debug.writer().print("Program has {s} statements\n", .{{program.statements.items.len});
     
     if (program.package) |pkg| {
-        std.debug.print("Package: {s}\n", .{pkg.name});
+        std.debug.writer().print("Package: {s}\n", .{pkg.name});
     }
     
-    std.debug.print("Imports: {}\n", .{program.imports.items.len});
+    std.debug.writer().print("Imports: {s}\n", .{{program.imports.items.len});
     for (program.imports.items) |import| {
-        std.debug.print("  - {s}\n", .{import.path});
+        std.debug.writer().print("  - {s}\n", .{import.path});
     }
 
     // Print AST
-    std.debug.print("\nAST Structure:\n", .{});
-    try program.print(0);
+    std.debug.writer().print("\nAST Structure:\n", .{});
+    try program.writer().print(0);
     
-    std.debug.print("\n✅ CURSED Parser Test Completed Successfully!\n", .{});
+    std.debug.writer().print("\n✅ CURSED Parser Test Completed Successfully!\n", .{});
 }

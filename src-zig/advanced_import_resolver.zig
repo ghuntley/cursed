@@ -115,7 +115,7 @@ pub const ImportSpec = struct {
         // Clean up version requirement if present
         if (self.owns_version_req) {
             if (self.version_req) |*version_req| {
-                version_req.deinit(allocator);
+                version_req.deinit();
                 self.version_req = null;
                 self.owns_version_req = false;
             }
@@ -167,7 +167,7 @@ pub const ModuleCache = struct {
     
     pub fn init(allocator: Allocator) ModuleCache {
         return ModuleCache{
-            .resolved_modules = HashMap([]const u8, ImportSpec, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .resolved_modules = HashMap([]const u8, ImportSpec, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .import_graph = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -185,7 +185,7 @@ pub const ModuleCache = struct {
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.resolved_modules.deinit();
+        self.resolved_modules.deinit(self.allocator);
         
         // Clean up import graph
         var graph_iter = self.import_graph.iterator();
@@ -203,7 +203,7 @@ pub const ModuleCache = struct {
                 entry.key_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.import_graph.deinit();
+        self.import_graph.deinit(self.allocator);
     }
     
     pub fn addToGraph(self: *ModuleCache, from_module: []const u8, to_module: []const u8) !void {
@@ -219,10 +219,10 @@ pub const ModuleCache = struct {
     }
     
     pub fn detectCycle(self: *ModuleCache, start_module: []const u8) !?ArrayList([]const u8) {
-        var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer visited.deinit();
         
-        var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var rec_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer rec_stack.deinit();
         
         var path = ArrayList([]const u8){};
@@ -301,7 +301,7 @@ pub const AdvancedImportResolver = struct {
         self.search_paths.deinit(self.allocator);
         
         // Clean up module cache
-        self.module_cache.deinit();
+        self.module_cache.deinit(self.allocator);
         
         // Clean up aliases
         var alias_iter = self.aliases.iterator();
@@ -315,7 +315,7 @@ pub const AdvancedImportResolver = struct {
                 entry.value_ptr.* = "";  // Clear to prevent double-free
             }
         }
-        self.aliases.deinit();
+        self.aliases.deinit(self.allocator);
         
         // Clean up package manifest
         if (self.package_manifest) |*manifest| {
@@ -881,7 +881,7 @@ pub const AdvancedImportResolver = struct {
         // Check for cycles in the entire dependency graph
         print("\n=== Cycle Detection ===\n", .{});
         
-        var checked = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var checked = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer checked.deinit();
         
         var graph_iter = self.module_cache.import_graph.iterator();

@@ -63,19 +63,19 @@ pub const StdlibTestRunner = struct {
         return StdlibTestRunner{
             .allocator = allocator,
             .interpreter = try runtime.Interpreter.init(allocator),
-            .results = std.ArrayList(StdlibTestResult).init(allocator),
+            .results = std.ArrayList(StdlibTestResult){},
             .workspace_root = workspace_root,
         };
     }
 
     pub fn deinit(self: *StdlibTestRunner) void {
-        self.interpreter.deinit();
-        self.results.deinit();
+        self.interpreter.deinit(self.allocator);
+        self.results.deinit(self.allocator);
     }
 
     pub fn runAllModuleTests(self: *StdlibTestRunner) !void {
-        std.debug.print("🧪 Testing CURSED Standard Library Modules\n", .{});
-        std.debug.print("=" ** 60 ++ "\n");
+        std.debug.writer().print("🧪 Testing CURSED Standard Library Modules\n", .{});
+        std.debug.writer().print("=" ** 60 ++ "\n");
 
         // Test individual modules
         for (stdlib_modules) |module_suite| {
@@ -95,7 +95,7 @@ pub const StdlibTestRunner = struct {
     }
 
     fn testModule(self: *StdlibTestRunner, module_suite: StdlibTestSuite) !void {
-        std.debug.print("📦 Testing module: {s}\n", .{module_suite.module_name});
+        std.debug.writer().print("📦 Testing module: {s}\n", .{module_suite.module_name});
 
         const start_time = std.time.milliTimestamp();
         
@@ -115,30 +115,30 @@ pub const StdlibTestRunner = struct {
         defer self.allocator.free(test_file_path);
 
         // Test interpretation mode
-        std.debug.print("  • Interpretation mode... ", .{});
+        std.debug.writer().print("  • Interpretation mode... ", .{});
         if (self.testInterpretation(test_file_path)) |_| {
             result.interpretation_passed = true;
-            std.debug.print("✅ PASS\n", .{});
+            std.debug.writer().print("✅ PASS\n", .{});
         } else |err| {
             result.interpretation_error = @errorName(err);
-            std.debug.print("❌ FAIL: {}\n", .{err});
+            std.debug.writer().print("❌ FAIL: {s}\n", .{{err});
         }
 
         // Test compilation mode  
-        std.debug.print("  • Compilation mode... ", .{});
+        std.debug.writer().print("  • Compilation mode... ", .{});
         if (self.testCompilationDetailed(test_file_path, &result)) |_| {
             result.compilation_passed = true;
-            std.debug.print("✅ PASS\n", .{});
+            std.debug.writer().print("✅ PASS\n", .{});
         } else |err| {
             result.compilation_error = @errorName(err);
-            std.debug.print("❌ FAIL: {}\n", .{err});
+            std.debug.writer().print("❌ FAIL: {s}\n", .{{err});
         }
 
         const end_time = std.time.milliTimestamp();
         result.execution_time_ms = @as(u64, @intCast(end_time - start_time));
 
-        try self.results.append(result);
-        std.debug.print("\n", .{});
+        try self.results.append(allocator, result);
+        std.debug.writer().print("\n", .{});
     }
 
     fn testInterpretation(self: *StdlibTestRunner, test_file_path: []const u8) !void {
@@ -148,7 +148,7 @@ pub const StdlibTestRunner = struct {
             test_file_path, 
             10 * 1024 * 1024 // 10MB max
         ) catch |err| {
-            std.debug.print("Failed to read test file: {}\n", .{err});
+            std.debug.writer().print("Failed to read test file: {s}\n", .{{err});
             return err;
         };
         defer self.allocator.free(file_content);
@@ -249,7 +249,7 @@ pub const StdlibTestRunner = struct {
         // Step 1: Lexical Analysis - Validate tokens can be generated
         var l = lexer_module.Lexer.init(self.allocator, source);
         const tokens = l.tokenize() catch |err| {
-            std.debug.print("Compilation failed at lexical analysis: {}\n", .{err});
+            std.debug.writer().print("Compilation failed at lexical analysis: {s}\n", .{{err});
             return error.LexicalError;
         };
         defer tokens.deinit();
@@ -261,7 +261,7 @@ pub const StdlibTestRunner = struct {
         // Step 2: Syntax Analysis - Validate AST can be generated
         var parser = parser_module.Parser.initWithFile(self.allocator, tokens.items, file_path);
         const program = parser.parseProgram() catch |err| {
-            std.debug.print("Compilation failed at syntax analysis: {}\n", .{err});
+            std.debug.writer().print("Compilation failed at syntax analysis: {s}\n", .{{err});
             return error.SyntaxError;
         };
         defer program.deinit();
@@ -275,14 +275,14 @@ pub const StdlibTestRunner = struct {
 
         // Step 4: Code Generation - Validate IR can be generated  
         var codegen = codegen_module.AdvancedCodeGenerator.init(self.allocator) catch |err| {
-            std.debug.print("Compilation failed to initialize code generator: {}\n", .{err});
+            std.debug.writer().print("Compilation failed to initialize code generator: {s}\n", .{{err});
             return error.CodeGenInitError;
         };
         defer codegen.deinit();
 
         // Generate IR without full compilation to test syntax validity
         codegen.generateAdvancedProgram(program) catch |err| {
-            std.debug.print("Compilation failed at IR generation: {}\n", .{err});
+            std.debug.writer().print("Compilation failed at IR generation: {s}\n", .{{err});
             return error.IRGenerationError;
         };
 
@@ -320,7 +320,7 @@ pub const StdlibTestRunner = struct {
         }
 
         // 3. Validate no duplicate function names
-        var function_names = std.StringHashMap(void).init(self.allocator);
+        var function_names = std.StringHashMap(void){};
         defer function_names.deinit();
 
         for (program.statements.items) |stmt| {
@@ -338,8 +338,8 @@ pub const StdlibTestRunner = struct {
 
     /// Test combinations of stdlib modules to ensure they work together
     fn testModuleCombinations(self: *StdlibTestRunner) !void {
-        std.debug.print("\n🔗 Testing Standard Library Module Combinations\n", .{});
-        std.debug.print("-" ** 50 ++ "\n");
+        std.debug.writer().print("\n🔗 Testing Standard Library Module Combinations\n", .{});
+        std.debug.writer().print("-" ** 50 ++ "\n");
 
         const combinations = [_]struct { name: []const u8, modules: []const []const u8 }{
             .{ .name = "Core Testing", .modules = &[_][]const u8{ "testz", "math", "string_simple" } },
@@ -351,31 +351,31 @@ pub const StdlibTestRunner = struct {
         };
 
         for (combinations) |combo| {
-            std.debug.print("  Testing combination: {s}... ", .{combo.name});
+            std.debug.writer().print("  Testing combination: {s}... ", .{combo.name});
             if (self.testModuleCombination(combo.modules)) |_| {
-                std.debug.print("✅ PASS\n", .{});
+                std.debug.writer().print("✅ PASS\n", .{});
             } else |err| {
-                std.debug.print("❌ FAIL: {}\n", .{err});
+                std.debug.writer().print("❌ FAIL: {s}\n", .{{err});
             }
         }
     }
 
     fn testModuleCombination(self: *StdlibTestRunner, modules: []const []const u8) !void {
         // Generate a combined test program that imports all modules
-        var test_program = std.ArrayList(u8).init(self.allocator);
+        var test_program = std.ArrayList(u8){};
         defer test_program.deinit();
 
         const writer = test_program.writer();
         
         // Add imports for all modules in combination
         for (modules) |module_name| {
-            try writer.print("yeet \"{s}\"\n", .{module_name});
+            try writer.writer().print("yeet \"{s}\"\n", .{module_name});
         }
         
         // Add a basic test that uses multiple modules
-        try writer.writeAll("\n");
-        try writer.writeAll("fr fr Combined module test\n");
-        try writer.writeAll("vibez.spill(\"Testing module combination\")\n");
+        try writer.writer().writeAll("\n");
+        try writer.writer().writeAll("fr fr Combined module test\n");
+        try writer.writer().writeAll("vibez.spill(\"Testing module combination\")\n");
         
         // Test the combination compiles correctly
         try self.validateCompilationPipeline(test_program.items, "module_combination_test");
@@ -383,14 +383,14 @@ pub const StdlibTestRunner = struct {
 
     /// Validate that all stdlib modules are pure CURSED implementations
     fn validatePureCursedImplementations(self: *StdlibTestRunner) !void {
-        std.debug.print("\n🔍 Validating Pure CURSED Implementations\n", .{});
-        std.debug.print("-" ** 50 ++ "\n");
+        std.debug.writer().print("\n🔍 Validating Pure CURSED Implementations\n", .{});
+        std.debug.writer().print("-" ** 50 ++ "\n");
 
         const stdlib_dir = try std.fmt.allocPrint(self.allocator, "{s}/stdlib", .{self.workspace_root});
         defer self.allocator.free(stdlib_dir);
 
         var dir = std.fs.cwd().openIterableDir(stdlib_dir, .{}) catch |err| {
-            std.debug.print("❌ Cannot access stdlib directory: {}\n", .{err});
+            std.debug.writer().print("❌ Cannot access stdlib directory: {s}\n", .{{err});
             return;
         };
         defer dir.close();
@@ -404,7 +404,7 @@ pub const StdlibTestRunner = struct {
     }
 
     fn validateModulePurity(self: *StdlibTestRunner, module_name: []const u8) !void {
-        std.debug.print("  Checking module purity: {s}... ", .{module_name});
+        std.debug.writer().print("  Checking module purity: {s}... ", .{module_name});
         
         const module_path = try std.fmt.allocPrint(
             self.allocator, 
@@ -415,7 +415,7 @@ pub const StdlibTestRunner = struct {
 
         // Check if module file exists
         std.fs.cwd().access(module_path, .{}) catch {
-            std.debug.print("⚠️  No mod.csd found\n", .{});
+            std.debug.writer().print("⚠️  No mod.csd found\n", .{});
             return;
         };
 
@@ -425,7 +425,7 @@ pub const StdlibTestRunner = struct {
             module_path, 
             1024 * 1024 // 1MB max
         ) catch |err| {
-            std.debug.print("❌ Read error: {}\n", .{err});
+            std.debug.writer().print("❌ Read error: {s}\n", .{{err});
             return;
         };
         defer self.allocator.free(content);
@@ -444,18 +444,18 @@ pub const StdlibTestRunner = struct {
 
         for (forbidden_patterns) |pattern| {
             if (std.mem.indexOf(u8, content, pattern) != null) {
-                std.debug.print("❌ Contains FFI: {s}\n", .{pattern});
+                std.debug.writer().print("❌ Contains FFI: {s}\n", .{pattern});
                 return;
             }
         }
 
         // Validate the module compiles as pure CURSED
         self.validateCompilationPipeline(content, module_path) catch |err| {
-            std.debug.print("❌ Compilation failed: {}\n", .{err});
+            std.debug.writer().print("❌ Compilation failed: {s}\n", .{{err});
             return;
         };
 
-        std.debug.print("✅ Pure CURSED\n", .{});
+        std.debug.writer().print("✅ Pure CURSED\n", .{});
     }
 
     /// Generate comprehensive compilation report
@@ -464,19 +464,19 @@ pub const StdlibTestRunner = struct {
         defer self.allocator.free(report_file_path);
 
         const report_file = std.fs.cwd().createFile(report_file_path, .{}) catch |err| {
-            std.debug.print("Failed to create compilation report: {}\n", .{err});
+            std.debug.writer().print("Failed to create compilation report: {s}\n", .{{err});
             return;
         };
         defer report_file.close();
 
         const writer = report_file.writer();
         
-        try writer.writeAll("# CURSED Standard Library Compilation Report\n\n");
-        try writer.print("Generated on: {}\n", .{std.time.timestamp()});
-        try writer.writeAll("Test Framework: stdlib_tests.zig\n\n");
+        try writer.writer().writeAll("# CURSED Standard Library Compilation Report\n\n");
+        try writer.writer().print("Generated on: {s}\n", .{{std.time.timestamp()});
+        try writer.writer().writeAll("Test Framework: stdlib_tests.zig\n\n");
 
-        try writer.writeAll("## Overview\n\n");
-        try writer.print("Total modules tested: {}\n", .{self.results.items.len});
+        try writer.writer().writeAll("## Overview\n\n");
+        try writer.writer().print("Total modules tested: {s}\n", .{{self.results.items.len});
         
         var total_passed = 0;
         var compilation_passed = 0;
@@ -485,13 +485,13 @@ pub const StdlibTestRunner = struct {
             if (result.compilation_passed) compilation_passed += 1;
         }
         
-        try writer.print("Fully functional modules: {}\n", .{total_passed});
-        try writer.print("Compilation successful: {}\n", .{compilation_passed});
-        try writer.writeAll("\n");
+        try writer.writer().print("Fully functional modules: {s}\n", .{{total_passed});
+        try writer.writer().print("Compilation successful: {s}\n", .{{compilation_passed});
+        try writer.writer().writeAll("\n");
 
-        try writer.writeAll("## Detailed Results\n\n");
-        try writer.writeAll("| Module | Interpretation | Compilation | Lexer | Parser | Semantic | Codegen | Details |\n");
-        try writer.writeAll("|--------|---------------|-------------|--------|--------|----------|---------|----------|\n");
+        try writer.writer().writeAll("## Detailed Results\n\n");
+        try writer.writer().writeAll("| Module | Interpretation | Compilation | Lexer | Parser | Semantic | Codegen | Details |\n");
+        try writer.writer().writeAll("|--------|---------------|-------------|--------|--------|----------|---------|----------|\n");
 
         for (self.results.items) |result| {
             const interp_status = if (result.interpretation_passed) "✅" else "❌";
@@ -506,40 +506,40 @@ pub const StdlibTestRunner = struct {
                            result.interpretation_error orelse 
                            "OK";
 
-            try writer.print("| {s} | {s} | {s} | {s} | {s} | {s} | {s} | {s} |\n", .{
+            try writer.writer().print("| {s} | {s} | {s} | {s} | {s} | {s} | {s} | {s} |\n", .{
                 result.module_name, interp_status, comp_status,
                 lexer_status, parser_status, semantic_status, codegen_status, details
             });
         }
 
-        try writer.writeAll("\n## Failed Modules\n\n");
+        try writer.writer().writeAll("\n## Failed Modules\n\n");
         for (self.results.items) |result| {
             if (!result.compilation_passed) {
-                try writer.print("### {s}\n\n", .{result.module_name});
+                try writer.writer().print("### {s}\n\n", .{result.module_name});
                 if (result.detailed_error) |error_msg| {
-                    try writer.print("**Error:** {s}\n\n", .{error_msg});
+                    try writer.writer().print("**Error:** {s}\n\n", .{error_msg});
                 }
-                try writer.print("**Pipeline Status:**\n", .{});
-                try writer.print("- Lexer: {s}\n", .{if (result.lexer_passed) "✅ PASS" else "❌ FAIL"});
-                try writer.print("- Parser: {s}\n", .{if (result.parser_passed) "✅ PASS" else "❌ FAIL"});
-                try writer.print("- Semantic: {s}\n", .{if (result.semantic_passed) "✅ PASS" else "❌ FAIL"});
-                try writer.print("- Codegen: {s}\n", .{if (result.codegen_passed) "✅ PASS" else "❌ FAIL"});
-                try writer.writeAll("\n");
+                try writer.writer().print("**Pipeline Status:**\n", .{});
+                try writer.writer().print("- Lexer: {s}\n", .{if (result.lexer_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.writer().print("- Parser: {s}\n", .{if (result.parser_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.writer().print("- Semantic: {s}\n", .{if (result.semantic_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.writer().print("- Codegen: {s}\n", .{if (result.codegen_passed) "✅ PASS" else "❌ FAIL"});
+                try writer.writer().writeAll("\n");
             }
         }
 
-        try writer.writeAll("\n## Recommendations\n\n");
-        try writer.writeAll("1. **Failed Modules:** Focus on fixing compilation errors in failed modules\n");
-        try writer.writeAll("2. **Syntax Issues:** Review parser and lexer implementations for syntax errors\n");
-        try writer.writeAll("3. **Semantic Issues:** Validate type checking and symbol resolution\n");
-        try writer.writeAll("4. **Code Generation:** Ensure LLVM IR generation is correct for all language constructs\n");
+        try writer.writer().writeAll("\n## Recommendations\n\n");
+        try writer.writer().writeAll("1. **Failed Modules:** Focus on fixing compilation errors in failed modules\n");
+        try writer.writer().writeAll("2. **Syntax Issues:** Review parser and lexer implementations for syntax errors\n");
+        try writer.writer().writeAll("3. **Semantic Issues:** Validate type checking and symbol resolution\n");
+        try writer.writer().writeAll("4. **Code Generation:** Ensure LLVM IR generation is correct for all language constructs\n");
         
-        std.debug.print("📄 Compilation report generated: {s}\n", .{report_file_path});
+        std.debug.writer().print("📄 Compilation report generated: {s}\n", .{report_file_path});
     }
 
     fn printSummary(self: *StdlibTestRunner) void {
-        std.debug.print("📊 Stdlib Test Summary:\n", .{});
-        std.debug.print("-" ** 40 ++ "\n");
+        std.debug.writer().print("📊 Stdlib Test Summary:\n", .{});
+        std.debug.writer().print("-" ** 40 ++ "\n");
 
         var total_modules: u32 = 0;
         var interp_passed: u32 = 0;
@@ -561,7 +561,7 @@ pub const StdlibTestRunner = struct {
 
             // Show detailed pipeline status for failed compilations
             if (!result.compilation_passed and result.interpretation_passed) {
-                std.debug.print("  {s:<20} {s} [L:{s} P:{s} S:{s} C:{s}]\n", .{ 
+                std.debug.writer().print("  {s:<20} {s} [L:{s} P:{s} S:{s} C:{s}]\n", .{ 
                     result.module_name, 
                     status,
                     if (result.lexer_passed) "✅" else "❌",
@@ -570,41 +570,41 @@ pub const StdlibTestRunner = struct {
                     if (result.codegen_passed) "✅" else "❌"
                 });
             } else {
-                std.debug.print("  {s:<20} {s}\n", .{ result.module_name, status });
+                std.debug.writer().print("  {s:<20} {s}\n", .{ result.module_name, status });
             }
         }
 
-        std.debug.print("\n", .{});
-        std.debug.print("Total Modules: {}\n", .{total_modules});
-        std.debug.print("Interpretation Success: {}/{} ({d:.1}%)\n", .{ 
+        std.debug.writer().print("\n", .{});
+        std.debug.writer().print("Total Modules: {s}\n", .{{total_modules});
+        std.debug.writer().print("Interpretation Success: {s}/{s} ({d:.1}%)\n", .{{ 
             interp_passed, 
             total_modules, 
             if (total_modules > 0) (@as(f64, @floatFromInt(interp_passed)) / @as(f64, @floatFromInt(total_modules))) * 100.0 else 0.0
         });
-        std.debug.print("Compilation Success: {}/{} ({d:.1}%)\n", .{ 
+        std.debug.writer().print("Compilation Success: {s}/{s} ({d:.1}%)\n", .{{ 
             comp_passed, 
             total_modules, 
             if (total_modules > 0) (@as(f64, @floatFromInt(comp_passed)) / @as(f64, @floatFromInt(total_modules))) * 100.0 else 0.0
         });
-        std.debug.print("Total Test Time: {}ms\n", .{total_time});
+        std.debug.writer().print("Total Test Time: {s}ms\n", .{{total_time});
 
         // Print failed modules
         var has_failures = false;
         for (self.results.items) |result| {
             if (!result.interpretation_passed or !result.compilation_passed) {
                 if (!has_failures) {
-                    std.debug.print("\n❌ Failed Modules:\n", .{});
+                    std.debug.writer().print("\n❌ Failed Modules:\n", .{});
                     has_failures = true;
                 }
                 
-                std.debug.print("  • {s}", .{result.module_name});
+                std.debug.writer().print("  • {s}", .{result.module_name});
                 if (result.interpretation_error) |err| {
-                    std.debug.print(" (interp: {s})", .{err});
+                    std.debug.writer().print(" (interp: {s})", .{err});
                 }
                 if (result.compilation_error) |err| {
-                    std.debug.print(" (comp: {s})", .{err});
+                    std.debug.writer().print(" (comp: {s})", .{err});
                 }
-                std.debug.print("\n", .{});
+                std.debug.writer().print("\n", .{});
             }
         }
     }
@@ -612,7 +612,7 @@ pub const StdlibTestRunner = struct {
 
 // Generate CURSED test files for missing modules
 pub fn generateStdlibTestFiles(allocator: Allocator, workspace_root: []const u8) !void {
-    std.debug.print("🔧 Generating missing stdlib test files...\n", .{});
+    std.debug.writer().print("🔧 Generating missing stdlib test files...\n", .{});
 
     for (stdlib_modules) |module_suite| {
         const test_file_path = try std.fmt.allocPrint(
@@ -625,7 +625,7 @@ pub fn generateStdlibTestFiles(allocator: Allocator, workspace_root: []const u8)
         // Check if test file exists
         std.fs.cwd().access(test_file_path, .{}) catch {
             // File doesn't exist, create it
-            std.debug.print("  Creating: {s}\n", .{test_file_path});
+            std.debug.writer().print("  Creating: {s}\n", .{test_file_path});
             try createTestFile(allocator, test_file_path, module_suite.module_name);
         };
     }

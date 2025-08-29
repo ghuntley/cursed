@@ -363,8 +363,8 @@ pub const MemorySafetyValidator = struct {
             .guard_page_manager = GuardPageManager.init(allocator, config.guard_page_size),
             .stack_monitor = StackMonitor.init(config.stack_size_limit),
             .validator_mutex = Mutex{},
-            .bounds_violations = ArrayList(BoundsViolation).init(allocator),
-            .leak_reports = ArrayList(LeakInfo).init(allocator),
+            .bounds_violations = ArrayList(BoundsViolation){},
+            .leak_reports = ArrayList(LeakInfo){},
         };
 
         return validator;
@@ -375,10 +375,10 @@ pub const MemorySafetyValidator = struct {
         self.generateLeakReport() catch {};
         
         // Clean up tracking structures
-        self.active_allocations.deinit();
-        self.freed_allocations.deinit();
-        self.bounds_violations.deinit();
-        self.leak_reports.deinit();
+        self.active_allocations.deinit(self.allocator);
+        self.freed_allocations.deinit(self.allocator);
+        self.bounds_violations.deinit(self.allocator);
+        self.leak_reports.deinit(self.allocator);
         
         self.allocator.destroy(self);
     }
@@ -525,7 +525,7 @@ pub const MemorySafetyValidator = struct {
                         .thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(Thread.getCurrentId())),
                     };
                     
-                    try self.bounds_violations.append(violation);
+                    try self.bounds_violations.append(allocator, violation);
                     
                     std.log.err("Bounds violation: {} access at 0x{x} (size {}), allocation at 0x{x} (size {})", .{
                         violation.violation_type, access_addr, access_size,
@@ -547,7 +547,7 @@ pub const MemorySafetyValidator = struct {
                     .thread_id = if (builtin.single_threaded) 0 else @as(u32, @truncate(Thread.getCurrentId())),
                 };
                 
-                try self.bounds_violations.append(violation);
+                try self.bounds_violations.append(allocator, violation);
                 return error.InvalidPointer;
             }
         }
@@ -595,7 +595,7 @@ pub const MemorySafetyValidator = struct {
                     .ref_count = metadata.ref_count.load(.acquire),
                 };
                 
-                try self.leak_reports.append(leak_info);
+                try self.leak_reports.append(allocator, leak_info);
             }
         }
         
@@ -623,25 +623,25 @@ pub const MemorySafetyValidator = struct {
 
     /// Get detailed validation report
     pub fn getValidationReport(self: *MemorySafetyValidator, allocator: std.mem.Allocator) ![]u8 {
-        var report = ArrayList(u8).init(allocator);
+        var report = ArrayList(u8){};
         const writer = report.writer();
 
         try writer.print("=== Memory Safety Validation Report ===\n");
-        try writer.print("Total Allocations: {}\n", .{self.stats.total_allocations.load(.acquire)});
-        try writer.print("Active Allocations: {}\n", .{self.stats.active_allocations.load(.acquire)});
-        try writer.print("Total Deallocations: {}\n", .{self.stats.total_deallocations.load(.acquire)});
-        try writer.print("Bounds Violations: {}\n", .{self.stats.bounds_violations.load(.acquire)});
-        try writer.print("Double-Free Attempts: {}\n", .{self.stats.double_free_attempts.load(.acquire)});
-        try writer.print("Use-After-Free Attempts: {}\n", .{self.stats.use_after_free_attempts.load(.acquire)});
-        try writer.print("Leaks Detected: {}\n", .{self.stats.leaks_detected.load(.acquire)});
-        try writer.print("Corruption Incidents: {}\n", .{self.stats.corruption_incidents.load(.acquire)});
-        try writer.print("Guard Violations: {}\n", .{self.stats.guard_violations.load(.acquire)});
-        try writer.print("Stack Overflows: {}\n", .{self.stats.stack_overflows.load(.acquire)});
+        try writer.print("Total Allocations: {s}\n", .{self.stats.total_allocations.load(.acquire)});
+        try writer.print("Active Allocations: {s}\n", .{self.stats.active_allocations.load(.acquire)});
+        try writer.print("Total Deallocations: {s}\n", .{self.stats.total_deallocations.load(.acquire)});
+        try writer.print("Bounds Violations: {s}\n", .{self.stats.bounds_violations.load(.acquire)});
+        try writer.print("Double-Free Attempts: {s}\n", .{self.stats.double_free_attempts.load(.acquire)});
+        try writer.print("Use-After-Free Attempts: {s}\n", .{self.stats.use_after_free_attempts.load(.acquire)});
+        try writer.print("Leaks Detected: {s}\n", .{self.stats.leaks_detected.load(.acquire)});
+        try writer.print("Corruption Incidents: {s}\n", .{self.stats.corruption_incidents.load(.acquire)});
+        try writer.print("Guard Violations: {s}\n", .{self.stats.guard_violations.load(.acquire)});
+        try writer.print("Stack Overflows: {s}\n", .{self.stats.stack_overflows.load(.acquire)});
 
         // Stack usage
         try writer.print("\n=== Stack Usage ===\n");
-        try writer.print("Current Depth: {} bytes\n", .{self.stack_monitor.current_depth.load(.acquire)});
-        try writer.print("Maximum Depth: {} bytes\n", .{self.stack_monitor.max_depth.load(.acquire)});
+        try writer.print("Current Depth: {s} bytes\n", .{self.stack_monitor.current_depth.load(.acquire)});
+        try writer.print("Maximum Depth: {s} bytes\n", .{self.stack_monitor.max_depth.load(.acquire)});
         try writer.print("Stack Utilization: {d:.1}%\n", .{
             @as(f32, @floatFromInt(self.stack_monitor.max_depth.load(.acquire))) / 
             @as(f32, @floatFromInt(self.config.stack_size_limit)) * 100.0
@@ -654,7 +654,7 @@ pub const MemorySafetyValidator = struct {
             const start_index = self.bounds_violations.items.len - recent_count;
             
             for (self.bounds_violations.items[start_index..]) |violation| {
-                try writer.print("  {} at 0x{x} (size {})\n", .{
+                try writer.print("  {s} at 0x{x} (size {s})\n", .{
                     violation.violation_type, violation.address, violation.access_size
                 });
             }

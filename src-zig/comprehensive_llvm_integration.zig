@@ -79,29 +79,30 @@ pub const CompilationResult = struct {
     }
     
     pub fn deinit(self: *CompilationResult, allocator: Allocator) void {
+        _ = allocator;
         for (self.output_files.items) |file| allocator.free(file);
         for (self.errors.items) |error_msg| allocator.free(error_msg);
         for (self.warnings.items) |warning_msg| allocator.free(warning_msg);
         
-        self.output_files.deinit();
-        self.errors.deinit();
-        self.warnings.deinit();
+        self.output_files.deinit(self.allocator);
+        self.errors.deinit(self.allocator);
+        self.warnings.deinit(self.allocator);
     }
     
     pub fn addError(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.errors.append(owned_message);
+        try self.errors.append(allocator, owned_message);
         self.success = false;
     }
     
     pub fn addWarning(self: *CompilationResult, allocator: Allocator, message: []const u8) !void {
         const owned_message = try allocator.dupe(u8, message);
-        try self.warnings.append(owned_message);
+        try self.warnings.append(allocator, owned_message);
     }
     
     pub fn addOutputFile(self: *CompilationResult, allocator: Allocator, file_path: []const u8) !void {
         const owned_path = try allocator.dupe(u8, file_path);
-        try self.output_files.append(owned_path);
+        try self.output_files.append(allocator, owned_path);
     }
 };
 
@@ -130,8 +131,8 @@ pub const ComprehensiveLLVMCompiler = struct {
     }
     
     pub fn deinit(self: *ComprehensiveLLVMCompiler) void {
-        self.type_inference_engine.deinit();
-        self.llvm_backend.deinit();
+        self.type_inference_engine.deinit(self.allocator);
+        self.llvm_backend.deinit(self.allocator);
     }
     
     /// Compile CURSED source code with comprehensive error handling
@@ -209,12 +210,12 @@ pub const ComprehensiveLLVMCompiler = struct {
         _ = source;
         
         // Simplified parsing - in real implementation would use full parser
-        var expressions = .empty;
+        var expressions = std.ArrayList(u8){};
         
         // Example expressions for testing
-        try expressions.append(ast.Expression{ .Integer = 42 });
+        try expressions.append(allocator, ast.Expression{ .Integer = 42 });
         try expressions.append(ast.Expression{ .String = "Hello, World!" });
-        try expressions.append(ast.Expression{ .Boolean = true });
+        try expressions.append(allocator, ast.Expression{ .Boolean = true });
         
         return expressions.toOwnedSlice(self.allocator);
     }

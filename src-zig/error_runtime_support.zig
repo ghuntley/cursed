@@ -36,7 +36,7 @@ const DeferStack = struct {
     fn deinit(self: *DeferStack) void {
         // Execute all remaining cleanup functions
         self.executeAll();
-        self.entries.deinit();
+        self.entries.deinit(self.allocator);
     }
     
     fn enterScope(self: *DeferStack) !void {
@@ -177,7 +177,7 @@ export fn cursed_propagate_error(error_ptr: ?*anyopaque) void {
             // Print error and exit/return
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            stdout.print("Fatal error: ") catch {};
+            stdout.writer().print("Fatal error: ") catch {};
             error_ctx.format(stdout) catch {};
             // In a real implementation, this might call exit() or longjmp()
         }
@@ -185,7 +185,7 @@ export fn cursed_propagate_error(error_ptr: ?*anyopaque) void {
         // Fallback: print error
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-        stdout.print("Error propagation system not initialized: ") catch {};
+        stdout.writer().print("Error propagation system not initialized: ") catch {};
         error_ctx.format(stdout) catch {};
     }
 }
@@ -199,7 +199,7 @@ export fn cursed_try_begin() void {
             .finally_handler = null,
             .scope_id = prop.current_scope_id,
         };
-        prop.try_catch_stack.append(try_context) catch {};
+        prop.try_catch_stack.append(allocator, try_context) catch {};
         prop.current_scope_id += 1;
         
         // Mark beginning of defer scope for this try block
@@ -332,7 +332,7 @@ export fn cursed_add_error_to_stack(error_ptr: ?*anyopaque) void {
     const error_ctx = @as(*ErrorContext, @ptrCast(@alignCast(error_ptr)));
     
     // Add to error stack
-    global_error_propagator.?.error_stack.append(error_ctx.*) catch {};
+    global_error_propagator.?.error_stack.append(allocator, error_ctx.*) catch {};
 }
 
 /// Check if we're in a try block
@@ -400,7 +400,7 @@ export fn cursed_unwind_error(error_ptr: ?*anyopaque, target_scope: u32) void {
     // Log unwinding for debugging
     var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-    stdout.print("Error unwound to scope {}, error: ", .{target_scope}) catch {};
+    stdout.writer().print("Error unwound to scope {s}, error: ", .{target_scope}) catch {};
     error_ctx.format(stdout) catch {};
 }
 

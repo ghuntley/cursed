@@ -28,7 +28,7 @@ pub const EnumExhaustivenessChecker = struct {
         }
         
         pub fn deinit(self: *EnumCoverage) void {
-            self.covered_variants.deinit();
+            self.covered_variants.deinit(self.allocator);
         }
     };
     
@@ -36,7 +36,7 @@ pub const EnumExhaustivenessChecker = struct {
         return EnumExhaustivenessChecker{
             .allocator = allocator,
             .enum_registry = enum_registry,
-            .coverage_cache = HashMap([]const u8, EnumCoverage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .coverage_cache = HashMap([]const u8, EnumCoverage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -45,7 +45,7 @@ pub const EnumExhaustivenessChecker = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.coverage_cache.deinit();
+        self.coverage_cache.deinit(self.allocator);
     }
     
     /// Check exhaustiveness for enum match patterns
@@ -67,12 +67,12 @@ pub const EnumExhaustivenessChecker = struct {
         // Check if all variants are covered
         const is_exhaustive = coverage.has_wildcard or coverage.covered_variants.count() == variants.items.len;
         
-        var missing_variants = ArrayList([]const u8).init(self.allocator);
+        var missing_variants = ArrayList([]const u8){};
         
         if (!is_exhaustive) {
             for (variants.items, 0..) |variant_name, i| {
                 if (!coverage.covered_variants.isSet(i)) {
-                    try missing_variants.append(variant_name);
+                    try missing_variants.append(allocator, variant_name);
                 }
             }
         }
@@ -117,7 +117,7 @@ pub const EnumExhaustivenessChecker = struct {
         }
         
         const is_exhaustive = has_wildcard or (has_true and has_false);
-        var missing_patterns = ArrayList([]const u8).init(self.allocator);
+        var missing_patterns = ArrayList([]const u8){};
         
         if (!is_exhaustive) {
             if (!has_true) try missing_patterns.append(try self.allocator.dupe(u8, "based"));
@@ -142,7 +142,7 @@ pub const EnumExhaustivenessChecker = struct {
         defer covered_values.deinit();
         
         var has_wildcard = false;
-        var range_patterns = ArrayList(RangeInfo).init(self.allocator);
+        var range_patterns = ArrayList(RangeInfo){};
         defer {
             for (range_patterns.items) |*range| {
                 self.allocator.free(range.description);
@@ -177,7 +177,7 @@ pub const EnumExhaustivenessChecker = struct {
                         .is_inclusive = range.is_inclusive,
                         .description = try std.fmt.allocPrint(self.allocator, "{}..{}{s}", .{ start, end, if (range.is_inclusive) "=" else "" }),
                     };
-                    try range_patterns.append(range_info);
+                    try range_patterns.append(allocator, range_info);
                     
                     // Mark range values as covered
                     const actual_end = if (range.is_inclusive) end else end - 1;
@@ -205,12 +205,12 @@ pub const EnumExhaustivenessChecker = struct {
         const total_values = @as(usize, 1) << type_bits;
         const is_exhaustive = has_wildcard or covered_values.count() == total_values;
         
-        var missing_values = ArrayList(i64).init(self.allocator);
+        var missing_values = ArrayList(i64){};
         if (!is_exhaustive and type_bits <= 8) { // Only enumerate for small types
             for (0..total_values) |i| {
                 if (!covered_values.isSet(i)) {
                     const value = @as(i64, @intCast(i)) + min_value;
-                    try missing_values.append(value);
+                    try missing_values.append(allocator, value);
                 }
             }
         }
@@ -248,8 +248,8 @@ pub const EnumExhaustivenessChecker = struct {
             .covered_count = literal_count,
             .total_count = std.math.maxInt(usize), // Effectively infinite
             .has_wildcard = has_wildcard,
-            .missing_values = ArrayList(i64).init(self.allocator),
-            .range_patterns = ArrayList(RangeInfo).init(self.allocator),
+            .missing_values = ArrayList(i64){},
+            .range_patterns = ArrayList(RangeInfo){},
         };
     }
     
@@ -287,7 +287,7 @@ pub const EnumExhaustivenessChecker = struct {
     
     /// Generate exhaustiveness error message
     pub fn generateExhaustivenessError(self: *EnumExhaustivenessChecker, enum_name: []const u8, result: ExhaustivenessResult) ![]const u8 {
-        var error_msg = .empty;
+        var error_msg = std.ArrayList(u8){};
         defer error_msg.deinit();
         
         try error_msg.writer().print("Non-exhaustive pattern match for enum '{s}'\n", .{enum_name});
@@ -309,7 +309,7 @@ pub const EnumExhaustivenessChecker = struct {
     
     /// Generate fix suggestions
     pub fn generateFixSuggestions(self: *EnumExhaustivenessChecker, enum_name: []const u8, result: ExhaustivenessResult) ![]const u8 {
-        var suggestions = .empty;
+        var suggestions = std.ArrayList(u8){};
         defer suggestions.deinit();
         
         try suggestions.writer().print("To fix exhaustiveness:\n", .{});
@@ -423,11 +423,11 @@ pub const EnhancedPatternCompiler = struct {
         switch (pattern) {
             .Enum => |enum_pattern| {
                 var patterns_list = enum_patterns.get(enum_pattern.enum_name) orelse blk: {
-                    var new_list = .empty;
+                    var new_list = std.ArrayList(u8){};
                     try enum_patterns.put(enum_pattern.enum_name, new_list);
                     break :blk enum_patterns.get(enum_pattern.enum_name).?;
                 };
-                try patterns_list.append(pattern);
+                try patterns_list.append(allocator, pattern);
             },
             .Or => |or_pattern| {
                 for (or_pattern.patterns) |sub_pattern| {

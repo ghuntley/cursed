@@ -330,7 +330,7 @@ pub const ConcurrencyCodeGen = struct {
             .Interface => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
             .Struct => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
             .Generic => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
-            .Tuple => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+             0),
             .Slice => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
         };
     }
@@ -348,7 +348,7 @@ pub const ConcurrencyCodeGen = struct {
             .Interface => 8,
             .Struct => 8,
             .Generic => 8,
-            .Tuple => 8,
+            
             .Slice => 8,
         };
     }

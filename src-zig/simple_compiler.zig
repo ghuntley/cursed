@@ -23,12 +23,12 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
     print("[1/5] Lexical Analysis...\n", .{});
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error during compilation: {}\n", .{err});
+        print("❌ Lexer error during compilation: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
     
-    if (verbose) print("📝 Lexed {} tokens for compilation\n", .{tokens.items.len});
+    if (verbose) print("📝 Lexed {s} tokens for compilation\n", .{tokens.items.len});
     
     // Step 2: Generate a simple C program
     print("[2/5] Generating C code...\n", .{});
@@ -37,21 +37,21 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
     defer allocator.free(c_filename);
     
     const c_file = std.fs.cwd().createFile(c_filename, .{}) catch |err| {
-        print("❌ Error creating C file: {}\n", .{err});
+        print("❌ Error creating C file: {s}\n", .{err});
         return;
     };
     defer c_file.close();
     
     var writer = c_file.writer();
-    try writer.writeAll("#include <stdio.h>\n");
-    try writer.writeAll("#include <stdlib.h>\n");
-    try writer.writeAll("#include <string.h>\n");
-    try writer.writeAll("int main() {\n");
+    try writer.writer().writeAll("#include <stdio.h>\n");
+    try writer.writer().writeAll("#include <stdlib.h>\n");
+    try writer.writer().writeAll("#include <string.h>\n");
+    try writer.writer().writeAll("int main() {\n");
     
     // Step 3: Simple CURSED-to-C translation
     print("[3/5] Translating CURSED to C...\n", .{});
     
-    var variables = std.ArrayList(VariableInfo).init(allocator);
+    var variables = std.ArrayList(VariableInfo){};
     defer {
         for (variables.items) |var_info| {
             allocator.free(var_info.name);
@@ -159,8 +159,8 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
         }
     }
     
-    try writer.writeAll("    return 0;\n");
-    try writer.writeAll("}\n");
+    try writer.writer().writeAll("    return 0;\n");
+    try writer.writer().writeAll("}\n");
     
     if (verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -180,19 +180,19 @@ pub fn compileProgramWithOutput(allocator: Allocator, source: []const u8, filena
     child.stderr_behavior = .Pipe;
     
     child.spawn() catch |err| {
-        print("❌ Error spawning GCC: {}\n", .{err});
+        print("❌ Error spawning GCC: {s}\n", .{err});
         return;
     };
     
     const result = child.wait() catch |err| {
-        print("❌ Error waiting for GCC: {}\n", .{err});
+        print("❌ Error waiting for GCC: {s}\n", .{err});
         return;
     };
     
     switch (result) {
         .Exited => |code| {
             if (code != 0) {
-                print("❌ Compilation failed with exit code: {}\n", .{code});
+                print("❌ Compilation failed with exit code: {s}\n", .{code});
                 return;
             }
         },

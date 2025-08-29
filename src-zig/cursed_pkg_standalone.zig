@@ -67,12 +67,12 @@ const CliArgs = struct {
         return CliArgs{
             .command = .help,
             .packages = &[_][:0]const u8{},
-            .options = std.StringHashMap([]const u8).init(allocator),
+            .options = std.StringHashMap([]const u8){},
         };
     }
     
     pub fn deinit(self: *CliArgs) void {
-        self.options.deinit();
+        self.options.deinit(self.allocator);
     }
 };
 
@@ -85,7 +85,7 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
     
     cli_args.command = Command.fromString(args[1]) orelse .help;
     
-    var packages = std.ArrayList([:0]const u8).init(self.allocator);
+    var packages = std.ArrayList([:0]const u8){};
     defer packages.deinit();
     
     var i: usize = 2;
@@ -106,7 +106,7 @@ fn parseArgs(allocator: std.mem.Allocator, args: [][:0]u8) !CliArgs {
                 try cli_args.options.put(key, value);
             }
         } else {
-            try packages.append(arg);
+            try packages.append(allocator, arg);
         }
         
         i += 1;
@@ -486,7 +486,7 @@ fn cmdList(allocator: std.mem.Allocator, args: CliArgs) !void {
         return;
     };
     
-    print("Cache status: exists ({} bytes)\n", .{cache_stat.size});
+    print("Cache status: exists ({s} bytes)\n", .{cache_stat.size});
 }
 
 fn cmdClean(allocator: std.mem.Allocator, args: CliArgs) !void {
@@ -564,13 +564,13 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
     
     var cli_args = parseArgs(allocator, args) catch |err| {
-        print("Error parsing arguments: {}\n", .{err});
+        print("Error parsing arguments: {s}\n", .{err});
         std.process.exit(1);
     };
     defer cli_args.deinit();
     
     runCommand(allocator, cli_args) catch |err| {
-        print("Error: {}\n", .{err});
+        print("Error: {s}\n", .{err});
         std.process.exit(1);
     };
 }

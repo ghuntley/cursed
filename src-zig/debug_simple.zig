@@ -20,19 +20,19 @@ pub fn main() !void {
 
     // Verify file exists
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("❌ Error opening file '{s}': {}\n", .{ filename, err });
+        print("❌ Error opening file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     // Read content for analysis
     const content = file.readToEndAlloc(std.heap.page_allocator, 1024 * 1024) catch |err| {
-        print("❌ Error reading file: {}\n", .{err});
+        print("❌ Error reading file: {s}\n", .{err});
         return;
     };
     defer std.heap.page_allocator.free(content);
 
-    print("✅ Program loaded successfully ({} bytes)\n", .{content.len});
+    print("✅ Program loaded successfully ({s} bytes)\n", .{content.len});
     
     // Simple analysis
     try analyzeProgram(content);
@@ -97,9 +97,9 @@ fn analyzeProgram(code: []const u8) !void {
     }
     
     print("\n📊 Program analysis:\n", .{});
-    print("   Lines: {}\n", .{line_count});
-    print("   Functions: {}\n", .{function_count});
-    print("   Variables: {}\n", .{variable_count});
+    print("   Lines: {s}\n", .{line_count});
+    print("   Functions: {s}\n", .{function_count});
+    print("   Variables: {s}\n", .{variable_count});
 }
 
 fn printDebugHelp() void {

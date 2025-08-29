@@ -10,7 +10,8 @@ pub const LSPServer = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator) !Self {
-        const symbols = std.HashMap([]const u8, SymbolInfo, std.hash_map.StringContext, 80).init(allocator);
+        _ = allocator;
+        const symbols = std.HashMap([]const u8, SymbolInfo, std.hash_map.StringContext, 80){};
         const diagnostics = std.ArrayList(Diagnostic){};
         return Self{
             .allocator = allocator,
@@ -20,7 +21,7 @@ pub const LSPServer = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.symbols.deinit();
+        self.symbols.deinit(self.allocator);
         self.diagnostics.deinit(self.allocator);
     }
     

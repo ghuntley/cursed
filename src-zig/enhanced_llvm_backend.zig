@@ -128,9 +128,9 @@ pub const EnhancedLLVMBackend = struct {
             .builder = builder,
             .pass_manager = pass_manager,
             .target_machine = target_machine,
-            .type_cache = HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
-            .functions = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
-            .variables = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
+            .type_cache = HashMap([]const u8, LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .functions = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .debug_enabled = false,
             .source_file = null,
             .allocated_strings = .empty,
@@ -151,7 +151,7 @@ pub const EnhancedLLVMBackend = struct {
         if (self.context) |ctx| c.LLVMContextDispose(ctx);
         
         // Arena allocator cleans up all allocations automatically
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -219,7 +219,7 @@ pub const EnhancedLLVMBackend = struct {
         for (cases, 0..) |_, i| {
             const block_name = try std.fmt.allocPrintZ(self.arena.allocator(), "pattern_case_{d}", .{i});
             const block = c.LLVMAppendBasicBlockInContext(self.context, function, block_name.ptr);
-            try case_blocks.append(block);
+            try case_blocks.append(allocator, block);
         }
         
         const merge_block = c.LLVMAppendBasicBlockInContext(self.context, function, "pattern_merge");

@@ -113,11 +113,11 @@ pub const CrossCompiler = struct {
                 3 => "-O3",
                 else => "-O2",
             };
-            try command_parts.append(opt_arg);
+            try command_parts.append(self.allocator, opt_arg);
             
             // Add linking mode for static linking
             if (std.mem.eql(u8, linking_mode, "static")) {
-                try command_parts.append("-static");
+                try command_parts.append(self.allocator, "-static");
             }
             
             // Add output file specification
@@ -193,7 +193,7 @@ pub const CrossCompiler = struct {
                 if (code == 0) {
                     if (verbose) print("✅ Cross-compilation completed successfully\n", .{});
                 } else {
-                    print("❌ Cross-compilation failed with exit code: {}\n", .{code});
+                    print("❌ Cross-compilation failed with exit code: {s}\n", .{code});
                     return error.CompilationFailed;
                 }
             },
@@ -283,7 +283,7 @@ pub const CrossCompiler = struct {
             child.stderr_behavior = .Ignore;
             
             child.spawn() catch |err| {
-                print("❌ Failed to test zig targets: {}\n", .{err});
+                print("❌ Failed to test zig targets: {s}\n", .{err});
                 continue;
             };
             
@@ -326,7 +326,7 @@ pub const CrossCompilationTester = struct {
             \\pub fn main() !void {
             \\    var stdout_buffer: [4096]u8 = undefined;
             \\    const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            \\    try stdout.print("Cross-compilation test successful!\n", .{});
+            \\    try stdout.writer().print("Cross-compilation test successful!\n", .{});
             \\}
         ;
         
@@ -374,7 +374,7 @@ pub const CrossCompilationTester = struct {
                 "dynamic", // linking mode
                 verbose
             ) catch |err| {
-                print("    ❌ Failed to generate command: {}\n", .{err});
+                print("    ❌ Failed to generate command: {s}\n", .{err});
                 continue;
             };
             defer {
@@ -385,18 +385,18 @@ pub const CrossCompilationTester = struct {
             }
             
             cross_compiler.executeCompilation(command, false) catch |err| {
-                print("    ❌ Compilation failed: {}\n", .{err});
+                print("    ❌ Compilation failed: {s}\n", .{err});
                 continue;
             };
             
             // Check if output file was created
             const stat = std.fs.cwd().statFile(output_name) catch |err| {
-                print("    ❌ Output file not found: {}\n", .{err});
+                print("    ❌ Output file not found: {s}\n", .{err});
                 continue;
             };
             
             if (stat.size > 0) {
-                print("    ✅ Successfully compiled ({} bytes)\n", .{stat.size});
+                print("    ✅ Successfully compiled ({s} bytes)\n", .{stat.size});
                 successful_targets += 1;
                 
                 // Clean up test binary
@@ -407,7 +407,7 @@ pub const CrossCompilationTester = struct {
         }
         
         const success_rate = (successful_targets * 100) / total_targets;
-        print("📊 Cross-compilation test results: {}/{} targets successful ({}%)\n", .{
+        print("📊 Cross-compilation test results: {s}/{s} targets successful ({s}%)\n", .{
             successful_targets, total_targets, success_rate
         });
         

@@ -32,7 +32,7 @@ pub fn main() !void {
         print("\nTesting directory: {s}\n", .{test_dir});
         
         var dir = fs.cwd().openDir(test_dir, .{ .iterate = true }) catch |err| {
-            print("⚠️  Could not open directory {s}: {}\n", .{ test_dir, err });
+            print("⚠️  Could not open directory {s}: {s}\n", .{ test_dir, err });
             continue;
         };
         defer dir.close();
@@ -51,7 +51,7 @@ pub fn main() !void {
                     .argv = &[_][]const u8{ "./zig-out/bin/cursed-zig", test_path },
                     .max_output_bytes = 1024 * 1024,
                 }) catch |err| {
-                    print("❌ {s} - Execution failed: {}\n", .{ entry.name, err });
+                    print("❌ {s} - Execution failed: {s}\n", .{ entry.name, err });
                     failed_tests += 1;
                     continue;
                 };
@@ -74,7 +74,7 @@ pub fn main() !void {
                         print("✅ {s} - Passed\n", .{entry.name});
                         passed_tests += 1;
                     } else {
-                        print("❌ {s} - Failed (exit code: {})\n", .{ entry.name, result.term });
+                        print("❌ {s} - Failed (exit code: {s})\n", .{ entry.name, result.term });
                         if (result.stderr.len > 0) {
                             print("   Error: {s}\n", .{result.stderr});
                         }

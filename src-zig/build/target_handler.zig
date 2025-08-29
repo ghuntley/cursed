@@ -23,6 +23,7 @@ pub const TargetHandler = struct {
         compilation_flags: [][]const u8,
         
         pub fn deinit(self: *TargetInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.canonical_triple);
             allocator.free(self.friendly_name);
             allocator.free(self.description);
@@ -49,7 +50,7 @@ pub const TargetHandler = struct {
         var handler = TargetHandler{
             .build = build,
             .normalizer = TargetTripleNormalizer.init(build.allocator),
-            .supported_targets = std.StringHashMap(TargetInfo).init(build.allocator),
+            .supported_targets = std.StringHashMap(TargetInfo){},
         };
         
         try handler.initializeSupportedTargets();
@@ -61,8 +62,8 @@ pub const TargetHandler = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit(self.build.allocator);
         }
-        self.supported_targets.deinit();
-        self.normalizer.deinit();
+        self.supported_targets.deinit(self.allocator);
+        self.normalizer.deinit(self.allocator);
     }
     
     /// Initialize the list of supported targets with their characteristics
@@ -283,10 +284,10 @@ pub const TargetHandler = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        try stdout.print("Supported target platforms:\n\n", .{});
+        try stdout.writer().print("Supported target platforms:\n\n", .{});
         
         var iterator = self.supported_targets.iterator();
-        var printed_targets = std.StringHashMap(void).init(self.build.allocator);
+        var printed_targets = std.StringHashMap(void){};
         defer printed_targets.deinit();
         
         while (iterator.next()) |entry| {
@@ -296,21 +297,21 @@ pub const TargetHandler = struct {
             if (printed_targets.contains(target_info.canonical_triple)) continue;
             try printed_targets.put(target_info.canonical_triple, {});
             
-            try stdout.print("  {s:<20} - {s}\n", .{ target_info.friendly_name, target_info.description });
-            try stdout.print("    Triple: {s}\n", .{target_info.canonical_triple});
-            try stdout.print("    LLVM: {s}, Threading: {s}, Dynamic Linking: {s}\n", .{
+            try stdout.writer().print("  {s:<20} - {s}\n", .{ target_info.friendly_name, target_info.description });
+            try stdout.writer().print("    Triple: {s}\n", .{target_info.canonical_triple});
+            try stdout.writer().print("    LLVM: {s}, Threading: {s}, Dynamic Linking: {s}\n", .{
                 if (target_info.supports_llvm) "✓" else "✗",
                 if (target_info.supports_threading) "✓" else "✗",
                 if (target_info.supports_dynamic_linking) "✓" else "✗",
             });
             if (target_info.cpu_features.cpu.len > 0) {
-                try stdout.print("    CPU: {s}", .{target_info.cpu_features.cpu});
+                try stdout.writer().print("    CPU: {s}", .{target_info.cpu_features.cpu});
                 if (target_info.cpu_features.features.len > 0) {
-                    try stdout.print(", Features: {s}", .{target_info.cpu_features.features});
+                    try stdout.writer().print(", Features: {s}", .{target_info.cpu_features.features});
                 }
-                try stdout.print("\n", .{});
+                try stdout.writer().print("\n", .{});
             }
-            try stdout.print("\n", .{});
+            try stdout.writer().print("\n", .{});
         }
     }
     
@@ -345,7 +346,7 @@ pub const TargetHandler = struct {
         root_source_file: Build.LazyPath,
         target_list: []const []const u8,
     ) !std.ArrayList(*Build.Step.Compile) {
-        var compile_steps = std.ArrayList(*Build.Step.Compile).init(self.build.allocator);
+        var compile_steps = std.ArrayList(*Build.Step.Compile){};
         
         for (target_list) |target_string| {
             const options = try self.getRecommendedBuildOptions(target_string);
@@ -358,7 +359,7 @@ pub const TargetHandler = struct {
             );
             
             const compile_step = try self.createCompileStep(target_name, root_source_file, options);
-            try compile_steps.append(compile_step);
+            try compile_steps.append(allocator, compile_step);
         }
         
         return compile_steps;

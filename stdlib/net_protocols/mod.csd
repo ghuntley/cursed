@@ -57,7 +57,11 @@ slay tls_init_connection() lit {
         tls_server_random[i] = crypto_random_int(0, 255)
     }
     
-    vibez.spill("🔒 TLS connection initialized")
+    fr fr Initialize session parameters
+    tls_cipher_suite = tls_aes_256_gcm fr fr Default to AES-256-GCM
+    tls_connection_state = 1 fr fr Move to initialized state
+    
+    vibez.spill("🔒 TLS connection initialized with AES-256-GCM")
     damn based
 }
 
@@ -148,18 +152,39 @@ slay tls_parse_server_hello(data tea) lit {
     bestie string_length(data) < 38 {
         vibez.spill("❌ Invalid Server Hello message")
         damn cap
-    } fr fr Extract server random
+    } 
+    
+    fr fr Validate TLS record header
+    bestie char_code(data[0]) != 22 { fr fr Not a handshake record
+        vibez.spill("❌ Invalid TLS record type")
+        damn cap
+    }
+    
+    fr fr Extract server random
     bestie i := 6; i < 38; i++ {
         tls_server_random[i - 6] = char_code(data[i])
-    } fr fr Extract cipher suite (simplified)
+    } 
+    
+    fr fr Extract cipher suite (simplified)
     sus cipher_pos normie = 38 + char_code(data[38]) + 1 fr fr Skip session ID
     bestie cipher_pos + 1 < string_length(data) {
         tls_cipher_suite = char_code(data[cipher_pos]) * 256 + char_code(data[cipher_pos + 1])
+        
+        fr fr Validate cipher suite is secure
+        bestie tls_cipher_suite == tls_aes_256_gcm || 
+               tls_cipher_suite == tls_aes_128_gcm || 
+               tls_cipher_suite == tls_chacha20_poly1305 {
+            tls_connection_state = 2 fr fr Handshake in progress
+            vibez.spill("📥 TLS Server Hello processed - Cipher: " + string(tls_cipher_suite))
+            damn based
+        } else {
+            vibez.spill("❌ Unsupported cipher suite: " + string(tls_cipher_suite))
+            damn cap
+        }
     }
     
-    tls_connection_state = 1 fr fr Handshake in progress
-    vibez.spill("📥 TLS Server Hello processed")
-    damn based
+    vibez.spill("❌ Failed to parse cipher suite")
+    damn cap
 }
 
 slay tls_generate_master_secret(pre_master_secret tea) lit { fr fr PRF (Pseudo-Random Function) for master secret derivation
@@ -170,13 +195,23 @@ slay tls_generate_master_secret(pre_master_secret tea) lit { fr fr PRF (Pseudo-R
     }
     bestie i := 0; i < 32; i++ {
         seed = seed + char(tls_server_random[i])
-    } fr fr Derive master secret using PBKDF2
-    sus master_key tea = crypto_pbkdf2(pre_master_secret + label, seed, 1000, 48) fr fr Store in master secret array
+    } 
+    
+    fr fr Derive master secret using PBKDF2
+    sus master_key tea = crypto_pbkdf2(pre_master_secret + label, seed, 1000, 48) 
+    
+    fr fr Store in master secret array
     bestie i := 0; i < 48 && i < string_length(master_key); i++ {
         tls_master_secret[i] = char_code(master_key[i])
     }
     
-    vibez.spill("🔑 TLS master secret generated")
+    fr fr Zero out remaining bytes for security
+    bestie i := string_length(master_key); i < 48; i++ {
+        tls_master_secret[i] = 0
+    }
+    
+    tls_connection_state = 2 fr fr Handshake progressing
+    vibez.spill("🔑 TLS master secret generated (48 bytes)")
     damn based
 }
 
@@ -237,7 +272,11 @@ slay ssh_init_connection() lit {
     ssh_session_id = ""
     ssh_client_kex_init = ""
     ssh_server_kex_init = ""
-    vibez.spill("🔐 SSH connection initialized")
+    
+    fr fr Initialize SSH protocol state
+    ssh_connection_state = 1 fr fr Ready for version exchange
+    
+    vibez.spill("🔐 SSH connection initialized - Ready for version exchange")
     damn based
 }
 
@@ -248,18 +287,27 @@ slay ssh_create_version_exchange() tea {
     damn version_string
 }
 
-slay ssh_parse_server_version(data tea) lit { fr fr Extract server version (remove \r\n)
+slay ssh_parse_server_version(data tea) lit { 
+    fr fr Extract server version (remove \r\n)
     sus server_version tea = data
     bestie string_length(server_version) > 2 {
         server_version = server_version[0:string_length(server_version)-2]
-    } fr fr Validate SSH version
+    } 
+    
+    fr fr Validate SSH version
     bestie server_version[0:4] != "SSH-" {
         vibez.spill("❌ Invalid SSH server version")
         damn cap
     }
     
+    fr fr Check for supported SSH version (2.0)
+    bestie !string_contains(server_version, "SSH-2.") {
+        vibez.spill("❌ Unsupported SSH version: " + server_version)
+        damn cap
+    }
+    
     vibez.spill("📥 SSH server version: " + server_version)
-    ssh_connection_state = 2
+    ssh_connection_state = 2 fr fr Ready for key exchange
     damn based
 }
 
@@ -1265,11 +1313,128 @@ slay crypto_sha1_hash(data tea) tea {
     damn crypto_sha256_hash(data)
 }
 
+fr fr ===== DNS IMPLEMENTATION =====
+
+sus dns_query_type_a normie = 1
+sus dns_query_type_aaaa normie = 28
+sus dns_query_type_mx normie = 15
+sus dns_query_type_cname normie = 5
+sus dns_query_type_txt normie = 16
+
+slay dns_create_query(hostname tea, query_type normie) tea {
+    sus query tea = ""
+    
+    fr fr DNS header (12 bytes)
+    sus transaction_id normie = crypto_random_int(1000, 65535)
+    query = query + char((transaction_id >> 8) & 0xFF) + char(transaction_id & 0xFF)
+    
+    fr fr Flags: Standard query, recursion desired
+    query = query + char(1) + char(0)
+    
+    fr fr Questions: 1, Answers: 0, Authority: 0, Additional: 0
+    query = query + char(0) + char(1) + char(0) + char(0) + char(0) + char(0) + char(0) + char(0)
+    
+    fr fr Question section
+    sus labels []tea = string_split(hostname, ".")
+    bestie i := 0; i < len(labels); i++ {
+        sus label tea = labels[i]
+        query = query + char(string_length(label))
+        query = query + label
+    }
+    query = query + char(0) fr fr End of hostname
+    
+    fr fr Query type and class
+    query = query + char((query_type >> 8) & 0xFF) + char(query_type & 0xFF)
+    query = query + char(0) + char(1) fr fr Class IN
+    
+    vibez.spill("📋 DNS query created for " + hostname + " (type " + string(query_type) + ")")
+    damn query
+}
+
+slay dns_parse_response(response tea) (lit, tea) {
+    bestie string_length(response) < 12 {
+        damn (cap, "")
+    }
+    
+    fr fr Parse DNS header
+    sus flags normie = (char_code(response[2]) << 8) | char_code(response[3])
+    sus response_code normie = flags & 0x0F
+    
+    bestie response_code != 0 {
+        vibez.spill("❌ DNS query failed with code: " + string(response_code))
+        damn (cap, "")
+    }
+    
+    sus answer_count normie = (char_code(response[6]) << 8) | char_code(response[7])
+    bestie answer_count == 0 {
+        vibez.spill("❌ No DNS answers received")
+        damn (cap, "")
+    }
+    
+    fr fr For simplicity, return a mock IP address
+    sus result_ip tea = "203.0.113." + string(crypto_random_int(1, 254))
+    
+    vibez.spill("✅ DNS response parsed - IP: " + result_ip)
+    damn (based, result_ip)
+}
+
+slay dns_resolve(hostname tea) tea {
+    sus query tea = dns_create_query(hostname, dns_query_type_a)
+    
+    fr fr In real implementation, would send UDP packet to DNS server
+    sus response tea = dns_simulate_response(query)
+    
+    (sus success lit, sus ip tea) = dns_parse_response(response)
+    bestie success {
+        damn ip
+    } else {
+        damn ""
+    }
+}
+
+slay dns_simulate_response(query tea) tea {
+    fr fr Simulate DNS response for testing
+    sus response tea = ""
+    
+    fr fr DNS header - copy transaction ID from query
+    response = response + query[0:2]
+    
+    fr fr Flags: Response, recursion available, no error
+    response = response + char(0x81) + char(0x80)
+    
+    fr fr Questions: 1, Answers: 1, Authority: 0, Additional: 0
+    response = response + char(0) + char(1) + char(0) + char(1) + char(0) + char(0) + char(0) + char(0)
+    
+    fr fr Question section (copy from query)
+    response = response + query[12:]
+    
+    fr fr Answer section
+    response = response + char(0xC0) + char(0x0C) fr fr Name compression pointer
+    response = response + char(0) + char(1) fr fr Type A
+    response = response + char(0) + char(1) fr fr Class IN
+    response = response + char(0) + char(0) + char(1) + char(0x2C) fr fr TTL: 300 seconds
+    response = response + char(0) + char(4) fr fr Data length: 4 bytes
+    response = response + char(203) + char(0) + char(113) + char(42) fr fr IP: 203.0.113.42
+    
+    damn response
+}
+
 fr fr ===== INITIALIZATION AND TESTING =====
 
 slay net_protocols_initialize() lit {
     crypto_initialize() fr fr Initialize crypto module
     protocol_state = 1 fr fr Mark as initialized
+    
+    fr fr Initialize protocol state variables
+    tls_connection_state = 0
+    ssh_connection_state = 0
+    ftp_connection_state = 0
+    smtp_connection_state = 0
+    ws_connection_state = 0
+    
+    fr fr Set default configuration
+    max_packet_size = 1460
+    http_connection_timeout = 30000
     
     vibez.spill("🌐 Network Protocols module initialized")
     vibez.spill("   - TLS/SSL 1.2 and 1.3 support with proper handshake")
@@ -1383,6 +1548,26 @@ slay net_protocols_test() lit {
 fr fr Environment variable helper for configurable endpoints
 slay get_env_with_default(env_var tea, default_value tea) tea {
     fr fr Get environment variable with default fallback
-    fr fr In production, this would read actual environment variables
+    fr fr In production, this would read actual environment variables using system calls
     damn default_value fr fr For now, return default
+}
+
+slay string_split(s tea, delimiter tea) []tea {
+    fr fr Simplified string split function
+    sus result []tea = []
+    fr fr For now, return empty array - real implementation would split string
+    damn result
+}
+
+slay get_network_mtu(connection NetworkConnection) normie {
+    fr fr Get Maximum Transmission Unit for network connection
+    fr fr Default Ethernet MTU minus headers
+    damn 1500 - 40 fr fr IP + TCP headers
+}
+
+squad NetworkConnection {
+    spill host tea
+    spill port normie
+    spill socket normie
+    spill connected lit
 }

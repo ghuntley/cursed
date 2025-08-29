@@ -48,7 +48,7 @@ pub const RuntimeTypeParameter = struct {
         for (self.constraints.items) |*constraint| {
             constraint.deinit();
         }
-        self.constraints.deinit();
+        self.constraints.deinit(self.allocator);
         if (self.default_type) |*default| {
             default.deinit();
         }
@@ -218,6 +218,7 @@ pub const RuntimeType = struct {
         }
         
         pub fn deinit(self: *TypeMetadata, allocator: Allocator) void {
+        _ = allocator;
             if (self.lifetime_params) |*params| {
                 for (params.items) |param| {
                     allocator.free(param);
@@ -248,6 +249,7 @@ pub const RuntimeType = struct {
     }
     
     pub fn deinit(self: *RuntimeType, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         if (self.type_args) |*args| {
             for (args.items) |*arg| {
@@ -255,12 +257,13 @@ pub const RuntimeType = struct {
             }
             args.deinit();
         }
-        self.metadata.deinit();
+        self.metadata.deinit(self.allocator);
     }
     
     /// Generate mangled name for type
     pub fn getMangledName(self: *RuntimeType, allocator: Allocator) ![]const u8 {
-        var name_parts = .empty;
+        _ = allocator;
+        var name_parts = std.ArrayList(u8){};
         defer name_parts.deinit();
         
         try name_parts.appendSlice(self.name);
@@ -311,7 +314,7 @@ pub const TypeSubstitution = struct {
     
     pub fn deinit(self: *TypeSubstitution) void {
         self.allocator.free(self.parameter_name);
-        self.concrete_type.deinit();
+        self.concrete_type.deinit(self.allocator);
     }
 };
 
@@ -340,15 +343,16 @@ pub const RuntimeTypeEnvironment = struct {
         }
         
         pub fn deinit(self: *GenericDeclaration, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.name);
             for (self.type_parameters.items) |*param| {
                 param.deinit();
             }
-            self.type_parameters.deinit();
+            self.type_parameters.deinit(self.allocator);
             for (self.constraints.items) |*constraint| {
                 constraint.deinit();
             }
-            self.constraints.deinit();
+            self.constraints.deinit(self.allocator);
         }
     };
     
@@ -383,10 +387,10 @@ pub const RuntimeTypeEnvironment = struct {
     
     pub fn init() RuntimeTypeEnvironment {
         return RuntimeTypeEnvironment{
-            .type_registry = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .generic_registry = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .instantiation_cache = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_impls = HashMap(InterfaceImplKey, bool, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .type_registry = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .generic_registry = HashMap([]const u8, GenericDeclaration, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .instantiation_cache = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .interface_impls = HashMap(InterfaceImplKey, bool, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage){},
             .type_constraints = HashMap([]const u8, ArrayList(RuntimeConstraint), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -397,21 +401,21 @@ pub const RuntimeTypeEnvironment = struct {
         while (type_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.type_registry.deinit();
+        self.type_registry.deinit(self.allocator);
         
         var generic_iter = self.generic_registry.iterator();
         while (generic_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.generic_registry.deinit();
+        self.generic_registry.deinit(self.allocator);
         
         var cache_iter = self.instantiation_cache.iterator();
         while (cache_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.instantiation_cache.deinit();
+        self.instantiation_cache.deinit(self.allocator);
         
-        self.interface_impls.deinit();
+        self.interface_impls.deinit(self.allocator);
         
         var constraint_iter = self.type_constraints.iterator();
         while (constraint_iter.next()) |entry| {
@@ -420,7 +424,7 @@ pub const RuntimeTypeEnvironment = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.type_constraints.deinit();
+        self.type_constraints.deinit(self.allocator);
     }
     
     /// Register a concrete type
@@ -460,7 +464,7 @@ pub const RuntimeTypeEnvironment = struct {
         try self.validateConstraints(generic_decl, type_args);
         
         // Create substitution map
-        var substitutions = .empty;
+        var substitutions = std.ArrayList(u8){};
         defer {
             for (substitutions.items) |*sub| {
                 sub.deinit();
@@ -484,7 +488,7 @@ pub const RuntimeTypeEnvironment = struct {
     
     /// Generate cache key for generic instantiation
     fn generateCacheKey(self: *RuntimeTypeEnvironment, generic_name: []const u8, type_args: []RuntimeType) ![]const u8 {
-        var key_parts = .empty;
+        var key_parts = std.ArrayList(u8){};
         defer key_parts.deinit();
         
         try key_parts.appendSlice(generic_name);
@@ -522,7 +526,7 @@ pub const RuntimeTypeEnvironment = struct {
     /// Perform the actual generic instantiation
     fn performInstantiation(self: *RuntimeTypeEnvironment, generic_decl: GenericDeclaration, substitutions: []TypeSubstitution) !RuntimeType {
         // Create substitution map for quick lookup
-        var sub_map = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var sub_map = HashMap([]const u8, RuntimeType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer sub_map.deinit();
         
         for (substitutions) |sub| {
@@ -530,7 +534,7 @@ pub const RuntimeTypeEnvironment = struct {
         }
         
         // Create instantiated type with substituted type arguments
-        var type_args = .empty;
+        var type_args = std.ArrayList(u8){};
         for (substitutions) |sub| {
             try type_args.append(self.allocator, sub.concrete_type);
         }
@@ -728,12 +732,12 @@ pub const RuntimeTypeEnvironment = struct {
             return error.GenericNotFound;
         };
         
-        var inferred_types = .empty;
+        var inferred_types = std.ArrayList(u8){};
         
         // Simple inference: use provided argument types
         for (arg_types, 0..) |arg_type, i| {
             if (i < generic_decl.type_parameters.items.len) {
-                try inferred_types.append(arg_type);
+                try inferred_types.append(allocator, arg_type);
             }
         }
         
@@ -741,7 +745,7 @@ pub const RuntimeTypeEnvironment = struct {
         while (inferred_types.items.len < generic_decl.type_parameters.items.len) {
             const param = generic_decl.type_parameters.items[inferred_types.items.len];
             if (param.default_type) |default| {
-                try inferred_types.append(default);
+                try inferred_types.append(allocator, default);
             } else {
                 return error.CannotInferType;
             }
@@ -782,7 +786,7 @@ pub const RuntimeGenericEngine = struct {
     }
     
     pub fn deinit(self: *RuntimeGenericEngine) void {
-        self.instantiation_queue.deinit();
+        self.instantiation_queue.deinit(self.allocator);
     }
     
     /// Queue generic instantiation with priority
@@ -821,11 +825,11 @@ pub const RuntimeGenericEngine = struct {
     
     /// Batch instantiation for performance
     pub fn batchInstantiate(self: *RuntimeGenericEngine, requests: []InstantiationRequest) ![]RuntimeType {
-        var results = .empty;
+        var results = std.ArrayList(u8){};
         
         for (requests) |request| {
             const result = try self.type_env.instantiateGeneric(request.generic_name, request.type_args);
-            try results.append(result);
+            try results.append(allocator, result);
         }
         
         return results.toOwnedSlice();
@@ -891,7 +895,7 @@ test "runtime generic type system" {
     const clone_constraint = RuntimeConstraint.init(allocator, .Clone);
     try type_param.addConstraint(clone_constraint);
     
-    try generic_decl.type_parameters.append(type_param);
+    try generic_decl.type_parameters.append(allocator, type_param);
     
     std.log.info("Runtime generic type system test completed successfully", .{});
 }
@@ -911,7 +915,7 @@ test "runtime type instantiation test" {
     var type_param = RuntimeTypeParameter.init(allocator, "T", .Covariant);
     defer type_param.deinit();
     
-    try generic_decl.type_parameters.append(type_param);
+    try generic_decl.type_parameters.append(allocator, type_param);
     try type_env.registerGeneric(generic_decl);
     
     // Test instantiation with concrete type

@@ -19,7 +19,7 @@ pub const LoggerBenchmark = struct {
     }
     
     pub fn deinit(self: *LoggerBenchmark) void {
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
     
     /// Run comprehensive performance comparison
@@ -31,23 +31,23 @@ pub const LoggerBenchmark = struct {
         std.debug.print("\n", .{});
         
         for (test_sizes) |size| {
-            std.debug.print("\n📊 Testing with {} log entries:\n", .{size});
+            std.debug.print("\n📊 Testing with {s} log entries:\n", .{size});
             
             // Test 1: Optimized logger (pool bypassing)
             const optimized_result = try self.benchmarkOptimizedLogger(size);
-            try self.results.append(optimized_result);
+            try self.results.append(allocator, optimized_result);
             
             // Test 2: Standard logger (with memory pools)
             const standard_result = try self.benchmarkStandardLogger(size);
-            try self.results.append(standard_result);
+            try self.results.append(allocator, standard_result);
             
             // Test 3: Arena allocator baseline
             const arena_result = try self.benchmarkArenaLogger(size);
-            try self.results.append(arena_result);
+            try self.results.append(allocator, arena_result);
             
             // Test 4: Batch processing optimization
             const batch_result = try self.benchmarkBatchLogger(size);
-            try self.results.append(batch_result);
+            try self.results.append(allocator, batch_result);
             
             self.printComparisonResults(size, optimized_result, standard_result, arena_result, batch_result);
         }
@@ -274,7 +274,7 @@ pub const LoggerBenchmark = struct {
         batch_result: BenchmarkResult
     ) void {
         
-        std.debug.print("\n┌─ Results for {} iterations ─┐\n", .{iterations});
+        std.debug.print("\n┌─ Results for {s} iterations ─┐\n", .{iterations});
         std.debug.print("│ Method                 │ Throughput (ops/s) │ Latency (ns) │ Memory (MB) │ Speedup │\n", .{});
         std.debug.print("├────────────────────────┼────────────────────┼──────────────┼─────────────┼─────────┤\n", .{});
         
@@ -341,7 +341,7 @@ pub const LoggerBenchmark = struct {
         std.debug.print("🏆 Best Performance Metrics:\n", .{});
         std.debug.print("   • Highest Throughput: {d:.0} ops/second\n", .{best_throughput});
         std.debug.print("   • Lowest Latency: {d} nanoseconds\n", .{best_latency});
-        std.debug.print("   • Minimum Allocations: {} allocations\n", .{best_memory});
+        std.debug.print("   • Minimum Allocations: {s} allocations\n", .{best_memory});
         
         std.debug.print("\n🎯 Oracle Optimization Effectiveness:\n", .{});
         std.debug.print("   • Pool bypassing provides consistent performance gains\n", .{});
@@ -382,7 +382,7 @@ const MemoryPool = struct {
         for (self.allocated_blocks.items) |block| {
             self.allocator.free(block);
         }
-        self.allocated_blocks.deinit();
+        self.allocated_blocks.deinit(self.allocator);
     }
     
     fn allocate(self: *MemoryPool, size: usize) ![]u8 {
@@ -413,6 +413,7 @@ fn formatJsonStandard(buffer: []u8, iteration: usize) !usize {
 
 /// Main benchmark runner
 pub fn runLoggerBenchmarks(allocator: Allocator) !void {
+        _ = allocator;
     var benchmark = LoggerBenchmark.init(allocator);
     defer benchmark.deinit();
     
@@ -424,6 +425,7 @@ pub fn runLoggerBenchmarks(allocator: Allocator) !void {
 
 /// Stress test for high-throughput scenarios
 pub fn runStressTest(allocator: Allocator) !void {
+        _ = allocator;
     std.debug.print("\n🔥 High-Throughput Stress Test\n", .{});
     std.debug.print("=" ** 40);
     std.debug.print("\n", .{});
@@ -453,7 +455,7 @@ pub fn runStressTest(allocator: Allocator) !void {
             const current_time = timer.read();
             const elapsed_s = @as(f64, @floatFromInt(current_time - start_time)) / 1_000_000_000.0;
             const current_throughput = @as(f64, @floatFromInt(i)) / elapsed_s;
-            std.debug.print("📈 {} M entries processed, {d:.0} ops/sec\n", .{ i / 1_000_000, current_throughput });
+            std.debug.print("📈 {s} M entries processed, {d:.0} ops/sec\n", .{ i / 1_000_000, current_throughput });
         }
     }
     
@@ -464,10 +466,10 @@ pub fn runStressTest(allocator: Allocator) !void {
     const metrics = logger.getPerformanceMetrics();
     
     std.debug.print("\n🏁 Stress Test Results:\n", .{});
-    std.debug.print("   • Total Entries: {} million\n", .{test_iterations / 1_000_000});
+    std.debug.print("   • Total Entries: {s} million\n", .{test_iterations / 1_000_000});
     std.debug.print("   • Total Time: {d:.2f} seconds\n", .{total_time_s});
     std.debug.print("   • Throughput: {d:.0} ops/second\n", .{final_throughput});
-    std.debug.print("   • Avg Latency: {} nanoseconds\n", .{metrics.avg_format_time_ns});
+    std.debug.print("   • Avg Latency: {s} nanoseconds\n", .{metrics.avg_format_time_ns});
     std.debug.print("   • Total Data: {d:.2f} MB\n", .{@as(f64, @floatFromInt(metrics.bytes_written)) / (1024.0 * 1024.0)});
     
     std.debug.print("\n✅ Stress test demonstrates stable high-throughput performance\n", .{});

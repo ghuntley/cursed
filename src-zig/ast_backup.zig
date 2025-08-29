@@ -27,7 +27,7 @@ pub const AST = struct {
             i -= 1;
             self.expressions.items[i].deinit(self.allocator, self);
         }
-        self.expressions.deinit();
+        self.expressions.deinit(self.allocator);
 
         // Clean up all statements
         i = self.statements.items.len;
@@ -35,7 +35,7 @@ pub const AST = struct {
             i -= 1;
             self.statements.items[i].deinit(self.allocator, self);
         }
-        self.statements.deinit();
+        self.statements.deinit(self.allocator);
     }
 
     pub fn addExpression(self: *AST, expr: Expression) !NodeIndex {
@@ -51,7 +51,7 @@ pub const AST = struct {
     
     pub fn addStatement(self: *AST, stmt: Statement) !NodeIndex {
         const index = @as(NodeIndex, @intCast(self.statements.items.len));
-        try self.statements.append(stmt);
+        try self.statements.append(allocator, stmt);
         return index;
     }
 };
@@ -87,7 +87,7 @@ pub const CallExpression = struct {
 
     pub fn deinit(self: *CallExpression, allocator: Allocator, ast: *AST) void {
                 _ = ast;
-        self.arguments.deinit();
+        self.arguments.deinit(self.allocator);
     }
 };
 
@@ -184,6 +184,6 @@ pub const Program = struct {
     }
 
     pub fn deinit(self: *Program) void {
-        self.statements.deinit();
+        self.statements.deinit(self.allocator);
     }
 };

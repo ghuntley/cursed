@@ -21,18 +21,18 @@ pub fn main() !void {
     const current_platform = platform.Platform.current();
     std.debug.print("Platform Detection:\n", .{});
     std.debug.print("  Current platform: {s}\n", .{current_platform.name()});
-    std.debug.print("  Is Windows: {}\n", .{current_platform.isWindows()});
-    std.debug.print("  Is Unix: {}\n", .{current_platform.isUnix()});
-    std.debug.print("  Is WASM: {}\n", .{current_platform.isWasm()});
+    std.debug.print("  Is Windows: {s}\n", .{current_platform.isWindows()});
+    std.debug.print("  Is Unix: {s}\n", .{current_platform.isUnix()});
+    std.debug.print("  Is WASM: {s}\n", .{current_platform.isWasm()});
     std.debug.print("\n", .{});
     
     // Test platform capabilities
     std.debug.print("Platform Capabilities:\n", .{});
-    std.debug.print("  Threading: {}\n", .{platform.Capabilities.hasThreading()});
-    std.debug.print("  Networking: {}\n", .{platform.Capabilities.hasNetworking()});
-    std.debug.print("  File System: {}\n", .{platform.Capabilities.hasFileSystem()});
-    std.debug.print("  Process Control: {}\n", .{platform.Capabilities.hasProcessControl()});
-    std.debug.print("  High-res Timer: {}\n", .{platform.Capabilities.hasHighResTimer()});
+    std.debug.print("  Threading: {s}\n", .{platform.Capabilities.hasThreading()});
+    std.debug.print("  Networking: {s}\n", .{platform.Capabilities.hasNetworking()});
+    std.debug.print("  File System: {s}\n", .{platform.Capabilities.hasFileSystem()});
+    std.debug.print("  Process Control: {s}\n", .{platform.Capabilities.hasProcessControl()});
+    std.debug.print("  High-res Timer: {s}\n", .{platform.Capabilities.hasHighResTimer()});
     std.debug.print("\n", .{});
     
     // Test time operations
@@ -41,12 +41,12 @@ pub fn main() !void {
     platform.TimeOps.sleepMs(10);
     const time2 = platform.TimeOps.TimeStamp.now();
     
-    std.debug.print("  Start time: {}ms\n", .{time1.toMillis()});
-    std.debug.print("  End time: {}ms\n", .{time2.toMillis()});
-    std.debug.print("  Duration: {}ms\n", .{time2.toMillis() - time1.toMillis()});
+    std.debug.print("  Start time: {s}ms\n", .{time1.toMillis()});
+    std.debug.print("  End time: {s}ms\n", .{time2.toMillis()});
+    std.debug.print("  Duration: {s}ms\n", .{time2.toMillis() - time1.toMillis()});
     
     const nano_time = platform.TimeOps.nanoTime();
-    std.debug.print("  Nano time: {}\n", .{nano_time});
+    std.debug.print("  Nano time: {s}\n", .{nano_time});
     std.debug.print("\n", .{});
     
     // Test path operations
@@ -58,7 +58,7 @@ pub fn main() !void {
     std.debug.print("  Dirname: {s}\n", .{platform.PathOps.dirname(test_path)});
     std.debug.print("  Basename: {s}\n", .{platform.PathOps.basename(test_path)});
     std.debug.print("  Extension: {s}\n", .{platform.PathOps.extension(test_path)});
-    std.debug.print("  Is absolute: {}\n", .{platform.PathOps.isAbsolute(test_path)});
+    std.debug.print("  Is absolute: {s}\n", .{platform.PathOps.isAbsolute(test_path)});
     
     // Test path joining
     const path_parts = [_][]const u8{ "home", "user", "documents", "file.txt" };
@@ -77,7 +77,7 @@ pub fn main() !void {
         // Test environment variables
         if (platform.ProcessOps.getEnv(allocator, "PATH")) |path_env| {
             defer allocator.free(path_env);
-            std.debug.print("  PATH env var length: {}\n", .{path_env.len});
+            std.debug.print("  PATH env var length: {s}\n", .{path_env.len});
         } else {
             std.debug.print("  PATH env var not found\n", .{});
         }
@@ -87,7 +87,7 @@ pub fn main() !void {
             defer allocator.free(cwd);
             std.debug.print("  Current directory: {s}\n", .{cwd});
         } else |err| {
-            std.debug.print("  Failed to get current directory: {}\n", .{err});
+            std.debug.print("  Failed to get current directory: {s}\n", .{err});
         }
         
         std.debug.print("\n", .{});
@@ -103,34 +103,34 @@ pub fn main() !void {
         
         // Write test file
         const write_handle = platform.FileOps.openFile(test_file_path, .write) catch |err| {
-            std.debug.print("  Failed to open file for writing: {}\n", .{err});
+            std.debug.print("  Failed to open file for writing: {s}\n", .{err});
             return;
         };
         
         const bytes_written = platform.FileOps.writeFile(write_handle, test_content) catch |err| {
             platform.FileOps.closeFile(write_handle);
-            std.debug.print("  Failed to write to file: {}\n", .{err});
+            std.debug.print("  Failed to write to file: {s}\n", .{err});
             return;
         };
         
         platform.FileOps.closeFile(write_handle);
-        std.debug.print("  Wrote {} bytes to {s}\n", .{ bytes_written, test_file_path });
+        std.debug.print("  Wrote {s} bytes to {s}\n", .{ bytes_written, test_file_path });
         
         // Read test file
         const read_handle = platform.FileOps.openFile(test_file_path, .read) catch |err| {
-            std.debug.print("  Failed to open file for reading: {}\n", .{err});
+            std.debug.print("  Failed to open file for reading: {s}\n", .{err});
             return;
         };
         
         var read_buffer: [1024]u8 = undefined;
         const bytes_read = platform.FileOps.readFile(read_handle, &read_buffer) catch |err| {
             platform.FileOps.closeFile(read_handle);
-            std.debug.print("  Failed to read from file: {}\n", .{err});
+            std.debug.print("  Failed to read from file: {s}\n", .{err});
             return;
         };
         
         platform.FileOps.closeFile(read_handle);
-        std.debug.print("  Read {} bytes from {s}\n", .{ bytes_read, test_file_path });
+        std.debug.print("  Read {s} bytes from {s}\n", .{ bytes_read, test_file_path });
         std.debug.print("  Content: {s}\n", .{read_buffer[0..bytes_read]});
         
         // Clean up test file
@@ -145,7 +145,7 @@ pub fn main() !void {
         
         // Test socket creation
         const socket = platform.NetworkOps.createSocket(.tcp) catch |err| {
-            std.debug.print("  Failed to create socket: {}\n", .{err});
+            std.debug.print("  Failed to create socket: {s}\n", .{err});
             return;
         };
         
@@ -154,7 +154,7 @@ pub fn main() !void {
         // Test socket binding (use high port to avoid permission issues)
         const test_port: u16 = 0; // Let OS choose port
         platform.NetworkOps.bindSocket(socket, test_port) catch |err| {
-            std.debug.print("  Failed to bind socket: {}\n", .{err});
+            std.debug.print("  Failed to bind socket: {s}\n", .{err});
             platform.NetworkOps.closeSocket(socket);
             return;
         };

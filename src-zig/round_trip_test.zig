@@ -35,7 +35,7 @@ pub fn testRoundTrip(allocator: Allocator, source: []const u8) RoundTripError!vo
     defer program.deinit();
 
     // Step 2: Pretty-print AST back to source
-    var pretty_printed = .empty;
+    var pretty_printed = std.ArrayList(u8){};
     defer pretty_printed.deinit();
     
     try prettyPrintProgram(&pretty_printed, program);
@@ -144,6 +144,7 @@ fn programsEqual(p1: Program, p2: Program) bool {
 
 /// Test canonical syntax forms
 pub fn testCanonicalSyntax(allocator: Allocator) !void {
+        _ = allocator;
     const test_cases = [_][]const u8{
         // Canonical return statement
         "slay test() { damn 42 }",
@@ -173,6 +174,7 @@ pub fn testCanonicalSyntax(allocator: Allocator) !void {
 
 /// Test rejection of non-canonical syntax
 pub fn testRejectNonCanonical(allocator: Allocator) !void {
+        _ = allocator;
     const rejected_cases = [_][]const u8{
         // Deprecated return keywords
         "slay test() { yolo 42 }", // Should reject 'yolo', use 'damn'

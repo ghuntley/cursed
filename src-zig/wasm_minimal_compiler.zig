@@ -11,7 +11,7 @@ export fn main() void {
 
 export fn interpret_cursed(source_ptr: [*]const u8, source_len: usize) void {
     const source = source_ptr[0..source_len];
-    std.debug.print("Interpreting CURSED source ({} bytes)\n", .{source.len});
+    std.debug.print("Interpreting CURSED source ({s} bytes)\n", .{source.len});
     
     // Basic WASM-compatible interpretation
     var i: usize = 0;

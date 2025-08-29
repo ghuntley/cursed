@@ -29,17 +29,17 @@ pub const SimpleDirectCompiler = struct {
         if (verbose) print("🔧 Generating LLVM IR header...\n", .{});
         
         // LLVM IR header
-        try writer.writeAll("; ModuleID = 'cursed_program'\n");
-        try writer.writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
-        try writer.writeAll("target triple = \"x86_64-pc-linux-gnu\"\n\n");
+        try writer.writer().writeAll("; ModuleID = 'cursed_program'\n");
+        try writer.writer().writeAll("target datalayout = \"e-m:e-p270:32:32-p271:32:32-p272:64:64-i64:64-f80:128-n8:16:32:64-S128\"\n");
+        try writer.writer().writeAll("target triple = \"x86_64-pc-linux-gnu\"\n\n");
         
         // String constants section
-        try writer.writeAll("; String constants\n");
+        try writer.writer().writeAll("; String constants\n");
         
         // Main function header
-        try writer.writeAll("\n; Main function\n");
-        try writer.writeAll("define i32 @main() {\n");
-        try writer.writeAll("entry:\n");
+        try writer.writer().writeAll("\n; Main function\n");
+        try writer.writer().writeAll("define i32 @main() {\n");
+        try writer.writer().writeAll("entry:\n");
         
         if (verbose) print("🔧 Processing CURSED source line by line...\n", .{});
         
@@ -68,7 +68,7 @@ pub const SimpleDirectCompiler = struct {
                 continue;
             }
             
-            if (verbose) print("  Processing line {}: {s}\n", .{ line_num, trimmed });
+            if (verbose) print("  Processing line {s}: {s}\n", .{ line_num, trimmed });
             
             // Skip imports and variable declarations (already processed)
             if (std.mem.startsWith(u8, trimmed, "yeet ") or std.mem.startsWith(u8, trimmed, "sus ")) {
@@ -83,12 +83,12 @@ pub const SimpleDirectCompiler = struct {
         }
         
         // Function footer
-        try writer.writeAll("  ret i32 0\n");
-        try writer.writeAll("}\n\n");
+        try writer.writer().writeAll("  ret i32 0\n");
+        try writer.writer().writeAll("}\n\n");
         
         // Add printf declaration
-        try writer.writeAll("; External function declarations\n");
-        try writer.writeAll("declare i32 @printf(i8*, ...)\n");
+        try writer.writer().writeAll("; External function declarations\n");
+        try writer.writer().writeAll("declare i32 @printf(i8*, ...)\n");
         
         if (verbose) print("✅ LLVM IR generation completed\n", .{});
     }
@@ -111,7 +111,7 @@ pub const SimpleDirectCompiler = struct {
         
         // Parse value - simple integer for now
         if (std.fmt.parseInt(i64, value_str, 10)) |int_val| {
-            try writer.print("  store i64 {}, i64* %{s}, align 8\n", .{ int_val, var_name });
+            try writer.print("  store i64 {s}, i64* %{s}, align 8\n", .{ int_val, var_name });
         } else |_| {
             // Default to 0 for complex expressions
             try writer.print("  store i64 0, i64* %{s}, align 8\n", .{var_name});
@@ -193,7 +193,7 @@ pub const SimpleDirectCompiler = struct {
         self.string_counter += 1;
         
         // Generate printf call
-        try writer.writeAll("  ; String constant for printf\n");
+        try writer.writer().writeAll("  ; String constant for printf\n");
         try writer.print("  %call{} = call i32 (i8*, ...) @printf(i8* getelementptr inbounds ([{} x i8], [{} x i8]* @{s}, i32 0, i32 0))\n",
             .{ self.string_counter, str_content.len + 1, str_content.len + 1, str_name }
         );
@@ -237,7 +237,7 @@ pub const SimpleDirectCompiler = struct {
         try self.addGlobalString(str_name, format_string);
         
         // Generate printf call
-        try writer.writeAll("  ; Multi-argument printf call\n");
+        try writer.writer().writeAll("  ; Multi-argument printf call\n");
         
         if (printf_args.items.len == 0) {
             // No variable arguments, just format string
@@ -259,8 +259,8 @@ pub const SimpleDirectCompiler = struct {
                 try call_writer.print(", i64 %{s}", .{var_name});
             }
             
-            try call_writer.writeAll(")\n");
-            try writer.writeAll(printf_call.items);
+            try call_writer.writer().writeAll(")\n");
+            try writer.writer().writeAll(printf_call.items);
         }
     }
     
@@ -292,7 +292,7 @@ pub const SimpleDirectCompiler = struct {
     pub fn writeToFile(self: *SimpleDirectCompiler, filename: []const u8) !void {
         var file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
-        try file.writeAll(self.ir_buffer.items);
+        try file.writer().writeAll(self.ir_buffer.items);
     }
     
     /// Get the generated IR as string

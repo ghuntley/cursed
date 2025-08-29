@@ -302,6 +302,7 @@ pub const AttributeIntegrationError = error{
 
 /// Testing utilities
 pub fn createTestIntegration(allocator: Allocator) AttributeIntegration {
+        _ = allocator;
     return AttributeIntegration.init(allocator);
 }
 

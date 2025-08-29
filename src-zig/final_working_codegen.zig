@@ -23,6 +23,7 @@ pub const FinalWorkingCodeGen = struct {
     current_function: ?c.LLVMValueRef,
     
     pub fn init(allocator: Allocator) !FinalWorkingCodeGen {
+        _ = allocator;
         // Initialize LLVM core
         c.LLVMInitializeCore(c.LLVMGetGlobalPassRegistry());
         _ = c.LLVMInitializeNativeTarget();
@@ -37,7 +38,7 @@ pub const FinalWorkingCodeGen = struct {
             .allocator = allocator,
             .ir_buffer = .empty,
             .string_constants = .empty,
-            .variables = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .context = context,
             .module = module,
             .builder = builder,
@@ -49,9 +50,9 @@ pub const FinalWorkingCodeGen = struct {
         std.debug.print("🧹 Starting FinalWorkingCodeGen cleanup (memory-safe)...\n", .{});
         
         // Clean up Zig data structures first
-        self.ir_buffer.deinit();
-        self.string_constants.deinit();
-        self.variables.deinit();
+        self.ir_buffer.deinit(self.allocator);
+        self.string_constants.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
         
         // Critical: Cleanup LLVM resources in proper order
         // Builder depends on context, module depends on context
@@ -135,7 +136,7 @@ pub const FinalWorkingCodeGen = struct {
         const file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
         
-        try file.writeAll(self.ir_buffer.items);
+        try file.writer().writeAll(self.ir_buffer.items);
     }
 
     /// Compile IR to executable using clang
@@ -153,7 +154,7 @@ pub const FinalWorkingCodeGen = struct {
         
         var child = std.process.Child.init(&[_][]const u8{ "sh", "-c", clang_cmd }, self.allocator);
         const result = child.spawnAndWait() catch |err| {
-            std.debug.print("Failed to run clang: {}\n", .{err});
+            std.debug.print("Failed to run clang: {s}\n", .{err});
             return;
         };
         
@@ -162,7 +163,7 @@ pub const FinalWorkingCodeGen = struct {
                 if (code == 0) {
                     std.debug.print("Successfully compiled to: {s}\n", .{output_path});
                 } else {
-                    std.debug.print("Clang failed with exit code: {}\n", .{code});
+                    std.debug.print("Clang failed with exit code: {s}\n", .{code});
                 }
             },
             else => {
@@ -318,7 +319,7 @@ pub const FinalWorkingCodeGen = struct {
         // Position builder at end block for continuation
         c.LLVMPositionBuilderAtEnd(self.builder, end_block);
         
-        std.debug.print("✅ Pattern switch statement compiled with {} cases\n", .{pattern_stmt.patterns.items.len});
+        std.debug.print("✅ Pattern switch statement compiled with {s} cases\n", .{pattern_stmt.patterns.items.len});
     }
 
     /// Generate pattern matching test logic for different pattern types
@@ -339,9 +340,7 @@ pub const FinalWorkingCodeGen = struct {
                 _ = c.LLVMBuildStore(self.builder, match_value, var_alloca);
                 _ = c.LLVMBuildBr(self.builder, success_block);
             },
-            .Tuple => |tuple_patterns| {
-                // Tuple destructuring (simplified implementation)
-                for (tuple_patterns.items, 0..) |sub_pattern, i| {
+             0..) |sub_pattern, i| {
                     const element_ptr = c.LLVMBuildStructGEP2(
                         self.builder,
                         c.LLVMTypeOf(match_value),

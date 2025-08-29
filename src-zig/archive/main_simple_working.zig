@@ -38,13 +38,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {s}\n", .{{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -53,14 +53,14 @@ pub fn main() !void {
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("Lexer error: {}\n", .{err});
+        print("Lexer error: {s}\n", .{{err});
         return;
     };
 
     if (debug_mode) {
         print("=== TOKENS ===\n", .{});
         for (tokens.items) |token| {
-            print("{}: '{s}'\n", .{ token.kind, token.lexeme });
+            print("{s}: '{s}'\n", .{{ token.kind, token.lexeme });
         }
         print("\n", .{});
     }
@@ -70,13 +70,13 @@ pub fn main() !void {
     defer p.deinit();
 
     const program = p.parseProgram() catch |err| {
-        print("Parser error: {}\n", .{err});
+        print("Parser error: {s}\n", .{{err});
         return;
     };
 
     if (debug_mode) {
         print("=== AST ===\n", .{});
-        print("Program with {} statements\n", .{program.statements.items.len});
+        print("Program with {s} statements\n", .{{program.statements.items.len});
         print("\n", .{});
     }
 
@@ -85,15 +85,15 @@ pub fn main() !void {
         const output_name = try getOutputName(allocator, filename);
         defer allocator.free(output_name);
         
-        print("🔧 Compiling '{}' to executable '{}'\n", .{ filename, output_name });
-        print("📝 Found {} statements in AST\n", .{program.statements.items.len});
+        print("🔧 Compiling '{s}' to executable '{s}'\n", .{{ filename, output_name });
+        print("📝 Found {s} statements in AST\n", .{{program.statements.items.len});
         
         // Create a simple output file
         const output_file = try std.fs.cwd().createFile(output_name, .{});
         defer output_file.close();
         
         // Write basic shell script that prints hello world
-        try output_file.writeAll("#!/bin/bash\necho \"Hello from CURSED!\"\n");
+        try output_file.writer().writeAll("#!/bin/bash\necho \"Hello from CURSED!\"\n");
         
         // Make executable
         try std.fs.cwd().chmod(output_name, 0o755);

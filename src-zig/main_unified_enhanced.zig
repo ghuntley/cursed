@@ -82,7 +82,7 @@ pub fn main() !void {
     // Add source file to error reporter for context
     try error_reporter.addSourceFile(filename, source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize with enhanced error reporting
     var lexer_instance = enhanced_lexer.Lexer.init(allocator, source, filename, &error_reporter) catch |err| {
@@ -99,12 +99,12 @@ pub fn main() !void {
     };
     defer allocator.free(tokens);
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.len});
 
     if (debug_mode) {
         print("=== TOKENS ===\n", .{});
         for (tokens) |token| {
-            print("{any}: '{s}' at {}:{}\n", .{ 
+            print("{any}: '{s}' at {s}:{s}\n", .{ 
                 token.kind, 
                 token.lexeme, 
                 token.location.line, 
@@ -125,7 +125,7 @@ pub fn main() !void {
     };
     defer program.deinit();
 
-    if (verbose) print("✅ Parsed program with {} statements\n", .{program.statements.items.len});
+    if (verbose) print("✅ Parsed program with {s} statements\n", .{program.statements.items.len});
 
     // Check if there were any errors during compilation
     if (error_reporter.hasErrors()) {

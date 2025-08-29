@@ -67,10 +67,10 @@ pub const OptimizedCompiler = struct {
         if (self.parallel_compiler) |*pc| {
             pc.deinit();
         }
-        self.compilation_cache.deinit();
-        self.llvm_optimizer.deinit();
-        self.performance_optimizer.deinit();
-        self.arena_allocator.deinit();
+        self.compilation_cache.deinit(self.allocator);
+        self.llvm_optimizer.deinit(self.allocator);
+        self.performance_optimizer.deinit(self.allocator);
+        self.arena_allocator.deinit(self.allocator);
     }
     
     /// Compile single file with all optimizations enabled
@@ -357,7 +357,7 @@ pub const OptimizedCompiler = struct {
     
     /// Generate optimization recommendations
     fn generateOptimizationRecommendations(self: *OptimizedCompiler) ![]OptimizationRecommendation {
-        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
+        var recommendations = std.ArrayList(OptimizationRecommendation){};
         
         // Analyze cache hit rate
         const cache_stats = self.compilation_cache.getCacheStatistics();

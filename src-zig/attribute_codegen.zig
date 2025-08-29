@@ -47,22 +47,22 @@ pub const AttributeCodeGen = struct {
         return AttributeCodeGen{
             .allocator = allocator,
             .base_codegen = base_codegen,
-            .function_attributes_cache = HashMap([]const u8, ProcessedFunctionAttributes, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .struct_attributes_cache = HashMap([]const u8, ProcessedStructAttributes, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_attributes_cache = HashMap([]const u8, ProcessedFunctionAttributes, StringContext, std.hash_map.default_max_load_percentage){},
+            .struct_attributes_cache = HashMap([]const u8, ProcessedStructAttributes, StringContext, std.hash_map.default_max_load_percentage){},
             .inline_candidates = .empty,
             .hot_functions = .empty,
             .cold_functions = .empty,
-            .exported_functions = HashMap([]const u8, []const u8, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .exported_functions = HashMap([]const u8, []const u8, StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *AttributeCodeGen) void {
-        self.function_attributes_cache.deinit();
-        self.struct_attributes_cache.deinit();
-        self.inline_candidates.deinit();
-        self.hot_functions.deinit();
-        self.cold_functions.deinit();
-        self.exported_functions.deinit();
+        self.function_attributes_cache.deinit(self.allocator);
+        self.struct_attributes_cache.deinit(self.allocator);
+        self.inline_candidates.deinit(self.allocator);
+        self.hot_functions.deinit(self.allocator);
+        self.cold_functions.deinit(self.allocator);
+        self.exported_functions.deinit(self.allocator);
     }
     
     /// Process function attributes and apply code generation modifications
@@ -77,13 +77,13 @@ pub const AttributeCodeGen = struct {
         
         // Update optimization lists
         if (processed.should_inline) {
-            try self.inline_candidates.append(func.name);
+            try self.inline_candidates.append(allocator, func.name);
         }
         
         if (processed.performance_level) |level| {
             switch (level) {
-                .High => try self.hot_functions.append(func.name),
-                .Low => try self.cold_functions.append(func.name),
+                .High => try self.hot_functions.append(allocator, func.name),
+                .Low => try self.cold_functions.append(allocator, func.name),
                 .Medium => {}, // Default optimization
             }
         }

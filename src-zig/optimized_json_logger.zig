@@ -40,6 +40,7 @@ pub const OptimizedJsonLogger = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         const direct_allocator = std.heap.GeneralPurposeAllocator(.{}){};
         
         const buffer_capacity = 10000; // High-throughput buffer
@@ -74,9 +75,9 @@ pub const OptimizedJsonLogger = struct {
         }
         self.allocator.free(self.message_buffer);
         
-        self.json_template_cache.deinit();
-        self.batch_buffer.deinit();
-        _ = self.direct_allocator.deinit();
+        self.json_template_cache.deinit(self.allocator);
+        self.batch_buffer.deinit(self.allocator);
+        _ = self.direct_allocator.deinit(self.allocator);
     }
     
     /// Ultra-fast JSON formatting bypassing memory pools
@@ -368,12 +369,12 @@ const JsonTemplateCache = struct {
     fn init(allocator: Allocator) !JsonTemplateCache {
         return JsonTemplateCache{
             .allocator = allocator,
-            .templates = HashMap(u32, []const u8).init(allocator),
+            .templates = HashMap(u32, []const u8){},
         };
     }
     
     fn deinit(self: *JsonTemplateCache) void {
-        self.templates.deinit();
+        self.templates.deinit(self.allocator);
     }
     
     fn getTemplate(self: *JsonTemplateCache, level: LogLevel, attr_count: usize) []const u8 {

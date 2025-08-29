@@ -139,7 +139,7 @@ pub const TypeInfo = struct {
     
     pub fn makeStruct(allocator: Allocator, name: []const u8) !*TypeInfo {
         const struct_info = try TypeInfo.init(allocator, .Struct, name);
-        struct_info.struct_fields = ArrayList(StructField).init(allocator);
+        struct_info.struct_fields = ArrayList(StructField){};
         return struct_info;
     }
 };
@@ -181,6 +181,7 @@ pub const SymbolTable = struct {
     };
     
     pub fn init(allocator: Allocator) SymbolTable {
+        _ = allocator;
         var table = SymbolTable{
             .scopes = ArrayList(HashMap([]const u8, Variable, StringContext, std.hash_map.default_max_load_percentage)).init(allocator),
             .current_scope_level = 0,
@@ -188,8 +189,8 @@ pub const SymbolTable = struct {
         };
         
         // Create global scope
-        const global_scope = HashMap([]const u8, Variable, StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-        table.scopes.append(global_scope) catch unreachable;
+        const global_scope = HashMap([]const u8, Variable, StringContext, std.hash_map.default_max_load_percentage){};
+        table.scopes.append(allocator, global_scope) catch unreachable;
         
         return table;
     }
@@ -203,12 +204,12 @@ pub const SymbolTable = struct {
             }
             scope.deinit();
         }
-        self.scopes.deinit();
+        self.scopes.deinit(self.allocator);
     }
     
     pub fn enterScope(self: *SymbolTable) !void {
-        const new_scope = HashMap([]const u8, Variable, StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
-        try self.scopes.append(new_scope);
+        const new_scope = HashMap([]const u8, Variable, StringContext, std.hash_map.default_max_load_percentage){};
+        try self.scopes.append(allocator, new_scope);
         self.current_scope_level += 1;
     }
     
@@ -323,10 +324,11 @@ pub const SimpleTypeChecker = struct {
     };
     
     pub fn init(allocator: Allocator) SimpleTypeChecker {
+        _ = allocator;
         var checker = SimpleTypeChecker{
             .symbol_table = SymbolTable.init(allocator),
-            .type_registry = HashMap([]const u8, *TypeInfo, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .errors = ArrayList(TypeCheckError).init(allocator),
+            .type_registry = HashMap([]const u8, *TypeInfo, StringContext, std.hash_map.default_max_load_percentage){},
+            .errors = ArrayList(TypeCheckError){},
             .allocator = allocator,
         };
         
@@ -345,16 +347,16 @@ pub const SimpleTypeChecker = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.*.deinit();
         }
-        self.type_registry.deinit();
+        self.type_registry.deinit(self.allocator);
         
         // Clean up errors
         for (self.errors.items) |*error_item| {
             error_item.deinit();
         }
-        self.errors.deinit();
+        self.errors.deinit(self.allocator);
         
         // Clean up symbol table
-        self.symbol_table.deinit();
+        self.symbol_table.deinit(self.allocator);
     }
     
     fn registerBuiltinTypes(self: *SimpleTypeChecker) !void {
@@ -391,7 +393,7 @@ pub const SimpleTypeChecker = struct {
                 .is_public = true, // Simplified: all fields public
             };
             
-            try struct_info.struct_fields.?.append(struct_field);
+            try struct_info.struct_fields.?.append(allocator, struct_field);
         }
         
         const name_copy = try self.allocator.dupe(u8, name);
@@ -555,7 +557,7 @@ pub const SimpleTypeChecker = struct {
     
     fn addError(self: *SimpleTypeChecker, kind: TypeCheckError.ErrorKind, message: []const u8) !void {
         const error_item = try TypeCheckError.init(self.allocator, kind, message);
-        try self.errors.append(error_item);
+        try self.errors.append(allocator, error_item);
     }
     
     pub fn hasErrors(self: *SimpleTypeChecker) bool {

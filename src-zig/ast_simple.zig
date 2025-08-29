@@ -10,8 +10,7 @@ pub const Program = struct {
     arena: std.heap.ArenaAllocator,
 
     pub fn init(backing_allocator: Allocator) Program {
-        var arena = std.heap.ArenaAllocator.init(backing_allocator);
-        const arena_allocator = arena.allocator();
+        const arena = std.heap.ArenaAllocator.init(backing_allocator);
         
         return Program{
             .statements = .empty,
@@ -44,7 +43,7 @@ pub const Program = struct {
         }
         
         for (self.statements.items, 0..) |stmt, i| {
-            std.debug.print("{s}  Statement {}: {s}\n", .{ spaces[0..indent], i, @tagName(stmt.*) });
+            std.debug.print("{s}  Statement {d}: {s}\n", .{ spaces[0..indent], i, @tagName(stmt.*) });
         }
     }
 };
@@ -149,6 +148,7 @@ pub const FunctionStatement = struct {
     type_parameters: ArrayList(TypeParameter),
 
     pub fn init(allocator: Allocator, name: []const u8) FunctionStatement {
+        _ = allocator;
         return FunctionStatement{
             .name = name,
             .parameters = .empty,

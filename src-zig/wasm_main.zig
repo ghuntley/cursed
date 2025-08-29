@@ -17,7 +17,7 @@ export fn cursed_compile(source_ptr: [*]const u8, source_len: usize) i32 {
     var tokens = lex.tokenize() catch {
         return -1; // Error code
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     // For WASM, just return success for now
     return 0;

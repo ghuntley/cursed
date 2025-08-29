@@ -25,7 +25,7 @@ const FinalLSPServer = struct {
     pub fn init(allocator: std.mem.Allocator) Self {
         return Self{
             .allocator = allocator,
-            .documents = HashMap([]const u8, DocumentData, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, DocumentData, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -227,7 +227,7 @@ const FinalLSPServer = struct {
         try writer.print(response, .{id});
         
         for (completions, 0..) |completion, i| {
-            if (i > 0) try writer.writeAll(",");
+            if (i > 0) try writer.writer().writeAll(",");
             try writer.print(
                 \\{{
                 \\  "label": "{s}",
@@ -238,7 +238,7 @@ const FinalLSPServer = struct {
             , .{ completion, completion });
         }
         
-        try writer.writeAll("    ]\n  }\n}");
+        try writer.writer().writeAll("    ]\n  }\n}");
         
         const content_end = try writer.context.getPos();
         const content_length = content_end - content_start;

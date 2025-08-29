@@ -29,7 +29,7 @@ pub const DiagnosticLexer = struct {
     }
     
     pub fn deinit(self: *DiagnosticLexer) void {
-        self.lexer.deinit();
+        self.lexer.deinit(self.allocator);
     }
     
     pub fn nextToken(self: *DiagnosticLexer) !?Token {

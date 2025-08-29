@@ -233,7 +233,7 @@ pub const OptimizationController = struct {
     
     /// Apply optimization passes to LLVM module based on level
     pub fn applyOptimizations(self: *Self, llvm_module: anytype) !void {
-        print("🚀 Applying {} optimization passes...\n", .{self.level.toString()});
+        print("🚀 Applying {s} optimization passes...\n", .{self.level.toString()});
         
         const c = @import("llvm_c_api.zig");
         
@@ -270,7 +270,7 @@ pub const OptimizationController = struct {
         // Run the passes
         try self.runOptimizationPasses(llvm_module, function_pass_manager, module_pass_manager);
         
-        print("✅ {} optimization passes completed\n", .{self.level.toString()});
+        print("✅ {s} optimization passes completed\n", .{self.level.toString()});
     }
     
     fn addBasicPasses(self: *Self, fpm: anytype, mpm: anytype) !void {
@@ -305,7 +305,7 @@ pub const OptimizationController = struct {
         c.LLVMAddInstructionCombiningPass(fpm);
         c.LLVMAddCFGSimplificationPass(fpm);
         
-        print("  📈 Added inlining passes (threshold: {})\n", .{self.config.inline_threshold});
+        print("  📈 Added inlining passes (threshold: {s})\n", .{self.config.inline_threshold});
     }
     
     fn addLoopOptimizationPasses(self: *Self, fpm: anytype) !void {
@@ -419,7 +419,7 @@ pub const OptimizationController = struct {
             return error.ModuleVerificationFailed;
         }
         
-        print("  ✅ Processed {} functions successfully\n", .{functions_processed});
+        print("  ✅ Processed {s} functions successfully\n", .{functions_processed});
         _ = self; // Suppress unused variable warning
     }
     
@@ -461,10 +461,10 @@ pub fn testOptimizationController() !void {
         var controller = OptimizationController.init(allocator, level);
         
         print("\n📊 Level {s}:\n", .{level.toString()});
-        print("  Inlining threshold: {}\n", .{controller.config.inline_threshold});
-        print("  Loop unrolling: {}\n", .{controller.config.enable_loop_unroll});
-        print("  Vectorization: {}\n", .{controller.config.enable_slp_vectorize});
-        print("  Size optimization: {}\n", .{controller.config.optimize_for_size});
+        print("  Inlining threshold: {s}\n", .{controller.config.inline_threshold});
+        print("  Loop unrolling: {s}\n", .{controller.config.enable_loop_unroll});
+        print("  Vectorization: {s}\n", .{controller.config.enable_slp_vectorize});
+        print("  Size optimization: {s}\n", .{controller.config.optimize_for_size});
         print("  Estimated speedup: {d:.1}x\n", .{controller.getEstimatedSpeedup()});
         print("  Estimated size: {d:.0}% of original\n", .{controller.getEstimatedSizeReduction() * 100});
     }

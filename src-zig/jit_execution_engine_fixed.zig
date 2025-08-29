@@ -39,6 +39,7 @@ pub const JITExecutionEngine = struct {
     const DEFAULT_MEMORY_BUDGET = 100 * 1024 * 1024; // 100MB
     
     pub fn init(allocator: Allocator) !JITExecutionEngine {
+        _ = allocator;
         return initWithBudget(allocator, DEFAULT_MEMORY_BUDGET);
     }
     
@@ -54,7 +55,7 @@ pub const JITExecutionEngine = struct {
             return err;
         };
         
-        const functions = HashMap([]const u8, ast.FunctionStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator);
+        const functions = HashMap([]const u8, ast.FunctionStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         
         return JITExecutionEngine{
             .allocator = allocator,
@@ -73,7 +74,7 @@ pub const JITExecutionEngine = struct {
     
     pub fn deinit(self: *JITExecutionEngine) void {
         // Arena allocator automatically frees all memory
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     /// Execute CURSED source code with proper memory management
@@ -87,18 +88,18 @@ pub const JITExecutionEngine = struct {
         // Lexer cleanup is handled by arena
         
         const tokens = lex.tokenize() catch |err| {
-            print("Lexer error: {}\n", .{err});
+            print("Lexer error: {s}\n", .{err});
             return err;
         };
         
         var parse = parser.Parser.init(exec_allocator, tokens) catch |err| {
-            print("Parser init error: {}\n", .{err});
+            print("Parser init error: {s}\n", .{err});
             return err;
         };
         // Parser cleanup is handled by arena
         
         const program = parse.parseProgram() catch |err| {
-            print("Parse error: {}\n", .{err});
+            print("Parse error: {s}\n", .{err});
             return err;
         };
         // Program cleanup is handled by arena
@@ -124,7 +125,7 @@ pub const JITExecutionEngine = struct {
                     const func = func_ptr.*;
                     // Duplicate function name in our arena to ensure lifetime
                     const func_name = self.arena_allocator.dupe(u8, func.name) catch |err| {
-                        print("Memory allocation failed for function name: {}\n", .{err});
+                        print("Memory allocation failed for function name: {s}\n", .{err});
                         return err;
                     };
                     
@@ -133,7 +134,7 @@ pub const JITExecutionEngine = struct {
                     func_copy.name = func_name;
                     
                     self.functions.put(func_name, func_copy) catch |err| {
-                        print("Failed to register function '{}': {}\n", .{func_name, err});
+                        print("Failed to register function '{s}': {s}\n", .{func_name, err});
                         return err;
                     };
                 },
@@ -144,7 +145,7 @@ pub const JITExecutionEngine = struct {
         // Second pass: execute statements with error recovery
         for (program.statements.items) |stmt| {
             self.executeStatement(stmt) catch |err| {
-                print("Statement execution error: {}\n", .{err});
+                print("Statement execution error: {s}\n", .{err});
                 // Continue with other statements for error recovery
                 continue;
             };
@@ -163,7 +164,7 @@ pub const JITExecutionEngine = struct {
         if (self.functions.get(name)) |func| {
             _ = try self.callFunction(func, &[_]Value{});
         } else {
-            print("Function '{}' not found\n", .{name});
+            print("Function '{s}' not found\n", .{name});
             return error.FunctionNotFound;
         }
     }
@@ -194,7 +195,7 @@ pub const JITExecutionEngine = struct {
                 // Functions are collected in first pass, skip here
             },
             else => {
-                print("Unsupported statement: {}\n", .{@tagName(stmt)});
+                print("Unsupported statement: {s}\n", .{@tagName(stmt)});
                 return error.UnsupportedStatement;
             },
         }
@@ -269,7 +270,7 @@ pub const JITExecutionEngine = struct {
             .String => |str_ptr| {
                 // Create a safe copy of the string in our arena
                 const safe_str = self.arena_allocator.dupe(u8, str_ptr.value) catch |err| {
-                    print("Failed to allocate string: {}\n", .{err});
+                    print("Failed to allocate string: {s}\n", .{err});
                     return err;
                 };
                 return Value{ .String = safe_str };
@@ -282,13 +283,13 @@ pub const JITExecutionEngine = struct {
             },
             .Identifier => |ident_ptr| {
                 return self.current_env.get(ident_ptr.name) catch |err| {
-                    print("Identifier '{}' not found: {}\n", .{ident_ptr.name, err});
+                    print("Identifier '{s}' not found: {s}\n", .{ident_ptr.name, err});
                     return err;
                 };
             },
             .Variable => |var_ptr| {
                 return self.current_env.get(var_ptr.name) catch |err| {
-                    print("Variable '{}' not found: {}\n", .{var_ptr.name, err});
+                    print("Variable '{s}' not found: {s}\n", .{var_ptr.name, err});
                     return err;
                 };
             },
@@ -305,7 +306,7 @@ pub const JITExecutionEngine = struct {
                 return self.evaluatePropertyAccess(prop_ptr.*);
             },
             else => {
-                print("Unsupported expression: {}\n", .{@tagName(expr)});
+                print("Unsupported expression: {s}\n", .{@tagName(expr)});
                 return error.UnsupportedExpression;
             },
         }
@@ -330,7 +331,7 @@ pub const JITExecutionEngine = struct {
             .And => Value{ .Boolean = left.toBool() and right.toBool() },
             .Or => Value{ .Boolean = left.toBool() or right.toBool() },
             else => {
-                print("Unsupported binary operator: {}\n", .{@tagName(binary.operator)});
+                print("Unsupported binary operator: {s}\n", .{@tagName(binary.operator)});
                 return error.UnsupportedOperator;
             },
         };
@@ -354,7 +355,7 @@ pub const JITExecutionEngine = struct {
             },
             .Not => Value{ .Boolean = !operand.toBool() },
             else => {
-                print("Unsupported unary operator: {}\n", .{@tagName(unary.operator)});
+                print("Unsupported unary operator: {s}\n", .{@tagName(unary.operator)});
                 return error.UnsupportedOperator;
             },
         };
@@ -375,19 +376,19 @@ pub const JITExecutionEngine = struct {
             const arg_allocator = arg_arena.allocator();
             
             // Evaluate arguments
-            var args = .empty;
+            var args = std.ArrayList(u8){};
             defer args.deinit();
             errdefer args.deinit(); // Clean up on error
             
             for (call.arguments.items) |arg| {
                 const arg_value = try self.evaluateExpression(arg.*);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
             
             return try self.callFunction(func, args.items);
         }
         
-        print("Unknown function: {}\n", .{call.function_name});
+        print("Unknown function: {s}\n", .{call.function_name});
         return error.UnknownFunction;
     }
     
@@ -474,7 +475,7 @@ pub const JITExecutionEngine = struct {
             
             const value = try self.evaluateExpression(arg.*);
             const str = value.toString(print_allocator) catch |err| {
-                print("[Error converting value to string: {}]", .{err});
+                print("[Error converting value to string: {s}]", .{err});
                 continue;
             };
             
@@ -723,6 +724,7 @@ pub const ExecutionStats = struct {
 
 /// Test the fixed JIT execution engine
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing Fixed JIT Execution Engine\n", .{});
     print("=====================================\n", .{});
     
@@ -781,9 +783,9 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     // Test 6: Memory management
     print("\n📝 Test 6: Memory management\n", .{});
     const stats = engine.getStats();
-    print("Memory used: {} bytes\n", .{stats.memory_used});
-    print("Memory budget: {} bytes\n", .{stats.memory_budget});
-    print("Call stack depth: {}\n", .{stats.call_stack_depth});
+    print("Memory used: {s} bytes\n", .{stats.memory_used});
+    print("Memory budget: {s} bytes\n", .{stats.memory_budget});
+    print("Call stack depth: {s}\n", .{stats.call_stack_depth});
     
     print("\n✅ Fixed JIT Execution Engine tests completed!\n", .{});
 }

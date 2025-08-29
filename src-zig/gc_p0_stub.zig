@@ -212,7 +212,7 @@ pub const P0GCAllocator = struct {
         }
         
         // Cleanup tracking data
-        self.allocations.deinit();
+        self.allocations.deinit(self.allocator);
     }
     
     /// Initialize heap memory with bump-pointer allocation setup

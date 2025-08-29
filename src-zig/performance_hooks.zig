@@ -73,6 +73,7 @@ pub const FunctionCallData = struct {
     stack_trace: ?[][]const u8, // Optional stack trace
     
     pub fn deinit(self: *FunctionCallData, allocator: Allocator) void {
+        _ = allocator;
         if (self.stack_trace) |stack| {
             for (stack) |frame| {
                 allocator.free(frame);
@@ -103,6 +104,7 @@ pub const MemoryEvent = struct {
     stack_trace: ?[][]const u8,
     
     pub fn deinit(self: *MemoryEvent, allocator: Allocator) void {
+        _ = allocator;
         if (self.stack_trace) |stack| {
             for (stack) |frame| {
                 allocator.free(frame);
@@ -178,6 +180,7 @@ pub const ErrorEvent = struct {
     stack_trace: ?[][]const u8,
     
     pub fn deinit(self: *ErrorEvent, allocator: Allocator) void {
+        _ = allocator;
         if (self.stack_trace) |stack| {
             for (stack) |frame| {
                 allocator.free(frame);
@@ -260,6 +263,7 @@ pub const BottleneckData = struct {
     affected_functions: [][]const u8,
     
     pub fn deinit(self: *BottleneckData, allocator: Allocator) void {
+        _ = allocator;
         for (self.affected_functions) |func| {
             allocator.free(func);
         }
@@ -285,6 +289,7 @@ pub const PerformanceMetrics = struct {
     resource_usage: ResourceSnapshot,
     
     pub fn deinit(self: *PerformanceMetrics, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.hot_paths);
         for (self.bottlenecks) |*bottleneck| {
             bottleneck.deinit();
@@ -314,6 +319,7 @@ pub const StackFrame = struct {
     address: usize,
     
     pub fn deinit(self: *StackFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.function_name);
         allocator.free(self.file_name);
     }
@@ -333,7 +339,7 @@ pub const StackWalker = struct {
     
     /// Walk the current call stack and return stack frames
     pub fn walkStack(self: *StackWalker) ![]StackFrame {
-        var frames = .empty;
+        var frames = std.ArrayList(u8){};
         defer frames.deinit();
         
         // Use builtin stack trace functionality
@@ -391,7 +397,7 @@ pub const StackWalker = struct {
     
     /// Convert stack frames to string array for storage
     pub fn framesToStrings(self: *StackWalker, frames: []StackFrame) ![][]const u8 {
-        var strings = .empty;
+        var strings = std.ArrayList(u8){};
         defer strings.deinit();
         
         for (frames) |frame| {
@@ -456,7 +462,7 @@ pub const PerformanceHooks = struct {
             .channel_events = .empty,
             .error_events = .empty,
             .resource_snapshots = .empty,
-            .hot_paths = HashMap([]const u8, HotPathData, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .hot_paths = HashMap([]const u8, HotPathData, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .bottlenecks = .empty,
             .active = Atomic(bool).init(false),
             .monitor_thread = null,
@@ -481,34 +487,34 @@ pub const PerformanceHooks = struct {
         for (self.function_calls.items) |*call| {
             call.deinit();
         }
-        self.function_calls.deinit();
+        self.function_calls.deinit(self.allocator);
         
         for (self.memory_events.items) |*event| {
             event.deinit();
         }
-        self.memory_events.deinit();
+        self.memory_events.deinit(self.allocator);
         
-        self.goroutine_events.deinit();
-        self.channel_events.deinit();
+        self.goroutine_events.deinit(self.allocator);
+        self.channel_events.deinit(self.allocator);
         
         for (self.error_events.items) |*event| {
             event.deinit();
         }
-        self.error_events.deinit();
+        self.error_events.deinit(self.allocator);
         
-        self.resource_snapshots.deinit();
+        self.resource_snapshots.deinit(self.allocator);
         
         // Clean up hot paths
         var iterator = self.hot_paths.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.hot_paths.deinit();
+        self.hot_paths.deinit(self.allocator);
         
         for (self.bottlenecks.items) |*bottleneck| {
             bottleneck.deinit();
         }
-        self.bottlenecks.deinit();
+        self.bottlenecks.deinit(self.allocator);
         
         self.allocator.destroy(self);
     }
@@ -619,7 +625,7 @@ pub const PerformanceHooks = struct {
             .stack_trace = stack_trace,
         };
         
-        self.function_calls.append(call_data) catch {};
+        self.function_calls.append(allocator, call_data) catch {};
         
         // Update hot paths
         if (self.config.enable_hot_path_detection) {
@@ -730,7 +736,7 @@ pub const PerformanceHooks = struct {
             .cpu_time_ns = 0, // TODO: Track CPU time per goroutine
         };
         
-        self.goroutine_events.append(event) catch {};
+        self.goroutine_events.append(allocator, event) catch {};
         
         // Trim buffer if needed
         if (self.goroutine_events.items.len > self.config.metrics_buffer_size) {
@@ -765,7 +771,7 @@ pub const PerformanceHooks = struct {
             .operation_duration = duration,
         };
         
-        self.channel_events.append(event) catch {};
+        self.channel_events.append(allocator, event) catch {};
         
         // Trim buffer if needed
         if (self.channel_events.items.len > self.config.metrics_buffer_size) {
@@ -894,10 +900,10 @@ pub const PerformanceHooks = struct {
         defer self.mutex.unlock();
         
         // Collect hot paths
-        var hot_paths = .empty;
+        var hot_paths = std.ArrayList(u8){};
         var iterator = self.hot_paths.iterator();
         while (iterator.next()) |entry| {
-            try hot_paths.append(entry.value_ptr.*);
+            try hot_paths.append(allocator, entry.value_ptr.*);
         }
         
         // Detect bottlenecks
@@ -1060,7 +1066,7 @@ pub const PerformanceHooks = struct {
             if (hot_path.average_time > 100_000_000) { // > 100ms
                 const severity: BottleneckSeverity = if (hot_path.average_time > 1_000_000_000) .critical else if (hot_path.average_time > 500_000_000) .major else .moderate;
                 
-                var affected_functions = .empty;
+                var affected_functions = std.ArrayList(u8){};
                 try affected_functions.append(self.allocator, try self.allocator.dupe(u8, hot_path.function_name));
                 
                 const bottleneck = BottleneckData{
@@ -1079,7 +1085,7 @@ pub const PerformanceHooks = struct {
             
             // Detect high frequency functions
             if (hot_path.call_frequency > 1000.0) { // > 1000 calls/sec
-                var affected_functions = .empty;
+                var affected_functions = std.ArrayList(u8){};
                 try affected_functions.append(self.allocator, try self.allocator.dupe(u8, hot_path.function_name));
                 
                 const bottleneck = BottleneckData{
@@ -1113,7 +1119,7 @@ pub const PerformanceHooks = struct {
             allocation_rate = @as(f64, @floatFromInt(recent_allocations));
             
             if (allocation_rate > 100.0) { // > 100 allocations/sec
-                var affected_functions = .empty;
+                var affected_functions = std.ArrayList(u8){};
                 
                 const bottleneck = BottleneckData{
                     .bottleneck_type = .memory_bound,
@@ -1142,7 +1148,7 @@ fn monitoringThread(hooks: *PerformanceHooks) void {
         // Collect resource snapshot
         hooks.mutex.lock();
         const snapshot = hooks.collectResourceSnapshot();
-        hooks.resource_snapshots.append(snapshot) catch {};
+        hooks.resource_snapshots.append(allocator, snapshot) catch {};
         
         // Trim snapshots buffer
         if (hooks.resource_snapshots.items.len > hooks.config.metrics_buffer_size) {

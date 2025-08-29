@@ -166,12 +166,12 @@ pub const CursedError = struct {
         if (self.stack_trace) |stack| {
             try writer.print("\nStack Trace:");
             for (stack) |frame| {
-                try writer.print("\n{}", .{frame});
+                try writer.print("\n{s}", .{frame});
             }
         }
         
         if (self.inner_error) |inner| {
-            try writer.print("\nCaused by: {}", .{inner.*});
+            try writer.print("\nCaused by: {s}", .{inner.*});
         }
     }
 };
@@ -214,21 +214,22 @@ pub const ErrorRuntime = struct {
     };
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const runtime = try allocator.create(Self);
         runtime.* = Self{
             .allocator = allocator,
-            .error_handlers = std.ArrayList(ErrorHandler).init(allocator),
-            .panic_handlers = std.ArrayList(PanicHandler).init(allocator),
+            .error_handlers = std.ArrayList(ErrorHandler){},
+            .panic_handlers = std.ArrayList(PanicHandler){},
             .current_panic = null,
-            .recovery_stack = std.ArrayList(RecoveryFrame).init(allocator),
+            .recovery_stack = std.ArrayList(RecoveryFrame){},
         };
         return runtime;
     }
     
     pub fn deinit(self: *Self) void {
-        self.error_handlers.deinit();
-        self.panic_handlers.deinit();
-        self.recovery_stack.deinit();
+        self.error_handlers.deinit(self.allocator);
+        self.panic_handlers.deinit(self.allocator);
+        self.recovery_stack.deinit(self.allocator);
         
         if (self.current_panic) |panic_err| {
             panic_err.deinit();
@@ -238,11 +239,11 @@ pub const ErrorRuntime = struct {
     }
     
     pub fn registerErrorHandler(self: *Self, handler: ErrorHandler) !void {
-        try self.error_handlers.append(handler);
+        try self.error_handlers.append(allocator, handler);
     }
     
     pub fn registerPanicHandler(self: *Self, handler: PanicHandler) !void {
-        try self.panic_handlers.append(handler);
+        try self.panic_handlers.append(allocator, handler);
     }
     
     /// Execute yikes statement - create and optionally throw error
@@ -279,7 +280,7 @@ pub const ErrorRuntime = struct {
             .context = context,
         };
         
-        try self.recovery_stack.append(frame);
+        try self.recovery_stack.append(allocator, frame);
         return recovery_point;
     }
     
@@ -306,6 +307,7 @@ var global_error_runtime: ?*ErrorRuntime = null;
 
 /// Initialize global error runtime
 pub fn initErrorRuntime(allocator: Allocator) !void {
+        _ = allocator;
     global_error_runtime = try ErrorRuntime.init(allocator);
 }
 
@@ -365,6 +367,7 @@ export fn cursed_error_deinit(error_ptr: ?*CursedError) void {
 
 // Testing functions
 pub fn testErrorHandling(allocator: Allocator) !void {
+        _ = allocator;
     try initErrorRuntime(allocator);
     defer deinitErrorRuntime();
     
@@ -377,11 +380,11 @@ pub fn testErrorHandling(allocator: Allocator) !void {
     try err.addContext("operation", "test_function");
     try err.addContext("input", "invalid_value");
     
-    std.debug.print("Created error: {}\n", .{err.*});
+    std.debug.print("Created error: {s}\n", .{err.*});
     
     // Test error wrapping
     const wrapped = try err.wrap(allocator, "Operation failed");
     defer wrapped.deinit();
     
-    std.debug.print("Wrapped error: {}\n", .{wrapped.*});
+    std.debug.print("Wrapped error: {s}\n", .{wrapped.*});
 }

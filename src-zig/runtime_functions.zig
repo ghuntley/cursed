@@ -106,8 +106,9 @@ pub fn runtime_unset_env(allocator: Allocator, name: []const u8) ![]const u8 {
     return "";
 }
 
-pub fn runtime_list_env(allocator: Allocator) !struct {ArrayList([]const u8), []const u8} {
-    var env_list = ArrayList([]const u8).init(allocator);
+pub fn runtime_list_env(allocator: Allocator) !struct {
+        _ = allocator;ArrayList([]const u8), []const u8} {
+    var env_list = ArrayList([]const u8){};
     
     // Use std.process.getEnvMap for cross-platform environment variable access
     var env_map = try std.process.getEnvMap(allocator);
@@ -116,14 +117,14 @@ pub fn runtime_list_env(allocator: Allocator) !struct {ArrayList([]const u8), []
     var iterator = env_map.iterator();
     while (iterator.next()) |entry| {
         const env_str = try std.fmt.allocPrint(allocator, "{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
-        try env_list.append(env_str);
+        try env_list.append(allocator, env_str);
     }
     
     return .{env_list, ""};
 }
 
 pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
-    var result = std.ArrayList(u8).init(allocator);
+    var result = std.ArrayList(u8){};
     defer result.deinit();
     
     var i: usize = 0;
@@ -142,7 +143,7 @@ pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
                     try result.appendSlice(value);
                     i = end + 1;
                 } else {
-                    try result.append(text[i]);
+                    try result.append(allocator, text[i]);
                     i += 1;
                 }
             } else if (i + 1 < text.len and std.ascii.isAlphabetic(text[i + 1])) {
@@ -157,11 +158,11 @@ pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
                 try result.appendSlice(value);
                 i = end;
             } else {
-                try result.append(text[i]);
+                try result.append(allocator, text[i]);
                 i += 1;
             }
         } else {
-            try result.append(text[i]);
+            try result.append(allocator, text[i]);
             i += 1;
         }
     }
@@ -170,6 +171,7 @@ pub fn runtime_expand_env(allocator: Allocator, text: []const u8) ![]const u8 {
 }
 
 pub fn runtime_clear_env(allocator: Allocator) ![]const u8 {
+        _ = allocator;
     // Clear all environment variables by getting the current environment
     // and unsetting each variable
     var env_map = try std.process.getEnvMap(allocator);
@@ -185,8 +187,9 @@ pub fn runtime_clear_env(allocator: Allocator) ![]const u8 {
     return "";
 }
 
-pub fn runtime_env_for_process(allocator: Allocator) !struct {ArrayList([]const u8), []const u8} {
-    var env_strings = ArrayList([]const u8).init(allocator);
+pub fn runtime_env_for_process(allocator: Allocator) !struct {
+        _ = allocator;ArrayList([]const u8), []const u8} {
+    var env_strings = ArrayList([]const u8){};
     
     // Use std.process.getEnvMap for cross-platform environment variable access
     var env_map = try std.process.getEnvMap(allocator);
@@ -195,7 +198,7 @@ pub fn runtime_env_for_process(allocator: Allocator) !struct {ArrayList([]const 
     var iterator = env_map.iterator();
     while (iterator.next()) |entry| {
         const env_str = try std.fmt.allocPrint(allocator, "{s}={s}", .{ entry.key_ptr.*, entry.value_ptr.* });
-        try env_strings.append(env_str);
+        try env_strings.append(allocator, env_str);
     }
     
     return .{env_strings, ""};
@@ -210,7 +213,7 @@ pub fn runtime_to_lowercase(allocator: Allocator, str: []const u8) ![]const u8 {
 }
 
 pub fn runtime_split_path(allocator: Allocator, path_str: []const u8) !ArrayList([]const u8) {
-    var paths = ArrayList([]const u8).init(allocator);
+    var paths = ArrayList([]const u8){};
     
     const separator = switch (std.builtin.os.tag) {
         .windows => ';',
@@ -221,7 +224,7 @@ pub fn runtime_split_path(allocator: Allocator, path_str: []const u8) !ArrayList
     while (iter.next()) |path| {
         if (path.len > 0) {
             const owned_path = try allocator.dupe(u8, path);
-            try paths.append(owned_path);
+            try paths.append(allocator, owned_path);
         }
     }
     
@@ -247,6 +250,7 @@ pub const Variable = union(enum) {
     Array: ArrayList(Variable),
     
     pub fn deinit(self: *Variable, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .String => |str| allocator.free(str),
             .Array => |*arr| arr.deinit(),
@@ -255,15 +259,16 @@ pub const Variable = union(enum) {
     }
     
     pub fn clone(self: Variable, allocator: Allocator) !Variable {
+        _ = allocator;
         return switch (self) {
             .Integer => |val| Variable{ .Integer = val },
             .Float => |val| Variable{ .Float = val },
             .String => |str| Variable{ .String = try allocator.dupe(u8, str) },
             .Boolean => |val| Variable{ .Boolean = val },
             .Array => |arr| {
-                var new_array = .empty;
+                var new_array = std.ArrayList(u8){};
                 for (arr.items) |item| {
-                    try new_array.append(try item.clone(allocator));
+                    try new_array.append(allocator, try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -276,7 +281,7 @@ pub fn array_length(array: []const Variable) i64 {
 }
 
 pub fn array_push(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(item);
+    try array.append(allocator, item);
 }
 
 pub fn array_pop(array: *ArrayList(Variable)) ?Variable {
@@ -289,7 +294,7 @@ pub fn array_sort(_: Allocator, array: *ArrayList(Variable)) !void {
 }
 
 pub fn array_append(array: *ArrayList(Variable), item: Variable) !void {
-    try array.append(item);
+    try array.append(allocator, item);
 }
 
 pub fn array_contains(array: []const Variable, item: Variable) bool {
@@ -307,14 +312,14 @@ pub fn array_find(array: []const Variable, item: Variable) i64 {
 }
 
 pub fn array_slice(allocator: Allocator, array: []const Variable, start: i64, end: i64) !ArrayList(Variable) {
-    var result = .empty;
+    var result = std.ArrayList(u8){};
     if (start < 0 or start >= array.len or end <= start) return result;
     
     const start_idx: usize = @intCast(start);
     const end_idx = @min(@as(usize, @intCast(end)), array.len);
     
     for (array[start_idx..end_idx]) |item| {
-        try result.append(try item.clone(allocator));
+        try result.append(allocator, try item.clone(allocator));
     }
     return result;
 }
@@ -404,7 +409,7 @@ pub fn read_file(allocator: Allocator, filename: []const u8) ![]u8 {
 pub fn write_file(filename: []const u8, content: []const u8) !bool {
     const file = std.fs.cwd().createFile(filename, .{}) catch return false;
     defer file.close();
-    file.writeAll(content) catch return false;
+    file.writer().writeAll(content) catch return false;
     return true;
 }
 
@@ -443,18 +448,18 @@ pub fn runtime_current_time_nanos() i64 {
 // === CORE TIME FUNCTIONS FOR CURSED STDLIB ===
 
 /// Get current UTC timestamp in milliseconds
-export fn runtime_get_current_time_ms() callconv(.C) i64 {
+export fn runtime_get_current_time_ms() callconv(.c) i64 {
     return std.time.milliTimestamp();
 }
 
 /// Sleep for specified milliseconds
-export fn runtime_sleep_ms(milliseconds: i64) callconv(.C) void {
+export fn runtime_sleep_ms(milliseconds: i64) callconv(.c) void {
     const duration_ms = @max(1, milliseconds);
     std.Thread.sleep(@intCast(duration_ms * 1000000));
 }
 
 /// Get local timezone offset in minutes from UTC
-export fn runtime_get_timezone_offset() callconv(.C) i64 {
+export fn runtime_get_timezone_offset() callconv(.c) i64 {
     // Get system timezone offset
     const now = std.time.timestamp();
     
@@ -484,7 +489,7 @@ export fn runtime_get_timezone_offset() callconv(.C) i64 {
 }
 
 /// Get local timezone name as C string
-export fn runtime_get_timezone_name() callconv(.C) [*:0]const u8 {
+export fn runtime_get_timezone_name() callconv(.c) [*:0]const u8 {
     const now = std.time.timestamp();
     const local_tm = std.c.localtime(&now);
     
@@ -581,12 +586,12 @@ pub fn runtime_read_line() ![]u8 {
 
 pub fn runtime_write_stdout(data: []const u8) void {
     const stdout = std.io.getStdOut().writer();
-    stdout.writeAll(data) catch {};
+    stdout.writer().writeAll(data) catch {};
 }
 
 pub fn runtime_write_stderr(data: []const u8) void {
     const stderr = std.io.getStdErr().writer();
-    stderr.writeAll(data) catch {};
+    stderr.writer().writeAll(data) catch {};
 }
 
 pub fn runtime_read_stdin() ![]u8 {
@@ -598,6 +603,7 @@ pub fn runtime_console_write(message: []const u8) void {
 }
 
 pub fn runtime_get_current_time_iso(allocator: Allocator) ![]u8 {
+        _ = allocator;
     const timestamp = std.time.milliTimestamp();
     return format_time(allocator, timestamp);
 }
@@ -609,12 +615,12 @@ pub fn runtime_read_file(allocator: Allocator, filename: []const u8) ![]u8 {
 pub fn runtime_write_file(filename: []const u8, content: []const u8) !bool {
     std.debug.print("DEBUG: runtime_write_file called with filename='{s}', content='{s}'\n", .{filename, content});
     const file = std.fs.cwd().createFile(filename, .{}) catch |err| {
-        std.debug.print("DEBUG: Failed to create file: {}\n", .{err});
+        std.debug.print("DEBUG: Failed to create file: {s}\n", .{err});
         return false;
     };
     defer file.close();
-    file.writeAll(content) catch |err| {
-        std.debug.print("DEBUG: Failed to write content: {}\n", .{err});
+    file.writer().writeAll(content) catch |err| {
+        std.debug.print("DEBUG: Failed to write content: {s}\n", .{err});
         return false;
     };
     std.debug.print("DEBUG: File written successfully\n");
@@ -635,7 +641,7 @@ pub fn runtime_append_file(filename: []const u8, content: []const u8) !bool {
     };
     defer file.close();
     try file.seekFromEnd(0);
-    file.writeAll(content) catch return false;
+    file.writer().writeAll(content) catch return false;
     return true;
 }
 
@@ -768,7 +774,7 @@ pub fn runtime_list_directory(allocator: Allocator, directory: []const u8) ![]u8
     };
     defer dir.close();
     
-    var files = std.ArrayList([]const u8).init(allocator);
+    var files = std.ArrayList([]const u8){};
     defer files.deinit();
     
     var iterator = dir.iterate();
@@ -777,17 +783,17 @@ pub fn runtime_list_directory(allocator: Allocator, directory: []const u8) ![]u8
     }
     
     // Convert to JSON array format
-    var result = std.ArrayList(u8).init(allocator);
+    var result = std.ArrayList(u8){};
     defer result.deinit();
     
-    try result.append('[');
+    try result.append(allocator, '[');
     for (files.items, 0..) |file, i| {
         if (i > 0) try result.appendSlice(", ");
-        try result.append('"');
+        try result.append(allocator, '"');
         try result.appendSlice(file);
-        try result.append('"');
+        try result.append(allocator, '"');
     }
-    try result.append(']');
+    try result.append(allocator, ']');
     
     return result.toOwnedSlice();
 }
@@ -849,6 +855,7 @@ pub fn runtime_float_to_string(allocator: Allocator, value: f64) ![]u8 {
 }
 
 pub fn runtime_get_last_error(allocator: Allocator) ![]u8 {
+        _ = allocator;
     // Return empty string for no error
     return allocator.dupe(u8, "");
 }
@@ -870,7 +877,7 @@ pub fn runtime_get_arg_count(args: []const []const u8) i64 {
 pub const StdlibFunction = struct {
     name: []const u8,
     module: []const u8,
-    implementation: *const fn() callconv(.C) void,
+    implementation: *const fn() callconv(.c) void,
 };
 
 pub fn registerStdlibFunctions() void {
@@ -887,20 +894,20 @@ pub fn test_runtime_functions() !void {
     // Test string functions
     const test_str = "Hello, CURSED!";
     const length = len_str(test_str);
-    print("String length: {}\n", .{length});
+    print("String length: {s}\n", .{length});
     
     const substr = try substring(allocator, test_str, 0, 5);
     print("Substring: {s}\n", .{substr});
     
     const contains_result = string_contains(test_str, "CURSED");
-    print("Contains 'CURSED': {}\n", .{contains_result});
+    print("Contains 'CURSED': {s}\n", .{contains_result});
     
     // Test math functions
     const sqrt_result = sqrt(16.0);
-    print("sqrt(16) = {}\n", .{sqrt_result});
+    print("sqrt(16) = {s}\n", .{sqrt_result});
     
     const power_result = power(2.0, 3.0);
-    print("2^3 = {}\n", .{power_result});
+    print("2^3 = {s}\n", .{power_result});
     
     print("✅ Runtime functions test completed\n", .{});
 }
@@ -910,7 +917,7 @@ pub fn test_runtime_functions() !void {
 /// Runtime bounds error handler - provides detailed error information
 /// before program termination. This function is called from LLVM IR
 /// when array bounds violations are detected at runtime.
-export fn cursed_bounds_error(index: i64, length: i64) callconv(.C) void {
+export fn cursed_bounds_error(index: i64, length: i64) callconv(.c) void {
     // Print detailed bounds error information to stderr
     std.debug.print("\n💀 CURSED RUNTIME ERROR: Array bounds violation detected!\n", .{});
     std.debug.print("   ├─ Attempted index: {d}\n", .{index});
@@ -940,13 +947,13 @@ export fn cursed_bounds_error(index: i64, length: i64) callconv(.C) void {
 
 /// Fast bounds checking validation for performance-critical code
 /// Returns true if bounds are valid, false otherwise
-export fn cursed_bounds_check_fast(index: i64, length: i64) callconv(.C) bool {
+export fn cursed_bounds_check_fast(index: i64, length: i64) callconv(.c) bool {
     return index >= 0 and index < length;
 }
 
 /// Bounds check with automatic recovery - attempts to clamp to valid range
 /// Returns clamped index within [0, length) or -1 if length is 0
-export fn cursed_bounds_check_clamp(index: i64, length: i64) callconv(.C) i64 {
+export fn cursed_bounds_check_clamp(index: i64, length: i64) callconv(.c) i64 {
     if (length <= 0) return -1;
     if (index < 0) return 0;
     if (index >= length) return length - 1;
@@ -959,7 +966,7 @@ const crypto = std.crypto;
 const Hash = std.crypto.hash;
 
 /// Secure random number generation using system entropy
-export fn runtime_secure_random_bytes(buffer: [*]u8, count: i64) callconv(.C) void {
+export fn runtime_secure_random_bytes(buffer: [*]u8, count: i64) callconv(.c) void {
     if (count <= 0) return;
     
     var rng = std.crypto.random;
@@ -968,7 +975,7 @@ export fn runtime_secure_random_bytes(buffer: [*]u8, count: i64) callconv(.C) vo
 }
 
 /// SHA-256 hash implementation using Zig's crypto library
-export fn runtime_sha256_hash(data: [*:0]const u8, data_len: i64, output: [*]u8) callconv(.C) void {
+export fn runtime_sha256_hash(data: [*:0]const u8, data_len: i64, output: [*]u8) callconv(.c) void {
     if (data_len <= 0) return;
     
     const input_data = data[0..@intCast(data_len)];
@@ -981,7 +988,7 @@ export fn runtime_sha256_hash(data: [*:0]const u8, data_len: i64, output: [*]u8)
 }
 
 /// AES-GCM encryption using real cryptographic implementation
-export fn runtime_aes_gcm_encrypt(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) void {
+export fn runtime_aes_gcm_encrypt(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.c) void {
     // Use AES-128-GCM for now (16-byte key, 12-byte nonce)
     const pt_len = std.mem.len(plaintext);
     const input_data = plaintext[0..pt_len];
@@ -999,7 +1006,7 @@ export fn runtime_aes_gcm_encrypt(plaintext: [*:0]const u8, key: [*:0]const u8, 
 }
 
 /// AES-GCM decryption using real cryptographic implementation
-export fn runtime_aes_gcm_decrypt(ciphertext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) bool {
+export fn runtime_aes_gcm_decrypt(ciphertext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.c) bool {
     const ct_len = std.mem.len(ciphertext);
     if (ct_len < 16) return false; // Need at least 16 bytes for tag
     
@@ -1021,7 +1028,7 @@ export fn runtime_aes_gcm_decrypt(ciphertext: [*:0]const u8, key: [*:0]const u8,
 }
 
 /// PBKDF2 key derivation using SHA-256
-export fn runtime_pbkdf2_derive(password: [*:0]const u8, salt: [*:0]const u8, iterations: i32, output: [*]u8, output_len: i32) callconv(.C) void {
+export fn runtime_pbkdf2_derive(password: [*:0]const u8, salt: [*:0]const u8, iterations: i32, output: [*]u8, output_len: i32) callconv(.c) void {
     if (iterations <= 0 or output_len <= 0) return;
     
     const pw_len = std.mem.len(password);
@@ -1035,7 +1042,7 @@ export fn runtime_pbkdf2_derive(password: [*:0]const u8, salt: [*:0]const u8, it
 }
 
 /// HMAC-SHA256 authentication
-export fn runtime_hmac_sha256(key: [*:0]const u8, message: [*:0]const u8, output: [*]u8) callconv(.C) void {
+export fn runtime_hmac_sha256(key: [*:0]const u8, message: [*:0]const u8, output: [*]u8) callconv(.c) void {
     const key_len = std.mem.len(key);
     const msg_len = std.mem.len(message);
     
@@ -1050,7 +1057,7 @@ export fn runtime_hmac_sha256(key: [*:0]const u8, message: [*:0]const u8, output
 }
 
 /// ChaCha20 stream cipher encryption/decryption
-export fn runtime_chacha20(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.C) void {
+export fn runtime_chacha20(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: [*:0]const u8, output: [*]u8) callconv(.c) void {
     const pt_len = std.mem.len(plaintext);
     const input_data = plaintext[0..pt_len];
     const key_bytes = key[0..32]; // 256-bit key
@@ -1062,7 +1069,7 @@ export fn runtime_chacha20(plaintext: [*:0]const u8, key: [*:0]const u8, nonce: 
 }
 
 /// Constant-time memory comparison to prevent timing attacks
-export fn runtime_constant_time_compare(a: [*:0]const u8, b: [*:0]const u8, len: i64) callconv(.C) bool {
+export fn runtime_constant_time_compare(a: [*:0]const u8, b: [*:0]const u8, len: i64) callconv(.c) bool {
     if (len <= 0) return true;
     
     const bytes_a = a[0..@intCast(len)];
@@ -1072,7 +1079,7 @@ export fn runtime_constant_time_compare(a: [*:0]const u8, b: [*:0]const u8, len:
 }
 
 /// Secure memory wiping to prevent data recovery
-export fn runtime_secure_wipe(ptr: [*]u8, len: i64) callconv(.C) void {
+export fn runtime_secure_wipe(ptr: [*]u8, len: i64) callconv(.c) void {
     if (len <= 0) return;
     
     const bytes = ptr[0..@intCast(len)];

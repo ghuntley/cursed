@@ -20,7 +20,7 @@ pub fn main() !void {
     
     // Read the file
     const file_content = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
-        std.debug.print("Error reading file '{s}': {}\n", .{ filename, err });
+        std.debug.print("Error reading file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer allocator.free(file_content);
@@ -32,7 +32,7 @@ pub fn main() !void {
     var cursed_lexer = lexer.Lexer.init(allocator, file_content);
 
     const tokens = cursed_lexer.tokenize() catch |err| {
-        std.debug.print("❌ Tokenization error: {}\n", .{err});
+        std.debug.print("❌ Tokenization error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
@@ -43,7 +43,7 @@ pub fn main() !void {
     var cursed_parser = parser.Parser.init(allocator, tokens.items);
 
     const program = cursed_parser.parseProgram() catch |err| {
-        std.debug.print("❌ Parse error: {}\n", .{err});
+        std.debug.print("❌ Parse error: {s}\n", .{err});
         return;
     };
 
@@ -51,7 +51,7 @@ pub fn main() !void {
 
     // Initialize real LLVM backend
     var llvm_codegen = llvm_real.RealLLVMCodeGen.init(allocator) catch |err| {
-        std.debug.print("❌ LLVM initialization failed: {}\n", .{err});
+        std.debug.print("❌ LLVM initialization failed: {s}\n", .{err});
         return;
     };
     defer llvm_codegen.deinit();
@@ -60,7 +60,7 @@ pub fn main() !void {
 
     // Generate LLVM IR
     llvm_codegen.generateProgram(program) catch |err| {
-        std.debug.print("❌ LLVM code generation failed: {}\n", .{err});
+        std.debug.print("❌ LLVM code generation failed: {s}\n", .{err});
         return;
     };
 
@@ -72,7 +72,7 @@ pub fn main() !void {
     // Write bitcode to file
     const output_file = "output.bc";
     llvm_codegen.writeToFile(output_file) catch |err| {
-        std.debug.print("❌ Failed to write bitcode: {}\n", .{err});
+        std.debug.print("❌ Failed to write bitcode: {s}\n", .{err});
         return;
     };
 

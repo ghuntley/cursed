@@ -254,7 +254,7 @@ pub const CrossPlatformOptimizer = struct {
             if (self.target_machine) |tm| {
                 c.LLVMDisposeTargetMachine(tm);
             }
-            self.optimization_passes.deinit();
+            self.optimization_passes.deinit(self.allocator);
         }
     };
     
@@ -556,23 +556,23 @@ pub const CrossPlatformOptimizer = struct {
         }
         
         pub fn deinit(self: *CrossPlatformMetrics) void {
-            self.estimated_speedup_by_platform.deinit();
+            self.estimated_speedup_by_platform.deinit(self.allocator);
         }
         
         pub fn printSummary(self: *const CrossPlatformMetrics) void {
             print("\n🌐 Cross-Platform Optimization Summary\n", .{});
             print("======================================\n", .{});
-            print("Platforms optimized: {}\n", .{self.platforms_optimized});
-            print("Total optimization time: {} ms\n", .{self.total_optimization_time_ms});
-            print("Vectorization opportunities: {}\n", .{self.vectorization_opportunities});
-            print("Cross-platform inlines: {}\n", .{self.cross_platform_inlines});
-            print("Platform-specific optimizations: {}\n", .{self.platform_specific_optimizations});
+            print("Platforms optimized: {s}\n", .{self.platforms_optimized});
+            print("Total optimization time: {s} ms\n", .{self.total_optimization_time_ms});
+            print("Vectorization opportunities: {s}\n", .{self.vectorization_opportunities});
+            print("Cross-platform inlines: {s}\n", .{self.cross_platform_inlines});
+            print("Platform-specific optimizations: {s}\n", .{self.platform_specific_optimizations});
             
             if (self.estimated_speedup_by_platform.count() > 0) {
                 print("\nEstimated speedup by platform:\n", .{});
                 var iter = self.estimated_speedup_by_platform.iterator();
                 while (iter.next()) |entry| {
-                    print("  {}: {:.2}x\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+                    print("  {s}: {:.2}x\n", .{ entry.key_ptr.*, entry.value_ptr.* });
                 }
             }
         }
@@ -597,9 +597,9 @@ pub const CrossPlatformOptimizer = struct {
         try optimizer.initializePlatformConfigurations();
         
         print("🌐 Cross-Platform Optimizer initialized\n", .{});
-        print("  Supported platforms: {}\n", .{optimizer.optimization_strategies.count()});
-        print("  Universal optimizations: {}\n", .{optimizer.universal_optimizations});
-        print("  Architecture-specific optimizations: {}\n", .{optimizer.architecture_specific_optimizations});
+        print("  Supported platforms: {s}\n", .{optimizer.optimization_strategies.count()});
+        print("  Universal optimizations: {s}\n", .{optimizer.universal_optimizations});
+        print("  Architecture-specific optimizations: {s}\n", .{optimizer.architecture_specific_optimizations});
         
         return optimizer;
     }
@@ -609,12 +609,12 @@ pub const CrossPlatformOptimizer = struct {
         for (self.target_platforms.items) |*platform| {
             platform.deinit();
         }
-        self.target_platforms.deinit();
-        self.optimization_strategies.deinit();
-        self.vectorization_configs.deinit();
-        self.memory_configs.deinit();
-        self.platform_characteristics.deinit();
-        self.optimization_metrics.deinit();
+        self.target_platforms.deinit(self.allocator);
+        self.optimization_strategies.deinit(self.allocator);
+        self.vectorization_configs.deinit(self.allocator);
+        self.memory_configs.deinit(self.allocator);
+        self.platform_characteristics.deinit(self.allocator);
+        self.optimization_metrics.deinit(self.allocator);
         
         print("✅ Cross-Platform Optimizer cleaned up\n", .{});
     }
@@ -631,7 +631,7 @@ pub const CrossPlatformOptimizer = struct {
         
         try self.target_platforms.append(self.allocator, target_platform);
         
-        print("🎯 Added target platform: {}\n", .{platform});
+        print("🎯 Added target platform: {s}\n", .{platform});
     }
     
     /// Set current active platform
@@ -643,14 +643,14 @@ pub const CrossPlatformOptimizer = struct {
             }
         }
         
-        print("🔧 Current platform set to: {}\n", .{platform});
+        print("🔧 Current platform set to: {s}\n", .{platform});
     }
     
     /// Optimize module for all target platforms
     pub fn optimizeForAllPlatforms(self: *Self, module: c.LLVMModuleRef) !CrossPlatformOptimizationResult {
         const start_time = std.time.milliTimestamp();
         
-        print("🚀 Starting cross-platform optimization for {} platforms...\n", .{self.target_platforms.items.len});
+        print("🚀 Starting cross-platform optimization for {s} platforms...\n", .{self.target_platforms.items.len});
         
         var result = CrossPlatformOptimizationResult.init(self.allocator);
         
@@ -676,7 +676,7 @@ pub const CrossPlatformOptimizer = struct {
         self.optimization_metrics.total_optimization_time_ms = @intCast(end_time - start_time);
         result.total_optimization_time_ms = self.optimization_metrics.total_optimization_time_ms;
         
-        print("✅ Cross-platform optimization completed in {} ms\n", .{self.optimization_metrics.total_optimization_time_ms});
+        print("✅ Cross-platform optimization completed in {s} ms\n", .{self.optimization_metrics.total_optimization_time_ms});
         self.optimization_metrics.printSummary();
         
         return result;
@@ -707,12 +707,12 @@ pub const CrossPlatformOptimizer = struct {
         result.universal_optimizations_applied += 6;
         self.optimization_metrics.cross_platform_inlines += 25; // Estimate
         
-        print("    Applied {} universal optimizations\n", .{result.universal_optimizations_applied});
+        print("    Applied {s} universal optimizations\n", .{result.universal_optimizations_applied});
     }
     
     /// Optimize module for specific platform
     fn optimizeForPlatform(self: *Self, module: c.LLVMModuleRef, platform: *TargetPlatform, result: *CrossPlatformOptimizationResult) !void {
-        print("    Optimizing for {}...\n", .{platform.platform});
+        print("    Optimizing for {s}...\n", .{platform.platform});
         
         // Get platform configuration
         const strategy = self.optimization_strategies.get(platform.platform).?;
@@ -761,9 +761,9 @@ pub const CrossPlatformOptimizer = struct {
             .estimated_speedup = estimated_speedup,
             .vectorization_opportunities = if (strategy.vectorization_priority > 0.5) 10 else 0,
         };
-        try result.platform_results.append(platform_result);
+        try result.platform_results.append(allocator, platform_result);
         
-        print("      Applied {} optimizations, estimated speedup: {:.2}x\n", .{ platform_result.optimizations_applied, estimated_speedup });
+        print("      Applied {s} optimizations, estimated speedup: {:.2}x\n", .{ platform_result.optimizations_applied, estimated_speedup });
     }
     
     /// Add vectorization passes for platform
@@ -867,7 +867,7 @@ pub const CrossPlatformOptimizer = struct {
                     .confidence = 0.8,
                     .description = "Vectorization shows best results on this platform",
                 };
-                try result.recommendations.append(recommendation);
+                try result.recommendations.append(allocator, recommendation);
             }
         }
         
@@ -923,10 +923,10 @@ pub const CrossPlatformOptimizer = struct {
         const arch = platform.platform.getArchitecture();
         
         // Add vectorization pass
-        try platform.optimization_passes.append(OptimizationPass.createVectorizationPass(arch));
+        try platform.optimization_passes.append(allocator, OptimizationPass.createVectorizationPass(arch));
         
         // Add inlining pass
-        try platform.optimization_passes.append(OptimizationPass.createInliningPass(arch));
+        try platform.optimization_passes.append(allocator, OptimizationPass.createInliningPass(arch));
         
         _ = self; // TODO: Use for additional configuration
     }
@@ -988,8 +988,8 @@ pub const CrossPlatformOptimizationResult = struct {
     }
     
     pub fn deinit(self: *CrossPlatformOptimizationResult) void {
-        self.platform_results.deinit();
-        self.recommendations.deinit();
+        self.platform_results.deinit(self.allocator);
+        self.recommendations.deinit(self.allocator);
     }
 };
 
@@ -1029,13 +1029,13 @@ pub const CrossPlatformStatistics = struct {
     pub fn printDetailedReport(self: *const CrossPlatformStatistics) void {
         print("\n🌐 Cross-Platform Optimization Statistics\n", .{});
         print("=========================================\n", .{});
-        print("Total platforms supported: {}\n", .{self.total_platforms_supported});
-        print("Target platforms configured: {}\n", .{self.target_platforms_configured});
-        print("Total optimization time: {} ms\n", .{self.total_optimization_time_ms});
-        print("Vectorization opportunities found: {}\n", .{self.vectorization_opportunities});
-        print("Platform-specific optimizations: {}\n", .{self.platform_specific_optimizations});
-        print("Universal optimizations: {}\n", .{if (self.universal_optimizations_enabled) "Enabled" else "Disabled"});
-        print("Architecture-specific optimizations: {}\n", .{if (self.architecture_specific_optimizations_enabled) "Enabled" else "Disabled"});
+        print("Total platforms supported: {s}\n", .{self.total_platforms_supported});
+        print("Target platforms configured: {s}\n", .{self.target_platforms_configured});
+        print("Total optimization time: {s} ms\n", .{self.total_optimization_time_ms});
+        print("Vectorization opportunities found: {s}\n", .{self.vectorization_opportunities});
+        print("Platform-specific optimizations: {s}\n", .{self.platform_specific_optimizations});
+        print("Universal optimizations: {s}\n", .{if (self.universal_optimizations_enabled) "Enabled" else "Disabled"});
+        print("Architecture-specific optimizations: {s}\n", .{if (self.architecture_specific_optimizations_enabled) "Enabled" else "Disabled"});
     }
 };
 

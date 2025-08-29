@@ -37,12 +37,12 @@ const SimpleJIT = struct {
     pub fn init() SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
-            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
 
     pub fn deinit(self: *SimpleJIT) void {
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {
@@ -56,7 +56,7 @@ const SimpleJIT = struct {
             if (trimmed.len == 0) continue;
 
             instruction_count += 1;
-            print("📝 Instruction #{}: {s}\n", .{ instruction_count, trimmed });
+            print("📝 Instruction #{s}: {s}\n", .{ instruction_count, trimmed });
 
             if (std.mem.startsWith(u8, trimmed, "sus ")) {
                 try self.executeVariableDeclaration(trimmed);
@@ -65,7 +65,7 @@ const SimpleJIT = struct {
             }
         }
 
-        print("✅ Executed {} instructions via JIT\n", .{instruction_count});
+        print("✅ Executed {s} instructions via JIT\n", .{instruction_count});
     }
 
     fn executeVariableDeclaration(self: *SimpleJIT, line: []const u8) !void {
@@ -84,7 +84,7 @@ const SimpleJIT = struct {
         const name_copy = try self.allocator.dupe(u8, name);
         try self.variables.put(name_copy, value);
         
-        print("🔧 JIT compiled variable assignment: {s} = {}\n", .{ name, value });
+        print("🔧 JIT compiled variable assignment: {s} = {s}\n", .{ name, value });
     }
 
     fn evaluateExpression(self: *SimpleJIT, expr: []const u8) !i64 {
@@ -96,7 +96,7 @@ const SimpleJIT = struct {
             const left_val = try self.getValue(left);
             const right_val = try self.getValue(right);
             
-            print("🧮 JIT computation: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+            print("🧮 JIT computation: {s} + {s} = {s}\n", .{ left_val, right_val, left_val + right_val });
             return left_val + right_val;
         }
         
@@ -138,7 +138,7 @@ const SimpleJIT = struct {
                 
                 // Try to get variable value
                 if (self.variables.get(trimmed)) |value| {
-                    print("{}", .{value});
+                    print("{s}", .{value});
                 } else {
                     print("{s}", .{trimmed});
                 }

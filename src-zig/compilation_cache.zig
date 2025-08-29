@@ -43,10 +43,10 @@ pub const CompilationCache = struct {
     }
     
     pub fn deinit(self: *CompilationCache) void {
-        self.dependency_graph.deinit();
-        self.object_cache.deinit();
-        self.ast_cache.deinit();
-        self.source_cache.deinit();
+        self.dependency_graph.deinit(self.allocator);
+        self.object_cache.deinit(self.allocator);
+        self.ast_cache.deinit(self.allocator);
+        self.source_cache.deinit(self.allocator);
         self.allocator.free(self.cache_dir);
     }
     
@@ -534,7 +534,7 @@ pub const CompilationCache = struct {
         const file = try std.fs.cwd().createFile(object_path, .{});
         defer file.close();
         
-        try file.writeAll(object_data);
+        try file.writer().writeAll(object_data);
     }
     
     fn verifyObjectFile(self: *CompilationCache, object_path: []const u8) bool {
@@ -552,7 +552,7 @@ pub const CompilationCache = struct {
         const file = try std.fs.cwd().createFile(ast_path, .{});
         defer file.close();
         
-        try file.writeAll(cached_ast.serialized_data);
+        try file.writer().writeAll(cached_ast.serialized_data);
     }
     
     fn removeDiskCacheFile(self: *CompilationCache, file_path: []const u8) !void {
@@ -715,7 +715,7 @@ const DependencyGraph = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         
         // Clean up dependents
         var dependents_iter = self.dependents.iterator();
@@ -725,12 +725,12 @@ const DependencyGraph = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.dependents.deinit();
+        self.dependents.deinit(self.allocator);
     }
     
     fn updateDependencies(self: *DependencyGraph, file_path: []const u8, dependencies: []const []const u8) !void {
         // Update dependencies for file
-        var deps_list = .empty;
+        var deps_list = std.ArrayList(u8){};
         for (dependencies) |dep| {
             try deps_list.append(self.allocator, try self.allocator.dupe(u8, dep));
         }

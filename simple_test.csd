@@ -1,7 +1,10 @@
-yeet "vibez"
-
-vibez.spill("Hello World!")
-vibez.spill("Testing basic functionality...")
-
-sus x drip = 42
-vibez.spill("Value of x:", x)
+spill("Hello CURSED World!")
+bestie i drip = 1; i <= 5; i += 1 {
+  ready (i % 3 == 0) {
+    spill("Fizz")  
+  } otherwise ready (i % 5 == 0) {
+    spill("Buzz")
+  } otherwise {
+    spill(i)
+  }
+}

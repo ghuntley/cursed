@@ -24,13 +24,13 @@ pub fn main() !void {
     // Test 2: Plugin discovery
     std.debug.print("\nTest 2: Plugin discovery...\n");
     const discovered = plugin_bridge.cursed_plugin_discover(manager, ".");
-    std.debug.print("✓ Discovered {} plugins in current directory\n", .{discovered});
+    std.debug.print("✓ Discovered {s} plugins in current directory\n", .{discovered});
 
     // Test 3: Load a real plugin
     std.debug.print("\nTest 3: Load test plugin...\n");
     const plugin_id = plugin_bridge.cursed_plugin_load(manager, "./test_plugin.so", false, false);
     if (plugin_id > 0) {
-        std.debug.print("✓ Plugin loaded successfully with ID: {}\n", .{plugin_id});
+        std.debug.print("✓ Plugin loaded successfully with ID: {s}\n", .{plugin_id});
 
         // Test 4: Get plugin information
         std.debug.print("\nTest 4: Plugin information...\n");
@@ -51,10 +51,10 @@ pub fn main() !void {
         }
 
         const status = plugin_bridge.cursed_plugin_get_status(manager, plugin_id);
-        std.debug.print("✓ Plugin status: {} (1=Loaded)\n", .{status});
+        std.debug.print("✓ Plugin status: {s} (1=Loaded)\n", .{status});
 
         const capabilities = plugin_bridge.cursed_plugin_get_capabilities(manager, plugin_id);
-        std.debug.print("✓ Plugin capabilities: {}\n", .{capabilities});
+        std.debug.print("✓ Plugin capabilities: {s}\n", .{capabilities});
 
         // Test 5: Call plugin function
         std.debug.print("\nTest 5: Call plugin function...\n");
@@ -91,7 +91,7 @@ pub fn main() !void {
     std.debug.print("\nTest 8: Plugin statistics...\n");
     const total_plugins = plugin_bridge.cursed_plugin_count_total(manager);
     const loaded_plugins = plugin_bridge.cursed_plugin_count_loaded(manager);
-    std.debug.print("✓ Total plugins: {}, Loaded: {}\n", .{ total_plugins, loaded_plugins });
+    std.debug.print("✓ Total plugins: {s}, Loaded: {s}\n", .{ total_plugins, loaded_plugins });
 
     const stats_json = plugin_bridge.cursed_plugin_get_stats_json(manager);
     if (stats_json) |stats| {

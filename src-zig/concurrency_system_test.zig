@@ -347,9 +347,9 @@ pub const ConcurrencySystemTest = struct {
         try testing.expect(channel_decl_count == 1);
         
         print("✅ Comprehensive concurrency workflow parsed successfully\n", .{});
-        print("   - Goroutines: {}\n", .{goroutine_count});
-        print("   - Select statements: {}\n", .{select_count});
-        print("   - Channel declarations: {}\n", .{channel_decl_count});
+        print("   - Goroutines: {s}\n", .{goroutine_count});
+        print("   - Select statements: {s}\n", .{select_count});
+        print("   - Channel declarations: {s}\n", .{channel_decl_count});
     }
     
     /// Helper function to parse CURSED source code

@@ -13,6 +13,7 @@ const Parser = parser.Parser;
 const Program = ast.Program;
 
 pub fn testComplexProgramParsing(allocator: Allocator) !void {
+        _ = allocator;
     // Test complex CURSED program parsing
     const source = 
         \\squad Point {
@@ -42,7 +43,7 @@ pub fn testComplexProgramParsing(allocator: Allocator) !void {
     defer program.deinit();
     
     // Verify the program structure
-    std.debug.print("Parsed program with {} statements\n", .{program.statements.items.len});
+    std.debug.print("Parsed program with {s} statements\n", .{program.statements.items.len});
     
     // Check that we have struct, interface, and function statements
     var struct_count: usize = 0;
@@ -58,13 +59,14 @@ pub fn testComplexProgramParsing(allocator: Allocator) !void {
         }
     }
     
-    std.debug.print("Found: {} structs, {} interfaces, {} functions\n", .{ struct_count, interface_count, function_count });
+    std.debug.print("Found: {s} structs, {s} interfaces, {s} functions\n", .{ struct_count, interface_count, function_count });
     
     // Print the parsed AST structure
-    try program.print(0);
+    try program.writer().print(0);
 }
 
 pub fn testMemoryManagement(allocator: Allocator) !void {
+        _ = allocator;
     // Test that AST nodes are properly cleaned up
     const source = "sus x normie = 42 + 10 * 5";
     
@@ -80,6 +82,7 @@ pub fn testMemoryManagement(allocator: Allocator) !void {
 }
 
 pub fn testExpressionParsing(allocator: Allocator) !void {
+        _ = allocator;
     // Test complex expression parsing
     const source = "sus result normie = (x + y) * z.property";
     

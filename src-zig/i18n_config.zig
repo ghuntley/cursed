@@ -57,7 +57,7 @@ pub const I18nConfig = struct {
                 .truncation_suffix = "...",
             },
             .rtl_support = true,
-            .custom_formatting = HashMap([]const u8, FormattingRule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .custom_formatting = HashMap([]const u8, FormattingRule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -69,7 +69,7 @@ pub const I18nConfig = struct {
             var rule = entry.value_ptr;
             rule.custom_placeholders.deinit();
         }
-        self.custom_formatting.deinit();
+        self.custom_formatting.deinit(self.allocator);
     }
 
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !I18nConfig {
@@ -152,7 +152,7 @@ pub const I18nConfig = struct {
     }
 
     fn serialize(self: I18nConfig) ![]u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         try result.appendSlice("{\n");
@@ -485,7 +485,7 @@ pub const LanguagePackGenerator = struct {
     }
 
     fn generateLanguagePackContent(allocator: Allocator, locale: Locale) ![]u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         try result.appendSlice("{\n");

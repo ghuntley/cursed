@@ -47,6 +47,6 @@ pub fn main() !void {
     try error_reporter.printDiagnostics(std.io.getStdErr().writer());
 
     print("\n✅ Error reporting test completed!\n", .{});
-    print("Error count: {}\n", .{error_reporter.getErrorCount()});
-    print("Warning count: {}\n", .{error_reporter.getWarningCount()});
+    print("Error count: {s}\n", .{error_reporter.getErrorCount()});
+    print("Warning count: {s}\n", .{error_reporter.getWarningCount()});
 }

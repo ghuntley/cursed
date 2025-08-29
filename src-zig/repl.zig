@@ -54,7 +54,7 @@ pub const ReplSession = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         
         // Clean up functions
         var func_iter = self.functions.iterator();
@@ -62,7 +62,7 @@ pub const ReplSession = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
         // Clean up structs
         var struct_iter = self.structs.iterator();
@@ -70,13 +70,13 @@ pub const ReplSession = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.structs.deinit();
+        self.structs.deinit(self.allocator);
         
         // Clean up history
         for (self.history.items) |line| {
             self.allocator.free(line);
         }
-        self.history.deinit();
+        self.history.deinit(self.allocator);
         
         // Clean up history file path
         if (self.history_file_path) |path| {
@@ -215,7 +215,7 @@ pub const ReplSession = struct {
         }
         
         if (self.verbose and loaded_count > 0) {
-            print("📜 Loaded {} history entries\n", .{loaded_count});
+            print("📜 Loaded {s} history entries\n", .{loaded_count});
         }
     }
     
@@ -248,8 +248,8 @@ pub const ReplSession = struct {
             0;
         
         for (self.history.items[start_idx..]) |line| {
-            try temp_file.writeAll(line);
-            try temp_file.writeAll("\n");
+            try temp_file.writer().writeAll(line);
+            try temp_file.writer().writeAll("\n");
         }
         
         try temp_file.sync(); // Ensure data is written to disk
@@ -258,7 +258,7 @@ pub const ReplSession = struct {
         try std.fs.cwd().rename(temp_path, history_path);
         
         if (self.verbose) {
-            print("💾 History saved ({} entries)\n", .{self.history.items.len - start_idx});
+            print("💾 History saved ({s} entries)\n", .{self.history.items.len - start_idx});
         }
     }
     
@@ -666,7 +666,7 @@ fn printHelp() void {
 var global_session: ?*ReplSession = null;
 
 /// Signal handler for graceful shutdown and history preservation
-fn signalHandler(sig: c_int) callconv(.C) void {
+fn signalHandler(sig: c_int) callconv(.c) void {
     if (global_session) |session| {
         session.saveHistory() catch {};
     }

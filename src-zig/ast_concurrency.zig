@@ -32,7 +32,7 @@ pub const Program = struct {
     }
     
     pub fn deinit(self: *Program) void {
-        self.statements.deinit();
+        self.statements.deinit(self.allocator);
     }
 };
 
@@ -127,7 +127,7 @@ pub const BlockStatement = struct {
     }
     
     pub fn deinit(self: *BlockStatement) void {
-        self.statements.deinit();
+        self.statements.deinit(self.allocator);
     }
 };
 
@@ -235,7 +235,7 @@ pub const FunctionLiteral = struct {
     }
     
     pub fn deinit(self: *FunctionLiteral) void {
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         if (self.generic_params) |*params| {
             params.deinit();
         }
@@ -263,7 +263,7 @@ pub const CallExpression = struct {
     }
     
     pub fn deinit(self: *CallExpression) void {
-        self.arguments.deinit();
+        self.arguments.deinit(self.allocator);
     }
 };
 
@@ -343,7 +343,7 @@ pub const GoroutineSpawn = struct {
     }
     
     pub fn deinit(self: *GoroutineSpawn) void {
-        self.arguments.deinit();
+        self.arguments.deinit(self.allocator);
     }
 };
 
@@ -375,7 +375,7 @@ pub const SelectExpression = struct {
     }
     
     pub fn deinit(self: *SelectExpression) void {
-        self.cases.deinit();
+        self.cases.deinit(self.allocator);
     }
 };
 
@@ -394,7 +394,7 @@ pub const StructLiteral = struct {
     }
     
     pub fn deinit(self: *StructLiteral) void {
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -418,7 +418,7 @@ pub const ArrayLiteral = struct {
     }
     
     pub fn deinit(self: *ArrayLiteral) void {
-        self.elements.deinit();
+        self.elements.deinit(self.allocator);
     }
 };
 
@@ -438,7 +438,7 @@ pub const MapLiteral = struct {
     }
     
     pub fn deinit(self: *MapLiteral) void {
-        self.pairs.deinit();
+        self.pairs.deinit(self.allocator);
     }
 };
 
@@ -462,7 +462,7 @@ pub const MatchExpression = struct {
     }
     
     pub fn deinit(self: *MatchExpression) void {
-        self.arms.deinit();
+        self.arms.deinit(self.allocator);
     }
 };
 
@@ -537,7 +537,7 @@ pub const FunctionType = struct {
     }
     
     pub fn deinit(self: *FunctionType) void {
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
     }
 };
 
@@ -563,7 +563,7 @@ pub const InterfaceType = struct {
     }
     
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit();
+        self.methods.deinit(self.allocator);
     }
 };
 
@@ -592,7 +592,7 @@ pub const StructType = struct {
     }
     
     pub fn deinit(self: *StructType) void {
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
         if (self.generic_params) |*params| {
             params.deinit();
         }
@@ -621,7 +621,7 @@ pub const GenericType = struct {
     }
     
     pub fn deinit(self: *GenericType) void {
-        self.type_arguments.deinit();
+        self.type_arguments.deinit(self.allocator);
     }
 };
 
@@ -664,6 +664,7 @@ pub fn createGoroutineSpawn(allocator: Allocator, function: *Expression) !*Gorou
 }
 
 pub fn createSelectExpression(allocator: Allocator) !*SelectExpression {
+        _ = allocator;
     const select_expr = try allocator.create(SelectExpression);
     select_expr.* = SelectExpression.init(allocator);
     return select_expr;

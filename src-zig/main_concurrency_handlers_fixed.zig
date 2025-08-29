@@ -18,6 +18,7 @@ var global_allocator: ?Allocator = null;
 
 // Safe initialization with double-checked locking and proper memory barriers
 pub fn initGlobalConcurrency(allocator: Allocator) void {
+        _ = allocator;
     // First check without lock (fast path for already initialized)
     if (global_concurrency_initialized.load(.acquire)) return;
     
@@ -28,7 +29,7 @@ pub fn initGlobalConcurrency(allocator: Allocator) void {
     if (global_concurrency_initialized.load(.relaxed)) return;
     
     // Safe to initialize - we have exclusive access
-    global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     global_goroutines = .empty;
     global_allocator = allocator;
     
@@ -113,7 +114,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         if (verbose) print("🚀 Spawning goroutine with block (race-safe)\n", .{});
         
         // Extract the body of the stan block
-        var body_lines = .empty;
+        var body_lines = std.ArrayList(u8){};
         defer body_lines.deinit();
         
         // Find the corresponding closing brace
@@ -130,7 +131,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             }
             
             if (brace_count > 0) {
-                try body_lines.append(block_line);
+                try body_lines.append(allocator, block_line);
             }
             current_line += 1;
         }
@@ -149,7 +150,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             fn run(ctx: *GoroutineContext) void {
                 defer ctx.release(); // Ensure cleanup on exit
                 
-                if (ctx.verb) print("🏃 Goroutine executing {} lines (race-safe)\n", .{ctx.lines.len});
+                if (ctx.verb) print("🏃 Goroutine executing {s} lines (race-safe)\n", .{ctx.lines.len});
                 
                 // Execute each line in the goroutine
                 for (ctx.lines) |block_line| {
@@ -183,7 +184,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         defer global_concurrency_mutex.unlock();
         
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         
         if (verbose) print("✅ Goroutine spawned (race-safe)\n", .{});
@@ -262,13 +263,13 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
         
         // Thread-safe wait for all spawned goroutines
         global_concurrency_mutex.lock();
-        var threads_to_join = .empty;
+        var threads_to_join = std.ArrayList(u8){};
         defer threads_to_join.deinit();
         
         if (global_goroutines) |*goroutines| {
             // Copy thread handles to avoid holding lock during join
             for (goroutines.items) |thread| {
-                try threads_to_join.append(thread);
+                try threads_to_join.append(allocator, thread);
             }
             goroutines.clearRetainingCapacity();
         }
@@ -291,7 +292,7 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
                 // Bounds check to prevent excessive waits
                 const bounded_wait = std.math.min(wait_ms, 10000); // Max 10 seconds
                 
-                if (verbose) print("⏳ Waiting for {}ms (race-safe)...\n", .{bounded_wait});
+                if (verbose) print("⏳ Waiting for {s}ms (race-safe)...\n", .{bounded_wait});
                 std.Thread.sleep(bounded_wait * 1_000_000); // Convert ms to ns
                 if (verbose) print("✅ Wait completed (race-safe)\n", .{});
             }
@@ -303,7 +304,7 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
 
 // Test concurrent goroutine spawning
 pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
-    print("🧪 Stress testing {} concurrent goroutines...\n", .{num_goroutines});
+    print("🧪 Stress testing {s} concurrent goroutines...\n", .{num_goroutines});
     
     initGlobalConcurrency(allocator);
     
@@ -316,7 +317,7 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
             fn run(self: @This()) void {
                 var j: u32 = 0;
                 while (j < 100) : (j += 1) {
-                    print("Goroutine {}: iteration {}\n", .{ self.id, j });
+                    print("Goroutine {s}: iteration {s}\n", .{ self.id, j });
                     std.Thread.sleep(1_000_000); // 1ms
                 }
             }
@@ -327,21 +328,21 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
         
         global_concurrency_mutex.lock();
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         global_concurrency_mutex.unlock();
     }
     
-    print("✅ All {} goroutines spawned, waiting for completion...\n", .{num_goroutines});
+    print("✅ All {s} goroutines spawned, waiting for completion...\n", .{num_goroutines});
     
     // Wait for all to complete
     global_concurrency_mutex.lock();
-    var threads_to_join = .empty;
+    var threads_to_join = std.ArrayList(u8){};
     defer threads_to_join.deinit();
     
     if (global_goroutines) |*goroutines| {
         for (goroutines.items) |thread| {
-            try threads_to_join.append(thread);
+            try threads_to_join.append(allocator, thread);
         }
         goroutines.clearRetainingCapacity();
     }
@@ -351,7 +352,7 @@ pub fn stressTestGoroutines(allocator: Allocator, num_goroutines: u32) !void {
         thread.join();
     }
     
-    print("✅ Stress test completed - all {} goroutines finished successfully\n", .{num_goroutines});
+    print("✅ Stress test completed - all {s} goroutines finished successfully\n", .{num_goroutines});
 }
 
 // Test race condition detection
@@ -367,7 +368,7 @@ pub fn validateRaceConditionFix() !void {
             fn run(self: @This()) void {
                 const allocator = std.heap.page_allocator;
                 initGlobalConcurrency(allocator);
-                print("Init thread {} completed\n", .{self.id});
+                print("Init thread {s} completed\n", .{self.id});
             }
         };
         

@@ -407,7 +407,7 @@ extern fn getspnam(name: [*:0]const u8) ?*spwd;
 extern fn crypt(key: [*:0]const u8, salt: [*:0]const u8) ?[*:0]u8;
 
 // Export for CURSED runtime integration
-pub fn cursed_get_current_uid() callconv(.C) c_int {
+pub fn cursed_get_current_uid() callconv(.c) c_int {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     
@@ -417,7 +417,7 @@ pub fn cursed_get_current_uid() callconv(.C) c_int {
     return @intCast(uid);
 }
 
-pub fn cursed_lookup_user(username_ptr: [*:0]const u8, user_info_ptr: *u8) callconv(.C) c_int {
+pub fn cursed_lookup_user(username_ptr: [*:0]const u8, user_info_ptr: *u8) callconv(.c) c_int {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     
@@ -445,7 +445,7 @@ pub fn cursed_lookup_user(username_ptr: [*:0]const u8, user_info_ptr: *u8) callc
     return 0;
 }
 
-pub fn cursed_authenticate_user(username_ptr: [*:0]const u8, password_ptr: [*:0]const u8) callconv(.C) c_int {
+pub fn cursed_authenticate_user(username_ptr: [*:0]const u8, password_ptr: [*:0]const u8) callconv(.c) c_int {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     defer _ = gpa.deinit();
     

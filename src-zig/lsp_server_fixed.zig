@@ -31,6 +31,7 @@ const FileTracker = struct {
         }
         
         pub fn deinit(self: *FileInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.uri);
             allocator.free(self.content);
             // Safely clear AST pointer
@@ -52,7 +53,7 @@ const FileTracker = struct {
     
     pub fn init() FileTracker {
         return FileTracker{
-            .files = HashMap([]const u8, FileInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .files = HashMap([]const u8, FileInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -63,7 +64,7 @@ const FileTracker = struct {
             var file_info = entry.value_ptr;
             file_info.deinit();
         }
-        self.files.deinit();
+        self.files.deinit(self.allocator);
     }
     
     pub fn addOrUpdateFile(self: *FileTracker, uri: []const u8, version: i32, content: []const u8) !void {
@@ -168,7 +169,7 @@ pub const CursedLSPServer = struct {
     }
     
     pub fn deinit(self: *CursedLSPServer) void {
-        self.file_tracker.deinit();
+        self.file_tracker.deinit(self.allocator);
     }
     
     // Safe AST parsing with error handling
@@ -524,7 +525,7 @@ pub const CursedLSPServer = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = std.ArrayList(u8).init(self.allocator);
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         while (!self.shutdown_requested) {
@@ -578,7 +579,7 @@ pub const CursedLSPServer = struct {
                     defer self.allocator.free(response);
                     
                     // Send response
-                    stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response }) catch |err| {
+                    stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response }) catch |err| {
                         std.log.warn("Failed to send response: {}", .{err});
                     };
                 } else |err| {

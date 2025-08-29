@@ -81,14 +81,14 @@ pub const LinterConfig = struct {
     
     pub fn init() LinterConfig {
         return LinterConfig{
-            .enabled_rules = std.HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .severity_overrides = std.HashMap([]const u8, Severity, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .enabled_rules = std.HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .severity_overrides = std.HashMap([]const u8, Severity, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *LinterConfig) void {
-        self.enabled_rules.deinit();
-        self.severity_overrides.deinit();
+        self.enabled_rules.deinit(self.allocator);
+        self.severity_overrides.deinit(self.allocator);
     }
 };
 
@@ -102,12 +102,12 @@ pub const Linter = struct {
         return Linter{
             .allocator = allocator,
             .config = config,
-            .issues = ArrayList(LintIssue).init(allocator),
+            .issues = ArrayList(LintIssue){},
         };
     }
     
     pub fn deinit(self: *Linter) void {
-        self.issues.deinit();
+        self.issues.deinit(self.allocator);
     }
     
     pub fn lintFile(self: *Linter, file_path: []const u8) !void {
@@ -168,7 +168,7 @@ pub const Linter = struct {
             final_issue.severity = severity;
         }
         
-        try self.issues.append(final_issue);
+        try self.issues.append(allocator, final_issue);
     }
     
     // Style Rules
@@ -331,7 +331,7 @@ pub const Linter = struct {
     
     fn checkUnusedVariables(self: *Linter, file_path: []const u8, ast_tree: ast.AST) !void {
         _ = ast_tree; // TODO: Use this when implementing proper AST traversal
-        var declared_vars = std.StringHashMap(VariableInfo).init(self.allocator);
+        var declared_vars = std.StringHashMap(VariableInfo){};
         defer declared_vars.deinit();
         
         // TODO: Implement proper AST traversal with new structure
@@ -1321,15 +1321,15 @@ pub const Linter = struct {
     
     fn toSnakeCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to snake_case
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         for (name, 0..) |char, i| {
             if (char >= 'A' and char <= 'Z') {
-                if (i > 0) try result.append('_');
-                try result.append(char + 32); // Convert to lowercase
+                if (i > 0) try result.append(allocator, '_');
+                try result.append(allocator, char + 32); // Convert to lowercase
             } else {
-                try result.append(char);
+                try result.append(allocator, char);
             }
         }
         
@@ -1338,7 +1338,7 @@ pub const Linter = struct {
     
     fn toPascalCase(self: *Linter, name: []const u8) ![]const u8 {
         // Convert to PascalCase
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var capitalize_next = true;
@@ -1346,10 +1346,10 @@ pub const Linter = struct {
             if (char == '_') {
                 capitalize_next = true;
             } else if (capitalize_next and char >= 'a' and char <= 'z') {
-                try result.append(char - 32); // Convert to uppercase
+                try result.append(allocator, char - 32); // Convert to uppercase
                 capitalize_next = false;
             } else {
-                try result.append(char);
+                try result.append(allocator, char);
                 capitalize_next = false;
             }
         }
@@ -1372,7 +1372,7 @@ fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     for (issues) |issue| {
-        try stdout.print("{s}:{}:{}: {s}: {s} [{s}]\n", .{
+        try stdout.writer().print("{s}:{s}:{s}: {s}: {s} [{s}]\n", .{{
             issue.file,
             issue.line,
             issue.column,
@@ -1382,41 +1382,41 @@ fn printIssuesHuman(allocator: Allocator, issues: []const LintIssue) !void {
         });
         
         if (issue.suggestion) |suggestion| {
-            try stdout.print("  suggestion: {s}\n", .{suggestion});
+            try stdout.writer().print("  suggestion: {s}\n", .{suggestion});
         }
     }
     
-    try stdout.print("\nFound {} issues\n", .{issues.len});
+    try stdout.writer().print("\nFound {s} issues\n", .{{issues.len});
 }
 
 fn printIssuesJSON(allocator: Allocator, issues: []const LintIssue) !void {
         var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
-    try stdout.writeAll("{\n  \"issues\": [\n");
+    try stdout.writer().writeAll("{\n  \"issues\": [\n");
     
     for (issues, 0..) |issue, i| {
-        try stdout.print("    {{\n", .{});
-        try stdout.print("      \"rule_id\": \"{s}\",\n", .{issue.rule_id});
-        try stdout.print("      \"severity\": \"{s}\",\n", .{issue.severity.toString()});
-        try stdout.print("      \"category\": \"{s}\",\n", .{issue.category.toString()});
-        try stdout.print("      \"message\": \"{s}\",\n", .{issue.message});
-        try stdout.print("      \"file\": \"{s}\",\n", .{issue.file});
-        try stdout.print("      \"line\": {},\n", .{issue.line});
-        try stdout.print("      \"column\": {}", .{issue.column});
+        try stdout.writer().print("    {{\n", .{});
+        try stdout.writer().print("      \"rule_id\": \"{s}\",\n", .{issue.rule_id});
+        try stdout.writer().print("      \"severity\": \"{s}\",\n", .{issue.severity.toString()});
+        try stdout.writer().print("      \"category\": \"{s}\",\n", .{issue.category.toString()});
+        try stdout.writer().print("      \"message\": \"{s}\",\n", .{issue.message});
+        try stdout.writer().print("      \"file\": \"{s}\",\n", .{issue.file});
+        try stdout.writer().print("      \"line\": {},\n", .{issue.line});
+        try stdout.writer().print("      \"column\": {}", .{issue.column});
         
         if (issue.suggestion) |suggestion| {
-            try stdout.print(",\n      \"suggestion\": \"{s}\"", .{suggestion});
+            try stdout.writer().print(",\n      \"suggestion\": \"{s}\"", .{suggestion});
         }
         
-        try stdout.writeAll("\n    }");
-        if (i < issues.len - 1) try stdout.writeAll(",");
-        try stdout.writeAll("\n");
+        try stdout.writer().writeAll("\n    }");
+        if (i < issues.len - 1) try stdout.writer().writeAll(",");
+        try stdout.writer().writeAll("\n");
     }
     
-    try stdout.writeAll("  ],\n");
-    try stdout.print("  \"total\": {}\n", .{issues.len});
-    try stdout.writeAll("}\n");
+    try stdout.writer().writeAll("  ],\n");
+    try stdout.writer().print("  \"total\": {}\n", .{issues.len});
+    try stdout.writer().writeAll("}\n");
 }
 
 // Main linter entry point

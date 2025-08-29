@@ -32,7 +32,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     const tokenize_end = timer.read();
     const tokenization_time = tokenize_end - tokenize_start;
     
-    if (verbose) print("⚡ Fast tokenization: {} tokens in {d:.2}ms\n", .{ tokens.len, @as(f64, @floatFromInt(tokenization_time)) / 1_000_000.0 });
+    if (verbose) print("⚡ Fast tokenization: {s} tokens in {d:.2}ms\n", .{ tokens.len, @as(f64, @floatFromInt(tokenization_time)) / 1_000_000.0 });
     
     // Optimized parsing
     var fast_parser = parser_optimizations.FastParser.init(allocator, tokens);
@@ -64,7 +64,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
     if (verbose) {
         print("⚡ Optimized execution completed in {d:.2}ms\n", .{@as(f64, @floatFromInt(execution_time)) / 1_000_000.0});
         print("\n=== Performance Statistics ===\n", .{});
-        perf_stats.print();
+        perf_stats.writer().print();
         print("Cache efficiency: {d:.2}%\n", .{optimized_scope.cache.getCacheEfficiency() * 100.0});
         
         // Parser benchmark
@@ -73,7 +73,7 @@ pub fn optimizedInterpret(allocator: Allocator, source: []const u8, verbose: boo
         parser_benchmark.parsing_time_ns = parsing_time;
         parser_benchmark.tokens_created = @as(u32, @intCast(tokens.len));
         parser_benchmark.nodes_created = fast_parser.ast_pool.cache_index;
-        parser_benchmark.print();
+        parser_benchmark.writer().print();
     }
     
     const total_time = timer.read() - start_time;
@@ -85,7 +85,7 @@ pub fn optimizedCompile(allocator: Allocator, source: []const u8, filename: []co
     var timer = std.time.Timer.start() catch return;
     const start_time = timer.read();
     
-    if (verbose) print("🔥 Starting optimized LLVM compilation (O{})...\n", .{optimization_level});
+    if (verbose) print("🔥 Starting optimized LLVM compilation (O{s})...\n", .{optimization_level});
     
     // Initialize LLVM optimizer
     const inline_threshold: u32 = switch (optimization_level) {
@@ -166,7 +166,7 @@ fn executeOptimizedAST(
     // This is a simplified execution - in a real implementation, this would
     // traverse the AST and execute each node with optimization tracking
     
-    if (verbose) print("🔧 Executing optimized AST with {} child nodes\n", .{ast.child_count});
+    if (verbose) print("🔧 Executing optimized AST with {s} child nodes\n", .{ast.child_count});
     
     // Simulate optimized execution by calling the regular interpreter
     // but with performance tracking
@@ -184,7 +184,7 @@ fn generateBasicLLVMIR(
     llvm_optimizer: *llvm_optimizations.LLVMOptimizer,
     verbose: bool
 ) ![]u8 {
-    var ir = std.ArrayList(u8).init(self.allocator);
+    var ir = std.ArrayList(u8){};
     
     // Add basic LLVM IR structure
     try ir.appendSlice("; CURSED Optimized LLVM IR\n");
@@ -218,7 +218,7 @@ fn generateBasicLLVMIR(
     try ir.appendSlice("  ret i32 0\n");
     try ir.appendSlice("}\n");
     
-    if (verbose) print("📝 Generated basic LLVM IR ({} bytes)\n", .{ir.items.len});
+    if (verbose) print("📝 Generated basic LLVM IR ({s} bytes)\n", .{ir.items.len});
     
     return ir.toOwnedSlice();
 }

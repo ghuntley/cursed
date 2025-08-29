@@ -143,13 +143,13 @@ pub const CursedCompiler = struct {
     fn performLexicalAnalysis(self: *CursedCompiler) CompilerError!ArrayList(lexer.Token) {
         // Read source file
         const file = std.fs.cwd().openFile(self.source_filename, .{}) catch |err| {
-            std.debug.print("❌ Error: Could not open source file '{s}': {}\n", .{ self.source_filename, err });
+            std.debug.print("❌ Error: Could not open source file '{s}': {s}\n", .{ self.source_filename, err });
             return CompilerError.LexicalError;
         };
         defer file.close();
         
         const source = file.readToEndAlloc(self.allocator, 1024 * 1024) catch |err| {
-            std.debug.print("❌ Error: Could not read source file '{s}': {}\n", .{ self.source_filename, err });
+            std.debug.print("❌ Error: Could not read source file '{s}': {s}\n", .{ self.source_filename, err });
             return CompilerError.LexicalError;
         };
         defer self.allocator.free(source);
@@ -159,11 +159,11 @@ pub const CursedCompiler = struct {
         defer l.deinit();
         
         const tokens = l.tokenize() catch |err| {
-            std.debug.print("❌ Lexical error: {}\n", .{err});
+            std.debug.print("❌ Lexical error: {s}\n", .{err});
             return CompilerError.LexicalError;
         };
         
-        std.debug.print("   Generated {} tokens\n", .{tokens.items.len});
+        std.debug.print("   Generated {s} tokens\n", .{tokens.items.len});
         return tokens;
     }
     
@@ -173,11 +173,11 @@ pub const CursedCompiler = struct {
         defer p.deinit();
         
         const program = p.parseProgram() catch |err| {
-            std.debug.print("❌ Syntax error: {}\n", .{err});
+            std.debug.print("❌ Syntax error: {s}\n", .{err});
             return CompilerError.SyntaxError;
         };
         
-        std.debug.print("   Parsed {} statements\n", .{program.statements.items.len});
+        std.debug.print("   Parsed {s} statements\n", .{program.statements.items.len});
         return program;
     }
     
@@ -232,7 +232,7 @@ pub const CursedCompiler = struct {
         }
         
         if (type_errors > 0) {
-            std.debug.print("❌ Found {} semantic errors\n", .{type_errors});
+            std.debug.print("❌ Found {s} semantic errors\n", .{type_errors});
             return CompilerError.SemanticError;
         }
         
@@ -242,7 +242,7 @@ pub const CursedCompiler = struct {
     /// Initialize native compiler
     fn initializeNativeCompiler(self: *CursedCompiler) CompilerError!void {
         self.native_compiler = native_compilation.NativeCompiler.init(self.allocator, self.target_platform) catch |err| {
-            std.debug.print("❌ Error initializing native compiler: {}\n", .{err});
+            std.debug.print("❌ Error initializing native compiler: {s}\n", .{err});
             return CompilerError.CompilationError;
         };
         
@@ -263,13 +263,13 @@ pub const CursedCompiler = struct {
             self.native_compiler.?.codegen.base_codegen.context,
             self.native_compiler.?.codegen.base_codegen.module
         ) catch |err| {
-            std.debug.print("❌ Error generating runtime library: {}\n", .{err});
+            std.debug.print("❌ Error generating runtime library: {s}\n", .{err});
             return CompilerError.RuntimeError;
         };
         
         // Generate user code
         self.native_compiler.?.codegen.generateAdvancedProgram(program) catch |err| {
-            std.debug.print("❌ Error generating LLVM IR: {}\n", .{err});
+            std.debug.print("❌ Error generating LLVM IR: {s}\n", .{err});
             return CompilerError.CodeGenError;
         };
         
@@ -289,7 +289,7 @@ pub const CursedCompiler = struct {
             self.native_compiler.?.codegen.base_codegen.context,
             self.native_compiler.?.codegen.base_codegen.module
         ) catch |err| {
-            std.debug.print("❌ Error initializing debug info generator: {}\n", .{err});
+            std.debug.print("❌ Error initializing debug info generator: {s}\n", .{err});
             return CompilerError.DebugInfoError;
         };
         
@@ -300,13 +300,13 @@ pub const CursedCompiler = struct {
         defer self.allocator.free(current_dir);
         
         self.debug_generator.?.createCompileUnit(self.source_filename, current_dir) catch |err| {
-            std.debug.print("❌ Error creating debug compile unit: {}\n", .{err});
+            std.debug.print("❌ Error creating debug compile unit: {s}\n", .{err});
             return CompilerError.DebugInfoError;
         };
         
         // Create standard types
         _ = self.debug_generator.?.createCursedTypes() catch |err| {
-            std.debug.print("❌ Error creating debug types: {}\n", .{err});
+            std.debug.print("❌ Error creating debug types: {s}\n", .{err});
             return CompilerError.DebugInfoError;
         };
         
@@ -323,7 +323,7 @@ pub const CursedCompiler = struct {
         }
         
         self.native_compiler.?.compileProgram(program, self.output_path) catch |err| {
-            std.debug.print("❌ Error during native compilation: {}\n", .{err});
+            std.debug.print("❌ Error during native compilation: {s}\n", .{err});
             return CompilerError.CompilationError;
         };
         
@@ -380,10 +380,10 @@ pub const CursedCompiler = struct {
     /// Print compilation statistics
     fn printCompilationStats(self: *CursedCompiler, stats: CompilationStats) void {
         std.debug.print("\n📊 Compilation Statistics:\n", .{});
-        std.debug.print("   Source lines:          {}\n", .{stats.source_lines});
-        std.debug.print("   Compilation time:      {} ms\n", .{stats.compilation_time_ms});
-        std.debug.print("   Executable size:       {} bytes ({d:.2} KB)\n", .{ stats.executable_size_bytes, @as(f64, @floatFromInt(stats.executable_size_bytes)) / 1024.0 });
-        std.debug.print("   Optimization passes:   {}\n", .{stats.optimization_passes});
+        std.debug.print("   Source lines:          {s}\n", .{stats.source_lines});
+        std.debug.print("   Compilation time:      {s} ms\n", .{stats.compilation_time_ms});
+        std.debug.print("   Executable size:       {s} bytes ({d:.2} KB)\n", .{ stats.executable_size_bytes, @as(f64, @floatFromInt(stats.executable_size_bytes)) / 1024.0 });
+        std.debug.print("   Optimization passes:   {s}\n", .{stats.optimization_passes});
         std.debug.print("   Target platform:       {s}\n", .{@tagName(self.target_platform)});
         std.debug.print("   Debug info:            {s}\n", .{if (self.debug_info_enabled) "enabled" else "disabled"});
         std.debug.print("\n🚀 Ready to execute: ./{s}\n", .{self.output_path});
@@ -401,7 +401,7 @@ pub const CursedCompiler = struct {
         try self.performSemanticAnalysis(program);
         
         native_compilation.NativeCompiler.crossCompile(self.allocator, program, output_dir) catch |err| {
-            std.debug.print("❌ Cross-compilation failed: {}\n", .{err});
+            std.debug.print("❌ Cross-compilation failed: {s}\n", .{err});
             return CompilerError.CompilationError;
         };
     }
@@ -417,7 +417,7 @@ pub const CursedCompiler = struct {
         try self.generateLLVMIR(program);
         
         self.native_compiler.?.generateAssembly(self.output_path) catch |err| {
-            std.debug.print("❌ Assembly generation failed: {}\n", .{err});
+            std.debug.print("❌ Assembly generation failed: {s}\n", .{err});
             return CompilerError.CompilationError;
         };
     }
@@ -431,11 +431,11 @@ pub const CursedCompiler = struct {
         
         var benchmark = native_compilation.PerformanceBenchmark.init(self.allocator);
         const compilation_time = benchmark.benchmarkCompilation(program, self.target_platform) catch |err| {
-            std.debug.print("❌ Benchmark failed: {}\n", .{err});
+            std.debug.print("❌ Benchmark failed: {s}\n", .{err});
             return CompilerError.CompilationError;
         };
         
-        std.debug.print("⏱️  Compilation benchmark: {} nanoseconds\n", .{compilation_time});
+        std.debug.print("⏱️  Compilation benchmark: {s} nanoseconds\n", .{compilation_time});
         return compilation_time;
     }
     

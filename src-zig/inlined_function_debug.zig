@@ -118,7 +118,7 @@ pub const InlinedFunctionDebugGenerator = struct {
             .context = context,
             .di_builder = di_builder,
             .inline_contexts = .empty,
-            .inlined_function_debug_info = HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .inlined_function_debug_info = HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .variable_mappings = .empty,
             .instruction_debug_locations = HashMap(c.LLVMValueRef, c.LLVMMetadataRef, std.hash_map.AutoContext(c.LLVMValueRef), std.hash_map.default_max_load_percentage).init(allocator),
             .inline_stack = .empty,
@@ -126,11 +126,11 @@ pub const InlinedFunctionDebugGenerator = struct {
     }
     
     pub fn deinit(self: *InlinedFunctionDebugGenerator) void {
-        self.inline_contexts.deinit();
-        self.inlined_function_debug_info.deinit();
-        self.variable_mappings.deinit();
-        self.instruction_debug_locations.deinit();
-        self.inline_stack.deinit();
+        self.inline_contexts.deinit(self.allocator);
+        self.inlined_function_debug_info.deinit(self.allocator);
+        self.variable_mappings.deinit(self.allocator);
+        self.instruction_debug_locations.deinit(self.allocator);
+        self.inline_stack.deinit(self.allocator);
     }
     
     /// Create debug information for an inlined function
@@ -216,14 +216,14 @@ pub const InlinedFunctionDebugGenerator = struct {
         mapping.original_debug_info = original_debug_info;
         mapping.inlined_debug_info = inlined_debug_info;
         
-        try self.variable_mappings.append(mapping);
+        try self.variable_mappings.append(allocator, mapping);
         
         std.debug.print("📍 Tracked inlined variable: {s} -> {s}\n", .{ original_name, inlined_name });
     }
     
     /// Handle nested inlining by maintaining a stack of inline contexts
     pub fn pushInlineContext(self: *InlinedFunctionDebugGenerator, context: *const InlineContext) InlineDebugError!void {
-        try self.inline_stack.append(context);
+        try self.inline_stack.append(allocator, context);
     }
     
     pub fn popInlineContext(self: *InlinedFunctionDebugGenerator) void {
@@ -298,7 +298,7 @@ pub const InlinedFunctionDebugGenerator = struct {
     /// Generate comprehensive inlining report for debugging
     pub fn generateInliningReport(self: *InlinedFunctionDebugGenerator, output_file: []const u8) InlineDebugError!void {
         const file = std.fs.cwd().createFile(output_file, .{}) catch |err| {
-            std.debug.print("❌ Failed to create inlining report file: {}\n", .{err});
+            std.debug.print("❌ Failed to create inlining report file: {s}\n", .{err});
             return InlineDebugError.DebugInfoCreationFailed;
         };
         defer file.close();

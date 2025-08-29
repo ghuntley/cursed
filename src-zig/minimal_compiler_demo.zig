@@ -71,7 +71,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    print("📄 Source: {s} ({} bytes)\n", .{ filename, source.len });
+    print("📄 Source: {s} ({s} bytes)\n", .{ filename, source.len });
 
     if (compile_mode) {
         // Complete LLVM Compilation Pipeline
@@ -104,7 +104,7 @@ fn demonstrateFullPipeline(allocator: Allocator, source: []const u8, filename: [
     // Step 1: Source Analysis
     print("\n1️⃣ Source Code Analysis\n", .{});
     print("   📝 Analyzing CURSED source code...\n", .{});
-    print("   🔍 Source size: {} bytes\n", .{source.len});
+    print("   🔍 Source size: {s} bytes\n", .{source.len});
     if (std.mem.indexOf(u8, source, "vibez.spill")) |_| {
         print("   ✅ Found CURSED print statement\n", .{});
     }
@@ -118,7 +118,7 @@ fn demonstrateFullPipeline(allocator: Allocator, source: []const u8, filename: [
     print("   ✅ Generated LLVM module with main function\n", .{});
     
     // Write IR to file for inspection
-    var ir_filename = .empty;
+    var ir_filename = std.ArrayList(u8){};
     defer ir_filename.deinit();
     try ir_filename.appendSlice(output_name);
     try ir_filename.appendSlice(".ll");
@@ -311,7 +311,7 @@ const LLVMCompiler = struct {
         defer c.LLVMDisposeTargetMachine(target_machine);
 
         // Generate object file
-        var obj_filename = .empty;
+        var obj_filename = std.ArrayList(u8){};
         defer obj_filename.deinit();
         try obj_filename.appendSlice(output_base);
         try obj_filename.appendSlice(".o");
@@ -327,34 +327,34 @@ const LLVMCompiler = struct {
 };
 
 fn linkToExecutable(allocator: Allocator, output_base: []const u8) !void {
-    var obj_filename = .empty;
+    var obj_filename = std.ArrayList(u8){};
     defer obj_filename.deinit();
     try obj_filename.appendSlice(output_base);
     try obj_filename.appendSlice(".o");
 
     // Link using gcc
-    var link_args = .empty;
+    var link_args = std.ArrayList(u8){};
     defer link_args.deinit();
     
-    try link_args.append("gcc");
-    try link_args.append("-o");
-    try link_args.append(output_base);
-    try link_args.append(obj_filename.items);
-    try link_args.append("-no-pie");
+    try link_args.append(allocator, "gcc");
+    try link_args.append(allocator, "-o");
+    try link_args.append(allocator, output_base);
+    try link_args.append(allocator, obj_filename.items);
+    try link_args.append(allocator, "-no-pie");
 
     var child = std.ChildProcess.init(link_args.items, allocator);
     child.stdout_behavior = .Ignore;
     child.stderr_behavior = .Pipe;
     
     const result = child.spawnAndWait() catch |err| {
-        print("Failed to spawn linker: {}\n", .{err});
+        print("Failed to spawn linker: {s}\n", .{err});
         return error.LinkerError;
     };
     
     switch (result) {
         .Exited => |code| {
             if (code != 0) {
-                print("Linker failed with exit code: {}\n", .{code});
+                print("Linker failed with exit code: {s}\n", .{code});
                 return error.LinkerError;
             }
         },
@@ -368,22 +368,22 @@ fn linkToExecutable(allocator: Allocator, output_base: []const u8) !void {
 fn validateExecutable(allocator: Allocator, executable_path: []const u8) !void {
     // Check if file exists and is executable
     const file = std.fs.cwd().openFile(executable_path, .{}) catch |err| {
-        print("   ❌ Executable not found: {}\n", .{err});
+        print("   ❌ Executable not found: {s}\n", .{err});
         return;
     };
     defer file.close();
     
     const stat = file.stat() catch |err| {
-        print("   ❌ Cannot stat executable: {}\n", .{err});
+        print("   ❌ Cannot stat executable: {s}\n", .{err});
         return;
     };
     
-    print("   ✅ Executable exists ({} bytes)\n", .{stat.size});
+    print("   ✅ Executable exists ({s} bytes)\n", .{stat.size});
     
     // Test if it's a valid ELF binary (on Linux)
     var buffer: [4]u8 = undefined;
     _ = file.readAll(&buffer) catch |err| {
-        print("   ❌ Cannot read executable header: {}\n", .{err});
+        print("   ❌ Cannot read executable header: {s}\n", .{err});
         return;
     };
     
@@ -400,7 +400,7 @@ fn runExecutable(allocator: Allocator, executable_path: []const u8) !void {
     child.stderr_behavior = .Pipe;
     
     const result = child.spawnAndWait() catch |err| {
-        print("   ❌ Failed to execute: {}\n", .{err});
+        print("   ❌ Failed to execute: {s}\n", .{err});
         return;
     };
     
@@ -415,9 +415,9 @@ fn runExecutable(allocator: Allocator, executable_path: []const u8) !void {
     switch (result) {
         .Exited => |code| {
             if (code == 0) {
-                print("   ✅ Executable ran successfully (exit code: {})\n", .{code});
+                print("   ✅ Executable ran successfully (exit code: {s})\n", .{code});
             } else {
-                print("   ❌ Executable failed (exit code: {})\n", .{code});
+                print("   ❌ Executable failed (exit code: {s})\n", .{code});
             }
         },
         else => {

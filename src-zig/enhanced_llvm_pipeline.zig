@@ -121,14 +121,14 @@ pub const EnhancedLLVMPipeline = struct {
         
         pub fn print(self: CompilationStats) void {
             std.debug.print("=== CURSED LLVM Compilation Statistics ===\n", .{});
-            std.debug.print("Compilation time: {} ms\n", .{self.compilation_time_ms});
-            std.debug.print("Optimization time: {} ms\n", .{self.optimization_time_ms});
-            std.debug.print("Code size: {} bytes\n", .{self.code_size_bytes});
-            std.debug.print("Functions compiled: {}\n", .{self.functions_compiled});
-            std.debug.print("Functions inlined: {}\n", .{self.functions_inlined});
-            std.debug.print("Dead code eliminated: {}\n", .{self.dead_code_eliminated});
-            std.debug.print("Constants propagated: {}\n", .{self.constants_propagated});
-            std.debug.print("Memory used: {} KB\n", .{self.memory_allocated_kb});
+            std.debug.print("Compilation time: {s} ms\n", .{self.compilation_time_ms});
+            std.debug.print("Optimization time: {s} ms\n", .{self.optimization_time_ms});
+            std.debug.print("Code size: {s} bytes\n", .{self.code_size_bytes});
+            std.debug.print("Functions compiled: {s}\n", .{self.functions_compiled});
+            std.debug.print("Functions inlined: {s}\n", .{self.functions_inlined});
+            std.debug.print("Dead code eliminated: {s}\n", .{self.dead_code_eliminated});
+            std.debug.print("Constants propagated: {s}\n", .{self.constants_propagated});
+            std.debug.print("Memory used: {s} KB\n", .{self.memory_allocated_kb});
         }
     };
     
@@ -193,7 +193,7 @@ pub const EnhancedLLVMPipeline = struct {
         
         try self.setupOptimizationPasses();
         
-        std.debug.print("✅ LLVM optimization level set to: {}\n", .{level});
+        std.debug.print("✅ LLVM optimization level set to: {s}\n", .{level});
     }
     
     /// Enable debug information generation with enhanced DWARF support
@@ -393,7 +393,7 @@ pub const EnhancedLLVMPipeline = struct {
         // Initialize function pass manager
         _ = c.LLVMInitializeFunctionPassManager(self.function_pass_manager);
         
-        std.debug.print("✅ LLVM optimization passes configured for level: {}\n", .{self.optimization_level});
+        std.debug.print("✅ LLVM optimization passes configured for level: {s}\n", .{self.optimization_level});
     }
     
     /// Compile a CURSED AST to optimized LLVM IR
@@ -431,7 +431,7 @@ pub const EnhancedLLVMPipeline = struct {
         const compilation_time = std.time.milliTimestamp();
         self.compilation_stats.compilation_time_ms = @as(u64, @intCast(compilation_time - start_time));
         
-        std.debug.print("✅ CURSED program compiled to LLVM IR in {} ms\n", .{self.compilation_stats.compilation_time_ms});
+        std.debug.print("✅ CURSED program compiled to LLVM IR in {s} ms\n", .{self.compilation_stats.compilation_time_ms});
     }
     
     /// Compile a single statement with optimizations
@@ -456,7 +456,7 @@ pub const EnhancedLLVMPipeline = struct {
             },
             else => {
                 // Handle other statement types
-                std.debug.print("⚠️ Statement type not yet optimized: {}\n", .{statement});
+                std.debug.print("⚠️ Statement type not yet optimized: {s}\n", .{statement});
             },
         }
     }
@@ -486,7 +486,7 @@ pub const EnhancedLLVMPipeline = struct {
         const optimization_time = std.time.milliTimestamp();
         self.compilation_stats.optimization_time_ms = @as(u64, @intCast(optimization_time - start_time));
         
-        std.debug.print("✅ LLVM optimizations completed in {} ms\n", .{self.compilation_stats.optimization_time_ms});
+        std.debug.print("✅ LLVM optimizations completed in {s} ms\n", .{self.compilation_stats.optimization_time_ms});
     }
     
     /// Generate optimized object file
@@ -547,18 +547,18 @@ pub const EnhancedLLVMPipeline = struct {
     
     /// Print compilation statistics
     pub fn printStatistics(self: *EnhancedLLVMPipeline) void {
-        self.compilation_stats.print();
+        self.compilation_stats.writer().print();
         
         // Print optimization configuration
         std.debug.print("\n=== Optimization Configuration ===\n", .{});
-        std.debug.print("Level: {}\n", .{self.optimization_level});
-        std.debug.print("Inline threshold: {}\n", .{self.optimization_config.inline_threshold});
-        std.debug.print("Vectorization: {}\n", .{self.optimization_config.vectorize});
-        std.debug.print("Loop unrolling: {}\n", .{self.optimization_config.unroll_loops});
-        std.debug.print("Dead code elimination: {}\n", .{self.optimization_config.eliminate_dead_code});
-        std.debug.print("Profile-guided optimization: {}\n", .{self.profile_guided_optimization});
-        std.debug.print("Link-time optimization: {}\n", .{self.link_time_optimization});
-        std.debug.print("Debug information: {}\n", .{self.debug_enabled});
+        std.debug.print("Level: {s}\n", .{self.optimization_level});
+        std.debug.print("Inline threshold: {s}\n", .{self.optimization_config.inline_threshold});
+        std.debug.print("Vectorization: {s}\n", .{self.optimization_config.vectorize});
+        std.debug.print("Loop unrolling: {s}\n", .{self.optimization_config.unroll_loops});
+        std.debug.print("Dead code elimination: {s}\n", .{self.optimization_config.eliminate_dead_code});
+        std.debug.print("Profile-guided optimization: {s}\n", .{self.profile_guided_optimization});
+        std.debug.print("Link-time optimization: {s}\n", .{self.link_time_optimization});
+        std.debug.print("Debug information: {s}\n", .{self.debug_enabled});
     }
     
     /// Validate that all CURSED language features compile correctly

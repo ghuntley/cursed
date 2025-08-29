@@ -253,21 +253,21 @@ fn handleCompile(allocator: Allocator, args: [][]const u8) !void {
     }
     
     // Create compilation command
-    var compile_args = .empty;
+    var compile_args = std.ArrayList(u8){};
     defer compile_args.deinit();
     
-    try compile_args.append("zig");
-    try compile_args.append("build");
+    try compile_args.append(allocator, "zig");
+    try compile_args.append(allocator, "build");
     
     if (target) |t| {
         try compile_args.append(try std.fmt.allocPrint(allocator, "-Dtarget={s}", .{t}));
     }
     
     if (release_mode) {
-        try compile_args.append("-Doptimize=ReleaseFast");
+        try compile_args.append(allocator, "-Doptimize=ReleaseFast");
     }
     
-    try compile_args.append("cursed-compile");
+    try compile_args.append(allocator, "cursed-compile");
     
     // Execute compilation
     const result = try std.process.Child.run(.{
@@ -291,7 +291,7 @@ fn handleCompile(allocator: Allocator, args: [][]const u8) !void {
 
 fn handleRun(allocator: Allocator, args: [][]const u8) !void {
     var project_dir: []const u8 = ".";
-    var run_args = .empty;
+    var run_args = std.ArrayList(u8){};
     defer run_args.deinit();
     
     // Parse arguments
@@ -310,7 +310,7 @@ fn handleRun(allocator: Allocator, args: [][]const u8) !void {
         } else if (std.mem.eql(u8, arg, "--")) {
             collecting_args = true;
         } else if (collecting_args) {
-            try run_args.append(arg);
+            try run_args.append(allocator, arg);
         }
     }
     
@@ -320,15 +320,15 @@ fn handleRun(allocator: Allocator, args: [][]const u8) !void {
     try handleCompile(allocator, &[_][]const u8{ "cursed", "compile", "--project", project_dir });
     
     // Then run it using Zig build system
-    var exec_args = .empty;
+    var exec_args = std.ArrayList(u8){};
     defer exec_args.deinit();
     
-    try exec_args.append("zig");
-    try exec_args.append("build");
-    try exec_args.append("cursed-run");
+    try exec_args.append(allocator, "zig");
+    try exec_args.append(allocator, "build");
+    try exec_args.append(allocator, "cursed-run");
     
     for (run_args.items) |arg| {
-        try exec_args.append(arg);
+        try exec_args.append(allocator, arg);
     }
     
     const result = try std.process.Child.run(.{
@@ -452,7 +452,7 @@ fn handleFormat(allocator: Allocator, args: [][]const u8) !void {
     
     // Find and format all .csd files
     var dir = std.fs.cwd().openDir(project_dir, .{ .iterate = true }) catch |err| {
-        print("Error opening directory: {}\n", .{err});
+        print("Error opening directory: {s}\n", .{err});
         return;
     };
     defer dir.close();
@@ -508,7 +508,7 @@ fn handleInstall(allocator: Allocator, args: [][]const u8) !void {
 
 fn handleBuild(allocator: Allocator, args: [][]const u8) !void {
     var project_dir: []const u8 = ".";
-    var build_args = .empty;
+    var build_args = std.ArrayList(u8){};
     defer build_args.deinit();
     
     // Parse arguments
@@ -524,20 +524,20 @@ fn handleBuild(allocator: Allocator, args: [][]const u8) !void {
             i += 1;
             project_dir = args[i];
         } else {
-            try build_args.append(arg);
+            try build_args.append(allocator, arg);
         }
     }
     
     print("Building CURSED project using Zig build system...\n", .{});
     
-    var exec_args = .empty;
+    var exec_args = std.ArrayList(u8){};
     defer exec_args.deinit();
     
-    try exec_args.append("zig");
-    try exec_args.append("build");
+    try exec_args.append(allocator, "zig");
+    try exec_args.append(allocator, "build");
     
     for (build_args.items) |arg| {
-        try exec_args.append(arg);
+        try exec_args.append(allocator, arg);
     }
     
     const result = try std.process.Child.run(.{

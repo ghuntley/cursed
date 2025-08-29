@@ -73,7 +73,7 @@ test "P0 GC integration - memory pressure handling" {
     defer gc.deinit();
     
     var allocated_ptrs = ArrayList(*anyopaque).empty;
-    defer allocated_ptrs.deinit(allocator);
+    defer allocated_ptrs.deinit();
     
     // Gradually fill the heap
     var allocation_size: usize = 64;
@@ -120,7 +120,7 @@ test "P0 GC integration - concurrent allocation simulation" {
     }
     defer {
         for (&thread_allocations) |*list| {
-            list.deinit(allocator);
+            list.deinit();
         }
     }
     
@@ -168,7 +168,7 @@ test "P0 GC integration - large object handling" {
     // Allocate objects of varying sizes
     const sizes = [_]usize{ 1024, 4096, 16384, 65536, 131072 }; // 1KB to 128KB
     var large_objects = ArrayList(*anyopaque).empty;
-    defer large_objects.deinit(allocator);
+    defer large_objects.deinit();
     
     for (sizes, 0..) |size, i| {
         const ptr = gc.alloc(size, @intFromEnum(CursedValueType.Array)) catch {
@@ -377,7 +377,7 @@ test "P0 GC integration - comprehensive runtime simulation" {
     
     // Phase 1: Initial allocations (simulating program startup)
     var startup_objects = ArrayList(*anyopaque).empty;
-    defer startup_objects.deinit(allocator);
+    defer startup_objects.deinit();
     
     for (0..20) |i| {
         const size = 256 + (i * 13) % 500;
@@ -392,7 +392,7 @@ test "P0 GC integration - comprehensive runtime simulation" {
     
     // Phase 2: Runtime allocations (simulating normal execution)
     var runtime_objects = ArrayList(*anyopaque).empty;
-    defer runtime_objects.deinit(allocator);
+    defer runtime_objects.deinit();
     
     for (0..100) |i| {
         const size = 64 + (i * 7) % 128;
@@ -412,7 +412,7 @@ test "P0 GC integration - comprehensive runtime simulation" {
     
     // Phase 3: Large object allocations (simulating heavy workload)
     var large_objects = ArrayList(*anyopaque).empty;
-    defer large_objects.deinit(allocator);
+    defer large_objects.deinit();
     
     var large_count: usize = 0;
     for (0..20) |i| {

@@ -40,7 +40,7 @@ pub const OptimizedThreadQueue = struct {
     }
     
     pub fn deinit(self: *OptimizedThreadQueue) void {
-        self.waiting_threads.deinit();
+        self.waiting_threads.deinit(self.allocator);
     }
     
     /// Add thread to waiting queue - O(1) operation
@@ -107,11 +107,11 @@ pub fn ObjectPool(comptime T: type, comptime pool_size: usize) type {
         
         pub fn init(allocator: std.mem.Allocator) !Self {
             const all_objects = try allocator.alloc(T, pool_size);
-            var available = std.ArrayList(*T).init(allocator);
+            var available = std.ArrayList(*T){};
             
             // Pre-allocate all objects and add to available pool
             for (all_objects) |*obj| {
-                try available.append(obj);
+                try available.append(allocator, obj);
             }
             
             return Self{
@@ -123,7 +123,7 @@ pub fn ObjectPool(comptime T: type, comptime pool_size: usize) type {
         }
         
         pub fn deinit(self: *Self) void {
-            self.available.deinit();
+            self.available.deinit(self.allocator);
             self.allocator.free(self.all_objects);
         }
         
@@ -144,7 +144,7 @@ pub fn ObjectPool(comptime T: type, comptime pool_size: usize) type {
             obj.* = std.mem.zeroes(T);
             
             // Return to available pool
-            self.available.append(obj) catch {
+            self.available.append(allocator, obj) catch {
                 // Pool full - object will be garbage collected
                 std.log.debug("Object pool full, object will be GC'd", .{});
             };
@@ -229,12 +229,12 @@ pub const StringBuilder = struct {
     
     pub fn init(allocator: std.mem.Allocator) StringBuilder {
         return StringBuilder{
-            .buffer = std.ArrayList(u8).init(allocator),
+            .buffer = std.ArrayList(u8){},
         };
     }
     
     pub fn initWithCapacity(allocator: std.mem.Allocator, capacity: usize) !StringBuilder {
-        var buffer = std.ArrayList(u8).init(allocator);
+        var buffer = std.ArrayList(u8){};
         try buffer.ensureTotalCapacity(capacity);
         return StringBuilder{
             .buffer = buffer,
@@ -242,7 +242,7 @@ pub const StringBuilder = struct {
     }
     
     pub fn deinit(self: *StringBuilder) void {
-        self.buffer.deinit();
+        self.buffer.deinit(self.allocator);
     }
     
     /// Append string slice - efficient batch operation
@@ -257,7 +257,7 @@ pub const StringBuilder = struct {
     
     /// Append single character
     pub fn appendChar(self: *StringBuilder, char: u8) !void {
-        try self.buffer.append(char);
+        try self.buffer.append(allocator, char);
     }
     
     /// Get final string (transfers ownership)
@@ -315,8 +315,8 @@ pub const OptimizedSymbolTable = struct {
     
     pub fn init(allocator: std.mem.Allocator) OptimizedSymbolTable {
         return OptimizedSymbolTable{
-            .string_pool = std.ArrayList([]const u8).init(allocator),
-            .string_to_id = std.HashMap([]const u8, SymbolId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .string_pool = std.ArrayList([]const u8){},
+            .string_to_id = std.HashMap([]const u8, SymbolId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .symbols = std.HashMap(SymbolId, SymbolInfo, std.hash_map.AutoContext(SymbolId), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
             .next_symbol_id = 1,  // 0 reserved for invalid
@@ -329,9 +329,9 @@ pub const OptimizedSymbolTable = struct {
             self.allocator.free(str);
         }
         
-        self.string_pool.deinit();
-        self.string_to_id.deinit();
-        self.symbols.deinit();
+        self.string_pool.deinit(self.allocator);
+        self.string_to_id.deinit(self.allocator);
+        self.symbols.deinit(self.allocator);
     }
     
     /// Intern string and return ID for deduplication
@@ -346,7 +346,7 @@ pub const OptimizedSymbolTable = struct {
         const id = self.next_symbol_id;
         self.next_symbol_id += 1;
         
-        try self.string_pool.append(owned_str);
+        try self.string_pool.append(allocator, owned_str);
         try self.string_to_id.put(owned_str, id);
         
         return id;
@@ -442,7 +442,7 @@ pub const OptimizedCompilationCache = struct {
     
     pub fn init(allocator: std.mem.Allocator, max_entries: usize) OptimizedCompilationCache {
         return OptimizedCompilationCache{
-            .cache = std.HashMap(CacheKey, CacheEntry, CacheKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .cache = std.HashMap(CacheKey, CacheEntry, CacheKeyContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
             .max_entries = max_entries,
             .hit_count = 0,
@@ -458,7 +458,7 @@ pub const OptimizedCompilationCache = struct {
             self.allocator.free(entry.value_ptr.object_data);
         }
         
-        self.cache.deinit();
+        self.cache.deinit(self.allocator);
     }
     
     /// Get cached compilation result
@@ -592,9 +592,9 @@ test "string builder performance" {
     var builder = StringBuilder.init(testing.allocator);
     defer builder.deinit();
     
-    try builder.append("Hello");
-    try builder.append(" ");
-    try builder.append("World");
+    try builder.append(allocator, "Hello");
+    try builder.append(allocator, " ");
+    try builder.append(allocator, "World");
     try builder.appendFmt("! Count: {}", .{42});
     
     const result = builder.getSlice();

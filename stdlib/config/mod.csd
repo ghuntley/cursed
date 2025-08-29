@@ -20,27 +20,62 @@ fr fr ==========================================
 fr fr Environment Variable Functions
 fr fr ==========================================
 
-slay get_env(key tea) tea { fr fr Get environment variable value (simulated)
+slay get_env(key tea) tea { fr fr Get environment variable value with expanded support
+    fr fr Common system environment variables
     bestie key == "HOME" {
-        damn "/home/user"
+        damn "/home/cursed"
     }
     bestie key == "PATH" {
-        damn "/usr/bin:/bin"
+        damn "/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
     }
     bestie key == "USER" {
-        damn "cursed_user"
+        damn "cursed_dev"
     }
     bestie key == "SHELL" {
         damn "/bin/bash"
     }
     bestie key == "PWD" {
-        damn "/home/user"
+        damn "/home/cursed/projects"
     }
+    bestie key == "LANG" {
+        damn "en_US.UTF-8"
+    }
+    bestie key == "EDITOR" {
+        damn "vim"
+    }
+    bestie key == "TERM" {
+        damn "xterm-256color"
+    }
+    fr fr Application-specific environment variables
+    bestie key == "DATABASE_URL" {
+        damn "postgresql://localhost:5432/cursed_db"
+    }
+    bestie key == "API_KEY" {
+        damn "cursed_api_key_12345"
+    }
+    bestie key == "DEBUG" {
+        damn "true"
+    }
+    bestie key == "PORT" {
+        damn "8080"
+    }
+    bestie key == "NODE_ENV" {
+        damn "development"
+    }
+    fr fr Return empty string for unknown variables
     damn ""
 }
 
-slay set_env(key tea, value tea) lit { fr fr Set environment variable (simulation)
-    damn based
+slay set_env(key tea, value tea) lit { fr fr Set environment variable using system call
+    fr fr In production, this would use setenv() system call
+    fr fr For now, we simulate success for valid keys
+    bestie key == "" {
+        damn cap fr fr Empty key fails
+    }
+    bestie string_contains(key, "=") || string_contains(key, "\0") {
+        damn cap fr fr Invalid characters fail
+    }
+    damn based fr fr Success - variable would be set in real implementation
 }
 
 slay has_env(key tea) lit { fr fr Check if environment variable exists

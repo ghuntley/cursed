@@ -268,9 +268,9 @@ pub const LinkerScriptManager = struct {
     
     /// Generate dynamic linker configuration for targets not in static map
     fn generateDynamicConfig(self: *LinkerScriptManager, triple: target_triple_normalization.TargetTripleNormalizer.NormalizedTriple) LinkerConfig {
-        var args = std.ArrayList([]const u8).init(self.allocator);
+        var args = std.ArrayList([]const u8){};
         defer args.deinit(self.allocator);
-        var libs = std.ArrayList([]const u8).init(self.allocator);
+        var libs = std.ArrayList([]const u8){};
         defer libs.deinit(self.allocator);
         
         // Base optimization flags for all targets
@@ -336,7 +336,7 @@ pub const LinkerScriptManager = struct {
             // Verify script exists
             std.fs.cwd().access(absolute_script_path, .{}) catch |err| {
                 if (b.verbose) {
-                    std.debug.print("⚠️ Linker script not found: {s} (error: {})\n", .{ absolute_script_path, err });
+                    std.debug.print("⚠️ Linker script not found: {s} (error: {s})\n", .{ absolute_script_path, err });
                 }
                 return;
             };
@@ -494,12 +494,12 @@ pub const LinkerScriptManager = struct {
         ;
         
         const file = std.fs.cwd().createFile(script_path, .{}) catch |err| {
-            std.debug.print("Failed to create linker script: {}\n", .{err});
+            std.debug.print("Failed to create linker script: {s}\n", .{err});
             return;
         };
         defer file.close();
         
-        try file.writeAll(script_content);
+        try file.writer().writeAll(script_content);
         std.debug.print("✅ Generated embedded ARM64 linker script: {s}\n", .{script_path});
     }
     

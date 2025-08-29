@@ -89,7 +89,7 @@ const SymbolInfo = struct {
             .documentation = null,
             .deprecated = false,
             .container_name = null,
-            .references = ArrayList(Location).init(allocator),
+            .references = ArrayList(Location){},
             .allocator = allocator,
         };
     }
@@ -99,7 +99,7 @@ const SymbolInfo = struct {
         if (self.detail) |detail| self.allocator.free(detail);
         if (self.documentation) |doc| self.allocator.free(doc);
         if (self.container_name) |name| self.allocator.free(name);
-        self.references.deinit();
+        self.references.deinit(self.allocator);
     }
 };
 
@@ -138,8 +138,8 @@ const TypeInfo = struct {
             .name = try allocator.dupe(u8, name),
             .kind = kind,
             .generic_params = null,
-            .methods = ArrayList(MethodInfo).init(allocator),
-            .fields = ArrayList(FieldInfo).init(allocator),
+            .methods = ArrayList(MethodInfo){},
+            .fields = ArrayList(FieldInfo){},
             .allocator = allocator,
         };
     }
@@ -158,8 +158,8 @@ const TypeInfo = struct {
             self.allocator.free(field.name);
             self.allocator.free(field.type_name);
         }
-        self.methods.deinit();
-        self.fields.deinit();
+        self.methods.deinit(self.allocator);
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -336,15 +336,15 @@ const DocumentData = struct {
             .text = try allocator.dupe(u8, text),
             .version = version,
             .ast = null,
-            .symbols = ArrayList(SymbolInfo).init(allocator),
-            .types = HashMap([]const u8, TypeInfo, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .diagnostics = ArrayList(Diagnostic).init(allocator),
-            .code_lenses = ArrayList(CodeLens).init(allocator),
-            .inlay_hints = ArrayList(InlayHint).init(allocator),
-            .performance_hints = ArrayList(PerformanceHint).init(allocator),
-            .security_vulnerabilities = ArrayList(SecurityVulnerability).init(allocator),
-            .imports = ArrayList([]const u8).init(allocator),
-            .exports = ArrayList([]const u8).init(allocator),
+            .symbols = ArrayList(SymbolInfo){},
+            .types = HashMap([]const u8, TypeInfo, StringContext, std.hash_map.default_max_load_percentage){},
+            .diagnostics = ArrayList(Diagnostic){},
+            .code_lenses = ArrayList(CodeLens){},
+            .inlay_hints = ArrayList(InlayHint){},
+            .performance_hints = ArrayList(PerformanceHint){},
+            .security_vulnerabilities = ArrayList(SecurityVulnerability){},
+            .imports = ArrayList([]const u8){},
+            .exports = ArrayList([]const u8){},
             .allocator = allocator,
         };
     }
@@ -356,30 +356,30 @@ const DocumentData = struct {
         for (self.symbols.items) |*symbol| {
             symbol.deinit();
         }
-        self.symbols.deinit();
+        self.symbols.deinit(self.allocator);
         
         var type_iter = self.types.iterator();
         while (type_iter.next()) |entry| {
             var type_info = entry.value_ptr;
             type_info.deinit();
         }
-        self.types.deinit();
+        self.types.deinit(self.allocator);
         
-        self.diagnostics.deinit();
-        self.code_lenses.deinit();
-        self.inlay_hints.deinit();
-        self.performance_hints.deinit();
-        self.security_vulnerabilities.deinit();
+        self.diagnostics.deinit(self.allocator);
+        self.code_lenses.deinit(self.allocator);
+        self.inlay_hints.deinit(self.allocator);
+        self.performance_hints.deinit(self.allocator);
+        self.security_vulnerabilities.deinit(self.allocator);
         
         for (self.imports.items) |import| {
             self.allocator.free(import);
         }
-        self.imports.deinit();
+        self.imports.deinit(self.allocator);
         
         for (self.exports.items) |exp| {
             self.allocator.free(exp);
         }
-        self.exports.deinit();
+        self.exports.deinit(self.allocator);
     }
 };
 
@@ -424,9 +424,10 @@ pub const AdvancedCursedLanguageServer = struct {
     };
 
     pub fn init(allocator: Allocator) AdvancedCursedLanguageServer {
+        _ = allocator;
         return AdvancedCursedLanguageServer{
             .allocator = allocator,
-            .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, DocumentData, StringContext, std.hash_map.default_max_load_percentage){},
             .workspace_root = null,
             .workspace_symbols = ArrayList(SymbolInfo){},
             .type_hierarchy = HashMap([]const u8, ArrayList([]const u8), StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -457,12 +458,12 @@ pub const AdvancedCursedLanguageServer = struct {
             var doc = entry.value_ptr;
             doc.deinit();
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
         
         for (self.workspace_symbols.items) |*symbol| {
             symbol.deinit();
         }
-        self.workspace_symbols.deinit();
+        self.workspace_symbols.deinit(self.allocator);
         
         var type_iter = self.type_hierarchy.iterator();
         while (type_iter.next()) |entry| {
@@ -472,7 +473,7 @@ pub const AdvancedCursedLanguageServer = struct {
             }
             list.deinit();
         }
-        self.type_hierarchy.deinit();
+        self.type_hierarchy.deinit(self.allocator);
         
         var call_iter = self.call_hierarchy.iterator();
         while (call_iter.next()) |entry| {
@@ -482,7 +483,7 @@ pub const AdvancedCursedLanguageServer = struct {
             }
             list.deinit();
         }
-        self.call_hierarchy.deinit();
+        self.call_hierarchy.deinit(self.allocator);
         
         if (self.workspace_root) |root| {
             self.allocator.free(root);
@@ -653,7 +654,7 @@ pub fn main() !void {
             \\}}
         ;
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
         try writer.print(response, .{id});
     }
 
@@ -874,7 +875,7 @@ pub fn main() !void {
                 const type_info = try TypeInfo.init(self.allocator, func_name, TypeInfo.TypeKind.Function);
                 try doc_data.types.put(func_name, type_info);
                 
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -906,7 +907,7 @@ pub fn main() !void {
                 symbol.detail = try std.fmt.allocPrint(self.allocator, "Variable: {s}", .{inferred_type});
                 symbol.documentation = try std.fmt.allocPrint(self.allocator, "Variable {s} of type {s}", .{ var_name, inferred_type });
                 
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -932,7 +933,7 @@ pub fn main() !void {
                 const type_info = try TypeInfo.init(self.allocator, struct_name, TypeInfo.TypeKind.Struct);
                 try doc_data.types.put(struct_name, type_info);
                 
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -958,7 +959,7 @@ pub fn main() !void {
                 const type_info = try TypeInfo.init(self.allocator, interface_name, TypeInfo.TypeKind.Interface);
                 try doc_data.types.put(interface_name, type_info);
                 
-                try doc_data.symbols.append(symbol);
+                try doc_data.symbols.append(allocator, symbol);
             }
         }
     }
@@ -990,7 +991,7 @@ pub fn main() !void {
                     },
                     .data = null,
                 };
-                try doc_data.code_lenses.append(lens);
+                try doc_data.code_lenses.append(allocator, lens);
             }
         }
     }
@@ -1029,7 +1030,7 @@ pub fn main() !void {
                         .padding_left = false,
                         .padding_right = true,
                     };
-                    try doc_data.inlay_hints.append(hint);
+                    try doc_data.inlay_hints.append(allocator, hint);
                 }
             }
             
@@ -1059,7 +1060,7 @@ pub fn main() !void {
                     .cwe_id = 89,
                     .fix = null,
                 };
-                try doc_data.security_vulnerabilities.append(vuln);
+                try doc_data.security_vulnerabilities.append(allocator, vuln);
             }
             
             // Weak cryptography
@@ -1075,7 +1076,7 @@ pub fn main() !void {
                     .cwe_id = 327,
                     .fix = null,
                 };
-                try doc_data.security_vulnerabilities.append(vuln);
+                try doc_data.security_vulnerabilities.append(allocator, vuln);
             }
             
             line_num += 1;
@@ -1105,7 +1106,7 @@ pub fn main() !void {
                     .suggestion = try self.allocator.dupe(u8, "Use more efficient data structures or algorithms"),
                     .fix = null,
                 };
-                try doc_data.performance_hints.append(hint);
+                try doc_data.performance_hints.append(allocator, hint);
             }
             
             // String concatenation in loops
@@ -1121,7 +1122,7 @@ pub fn main() !void {
                     .suggestion = try self.allocator.dupe(u8, "Consider using StringBuilder pattern"),
                     .fix = null,
                 };
-                try doc_data.performance_hints.append(hint);
+                try doc_data.performance_hints.append(allocator, hint);
             }
             
             line_num += 1;
@@ -1160,7 +1161,7 @@ pub fn main() !void {
         const line = @as(u32, @intCast(position.get("line").?.integer));
         const character = @as(u32, @intCast(position.get("character").?.integer));
         
-        var completions = ArrayList(CompletionItem).init(self.allocator);
+        var completions = ArrayList(CompletionItem){};
         defer {
             for (completions.items) |*item| {
                 self.allocator.free(item.label);
@@ -1373,7 +1374,7 @@ pub fn main() !void {
             // Find symbol at position
             for (doc_data.symbols.items) |symbol| {
                 if (self.positionInRange(Position{ .line = line, .character = character }, symbol.location.range)) {
-                    var content_builder = ArrayList(u8).init(self.allocator);
+                    var content_builder = ArrayList(u8){};
                     defer content_builder.deinit();
                     
                     // Build rich hover content
@@ -1423,12 +1424,12 @@ pub fn main() !void {
         const text_document = params.get("textDocument").?.object;
         const uri = text_document.get("uri").?.string;
         
-        var code_lenses = ArrayList(CodeLens).init(self.allocator);
+        var code_lenses = ArrayList(CodeLens){};
         defer code_lenses.deinit();
         
         if (self.documents.get(uri)) |doc_data| {
             for (doc_data.code_lenses.items) |lens| {
-                try code_lenses.append(lens);
+                try code_lenses.append(allocator, lens);
             }
         }
         
@@ -1442,12 +1443,12 @@ pub fn main() !void {
         const text_document = params.get("textDocument").?.object;
         const uri = text_document.get("uri").?.string;
         
-        var hints = ArrayList(InlayHint).init(self.allocator);
+        var hints = ArrayList(InlayHint){};
         defer hints.deinit();
         
         if (self.documents.get(uri)) |doc_data| {
             for (doc_data.inlay_hints.items) |hint| {
-                try hints.append(hint);
+                try hints.append(allocator, hint);
             }
         }
         
@@ -1458,7 +1459,7 @@ pub fn main() !void {
     fn handleCodeAction(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var actions = ArrayList(CodeAction).init(self.allocator);
+        var actions = ArrayList(CodeAction){};
         defer actions.deinit();
         
         // TODO: Generate context-specific code actions
@@ -1480,7 +1481,7 @@ pub fn main() !void {
     fn handleReferences(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var locations = ArrayList(Location).init(self.allocator);
+        var locations = ArrayList(Location){};
         defer locations.deinit();
         
         // TODO: Find all references to symbol at position
@@ -1492,7 +1493,7 @@ pub fn main() !void {
     fn handleDefinition(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var locations = ArrayList(Location).init(self.allocator);
+        var locations = ArrayList(Location){};
         defer locations.deinit();
         
         // TODO: Find definition of symbol at position
@@ -1504,7 +1505,7 @@ pub fn main() !void {
     fn handleFormatting(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var edits = ArrayList(CodeAction.WorkspaceEdit.TextEdit).init(self.allocator);
+        var edits = ArrayList(CodeAction.WorkspaceEdit.TextEdit){};
         defer edits.deinit();
         
         // TODO: Format document using cursed-fmt
@@ -1516,7 +1517,7 @@ pub fn main() !void {
     fn handleSemanticTokens(self: *AdvancedCursedLanguageServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var tokens = ArrayList(u32).init(self.allocator);
+        var tokens = ArrayList(u32){};
         defer tokens.deinit();
         
         // TODO: Generate semantic tokens for syntax highlighting
@@ -1556,7 +1557,7 @@ pub fn main() !void {
         const params = request.object.get("params").?.object;
         const query = if (params.get("query")) |q| q.string else "";
 
-        var symbols = ArrayList(SymbolInfo).init(self.allocator);
+        var symbols = ArrayList(SymbolInfo){};
         defer symbols.deinit();
 
         var doc_iterator = self.documents.iterator();
@@ -1564,7 +1565,7 @@ pub fn main() !void {
             const doc_data = entry.value_ptr;
             for (doc_data.symbols.items) |symbol| {
                 if (query.len == 0 or std.mem.indexOf(u8, symbol.name, query) != null) {
-                    try symbols.append(symbol);
+                    try symbols.append(allocator, symbol);
                 }
             }
         }
@@ -1609,8 +1610,8 @@ pub fn main() !void {
             \\{"jsonrpc": "2.0", "id": null, "result": null}
         ;
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     // Helper functions
@@ -1646,7 +1647,7 @@ pub fn main() !void {
 
     /// Publish diagnostics with enhanced information
     fn publishDiagnostics(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, uri: []const u8, diagnostics: *ArrayList(Diagnostic)) !void {
-        var diag_json = ArrayList(u8).init(self.allocator);
+        var diag_json = ArrayList(u8){};
         defer diag_json.deinit();
         
         try diag_json.appendSlice("[");
@@ -1654,7 +1655,7 @@ pub fn main() !void {
         for (diagnostics.items, 0..) |diag, i| {
             if (i > 0) try diag_json.appendSlice(",");
             
-            var escaped_message = ArrayList(u8).init(self.allocator);
+            var escaped_message = ArrayList(u8){};
             defer escaped_message.deinit();
             
             for (diag.message) |c| {
@@ -1664,7 +1665,7 @@ pub fn main() !void {
                     '\n' => try escaped_message.appendSlice("\\n"),
                     '\r' => try escaped_message.appendSlice("\\r"),
                     '\t' => try escaped_message.appendSlice("\\t"),
-                    else => try escaped_message.append(c),
+                    else => try escaped_message.append(allocator, c),
                 }
             }
             
@@ -1687,13 +1688,13 @@ pub fn main() !void {
         , .{ uri, diag_json.items });
         defer self.allocator.free(notification);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{notification.len});
-        try writer.writeAll(notification);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{notification.len});
+        try writer.writer().writeAll(notification);
     }
 
     // Response helper functions
     fn sendCompletionResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, completions: *ArrayList(CompletionItem)) !void {
-        var items_json = ArrayList(u8).init(self.allocator);
+        var items_json = ArrayList(u8){};
         defer items_json.deinit();
         
         try items_json.appendSlice("[");
@@ -1721,8 +1722,8 @@ pub fn main() !void {
         , .{ id, items_json.items });
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendHoverResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, hover_text: ?[]const u8) !void {
@@ -1736,8 +1737,8 @@ pub fn main() !void {
             , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendCodeLensResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, lenses: *ArrayList(CodeLens)) !void {
@@ -1747,8 +1748,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendInlayHintsResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, hints: *ArrayList(InlayHint)) !void {
@@ -1758,8 +1759,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendCodeActionResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, actions: *ArrayList(CodeAction)) !void {
@@ -1769,8 +1770,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendRenameResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, edit: ?CodeAction.WorkspaceEdit) !void {
@@ -1780,8 +1781,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendReferencesResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
@@ -1791,8 +1792,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendDefinitionResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, locations: *ArrayList(Location)) !void {
@@ -1802,8 +1803,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendFormattingResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, edits: *ArrayList(CodeAction.WorkspaceEdit.TextEdit)) !void {
@@ -1813,8 +1814,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendSemanticTokensResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, tokens: *ArrayList(u32)) !void {
@@ -1824,8 +1825,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendWorkspaceSymbolResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64, symbols: *ArrayList(SymbolInfo)) !void {
@@ -1835,8 +1836,8 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 
     fn sendEmptyResponse(self: *AdvancedCursedLanguageServer, writer: std.io.AnyWriter, id: i64) !void {
@@ -1845,13 +1846,14 @@ pub fn main() !void {
         , .{id});
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n", .{response.len});
-        try writer.writeAll(response);
+        try writer.print("Content-Length: {s}\r\n\r\n", .{response.len});
+        try writer.writer().writeAll(response);
     }
 };
 
 /// Advanced LSP Server main loop
 pub fn runAdvancedLspServer(allocator: Allocator) !void {
+        _ = allocator;
     var server = AdvancedCursedLanguageServer.init(allocator);
     defer server.deinit();
 

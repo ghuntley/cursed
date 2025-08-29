@@ -59,9 +59,9 @@ pub const CodeGenerator = struct {
         self.context = c.LLVMContextCreate();
         self.module = c.LLVMModuleCreateWithNameInContext("cursed_module", self.context);
         self.builder = c.LLVMCreateBuilderInContext(self.context);
-        self.variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-        self.struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-        self.interface_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+        self.variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
+        self.struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
+        self.interface_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         self.struct_fields = std.HashMap([]const u8, std.ArrayList([]const u8), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
         
         // Set up runtime functions needed for compilation
@@ -107,16 +107,16 @@ pub const CodeGenerator = struct {
     }
 
     pub fn deinit(self: *CodeGenerator) void {
-        self.variables.deinit();
-        self.struct_types.deinit();
-        self.interface_types.deinit();
+        self.variables.deinit(self.allocator);
+        self.struct_types.deinit(self.allocator);
+        self.interface_types.deinit(self.allocator);
         
         // Clean up struct fields
         var field_iter = self.struct_fields.iterator();
         while (field_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.struct_fields.deinit();
+        self.struct_fields.deinit(self.allocator);
         
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
@@ -462,8 +462,6 @@ pub const CodeGenerator = struct {
             .Map => |map| {
                 return try self.generateMapExpression(map.*);
             },
-            .Tuple => |tuple| {
-                return try self.generateTupleExpression(tuple);
             },
             .TupleAccess => |tuple_access| {
                 return try self.generateTupleAccessExpression(tuple_access);
@@ -1756,7 +1754,7 @@ pub const CodeGenerator = struct {
         c.LLVMInitializeAllAsmPrinters();
 
         // Write LLVM IR to file for debugging
-        var ir_filename = std.ArrayList(u8).init(self.allocator);
+        var ir_filename = std.ArrayList(u8){};
         defer ir_filename.deinit();
         
         try ir_filename.appendSlice(output_path);
@@ -1799,7 +1797,7 @@ pub const CodeGenerator = struct {
         }
 
         // Generate object file
-        var obj_filename = std.ArrayList(u8).init(self.allocator);
+        var obj_filename = std.ArrayList(u8){};
         defer obj_filename.deinit();
         try obj_filename.appendSlice(output_path);
         try obj_filename.appendSlice(".o");
@@ -1826,32 +1824,32 @@ pub const CodeGenerator = struct {
         const is_macos = std.builtin.os.tag == .macos;
         const is_windows = std.builtin.os.tag == .windows;
         
-        var link_args = std.ArrayList([]const u8).init(self.allocator);
+        var link_args = std.ArrayList([]const u8){};
         defer link_args.deinit();
         
         if (is_windows) {
             // Windows: use link.exe or ld
-            try link_args.append("ld");
-            try link_args.append("-o");
-            try link_args.append(output_path);
-            try link_args.append(obj_path);
-            try link_args.append("-lc");
+            try link_args.append(allocator, "ld");
+            try link_args.append(allocator, "-o");
+            try link_args.append(allocator, output_path);
+            try link_args.append(allocator, obj_path);
+            try link_args.append(allocator, "-lc");
         } else if (is_macos) {
             // macOS: use ld
-            try link_args.append("ld");
-            try link_args.append("-o");
-            try link_args.append(output_path);
-            try link_args.append(obj_path);
-            try link_args.append("-lSystem");
-            try link_args.append("-arch");
-            try link_args.append("x86_64");
+            try link_args.append(allocator, "ld");
+            try link_args.append(allocator, "-o");
+            try link_args.append(allocator, output_path);
+            try link_args.append(allocator, obj_path);
+            try link_args.append(allocator, "-lSystem");
+            try link_args.append(allocator, "-arch");
+            try link_args.append(allocator, "x86_64");
         } else {
             // Linux: use ld or gcc
-            try link_args.append("gcc");
-            try link_args.append("-o");
-            try link_args.append(output_path);
-            try link_args.append(obj_path);
-            try link_args.append("-no-pie"); // Disable PIE for compatibility
+            try link_args.append(allocator, "gcc");
+            try link_args.append(allocator, "-o");
+            try link_args.append(allocator, output_path);
+            try link_args.append(allocator, obj_path);
+            try link_args.append(allocator, "-no-pie"); // Disable PIE for compatibility
         }
 
         // Execute linker
@@ -1860,14 +1858,14 @@ pub const CodeGenerator = struct {
         child.stderr_behavior = .Pipe;
         
         const result = child.spawnAndWait() catch |err| {
-            std.debug.print("Failed to spawn linker: {}\n", .{err});
+            std.debug.print("Failed to spawn linker: {s}\n", .{err});
             return CodeGenError.LinkerError;
         };
         
         switch (result) {
             .Exited => |code| {
                 if (code != 0) {
-                    std.debug.print("Linker failed with exit code: {}\n", .{code});
+                    std.debug.print("Linker failed with exit code: {s}\n", .{code});
                     return CodeGenError.LinkerError;
                 }
             },
@@ -1904,7 +1902,7 @@ pub const CodeGenerator = struct {
         // Store struct type for later reference
         try self.struct_types.put(struct_stmt.name, struct_type);
         
-        std.debug.print("✅ Struct '{s}' defined with {} fields\n", .{ struct_stmt.name, struct_stmt.fields.items.len });
+        std.debug.print("✅ Struct '{s}' defined with {s} fields\n", .{ struct_stmt.name, struct_stmt.fields.items.len });
     }
 
     /// Generate interface definitions with error propagation
@@ -2003,7 +2001,7 @@ pub const CodeGenerator = struct {
         );
         c.LLVMSetInitializer(global_vtable, vtable_const);
         
-        std.debug.print("✅ Interface '{s}' defined with {} methods (error-aware + vtable validation)\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
+        std.debug.print("✅ Interface '{s}' defined with {s} methods (error-aware + vtable validation)\n", .{ interface_stmt.name, interface_stmt.methods.items.len });
     }
 
     /// Generate implementation blocks
@@ -2027,7 +2025,7 @@ pub const CodeGenerator = struct {
             try self.generateFunction(method_copy);
         }
         
-        std.debug.print("✅ Implementation of {} for {} with {} methods\n", .{
+        std.debug.print("✅ Implementation of {s} for {s} with {s} methods\n", .{
             impl_stmt.interface_name,
             impl_stmt.implementing_type,
             impl_stmt.methods.items.len,
@@ -2239,7 +2237,7 @@ pub const CodeGenerator = struct {
         // Continue with merge block
         c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
         
-        std.debug.print("✅ Select statement with {} cases generated\n", .{select_stmt.cases.items.len});
+        std.debug.print("✅ Select statement with {s} cases generated\n", .{select_stmt.cases.items.len});
     }
     
     /// Get or create runtime select function for channel multiplexing
@@ -2553,7 +2551,7 @@ pub const CodeGenerator = struct {
         // Continue with end block
         c.LLVMPositionBuilderAtEnd(self.builder, end_block);
         
-        std.debug.print("✅ Switch statement compiled with {} cases\n", .{switch_stmt.cases.items.len});
+        std.debug.print("✅ Switch statement compiled with {s} cases\n", .{switch_stmt.cases.items.len});
     }
 
     fn generatePatternSwitchStatement(self: *CodeGenerator, pattern_stmt: ast.PatternSwitchStatement) !void {
@@ -2568,7 +2566,7 @@ pub const CodeGenerator = struct {
         const default_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "pattern_default");
         
         // Track all case blocks for cleanup
-        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef){};
         defer case_blocks.deinit();
         
         // Generate comparison chains for each pattern
@@ -2629,7 +2627,7 @@ pub const CodeGenerator = struct {
         // Position builder at end block for continuation
         c.LLVMPositionBuilderAtEnd(self.builder, end_block);
         
-        std.debug.print("✅ Pattern switch statement compiled with {} cases\n", .{pattern_stmt.patterns.items.len});
+        std.debug.print("✅ Pattern switch statement compiled with {s} cases\n", .{pattern_stmt.patterns.items.len});
     }
 
     /// Generate pattern matching test logic for different pattern types
@@ -2719,9 +2717,7 @@ pub const CodeGenerator = struct {
                     _ = c.LLVMBuildCondBr(self.builder, tag_matches, success_block, failure_block);
                 }
             },
-            .Tuple => |tuple_patterns| {
-                // Tuple destructuring (simplified implementation)
-                for (tuple_patterns.items, 0..) |sub_pattern, i| {
+             0..) |sub_pattern, i| {
                     const element_ptr = c.LLVMBuildStructGEP2(
                         self.builder,
                         c.LLVMTypeOf(match_value),
@@ -3547,7 +3543,7 @@ pub const CodeGenerator = struct {
         // Continue with merge block
         c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
         
-        std.debug.print("✅ vibe_check statement compiled with {} mood cases\n", .{vibe_check.mood_cases.items.len});
+        std.debug.print("✅ vibe_check statement compiled with {s} mood cases\n", .{vibe_check.mood_cases.items.len});
     }
 
     /// Complete match expression generation with all pattern types
@@ -3620,7 +3616,7 @@ pub const CodeGenerator = struct {
         
         // Return the result
         const final_result = c.LLVMBuildLoad2(self.builder, result_type, result_alloca, "match_final_result");
-        std.debug.print("✅ Match expression compiled with {} cases\n", .{match_expr.cases.items.len});
+        std.debug.print("✅ Match expression compiled with {s} cases\n", .{match_expr.cases.items.len});
         
         return final_result;
     }

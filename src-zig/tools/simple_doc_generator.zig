@@ -17,7 +17,7 @@ const DocItem = struct {
 
 // Simple documentation extractor
 pub fn extractDocumentation(allocator: Allocator, source: []const u8, file_path: []const u8) ![]DocItem {
-    var items = ArrayList(DocItem).init(allocator);
+    var items = ArrayList(DocItem){};
     defer items.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -114,7 +114,7 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
     
     const writer = index_file.writer();
     
-    try writer.writeAll(
+    try writer.writer().writeAll(
         \\<!DOCTYPE html>
         \\<html>
         \\<head>
@@ -133,28 +133,28 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
     );
     
     // Group items by type
-    var functions = ArrayList(DocItem).init(allocator);
-    var structs = ArrayList(DocItem).init(allocator);
-    var interfaces = ArrayList(DocItem).init(allocator);
+    var functions = ArrayList(DocItem){};
+    var structs = ArrayList(DocItem){};
+    var interfaces = ArrayList(DocItem){};
     defer functions.deinit();
     defer structs.deinit();
     defer interfaces.deinit();
     
     for (items) |item| {
         if (std.mem.eql(u8, item.type, "function")) {
-            try functions.append(item);
+            try functions.append(allocator, item);
         } else if (std.mem.eql(u8, item.type, "struct")) {
-            try structs.append(item);
+            try structs.append(allocator, item);
         } else if (std.mem.eql(u8, item.type, "interface")) {
-            try interfaces.append(item);
+            try interfaces.append(allocator, item);
         }
     }
     
     // Write functions section
     if (functions.items.len > 0) {
-        try writer.writeAll("    <h2>Functions</h2>\n");
+        try writer.writer().writeAll("    <h2>Functions</h2>\n");
         for (functions.items) |item| {
-            try writer.print(
+            try writer.writer().print(
                 \\    <div class="item">
                 \\        <h3>{s} <span class="type">({s})</span></h3>
                 \\        <div class="signature">{s}</div>
@@ -168,9 +168,9 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
     
     // Write structs section
     if (structs.items.len > 0) {
-        try writer.writeAll("    <h2>Structs</h2>\n");
+        try writer.writer().writeAll("    <h2>Structs</h2>\n");
         for (structs.items) |item| {
-            try writer.print(
+            try writer.writer().print(
                 \\    <div class="item">
                 \\        <h3>{s} <span class="type">({s})</span></h3>
                 \\        <div class="signature">{s}</div>
@@ -184,9 +184,9 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
     
     // Write interfaces section
     if (interfaces.items.len > 0) {
-        try writer.writeAll("    <h2>Interfaces</h2>\n");
+        try writer.writer().writeAll("    <h2>Interfaces</h2>\n");
         for (interfaces.items) |item| {
-            try writer.print(
+            try writer.writer().print(
                 \\    <div class="item">
                 \\        <h3>{s} <span class="type">({s})</span></h3>
                 \\        <div class="signature">{s}</div>
@@ -198,7 +198,7 @@ pub fn generateHTML(allocator: Allocator, items: []DocItem, output_dir: []const 
         }
     }
     
-    try writer.writeAll(
+    try writer.writer().writeAll(
         \\</body>
         \\</html>
     );
@@ -233,7 +233,7 @@ pub fn main() !void {
         }
     }
     
-    var all_items = ArrayList(DocItem).init(allocator);
+    var all_items = ArrayList(DocItem){};
     defer all_items.deinit();
     
     // Process files in directory
@@ -259,7 +259,7 @@ pub fn main() !void {
             defer allocator.free(items);
             
             for (items) |item| {
-                try all_items.append(item);
+                try all_items.append(allocator, item);
             }
         }
     }

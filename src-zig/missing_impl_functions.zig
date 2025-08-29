@@ -65,17 +65,17 @@ pub fn bool_to_string_impl(allocator: std.mem.Allocator, value: bool) ![]u8 {
 
 /// Convert array to string representation
 pub fn array_to_string_impl(allocator: std.mem.Allocator, array: []const i64) ![]u8 {
-    var result = std.ArrayList(u8).init(allocator);
+    var result = std.ArrayList(u8){};
     defer result.deinit();
     
-    try result.append('[');
+    try result.append(allocator, '[');
     for (array, 0..) |item, i| {
         if (i > 0) try result.appendSlice(", ");
         const item_str = try std.fmt.allocPrint(allocator, "{d}", .{item});
         defer allocator.free(item_str);
         try result.appendSlice(item_str);
     }
-    try result.append(']');
+    try result.append(allocator, ']');
     
     return result.toOwnedSlice();
 }
@@ -235,12 +235,12 @@ pub fn test_missing_implementations() !void {
     print("Array to string: {s}\n", .{array_str});
     
     // Test file operations
-    print("Is directory '.': {}\n", .{is_directory_impl(".")});
-    print("File mtime for '.': {}\n", .{file_mtime_impl(".")});
+    print("Is directory '.': {s}\n", .{is_directory_impl(".")});
+    print("File mtime for '.': {s}\n", .{file_mtime_impl(".")});
     
     // Test random numbers
     print("Random float: {d}\n", .{random_float_impl()});
-    print("Random int (1-10): {}\n", .{random_int_range_impl(1, 10)});
+    print("Random int (1-10): {s}\n", .{random_int_range_impl(1, 10)});
     
     // Test environment
     const cwd = try getcwd_impl(allocator);

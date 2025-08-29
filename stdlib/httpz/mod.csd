@@ -466,7 +466,9 @@ slay url_decode(text tea) tea {
 slay is_valid_url(url tea) lit {
     fr fr Basic URL validation
     ready (starts_with(url, "http://") || starts_with(url, "https://")) {
-        damn based
+        sus has_domain lit = (indexOf(url, ".") > 0)
+        sus has_valid_path lit = (!contains_substring(url, ".."))
+        damn (has_domain && has_valid_path)
     }
     damn cringe
 }

@@ -50,14 +50,14 @@ pub const MacroHygieneContext = struct {
             return Scope{
                 .id = id,
                 .parent = parent,
-                .symbols = HashMap([]const u8, SymbolInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .symbols = HashMap([]const u8, SymbolInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
                 .macro_generated = macro_generated,
                 .expansion_id = null,
             };
         }
         
         pub fn deinit(self: *Scope) void {
-            self.symbols.deinit();
+            self.symbols.deinit(self.allocator);
         }
     };
     
@@ -102,7 +102,7 @@ pub const MacroHygieneContext = struct {
         }
         
         pub fn deinit(self: *MacroExpansion) void {
-            self.symbols_introduced.deinit();
+            self.symbols_introduced.deinit(self.allocator);
         }
     };
     
@@ -121,12 +121,13 @@ pub const MacroHygieneContext = struct {
     };
     
     pub fn init(allocator: Allocator) !MacroHygieneContext {
+        _ = allocator;
         var context = MacroHygieneContext{
             .allocator = allocator,
             .scope_stack = .empty,
             .global_scope = undefined,
             .current_scope_id = 0,
-            .renamed_symbols = HashMap(SymbolKey, []const u8, SymbolKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .renamed_symbols = HashMap(SymbolKey, []const u8, SymbolKeyContext, std.hash_map.default_max_load_percentage){},
             .rename_counter = 0,
             .expansion_stack = .empty,
             .hygiene_violations = .empty,
@@ -134,7 +135,7 @@ pub const MacroHygieneContext = struct {
         
         // Create global scope
         const global_scope = Scope.init(allocator, 0, null, false);
-        try context.scope_stack.append(global_scope);
+        try context.scope_stack.append(allocator, global_scope);
         context.global_scope = &context.scope_stack.items[0];
         
         return context;
@@ -144,20 +145,20 @@ pub const MacroHygieneContext = struct {
         for (self.scope_stack.items) |*scope| {
             scope.deinit();
         }
-        self.scope_stack.deinit();
+        self.scope_stack.deinit(self.allocator);
         
         var renamed_iterator = self.renamed_symbols.iterator();
         while (renamed_iterator.next()) |entry| {
             self.allocator.free(entry.value_ptr.*);
         }
-        self.renamed_symbols.deinit();
+        self.renamed_symbols.deinit(self.allocator);
         
         for (self.expansion_stack.items) |*expansion| {
             expansion.deinit();
         }
-        self.expansion_stack.deinit();
+        self.expansion_stack.deinit(self.allocator);
         
-        self.hygiene_violations.deinit();
+        self.hygiene_violations.deinit(self.allocator);
     }
     
     /// Begin macro expansion with hygiene tracking
@@ -538,7 +539,7 @@ pub const MacroHygieneContext = struct {
     
     /// Generate hygiene report
     pub fn generateHygieneReport(self: *MacroHygieneContext) ![]const u8 {
-        var report = .empty;
+        var report = std.ArrayList(u8){};
         defer report.deinit();
         
         try report.writer().print("Macro Hygiene Report\n", .{});
@@ -550,14 +551,14 @@ pub const MacroHygieneContext = struct {
             try report.writer().print("Found {d} hygiene violations:\n\n", .{self.hygiene_violations.items.len});
             
             for (self.hygiene_violations.items, 0..) |violation, i| {
-                try report.writer().print("{}. {} in macro '{}' at {}\n", .{ 
+                try report.writer().print("{s}. {s} in macro '{s}' at {s}\n", .{ 
                     i + 1, 
                     violation.kind, 
                     violation.macro_name, 
                     violation.location 
                 });
-                try report.writer().print("   Symbol: {}\n", .{violation.symbol_name});
-                try report.writer().print("   Resolution: {}\n\n", .{self.getViolationResolution(violation.kind)});
+                try report.writer().print("   Symbol: {s}\n", .{violation.symbol_name});
+                try report.writer().print("   Resolution: {s}\n\n", .{self.getViolationResolution(violation.kind)});
             }
         }
         

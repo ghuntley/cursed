@@ -22,6 +22,7 @@ pub const BuiltInRegistry = struct {
         Null,
 
         pub fn toString(self: Value, allocator: Allocator) ![]u8 {
+        _ = allocator;
             switch (self) {
                 .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
                 .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
@@ -47,13 +48,13 @@ pub const BuiltInRegistry = struct {
         }
 
         pub fn deinit(self: *Channel) void {
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
         }
 
         pub fn send(self: *Channel, value: Value) !bool {
             if (self.closed) return false;
             if (self.buffer.items.len >= self.capacity) return false;
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             return true;
         }
 
@@ -64,9 +65,10 @@ pub const BuiltInRegistry = struct {
     };
 
     pub fn init(allocator: Allocator) !BuiltInRegistry {
+        _ = allocator;
         var registry = BuiltInRegistry{
             .allocator = allocator,
-            .functions = std.StringHashMap(BuiltInFunction).init(allocator),
+            .functions = std.StringHashMap(BuiltInFunction){},
         };
         
         try registry.registerBuiltIns();
@@ -74,7 +76,7 @@ pub const BuiltInRegistry = struct {
     }
 
     pub fn deinit(self: *BuiltInRegistry) void {
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
     }
 
     fn registerBuiltIns(self: *BuiltInRegistry) !void {

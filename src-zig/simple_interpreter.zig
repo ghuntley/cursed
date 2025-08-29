@@ -57,6 +57,8 @@ pub const InterpreterError = error{
     InvalidStructField,
 };
 
+const Variable = struct { name: []const u8, value: Value };
+
 pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
@@ -74,8 +76,8 @@ pub const Value = union(enum) {
             .String => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "lies"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
-            .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "{}{{ ... }}", .{struct_inst.type_name}),
-            .Array => |arr| return std.fmt.allocPrint(allocator, "[{} items]", .{arr.len}),
+            .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "{s}{{ ... }}", .{struct_inst.type_name}),
+            .Array => |arr| return std.fmt.allocPrint(allocator, "[{d} items]", .{arr.len}),
             .Null => return allocator.dupe(u8, "cap"),
         }
     }
@@ -244,7 +246,7 @@ pub const StructType = struct {
     
     pub fn deinit(self: *StructType) void {
         self.allocator.free(self.name);
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
     
     pub fn addField(self: *StructType, name: []const u8, field_type: []const u8) !void {
@@ -267,7 +269,7 @@ pub const SimpleInterpreter = struct {
     struct_types: HashMap([]const u8, StructType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     allocator: Allocator,
 
-    pub fn init() SimpleInterpreter {
+    pub fn init(allocator: Allocator) SimpleInterpreter {
         return SimpleInterpreter{
             .environment = Environment.init(allocator, null),
             .functions = HashMap([]const u8, FuncStmt, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -427,7 +429,7 @@ pub const SimpleInterpreter = struct {
         i += 1;
         
         // Create struct type
-        var struct_type = StructType.init(self.allocator, struct_name);
+        var struct_type = StructType.init(self.allocator, struct_name) catch return InterpreterError.RuntimeError;
         
         // Parse fields
         while (i < tokens.len and tokens[i].kind != .RightBrace) {
@@ -449,8 +451,7 @@ pub const SimpleInterpreter = struct {
                     const field_type = tokens[i].lexeme;
                     i += 1;
                     
-                    var mutable_struct_type = struct_type;
-                    try mutable_struct_type.addField(field_name, field_type);
+                    try struct_type.addField(field_name, field_type);
                 }
                 
                 // Skip optional comma
@@ -538,7 +539,7 @@ pub const SimpleInterpreter = struct {
         i.* += 1;
         
         // Create struct instance
-        var struct_instance = StructInstance.init(self.allocator, struct_name);
+        var struct_instance = StructInstance.init(self.allocator, struct_name) catch return InterpreterError.RuntimeError;
         
         // Parse field assignments
         while (i.* < tokens.len and tokens[i.*].kind != .RightBrace) {
@@ -560,8 +561,7 @@ pub const SimpleInterpreter = struct {
                 
                 // Get field value
                 const field_value = try self.evaluateSimpleExpression(tokens, i);
-                var mutable_struct_instance = struct_instance;
-                try mutable_struct_instance.setField(field_name, field_value);
+                try struct_instance.setField(field_name, field_value);
                 
                 // Skip optional comma
                 if (i.* < tokens.len and tokens[i.*].kind == .Comma) {

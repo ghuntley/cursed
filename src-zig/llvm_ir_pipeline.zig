@@ -140,10 +140,10 @@ pub const LLVMIRPipeline = struct {
             .pass_manager = pass_manager,
             .target_machine = target_machine,
             .type_checker = type_checker,
-            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .current_function = null,
             .string_counter = 0,
             .optimization_level = 2,
@@ -161,13 +161,13 @@ pub const LLVMIRPipeline = struct {
         print("🧹 Cleaning up LLVM IR Pipeline...\n", .{});
         
         // Clean up hash maps first
-        self.functions.deinit();
-        self.variables.deinit();
-        self.global_strings.deinit();
-        self.type_cache.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
+        self.global_strings.deinit(self.allocator);
+        self.type_cache.deinit(self.allocator);
         
         // Clean up type system components
-        self.type_checker.deinit();
+        self.type_checker.deinit(self.allocator);
         
         // Dispose LLVM objects in proper order
         if (self.pass_manager) |pm| {
@@ -187,7 +187,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Clean up arena and self
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
         self.allocator.destroy(self);
         
         print("✅ LLVM IR Pipeline cleanup complete\n", .{});
@@ -337,12 +337,12 @@ pub const LLVMIRPipeline = struct {
     /// Generate LLVM function
     fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionDeclaration) !void {
         // Create function type
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (func_decl.parameters.items) |param| {
             const llvm_type = try self.cursedTypeToLLVM(param.param_type);
-            try param_types.append(llvm_type);
+            try param_types.append(allocator, llvm_type);
         }
         
         const return_type = if (func_decl.return_type) |ret_type|
@@ -529,12 +529,12 @@ pub const LLVMIRPipeline = struct {
         
         // Look up user-defined function
         if (self.functions.get(call.name)) |function| {
-            var args = .empty;
+            var args = std.ArrayList(u8){};
             defer args.deinit();
             
             for (call.arguments.items) |arg| {
                 const arg_val = try self.generateExpression(arg);
-                try args.append(arg_val);
+                try args.append(allocator, arg_val);
             }
             
             const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));

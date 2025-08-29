@@ -73,14 +73,14 @@ pub fn main() !void {
     
     // Read the source file
     const source = std.fs.cwd().readFileAlloc(allocator, filename.?, 1024 * 1024) catch |err| {
-        print("❌ Error reading file: {}\n", .{err});
+        print("❌ Error reading file: {s}\n", .{err});
         return;
     };
     defer allocator.free(source);
     
     // Compile the program
     enhanced_compiler.compileProgram(allocator, source, filename.?, config) catch |err| {
-        print("❌ Compilation failed: {}\n", .{err});
+        print("❌ Compilation failed: {s}\n", .{err});
         return;
     };
 }

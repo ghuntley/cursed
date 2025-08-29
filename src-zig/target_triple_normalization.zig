@@ -444,7 +444,7 @@ pub const TargetTripleNormalizer = struct {
     /// Returns owned slice of owned strings that must be freed by caller
     pub fn getCompilationFlags(self: *TargetTripleNormalizer, triple_str: []const u8) ![][]const u8 {
         const triple = try self.normalizeTriple(triple_str);
-        var flags = std.ArrayList([]const u8).init(self.allocator);
+        var flags = std.ArrayList([]const u8){};
         
         // Architecture-specific flags
         if (triple.isARM64()) {

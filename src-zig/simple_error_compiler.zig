@@ -31,14 +31,14 @@ pub fn main() !void {
     defer allocator.free(file_content);
 
     print("🚀 CURSED Error Handling Compiler\n", .{});
-    print("📁 Processing {s} ({} bytes)\n", .{ filename, file_content.len });
+    print("📁 Processing {s} ({s} bytes)\n", .{ filename, file_content.len });
 
     // Simple line-based parser for error handling
     var lines = std.mem.splitScalar(u8, file_content, '\n');
     var line_number: u32 = 0;
     var has_errors = false;
     var in_fam_block = false;
-    var errors_created = .empty;
+    var errors_created = std.ArrayList(u8){};
     defer {
         for (errors_created.items) |error_name| {
             allocator.free(error_name);
@@ -71,17 +71,17 @@ pub fn main() !void {
             try processVibezSpill(trimmed, line_number);
         } else if (trimmed.len > 0) {
             // Other CURSED statements
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
 
     // Summary
     print("\n✅ Error handling analysis complete\n", .{});
     print("📊 Statistics:\n", .{});
-    print("   Lines processed: {}\n", .{line_number});
-    print("   Error handling detected: {}\n", .{has_errors});
-    print("   Fam blocks detected: {}\n", .{in_fam_block});
-    print("   Errors created: {}\n", .{errors_created.items.len});
+    print("   Lines processed: {s}\n", .{line_number});
+    print("   Error handling detected: {s}\n", .{has_errors});
+    print("   Fam blocks detected: {s}\n", .{in_fam_block});
+    print("   Errors created: {s}\n", .{errors_created.items.len});
 
     if (errors_created.items.len > 0) {
         print("   Error types:\n", .{});
@@ -96,7 +96,7 @@ pub fn main() !void {
 }
 
 fn processYikesStatement(allocator: Allocator, line: []const u8, line_number: u32, errors_created: *ArrayList([]const u8)) !void {
-    print("Line {}: 🚨 YIKES statement - {s}\n", .{ line_number, line });
+    print("Line {s}: 🚨 YIKES statement - {s}\n", .{ line_number, line });
     
     // Extract error name and value
     var parts = std.mem.splitScalar(u8, line, ' ');
@@ -104,7 +104,7 @@ fn processYikesStatement(allocator: Allocator, line: []const u8, line_number: u3
     
     if (parts.next()) |error_name| {
         const name_copy = try allocator.dupe(u8, error_name);
-        try errors_created.append(name_copy);
+        try errors_created.append(allocator, name_copy);
         
         if (std.mem.indexOf(u8, line, "=")) |_| {
             print("   ✨ Error '{s}' created with initial value\n", .{error_name});
@@ -115,17 +115,17 @@ fn processYikesStatement(allocator: Allocator, line: []const u8, line_number: u3
 }
 
 fn processFamStatement(line: []const u8, line_number: u32) !void {
-    print("Line {}: 🛡️  FAM statement - {s}\n", .{ line_number, line });
+    print("Line {s}: 🛡️  FAM statement - {s}\n", .{ line_number, line });
     print("   ✨ Panic recovery block started\n", .{});
 }
 
 fn processShookExpression(line: []const u8, line_number: u32) !void {
-    print("Line {}: ⚡ SHOOK expression - {s}\n", .{ line_number, line });
+    print("Line {s}: ⚡ SHOOK expression - {s}\n", .{ line_number, line });
     print("   ✨ Error propagation detected\n", .{});
 }
 
 fn processVibezSpill(line: []const u8, line_number: u32) !void {
-    print("Line {}: 💬 Output - {s}\n", .{ line_number, line });
+    print("Line {s}: 💬 Output - {s}\n", .{ line_number, line });
     
     // Extract and execute the output
     if (std.mem.indexOf(u8, line, "(")) |start| {

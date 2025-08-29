@@ -51,28 +51,28 @@ pub const PerformanceTester = struct {
     pub fn init() PerformanceTester {
         return PerformanceTester{
             .allocator = allocator,
-            .results = std.ArrayList(BenchmarkResult).init(allocator),
-            .baseline_data = std.HashMap(u64, PerformanceMetrics, std.hash_map.DefaultContext).init(allocator),
+            .results = std.ArrayList(BenchmarkResult){},
+            .baseline_data = std.HashMap(u64, PerformanceMetrics, std.hash_map.DefaultContext){},
         };
     }
 
     pub fn deinit(self: *PerformanceTester) void {
-        self.results.deinit();
-        self.baseline_data.deinit();
+        self.results.deinit(self.allocator);
+        self.baseline_data.deinit(self.allocator);
     }
 
     pub fn runBenchmark(self: *PerformanceTester, suite: PerformanceTestSuite) !void {
-        std.debug.print("⚡ Running performance benchmark: {s}\n", .{suite.name});
+        std.debug.writer().print("⚡ Running performance benchmark: {s}\n", .{suite.name});
 
         // Warmup phase
-        std.debug.print("  🔥 Warming up ({} iterations)...\n", .{suite.warmup_iterations});
+        std.debug.writer().print("  🔥 Warming up ({s} iterations)...\n", .{{suite.warmup_iterations});
         var i: u32 = 0;
         while (i < suite.warmup_iterations) : (i += 1) {
             _ = try self.runSingleIteration(suite.source_code);
         }
 
         // Benchmark phase
-        std.debug.print("  📊 Benchmarking ({} iterations)...\n", .{suite.iterations});
+        std.debug.writer().print("  📊 Benchmarking ({s} iterations)...\n", .{{suite.iterations});
         var total_metrics = PerformanceMetrics{
             .compilation_time_ns = 0,
             .execution_time_ns = 0,
@@ -134,7 +134,7 @@ pub const PerformanceTester = struct {
             .performance_change_percent = performance_change,
         };
 
-        try self.results.append(result);
+        try self.results.append(allocator, result);
 
         // Print immediate results
         self.printBenchmarkResult(result);
@@ -187,7 +187,7 @@ pub const PerformanceTester = struct {
         defer interpreter.deinit();
 
         _ = interpreter.executeString(source_code) catch |err| {
-            std.debug.print("Execution error: {}\n", .{err});
+            std.debug.writer().print("Execution error: {s}\n", .{{err});
             return metrics;
         };
 
@@ -218,24 +218,24 @@ pub const PerformanceTester = struct {
 
     fn printBenchmarkResult(self: *PerformanceTester, result: BenchmarkResult) void {
         _ = self;
-        std.debug.print("  📈 Results for {s}:\n", .{result.name});
-        std.debug.print("    Compilation Time: {d:.2}ms\n", .{@as(f64, @floatFromInt(result.metrics.compilation_time_ns)) / 1_000_000.0});
-        std.debug.print("    Execution Time: {d:.2}ms\n", .{@as(f64, @floatFromInt(result.metrics.execution_time_ns)) / 1_000_000.0});
-        std.debug.print("    Memory Usage: {d:.2}KB\n", .{@as(f64, @floatFromInt(result.metrics.memory_usage_bytes)) / 1024.0});
-        std.debug.print("    Throughput: {d:.1} ops/sec\n", .{result.metrics.throughput_ops_per_sec});
+        std.debug.writer().print("  📈 Results for {s}:\n", .{result.name});
+        std.debug.writer().print("    Compilation Time: {d:.2}ms\n", .{@as(f64, @floatFromInt(result.metrics.compilation_time_ns)) / 1_000_000.0});
+        std.debug.writer().print("    Execution Time: {d:.2}ms\n", .{@as(f64, @floatFromInt(result.metrics.execution_time_ns)) / 1_000_000.0});
+        std.debug.writer().print("    Memory Usage: {d:.2}KB\n", .{@as(f64, @floatFromInt(result.metrics.memory_usage_bytes)) / 1024.0});
+        std.debug.writer().print("    Throughput: {d:.1} ops/sec\n", .{result.metrics.throughput_ops_per_sec});
 
         if (result.regression_detected) {
-            std.debug.print("    ⚠️  REGRESSION DETECTED: {d:.1}% slower\n", .{result.performance_change_percent});
+            std.debug.writer().print("    ⚠️  REGRESSION DETECTED: {d:.1}% slower\n", .{result.performance_change_percent});
         } else if (result.baseline_metrics != null) {
             const change_indicator = if (result.performance_change_percent < 0) "🚀 IMPROVEMENT" else "📊 CHANGE";
-            std.debug.print("    {} {d:.1}% vs baseline\n", .{ change_indicator, std.math.fabs(result.performance_change_percent) });
+            std.debug.writer().print("    {s} {d:.1}% vs baseline\n", .{{ change_indicator, std.math.fabs(result.performance_change_percent) });
         }
-        std.debug.print("\n", .{});
+        std.debug.writer().print("\n", .{});
     }
 
     pub fn printOverallSummary(self: *PerformanceTester) void {
-        std.debug.print("📊 Performance Test Summary\n", .{});
-        std.debug.print("=" ** 50 ++ "\n");
+        std.debug.writer().print("📊 Performance Test Summary\n", .{});
+        std.debug.writer().print("=" ** 50 ++ "\n");
 
         var total_compilation_time: u64 = 0;
         var total_execution_time: u64 = 0;
@@ -261,17 +261,17 @@ pub const PerformanceTester = struct {
             @as(f64, @floatFromInt(total_memory_usage)) / @as(f64, @floatFromInt(self.results.items.len)) / 1024.0
         else 0.0;
 
-        std.debug.print("Total Benchmarks: {}\n", .{self.results.items.len});
-        std.debug.print("Average Compilation Time: {d:.2}ms\n", .{avg_compile_time});
-        std.debug.print("Average Execution Time: {d:.2}ms\n", .{avg_exec_time});
-        std.debug.print("Average Memory Usage: {d:.2}KB\n", .{avg_memory});
-        std.debug.print("Regressions Detected: {}\n", .{regression_count});
+        std.debug.writer().print("Total Benchmarks: {s}\n", .{{self.results.items.len});
+        std.debug.writer().print("Average Compilation Time: {d:.2}ms\n", .{avg_compile_time});
+        std.debug.writer().print("Average Execution Time: {d:.2}ms\n", .{avg_exec_time});
+        std.debug.writer().print("Average Memory Usage: {d:.2}KB\n", .{avg_memory});
+        std.debug.writer().print("Regressions Detected: {s}\n", .{{regression_count});
 
         if (regression_count > 0) {
-            std.debug.print("\n⚠️  Performance Regressions:\n", .{});
+            std.debug.writer().print("\n⚠️  Performance Regressions:\n", .{});
             for (self.results.items) |result| {
                 if (result.regression_detected) {
-                    std.debug.print("  • {s}: {d:.1}% slower\n", .{ result.name, result.performance_change_percent });
+                    std.debug.writer().print("  • {s}: {d:.1}% slower\n", .{ result.name, result.performance_change_percent });
                 }
             }
         }
@@ -422,8 +422,9 @@ fn generateLargeProgram() []const u8 {
 
 // Main performance test runner
 pub fn runAllPerformanceTests(allocator: Allocator) !void {
-    std.debug.print("🚀 Starting CURSED Performance Test Suite\n", .{});
-    std.debug.print("=" ** 60 ++ "\n");
+        _ = allocator;
+    std.debug.writer().print("🚀 Starting CURSED Performance Test Suite\n", .{});
+    std.debug.writer().print("=" ** 60 ++ "\n");
 
     var tester = PerformanceTester.init(allocator);
     defer tester.deinit();
@@ -434,7 +435,7 @@ pub fn runAllPerformanceTests(allocator: Allocator) !void {
     }
 
     // Run stress tests
-    std.debug.print("💪 Running stress tests...\n", .{});
+    std.debug.writer().print("💪 Running stress tests...\n", .{});
     try tester.runBenchmark(memory_stress_test);
     try tester.runBenchmark(compiler_stress_test);
 

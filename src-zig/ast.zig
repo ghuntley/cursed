@@ -163,13 +163,13 @@ pub const Expression = union(enum) {
             .Binary => |bin| {
                 const left_expr: *Expression = @ptrCast(@alignCast(bin.left));
                 const right_expr: *Expression = @ptrCast(@alignCast(bin.right));
-                left_expr.deinit(allocator);
-                right_expr.deinit(allocator);
+                left_expr.deinit();
+                right_expr.deinit();
                 allocator.destroy(left_expr);
                 allocator.destroy(right_expr);
             },
             .Call => |*call| {
-                call.deinit(allocator);
+                call.deinit();
             },
             .MemberAccess => |member| {
                 allocator.destroy(member);
@@ -193,11 +193,11 @@ pub const Expression = union(enum) {
                 for (interpolation.parts.items) |part| {
                     if (part.expression) |expr| {
                         const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
-                        expr_ptr.deinit(allocator);
+                        expr_ptr.deinit();
                         allocator.destroy(expr_ptr);
                     }
                 }
-                interpolation.parts.deinit(allocator);
+                interpolation.parts.deinit();
             },
             else => {}, // Simple types don't need special cleanup
         }
@@ -228,16 +228,16 @@ pub const Expression = union(enum) {
                 print_fn("]", .{});
             },
             .Binary => |bin| {
-                try bin.left.print(0);
+                try bin.left.writer().print(0);
                 print_fn(" {s} ", .{bin.operator});
-                try bin.right.print(0);
+                try bin.right.writer().print(0);
             },
             .Call => |call| {
-                try call.function.print(0);
+                try call.function.writer().print(0);
                 print_fn("(", .{});
                 for (call.arguments.items, 0..) |arg, i| {
                     if (i > 0) print_fn(", ", .{});
-                    try arg.print(0);
+                    try arg.writer().print(0);
                 }
                 print_fn(")", .{});
             },
@@ -262,18 +262,18 @@ pub const Program = struct {
     pub fn deinit(self: *Program, allocator: Allocator) void {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            stmt_ptr.deinit(allocator);
+            stmt_ptr.deinit();
             allocator.destroy(stmt_ptr);
         }
-        self.statements.deinit(allocator);
+        self.statements.deinit(self.allocator);
         
         for (self.imports.items) |*import| {
-            import.deinit(allocator);
+            import.deinit();
         }
-        self.imports.deinit(allocator);
+        self.imports.deinit(self.allocator);
         
         if (self.package) |*pkg| {
-            pkg.deinit(allocator);
+            pkg.deinit();
         }
     }
 
@@ -292,7 +292,7 @@ pub const Program = struct {
         }
         
         for (self.statements.items) |stmt| {
-            try stmt.print(indent + 2);
+            try stmt.writer().print(indent + 2);
         }
     }
 };
@@ -329,16 +329,19 @@ pub const ImportStatement = struct {
     }
 
     pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
-        self.multiple_paths.deinit(allocator);
-        self.selective_items.deinit(allocator);
+        _ = allocator;
+        self.multiple_paths.deinit(self.allocator);
+        self.selective_items.deinit(self.allocator);
     }
     
     pub fn addMultiplePath(self: *ImportStatement, allocator: Allocator, path: []const u8) !void {
-        try self.multiple_paths.append(allocator, path);
+        _ = allocator;
+        try self.multiple_paths.append(self.allocator, path);
     }
     
     pub fn addSelectiveItem(self: *ImportStatement, allocator: Allocator, name: []const u8, item_alias: ?[]const u8) !void {
-        try self.selective_items.append(allocator, ImportItem{ .name = name, .alias = item_alias });
+        _ = allocator;
+        try self.selective_items.append(self.allocator, ImportItem{ .name = name, .alias = item_alias });
         self.is_selective = true;
     }
 };
@@ -348,6 +351,7 @@ pub const PackageDeclaration = struct {
     version: ?[]const u8,
 
     pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
+        _ = allocator;
                 _ = self;
         _ = allocator;
     }
@@ -381,12 +385,13 @@ pub const Type = union(enum) {
     Tuple: TupleType,
 
     pub fn deinit(self: *Type, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
-            .Array => |*arr| arr.deinit(allocator),
-            .Map => |*map| map.deinit(allocator),
-            .Function => |*func| func.deinit(allocator),
-            .Tuple => |*tuple| tuple.deinit(allocator),
-            else => {},
+            .Array => |*arr| arr.deinit(),
+            .Map => |*map| map.deinit(),
+            .Function => |*func| func.deinit(),
+            
+            else => {}
         }
     }
 };
@@ -431,6 +436,7 @@ pub const ArrayType = struct {
     }
 
     pub fn deinit(self: *ArrayType, allocator: Allocator) void {
+        _ = allocator;
         self.element_type.deinit(Type.deinit);
         _ = allocator; // Satisfied by ref_counted system
     }
@@ -450,6 +456,7 @@ pub const SliceType = struct {
     }
 
     pub fn deinit(self: *SliceType, allocator: Allocator) void {
+        _ = allocator;
         self.element_type.deinit(Type.deinit);
         _ = allocator;
     }
@@ -471,6 +478,7 @@ pub const MapType = struct {
     }
 
     pub fn deinit(self: *MapType, allocator: Allocator) void {
+        _ = allocator;
         self.key_type.deinit(Type.deinit);
         self.value_type.deinit(Type.deinit);
         _ = allocator;
@@ -491,6 +499,7 @@ pub const PointerType = struct {
     }
 
     pub fn deinit(self: *PointerType, allocator: Allocator) void {
+        _ = allocator;
         self.target_type.deinit(Type.deinit);
         _ = allocator;
     }
@@ -505,7 +514,7 @@ pub const FunctionType = struct {
         const function_type = try allocator.create(FunctionType);
         function_type.* = FunctionType{
             .ref_counted = RefCounted.init(allocator),
-            .parameters = ArrayList(Type).init(allocator),
+            .parameters = ArrayList(Type){},
             .return_type = null,
         };
         return function_type;
@@ -516,11 +525,12 @@ pub const FunctionType = struct {
     }
 
     pub fn deinit(self: *FunctionType, allocator: Allocator) void {
+        _ = allocator;
         // Clean up parameters (these are value types, safe to cleanup)
         for (self.parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit(self.allocator);
         
         // Clean up return type with proper reference counting
         if (self.return_type) |*ret_type| {
@@ -549,10 +559,11 @@ pub const TupleType = struct {
     elements: ArrayList(Type),
 
     pub fn deinit(self: *TupleType, allocator: Allocator) void {
+        _ = allocator;
         for (self.elements.items) |*elem| {
-            elem.deinit(allocator);
+            elem.deinit();
         }
-        self.elements.deinit(allocator);
+        self.elements.deinit(self.allocator);
     }
 };
 
@@ -617,21 +628,21 @@ pub const Statement = union(enum) {
         switch (self.*) {
             .Expression => |expr| {
                 const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
-                expr_ptr.deinit(allocator);
+                expr_ptr.deinit();
                 allocator.destroy(expr_ptr);
             },
-            .Let => |*let| let.deinit(allocator),
-            .Assignment => |*assign| assign.deinit(allocator),
-            .Return => |*ret| ret.deinit(allocator),
-            .If => |*if_stmt| if_stmt.deinit(allocator),
-            .Function => |*func| func.deinit(allocator),
-            .While => |*while_stmt| while_stmt.deinit(allocator),
-            .Interface => |*interface_stmt| interface_stmt.deinit(allocator),
-            .Implementation => |*impl_stmt| impl_stmt.deinit(allocator),
-            .Stan => |*stan| stan.deinit(allocator),
-            .Block => |*block| block.deinit(allocator),
+            .Let => |*let| let.deinit(),
+            .Assignment => |*assign| assign.deinit(),
+            .Return => |*ret| ret.deinit(),
+            .If => |*if_stmt| if_stmt.deinit(),
+            .Function => |*func| func.deinit(),
+            .While => |*while_stmt| while_stmt.deinit(),
+            .Interface => |*interface_stmt| interface_stmt.deinit(),
+            .Implementation => |*impl_stmt| impl_stmt.deinit(),
+            .Stan => |*stan| stan.deinit(),
+            .Block => |*block| block.deinit(),
             // Add more cases as needed
-            else => {},
+            else => {}
         }
     }
 
@@ -642,25 +653,25 @@ pub const Statement = union(enum) {
         switch (self) {
             .Expression => |expr| {
                 print_fn("{s}Expression: ", .{spaces[0..indent]});
-                try expr.print(0);
+                try expr.writer().print(0);
                 print_fn("\n", .{});
             },
             .Let => |let| {
                 print_fn("{s}Let: {s} = ", .{ spaces[0..indent], let.name });
                 if (let.initializer) |init| {
-                    try init.print(0);
+                    try init.writer().print(0);
                 }
                 print_fn("\n", .{});
             },
             .Function => |func| {
                 print_fn("{s}Function: {s}\n", .{ spaces[0..indent], func.name });
                 for (func.body.items) |stmt| {
-                    try stmt.print(indent + 2);
+                    try stmt.writer().print(indent + 2);
                 }
             },
             else => {
                 print_fn("{s}Statement: {s}\n", .{ spaces[0..indent], @tagName(self) });
-            },
+            }
         }
     }
 };
@@ -697,7 +708,7 @@ pub const LetStatement = struct {
         
         // Only cleanup the initializer (expression) which is usually safe
         if (self.initializer) |init| {
-            init.deinit(allocator);
+            init.deinit();
             allocator.destroy(init);
         }
         // TODO: Implement proper reference counting for types
@@ -711,11 +722,11 @@ pub const AssignmentStatement = struct {
 
     pub fn deinit(self: *AssignmentStatement, allocator: Allocator) void {
         const target_expr: *Expression = @ptrCast(@alignCast(self.target));
-        target_expr.deinit(allocator);
+        target_expr.deinit();
         allocator.destroy(target_expr);
         
         const value_expr: *Expression = @ptrCast(@alignCast(self.value));
-        value_expr.deinit(allocator);
+        value_expr.deinit();
         allocator.destroy(value_expr);
     }
 };
@@ -726,7 +737,7 @@ pub const ReturnStatement = struct {
     pub fn deinit(self: *ReturnStatement, allocator: Allocator) void {
         if (self.value) |val| {
             const expr_ptr: *Expression = @ptrCast(@alignCast(val));
-            expr_ptr.deinit(allocator);
+            expr_ptr.deinit();
             allocator.destroy(expr_ptr);
         }
     }
@@ -739,14 +750,14 @@ pub const IfStatement = struct {
 
     pub fn deinit(self: *IfStatement, allocator: Allocator) void {
         const condition_expr: *Expression = @ptrCast(@alignCast(self.condition));
-        condition_expr.deinit(allocator);
+        condition_expr.deinit();
         allocator.destroy(condition_expr);
         // Note: Individual statement cleanup handled by parent scope
-        self.then_branch.deinit(allocator);
+        self.then_branch.deinit(self.allocator);
         
         if (self.else_branch) |*else_br| {
             // Note: Individual statement cleanup handled by parent scope  
-            else_br.deinit(allocator);
+            else_br.deinit();
         }
     }
 };
@@ -780,36 +791,36 @@ pub const FunctionStatement = struct {
 
     pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
         for (self.parameters.items) |*param| {
-            param.param_type.deinit(allocator);
+            param.param_type.deinit();
             if (param.default_value) |default| {
                 const default_expr: *Expression = @ptrCast(@alignCast(default));
-                default_expr.deinit(allocator);
+                default_expr.deinit();
             }
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit(self.allocator);
         
         if (self.return_type) |*ret_type| {
-            ret_type.deinit(allocator);
+            ret_type.deinit();
         }
         
         for (self.body.items) |stmt| {
-            stmt.deinit(allocator);
+            stmt.deinit();
             allocator.destroy(stmt);
         }
-        self.body.deinit(allocator);
+        self.body.deinit(self.allocator);
         
         for (self.type_parameters.items) |*type_param| {
             for (type_param.constraints.items) |*constraint| {
-                constraint.deinit(allocator);
+                constraint.deinit();
             }
-            type_param.constraints.deinit(allocator);
+            type_param.constraints.deinit();
         }
-        self.type_parameters.deinit(allocator);
+        self.type_parameters.deinit(self.allocator);
         
-        self.comments.deinit(allocator);
+        self.comments.deinit(self.allocator);
         
         if (self.attributes) |*attrs| {
-            attrs.deinit(allocator);
+            attrs.deinit();
         }
     }
 };
@@ -819,13 +830,13 @@ pub const WhileStatement = struct {
     body: ArrayList(*Statement),
 
     pub fn deinit(self: *WhileStatement, allocator: Allocator) void {
-        self.condition.deinit(allocator);
+        self.condition.deinit(self.allocator);
         allocator.destroy(self.condition);
         for (self.body.items) |stmt| {
-            stmt.deinit(allocator);
+            stmt.deinit();
             allocator.destroy(stmt);
         }
-        self.body.deinit(allocator);
+        self.body.deinit(self.allocator);
     }
 };
 
@@ -862,11 +873,12 @@ pub const StanStatement = struct {
     body: ArrayList(*anyopaque),
     
     pub fn deinit(self: *StanStatement, allocator: Allocator) void {
+        _ = allocator;
         for (self.body.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            stmt_ptr.deinit(allocator);
+            stmt_ptr.deinit();
         }
-        self.body.deinit(allocator);
+        self.body.deinit(self.allocator);
     }
 };
 
@@ -890,21 +902,22 @@ pub const StructStatement = struct {
     attributes: ?AttributeList = null, // Attribute decorations for memory layout and optimization
     
     pub fn deinit(self: *StructStatement, allocator: Allocator) void {
+        _ = allocator;
         for (self.fields.items) |*field| {
-            field.field_type.deinit(allocator);
+            field.field_type.deinit();
         }
-        self.fields.deinit(allocator);
+        self.fields.deinit(self.allocator);
         for (self.methods.items) |*method| {
-            method.deinit(allocator);
+            method.deinit();
         }
-        self.methods.deinit(allocator);
+        self.methods.deinit(self.allocator);
         for (self.type_parameters.items) |*type_param| {
-            type_param.constraints.deinit(allocator);
+            type_param.constraints.deinit();
         }
-        self.type_parameters.deinit(allocator);
+        self.type_parameters.deinit(self.allocator);
         
         if (self.attributes) |*attrs| {
-            attrs.deinit(allocator);
+            attrs.deinit();
         }
     }
 };
@@ -918,10 +931,11 @@ pub const InterfaceStatement = struct {
     compositions: ArrayList([]const u8), // Interface composition with "with"
     
     pub fn deinit(self: *InterfaceStatement, allocator: Allocator) void {
-                self.methods.deinit(allocator);
-        self.type_parameters.deinit(allocator);
-        self.extends.deinit(allocator);
-        self.compositions.deinit(allocator);
+        _ = allocator;
+        self.methods.deinit(self.allocator);
+        self.type_parameters.deinit(self.allocator);
+        self.extends.deinit(self.allocator);
+        self.compositions.deinit(self.allocator);
     }
 };
 
@@ -932,10 +946,11 @@ pub const ImplementationStatement = struct {
     where_clause: ?[]const u8,
     
     pub fn deinit(self: *ImplementationStatement, allocator: Allocator) void {
+        _ = allocator;
         for (self.methods.items) |*method| {
-            method.deinit(allocator);
+            method.deinit();
         }
-        self.methods.deinit(allocator);
+        self.methods.deinit(self.allocator);
     }
 };
 
@@ -1014,10 +1029,10 @@ pub const BlockStatement = struct {
     pub fn deinit(self: *BlockStatement, allocator: Allocator) void {
         for (self.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            stmt_ptr.deinit(allocator);
+            stmt_ptr.deinit();
             allocator.destroy(stmt_ptr);
         }
-        self.statements.deinit(allocator);
+        self.statements.deinit(self.allocator);
     }
 };
 
@@ -1028,8 +1043,8 @@ pub const BinaryExpression = struct {
     right: *Expression,
 
     pub fn deinit(self: *BinaryExpression, allocator: Allocator) void {
-        self.left.deinit(allocator);
-        self.right.deinit(allocator);
+        self.left.deinit(self.allocator);
+        self.right.deinit(self.allocator);
         allocator.destroy(self.left);
         allocator.destroy(self.right);
     }
@@ -1040,14 +1055,14 @@ pub const CallExpression = struct {
     arguments: ArrayList(*Expression),
 
     pub fn deinit(self: *CallExpression, allocator: Allocator) void {
-        self.function.deinit(allocator);
+        self.function.deinit(self.allocator);
         allocator.destroy(self.function);
         
         for (self.arguments.items) |arg| {
-            arg.deinit(allocator);
+            arg.deinit();
             allocator.destroy(arg);
         }
-        self.arguments.deinit(allocator);
+        self.arguments.deinit(self.allocator);
     }
 };
 
@@ -1101,10 +1116,10 @@ pub const StructExpression = struct {
     
     pub fn deinit(self: *StructExpression, allocator: Allocator) void {
         for (self.fields.items) |*field| {
-            field.value.deinit(allocator);
+            field.value.deinit();
             allocator.destroy(field.value);
         }
-        self.fields.deinit(allocator);
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -1114,14 +1129,14 @@ pub const MethodCallExpression = struct {
     arguments: ArrayList(*Expression),
     
     pub fn deinit(self: *MethodCallExpression, allocator: Allocator) void {
-        self.object.deinit(allocator);
+        self.object.deinit(self.allocator);
         allocator.destroy(self.object);
         
         for (self.arguments.items) |arg| {
-            arg.deinit(allocator);
+            arg.deinit();
             allocator.destroy(arg);
         }
-        self.arguments.deinit(allocator);
+        self.arguments.deinit(self.allocator);
     }
 };
 
@@ -1282,8 +1297,8 @@ pub const ChannelOperation = union(enum) {
     Receive: struct {
         channel: *Expression,
         variable: ?[]const u8,
-    },
-};
+    }
+        };
 
 pub const MatchCase = struct {
     pattern: Pattern,
@@ -1373,11 +1388,11 @@ pub const StringInterpolationExpression = struct {
         for (self.parts.items) |part| {
             if (part.expression) |expr| {
                 const expr_ptr: *Expression = @ptrCast(@alignCast(expr));
-                expr_ptr.deinit(allocator);
+                expr_ptr.deinit();
                 allocator.destroy(expr_ptr);
             }
         }
-        self.parts.deinit(allocator);
+        self.parts.deinit(self.allocator);
     }
 };
 
@@ -1498,7 +1513,7 @@ test "ast creation" {
     const allocator = std.testing.allocator;
     
     var program = Program.init(allocator);
-    defer program.deinit(allocator);
+    defer program.deinit();
     
     try std.testing.expect(program.statements.items.len == 0);
 }
@@ -1507,7 +1522,7 @@ test "function statement" {
     const allocator = std.testing.allocator;
     
     var func = FunctionStatement.init(allocator, "test_function");
-    defer func.deinit(allocator);
+    defer func.deinit();
     
     try std.testing.expect(std.mem.eql(u8, func.name, "test_function"));
     try std.testing.expect(func.parameters.items.len == 0);

@@ -44,6 +44,7 @@ pub const VariableInfo = struct {
     scope_id: u32 = 0,          // Scope where variable was declared
     
     pub fn deinit(self: *VariableInfo, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         allocator.free(self.cursed_type);
     }
@@ -69,7 +70,7 @@ pub const Scope = struct {
             var var_info = entry.value_ptr;
             var_info.deinit(self.variables.allocator);
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
     
     /// Look up a variable in this scope or parent scopes
@@ -123,7 +124,7 @@ pub const VariableScopeManager = struct {
             scope.deinit();
             self.allocator.destroy(scope);
         }
-        self.scopes.deinit();
+        self.scopes.deinit(self.allocator);
     }
     
     /// Enter a new scope

@@ -90,7 +90,7 @@ pub const CursedLSP = struct {
     pub fn init() CursedLSP {
         return CursedLSP{
             .allocator = allocator,
-            .documents = HashMap([]const u8, Document, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, Document, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .initialized = false,
             .shutdown_requested = false,
             .client_capabilities = null,
@@ -104,7 +104,7 @@ pub const CursedLSP = struct {
             doc.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
         
         if (self.client_capabilities) |caps| {
             caps.deinit();
@@ -208,10 +208,10 @@ pub const CursedLSP = struct {
         defer completion.deinit();
         try completion.put("resolveProvider", json.Value{ .bool = true });
         
-        var triggers = ArrayList(json.Value).init(self.allocator);
+        var triggers = ArrayList(json.Value){};
         defer triggers.deinit();
-        try triggers.append(json.Value{ .string = "." });
-        try triggers.append(json.Value{ .string = ":" });
+        try triggers.append(allocator, json.Value{ .string = "." });
+        try triggers.append(allocator, json.Value{ .string = ":" });
         try completion.put("triggerCharacters", json.Value{ .array = triggers });
         try capabilities.put("completionProvider", json.Value{ .object = completion });
         
@@ -222,17 +222,17 @@ pub const CursedLSP = struct {
         try capabilities.put("documentFormattingProvider", json.Value{ .bool = true });
         
         // Server info
-        var server_info = std.StringHashMap(json.Value).init(self.allocator);
+        var server_info = std.StringHashMap(json.Value){};
         defer server_info.deinit();
         try server_info.put("name", json.Value{ .string = "CURSED Language Server" });
         try server_info.put("version", json.Value{ .string = "1.0.0" });
         
-        var result = std.StringHashMap(json.Value).init(self.allocator);
+        var result = std.StringHashMap(json.Value){};
         defer result.deinit();
         try result.put("capabilities", json.Value{ .object = capabilities });
         try result.put("serverInfo", json.Value{ .object = server_info });
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -323,7 +323,7 @@ pub const CursedLSP = struct {
         const completions = try self.getCompletions(uri, line, character);
         defer self.allocator.free(completions);
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -344,7 +344,7 @@ pub const CursedLSP = struct {
         
         const hover_info = try self.getHoverInfo(uri, line, character);
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -352,12 +352,12 @@ pub const CursedLSP = struct {
         if (hover_info) |info| {
             defer self.allocator.free(info);
             
-            var contents = std.StringHashMap(json.Value).init(self.allocator);
+            var contents = std.StringHashMap(json.Value){};
             defer contents.deinit();
             try contents.put("kind", json.Value{ .string = "markdown" });
             try contents.put("value", json.Value{ .string = info });
             
-            var hover = std.StringHashMap(json.Value).init(self.allocator);
+            var hover = std.StringHashMap(json.Value){};
             defer hover.deinit();
             try hover.put("contents", json.Value{ .object = contents });
             
@@ -379,7 +379,7 @@ pub const CursedLSP = struct {
         const edits = try self.formatDocument(uri);
         defer if (edits) |e| self.allocator.free(e);
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -387,7 +387,7 @@ pub const CursedLSP = struct {
         if (edits) |e| {
             try response.put("result", json.Value{ .array = e });
         } else {
-            try response.put("result", json.Value{ .array = ArrayList(json.Value).init(self.allocator) });
+            try response.put("result", json.Value{ .array = ArrayList(json.Value){} });
         }
         
         return try json.stringifyAlloc(self.allocator, json.Value{ .object = response }, .{});
@@ -396,7 +396,7 @@ pub const CursedLSP = struct {
     fn handleDefinition(self: *CursedLSP, message: json.Value) ![]u8 {
         const id = message.object.get("id").?;
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -408,11 +408,11 @@ pub const CursedLSP = struct {
     fn handleReferences(self: *CursedLSP, message: json.Value) ![]u8 {
         const id = message.object.get("id").?;
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
-        try response.put("result", json.Value{ .array = ArrayList(json.Value).init(self.allocator) });
+        try response.put("result", json.Value{ .array = ArrayList(json.Value){} });
         
         return try json.stringifyAlloc(self.allocator, json.Value{ .object = response }, .{});
     }
@@ -420,7 +420,7 @@ pub const CursedLSP = struct {
     fn handleShutdown(self: *CursedLSP, message: json.Value) ![]u8 {
         const id = message.object.get("id").?;
         
-        var response = std.StringHashMap(json.Value).init(self.allocator);
+        var response = std.StringHashMap(json.Value){};
         defer response.deinit();
         try response.put("jsonrpc", json.Value{ .string = "2.0" });
         try response.put("id", id);
@@ -434,7 +434,7 @@ pub const CursedLSP = struct {
         _ = line;
         _ = character;
         
-        var completions = ArrayList(json.Value).init(self.allocator);
+        var completions = ArrayList(json.Value){};
         
         // CURSED keywords
         const keywords = [_]struct { []const u8, []const u8 }{
@@ -457,7 +457,7 @@ pub const CursedLSP = struct {
         };
         
         for (keywords) |kw| {
-            var item = std.StringHashMap(json.Value).init(self.allocator);
+            var item = std.StringHashMap(json.Value){};
             defer item.deinit();
             
             try item.put("label", json.Value{ .string = kw[0] });
@@ -465,7 +465,7 @@ pub const CursedLSP = struct {
             try item.put("detail", json.Value{ .string = kw[1] });
             try item.put("insertText", json.Value{ .string = kw[0] });
             
-            try completions.append(json.Value{ .object = item });
+            try completions.append(allocator, json.Value{ .object = item });
         }
         
         // Standard library functions
@@ -479,7 +479,7 @@ pub const CursedLSP = struct {
         };
         
         for (stdlib_funcs) |func| {
-            var item = std.StringHashMap(json.Value).init(self.allocator);
+            var item = std.StringHashMap(json.Value){};
             defer item.deinit();
             
             try item.put("label", json.Value{ .string = func[0] });
@@ -487,7 +487,7 @@ pub const CursedLSP = struct {
             try item.put("detail", json.Value{ .string = func[1] });
             try item.put("insertText", json.Value{ .string = func[0] });
             
-            try completions.append(json.Value{ .object = item });
+            try completions.append(allocator, json.Value{ .object = item });
         }
         
         // Check document for local completions
@@ -511,7 +511,7 @@ pub const CursedLSP = struct {
                     const func_name = std.mem.trim(u8, after_slay[0..paren_pos], " \t");
                     
                     if (func_name.len > 0) {
-                        var item = std.StringHashMap(json.Value).init(self.allocator);
+                        var item = std.StringHashMap(json.Value){};
                         defer item.deinit();
                         
                         try item.put("label", json.Value{ .string = func_name });
@@ -519,7 +519,7 @@ pub const CursedLSP = struct {
                         try item.put("detail", json.Value{ .string = "Local function" });
                         try item.put("insertText", json.Value{ .string = func_name });
                         
-                        try completions.append(json.Value{ .object = item });
+                        try completions.append(allocator, json.Value{ .object = item });
                     }
                 }
             }
@@ -531,7 +531,7 @@ pub const CursedLSP = struct {
                     const var_name = std.mem.trim(u8, after_sus[0..space_pos], " \t");
                     
                     if (var_name.len > 0) {
-                        var item = std.StringHashMap(json.Value).init(self.allocator);
+                        var item = std.StringHashMap(json.Value){};
                         defer item.deinit();
                         
                         try item.put("label", json.Value{ .string = var_name });
@@ -539,7 +539,7 @@ pub const CursedLSP = struct {
                         try item.put("detail", json.Value{ .string = "Local variable" });
                         try item.put("insertText", json.Value{ .string = var_name });
                         
-                        try completions.append(json.Value{ .object = item });
+                        try completions.append(allocator, json.Value{ .object = item });
                     }
                 }
             }
@@ -622,7 +622,7 @@ pub const CursedLSP = struct {
             defer self.allocator.free(formatted);
             
             if (!std.mem.eql(u8, formatted, doc.content)) {
-                var edits = ArrayList(json.Value).init(self.allocator);
+                var edits = ArrayList(json.Value){};
                 
                 // Count lines in original content
                 var line_count: u32 = 0;
@@ -631,27 +631,27 @@ pub const CursedLSP = struct {
                 }
                 
                 // Create range for entire document
-                var start_pos = std.StringHashMap(json.Value).init(self.allocator);
+                var start_pos = std.StringHashMap(json.Value){};
                 defer start_pos.deinit();
                 try start_pos.put("line", json.Value{ .integer = 0 });
                 try start_pos.put("character", json.Value{ .integer = 0 });
                 
-                var end_pos = std.StringHashMap(json.Value).init(self.allocator);
+                var end_pos = std.StringHashMap(json.Value){};
                 defer end_pos.deinit();
                 try end_pos.put("line", json.Value{ .integer = @intCast(line_count) });
                 try end_pos.put("character", json.Value{ .integer = 0 });
                 
-                var range = std.StringHashMap(json.Value).init(self.allocator);
+                var range = std.StringHashMap(json.Value){};
                 defer range.deinit();
                 try range.put("start", json.Value{ .object = start_pos });
                 try range.put("end", json.Value{ .object = end_pos });
                 
-                var edit = std.StringHashMap(json.Value).init(self.allocator);
+                var edit = std.StringHashMap(json.Value){};
                 defer edit.deinit();
                 try edit.put("range", json.Value{ .object = range });
                 try edit.put("newText", json.Value{ .string = formatted });
                 
-                try edits.append(json.Value{ .object = edit });
+                try edits.append(allocator, json.Value{ .object = edit });
                 
                 return edits;
             }
@@ -661,7 +661,7 @@ pub const CursedLSP = struct {
     }
 
     fn formatCursedCode(self: *CursedLSP, content: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var indent_level: u32 = 0;
@@ -670,40 +670,40 @@ pub const CursedLSP = struct {
         for (content) |c| {
             switch (c) {
                 '{' => {
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     indent_level += 1;
                     at_line_start = true;
                 },
                 '}' => {
                     if (!at_line_start) {
-                        try result.append('\n');
+                        try result.append(allocator, '\n');
                     }
                     if (indent_level > 0) indent_level -= 1;
                     for (0..indent_level * 4) |_| {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                     }
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     at_line_start = true;
                 },
                 '\n' => {
-                    try result.append(c);
+                    try result.append(allocator, c);
                     at_line_start = true;
                 },
                 ' ', '\t' => {
                     if (!at_line_start) {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                     }
                 },
                 else => {
                     if (at_line_start) {
                         for (0..indent_level * 4) |_| {
-                            try result.append(' ');
+                            try result.append(allocator, ' ');
                         }
                         at_line_start = false;
                     }
-                    try result.append(c);
+                    try result.append(allocator, c);
                 },
             }
         }
@@ -717,12 +717,12 @@ pub const CursedLSP = struct {
             defer self.allocator.free(diagnostics);
             
             // Create notification
-            var params = std.StringHashMap(json.Value).init(self.allocator);
+            var params = std.StringHashMap(json.Value){};
             defer params.deinit();
             try params.put("uri", json.Value{ .string = uri });
             try params.put("diagnostics", json.Value{ .array = diagnostics });
             
-            var notification = std.StringHashMap(json.Value).init(self.allocator);
+            var notification = std.StringHashMap(json.Value){};
             defer notification.deinit();
             try notification.put("jsonrpc", json.Value{ .string = "2.0" });
             try notification.put("method", json.Value{ .string = "textDocument/publishDiagnostics" });
@@ -734,14 +734,14 @@ pub const CursedLSP = struct {
             // Send notification
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ message.len, message });
+            try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ message.len, message });
             
             std.log.info("Published {} diagnostics for {s}", .{ diagnostics.items.len, uri });
         }
     }
 
     fn analyzeDiagnostics(self: *CursedLSP, content: []const u8) !ArrayList(json.Value) {
-        var diagnostics = ArrayList(json.Value).init(self.allocator);
+        var diagnostics = ArrayList(json.Value){};
         
         // Simple syntax validation
         var lines = std.mem.split(u8, content, "\n");
@@ -768,29 +768,29 @@ pub const CursedLSP = struct {
             }
             
             if (in_string) {
-                var start_pos = std.StringHashMap(json.Value).init(self.allocator);
+                var start_pos = std.StringHashMap(json.Value){};
                 defer start_pos.deinit();
                 try start_pos.put("line", json.Value{ .integer = @intCast(line_num) });
                 try start_pos.put("character", json.Value{ .integer = 0 });
                 
-                var end_pos = std.StringHashMap(json.Value).init(self.allocator);
+                var end_pos = std.StringHashMap(json.Value){};
                 defer end_pos.deinit();
                 try end_pos.put("line", json.Value{ .integer = @intCast(line_num) });
                 try end_pos.put("character", json.Value{ .integer = @intCast(trimmed.len) });
                 
-                var range = std.StringHashMap(json.Value).init(self.allocator);
+                var range = std.StringHashMap(json.Value){};
                 defer range.deinit();
                 try range.put("start", json.Value{ .object = start_pos });
                 try range.put("end", json.Value{ .object = end_pos });
                 
-                var diagnostic = std.StringHashMap(json.Value).init(self.allocator);
+                var diagnostic = std.StringHashMap(json.Value){};
                 defer diagnostic.deinit();
                 try diagnostic.put("range", json.Value{ .object = range });
                 try diagnostic.put("severity", json.Value{ .integer = 1 }); // Error
                 try diagnostic.put("message", json.Value{ .string = "Unclosed string literal" });
                 try diagnostic.put("source", json.Value{ .string = "CURSED LSP" });
                 
-                try diagnostics.append(json.Value{ .object = diagnostic });
+                try diagnostics.append(allocator, json.Value{ .object = diagnostic });
             }
             
             line_num += 1;
@@ -808,7 +808,7 @@ pub const CursedLSP = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = ArrayList(u8).init(self.allocator);
+        var buffer = ArrayList(u8){};
         defer buffer.deinit();
         
         while (!self.shutdown_requested) {
@@ -833,7 +833,7 @@ pub const CursedLSP = struct {
                         defer self.allocator.free(response);
                         
                         // Send response
-                        try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+                        try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ response.len, response });
                     }
                 }
             } else {

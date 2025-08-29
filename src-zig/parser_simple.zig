@@ -47,13 +47,13 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 const import_stmt = try self.parseImportStatement();
-                try program.imports.append(import_stmt);
+                try program.imports.append(allocator, import_stmt);
                 continue;
             }
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(stmt);
+            try program.statements.append(allocator, stmt);
         }
 
         return program;
@@ -304,7 +304,7 @@ pub const Parser = struct {
     fn consume(self: *Parser, kind: TokenKind, message: []const u8) ParserError!Token {
         if (self.check(kind)) return self.advance();
         
-        std.debug.print("Parser error: {s}. Expected {}, got {}\n", .{ message, kind, self.peek().kind });
+        std.debug.print("Parser error: {s}. Expected {s}, got {s}\n", .{ message, kind, self.peek().kind });
         return ParserError.UnexpectedToken;
     }
 

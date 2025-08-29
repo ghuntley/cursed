@@ -86,6 +86,7 @@ pub const TypeId = struct {
     }
     
     pub fn deinit(self: *TypeId, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.canonical_name);
     }
     
@@ -189,9 +190,9 @@ pub const CollisionResistantTypeRegistry = struct {
     
     pub fn init(allocator: std.mem.Allocator) CollisionResistantTypeRegistry {
         return CollisionResistantTypeRegistry{
-            .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage){},
             .overflow_table = HashMap(u64, ArrayList(TypeEntry), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .name_index = HashMap([]const u8, TypeId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .name_index = HashMap([]const u8, TypeId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .fingerprint_index = HashMap(u64, ArrayList(TypeId), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_stats = CollisionStats{},
             .allocator = allocator,
@@ -206,7 +207,7 @@ pub const CollisionResistantTypeRegistry = struct {
             entry.value_ptr.type_id.deinit();
             entry.value_ptr.type_info.deinit();
         }
-        self.primary_table.deinit();
+        self.primary_table.deinit(self.allocator);
         
         // Clean up overflow table
         var overflow_iter = self.overflow_table.iterator();
@@ -217,14 +218,14 @@ pub const CollisionResistantTypeRegistry = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.overflow_table.deinit();
+        self.overflow_table.deinit(self.allocator);
         
         // Clean up name index
         var name_iter = self.name_index.iterator();
         while (name_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.name_index.deinit();
+        self.name_index.deinit(self.allocator);
         
         // Clean up fingerprint index
         var fp_iter = self.fingerprint_index.iterator();
@@ -234,7 +235,7 @@ pub const CollisionResistantTypeRegistry = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.fingerprint_index.deinit();
+        self.fingerprint_index.deinit(self.allocator);
     }
     
     /// Register a new type with collision detection and prevention
@@ -306,11 +307,11 @@ pub const CollisionResistantTypeRegistry = struct {
             }
             
             // Add to existing overflow list
-            try overflow_list.append(entry);
+            try overflow_list.append(allocator, entry);
         } else {
             // Create new overflow list
-            var new_list = .empty;
-            try new_list.append(entry);
+            var new_list = std.ArrayList(u8){};
+            try new_list.append(allocator, entry);
             try self.overflow_table.put(hash, new_list);
         }
         
@@ -395,7 +396,7 @@ pub const CollisionResistantTypeRegistry = struct {
         if (self.fingerprint_index.getPtr(fp_hash)) |type_list| {
             try type_list.append(self.allocator, type_id);
         } else {
-            var new_list = .empty;
+            var new_list = std.ArrayList(u8){};
             try new_list.append(self.allocator, type_id);
             try self.fingerprint_index.put(fp_hash, new_list);
         }
@@ -539,6 +540,7 @@ pub const InterfaceImplRegistry = struct {
         }
         
         pub fn deinit(self: *ImplKey, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.type_name);
             allocator.free(self.interface_name);
         }
@@ -578,7 +580,7 @@ pub const InterfaceImplRegistry = struct {
     
     pub fn init(allocator: std.mem.Allocator) InterfaceImplRegistry {
         return InterfaceImplRegistry{
-            .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage){},
             .collision_table = HashMap(u64, ArrayList(ImplEntry), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };
@@ -589,7 +591,7 @@ pub const InterfaceImplRegistry = struct {
         while (iter.next()) |entry| {
             entry.key_ptr.deinit();
         }
-        self.impl_table.deinit();
+        self.impl_table.deinit(self.allocator);
         
         var collision_iter = self.collision_table.iterator();
         while (collision_iter.next()) |entry| {
@@ -598,7 +600,7 @@ pub const InterfaceImplRegistry = struct {
             }
             entry.value_ptr.deinit();
         }
-        self.collision_table.deinit();
+        self.collision_table.deinit(self.allocator);
     }
     
     /// Register interface implementation with collision detection
@@ -630,9 +632,9 @@ pub const InterfaceImplRegistry = struct {
         };
         
         if (self.collision_table.getPtr(hash)) |collision_list| {
-            try collision_list.append(entry);
+            try collision_list.append(allocator, entry);
         } else {
-            var new_list = .empty;
+            var new_list = std.ArrayList(u8){};
             try new_list.append(self.allocator, entry);
             try self.collision_table.put(hash, new_list);
         }

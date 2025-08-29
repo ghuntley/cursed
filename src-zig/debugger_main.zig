@@ -33,7 +33,7 @@ pub fn main() !void {
 
     // Initialize debugger
     var debug = debugger.CursedDebugger.init(allocator, &interp) catch |err| {
-        print("❌ Failed to initialize debugger: {}\n", .{err});
+        print("❌ Failed to initialize debugger: {s}\n", .{err});
         return;
     };
     defer debug.deinit();
@@ -43,7 +43,7 @@ pub fn main() !void {
 
     // Load source file
     debug.loadSourceFile(filename) catch |err| {
-        print("❌ Failed to load source file '{s}': {}\n", .{ filename, err });
+        print("❌ Failed to load source file '{s}': {s}\n", .{ filename, err });
         return;
     };
 
@@ -52,7 +52,7 @@ pub fn main() !void {
 
     // Start interactive debugger session
     debug.run() catch |err| {
-        print("❌ Debugger error: {}\n", .{err});
+        print("❌ Debugger error: {s}\n", .{err});
         return;
     };
 }

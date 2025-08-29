@@ -62,7 +62,7 @@ pub const ParseError = struct {
     
     pub fn print(self: ParseError, writer: anytype) !void {
         if (self.location) |loc| {
-            try writer.print("Error at {}:{}:{} - {s}", .{ loc.file, loc.line, loc.column, self.message });
+            try writer.print("Error at {s}:{s}:{s} - {s}", .{ loc.file, loc.line, loc.column, self.message });
         } else {
             try writer.print("Error: {s}", .{self.message});
         }
@@ -123,8 +123,8 @@ pub const EnhancedParser = struct {
     }
 
     pub fn deinit(self: *EnhancedParser) void {
-        self.errors.deinit();
-        self.arena.deinit();
+        self.errors.deinit(self.allocator);
+        self.arena.deinit(self.allocator);
     }
 
     pub fn initWithFile(allocator: Allocator, tokens: []const Token, file_path: []const u8) EnhancedParser {
@@ -158,7 +158,7 @@ pub const EnhancedParser = struct {
     fn reportErrorAtLocation(self: *EnhancedParser, message: []const u8, context: []const u8, location: ?ast.SourceLocation, token: Token) ParserError {
         // Validate inputs
         if (message.len == 0 or message.len > 1024) {
-            std.debug.print("Internal error: Invalid error message length: {}\n", .{message.len});
+            std.debug.print("Internal error: Invalid error message length: {s}\n", .{message.len});
             self.had_error = true;
             return ParserError.InvalidInput;
         }
@@ -172,13 +172,13 @@ pub const EnhancedParser = struct {
         const error_info = ParseError.init(ParserError.SyntaxError, message, location, token, context);
         
         // Try to add error to list (gracefully handle OOM)
-        self.errors.append(error_info) catch {
+        self.errors.append(allocator, error_info) catch {
             // If we can't allocate for error tracking, at least print it
             std.debug.print("Error: {s} (failed to track error due to OOM)\n", .{message});
         };
         
         // Print error immediately for user feedback
-        error_info.print(std.debug) catch {};
+        error_info.writer().print(std.debug) catch {};
         
         self.had_error = true;
         return ParserError.SyntaxError;
@@ -264,7 +264,7 @@ pub const EnhancedParser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(import_stmt) catch |err| {
+                    program.imports.append(allocator, import_stmt) catch |err| {
                         try self.reportError("Failed to add import to program", "parseProgram");
                         if (err == error.OutOfMemory) return ParserError.OutOfMemory;
                     };
@@ -427,7 +427,7 @@ pub const EnhancedParser = struct {
                     return err;
                 };
                 
-                func.parameters.append(param) catch {
+                func.parameters.append(allocator, param) catch {
                     try self.reportError("Out of memory adding parameter", "parseFunctionStatement");
                     return ParserError.OutOfMemory;
                 };
@@ -839,7 +839,7 @@ pub const EnhancedParser = struct {
     }
 
     fn finishCall(self: *EnhancedParser, callee: Expression) ParserError!Expression {
-        var arguments = .empty;
+        var arguments = std.ArrayList(u8){};
         errdefer {
             for (arguments.items) |arg| {
                 self.allocator.destroy(arg);
@@ -1049,7 +1049,7 @@ pub const EnhancedParser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var then_branch = .empty;
+        var then_branch = std.ArrayList(u8){};
         errdefer {
             for (then_branch.items) |stmt_ptr| {
                 const stmt: *Statement = self.safePtrCast(Statement, stmt_ptr) catch continue;
@@ -1114,7 +1114,7 @@ pub const EnhancedParser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = .empty;
+        var body = std.ArrayList(u8){};
         errdefer {
             for (body.items) |stmt| {
                 self.allocator.destroy(stmt);
@@ -1222,7 +1222,7 @@ pub const EnhancedParser = struct {
     /// Print all errors
     pub fn printErrors(self: *EnhancedParser, writer: anytype) !void {
         for (self.errors.items) |error_info| {
-            try error_info.print(writer);
+            try error_info.writer().print(writer);
         }
     }
 

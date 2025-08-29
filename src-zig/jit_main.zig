@@ -27,7 +27,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
     
-    print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
     
     if (use_jit) {
         print("🚀 Using Working JIT Execution Engine\n", .{});

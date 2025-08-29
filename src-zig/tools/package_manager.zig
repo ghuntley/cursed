@@ -25,6 +25,7 @@ pub const Version = struct {
     }
     
     pub fn toString(self: Version, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         return try std.fmt.allocPrint(allocator, "{}.{}.{}", .{ self.major, self.minor, self.patch });
     }
     
@@ -93,16 +94,16 @@ pub const PackageManifest = struct {
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },
             .authors = &[_][]const u8{},
-            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .exports = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .exports = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *PackageManifest) void {
-        self.dependencies.deinit();
-        self.dev_dependencies.deinit();
-        self.exports.deinit();
+        self.dependencies.deinit(self.allocator);
+        self.dev_dependencies.deinit(self.allocator);
+        self.exports.deinit(self.allocator);
     }
     
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -122,7 +123,7 @@ pub const PackageManifest = struct {
         const file = try std.fs.cwd().createFile(file_path, .{});
         defer file.close();
         
-        try file.writeAll(content);
+        try file.writer().writeAll(content);
     }
     
     fn parseFromString(allocator: Allocator, content: []const u8) !PackageManifest {
@@ -185,7 +186,7 @@ pub const PackageManifest = struct {
         
         try json_obj.put("dependencies", json.Value{ .object = deps_obj });
         
-        var json_string = ArrayList(u8).init(allocator);
+        var json_string = ArrayList(u8){};
         defer json_string.deinit();
         
         try json.stringify(json.Value{ .object = json_obj }, .{}, json_string.writer());
@@ -207,12 +208,12 @@ pub const LockFile = struct {
     
     pub fn init() LockFile {
         return LockFile{
-            .packages = HashMap([]const u8, LockedPackage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .packages = HashMap([]const u8, LockedPackage, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *LockFile) void {
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
     }
 };
 
@@ -238,7 +239,7 @@ pub const RegistryClient = struct {
         const response_body = try self.makeHttpRequest("GET", url, null);
         defer self.allocator.free(response_body);
         
-        var results = ArrayList(PackageInfo).init(self.allocator);
+        var results = ArrayList(PackageInfo){};
         
         // Mock search results with more realistic data
         if (std.mem.indexOf(u8, query, "http")) |_| {
@@ -302,7 +303,7 @@ pub const RegistryClient = struct {
         
         const end_time = std.time.milliTimestamp();
         const download_time = end_time - start_time;
-        print("Download completed in {}ms\n", .{download_time});
+        print("Download completed in {s}ms\n", .{{download_time});
     }
     
     const PackageInfo = struct {
@@ -410,7 +411,7 @@ pub const PackageManager = struct {
         const main_file = try std.fs.cwd().createFile(main_path, .{});
         defer main_file.close();
         
-        try main_file.writeAll(
+        try main_file.writer().writeAll(
             \\fr fr Main entry point for CURSED package
             \\
             \\slay main() {

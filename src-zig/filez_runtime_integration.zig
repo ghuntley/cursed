@@ -34,7 +34,7 @@ fn clearLastError() void {
     }
 }
 
-export fn runtime_get_last_error() callconv(.C) [*:0]const u8 {
+export fn runtime_get_last_error() callconv(.c) [*:0]const u8 {
     if (!error_initialized or last_error.len == 0) {
         return "";
     }
@@ -43,13 +43,13 @@ export fn runtime_get_last_error() callconv(.C) [*:0]const u8 {
     return null_terminated.ptr;
 }
 
-export fn runtime_clear_last_error() callconv(.C) void {
+export fn runtime_clear_last_error() callconv(.c) void {
     clearLastError();
 }
 
 // === SAFE FILE OPERATIONS ===
 
-export fn runtime_read_file_safe(allocator: Allocator, filename: [*:0]const u8) callconv(.C) [*:0]const u8 {
+export fn runtime_read_file_safe(allocator: Allocator, filename: [*:0]const u8) callconv(.c) [*:0]const u8 {
     const filename_slice = std.mem.span(filename);
     
     const content = std.fs.cwd().readFileAlloc(allocator, filename_slice, 100 * 1024 * 1024) catch |err| {
@@ -70,7 +70,7 @@ export fn runtime_read_file_safe(allocator: Allocator, filename: [*:0]const u8) 
     return null_terminated.ptr;
 }
 
-export fn runtime_write_file_safe(allocator: Allocator, filename: [*:0]const u8, content: [*:0]const u8) callconv(.C) bool {
+export fn runtime_write_file_safe(allocator: Allocator, filename: [*:0]const u8, content: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     const content_slice = std.mem.span(content);
     
@@ -87,7 +87,7 @@ export fn runtime_write_file_safe(allocator: Allocator, filename: [*:0]const u8,
     };
     defer file.close();
     
-    file.writeAll(content_slice) catch |err| {
+    file.writer().writeAll(content_slice) catch |err| {
         const error_msg = switch (err) {
             error.AccessDenied => "Write access denied",
             error.NoSpaceLeft => "No space left on device",
@@ -122,7 +122,7 @@ const FileHandleRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.close();
         }
-        self.handles.deinit();
+        self.handles.deinit(self.allocator);
     }
     
     fn registerHandle(self: *FileHandleRegistry, file: File) i32 {
@@ -155,7 +155,7 @@ fn getFileRegistry(allocator: Allocator) *FileHandleRegistry {
     return &file_registry.?;
 }
 
-export fn runtime_open_file(allocator: Allocator, filename: [*:0]const u8, mode: [*:0]const u8) callconv(.C) i32 {
+export fn runtime_open_file(allocator: Allocator, filename: [*:0]const u8, mode: [*:0]const u8) callconv(.c) i32 {
     const filename_slice = std.mem.span(filename);
     const mode_slice = std.mem.span(mode);
     
@@ -217,7 +217,7 @@ export fn runtime_open_file(allocator: Allocator, filename: [*:0]const u8, mode:
     return fd;
 }
 
-export fn runtime_close_file(allocator: Allocator, fd: i32) callconv(.C) bool {
+export fn runtime_close_file(allocator: Allocator, fd: i32) callconv(.c) bool {
     const registry = getFileRegistry(allocator);
     if (registry.closeHandle(fd)) {
         clearLastError();
@@ -228,7 +228,7 @@ export fn runtime_close_file(allocator: Allocator, fd: i32) callconv(.C) bool {
     }
 }
 
-export fn runtime_read_file_chunk(allocator: Allocator, fd: i32, size: i64) callconv(.C) [*:0]const u8 {
+export fn runtime_read_file_chunk(allocator: Allocator, fd: i32, size: i64) callconv(.c) [*:0]const u8 {
     if (size <= 0 or size > 1024 * 1024) { // 1MB limit
         setLastError(allocator, "Invalid read size");
         return "READ_ERROR";
@@ -269,7 +269,7 @@ export fn runtime_read_file_chunk(allocator: Allocator, fd: i32, size: i64) call
     return null_terminated.ptr;
 }
 
-export fn runtime_write_file_chunk(allocator: Allocator, fd: i32, content: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_write_file_chunk(allocator: Allocator, fd: i32, content: [*:0]const u8) callconv(.c) i64 {
     const content_slice = std.mem.span(content);
     
     const registry = getFileRegistry(allocator);
@@ -278,7 +278,7 @@ export fn runtime_write_file_chunk(allocator: Allocator, fd: i32, content: [*:0]
         return -1;
     };
     
-    file.writeAll(content_slice) catch |err| {
+    file.writer().writeAll(content_slice) catch |err| {
         const error_msg = switch (err) {
             error.AccessDenied => "Write access denied",
             error.NoSpaceLeft => "No space left on device",
@@ -296,7 +296,7 @@ export fn runtime_write_file_chunk(allocator: Allocator, fd: i32, content: [*:0]
 
 // === FILE SEEKING AND POSITIONING ===
 
-export fn runtime_seek_file(allocator: Allocator, fd: i32, position: i64, whence: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_seek_file(allocator: Allocator, fd: i32, position: i64, whence: [*:0]const u8) callconv(.c) i64 {
     const whence_slice = std.mem.span(whence);
     
     const registry = getFileRegistry(allocator);
@@ -329,7 +329,7 @@ export fn runtime_seek_file(allocator: Allocator, fd: i32, position: i64, whence
     return @intCast(result);
 }
 
-export fn runtime_truncate_file(allocator: Allocator, fd: i32, size: i64) callconv(.C) bool {
+export fn runtime_truncate_file(allocator: Allocator, fd: i32, size: i64) callconv(.c) bool {
     const registry = getFileRegistry(allocator);
     const file = registry.getHandle(fd) orelse {
         setLastError(allocator, "Invalid file descriptor");
@@ -352,7 +352,7 @@ export fn runtime_truncate_file(allocator: Allocator, fd: i32, size: i64) callco
 
 // === FILE LOCKING ===
 
-export fn runtime_lock_file(allocator: Allocator, fd: i32, exclusive: bool) callconv(.C) bool {
+export fn runtime_lock_file(allocator: Allocator, fd: i32, exclusive: bool) callconv(.c) bool {
     const registry = getFileRegistry(allocator);
     const file = registry.getHandle(fd) orelse {
         setLastError(allocator, "Invalid file descriptor");
@@ -374,7 +374,7 @@ export fn runtime_lock_file(allocator: Allocator, fd: i32, exclusive: bool) call
     return true;
 }
 
-export fn runtime_unlock_file(allocator: Allocator, fd: i32) callconv(.C) bool {
+export fn runtime_unlock_file(allocator: Allocator, fd: i32) callconv(.c) bool {
     const registry = getFileRegistry(allocator);
     const file = registry.getHandle(fd) orelse {
         setLastError(allocator, "Invalid file descriptor");
@@ -404,7 +404,7 @@ const BufferRegistry = struct {
         while (iterator.next()) |entry| {
             self.allocator.free(entry.value_ptr.*);
         }
-        self.buffers.deinit();
+        self.buffers.deinit(self.allocator);
     }
     
     fn setBuffer(self: *BufferRegistry, fd: i32, size: usize) !void {
@@ -429,7 +429,7 @@ fn getBufferRegistry(allocator: Allocator) *BufferRegistry {
     return &buffer_registry.?;
 }
 
-export fn runtime_enable_file_buffering(allocator: Allocator, fd: i32, buffer_size: i64) callconv(.C) bool {
+export fn runtime_enable_file_buffering(allocator: Allocator, fd: i32, buffer_size: i64) callconv(.c) bool {
     if (buffer_size < 512 or buffer_size > 65536) {
         setLastError(allocator, "Invalid buffer size");
         return false;
@@ -451,7 +451,7 @@ export fn runtime_enable_file_buffering(allocator: Allocator, fd: i32, buffer_si
     return true;
 }
 
-export fn runtime_flush_file_buffer(allocator: Allocator, fd: i32) callconv(.C) bool {
+export fn runtime_flush_file_buffer(allocator: Allocator, fd: i32) callconv(.c) bool {
     const registry = getFileRegistry(allocator);
     const file = registry.getHandle(fd) orelse {
         setLastError(allocator, "Invalid file descriptor");
@@ -474,7 +474,7 @@ export fn runtime_flush_file_buffer(allocator: Allocator, fd: i32) callconv(.C) 
 
 // === ADVANCED FILE METADATA ===
 
-export fn runtime_file_size_safe(allocator: Allocator, filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_size_safe(allocator: Allocator, filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch |err| {
@@ -503,7 +503,7 @@ export fn runtime_file_size_safe(allocator: Allocator, filename: [*:0]const u8) 
     return @intCast(stat.size);
 }
 
-export fn runtime_file_executable(filename: [*:0]const u8) callconv(.C) bool {
+export fn runtime_file_executable(filename: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     
     // Check file permissions for execute bit
@@ -516,7 +516,7 @@ export fn runtime_file_executable(filename: [*:0]const u8) callconv(.C) bool {
     return (stat.mode & 0o100) != 0;
 }
 
-export fn runtime_file_accessed_time(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_accessed_time(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -526,7 +526,7 @@ export fn runtime_file_accessed_time(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.atime);
 }
 
-export fn runtime_file_created_time(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_created_time(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -536,7 +536,7 @@ export fn runtime_file_created_time(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.ctime);
 }
 
-export fn runtime_file_permissions_numeric(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_permissions_numeric(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -549,7 +549,7 @@ export fn runtime_file_permissions_numeric(filename: [*:0]const u8) callconv(.C)
     return @intCast(perms);
 }
 
-export fn runtime_file_owner_id(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_owner_id(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -559,7 +559,7 @@ export fn runtime_file_owner_id(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.uid);
 }
 
-export fn runtime_file_group_id(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_group_id(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -569,7 +569,7 @@ export fn runtime_file_group_id(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.gid);
 }
 
-export fn runtime_file_device_id(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_device_id(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -579,7 +579,7 @@ export fn runtime_file_device_id(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.dev);
 }
 
-export fn runtime_file_inode(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_inode(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -589,7 +589,7 @@ export fn runtime_file_inode(filename: [*:0]const u8) callconv(.C) i64 {
     return @intCast(stat.ino);
 }
 
-export fn runtime_file_link_count(filename: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_file_link_count(filename: [*:0]const u8) callconv(.c) i64 {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().openFile(filename_slice, .{}) catch return -1;
@@ -601,7 +601,7 @@ export fn runtime_file_link_count(filename: [*:0]const u8) callconv(.C) i64 {
 
 // === ENHANCED DIRECTORY OPERATIONS ===
 
-export fn runtime_create_directory_recursive_with_permissions(allocator: Allocator, dirname: [*:0]const u8, permissions: i64) callconv(.C) bool {
+export fn runtime_create_directory_recursive_with_permissions(allocator: Allocator, dirname: [*:0]const u8, permissions: i64) callconv(.c) bool {
     const dirname_slice = std.mem.span(dirname);
     
     std.fs.cwd().makePath(dirname_slice) catch |err| {
@@ -626,7 +626,7 @@ export fn runtime_create_directory_recursive_with_permissions(allocator: Allocat
     return true;
 }
 
-export fn runtime_directory_readable(filename: [*:0]const u8) callconv(.C) bool {
+export fn runtime_directory_readable(filename: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     
     var dir = std.fs.cwd().openDir(filename_slice, .{}) catch return false;
@@ -634,7 +634,7 @@ export fn runtime_directory_readable(filename: [*:0]const u8) callconv(.C) bool 
     return true;
 }
 
-export fn runtime_remove_directory_recursive(allocator: Allocator, dirname: [*:0]const u8, force: bool) callconv(.C) bool {
+export fn runtime_remove_directory_recursive(allocator: Allocator, dirname: [*:0]const u8, force: bool) callconv(.c) bool {
     const dirname_slice = std.mem.span(dirname);
     
     if (!force) {
@@ -668,7 +668,7 @@ export fn runtime_remove_directory_recursive(allocator: Allocator, dirname: [*:0
     return true;
 }
 
-export fn runtime_directory_is_empty(allocator: Allocator, dirname: [*:0]const u8) callconv(.C) bool {
+export fn runtime_directory_is_empty(allocator: Allocator, dirname: [*:0]const u8) callconv(.c) bool {
     const dirname_slice = std.mem.span(dirname);
     
     var dir = std.fs.cwd().openDir(dirname_slice, .{ .iterate = true }) catch {
@@ -685,7 +685,7 @@ export fn runtime_directory_is_empty(allocator: Allocator, dirname: [*:0]const u
 
 // === FILESYSTEM INFORMATION ===
 
-export fn runtime_filesystem_total_space(allocator: Allocator, path: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_filesystem_total_space(allocator: Allocator, path: [*:0]const u8) callconv(.c) i64 {
     _ = path; // Platform-specific implementation needed
     
     // This is a simplified version - real implementation would use platform-specific APIs
@@ -694,7 +694,7 @@ export fn runtime_filesystem_total_space(allocator: Allocator, path: [*:0]const 
     return 1073741824000; // 1TB
 }
 
-export fn runtime_filesystem_available_space(allocator: Allocator, path: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_filesystem_available_space(allocator: Allocator, path: [*:0]const u8) callconv(.c) i64 {
     _ = path;
     
     // Platform-specific implementation needed
@@ -702,14 +702,14 @@ export fn runtime_filesystem_available_space(allocator: Allocator, path: [*:0]co
     return 536870912000; // 500GB
 }
 
-export fn runtime_filesystem_block_size(allocator: Allocator, path: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_filesystem_block_size(allocator: Allocator, path: [*:0]const u8) callconv(.c) i64 {
     _ = path;
     
     clearLastError();
     return 4096; // 4KB blocks
 }
 
-export fn runtime_filesystem_type(allocator: Allocator, path: [*:0]const u8) callconv(.C) [*:0]const u8 {
+export fn runtime_filesystem_type(allocator: Allocator, path: [*:0]const u8) callconv(.c) [*:0]const u8 {
     const path_slice = std.mem.span(path);
     
     // Simple heuristic based on path
@@ -725,7 +725,7 @@ export fn runtime_filesystem_type(allocator: Allocator, path: [*:0]const u8) cal
     return result.ptr;
 }
 
-export fn runtime_filesystem_is_readonly(allocator: Allocator, path: [*:0]const u8) callconv(.C) bool {
+export fn runtime_filesystem_is_readonly(allocator: Allocator, path: [*:0]const u8) callconv(.c) bool {
     _ = path;
     
     // Platform-specific implementation needed
@@ -733,7 +733,7 @@ export fn runtime_filesystem_is_readonly(allocator: Allocator, path: [*:0]const 
     return false; // Assume writable
 }
 
-export fn runtime_sync_filesystem(allocator: Allocator, path: [*:0]const u8) callconv(.C) bool {
+export fn runtime_sync_filesystem(allocator: Allocator, path: [*:0]const u8) callconv(.c) bool {
     _ = path;
     
     // Call sync() system call - simplified implementation
@@ -743,7 +743,7 @@ export fn runtime_sync_filesystem(allocator: Allocator, path: [*:0]const u8) cal
 
 // === SECURITY VALIDATION ===
 
-export fn runtime_check_file_access(allocator: Allocator, filename: [*:0]const u8, mode: [*:0]const u8) callconv(.C) bool {
+export fn runtime_check_file_access(allocator: Allocator, filename: [*:0]const u8, mode: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     const mode_slice = std.mem.span(mode);
     
@@ -773,7 +773,7 @@ export fn runtime_check_file_access(allocator: Allocator, filename: [*:0]const u
 
 // === PERFORMANCE AND TOUCH OPERATIONS ===
 
-export fn runtime_touch_existing_file(allocator: Allocator, filename: [*:0]const u8) callconv(.C) bool {
+export fn runtime_touch_existing_file(allocator: Allocator, filename: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     
     // Open file and update access time
@@ -798,7 +798,7 @@ export fn runtime_touch_existing_file(allocator: Allocator, filename: [*:0]const
     return true;
 }
 
-export fn runtime_create_empty_file(allocator: Allocator, filename: [*:0]const u8) callconv(.C) bool {
+export fn runtime_create_empty_file(allocator: Allocator, filename: [*:0]const u8) callconv(.c) bool {
     const filename_slice = std.mem.span(filename);
     
     const file = std.fs.cwd().createFile(filename_slice, .{}) catch |err| {
@@ -819,7 +819,7 @@ export fn runtime_create_empty_file(allocator: Allocator, filename: [*:0]const u
 
 // === CLEANUP ON PROGRAM EXIT ===
 
-export fn cleanup_filez_runtime() callconv(.C) void {
+export fn cleanup_filez_runtime() callconv(.c) void {
     if (file_registry) |*registry| {
         registry.deinit();
     }
