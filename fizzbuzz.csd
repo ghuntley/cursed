@@ -1,21 +1,22 @@
-slay main() drip {
+# CURSED FizzBuzz Implementation
+# Testing the unified compiler functionality
+
+yeet "vibez"
+
+# Simple FizzBuzz function
+slay fizzbuzz() {
     bestie (sus i drip = 1; i <= 100; i = i + 1) {
-        sus output tea = ""
-        
         ready (i % 15 == 0) {
-            output = "FizzBuzz"
+            vibez.spill("FizzBuzz")
         } otherwise ready (i % 3 == 0) {
-            output = "Fizz"
+            vibez.spill("Fizz")
         } otherwise ready (i % 5 == 0) {
-            output = "Buzz"
+            vibez.spill("Buzz")
         } otherwise {
-            # Convert number to string - for now just output number
             vibez.spill(i)
-            rn
         }
-        
-        vibez.spill(output)
     }
-    
-    damn 0
 }
+
+# Main execution
+fizzbuzz()
