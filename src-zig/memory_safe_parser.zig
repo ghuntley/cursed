@@ -3,7 +3,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 const ArenaAllocator = std.heap.ArenaAllocator;
 
-const lexer = @import("memory_safe_lexer.zig");
+const lexer = @import("lexer.zig");
 const ast = @import("ast.zig");
 const error_reporting = @import("memory_safe_error_reporting.zig");
 
