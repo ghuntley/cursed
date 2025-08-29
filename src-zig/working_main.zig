@@ -4,7 +4,7 @@ const ArrayList = std.ArrayList;
 const Allocator = std.mem.Allocator;
 
 const lexer = @import("lexer.zig");
-const simple_interpreter = @import("simple_interpreter.zig");
+const interpreter = @import("interpreter.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
