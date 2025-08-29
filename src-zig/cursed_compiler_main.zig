@@ -28,17 +28,24 @@ pub fn main() !void {
         return;
     }
 
-    const filename = args[1];
-    
     // Parse command line options
     var compile_mode = false;
     var debug_mode = false;
     var verbose = false;
     var output_name: ?[]const u8 = null;
     var optimize = false;
+    var filename: ?[]const u8 = null;
     
-    for (args[2..]) |arg| {
-        if (std.mem.eql(u8, arg, "--compile")) {
+    for (args[1..]) |arg| {
+        if (std.mem.eql(u8, arg, "--version")) {
+            print("CURSED Unified Compiler v1.0.0 (Production Ready)\n", .{});
+            print("Full LLVM backend with CURSED language support\n", .{});
+            print("Copyright (C) 2025 - Built with ❤️ by the CURSED team\n", .{});
+            return;
+        } else if (std.mem.eql(u8, arg, "--help")) {
+            printUsage();
+            return;
+        } else if (std.mem.eql(u8, arg, "--compile")) {
             compile_mode = true;
         } else if (std.mem.eql(u8, arg, "--debug")) {
             debug_mode = true;
@@ -51,30 +58,40 @@ pub fn main() !void {
             output_name = arg[9..];
         } else if (std.mem.startsWith(u8, arg, "-o") and arg.len > 2) {
             output_name = arg[2..];
+        } else if (!std.mem.startsWith(u8, arg, "-") and filename == null) {
+            // First non-flag argument is the filename
+            filename = arg;
         }
+    }
+    
+    // Check if filename was provided
+    if (filename == null) {
+        print("Error: No input file specified\n", .{});
+        printUsage();
+        return;
     }
 
     // Default output name
     if (output_name == null and compile_mode) {
-        const base = std.fs.path.basename(filename);
+        const base = std.fs.path.basename(filename.?);
         const dot_pos = std.mem.lastIndexOf(u8, base, ".") orelse base.len;
         output_name = base[0..dot_pos];
     }
 
     // Read source file
-    const source = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
-        print("❌ Error reading file {s}: {any}\n", .{ filename, err });
+    const source = std.fs.cwd().readFileAlloc(allocator, filename.?, 1024 * 1024) catch |err| {
+        print("❌ Error reading file {s}: {any}\n", .{ filename.?, err });
         return;
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({d} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({d} bytes)\n", .{ filename.?, source.len });
 
     if (compile_mode) {
-        try compileToExecutable(allocator, source, filename, output_name.?, verbose, debug_mode, optimize);
+        try compileToExecutable(allocator, source, filename.?, output_name.?, verbose, debug_mode, optimize);
     } else {
         // Fallback to interpreter mode for quick execution
-        try interpretSource(allocator, source, filename, verbose);
+        try interpretSource(allocator, source, filename.?, verbose);
     }
 }
 
