@@ -26,6 +26,7 @@ pub const PerformanceBenchmarkSuite = struct {
     reference_performance: ReferencePerformance,
 
     pub fn init(allocator: Allocator) !PerformanceBenchmarkSuite {
+        _ = allocator;
         return PerformanceBenchmarkSuite{
             .allocator = allocator,
             .config = BenchmarkConfig.comprehensive(),
@@ -39,11 +40,11 @@ pub const PerformanceBenchmarkSuite = struct {
     }
 
     pub fn deinit(self: *PerformanceBenchmarkSuite) void {
-        self.io_benchmarks.deinit();
-        self.concurrency_benchmarks.deinit();
-        self.memory_benchmarks.deinit();
-        self.computational_benchmarks.deinit();
-        self.results.deinit();
+        self.io_benchmarks.deinit(self.allocator);
+        self.concurrency_benchmarks.deinit(self.allocator);
+        self.memory_benchmarks.deinit(self.allocator);
+        self.computational_benchmarks.deinit(self.allocator);
+        self.results.deinit(self.allocator);
     }
 
     /// Run complete benchmark suite and generate performance report
@@ -330,23 +331,23 @@ pub const PerformanceBenchmarkSuite = struct {
     }
 
     fn generateRecommendations(self: *PerformanceBenchmarkSuite) !ArrayList([]const u8) {
-        var recommendations = ArrayList([]const u8).init(self.allocator);
+        var recommendations = ArrayList([]const u8){};
 
         const overall_score = try self.calculateOverallScore();
 
         if (overall_score < 8.0) {
-            try recommendations.append("Consider enabling more aggressive LLVM optimization passes");
-            try recommendations.append("Implement profile-guided optimization for hot paths");
+            try recommendations.append(allocator, "Consider enabling more aggressive LLVM optimization passes");
+            try recommendations.append(allocator, "Implement profile-guided optimization for hot paths");
         }
 
         if (self.results.last_memory_score < 7.0) {
-            try recommendations.append("Optimize memory allocation patterns for better cache locality");
-            try recommendations.append("Implement memory pooling for frequently allocated objects");
+            try recommendations.append(allocator, "Optimize memory allocation patterns for better cache locality");
+            try recommendations.append(allocator, "Implement memory pooling for frequently allocated objects");
         }
 
         if (self.results.last_concurrency_score < 8.0) {
-            try recommendations.append("Optimize channel operations and goroutine scheduling");
-            try recommendations.append("Implement lock-free data structures where applicable");
+            try recommendations.append(allocator, "Optimize channel operations and goroutine scheduling");
+            try recommendations.append(allocator, "Implement lock-free data structures where applicable");
         }
 
         return recommendations;
@@ -541,6 +542,7 @@ pub const BenchmarkResults = struct {
     last_io_score: f64 = 0.0,
 
     pub fn init(allocator: Allocator) BenchmarkResults {
+        _ = allocator;
         return BenchmarkResults{ .allocator = allocator };
     }
 

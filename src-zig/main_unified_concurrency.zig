@@ -172,17 +172,17 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit(); // Fix memory leak
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -284,7 +284,7 @@ fn compileWithConcurrency(
     const c_filename = try std.fmt.allocPrint(allocator, "{s}.c", .{output_name});
     defer allocator.free(c_filename);
     
-    var c_code = std.ArrayList(u8).init(self.allocator);
+    var c_code = std.ArrayList(u8){};
     defer c_code.deinit();
     
     // Generate comprehensive C code with concurrency support
@@ -302,7 +302,7 @@ fn compileWithConcurrency(
     if (features.has_select) try c_code.appendSlice("select ");
     try c_code.appendSlice("\n");
     try c_code.appendSlice("// Optimization level: ");
-    try c_code.append('0' + optimization_level);
+    try c_code.append(allocator, '0' + optimization_level);
     try c_code.appendSlice("\n\n");
     
     // Generate concurrency-aware code generation
@@ -332,7 +332,7 @@ fn compileWithConcurrency(
     // Write C file
     const c_file = try std.fs.cwd().createFile(c_filename, .{});
     defer c_file.close();
-    try c_file.writeAll(c_code.items);
+    try c_file.writer().writeAll(c_code.items);
     
     if (verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -345,17 +345,17 @@ fn compileWithConcurrency(
         else => "-O2",
     };
     
-    var compile_args = .empty;
+    var compile_args = std.ArrayList(u8){};
     defer compile_args.deinit();
     
-    try compile_args.append("gcc");
-    try compile_args.append(opt_flag);
-    try compile_args.append("-o");
-    try compile_args.append(output_name);
-    try compile_args.append(c_filename);
+    try compile_args.append(allocator, "gcc");
+    try compile_args.append(allocator, opt_flag);
+    try compile_args.append(allocator, "-o");
+    try compile_args.append(allocator, output_name);
+    try compile_args.append(allocator, c_filename);
     
     if (features.requiresConcurrency()) {
-        try compile_args.append("-lpthread"); // For concurrency support
+        try compile_args.append(allocator, "-lpthread"); // For concurrency support
     }
     
     if (verbose) {
@@ -370,7 +370,7 @@ fn compileWithConcurrency(
         .allocator = allocator,
         .argv = compile_args.items,
     }) catch |err| {
-        print("❌ Compilation failed: {}\n", .{err});
+        print("❌ Compilation failed: {s}\n", .{err});
         print("Generated C code saved in: {s}\n", .{c_filename});
         return;
     };
@@ -419,14 +419,14 @@ fn interpretWithConcurrency(
         
         // Concurrency-aware interpretation
         if (features.has_goroutines and std.mem.indexOf(u8, trimmed, "stan")) |_| {
-            if (verbose) print("Line {}: Goroutine spawn detected\n", .{line_number});
+            if (verbose) print("Line {s}: Goroutine spawn detected\n", .{line_number});
             // In real implementation, would parse and spawn goroutine
             print("[Goroutine spawned]\n", .{});
         } else if (features.has_channels and std.mem.indexOf(u8, trimmed, "dm")) |_| {
-            if (verbose) print("Line {}: Channel operation detected\n", .{line_number});
+            if (verbose) print("Line {s}: Channel operation detected\n", .{line_number});
             print("[Channel operation]\n", .{});
         } else if (features.has_select and std.mem.indexOf(u8, trimmed, "ready")) |_| {
-            if (verbose) print("Line {}: Select statement detected\n", .{line_number});
+            if (verbose) print("Line {s}: Select statement detected\n", .{line_number});
             print("[Select statement executed]\n", .{});
         } else if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
             // Standard output handling
@@ -443,7 +443,7 @@ fn interpretWithConcurrency(
                 }
             }
         } else if (verbose) {
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     

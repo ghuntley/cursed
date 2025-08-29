@@ -218,6 +218,7 @@ pub const RealSignalHandler = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         var self = Self{
             .allocator = allocator,
             .handlers = HashMap(SignalType, SignalHandler, std.hash_map.AutoContext(SignalType), 80).init(allocator),
@@ -240,8 +241,8 @@ pub const RealSignalHandler = struct {
     
     pub fn deinit(self: *Self) void {
         self.cleanup();
-        self.handlers.deinit();
-        self.cleanup_handlers.deinit();
+        self.handlers.deinit(self.allocator);
+        self.cleanup_handlers.deinit(self.allocator);
         
         // Close self-pipe (Unix only)
         if (builtin.target.os.tag != .windows) {
@@ -372,7 +373,7 @@ pub const RealSignalHandler = struct {
         const unix_signal = signal.toUnixSignal();
         
         const handler = struct {
-            fn signalHandler(sig: c_int) callconv(.C) void {
+            fn signalHandler(sig: c_int) callconv(.c) void {
                 // Write signal number to self-pipe for async-safe handling
                 const signal_byte = @as(u8, @intCast(sig));
                 _ = std.posix.write(global_self_pipe_fd, &[_]u8{signal_byte}) catch {};
@@ -606,7 +607,7 @@ pub const RealSignalHandler = struct {
     
     // Register cleanup handler for graceful shutdown
     pub fn registerCleanupHandler(self: *Self, cleanup_fn: *const fn () void) !void {
-        try self.cleanup_handlers.append(cleanup_fn);
+        try self.cleanup_handlers.append(allocator, cleanup_fn);
     }
     
     // Execute all cleanup handlers

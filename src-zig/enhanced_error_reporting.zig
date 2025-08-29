@@ -22,7 +22,7 @@ pub const SourceLocation = struct {
     }
     
     pub fn format(self: SourceLocation, writer: anytype) !void {
-        try writer.print("{}:{}:{}", .{ self.file, self.line, self.column });
+        try writer.print("{s}:{s}:{s}", .{ self.file, self.line, self.column });
     }
 };
 
@@ -193,7 +193,7 @@ pub const DiagnosticMessage = struct {
     
     pub fn deinit(self: *DiagnosticMessage) void {
         self.allocator.free(self.message);
-        self.suggestions.deinit();
+        self.suggestions.deinit(self.allocator);
         if (self.source_snippet) |snippet| {
             self.allocator.free(snippet);
         }
@@ -309,7 +309,7 @@ pub const ErrorReporter = struct {
             .warning_count = 0,
             .use_colors = true,
             .verbose = false,
-            .source_files = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .source_files = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -317,14 +317,14 @@ pub const ErrorReporter = struct {
         for (self.diagnostics.items) |*diagnostic| {
             diagnostic.deinit();
         }
-        self.diagnostics.deinit();
+        self.diagnostics.deinit(self.allocator);
         
         var iterator = self.source_files.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.source_files.deinit();
+        self.source_files.deinit(self.allocator);
     }
     
     pub fn addSourceFile(self: *ErrorReporter, file_path: []const u8, contents: []const u8) !void {
@@ -387,7 +387,7 @@ pub const ErrorReporter = struct {
         // Add helpful suggestions based on error code
         try self.addSuggestionsForError(&diagnostic);
         
-        try self.diagnostics.append(diagnostic);
+        try self.diagnostics.append(allocator, diagnostic);
     }
     
     fn extractSourceLine(self: *ErrorReporter, source: []const u8, line_num: u32) ![]const u8 {
@@ -571,13 +571,13 @@ pub const DebugInfo = struct {
     }
     
     pub fn deinit(self: *DebugInfo) void {
-        self.line_table.deinit();
-        self.scope_table.deinit();
+        self.line_table.deinit(self.allocator);
+        self.scope_table.deinit(self.allocator);
         for (self.variable_table.items) |variable| {
             self.allocator.free(variable.name);
             self.allocator.free(variable.type_name);
         }
-        self.variable_table.deinit();
+        self.variable_table.deinit(self.allocator);
     }
     
     pub fn addLineInfo(self: *DebugInfo, line: u32, column: u32, file_path: []const u8, offset: u32) !void {

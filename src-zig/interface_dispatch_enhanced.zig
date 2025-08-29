@@ -77,9 +77,9 @@ pub const EnhancedInterfaceDispatcher = struct {
         return Self{
             .allocator = allocator,
             .interface_registry = interface_registry,
-            .vtables = HashMap(InterfaceImplKey, *VTable, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_types = HashMap([]const u8, InterfaceType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .implementations = HashMap(ImplKey, ImplementationInfo, ImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .vtables = HashMap(InterfaceImplKey, *VTable, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage){},
+            .interface_types = HashMap([]const u8, InterfaceType, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .implementations = HashMap(ImplKey, ImplementationInfo, ImplKeyContext, std.hash_map.default_max_load_percentage){},
             .method_cache = HashMap(u64, usize, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .validation_errors = .empty,
             .dispatch_stats = DispatchStatistics.init(),
@@ -93,18 +93,18 @@ pub const EnhancedInterfaceDispatcher = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.vtables.deinit();
+        self.vtables.deinit(self.allocator);
         
         // Clean up interface types
         var interface_iterator = self.interface_types.iterator();
         while (interface_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.interface_types.deinit();
+        self.interface_types.deinit(self.allocator);
         
-        self.implementations.deinit();
-        self.method_cache.deinit();
-        self.validation_errors.deinit();
+        self.implementations.deinit(self.allocator);
+        self.method_cache.deinit(self.allocator);
+        self.validation_errors.deinit(self.allocator);
     }
 
     /// Register an interface type with comprehensive validation
@@ -201,8 +201,8 @@ pub const EnhancedInterfaceDispatcher = struct {
 
     /// Complete implementation validation with signature checking
     fn validateImplementationComplete(self: *Self, interface_type: InterfaceType, methods: []const MethodImpl) !ValidationResult {
-        var missing_methods = .empty;
-        var signature_mismatches = .empty;
+        var missing_methods = std.ArrayList(u8){};
+        var signature_mismatches = std.ArrayList(u8){};
         
         for (interface_type.methods.items) |interface_method| {
             var found = false;
@@ -225,7 +225,7 @@ pub const EnhancedInterfaceDispatcher = struct {
             }
             
             if (!found) {
-                try missing_methods.append(interface_method.name);
+                try missing_methods.append(allocator, interface_method.name);
             }
         }
         
@@ -575,14 +575,14 @@ pub const InterfaceType = struct {
             .methods = .empty,
             .allocator = allocator,
             .inheritance_chain = .empty,
-            .attributes = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .attributes = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
 
     pub fn deinit(self: *InterfaceType) void {
-        self.methods.deinit();
-        self.inheritance_chain.deinit();
-        self.attributes.deinit();
+        self.methods.deinit(self.allocator);
+        self.inheritance_chain.deinit(self.allocator);
+        self.attributes.deinit(self.allocator);
     }
 
     pub fn addMethod(self: *InterfaceType, method: MethodSignature) !void {

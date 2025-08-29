@@ -103,6 +103,7 @@ pub const GoroutineContext = struct {
     
     /// Release reference count and cleanup if last reference
     pub fn release(self: *GoroutineContext, allocator: Allocator) void {
+        _ = allocator;
         const old_count = self.ref_count.fetchSub(1, .acq_rel);
         if (old_count == 1) {
             self.cleanup(allocator);
@@ -188,7 +189,7 @@ pub const Goroutine = struct {
     pub fn execute(self: *Self) void {
         // Transition to running state
         if (!self.context.transitionState(.ready, .running)) {
-            print("Warning: Goroutine {} failed to transition to running state\n", .{self.id});
+            print("Warning: Goroutine {s} failed to transition to running state\n", .{self.id});
             return;
         }
         
@@ -267,7 +268,7 @@ pub const WorkStealingDeque = struct {
         while (self.popBottom()) |goroutine| {
             goroutine.context.release(self.allocator);
         }
-        self.items.deinit();
+        self.items.deinit(self.allocator);
     }
     
     /// Push to bottom (owner thread only)
@@ -283,7 +284,7 @@ pub const WorkStealingDeque = struct {
         
         // Atomic append with proper ordering
         const old_tail = self.tail.load(.acquire);
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.tail.store(old_tail + 1, .release);
     }
     
@@ -392,7 +393,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(self.allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -414,7 +415,7 @@ pub const Worker = struct {
     }
     
     fn run(self: *Self) void {
-        print("[WORKER-{}] Started\n", .{self.id});
+        print("[WORKER-{s}] Started\n", .{self.id});
         
         while (self.running.load(.acquire)) {
             // Try to get work from own deque first
@@ -442,7 +443,7 @@ pub const Worker = struct {
                 } else {
                     // Reschedule if not completed
                     self.scheduler.scheduleGoroutine(g) catch {
-                        print("[WORKER-{}] Failed to reschedule goroutine {}\n", .{ self.id, g.id });
+                        print("[WORKER-{s}] Failed to reschedule goroutine {s}\n", .{ self.id, g.id });
                     };
                 }
                 
@@ -453,7 +454,7 @@ pub const Worker = struct {
             }
         }
         
-        print("[WORKER-{}] Stopped\n", .{self.id});
+        print("[WORKER-{s}] Stopped\n", .{self.id});
     }
     
     pub fn scheduleGoroutine(self: *Self, goroutine: *Goroutine) !void {
@@ -513,7 +514,7 @@ pub const Scheduler = struct {
     total_goroutines_scheduled: Atomic(u64) = Atomic(u64).init(0),
     
     pub fn init(allocator: Allocator, config: SchedulerConfig) !Self {
-        var workers = .empty;
+        var workers = std.ArrayList(u8){};
         try workers.ensureTotalCapacity(allocator, config.num_workers);
         
         // Create workers
@@ -534,7 +535,7 @@ pub const Scheduler = struct {
         for (self.workers.items) |*worker| {
             worker.deinit();
         }
-        self.workers.deinit();
+        self.workers.deinit(self.allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -553,7 +554,7 @@ pub const Scheduler = struct {
         }
         
         self.running.store(true, .release);
-        print("[SCHEDULER] Started with {} workers\n", .{self.config.num_workers});
+        print("[SCHEDULER] Started with {s} workers\n", .{self.config.num_workers});
     }
     
     pub fn stop(self: *Self) void {
@@ -618,11 +619,11 @@ pub const Scheduler = struct {
     }
     
     pub fn getSchedulerStats(self: *const Self) SchedulerStats {
-        var worker_stats = .empty;
+        var worker_stats = std.ArrayList(u8){};
         defer worker_stats.deinit();
         
         for (self.workers.items) |*worker| {
-            worker_stats.append(worker.getStats()) catch {};
+            worker_stats.append(allocator, worker.getStats()) catch {};
         }
         
         return SchedulerStats{
@@ -680,7 +681,7 @@ pub const Worker = struct {
     
     pub fn deinit(self: *Self) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(self.allocator);
     }
     
     /// Start worker thread
@@ -836,7 +837,7 @@ pub const Scheduler = struct {
         
         for (0..num_workers) |i| {
             const worker = Worker.init(allocator, @intCast(i), &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
         
         return scheduler;
@@ -849,7 +850,7 @@ pub const Scheduler = struct {
         for (self.workers.items) |*worker| {
             worker.deinit();
         }
-        self.workers.deinit();
+        self.workers.deinit(self.allocator);
     }
     
     /// Start the scheduler
@@ -864,7 +865,7 @@ pub const Scheduler = struct {
             try worker.start();
         }
         
-        print("🚀 Scheduler started with {} workers\n", .{self.workers.items.len});
+        print("🚀 Scheduler started with {s} workers\n", .{self.workers.items.len});
     }
     
     /// Shutdown the scheduler
@@ -912,11 +913,11 @@ pub const Scheduler = struct {
     
     /// Get scheduler statistics
     pub fn getStats(self: *const Self) SchedulerStats {
-        var worker_stats = .empty;
+        var worker_stats = std.ArrayList(u8){};
         defer worker_stats.deinit();
         
         for (self.workers.items) |*worker| {
-            worker_stats.append(worker.stats) catch {};
+            worker_stats.append(allocator, worker.stats) catch {};
         }
         
         return SchedulerStats{
@@ -938,6 +939,7 @@ pub const SchedulerStats = struct {
     worker_stats: []WorkerStats,
     
     pub fn deinit(self: *SchedulerStats, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.worker_stats);
     }
 };
@@ -1061,6 +1063,7 @@ pub fn initScheduler(allocator: Allocator, config: SchedulerConfig) !void {
 
 /// Shutdown global scheduler
 pub fn shutdownScheduler(allocator: Allocator) void {
+        _ = allocator;
     global_scheduler_mutex.lock();
     defer global_scheduler_mutex.unlock();
     

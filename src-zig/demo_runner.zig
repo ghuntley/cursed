@@ -25,20 +25,21 @@ pub const DemoParser = struct {
         };
         
         pub fn init(allocator: Allocator) !*EnhancedInterpreter {
+        _ = allocator;
             const interp = try allocator.create(EnhancedInterpreter);
             interp.* = EnhancedInterpreter{
                 .allocator = allocator,
                 .runtime = try integration.UnifiedRuntime.init(allocator),
-                .variables = std.StringHashMap(integration.InterpreterValue).init(allocator),
-                .functions = std.StringHashMap(DemoFunction).init(allocator),
+                .variables = std.StringHashMap(integration.InterpreterValue){},
+                .functions = std.StringHashMap(DemoFunction){},
             };
             return interp;
         }
         
         pub fn deinit(self: *EnhancedInterpreter) void {
-            self.variables.deinit();
-            self.functions.deinit();
-            self.runtime.deinit();
+            self.variables.deinit(self.allocator);
+            self.functions.deinit(self.allocator);
+            self.runtime.deinit(self.allocator);
             self.allocator.destroy(self);
         }
         
@@ -91,7 +92,7 @@ pub const DemoParser = struct {
                     const str_content = trimmed_arg[1 .. trimmed_arg.len - 1];
                     std.debug.print("{s}", .{str_content});
                 } else if (self.variables.get(trimmed_arg)) |value| {
-                    std.debug.print("{}", .{value});
+                    std.debug.print("{s}", .{value});
                 } else {
                     std.debug.print("{s}", .{trimmed_arg});
                 }
@@ -112,7 +113,7 @@ pub const DemoParser = struct {
                 1000
             );
             
-            std.debug.print("[CURSED ERROR] Created: {}\n", .{error_result});
+            std.debug.print("[CURSED ERROR] Created: {s}\n", .{error_result});
         }
         
         fn handleFamCommand(self: *EnhancedInterpreter, command: []const u8) !void {
@@ -129,13 +130,13 @@ pub const DemoParser = struct {
                 }.tryBlock,
                 struct {
                     fn catchBlock(error_obj: *integration.advanced_error_handling.CursedError) integration.InterpreterValue {
-                        std.debug.print("[CURSED FAM] Caught error: {}\n", .{error_obj.*});
+                        std.debug.print("[CURSED FAM] Caught error: {s}\n", .{error_obj.*});
                         return integration.InterpreterValue{ .String = "Recovered" };
                     }
                 }.catchBlock
             );
             
-            std.debug.print("[CURSED FAM] Result: {}\n", .{fam_result});
+            std.debug.print("[CURSED FAM] Result: {s}\n", .{fam_result});
         }
         
         fn handleStanCommand(self: *EnhancedInterpreter, command: []const u8) !void {
@@ -150,18 +151,18 @@ pub const DemoParser = struct {
                         if (ctx) |c| {
                             const counter_ptr = @as(*i32, @ptrCast(@alignCast(c)));
                             counter_ptr.* = 42;
-                            std.debug.print("[CURSED GOROUTINE] Executed, set counter to {}\n", .{counter_ptr.*});
+                            std.debug.print("[CURSED GOROUTINE] Executed, set counter to {s}\n", .{counter_ptr.*});
                         }
                     }
                 }.entry,
                 &counter
             );
             
-            std.debug.print("[CURSED STAN] Goroutine ID: {}\n", .{goroutine_result});
+            std.debug.print("[CURSED STAN] Goroutine ID: {s}\n", .{goroutine_result});
             
             // Give goroutine time to execute
             std.time.sleep(10_000_000); // 10ms
-            std.debug.print("[CURSED STAN] Counter after goroutine: {}\n", .{counter});
+            std.debug.print("[CURSED STAN] Counter after goroutine: {s}\n", .{counter});
         }
         
         fn handleVariableDeclaration(self: *EnhancedInterpreter, command: []const u8) !void {
@@ -187,7 +188,7 @@ pub const DemoParser = struct {
             
             const owned_name = try self.allocator.dupe(u8, name);
             try self.variables.put(owned_name, value);
-            std.debug.print("[CURSED VAR] {s} = {}\n", .{ name, value });
+            std.debug.print("[CURSED VAR] {s} = {s}\n", .{ name, value });
         }
         
         fn handleFunctionDefinition(self: *EnhancedInterpreter, command: []const u8) !void {
@@ -207,6 +208,7 @@ pub const DemoParser = struct {
     };
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const parser = try allocator.create(Self);
         parser.* = Self{
             .allocator = allocator,
@@ -216,7 +218,7 @@ pub const DemoParser = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.interpreter.deinit();
+        self.interpreter.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -224,7 +226,7 @@ pub const DemoParser = struct {
         std.debug.print("=== Parsing CURSED file: {s} ===\n", .{file_path});
         
         const file = std.fs.cwd().openFile(file_path, .{}) catch |err| {
-            std.debug.print("Error opening file {s}: {}\n", .{ file_path, err });
+            std.debug.print("Error opening file {s}: {s}\n", .{ file_path, err });
             return;
         };
         defer file.close();
@@ -241,7 +243,7 @@ pub const DemoParser = struct {
             defer line_number += 1;
             
             self.interpreter.executeCommand(line) catch |err| {
-                std.debug.print("Error on line {}: {} - {s}\n", .{ line_number, err, line });
+                std.debug.print("Error on line {s}: {s} - {s}\n", .{ line_number, err, line });
             };
         }
         
@@ -263,12 +265,12 @@ pub fn main() !void {
     // Try to run the error handling demo
     std.debug.print("\n");
     parser.parseFile("error_handling_demo.csd") catch |err| {
-        std.debug.print("Could not run error_handling_demo.csd: {}\n", .{err});
+        std.debug.print("Could not run error_handling_demo.csd: {s}\n", .{err});
     };
     
     std.debug.print("\n");
     parser.parseFile("concurrency_demo.csd") catch |err| {
-        std.debug.print("Could not run concurrency_demo.csd: {}\n", .{err});
+        std.debug.print("Could not run concurrency_demo.csd: {s}\n", .{err});
     };
     
     // Run integration tests directly

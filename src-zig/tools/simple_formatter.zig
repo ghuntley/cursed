@@ -7,7 +7,7 @@ const Allocator = std.mem.Allocator;
 
 // Simple formatter that works with basic CURSED syntax
 pub fn formatCursedCode(allocator: Allocator, source: []const u8) ![]const u8 {
-    var formatted = ArrayList(u8).init(allocator);
+    var formatted = ArrayList(u8){};
     defer formatted.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -18,7 +18,7 @@ pub fn formatCursedCode(allocator: Allocator, source: []const u8) ![]const u8 {
         
         // Skip empty lines
         if (trimmed.len == 0) {
-            try formatted.append('\n');
+            try formatted.append(allocator, '\n');
             continue;
         }
         
@@ -29,12 +29,12 @@ pub fn formatCursedCode(allocator: Allocator, source: []const u8) ![]const u8 {
         
         // Add indentation
         for (0..indent_level * 4) |_| {
-            try formatted.append(' ');
+            try formatted.append(allocator, ' ');
         }
         
         // Add the line
         try formatted.appendSlice(trimmed);
-        try formatted.append('\n');
+        try formatted.append(allocator, '\n');
         
         // Increase indent for opening braces
         if (std.mem.endsWith(u8, trimmed, "{")) {
@@ -87,7 +87,7 @@ pub fn main() !void {
     };
     defer output_file.close();
     
-    output_file.writeAll(formatted) catch |err| {
+    output_file.writer().writeAll(formatted) catch |err| {
         std.log.err("Cannot write formatted content to {s}: {}", .{ file_path, err });
         return;
     };

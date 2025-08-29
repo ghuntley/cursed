@@ -35,6 +35,7 @@ pub const TokenCollection = struct {
     arena: ArenaAllocator,
     
     pub fn init(backing_allocator: Allocator) TokenCollection {
+        _ = allocator;
         var arena = ArenaAllocator.init(backing_allocator);
         const arena_allocator = arena.allocator();
         
@@ -46,11 +47,11 @@ pub const TokenCollection = struct {
     
     pub fn deinit(self: *TokenCollection) void {
         // Arena automatically cleans up all allocated memory including token lexemes
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     pub fn append(self: *TokenCollection, token: Token) !void {
-        try self.tokens.append(token);
+        try self.tokens.append(allocator, token);
     }
     
     pub fn toSlice(self: *TokenCollection) []const Token {
@@ -87,7 +88,7 @@ pub const Lexer = struct {
             const token = try self.nextToken();
             // Skip comments and newlines like the Rust version
             if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
             if (token.kind == .Eof) break;
         }

@@ -196,7 +196,7 @@ pub const WindowsAsyncNetwork = struct {
             operation.deinit();
             self.allocator.destroy(operation);
         }
-        self.active_operations.deinit();
+        self.active_operations.deinit(self.allocator);
     }
     
     // Create TCP socket with IOCP association
@@ -581,7 +581,7 @@ pub const RuntimeIntegration = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.network.deinit();
+        self.network.deinit(self.allocator);
     }
     
     // Goroutine-friendly TCP server

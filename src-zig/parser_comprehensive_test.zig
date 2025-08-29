@@ -30,7 +30,7 @@ test "parse simple variable declaration" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -48,7 +48,7 @@ test "parse simple variable declaration" {
             try testing.expect(let_stmt.initializer != null);
         },
         else => {
-            std.debug.print("Expected Let statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Let statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -71,7 +71,7 @@ test "parse simple function definition" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -89,7 +89,7 @@ test "parse simple function definition" {
             try testing.expect(func.body.items.len == 0);
         },
         else => {
-            std.debug.print("Expected Function statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Function statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -118,7 +118,7 @@ test "parse function with parameters" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -138,7 +138,7 @@ test "parse function with parameters" {
             try testing.expect(func.return_type != null);
         },
         else => {
-            std.debug.print("Expected Function statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Function statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -161,7 +161,7 @@ test "parse function call expression" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -184,19 +184,19 @@ test "parse function call expression" {
                             try testing.expect(std.mem.eql(u8, member.property, "spill"));
                         },
                         else => {
-                            std.debug.print("Expected MemberAccess, got: {}\n", .{func_expr.*});
+                            std.debug.print("Expected MemberAccess, got: {s}\n", .{func_expr.*});
                             try testing.expect(false);
                         },
                     }
                 },
                 else => {
-                    std.debug.print("Expected Call expression, got: {}\n", .{expr});
+                    std.debug.print("Expected Call expression, got: {s}\n", .{expr});
                     try testing.expect(false);
                 },
             }
         },
         else => {
-            std.debug.print("Expected Expression statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Expression statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -234,7 +234,7 @@ test "parse if statement" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -252,7 +252,7 @@ test "parse if statement" {
             try testing.expect(if_stmt.else_branch != null);
         },
         else => {
-            std.debug.print("Expected If statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected If statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -272,7 +272,7 @@ test "parse binary expression" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -304,13 +304,13 @@ test "parse binary expression" {
                     }
                 },
                 else => {
-                    std.debug.print("Expected Binary expression, got: {}\n", .{expr});
+                    std.debug.print("Expected Binary expression, got: {s}\n", .{expr});
                     try testing.expect(false);
                 },
             }
         },
         else => {
-            std.debug.print("Expected Expression statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Expression statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -328,7 +328,7 @@ test "parse string and identifier literals" {
     
     var string_parser = Parser.init(allocator, &string_tokens);
     const string_program = string_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -346,13 +346,13 @@ test "parse string and identifier literals" {
                     try testing.expect(std.mem.eql(u8, str, "\"hello world\""));
                 },
                 else => {
-                    std.debug.print("Expected String expression, got: {}\n", .{expr});
+                    std.debug.print("Expected String expression, got: {s}\n", .{expr});
                     try testing.expect(false);
                 },
             }
         },
         else => {
-            std.debug.print("Expected Expression statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Expression statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -376,7 +376,7 @@ test "parse complex nested expression" {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {
@@ -400,19 +400,19 @@ test "parse complex nested expression" {
                             try testing.expect(std.mem.eql(u8, left_bin.operator, "+"));
                         },
                         else => {
-                            std.debug.print("Expected nested Binary expression, got: {}\n", .{left_expr.*});
+                            std.debug.print("Expected nested Binary expression, got: {s}\n", .{left_expr.*});
                             try testing.expect(false);
                         },
                     }
                 },
                 else => {
-                    std.debug.print("Expected Binary expression, got: {}\n", .{expr});
+                    std.debug.print("Expected Binary expression, got: {s}\n", .{expr});
                     try testing.expect(false);
                 },
             }
         },
         else => {
-            std.debug.print("Expected Expression statement, got: {}\n", .{stmt_ptr.*});
+            std.debug.print("Expected Expression statement, got: {s}\n", .{stmt_ptr.*});
             try testing.expect(false);
         },
     }
@@ -420,6 +420,7 @@ test "parse complex nested expression" {
 
 // Test runner function
 pub fn runAllTests(allocator: Allocator) !void {
+        _ = allocator;
     const tests = [_]fn () anyerror!void{
         test_simple_variable_declaration,
         test_simple_function_definition,
@@ -431,15 +432,15 @@ pub fn runAllTests(allocator: Allocator) !void {
         test_complex_nested_expression,
     };
     
-    std.debug.print("Running {} parser tests...\n", .{tests.len});
+    std.debug.print("Running {s} parser tests...\n", .{tests.len});
     
     var passed: usize = 0;
     var failed: usize = 0;
     
     for (tests, 0..) |test_func, i| {
-        std.debug.print("Test {}: ", .{i + 1});
+        std.debug.print("Test {s}: ", .{i + 1});
         test_func() catch |err| {
-            std.debug.print("FAILED - {}\n", .{err});
+            std.debug.print("FAILED - {s}\n", .{err});
             failed += 1;
             continue;
         };
@@ -448,9 +449,9 @@ pub fn runAllTests(allocator: Allocator) !void {
     }
     
     std.debug.print("\n=== Test Results ===\n", .{});
-    std.debug.print("Passed: {}\n", .{passed});
-    std.debug.print("Failed: {}\n", .{failed});
-    std.debug.print("Total:  {}\n", .{tests.len});
+    std.debug.print("Passed: {s}\n", .{passed});
+    std.debug.print("Failed: {s}\n", .{failed});
+    std.debug.print("Total:  {s}\n", .{tests.len});
     
     if (failed > 0) {
         return error.TestsFailed;
@@ -473,7 +474,7 @@ fn test_simple_variable_declaration() !void {
     
     var test_parser = Parser.init(allocator, &tokens);
     const program = test_parser.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return err;
     };
     defer {

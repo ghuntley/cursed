@@ -133,7 +133,7 @@ pub const NativeCompiler = struct {
         if (self.target_machine) |tm| {
             c.LLVMDisposeTargetMachine(tm);
         }
-        self.codegen.deinit();
+        self.codegen.deinit(self.allocator);
     }
     
     pub fn setOptimizationLevel(self: *NativeCompiler, level: OptimizationLevel) void {
@@ -170,7 +170,7 @@ pub const NativeCompiler = struct {
     /// Generate LLVM IR for the program
     fn generateIR(self: *NativeCompiler, program: ast.Program) CompilationError!void {
         self.codegen.generateAdvancedProgram(program) catch |err| {
-            std.debug.print("Code generation failed: {}\n", .{err});
+            std.debug.print("Code generation failed: {s}\n", .{err});
             return CompilationError.CodeGenError;
         };
         
@@ -310,7 +310,7 @@ pub const NativeCompiler = struct {
                 if (code != 0) {
                     const stderr = try child.stderr.?.readToEndAlloc(self.allocator, 1024 * 1024);
                     defer self.allocator.free(stderr);
-                    std.debug.print("Linker failed with exit code {}: {s}\n", .{ code, stderr });
+                    std.debug.print("Linker failed with exit code {s}: {s}\n", .{ code, stderr });
                     return CompilationError.LinkerError;
                 }
             },
@@ -405,7 +405,7 @@ pub const NativeCompiler = struct {
                     std.debug.print("Generated debug information: {s}\n", .{debug_path});
                 } else {
                     // Debug info generation is optional, so we don't fail on error
-                    std.debug.print("Warning: Debug info generation failed with exit code {}\n", .{code});
+                    std.debug.print("Warning: Debug info generation failed with exit code {s}\n", .{code});
                 }
             },
             else => {
@@ -434,7 +434,7 @@ pub const NativeCompiler = struct {
             std.debug.print("Cross-compiling for target: {s}\n", .{target.getTriple()});
             
             var compiler = init(allocator, target) catch |err| {
-                std.debug.print("Failed to initialize compiler for {s}: {}\n", .{ target.getTriple(), err });
+                std.debug.print("Failed to initialize compiler for {s}: {s}\n", .{ target.getTriple(), err });
                 continue;
             };
             defer compiler.deinit();
@@ -446,7 +446,7 @@ pub const NativeCompiler = struct {
             defer allocator.free(output_name);
             
             compiler.compileProgram(program, output_name) catch |err| {
-                std.debug.print("Failed to compile for {s}: {}\n", .{ target.getTriple(), err });
+                std.debug.print("Failed to compile for {s}: {s}\n", .{ target.getTriple(), err });
                 continue;
             };
         }
@@ -652,7 +652,7 @@ pub const NativeCompiler = struct {
                 if (code == 0) {
                     std.debug.print("Profile data collection completed successfully\n", .{});
                 } else {
-                    std.debug.print("Warning: Instrumented binary exited with code {}\n", .{code});
+                    std.debug.print("Warning: Instrumented binary exited with code {s}\n", .{code});
                 }
             },
             else => {
@@ -667,7 +667,7 @@ pub const NativeCompiler = struct {
     /// Create dummy profile data for testing
     fn createDummyProfileData(_: *NativeCompiler, profile_data_path: []const u8) CompilationError!void {
         const file = std.fs.cwd().createFile(profile_data_path, .{}) catch |err| {
-            std.debug.print("Failed to create profile data file: {}\n", .{err});
+            std.debug.print("Failed to create profile data file: {s}\n", .{err});
             return CompilationError.ObjectGenError;
         };
         defer file.close();
@@ -689,7 +689,7 @@ pub const NativeCompiler = struct {
     fn compileWithProfileData(self: *NativeCompiler, program: ast.Program, output_path: []const u8, profile_data_path: []const u8) CompilationError!void {
         // Load profile data
         const profile_data = self.loadProfileData(profile_data_path) catch |err| {
-            std.debug.print("Warning: Failed to load profile data: {}\n", .{err});
+            std.debug.print("Warning: Failed to load profile data: {s}\n", .{err});
             // Fall back to regular compilation
             return self.compileProgram(program, output_path);
         };
@@ -720,7 +720,7 @@ pub const NativeCompiler = struct {
         defer c.LLVMDisposePassManager(pass_manager);
         
         // Parse profile data to identify hot functions
-        var hot_functions = std.ArrayList([]const u8).init(self.allocator);
+        var hot_functions = std.ArrayList([]const u8){};
         defer hot_functions.deinit();
         
         try self.parseProfileData(profile_data, &hot_functions);
@@ -737,7 +737,7 @@ pub const NativeCompiler = struct {
         // Apply optimizations
         _ = c.LLVMRunPassManager(pass_manager, self.codegen.base_codegen.module);
         
-        std.debug.print("Applied profile-guided optimizations for {} hot functions\n", .{hot_functions.items.len});
+        std.debug.print("Applied profile-guided optimizations for {s} hot functions\n", .{hot_functions.items.len});
     }
     
     /// Parse profile data to extract hot functions
@@ -809,7 +809,7 @@ pub const NativeCompiler = struct {
                 if (code != 0) {
                     const stderr = try child.stderr.?.readToEndAlloc(self.allocator, 1024 * 1024);
                     defer self.allocator.free(stderr);
-                    std.debug.print("Linker failed with exit code {}: {s}\n", .{ code, stderr });
+                    std.debug.print("Linker failed with exit code {s}: {s}\n", .{ code, stderr });
                     return CompilationError.LinkerError;
                 }
             },
@@ -848,7 +848,7 @@ pub const NativeCompiler = struct {
         switch (result) {
             .Exited => |code| {
                 if (code != 0) {
-                    std.debug.print("LTO linking failed with exit code {}\n", .{code});
+                    std.debug.print("LTO linking failed with exit code {s}\n", .{code});
                     return CompilationError.LinkerError;
                 }
             },

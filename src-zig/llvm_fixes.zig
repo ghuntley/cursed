@@ -128,12 +128,12 @@ fn generateUserFunctionCall(
 ) !c.LLVMValueRef {
         
     // Generate arguments with proper variable resolution
-    var args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+    var args = std.ArrayList(c.LLVMValueRef){};
     defer args.deinit();
     
     for (call.arguments.items) |arg_expr| {
         const arg_value = try generateExpressionValue(context, builder, arg_expr);
-        try args.append(arg_value);
+        try args.append(allocator, arg_value);
     }
     
     // Generate function call
@@ -237,7 +237,7 @@ fn generateExpressionValue(
         .Identifier => |name| {
             // Look up variable in scope and load its value
             return lookupAndLoadVariable(context, builder, name) catch |err| {
-                std.debug.print("Variable lookup error for '{s}': {}\n", .{ name, err });
+                std.debug.print("Variable lookup error for '{s}': {s}\n", .{ name, err });
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(context), 0, 0);
             };
         },
@@ -534,7 +534,7 @@ pub fn registerVariable(
         
         try scope_manager.define(name, var_info);
         
-        std.debug.print("✅ Registered variable '{s}' of type '{s}' in scope {}\n", .{ name, cursed_type, var_info.scope_id });
+        std.debug.print("✅ Registered variable '{s}' of type '{s}' in scope {s}\n", .{ name, cursed_type, var_info.scope_id });
         return alloca;
     }
     
@@ -557,7 +557,7 @@ pub fn lookupAndLoadVariable(
             
             const loaded_value = c.LLVMBuildLoad2(builder, var_info.llvm_type, var_info.llvm_value, load_name.ptr);
             
-            std.debug.print("✅ Loaded variable '{s}' from scope {}\n", .{ name, var_info.scope_id });
+            std.debug.print("✅ Loaded variable '{s}' from scope {s}\n", .{ name, var_info.scope_id });
             return loaded_value;
         } else {
             std.debug.print("❌ Variable '{s}' not found in any scope\n", .{name});

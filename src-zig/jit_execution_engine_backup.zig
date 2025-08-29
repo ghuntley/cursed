@@ -50,7 +50,7 @@ pub const JITFunction = struct {
     compilation_time: u64,
     code_size: usize,
     llvm_function: LLVMValueRef,
-    native_ptr: ?*const fn() callconv(.C) void,
+    native_ptr: ?*const fn() callconv(.c) void,
     allocator: Allocator,
 
     pub fn init(allocator: Allocator, name: []const u8, module_name: []const u8) !JITFunction {
@@ -111,6 +111,7 @@ pub const ORCJITEngine = struct {
     jit_dylib: LLVMOrcJITDylibRef,
     
     pub fn init(allocator: Allocator) !ORCJITEngine {
+        _ = allocator;
         // Mock LLVM initialization for now
         print("🔧 Initializing mock LLVM ORC JIT Engine\n", .{});
         
@@ -143,12 +144,12 @@ pub const ORCJITEngine = struct {
     }
     
     /// Get function address for execution
-    pub fn getFunctionAddress(self: *ORCJITEngine, name: []const u8) !*const fn() callconv(.C) void {
+    pub fn getFunctionAddress(self: *ORCJITEngine, name: []const u8) !*const fn() callconv(.c) void {
         _ = self;
         print("🔍 Mock getting function address for: {s}\n", .{name});
         // Return a dummy function pointer for testing
         const dummy_func = struct {
-            fn dummy() callconv(.C) void {}
+            fn dummy() callconv(.c) void {}
         }.dummy;
         return dummy_func;
     }
@@ -197,11 +198,12 @@ pub const JITExecutionEngine = struct {
     cache_hit_rate: f64,
 
     pub fn init(allocator: Allocator) !JITExecutionEngine {
+        _ = allocator;
         return JITExecutionEngine{
             .allocator = allocator,
             .orc_jit = try ORCJITEngine.init(allocator),
-            .functions = HashMap([]const u8, JITFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .function_signatures = HashMap([]const u8, FunctionSignature, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, JITFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .function_signatures = HashMap([]const u8, FunctionSignature, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .hot_functions = .empty,
             .interpreter_env = interpreter.Environment.init(allocator, null),
             .tier_up_threshold = 50,
@@ -214,22 +216,22 @@ pub const JITExecutionEngine = struct {
     }
 
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.orc_jit.deinit();
+        self.orc_jit.deinit(self.allocator);
         
         var func_iter = self.functions.iterator();
         while (func_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
         var sig_iter = self.function_signatures.iterator();
         while (sig_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.function_signatures.deinit();
+        self.function_signatures.deinit(self.allocator);
         
-        self.hot_functions.deinit();
-        self.interpreter_env.deinit();
+        self.hot_functions.deinit(self.allocator);
+        self.interpreter_env.deinit(self.allocator);
     }
 
     /// Register a function for JIT compilation
@@ -253,7 +255,7 @@ pub const JITExecutionEngine = struct {
         const signature = try FunctionSignature.init(self.allocator, parameters, return_type);
         try self.function_signatures.put(try self.allocator.dupe(u8, full_name), signature);
         
-        print("📝 Registered JIT function with signature: {s} (params: {}, return: {s})\n", .{ full_name, parameters.len, return_type });
+        print("📝 Registered JIT function with signature: {s} (params: {s}, return: {s})\n", .{ full_name, parameters.len, return_type });
     }
 
     /// Execute a function with tiered compilation
@@ -302,7 +304,7 @@ pub const JITExecutionEngine = struct {
     /// Core interpretation implementation
     fn interpretFunction(self: *JITExecutionEngine, jit_func: *JITFunction, args: []const interpreter.Value) !interpreter.Value {
         // Create local execution context
-        var local_vars = std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var local_vars = std.HashMap([]const u8, interpreter.Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer local_vars.deinit();
         
         // Handle built-in functions
@@ -325,7 +327,7 @@ pub const JITExecutionEngine = struct {
         // Bind function parameters to arguments
         if (self.function_signatures.get(jit_func.name)) |signature| {
             if (args.len != signature.parameters.len) {
-                print("Parameter count mismatch for {s}: expected {}, got {}\n", .{jit_func.name, signature.parameters.len, args.len});
+                print("Parameter count mismatch for {s}: expected {s}, got {s}\n", .{jit_func.name, signature.parameters.len, args.len});
                 return interpreter.InterpreterError.TypeMismatch;
             }
             
@@ -368,9 +370,9 @@ pub const JITExecutionEngine = struct {
             if (idx > 0) print(" ", .{});
             switch (arg) {
                 .String => |s| print("{s}", .{s}),
-                .Integer => |int_val| print("{}", .{int_val}),
+                .Integer => |int_val| print("{s}", .{int_val}),
                 .Float => |n| print("{d}", .{n}),
-                .Boolean => |b| print("{}", .{b}),
+                .Boolean => |b| print("{s}", .{b}),
                 .Character => |c| print("{c}", .{c}),
                 .Null => print("null", .{}),
                 .Struct => |struct_inst| print("[struct {s}]", .{struct_inst.type_name}),
@@ -396,9 +398,9 @@ pub const JITExecutionEngine = struct {
             if (idx > 0) print(" ", .{});
             switch (arg) {
                 .String => |s| print("{s}", .{s}),
-                .Integer => |int_val| print("{}", .{int_val}),
+                .Integer => |int_val| print("{s}", .{int_val}),
                 .Float => |n| print("{d}", .{n}),
-                .Boolean => |b| print("{}", .{b}),
+                .Boolean => |b| print("{s}", .{b}),
                 .Character => |c| print("{c}", .{c}),
                 .Null => print("null", .{}),
                 .Struct => |struct_inst| print("[struct {s}]", .{struct_inst.type_name}),
@@ -422,7 +424,7 @@ pub const JITExecutionEngine = struct {
     }
     
     /// Call native function with type conversion
-    fn callNativeFunction(self: *JITExecutionEngine, func_ptr: *const fn() callconv(.C) void, args: []const interpreter.Value) !interpreter.Value {
+    fn callNativeFunction(self: *JITExecutionEngine, func_ptr: *const fn() callconv(.c) void, args: []const interpreter.Value) !interpreter.Value {
         
         // Convert arguments to native types for function call
         var native_args: [8]usize = undefined; // Support up to 8 arguments
@@ -435,33 +437,33 @@ pub const JITExecutionEngine = struct {
         // Call native function based on argument count
         const result: usize = switch (args.len) {
             0 => blk: {
-                const f: *const fn() callconv(.C) usize = @ptrCast(func_ptr);
+                const f: *const fn() callconv(.c) usize = @ptrCast(func_ptr);
                 _ = f();
                 break :blk 0;
             },
             1 => blk: {
-                const f: *const fn(usize) callconv(.C) usize = @ptrCast(func_ptr);
+                const f: *const fn(usize) callconv(.c) usize = @ptrCast(func_ptr);
                 _ = f(native_args[0]);
                 break :blk 0;
             },
             2 => blk: {
-                const f: *const fn(usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                const f: *const fn(usize, usize) callconv(.c) usize = @ptrCast(func_ptr);
                 _ = f(native_args[0], native_args[1]);
                 break :blk 0;
             },
             3 => blk: {
-                const f: *const fn(usize, usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                const f: *const fn(usize, usize, usize) callconv(.c) usize = @ptrCast(func_ptr);
                 _ = f(native_args[0], native_args[1], native_args[2]);
                 break :blk 0;
             },
             4 => blk: {
-                const f: *const fn(usize, usize, usize, usize) callconv(.C) usize = @ptrCast(func_ptr);
+                const f: *const fn(usize, usize, usize, usize) callconv(.c) usize = @ptrCast(func_ptr);
                 _ = f(native_args[0], native_args[1], native_args[2], native_args[3]);
                 break :blk 0;
             },
             else => {
                 // For more arguments, use generic calling convention
-                print("Warning: Native function calls with {} arguments not fully supported\n", .{args.len});
+                print("Warning: Native function calls with {s} arguments not fully supported\n", .{args.len});
                 return interpreter.Value{ .Integer = 0 };
             }
         };
@@ -714,7 +716,7 @@ pub const JITExecutionEngine = struct {
             try array_struct.setField(field_name, arg);
         }
         
-        print("Created array with {} elements\n", .{args.len});
+        print("Created array with {s} elements\n", .{args.len});
         return interpreter.Value{ .Struct = array_struct };
     }
     
@@ -730,7 +732,7 @@ pub const JITExecutionEngine = struct {
             try tuple_struct.setField(field_name, arg);
         }
         
-        print("Created tuple with {} elements\n", .{args.len});
+        print("Created tuple with {s} elements\n", .{args.len});
         return interpreter.Value{ .Struct = tuple_struct };
     }
     
@@ -944,7 +946,7 @@ pub const JITExecutionEngine = struct {
         const signature = try FunctionSignature.init(self.allocator, param_names, "Any");
         try self.function_signatures.put(try self.allocator.dupe(u8, lambda_id), signature);
         
-        print("Created lambda with {} parameters: {s}\n", .{ lambda.parameters.items.len, lambda_id });
+        print("Created lambda with {s} parameters: {s}\n", .{ lambda.parameters.items.len, lambda_id });
         return interpreter.Value{ .Struct = lambda_struct };
     }
     
@@ -1114,7 +1116,7 @@ pub const JITExecutionEngine = struct {
         jit_func.tier = new_tier;
         self.total_compilations += 1;
         
-        print("✅ Tier-up completed in {}ms\n", .{compilation_time / 1_000_000});
+        print("✅ Tier-up completed in {s}ms\n", .{compilation_time / 1_000_000});
     }
 
     /// Compile function to specific tier
@@ -1150,7 +1152,7 @@ pub const JITExecutionEngine = struct {
                     .optimization_priority = @intFromFloat(hotness_score),
                 };
                 
-                try self.hot_functions.append(hot_profile);
+                try self.hot_functions.append(allocator, hot_profile);
             }
         }
         
@@ -1180,15 +1182,15 @@ pub const JITExecutionEngine = struct {
         print("\n📊 JIT EXECUTION ENGINE PERFORMANCE REPORT\n", .{});
         print("==========================================\n", .{});
         
-        print("🏗️ Total Compilations: {}\n", .{self.total_compilations});
-        print("⏱️ Total Execution Time: {}ms\n", .{self.total_execution_time / 1_000_000});
+        print("🏗️ Total Compilations: {s}\n", .{self.total_compilations});
+        print("⏱️ Total Execution Time: {s}ms\n", .{self.total_execution_time / 1_000_000});
         print("📈 Cache Hit Rate: {d:.2}%\n", .{self.cache_hit_rate * 100});
         
         print("\n🔥 Hot Functions:\n", .{});
         for (self.hot_functions.items) |hot_profile| {
             const func = hot_profile.function;
             print("  {s}.{s}:\n", .{ func.module_name, func.name });
-            print("    Calls: {}, Tier: {any}, Avg Time: {d:.2}μs\n", .{ 
+            print("    Calls: {s}, Tier: {any}, Avg Time: {d:.2}μs\n", .{ 
                 func.call_count, 
                 func.tier, 
                 func.averageExecutionTime() / 1000.0 
@@ -1209,9 +1211,9 @@ pub const JITExecutionEngine = struct {
             }
         }
         
-        print("  Interpreter: {}\n", .{interpreter_count});
-        print("  Baseline JIT: {}\n", .{baseline_count});
-        print("  Optimized JIT: {}\n", .{optimized_count});
+        print("  Interpreter: {s}\n", .{interpreter_count});
+        print("  Baseline JIT: {s}\n", .{baseline_count});
+        print("  Optimized JIT: {s}\n", .{optimized_count});
         
         print("==========================================\n", .{});
     }
@@ -1219,6 +1221,7 @@ pub const JITExecutionEngine = struct {
 
 /// Test the JIT execution engine
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing JIT Execution Engine\n", .{});
     print("==============================\n", .{});
     
@@ -1281,7 +1284,7 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     for (0..50) |i| {
         _ = try engine.executeFunction("test_module.add_numbers", &add_args);
         if (i % 10 == 0) {
-            print("  Call {}: checking tier-up\n", .{i});
+            print("  Call {s}: checking tier-up\n", .{i});
         }
     }
     

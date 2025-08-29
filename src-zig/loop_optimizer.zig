@@ -54,6 +54,7 @@ pub const LoopOptimizer = struct {
     stats: LoopOptimizationStats,
 
     pub fn init(allocator: Allocator) !LoopOptimizer {
+        _ = allocator;
         return LoopOptimizer{
             .allocator = allocator,
             .loop_info_cache = HashMap(c.LLVMBasicBlockRef, LoopInfo, std.hash_map.AutoContext(c.LLVMBasicBlockRef), std.hash_map.default_max_load_percentage).init(allocator),
@@ -64,8 +65,8 @@ pub const LoopOptimizer = struct {
     }
 
     pub fn deinit(self: *LoopOptimizer) void {
-        self.loop_info_cache.deinit();
-        self.vectorization_cache.deinit();
+        self.loop_info_cache.deinit(self.allocator);
+        self.vectorization_cache.deinit(self.allocator);
     }
 
     /// Optimize loops in the module
@@ -146,13 +147,13 @@ pub const LoopOptimizer = struct {
 
     /// Find all loop headers in a function
     fn findLoopsInFunction(self: *LoopOptimizer, function: c.LLVMValueRef) !ArrayList(c.LLVMBasicBlockRef) {
-        var loops = .empty;
+        var loops = std.ArrayList(u8){};
         
         // Use a simple approach: find basic blocks that have back edges
         var basic_block = c.LLVMGetFirstBasicBlock(function);
         while (basic_block != null) {
             if (try self.isLoopHeader(basic_block.?)) {
-                try loops.append(basic_block.?);
+                try loops.append(allocator, basic_block.?);
             }
             basic_block = c.LLVMGetNextBasicBlock(basic_block.?);
         }
@@ -302,7 +303,7 @@ pub const LoopOptimizer = struct {
     fn findLoopBlocks(self: *LoopOptimizer, loop_header: c.LLVMBasicBlockRef, blocks: *ArrayList(c.LLVMBasicBlockRef)) !void {
         
         // Add the header
-        try blocks.append(loop_header);
+        try blocks.append(allocator, loop_header);
         
         // Simple approach: traverse from header and find blocks that can reach back to header
         _ = c.LLVMGetBasicBlockParent(loop_header);
@@ -311,7 +312,7 @@ pub const LoopOptimizer = struct {
         while (basic_block != null) {
             // Check if this block can reach back to the header
             if (self.canReachBlock(basic_block.?, loop_header)) {
-                try blocks.append(basic_block.?);
+                try blocks.append(allocator, basic_block.?);
             }
             basic_block = c.LLVMGetNextBasicBlock(basic_block.?);
         }
@@ -369,7 +370,7 @@ pub const LoopOptimizer = struct {
                     }
                     
                     if (!already_added) {
-                        try loop_info.exit_blocks.append(successor);
+                        try loop_info.exit_blocks.append(allocator, successor);
                     }
                 }
                 
@@ -390,7 +391,7 @@ pub const LoopOptimizer = struct {
         while (instruction != null) {
             if (c.LLVMGetInstructionOpcode(instruction.?) == c.LLVMPHI) {
                 if (self.isPHIAnInductionVariable(instruction.?, loop_info)) {
-                    try loop_info.induction_variables.append(instruction.?);
+                    try loop_info.induction_variables.append(allocator, instruction.?);
                 }
             }
             instruction = c.LLVMGetNextInstruction(instruction.?);
@@ -471,7 +472,7 @@ pub const LoopOptimizer = struct {
                 while (instruction != null) {
                     if (!self.isInstructionInvariant(instruction.?, loop_info) and 
                         self.canInstructionBeInvariant(instruction.?, loop_info)) {
-                        try loop_info.invariant_instructions.append(instruction.?);
+                        try loop_info.invariant_instructions.append(allocator, instruction.?);
                         changed = true;
                     }
                     instruction = c.LLVMGetNextInstruction(instruction.?);
@@ -556,7 +557,7 @@ pub const LoopOptimizer = struct {
                         .stride = self.analyzeMemoryStride(instruction.?, loop_info),
                     };
                     
-                    try loop_info.memory_accesses.append(memory_access);
+                    try loop_info.memory_accesses.append(allocator, memory_access);
                     loop_info.instruction_count += 1;
                 }
                 

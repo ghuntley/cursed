@@ -75,7 +75,7 @@ pub const SafeArrayType = struct {
     }
 
     pub fn deinit(self: *SafeArrayType) void {
-        self.element_type.deinit();
+        self.element_type.deinit(self.allocator);
     }
 
     pub fn toAstType(self: *const SafeArrayType) ast.ArrayType {
@@ -99,8 +99,8 @@ pub const SafeMapType = struct {
     }
 
     pub fn deinit(self: *SafeMapType) void {
-        self.key_type.deinit();
-        self.value_type.deinit();
+        self.key_type.deinit(self.allocator);
+        self.value_type.deinit(self.allocator);
     }
 
     pub fn toAstType(self: *const SafeMapType) ast.MapType {
@@ -130,10 +130,11 @@ pub const SafeFunctionType = struct {
     }
 
     pub fn deinit(self: *SafeFunctionType, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |*param| {
             param.deinit();
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         
         if (self.return_type) |*ret| {
             ret.deinit();

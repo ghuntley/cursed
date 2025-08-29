@@ -101,7 +101,7 @@ pub fn Channel(comptime T: type) type {
                 // For complex types, would need proper cleanup
                 _ = item;
             }
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
             
             // Mark cleanup as completed
             self.cleanup_completed.store(true, .release);
@@ -169,7 +169,7 @@ pub fn Channel(comptime T: type) type {
                     return SendResult.closed;
                 }
                 
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_condition.signal();
                 return SendResult.sent;
             }
@@ -185,7 +185,7 @@ pub fn Channel(comptime T: type) type {
                 return SendResult.closed;
             }
             
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             self.recv_condition.signal();
             return SendResult.sent;
         }
@@ -306,12 +306,12 @@ pub const SafeGoroutine = struct {
             channel.release();
         }
         
-        self.channels.deinit();
+        self.channels.deinit(self.allocator);
     }
     
     /// Add a channel reference to this goroutine
     pub fn addChannelRef(self: *Self, channel: *anyopaque) !void {
-        try self.channels.append(channel);
+        try self.channels.append(allocator, channel);
     }
     
     /// Start the goroutine with a function

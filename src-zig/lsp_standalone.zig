@@ -20,7 +20,8 @@ const SimpleLexer = struct {
     }
     
     pub fn tokenize(self: *SimpleLexer, allocator: Allocator) ![][]const u8 {
-        var tokens = .empty;
+        _ = allocator;
+        var tokens = std.ArrayList(u8){};
         defer tokens.deinit();
         
         var current_pos: usize = 0;
@@ -46,14 +47,14 @@ const SimpleLexer = struct {
             }
             
             if (current_pos > start) {
-                try tokens.append(self.input[start..current_pos]);
+                try tokens.append(self.allocator, self.input[start..current_pos]);
             }
             
             // Handle single character tokens
             if (current_pos < self.input.len) {
                 const ch = self.input[current_pos];
                 if (ch == '(' or ch == ')' or ch == '{' or ch == '}' or ch == ';') {
-                    try tokens.append(self.input[current_pos..current_pos + 1]);
+                    try tokens.append(self.allocator, self.input[current_pos..current_pos + 1]);
                     current_pos += 1;
                 }
             }
@@ -157,7 +158,7 @@ const CursedLspServer = struct {
         , .{id}) catch return;
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+        try writer.print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response });
     }
     
     fn handleDidOpen(self: *CursedLspServer, request: json.Value, writer: std.io.AnyWriter) !void {
@@ -167,7 +168,7 @@ const CursedLspServer = struct {
         const text = text_document.get("text").?.string;
         
         // Simple syntax checking
-        var diagnostics = .empty;
+        var diagnostics = std.ArrayList(u8){};
         defer diagnostics.deinit();
         
         var lexer = SimpleLexer.init(text);
@@ -199,7 +200,7 @@ const CursedLspServer = struct {
     fn handleCompletion(self: *CursedLspServer, request: json.Value, writer: std.io.AnyWriter) !void {
         const id = request.object.get("id").?.integer;
         
-        var completions = .empty;
+        var completions = std.ArrayList(u8){};
         defer completions.deinit();
         
         // Add CURSED keywords as completions
@@ -217,7 +218,7 @@ const CursedLspServer = struct {
         , .{id}) catch return;
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+        try writer.print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response });
     }
     
     fn handleHover(self: *CursedLspServer, request: json.Value, writer: std.io.AnyWriter) !void {
@@ -228,7 +229,7 @@ const CursedLspServer = struct {
         , .{id}) catch return;
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+        try writer.print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response });
     }
     
     fn handleShutdown(self: *CursedLspServer, request: json.Value, writer: std.io.AnyWriter) !void {
@@ -239,7 +240,7 @@ const CursedLspServer = struct {
         , .{id}) catch return;
         defer self.allocator.free(response);
         
-        try writer.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+        try writer.print("Content-Length: {s}\r\n\r\n{s}", .{ response.len, response });
     }
     
     fn publishDiagnostics(self: *CursedLspServer, uri: []const u8, diagnostics: *ArrayList(Diagnostic), writer: std.io.AnyWriter) !void {
@@ -249,11 +250,12 @@ const CursedLspServer = struct {
         , .{uri}) catch return;
         defer self.allocator.free(notification);
         
-        try writer.print("Content-Length: {}\r\n\r\n{s}", .{ notification.len, notification });
+        try writer.print("Content-Length: {s}\r\n\r\n{s}", .{ notification.len, notification });
     }
 };
 
 pub fn runLspServer(allocator: Allocator) !void {
+        _ = allocator;
     var server = CursedLspServer.init(allocator);
     
     var stdin_buffer: [4096]u8 = undefined;
@@ -264,7 +266,7 @@ pub fn runLspServer(allocator: Allocator) !void {
     
     std.log.info("CURSED LSP Server starting...", .{});
     
-    var buffer = .empty;
+    var buffer = std.ArrayList(u8){};
     defer buffer.deinit();
     
     while (true) {

@@ -29,7 +29,7 @@ const DebuggerOptions = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.initial_breakpoints.deinit();
+        self.initial_breakpoints.deinit(self.allocator);
     }
 };
 
@@ -67,7 +67,7 @@ fn parseArguments(allocator: std.mem.Allocator, args: [][:0]u8) !DebuggerOptions
                 print("❌ Error: Invalid line number: {s}\n", .{line_str});
                 return error.InvalidArguments;
             };
-            try options.initial_breakpoints.append(line_num);
+            try options.initial_breakpoints.append(allocator, line_num);
             i += 1;
         } else if (std.mem.eql(u8, arg, "--script") or std.mem.eql(u8, arg, "-s")) {
             if (i + 1 >= args.len) {
@@ -156,12 +156,12 @@ fn parseSourceFile(allocator: std.mem.Allocator, file_path: []const u8) !ast.Pro
     
     // Tokenize
     var tokenizer = lexer.Lexer.init(allocator, source_content);
-    var tokens = std.ArrayList(lexer.Token).init(self.allocator);
+    var tokens = std.ArrayList(lexer.Token){};
     defer tokens.deinit();
     
     while (true) {
         const token = try tokenizer.nextToken();
-        try tokens.append(token);
+        try tokens.append(allocator, token);
         if (token.kind == .Eof) break;
     }
     

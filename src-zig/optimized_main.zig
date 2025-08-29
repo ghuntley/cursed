@@ -57,7 +57,7 @@ pub fn main() !void {
     var enable_profiling = false;
     var enable_parallel = false;
     var llvm_opt_level: []const u8 = "O2";
-    var input_files = .empty;
+    var input_files = std.ArrayList(u8){};
     defer input_files.deinit();
     
     while (i < args.len) : (i += 1) {
@@ -100,7 +100,7 @@ pub fn main() !void {
             try runPerformanceBenchmarks(allocator, &performance_optimizer);
             return;
         } else if (!std.mem.startsWith(u8, arg, "-")) {
-            try input_files.append(arg);
+            try input_files.append(allocator, arg);
         }
     }
     
@@ -250,7 +250,7 @@ fn compileFileOptimized(
     // Print performance profile if enabled
     if (profiler) |*p| {
         const profile = p.getProfile();
-        profile.print();
+        profile.writer().print();
         
         // Profile compilation bottlenecks and suggest improvements
         const bottleneck_analysis = try optimizer.profileCompilationBottlenecks();
@@ -340,7 +340,7 @@ fn checkFileOptimized(
     
     if (profiler) |*p| {
         const profile = p.getProfile();
-        profile.print();
+        profile.writer().print();
     }
 }
 
@@ -413,7 +413,7 @@ fn interpretFileOptimized(
     
     if (profiler) |*p| {
         const profile = p.getProfile();
-        profile.print();
+        profile.writer().print();
     }
 }
 
@@ -439,7 +439,7 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
     
     std.debug.print("📝 Lexing Benchmark:\n", .{});
     const lexing_profile = try @import("performance_optimizer.zig").benchmarkLexer(allocator, test_source, 1000);
-    lexing_profile.print();
+    lexing_profile.writer().print();
     
     // Benchmark 2: Memory allocation performance
     std.debug.print("🧠 Memory Allocation Benchmark:\n", .{});
@@ -487,7 +487,7 @@ fn runPerformanceBenchmarks(allocator: Allocator, optimizer: *PerformanceOptimiz
 
 fn readSourceFile(allocator: Allocator, filename: []const u8) ![]u8 {
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        std.debug.print("❌ Error opening file '{s}': {}\n", .{ filename, err });
+        std.debug.print("❌ Error opening file '{s}': {s}\n", .{ filename, err });
         return err;
     };
     defer file.close();
@@ -513,7 +513,7 @@ fn writeOutputFile(filename: []const u8, content: []const u8) !void {
     const file = try std.fs.cwd().createFile(filename, .{});
     defer file.close();
     
-    try file.writeAll(content);
+    try file.writer().writeAll(content);
 }
 
 fn convertTokensToParserFormat(allocator: Allocator, fast_tokens: []const FastLexer.Token) ![]Token {

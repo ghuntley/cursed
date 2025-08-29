@@ -60,7 +60,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    print("📄 Read source file: {s} ({} bytes)\n", .{ filename, source.len });
+    print("📄 Read source file: {s} ({s} bytes)\n", .{{ filename, source.len });
 
     if (compile_mode) {
         // LLVM Compilation Pipeline Demo
@@ -83,14 +83,14 @@ fn demonstrateCompilationPipeline(allocator: Allocator, source: []const u8, file
     var l = lexer.Lexer.init(allocator, source);
     const tokens = try l.tokenize();
     defer tokens.deinit();
-    print("   Generated {} tokens\n", .{tokens.items.len});
+    print("   Generated {s} tokens\n", .{{tokens.items.len});
 
     // Step 2: Parsing
     print("2️⃣ Parsing...\n", .{});
     var p = parser.Parser.init(allocator, tokens.items);
     defer p.deinit();
     const program = try p.parseProgram();
-    print("   Parsed {} statements\n", .{program.statements.items.len});
+    print("   Parsed {s} statements\n", .{{program.statements.items.len});
 
     // Step 3: LLVM IR Generation
     print("3️⃣ LLVM IR Generation...\n", .{});
@@ -104,7 +104,7 @@ fn demonstrateCompilationPipeline(allocator: Allocator, source: []const u8, file
     const output_name = try getOutputName(allocator, filename);
     defer allocator.free(output_name);
     
-    var ir_filename = ArrayList(u8).init(allocator);
+    var ir_filename = ArrayList(u8){};
     defer ir_filename.deinit();
     try ir_filename.appendSlice(output_name);
     try ir_filename.appendSlice(".ll");
@@ -241,7 +241,7 @@ const SimpleCodeGen = struct {
         defer c.LLVMDisposeTargetMachine(target_machine);
 
         // Generate object file
-        var obj_filename = ArrayList(u8).init(self.allocator);
+        var obj_filename = ArrayList(u8){};
         defer obj_filename.deinit();
         try obj_filename.appendSlice(output_base);
         try obj_filename.appendSlice(".o");
@@ -257,34 +257,34 @@ const SimpleCodeGen = struct {
 };
 
 fn linkToExecutable(allocator: Allocator, output_base: []const u8) !void {
-    var obj_filename = ArrayList(u8).init(allocator);
+    var obj_filename = ArrayList(u8){};
     defer obj_filename.deinit();
     try obj_filename.appendSlice(output_base);
     try obj_filename.appendSlice(".o");
 
     // Link using gcc
-    var link_args = ArrayList([]const u8).init(allocator);
+    var link_args = ArrayList([]const u8){};
     defer link_args.deinit();
     
-    try link_args.append("gcc");
-    try link_args.append("-o");
-    try link_args.append(output_base);
-    try link_args.append(obj_filename.items);
-    try link_args.append("-no-pie");
+    try link_args.append(allocator, "gcc");
+    try link_args.append(allocator, "-o");
+    try link_args.append(allocator, output_base);
+    try link_args.append(allocator, obj_filename.items);
+    try link_args.append(allocator, "-no-pie");
 
     var child = std.ChildProcess.init(link_args.items, allocator);
     child.stdout_behavior = .Pipe;
     child.stderr_behavior = .Pipe;
     
     const result = child.spawnAndWait() catch |err| {
-        print("Failed to spawn linker: {}\n", .{err});
+        print("Failed to spawn linker: {s}\n", .{{err});
         return CompilerError.LinkerError;
     };
     
     switch (result) {
         .Exited => |code| {
             if (code != 0) {
-                print("Linker failed with exit code: {}\n", .{code});
+                print("Linker failed with exit code: {s}\n", .{{code});
                 return CompilerError.LinkerError;
             }
         },
@@ -303,7 +303,7 @@ fn testExecutable(allocator: Allocator, executable_path: []const u8) !void {
     child.stderr_behavior = .Pipe;
     
     const result = child.spawnAndWait() catch |err| {
-        print("Failed to execute: {}\n", .{err});
+        print("Failed to execute: {s}\n", .{{err});
         return;
     };
     
@@ -312,7 +312,7 @@ fn testExecutable(allocator: Allocator, executable_path: []const u8) !void {
             if (code == 0) {
                 print("   ✅ Executable ran successfully!\n", .{});
             } else {
-                print("   ❌ Executable failed with exit code: {}\n", .{code});
+                print("   ❌ Executable failed with exit code: {s}\n", .{{code});
             }
         },
         else => {

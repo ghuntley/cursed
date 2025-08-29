@@ -35,9 +35,9 @@ pub const CursedInterpreter = struct {
             .allocator = allocator,
             .globals = globals,
             .environment = &globals,
-            .functions = HashMap([]const u8, FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .struct_definitions = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_definitions = HashMap([]const u8, InterfaceDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .struct_definitions = HashMap([]const u8, StructDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .interface_definitions = HashMap([]const u8, InterfaceDefinition, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .defer_stack = .empty,
             .call_stack = .empty,
             .recursion_depth = 0,
@@ -49,7 +49,7 @@ pub const CursedInterpreter = struct {
         // Execute all remaining deferred statements
         self.executeAllDefers();
         
-        self.globals.deinit();
+        self.globals.deinit(self.allocator);
         
         // Clean up functions
         var func_iter = self.functions.iterator();
@@ -57,7 +57,7 @@ pub const CursedInterpreter = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
         // Clean up struct definitions
         var struct_iter = self.struct_definitions.iterator();
@@ -65,7 +65,7 @@ pub const CursedInterpreter = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.struct_definitions.deinit();
+        self.struct_definitions.deinit(self.allocator);
         
         // Clean up interface definitions
         var interface_iter = self.interface_definitions.iterator();
@@ -73,10 +73,10 @@ pub const CursedInterpreter = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.interface_definitions.deinit();
+        self.interface_definitions.deinit(self.allocator);
         
-        self.defer_stack.deinit();
-        self.call_stack.deinit();
+        self.defer_stack.deinit(self.allocator);
+        self.call_stack.deinit(self.allocator);
     }
 
     /// Execute a complete program
@@ -182,7 +182,7 @@ pub const CursedInterpreter = struct {
             .Unary => |unary| return try self.evaluateUnaryExpression(unary.*),
             .StructLiteral => |struct_literal| return try self.evaluateStructLiteral(struct_literal),
             .Lambda => |lambda| return try self.evaluateLambda(lambda),
-            .Tuple => |tuple| return try self.evaluateTuple(tuple),
+            
             .ArrayAccess => |array_access| return try self.evaluateArrayAccess(array_access),
             .TupleAccess => |tuple_access| return try self.evaluateTupleAccess(tuple_access),
             .MethodCall => |method_call| return try self.evaluateMethodCall(method_call.*),
@@ -360,12 +360,12 @@ pub const CursedInterpreter = struct {
             
             // Handle user-defined functions
             if (self.functions.get(func_name)) |func| {
-                var args = .empty;
+                var args = std.ArrayList(u8){};
                 defer args.deinit();
                 
                 for (call.arguments.items) |arg_ptr| {
                     const arg_expr: *Expression = @ptrCast(@alignCast(arg_ptr));
-                    try args.append(try self.evaluateExpression(arg_expr.*));
+                    try args.append(self.allocator, try self.evaluateExpression(arg_expr.*));
                 }
                 
                 return try self.callFunction(func, args.items);
@@ -400,7 +400,7 @@ pub const CursedInterpreter = struct {
             switch (value) {
                 .String => |s| return Value{ .Integer = @intCast(s.len) },
                 .Array => |arr| return Value{ .Integer = @intCast(arr.items.len) },
-                .Tuple => |tuple| return Value{ .Integer = @intCast(tuple.items.len) },
+                },
                 else => return InterpreterError.TypeMismatch,
             }
         }
@@ -526,7 +526,7 @@ pub const CursedInterpreter = struct {
 
     /// Register function definition
     fn registerFunction(self: *CursedInterpreter, func_stmt: ast.FunctionStatement) InterpreterError!void {
-        var parameters = .empty;
+        var parameters = std.ArrayList(u8){};
         for (func_stmt.parameters.items) |param| {
             try parameters.append(self.allocator, try self.allocator.dupe(u8, param.name));
         }
@@ -549,7 +549,7 @@ pub const CursedInterpreter = struct {
             .expression = expr_ptr.*,
             .environment = self.environment,
         };
-        try self.defer_stack.append(defer_entry);
+        try self.defer_stack.append(allocator, defer_entry);
         return ExecutionFlow{ .Continue = Value.Nil };
     }
 
@@ -585,7 +585,7 @@ pub const CursedInterpreter = struct {
             .Character => |c| return std.fmt.allocPrint(self.allocator, "{c}", .{c}),
             .Null => return self.allocator.dupe(u8, "cap"),
             .Array => |arr| {
-                var result = std.ArrayList(u8).init(self.allocator);
+                var result = std.ArrayList(u8){};
                 try result.append(self.allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
@@ -596,8 +596,7 @@ pub const CursedInterpreter = struct {
                 try result.append(self.allocator, ']');
                 return result.toOwnedSlice(self.allocator);
             },
-            .Tuple => |tuple| {
-                var result = std.ArrayList(u8).init(self.allocator);
+            };
                 try result.append(self.allocator, '(');
                 for (tuple.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
@@ -686,11 +685,11 @@ pub const CursedInterpreter = struct {
     }
 
     fn evaluateArrayExpression(self: *CursedInterpreter, array: ast.ArrayExpression) InterpreterError!Value {
-        var values = .empty;
+        var values = std.ArrayList(u8){};
         errdefer values.deinit(); // Clean up on error
         for (array.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
-            try values.append(try self.evaluateExpression(elem_expr.*));
+            try values.append(self.allocator, try self.evaluateExpression(elem_expr.*));
         }
         return Value{ .Array = values };
     }
@@ -738,11 +737,11 @@ pub const CursedInterpreter = struct {
     }
 
     fn evaluateTuple(self: *CursedInterpreter, tuple: ast.TupleExpression) InterpreterError!Value {
-        var values = .empty;
+        var values = std.ArrayList(u8){};
         errdefer values.deinit(); // Clean up on error
         for (tuple.elements.items) |elem_ptr| {
             const elem_expr: *Expression = @ptrCast(@alignCast(elem_ptr));
-            try values.append(try self.evaluateExpression(elem_expr.*));
+            try values.append(self.allocator, try self.evaluateExpression(elem_expr.*));
         }
         return Value{ .Tuple = values };
     }
@@ -785,6 +784,8 @@ pub const CursedInterpreter = struct {
 };
 
 /// Runtime value types for CURSED
+const Variable = struct { name: []const u8, value: Value };
+
 pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
@@ -799,6 +800,7 @@ pub const Value = union(enum) {
     Error: ErrorValue,
 
     pub fn deinit(self: *Value, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .String => |str| allocator.free(str),
             .Array => |*arr| {
@@ -807,10 +809,7 @@ pub const Value = union(enum) {
                 }
                 arr.deinit();
             },
-            .Tuple => |*tuple| {
-                for (tuple.items) |*item| {
-                    item.deinit();
-                }
+            }
                 tuple.deinit();
             },
             .Struct => |*struct_inst| struct_inst.deinit(),
@@ -829,7 +828,7 @@ pub const Environment = struct {
 
     pub fn init(allocator: Allocator, parent: ?*Environment) Environment {
         return Environment{
-            .variables = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .parent = parent,
             .allocator = allocator,
         };
@@ -841,7 +840,7 @@ pub const Environment = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -894,7 +893,7 @@ pub const StructDefinition = struct {
     fields: ArrayList(FieldDefinition),
 
     pub fn deinit(self: *StructDefinition) void {
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -910,7 +909,7 @@ pub const InterfaceDefinition = struct {
     methods: ArrayList(MethodDefinition),
 
     pub fn deinit(self: *InterfaceDefinition) void {
-        self.methods.deinit();
+        self.methods.deinit(self.allocator);
     }
 };
 
@@ -931,7 +930,7 @@ pub const StructInstance = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit(std.heap.page_allocator); // TODO: pass proper allocator
         }
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -1006,7 +1005,7 @@ fn isTruthy(value: Value) bool {
         .String => |s| return s.len > 0,
         .Null => return false,
         .Array => |arr| return arr.items.len > 0,
-        .Tuple => |tuple| return tuple.items.len > 0,
+        
         else => return true,
     }
 }

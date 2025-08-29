@@ -52,10 +52,10 @@ const MemoryTracker = struct {
     
     pub fn printStats(self: *MemoryTracker, test_name: []const u8) void {
         print("Memory stats for {s}:\n", .{test_name});
-        print("  Initial: {} bytes\n", .{self.initial_memory});
-        print("  Current: {} bytes\n", .{self.current_memory});
-        print("  Peak: {} bytes\n", .{self.peak_memory});
-        print("  Delta: {} bytes\n", .{self.getMemoryDelta()});
+        print("  Initial: {s} bytes\n", .{self.initial_memory});
+        print("  Current: {s} bytes\n", .{self.current_memory});
+        print("  Peak: {s} bytes\n", .{self.peak_memory});
+        print("  Delta: {s} bytes\n", .{self.getMemoryDelta()});
     }
     
     fn getCurrentMemoryUsage() usize {
@@ -143,7 +143,7 @@ test "JIT execution engine memory safety" {
         
         // Should handle error gracefully without leaking memory
         _ = engine.executeSource(error_program) catch |err| {
-            print("Expected error caught: {}\n", .{err});
+            print("Expected error caught: {s}\n", .{err});
         };
     }
     
@@ -228,7 +228,7 @@ test "concurrency system memory safety" {
         std.Thread.sleep(100_000_000); // 100ms
         
         tracker.update();
-        print("Executed goroutines: {}\n", .{executed_count});
+        print("Executed goroutines: {s}\n", .{executed_count});
     }
     
     // Test 4: Channel timeout operations
@@ -565,7 +565,7 @@ test "memory management stress test" {
     tracker.update();
     tracker.printStats("Stress Test");
     
-    print("Completed {} iterations in {} ms\n", .{iteration, std.time.milliTimestamp() - start_time});
+    print("Completed {s} iterations in {s} ms\n", .{iteration, std.time.milliTimestamp() - start_time});
     
     // Verify system remained stable under stress
     const memory_delta = tracker.getMemoryDelta();
@@ -598,7 +598,7 @@ test "memory management error handling" {
             if (result) |_| {
                 allocations += 1;
             } else |err| {
-                print("Expected OOM after {} allocations: {}\n", .{allocations, err});
+                print("Expected OOM after {s} allocations: {s}\n", .{allocations, err});
                 break;
             }
         }
@@ -614,7 +614,7 @@ test "memory management error handling" {
         // Test invalid syntax
         const invalid_program = "this is not valid CURSED syntax @#$%";
         _ = engine.executeSource(invalid_program) catch |err| {
-            print("Expected syntax error: {}\n", .{err});
+            print("Expected syntax error: {s}\n", .{err});
         };
         
         // Test stack overflow protection
@@ -626,7 +626,7 @@ test "memory management error handling" {
         ;
         
         _ = engine.executeSource(recursive_program) catch |err| {
-            print("Expected stack overflow: {}\n", .{err});
+            print("Expected stack overflow: {s}\n", .{err});
         };
         
         tracker.update();

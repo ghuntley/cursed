@@ -373,12 +373,12 @@ fn interpretWithAST(allocator: Allocator, source: []const u8, config: Config) !v
         print("❌ Tokenization failed: {any}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (config.verbose) {
-        print("✅ Tokenized into {} tokens\n", .{tokens.items.len});
+        print("✅ Tokenized into {s} tokens\n", .{tokens.items.len});
         for (tokens.items, 0..) |token, i| {
-            print("  [{}] {s} = '{s}'\n", .{ i, @tagName(token.kind), token.lexeme });
+            print("  [{s}] {s} = '{s}'\n", .{ i, @tagName(token.kind), token.lexeme });
         }
     }
     
@@ -401,10 +401,10 @@ fn checkWithAST(allocator: Allocator, source: []const u8, config: Config) !void 
         print("❌ Tokenization failed: {any}\n", .{err});
         return err;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (config.verbose) {
-        print("✅ Tokenized into {} tokens for AST analysis\n", .{tokens.items.len});
+        print("✅ Tokenized into {s} tokens for AST analysis\n", .{tokens.items.len});
     }
     
     // Basic AST structure validation
@@ -420,9 +420,9 @@ fn checkWithAST(allocator: Allocator, source: []const u8, config: Config) !void 
     
     if (config.verbose) {
         print("🔍 AST Analysis Results:\n", .{});
-        print("  Variables declared: {}\n", .{variable_count});
-        print("  Functions defined: {}\n", .{function_count});
-        print("  Print statements: {}\n", .{print_count});
+        print("  Variables declared: {s}\n", .{variable_count});
+        print("  Functions defined: {s}\n", .{function_count});
+        print("  Print statements: {s}\n", .{print_count});
     }
 }
 
@@ -449,7 +449,7 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
     if (config.verbose) print("🚀 Using enhanced interpreter with AST support\n", .{});
     
     // Global variable storage supporting both strings and integers
-    var variables = std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var variables = std.HashMap([]const u8, VariableValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var iter = variables.iterator();
         while (iter.next()) |entry| {
@@ -459,7 +459,7 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
     }
     
     // Function storage
-    var functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var func_iter = functions.iterator();
         while (func_iter.next()) |entry| {
@@ -511,13 +511,13 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
             // Try to evaluate as expression and print result
             const result = evaluateAST_ExpressionStatement(&variables, trimmed) catch |err| {
                 if (config.verbose) {
-                    print("Unknown statement: {s} (error: {})\n", .{trimmed, err});
+                    print("Unknown statement: {s} (error: {s})\n", .{trimmed, err});
                 }
                 continue;
             };
             
-            if (config.verbose) print("🎯 AST Expression result: {}\n", .{result});
-            print("{}\n", .{result});
+            if (config.verbose) print("🎯 AST Expression result: {s}\n", .{result});
+            print("{s}\n", .{result});
         }
     }
     
@@ -527,11 +527,11 @@ fn interpretEnhanced(allocator: Allocator, source: []const u8, config: Config, t
 // Parse source into statements (handles multi-line constructs properly)
 fn parseStatements(allocator: Allocator, source: []const u8) ![][]const u8 {
     var statements = std.ArrayList([]const u8){};
-    defer statements.deinit(allocator);
+    defer statements.deinit();
     
     var i: usize = 0;
     var current_statement = std.ArrayList(u8){};
-    defer current_statement.deinit(allocator);
+    defer current_statement.deinit();
     
     var brace_count: i32 = 0;
     var paren_count: i32 = 0;
@@ -654,7 +654,7 @@ fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]
     
     // Parse parameters: "a drip, b drip" -> ["a", "b"]
     var params = std.ArrayList([]const u8){};
-    defer params.deinit(allocator);
+    defer params.deinit();
     
     if (param_section.len > 0) {
         var param_pairs = std.mem.splitSequence(u8, param_section, ", ");
@@ -684,7 +684,7 @@ fn handleAST_FunctionDefinition(allocator: Allocator, functions: *std.HashMap([]
     try functions.put(key_copy, func_def);
     
     if (verbose) {
-        print("✅ AST Function defined: {s} with {} parameters\n", .{ func_name, func_def.params.len });
+        print("✅ AST Function defined: {s} with {s} parameters\n", .{ func_name, func_def.params.len });
         for (func_def.params) |param| {
             print("  - Parameter: {s}\n", .{param});
         }
@@ -725,9 +725,9 @@ fn handleAST_Variable(allocator: Allocator, variables: *std.HashMap([]const u8, 
     
     if (verbose) {
         switch (value) {
-            .integer => |int_val| print("🎯 AST Variable: {s} = {}\n", .{ name, int_val }),
+            .integer => |int_val| print("🎯 AST Variable: {s} = {s}\n", .{ name, int_val }),
             .string => |str_val| print("🎯 AST Variable: {s} = \"{s}\"\n", .{ name, str_val }),
-            .boolean => |bool_val| print("🎯 AST Variable: {s} = {}\n", .{ name, bool_val }),
+            .boolean => |bool_val| print("🎯 AST Variable: {s} = {s}\n", .{ name, bool_val }),
         }
     }
 }
@@ -750,7 +750,7 @@ fn evaluateAST_Expression(allocator: Allocator, variables: *std.HashMap([]const 
         const left_val = try getAST_Value(variables, left);
         const right_val = try getAST_Value(variables, right);
         
-        if (verbose) print("🎯 AST Expression: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+        if (verbose) print("🎯 AST Expression: {s} + {s} = {s}\n", .{ left_val, right_val, left_val + right_val });
         return left_val + right_val;
     }
     
@@ -773,7 +773,7 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
     
     // Parse arguments: "5, 3" or "10, \"test\"" -> mixed values
     var args = std.ArrayList(FunctionArgValue){};
-    defer args.deinit(allocator);
+    defer args.deinit();
     
     if (args_str.len > 0) {
         var arg_parts = std.mem.splitSequence(u8, args_str, ", ");
@@ -789,14 +789,14 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
                 // Try as integer or variable
                 const value = try getAST_Value(variables, trimmed_arg);
                 try args.append(allocator, FunctionArgValue{ .integer = value });
-                if (verbose) print("🎯 AST Integer argument: {}\n", .{value});
+                if (verbose) print("🎯 AST Integer argument: {s}\n", .{value});
             }
         }
     }
     
     // Check parameter count
     if (args.items.len != func_def.params.len) {
-        print("❌ AST: Function {s} expects {} arguments, got {}\n", .{ func_name, func_def.params.len, args.items.len });
+        print("❌ AST: Function {s} expects {s} arguments, got {s}\n", .{ func_name, func_def.params.len, args.items.len });
         return error.InvalidArgumentCount;
     }
     
@@ -805,7 +805,7 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
         for (args.items, 0..) |arg, i| {
             if (i > 0) print(", ", .{});
             switch (arg) {
-                .integer => |int_val| print("{}", .{int_val}),
+                .integer => |int_val| print("{s}", .{int_val}),
                 .string => |str_val| print("\"{s}\"", .{str_val}),
             }
         }
@@ -813,7 +813,7 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
     }
     
     // Create function scope with parameters
-    var func_scope = std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var func_scope = std.HashMap([]const u8, FunctionArgValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer func_scope.deinit();
     
     // Bind parameters to argument values
@@ -821,7 +821,7 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
         try func_scope.put(param, arg_value);
         if (verbose) {
             switch (arg_value) {
-                .integer => |int_val| print("🎯 AST Parameter binding: {s} = {}\n", .{ param, int_val }),
+                .integer => |int_val| print("🎯 AST Parameter binding: {s} = {s}\n", .{ param, int_val }),
                 .string => |str_val| print("🎯 AST Parameter binding: {s} = \"{s}\"\n", .{ param, str_val }),
             }
         }
@@ -830,7 +830,7 @@ fn callAST_Function(allocator: Allocator, variables: *std.HashMap([]const u8, Va
     // Execute function body with parameter scope
     const result = try executeAST_FunctionBodyMixed(allocator, &func_scope, functions, func_def.body, verbose);
     
-    if (verbose) print("🎯 AST Function {s} returned: {}\n", .{ func_name, result });
+    if (verbose) print("🎯 AST Function {s} returned: {s}\n", .{ func_name, result });
     return result;
 }
 
@@ -864,7 +864,7 @@ fn executeAST_FunctionBodyMixed(allocator: Allocator, func_scope: *std.HashMap([
         }
     }
     
-    if (verbose) print("🎯 AST Function body returned: {}\n", .{last_value});
+    if (verbose) print("🎯 AST Function body returned: {s}\n", .{last_value});
     return last_value;
 }
 
@@ -898,7 +898,7 @@ fn executeAST_FunctionBody(allocator: Allocator, func_scope: *std.HashMap([]cons
         }
     }
     
-    if (verbose) print("🎯 AST Function body returned: {}\n", .{last_value});
+    if (verbose) print("🎯 AST Function body returned: {s}\n", .{last_value});
     return last_value;
 }
 
@@ -920,7 +920,7 @@ fn handleAST_FunctionVariableDeclaration(allocator: Allocator, func_scope: *std.
     // Store in function scope (no need to duplicate key since we're using string literals)
     try func_scope.put(name, value);
     
-    if (verbose) print("🎯 AST Function variable: {s} = {}\n", .{ name, value });
+    if (verbose) print("🎯 AST Function variable: {s} = {s}\n", .{ name, value });
 }
 
 // Handle variable declaration in function scope with mixed types: "sus local_var drip = param1 + 5"
@@ -941,7 +941,7 @@ fn handleAST_FunctionVariableDeclarationMixed(allocator: Allocator, func_scope: 
     // Store in function scope as integer for now (extend later for mixed types if needed)
     try func_scope.put(name, FunctionArgValue{ .integer = value });
     
-    if (verbose) print("🎯 AST Function variable: {s} = {}\n", .{ name, value });
+    if (verbose) print("🎯 AST Function variable: {s} = {s}\n", .{ name, value });
 }
 
 // Evaluate expressions in function scope with mixed types (looks in function params first, then globals)
@@ -954,7 +954,7 @@ fn evaluateAST_FunctionExpressionMixed(_: Allocator, func_scope: *std.HashMap([]
         const left_val = try getAST_FunctionValueMixed(func_scope, left);
         const right_val = try getAST_FunctionValueMixed(func_scope, right);
         
-        if (verbose) print("🎯 AST Function expression: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+        if (verbose) print("🎯 AST Function expression: {s} + {s} = {s}\n", .{ left_val, right_val, left_val + right_val });
         return left_val + right_val;
     }
     
@@ -966,7 +966,7 @@ fn evaluateAST_FunctionExpressionMixed(_: Allocator, func_scope: *std.HashMap([]
         const left_val = try getAST_FunctionValueMixed(func_scope, left);
         const right_val = try getAST_FunctionValueMixed(func_scope, right);
         
-        if (verbose) print("🎯 AST Function expression: {} * {} = {}\n", .{ left_val, right_val, left_val * right_val });
+        if (verbose) print("🎯 AST Function expression: {s} * {s} = {s}\n", .{ left_val, right_val, left_val * right_val });
         return left_val * right_val;
     }
     
@@ -1006,7 +1006,7 @@ fn evaluateAST_FunctionExpression(_: Allocator, func_scope: *std.HashMap([]const
         const left_val = try getAST_FunctionValue(func_scope, left);
         const right_val = try getAST_FunctionValue(func_scope, right);
         
-        if (verbose) print("🎯 AST Function expression: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+        if (verbose) print("🎯 AST Function expression: {s} + {s} = {s}\n", .{ left_val, right_val, left_val + right_val });
         return left_val + right_val;
     }
     
@@ -1018,7 +1018,7 @@ fn evaluateAST_FunctionExpression(_: Allocator, func_scope: *std.HashMap([]const
         const left_val = try getAST_FunctionValue(func_scope, left);
         const right_val = try getAST_FunctionValue(func_scope, right);
         
-        if (verbose) print("🎯 AST Function expression: {} * {} = {}\n", .{ left_val, right_val, left_val * right_val });
+        if (verbose) print("🎯 AST Function expression: {s} * {s} = {s}\n", .{ left_val, right_val, left_val * right_val });
         return left_val * right_val;
     }
     
@@ -1140,9 +1140,9 @@ fn handleAST_Print(variables: *std.HashMap([]const u8, VariableValue, std.hash_m
             // Try to get variable value
             if (variables.get(trimmed)) |var_value| {
                 switch (var_value) {
-                    .integer => |int_val| print("{}", .{int_val}),
+                    .integer => |int_val| print("{s}", .{int_val}),
                     .string => |str_val| print("{s}", .{str_val}),
-                    .boolean => |bool_val| print("{}", .{bool_val}),
+                    .boolean => |bool_val| print("{s}", .{bool_val}),
                 }
             } else {
                 // Check if it's a string literal
@@ -1187,7 +1187,7 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
         if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
             try handleSimpleVibesSpill(trimmed);
         } else if (config.verbose) {
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     
@@ -1227,18 +1227,18 @@ fn checkBasicSyntax(allocator: Allocator, source: []const u8, config: Config) !v
         // Basic syntax checks
         if (std.mem.startsWith(u8, trimmed, "sus ")) {
             if (std.mem.indexOf(u8, trimmed, "=") == null) {
-                print("❌ Line {}: sus statement missing assignment\n", .{line_number});
+                print("❌ Line {s}: sus statement missing assignment\n", .{line_number});
                 error_count += 1;
             }
         }
         
         if (config.verbose) {
-            print("✅ Line {} syntax OK\n", .{line_number});
+            print("✅ Line {s} syntax OK\n", .{line_number});
         }
     }
     
     if (error_count > 0) {
-        print("❌ Found {} syntax error(s)\n", .{error_count});
+        print("❌ Found {s} syntax error(s)\n", .{error_count});
         return error.SyntaxError;
     }
 }

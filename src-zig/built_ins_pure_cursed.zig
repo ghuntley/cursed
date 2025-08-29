@@ -14,7 +14,9 @@ pub const BuiltInRegistry = struct {
         arg_count: usize,
     };
 
-    pub const Value = union(enum) {
+    const Variable = struct { name: []const u8, value: Value };
+
+pub const Value = union(enum) {
         Integer: i64,
         Float: f64,
         String: []const u8,
@@ -25,6 +27,7 @@ pub const BuiltInRegistry = struct {
         Null,
 
         pub fn toString(self: Value, allocator: Allocator) ![]u8 {
+        _ = allocator;
             switch (self) {
                 .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
                 .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
@@ -52,13 +55,13 @@ pub const BuiltInRegistry = struct {
         }
 
         pub fn deinit(self: *Channel) void {
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
         }
 
         pub fn send(self: *Channel, value: Value) !bool {
             if (self.closed) return false;
             if (self.buffer.items.len >= self.capacity) return false;
-            try self.buffer.append(value);
+            try self.buffer.append(allocator, value);
             return true;
         }
 
@@ -69,9 +72,10 @@ pub const BuiltInRegistry = struct {
     };
 
     pub fn init(allocator: Allocator) !BuiltInRegistry {
+        _ = allocator;
         var registry = BuiltInRegistry{
             .allocator = allocator,
-            .functions = std.StringHashMap(BuiltInFunction).init(allocator),
+            .functions = std.StringHashMap(BuiltInFunction){},
         };
         
         try registry.registerBuiltIns();
@@ -79,7 +83,7 @@ pub const BuiltInRegistry = struct {
     }
 
     pub fn deinit(self: *BuiltInRegistry) void {
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
     }
 
     pub fn registerBuiltIns(self: *BuiltInRegistry) !void {
@@ -272,7 +276,7 @@ pub const BuiltInRegistry = struct {
         // Direct console output using std.debug.print
         switch (args[0]) {
             .String => |str| std.debug.print("{s}\n", .{str}),
-            .Integer => |int| std.debug.print("{}\n", .{int}),
+            .Integer => |int| std.debug.print("{s}\n", .{int}),
             .Float => |float| std.debug.print("{d}\n", .{float}),
             .Boolean => |bool_val| std.debug.print("{s}\n", .{if (bool_val) "based" else "cringe"}),
             .Null => std.debug.print("cap\n", .{}),
@@ -289,7 +293,7 @@ pub const BuiltInRegistry = struct {
             
             switch (arg) {
                 .String => |str| std.debug.print("{s}", .{str}),
-                .Integer => |int| std.debug.print("{}", .{int}),
+                .Integer => |int| std.debug.print("{s}", .{int}),
                 .Float => |float| std.debug.print("{d}", .{float}),
                 .Boolean => |bool_val| std.debug.print("{s}", .{if (bool_val) "based" else "cringe"}),
                 .Null => std.debug.print("cap", .{}),
@@ -767,7 +771,7 @@ pub const BuiltInRegistry = struct {
                 std.debug.panic("CURSED runtime panic: {s}", .{msg});
             },
             .Integer => |code| {
-                std.debug.print("PANIC: Error code {}\n", .{code});
+                std.debug.print("PANIC: Error code {s}\n", .{code});
                 std.debug.panic("CURSED runtime panic: code {}", .{code});
             },
             else => {

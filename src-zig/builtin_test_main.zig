@@ -11,14 +11,14 @@ pub fn main() !void {
 
     // Initialize builtin registry
     var registry = BuiltInRegistry.init(allocator) catch |err| {
-        print("Failed to initialize builtin registry: {}\n", .{err});
+        print("Failed to initialize builtin registry: {s}\n", .{err});
         return;
     };
     defer registry.deinit();
 
     // Register all builtin functions
     registry.registerBuiltIns() catch |err| {
-        print("Failed to register builtin functions: {}\n", .{err});
+        print("Failed to register builtin functions: {s}\n", .{err});
         return;
     };
 
@@ -28,10 +28,10 @@ pub fn main() !void {
     print("\n--- Testing new() function ---\n", .{});
     const new_args = [_]BuiltInRegistry.Value{};
     const new_result = registry.callFunction("new", &new_args) catch |err| {
-        print("new() failed: {}\n", .{err});
+        print("new() failed: {s}\n", .{err});
         return;
     };
-    print("new() result: {}\n", .{new_result});
+    print("new() result: {s}\n", .{new_result});
 
     // Test 2: make() function
     print("\n--- Testing make() function ---\n", .{});
@@ -39,19 +39,19 @@ pub fn main() !void {
         BuiltInRegistry.Value{ .Integer = 5 }
     };
     const make_result = registry.callFunction("make", &make_args) catch |err| {
-        print("make(5) failed: {}\n", .{err});
+        print("make(5) failed: {s}\n", .{err});
         return;
     };
-    print("make(5) result: {}\n", .{make_result});
+    print("make(5) result: {s}\n", .{make_result});
 
     // Test 3: cap() function
     print("\n--- Testing cap() function ---\n", .{});
     const cap_args = [_]BuiltInRegistry.Value{make_result};
     const cap_result = registry.callFunction("cap", &cap_args) catch |err| {
-        print("cap() failed: {}\n", .{err});
+        print("cap() failed: {s}\n", .{err});
         return;
     };
-    print("cap() result: {}\n", .{cap_result});
+    print("cap() result: {s}\n", .{cap_result});
 
     // Test 4: copy() function
     print("\n--- Testing copy() function ---\n", .{});
@@ -68,10 +68,10 @@ pub fn main() !void {
         BuiltInRegistry.Value{ .Array = source_arr }
     };
     const copy_result = registry.callFunction("copy", &copy_args) catch |err| {
-        print("copy() failed: {}\n", .{err});
+        print("copy() failed: {s}\n", .{err});
         return;
     };
-    print("copy() result: {}\n", .{copy_result});
+    print("copy() result: {s}\n", .{copy_result});
 
     // Test 5: delete() function  
     print("\n--- Testing delete() function ---\n", .{});
@@ -80,19 +80,19 @@ pub fn main() !void {
         BuiltInRegistry.Value{ .Integer = 1 }
     };
     const delete_result = registry.callFunction("delete", &delete_args) catch |err| {
-        print("delete() failed: {}\n", .{err});
+        print("delete() failed: {s}\n", .{err});
         return;
     };
-    print("delete() result: {}\n", .{delete_result});
+    print("delete() result: {s}\n", .{delete_result});
 
     // Test 6: recover() function
     print("\n--- Testing recover() function ---\n", .{});
     const recover_args = [_]BuiltInRegistry.Value{};
     const recover_result = registry.callFunction("recover", &recover_args) catch |err| {
-        print("recover() failed: {}\n", .{err});
+        print("recover() failed: {s}\n", .{err});
         return;
     };
-    print("recover() result: {}\n", .{recover_result});
+    print("recover() result: {s}\n", .{recover_result});
 
     // Test existing functions still work
     print("\n--- Testing existing functions ---\n", .{});
@@ -101,19 +101,19 @@ pub fn main() !void {
         BuiltInRegistry.Value{ .Integer = 5 }
     };
     const add_result = registry.callFunction("math.add", &math_args) catch |err| {
-        print("math.add failed: {}\n", .{err});
+        print("math.add failed: {s}\n", .{err});
         return;
     };
-    print("math.add(10, 5) result: {}\n", .{add_result});
+    print("math.add(10, 5) result: {s}\n", .{add_result});
 
     const channel_args = [_]BuiltInRegistry.Value{
         BuiltInRegistry.Value{ .Integer = 3 }
     };
     const channel_result = registry.callFunction("make_channel", &channel_args) catch |err| {
-        print("make_channel failed: {}\n", .{err});
+        print("make_channel failed: {s}\n", .{err});
         return;
     };
-    print("make_channel(3) result: {}\n", .{channel_result});
+    print("make_channel(3) result: {s}\n", .{channel_result});
 
     print("\n=== All builtin tests completed successfully ===\n", .{});
     print("✓ new<T>() - Generic object creation: IMPLEMENTED\n", .{});

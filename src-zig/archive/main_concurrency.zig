@@ -82,13 +82,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {s}\n", .{{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -100,14 +100,14 @@ pub fn main() !void {
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{{err});
         return;
     };
 
     if (debug_tokens) {
         print("\n=== TOKENS ===\n", .{});
         for (tokens.items) |token| {
-            print("{}: '{}'\n", .{ token.kind, token.lexeme });
+            print("{s}: '{s}'\n", .{{ token.kind, token.lexeme });
         }
         print("\n", .{});
     }
@@ -117,13 +117,13 @@ pub fn main() !void {
     defer p.deinit();
 
     const program = p.parseProgram() catch |err| {
-        print("❌ Parser error: {}\n", .{err});
+        print("❌ Parser error: {s}\n", .{{err});
         return;
     };
 
     if (debug_ast) {
         print("=== AST ===\n", .{});
-        print("Program with {} statements\n", .{program.statements.items.len});
+        print("Program with {s} statements\n", .{{program.statements.items.len});
         print("\n", .{});
     }
 
@@ -146,7 +146,7 @@ fn executeWithInterpreter(allocator: Allocator, program: *ast.Program, debug_mod
     print("🔄 Executing with concurrency interpreter...\n", .{});
 
     var interpreter = interpreter_concurrency.ConcurrencyInterpreter.init(allocator) catch |err| {
-        print("❌ Failed to initialize concurrency interpreter: {}\n", .{err});
+        print("❌ Failed to initialize concurrency interpreter: {s}\n", .{{err});
         return;
     };
     defer interpreter.deinit();
@@ -158,7 +158,7 @@ fn executeWithInterpreter(allocator: Allocator, program: *ast.Program, debug_mod
     // Execute program statements
     for (program.statements.items) |stmt| {
         const result = interpreter.eval(ast.Node{ .statement = stmt }) catch |err| {
-            print("❌ Execution error: {}\n", .{err});
+            print("❌ Execution error: {s}\n", .{{err});
             return;
         };
 
@@ -172,25 +172,25 @@ fn executeWithInterpreter(allocator: Allocator, program: *ast.Program, debug_mod
     // Print runtime statistics
     const stats = interpreter.getRuntimeStats();
     print("\n📈 Concurrency Statistics:\n", .{});
-    print("  Goroutines spawned: {}\n", .{stats.total_goroutines_spawned});
-    print("  Channels created: {}\n", .{stats.total_channels_created});
-    print("  Messages sent: {}\n", .{stats.total_messages_sent});
-    print("  Messages received: {}\n", .{stats.total_messages_received});
-    print("  Select operations: {}\n", .{stats.total_select_operations});
+    print("  Goroutines spawned: {s}\n", .{{stats.total_goroutines_spawned});
+    print("  Channels created: {s}\n", .{{stats.total_channels_created});
+    print("  Messages sent: {s}\n", .{{stats.total_messages_sent});
+    print("  Messages received: {s}\n", .{{stats.total_messages_received});
+    print("  Select operations: {s}\n", .{{stats.total_select_operations});
 
     print("✅ Execution completed successfully\n", .{});
 }
 
 /// Compile program with concurrency support
 fn compileWithConcurrency(allocator: Allocator, program: *ast.Program, filename: []const u8, optimization_level: u8, debug_mode: bool) !void {
-    print("⚙️ Compiling with concurrency support (O{})...\n", .{optimization_level});
+    print("⚙️ Compiling with concurrency support (O{s})...\n", .{{optimization_level});
 
     // Generate LLVM IR with concurrency support
     var concurrency_gen = concurrency_codegen.ConcurrencyCodeGen.init(allocator);
     defer concurrency_gen.deinit();
 
     concurrency_gen.generateProgram(program) catch |err| {
-        print("❌ Concurrency code generation error: {}\n", .{err});
+        print("❌ Concurrency code generation error: {s}\n", .{{err});
         return;
     };
 
@@ -230,7 +230,7 @@ fn compileWithConcurrency(allocator: Allocator, program: *ast.Program, filename:
         print("✅ Generated executable: {s}\n", .{output_name});
         print("🚀 Run with: ./{s}\n", .{output_name});
     } else {
-        print("❌ Compilation failed with exit code: {}\n", .{result.term.Exited});
+        print("❌ Compilation failed with exit code: {s}\n", .{{result.term.Exited});
         print("Error output: {s}\n", .{result.stderr});
     }
 
@@ -252,22 +252,22 @@ fn runConcurrencyBenchmark(allocator: Allocator) !void {
     print("📊 Benchmark 1: Goroutine spawning\n", .{});
     const num_goroutines = 1000;
     
-    var spawned_goroutines = ArrayList(concurrency.GoroutineId).init(allocator);
+    var spawned_goroutines = ArrayList(concurrency.GoroutineId){};
     defer spawned_goroutines.deinit();
 
     const spawn_start = std.time.milliTimestamp();
     for (0..num_goroutines) |_| {
         const function_literal = ast.FunctionLiteral{
-            .parameters = ArrayList(*ast.Identifier).init(allocator),
-            .body = ast.BlockStatement{ .statements = ArrayList(ast.Statement).init(allocator) },
+            .parameters = ArrayList(*ast.Identifier){},
+            .body = ast.BlockStatement{ .statements = ArrayList(ast.Statement){} },
         };
 
         const goroutine_id = try concurrency_runtime.executeStan(&function_literal, null);
-        try spawned_goroutines.append(goroutine_id);
+        try spawned_goroutines.append(allocator, goroutine_id);
     }
     const spawn_end = std.time.milliTimestamp();
     
-    print("  Spawned {} goroutines in {}ms\n", .{ num_goroutines, spawn_end - spawn_start });
+    print("  Spawned {s} goroutines in {s}ms\n", .{{ num_goroutines, spawn_end - spawn_start });
     print("  Average: {d:.2}μs per goroutine\n", .{ @as(f64, @floatFromInt(spawn_end - spawn_start)) * 1000.0 / @as(f64, @floatFromInt(num_goroutines)) });
 
     // Benchmark 2: Channel operations
@@ -284,7 +284,7 @@ fn runConcurrencyBenchmark(allocator: Allocator) !void {
     }
     const channel_end = std.time.milliTimestamp();
     
-    print("  Processed {} messages in {}ms\n", .{ num_messages, channel_end - channel_start });
+    print("  Processed {s} messages in {s}ms\n", .{{ num_messages, channel_end - channel_start });
     print("  Average: {d:.2}μs per message\n", .{ @as(f64, @floatFromInt(channel_end - channel_start)) * 1000.0 / @as(f64, @floatFromInt(num_messages)) });
 
     // Benchmark 3: Select operations
@@ -305,21 +305,21 @@ fn runConcurrencyBenchmark(allocator: Allocator) !void {
     }
     const select_end = std.time.milliTimestamp();
     
-    print("  Executed {} select operations in {}ms\n", .{ num_selects, select_end - select_start });
+    print("  Executed {s} select operations in {s}ms\n", .{{ num_selects, select_end - select_start });
     print("  Average: {d:.2}μs per select\n", .{ @as(f64, @floatFromInt(select_end - select_start)) * 1000.0 / @as(f64, @floatFromInt(num_selects)) });
 
     const total_time = std.time.milliTimestamp() - start_time;
-    print("\n⏱️ Total benchmark time: {}ms\n", .{total_time});
+    print("\n⏱️ Total benchmark time: {s}ms\n", .{{total_time});
 
     // Get final statistics
     if (concurrency_runtime.getRuntime()) |runtime| {
         const stats = runtime.getStats();
         print("\n📈 Final Statistics:\n", .{});
-        print("  Total goroutines spawned: {}\n", .{stats.total_goroutines_spawned});
-        print("  Total channels created: {}\n", .{stats.total_channels_created});
-        print("  Total messages sent: {}\n", .{stats.total_messages_sent});
-        print("  Total messages received: {}\n", .{stats.total_messages_received});
-        print("  Total select operations: {}\n", .{stats.total_select_operations});
+        print("  Total goroutines spawned: {s}\n", .{{stats.total_goroutines_spawned});
+        print("  Total channels created: {s}\n", .{{stats.total_channels_created});
+        print("  Total messages sent: {s}\n", .{{stats.total_messages_sent});
+        print("  Total messages received: {s}\n", .{{stats.total_messages_received});
+        print("  Total select operations: {s}\n", .{{stats.total_select_operations});
     }
 
     print("✅ Benchmark completed successfully\n", .{});

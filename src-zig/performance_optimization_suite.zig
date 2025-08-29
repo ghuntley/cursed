@@ -68,14 +68,14 @@ pub const PerformanceOptimizationSuite = struct {
         
         pub fn printMetrics(self: *const PerformanceMetrics) void {
             std.debug.print("📊 Performance Metrics:\n", .{});
-            print("  Compilation time: {} ms\n", .{self.compilation_time_ms});
+            print("  Compilation time: {s} ms\n", .{self.compilation_time_ms});
             print("  Memory usage: {:.2} MB\n", .{@as(f64, @floatFromInt(self.memory_usage_bytes)) / 1024.0 / 1024.0});
             print("  Peak memory: {:.2} MB\n", .{@as(f64, @floatFromInt(self.peak_memory_bytes)) / 1024.0 / 1024.0});
-            print("  Hot path hits: {}\n", .{self.hot_path_hit_count});
+            print("  Hot path hits: {s}\n", .{self.hot_path_hit_count});
             print("  Cache hit rate: {:.2}%\n", .{self.cache_hit_rate * 100.0});
-            print("  Optimization passes: {}\n", .{self.optimization_passes});
-            print("  LLVM optimization time: {} ms\n", .{self.llvm_opt_time_ms});
-            print("  Linking time: {} ms\n", .{self.linking_time_ms});
+            print("  Optimization passes: {s}\n", .{self.optimization_passes});
+            print("  LLVM optimization time: {s} ms\n", .{self.llvm_opt_time_ms});
+            print("  Linking time: {s} ms\n", .{self.linking_time_ms});
         }
     };
     
@@ -111,7 +111,7 @@ pub const PerformanceOptimizationSuite = struct {
         
         pub fn init(allocator: std.mem.Allocator) PGOData {
             return PGOData{
-                .function_call_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+                .function_call_counts = std.HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
                 .branch_probabilities = std.HashMap(u64, f64, std.hash_map.DefaultHashContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
                 .hot_functions = .{},
                 .cold_functions = .{},
@@ -119,10 +119,10 @@ pub const PerformanceOptimizationSuite = struct {
         }
         
         pub fn deinit(self: *PGOData) void {
-            self.function_call_counts.deinit();
-            self.branch_probabilities.deinit();
-            self.hot_functions.deinit();
-            self.cold_functions.deinit();
+            self.function_call_counts.deinit(self.allocator);
+            self.branch_probabilities.deinit(self.allocator);
+            self.hot_functions.deinit(self.allocator);
+            self.cold_functions.deinit(self.allocator);
         }
     };
     
@@ -175,30 +175,30 @@ pub const PerformanceOptimizationSuite = struct {
         // Load existing PGO data if available
         if (suite.pgo_enabled) {
             suite.loadPGOData() catch |err| {
-                print("⚠️ Warning: Could not load PGO data: {}\n", .{err});
+                print("⚠️ Warning: Could not load PGO data: {s}\n", .{err});
             };
         }
         
         print("🚀 Performance Optimization Suite initialized\n", .{});
-        print("  PGO: {}, LTO: {}, Profiling: {}\n", .{ suite.pgo_enabled, suite.lto_enabled, suite.profiling_enabled });
-        print("  Hot path optimization: {}, Memory pooling: {}\n", .{ suite.hot_path_optimization, suite.memory_pooling });
-        print("  Concurrency optimization: {}, Compile-time optimization: {}\n", .{ suite.concurrency_optimization, suite.compile_time_optimization });
+        print("  PGO: {s}, LTO: {s}, Profiling: {s}\n", .{ suite.pgo_enabled, suite.lto_enabled, suite.profiling_enabled });
+        print("  Hot path optimization: {s}, Memory pooling: {s}\n", .{ suite.hot_path_optimization, suite.memory_pooling });
+        print("  Concurrency optimization: {s}, Compile-time optimization: {s}\n", .{ suite.concurrency_optimization, suite.compile_time_optimization });
         
         return suite;
     }
     
     /// Deinitialize and cleanup resources
     pub fn deinit(self: *Self) void {
-        self.string_pool.deinit();
-        self.ast_node_pool.deinit();
-        self.token_pool.deinit();
-        self.hot_path_cache.deinit();
-        self.pgo_data.deinit();
+        self.string_pool.deinit(self.allocator);
+        self.ast_node_pool.deinit(self.allocator);
+        self.token_pool.deinit(self.allocator);
+        self.hot_path_cache.deinit(self.allocator);
+        self.pgo_data.deinit(self.allocator);
         
         // Save PGO data for future runs
         if (self.pgo_enabled) {
             self.savePGOData() catch |err| {
-                print("⚠️ Warning: Could not save PGO data: {}\n", .{err});
+                print("⚠️ Warning: Could not save PGO data: {s}\n", .{err});
             };
         }
         
@@ -366,13 +366,13 @@ pub const PerformanceOptimizationSuite = struct {
         self.metrics.printMetrics();
         
         print("\n📈 Compilation Statistics:\n", .{});
-        print("  Files compiled: {}\n", .{self.compilation_stats.files_compiled});
-        print("  Lines of code: {}\n", .{self.compilation_stats.lines_of_code});
-        print("  AST nodes created: {}\n", .{self.compilation_stats.ast_nodes_created});
-        print("  Tokens processed: {}\n", .{self.compilation_stats.tokens_processed});
-        print("  Optimizations applied: {}\n", .{self.compilation_stats.optimizations_applied});
-        print("  Cache misses: {}\n", .{self.compilation_stats.cache_misses});
-        print("  GC collections: {}\n", .{self.compilation_stats.gc_collections});
+        print("  Files compiled: {s}\n", .{self.compilation_stats.files_compiled});
+        print("  Lines of code: {s}\n", .{self.compilation_stats.lines_of_code});
+        print("  AST nodes created: {s}\n", .{self.compilation_stats.ast_nodes_created});
+        print("  Tokens processed: {s}\n", .{self.compilation_stats.tokens_processed});
+        print("  Optimizations applied: {s}\n", .{self.compilation_stats.optimizations_applied});
+        print("  Cache misses: {s}\n", .{self.compilation_stats.cache_misses});
+        print("  GC collections: {s}\n", .{self.compilation_stats.gc_collections});
         
         print("\n🎯 Optimization Status:\n", .{});
         print("  PGO: {s}\n", .{if (self.pgo_enabled) "✅ Enabled" else "❌ Disabled"});
@@ -524,11 +524,11 @@ pub const BenchmarkResults = struct {
     
     pub fn printResults(self: *const BenchmarkResults) void {
         std.debug.print("\n📊 Benchmark Results Summary:\n", .{});
-        print("  Compiler benchmarks: {} ms\n", .{self.compiler_benchmark_ms});
-        print("  Memory benchmarks: {} ms\n", .{self.memory_benchmark_ms});
-        print("  Concurrency benchmarks: {} ms\n", .{self.concurrency_benchmark_ms});
-        print("  Optimization benchmarks: {} ms\n", .{self.optimization_benchmark_ms});
-        print("  Total benchmark time: {} ms\n", .{self.total_time_ms});
+        print("  Compiler benchmarks: {s} ms\n", .{self.compiler_benchmark_ms});
+        print("  Memory benchmarks: {s} ms\n", .{self.memory_benchmark_ms});
+        print("  Concurrency benchmarks: {s} ms\n", .{self.concurrency_benchmark_ms});
+        print("  Optimization benchmarks: {s} ms\n", .{self.optimization_benchmark_ms});
+        print("  Total benchmark time: {s} ms\n", .{self.total_time_ms});
     }
 };
 

@@ -118,6 +118,7 @@ pub const AdvancedCodeGen = struct {
     gc_integration: ?*GCIntegration,
     
     pub fn init(allocator: Allocator) !AdvancedCodeGen {
+        _ = allocator;
         var gc_registry = GCTypeRegistry.init(allocator);
         var interface_registry = InterfaceRegistry.init(allocator);
         const interface_dispatcher = InterfaceDispatcher.init(allocator, &interface_registry);
@@ -140,10 +141,10 @@ pub const AdvancedCodeGen = struct {
             .scope_stack = .empty,
             .current_function_name = null,
             .current_scope_id = 0,
-            .struct_types = HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .vtables = HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .struct_types = HashMap([]const u8, StructTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .interface_types = HashMap([]const u8, InterfaceTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .generic_instances = HashMap([]const u8, GenericInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .vtables = HashMap([]const u8, VTableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .monomorphizer = monomorphizer,
             .gc_type_registry = gc_registry,
             .typed_allocator = TypedAllocator.init(allocator, &gc_registry),
@@ -169,6 +170,7 @@ pub const AdvancedCodeGen = struct {
     
     /// Initialize GC integration for write barriers
     pub fn initGCIntegration(self: *AdvancedCodeGen, allocator: Allocator) !void {
+        _ = allocator;
         if (self.gc_integration == null) {
             const gc_integration_ptr = try allocator.create(GCIntegration);
             gc_integration_ptr.* = try GCIntegration.init(allocator, self.base_codegen.context, self.base_codegen.module, self.base_codegen.builder);
@@ -202,36 +204,36 @@ pub const AdvancedCodeGen = struct {
         }
         
         // 2. Clean up Zig data structures
-        self.base_codegen.deinit();
-        self.defer_stack.deinit();
+        self.base_codegen.deinit(self.allocator);
+        self.defer_stack.deinit(self.allocator);
         
         // Clean up scope defer stacks
         var scope_iter = self.scope_defer_stacks.iterator();
         while (scope_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.scope_defer_stacks.deinit();
+        self.scope_defer_stacks.deinit(self.allocator);
         
-        self.struct_types.deinit();
-        self.interface_types.deinit();
-        self.generic_instances.deinit();
-        self.vtables.deinit();
+        self.struct_types.deinit(self.allocator);
+        self.interface_types.deinit(self.allocator);
+        self.generic_instances.deinit(self.allocator);
+        self.vtables.deinit(self.allocator);
         
         // Clean up monomorphizer
-        self.monomorphizer.deinit();
+        self.monomorphizer.deinit(self.allocator);
         self.base_codegen.allocator.destroy(self.monomorphizer);
         
-        self.gc_type_registry.deinit();
-        self.typed_allocator.deinit();
-        self.interface_registry.deinit();
-        self.interface_dispatcher.deinit();
+        self.gc_type_registry.deinit(self.allocator);
+        self.typed_allocator.deinit(self.allocator);
+        self.interface_registry.deinit(self.allocator);
+        self.interface_dispatcher.deinit(self.allocator);
         if (self.optimization_engine) |*engine| {
             engine.deinit();
         }
         if (self.debug_generator) |*debug_gen| {
             debug_gen.deinit();
         }
-        self.source_locations.deinit();
+        self.source_locations.deinit(self.allocator);
         
         std.debug.print("✅ AdvancedCodeGen cleanup complete - all LLVM resources disposed\n", .{});
     }
@@ -387,7 +389,7 @@ pub const AdvancedCodeGen = struct {
             .scope_id = scope_id,
         };
         
-        try self.defer_stack.append(defer_info);
+        try self.defer_stack.append(allocator, defer_info);
         
         std.debug.print("✅ Advanced defer statement compiled: {s} (error-safe, LIFO)\n", .{cleanup_func_name});
     }
@@ -616,7 +618,7 @@ pub const AdvancedCodeGen = struct {
         self.current_scope_id += 1;
         
         // Bounds-checked append with error handling
-        try self.scope_stack.append(self.current_scope_id);
+        try self.scope_stack.append(self.allocator, self.current_scope_id);
         
         // Verify the append was successful
         if (self.scope_stack.items.len == 0 or self.scope_stack.items[self.scope_stack.items.len - 1] != self.current_scope_id) {
@@ -967,14 +969,14 @@ pub const AdvancedCodeGen = struct {
         }
         const switch_inst = c.LLVMBuildSwitch(builder, ready_case_index, no_case_ready_block, @as(u32, @truncate(select_stmt.cases.items.len)));
         
-        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef){};
         defer case_blocks.deinit();
         
         // Generate blocks for each case
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(context, current_function, 
                 try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
 
             // Add case to switch
             const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
@@ -1381,8 +1383,8 @@ pub const AdvancedCodeGen = struct {
         const result_phi = c.LLVMBuildPhi(self.base_codegen.builder, result_type, "match_result");
         
         // Generate pattern matching cases
-        var phi_values = .empty;
-        var phi_blocks = .empty;
+        var phi_values = std.ArrayList(u8){};
+        var phi_blocks = std.ArrayList(u8){};
         defer phi_values.deinit();
         defer phi_blocks.deinit();
         
@@ -1397,8 +1399,8 @@ pub const AdvancedCodeGen = struct {
             // Generate case body
             c.LLVMPositionBuilderAtEnd(self.base_codegen.builder, case_block);
             const case_result = try self.generateExpression(case.result);
-            try phi_values.append(case_result);
-            try phi_blocks.append(c.LLVMGetInsertBlock(self.base_codegen.builder));
+            try phi_values.append(allocator, case_result);
+            try phi_blocks.append(self.allocator, c.LLVMGetInsertBlock(self.base_codegen.builder));
             
             if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.base_codegen.builder)) == null) {
                 _ = c.LLVMBuildBr(self.base_codegen.builder, merge_block);
@@ -1519,8 +1521,7 @@ pub const AdvancedCodeGen = struct {
                 _ = c.LLVMBuildBr(self.base_codegen.builder, success_block);
                 return value;
             },
-            .Tuple => |tuple_patterns| {
-                return try self.generateTuplePatternCheck(value, tuple_patterns.items, success_block, fail_block);
+             tuple_patterns.items, success_block, fail_block);
             },
             .Struct => |struct_pattern| {
                 return try self.generateStructPatternCheck(value, struct_pattern, success_block, fail_block);
@@ -1810,8 +1811,6 @@ pub const AdvancedCodeGen = struct {
             .Match => |match| {
                 return try self.generateAdvancedMatch(match);
             },
-            .Tuple => |tuple| {
-                return try self.generateAdvancedTuple(tuple);
             },
             .TupleAccess => |tuple_access| {
                 const complete_ir = @import("complete_ir_nodes.zig");
@@ -2065,16 +2064,16 @@ pub const AdvancedCodeGen = struct {
 
     /// Collect struct definition information
     fn collectStructDefinition(self: *AdvancedCodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
-        var field_types = .empty;
+        var field_types = std.ArrayList(u8){};
         defer field_types.deinit();
         
-        var field_names = .empty;
+        var field_names = std.ArrayList(u8){};
         defer field_names.deinit();
         
         for (struct_stmt.fields.items) |field| {
             const field_type = try self.base_codegen.getLLVMType(field.field_type);
-            try field_types.append(field_type);
-            try field_names.append(field.name);
+            try field_types.append(allocator, field_type);
+            try field_names.append(allocator, field.name);
         }
         
         const struct_info = StructTypeInfo{
@@ -2092,7 +2091,7 @@ pub const AdvancedCodeGen = struct {
 
     /// Collect interface definition information
     fn collectInterfaceDefinition(self: *AdvancedCodeGen, interface_stmt: ast.InterfaceStatement) CodeGenError!void {
-        var methods = .empty;
+        var methods = std.ArrayList(u8){};
         
         for (interface_stmt.methods.items, 0..) |method, index| {
             const method_info = InterfaceMethodInfo{
@@ -2100,7 +2099,7 @@ pub const AdvancedCodeGen = struct {
                 .index = index,
                 .signature = method, // Store full signature
             };
-            try methods.append(method_info);
+            try methods.append(allocator, method_info);
         }
         
         const interface_info = InterfaceTypeInfo{
@@ -2132,7 +2131,7 @@ pub const AdvancedCodeGen = struct {
         };
         
         // Create method map for this implementation
-        var method_implementations = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.base_codegen.allocator);
+        var method_implementations = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         
         for (impl_stmt.methods.items) |method| {
             const impl_method_name = try std.fmt.allocPrint(
@@ -2196,7 +2195,7 @@ pub const AdvancedCodeGen = struct {
             }
             
             // Register interface with dispatcher
-            var method_signatures = .empty;
+            var method_signatures = std.ArrayList(u8){};
             defer method_signatures.deinit();
             
             for (interface_info.methods.items) |method| {
@@ -2205,7 +2204,7 @@ pub const AdvancedCodeGen = struct {
                     .parameter_types = &[_][]const u8{}, // TODO: Add proper type conversion
                     .return_type = "void", // TODO: Add proper return type
                 };
-                try method_signatures.append(signature);
+                try method_signatures.append(allocator, signature);
             }
             
             try self.interface_dispatcher.registerInterface(interface_info.name, method_signatures.items);
@@ -2225,7 +2224,7 @@ pub const AdvancedCodeGen = struct {
     
     /// Register struct implementation with interface dispatcher
     fn registerStructImplementation(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) CodeGenError!void {
-        var method_impls = .empty;
+        var method_impls = std.ArrayList(u8){};
         defer method_impls.deinit();
         
         for (interface_info.methods.items) |interface_method| {
@@ -2268,7 +2267,7 @@ pub const AdvancedCodeGen = struct {
 
     /// Generate vtable for struct implementing interface
     fn generateVTableForImplementation(self: *AdvancedCodeGen, struct_info: *StructTypeInfo, interface_info: *InterfaceTypeInfo) CodeGenError!void {
-        var vtable_name = .empty;
+        var vtable_name = std.ArrayList(u8){};
         defer vtable_name.deinit();
         
         try vtable_name.appendSlice(struct_info.name);
@@ -2294,7 +2293,7 @@ pub const AdvancedCodeGen = struct {
         c.LLVMSetLinkage(vtable_global, c.LLVMInternalLinkage);
         
         // Initialize vtable with method pointers
-        var method_pointers = .empty;
+        var method_pointers = std.ArrayList(u8){};
         defer method_pointers.deinit();
         
         for (interface_info.methods.items) |interface_method| {
@@ -2304,7 +2303,7 @@ pub const AdvancedCodeGen = struct {
                 return CodeGenError.UndefinedSymbol;
             };
             
-            try method_pointers.append(method_func);
+            try method_pointers.append(allocator, method_func);
         }
         
         // Create constant array initializer
@@ -2363,14 +2362,14 @@ pub const AdvancedCodeGen = struct {
         // Find base generic type
         if (self.struct_types.get(base_name)) |base_struct| {
             // Create specialized struct type
-            var specialized_field_types = .empty;
+            var specialized_field_types = std.ArrayList(u8){};
             defer specialized_field_types.deinit();
             
             // Substitute type parameters with concrete types
             for (base_struct.field_types) |field_type| {
                 // For now, use the field type as-is
                 // In a full implementation, we would do type parameter substitution
-                try specialized_field_types.append(field_type);
+                try specialized_field_types.append(allocator, field_type);
             }
             
             // Create the specialized LLVM struct type
@@ -2668,12 +2667,12 @@ pub const AdvancedCodeGen = struct {
         );
         
         // Prepare arguments (data pointer + original args)
-        var call_args = .empty;
+        var call_args = std.ArrayList(u8){};
         defer call_args.deinit();
         
-        try call_args.append(data_ptr); // self pointer
+        try call_args.append(allocator, data_ptr); // self pointer
         for (args) |arg| {
-            try call_args.append(arg);
+            try call_args.append(allocator, arg);
         }
         
         // Call the method through function pointer
@@ -2703,7 +2702,7 @@ pub const AdvancedCodeGen = struct {
                 self.base_codegen.context,
                 self.base_codegen.module
             ) catch |err| {
-                std.debug.print("Failed to initialize optimization engine: {}\n", .{err});
+                std.debug.print("Failed to initialize optimization engine: {s}\n", .{err});
                 return; // Fall back to basic optimization
             };
             
@@ -2724,13 +2723,13 @@ pub const AdvancedCodeGen = struct {
         if (self.optimization_engine) |*engine| {
             // Configure optimization passes
             engine.configurePasses() catch |err| {
-                std.debug.print("Failed to configure optimization passes: {}\n", .{err});
+                std.debug.print("Failed to configure optimization passes: {s}\n", .{err});
                 return; // Fall back to basic optimization
             };
             
             // Run advanced optimizations
             const result = engine.runOptimizations() catch |err| {
-                std.debug.print("Failed to run optimizations: {}\n", .{err});
+                std.debug.print("Failed to run optimizations: {s}\n", .{err});
                 return; // Fall back to basic optimization
             };
             
@@ -2739,12 +2738,12 @@ pub const AdvancedCodeGen = struct {
             
             // Print optimization statistics
             std.debug.print("✅ Advanced optimizations applied:\n", .{});
-            std.debug.print("   - Functions optimized: {}\n", .{result.functions_optimized});
-            std.debug.print("   - Instructions eliminated: {}\n", .{result.instructions_eliminated});
-            std.debug.print("   - Constants folded: {}\n", .{result.constants_folded});
-            std.debug.print("   - Functions inlined: {}\n", .{result.functions_inlined});
-            std.debug.print("   - Loops optimized: {}\n", .{result.loops_optimized});
-            std.debug.print("   - Memory allocations optimized: {}\n", .{result.memory_allocations_optimized});
+            std.debug.print("   - Functions optimized: {s}\n", .{result.functions_optimized});
+            std.debug.print("   - Instructions eliminated: {s}\n", .{result.instructions_eliminated});
+            std.debug.print("   - Constants folded: {s}\n", .{result.constants_folded});
+            std.debug.print("   - Functions inlined: {s}\n", .{result.functions_inlined});
+            std.debug.print("   - Loops optimized: {s}\n", .{result.loops_optimized});
+            std.debug.print("   - Memory allocations optimized: {s}\n", .{result.memory_allocations_optimized});
             std.debug.print("   - Estimated performance improvement: {d:.2}x\n", .{result.estimated_performance_improvement});
         }
     }
@@ -2777,7 +2776,7 @@ pub const AdvancedCodeGen = struct {
 
     /// Generate optimization report
     fn generateOptimizationReport(self: *AdvancedCodeGen, base_path: []const u8) CodeGenError!void {
-        var report_path = .empty;
+        var report_path = std.ArrayList(u8){};
         defer report_path.deinit();
         
         try report_path.appendSlice(base_path);
@@ -2785,7 +2784,7 @@ pub const AdvancedCodeGen = struct {
         
         // Generate detailed optimization report
         const report_file = std.fs.cwd().createFile(report_path.items, .{}) catch |err| {
-            std.debug.print("Warning: Could not create optimization report file: {}\n", .{err});
+            std.debug.print("Warning: Could not create optimization report file: {s}\n", .{err});
             return;
         };
         defer report_file.close();
@@ -2871,12 +2870,12 @@ pub const AdvancedCodeGen = struct {
         const builder = self.base_codegen.builder;
         
         // Create function type
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (func_stmt.parameters.items) |param| {
             const param_type = self.base_codegen.convertType(param.param_type) catch c.LLVMInt64TypeInContext(context);
-            try param_types.append(param_type);
+            try param_types.append(allocator, param_type);
         }
         
         const return_type = if (func_stmt.return_type) |ret_type|
@@ -2899,12 +2898,12 @@ pub const AdvancedCodeGen = struct {
             var debug_gen = &self.debug_generator.?;
             
             // Create debug types for parameters
-            var debug_param_types = .empty;
+            var debug_param_types = std.ArrayList(u8){};
             defer debug_param_types.deinit();
             
             for (func_stmt.parameters.items) |_| {
                 const debug_type = try self.getCursedDebugType("drip"); // Default to drip for now
-                try debug_param_types.append(debug_type);
+                try debug_param_types.append(allocator, debug_type);
             }
             
             // Create debug type for return value
@@ -2995,7 +2994,7 @@ pub const AdvancedCodeGen = struct {
         var debug_gen = &self.debug_generator.?;
         
         // Create debug field information
-        var fields = .empty;
+        var fields = std.ArrayList(u8){};
         defer fields.deinit();
         
         for (field_names, field_types) |field_name, field_type| {
@@ -3023,7 +3022,7 @@ pub const AdvancedCodeGen = struct {
         var debug_gen = &self.debug_generator.?;
         
         // For interfaces, create a structure with function pointers
-        var fields = .empty;
+        var fields = std.ArrayList(u8){};
         defer fields.deinit();
         
         // Add vtable pointer field
@@ -3211,13 +3210,13 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Generate elements with type inference
-        var element_values = .empty;
+        var element_values = std.ArrayList(u8){};
         defer element_values.deinit();
         
         var common_type: ?c.LLVMTypeRef = null;
         for (array.elements.items) |element| {
             const value = try self.generateExpression(element);
-            try element_values.append(value);
+            try element_values.append(allocator, value);
             
             if (common_type == null) {
                 common_type = c.LLVMTypeOf(value);
@@ -3557,7 +3556,7 @@ pub const AdvancedCodeGen = struct {
     /// Advanced lambda compilation with proper closure support
     fn generateAdvancedLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
         // First, analyze the lambda to detect captured variables
-        var captured_vars = .empty;
+        var captured_vars = std.ArrayList(u8){};
         defer captured_vars.deinit();
         
         // Analyze lambda body for variable captures
@@ -3587,12 +3586,12 @@ pub const AdvancedCodeGen = struct {
         const return_type = c.LLVMInt32TypeInContext(self.base_codegen.context); // Default to int
         
         // Simple case: treat parameters as string names for now
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (lambda.parameters.items) |_| {
             // Default all parameters to int for now
-            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+            try param_types.append(self.allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
         }
         
         const func_type = c.LLVMFunctionType(
@@ -3639,11 +3638,11 @@ pub const AdvancedCodeGen = struct {
     /// Generate closure lambda with captured variables
     fn generateClosureLambda(self: *AdvancedCodeGen, lambda: ast.LambdaExpression, captured_vars: [][]const u8) CodeGenError!c.LLVMValueRef {
         // Create closure struct type: { function_ptr, capture_count, captured_vars... }
-        var closure_field_types = .empty;
+        var closure_field_types = std.ArrayList(u8){};
         defer closure_field_types.deinit();
         
         // Function pointer type
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         // First parameter is closure environment pointer
@@ -3651,16 +3650,16 @@ pub const AdvancedCodeGen = struct {
         
         // Add lambda parameters (default to int for now)
         for (lambda.parameters.items) |_| {
-            try param_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+            try param_types.append(self.allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
         }
         
         const return_type = c.LLVMInt32TypeInContext(self.base_codegen.context);
         
         const func_ptr_type = c.LLVMPointerTypeInContext(self.base_codegen.context, 0);
-        try closure_field_types.append(func_ptr_type);
+        try closure_field_types.append(allocator, func_ptr_type);
         
         // Capture count
-        try closure_field_types.append(c.LLVMInt32TypeInContext(self.base_codegen.context));
+        try closure_field_types.append(self.allocator, c.LLVMInt32TypeInContext(self.base_codegen.context));
         
         // Captured variable slots
         for (captured_vars) |_| {
@@ -3788,7 +3787,7 @@ pub const AdvancedCodeGen = struct {
                             return; // Already captured
                         }
                     }
-                    try captured_vars.append(var_expr.name);
+                    try captured_vars.append(allocator, var_expr.name);
                 }
             },
             .FunctionCall => |call| {
@@ -4272,24 +4271,24 @@ pub const AdvancedCodeGen = struct {
         );
         
         // Generate method call arguments
-        var llvm_args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var llvm_args = std.ArrayList(c.LLVMValueRef){};
         defer llvm_args.deinit();
         
         // First argument is 'self' (the instance)
-        try llvm_args.append(instance);
+        try llvm_args.append(allocator, instance);
         
         // Add other arguments
         for (args) |arg| {
             const arg_value = try self.base_codegen.generateExpression(arg);
-            try llvm_args.append(arg_value);
+            try llvm_args.append(allocator, arg_value);
         }
         
         // Create function type for the method call
-        var param_types = std.ArrayList(c.LLVMTypeRef).init(self.allocator);
+        var param_types = std.ArrayList(c.LLVMTypeRef){};
         defer param_types.deinit();
         
         for (llvm_args.items) |arg| {
-            try param_types.append(c.LLVMTypeOf(arg));
+            try param_types.append(allocator, c.LLVMTypeOf(arg));
         }
         
         const return_type = c.LLVMInt64TypeInContext(context); // Default return type
@@ -4454,13 +4453,13 @@ pub const AdvancedCodeGen = struct {
         _ = self.base_codegen.module;
         
         // Extract type arguments from call if available
-        var type_args = std.ArrayList(Type).init(self.allocator);
+        var type_args = std.ArrayList(Type){};
         defer type_args.deinit();
         
         // For now, infer types from arguments since CURSED uses type inference
         for (call.arguments) |arg| {
             const arg_type = try self.inferExpressionType(arg);
-            try type_args.append(arg_type);
+            try type_args.append(allocator, arg_type);
         }
         
         // Create mangled name for the instantiated function
@@ -4546,15 +4545,15 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Fallback: treat as regular function call with object as first parameter
-        var args = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var args = std.ArrayList(c.LLVMValueRef){};
         defer args.deinit();
         
-        try args.append(object_value);
+        try args.append(allocator, object_value);
         
         // Add method call arguments
         for (method_call.arguments.items) |arg| {
             const arg_value = try self.generateExpression(arg);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         // Try to find method as a function with object type as first parameter
@@ -4891,12 +4890,12 @@ pub const AdvancedCodeGen = struct {
         const builder = self.base_codegen.builder;
         
         // Generate arguments with proper expression evaluation
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         
         for (call.arguments.items) |arg_expr| {
             const arg_value = try self.generateExpression(arg_expr);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         // Generate function call
@@ -4918,12 +4917,12 @@ pub const AdvancedCodeGen = struct {
         const builder = self.base_codegen.builder;
         
         // Generate arguments
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         
         for (call.arguments.items) |arg_expr| {
             const arg_value = try self.generateExpression(arg_expr);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         // Generate runtime function call
@@ -4973,10 +4972,10 @@ pub const AdvancedCodeGen = struct {
         }
         
         // Handle multiple arguments
-        var format_parts = .empty;
+        var format_parts = std.ArrayList(u8){};
         defer format_parts.deinit();
         
-        var printf_args = .empty;
+        var printf_args = std.ArrayList(u8){};
         defer printf_args.deinit();
         
         for (call.arguments.items, 0..) |arg_expr, i| {
@@ -4996,20 +4995,20 @@ pub const AdvancedCodeGen = struct {
                     const true_str = c.LLVMBuildGlobalStringPtr(builder, "based", "true_str");
                     const false_str = c.LLVMBuildGlobalStringPtr(builder, "cringe", "false_str");
                     const bool_str = c.LLVMBuildSelect(builder, arg_value, true_str, false_str, "bool_str");
-                    try printf_args.append(bool_str);
+                    try printf_args.append(allocator, bool_str);
                 } else {
                     try format_parts.appendSlice("%lld");
-                    try printf_args.append(arg_value);
+                    try printf_args.append(allocator, arg_value);
                 }
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
                 try format_parts.appendSlice("%.2f");
-                try printf_args.append(arg_value);
+                try printf_args.append(allocator, arg_value);
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
                 try format_parts.appendSlice("%s");
-                try printf_args.append(arg_value);
+                try printf_args.append(allocator, arg_value);
             } else {
                 try format_parts.appendSlice("%p");
-                try printf_args.append(arg_value);
+                try printf_args.append(allocator, arg_value);
             }
         }
         
@@ -5021,9 +5020,9 @@ pub const AdvancedCodeGen = struct {
         const format = c.LLVMBuildGlobalStringPtr(builder, format_str.ptr, "printf_fmt");
         
         // Build final printf arguments
-        var final_args = .empty;
+        var final_args = std.ArrayList(u8){};
         defer final_args.deinit();
-        try final_args.append(format);
+        try final_args.append(allocator, format);
         try final_args.appendSlice(printf_args.items);
         
         return c.LLVMBuildCall2(
@@ -5227,7 +5226,7 @@ pub const AdvancedCodeGen = struct {
     
     /// Create mangled name for generic function instantiation
     fn createMangledGenericName(self: *AdvancedCodeGen, base_name: []const u8, type_args: []Type) CodeGenError![]u8 {
-        var mangled = std.ArrayList(u8).init(self.allocator);
+        var mangled = std.ArrayList(u8){};
         defer mangled.deinit();
         
         try mangled.appendSlice(base_name);
@@ -5308,7 +5307,7 @@ pub const AdvancedCodeGen = struct {
         );
 
         // Create operation descriptors for each case
-        var operation_values = std.ArrayList(c.LLVMValueRef).init(self.allocator);
+        var operation_values = std.ArrayList(c.LLVMValueRef){};
         defer operation_values.deinit();
         
         for (select_stmt.cases.items, 0..) |case_item, i| {
@@ -5371,7 +5370,7 @@ pub const AdvancedCodeGen = struct {
         );
 
         // Create basic blocks for each case
-        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef).init(self.allocator);
+        var case_blocks = std.ArrayList(c.LLVMBasicBlockRef){};
         defer case_blocks.deinit();
         
         const merge_block = c.LLVMAppendBasicBlockInContext(context, current_func, "select_merge");
@@ -5384,7 +5383,7 @@ pub const AdvancedCodeGen = struct {
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(context, current_func, 
                 try std.fmt.allocPrint(self.base_codegen.allocator, "select_case_{d}", .{i}).ptr);
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
 
             // Add case to switch
             const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(context), @as(u32, @intCast(i)), 0);
@@ -5763,12 +5762,7 @@ pub const AdvancedCodeGen = struct {
                     else => return false,
                 }
             },
-            .Tuple => |tuple1| {
-                switch (type2) {
-                    .Tuple => |tuple2| {
-                        if (tuple1.elements.items.len != tuple2.elements.items.len) return false;
-                        
-                        for (tuple1.elements.items, tuple2.elements.items) |elem1, elem2| {
+             tuple2.elements.items) |elem1, elem2| {
                             if (!try self.typesAreEqual(elem1, elem2)) return false;
                         }
                         

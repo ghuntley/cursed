@@ -23,7 +23,7 @@ pub const IntegratedSafeLoader = struct {
     }
     
     pub fn deinit(self: *IntegratedSafeLoader) void {
-        self.safe_loader.deinit();
+        self.safe_loader.deinit(self.allocator);
     }
     
     /// Load a module safely with cycle detection

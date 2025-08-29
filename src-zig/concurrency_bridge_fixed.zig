@@ -31,6 +31,7 @@ pub const ConcurrencyBridge = struct {
     spurious_wakeups: Atomic(u64),
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         const channel_sync_bridge = try allocator.create(sync.ChannelSyncBridge);
         channel_sync_bridge.* = try sync.ChannelSyncBridge.init(allocator);
         
@@ -55,14 +56,14 @@ pub const ConcurrencyBridge = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.active_selects.deinit();
+        self.active_selects.deinit(self.allocator);
         self.global_mutex.unlock() catch {};
         
         // Clean up bridge
-        self.channel_sync_bridge.deinit();
+        self.channel_sync_bridge.deinit(self.allocator);
         self.allocator.destroy(self.channel_sync_bridge);
         
-        self.global_mutex.deinit();
+        self.global_mutex.deinit(self.allocator);
     }
     
     /// Enhanced select operation that uses proper condition variable synchronization
@@ -112,9 +113,9 @@ pub const ConcurrencyBridge = struct {
         }
         
         pub fn deinit(self: *SelectSelf) void {
-            self.operations.deinit();
-            self.result_mutex.deinit();
-            self.result_condition.deinit();
+            self.operations.deinit(self.allocator);
+            self.result_mutex.deinit(self.allocator);
+            self.result_condition.deinit(self.allocator);
         }
         
         /// Add a send operation to the select
@@ -126,7 +127,7 @@ pub const ConcurrencyBridge = struct {
                 .value_ptr = value_ptr,
                 .value_size = value_size,
             };
-            try self.operations.append(op);
+            try self.operations.append(allocator, op);
         }
         
         /// Add a receive operation to the select
@@ -138,7 +139,7 @@ pub const ConcurrencyBridge = struct {
                 .value_ptr = buffer_ptr,
                 .value_size = buffer_size,
             };
-            try self.operations.append(op);
+            try self.operations.append(allocator, op);
         }
         
         /// Add a default case to the select
@@ -190,7 +191,7 @@ pub const ConcurrencyBridge = struct {
         /// Try all operations immediately without blocking
         fn tryImmediateOperations(self: *SelectSelf) !?SelectResult {
             // Convert operations to bridge format
-            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.allocator);
+            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }){};
             defer bridge_ops.deinit();
             
             for (self.operations.items) |op| {
@@ -201,7 +202,7 @@ pub const ConcurrencyBridge = struct {
                         .receive => .receive,
                     },
                 };
-                try bridge_ops.append(bridge_op);
+                try bridge_ops.append(allocator, bridge_op);
             }
             
             // Try immediate readiness check (non-blocking)
@@ -242,7 +243,7 @@ pub const ConcurrencyBridge = struct {
             const start_time = std.time.nanoTimestamp();
             
             // Convert operations to bridge format
-            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }).init(self.allocator);
+            var bridge_ops = std.ArrayList(struct { channel_id: u64, operation: enum { send, receive } }){};
             defer bridge_ops.deinit();
             
             for (self.operations.items) |op| {
@@ -253,7 +254,7 @@ pub const ConcurrencyBridge = struct {
                         .receive => .receive,
                     },
                 };
-                try bridge_ops.append(bridge_op);
+                try bridge_ops.append(allocator, bridge_op);
             }
             
             while (true) {
@@ -386,6 +387,7 @@ var bridge_mutex = std.Thread.Mutex{};
 
 /// Initialize the concurrency bridge
 pub fn initBridge(allocator: Allocator) !void {
+        _ = allocator;
     bridge_mutex.lock();
     defer bridge_mutex.unlock();
     
@@ -398,6 +400,7 @@ pub fn initBridge(allocator: Allocator) !void {
 
 /// Shutdown the concurrency bridge
 pub fn shutdownBridge(allocator: Allocator) void {
+        _ = allocator;
     bridge_mutex.lock();
     defer bridge_mutex.unlock();
     

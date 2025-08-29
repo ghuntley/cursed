@@ -46,7 +46,7 @@ pub fn main() !void {
 
     // Read the file
     const source = std.fs.cwd().readFileAlloc(allocator, file, std.math.maxInt(usize)) catch |err| {
-        std.debug.print("Error reading file {s}: {}\n", .{ file, err });
+        std.debug.print("Error reading file {s}: {s}\n", .{ file, err });
         return;
     };
     defer allocator.free(source);
@@ -54,20 +54,20 @@ pub fn main() !void {
     // Tokenize
     var lex = lexer.Lexer.init(allocator, source);
     var tokens = lex.tokenize() catch |err| {
-        std.debug.print("Tokenization error: {}\n", .{err});
+        std.debug.print("Tokenization error: {s}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
 
     // Parse
     var p = parser.Parser.init(allocator, tokens.items);
     const program = p.parseProgram() catch |err| {
-        std.debug.print("Parse error: {}\n", .{err});
+        std.debug.print("Parse error: {s}\n", .{err});
         return;
     };
     defer {
         var mutable_program = program;
-        mutable_program.deinit(allocator);
+        mutable_program.deinit();
     }
 
     if (compile_mode) {
@@ -75,13 +75,13 @@ pub fn main() !void {
         std.debug.print("Compiling {s} with LLVM backend...\n", .{file});
         
         var codegen = llvm_real.RealLLVMCodeGen.init(allocator) catch |err| {
-            std.debug.print("Failed to initialize LLVM: {}\n", .{err});
+            std.debug.print("Failed to initialize LLVM: {s}\n", .{err});
             return;
         };
         defer codegen.deinit();
         
         codegen.generateProgram(program) catch |err| {
-            std.debug.print("Code generation error: {}\n", .{err});
+            std.debug.print("Code generation error: {s}\n", .{err});
             return;
         };
         
@@ -93,7 +93,7 @@ pub fn main() !void {
         defer allocator.free(output_file);
         
         codegen.writeToFile(output_file) catch |err| {
-            std.debug.print("Failed to write output file: {}\n", .{err});
+            std.debug.print("Failed to write output file: {s}\n", .{err});
             return;
         };
         
@@ -106,7 +106,7 @@ pub fn main() !void {
         defer interp.deinit();
         
         interp.interpret(program) catch |err| {
-            std.debug.print("Interpreter error: {}\n", .{err});
+            std.debug.print("Interpreter error: {s}\n", .{err});
             return;
         };
     }

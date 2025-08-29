@@ -109,13 +109,15 @@ pub const GoroutineRegistry = struct {
         }
         
         pub fn deinit(self: *GoroutineInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.destroy(self);
         }
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         return Self{
-            .goroutines = HashMap(GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .goroutines = HashMap(GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.Mutex{},
             .next_id = Atomic(u64).init(1),
             .allocator = allocator,
@@ -130,7 +132,7 @@ pub const GoroutineRegistry = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.allocator);
         }
-        self.goroutines.deinit();
+        self.goroutines.deinit(self.allocator);
     }
     
     pub fn registerGoroutine(self: *Self, func: ?*const fn() void) !GoroutineId {
@@ -231,13 +233,14 @@ pub const RuntimeBridge = struct {
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         return Self{
             .allocator = allocator,
             .current_mode = .interpreter,
             .mixed_mode_enabled = true,
             .initialized = true,
             .goroutine_registry = try GoroutineRegistry.init(allocator),
-            .channels = HashMap(ChannelId, *SimpleChannel, ChannelContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .channels = HashMap(ChannelId, *SimpleChannel, ChannelContext, std.hash_map.default_max_load_percentage){},
             .next_channel_id = Atomic(u64).init(1),
             .channel_mutex = std.Thread.Mutex{},
         };
@@ -255,9 +258,9 @@ pub const RuntimeBridge = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.channels.deinit();
+        self.channels.deinit(self.allocator);
         
-        self.goroutine_registry.deinit();
+        self.goroutine_registry.deinit(self.allocator);
         self.initialized = false;
     }
     

@@ -34,6 +34,7 @@ pub const InterpreterValue = union(enum) {
     null_value: void,
 
     pub fn deinit(self: *InterpreterValue, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .string => |s| allocator.free(s),
             .array => |*arr| {
@@ -48,6 +49,7 @@ pub const InterpreterValue = union(enum) {
     }
 
     pub fn toString(self: InterpreterValue, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         return switch (self) {
             .integer => |i| try std.fmt.allocPrint(allocator, "{}", .{i}),
             .string => |s| try allocator.dupe(u8, s),
@@ -69,7 +71,7 @@ pub const Environment = struct {
 
     pub fn init(allocator: Allocator, parent: ?*Environment) Environment {
         return Environment{
-            .values = std.HashMap([]const u8, InterpreterValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .values = std.HashMap([]const u8, InterpreterValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .parent = parent,
             .allocator = allocator,
         };
@@ -81,7 +83,7 @@ pub const Environment = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.values.deinit();
+        self.values.deinit(self.allocator);
     }
 
     pub fn define(self: *Environment, name: []const u8, value: InterpreterValue) !void {
@@ -119,6 +121,7 @@ pub const ConcurrencyInterpreter = struct {
     runtime_initialized: bool,
 
     pub fn init(allocator: Allocator) !ConcurrencyInterpreter {
+        _ = allocator;
         // Initialize concurrency runtime
         try concurrency_runtime.initializeRuntime(allocator);
 
@@ -133,7 +136,7 @@ pub const ConcurrencyInterpreter = struct {
     }
 
     pub fn deinit(self: *ConcurrencyInterpreter) void {
-        self.environment.deinit();
+        self.environment.deinit(self.allocator);
         self.allocator.destroy(self.environment);
         
         if (self.runtime_initialized) {
@@ -205,12 +208,12 @@ pub const ConcurrencyInterpreter = struct {
 
         if (function == .function) {
             // Execute user-defined function
-            var args = .empty;
+            var args = std.ArrayList(u8){};
             defer args.deinit();
 
             for (call_expr.arguments.items) |arg| {
                 const arg_value = try self.evalExpression(arg);
-                try args.append(arg_value);
+                try args.append(allocator, arg_value);
             }
 
             return try self.executeFunction(function.function, args.items);
@@ -291,7 +294,7 @@ pub const ConcurrencyInterpreter = struct {
 
     /// Evaluate select expression (ready keyword)
     fn evalSelectExpression(self: *ConcurrencyInterpreter, select_expr: *ast.SelectExpression) !InterpreterValue {
-        var operations = .empty;
+        var operations = std.ArrayList(u8){};
         defer operations.deinit();
 
         for (select_expr.cases.items) |case_item| {

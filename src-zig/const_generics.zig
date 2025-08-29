@@ -47,8 +47,8 @@ pub const ConstGenericValue = union(ConstGenericKind) {
         _ = fmt;
         _ = options;
         switch (self) {
-            .Integer => |val| try writer.print("{}", .{val}),
-            .Boolean => |val| try writer.print("{}", .{val}),
+            .Integer => |val| try writer.print("{s}", .{val}),
+            .Boolean => |val| try writer.print("{s}", .{val}),
             .String => |val| try writer.print("\"{}\"", .{val}),
             .Float => |val| try writer.print("{d}", .{val}),
             .Array => |arr| {
@@ -202,7 +202,7 @@ pub const ConstGenericParam = struct {
     }
     
     pub fn deinit(self: *ConstGenericParam) void {
-        self.bounds.deinit();
+        self.bounds.deinit(self.allocator);
     }
     
     pub fn validate(self: ConstGenericParam, value: ConstGenericValue) ConstGenericError!void {
@@ -245,8 +245,8 @@ pub const ConstGenericInstantiation = struct {
     pub fn init() ConstGenericInstantiation {
         return ConstGenericInstantiation{
             .allocator = allocator,
-            .parameters = HashMap([]const u8, ConstGenericParam, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .values = HashMap([]const u8, ConstGenericValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .parameters = HashMap([]const u8, ConstGenericParam, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .values = HashMap([]const u8, ConstGenericValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -256,8 +256,8 @@ pub const ConstGenericInstantiation = struct {
             var param = entry.value_ptr;
             param.deinit();
         }
-        self.parameters.deinit();
-        self.values.deinit();
+        self.parameters.deinit(self.allocator);
+        self.values.deinit(self.allocator);
     }
     
     /// Add a const generic parameter with bounds
@@ -647,12 +647,12 @@ pub const ConstGenericLLVMIntegration = struct {
                 return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
             },
             .Array => |arr_val| {
-                var llvm_elements = .empty;
+                var llvm_elements = std.ArrayList(u8){};
                 defer llvm_elements.deinit();
                 
                 for (arr_val.elements) |elem| {
                     const llvm_elem = try self.generateLLVMConstant(elem);
-                    try llvm_elements.append(llvm_elem);
+                    try llvm_elements.append(allocator, llvm_elem);
                 }
                 
                 const element_type = try self.constGenericKindToLLVMType(arr_val.element_type);
@@ -737,7 +737,7 @@ pub const ConstGenericsManager = struct {
     }
     
     pub fn deinit(self: *ConstGenericsManager) void {
-        self.instantiation.deinit();
+        self.instantiation.deinit(self.allocator);
     }
     
     /// Process const generic declaration with bounds checking

@@ -65,8 +65,9 @@ pub const IntegratedGenericCompiler = struct {
         }
         
         pub fn deinit(self: *CompiledInstance, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.mangled_name);
-            self.runtime_type.deinit();
+            self.runtime_type.deinit(self.allocator);
         }
     };
     
@@ -123,7 +124,7 @@ pub const IntegratedGenericCompiler = struct {
             .runtime_engine = runtime_engine,
             .llvm_context = llvm_context,
             .llvm_module = llvm_module,
-            .compiled_instances = HashMap([]const u8, CompiledInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .compiled_instances = HashMap([]const u8, CompiledInstance, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .optimization_level = .Speed,
             .compile_stats = CompilationStats.init(),
         };
@@ -134,12 +135,12 @@ pub const IntegratedGenericCompiler = struct {
         while (instance_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.compiled_instances.deinit();
+        self.compiled_instances.deinit(self.allocator);
         
-        self.runtime_engine.deinit();
+        self.runtime_engine.deinit(self.allocator);
         self.allocator.destroy(self.runtime_engine);
         
-        self.monomorphizer.deinit();
+        self.monomorphizer.deinit(self.allocator);
         self.allocator.destroy(self.monomorphizer);
     }
     
@@ -166,12 +167,12 @@ pub const IntegratedGenericCompiler = struct {
         const instantiated_type = try self.runtime_type_env.instantiateGeneric(generic_name, type_args);
         
         // Convert runtime types to AST types for monomorphizer
-        var ast_type_args = .empty;
+        var ast_type_args = std.ArrayList(u8){};
         defer ast_type_args.deinit();
         
         for (type_args) |runtime_type| {
             const ast_type = try self.runtimeTypeToAstType(runtime_type);
-            try ast_type_args.append(ast_type);
+            try ast_type_args.append(allocator, ast_type);
         }
         
         // Request monomorphization
@@ -237,12 +238,12 @@ pub const IntegratedGenericCompiler = struct {
         const instantiated_type = try self.runtime_type_env.instantiateGeneric(generic_name, type_args);
         
         // Convert to AST types for monomorphizer
-        var ast_type_args = .empty;
+        var ast_type_args = std.ArrayList(u8){};
         defer ast_type_args.deinit();
         
         for (type_args) |runtime_type| {
             const ast_type = try self.runtimeTypeToAstType(runtime_type);
-            try ast_type_args.append(ast_type);
+            try ast_type_args.append(allocator, ast_type);
         }
         
         // Request monomorphization
@@ -281,7 +282,7 @@ pub const IntegratedGenericCompiler = struct {
         self: *IntegratedGenericCompiler,
         requests: []CompilationRequest
     ) ![]CompilationResult {
-        var results = .empty;
+        var results = std.ArrayList(u8){};
         
         // Sort requests by priority and dependencies
         const sorted_requests = try self.sortCompilationRequests(requests);
@@ -310,7 +311,7 @@ pub const IntegratedGenericCompiler = struct {
                 },
             };
             
-            try results.append(result);
+            try results.append(allocator, result);
         }
         
         return results.toOwnedSlice();
@@ -384,7 +385,7 @@ pub const IntegratedGenericCompiler = struct {
     // Helper methods
     
     fn generateMangledName(self: *IntegratedGenericCompiler, generic_name: []const u8, type_args: []runtime_generics.RuntimeType) ![]const u8 {
-        var name_parts = .empty;
+        var name_parts = std.ArrayList(u8){};
         defer name_parts.deinit();
         
         try name_parts.appendSlice(generic_name);
@@ -534,11 +535,11 @@ pub const IntegratedGenericCompiler = struct {
     }
     
     fn sortCompilationRequests(self: *IntegratedGenericCompiler, requests: []CompilationRequest) ![]CompilationRequest {
-        var sorted = .empty;
+        var sorted = std.ArrayList(u8){};
         
         // Simple topological sort based on dependencies and priority
         for (requests) |request| {
-            try sorted.append(request);
+            try sorted.append(allocator, request);
         }
         
         // Sort by priority (higher priority first)

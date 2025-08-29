@@ -58,14 +58,14 @@ pub const RealLLVMBackend = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .current_function = null,
             .current_function_name = null,
             .current_block = null,
-            .break_blocks = ArrayList(c.LLVMBasicBlockRef).init(allocator),
-            .continue_blocks = ArrayList(c.LLVMBasicBlockRef).init(allocator),
+            .break_blocks = ArrayList(c.LLVMBasicBlockRef){},
+            .continue_blocks = ArrayList(c.LLVMBasicBlockRef){},
         };
         
         try self.initializeBuiltinTypes();
@@ -79,11 +79,11 @@ pub const RealLLVMBackend = struct {
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);
         
-        self.functions.deinit();
-        self.variables.deinit();
-        self.types.deinit();
-        self.break_blocks.deinit();
-        self.continue_blocks.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
+        self.types.deinit(self.allocator);
+        self.break_blocks.deinit(self.allocator);
+        self.continue_blocks.deinit(self.allocator);
         
         self.allocator.destroy(self);
     }
@@ -486,8 +486,8 @@ pub const RealLLVMBackend = struct {
         c.LLVMPositionBuilderAtEnd(self.builder, body_block);
         
         // Set up break/continue targets
-        try self.break_blocks.append(exit_block);
-        try self.continue_blocks.append(cond_block);
+        try self.break_blocks.append(allocator, exit_block);
+        try self.continue_blocks.append(allocator, cond_block);
         
         try self.compileStatement(while_stmt.body);
         

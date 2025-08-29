@@ -24,7 +24,7 @@ pub const SchedulerConfig = struct {
     pub fn default() SchedulerConfig {
         const cpu_count = std.Thread.getCpuCount() catch 4;
         return SchedulerConfig{
-            .num_workers = @max(1, @intCast(cpu_count)),
+            .num_workers = @max(1, @as(u32, @intCast(cpu_count))),
             .work_stealing_enabled = true,
             .preemption_enabled = true,
             .gc_integration_enabled = true,
@@ -119,8 +119,8 @@ pub const Scheduler = struct {
     pub fn init(allocator: Allocator, config: SchedulerConfig) !Scheduler {
         return Scheduler{
             .config = config,
-            .workers = ArrayList(*Worker).init(allocator),
-            .global_queue = ArrayList(*Goroutine).init(allocator),
+            .workers = ArrayList(*Worker){},
+            .global_queue = ArrayList(*Goroutine){},
             .next_goroutine_id = Atomic(u64).init(1),
             .running = Atomic(bool).init(false),
             .allocator = allocator,
@@ -136,14 +136,14 @@ pub const Scheduler = struct {
             worker.deinit();
             self.allocator.destroy(worker);
         }
-        self.workers.deinit();
+        self.workers.deinit(self.allocator);
         
         // Clean up remaining goroutines
         for (self.global_queue.items) |goroutine| {
             goroutine.deinit();
             self.allocator.destroy(goroutine);
         }
-        self.global_queue.deinit();
+        self.global_queue.deinit(self.allocator);
     }
     
     pub fn start(self: *Scheduler) !void {
@@ -153,11 +153,11 @@ pub const Scheduler = struct {
         for (0..self.config.num_workers) |i| {
             const worker = try self.allocator.create(Worker);
             worker.* = try Worker.init(self.allocator, @intCast(i), self);
-            try self.workers.append(worker);
+            try self.workers.append(allocator, worker);
             try worker.start();
         }
         
-        print("[SCHEDULER] Started with {} workers\n", .{self.config.num_workers});
+        print("[SCHEDULER] Started with {s} workers\n", .{self.config.num_workers});
     }
     
     pub fn stop(self: *Scheduler) void {
@@ -177,7 +177,7 @@ pub const Scheduler = struct {
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        try self.global_queue.append(goroutine);
+        try self.global_queue.append(allocator, goroutine);
         
         // Try to assign to a worker with least load
         if (self.workers.items.len > 0) {
@@ -220,7 +220,7 @@ pub const Scheduler = struct {
             return Worker{
                 .id = id,
                 .scheduler = scheduler,
-                .local_queue = ArrayList(*Goroutine).init(allocator),
+                .local_queue = ArrayList(*Goroutine){},
                 .thread_handle = null,
                 .running = Atomic(bool).init(false),
                 .allocator = allocator,
@@ -236,7 +236,7 @@ pub const Scheduler = struct {
                 goroutine.deinit();
                 self.allocator.destroy(goroutine);
             }
-            self.local_queue.deinit();
+            self.local_queue.deinit(self.allocator);
         }
         
         pub fn start(self: *Worker) !void {
@@ -285,7 +285,7 @@ pub const Scheduler = struct {
             
             // Spawn the goroutine (it will run in its own thread)
             goroutine.spawn() catch |err| {
-                print("[WORKER {}] Failed to spawn goroutine {}: {}\n", .{ self.id, goroutine.id, err });
+                print("[WORKER {s}] Failed to spawn goroutine {s}: {s}\n", .{ self.id, goroutine.id, err });
                 goroutine.state.store(@intFromEnum(GoroutineState.dead), .release);
             };
             
@@ -331,7 +331,7 @@ pub const Scheduler = struct {
         pub fn addWork(self: *Worker, goroutine: *Goroutine) !void {
             self.mutex.lock();
             defer self.mutex.unlock();
-            try self.local_queue.append(goroutine);
+            try self.local_queue.append(allocator, goroutine);
         }
         
         pub fn getQueueSize(self: *const Worker) u32 {
@@ -366,6 +366,7 @@ pub fn initializeScheduler(allocator: Allocator, config: SchedulerConfig) !void 
 
 /// Shutdown the scheduler  
 pub fn shutdownScheduler(allocator: Allocator) void {
+        _ = allocator;
     global_mutex.lock();
     defer global_mutex.unlock();
     

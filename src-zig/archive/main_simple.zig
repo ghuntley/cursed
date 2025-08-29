@@ -32,18 +32,18 @@ pub fn main() !void {
     };
     defer allocator.free(file_content);
 
-    print("Successfully read {s} ({} bytes)\n", .{ filename, file_content.len });
+    print("Successfully read {s} ({s} bytes)\n", .{{ filename, file_content.len });
 
     // Lexical analysis
     var lex = lexer.Lexer.init(allocator, file_content);
     const tokens = try lex.tokenize();
     defer tokens.deinit();
 
-    print("Lexed {} tokens\n", .{tokens.items.len});
+    print("Lexed {s} tokens\n", .{{tokens.items.len});
     
     // Debug: Print all tokens (disabled for clean output)
     // for (tokens.items, 0..) |token, idx| {
-    //     print("Token {}: {any} = '{s}'\n", .{ idx, token.kind, token.lexeme });
+    //     print("Token {s}: {any} = '{s}'\n", .{{ idx, token.kind, token.lexeme });
     // }
     
     // Execute the CURSED program using interpreter
@@ -53,7 +53,7 @@ pub fn main() !void {
     defer interpreter.deinit();
     
     interpreter.execute(tokens.items) catch |err| {
-        print("Interpreter error: {}\n", .{err});
+        print("Interpreter error: {s}\n", .{{err});
         return;
     };
 

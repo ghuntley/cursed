@@ -72,7 +72,7 @@ pub fn Channel(comptime T: type) type {
             
             self.closed = true;
             self.condition.broadcast();
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
         }
         
         /// Send with timeout - all operations under single lock
@@ -98,7 +98,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For unbuffered channels - direct handoff
                 if (self.capacity == 0) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -106,7 +106,7 @@ pub fn Channel(comptime T: type) type {
                 
                 // For buffered channels - check space
                 if (self.buffer.items.len < self.capacity) {
-                    self.buffer.append(value) catch return error.OutOfMemory;
+                    self.buffer.append(allocator, value) catch return error.OutOfMemory;
                     self.total_sent += 1;
                     self.condition.broadcast();
                     return SendResult.sent;
@@ -345,6 +345,7 @@ var global_allocator: ?Allocator = null;
 
 /// Initialize runtime
 pub fn initRuntime(allocator: Allocator) !void {
+        _ = allocator;
     if (global_scheduler != null) {
         return; // Already initialized
     }

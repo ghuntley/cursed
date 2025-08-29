@@ -31,10 +31,16 @@ vibez.spill("Array returned to pool successfully")
 print_test_summary()
 
 test_start("test_quicksort_optimized")
-# Test quicksort_optimized function
-# TODO: Implement test cases for quicksort_optimized
-sus result lit = quicksort_optimized("test_input")
-assert_true(result)
+# Test quicksort_optimized function - sorts array efficiently
+sus unsorted []drip = [5, 2, 8, 1, 9, 3]
+sus sorted_arr []drip = quicksort_optimized(unsorted, 0, len(unsorted) - 1)
+assert_eq_int(get_array_element(sorted_arr, 0), 1)
+assert_eq_int(get_array_element(sorted_arr, 1), 2)
+assert_eq_int(get_array_element(sorted_arr, 2), 3)
+# Test edge case: already sorted
+sus already_sorted []drip = [1, 2, 3, 4, 5]
+sus result2 []drip = quicksort_optimized(already_sorted, 0, len(already_sorted) - 1)
+assert_eq_int(get_array_element(result2, 0), 1)
 print_test_summary()
 
 test_start("test_partition_optimized")
@@ -59,10 +65,17 @@ assert_true(result)
 print_test_summary()
 
 test_start("test_binary_search_optimized")
-# Test binary_search_optimized function
-# TODO: Implement test cases for binary_search_optimized
-sus result lit = binary_search_optimized("test_input")
-assert_true(result)
+# Test binary_search_optimized function - efficient search in sorted arrays
+sus sorted_arr []drip = [1, 3, 5, 7, 9, 11, 13, 15]
+sus index1 drip = binary_search_optimized(sorted_arr, 7)
+assert_eq_int(index1, 3)
+sus index2 drip = binary_search_optimized(sorted_arr, 1)
+assert_eq_int(index2, 0)
+sus index3 drip = binary_search_optimized(sorted_arr, 15)
+assert_eq_int(index3, 7)
+# Test not found case
+sus not_found drip = binary_search_optimized(sorted_arr, 6)
+assert_eq_int(not_found, -1)
 print_test_summary()
 
 test_start("test_filter_array_optimized")

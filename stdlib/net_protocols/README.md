@@ -253,9 +253,31 @@ bestie client_connected {
 ```cursed
 slay validate_certificate(cert_data tea, hostname tea) lit {
     // Certificate chain validation
+    bestie string_length(cert_data) < 100 {
+        vibez.spill("❌ Invalid certificate data")
+        damn cap
+    }
+    
     // Hostname verification
-    // Expiration checking
-    // Signature verification
+    bestie !string_contains(cert_data, hostname) && !string_contains(cert_data, "*") {
+        vibez.spill("❌ Certificate hostname mismatch")
+        damn cap
+    }
+    
+    // Expiration checking (simplified)
+    sus current_timestamp normie = get_current_timestamp()
+    bestie current_timestamp > extract_cert_expiry(cert_data) {
+        vibez.spill("❌ Certificate has expired")
+        damn cap
+    }
+    
+    // Signature verification using crypto module
+    bestie !crypto_verify_certificate_signature(cert_data) {
+        vibez.spill("❌ Certificate signature verification failed")
+        damn cap
+    }
+    
+    vibez.spill("✅ Certificate validation successful")
     damn based
 }
 ```
@@ -264,9 +286,23 @@ slay validate_certificate(cert_data tea, hostname tea) lit {
 ```cursed
 slay verify_host_key(host tea, key tea) lit {
     // Known hosts checking
-    // Key fingerprint verification
-    // Trust-on-first-use handling
-    damn based
+    sus known_hosts tea = load_known_hosts_file()
+    sus host_entry tea = extract_host_entry(known_hosts, host)
+    
+    bestie string_length(host_entry) > 0 {
+        // Host exists in known_hosts, verify key matches
+        bestie !crypto_constant_time_compare(host_entry, key) {
+            vibez.spill("❌ Host key verification failed - possible MITM attack")
+            damn cap
+        }
+        vibez.spill("✅ Host key verified from known_hosts")
+        damn based
+    } else {
+        // Trust-on-first-use handling
+        vibez.spill("⚠️ Unknown host - adding to known_hosts")
+        add_host_to_known_hosts(host, key)
+        damn based
+    }
 }
 ```
 
@@ -338,10 +374,19 @@ slay test_tls_compliance() lit {
     tls_init_connection()
     sus client_hello tea = tls_create_client_hello()
     assert_true(string_length(client_hello) > 0)
+    assert_true(string_contains(client_hello, "TLS"))
     
     // Test key derivation
     sus test_secret tea = "test_pre_master_secret"
     tls_generate_master_secret(test_secret)
+    
+    // Test cipher suite validation
+    sus mock_server_hello tea = create_mock_server_hello(tls_aes_256_gcm)
+    assert_true(tls_parse_server_hello(mock_server_hello))
+    
+    // Test unsupported cipher rejection
+    sus weak_server_hello tea = create_mock_server_hello(0x0001) // Weak cipher
+    assert_false(tls_parse_server_hello(weak_server_hello))
     
     print_test_summary()
     damn based
@@ -354,6 +399,14 @@ slay test_ssh_key_exchange() lit {
     ssh_init_connection()
     sus kex_msg tea = ssh_create_kex_init()
     assert_true(contains_algorithm(kex_msg, "diffie-hellman-group14-sha256"))
+    assert_true(contains_algorithm(kex_msg, "aes256-gcm@openssh.com"))
+    
+    // Test version exchange
+    sus version_msg tea = ssh_create_version_exchange()
+    assert_true(string_contains(version_msg, "SSH-2.0"))
+    
+    // Test invalid version rejection
+    assert_false(ssh_parse_server_version("SSH-1.5-OldServer\r\n"))
     
     print_test_summary()
     damn based
@@ -370,12 +423,18 @@ slay test_crypto_integration() lit {
     // Test TLS encryption/decryption
     sus key tea = crypto_random_bytes(32)
     sus iv tea = crypto_random_bytes(16)
-    sus plaintext tea = "Test message"
+    sus plaintext tea = "Test message for encryption validation"
     
     sus encrypted tea = tls_encrypt_application_data(plaintext, key, iv)
     sus decrypted tea = tls_decrypt_application_data(encrypted, key, iv)
     
     assert_eq_string(plaintext, decrypted)
+    assert_true(string_length(encrypted) > string_length(plaintext)) // Should include auth tag
+    
+    // Test authentication failure with wrong key
+    sus wrong_key tea = crypto_random_bytes(32) 
+    sus bad_decryption tea = tls_decrypt_application_data(encrypted, wrong_key, iv)
+    assert_eq_string(bad_decryption, "") // Should fail authentication
     
     print_test_summary()
     damn based

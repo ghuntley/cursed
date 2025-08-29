@@ -19,19 +19,19 @@ pub fn main() !void {
 
     // Read file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("❌ Error opening file '{s}': {}\n", .{ filename, err });
+        print("❌ Error opening file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     // Read content
     const content = file.readToEndAlloc(std.heap.page_allocator, 1024 * 1024) catch |err| {
-        print("❌ Error reading file: {}\n", .{err});
+        print("❌ Error reading file: {s}\n", .{err});
         return;
     };
     defer std.heap.page_allocator.free(content);
 
-    print("✅ File read successfully ({} bytes)\n", .{content.len});
+    print("✅ File read successfully ({s} bytes)\n", .{content.len});
 
     // Perform basic linting checks
     const issues = try lintCursedCode(content, filename);
@@ -41,9 +41,9 @@ pub fn main() !void {
     if (issues.len == 0) {
         print("✨ No issues found! Code looks good.\n", .{});
     } else {
-        print("⚠️  Found {} issue(s):\n\n", .{issues.len});
+        print("⚠️  Found {s} issue(s):\n\n", .{issues.len});
         for (issues) |issue| {
-            print("  {}:{}: {s} - {s}\n", .{ issue.line, issue.column, @tagName(issue.level), issue.message });
+            print("  {s}:{s}: {s} - {s}\n", .{ issue.line, issue.column, @tagName(issue.level), issue.message });
         }
         print("\n", .{});
     }

@@ -26,6 +26,7 @@ pub const SafeImportManager = struct {
         load_time_ms: u64,
 
         pub fn deinit(self: *ImportResult, allocator: Allocator) void {
+        _ = allocator;
             if (self.error_message) |msg| {
                 allocator.free(msg);
             }
@@ -65,7 +66,7 @@ pub const SafeImportManager = struct {
         return SafeImportManager{
             .allocator = allocator,
             .module_loader_instance = module_loader.ModuleLoader.init(allocator, verbose),
-            .import_cache = HashMap([]const u8, ImportResult, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .import_cache = HashMap([]const u8, ImportResult, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .memory_guard = MemoryGuard.init(),
         };
@@ -79,14 +80,14 @@ pub const SafeImportManager = struct {
             result.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.import_cache.deinit();
+        self.import_cache.deinit(self.allocator);
 
         // Clean up module loader
-        self.module_loader_instance.deinit();
+        self.module_loader_instance.deinit(self.allocator);
 
         if (self.verbose) {
             print("📊 Memory Guard Final Report:\n", .{});
-            print("  Remaining allocations: {}\n", .{self.memory_guard.current_allocations});
+            print("  Remaining allocations: {s}\n", .{self.memory_guard.current_allocations});
         }
     }
 
@@ -94,7 +95,7 @@ pub const SafeImportManager = struct {
     pub fn safeImportModule(self: *SafeImportManager, module_name: []const u8) !bool {
         // Input validation
         if (module_name.len == 0 or module_name.len > 255) {
-            if (self.verbose) print("❌ Invalid module name length: {}\n", .{module_name.len});
+            if (self.verbose) print("❌ Invalid module name length: {s}\n", .{module_name.len});
             return false;
         }
 
@@ -254,22 +255,22 @@ pub const ImportStats = struct {
 
     pub fn print(self: ImportStats) void {
         std.debug.print("📊 Import Statistics:\n", .{});
-        std.debug.print("  Successful imports: {}\n", .{self.successful_imports});
-        std.debug.print("  Failed imports: {}\n", .{self.failed_imports});
-        std.debug.print("  Total functions loaded: {}\n", .{self.total_functions});
-        std.debug.print("  Total load time: {}ms\n", .{self.total_load_time_ms});
-        std.debug.print("  Memory allocations: {}\n", .{self.memory_allocations});
+        std.debug.print("  Successful imports: {s}\n", .{self.successful_imports});
+        std.debug.print("  Failed imports: {s}\n", .{self.failed_imports});
+        std.debug.print("  Total functions loaded: {s}\n", .{self.total_functions});
+        std.debug.print("  Total load time: {s}ms\n", .{self.total_load_time_ms});
+        std.debug.print("  Memory allocations: {s}\n", .{self.memory_allocations});
         
         if (self.successful_imports > 0) {
             const avg_time = self.total_load_time_ms / self.successful_imports;
-            std.debug.print("  Average load time: {}ms\n", .{avg_time});
+            std.debug.print("  Average load time: {s}ms\n", .{avg_time});
         }
     }
 };
 
 /// Enhanced import extraction with safety checks
 pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
-    var imports = .empty;
+    var imports = std.ArrayList(u8){};
     errdefer {
         for (imports.items) |import_name| {
             allocator.free(import_name);
@@ -324,7 +325,7 @@ pub fn extractImportsSafely(allocator: Allocator, source: []const u8) !ArrayList
                                 
                                 if (valid) {
                                     const module_copy = try allocator.dupe(u8, module_name);
-                                    try imports.append(module_copy);
+                                    try imports.append(allocator, module_copy);
                                 }
                             }
                         }
@@ -362,6 +363,7 @@ pub fn validateImportsSafely(allocator: Allocator, imports: ArrayList([]const u8
 
 /// Test the safe import system
 pub fn testSafeImportSystem(allocator: Allocator) !void {
+        _ = allocator;
     print("🧪 Testing Safe Import System...\n", .{});
 
     var safe_manager = SafeImportManager.init(allocator, true);
@@ -381,7 +383,7 @@ pub fn testSafeImportSystem(allocator: Allocator) !void {
 
     // Print statistics
     const stats = safe_manager.getImportStats();
-    stats.print();
+    stats.writer().print();
 
     // Validate all imports
     const all_valid = try safe_manager.validateAllImports();

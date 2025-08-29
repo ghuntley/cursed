@@ -80,7 +80,7 @@ fn testMultipleExecutions(allocator: Allocator) !void {
 
     var i: u32 = 1;
     while (i <= 3) {
-        print("  Execution #{}: ", .{i});
+        print("  Execution #{s}: ", .{i});
         try jit.execute(program);
         i += 1;
     }
@@ -95,7 +95,7 @@ fn testFileExecution(allocator: Allocator) !void {
     };
     defer allocator.free(file_content);
 
-    print("📁 Executing file: test_jit_comprehensive.csd ({} bytes)\n", .{file_content.len});
+    print("📁 Executing file: test_jit_comprehensive.csd ({s} bytes)\n", .{file_content.len});
 
     var jit = SimpleJIT.init(allocator);
     defer jit.deinit();
@@ -112,7 +112,7 @@ const SimpleJIT = struct {
     pub fn init() SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
-            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
 
@@ -122,7 +122,7 @@ const SimpleJIT = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {
@@ -196,7 +196,7 @@ const SimpleJIT = struct {
                 first = false;
                 
                 if (self.variables.get(trimmed)) |value| {
-                    print("{}", .{value});
+                    print("{s}", .{value});
                 } else {
                     print("{s}", .{trimmed});
                 }

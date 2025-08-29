@@ -37,6 +37,7 @@ pub const PGOMemoryIntegration = struct {
     
     /// Initialize PGO memory integration
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         var profile_allocator = std.heap.ArenaAllocator.init(allocator);
         
         return Self{
@@ -44,18 +45,18 @@ pub const PGOMemoryIntegration = struct {
             .profile_allocator = profile_allocator,
             .memory_optimizer_enabled = true,
             .gc_integration_enabled = true,
-            .hot_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80).init(allocator),
-            .cold_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80).init(allocator),
+            .hot_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80){},
+            .cold_allocations = std.HashMap(u64, AllocationProfile, std.AutoHashMap.default_hash_context, 80){},
             .allocation_hotspots = std..empty,
         };
     }
     
     /// Cleanup resources
     pub fn deinit(self: *Self) void {
-        self.hot_allocations.deinit();
-        self.cold_allocations.deinit();
-        self.allocation_hotspots.deinit();
-        self.profile_allocator.deinit();
+        self.hot_allocations.deinit(self.allocator);
+        self.cold_allocations.deinit(self.allocator);
+        self.allocation_hotspots.deinit(self.allocator);
+        self.profile_allocator.deinit(self.allocator);
     }
     
     /// Integrate PGO with memory optimizer
@@ -145,7 +146,7 @@ pub const PGOMemoryIntegration = struct {
             if (optimizations_applied >= 10) break; // Limit optimizations
         }
         
-        print("    ✅ Applied {} memory layout optimizations\n", .{optimizations_applied});
+        print("    ✅ Applied {s} memory layout optimizations\n", .{optimizations_applied});
     }
     
     /// Validate memory safety with PGO
@@ -183,11 +184,11 @@ pub const PGOMemoryIntegration = struct {
         const is_safe = potential_leaks == 0;
         if (is_safe) {
             print("    ✅ Memory safety validation passed\n", .{});
-            print("    ✅ Hot allocations: {}\n", .{self.hot_allocations.count()});
-            print("    ✅ Cold allocations: {}\n", .{self.cold_allocations.count()});
-            print("    ✅ Memory hotspots: {}\n", .{self.allocation_hotspots.items.len});
+            print("    ✅ Hot allocations: {s}\n", .{self.hot_allocations.count()});
+            print("    ✅ Cold allocations: {s}\n", .{self.cold_allocations.count()});
+            print("    ✅ Memory hotspots: {s}\n", .{self.allocation_hotspots.items.len});
         } else {
-            print("    ❌ Memory safety issues detected: {} potential leaks\n", .{potential_leaks});
+            print("    ❌ Memory safety issues detected: {s} potential leaks\n", .{potential_leaks});
         }
         
         return is_safe;
@@ -219,19 +220,19 @@ pub const PGOMemoryIntegration = struct {
         }
         
         print("Hot Memory Profile:\n", .{});
-        print("  Functions: {}\n", .{self.hot_allocations.count()});
-        print("  Total Allocations: {}\n", .{total_hot_allocations});
-        print("  Total Size: {} bytes\n", .{total_hot_size});
+        print("  Functions: {s}\n", .{self.hot_allocations.count()});
+        print("  Total Allocations: {s}\n", .{total_hot_allocations});
+        print("  Total Size: {s} bytes\n", .{total_hot_size});
         
         print("\nCold Memory Profile:\n", .{});
-        print("  Functions: {}\n", .{self.cold_allocations.count()});
-        print("  Total Allocations: {}\n", .{total_cold_allocations});
-        print("  Total Size: {} bytes\n", .{total_cold_size});
+        print("  Functions: {s}\n", .{self.cold_allocations.count()});
+        print("  Total Allocations: {s}\n", .{total_cold_allocations});
+        print("  Total Size: {s} bytes\n", .{total_cold_size});
         
-        print("\nMemory Hotspots: {}\n", .{self.allocation_hotspots.items.len});
+        print("\nMemory Hotspots: {s}\n", .{self.allocation_hotspots.items.len});
         for (self.allocation_hotspots.items) |hotspot| {
             if (hotspot.optimization_applied) {
-                print("  ✅ Hotspot {} optimized ({} allocations)\n", .{ hotspot.address_range, hotspot.allocation_count });
+                print("  ✅ Hotspot {s} optimized ({s} allocations)\n", .{ hotspot.address_range, hotspot.allocation_count });
             }
         }
         

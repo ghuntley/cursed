@@ -160,7 +160,7 @@ pub fn executeFamBlock(
         
         const result = executeStatement(variables, functions, allocator, stmt, verbose) 
             catch |err| {
-                if (verbose) std.debug.print("❌ Error in try block: {}\n", .{err});
+                if (verbose) std.debug.print("❌ Error in try block: {s}\n", .{err});
                 const error_msg = @errorName(err);
                 const error_val = ErrorValue.init(
                     allocator, 
@@ -221,7 +221,7 @@ pub fn executeFamBlock(
             
             _ = executeStatement(variables, functions, allocator, stmt, verbose) 
                 catch |err| {
-                    if (verbose) std.debug.print("❌ Error in catch block: {}\n", .{err});
+                    if (verbose) std.debug.print("❌ Error in catch block: {s}\n", .{err});
                     continue;
                 };
         }

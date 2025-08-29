@@ -26,7 +26,7 @@ pub const ProjectTemplate = struct {
     }
     
     pub fn deinit(self: *ProjectTemplate) void {
-        self.files.deinit();
+        self.files.deinit(self.allocator);
     }
     
     pub fn addFile(self: *ProjectTemplate, path: []const u8, content: []const u8, executable: bool) !void {
@@ -166,7 +166,7 @@ pub const ProjectTemplates = struct {
             \\    // Use CURSED build integration
             \\    const cursed_build = @import("cursed_build_system.zig");
             \\    cursed_build.createCursedBuildStep(b, target, optimize, "cursed") catch |err| {
-            \\        std.debug.print("CURSED build integration failed: {}\n", .{err});
+            \\        std.debug.print("CURSED build integration failed: {s}\n", .{err});
             \\    };
             \\}
             \\
@@ -655,7 +655,7 @@ pub const TemplateManager = struct {
             const output_file = try std.fs.cwd().createFile(full_path, .{});
             defer output_file.close();
             
-            try output_file.writeAll(file.content);
+            try output_file.writer().writeAll(file.content);
             
             // Set executable permission if needed
             if (file.executable) {

@@ -85,7 +85,7 @@ pub const Parser = struct {
 
     pub fn deinit(self: *Parser) void {
         // Arena automatically cleans up all AST nodes and temporary allocations
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
@@ -115,13 +115,13 @@ pub const Parser = struct {
             // Parse import statement
             if (self.check(.Yeet)) {
                 const import_stmt = try self.parseImportStatement();
-                try program.imports.append(import_stmt);
+                try program.imports.append(allocator, import_stmt);
                 continue;
             }
 
             // Parse regular statements
             const stmt = try self.parseStatement();
-            try program.statements.append(stmt);
+            try program.statements.append(allocator, stmt);
         }
 
         return program;
@@ -164,7 +164,7 @@ pub const Parser = struct {
             }
         } else {
             if (location) |loc| {
-                std.debug.print("Error at {}:{}:{} - {s}\n", .{ loc.file, loc.line, loc.column, message });
+                std.debug.print("Error at {s}:{s}:{s} - {s}\n", .{ loc.file, loc.line, loc.column, message });
             } else {
                 std.debug.print("Error: {s}\n", .{message});
             }
@@ -186,7 +186,7 @@ pub const Parser = struct {
             );
             reporter.reportError(.E104_InvalidSyntax, message, error_location) catch {};
         } else {
-            std.debug.print("Error at {}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
+            std.debug.print("Error at {s}:{s}:{s} - {s}\n", .{ location.file, location.line, location.column, message });
         }
         
         self.had_error = true;
@@ -404,12 +404,12 @@ pub const Parser = struct {
                     if (self.match(.Colon)) {
                         while (!self.check(.Comma) and !self.check(.Greater) and !self.check(.RightAngle)) {
                             const constraint = try self.parseType();
-                            try type_param.constraints.append(constraint);
+                            try type_param.constraints.append(allocator, constraint);
                             if (!self.match(.Plus)) break;
                         }
                     }
                     
-                    try func.type_parameters.append(type_param);
+                    try func.type_parameters.append(allocator, type_param);
                 }
                 
                 if (!self.match(.Comma)) break;
@@ -426,7 +426,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try func.parameters.append(param);
+                try func.parameters.append(allocator, param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -450,7 +450,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            try func.body.append(stmt);
+            try func.body.append(allocator, stmt);
         }
         
         try self.consume(.RightBrace, "Expected '}'");
@@ -564,12 +564,12 @@ pub const Parser = struct {
         if (self.check(.LeftParen) and self.isFunctionType()) {
             _ = self.advance(); // consume '('
             
-            var param_types = .empty;
+            var param_types = std.ArrayList(u8){};
             
             if (!self.check(.RightParen)) {
                 while (true) {
                     const param_type = try self.parseType();
-                    try param_types.append(param_type);
+                    try param_types.append(allocator, param_type);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -589,12 +589,12 @@ pub const Parser = struct {
 
         // Tuple types (type1, type2, type3)
         if (self.match(.LeftParen)) {
-            var element_types = .empty;
+            var element_types = std.ArrayList(u8){};
             
             if (!self.check(.RightParen)) {
                 while (true) {
                     const element_type = try self.parseType();
-                    try element_types.append(element_type);
+                    try element_types.append(allocator, element_type);
                     
                     if (!self.match(.Comma)) break;
                 }

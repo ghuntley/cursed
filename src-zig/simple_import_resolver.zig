@@ -90,7 +90,7 @@ fn resolveStdlibImportLegacy(allocator: Allocator, module_name: []const u8, stdl
     var buf: [1024]u8 = undefined;
 
     var stdlib_path = std.ArrayList(u8){};
-    defer stdlib_path.deinit(allocator);
+    defer stdlib_path.deinit();
 
     if (stdlib_path_override) |custom_path| {
         // Use provided stdlib path
@@ -126,7 +126,7 @@ fn findProjectRoot(allocator: Allocator) ![]const u8 {
     const markers = [_][]const u8{ "build.zig", "Cargo.toml", "CursedPackage.toml", "AGENT.md", ".git" };
 
     var path_components = std.ArrayList([]const u8){};
-    defer path_components.deinit(allocator);
+    defer path_components.deinit();
 
     // Split path into components
     var iter = std.mem.splitScalar(u8, current_path, '/');
@@ -140,7 +140,7 @@ fn findProjectRoot(allocator: Allocator) ![]const u8 {
     while (path_components.items.len > 0) {
         // Build current test path
         var test_path = std.ArrayList(u8){};
-        defer test_path.deinit(allocator);
+        defer test_path.deinit();
 
         for (path_components.items) |component| {
             try test_path.append(allocator, '/');
@@ -150,7 +150,7 @@ fn findProjectRoot(allocator: Allocator) ![]const u8 {
         // Check for marker files
         for (markers) |marker| {
             var marker_path = std.ArrayList(u8){};
-            defer marker_path.deinit(allocator);
+            defer marker_path.deinit();
 
             try marker_path.appendSlice(allocator, test_path.items);
             try marker_path.append(allocator, '/');

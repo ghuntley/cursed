@@ -102,7 +102,7 @@ pub const WasmCompiler = struct {
         
         if (self.config.verbose) {
             print("✅ Compilation successful: {s}\n", .{output_file});
-            print("📊 Binary size: {} bytes\n", .{wasm_binary.len});
+            print("📊 Binary size: {s} bytes\n", .{wasm_binary.len});
         }
     }
     
@@ -141,7 +141,7 @@ pub const WasmCompiler = struct {
         const file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
         
-        try file.writeAll(wasm_binary);
+        try file.writer().writeAll(wasm_binary);
         
         if (self.config.verbose) {
             print("📝 Wrote WASM binary: {s}\n", .{filename});
@@ -285,7 +285,7 @@ pub const WasmCompiler = struct {
         const file = try std.fs.cwd().createFile(js_file, .{});
         defer file.close();
         
-        try file.writeAll(js_code);
+        try file.writer().writeAll(js_code);
         
         if (self.config.verbose) {
             print("📝 Generated JavaScript bindings: {s}\n", .{js_file});
@@ -475,7 +475,7 @@ pub const WasmCompiler = struct {
         const file = try std.fs.cwd().createFile(html_file, .{});
         defer file.close();
         
-        try file.writeAll(html_code);
+        try file.writer().writeAll(html_code);
         
         if (self.config.verbose) {
             print("📝 Generated HTML wrapper: {s}\n", .{html_file});

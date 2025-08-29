@@ -33,8 +33,8 @@ pub const DebugInterpreter = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.debugger.deinit();
-        self.base_interpreter.deinit();
+        self.debugger.deinit(self.allocator);
+        self.base_interpreter.deinit(self.allocator);
     }
     
     /// Start interactive debugging session
@@ -145,9 +145,7 @@ pub const DebugInterpreter = struct {
             var name_index: usize = 0;
             
             switch (value) {
-                .Tuple => |tuple| {
-                    while (name_iter.next()) |raw_name| {
-                        const trimmed_name = std.mem.trim(u8, raw_name, " \t");
+                 raw_name, " \t");
                         if (name_index < tuple.items.len) {
                             try self.base_interpreter.environment.define(trimmed_name, tuple.items[name_index]);
                         } else {
@@ -279,9 +277,9 @@ pub const DebugInterpreter = struct {
                 .function_name = func.declaration.name,
                 .file = "main.csd", // TODO: Get actual file name
                 .line = self.current_line,
-                .local_variables = std.StringHashMap(interpreter.Value).init(self.base_interpreter.allocator),
+                .local_variables = std.StringHashMap(interpreter.Value){},
             };
-            try self.debugger.execution_stack.append(frame);
+            try self.debugger.execution_stack.append(allocator, frame);
         }
         
         // Call base interpreter function
@@ -336,7 +334,7 @@ pub const DebugInterpreter = struct {
             .Integer => |i| std.debug.print("{d}", .{i}),
             .Float => |f| std.debug.print("{d}", .{f}),
             .String => |s| std.debug.print("\"{s}\"", .{s}),
-            .Boolean => |b| std.debug.print("{}", .{b}),
+            .Boolean => |b| std.debug.print("{s}", .{b}),
             .Character => |c| std.debug.print("'{c}'", .{c}),
             .Null => std.debug.print("null", .{}),
             else => std.debug.print("(complex value)", .{}),

@@ -19,6 +19,7 @@ pub const MemoryManager = struct {
     is_initialized: atomic.Value(bool),
 
     pub fn init(allocator: Allocator) MemoryManager {
+        _ = allocator;
         return MemoryManager{
             .allocator = allocator,
             .ref_counts = HashMap(usize, u32, std.hash_map.DefaultHashContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
@@ -43,8 +44,8 @@ pub const MemoryManager = struct {
             self.allocator.destroy(@as(*anyopaque, @ptrCast(ptr)));
         }
         
-        self.ref_counts.deinit();
-        self.allocated_objects.deinit();
+        self.ref_counts.deinit(self.allocator);
+        self.allocated_objects.deinit(self.allocator);
         self.is_initialized.store(false, .release);
     }
 
@@ -127,6 +128,7 @@ pub fn getGlobalManager() *MemoryManager {
 }
 
 pub fn initGlobalManager(allocator: Allocator) void {
+        _ = allocator;
     thread_local_manager = MemoryManager.init(allocator);
 }
 

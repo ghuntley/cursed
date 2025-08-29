@@ -62,6 +62,7 @@ pub const CompileTimeTypeInfo = struct {
     }
     
     pub fn deinit(self: *CompileTimeTypeInfo, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         if (self.fields) |fields| {
             for (fields) |*field| {
@@ -110,8 +111,8 @@ pub const CompileTimeReflection = struct {
     pub fn init() CompileTimeReflection {
         return CompileTimeReflection{
             .allocator = allocator,
-            .type_info_cache = HashMap([]const u8, CompileTimeTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .ast_cache = HashMap([]const u8, ASTTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .type_info_cache = HashMap([]const u8, CompileTimeTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .ast_cache = HashMap([]const u8, ASTTypeInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
@@ -120,8 +121,8 @@ pub const CompileTimeReflection = struct {
         while (type_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.type_info_cache.deinit();
-        self.ast_cache.deinit();
+        self.type_info_cache.deinit(self.allocator);
+        self.ast_cache.deinit(self.allocator);
     }
     
     /// Register struct declaration for compile-time reflection
@@ -133,7 +134,7 @@ pub const CompileTimeReflection = struct {
         var type_info = try CompileTimeTypeInfo.init(self.allocator, struct_decl.name, .Struct);
         
         // Analyze struct fields
-        var fields = .empty;
+        var fields = std.ArrayList(u8){};
         var offset: usize = 0;
         
         for (struct_decl.fields.items) |*field| {
@@ -165,10 +166,10 @@ pub const CompileTimeReflection = struct {
         var type_info = try CompileTimeTypeInfo.init(self.allocator, interface_decl.name, .Interface);
         
         // Analyze interface methods
-        var methods = .empty;
+        var methods = std.ArrayList(u8){};
         
         for (interface_decl.methods.items) |*method| {
-            var parameters = .empty;
+            var parameters = std.ArrayList(u8){};
             
             for (method.parameters.items) |*param| {
                 try parameters.append(self.allocator, CompileTimeTypeInfo.MethodInfo.ParameterInfo{
@@ -226,7 +227,7 @@ pub const CompileTimeReflection = struct {
         
         if (type_info.fields == null) return null;
         
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         try result.writer().print("[\n", .{});
@@ -246,7 +247,7 @@ pub const CompileTimeReflection = struct {
         
         if (type_info.methods == null) return null;
         
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         try result.writer().print("[\n", .{});
@@ -377,7 +378,7 @@ pub const CompileTimeCodeGen = struct {
         
         if (type_info.fields == null) return null;
         
-        var code = .empty;
+        var code = std.ArrayList(u8){};
         defer code.deinit();
         
         try code.writer().print("// Auto-generated field accessors for {s}\n\n", .{type_name});
@@ -401,7 +402,7 @@ pub const CompileTimeCodeGen = struct {
     pub fn generateTypeConstants(self: *CompileTimeCodeGen, type_name: []const u8) !?[]const u8 {
         const type_info = self.reflection.getTypeInfo(type_name) orelse return null;
         
-        var code = .empty;
+        var code = std.ArrayList(u8){};
         defer code.deinit();
         
         try code.writer().print("// Auto-generated type constants for {s}\n\n", .{type_name});
@@ -433,7 +434,7 @@ pub const CompileTimeCodeGen = struct {
         
         if (type_info.fields == null) return null;
         
-        var code = .empty;
+        var code = std.ArrayList(u8){};
         defer code.deinit();
         
         try code.writer().print("// Auto-generated serialization for {s}\n\n", .{type_name});
@@ -498,7 +499,7 @@ test "compile-time type info registration" {
     defer reflection.deinit();
     
     // Create a mock struct declaration
-    var fields = .empty;
+    var fields = std.ArrayList(u8){};
     defer fields.deinit();
     
     try fields.append(ast.StructField{

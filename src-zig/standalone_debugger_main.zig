@@ -67,7 +67,7 @@ pub fn main() !void {
             return;
         },
         else => {
-            print("❌ Error: Cannot access file '{s}': {}\n", .{ source_file, err });
+            print("❌ Error: Cannot access file '{s}': {s}\n", .{ source_file, err });
             return;
         },
     };

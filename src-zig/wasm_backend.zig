@@ -49,28 +49,28 @@ pub const WasmBackend = struct {
         return Self{
             .allocator = allocator,
             .options = options,
-            .wasm_buffer = std.ArrayList(u8).init(allocator),
-            .exports = std.ArrayList(WasmExport).init(allocator),
-            .imports = std.ArrayList(WasmImport).init(allocator),
-            .functions = std.ArrayList(WasmFunction).init(allocator),
-            .globals = std.ArrayList(WasmGlobal).init(allocator),
+            .wasm_buffer = std.ArrayList(u8){},
+            .exports = std.ArrayList(WasmExport){},
+            .imports = std.ArrayList(WasmImport){},
+            .functions = std.ArrayList(WasmFunction){},
+            .globals = std.ArrayList(WasmGlobal){},
             .memory_info = WasmMemoryInfo{
                 .initial_pages = options.memory_pages,
                 .max_pages = options.max_memory_pages,
             },
-            .string_table = std.ArrayList([]const u8).init(allocator),
-            .type_table = std.ArrayList(WasmType).init(allocator),
+            .string_table = std.ArrayList([]const u8){},
+            .type_table = std.ArrayList(WasmType){},
         };
     }
     
     pub fn deinit(self: *Self) void {
-        self.wasm_buffer.deinit();
-        self.exports.deinit();
-        self.imports.deinit();
-        self.functions.deinit();
-        self.globals.deinit();
-        self.string_table.deinit();
-        self.type_table.deinit();
+        self.wasm_buffer.deinit(self.allocator);
+        self.exports.deinit(self.allocator);
+        self.imports.deinit(self.allocator);
+        self.functions.deinit(self.allocator);
+        self.globals.deinit(self.allocator);
+        self.string_table.deinit(self.allocator);
+        self.type_table.deinit(self.allocator);
     }
     
     // Main compilation entry point
@@ -161,15 +161,15 @@ pub const WasmBackend = struct {
         var wasm_func = WasmFunction{
             .name = try self.allocator.dupe(u8, func_decl.name),
             .type_index = try self.getFunctionTypeIndex(func_decl.parameters, func_decl.return_type),
-            .locals = std.ArrayList(WasmValueType).init(self.allocator),
-            .body = std.ArrayList(u8).init(self.allocator),
+            .locals = std.ArrayList(WasmValueType){},
+            .body = std.ArrayList(u8){},
             .is_export = func_decl.is_public,
         };
         
         // Generate function body
         try self.generateFunctionBody(&wasm_func, func_decl.body);
         
-        try self.functions.append(wasm_func);
+        try self.functions.append(allocator, wasm_func);
         
         // Add export if public
         if (func_decl.is_public) {
@@ -184,7 +184,7 @@ pub const WasmBackend = struct {
         
         // Add return if function doesn't end with one
         if (wasm_func.body.items.len == 0 or wasm_func.body.items[wasm_func.body.items.len - 1] != 0x0F) {
-            try wasm_func.body.append(0x0F); // return
+            try wasm_func.body.append(allocator, 0x0F); // return
         }
     }
     
@@ -192,7 +192,7 @@ pub const WasmBackend = struct {
         switch (stmt.*) {
             .expression_statement => |expr_stmt| {
                 try self.generateExpression(wasm_func, expr_stmt.expression);
-                try wasm_func.body.append(0x1A); // drop result if not used
+                try wasm_func.body.append(allocator, 0x1A); // drop result if not used
             },
             .variable_declaration => |var_decl| {
                 // Local variables
@@ -205,37 +205,37 @@ pub const WasmBackend = struct {
                 if (ret_stmt.value) |value| {
                     try self.generateExpression(wasm_func, value);
                 }
-                try wasm_func.body.append(0x0F); // return
+                try wasm_func.body.append(allocator, 0x0F); // return
             },
             .if_statement => |if_stmt| {
                 try self.generateExpression(wasm_func, if_stmt.condition);
-                try wasm_func.body.append(0x04); // if
-                try wasm_func.body.append(0x40); // void block type
+                try wasm_func.body.append(allocator, 0x04); // if
+                try wasm_func.body.append(allocator, 0x40); // void block type
                 
                 try self.generateStatement(wasm_func, if_stmt.then_branch);
                 
                 if (if_stmt.else_branch) |else_branch| {
-                    try wasm_func.body.append(0x05); // else
+                    try wasm_func.body.append(allocator, 0x05); // else
                     try self.generateStatement(wasm_func, else_branch);
                 }
                 
-                try wasm_func.body.append(0x0B); // end
+                try wasm_func.body.append(allocator, 0x0B); // end
             },
             .while_statement => |while_stmt| {
-                try wasm_func.body.append(0x02); // block
-                try wasm_func.body.append(0x40); // void block type
-                try wasm_func.body.append(0x03); // loop
-                try wasm_func.body.append(0x40); // void block type
+                try wasm_func.body.append(allocator, 0x02); // block
+                try wasm_func.body.append(allocator, 0x40); // void block type
+                try wasm_func.body.append(allocator, 0x03); // loop
+                try wasm_func.body.append(allocator, 0x40); // void block type
                 
                 try self.generateExpression(wasm_func, while_stmt.condition);
-                try wasm_func.body.append(0x04); // if
-                try wasm_func.body.append(0x40); // void block type
+                try wasm_func.body.append(allocator, 0x04); // if
+                try wasm_func.body.append(allocator, 0x40); // void block type
                 try self.generateStatement(wasm_func, while_stmt.body);
-                try wasm_func.body.append(0x0C); // br 0 (continue loop)
-                try wasm_func.body.append(0x00);
-                try wasm_func.body.append(0x0B); // end if
-                try wasm_func.body.append(0x0B); // end loop
-                try wasm_func.body.append(0x0B); // end block
+                try wasm_func.body.append(allocator, 0x0C); // br 0 (continue loop)
+                try wasm_func.body.append(allocator, 0x00);
+                try wasm_func.body.append(allocator, 0x0B); // end if
+                try wasm_func.body.append(allocator, 0x0B); // end loop
+                try wasm_func.body.append(allocator, 0x0B); // end block
             },
             .block_statement => |block_stmt| {
                 for (block_stmt.statements) |nested_stmt| {
@@ -254,21 +254,21 @@ pub const WasmBackend = struct {
             .literal => |literal| {
                 switch (literal) {
                     .integer => |int_val| {
-                        try wasm_func.body.append(0x41); // i32.const
+                        try wasm_func.body.append(allocator, 0x41); // i32.const
                         try self.encodeLEB128(wasm_func, @intCast(int_val));
                     },
                     .float => |float_val| {
-                        try wasm_func.body.append(0x44); // f64.const
+                        try wasm_func.body.append(allocator, 0x44); // f64.const
                         const float_bytes = @as([8]u8, @bitCast(float_val));
                         try wasm_func.body.appendSlice(&float_bytes);
                     },
                     .string => |string_val| {
                         const str_index = try self.addStringConstant(string_val);
-                        try wasm_func.body.append(0x41); // i32.const (string pointer)
+                        try wasm_func.body.append(allocator, 0x41); // i32.const (string pointer)
                         try self.encodeLEB128(wasm_func, str_index);
                     },
                     .boolean => |bool_val| {
-                        try wasm_func.body.append(0x41); // i32.const
+                        try wasm_func.body.append(allocator, 0x41); // i32.const
                         try self.encodeLEB128(wasm_func, if (bool_val) 1 else 0);
                     },
                 }
@@ -281,16 +281,16 @@ pub const WasmBackend = struct {
                 try self.generateExpression(wasm_func, binary_op.right);
                 
                 switch (binary_op.operator) {
-                    .add => try wasm_func.body.append(0x6A), // i32.add
-                    .subtract => try wasm_func.body.append(0x6B), // i32.sub
-                    .multiply => try wasm_func.body.append(0x6C), // i32.mul
-                    .divide => try wasm_func.body.append(0x6D), // i32.div_s
-                    .equal => try wasm_func.body.append(0x46), // i32.eq
-                    .not_equal => try wasm_func.body.append(0x47), // i32.ne
-                    .less_than => try wasm_func.body.append(0x48), // i32.lt_s
-                    .greater_than => try wasm_func.body.append(0x4A), // i32.gt_s
-                    .less_equal => try wasm_func.body.append(0x4C), // i32.le_s
-                    .greater_equal => try wasm_func.body.append(0x4E), // i32.ge_s
+                    .add => try wasm_func.body.append(allocator, 0x6A), // i32.add
+                    .subtract => try wasm_func.body.append(allocator, 0x6B), // i32.sub
+                    .multiply => try wasm_func.body.append(allocator, 0x6C), // i32.mul
+                    .divide => try wasm_func.body.append(allocator, 0x6D), // i32.div_s
+                    .equal => try wasm_func.body.append(allocator, 0x46), // i32.eq
+                    .not_equal => try wasm_func.body.append(allocator, 0x47), // i32.ne
+                    .less_than => try wasm_func.body.append(allocator, 0x48), // i32.lt_s
+                    .greater_than => try wasm_func.body.append(allocator, 0x4A), // i32.gt_s
+                    .less_equal => try wasm_func.body.append(allocator, 0x4C), // i32.le_s
+                    .greater_equal => try wasm_func.body.append(allocator, 0x4E), // i32.ge_s
                     else => {
                         std.debug.print("Warning: Unhandled binary operator in WASM generation\n", .{});
                     },
@@ -308,7 +308,7 @@ pub const WasmBackend = struct {
                 } else {
                     // Regular function call
                     const func_index = try self.getFunctionIndex(func_call.function);
-                    try wasm_func.body.append(0x10); // call
+                    try wasm_func.body.append(allocator, 0x10); // call
                     try self.encodeLEB128(wasm_func, func_index);
                 }
             },
@@ -331,8 +331,8 @@ pub const WasmBackend = struct {
         var main_func = WasmFunction{
             .name = try self.allocator.dupe(u8, "main"),
             .type_index = try self.getFunctionTypeIndex(&[_]AST.Parameter{}, AST.Type.void),
-            .locals = std.ArrayList(WasmValueType).init(self.allocator),
-            .body = std.ArrayList(u8).init(self.allocator),
+            .locals = std.ArrayList(WasmValueType){},
+            .body = std.ArrayList(u8){},
             .is_export = true,
         };
         
@@ -349,7 +349,7 @@ pub const WasmBackend = struct {
             }
         }
         
-        try self.functions.append(main_func);
+        try self.functions.append(allocator, main_func);
         try self.addExport("main", .function, @intCast(self.functions.items.len - 1));
         
         // Add _start export for WASI compatibility
@@ -381,46 +381,46 @@ pub const WasmBackend = struct {
                 AST.Parameter{ .name = "ptr", .type = AST.Type.integer },
                 AST.Parameter{ .name = "len", .type = AST.Type.integer },
             }, AST.Type.void),
-            .locals = std.ArrayList(WasmValueType).init(self.allocator),
-            .body = std.ArrayList(u8).init(self.allocator),
+            .locals = std.ArrayList(WasmValueType){},
+            .body = std.ArrayList(u8){},
             .is_export = false,
         };
         
         switch (self.options.target) {
             .browser => {
                 // Call JS console.log
-                try print_func.body.append(0x20); // local.get 0 (ptr)
-                try print_func.body.append(0x00);
-                try print_func.body.append(0x20); // local.get 1 (len)
-                try print_func.body.append(0x01);
-                try print_func.body.append(0x10); // call console_log import
-                try print_func.body.append(0x00); // import index
+                try print_func.body.append(allocator, 0x20); // local.get 0 (ptr)
+                try print_func.body.append(allocator, 0x00);
+                try print_func.body.append(allocator, 0x20); // local.get 1 (len)
+                try print_func.body.append(allocator, 0x01);
+                try print_func.body.append(allocator, 0x10); // call console_log import
+                try print_func.body.append(allocator, 0x00); // import index
             },
             .wasi => {
                 // Use WASI fd_write
                 // TODO: Implement proper WASI I/O vectors
-                try print_func.body.append(0x41); // i32.const 1 (stdout)
-                try print_func.body.append(0x01);
-                try print_func.body.append(0x20); // local.get 0 (ptr to iov)
-                try print_func.body.append(0x00);
-                try print_func.body.append(0x41); // i32.const 1 (iov count)
-                try print_func.body.append(0x01);
-                try print_func.body.append(0x41); // i32.const result ptr
-                try print_func.body.append(0x08);
-                try print_func.body.append(0x10); // call fd_write
-                try print_func.body.append(0x00); // import index
-                try print_func.body.append(0x1A); // drop result
+                try print_func.body.append(allocator, 0x41); // i32.const 1 (stdout)
+                try print_func.body.append(allocator, 0x01);
+                try print_func.body.append(allocator, 0x20); // local.get 0 (ptr to iov)
+                try print_func.body.append(allocator, 0x00);
+                try print_func.body.append(allocator, 0x41); // i32.const 1 (iov count)
+                try print_func.body.append(allocator, 0x01);
+                try print_func.body.append(allocator, 0x41); // i32.const result ptr
+                try print_func.body.append(allocator, 0x08);
+                try print_func.body.append(allocator, 0x10); // call fd_write
+                try print_func.body.append(allocator, 0x00); // import index
+                try print_func.body.append(allocator, 0x1A); // drop result
             },
             .freestanding => {
                 // No-op for freestanding
             },
         }
         
-        try self.functions.append(print_func);
+        try self.functions.append(allocator, print_func);
     }
     
     fn generateWasmBinary(self: *Self) ![]const u8 {
-        var output = std.ArrayList(u8).init(self.allocator);
+        var output = std.ArrayList(u8){};
         defer output.deinit();
         
         // WASM header already added in setupWasmModule
@@ -522,8 +522,8 @@ pub const WasmBackend = struct {
     fn getFunctionIndex(self: *Self, name: []const u8) !u32 { _ = self; _ = name; return 0; }
     fn processGlobalVariable(self: *Self, var_decl: AST.VariableDeclaration) !void { _ = self; _ = var_decl; }
     fn processImport(self: *Self, import_stmt: AST.ImportStatement) !void { _ = self; _ = import_stmt; }
-    fn encodeLEB128(self: *Self, wasm_func: *WasmFunction, value: u32) !void { _ = self; try wasm_func.body.append(@intCast(value & 0x7F)); }
-    fn writeSection(self: *Self, output: *std.ArrayList(u8), section_id: u8, data: []const u8) !void { _ = self; try output.append(section_id); try output.appendSlice(data); }
+    fn encodeLEB128(self: *Self, wasm_func: *WasmFunction, value: u32) !void { _ = self; try wasm_func.body.append(allocator, @intCast(value & 0x7F)); }
+    fn writeSection(self: *Self, output: *std.ArrayList(u8), section_id: u8, data: []const u8) !void { _ = self; try output.append(allocator, section_id); try output.appendSlice(data); }
     fn encodeTypeSection(self: *Self) ![]const u8 { _ = self; return &[_]u8{}; }
     fn encodeImportSection(self: *Self) ![]const u8 { _ = self; return &[_]u8{}; }
     fn encodeFunctionSection(self: *Self) ![]const u8 { _ = self; return &[_]u8{}; }

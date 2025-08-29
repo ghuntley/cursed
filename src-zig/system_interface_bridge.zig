@@ -11,7 +11,7 @@ var global_allocator: Allocator = std.heap.c_allocator;
 
 // ========== ENVIRONMENT VARIABLES ==========
 
-export fn runtime_get_env_bridge(name_ptr: [*:0]const u8) callconv(.C) struct { [*:0]const u8, [*:0]const u8 } {
+export fn runtime_get_env_bridge(name_ptr: [*:0]const u8) callconv(.c) struct { [*:0]const u8, [*:0]const u8 } {
     const name = std.mem.span(name_ptr);
     
     if (std.posix.getenv(name)) |value| {
@@ -22,7 +22,7 @@ export fn runtime_get_env_bridge(name_ptr: [*:0]const u8) callconv(.C) struct { 
     }
 }
 
-export fn runtime_set_env_bridge(name_ptr: [*:0]const u8, value_ptr: [*:0]const u8) callconv(.C) [*:0]const u8 {
+export fn runtime_set_env_bridge(name_ptr: [*:0]const u8, value_ptr: [*:0]const u8) callconv(.c) [*:0]const u8 {
     const name = std.mem.span(name_ptr);
     const value = std.mem.span(value_ptr);
     
@@ -38,7 +38,7 @@ export fn runtime_set_env_bridge(name_ptr: [*:0]const u8, value_ptr: [*:0]const 
     return "";
 }
 
-export fn runtime_unset_env_bridge(name_ptr: [*:0]const u8) callconv(.C) [*:0]const u8 {
+export fn runtime_unset_env_bridge(name_ptr: [*:0]const u8) callconv(.c) [*:0]const u8 {
     const name = std.mem.span(name_ptr);
     
     const name_z = global_allocator.dupeZ(u8, name) catch return "Failed to allocate memory";
@@ -53,7 +53,7 @@ export fn runtime_unset_env_bridge(name_ptr: [*:0]const u8) callconv(.C) [*:0]co
 
 // ========== FILE OPERATIONS ==========
 
-export fn runtime_open_file_readonly_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_readonly_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().openFile(path, .{}) catch return -1;
@@ -62,7 +62,7 @@ export fn runtime_open_file_readonly_bridge(path_ptr: [*:0]const u8) callconv(.C
     return @intCast(file.handle);
 }
 
-export fn runtime_open_file_writeonly_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_writeonly_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().createFile(path, .{}) catch return -1;
@@ -70,7 +70,7 @@ export fn runtime_open_file_writeonly_bridge(path_ptr: [*:0]const u8) callconv(.
     return @intCast(file.handle);
 }
 
-export fn runtime_open_file_append_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_append_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().openFile(path, .{ .mode = .write_only }) catch {
@@ -84,7 +84,7 @@ export fn runtime_open_file_append_bridge(path_ptr: [*:0]const u8) callconv(.C) 
     return @intCast(file.handle);
 }
 
-export fn runtime_open_file_readwrite_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_readwrite_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().openFile(path, .{ .mode = .read_write }) catch return -1;
@@ -92,7 +92,7 @@ export fn runtime_open_file_readwrite_bridge(path_ptr: [*:0]const u8) callconv(.
     return @intCast(file.handle);
 }
 
-export fn runtime_open_file_readwrite_create_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_readwrite_create_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().createFile(path, .{ .read = true }) catch return -1;
@@ -100,7 +100,7 @@ export fn runtime_open_file_readwrite_create_bridge(path_ptr: [*:0]const u8) cal
     return @intCast(file.handle);
 }
 
-export fn runtime_open_file_readwrite_append_bridge(path_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_open_file_readwrite_append_bridge(path_ptr: [*:0]const u8) callconv(.c) i64 {
     const path = std.mem.span(path_ptr);
     
     const file = std.fs.cwd().openFile(path, .{ .mode = .read_write }) catch {
@@ -121,7 +121,7 @@ export fn runtime_spawn_process_bridge(
     env_ptr: [*][*:0]const u8,
     env_len: i64,
     working_dir_ptr: [*:0]const u8
-) callconv(.C) i64 {
+) callconv(.c) i64 {
     const command = std.mem.span(command_ptr);
     
     // Convert arguments
@@ -162,14 +162,14 @@ export fn runtime_spawn_process_bridge(
     return 1000 + std.crypto.random.int(i64) % 9000; // Mock PID
 }
 
-export fn runtime_wait_process_bridge(pid: i64) callconv(.C) i64 {
+export fn runtime_wait_process_bridge(pid: i64) callconv(.c) i64 {
     _ = pid; // In real implementation, would wait for actual process
     
     // Mock process completion - return exit code 0
     return 0;
 }
 
-export fn runtime_kill_process_bridge(pid: i64, signal: i64) callconv(.C) bool {
+export fn runtime_kill_process_bridge(pid: i64, signal: i64) callconv(.c) bool {
     _ = pid;
     _ = signal;
     
@@ -177,7 +177,7 @@ export fn runtime_kill_process_bridge(pid: i64, signal: i64) callconv(.C) bool {
     return true;
 }
 
-export fn runtime_read_process_output_bridge(pid: i64) callconv(.C) struct { [*:0]const u8, [*:0]const u8 } {
+export fn runtime_read_process_output_bridge(pid: i64) callconv(.c) struct { [*:0]const u8, [*:0]const u8 } {
     _ = pid;
     
     // Mock process output
@@ -189,7 +189,7 @@ export fn runtime_read_process_output_bridge(pid: i64) callconv(.C) struct { [*:
 
 // ========== SIGNAL HANDLING ==========
 
-export fn runtime_signal_register_handler_bridge(signal: i64, handler_ptr: [*:0]const u8) callconv(.C) bool {
+export fn runtime_signal_register_handler_bridge(signal: i64, handler_ptr: [*:0]const u8) callconv(.c) bool {
     _ = handler_ptr;
     
     // Validate signal number
@@ -201,7 +201,7 @@ export fn runtime_signal_register_handler_bridge(signal: i64, handler_ptr: [*:0]
     return true;
 }
 
-export fn runtime_signal_send_process_bridge(pid: i64, signal: i64) callconv(.C) bool {
+export fn runtime_signal_send_process_bridge(pid: i64, signal: i64) callconv(.c) bool {
     if (pid <= 0 or signal < 1 or signal > 64) return false;
     
     // In real implementation, would use kill() system call
@@ -222,7 +222,7 @@ export fn runtime_signal_send_process_bridge(pid: i64, signal: i64) callconv(.C)
     }
 }
 
-export fn runtime_signal_send_group_bridge(pgid: i64, signal: i64) callconv(.C) bool {
+export fn runtime_signal_send_group_bridge(pgid: i64, signal: i64) callconv(.c) bool {
     if (pgid <= 0 or signal < 1 or signal > 64) return false;
     
     // In real implementation, would send signal to process group
@@ -242,7 +242,7 @@ export fn runtime_signal_send_group_bridge(pgid: i64, signal: i64) callconv(.C) 
     }
 }
 
-export fn runtime_signal_block_mask_bridge(signals_ptr: [*]const bool, mask_size: i64) callconv(.C) bool {
+export fn runtime_signal_block_mask_bridge(signals_ptr: [*]const bool, mask_size: i64) callconv(.c) bool {
     const signals = signals_ptr[0..@intCast(mask_size)];
     
     // In real implementation, would use sigprocmask() or similar
@@ -255,7 +255,7 @@ export fn runtime_signal_block_mask_bridge(signals_ptr: [*]const bool, mask_size
     return true;
 }
 
-export fn runtime_signal_unblock_mask_bridge(signals_ptr: [*]const bool, mask_size: i64) callconv(.C) bool {
+export fn runtime_signal_unblock_mask_bridge(signals_ptr: [*]const bool, mask_size: i64) callconv(.c) bool {
     const signals = signals_ptr[0..@intCast(mask_size)];
     
     // In real implementation, would use sigprocmask() or similar
@@ -270,12 +270,12 @@ export fn runtime_signal_unblock_mask_bridge(signals_ptr: [*]const bool, mask_si
 
 // ========== STRING UTILITY FUNCTIONS ==========
 
-export fn runtime_string_length_bridge(str_ptr: [*:0]const u8) callconv(.C) i64 {
+export fn runtime_string_length_bridge(str_ptr: [*:0]const u8) callconv(.c) i64 {
     const str = std.mem.span(str_ptr);
     return @intCast(str.len);
 }
 
-export fn runtime_to_lowercase_bridge(str_ptr: [*:0]const u8) callconv(.C) [*:0]const u8 {
+export fn runtime_to_lowercase_bridge(str_ptr: [*:0]const u8) callconv(.c) [*:0]const u8 {
     const str = std.mem.span(str_ptr);
     var result = global_allocator.allocSentinel(u8, str.len, 0) catch return str_ptr;
     
@@ -286,7 +286,7 @@ export fn runtime_to_lowercase_bridge(str_ptr: [*:0]const u8) callconv(.C) [*:0]
     return result.ptr;
 }
 
-export fn runtime_split_path_bridge(path_str_ptr: [*:0]const u8) callconv(.C) [*][*:0]const u8 {
+export fn runtime_split_path_bridge(path_str_ptr: [*:0]const u8) callconv(.c) [*][*:0]const u8 {
     const path_str = std.mem.span(path_str_ptr);
     
     const separator = switch (std.builtin.os.tag) {
@@ -294,14 +294,14 @@ export fn runtime_split_path_bridge(path_str_ptr: [*:0]const u8) callconv(.C) [*
         else => ':',
     };
     
-    var paths = ArrayList([]const u8).init(global_allocator);
+    var paths = ArrayList([]const u8){};
     defer paths.deinit();
     
     var iter = std.mem.split(u8, path_str, &[_]u8{separator});
     while (iter.next()) |path| {
         if (path.len > 0) {
             const owned_path = global_allocator.dupeZ(u8, path) catch continue;
-            paths.append(owned_path) catch continue;
+            paths.append(allocator, owned_path) catch continue;
         }
     }
     
@@ -314,7 +314,7 @@ export fn runtime_split_path_bridge(path_str_ptr: [*:0]const u8) callconv(.C) [*
     return result.ptr;
 }
 
-export fn runtime_parse_int_bridge(str_ptr: [*:0]const u8) callconv(.C) struct { i64, [*:0]const u8 } {
+export fn runtime_parse_int_bridge(str_ptr: [*:0]const u8) callconv(.c) struct { i64, [*:0]const u8 } {
     const str = std.mem.span(str_ptr);
     const parsed = std.fmt.parseInt(i64, str, 10) catch {
         return .{0, "Invalid integer format"};
@@ -324,10 +324,10 @@ export fn runtime_parse_int_bridge(str_ptr: [*:0]const u8) callconv(.C) struct {
 
 // ========== SYSTEM INITIALIZATION ==========
 
-export fn cursed_runtime_init_system_interface() callconv(.C) void {
+export fn cursed_runtime_init_system_interface() callconv(.c) void {
     std.debug.print("✅ CURSED System Interface Bridge initialized - Real OS integration active\n");
 }
 
-export fn cursed_runtime_shutdown_system_interface() callconv(.C) void {
+export fn cursed_runtime_shutdown_system_interface() callconv(.c) void {
     std.debug.print("✅ CURSED System Interface Bridge shutdown - Cleanup complete\n");
 }

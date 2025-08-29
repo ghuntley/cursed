@@ -114,7 +114,7 @@ pub const BuildThreadPool = struct {
         // Create worker threads
         for (0..thread_count) |i| {
             const thread = try std.Thread.spawn(.{}, workerThread, .{ &pool, i });
-            try pool.threads.append(thread);
+            try pool.threads.append(allocator, thread);
         }
 
         return pool;
@@ -176,7 +176,7 @@ pub const BuildThreadPool = struct {
             };
             
             step.make_fn(step, progress_node) catch |err| {
-                std.debug.print("❌ Worker {d} failed step {s}: {}\n", .{ worker_id, step.name, err });
+                std.debug.print("❌ Worker {d} failed step {s}: {s}\n", .{ worker_id, step.name, err });
             };
         }
     }
@@ -264,7 +264,7 @@ pub const DependencyTracker = struct {
     }
 
     pub fn getExecutionOrder(self: *DependencyTracker) !std.ArrayList(*std.Build.Step) {
-        var order = std.ArrayList(*std.Build.Step).init(self.allocator);
+        var order = std.ArrayList(*std.Build.Step){};
         var in_degree = std.HashMap(*std.Build.Step, u32, std.hash_map.AutoContext(*std.Build.Step), 80).init(self.allocator);
         defer in_degree.deinit(self.allocator);
 
@@ -283,7 +283,7 @@ pub const DependencyTracker = struct {
         }
 
         // Topological sort
-        var queue = std.ArrayList(*std.Build.Step).init(self.allocator);
+        var queue = std.ArrayList(*std.Build.Step){};
         defer queue.deinit(self.allocator);
 
         var degree_iterator = in_degree.iterator();
@@ -330,7 +330,7 @@ pub const ResourceManager = struct {
 
     pub fn init(allocator: std.mem.Allocator) ResourceManager {
         return ResourceManager{
-            .resources = std.HashMap([]const u8, Resource, std.hash_map.StringContext, 80).init(allocator),
+            .resources = std.HashMap([]const u8, Resource, std.hash_map.StringContext, 80){},
             .allocator = allocator,
             .mutex = std.Thread.Mutex{},
         };

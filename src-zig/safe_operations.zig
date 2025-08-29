@@ -44,7 +44,7 @@ pub const SafeMemoryManager = struct {
     }
     
     pub fn deinit(self: *SafeMemoryManager) void {
-        self.memory_detector.deinit();
+        self.memory_detector.deinit(self.allocator);
     }
     
     /// Safe memory allocation with error tracking

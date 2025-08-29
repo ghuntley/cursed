@@ -21,16 +21,18 @@ pub const PatternValue = union(enum) {
     Null: void,
     
     pub fn init(allocator: Allocator) PatternValue {
+        _ = allocator;
         return PatternValue{
-            .Struct = HashMap([]const u8, PatternValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .Struct = HashMap([]const u8, PatternValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *PatternValue, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Array => |arr| {
                 for (arr) |*value| {
-                    value.deinit(allocator);
+                    value.deinit();
                 }
                 allocator.free(arr);
             },
@@ -38,7 +40,7 @@ pub const PatternValue = union(enum) {
                 var iterator = map.iterator();
                 while (iterator.next()) |entry| {
                     allocator.free(entry.key_ptr.*);
-                    entry.value_ptr.deinit(allocator);
+                    entry.value_ptr.deinit();
                 }
                 map.deinit();
             },
@@ -49,13 +51,14 @@ pub const PatternValue = union(enum) {
     
     /// Convert to string representation for debugging
     pub fn toString(self: PatternValue, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         return switch (self) {
             .Integer => |val| try std.fmt.allocPrint(allocator, "{}", .{val}),
             .Float => |val| try std.fmt.allocPrint(allocator, "{d}", .{val}),
             .Boolean => |val| try std.fmt.allocPrint(allocator, "{}", .{val}),
             .String => |str| try allocator.dupe(u8, str),
             .Array => |arr| blk: {
-                var result = ArrayList(u8).init(allocator);
+                var result = ArrayList(u8){};
                 defer result.deinit();
                 
                 try result.appendSlice("[");
@@ -122,9 +125,10 @@ pub const VariableBinding = struct {
     }
     
     pub fn deinit(self: *VariableBinding, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         allocator.free(self.type_name);
-        self.value.deinit(allocator);
+        self.value.deinit(self.allocator);
     }
 };
 
@@ -144,15 +148,16 @@ pub const PatternContext = struct {
     match_trace: ArrayList([]const u8),
     
     pub fn init(allocator: Allocator) PatternContext {
+        _ = allocator;
         return PatternContext{
             .allocator = allocator,
-            .variable_stack = ArrayList(VariableBinding).init(allocator),
+            .variable_stack = ArrayList(VariableBinding){},
             .scope_depth = 0,
             .guard_evaluation_active = false,
             .current_match_value = null,
             .match_success = false,
             .debug_mode = false,
-            .match_trace = ArrayList([]const u8).init(allocator),
+            .match_trace = ArrayList([]const u8){},
         };
     }
     
@@ -161,7 +166,7 @@ pub const PatternContext = struct {
         for (self.variable_stack.items) |*binding| {
             binding.deinit(self.allocator);
         }
-        self.variable_stack.deinit();
+        self.variable_stack.deinit(self.allocator);
         
         // Clean up match value if present
         if (self.current_match_value) |*value| {
@@ -172,7 +177,7 @@ pub const PatternContext = struct {
         for (self.match_trace.items) |trace| {
             self.allocator.free(trace);
         }
-        self.match_trace.deinit();
+        self.match_trace.deinit(self.allocator);
     }
     
     /// Enter a new pattern matching scope
@@ -181,7 +186,7 @@ pub const PatternContext = struct {
         
         if (self.debug_mode) {
             const trace_msg = std.fmt.allocPrint(self.allocator, "Entered scope depth {}", .{self.scope_depth}) catch return;
-            self.match_trace.append(trace_msg) catch {};
+            self.match_trace.append(allocator, trace_msg) catch {};
         }
     }
     
@@ -203,7 +208,7 @@ pub const PatternContext = struct {
         
         if (self.debug_mode) {
             const trace_msg = std.fmt.allocPrint(self.allocator, "Exited to scope depth {}", .{self.scope_depth}) catch return;
-            self.match_trace.append(trace_msg) catch {};
+            self.match_trace.append(allocator, trace_msg) catch {};
         }
     }
     
@@ -220,14 +225,14 @@ pub const PatternContext = struct {
         const owned_type = try self.allocator.dupe(u8, type_name);
         
         const binding = VariableBinding.init(owned_name, value, owned_type, is_mutable, self.scope_depth);
-        try self.variable_stack.append(binding);
+        try self.variable_stack.append(allocator, binding);
         
         if (self.debug_mode) {
             const value_str = try value.toString(self.allocator);
             defer self.allocator.free(value_str);
             
             const trace_msg = try std.fmt.allocPrint(self.allocator, "Bound variable '{s}': {s} (type: {s})", .{ name, value_str, type_name });
-            try self.match_trace.append(trace_msg);
+            try self.match_trace.append(allocator, trace_msg);
         }
     }
     
@@ -262,7 +267,7 @@ pub const PatternContext = struct {
         
         if (self.debug_mode) {
             const trace_msg = std.fmt.allocPrint(self.allocator, "Started guard evaluation", .{}) catch return;
-            self.match_trace.append(trace_msg) catch {};
+            self.match_trace.append(allocator, trace_msg) catch {};
         }
     }
     
@@ -272,7 +277,7 @@ pub const PatternContext = struct {
         
         if (self.debug_mode) {
             const trace_msg = std.fmt.allocPrint(self.allocator, "Ended guard evaluation", .{}) catch return;
-            self.match_trace.append(trace_msg) catch {};
+            self.match_trace.append(allocator, trace_msg) catch {};
         }
     }
     
@@ -288,7 +293,7 @@ pub const PatternContext = struct {
         if (self.debug_mode) {
             const result_str = if (success) "success" else "failure";
             const trace_msg = std.fmt.allocPrint(self.allocator, "Match result: {s}", .{result_str}) catch return;
-            self.match_trace.append(trace_msg) catch {};
+            self.match_trace.append(allocator, trace_msg) catch {};
         }
     }
     
@@ -304,12 +309,12 @@ pub const PatternContext = struct {
     
     /// Get debug trace as string
     pub fn getDebugTrace(self: *PatternContext) ![]const u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         try result.appendSlice("Pattern Matching Trace:\n");
         for (self.match_trace.items, 0..) |trace, i| {
-            try result.writer().print("  {}. {s}\n", .{ i + 1, trace });
+            try result.writer().print("  {s}. {s}\n", .{ i + 1, trace });
         }
         
         return result.toOwnedSlice();
@@ -326,17 +331,17 @@ pub const PatternContext = struct {
     /// Print current context state (debugging utility)
     pub fn printContextState(self: *PatternContext) void {
         std.debug.print("=== Pattern Context State ===\n", .{});
-        std.debug.print("Scope depth: {}\n", .{self.scope_depth});
-        std.debug.print("Guard evaluation: {}\n", .{self.guard_evaluation_active});
-        std.debug.print("Match success: {}\n", .{self.match_success});
-        std.debug.print("Variables ({}):\n", .{self.variable_stack.items.len});
+        std.debug.print("Scope depth: {s}\n", .{self.scope_depth});
+        std.debug.print("Guard evaluation: {s}\n", .{self.guard_evaluation_active});
+        std.debug.print("Match success: {s}\n", .{self.match_success});
+        std.debug.print("Variables ({s}):\n", .{self.variable_stack.items.len});
         
         for (self.variable_stack.items) |binding| {
             const value_str = binding.value.toString(self.allocator) catch "<?>";
             defer self.allocator.free(value_str);
             
             const mutability = if (binding.is_mutable) "mut" else "immut";
-            std.debug.print("  {s} {s}: {s} = {s} (scope: {})\n", .{ mutability, binding.type_name, binding.name, value_str, binding.scope_depth });
+            std.debug.print("  {s} {s}: {s} = {s} (scope: {s})\n", .{ mutability, binding.type_name, binding.name, value_str, binding.scope_depth });
         }
         
         if (self.current_match_value) |match_value| {
@@ -380,7 +385,7 @@ pub const AdvancedPatternMatcher = struct {
             .Literal => |literal| try self.matchLiteral(literal, value),
             .Variable => |var_pattern| try self.matchVariable(var_pattern, value),
             .Wildcard => true, // Always matches
-            .Tuple => |tuple| try self.matchTuple(tuple, value),
+             value),
             .Struct => |struct_pattern| try self.matchStruct(struct_pattern, value),
             .Array => |array| try self.matchArray(array, value),
             .Or => |or_pattern| try self.matchOr(or_pattern, value),

@@ -366,7 +366,7 @@ pub const StackAllocator = struct {
             const stack_size = entry.value_ptr.*;
             self.allocator.free(stack_ptr[0..stack_size]);
         }
-        self.allocated_stacks.deinit();
+        self.allocated_stacks.deinit(self.allocator);
     }
     
     /// Allocate a new stack
@@ -447,14 +447,14 @@ pub const ContextPool = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, initial_size: usize) !Self {
-        var available = std.ArrayList(*Context).init(self.allocator);
+        var available = std.ArrayList(*Context){};
         try available.ensureTotalCapacity(allocator, initial_size);
         
         // Pre-allocate contexts
         for (0..initial_size) |_| {
             const context = try allocator.create(Context);
             context.* = Context.init();
-            try available.append(context);
+            try available.append(allocator, context);
         }
         
         return Self{
@@ -469,8 +469,8 @@ pub const ContextPool = struct {
         for (self.available_contexts.items) |context| {
             self.allocator.destroy(context);
         }
-        self.available_contexts.deinit();
-        self.stack_allocator.deinit();
+        self.available_contexts.deinit(self.allocator);
+        self.stack_allocator.deinit(self.allocator);
     }
     
     /// Get a context from the pool or create a new one

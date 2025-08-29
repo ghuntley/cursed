@@ -58,13 +58,13 @@ export fn cursed_runtime_init() void {
     
     // Initialize garbage collector with proper error cleanup
     global_gc = global_allocator.?.create(gc.GC) catch |err| {
-        print("[RUNTIME] Failed to create GC: {}\n", .{err});
+        print("[RUNTIME] Failed to create GC: {s}\n", .{err});
         channel_registry.deinit(global_allocator);
         return;
     };
     
     global_gc.?.* = gc.GC.init(global_allocator.?) catch |err| {
-        print("[RUNTIME] Failed to initialize GC: {}\n", .{err});
+        print("[RUNTIME] Failed to initialize GC: {s}\n", .{err});
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
         channel_registry.deinit();
@@ -74,7 +74,7 @@ export fn cursed_runtime_init() void {
     // Initialize scheduler with proper error cleanup
     const config = concurrency.SchedulerConfig.default();
     global_scheduler = global_allocator.?.create(concurrency.Scheduler) catch |err| {
-        print("[RUNTIME] Failed to create scheduler: {}\n", .{err});
+        print("[RUNTIME] Failed to create scheduler: {s}\n", .{err});
         global_gc.?.deinit();
         global_allocator.?.destroy(global_gc.?);
         global_gc = null;
@@ -83,7 +83,7 @@ export fn cursed_runtime_init() void {
     };
     
     global_scheduler.?.* = concurrency.Scheduler.init(global_allocator.?, config) catch |err| {
-        print("[RUNTIME] Failed to initialize scheduler: {}\n", .{err});
+        print("[RUNTIME] Failed to initialize scheduler: {s}\n", .{err});
         global_allocator.?.destroy(global_scheduler.?);
         global_scheduler = null;
         global_gc.?.deinit();
@@ -95,7 +95,7 @@ export fn cursed_runtime_init() void {
     
     // Start scheduler with proper error cleanup
     global_scheduler.?.start() catch |err| {
-        print("[RUNTIME] Failed to start scheduler: {}\n", .{err});
+        print("[RUNTIME] Failed to start scheduler: {s}\n", .{err});
         global_scheduler.?.deinit();
         global_allocator.?.destroy(global_scheduler.?);
         global_scheduler = null;
@@ -108,7 +108,7 @@ export fn cursed_runtime_init() void {
     
     // Initialize global concurrency system with proper error cleanup
     concurrency.initializeScheduler(global_allocator.?, config) catch |err| {
-        print("[RUNTIME] Failed to initialize global scheduler: {}\n", .{err});
+        print("[RUNTIME] Failed to initialize global scheduler: {s}\n", .{err});
         global_scheduler.?.stop();
         global_scheduler.?.deinit();
         global_allocator.?.destroy(global_scheduler.?);
@@ -122,7 +122,7 @@ export fn cursed_runtime_init() void {
     
     runtime_initialized = true;
     print("[RUNTIME] ✅ Concurrency runtime initialized successfully\n", .{});
-    print("[RUNTIME] - Scheduler: {} workers\n", .{config.num_workers});
+    print("[RUNTIME] - Scheduler: {s} workers\n", .{config.num_workers});
     print("[RUNTIME] - GC: Tri-color mark-and-sweep\n", .{});
     print("[RUNTIME] - Channels: Type-safe with capacity support\n", .{});
 }
@@ -172,7 +172,7 @@ export fn cursed_runtime_shutdown() void {
 }
 
 /// Spawn a goroutine (implements `stan` keyword)
-export fn cursed_runtime_spawn_goroutine(func: ?*const fn (?*anyopaque) callconv(.C) void, context: ?*anyopaque) u64 {
+export fn cursed_runtime_spawn_goroutine(func: ?*const fn (?*anyopaque) callconv(.c) void, context: ?*anyopaque) u64 {
     if (!runtime_initialized) {
         print("[RUNTIME] ❌ Runtime not initialized\n", .{});
         return 0;
@@ -187,7 +187,7 @@ export fn cursed_runtime_spawn_goroutine(func: ?*const fn (?*anyopaque) callconv
     
     // Wrapper function to convert C calling convention
     const GoroutineWrapper = struct {
-        c_func: ?*const fn (?*anyopaque) callconv(.C) void,
+        c_func: ?*const fn (?*anyopaque) callconv(.c) void,
         c_context: ?*anyopaque,
         
         fn run(ctx: ?*anyopaque) void {
@@ -199,7 +199,7 @@ export fn cursed_runtime_spawn_goroutine(func: ?*const fn (?*anyopaque) callconv
     };
     
     const wrapper = global_allocator.?.create(GoroutineWrapper) catch |err| {
-        print("[RUNTIME] ❌ Failed to allocate goroutine wrapper: {}\n", .{err});
+        print("[RUNTIME] ❌ Failed to allocate goroutine wrapper: {s}\n", .{err});
         return 0;
     };
     wrapper.* = GoroutineWrapper{
@@ -208,12 +208,12 @@ export fn cursed_runtime_spawn_goroutine(func: ?*const fn (?*anyopaque) callconv
     };
     
     const goroutine_id = scheduler.spawn(GoroutineWrapper.run, wrapper) catch |err| {
-        print("[RUNTIME] ❌ Failed to spawn goroutine: {}\n", .{err});
+        print("[RUNTIME] ❌ Failed to spawn goroutine: {s}\n", .{err});
         global_allocator.?.destroy(wrapper);
         return 0;
     };
     
-    print("[RUNTIME] ✅ Goroutine {} spawned successfully\n", .{goroutine_id});
+    print("[RUNTIME] ✅ Goroutine {s} spawned successfully\n", .{goroutine_id});
     return goroutine_id;
 }
 
@@ -224,7 +224,7 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
         return 0;
     }
     
-    print("[RUNTIME] Creating channel type={} capacity={}\n", .{ channel_type, capacity });
+    print("[RUNTIME] Creating channel type={s} capacity={s}\n", .{ channel_type, capacity });
     
     const channel_id = next_channel_id;
     next_channel_id += 1;
@@ -233,17 +233,17 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
     switch (channel_type) {
         0 => { // normie (i64)
             const channel = global_allocator.?.create(concurrency.Channel(i64)) catch |err| {
-                print("[RUNTIME] ❌ Failed to create channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to create channel: {s}\n", .{err});
                 return 0;
             };
             channel.* = concurrency.Channel(i64).init(global_allocator.?, capacity) catch |err| {
-                print("[RUNTIME] ❌ Failed to initialize channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to initialize channel: {s}\n", .{err});
                 global_allocator.?.destroy(channel);
                 return 0;
             };
             
             channel_registry.put(channel_id, channel) catch |err| {
-                print("[RUNTIME] ❌ Failed to register channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to register channel: {s}\n", .{err});
                 channel.deinit();
                 global_allocator.?.destroy(channel);
                 return 0;
@@ -251,17 +251,17 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
         },
         1 => { // tea (string)
             const channel = global_allocator.?.create(concurrency.Channel([]const u8)) catch |err| {
-                print("[RUNTIME] ❌ Failed to create string channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to create string channel: {s}\n", .{err});
                 return 0;
             };
             channel.* = concurrency.Channel([]const u8).init(global_allocator.?, capacity) catch |err| {
-                print("[RUNTIME] ❌ Failed to initialize string channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to initialize string channel: {s}\n", .{err});
                 global_allocator.?.destroy(channel);
                 return 0;
             };
             
             channel_registry.put(channel_id, channel) catch |err| {
-                print("[RUNTIME] ❌ Failed to register string channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to register string channel: {s}\n", .{err});
                 channel.deinit();
                 global_allocator.?.destroy(channel);
                 return 0;
@@ -269,29 +269,29 @@ export fn cursed_runtime_create_channel(channel_type: i32, capacity: usize) u64 
         },
         2 => { // lit (bool)
             const channel = global_allocator.?.create(concurrency.Channel(bool)) catch |err| {
-                print("[RUNTIME] ❌ Failed to create bool channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to create bool channel: {s}\n", .{err});
                 return 0;
             };
             channel.* = concurrency.Channel(bool).init(global_allocator.?, capacity) catch |err| {
-                print("[RUNTIME] ❌ Failed to initialize bool channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to initialize bool channel: {s}\n", .{err});
                 global_allocator.?.destroy(channel);
                 return 0;
             };
             
             channel_registry.put(channel_id, channel) catch |err| {
-                print("[RUNTIME] ❌ Failed to register bool channel: {}\n", .{err});
+                print("[RUNTIME] ❌ Failed to register bool channel: {s}\n", .{err});
                 channel.deinit();
                 global_allocator.?.destroy(channel);
                 return 0;
             };
         },
         else => {
-            print("[RUNTIME] ❌ Unsupported channel type: {}\n", .{channel_type});
+            print("[RUNTIME] ❌ Unsupported channel type: {s}\n", .{channel_type});
             return 0;
         },
     }
     
-    print("[RUNTIME] ✅ Channel {} created successfully\n", .{channel_id});
+    print("[RUNTIME] ✅ Channel {s} created successfully\n", .{channel_id});
     return channel_id;
 }
 
@@ -302,10 +302,10 @@ export fn cursed_runtime_send_channel(channel_id: u64, data: ?*const anyopaque, 
         return -1;
     }
     
-    print("[RUNTIME] Sending to channel {} (size={})\n", .{ channel_id, size });
+    print("[RUNTIME] Sending to channel {s} (size={s})\n", .{ channel_id, size });
     
     const channel_ptr = channel_registry.get(channel_id) orelse {
-        print("[RUNTIME] ❌ Invalid channel ID: {}\n", .{channel_id});
+        print("[RUNTIME] ❌ Invalid channel ID: {s}\n", .{channel_id});
         return -1;
     };
     
@@ -320,21 +320,21 @@ export fn cursed_runtime_send_channel(channel_id: u64, data: ?*const anyopaque, 
         const value: *const i64 = @ptrCast(@alignCast(data.?));
         
         const result = channel.send(value.*) catch |err| {
-            print("[RUNTIME] ❌ Channel send failed: {}\n", .{err});
+            print("[RUNTIME] ❌ Channel send failed: {s}\n", .{err});
             return -1;
         };
         
         switch (result) {
             .sent => {
-                print("[RUNTIME] ✅ Value {} sent to channel {}\n", .{ value.*, channel_id });
+                print("[RUNTIME] ✅ Value {s} sent to channel {s}\n", .{ value.*, channel_id });
                 return 0;
             },
             .would_block => {
-                print("[RUNTIME] ⚠️ Channel {} would block\n", .{channel_id});
+                print("[RUNTIME] ⚠️ Channel {s} would block\n", .{channel_id});
                 return 1;
             },
             .closed => {
-                print("[RUNTIME] ❌ Channel {} is closed\n", .{channel_id});
+                print("[RUNTIME] ❌ Channel {s} is closed\n", .{channel_id});
                 return -1;
             },
         }
@@ -351,10 +351,10 @@ export fn cursed_runtime_receive_channel(channel_id: u64, size: ?*usize) ?*anyop
         return null;
     }
     
-    print("[RUNTIME] Receiving from channel {}\n", .{channel_id});
+    print("[RUNTIME] Receiving from channel {s}\n", .{channel_id});
     
     const channel_ptr = channel_registry.get(channel_id) orelse {
-        print("[RUNTIME] ❌ Invalid channel ID: {}\n", .{channel_id});
+        print("[RUNTIME] ❌ Invalid channel ID: {s}\n", .{channel_id});
         return null;
     };
     
@@ -362,14 +362,14 @@ export fn cursed_runtime_receive_channel(channel_id: u64, size: ?*usize) ?*anyop
     const channel: *concurrency.Channel(i64) = @ptrCast(@alignCast(channel_ptr));
     
     const value = channel.receive() catch |err| {
-        print("[RUNTIME] ❌ Channel receive failed: {}\n", .{err});
+        print("[RUNTIME] ❌ Channel receive failed: {s}\n", .{err});
         return null;
     };
     
     if (value) |received_value| {
         // Allocate space for the returned value
         const result_ptr = global_allocator.?.create(i64) catch |err| {
-            print("[RUNTIME] ❌ Failed to allocate return value: {}\n", .{err});
+            print("[RUNTIME] ❌ Failed to allocate return value: {s}\n", .{err});
             return null;
         };
         result_ptr.* = received_value;
@@ -378,10 +378,10 @@ export fn cursed_runtime_receive_channel(channel_id: u64, size: ?*usize) ?*anyop
             size_ptr.* = @sizeOf(i64);
         }
         
-        print("[RUNTIME] ✅ Received value {} from channel {}\n", .{ received_value, channel_id });
+        print("[RUNTIME] ✅ Received value {s} from channel {s}\n", .{ received_value, channel_id });
         return result_ptr;
     } else {
-        print("[RUNTIME] ❌ Channel {} is closed or empty\n", .{channel_id});
+        print("[RUNTIME] ❌ Channel {s} is closed or empty\n", .{channel_id});
         return null;
     }
 }
@@ -393,7 +393,7 @@ export fn cursed_runtime_select(operations: ?*anyopaque, count: usize) i32 {
         return -1;
     }
     
-    print("[RUNTIME] Executing select with {} operations\n", .{count});
+    print("[RUNTIME] Executing select with {s} operations\n", .{count});
     
     if (operations == null or count == 0) {
         print("[RUNTIME] ❌ Invalid select parameters\n", .{});
@@ -407,12 +407,12 @@ export fn cursed_runtime_select(operations: ?*anyopaque, count: usize) i32 {
     // In real implementation, would parse operations array
     // For now, simulate select execution
     select_stmt.addDefault(0) catch |err| {
-        print("[RUNTIME] ❌ Failed to add default case: {}\n", .{err});
+        print("[RUNTIME] ❌ Failed to add default case: {s}\n", .{err});
         return -1;
     };
     
     const result = select_stmt.execute() catch |err| {
-        print("[RUNTIME] ❌ Select execution failed: {}\n", .{err});
+        print("[RUNTIME] ❌ Select execution failed: {s}\n", .{err});
         return -1;
     };
     
@@ -451,7 +451,7 @@ export fn cursed_runtime_yield() void {
     
     if (global_scheduler) |scheduler| {
         scheduler.yield() catch |err| {
-            print("[RUNTIME] ❌ Yield failed: {}\n", .{err});
+            print("[RUNTIME] ❌ Yield failed: {s}\n", .{err});
         };
     }
 }
@@ -467,12 +467,12 @@ export fn cursed_runtime_get_stats() void {
     
     if (global_scheduler) |scheduler| {
         const stats = scheduler.getStats();
-        print("[RUNTIME] - Goroutines spawned: {}\n", .{stats.total_spawned});
-        print("[RUNTIME] - Goroutines completed: {}\n", .{stats.total_completed});
-        print("[RUNTIME] - Active goroutines: {}\n", .{scheduler.activeGoroutineCount()});
+        print("[RUNTIME] - Goroutines spawned: {s}\n", .{stats.total_spawned});
+        print("[RUNTIME] - Goroutines completed: {s}\n", .{stats.total_completed});
+        print("[RUNTIME] - Active goroutines: {s}\n", .{scheduler.activeGoroutineCount()});
     }
     
-    print("[RUNTIME] - Channels created: {}\n", .{channel_registry.count()});
+    print("[RUNTIME] - Channels created: {s}\n", .{channel_registry.count()});
     
     if (global_gc) |gc_ctx| {
         // In real implementation, would show GC statistics
@@ -492,7 +492,7 @@ export fn cursed_runtime_force_gc() void {
     
     if (global_gc) |gc_ctx| {
         gc_ctx.collectNow() catch |err| {
-            print("[RUNTIME] ❌ GC collection failed: {}\n", .{err});
+            print("[RUNTIME] ❌ GC collection failed: {s}\n", .{err});
         };
         print("[RUNTIME] ✅ Garbage collection completed\n", .{});
     }

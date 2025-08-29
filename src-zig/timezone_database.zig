@@ -51,8 +51,8 @@ pub const TimezoneInfo = struct {
     }
     
     pub fn deinit(self: *TimezoneInfo) void {
-        self.transitions.deinit();
-        self.rules.deinit();
+        self.transitions.deinit(self.allocator);
+        self.rules.deinit(self.allocator);
     }
 };
 
@@ -93,6 +93,7 @@ const SECONDS_PER_HOUR: i64 = 3600;
 
 // Initialize timezone database
 pub fn initializeTimezoneDatabase(allocator: Allocator) !void {
+        _ = allocator;
     database_mutex.lock();
     defer database_mutex.unlock();
     
@@ -107,7 +108,7 @@ pub fn initializeTimezoneDatabase(allocator: Allocator) !void {
     try loadUTCTimezones(allocator);
     
     database_loaded = true;
-    print("🌍 Timezone database loaded with {} zones\n", .{timezone_database.items.len});
+    print("🌍 Timezone database loaded with {s} zones\n", .{timezone_database.items.len});
 }
 
 pub fn deinitTimezoneDatabase() void {
@@ -138,7 +139,7 @@ fn loadAmericaTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&eastern_info, "EST", EST_OFFSET, false);
     try addTimezoneRule(&eastern_info, "EDT", EDT_OFFSET, true);
     try generateDSTTransitions(&eastern_info, 2024, 5);
-    try timezone_database.append(eastern_info);
+    try timezone_database.append(allocator, eastern_info);
     
     // Pacific Time (PST/PDT)
     var pacific_info = createTimezoneInfo(
@@ -153,7 +154,7 @@ fn loadAmericaTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&pacific_info, "PST", PST_OFFSET, false);
     try addTimezoneRule(&pacific_info, "PDT", PDT_OFFSET, true);
     try generateDSTTransitions(&pacific_info, 2024, 5);
-    try timezone_database.append(pacific_info);
+    try timezone_database.append(allocator, pacific_info);
     
     // Central Time (CST/CDT)
     var central_info = createTimezoneInfo(
@@ -168,7 +169,7 @@ fn loadAmericaTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&central_info, "CST", CST_OFFSET, false);
     try addTimezoneRule(&central_info, "CDT", CDT_OFFSET, true);
     try generateDSTTransitions(&central_info, 2024, 5);
-    try timezone_database.append(central_info);
+    try timezone_database.append(allocator, central_info);
     
     // Mountain Time (MST/MDT)
     var mountain_info = createTimezoneInfo(
@@ -183,7 +184,7 @@ fn loadAmericaTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&mountain_info, "MST", MST_OFFSET, false);
     try addTimezoneRule(&mountain_info, "MDT", MDT_OFFSET, true);
     try generateDSTTransitions(&mountain_info, 2024, 5);
-    try timezone_database.append(mountain_info);
+    try timezone_database.append(allocator, mountain_info);
 }
 
 fn loadEuropeTimezones(allocator: Allocator) !void {
@@ -200,7 +201,7 @@ fn loadEuropeTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&london_info, "GMT", GMT_OFFSET, false);
     try addTimezoneRule(&london_info, "BST", BST_OFFSET, true);
     try generateDSTTransitions(&london_info, 2024, 5);
-    try timezone_database.append(london_info);
+    try timezone_database.append(allocator, london_info);
     
     // Central European Time (CET/CEST)
     var berlin_info = createTimezoneInfo(
@@ -215,7 +216,7 @@ fn loadEuropeTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&berlin_info, "CET", CET_OFFSET, false);
     try addTimezoneRule(&berlin_info, "CEST", CEST_OFFSET, true);
     try generateDSTTransitions(&berlin_info, 2024, 5);
-    try timezone_database.append(berlin_info);
+    try timezone_database.append(allocator, berlin_info);
     
     // Paris (same as Berlin for CET/CEST)
     var paris_info = createTimezoneInfo(
@@ -230,7 +231,7 @@ fn loadEuropeTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&paris_info, "CET", CET_OFFSET, false);
     try addTimezoneRule(&paris_info, "CEST", CEST_OFFSET, true);
     try generateDSTTransitions(&paris_info, 2024, 5);
-    try timezone_database.append(paris_info);
+    try timezone_database.append(allocator, paris_info);
 }
 
 fn loadAsiaTimezones(allocator: Allocator) !void {
@@ -245,7 +246,7 @@ fn loadAsiaTimezones(allocator: Allocator) !void {
         0
     );
     try addTimezoneRule(&tokyo_info, "JST", JST_OFFSET, false);
-    try timezone_database.append(tokyo_info);
+    try timezone_database.append(allocator, tokyo_info);
     
     // China Standard Time (no DST)
     var shanghai_info = createTimezoneInfo(
@@ -258,7 +259,7 @@ fn loadAsiaTimezones(allocator: Allocator) !void {
         0
     );
     try addTimezoneRule(&shanghai_info, "CST", 28800, false);
-    try timezone_database.append(shanghai_info);
+    try timezone_database.append(allocator, shanghai_info);
 }
 
 fn loadAustraliaTimezones(allocator: Allocator) !void {
@@ -275,7 +276,7 @@ fn loadAustraliaTimezones(allocator: Allocator) !void {
     try addTimezoneRule(&sydney_info, "AEST", AEST_OFFSET, false);
     try addTimezoneRule(&sydney_info, "AEDT", AEDT_OFFSET, true);
     try generateDSTTransitions(&sydney_info, 2024, 5);
-    try timezone_database.append(sydney_info);
+    try timezone_database.append(allocator, sydney_info);
 }
 
 fn loadUTCTimezones(allocator: Allocator) !void {
@@ -290,7 +291,7 @@ fn loadUTCTimezones(allocator: Allocator) !void {
         0
     );
     try addTimezoneRule(&utc_info, "UTC", UTC_OFFSET, false);
-    try timezone_database.append(utc_info);
+    try timezone_database.append(allocator, utc_info);
     
     // GMT timezone (same as UTC for most purposes)
     var gmt_info = createTimezoneInfo(
@@ -303,7 +304,7 @@ fn loadUTCTimezones(allocator: Allocator) !void {
         0
     );
     try addTimezoneRule(&gmt_info, "GMT", GMT_OFFSET, false);
-    try timezone_database.append(gmt_info);
+    try timezone_database.append(allocator, gmt_info);
 }
 
 // Helper functions
@@ -338,7 +339,7 @@ fn addTimezoneRule(info: *TimezoneInfo, name: []const u8, offset: i32, is_dst: b
         .start_timestamp = 0,
         .end_timestamp = 2147483647,  // Max timestamp
     };
-    try info.rules.append(rule);
+    try info.rules.append(allocator, rule);
 }
 
 // DST calculation functions
@@ -502,7 +503,7 @@ fn generateDSTTransitions(info: *TimezoneInfo, base_year: i32, years_ahead: i32)
                 .rule_before = getStandardTimeRule(info),
                 .rule_after = getDSTRule(info),
             };
-            try info.transitions.append(spring_transition);
+            try info.transitions.append(allocator, spring_transition);
             
             // Fall back transition
             const fall_transition = TimezoneTransition{
@@ -512,7 +513,7 @@ fn generateDSTTransitions(info: *TimezoneInfo, base_year: i32, years_ahead: i32)
                 .rule_before = getDSTRule(info),
                 .rule_after = getStandardTimeRule(info),
             };
-            try info.transitions.append(fall_transition);
+            try info.transitions.append(allocator, fall_transition);
         }
     }
 }
@@ -620,7 +621,7 @@ pub fn printTimezoneDatabaseStats() void {
     if (!database_loaded) return;
     
     print("🌍 Timezone Database Statistics:\n", .{});
-    print("  Total zones loaded: {}\n", .{timezone_database.items.len});
+    print("  Total zones loaded: {s}\n", .{timezone_database.items.len});
     
     var zones_with_dst: u32 = 0;
     var total_transitions: u32 = 0;
@@ -632,11 +633,12 @@ pub fn printTimezoneDatabaseStats() void {
         total_transitions += @as(u32, @intCast(tz.transitions.items.len));
     }
     
-    print("  Zones with DST: {}\n", .{zones_with_dst});
-    print("  Total transitions: {}\n", .{total_transitions});
+    print("  Zones with DST: {s}\n", .{zones_with_dst});
+    print("  Total transitions: {s}\n", .{total_transitions});
 }
 
 pub fn testTimezoneDatabase(allocator: Allocator) !void {
+        _ = allocator;
     print("🧪 Testing Timezone Database:\n", .{});
     
     try initializeTimezoneDatabase(allocator);
@@ -679,7 +681,7 @@ pub fn testTimezoneDatabase(allocator: Allocator) !void {
 export fn cursed_timezone_init() void {
     const allocator = std.heap.page_allocator;
     initializeTimezoneDatabase(allocator) catch |err| {
-        print("Failed to initialize timezone database: {}\n", .{err});
+        print("Failed to initialize timezone database: {s}\n", .{err});
     };
 }
 
@@ -712,7 +714,7 @@ export fn cursed_timezone_is_dst(zone_name_ptr: [*:0]const u8, timestamp: i64) b
 export fn cursed_timezone_test() void {
     const allocator = std.heap.page_allocator;
     testTimezoneDatabase(allocator) catch |err| {
-        print("Timezone database test failed: {}\n", .{err});
+        print("Timezone database test failed: {s}\n", .{err});
     };
 }
 

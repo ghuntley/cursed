@@ -13,20 +13,21 @@ pub const ImportResolver = struct {
     loaded_modules: std.StringHashMap([]const u8),
 
     pub fn init(allocator: Allocator) !ImportResolver {
+        _ = allocator;
         const cwd = std.fs.cwd();
         var buf: [1024]u8 = undefined;
         const current_dir = try cwd.realpath(".", &buf);
         
         const stdlib_path = try std.fmt.allocPrint(allocator, "{s}/stdlib", .{current_dir});
         
-        var search_paths = .empty;
+        var search_paths = std.ArrayList(u8){};
         try search_paths.append(try allocator.dupe(u8, current_dir));
         
         return ImportResolver{
             .allocator = allocator,
             .stdlib_path = stdlib_path,
             .search_paths = search_paths,
-            .loaded_modules = std.StringHashMap([]const u8).init(allocator),
+            .loaded_modules = std.StringHashMap([]const u8){},
         };
     }
 
@@ -35,14 +36,14 @@ pub const ImportResolver = struct {
         for (self.search_paths.items) |path| {
             self.allocator.free(path);
         }
-        self.search_paths.deinit();
+        self.search_paths.deinit(self.allocator);
         
         var iterator = self.loaded_modules.iterator();
         while (iterator.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(self.allocator);
     }
 
     pub fn resolveImport(self: *ImportResolver, module_name: []const u8) ![]const u8 {
@@ -168,7 +169,7 @@ pub const ImportResolver = struct {
 
 // Parse "yeet" import statements from source code
 pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]const u8) {
-    var imports = .empty;
+    var imports = std.ArrayList(u8){};
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
@@ -194,6 +195,7 @@ pub fn extractImports(allocator: Allocator, source: []const u8) !ArrayList([]con
 
 // Test function to validate import resolution
 pub fn testImportResolution(allocator: Allocator) !void {
+        _ = allocator;
     print("🧪 Testing Import Resolution System...\n", .{});
     
     var resolver = try ImportResolver.init(allocator);
@@ -206,7 +208,7 @@ pub fn testImportResolution(allocator: Allocator) !void {
         print("Testing module: {s}... ", .{module});
         
         if (resolver.resolveImport(module)) |content| {
-            print("✅ Found ({} bytes)\n", .{content.len});
+            print("✅ Found ({s} bytes)\n", .{content.len});
         } else |err| {
             print("❌ Error: {any}\n", .{err});
         }

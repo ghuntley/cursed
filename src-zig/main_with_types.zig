@@ -287,14 +287,14 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
 
     // Read source file
     const file_content = std.fs.cwd().readFileAlloc(allocator, source_file, std.math.maxInt(usize)) catch |err| {
-        print("Error reading file '{s}': {}\n", .{ source_file, err });
+        print("Error reading file '{s}': {s}\n", .{ source_file, err });
         std.process.exit(1);
     };
     defer allocator.free(file_content);
 
     // Tokenize
     var token_list = lexer.tokenize(allocator, file_content) catch |err| {
-        print("Tokenization error: {}\n", .{err});
+        print("Tokenization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer token_list.deinit();
@@ -302,7 +302,7 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
     if (config.show_tokens) {
         print("\n📝 Tokens:\n", .{});
         for (token_list.items, 0..) |token, i| {
-            print("{}: {} '{}'\n", .{ i, token.type, token.value });
+            print("{s}: {s} '{s}'\n", .{ i, token.type, token.value });
         }
         print("\n", .{});
     }
@@ -310,7 +310,7 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
     // Parse
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
-        print("Parse error: {}\n", .{err});
+        print("Parse error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer program.deinit();
@@ -323,13 +323,13 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
 
     // Type check with comprehensive system
     var type_integration = type_checker_integration.TypeCheckerIntegration.init(allocator) catch |err| {
-        print("Type checker initialization error: {}\n", .{err});
+        print("Type checker initialization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer type_integration.deinit();
 
     const type_result = type_integration.checkProgram(&program) catch |err| {
-        print("Type checking error: {}\n", .{err});
+        print("Type checking error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer {
@@ -343,15 +343,15 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         
         if (config.show_types) {
             print("\n📊 Type Information:\n", .{});
-            print("- Strict type checking: {}\n", .{config.strict_types});
-            print("- Generic types enabled: {}\n", .{config.enable_generics});
-            print("- Type inference enabled: {}\n", .{config.enable_inference});
+            print("- Strict type checking: {s}\n", .{config.strict_types});
+            print("- Generic types enabled: {s}\n", .{config.enable_generics});
+            print("- Type inference enabled: {s}\n", .{config.enable_inference});
         }
         
         if (type_result.warnings.items.len > 0) {
             print("\n⚠️  Warnings:\n", .{});
             for (type_result.warnings.items) |warning| {
-                print("  Line {}, Column {}: {s}\n", .{ warning.line, warning.column, warning.message });
+                print("  Line {s}, Column {s}: {s}\n", .{ warning.line, warning.column, warning.message });
             }
         }
     } else {
@@ -360,7 +360,7 @@ fn runTypeCheck(allocator: Allocator, source_file: []const u8, config: Config) !
         if (type_result.errors.items.len > 0) {
             print("\n🚨 Type Errors:\n", .{});
             for (type_result.errors.items, 0..) |error_detail, i| {
-                print("{}. [{s}] Line {}, Column {}: {s}\n", .{
+                print("{s}. [{s}] Line {s}, Column {s}: {s}\n", .{
                     i + 1,
                     @tagName(error_detail.kind),
                     error_detail.line,
@@ -381,27 +381,27 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
 
     // Read and parse source file (similar to type check)
     const file_content = std.fs.cwd().readFileAlloc(allocator, source_file, std.math.maxInt(usize)) catch |err| {
-        print("Error reading file '{s}': {}\n", .{ source_file, err });
+        print("Error reading file '{s}': {s}\n", .{ source_file, err });
         std.process.exit(1);
     };
     defer allocator.free(file_content);
 
     var token_list = lexer.tokenize(allocator, file_content) catch |err| {
-        print("Tokenization error: {}\n", .{err});
+        print("Tokenization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
-        print("Parse error: {}\n", .{err});
+        print("Parse error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer program.deinit();
 
     // Initialize type system for inference analysis
     var type_integration = type_checker_integration.TypeCheckerIntegration.init(allocator) catch |err| {
-        print("Type system initialization error: {}\n", .{err});
+        print("Type system initialization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer type_integration.deinit();
@@ -411,19 +411,19 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
 
     // Analyze each statement for type inference
     for (program.statements.items, 0..) |stmt, i| {
-        print("\nStatement {}:\n", .{i + 1});
+        print("\nStatement {s}:\n", .{i + 1});
         
         switch (stmt) {
             .VariableDeclaration => |var_decl| {
                 print("  Variable: {s}\n", .{var_decl.name});
                 if (var_decl.init_value) |init_val| {
                     const expr_result = type_integration.checkExpression(init_val) catch |err| {
-                        print("  Inference error: {}\n", .{err});
+                        print("  Inference error: {s}\n", .{err});
                         continue;
                     };
                     
-                    print("  Inferred type: {}\n", .{expr_result.inferred_type});
-                    print("  Inference successful: {}\n", .{expr_result.success});
+                    print("  Inferred type: {s}\n", .{expr_result.inferred_type});
+                    print("  Inference successful: {s}\n", .{expr_result.success});
                     
                     if (expr_result.error_message) |err_msg| {
                         print("  Error: {s}\n", .{err_msg});
@@ -432,28 +432,28 @@ fn runTypeInference(allocator: Allocator, source_file: []const u8, config: Confi
             },
             .FunctionDeclaration => |func_decl| {
                 print("  Function: {s}\n", .{func_decl.name});
-                print("  Parameter count: {}\n", .{func_decl.parameters.items.len});
-                print("  Has return type: {}\n", .{func_decl.return_type != null});
+                print("  Parameter count: {s}\n", .{func_decl.parameters.items.len});
+                print("  Has return type: {s}\n", .{func_decl.return_type != null});
                 
                 // Check if function is generic
                 const generic_result = type_integration.checkGenericFunction(&func_decl) catch |err| {
-                    print("  Generic check error: {}\n", .{err});
+                    print("  Generic check error: {s}\n", .{err});
                     continue;
                 };
                 defer generic_result.deinit();
                 
-                print("  Is generic: {}\n", .{generic_result.is_generic});
-                print("  Monomorphization needed: {}\n", .{generic_result.monomorphization_needed});
+                print("  Is generic: {s}\n", .{generic_result.is_generic});
+                print("  Monomorphization needed: {s}\n", .{generic_result.monomorphization_needed});
             },
             .Expression => |expr_stmt| {
                 print("  Expression statement\n", .{});
                 const expr_result = type_integration.checkExpression(expr_stmt.expression) catch |err| {
-                    print("  Inference error: {}\n", .{err});
+                    print("  Inference error: {s}\n", .{err});
                     continue;
                 };
                 
-                print("  Inferred type: {}\n", .{expr_result.inferred_type});
-                print("  Inference successful: {}\n", .{expr_result.success});
+                print("  Inferred type: {s}\n", .{expr_result.inferred_type});
+                print("  Inference successful: {s}\n", .{expr_result.success});
             },
             else => {
                 print("  Type: {s}\n", .{@tagName(stmt)});
@@ -471,52 +471,52 @@ fn runConstraintResolution(allocator: Allocator, source_file: []const u8, config
 
     // Similar setup to other type operations
     const file_content = std.fs.cwd().readFileAlloc(allocator, source_file, std.math.maxInt(usize)) catch |err| {
-        print("Error reading file '{s}': {}\n", .{ source_file, err });
+        print("Error reading file '{s}': {s}\n", .{ source_file, err });
         std.process.exit(1);
     };
     defer allocator.free(file_content);
 
     var token_list = lexer.tokenize(allocator, file_content) catch |err| {
-        print("Tokenization error: {}\n", .{err});
+        print("Tokenization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
-        print("Parse error: {}\n", .{err});
+        print("Parse error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer program.deinit();
 
     var type_integration = type_checker_integration.TypeCheckerIntegration.init(allocator) catch |err| {
-        print("Type system initialization error: {}\n", .{err});
+        print("Type system initialization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer type_integration.deinit();
 
     // Run constraint resolution
     const constraint_result = type_integration.resolveConstraints() catch |err| {
-        print("Constraint resolution error: {}\n", .{err});
+        print("Constraint resolution error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer constraint_result.deinit();
 
     print("🔍 Constraint Resolution Results:\n", .{});
     print("=================================\n", .{});
-    print("Resolution successful: {}\n", .{constraint_result.success});
-    print("Resolved constraints: {}\n", .{constraint_result.resolved_constraints.items.len});
-    print("Remaining unknowns: {}\n", .{constraint_result.remaining_unknowns});
+    print("Resolution successful: {s}\n", .{constraint_result.success});
+    print("Resolved constraints: {s}\n", .{constraint_result.resolved_constraints.items.len});
+    print("Remaining unknowns: {s}\n", .{constraint_result.remaining_unknowns});
 
     if (constraint_result.resolved_constraints.items.len > 0) {
         print("\n📋 Resolved Type Variables:\n", .{});
         for (constraint_result.resolved_constraints.items, 0..) |resolved, i| {
-            print("{}. T{} = {}\n", .{ i + 1, resolved.type_var_id, resolved.resolved_type });
+            print("{s}. T{s} = {s}\n", .{ i + 1, resolved.type_var_id, resolved.resolved_type });
         }
     }
 
     if (constraint_result.remaining_unknowns > 0) {
-        print("\n⚠️  {} type variables remain unresolved\n", .{constraint_result.remaining_unknowns});
+        print("\n⚠️  {s} type variables remain unresolved\n", .{constraint_result.remaining_unknowns});
         print("This may indicate incomplete type information or circular constraints.\n", .{});
     }
 
@@ -529,27 +529,27 @@ fn runSyntaxCheck(allocator: Allocator, source_file: []const u8, config: Config)
     }
 
     const file_content = std.fs.cwd().readFileAlloc(allocator, source_file, std.math.maxInt(usize)) catch |err| {
-        print("Error reading file '{s}': {}\n", .{ source_file, err });
+        print("Error reading file '{s}': {s}\n", .{ source_file, err });
         std.process.exit(1);
     };
     defer allocator.free(file_content);
 
     var token_list = lexer.tokenize(allocator, file_content) catch |err| {
-        print("Tokenization error: {}\n", .{err});
+        print("Tokenization error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer token_list.deinit();
 
     var cursed_parser = parser.Parser.init(allocator, token_list.items);
     var program = cursed_parser.parseProgram() catch |err| {
-        print("Parse error: {}\n", .{err});
+        print("Parse error: {s}\n", .{err});
         std.process.exit(1);
     };
     defer program.deinit();
 
     print("✅ Syntax check passed successfully!\n", .{});
     print("📊 Program statistics:\n", .{});
-    print("  - Statements: {}\n", .{program.statements.items.len});
+    print("  - Statements: {s}\n", .{program.statements.items.len});
     
     // Count different statement types
     var function_count: u32 = 0;
@@ -567,10 +567,10 @@ fn runSyntaxCheck(allocator: Allocator, source_file: []const u8, config: Config)
         }
     }
     
-    print("  - Functions: {}\n", .{function_count});
-    print("  - Variables: {}\n", .{variable_count});
-    print("  - Structs: {}\n", .{struct_count});
-    print("  - Interfaces: {}\n", .{interface_count});
+    print("  - Functions: {s}\n", .{function_count});
+    print("  - Variables: {s}\n", .{variable_count});
+    print("  - Structs: {s}\n", .{struct_count});
+    print("  - Interfaces: {s}\n", .{interface_count});
 }
 
 fn runInterpret(allocator: Allocator, source_file: []const u8, config: Config) !void {
@@ -613,23 +613,23 @@ fn printAST(program: ast.Program, indent: u32) !void {
     const actual_indent = if (indent > 10) 10 else indent;
     
     for (program.statements.items, 0..) |stmt, i| {
-        print("{s}Statement {}: {s}\n", .{ indent_str[0..(actual_indent * 2)], i, @tagName(stmt) });
+        print("{s}Statement {s}: {s}\n", .{ indent_str[0..(actual_indent * 2)], i, @tagName(stmt) });
         
         switch (stmt) {
             .FunctionDeclaration => |func| {
                 print("{s}  Function: {s}\n", .{ indent_str[0..(actual_indent * 2)], func.name });
-                print("{s}  Parameters: {}\n", .{ indent_str[0..(actual_indent * 2)], func.parameters.items.len });
-                print("{s}  Body statements: {}\n", .{ indent_str[0..(actual_indent * 2)], func.body.items.len });
+                print("{s}  Parameters: {s}\n", .{ indent_str[0..(actual_indent * 2)], func.parameters.items.len });
+                print("{s}  Body statements: {s}\n", .{ indent_str[0..(actual_indent * 2)], func.body.items.len });
             },
             .VariableDeclaration => |var_decl| {
                 print("{s}  Variable: {s}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.name });
-                print("{s}  Mutable: {}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.is_mutable });
-                print("{s}  Has explicit type: {}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.var_type != null });
-                print("{s}  Has initializer: {}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.init_value != null });
+                print("{s}  Mutable: {s}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.is_mutable });
+                print("{s}  Has explicit type: {s}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.var_type != null });
+                print("{s}  Has initializer: {s}\n", .{ indent_str[0..(actual_indent * 2)], var_decl.init_value != null });
             },
             .StructDeclaration => |struct_decl| {
                 print("{s}  Struct: {s}\n", .{ indent_str[0..(actual_indent * 2)], struct_decl.name });
-                print("{s}  Fields: {}\n", .{ indent_str[0..(actual_indent * 2)], struct_decl.fields.items.len });
+                print("{s}  Fields: {s}\n", .{ indent_str[0..(actual_indent * 2)], struct_decl.fields.items.len });
             },
             else => {},
         }

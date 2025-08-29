@@ -18,7 +18,7 @@ pub fn main() !void {
     defer std.process.argsFree(allocator, args);
 
     if (args.len < 2) {
-        print("Usage: {} <program.csd>\n", .{args[0]});
+        print("Usage: {s} <program.csd>\n", .{args[0]});
         print("CURSED Error Handling Compiler - Testing yikes, shook, fam operators\n", .{});
         print("\nError handling syntax:\n", .{});
         print("  yikes \"message\", code     - Create error\n");
@@ -33,12 +33,12 @@ pub fn main() !void {
 
     // Read file content
     const content = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
-        print("❌ Error reading file: {}\n", .{err});
+        print("❌ Error reading file: {s}\n", .{err});
         return;
     };
     defer allocator.free(content);
 
-    print("📄 File content ({} bytes):\n{s}\n", .{ content.len, content });
+    print("📄 File content ({s} bytes):\n{s}\n", .{ content.len, content });
 
     // Simple pattern matching for error handling keywords
     try analyzeErrorHandling(allocator, content);
@@ -88,7 +88,7 @@ fn analyzeErrorHandling(allocator: Allocator, content: []const u8) !void {
 }
 
 fn processYikesExpression(allocator: Allocator, line: []const u8, line_number: u32) !void {
-    print("Line {}: 💥 YIKES expression - {s}\n", .{ line_number, line });
+    print("Line {s}: 💥 YIKES expression - {s}\n", .{ line_number, line });
     
     // Extract error message and code if possible
     if (std.mem.indexOf(u8, line, "\"")) |start| {
@@ -115,7 +115,7 @@ fn processYikesExpression(allocator: Allocator, line: []const u8, line_number: u
 }
 
 fn processShookExpression(allocator: Allocator, line: []const u8, line_number: u32) !void {
-    print("Line {}: ⚡ SHOOK expression - {s}\n", .{ line_number, line });
+    print("Line {s}: ⚡ SHOOK expression - {s}\n", .{ line_number, line });
     
     // Simulate error propagation
     print("   🔄 Simulating error propagation...\n", .{});
@@ -131,7 +131,7 @@ fn processShookExpression(allocator: Allocator, line: []const u8, line_number: u
 }
 
 fn processFamExpression(allocator: Allocator, line: []const u8, line_number: u32) !void {
-    print("Line {}: 🛡️  FAM expression - {s}\n", .{ line_number, line });
+    print("Line {s}: 🛡️  FAM expression - {s}\n", .{ line_number, line });
     
     // Check for catch blocks
     if (std.mem.indexOf(u8, line, "catch")) |_| {
@@ -159,7 +159,7 @@ fn testErrorOperators(allocator: Allocator) !void {
         return;
     };
     defer error1.deinit();
-    print("   ✅ yikes: Created error with message '{s}' and code {}\n", .{ error1.getMessage(), error1.getCode() });
+    print("   ✅ yikes: Created error with message '{s}' and code {s}\n", .{ error1.getMessage(), error1.getCode() });
     
     // Test 2: shook error propagation
     print("2. Testing shook error propagation...\n", .{});

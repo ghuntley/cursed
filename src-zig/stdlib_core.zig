@@ -95,7 +95,7 @@ pub const StdlibCore = struct {
     /// Append to dynamic array (simplified)
     pub fn array_append(self: *StdlibCore, list: *ArrayList([]const u8), item: []const u8) !void {
         _ = self;
-        try list.append(item);
+        try list.append(allocator, item);
     }
     
     // ===== MATH FUNCTIONS (mathz module) =====
@@ -208,7 +208,7 @@ pub const StdlibCore = struct {
         const file = std.fs.cwd().createFile(filename, .{}) catch return false;
         defer file.close();
         
-        file.writeAll(content) catch return false;
+        file.writer().writeAll(content) catch return false;
         return true;
     }
     
@@ -243,7 +243,7 @@ pub const StdlibCore = struct {
         };
         defer file.close();
         try file.seekFromEnd(0);
-        file.writeAll(content) catch return false;
+        file.writer().writeAll(content) catch return false;
         return true;
     }
     
@@ -258,7 +258,7 @@ pub const StdlibCore = struct {
     
     /// List directory contents  
     pub fn list_directory(self: *StdlibCore, dirname: []const u8) ![]u8 {
-        var result = std.ArrayList(u8).init(self.allocator);
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         var dir = std.fs.cwd().openIterableDir(dirname, .{}) catch return try self.allocator.dupe(u8, "");
@@ -299,7 +299,7 @@ pub const StdlibCore = struct {
         _ = self;
         const file = std.fs.cwd().createFile(filename, .{}) catch return false;
         defer file.close();
-        file.writeAll(bytes) catch return false;
+        file.writer().writeAll(bytes) catch return false;
         return true;
     }
     
@@ -307,7 +307,7 @@ pub const StdlibCore = struct {
     
     /// List directory files
     pub fn list_directory_files(self: *StdlibCore, directory: []const u8) !ArrayList([]const u8) {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         
         var dir = std.fs.cwd().openIterableDir(directory, .{}) catch return result;
         defer dir.close();
@@ -424,6 +424,7 @@ var global_stdlib_core: ?StdlibCore = null;
 
 /// Initialize global stdlib core
 pub fn init_stdlib_core(allocator: Allocator) void {
+        _ = allocator;
     global_stdlib_core = StdlibCore.init(allocator);
 }
 
@@ -723,9 +724,9 @@ pub fn test_stdlib_core() !void {
     
     // Test math functions
     print("Testing math functions...\n", .{});
-    print("abs(-5): {}\n", .{core.abs_int(-5)});
-    print("sqrt(16): {}\n", .{core.sqrt(16.0)});
-    print("sin(0): {}\n", .{core.sin(0.0)});
+    print("abs(-5): {s}\n", .{core.abs_int(-5)});
+    print("sqrt(16): {s}\n", .{core.sqrt(16.0)});
+    print("sin(0): {s}\n", .{core.sin(0.0)});
     
     // Test file operations
     print("Testing file operations...\n", .{});

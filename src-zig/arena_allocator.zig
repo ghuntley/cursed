@@ -552,11 +552,11 @@ pub const CursedArenaManager = struct {
     }
     
     pub fn deinit(self: *CursedArenaManager) void {
-        self.parser_arena.deinit();
-        self.ast_arena.deinit();
-        self.runtime_arena.deinit();
-        self.string_arena.deinit();
-        self.temporary_arena.deinit();
+        self.parser_arena.deinit(self.allocator);
+        self.ast_arena.deinit(self.allocator);
+        self.runtime_arena.deinit(self.allocator);
+        self.string_arena.deinit(self.allocator);
+        self.temporary_arena.deinit(self.allocator);
     }
     
     /// Reset all arenas (typically done between compilation units)

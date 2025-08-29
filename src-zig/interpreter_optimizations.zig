@@ -25,7 +25,7 @@ pub const VariableCache = struct {
     pub fn init() Self {
         return Self{
             .cache = HashMap(u64, CachedVariable, std.hash_map.DefaultContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
-            .string_to_hash = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .string_to_hash = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
             .hit_count = 0,
             .miss_count = 0,
@@ -39,8 +39,8 @@ pub const VariableCache = struct {
             self.allocator.free(entry.key_ptr.*);
         }
         
-        self.cache.deinit();
-        self.string_to_hash.deinit();
+        self.cache.deinit(self.allocator);
+        self.string_to_hash.deinit(self.allocator);
     }
     
     pub fn getVariablePtr(self: *Self, name: []const u8) ?*const anyopaque {
@@ -83,7 +83,7 @@ pub const VariableCache = struct {
     
     pub fn printStats(self: *Self) void {
         const total = self.hit_count + self.miss_count;
-        std.debug.print("Variable Cache Stats: {} hits, {} misses, {d:.1}% hit ratio\n", .{
+        std.debug.print("Variable Cache Stats: {s} hits, {s} misses, {d:.1}% hit ratio\n", .{
             self.hit_count, self.miss_count, self.getCacheHitRatio() * 100.0
         });
     }
@@ -141,7 +141,7 @@ pub const OptimizedFunctionCall = struct {
     
     pub fn printStats(self: *Self) void {
         const avg_time_ms = self.getAverageCallTime() / 1_000_000.0;
-        std.debug.print("Function '{}': {} calls, {d:.2}ms avg\n", .{
+        std.debug.print("Function '{s}': {s} calls, {d:.2}ms avg\n", .{
             self.function_name, self.call_count, avg_time_ms
         });
     }
@@ -191,7 +191,7 @@ pub const ExpressionCache = struct {
             }
         }
         
-        self.cache.deinit();
+        self.cache.deinit(self.allocator);
     }
     
     pub fn getHash(expression: []const u8) u64 {
@@ -244,7 +244,7 @@ pub const ExpressionCache = struct {
     pub fn printStats(self: *Self) void {
         const total = self.hit_count + self.miss_count;
         const hit_ratio = if (total > 0) (@as(f64, @floatFromInt(self.hit_count)) / @as(f64, @floatFromInt(total))) * 100.0 else 0.0;
-        std.debug.print("Expression Cache: {} entries, {d:.1}% hit ratio\n", .{
+        std.debug.print("Expression Cache: {s} entries, {d:.1}% hit ratio\n", .{
             self.cache.count(), hit_ratio
         });
     }
@@ -261,7 +261,7 @@ pub const StringInterner = struct {
     pub fn init() Self {
         return Self{
             .strings = .empty,
-            .string_map = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .string_map = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -270,8 +270,8 @@ pub const StringInterner = struct {
         for (self.strings.items) |string| {
             self.allocator.free(string);
         }
-        self.strings.deinit();
-        self.string_map.deinit();
+        self.strings.deinit(self.allocator);
+        self.string_map.deinit(self.allocator);
     }
     
     pub fn intern(self: *Self, string: []const u8) ![]const u8 {
@@ -321,7 +321,7 @@ pub const PerformanceMonitor = struct {
             .variable_cache = VariableCache.init(allocator),
             .expression_cache = ExpressionCache.init(allocator),
             .string_interner = StringInterner.init(allocator),
-            .function_calls = HashMap([]const u8, OptimizedFunctionCall, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_calls = HashMap([]const u8, OptimizedFunctionCall, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .total_interpretation_time_ns = 0,
             .total_variable_lookups = 0,
             .total_function_calls = 0,
@@ -331,16 +331,16 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.variable_cache.deinit();
-        self.expression_cache.deinit();
-        self.string_interner.deinit();
+        self.variable_cache.deinit(self.allocator);
+        self.expression_cache.deinit(self.allocator);
+        self.string_interner.deinit(self.allocator);
         
         // Free function call tracking
         var iter = self.function_calls.iterator();
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.function_calls.deinit();
+        self.function_calls.deinit(self.allocator);
     }
     
     pub fn recordVariableLookup(self: *Self) void {
@@ -374,16 +374,16 @@ pub const PerformanceMonitor = struct {
         
         std.debug.print("\n=== CURSED Performance Optimization Report ===\n", .{});
         std.debug.print("Total interpretation time: {d:.2}ms\n", .{total_time_ms});
-        std.debug.print("Variable lookups: {}\n", .{self.total_variable_lookups});
-        std.debug.print("Function calls: {}\n", .{self.total_function_calls});
-        std.debug.print("Expressions evaluated: {}\n", .{self.total_expressions_evaluated});
+        std.debug.print("Variable lookups: {s}\n", .{self.total_variable_lookups});
+        std.debug.print("Function calls: {s}\n", .{self.total_function_calls});
+        std.debug.print("Expressions evaluated: {s}\n", .{self.total_expressions_evaluated});
         
         std.debug.print("\n--- Cache Performance ---\n", .{});
         self.variable_cache.printStats();
         self.expression_cache.printStats();
         
         const string_stats = self.string_interner.getStats();
-        std.debug.print("String interning: {} strings, {} bytes\n", .{
+        std.debug.print("String interning: {s} strings, {s} bytes\n", .{
             string_stats.interned_count, string_stats.total_size
         });
         

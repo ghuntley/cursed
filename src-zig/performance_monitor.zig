@@ -67,11 +67,12 @@ pub const PerformanceMonitor = struct {
     monitoring_start_time: i64,
     
     pub fn init(allocator: Allocator) Self {
+        _ = allocator;
         return Self{
             .allocator = allocator,
             .samples = SampleMap.init(allocator),
             .thresholds = ThresholdMap.init(allocator),
-            .alerts = ArrayList(RegressionAlert).init(allocator),
+            .alerts = ArrayList(RegressionAlert){},
             .monitoring_start_time = std.time.nanoTimestamp(),
         };
     }
@@ -82,13 +83,13 @@ pub const PerformanceMonitor = struct {
         while (sample_iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.samples.deinit();
+        self.samples.deinit(self.allocator);
         
         // Clean up thresholds
-        self.thresholds.deinit();
+        self.thresholds.deinit(self.allocator);
         
         // Clean up alerts
-        self.alerts.deinit();
+        self.alerts.deinit(self.allocator);
     }
     
     // Record performance sample
@@ -106,7 +107,7 @@ pub const PerformanceMonitor = struct {
         // Get or create sample list for this metric
         var sample_list = self.samples.getPtr(key);
         if (sample_list == null) {
-            var new_list = ArrayList(PerformanceSample).init(self.allocator);
+            var new_list = ArrayList(PerformanceSample){};
             try new_list.ensureTotalCapacity(self.max_samples_per_metric);
             try self.samples.put(try self.allocator.dupe(u8, key), new_list);
             sample_list = self.samples.getPtr(key).?;
@@ -120,7 +121,7 @@ pub const PerformanceMonitor = struct {
             self.allocator.free(oldest.context);
         }
         
-        try sample_list.append(sample);
+        try sample_list.append(allocator, sample);
         self.total_samples += 1;
         
         // Check for regressions
@@ -175,7 +176,7 @@ pub const PerformanceMonitor = struct {
                 .severity = severity.?,
             };
             
-            try self.alerts.append(alert);
+            try self.alerts.append(allocator, alert);
             self.total_alerts += 1;
             
             // Log alert
@@ -207,9 +208,9 @@ pub const PerformanceMonitor = struct {
     // Generate performance report
     pub fn generateReport(self: *Self) !void {
         std.debug.print("=== PERFORMANCE MONITORING REPORT ===\n");
-        std.debug.print("Monitoring duration: {} seconds\n", .{(std.time.nanoTimestamp() - self.monitoring_start_time) / 1_000_000_000});
-        std.debug.print("Total samples collected: {}\n", .{self.total_samples});
-        std.debug.print("Total alerts generated: {}\n", .{self.total_alerts});
+        std.debug.print("Monitoring duration: {s} seconds\n", .{(std.time.nanoTimestamp() - self.monitoring_start_time) / 1_000_000_000});
+        std.debug.print("Total samples collected: {s}\n", .{self.total_samples});
+        std.debug.print("Total alerts generated: {s}\n", .{self.total_alerts});
         std.debug.print("\n");
         
         // Report by metric type
@@ -223,11 +224,11 @@ pub const PerformanceMonitor = struct {
             // Parse key to get metric info
             const parsed = try self.parseKey(key);
             
-            std.debug.print("Metric: {} - {s}\n", .{ parsed.metric_type, parsed.operation_name });
+            std.debug.print("Metric: {s} - {s}\n", .{ parsed.metric_type, parsed.operation_name });
             
             // Calculate statistics
             const stats = self.calculateStatistics(samples.items);
-            std.debug.print("  Samples: {}\n", .{samples.items.len});
+            std.debug.print("  Samples: {s}\n", .{samples.items.len});
             std.debug.print("  Average: {d:.2} ns\n", .{stats.mean});
             std.debug.print("  Median: {d:.2} ns\n", .{stats.median});
             std.debug.print("  95th percentile: {d:.2} ns\n", .{stats.p95});
@@ -424,7 +425,7 @@ pub const PerformanceTimer = struct {
         const duration_ns = @as(f64, @floatFromInt(end_time - self.start_time));
         
         self.monitor.recordSample(self.metric_type, self.operation_name, duration_ns, self.context) catch |err| {
-            std.debug.print("Failed to record performance sample: {}\n", .{err});
+            std.debug.print("Failed to record performance sample: {s}\n", .{err});
         };
     }
 };
@@ -490,6 +491,7 @@ pub const DEFAULT_THRESHOLDS = [_]PerformanceThreshold{
 var global_performance_monitor: ?*PerformanceMonitor = null;
 
 pub fn initGlobalPerformanceMonitor(allocator: Allocator) !void {
+        _ = allocator;
     var monitor = try allocator.create(PerformanceMonitor);
     monitor.* = PerformanceMonitor.init(allocator);
     
@@ -502,6 +504,7 @@ pub fn initGlobalPerformanceMonitor(allocator: Allocator) !void {
 }
 
 pub fn deinitGlobalPerformanceMonitor(allocator: Allocator) void {
+        _ = allocator;
     if (global_performance_monitor) |monitor| {
         monitor.deinit();
         allocator.destroy(monitor);

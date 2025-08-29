@@ -118,8 +118,8 @@ pub fn main() !void {
     print("\n=== Diagnostic Summary ===\n", .{});
     print("Total errors: {d}\n", .{engine.getErrorCount()});
     print("Total warnings: {d}\n", .{engine.getWarningCount()});
-    print("Has errors: {}\n", .{engine.hasErrors()});
-    print("Has warnings: {}\n", .{engine.hasWarnings()});
+    print("Has errors: {s}\n", .{engine.hasErrors()});
+    print("Has warnings: {s}\n", .{engine.hasWarnings()});
     
     // Test without colors for comparison
     print("\n=== Same Output Without Colors ===\n", .{});

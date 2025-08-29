@@ -250,40 +250,40 @@ pub const CodeGen = struct {
             .context = context,
             .module = module,
             .builder = builder,
-            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_types = std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .variables = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .struct_types = std.HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .interface_types = std.HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .goroutines = std.HashMap(u32, GoroutineInfo, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .channels = std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .channels = std.HashMap([]const u8, ChannelInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .loop_stack = .empty,
             .defer_stack = .empty,
             .current_function = null,
             .goroutine_counter = 0,
             .current_error_var = null,
             .current_error_flag = null,
-            .runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .runtime_functions = std.HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
 
     pub fn deinit(self: *CodeGen) void {
-        self.functions.deinit();
-        self.variables.deinit();
-        self.struct_types.deinit();
+        self.functions.deinit(self.allocator);
+        self.variables.deinit(self.allocator);
+        self.struct_types.deinit(self.allocator);
         
         // Clean up interface types
         var interface_iter = self.interface_types.iterator();
         while (interface_iter.next()) |entry| {
             entry.value_ptr.methods.deinit();
         }
-        self.interface_types.deinit();
+        self.interface_types.deinit(self.allocator);
         
         // Clean up CURSED runtime structures
-        self.goroutines.deinit();
-        self.channels.deinit();
-        self.loop_stack.deinit();
-        self.defer_stack.deinit();
-        self.runtime_functions.deinit();
+        self.goroutines.deinit(self.allocator);
+        self.channels.deinit(self.allocator);
+        self.loop_stack.deinit(self.allocator);
+        self.defer_stack.deinit(self.allocator);
+        self.runtime_functions.deinit(self.allocator);
         
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
@@ -486,7 +486,7 @@ pub const CodeGen = struct {
                 try self.generateConst(const_stmt.*);
             },
             else => {
-                std.debug.print("Unknown statement type in codegen: {}\n", .{stmt.tag});
+                std.debug.print("Unknown statement type in codegen: {s}\n", .{stmt.tag});
                 return CodeGenError.LLVMError;
             },
         }
@@ -494,12 +494,12 @@ pub const CodeGen = struct {
 
     fn generateFunction(self: *CodeGen, func: FunctionStatement) CodeGenError!void {
         // Create function type
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (func.parameters.items) |param| {
             const param_type = try self.getLLVMType(param.param_type);
-            try param_types.append(param_type);
+            try param_types.append(allocator, param_type);
         }
         
         const return_type = if (func.return_type) |ret_type|
@@ -650,7 +650,7 @@ pub const CodeGen = struct {
                 return try self.generateCall(call.*);
             },
             else => {
-                std.debug.print("Unsupported expression type: {}\n", .{expr.tag});
+                std.debug.print("Unsupported expression type: {s}\n", .{expr.tag});
                 return CodeGenError.LLVMError;
             },
         }
@@ -694,7 +694,7 @@ pub const CodeGen = struct {
             .Multiply => return c.LLVMBuildMul(self.builder, left, right, "mul"),
             .Divide => return c.LLVMBuildSDiv(self.builder, left, right, "div"),
             else => {
-                std.debug.print("Unsupported binary operator: {}\n", .{binary.operator});
+                std.debug.print("Unsupported binary operator: {s}\n", .{binary.operator});
                 return CodeGenError.LLVMError;
             },
         }
@@ -711,12 +711,12 @@ pub const CodeGen = struct {
             return CodeGenError.UndefinedSymbol;
         };
         
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         
         for (call.arguments.items) |arg| {
             const arg_value = try self.generateExpression(arg.*);
-            try args.append(arg_value);
+            try args.append(allocator, arg_value);
         }
         
         const func_type = c.LLVMGlobalGetValueType(function);
@@ -735,15 +735,15 @@ pub const CodeGen = struct {
             return CodeGenError.UndefinedSymbol;
         };
         
-        var format_str = std.ArrayList(u8).init(self.allocator);
+        var format_str = std.ArrayList(u8){};
         defer format_str.deinit();
         
-        var llvm_args = .empty;
+        var llvm_args = std.ArrayList(u8){};
         defer llvm_args.deinit();
         
         // Generate format string and arguments
         for (args, 0..) |arg, i| {
-            if (i > 0) try format_str.append(' ');
+            if (i > 0) try format_str.append(allocator, ' ');
             
             const arg_value = try self.generateExpression(arg);
             const arg_type = c.LLVMTypeOf(arg_value);
@@ -754,17 +754,17 @@ pub const CodeGen = struct {
                 try format_str.appendSlice("%s");
             }
             
-            try llvm_args.append(arg_value);
+            try llvm_args.append(allocator, arg_value);
         }
         
-        try format_str.append('\n');
-        try format_str.append(0); // null terminator
+        try format_str.append(allocator, '\n');
+        try format_str.append(allocator, 0); // null terminator
         
         const format_global = c.LLVMBuildGlobalStringPtr(self.builder, format_str.items.ptr, "printf_fmt");
         
-        var printf_args = .empty;
+        var printf_args = std.ArrayList(u8){};
         defer printf_args.deinit();
-        try printf_args.append(format_global);
+        try printf_args.append(allocator, format_global);
         try printf_args.appendSlice(llvm_args.items);
         
         const printf_type = c.LLVMGlobalGetValueType(printf_func);
@@ -986,12 +986,12 @@ pub const CodeGen = struct {
     /// Generate struct type declaration
     fn generateStruct(self: *CodeGen, struct_stmt: ast.StructStatement) CodeGenError!void {
         // Create field types array
-        var field_types = .empty;
+        var field_types = std.ArrayList(u8){};
         defer field_types.deinit();
         
         for (struct_stmt.fields.items) |field| {
             const field_type = try self.getLLVMType(field.field_type);
-            try field_types.append(field_type);
+            try field_types.append(allocator, field_type);
         }
         
         // Create struct type
@@ -1016,15 +1016,15 @@ pub const CodeGen = struct {
         
         // Create method info for each interface method
         for (interface_stmt.methods.items, 0..) |method, i| {
-            var param_types = .empty;
+            var param_types = std.ArrayList(u8){};
             defer param_types.deinit();
             
             // Add 'self' parameter as first parameter
-            try param_types.append(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            try param_types.append(self.allocator, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
             
             for (method.parameters.items) |param| {
                 const param_type = try self.getLLVMType(param.param_type);
-                try param_types.append(param_type);
+                try param_types.append(allocator, param_type);
             }
             
             const return_type = if (method.return_type) |ret_type|
@@ -1045,7 +1045,7 @@ pub const CodeGen = struct {
                 .function_type = method_type,
             };
             
-            try interface_info.methods.append(interface_method);
+            try interface_info.methods.append(allocator, interface_method);
         }
         
         // Create vtable type
@@ -1358,8 +1358,6 @@ pub const CodeGen = struct {
             .StructLiteral => |struct_lit| {
                 return try self.generateStructLiteral(struct_lit);
             },
-            .Tuple => |tuple| {
-                return try self.generateTuple(tuple);
             },
             .TupleAccess => |tuple_access| {
                 return try self.generateTupleAccess(tuple_access);
@@ -1469,7 +1467,7 @@ pub const CodeGen = struct {
                 return try self.generateFamExpression(fam);
             },
             else => {
-                std.debug.print("Unknown expression type in codegen: {}\n", .{expr});
+                std.debug.print("Unknown expression type in codegen: {s}\n", .{expr});
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 1);
             },
         }
@@ -1590,10 +1588,10 @@ pub const CodeGen = struct {
                     }
                     
                     // Build format string and arguments dynamically
-                    var format_parts = .empty;
+                    var format_parts = std.ArrayList(u8){};
                     defer format_parts.deinit();
                     
-                    var printf_args = .empty;
+                    var printf_args = std.ArrayList(u8){};
                     defer printf_args.deinit();
                     
                     for (call.arguments.items, 0..) |arg_expr, i| {
@@ -1612,17 +1610,17 @@ pub const CodeGen = struct {
                                 const true_str = c.LLVMBuildGlobalStringPtr(self.builder, "true", "true_str");
                                 const false_str = c.LLVMBuildGlobalStringPtr(self.builder, "false", "false_str");
                                 const cond_arg = c.LLVMBuildSelect(self.builder, arg, true_str, false_str, "bool_str");
-                                try printf_args.append(cond_arg);
+                                try printf_args.append(allocator, cond_arg);
                             } else {
                                 try format_parts.appendSlice("%d");
-                                try printf_args.append(arg);
+                                try printf_args.append(allocator, arg);
                             }
                         } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
                             try format_parts.appendSlice("%.2f");
-                            try printf_args.append(arg);
+                            try printf_args.append(allocator, arg);
                         } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
                             try format_parts.appendSlice("%s");
-                            try printf_args.append(arg);
+                            try printf_args.append(allocator, arg);
                         } else {
                             try format_parts.appendSlice("%p");
                             try printf_args.append(self.allocator, arg);
@@ -1637,7 +1635,7 @@ pub const CodeGen = struct {
                     const format = c.LLVMBuildGlobalStringPtr(self.builder, format_str.ptr, "fmt");
                     
                     // Build final printf arguments (format string + actual arguments)
-                    var final_args = .empty;
+                    var final_args = std.ArrayList(u8){};
                     defer final_args.deinit();
                     try final_args.append(self.allocator, format);
                     try final_args.appendSlice(printf_args.items);
@@ -1655,12 +1653,12 @@ pub const CodeGen = struct {
             .Identifier => |name| {
                 if (self.functions.get(name)) |function| {
                     // Generate arguments
-                    var args = .empty;
+                    var args = std.ArrayList(u8){};
                     defer args.deinit();
                     
                     for (call.arguments.items) |arg_expr| {
                         const arg = try self.generateExpression(arg_expr);
-                        try args.append(arg);
+                        try args.append(allocator, arg);
                     }
                     
                     return c.LLVMBuildCall2(
@@ -1838,7 +1836,7 @@ test "codegen basic" {
 
     pub fn writeExecutable(self: *CodeGen, output_path: []const u8) CodeGenError!void {
         // Write LLVM IR to file for debugging
-        var ir_filename = .empty;
+        var ir_filename = std.ArrayList(u8){};
         defer ir_filename.deinit();
         
         try ir_filename.appendSlice(output_path);
@@ -1914,17 +1912,17 @@ test "codegen basic" {
     /// Generate tuple expression
     fn generateTuple(self: *CodeGen, tuple: ast.TupleExpression) CodeGenError!c.LLVMValueRef {
         // Create tuple type
-        var element_types = .empty;
+        var element_types = std.ArrayList(u8){};
         defer element_types.deinit();
         
-        var element_values = .empty;
+        var element_values = std.ArrayList(u8){};
         defer element_values.deinit();
         
         for (tuple.elements.items) |element| {
             const value = try self.generateExpression(element);
             const value_type = c.LLVMTypeOf(value);
-            try element_types.append(value_type);
-            try element_values.append(value);
+            try element_types.append(allocator, value_type);
+            try element_values.append(allocator, value);
         }
         
         // Create tuple struct type
@@ -2143,13 +2141,13 @@ test "codegen basic" {
         }
 
         // Generate all elements first to determine array type
-        var element_values = .empty;
+        var element_values = std.ArrayList(u8){};
         defer element_values.deinit();
 
         var element_type: ?c.LLVMTypeRef = null;
         for (array.elements.items) |element| {
             const value = try self.generateExpression(element);
-            try element_values.append(value);
+            try element_values.append(allocator, value);
             
             if (element_type == null) {
                 element_type = c.LLVMTypeOf(value);
@@ -2262,10 +2260,10 @@ test "codegen basic" {
         const current_func = self.current_function.?;
 
         // Create basic blocks for each case and merge
-        var case_blocks = .empty;
+        var case_blocks = std.ArrayList(u8){};
         defer case_blocks.deinit();
 
-        var case_values = .empty;
+        var case_values = std.ArrayList(u8){};
         defer case_values.deinit();
 
         const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_merge");
@@ -2274,7 +2272,7 @@ test "codegen basic" {
         // Generate blocks and conditions for each case
         for (match.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_case");
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
 
             // Generate condition check
             if (i == 0) {
@@ -2306,7 +2304,7 @@ test "codegen basic" {
             else
                 c.LLVMGetUndef(match_value_type);
 
-            try case_values.append(case_result);
+            try case_values.append(allocator, case_result);
 
             // Branch to merge block
             _ = c.LLVMBuildBr(self.builder, merge_block);
@@ -2350,7 +2348,7 @@ test "codegen basic" {
 
         // Generate methods with mangled names
         for (impl.methods.items) |method| {
-            var mangled_name = .empty;
+            var mangled_name = std.ArrayList(u8){};
             defer mangled_name.deinit();
 
             try mangled_name.appendSlice(struct_type_name);
@@ -2387,7 +2385,7 @@ test "codegen basic" {
             c.LLVMSetLinkage(vtable_global, c.LLVMInternalLinkage);
 
             // Initialize vtable with method pointers
-            var method_pointers = .empty;
+            var method_pointers = std.ArrayList(u8){};
             defer method_pointers.deinit();
 
             for (interface_info.methods.items) |interface_method| {
@@ -2613,7 +2611,7 @@ test "codegen basic" {
         );
 
         // Create blocks for each case and merge
-        var case_blocks = .empty;
+        var case_blocks = std.ArrayList(u8){};
         defer case_blocks.deinit();
 
         const merge_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select_merge");
@@ -2625,7 +2623,7 @@ test "codegen basic" {
         // Generate case blocks
         for (select_stmt.cases.items, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "select_case");
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
 
             const case_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), @as(u32, @intCast(i)), 0);
             c.LLVMAddCase(switch_inst, case_value, case_block);
@@ -2717,7 +2715,7 @@ test "codegen basic" {
             .cleanup_function = cleanup_func,
             .cleanup_block = cleanup_entry,
         };
-        try self.defer_stack.append(defer_info);
+        try self.defer_stack.append(allocator, defer_info);
     }
 
     /// Generate bestie (for) loop statement
@@ -2734,7 +2732,7 @@ test "codegen basic" {
             .continue_block = condition_block,
             .break_block = exit_block,
         };
-        try self.loop_stack.append(loop_context);
+        try self.loop_stack.append(allocator, loop_context);
         defer _ = self.loop_stack.pop();
 
         // Generate initializer if present
@@ -2799,13 +2797,13 @@ test "codegen basic" {
         // Create switch instruction
         const switch_inst = c.LLVMBuildSwitch(self.builder, value, default_block, @as(u32, @intCast(cases.len)));
 
-        var case_blocks = .empty;
+        var case_blocks = std.ArrayList(u8){};
         defer case_blocks.deinit();
 
         // Generate case blocks
         for (cases, 0..) |case_item, i| {
             const case_block = c.LLVMAppendBasicBlockInContext(self.context, current_func, "match_case");
-            try case_blocks.append(case_block);
+            try case_blocks.append(allocator, case_block);
 
             // Add case to switch (simplified - assumes literal patterns)
             if (case_item.pattern) |pattern| {
@@ -2947,12 +2945,12 @@ test "codegen basic" {
         const object_value = try self.generateExpression(interface_call.object.*);
 
         // Generate arguments
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
 
         for (interface_call.arguments.items) |arg_expr| {
             const arg = try self.generateExpression(arg_expr);
-            try args.append(arg);
+            try args.append(allocator, arg);
         }
 
         // For now, create a simplified interface call
@@ -3180,7 +3178,7 @@ test "codegen basic" {
             .continue_block = increment_block,
             .break_block = exit_block,
         };
-        try self.loop_stack.append(loop_context);
+        try self.loop_stack.append(allocator, loop_context);
         defer _ = self.loop_stack.pop();
 
         // Generate initializer if present
@@ -3586,12 +3584,12 @@ test "codegen basic" {
     /// Generate lambda expression
     fn generateLambda(self: *CodeGen, lambda: ast.LambdaExpression) CodeGenError!c.LLVMValueRef {
         // Create anonymous function
-        var param_types = .empty;
+        var param_types = std.ArrayList(u8){};
         defer param_types.deinit();
         
         for (lambda.parameters.items) |param| {
             const param_type = try self.getLLVMType(param.param_type);
-            try param_types.append(param_type);
+            try param_types.append(allocator, param_type);
         }
         
         const return_type = if (lambda.return_type) |ret_type|
@@ -3765,12 +3763,12 @@ test "codegen basic" {
     /// Generate array expression (different from ArrayLiteral)
     fn generateArrayExpression(self: *CodeGen, array: ast.ArrayExpression) CodeGenError!c.LLVMValueRef {
         // Generate array elements
-        var element_values = .empty;
+        var element_values = std.ArrayList(u8){};
         defer element_values.deinit();
         
         for (array.elements.items) |element| {
             const element_value = try self.generateExpression(element.*);
-            try element_values.append(element_value);
+            try element_values.append(allocator, element_value);
         }
         
         if (element_values.items.len == 0) {

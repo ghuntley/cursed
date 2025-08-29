@@ -54,7 +54,7 @@ pub fn main() !void {
             "Could not open file",
             memory_safe_error_reporting.SourceLocation.init(filename, 1, 1, 0)
         );
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
@@ -84,7 +84,7 @@ pub fn main() !void {
             "Lexing failed",
             memory_safe_error_reporting.SourceLocation.init(filename, 1, 1, 0)
         );
-        print("Lexing error: {}\n", .{err});
+        print("Lexing error: {s}\n", .{err});
         try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         return;
     };
@@ -94,7 +94,7 @@ pub fn main() !void {
         print("Tokenized successfully: {d} tokens\n", .{tokens.items().len});
         if (debug_mode) {
             for (tokens.items(), 0..) |token, i| {
-                print("Token {d}: {}\n", .{ i, token });
+                print("Token {d}: {s}\n", .{ i, token });
             }
         }
     }
@@ -112,7 +112,7 @@ pub fn main() !void {
             "Parsing failed",
             memory_safe_error_reporting.SourceLocation.init(filename, 1, 1, 0)
         );
-        print("Parsing error: {}\n", .{err});
+        print("Parsing error: {s}\n", .{err});
         try error_reporter.printDiagnostics(std.fs.File.stdout().writer(&[_]u8{}));
         return;
     };

@@ -71,6 +71,7 @@ pub const PluginMetadata = struct {
     checksum: ?[]const u8,
     
     pub fn init(allocator: Allocator) PluginMetadata {
+        _ = allocator;
         return PluginMetadata{
             .name = "",
             .version = "0.0.0",
@@ -100,8 +101,8 @@ pub const PluginHandle = struct {
     metadata: PluginMetadata,
     library_handle: LibraryHandle,
     status: PluginStatus,
-    init_function: ?*const fn() callconv(.C) i32,
-    cleanup_function: ?*const fn() callconv(.C) void,
+    init_function: ?*const fn() callconv(.c) i32,
+    cleanup_function: ?*const fn() callconv(.c) void,
     allocator: Allocator,
     
     // Function registry for exposed plugin functions
@@ -116,13 +117,13 @@ pub const PluginHandle = struct {
             .init_function = null,
             .cleanup_function = null,
             .allocator = allocator,
-            .functions = HashMap([]const u8, *anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, *anyopaque, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *PluginHandle) void {
-        self.functions.deinit();
-        self.library_handle.deinit();
+        self.functions.deinit(self.allocator);
+        self.library_handle.deinit(self.allocator);
     }
 };
 
@@ -146,6 +147,7 @@ const LibraryHandle = struct {
     
     // Platform-specific library loading
     pub fn load(self: *LibraryHandle, path: []const u8, allocator: Allocator) !void {
+        _ = allocator;
         const path_z = try allocator.dupeZ(u8, path);
         defer allocator.free(path_z);
         
@@ -165,7 +167,7 @@ const LibraryHandle = struct {
                 const handle = std.os.windows.kernel32.LoadLibraryA(path_z);
                 if (handle == null) {
                     const err = std.os.windows.kernel32.GetLastError();
-                    std.debug.print("LoadLibrary failed: {}\n", .{err});
+                    std.debug.print("LoadLibrary failed: {s}\n", .{err});
                     return PluginError.LibraryNotFound;
                 }
                 self.handle = @ptrCast(handle);
@@ -178,6 +180,7 @@ const LibraryHandle = struct {
     
     // Platform-specific symbol resolution
     pub fn getSymbol(self: *const LibraryHandle, symbol_name: []const u8, allocator: Allocator) !*anyopaque {
+        _ = allocator;
         if (self.handle == null) return PluginError.SymbolNotFound;
         
         const symbol_z = try allocator.dupeZ(u8, symbol_name);
@@ -199,7 +202,7 @@ const LibraryHandle = struct {
                 const symbol = std.os.windows.kernel32.GetProcAddress(@ptrCast(self.handle), symbol_z);
                 if (symbol == null) {
                     const err = std.os.windows.kernel32.GetLastError();
-                    std.debug.print("GetProcAddress failed for {s}: {}\n", .{ symbol_name, err });
+                    std.debug.print("GetProcAddress failed for {s}: {s}\n", .{ symbol_name, err });
                     return PluginError.SymbolNotFound;
                 }
                 return @ptrCast(symbol.?);
@@ -234,12 +237,13 @@ pub const PluginRegistry = struct {
     security_checker: SecurityChecker,
     
     pub fn init(allocator: Allocator) PluginRegistry {
+        _ = allocator;
         return PluginRegistry{
             .plugins = HashMap(u32, PluginHandle, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
-            .plugin_by_name = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .plugin_by_name = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .next_id = 1,
             .allocator = allocator,
-            .plugin_directories = ArrayList([]const u8).init(allocator),
+            .plugin_directories = ArrayList([]const u8){},
             .security_checker = SecurityChecker.init(allocator),
         };
     }
@@ -251,15 +255,15 @@ pub const PluginRegistry = struct {
             self.unloadPlugin(entry.key_ptr.*) catch {};
         }
         
-        self.plugins.deinit();
-        self.plugin_by_name.deinit();
+        self.plugins.deinit(self.allocator);
+        self.plugin_by_name.deinit(self.allocator);
         
         for (self.plugin_directories.items) |dir| {
             self.allocator.free(dir);
         }
-        self.plugin_directories.deinit();
+        self.plugin_directories.deinit(self.allocator);
         
-        self.security_checker.deinit();
+        self.security_checker.deinit(self.allocator);
     }
     
     // Load plugin from path with comprehensive validation
@@ -350,7 +354,7 @@ pub const PluginRegistry = struct {
     
     // Discover plugins in directory
     pub fn discoverPlugins(self: *PluginRegistry, directory: []const u8) ![][]const u8 {
-        var discovered = ArrayList([]const u8).init(self.allocator);
+        var discovered = ArrayList([]const u8){};
         
         var dir = std.fs.cwd().openDir(directory, .{ .iterate = true }) catch {
             return discovered.toOwnedSlice();
@@ -370,7 +374,7 @@ pub const PluginRegistry = struct {
             
             if (is_plugin) {
                 const full_path = try std.fs.path.join(self.allocator, &[_][]const u8{ directory, entry.name });
-                try discovered.append(full_path);
+                try discovered.append(allocator, full_path);
             }
         }
         
@@ -408,12 +412,12 @@ pub const PluginRegistry = struct {
     
     // List all loaded plugins
     pub fn listLoadedPlugins(self: *const PluginRegistry) ![]u32 {
-        var loaded = ArrayList(u32).init(self.allocator);
+        var loaded = ArrayList(u32){};
         
         var iterator = self.plugins.iterator();
         while (iterator.next()) |entry| {
             if (entry.value_ptr.status == .Loaded or entry.value_ptr.status == .Sandboxed) {
-                try loaded.append(entry.key_ptr.*);
+                try loaded.append(allocator, entry.key_ptr.*);
             }
         }
         
@@ -527,9 +531,10 @@ const SecurityChecker = struct {
     trusted_keys: ArrayList([]const u8),
     
     pub fn init(allocator: Allocator) SecurityChecker {
+        _ = allocator;
         return SecurityChecker{
             .allocator = allocator,
-            .trusted_keys = ArrayList([]const u8).init(allocator),
+            .trusted_keys = ArrayList([]const u8){},
         };
     }
     
@@ -537,7 +542,7 @@ const SecurityChecker = struct {
         for (self.trusted_keys.items) |key| {
             self.allocator.free(key);
         }
-        self.trusted_keys.deinit();
+        self.trusted_keys.deinit(self.allocator);
     }
     
     // Verify plugin cryptographic signature
@@ -556,7 +561,7 @@ const SecurityChecker = struct {
     // Add trusted signing key
     pub fn addTrustedKey(self: *SecurityChecker, public_key: []const u8) !void {
         const key_copy = try self.allocator.dupe(u8, public_key);
-        try self.trusted_keys.append(key_copy);
+        try self.trusted_keys.append(allocator, key_copy);
     }
 };
 
@@ -571,25 +576,25 @@ pub const ExtensionPoint = struct {
         return ExtensionPoint{
             .id = id,
             .name = name,
-            .registered_plugins = ArrayList(u32).init(allocator),
+            .registered_plugins = ArrayList(u32){},
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *ExtensionPoint) void {
-        self.registered_plugins.deinit();
+        self.registered_plugins.deinit(self.allocator);
     }
     
     pub fn registerPlugin(self: *ExtensionPoint, plugin_id: u32) !void {
-        try self.registered_plugins.append(plugin_id);
+        try self.registered_plugins.append(allocator, plugin_id);
     }
     
     pub fn callExtensions(self: *ExtensionPoint, registry: *PluginRegistry, data: PluginValue) ![]PluginValue {
-        var results = ArrayList(PluginValue).init(self.allocator);
+        var results = ArrayList(PluginValue){};
         
         for (self.registered_plugins.items) |plugin_id| {
             const result = registry.callPluginFunction(plugin_id, "extension_handler", &[_]PluginValue{data}) catch continue;
-            try results.append(result);
+            try results.append(allocator, result);
         }
         
         return results.toOwnedSlice();
@@ -604,6 +609,7 @@ pub const PluginManager = struct {
     auto_load_directory: ?[]const u8,
     
     pub fn init(allocator: Allocator) PluginManager {
+        _ = allocator;
         return PluginManager{
             .registry = PluginRegistry.init(allocator),
             .extension_points = HashMap(u32, ExtensionPoint, std.hash_map.AutoContext(u32), std.hash_map.default_max_load_percentage).init(allocator),
@@ -617,9 +623,9 @@ pub const PluginManager = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.extension_points.deinit();
+        self.extension_points.deinit(self.allocator);
         
-        self.registry.deinit();
+        self.registry.deinit(self.allocator);
     }
     
     pub fn startAutoLoading(self: *PluginManager, directory: []const u8) !void {
@@ -635,7 +641,7 @@ pub const PluginManager = struct {
         
         for (discovered) |path| {
             _ = self.registry.loadPlugin(path, false, false) catch |err| {
-                std.debug.print("Failed to auto-load plugin {s}: {}\n", .{ path, err });
+                std.debug.print("Failed to auto-load plugin {s}: {s}\n", .{ path, err });
             };
         }
     }

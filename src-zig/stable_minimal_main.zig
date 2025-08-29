@@ -21,6 +21,7 @@ const Variable = union(enum) {
     Array: ArrayList(Variable),
     
     pub fn deinit(self: *Variable, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .String => |s| allocator.free(s),
             .Array => |*arr| {
@@ -34,6 +35,7 @@ const Variable = union(enum) {
     }
     
     pub fn clone(self: Variable, allocator: Allocator) !Variable {
+        _ = allocator;
         return switch (self) {
             .Integer => |i| Variable{ .Integer = i },
             .String => |s| Variable{ .String = try allocator.dupe(u8, s) },
@@ -41,7 +43,7 @@ const Variable = union(enum) {
             .Array => |arr| {
                 var new_array: ArrayList(Variable) = .empty;
                 for (arr.items) |item| {
-                    try new_array.append(try item.clone(allocator));
+                    try new_array.append(allocator, try item.clone(allocator));
                 }
                 return Variable{ .Array = new_array };
             },
@@ -73,11 +75,12 @@ const FunctionDef = struct {
     body: []const u8,
     
     pub fn deinit(self: *FunctionDef, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         for (self.params.items) |param| {
             allocator.free(param);
         }
-        self.params.deinit();
+        self.params.deinit(self.allocator);
         allocator.free(self.body);
     }
 };
@@ -90,8 +93,8 @@ const Context = struct {
     
     pub fn init() Context {
         return Context{
-            .variables = std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80).init(allocator),
-            .functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80).init(allocator),
+            .variables = std.HashMap([]const u8, Variable, std.hash_map.StringContext, 80){},
+            .functions = std.HashMap([]const u8, FunctionDef, std.hash_map.StringContext, 80){},
             .defer_stack = .empty,
             .allocator = allocator,
         };

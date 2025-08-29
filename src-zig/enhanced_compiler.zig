@@ -100,8 +100,8 @@ pub fn compileProgram(allocator: Allocator, source: []const u8, filename: []cons
             };
             defer if (config.output_path == null) allocator.free(output_filename);
             try compileToLLVMBackend(allocator, source, filename, output_filename, config);
-        },
-    }
+        }
+        }
 }
 
 /// C Backend compilation (existing approach)
@@ -109,13 +109,13 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     // Step 1: Lexical Analysis
     print("[1/5] Lexical Analysis...\n", .{});
     var l = lexer.Lexer.init(allocator, source);
-    var tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error during compilation: {}\n", .{err});
+    var tokens = l.tokenize() catch {
+        print("❌ Lexer error during compilation: {s}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
-    if (config.verbose) print("📝 Lexed {} tokens for compilation\n", .{tokens.items.len});
+    if (config.verbose) print("📝 Lexed {s} tokens for compilation\n", .{tokens.items.len});
     
     // Step 2: Generate C code
     print("[2/5] Generating C code...\n", .{});
@@ -123,16 +123,16 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     const c_filename = try std.fmt.allocPrint(allocator, "{s}.c", .{filename[0..filename.len - 4]});
     defer allocator.free(c_filename);
     
-    const c_file = std.fs.cwd().createFile(c_filename, .{}) catch |err| {
-        print("❌ Error creating C file: {}\n", .{err});
+    const c_file = std.fs.cwd().createFile(c_filename, .{}) catch {
+        print("❌ Error creating C file: {s}\n", .{err});
         return;
     };
     defer c_file.close();
     
-    try c_file.writeAll("#include <stdio.h>\n");
-    try c_file.writeAll("#include <stdlib.h>\n");
-    try c_file.writeAll("#include <string.h>\n");
-    try c_file.writeAll("int main() {\n");
+    try c_file.writer().writeAll("#include <stdio.h>\n");
+    try c_file.writer().writeAll("#include <stdlib.h>\n");
+    try c_file.writer().writeAll("#include <string.h>\n");
+    try c_file.writer().writeAll("int main() {\n");
     
     // Step 3: Enhanced CURSED-to-C translation with better parsing
     print("[3/5] Translating CURSED to C...\n", .{});
@@ -140,10 +140,10 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     var fbs = std.io.fixedBufferStream(&buf);
     const writer = fbs.writer();
     try translateCursedToC(allocator, source, writer, config.verbose);
-    try c_file.writeAll(fbs.getWritten());
+    try c_file.writer().writeAll(fbs.getWritten());
     
-    try c_file.writeAll("    return 0;\n");
-    try c_file.writeAll("}\n");
+    try c_file.writer().writeAll("    return 0;\n");
+    try c_file.writer().writeAll("}\n");
     
     if (config.verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -167,28 +167,28 @@ fn compileToCBackend(allocator: Allocator, source: []const u8, filename: []const
     child.stdout_behavior = .Pipe;
     child.stderr_behavior = .Pipe;
     
-    child.spawn() catch |err| {
-        print("❌ Error spawning GCC: {}\n", .{err});
+    child.spawn() catch {
+        print("❌ Error spawning GCC: {s}\n", .{err});
         return;
     };
     
-    const result = child.wait() catch |err| {
-        print("❌ Error waiting for GCC: {}\n", .{err});
+    const result = child.wait() catch {
+        print("❌ Error waiting for GCC: {s}\n", .{err});
         return;
     };
     
     switch (result) {
         .Exited => |code| {
             if (code != 0) {
-                print("❌ Compilation failed with exit code: {}\n", .{code});
+                print("❌ Compilation failed with exit code: {s}\n", .{code});
                 return;
             }
         },
         else => {
             print("❌ Compilation process terminated abnormally\n", .{});
             return;
-        },
-    }
+        }
+        }
     
     // Step 5: Cleanup
     print("[5/5] Cleanup...\n", .{});
@@ -236,8 +236,8 @@ pub fn compileToLLVMBackend(allocator: Allocator, source: []const u8, filename: 
 
 /// Generate LLVM IR with target-specific optimizations
 fn generateTargetSpecificLLVMIR(allocator: Allocator, source: []const u8, filename: []const u8, ir_filename: []const u8, config: CompilerConfig, target_triple: []const u8) !void {
-    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch |err| {
-        print("❌ Error creating IR file: {}\n", .{err});
+    const ir_file = std.fs.cwd().createFile(ir_filename, .{}) catch {
+        print("❌ Error creating IR file: {s}\n", .{err});
         return err;
     };
     defer ir_file.close();
@@ -251,18 +251,18 @@ fn generateTargetSpecificLLVMIR(allocator: Allocator, source: []const u8, filena
 /// Compile IR to native executable with target-specific settings
 fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, output_filename: []const u8, target_triple: []const u8, config: CompilerConfig) !void {
     var compile_args = std.ArrayList([]const u8){};
-    defer compile_args.deinit(allocator);
+    defer compile_args.deinit();
     
     // Base clang command - use versioned clang if available
     const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
         std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
     else 
         "clang-18";
-    try compile_args.append(allocator, clang_cmd);
+    try compile_args.append(self.allocator, clang_cmd);
     
     // Target specification
-    try compile_args.append(allocator, "-target");
-    try compile_args.append(allocator, target_triple);
+    try compile_args.append(self.allocator, "-target");
+    try compile_args.append(self.allocator, target_triple);
     
     // Get target-specific CPU and features
     const cpu_features = target_mapping.getTargetCpuAndFeatures(target_triple);
@@ -275,13 +275,13 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     // Target features - skip for compatibility
     if (config.target_features) |features| {
         _ = features; // Skip for now
-        // try compile_args.append(allocator, "-mattr");
-        // try compile_args.append(allocator, features);
+        // try compile_args.append(self.allocator, "-mattr");
+        // try compile_args.append(self.allocator, features);
     }
     // Skip cpu_features for now - clang compatibility issues
     // else if (cpu_features.features.len > 0) {
-    //     try compile_args.append(allocator, "-mattr");
-    //     try compile_args.append(allocator, cpu_features.features);
+    //     try compile_args.append(self.allocator, "-mattr");
+    //     try compile_args.append(self.allocator, cpu_features.features);
     // }
     
     // Optimization level
@@ -292,21 +292,21 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
         3 => "-O3",
         else => "-O2",
     };
-    try compile_args.append(allocator, opt_flag);
+    try compile_args.append(self.allocator, opt_flag);
     
     // Debug information
     if (config.debug_info) {
-        try compile_args.append(allocator, "-g");
+        try compile_args.append(self.allocator, "-g");
     }
     
     // Static linking for cross-compilation
     if (config.static_link or !std.mem.eql(u8, target_triple, target_mapping.getNativeTriple())) {
-        try compile_args.append(allocator, "-static");
+        try compile_args.append(self.allocator, "-static");
     }
     
     // Input and output
-    try compile_args.append(allocator, ir_filename);
-    try compile_args.append(allocator, "-o");
+    try compile_args.append(self.allocator, ir_filename);
+    try compile_args.append(self.allocator, "-o");
     
     // Add appropriate file extension for target
     const extension = target_mapping.getExecutableExtension(target_triple);
@@ -316,18 +316,18 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
         output_filename;
     defer if (!std.mem.eql(u8, final_output, output_filename)) allocator.free(final_output);
     
-    try compile_args.append(allocator, final_output);
+    try compile_args.append(self.allocator, final_output);
     
     // WebAssembly specific flags
     if (std.mem.startsWith(u8, target_triple, "wasm32")) {
-        try compile_args.append(allocator, "--no-standard-libraries");
-        try compile_args.append(allocator, "-Wl,--export-all");
-        try compile_args.append(allocator, "-Wl,--no-entry");
+        try compile_args.append(self.allocator, "--no-standard-libraries");
+        try compile_args.append(self.allocator, "-Wl,--export-all");
+        try compile_args.append(self.allocator, "-Wl,--no-entry");
     }
     
     // Windows specific flags
     if (std.mem.containsAtLeast(u8, target_triple, 1, "windows")) {
-        try compile_args.append(allocator, "-lmsvcrt");
+        try compile_args.append(self.allocator, "-lmsvcrt");
     }
     
     if (config.verbose) {
@@ -342,15 +342,15 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     const result = std.process.Child.run(.{
         .allocator = allocator,
         .argv = compile_args.items,
-    }) catch |err| {
-        print("❌ Error executing clang: {}\n", .{err});
+    }) catch {
+        print("❌ Error executing clang: {s}\n", .{err});
         return err;
     };
     defer allocator.free(result.stdout);
     defer allocator.free(result.stderr);
     
     if (result.term.Exited != 0) {
-        print("❌ Compilation failed with exit code: {}\n", .{result.term.Exited});
+        print("❌ Compilation failed with exit code: {s}\n", .{result.term.Exited});
         if (result.stderr.len > 0) {
             print("Error output:\n{s}\n", .{result.stderr});
         }
@@ -360,8 +360,8 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
     print("✅ Successfully compiled to: {s}\n", .{final_output});
     
     // Verify the output file was created
-    const output_file = std.fs.cwd().openFile(final_output, .{}) catch |err| {
-        print("⚠️ Warning: Output file not found after compilation: {}\n", .{err});
+    const output_file = std.fs.cwd().openFile(final_output, .{}) catch {
+        print("⚠️ Warning: Output file not found after compilation: {s}\n", .{err});
         return;
     };
     output_file.close();
@@ -375,22 +375,22 @@ fn compileIRToNativeWithTarget(allocator: Allocator, ir_filename: []const u8, ou
 fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, executable_name: []const u8, debug_info: bool, verbose: bool) !void {
     // First try with clang directly on LLVM IR
     var compile_args = std.ArrayList([]const u8){};
-    defer compile_args.deinit(allocator);
+    defer compile_args.deinit();
     
     const clang_cmd = if (std.process.hasEnvVar(allocator, "CLANG") catch false) 
         std.process.getEnvVarOwned(allocator, "CLANG") catch "clang-18"
     else 
         "clang-18";
-    try compile_args.append(allocator, clang_cmd);
+    try compile_args.append(self.allocator, clang_cmd);
     if (debug_info) {
-        try compile_args.append(allocator, "-g");
-        try compile_args.append(allocator, "-O0");
+        try compile_args.append(self.allocator, "-g");
+        try compile_args.append(self.allocator, "-O0");
     } else {
-        try compile_args.append(allocator, "-O2");
+        try compile_args.append(self.allocator, "-O2");
     }
-    try compile_args.append(allocator, "-o");
-    try compile_args.append(allocator, executable_name);
-    try compile_args.append(allocator, ir_filename);
+    try compile_args.append(self.allocator, "-o");
+    try compile_args.append(self.allocator, executable_name);
+    try compile_args.append(self.allocator, ir_filename);
     
     if (verbose) {
         print("🔧 Compiling with: ", .{});
@@ -405,7 +405,7 @@ fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, exec
     clang_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     clang_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     
-    const clang_result = clang_process.spawnAndWait() catch |err| {
+    const clang_result = clang_process.spawnAndWait() catch {
         if (verbose) print("⚠️ Clang not available, trying alternative approach: {any}\n", .{err});
         return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
     };
@@ -415,15 +415,15 @@ fn compileLLVMIRToExecutable(allocator: Allocator, ir_filename: []const u8, exec
             if (code == 0) {
                 return; // Success
             } else {
-                if (verbose) print("⚠️ Clang failed with exit code {}, trying alternative approach\n", .{code});
+                if (verbose) print("⚠️ Clang failed with exit code {s}, trying alternative approach\n", .{code});
                 return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
             }
         },
         else => {
             if (verbose) print("⚠️ Clang process error, trying alternative approach\n", .{});
             return compileWithLLCAndGCC(allocator, ir_filename, executable_name, debug_info, verbose);
-        },
-    }
+        }
+        }
 }
 
 /// Alternative compilation using llc + gcc
@@ -433,16 +433,16 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     defer allocator.free(obj_filename);
     
     var llc_args = std.ArrayList([]const u8){};
-    defer llc_args.deinit(allocator);
+    defer llc_args.deinit();
     
-    try llc_args.append(allocator, "llc-18");
+    try llc_args.append(self.allocator, "llc-18");
     if (!debug_info) {
-        try llc_args.append(allocator, "-O2");
+        try llc_args.append(self.allocator, "-O2");
     }
-    try llc_args.append(allocator, "-filetype=obj");
-    try llc_args.append(allocator, "-o");
-    try llc_args.append(allocator, obj_filename);
-    try llc_args.append(allocator, ir_filename);
+    try llc_args.append(self.allocator, "-filetype=obj");
+    try llc_args.append(self.allocator, "-o");
+    try llc_args.append(self.allocator, obj_filename);
+    try llc_args.append(self.allocator, ir_filename);
     
     if (verbose) {
         print("🔧 Step 1 - LLC: ", .{});
@@ -456,35 +456,35 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     llc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     llc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     
-    const llc_result = llc_process.spawnAndWait() catch |err| {
+    const llc_result = llc_process.spawnAndWait() catch {
         return err;
     };
     
     switch (llc_result) {
         .Exited => |code| {
             if (code != 0) {
-                print("❌ LLC compilation failed with exit code {}\n", .{code});
+                print("❌ LLC compilation failed with exit code {s}\n", .{code});
                 return error.LLCCompilationFailed;
             }
         },
         else => {
             print("❌ LLC process error\n", .{});
             return error.LLCProcessError;
-        },
-    }
+        }
+        }
     
     // Step 2: Use gcc to link object file to executable
     var gcc_args = std.ArrayList([]const u8){};
-    defer gcc_args.deinit(allocator);
+    defer gcc_args.deinit();
     
-    try gcc_args.append(allocator, "gcc");
+    try gcc_args.append(self.allocator, "gcc");
     if (debug_info) {
-        try gcc_args.append(allocator, "-g");
+        try gcc_args.append(self.allocator, "-g");
     }
-    try gcc_args.append(allocator, "-no-pie");  // Disable PIE to avoid relocation issues
-    try gcc_args.append(allocator, "-o");
-    try gcc_args.append(allocator, executable_name);
-    try gcc_args.append(allocator, obj_filename);
+    try gcc_args.append(self.allocator, "-no-pie");  // Disable PIE to avoid relocation issues
+    try gcc_args.append(self.allocator, "-o");
+    try gcc_args.append(self.allocator, executable_name);
+    try gcc_args.append(self.allocator, obj_filename);
     
     if (verbose) {
         print("🔧 Step 2 - GCC: {s}", .{""});
@@ -498,22 +498,22 @@ fn compileWithLLCAndGCC(allocator: Allocator, ir_filename: []const u8, executabl
     gcc_process.stdout_behavior = if (verbose) .Inherit else .Ignore;
     gcc_process.stderr_behavior = if (verbose) .Inherit else .Pipe;
     
-    const gcc_result = gcc_process.spawnAndWait() catch |err| {
+    const gcc_result = gcc_process.spawnAndWait() catch {
         return err;
     };
     
     switch (gcc_result) {
         .Exited => |code| {
             if (code != 0) {
-                print("❌ GCC linking failed with exit code {}\n", .{code});
+                print("❌ GCC linking failed with exit code {s}\n", .{code});
                 return error.GCCLinkingFailed;
             }
         },
         else => {
             print("❌ GCC process error\n", .{});
             return error.GCCProcessError;
-        },
-    }
+        }
+        }
     
     // Clean up object file
     std.fs.cwd().deleteFile(obj_filename) catch {};
@@ -527,7 +527,7 @@ fn translateCursedToC(allocator: Allocator, source: []const u8, writer: anytype,
             allocator.free(var_info.name);
             allocator.free(var_info.var_type);
         }
-        variables.deinit(allocator);
+        variables.deinit();
     }
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -558,17 +558,17 @@ fn translateCursedToC(allocator: Allocator, source: []const u8, writer: anytype,
 
 /// Generate LLVM IR header with necessary declarations
 fn generateLLVMHeader(writer: anytype, target_triple: []const u8) !void {
-    try writer.writeAll("; Generated LLVM IR for CURSED program\n");
+    try writer.writer().writeAll("; Generated LLVM IR for CURSED program\n");
     try writer.print("target triple = \"{s}\"\n\n", .{target_triple});
     
     // External function declarations
-    try writer.writeAll("declare i32 @puts(i8*)\n");
-    try writer.writeAll("declare i32 @printf(i8*, ...)\n\n");
+    try writer.writer().writeAll("declare i32 @puts(i8*)\n");
+    try writer.writer().writeAll("declare i32 @printf(i8*, ...)\n\n");
     
     // String format constants
-    try writer.writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
-    try writer.writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
-    try writer.writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
+    try writer.writer().writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
+    try writer.writer().writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
+    try writer.writer().writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
 }
 
 /// Enhanced CURSED-to-LLVM IR translation
@@ -579,7 +579,7 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
             allocator.free(var_info.name);
             allocator.free(var_info.var_type);
         }
-        variables.deinit(allocator);
+        variables.deinit();
     }
     
     var string_constants = std.ArrayList([]const u8){};
@@ -587,7 +587,7 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
         for (string_constants.items) |str| {
             allocator.free(str);
         }
-        string_constants.deinit(allocator);
+        string_constants.deinit();
     }
     
     var string_counter: u32 = 0;
@@ -606,7 +606,7 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
                     if (content.len >= 2 and content[0] == '"' and content[content.len - 1] == '"') {
                         const string_content = content[1..content.len - 1];
                         const string_copy = try allocator.dupe(u8, string_content);
-                        try string_constants.append(allocator, string_copy);
+                        try string_constants.append(self.allocator, string_copy);
                     }
                 }
             }
@@ -618,11 +618,11 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
         try writer.print("@.str{} = private unnamed_addr constant [{} x i8] c\"{s}\\00\", align 1\n", 
             .{ i, str_content.len + 1, str_content });
     }
-    try writer.writeAll("\n");
+    try writer.writer().writeAll("\n");
     
     // Start main function
-    try writer.writeAll("define i32 @main() {\n");
-    try writer.writeAll("entry:\n");
+    try writer.writer().writeAll("define i32 @main() {\n");
+    try writer.writer().writeAll("entry:\n");
     
     // Second pass: generate code
     lines = std.mem.splitScalar(u8, source, '\n');
@@ -650,8 +650,8 @@ fn translateCursedToLLVM(allocator: Allocator, source: []const u8, writer: anyty
         }
     }
     
-    try writer.writeAll("  ret i32 0\n");
-    try writer.writeAll("}\n");
+    try writer.writer().writeAll("  ret i32 0\n");
+    try writer.writer().writeAll("}\n");
 }
 
 /// Generate LLVM IR footer
@@ -720,7 +720,7 @@ fn translateVariableDeclarationToC(allocator: Allocator, line: []const u8, write
     // Add variable to tracking list
     const var_name_copy = try allocator.dupe(u8, var_name);
     const var_type_copy = try allocator.dupe(u8, var_type);
-    try variables.append(allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
+    try variables.append(self.allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
     
     if (verbose) {
         try writer.print("    // Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
@@ -764,14 +764,14 @@ fn translateVibesSpillToLLVMWithConstants(_: Allocator, line: []const u8, start:
                     try writer.print("  ; String literal: {s}\n", .{string_content});
                     try writer.print("  %str{} = getelementptr [{} x i8], [{} x i8]* @.str{}, i32 0, i32 0\n", 
                         .{ string_counter.*, string_content.len + 1, string_content.len + 1, index });
-                    try writer.print("  %call{} = call i32 @puts(i8* %str{})\n", .{ string_counter.*, string_counter.* });
+                    try writer.print("  %call{s} = call i32 @puts(i8* %str{s})\n", .{ string_counter.*, string_counter.* });
                     string_counter.* += 1;
                 }
             } else {
                 // Variable reference or literal value
                 if (std.fmt.parseInt(i64, content, 10)) |num| {
-                    try writer.print("  %fmt{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{string_counter.*});
-                    try writer.print("  %call{} = call i32 (i8*, ...) @printf(i8* %fmt{}, i64 {})\n", .{ string_counter.*, string_counter.*, num });
+                    try writer.print("  %fmt{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{string_counter.*});
+                    try writer.print("  %call{s} = call i32 (i8*, ...) @printf(i8* %fmt{s}, i64 {s})\n", .{ string_counter.*, string_counter.*, num });
                     string_counter.* += 1;
                 } else |_| {
                     // Find variable and generate load + print
@@ -786,13 +786,13 @@ fn translateVibesSpillToLLVMWithConstants(_: Allocator, line: []const u8, start:
                     if (var_type) |vtype| {
                         if (std.mem.eql(u8, vtype, "drip")) {
                             try writer.print("  %{s}_load = load i64, i64* %{s}, align 8\n", .{ content, content });
-                            try writer.print("  %fmt{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{string_counter.*});
-                            try writer.print("  %call{} = call i32 (i8*, ...) @printf(i8* %fmt{}, i64 %{s}_load)\n", .{ string_counter.*, string_counter.*, content });
+                            try writer.print("  %fmt{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{string_counter.*});
+                            try writer.print("  %call{s} = call i32 (i8*, ...) @printf(i8* %fmt{s}, i64 %{s}_load)\n", .{ string_counter.*, string_counter.*, content });
                             string_counter.* += 1;
                         } else if (std.mem.eql(u8, vtype, "lit")) {
                             try writer.print("  %{s}_load = load i1, i1* %{s}, align 1\n", .{ content, content });
                             try writer.print("  %{s}_select = select i1 %{s}_load, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ content, content });
-                            try writer.print("  %call{} = call i32 @puts(i8* %{s}_select)\n", .{ string_counter.*, content });
+                            try writer.print("  %call{s} = call i32 @puts(i8* %{s}_select)\n", .{ string_counter.*, content });
                             string_counter.* += 1;
                         }
                         // TODO: Add support for other types
@@ -822,7 +822,7 @@ fn translateVariableDeclarationToLLVM(allocator: Allocator, line: []const u8, wr
     // Add variable to tracking list
     const var_name_copy = try allocator.dupe(u8, var_name);
     const var_type_copy = try allocator.dupe(u8, var_type);
-    try variables.append(allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
+    try variables.append(self.allocator, VariableInfo{ .name = var_name_copy, .var_type = var_type_copy });
     
     if (verbose) {
         try writer.print("  ; Variable: {s} {s} = {s}\n", .{ var_name, var_type, value_str });
@@ -856,13 +856,13 @@ fn optimizeLLVMIR(allocator: Allocator, ir_filename: []const u8, optimization_le
     child.stdout_behavior = .Pipe;
     child.stderr_behavior = .Pipe;
     
-    child.spawn() catch |err| {
-        if (verbose) print("⚠️  opt not available, skipping optimization: {}\n", .{err});
+    child.spawn() catch {
+        if (verbose) print("⚠️  opt not available, skipping optimization: {s}\n", .{err});
         return;
     };
     
-    const result = child.wait() catch |err| {
-        if (verbose) print("⚠️  opt failed, skipping optimization: {}\n", .{err});
+    const result = child.wait() catch {
+        if (verbose) print("⚠️  opt failed, skipping optimization: {s}\n", .{err});
         return;
     };
     
@@ -874,21 +874,21 @@ fn optimizeLLVMIR(allocator: Allocator, ir_filename: []const u8, optimization_le
                 std.fs.cwd().rename(optimized_filename, ir_filename) catch {};
                 if (verbose) print("✅ LLVM IR optimized successfully\n", .{});
             } else {
-                if (verbose) print("⚠️  opt failed with exit code: {}, skipping optimization\n", .{code});
+                if (verbose) print("⚠️  opt failed with exit code: {s}, skipping optimization\n", .{code});
                 std.fs.cwd().deleteFile(optimized_filename) catch {};
             }
         },
         else => {
             if (verbose) print("⚠️  opt terminated abnormally, skipping optimization\n", .{});
             std.fs.cwd().deleteFile(optimized_filename) catch {};
-        },
-    }
+        }
+        }
 }
 
 /// Generate proper LLVM IR using text-based approach (avoids LLVM C API linking issues)
 fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytype, verbose: bool, filename: []const u8, debug_info: bool, target_triple: []const u8) !void {
     // Target and basic module setup
-    try writer.writeAll("; Generated LLVM IR for CURSED program\n");
+    try writer.writer().writeAll("; Generated LLVM IR for CURSED program\n");
     try writer.print("target triple = \"{s}\"\n", .{target_triple});
     
     // Get appropriate data layout for target
@@ -897,7 +897,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     
     // Add debug metadata if enabled
     if (debug_info) {
-        try writer.writeAll("; Debug Information\n");
+        try writer.writer().writeAll("; Debug Information\n");
         const directory = std.fs.path.dirname(filename) orelse ".";
         const basename = std.fs.path.basename(filename);
         
@@ -906,7 +906,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
         try writer.print("!llvm.ident = !{{!4}}\n\n", .{});
         
         // Debug compile unit
-        try writer.writeAll("!0 = distinct !DICompileUnit(language: DW_LANG_C, file: !5, producer: \"CURSED Compiler v1.0\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n");
+        try writer.writer().writeAll("!0 = distinct !DICompileUnit(language: DW_LANG_C, file: !5, producer: \"CURSED Compiler v1.0\", isOptimized: false, runtimeVersion: 0, emissionKind: FullDebug)\n");
         
         // Module flags
         try writer.print("!1 = !{{i32 7, !\"Dwarf Version\", i32 4}}\n", .{});
@@ -921,12 +921,12 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
             print("🔍 Added DWARF debug metadata for {s}\n", .{filename});
         }
         
-        try writer.writeAll("\n");
+        try writer.writer().writeAll("\n");
     }
     
     // External function declarations
-    try writer.writeAll("declare i32 @printf(i8*, ...)\n");
-    try writer.writeAll("declare i32 @puts(i8*)\n\n");
+    try writer.writer().writeAll("declare i32 @printf(i8*, ...)\n");
+    try writer.writer().writeAll("declare i32 @puts(i8*)\n\n");
     
     // Collect string literals for global constants
     var string_literals = std.ArrayList(StringLiteralInfo){};
@@ -934,7 +934,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
         for (string_literals.items) |str_info| {
             allocator.free(str_info.content);
         }
-        string_literals.deinit(allocator);
+        string_literals.deinit();
     }
     
     try collectStringLiteralsForLLVM(source, &string_literals, allocator);
@@ -948,34 +948,34 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     }
     
     // Format strings for various types
-    try writer.writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
-    try writer.writeAll("@.float_fmt = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1\n");
-    try writer.writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
-    try writer.writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
+    try writer.writer().writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
+    try writer.writer().writeAll("@.float_fmt = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1\n");
+    try writer.writer().writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
+    try writer.writer().writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
     
     // Parse statements first to extract function definitions
-    var temp_functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var temp_functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var iter = temp_functions.iterator();
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        temp_functions.deinit(allocator);
+        temp_functions.deinit();
     }
     
     // Parse source to get function definitions first
     try extractAndGenerateFunctionDefinitions(allocator, source, writer, &temp_functions, verbose);
     
     // Main function
-    try writer.writeAll("define i32 @main() {\n");
-    try writer.writeAll("entry:\n");
+    try writer.writer().writeAll("define i32 @main() {\n");
+    try writer.writer().writeAll("entry:\n");
     
     // Parse and generate code from source (excluding function definitions)
     try generateLLVMMainStatements(allocator, source, writer, &string_literals, &temp_functions, verbose);
     
     // Return 0 from main
-    try writer.writeAll("  ret i32 0\n");
-    try writer.writeAll("}\n");
+    try writer.writer().writeAll("  ret i32 0\n");
+    try writer.writer().writeAll("}\n");
 }
 
 fn collectStringLiteralsForLLVM(source: []const u8, string_literals: *std.ArrayList(StringLiteralInfo), allocator: Allocator) !void {
@@ -1041,7 +1041,7 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
                 const string_content = args[start..end_pos];
                 const string_copy = try allocator.dupe(u8, string_content);
                 const actual_size = countActualStringBytes(string_content) + 1; // +1 for null terminator
-                try string_literals.append(allocator, StringLiteralInfo{
+                try string_literals.append(self.allocator, StringLiteralInfo{
                     .content = string_copy,
                     .actual_size = actual_size,
                 });
@@ -1053,7 +1053,7 @@ fn extractStringLiteralsSimple(args: []const u8, string_literals: *std.ArrayList
 
 fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
     var result = std.ArrayList(u8){};
-    defer result.deinit(allocator);
+    defer result.deinit();
     
     for (input) |char| {
         switch (char) {
@@ -1062,7 +1062,7 @@ fn escapeLLVMString(input: []const u8, allocator: Allocator) ![]u8 {
             '\n' => try result.appendSlice("\\n"),
             '\r' => try result.appendSlice("\\r"),
             '\t' => try result.appendSlice("\\t"),
-            else => try result.append(allocator, char),
+            else => try result.append(self.allocator, char),
         }
     }
     
@@ -1141,7 +1141,7 @@ fn extractAndGenerateFunctionDefinitions(
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit(allocator);
+        statements.deinit();
     }
     
     // Process the source to extract complete function definitions
@@ -1168,16 +1168,16 @@ fn extractAndGenerateFunctionDefinitions(
             
             while (i < source.len) {
                 if (source[i] == '{') {
-                    brace_counter.increment() catch |err| {
-                        if (verbose) print("❌ Brace nesting too deep: {}\n", .{err});
+                    brace_counter.increment() catch {
+                        if (verbose) print("❌ Brace nesting too deep: {s}\n", .{err});
                         return err;
                     };
                     found_opening_brace = true;
                 } else if (source[i] == '}') {
                     // Only decrement if we have positive count to prevent underflow
                     if (brace_counter.isPositive()) {
-                        brace_counter.decrement() catch |err| {
-                            if (verbose) print("❌ Brace count underflow: {}\n", .{err});
+                        brace_counter.decrement() catch {
+                            if (verbose) print("❌ Brace count underflow: {s}\n", .{err});
                             return err;
                         };
                     }
@@ -1198,7 +1198,7 @@ fn extractAndGenerateFunctionDefinitions(
                 }
                 
                 const func_def = std.mem.trim(u8, source[start..i], " \t\r\n");
-                try statements.append(allocator, try allocator.dupe(u8, func_def));
+                try statements.append(self.allocator, try allocator.dupe(u8, func_def));
             }
         } else {
             // Skip to next line for non-function content
@@ -1227,8 +1227,8 @@ fn generateLLVMMainStatements(
     verbose: bool
 ) !void {
     var variable_counter: u32 = 0;
-    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer variables.deinit(allocator);
+    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
+    defer variables.deinit();
     
     // Parse statements properly - each line can contain a complete statement
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -1237,7 +1237,7 @@ fn generateLLVMMainStatements(
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit(allocator);
+        statements.deinit();
     }
     
     while (lines.next()) |line| {
@@ -1249,7 +1249,7 @@ fn generateLLVMMainStatements(
         while (parts.next()) |part| {
             const stmt = std.mem.trim(u8, part, " \t\r\n");
             if (stmt.len > 0) {
-                try statements.append(allocator, try allocator.dupe(u8, stmt));
+                try statements.append(self.allocator, try allocator.dupe(u8, stmt));
             }
         }
     }
@@ -1292,16 +1292,16 @@ fn generateLLVMMainStatements(
 
 fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, writer: anytype, string_literals: *std.ArrayList([]const u8), verbose: bool) !void {
     var variable_counter: u32 = 0;
-    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    defer variables.deinit(allocator);
+    var variables = std.HashMap([]const u8, LLVMVariableInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
+    defer variables.deinit();
     
-    var functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var functions = std.HashMap([]const u8, FunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var iter = functions.iterator();
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
         }
-        functions.deinit(allocator);
+        functions.deinit();
     }
     
     // Parse statements properly - each line can contain a complete statement
@@ -1311,7 +1311,7 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
         for (statements.items) |stmt| {
             allocator.free(stmt);
         }
-        statements.deinit(allocator);
+        statements.deinit();
     }
     
     while (lines.next()) |line| {
@@ -1323,7 +1323,7 @@ fn generateLLVMStatementsFromSource(allocator: Allocator, source: []const u8, wr
         while (parts.next()) |part| {
             const stmt = std.mem.trim(u8, part, " \t\r\n");
             if (stmt.len > 0) {
-                try statements.append(allocator, try allocator.dupe(u8, stmt));
+                try statements.append(self.allocator, try allocator.dupe(u8, stmt));
             }
         }
     }
@@ -1395,22 +1395,22 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                             const str_info = string_literals.items[index];
                             try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* @.str.{}, i32 0, i32 0\n", 
                                 .{ variable_counter.*, str_info.actual_size, str_info.actual_size, index });
-                            try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                            try writer.print("  call i32 @puts(i8* %str_ptr.{s})\n", .{variable_counter.*});
                             variable_counter.* += 1;
                         }
                     } else {
                         // Variable or numeric literal
                         if (std.fmt.parseInt(i64, trimmed_arg, 10) catch null) |num| {
                             // Integer literal
-                            if (verbose) try writer.print("  ; Integer literal: {}\n", .{num});
-                            try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 {})\n", .{ variable_counter.*, num });
+                            if (verbose) try writer.print("  ; Integer literal: {s}\n", .{num});
+                            try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, i64 {s})\n", .{ variable_counter.*, num });
                             variable_counter.* += 1;
                         } else if (std.fmt.parseFloat(f64, trimmed_arg) catch null) |num| {
                             // Float literal  
-                            if (verbose) try writer.print("  ; Float literal: {}\n", .{num});
-                            try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double {})\n", .{ variable_counter.*, num });
+                            if (verbose) try writer.print("  ; Float literal: {s}\n", .{num});
+                            try writer.print("  %fmt_ptr.{s} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                            try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, double {s})\n", .{ variable_counter.*, num });
                             variable_counter.* += 1;
                         } else {
                             // Check for function call pattern
@@ -1427,32 +1427,32 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                                 if (verbose) try writer.print("  ; Found variable: {s} (type: {s})\n", .{ trimmed_arg, var_info.llvm_type });
                                 
                                 if (std.mem.eql(u8, var_info.llvm_type, "i64")) {
-                                    try writer.print("  %loaded.{} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  %loaded.{s} = load i64, i64* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, i64 %loaded.{s})\n", .{ variable_counter.*, variable_counter.* });
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "i32")) {
-                                    try writer.print("  %loaded.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %loaded.{s} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, var_info.var_name });
                                     // Cast i32 to i64 for printf
-                                    try writer.print("  %extended.{} = sext i32 %loaded.{} to i64\n", .{ variable_counter.*, variable_counter.* });
-                                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  %extended.{s} = sext i32 %loaded.{s} to i64\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, i64 %extended.{s})\n", .{ variable_counter.*, variable_counter.* });
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "i1")) {
-                                    try writer.print("  %loaded.{} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
-                                    try writer.print("  %select.{} = select i1 %loaded.{}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
-                                    try writer.print("  call i32 @puts(i8* %select.{})\n", .{variable_counter.*});
+                                    try writer.print("  %loaded.{s} = load i1, i1* %{s}, align 1\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %select.{s} = select i1 %loaded.{s}, i8* getelementptr ([6 x i8], [6 x i8]* @.bool_true, i32 0, i32 0), i8* getelementptr ([7 x i8], [7 x i8]* @.bool_false, i32 0, i32 0)\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  call i32 @puts(i8* %select.{s})\n", .{variable_counter.*});
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "double")) {
-                                    try writer.print("  %loaded.{} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                    try writer.print("  %fmt_ptr.{} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
-                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, double %loaded.{})\n", .{ variable_counter.*, variable_counter.* });
+                                    try writer.print("  %loaded.{s} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                    try writer.print("  %fmt_ptr.{s} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, double %loaded.{s})\n", .{ variable_counter.*, variable_counter.* });
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "tea")) {
                                     // String variable - get pointer to first character and print
                                     if (var_info.string_len) |len| {
                                         try writer.print("  %str_ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 0\n", 
                                             .{ variable_counter.*, len, len, var_info.var_name });
                                     } else {
-                                        try writer.print("  %str_ptr.{} = load i8*, i8** %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
+                                        try writer.print("  %str_ptr.{s} = load i8*, i8** %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
                                     }
-                                    try writer.print("  call i32 @puts(i8* %str_ptr.{})\n", .{variable_counter.*});
+                                    try writer.print("  call i32 @puts(i8* %str_ptr.{s})\n", .{variable_counter.*});
                                 }
                                 variable_counter.* += 1;
                             } else {
@@ -1485,13 +1485,13 @@ fn generateArrayAccess(expr: []const u8, writer: anytype, variables: *std.HashMa
                 var index_value: []const u8 = undefined;
                 if (std.fmt.parseInt(i32, index_str, 10) catch null) |index_num| {
                     // Integer literal index
-                    try writer.print("  %index.{} = add i32 0, {}\n", .{ variable_counter.*, index_num });
+                    try writer.print("  %index.{s} = add i32 0, {s}\n", .{ variable_counter.*, index_num });
                     variable_counter.* += 1;
                     index_value = try std.fmt.allocPrint(std.heap.page_allocator, "%index.{}", .{variable_counter.* - 1});
                 } else {
                     // Variable index
                     if (variables.get(index_str)) |index_var| {
-                        try writer.print("  %index.{} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, index_var.var_name });
+                        try writer.print("  %index.{s} = load i32, i32* %{s}, align 4\n", .{ variable_counter.*, index_var.var_name });
                         variable_counter.* += 1;
                         index_value = try std.fmt.allocPrint(std.heap.page_allocator, "%index.{}", .{variable_counter.* - 1});
                     } else {
@@ -1510,7 +1510,7 @@ fn generateArrayAccess(expr: []const u8, writer: anytype, variables: *std.HashMa
                     // Cast to i64 for printf
                     try writer.print("  %extended.{} = sext i32 %element.{} to i64\n", 
                         .{ variable_counter.*, variable_counter.* });
-                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                    try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
                     try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
                         .{ variable_counter.*, variable_counter.* });
                     variable_counter.* += 1;
@@ -1540,19 +1540,19 @@ fn generateFunctionCall(expr: []const u8, writer: anytype, variables: *std.HashM
                 if (std.fmt.parseInt(i32, args_str, 10)) |arg_value| {
                     // Call abs function on literal
                     const abs_result = if (arg_value < 0) -arg_value else arg_value;
-                    try writer.print("  %func_result.{} = add i32 0, {}\n", .{ variable_counter.*, abs_result });
+                    try writer.print("  %func_result.{s} = add i32 0, {s}\n", .{ variable_counter.*, abs_result });
                     // Cast to i64 for printf
                     try writer.print("  %extended.{} = sext i32 %func_result.{} to i64\n", 
                         .{ variable_counter.*, variable_counter.* });
-                    try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                    try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
                     try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
                         .{ variable_counter.*, variable_counter.* });
                     variable_counter.* += 1;
                 } else |_| {
                     // Variable argument - lookup in variables
                     if (variables.get(args_str)) |var_info| {
-                        try writer.print("  %{} = load {}, {}* %{}, align 4\n", .{ variable_counter.*, var_info.llvm_type, var_info.llvm_type, var_info.name });
-                        try writer.print("  call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.{}, i64 0, i64 0), {} %{})\n", .{ string_literals.items.len, var_info.llvm_type, variable_counter.* });
+                        try writer.print("  %{s} = load {s}, {s}* %{s}, align 4\n", .{ variable_counter.*, var_info.llvm_type, var_info.llvm_type, var_info.name });
+                        try writer.print("  call i32 (i8*, ...) @printf(i8* noundef getelementptr inbounds ([4 x i8], [4 x i8]* @.str.{s}, i64 0, i64 0), {s} %{s})\n", .{ string_literals.items.len, var_info.llvm_type, variable_counter.* });
                         variable_counter.* += 1;
                     } else {
                         if (verbose) try writer.print("  ; Warning: Unknown variable in function call: {s}\n", .{args_str});
@@ -1568,11 +1568,11 @@ fn generateFunctionCall(expr: []const u8, writer: anytype, variables: *std.HashM
                             if (std.mem.indexOf(u8, type_str, " x")) |space_pos| {
                             const size_str = type_str[1..space_pos];
                             if (std.fmt.parseInt(i32, size_str, 10)) |array_size| {
-                                try writer.print("  %len_result.{} = add i32 0, {}\n", .{ variable_counter.*, array_size });
+                                try writer.print("  %len_result.{s} = add i32 0, {s}\n", .{ variable_counter.*, array_size });
                                 // Cast to i64 for printf
                                 try writer.print("  %extended.{} = sext i32 %len_result.{} to i64\n", 
                                     .{ variable_counter.*, variable_counter.* });
-                                try writer.print("  %fmt_ptr.{} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                try writer.print("  %fmt_ptr.{s} = getelementptr [6 x i8], [6 x i8]* @.int_fmt, i32 0, i32 0\n", .{variable_counter.*});
                                 try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{}, i64 %extended.{})\n", 
                                     .{ variable_counter.*, variable_counter.* });
                                 variable_counter.* += 1;
@@ -1622,10 +1622,10 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
                 if (char == ',') element_count += 1;
             }
             
-            if (verbose) try writer.print("  ; Array with {} elements\n", .{element_count});
+            if (verbose) try writer.print("  ; Array with {s} elements\n", .{element_count});
             
             // Allocate array
-            try writer.print("  %{s} = alloca [{} x i32], align 16\n", .{ var_name, element_count });
+            try writer.print("  %{s} = alloca [{s} x i32], align 16\n", .{ var_name, element_count });
             
             // Initialize array elements
             var elements = std.mem.splitScalar(u8, elements_str, ',');
@@ -1660,7 +1660,7 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
         // Try to evaluate the expression
         const expr_result = try evaluateIntegerExpression(value_str, variables);
         if (expr_result.is_literal) {
-            try writer.print("  store {s} {}, {s}* %{s}, align {s}\n", .{ 
+            try writer.print("  store {s} {s}, {s}* %{s}, align {s}\n", .{ 
                 llvm_type, expr_result.value, llvm_type, var_name, 
                 if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
             });
@@ -1689,7 +1689,7 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
         // Float type
         try writer.print("  %{s} = alloca double, align 8\n", .{var_name});
         if (std.fmt.parseFloat(f64, value_str) catch null) |num| {
-            try writer.print("  store double {}, double* %{s}, align 8\n", .{ num, var_name });
+            try writer.print("  store double {s}, double* %{s}, align 8\n", .{ num, var_name });
         } else {
             try writer.print("  store double 0.0, double* %{s}, align 8\n", .{var_name});
         }
@@ -1705,18 +1705,18 @@ fn generateLLVMVariableDeclaration(line: []const u8, writer: anytype, variables:
             const string_content = value_str[1..value_str.len - 1];
             const string_len = string_content.len + 1; // +1 for null terminator
             
-            try writer.print("  %{s} = alloca [{} x i8], align 1\n", .{ var_name, string_len });
+            try writer.print("  %{s} = alloca [{s} x i8], align 1\n", .{ var_name, string_len });
             
             // Store each character individually
             for (string_content, 0..) |char, i| {
                 try writer.print("  %{s}.ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 {}\n", 
                     .{ var_name, i, string_len, string_len, var_name, i });
-                try writer.print("  store i8 {}, i8* %{s}.ptr.{}, align 1\n", .{ char, var_name, i });
+                try writer.print("  store i8 {s}, i8* %{s}.ptr.{s}, align 1\n", .{ char, var_name, i });
             }
             // Add null terminator
             try writer.print("  %{s}.ptr.{} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 {}\n", 
                 .{ var_name, string_content.len, string_len, string_len, var_name, string_content.len });
-            try writer.print("  store i8 0, i8* %{s}.ptr.{}, align 1\n", .{ var_name, string_content.len });
+            try writer.print("  store i8 0, i8* %{s}.ptr.{s}, align 1\n", .{ var_name, string_content.len });
             
             try variables.put(var_name, .{ .llvm_type = "tea", .var_name = var_name, .string_len = string_len });
         } else {
@@ -1759,7 +1759,7 @@ fn generateLenFunctionCall(
             }
             
             try writer.print("  %count = alloca i64, align 8\n", .{});
-            try writer.print("  store i64 {}, i64* %count, align 8  ; dynamic array literal length\n", .{element_count});
+            try writer.print("  store i64 {s}, i64* %count, align 8  ; dynamic array literal length\n", .{element_count});
             variable_counter.* += 1;
         }
     } else {
@@ -1787,14 +1787,14 @@ fn generateStructCreation(
     // Parse pattern: sus p Point = Point{x: 10, y: 20}
     if (std.mem.indexOf(u8, stmt, "Point{")) |_| {
         // Create Point struct with two i64 fields
-        try writer.writeAll("  %struct.Point = type { i64, i64 }\n");
+        try writer.writer().writeAll("  %struct.Point = type { i64, i64 }\n");
         try writer.print("  %p = alloca %struct.Point, align 8\n", .{});
         
         // Initialize fields with values from literal
-        try writer.writeAll("  %x_ptr = getelementptr %struct.Point, %struct.Point* %p, i32 0, i32 0\n");
-        try writer.writeAll("  store i64 10, i64* %x_ptr, align 8\n");
-        try writer.writeAll("  %y_ptr = getelementptr %struct.Point, %struct.Point* %p, i32 0, i32 1\n");
-        try writer.writeAll("  store i64 20, i64* %y_ptr, align 8\n");
+        try writer.writer().writeAll("  %x_ptr = getelementptr %struct.Point, %struct.Point* %p, i32 0, i32 0\n");
+        try writer.writer().writeAll("  store i64 10, i64* %x_ptr, align 8\n");
+        try writer.writer().writeAll("  %y_ptr = getelementptr %struct.Point, %struct.Point* %p, i32 0, i32 1\n");
+        try writer.writer().writeAll("  store i64 20, i64* %y_ptr, align 8\n");
         
         variable_counter.* += 1;
     }
@@ -1815,15 +1815,15 @@ fn generateComplexExpression(
     // Handle patterns like: sus result drip = (a + b) * 2 - (a - b) / 2
     if (std.mem.indexOf(u8, stmt, " + ") != null and std.mem.indexOf(u8, stmt, " * ") != null) {
         // Complex arithmetic expression - generate step by step
-        try writer.print("  %temp{} = alloca i64, align 8\n", .{variable_counter.*});
+        try writer.print("  %temp{s} = alloca i64, align 8\n", .{variable_counter.*});
         try writer.print("  %add_result = add i64 5, 3  ; simplified calculation\n", .{});
         try writer.print("  %mul_result = mul i64 %add_result, 2\n", .{});
-        try writer.print("  store i64 %mul_result, i64* %temp{}, align 8\n", .{variable_counter.*});
+        try writer.print("  store i64 %mul_result, i64* %temp{s}, align 8\n", .{variable_counter.*});
         variable_counter.* += 1;
     } else {
         // Simple expression
-        try writer.print("  %expr{} = alloca i64, align 8\n", .{variable_counter.*});
-        try writer.print("  store i64 0, i64* %expr{}, align 8\n", .{variable_counter.*});
+        try writer.print("  %expr{s} = alloca i64, align 8\n", .{variable_counter.*});
+        try writer.print("  store i64 0, i64* %expr{s}, align 8\n", .{variable_counter.*});
         variable_counter.* += 1;
     }
 }
@@ -1868,8 +1868,8 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
     // Parse parameters
     var param_names = std.ArrayList([]const u8){};
     var param_types = std.ArrayList([]const u8){};
-    defer param_names.deinit(allocator);
-    defer param_types.deinit(allocator);
+    defer param_names.deinit();
+    defer param_types.deinit();
     
     if (params_str.len > 0) {
         // Handle comma-separated parameters: "a drip, b drip"
@@ -1879,8 +1879,8 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
             var param_parts = std.mem.tokenizeScalar(u8, trimmed_group, ' ');
             if (param_parts.next()) |param_name| {
                 if (param_parts.next()) |param_type| {
-                    try param_names.append(allocator, try allocator.dupe(u8, param_name));
-                    try param_types.append(allocator, try allocator.dupe(u8, param_type));
+                    try param_names.append(self.allocator, try allocator.dupe(u8, param_name));
+                    try param_types.append(self.allocator, try allocator.dupe(u8, param_type));
                 }
             }
         }
@@ -1893,18 +1893,18 @@ fn parseFunctionDefinition(stmt: []const u8, functions: *std.HashMap([]const u8,
     try writer.print("define {s} @{s}(", .{ llvm_return_type, func_name });
     
     for (param_names.items, param_types.items, 0..) |param_name, param_type, i| {
-        if (i > 0) try writer.writeAll(", ");
+        if (i > 0) try writer.writer().writeAll(", ");
         const llvm_param_type = cursedTypeToLLVMType(param_type);
         try writer.print("{s} %{s}", .{ llvm_param_type, param_name });
     }
     
-    try writer.writeAll(") {\n");
-    try writer.writeAll("entry:\n");
+    try writer.writer().writeAll(") {\n");
+    try writer.writer().writeAll("entry:\n");
     
     // Generate function body
     try generateFunctionBody(body_str, param_names.items, param_types.items, llvm_return_type, writer, allocator, verbose);
     
-    try writer.writeAll("}\n\n");
+    try writer.writer().writeAll("}\n\n");
     
     // Store function info
     const func_info = FunctionInfo{
@@ -1941,14 +1941,14 @@ fn generateFunctionBody(body: []const u8, param_names: [][]const u8, param_types
     } else {
         // Handle multi-statement body
         var statements = std.ArrayList([]const u8){};
-        defer statements.deinit(allocator);
+        defer statements.deinit();
         
         // Split body into statements (simplified)
         var lines = std.mem.splitScalar(u8, body, '\n');
         while (lines.next()) |line| {
             const trimmed = std.mem.trim(u8, line, " \t\r\n");
             if (trimmed.len > 0) {
-                try statements.append(allocator, trimmed);
+                try statements.append(self.allocator, trimmed);
             }
         }
         
@@ -1964,7 +1964,7 @@ fn generateFunctionBody(body: []const u8, param_names: [][]const u8, param_types
         
         // No return statement found, add default return
         if (std.mem.eql(u8, return_type, "void")) {
-            try writer.writeAll("  ret void\n");
+            try writer.writer().writeAll("  ret void\n");
         } else {
             try writer.print("  ret {s} 0\n", .{return_type});
         }
@@ -2008,12 +2008,12 @@ fn generateRecursiveFactorial(param_names: [][]const u8, return_type: []const u8
         
         // if (n <= 1) return 1;
         try writer.print("  %cond = icmp sle {s} %{s}, 1\n", .{ return_type, n_param });
-        try writer.writeAll("  br i1 %cond, label %base_case, label %recursive_case\n\n");
+        try writer.writer().writeAll("  br i1 %cond, label %base_case, label %recursive_case\n\n");
         
-        try writer.writeAll("base_case:\n");
+        try writer.writer().writeAll("base_case:\n");
         try writer.print("  ret {s} 1\n\n", .{return_type});
         
-        try writer.writeAll("recursive_case:\n");
+        try writer.writer().writeAll("recursive_case:\n");
         try writer.print("  %n_minus_1 = sub {s} %{s}, 1\n", .{ return_type, n_param });
         try writer.print("  %recursive_result = call {s} @factorial({s} %n_minus_1)\n", .{ return_type, return_type });
         try writer.print("  %result = mul {s} %{s}, %recursive_result\n", .{ return_type, n_param });
@@ -2032,21 +2032,21 @@ fn generateRecursiveFibonacci(param_names: [][]const u8, return_type: []const u8
         
         // if (n <= 0) return 0;
         try writer.print("  %cond0 = icmp sle {s} %{s}, 0\n", .{ return_type, n_param });
-        try writer.writeAll("  br i1 %cond0, label %case_zero, label %check_one\n\n");
+        try writer.writer().writeAll("  br i1 %cond0, label %case_zero, label %check_one\n\n");
         
-        try writer.writeAll("case_zero:\n");
+        try writer.writer().writeAll("case_zero:\n");
         try writer.print("  ret {s} 0\n\n", .{return_type});
         
         // if (n == 1) return 1;
-        try writer.writeAll("check_one:\n");
+        try writer.writer().writeAll("check_one:\n");
         try writer.print("  %cond1 = icmp eq {s} %{s}, 1\n", .{ return_type, n_param });
-        try writer.writeAll("  br i1 %cond1, label %case_one, label %recursive_case\n\n");
+        try writer.writer().writeAll("  br i1 %cond1, label %case_one, label %recursive_case\n\n");
         
-        try writer.writeAll("case_one:\n");
+        try writer.writer().writeAll("case_one:\n");
         try writer.print("  ret {s} 1\n\n", .{return_type});
         
         // return fib(n-1) + fib(n-2)
-        try writer.writeAll("recursive_case:\n");
+        try writer.writer().writeAll("recursive_case:\n");
         try writer.print("  %n_minus_1 = sub {s} %{s}, 1\n", .{ return_type, n_param });
         try writer.print("  %n_minus_2 = sub {s} %{s}, 2\n", .{ return_type, n_param });
         try writer.print("  %fib_n_1 = call {s} @fib({s} %n_minus_1)\n", .{ return_type, return_type });
@@ -2087,7 +2087,7 @@ fn generateReturnExpression(return_expr: []const u8, param_names: [][]const u8, 
     } else {
         // Simple return value
         if (std.fmt.parseInt(i64, return_expr, 10) catch null) |num| {
-            try writer.print("  ret {s} {}\n", .{ return_type, num });
+            try writer.print("  ret {s} {s}\n", .{ return_type, num });
         } else {
             // Try to find parameter
             for (param_names) |param_name| {
@@ -2198,7 +2198,7 @@ fn generateBinaryOperation(
         try writer.print("  %result = {s} {s} {s}, {s}\n", .{ llvm_op, return_type, left_value, right_value });
     } else if (found_left_param and right_literal != null) {
         // Left is parameter, right is literal
-        try writer.print("  %result = {s} {s} {s}, {}\n", .{ llvm_op, return_type, left_value, right_literal.? });
+        try writer.print("  %result = {s} {s} {s}, {s}\n", .{ llvm_op, return_type, left_value, right_literal.? });
     } else {
         // Fallback: return 0
         try writer.print("  ; Warning: Unable to resolve operands\n", .{});
@@ -2256,17 +2256,17 @@ fn generateLLVMVariableDeclarationWithFunctionCalls(
                 var arg_index: usize = 0;
                 while (args.next()) |arg| {
                     const trimmed_arg = std.mem.trim(u8, arg, " \t");
-                    if (arg_index > 0) try writer.writeAll(", ");
+                    if (arg_index > 0) try writer.writer().writeAll(", ");
                     
                     // Determine argument type and value
                     if (std.fmt.parseInt(i64, trimmed_arg, 10) catch null) |num| {
                         // Integer literal
-                        try writer.print("{s} {}", .{ llvm_type, num });
+                        try writer.print("{s} {s}", .{ llvm_type, num });
                     } else if (variables.get(trimmed_arg)) |var_info| {
                         // Variable reference - load it
                         const load_result = try std.fmt.allocPrint(variables.allocator, "%arg_load.{d}", .{variable_counter.*});
                         defer variables.allocator.free(load_result);
-                        try writer.print("  {s} = load {s}, {s}* %{s}, align {s}\n", .{ 
+                        try writer.print("  {s} = load {s}, {s}* %{s}, align {s}\n", . 
                             load_result, var_info.llvm_type, var_info.llvm_type, var_info.var_name,
                             if (std.mem.eql(u8, var_info.llvm_type, "i64")) "8" else "4"
                         });
@@ -2280,10 +2280,10 @@ fn generateLLVMVariableDeclarationWithFunctionCalls(
                 }
             }
             
-            try writer.writeAll(")\n");
+            try writer.writer().writeAll(")\n");
             
             // Store result in variable
-            try writer.print("  store {s} {s}, {s}* %{s}, align {s}\n", .{ 
+            try writer.print("  store {s} {s}, {s}* %{s}, align {s}\n", . 
                 llvm_type, result_value, llvm_type, var_name,
                 if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4"
             });
@@ -2371,8 +2371,8 @@ fn generateArithmeticLLVM(
         const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
         const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
         
-        try writer.print("  %add_result.{} = add {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
-        try writer.print("  store {s} %add_result.{}, {s}* %{s}, align {s}\n", .{ 
+        try writer.print("  %add_result.{s} = add {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %add_result.{s}, {s}* %{s}, align {s}\n", . 
             llvm_type, variable_counter.*, llvm_type, result_var,
             if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
         });
@@ -2387,8 +2387,8 @@ fn generateArithmeticLLVM(
         const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
         const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
         
-        try writer.print("  %sub_result.{} = sub {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
-        try writer.print("  store {s} %sub_result.{}, {s}* %{s}, align {s}\n", .{ 
+        try writer.print("  %sub_result.{s} = sub {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %sub_result.{s}, {s}* %{s}, align {s}\n", . 
             llvm_type, variable_counter.*, llvm_type, result_var,
             if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
         });
@@ -2403,8 +2403,8 @@ fn generateArithmeticLLVM(
         const left_val = try getOperandValue(left_str, variables, writer, variable_counter, llvm_type);
         const right_val = try getOperandValue(right_str, variables, writer, variable_counter, llvm_type);
         
-        try writer.print("  %mul_result.{} = mul {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
-        try writer.print("  store {s} %mul_result.{}, {s}* %{s}, align {s}\n", .{ 
+        try writer.print("  %mul_result.{s} = mul {s} {s}, {s}\n", .{ variable_counter.*, llvm_type, left_val, right_val });
+        try writer.print("  store {s} %mul_result.{s}, {s}* %{s}, align {s}\n", . 
             llvm_type, variable_counter.*, llvm_type, result_var,
             if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
         });
@@ -2413,7 +2413,7 @@ fn generateArithmeticLLVM(
     }
     
     // Default: store 0
-    try writer.print("  store {s} 0, {s}* %{s}, align {s}\n", .{ 
+    try writer.print("  store {s} 0, {s}* %{s}, align {s}\n", . 
         llvm_type, llvm_type, result_var,
         if (std.mem.eql(u8, llvm_type, "i64")) "8" else "4" 
     });
@@ -2470,14 +2470,14 @@ fn getOperandValue(
 
 /// Convert simple LLVM IR back to C code (fallback for when clang is not available)
 fn convertLLVMIRToC(allocator: Allocator, ir_filename: []const u8, c_filename: []const u8) !void {
-    const ir_content = std.fs.cwd().readFileAlloc(allocator, ir_filename, 1024 * 1024) catch |err| {
-        print("❌ Error reading LLVM IR file: {}\n", .{err});
+    const ir_content = std.fs.cwd().readFileAlloc(allocator, ir_filename, 1024 * 1024) catch {
+        print("❌ Error reading LLVM IR file: {s}\n", .{err});
         return;
     };
     defer allocator.free(ir_content);
     
-    const c_file = std.fs.cwd().createFile(c_filename, .{}) catch |err| {
-        print("❌ Error creating C file: {}\n", .{err});
+    const c_file = std.fs.cwd().createFile(c_filename, .{}) catch {
+        print("❌ Error creating C file: {s}\n", .{err});
         return;
     };
     defer c_file.close();
@@ -2485,9 +2485,9 @@ fn convertLLVMIRToC(allocator: Allocator, ir_filename: []const u8, c_filename: [
     const writer = c_file.writer();
     
     // Write C headers
-    try writer.writeAll("#include <stdio.h>\n");
-    try writer.writeAll("#include <stdlib.h>\n");
-    try writer.writeAll("#include <string.h>\n\n");
+    try writer.writer().writeAll("#include <stdio.h>\n");
+    try writer.writer().writeAll("#include <stdlib.h>\n");
+    try writer.writer().writeAll("#include <string.h>\n\n");
     
     // Extract string constants and convert to C
     var lines = std.mem.splitScalar(u8, ir_content, '\n');
@@ -2516,7 +2516,7 @@ fn convertLLVMIRToC(allocator: Allocator, ir_filename: []const u8, c_filename: [
         }
     }
     
-    try writer.writeAll("\nint main() {\n");
+    try writer.writer().writeAll("\nint main() {\n");
     
     // Second pass: convert main function
     lines = std.mem.splitScalar(u8, ir_content, '\n');
@@ -2615,6 +2615,6 @@ fn convertLLVMIRToC(allocator: Allocator, ir_filename: []const u8, c_filename: [
         }
     }
     
-    try writer.writeAll("    return 0;\n");
-    try writer.writeAll("}\n");
+    try writer.writer().writeAll("    return 0;\n");
+    try writer.writer().writeAll("}\n");
 }

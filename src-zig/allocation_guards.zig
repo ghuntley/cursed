@@ -18,7 +18,7 @@ pub const AllocationGuard = struct {
         for (self.allocations.items) |ptr| {
             self.allocator.destroy(@as(*u8, @ptrCast(ptr)));
         }
-        self.allocations.deinit();
+        self.allocations.deinit(self.allocator);
     }
     
     /// Create a guarded allocation that will be cleaned up on guard destruction
@@ -66,13 +66,14 @@ pub const ArenaGuard = struct {
     arena: std.heap.ArenaAllocator,
     
     pub fn init(backing_allocator: Allocator) ArenaGuard {
+        _ = allocator;
         return ArenaGuard{
             .arena = std.heap.ArenaAllocator.init(backing_allocator),
         };
     }
     
     pub fn deinit(self: *ArenaGuard) void {
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     pub fn allocator(self: *ArenaGuard) Allocator {
@@ -96,7 +97,7 @@ pub const ExpressionAllocator = struct {
     }
     
     pub fn deinit(self: *ExpressionAllocator) void {
-        self.guard.deinit();
+        self.guard.deinit(self.allocator);
     }
     
     /// Create a binary expression with guaranteed cleanup on failure

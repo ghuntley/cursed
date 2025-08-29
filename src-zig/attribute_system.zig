@@ -74,7 +74,7 @@ pub const AttributeValue = union(enum) {
     pub fn deinit(self: *AttributeValue, allocator: Allocator) void {
         switch (self.*) {
             .Expression => |expr| {
-                expr.deinit(allocator);
+                expr.deinit();
                 allocator.destroy(expr);
             },
             else => {},
@@ -88,7 +88,8 @@ pub const AttributeParameter = struct {
     value: AttributeValue,
     
     pub fn deinit(self: *AttributeParameter, allocator: Allocator) void {
-        self.value.deinit(allocator);
+        _ = allocator;
+        self.value.deinit(self.allocator);
     }
 };
 
@@ -109,10 +110,11 @@ pub const Attribute = struct {
     }
     
     pub fn deinit(self: *Attribute, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |*param| {
-            param.deinit(allocator);
+            param.deinit();
         }
-        self.parameters.deinit(allocator);
+        self.parameters.deinit(self.allocator);
     }
     
     /// Add a parameter to this attribute
@@ -184,15 +186,16 @@ pub const AttributeList = struct {
     }
     
     pub fn deinit(self: *AttributeList, allocator: Allocator) void {
+        _ = allocator;
         for (self.attributes.items) |*attr| {
-            attr.deinit(allocator);
+            attr.deinit();
         }
-        self.attributes.deinit(allocator);
+        self.attributes.deinit(self.allocator);
     }
     
     /// Add an attribute to the list
     pub fn addAttribute(self: *AttributeList, attr: Attribute) !void {
-        try self.attributes.append(attr);
+        try self.attributes.append(self.allocator, attr);
     }
     
     /// Find attribute by type
@@ -221,8 +224,8 @@ pub const AttributeList = struct {
     }
     
     /// Get all attributes of a specific type
-    pub fn getAttributesByType(self: *const AttributeList, _: Allocator, attr_type: AttributeType) !ArrayList(*const Attribute) {
-        var result = .empty;
+    pub fn getAttributesByType(self: *const AttributeList, allocator: Allocator, attr_type: AttributeType) !ArrayList(*const Attribute) {
+        var result = ArrayList(*const Attribute).init(allocator);
         for (self.attributes.items) |*attr| {
             if (attr.type == attr_type) {
                 try result.append(attr);

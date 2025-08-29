@@ -207,7 +207,7 @@ pub const InlinedDebugTestSuite = struct {
         
         // Verify the report file was created
         const file = std.fs.cwd().openFile("test_inlined_debug_report.md", .{}) catch |err| {
-            print("❌ Report generation failed: {}\n", .{err});
+            print("❌ Report generation failed: {s}\n", .{err});
             return;
         };
         file.close();
@@ -337,7 +337,7 @@ pub fn testInlinedDebugComplete() !void {
 // Export for external testing
 export fn run_inlined_debug_tests() void {
     testInlinedDebugComplete() catch |err| {
-        print("❌ Tests failed with error: {}\n", .{err});
+        print("❌ Tests failed with error: {s}\n", .{err});
     };
 }
 

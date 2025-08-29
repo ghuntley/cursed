@@ -139,7 +139,7 @@ pub const DebugEnabledCodeGen = struct {
     }
     
     pub fn deinit(self: *DebugEnabledCodeGen) void {
-        self.debug_generator.deinit();
+        self.debug_generator.deinit(self.allocator);
         c.LLVMDisposeBuilder(self.builder);
         c.LLVMDisposeModule(self.module);
         c.LLVMContextDispose(self.context);
@@ -618,7 +618,7 @@ pub const DebugEnabledCodeGen = struct {
         defer self.allocator.free(result.stderr);
         
         if (result.term.Exited != 0) {
-            std.debug.print("❌ Compilation failed with exit code {}\n", .{result.term.Exited});
+            std.debug.print("❌ Compilation failed with exit code {s}\n", .{result.term.Exited});
             std.debug.print("stderr: {s}\n", .{result.stderr});
             return;
         }

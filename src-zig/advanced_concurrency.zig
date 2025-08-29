@@ -128,8 +128,8 @@ pub fn Channel(comptime T: type) type {
                 .buffer = Buffer.init(allocator),
                 .capacity = capacity,
                 .closed = Atomic(bool).init(false),
-                .send_waiters = std.ArrayList(*Goroutine).init(allocator),
-                .recv_waiters = std.ArrayList(*Goroutine).init(allocator),
+                .send_waiters = std.ArrayList(*Goroutine){},
+                .recv_waiters = std.ArrayList(*Goroutine){},
                 .mutex = Mutex{},
                 .send_cond = Condition{},
                 .recv_cond = Condition{},
@@ -140,9 +140,9 @@ pub fn Channel(comptime T: type) type {
         }
         
         pub fn deinit(self: *Self) void {
-            self.buffer.deinit();
-            self.send_waiters.deinit();
-            self.recv_waiters.deinit();
+            self.buffer.deinit(self.allocator);
+            self.send_waiters.deinit(self.allocator);
+            self.recv_waiters.deinit(self.allocator);
             self.allocator.destroy(self);
         }
         
@@ -157,7 +157,7 @@ pub fn Channel(comptime T: type) type {
             
             // If buffered and not full, add to buffer
             if (self.capacity > 0 and self.buffer.items.len < self.capacity) {
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_cond.signal(); // Wake up receivers
                 return true;
             }
@@ -166,7 +166,7 @@ pub fn Channel(comptime T: type) type {
             // In a real implementation, we'd block the goroutine here
             // For this demo, we'll just try to add to buffer
             if (self.buffer.items.len < self.capacity or self.capacity == 0) {
-                try self.buffer.append(value);
+                try self.buffer.append(allocator, value);
                 self.recv_cond.signal();
                 return true;
             }
@@ -250,7 +250,7 @@ pub const Scheduler = struct {
             if (self.thread) |thread| {
                 thread.join();
             }
-            self.local_queue.deinit();
+            self.local_queue.deinit(self.allocator);
         }
         
         fn workerLoop(self: *Worker) void {
@@ -350,7 +350,7 @@ pub const Scheduler = struct {
         }
         
         self.allocator.free(self.workers);
-        self.global_queue.deinit();
+        self.global_queue.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -361,7 +361,7 @@ pub const Scheduler = struct {
         // Add to global queue (in production, would use load balancing)
         self.global_mutex.lock();
         defer self.global_mutex.unlock();
-        try self.global_queue.append(goroutine);
+        try self.global_queue.append(allocator, goroutine);
         
         return goroutine_id;
     }
@@ -382,6 +382,7 @@ pub const ConcurrencyRuntime = struct {
     initialized: bool,
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const runtime = try allocator.create(Self);
         runtime.* = Self{
             .allocator = allocator,
@@ -398,9 +399,9 @@ pub const ConcurrencyRuntime = struct {
     
     pub fn deinit(self: *Self) void {
         if (self.initialized) {
-            self.scheduler.deinit();
+            self.scheduler.deinit(self.allocator);
         }
-        self.channels.deinit();
+        self.channels.deinit(self.allocator);
         self.allocator.destroy(self);
     }
     
@@ -433,6 +434,7 @@ var global_concurrency_runtime: ?*ConcurrencyRuntime = null;
 
 /// Initialize global concurrency runtime
 pub fn initConcurrencyRuntime(allocator: Allocator) !void {
+        _ = allocator;
     global_concurrency_runtime = try ConcurrencyRuntime.init(allocator);
 }
 
@@ -497,10 +499,11 @@ export fn cursed_dm_destroy_int(channel_ptr: ?*Channel(i64)) void {
 fn testGoroutineEntry(context: ?*anyopaque) void {
     const value_ptr = @as(*i32, @ptrCast(@alignCast(context)));
     value_ptr.* = 42;
-    std.debug.print("Goroutine executed, set value to: {}\n", .{value_ptr.*});
+    std.debug.print("Goroutine executed, set value to: {s}\n", .{value_ptr.*});
 }
 
 pub fn testConcurrency(allocator: Allocator) !void {
+        _ = allocator;
     try initConcurrencyRuntime(allocator);
     defer deinitConcurrencyRuntime();
     
@@ -510,12 +513,12 @@ pub fn testConcurrency(allocator: Allocator) !void {
     var test_value: i32 = 0;
     const goroutine_id = try runtime.stan(testGoroutineEntry, &test_value);
     
-    std.debug.print("Spawned goroutine with ID: {}\n", .{goroutine_id});
+    std.debug.print("Spawned goroutine with ID: {s}\n", .{goroutine_id});
     
     // Give goroutine time to execute
     std.time.sleep(10_000_000); // 10ms
     
-    std.debug.print("Test value after goroutine: {}\n", .{test_value});
+    std.debug.print("Test value after goroutine: {s}\n", .{test_value});
     
     // Test channel operations
     const channel = try runtime.dmMake(i64, 5);
@@ -526,17 +529,17 @@ pub fn testConcurrency(allocator: Allocator) !void {
     _ = try runtime.dmSend(channel, 300);
     
     if (runtime.dmRecv(channel)) |value1| {
-        std.debug.print("Received from channel: {}\n", .{value1});
+        std.debug.print("Received from channel: {s}\n", .{value1});
     }
     
     if (runtime.dmRecv(channel)) |value2| {
-        std.debug.print("Received from channel: {}\n", .{value2});
+        std.debug.print("Received from channel: {s}\n", .{value2});
     }
     
     runtime.dmClose(channel);
     
     if (runtime.dmRecv(channel)) |value3| {
-        std.debug.print("Received from closed channel: {}\n", .{value3});
+        std.debug.print("Received from closed channel: {s}\n", .{value3});
     } else {
         std.debug.print("Channel is closed, no more values\n", .{});
     }

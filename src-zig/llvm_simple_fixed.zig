@@ -23,8 +23,8 @@ pub const LLVMSimpleFixed = struct {
         for (self.allocated_strings.items) |str| {
             self.allocator.free(str);
         }
-        self.allocated_strings.deinit();
-        self.ir_content.deinit();
+        self.allocated_strings.deinit(self.allocator);
+        self.ir_content.deinit(self.allocator);
     }
 
     /// Track allocated string for cleanup
@@ -124,14 +124,14 @@ pub const LLVMSimpleFixed = struct {
             \\
         );
         
-        print("[LLVM] Simple fixed backend compiled with {} statements\n", .{statements_count});
+        print("[LLVM] Simple fixed backend compiled with {s} statements\n", .{statements_count});
     }
 
     pub fn writeToFile(self: *LLVMSimpleFixed, filename: []const u8) !void {
         const file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
         
-        try file.writeAll(self.ir_content.items);
+        try file.writer().writeAll(self.ir_content.items);
         print("[LLVM] Generated simple fixed IR: {s}\n", .{filename});
     }
 };
@@ -346,14 +346,14 @@ pub fn compileAdvancedFeatures(allocator: Allocator, source: []const u8, output_
     
     try backend.writeToFile(output_file);
     
-    print("✅ Advanced features compiled: pattern_matching={}, channels={}, defer={}, errors={}, goroutines={}\n", .{
+    print("✅ Advanced features compiled: pattern_matching={s}, channels={s}, defer={s}, errors={s}, goroutines={s}\n", .{
         has_pattern_matching,
         has_channels, 
         has_defer,
         has_error_propagation,
         has_goroutines
     });
-    print("✅ Total features detected: {}\n", .{feature_count});
+    print("✅ Total features detected: {s}\n", .{feature_count});
 }
 
 /// Cross-compilation with proper target detection

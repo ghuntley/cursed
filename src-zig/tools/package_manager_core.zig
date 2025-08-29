@@ -25,6 +25,7 @@ pub const Version = struct {
     }
     
     pub fn toString(self: Version, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         return try std.fmt.allocPrint(allocator, "{}.{}.{}", .{ self.major, self.minor, self.patch });
     }
     
@@ -125,6 +126,7 @@ pub const VersionRequirement = struct {
     }
     
     pub fn toString(self: VersionRequirement, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         switch (self.constraint) {
             .exact => |v| return v.toString(allocator),
             .caret => |v| {
@@ -188,6 +190,7 @@ pub const PackageSource = union(enum) {
     },
     
     pub fn deinit(self: *PackageSource, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .registry => |*reg| {
                 allocator.free(reg.name);
@@ -220,8 +223,9 @@ pub const Dependency = struct {
     }
     
     pub fn deinit(self: *Dependency, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
-        self.source.deinit();
+        self.source.deinit(self.allocator);
     }
 };
 
@@ -241,10 +245,10 @@ pub const PackageManifest = struct {
         return PackageManifest{
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },
-            .authors = ArrayList([]const u8).init(allocator),
-            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .exports = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .authors = ArrayList([]const u8){},
+            .dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .dev_dependencies = HashMap([]const u8, Dependency, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .exports = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -258,28 +262,28 @@ pub const PackageManifest = struct {
         for (self.authors.items) |author| {
             self.allocator.free(author);
         }
-        self.authors.deinit();
+        self.authors.deinit(self.allocator);
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.dev_dependencies.deinit();
+        self.dev_dependencies.deinit(self.allocator);
         
         var export_iter = self.exports.iterator();
         while (export_iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.exports.deinit();
+        self.exports.deinit(self.allocator);
     }
     
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -387,56 +391,56 @@ pub const PackageManifest = struct {
     }
     
     pub fn toTomlString(self: *const PackageManifest) ![]const u8 {
-        var content = ArrayList(u8).init(self.allocator);
+        var content = ArrayList(u8){};
         var writer = content.writer();
         
         // Package metadata
-        try writer.print("name = \"{s}\"\n", .{self.name});
+        try writer.writer().print("name = \"{s}\"\n", .{self.name});
         const version_str = try self.version.toString(self.allocator);
         defer self.allocator.free(version_str);
-        try writer.print("version = \"{s}\"\n", .{version_str});
+        try writer.writer().print("version = \"{s}\"\n", .{version_str});
         
         if (self.description) |desc| {
-            try writer.print("description = \"{s}\"\n", .{desc});
+            try writer.writer().print("description = \"{s}\"\n", .{desc});
         }
         
         if (self.license) |license| {
-            try writer.print("license = \"{s}\"\n", .{license});
+            try writer.writer().print("license = \"{s}\"\n", .{license});
         }
         
         if (self.main) |main| {
-            try writer.print("main = \"{s}\"\n", .{main});
+            try writer.writer().print("main = \"{s}\"\n", .{main});
         }
         
         // Authors array
         if (self.authors.items.len > 0) {
-            try writer.writeAll("authors = [");
+            try writer.writer().writeAll("authors = [");
             for (self.authors.items, 0..) |author, i| {
-                if (i > 0) try writer.writeAll(", ");
-                try writer.print("\"{s}\"", .{author});
+                if (i > 0) try writer.writer().writeAll(", ");
+                try writer.writer().print("\"{s}\"", .{author});
             }
-            try writer.writeAll("]\n");
+            try writer.writer().writeAll("]\n");
         }
         
         // Dependencies
         if (self.dependencies.count() > 0) {
-            try writer.writeAll("\n[dependencies]\n");
+            try writer.writer().writeAll("\n[dependencies]\n");
             var dep_iter = self.dependencies.iterator();
             while (dep_iter.next()) |entry| {
                 const version_str_dep = try entry.value_ptr.version_req.toString(self.allocator);
                 defer self.allocator.free(version_str_dep);
-                try writer.print("{s} = \"{s}\"\n", .{ entry.key_ptr.*, version_str_dep });
+                try writer.writer().print("{s} = \"{s}\"\n", .{ entry.key_ptr.*, version_str_dep });
             }
         }
         
         // Dev dependencies
         if (self.dev_dependencies.count() > 0) {
-            try writer.writeAll("\n[dev_dependencies]\n");
+            try writer.writer().writeAll("\n[dev_dependencies]\n");
             var dev_dep_iter = self.dev_dependencies.iterator();
             while (dev_dep_iter.next()) |entry| {
                 const version_str_dev = try entry.value_ptr.version_req.toString(self.allocator);
                 defer self.allocator.free(version_str_dev);
-                try writer.print("{s} = \"{s}\"\n", .{ entry.key_ptr.*, version_str_dev });
+                try writer.writer().print("{s} = \"{s}\"\n", .{ entry.key_ptr.*, version_str_dev });
             }
         }
         
@@ -556,7 +560,7 @@ pub const commands = struct {
         // Generate build integration
         try generateBuildIntegration(allocator, &manifest);
         
-        print("✅ Successfully installed {} dependencies\n", .{installed_count});
+        print("✅ Successfully installed {s} dependencies\n", .{{installed_count});
         print("📁 Dependencies cached in .cursed/cache/\n", .{});
         print("🔒 Lock file generated: CursedPackage.lock\n", .{});
         print("🏗️  Build integration generated: build_generated.zig\n", .{});
@@ -591,31 +595,31 @@ pub const commands = struct {
     }
     
     fn generateLockFile(allocator: Allocator, manifest: *const PackageManifest) !void {
-        var content = ArrayList(u8).init(allocator);
+        var content = ArrayList(u8){};
         defer content.deinit();
         var writer = content.writer();
         
-        try writer.writeAll("# CursedPackage.lock - Generated lock file\n");
-        try writer.writeAll("# Do not edit manually\n\n");
+        try writer.writer().writeAll("# CursedPackage.lock - Generated lock file\n");
+        try writer.writer().writeAll("# Do not edit manually\n\n");
         
-        try writer.writeAll("[[package]]\n");
-        try writer.print("name = \"{s}\"\n", .{manifest.name});
+        try writer.writer().writeAll("[[package]]\n");
+        try writer.writer().print("name = \"{s}\"\n", .{manifest.name});
         const version_str = try manifest.version.toString(allocator);
         defer allocator.free(version_str);
-        try writer.print("version = \"{s}\"\n", .{version_str});
+        try writer.writer().print("version = \"{s}\"\n", .{version_str});
         
         // Lock dependencies
         var dep_iter = manifest.dependencies.iterator();
         while (dep_iter.next()) |entry| {
             const dep = entry.value_ptr.*;
-            try writer.writeAll("\n[[package]]\n");
-            try writer.print("name = \"{s}\"\n", .{dep.name});
-            try writer.writeAll("version = \"1.0.0\"\n"); // Mock resolved version
-            try writer.writeAll("source = \"registry+https://packages.cursed.dev\"\n");
+            try writer.writer().writeAll("\n[[package]]\n");
+            try writer.writer().print("name = \"{s}\"\n", .{dep.name});
+            try writer.writer().writeAll("version = \"1.0.0\"\n"); // Mock resolved version
+            try writer.writer().writeAll("source = \"registry+https://packages.cursed.dev\"\n");
             
             const checksum = try generateMockChecksum(allocator, dep.name);
             defer allocator.free(checksum);
-            try writer.print("checksum = \"{s}\"\n", .{checksum});
+            try writer.writer().print("checksum = \"{s}\"\n", .{checksum});
         }
         
         try std.fs.cwd().writeFile(.{ .sub_path = "CursedPackage.lock", .data = content.items });
@@ -634,33 +638,33 @@ pub const commands = struct {
     }
     
     fn generateBuildIntegration(allocator: Allocator, manifest: *const PackageManifest) !void {
-        var content = ArrayList(u8).init(allocator);
+        var content = ArrayList(u8){};
         defer content.deinit();
         var writer = content.writer();
         
-        try writer.writeAll("// Generated build integration for CURSED package manager\n");
-        try writer.writeAll("// This file is auto-generated, do not edit manually\n\n");
-        try writer.writeAll("const std = @import(\"std\");\n\n");
+        try writer.writer().writeAll("// Generated build integration for CURSED package manager\n");
+        try writer.writer().writeAll("// This file is auto-generated, do not edit manually\n\n");
+        try writer.writer().writeAll("const std = @import(\"std\");\n\n");
         
-        try writer.writeAll("pub fn addDependencies(b: *std.build.Builder) void {\n");
-        try writer.writeAll("    // Package dependencies\n");
+        try writer.writer().writeAll("pub fn addDependencies(b: *std.build.Builder) void {\n");
+        try writer.writer().writeAll("    // Package dependencies\n");
         
         var dep_iter = manifest.dependencies.iterator();
         while (dep_iter.next()) |entry| {
             const dep = entry.value_ptr.*;
-            try writer.print("    // {s}\n", .{dep.name});
-            try writer.print("    b.addPackagePath(\"{s}\", \".cursed/packages/{s}/mod.csd\");\n", .{dep.name, dep.name});
+            try writer.writer().print("    // {s}\n", .{dep.name});
+            try writer.writer().print("    b.addPackagePath(\"{s}\", \".cursed/packages/{s}/mod.csd\");\n", .{dep.name, dep.name});
         }
         
-        try writer.writeAll("}\n\n");
+        try writer.writer().writeAll("}\n\n");
         
-        try writer.writeAll("pub const dependencies = struct {\n");
+        try writer.writer().writeAll("pub const dependencies = struct {\n");
         var dep_iter2 = manifest.dependencies.iterator();
         while (dep_iter2.next()) |entry| {
             const dep = entry.value_ptr.*;
-            try writer.print("    pub const {s} = \".cursed/packages/{s}/mod.csd\";\n", .{dep.name, dep.name});
+            try writer.writer().print("    pub const {s} = \".cursed/packages/{s}/mod.csd\";\n", .{dep.name, dep.name});
         }
-        try writer.writeAll("};\n");
+        try writer.writer().writeAll("};\n");
         
         try std.fs.cwd().writeFile(.{ .sub_path = "build_generated.zig", .data = content.items });
     }
@@ -784,7 +788,7 @@ pub const commands = struct {
         if (found_count == 0) {
             print("No packages found matching '{s}'\n", .{query});
         } else {
-            print("\nFound {} packages\n", .{found_count});
+            print("\nFound {s} packages\n", .{{found_count});
             print("Install with: cursed-pkg add <package>\n", .{});
         }
     }

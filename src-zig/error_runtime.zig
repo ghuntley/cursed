@@ -48,7 +48,7 @@ pub const ErrorValue = struct {
             self.allocator.free(frame.function_name);
             self.allocator.free(frame.file);
         }
-        self.stack_trace.deinit();
+        self.stack_trace.deinit(self.allocator);
     }
     
     pub fn addStackFrame(self: *ErrorValue, function_name: []const u8, file: []const u8, line: u32, column: u32) !void {
@@ -63,12 +63,12 @@ pub const ErrorValue = struct {
     pub fn format(self: ErrorValue, writer: anytype) !void {
         try writer.print("Error: {s}\n", .{self.message});
         try writer.print("Type: {s}\n", .{self.error_type});
-        try writer.print("Location: {s}:{}:{}\n", .{ self.location.file, self.location.line, self.location.column });
+        try writer.print("Location: {s}:{s}:{s}\n", .{ self.location.file, self.location.line, self.location.column });
         
         if (self.stack_trace.items.len > 0) {
             try writer.print("Stack trace:\n", .{});
             for (self.stack_trace.items) |frame| {
-                try writer.print("  at {s} ({s}:{}:{})\n", .{ frame.function_name, frame.file, frame.line, frame.column });
+                try writer.print("  at {s} ({s}:{s}:{s})\n", .{ frame.function_name, frame.file, frame.line, frame.column });
             }
         }
     }
@@ -112,19 +112,19 @@ pub const ErrorHandler = struct {
         for (self.error_stack.items) |*err| {
             err.deinit();
         }
-        self.error_stack.deinit();
+        self.error_stack.deinit(self.allocator);
         
         for (self.function_stack.items) |func_name| {
             self.allocator.free(func_name);
         }
-        self.function_stack.deinit();
+        self.function_stack.deinit(self.allocator);
         
         for (self.try_catch_stack.items) |frame| {
             if (frame.error_variable) |var_name| {
                 self.allocator.free(var_name);
             }
         }
-        self.try_catch_stack.deinit();
+        self.try_catch_stack.deinit(self.allocator);
     }
     
     pub fn pushFunction(self: *ErrorHandler, function_name: []const u8) !void {
@@ -243,7 +243,7 @@ pub const ErrorHandler = struct {
 export fn cursed_error_handler_init() ?*ErrorHandler {
     const allocator = std.heap.c_allocator;
     const handler = allocator.create(ErrorHandler) catch |err| {
-        std.debug.print("Failed to create error handler: {}\n", .{err});
+        std.debug.print("Failed to create error handler: {s}\n", .{err});
         return null;
     };
     handler.* = ErrorHandler.init(allocator);
@@ -262,7 +262,7 @@ export fn cursed_yikes(handler: *ErrorHandler, message: [*:0]const u8, error_typ
     const file_name = std.mem.span(file);
     
     handler.yikes(msg, err_type, file_name, line, column) catch |err| {
-        std.debug.print("Failed to create error: {}\n", .{err});
+        std.debug.print("Failed to create error: {s}\n", .{err});
         return; // Graceful failure instead of panic
     };
 }
@@ -283,7 +283,7 @@ export fn cursed_clear_error(handler: *ErrorHandler) void {
 export fn cursed_push_function(handler: *ErrorHandler, function_name: [*:0]const u8) void {
     const func_name = std.mem.span(function_name);
     handler.pushFunction(func_name) catch |err| {
-        std.debug.print("Failed to push function: {}\n", .{err});
+        std.debug.print("Failed to push function: {s}\n", .{err});
         return; // Graceful failure instead of panic
     };
 }
@@ -302,7 +302,7 @@ export fn cursed_push_try_catch(handler: *ErrorHandler, try_block_start: usize, 
     };
     
     handler.pushTryCatch(try_block_start, var_name, h_type) catch |err| {
-        std.debug.print("Failed to push try-catch: {}\n", .{err});
+        std.debug.print("Failed to push try-catch: {s}\n", .{err});
         return; // Graceful failure instead of panic
     };
 }

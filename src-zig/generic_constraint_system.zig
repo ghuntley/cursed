@@ -92,11 +92,11 @@ pub const GenericTypeParameter = struct {
     }
     
     pub fn deinit(self: *GenericTypeParameter) void {
-        self.constraints.deinit();
+        self.constraints.deinit(self.allocator);
     }
     
     pub fn addConstraint(self: *GenericTypeParameter, constraint: TypeConstraint) !void {
-        try self.constraints.append(constraint);
+        try self.constraints.append(allocator, constraint);
     }
 };
 
@@ -241,7 +241,7 @@ pub const ConstraintValidator = struct {
         }
         
         pub fn deinit(self: *InterfaceInfo) void {
-            self.methods.deinit();
+            self.methods.deinit(self.allocator);
         }
     };
     
@@ -249,7 +249,7 @@ pub const ConstraintValidator = struct {
         var validator = ConstraintValidator{
             .allocator = allocator,
             .type_registry = type_registry,
-            .builtin_interfaces = HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .builtin_interfaces = HashMap([]const u8, InterfaceInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         validator.initBuiltinInterfaces() catch |err| {
@@ -264,7 +264,7 @@ pub const ConstraintValidator = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.builtin_interfaces.deinit();
+        self.builtin_interfaces.deinit(self.allocator);
     }
     
     /// Initialize built-in constraint interfaces
@@ -521,13 +521,13 @@ pub const ConstraintValidator = struct {
             return error.TypeArgumentCountMismatch;
         }
         
-        var results = .empty;
+        var results = std.ArrayList(u8){};
         
         for (type_parameters, concrete_types) |type_param, concrete_type| {
             // Validate each constraint for this type parameter
             for (type_param.constraints.items) |constraint| {
                 const result = self.validateConstraint(concrete_type, constraint);
-                try results.append(result);
+                try results.append(allocator, result);
                 
                 // If any constraint fails, we could early exit or collect all errors
                 if (!result.valid) {
@@ -735,16 +735,16 @@ pub const GenericFunctionSignature = struct {
         for (self.type_parameters.items) |*param| {
             param.deinit();
         }
-        self.type_parameters.deinit();
-        self.parameters.deinit();
+        self.type_parameters.deinit(self.allocator);
+        self.parameters.deinit(self.allocator);
     }
     
     pub fn addTypeParameter(self: *GenericFunctionSignature, type_param: GenericTypeParameter) !void {
-        try self.type_parameters.append(type_param);
+        try self.type_parameters.append(allocator, type_param);
     }
     
     pub fn addParameter(self: *GenericFunctionSignature, param: FunctionParameter) !void {
-        try self.parameters.append(param);
+        try self.parameters.append(allocator, param);
     }
 };
 

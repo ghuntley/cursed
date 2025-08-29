@@ -40,6 +40,7 @@ const Document = struct {
     }
     
     pub fn deinit(self: *Document, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.uri);
         allocator.free(self.content);
     }
@@ -61,7 +62,7 @@ pub const CursedLSP = struct {
     pub fn init() CursedLSP {
         return CursedLSP{
             .allocator = allocator,
-            .documents = std.StringHashMap(Document).init(allocator),
+            .documents = std.StringHashMap(Document){},
             .initialized = false,
             .shutdown_requested = false,
         };
@@ -74,7 +75,7 @@ pub const CursedLSP = struct {
             doc.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
     }
     
     // Core message handling
@@ -261,26 +262,26 @@ pub const CursedLSP = struct {
     
     // Utilities
     fn unescapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var i: usize = 0;
         while (i < text.len) {
             if (text[i] == '\\' and i + 1 < text.len) {
                 switch (text[i + 1]) {
-                    'n' => try result.append('\n'),
-                    't' => try result.append('\t'),
-                    'r' => try result.append('\r'),
-                    '\\' => try result.append('\\'),
-                    '"' => try result.append('"'),
+                    'n' => try result.append(allocator, '\n'),
+                    't' => try result.append(allocator, '\t'),
+                    'r' => try result.append(allocator, '\r'),
+                    '\\' => try result.append(allocator, '\\'),
+                    '"' => try result.append(allocator, '"'),
                     else => {
-                        try result.append(text[i]);
-                        try result.append(text[i + 1]);
+                        try result.append(allocator, text[i]);
+                        try result.append(allocator, text[i + 1]);
                     },
                 }
                 i += 2;
             } else {
-                try result.append(text[i]);
+                try result.append(allocator, text[i]);
                 i += 1;
             }
         }
@@ -289,7 +290,7 @@ pub const CursedLSP = struct {
     }
     
     fn escapeJson(self: *CursedLSP, text: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         for (text) |c| {
@@ -299,7 +300,7 @@ pub const CursedLSP = struct {
                 '\r' => try result.appendSlice("\\r"),
                 '\\' => try result.appendSlice("\\\\"),
                 '"' => try result.appendSlice("\\\""),
-                else => try result.append(c),
+                else => try result.append(allocator, c),
             }
         }
         
@@ -307,7 +308,7 @@ pub const CursedLSP = struct {
     }
     
     fn formatCursedCode(self: *CursedLSP, content: []const u8) ![]u8 {
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         var indent_level: u32 = 0;
@@ -316,40 +317,40 @@ pub const CursedLSP = struct {
         for (content) |c| {
             switch (c) {
                 '{' => {
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     indent_level += 1;
                     at_line_start = true;
                 },
                 '}' => {
                     if (!at_line_start) {
-                        try result.append('\n');
+                        try result.append(allocator, '\n');
                     }
                     if (indent_level > 0) indent_level -= 1;
                     for (0..indent_level * 4) |_| {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                     }
-                    try result.append(c);
-                    try result.append('\n');
+                    try result.append(allocator, c);
+                    try result.append(allocator, '\n');
                     at_line_start = true;
                 },
                 '\n' => {
-                    try result.append(c);
+                    try result.append(allocator, c);
                     at_line_start = true;
                 },
                 ' ', '\t' => {
                     if (!at_line_start) {
-                        try result.append(' ');
+                        try result.append(allocator, ' ');
                     }
                 },
                 else => {
                     if (at_line_start) {
                         for (0..indent_level * 4) |_| {
-                            try result.append(' ');
+                            try result.append(allocator, ' ');
                         }
                         at_line_start = false;
                     }
-                    try result.append(c);
+                    try result.append(allocator, c);
                 },
             }
         }
@@ -364,14 +365,14 @@ pub const CursedLSP = struct {
             
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ diagnostics.len, diagnostics });
+            try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ diagnostics.len, diagnostics });
             
             std.log.info("Published diagnostics for {s}", .{uri});
         }
     }
     
     fn analyzeDiagnostics(self: *CursedLSP, content: []const u8, uri: []const u8) ![]u8 {
-        var diagnostics = ArrayList(u8).init(self.allocator);
+        var diagnostics = ArrayList(u8){};
         defer diagnostics.deinit();
         
         try diagnostics.appendSlice("{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{\"uri\":\"");
@@ -434,7 +435,7 @@ pub const CursedLSP = struct {
         var stdout_buffer: [4096]u8 = undefined;
         const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
         
-        var buffer = ArrayList(u8).init(self.allocator);
+        var buffer = ArrayList(u8){};
         defer buffer.deinit();
         
         while (!self.shutdown_requested) {
@@ -459,7 +460,7 @@ pub const CursedLSP = struct {
                         defer self.allocator.free(response);
                         
                         // Send response
-                        try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+                        try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ response.len, response });
                     }
                 }
             } else {

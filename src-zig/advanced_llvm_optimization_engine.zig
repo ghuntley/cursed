@@ -241,14 +241,14 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             print("\n🚀 Optimization Metrics Summary\n", .{});
             print("===============================\n", .{});
             print("Optimization time: {:.2} ms\n", .{@as(f64, @floatFromInt(self.total_optimization_time_ns)) / 1_000_000.0});
-            print("Passes executed: {}\n", .{self.passes_executed});
-            print("Functions optimized: {}\n", .{self.functions_optimized});
-            print("Instructions eliminated: {}\n", .{self.instructions_eliminated});
-            print("Loops unrolled: {}\n", .{self.loops_unrolled});
-            print("Functions inlined: {}\n", .{self.functions_inlined});
-            print("Vectorized loops: {}\n", .{self.vectorized_loops});
+            print("Passes executed: {s}\n", .{self.passes_executed});
+            print("Functions optimized: {s}\n", .{self.functions_optimized});
+            print("Instructions eliminated: {s}\n", .{self.instructions_eliminated});
+            print("Loops unrolled: {s}\n", .{self.loops_unrolled});
+            print("Functions inlined: {s}\n", .{self.functions_inlined});
+            print("Vectorized loops: {s}\n", .{self.vectorized_loops});
             print("Estimated speedup: {:.2}x\n", .{self.estimated_speedup});
-            print("Code size change: {} bytes\n", .{self.code_size_reduction_bytes});
+            print("Code size change: {s} bytes\n", .{self.code_size_reduction_bytes});
             print("Peak memory usage: {:.1} MB\n", .{self.memory_usage_peak_mb});
         }
     };
@@ -297,10 +297,10 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         try engine.initializePlatformOptimizations();
         
         print("🎯 Advanced LLVM Optimization Engine initialized\n", .{});
-        print("  Optimization level: {}\n", .{config.level});
-        print("  Vectorization: {}\n", .{config.enable_vectorization});
-        print("  Function inlining: {}\n", .{config.enable_function_inlining});
-        print("  Dead code elimination: {}\n", .{config.enable_dead_code_elimination});
+        print("  Optimization level: {s}\n", .{config.level});
+        print("  Vectorization: {s}\n", .{config.enable_vectorization});
+        print("  Function inlining: {s}\n", .{config.enable_function_inlining});
+        print("  Dead code elimination: {s}\n", .{config.enable_dead_code_elimination});
         
         return engine;
     }
@@ -327,7 +327,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         self.allocator.free(self.target_cpu);
         self.allocator.free(self.target_features);
         
-        self.platform_specific_optimizations.deinit();
+        self.platform_specific_optimizations.deinit(self.allocator);
         
         print("✅ Advanced LLVM Optimization Engine cleaned up\n", .{});
     }
@@ -350,7 +350,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         self.lto_enabled = true;
         self.lto_mode = mode;
         
-        print("✅ Link-Time Optimization enabled: {}\n", .{mode});
+        print("✅ Link-Time Optimization enabled: {s}\n", .{mode});
     }
     
     /// Setup target platform for cross-compilation optimization
@@ -396,7 +396,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         c.LLVMSetDataLayout(self.module, layout_string);
         c.LLVMSetTarget(self.module, self.target_triple.ptr);
         
-        print("✅ Target platform configured: {}\n", .{platform});
+        print("✅ Target platform configured: {s}\n", .{platform});
     }
     
     /// Enable cross-platform optimization strategies
@@ -596,7 +596,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             for (pgo.hot_loops.items) |hot_loop| {
                 if (hot_loop.execution_count > 10000) { // High execution threshold
                     hot_loop_count += 1;
-                    print("      🔥 Hot loop detected: {} executions\n", .{hot_loop.execution_count});
+                    print("      🔥 Hot loop detected: {s} executions\n", .{hot_loop.execution_count});
                 }
             }
             
@@ -605,7 +605,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
                 c.LLVMAddLoopVectorizePass(self.function_pass_manager);
                 c.LLVMAddSLPVectorizePass(self.function_pass_manager);
                 c.LLVMAddLoadStoreVectorizerPass(self.function_pass_manager);
-                print("    ✅ Added full vectorization suite for {} hot loops\n", .{hot_loop_count});
+                print("    ✅ Added full vectorization suite for {s} hot loops\n", .{hot_loop_count});
                 self.optimization_metrics.estimated_speedup *= 2.2; // Higher improvement with PGO
             } else {
                 // Conservative vectorization without hot loops
@@ -832,7 +832,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
     pub fn applyLTO(self: *Self, modules: []c.LLVMModuleRef) !void {
         if (!self.lto_enabled or modules.len == 0) return;
         
-        print("🔗 Applying Link-Time Optimization ({})...\n", .{self.lto_mode});
+        print("🔗 Applying Link-Time Optimization ({s})...\n", .{self.lto_mode});
         
         switch (self.lto_mode) {
             .None => return,
@@ -847,16 +847,16 @@ pub const AdvancedLLVMOptimizationEngine = struct {
     /// Apply Thin LTO
     fn applyThinLTO(self: *Self, modules: []c.LLVMModuleRef) !void {
         // Thin LTO implementation
-        print("  Applying Thin LTO to {} modules...\n", .{modules.len});
+        print("  Applying Thin LTO to {s} modules...\n", .{modules.len});
         
         // Thin LTO performs incremental linking and optimization
         // 1. Create summary index for each module
-        var summaries = std.ArrayList(ThinLTOSummary).init(self.allocator);
+        var summaries = std.ArrayList(ThinLTOSummary){};
         defer summaries.deinit();
         
         for (modules) |module| {
             const summary = try self.createModuleSummary(module);
-            try summaries.append(summary);
+            try summaries.append(allocator, summary);
         }
         
         // 2. Perform global analysis across all summaries
@@ -869,7 +869,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         
         // 4. Update optimization metrics
         self.optimization_metrics.cross_module_optimizations += @intCast(modules.len);
-        print("    ✅ Thin LTO completed - {} modules optimized\n", .{modules.len});
+        print("    ✅ Thin LTO completed - {s} modules optimized\n", .{modules.len});
     }
     
     /// Create module summary for Thin LTO
@@ -888,7 +888,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
         while (function != null) {
             const name = c.LLVMGetValueName(function);
             if (c.LLVMGetLinkage(function) != c.LLVMInternalLinkage) {
-                try summary.exported_functions.append(std.mem.span(name));
+                try summary.exported_functions.append(allocator, std.mem.span(name));
             }
             function = c.LLVMGetNextFunction(function);
         }
@@ -909,7 +909,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
             for (summary.exported_functions.items) |func_name| {
                 // Check if function should be inlined across modules
                 if (self.shouldInlineAcrossModules(func_name)) {
-                    try analysis.inlinable_functions.append(func_name);
+                    try analysis.inlinable_functions.append(allocator, func_name);
                 }
             }
         }
@@ -963,7 +963,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
     /// Apply Full LTO
     fn applyFullLTO(self: *Self, modules: []c.LLVMModuleRef) !void {
         // Full LTO implementation - link all modules together
-        print("  Applying Full LTO to {} modules...\n", .{modules.len});
+        print("  Applying Full LTO to {s} modules...\n", .{modules.len});
         
         for (modules[1..]) |other_module| {
             if (c.LLVMLinkModules2(self.module, other_module) != 0) {
@@ -978,7 +978,7 @@ pub const AdvancedLLVMOptimizationEngine = struct {
     /// Apply Fat LTO
     fn applyFatLTO(self: *Self, modules: []c.LLVMModuleRef) !void {
         // Fat LTO - embed bitcode in object files
-        print("  Applying Fat LTO to {} modules...\n", .{modules.len});
+        print("  Applying Fat LTO to {s} modules...\n", .{modules.len});
         
         // TODO: Implement Fat LTO when needed
         _ = self;
@@ -1069,16 +1069,16 @@ pub const OptimizationStatistics = struct {
         print("\n📊 Detailed Optimization Statistics Report\n", .{});
         print("===========================================\n", .{});
         print("🕒 Total optimization time: {:.2} ms\n", .{self.total_optimization_time_ms});
-        print("🔧 Optimization passes executed: {}\n", .{self.passes_executed});
-        print("⚡ Functions optimized: {}\n", .{self.functions_optimized});
+        print("🔧 Optimization passes executed: {s}\n", .{self.passes_executed});
+        print("⚡ Functions optimized: {s}\n", .{self.functions_optimized});
         print("🚀 Estimated performance improvement: {:.2}x\n", .{self.estimated_speedup});
-        print("📦 Code size change: {} bytes\n", .{self.code_size_reduction_bytes});
-        print("🔄 Loops vectorized: {}\n", .{self.vectorized_loops});
-        print("📎 Functions inlined: {}\n", .{self.inlined_functions});
-        print("🔁 Loops unrolled: {}\n", .{self.unrolled_loops});
-        print("🎯 Profile-Guided Optimization: {}\n", .{if (self.pgo_enabled) "Enabled" else "Disabled"});
-        print("🔗 Link-Time Optimization: {}\n", .{if (self.lto_enabled) "Enabled" else "Disabled"});
-        print("🌐 Cross-platform optimizations: {}\n", .{if (self.cross_platform_enabled) "Enabled" else "Disabled"});
+        print("📦 Code size change: {s} bytes\n", .{self.code_size_reduction_bytes});
+        print("🔄 Loops vectorized: {s}\n", .{self.vectorized_loops});
+        print("📎 Functions inlined: {s}\n", .{self.inlined_functions});
+        print("🔁 Loops unrolled: {s}\n", .{self.unrolled_loops});
+        print("🎯 Profile-Guided Optimization: {s}\n", .{if (self.pgo_enabled) "Enabled" else "Disabled"});
+        print("🔗 Link-Time Optimization: {s}\n", .{if (self.lto_enabled) "Enabled" else "Disabled"});
+        print("🌐 Cross-platform optimizations: {s}\n", .{if (self.cross_platform_enabled) "Enabled" else "Disabled"});
         
         if (self.estimated_speedup > 1.5) {
             print("✨ Excellent optimization results achieved!\n", .{});

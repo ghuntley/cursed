@@ -18,15 +18,16 @@ pub const Program = struct {
     }
 
     pub fn deinit(self: *Program, allocator: Allocator) void {
+        _ = allocator;
         for (self.statements.items) |*stmt| {
             stmt.deinit();
         }
-        self.statements.deinit();
+        self.statements.deinit(self.allocator);
         
         for (self.imports.items) |*import| {
             import.deinit();
         }
-        self.imports.deinit();
+        self.imports.deinit(self.allocator);
         
         if (self.package) |*pkg| {
             pkg.deinit();
@@ -48,7 +49,7 @@ pub const Program = struct {
         }
         
         for (self.statements.items) |stmt| {
-            try stmt.print(indent + 2);
+            try stmt.writer().print(indent + 2);
         }
     }
 };
@@ -67,7 +68,8 @@ pub const ImportStatement = struct {
     }
 
     pub fn deinit(self: *ImportStatement, allocator: Allocator) void {
-                self.items.deinit();
+        _ = allocator;
+                self.items.deinit(self.allocator);
     }
 };
 
@@ -76,6 +78,7 @@ pub const PackageDeclaration = struct {
     version: ?[]const u8,
 
     pub fn deinit(self: *PackageDeclaration, allocator: Allocator) void {
+        _ = allocator;
                 _ = self;
     }
 };
@@ -107,11 +110,12 @@ pub const Type = union(enum) {
     Tuple: TupleType,
 
     pub fn deinit(self: *Type, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Array => |*arr| arr.deinit(),
             .Map => |*map| map.deinit(),
             .Function => |*func| func.deinit(),
-            .Tuple => |*tuple| tuple.deinit(),
+            
             else => {},
         }
     }
@@ -145,7 +149,8 @@ pub const ArrayType = struct {
     size: ?usize,
 
     pub fn deinit(self: *ArrayType, allocator: Allocator) void {
-        self.element_type.deinit();
+        _ = allocator;
+        self.element_type.deinit(self.allocator);
         allocator.destroy(self.element_type);
     }
 };
@@ -159,8 +164,9 @@ pub const MapType = struct {
     value_type: *Type,
 
     pub fn deinit(self: *MapType, allocator: Allocator) void {
-        self.key_type.deinit();
-        self.value_type.deinit();
+        _ = allocator;
+        self.key_type.deinit(self.allocator);
+        self.value_type.deinit(self.allocator);
         allocator.destroy(self.key_type);
         allocator.destroy(self.value_type);
     }
@@ -175,10 +181,11 @@ pub const FunctionType = struct {
     return_type: ?*Type,
 
     pub fn deinit(self: *FunctionType, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |*param| {
             param.deinit();
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         
         if (self.return_type) |ret| {
             ret.deinit();
@@ -206,10 +213,11 @@ pub const TupleType = struct {
     elements: ArrayList(Type),
 
     pub fn deinit(self: *TupleType, allocator: Allocator) void {
+        _ = allocator;
         for (self.elements.items) |*elem| {
             elem.deinit();
         }
-        self.elements.deinit();
+        self.elements.deinit(self.allocator);
     }
 };
 
@@ -268,6 +276,7 @@ pub const Statement = union(enum) {
     Const: ConstDecl,
 
     pub fn deinit(self: *Statement, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Expression => |*expr| expr.deinit(),
             .Let => |*let| let.deinit(),
@@ -288,20 +297,20 @@ pub const Statement = union(enum) {
         switch (self) {
             .Expression => |expr| {
                 print_fn("{s}Expression: ", .{spaces[0..indent]});
-                try expr.print(0);
+                try expr.writer().print(0);
                 print_fn("\n", .{});
             },
             .Let => |let| {
                 print_fn("{s}Let: {s} = ", .{ spaces[0..indent], let.name });
                 if (let.initializer) |init| {
-                    try init.print(0);
+                    try init.writer().print(0);
                 }
                 print_fn("\n", .{});
             },
             .Function => |func| {
                 print_fn("{s}Function: {s}\n", .{ spaces[0..indent], func.name });
                 for (func.body.items) |stmt| {
-                    try stmt.print(indent + 2);
+                    try stmt.writer().print(indent + 2);
                 }
             },
             else => {
@@ -351,6 +360,7 @@ pub const Expression = union(enum) {
     TypeSwitch: TypeSwitchExpression,
 
     pub fn deinit(self: *Expression, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Array => |*arr| {
                 for (arr.items) |*expr| {
@@ -384,16 +394,16 @@ pub const Expression = union(enum) {
             .Boolean => |bool_val| print_fn("{}", .{bool_val}),
             .Character => |char| print_fn("'{c}'", .{char}),
             .Binary => |bin| {
-                try bin.left.print(0);
+                try bin.left.writer().print(0);
                 print_fn(" {s} ", .{bin.operator});
-                try bin.right.print(0);
+                try bin.right.writer().print(0);
             },
             .Call => |call| {
-                try call.function.print(0);
+                try call.function.writer().print(0);
                 print_fn("(", .{});
                 for (call.arguments.items, 0..) |arg, i| {
                     if (i > 0) print_fn(", ", .{});
-                    try arg.print(0);
+                    try arg.writer().print(0);
                 }
                 print_fn(")", .{});
             },
@@ -424,6 +434,7 @@ pub const LetStatement = struct {
     is_mutable: bool,
 
     pub fn deinit(self: *LetStatement, allocator: Allocator) void {
+        _ = allocator;
         if (self.var_type) |*var_type| {
             var_type.deinit();
         }
@@ -439,8 +450,9 @@ pub const AssignmentStatement = struct {
     operator: []const u8,
 
     pub fn deinit(self: *AssignmentStatement, allocator: Allocator) void {
-        self.target.deinit();
-        self.value.deinit();
+        _ = allocator;
+        self.target.deinit(self.allocator);
+        self.value.deinit(self.allocator);
     }
 };
 
@@ -448,6 +460,7 @@ pub const ReturnStatement = struct {
     value: ?Expression,
 
     pub fn deinit(self: *ReturnStatement, allocator: Allocator) void {
+        _ = allocator;
         if (self.value) |*val| {
             val.deinit();
         }
@@ -460,11 +473,12 @@ pub const IfStatement = struct {
     else_branch: ?ArrayList(Statement),
 
     pub fn deinit(self: *IfStatement, allocator: Allocator) void {
-        self.condition.deinit();
+        _ = allocator;
+        self.condition.deinit(self.allocator);
         for (self.then_branch.items) |*stmt| {
             stmt.deinit();
         }
-        self.then_branch.deinit();
+        self.then_branch.deinit(self.allocator);
         
         if (self.else_branch) |*else_br| {
             for (else_br.items) |*stmt| {
@@ -499,13 +513,14 @@ pub const FunctionStatement = struct {
     }
 
     pub fn deinit(self: *FunctionStatement, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |*param| {
             param.param_type.deinit();
             if (param.default_value) |*default| {
                 default.deinit();
             }
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         
         if (self.return_type) |*ret_type| {
             ret_type.deinit();
@@ -514,7 +529,7 @@ pub const FunctionStatement = struct {
         for (self.body.items) |*stmt| {
             stmt.deinit();
         }
-        self.body.deinit();
+        self.body.deinit(self.allocator);
         
         for (self.type_parameters.items) |*type_param| {
             for (type_param.constraints.items) |*constraint| {
@@ -522,9 +537,9 @@ pub const FunctionStatement = struct {
             }
             type_param.constraints.deinit();
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(self.allocator);
         
-        self.comments.deinit();
+        self.comments.deinit(self.allocator);
     }
 };
 
@@ -533,11 +548,12 @@ pub const WhileStatement = struct {
     body: ArrayList(Statement),
 
     pub fn deinit(self: *WhileStatement, allocator: Allocator) void {
-        self.condition.deinit();
+        _ = allocator;
+        self.condition.deinit(self.allocator);
         for (self.body.items) |*stmt| {
             stmt.deinit();
         }
-        self.body.deinit();
+        self.body.deinit(self.allocator);
     }
 };
 
@@ -658,8 +674,9 @@ pub const BinaryExpression = struct {
     right: *Expression,
 
     pub fn deinit(self: *BinaryExpression, allocator: Allocator) void {
-        self.left.deinit();
-        self.right.deinit();
+        _ = allocator;
+        self.left.deinit(self.allocator);
+        self.right.deinit(self.allocator);
         allocator.destroy(self.left);
         allocator.destroy(self.right);
     }
@@ -670,13 +687,14 @@ pub const CallExpression = struct {
     arguments: ArrayList(Expression),
 
     pub fn deinit(self: *CallExpression, allocator: Allocator) void {
-        self.function.deinit();
+        _ = allocator;
+        self.function.deinit(self.allocator);
         allocator.destroy(self.function);
         
         for (self.arguments.items) |*arg| {
             arg.deinit();
         }
-        self.arguments.deinit();
+        self.arguments.deinit(self.allocator);
     }
 };
 

@@ -83,7 +83,7 @@ pub fn main() !void {
 
     if (debug_ast) {
         print("=== AST ===\n", .{});
-        try program.print(0);
+        try program.writer().print(0);
         print("\n", .{});
     }
 
@@ -97,7 +97,7 @@ pub fn main() !void {
         defer allocator.free(output_name);
         
         try codegen_ctx.writeExecutable(output_name);
-        print("✅ Compiled {s} to {s} (optimization level: {})\n", .{ filename, output_name, optimization_level });
+        print("✅ Compiled {s} to {s} (optimization level: {s})\n", .{{ filename, output_name, optimization_level });
     } else {
         // Interpret mode
         var interpreter = @import("interpreter.zig").Interpreter.init(allocator);

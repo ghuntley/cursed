@@ -14,6 +14,7 @@ var mock_system_status: i32 = 0; // OK status
 var mock_log_priority: i32 = 0; // Normal priority
 
 pub fn initializeFfiRuntime(allocator: Allocator) !void {
+        _ = allocator;
     mock_pixel_colors = HashMap(u64, i32, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator);
 }
 
@@ -27,25 +28,25 @@ pub export fn set_pixel_color(x: i32, y: i32, color: i8) void {
     mock_pixel_colors.put(coord, color) catch {
         print("Warning: Failed to store pixel color\n", .{});
     };
-    print("Set pixel at ({}, {}) to color {}\n", .{ x, y, color });
+    print("Set pixel at ({s}, {s}) to color {s}\n", .{ x, y, color });
 }
 
 pub export fn get_pixel_color(x: i32, y: i32) i8 {
     const coord = (@as(u64, @intCast(x)) << 32) | @as(u64, @intCast(y));
     const color = mock_pixel_colors.get(coord) orelse 0;
-    print("Get pixel at ({}, {}) returned color {}\n", .{ x, y, color });
+    print("Get pixel at ({s}, {s}) returned color {s}\n", .{ x, y, color });
     return @intCast(color);
 }
 
 // Mock system library functions  
 pub export fn get_system_status() i8 {
-    print("System status requested: {}\n", .{mock_system_status});
+    print("System status requested: {s}\n", .{mock_system_status});
     return @intCast(mock_system_status);
 }
 
 pub export fn set_log_priority(priority: i8) void {
     mock_log_priority = priority;
-    print("Log priority set to: {}\n", .{priority});
+    print("Log priority set to: {s}\n", .{priority});
 }
 
 // FFI call dispatcher

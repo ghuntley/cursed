@@ -1938,7 +1938,7 @@ pub fn createFromTemplate(allocator: Allocator, template_type: TemplateType, pro
         .testing_framework => templates.library, // Fallback to library
     };
     
-    std.debug.print("🎯 Creating {} project: {s}\n", .{template.template_type, project_name});
+    std.debug.writer().print("🎯 Creating {s} project: {s}\n", .{{template.template_type, project_name});
     
     // Create project directory
     try std.fs.cwd().makeDir(project_name);
@@ -1953,7 +1953,7 @@ pub fn createFromTemplate(allocator: Allocator, template_type: TemplateType, pro
         }
         
         try project_dir.writeFile(.{ .sub_path = file_template.path, .data = file_template.content });
-        std.debug.print("  📄 Created {s}\n", .{file_template.path});
+        std.debug.writer().print("  📄 Created {s}\n", .{file_template.path});
     }
     
     // Create package manifest
@@ -1961,42 +1961,42 @@ pub fn createFromTemplate(allocator: Allocator, template_type: TemplateType, pro
     defer allocator.free(manifest_content);
     try project_dir.writeFile(.{ .sub_path = "CursedPackage.toml", .data = manifest_content });
     
-    std.debug.print("✅ Project '{s}' created successfully\n", .{project_name});
-    std.debug.print("📁 Change to directory: cd {s}\n", .{project_name});
-    std.debug.print("🏗️  Install dependencies: cursed-pkg install\n", .{});
-    std.debug.print("🧪 Run tests: cursed-pkg test\n", .{});
+    std.debug.writer().print("✅ Project '{s}' created successfully\n", .{project_name});
+    std.debug.writer().print("📁 Change to directory: cd {s}\n", .{project_name});
+    std.debug.writer().print("🏗️  Install dependencies: cursed-pkg install\n", .{});
+    std.debug.writer().print("🧪 Run tests: cursed-pkg test\n", .{});
 }
 
 fn createManifestContent(allocator: Allocator, project_name: []const u8, template: Template) ![]const u8 {
-    var content = ArrayList(u8).init(allocator);
+    var content = ArrayList(u8){};
     var writer = content.writer();
     
-    try writer.print("name = \"{s}\"\n", .{project_name});
-    try writer.writeAll("version = \"0.1.0\"\n");
-    try writer.print("description = \"{s}\"\n", .{template.description});
-    try writer.writeAll("authors = [\"Your Name <your.email@example.com>\"]\n");
-    try writer.writeAll("license = \"MIT\"\n");
+    try writer.writer().print("name = \"{s}\"\n", .{project_name});
+    try writer.writer().writeAll("version = \"0.1.0\"\n");
+    try writer.writer().print("description = \"{s}\"\n", .{template.description});
+    try writer.writer().writeAll("authors = [\"Your Name <your.email@example.com>\"]\n");
+    try writer.writer().writeAll("license = \"MIT\"\n");
     
     switch (template.template_type) {
-        .library => try writer.writeAll("main = \"src/lib.csd\"\n"),
-        .binary, .cli_tool => try writer.writeAll("main = \"src/main.csd\"\n"),
-        .webapp, .api_server => try writer.writeAll("main = \"src/main.csd\"\n"),
-        .testing_framework => try writer.writeAll("main = \"src/lib.csd\"\n"),
+        .library => try writer.writer().writeAll("main = \"src/lib.csd\"\n"),
+        .binary, .cli_tool => try writer.writer().writeAll("main = \"src/main.csd\"\n"),
+        .webapp, .api_server => try writer.writer().writeAll("main = \"src/main.csd\"\n"),
+        .testing_framework => try writer.writer().writeAll("main = \"src/lib.csd\"\n"),
     }
     
     // Dependencies
     if (template.dependencies.len > 0) {
-        try writer.writeAll("\n[dependencies]\n");
+        try writer.writer().writeAll("\n[dependencies]\n");
         for (template.dependencies) |dep| {
-            try writer.print("{s} = \"^1.0.0\"\n", .{dep});
+            try writer.writer().print("{s} = \"^1.0.0\"\n", .{dep});
         }
     }
     
     // Dev dependencies
     if (template.dev_dependencies.len > 0) {
-        try writer.writeAll("\n[dev_dependencies]\n");
+        try writer.writer().writeAll("\n[dev_dependencies]\n");
         for (template.dev_dependencies) |dep| {
-            try writer.print("{s} = \"^1.0.0\"\n", .{dep});
+            try writer.writer().print("{s} = \"^1.0.0\"\n", .{dep});
         }
     }
     

@@ -63,7 +63,7 @@ const GoroutineTracker = struct {
 
     pub fn init() Self {
         return Self{
-            .goroutines = HashMap(concurrency.GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .goroutines = HashMap(concurrency.GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage){},
             .mutex = Mutex{},
             .next_id = Atomic(u64).init(1),
         };
@@ -78,7 +78,7 @@ const GoroutineTracker = struct {
             entry.value_ptr.*.deinit();
             self.goroutines.allocator.destroy(entry.value_ptr.*);
         }
-        self.goroutines.deinit();
+        self.goroutines.deinit(self.allocator);
     }
 
     pub fn registerGoroutine(self: *Self, id: concurrency.GoroutineId, function_ptr: ?*anyopaque, context: ?*anyopaque) !void {
@@ -162,7 +162,7 @@ pub export fn cursed_concurrency_init() void {
     config.quantum_ms = 5; // Smaller quantum for better responsiveness
     
     concurrency.initializeScheduler(global_allocator, config) catch |err| {
-        std.debug.print("Failed to initialize scheduler: {}\n", .{err});
+        std.debug.print("Failed to initialize scheduler: {s}\n", .{err});
         return;
     };
     

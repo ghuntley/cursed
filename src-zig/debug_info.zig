@@ -92,7 +92,7 @@ pub const DebugInfoGenerator = struct {
             .compile_unit = null,
             .file_metadata = null,
             .scope_stack = .empty,
-            .debug_types = std.HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .debug_types = std.HashMap([]const u8, c.LLVMMetadataRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .current_line = 1,
             .current_column = 1,
             .source_file_path = "",
@@ -107,10 +107,10 @@ pub const DebugInfoGenerator = struct {
         if (self.di_builder) |builder| {
             c.LLVMDisposeDIBuilder(builder);
         }
-        self.scope_stack.deinit();
-        self.debug_types.deinit();
-        self.function_debug_info.deinit();
-        self.variable_debug_info.deinit();
+        self.scope_stack.deinit(self.allocator);
+        self.debug_types.deinit(self.allocator);
+        self.function_debug_info.deinit(self.allocator);
+        self.variable_debug_info.deinit(self.allocator);
     }
     
     /// Initialize comprehensive debug compilation unit with enhanced GDB/LLDB support
@@ -159,7 +159,7 @@ pub const DebugInfoGenerator = struct {
         self.cursed_debug_types = try self.createCursedTypes();
         
         // Push compile unit as initial scope
-        try self.scope_stack.append(self.compile_unit.?);
+        try self.scope_stack.append(self.allocator, self.compile_unit.?);
         
         std.debug.print("✅ Debug compilation unit created for {s}\n", .{source_filename});
     }
@@ -194,7 +194,7 @@ pub const DebugInfoGenerator = struct {
         c.LLVMSetSubprogram(function, di_function);
         
         // Push function as new scope
-        try self.scope_stack.append(di_function);
+        try self.scope_stack.append(allocator, di_function);
         
         return di_function;
     }
@@ -488,7 +488,7 @@ pub const DebugInfoGenerator = struct {
     
     /// Enter new lexical scope
     pub fn pushScope(self: *DebugInfoGenerator, scope: c.LLVMMetadataRef) DebugError!void {
-        try self.scope_stack.append(scope);
+        try self.scope_stack.append(allocator, scope);
     }
     
     /// Exit current lexical scope

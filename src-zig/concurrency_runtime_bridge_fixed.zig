@@ -72,13 +72,15 @@ const GoroutineTracker = struct {
         }
         
         pub fn deinit(self: *GoroutineInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.destroy(self);
         }
     };
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         var self = Self{
-            .goroutines = HashMap(concurrency_fixed.GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .goroutines = HashMap(concurrency_fixed.GoroutineId, *GoroutineInfo, GoroutineContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.RwLock{},
             .next_id = Atomic(u64).init(1),
             .cleanup_in_progress = Atomic(bool).init(false),
@@ -108,8 +110,8 @@ const GoroutineTracker = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.*.deinit(self.goroutines.allocator);
         }
-        self.goroutines.deinit();
-        self.pending_cleanups.deinit();
+        self.goroutines.deinit(self.allocator);
+        self.pending_cleanups.deinit(self.allocator);
     }
     
     pub fn register(self: *Self, id: concurrency_fixed.GoroutineId, function_ptr: ?*anyopaque, context: ?*anyopaque) !void {
@@ -146,7 +148,7 @@ const GoroutineTracker = struct {
         
         // Add to pending cleanup queue (thread-safe)
         self.mutex.lock();
-        self.pending_cleanups.append(id) catch return; // Ignore error for cleanup
+        self.pending_cleanups.append(allocator, id) catch return; // Ignore error for cleanup
         self.mutex.unlock();
     }
     

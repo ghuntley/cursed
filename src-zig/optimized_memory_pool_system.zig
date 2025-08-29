@@ -42,7 +42,7 @@ pub const OptimizedMemoryPool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.slab_lookup.deinit();
+        self.slab_lookup.deinit(self.allocator);
     }
     
     // Register slab in hash map for O(1) lookup
@@ -137,9 +137,9 @@ pub const OptimizedMemoryPool = struct {
         else 0.0;
             
         std.debug.print("Memory Pool Performance Stats:\n");
-        std.debug.print("  Total lookups: {}\n", .{self.stats.lookups});
+        std.debug.print("  Total lookups: {s}\n", .{self.stats.lookups});
         std.debug.print("  Cache hit rate: {d:.2}%\n", .{hit_rate});
-        std.debug.print("  Avg lookup time: {} ns\n", .{self.stats.avg_lookup_time_ns});
+        std.debug.print("  Avg lookup time: {s} ns\n", .{self.stats.avg_lookup_time_ns});
     }
 };
 
@@ -161,7 +161,7 @@ pub const ThreadLocalPoolCache = struct {
     }
     
     pub fn deinit(self: *@This()) void {
-        self.pools.deinit();
+        self.pools.deinit(self.allocator);
     }
     
     // O(1) thread-local pool lookup
@@ -231,23 +231,23 @@ pub const PerformanceMonitor = struct {
     
     pub fn init(allocator: std.mem.Allocator) @This() {
         return .{
-            .allocation_times = std.ArrayList(u64).init(allocator),
-            .deallocation_times = std.ArrayList(u64).init(allocator),
+            .allocation_times = std.ArrayList(u64){},
+            .deallocation_times = std.ArrayList(u64){},
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *@This()) void {
-        self.allocation_times.deinit();
-        self.deallocation_times.deinit();
+        self.allocation_times.deinit(self.allocator);
+        self.deallocation_times.deinit(self.allocator);
     }
     
     pub fn recordAllocation(self: *@This(), time_ns: u64) !void {
-        try self.allocation_times.append(time_ns);
+        try self.allocation_times.append(allocator, time_ns);
     }
     
     pub fn recordDeallocation(self: *@This(), time_ns: u64) !void {
-        try self.deallocation_times.append(time_ns);
+        try self.deallocation_times.append(allocator, time_ns);
     }
     
     pub fn generateReport(self: *@This()) void {
@@ -256,8 +256,8 @@ pub const PerformanceMonitor = struct {
             const p95_alloc = self.calculatePercentile(self.allocation_times.items, 95);
             
             std.debug.print("Allocation Performance:\n");
-            std.debug.print("  Average: {} ns\n", .{avg_alloc});
-            std.debug.print("  95th percentile: {} ns\n", .{p95_alloc});
+            std.debug.print("  Average: {s} ns\n", .{avg_alloc});
+            std.debug.print("  95th percentile: {s} ns\n", .{p95_alloc});
         }
         
         if (self.deallocation_times.items.len > 0) {
@@ -265,8 +265,8 @@ pub const PerformanceMonitor = struct {
             const p95_dealloc = self.calculatePercentile(self.deallocation_times.items, 95);
             
             std.debug.print("Deallocation Performance:\n");
-            std.debug.print("  Average: {} ns\n", .{avg_dealloc});
-            std.debug.print("  95th percentile: {} ns\n", .{p95_dealloc});
+            std.debug.print("  Average: {s} ns\n", .{avg_dealloc});
+            std.debug.print("  95th percentile: {s} ns\n", .{p95_dealloc});
         }
     }
     

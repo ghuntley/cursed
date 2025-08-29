@@ -312,12 +312,12 @@ export fn cursed_later_with_capture(
     };
     enhanced_defer_count += 1;
     
-    std.debug.print("Enhanced defer pushed with {} bytes of captured variables\n", .{capture_size});
+    std.debug.print("Enhanced defer pushed with {s} bytes of captured variables\n", .{capture_size});
 }
 
 /// Execute enhanced defers with proper cleanup
 export fn cursed_later_execute_all() void {
-    std.debug.print("Executing {} enhanced defer functions\n", .{enhanced_defer_count});
+    std.debug.print("Executing {s} enhanced defer functions\n", .{enhanced_defer_count});
     
     // Execute in reverse order (LIFO)
     while (enhanced_defer_count > 0) {
@@ -329,7 +329,7 @@ export fn cursed_later_execute_all() void {
         // Set up captured variables context if present
         if (entry.captured_vars != null) {
             // TODO: Set up variable context for cleanup function
-            std.debug.print("Restoring {} bytes of captured variables\n", .{entry.capture_size});
+            std.debug.print("Restoring {s} bytes of captured variables\n", .{entry.capture_size});
         }
         
         // Execute cleanup function
@@ -344,7 +344,7 @@ export fn cursed_later_execute_all() void {
 
 /// Execute defers during early return
 export fn cursed_later_early_return(target_scope: u32) void {
-    std.debug.print("Executing defers for early return from scope {}\n", .{target_scope});
+    std.debug.print("Executing defers for early return from scope {s}\n", .{target_scope});
     
     // Execute all defers from current scope up to target scope
     var i = enhanced_defer_count;
@@ -353,7 +353,7 @@ export fn cursed_later_early_return(target_scope: u32) void {
         const entry = enhanced_defer_stack[i];
         
         if (entry.scope_id >= target_scope and entry.early_return_safe) {
-            std.debug.print("Executing early return defer for scope {}\n", .{entry.scope_id});
+            std.debug.print("Executing early return defer for scope {s}\n", .{entry.scope_id});
             
             // Set up captured variables if present
             if (entry.captured_vars != null) {
@@ -381,12 +381,12 @@ export fn cursed_later_early_return(target_scope: u32) void {
 /// Enhanced scope management for nested defer statements
 export fn cursed_later_enter_nested_scope() u32 {
     current_scope_id += 1;
-    std.debug.print("Entered nested defer scope {}\n", .{current_scope_id});
+    std.debug.print("Entered nested defer scope {s}\n", .{current_scope_id});
     return current_scope_id;
 }
 
 export fn cursed_later_exit_nested_scope(scope_id: u32) void {
-    std.debug.print("Exiting nested defer scope {}\n", .{scope_id});
+    std.debug.print("Exiting nested defer scope {s}\n", .{scope_id});
     
     // Execute all defers for this specific scope
     var i = enhanced_defer_count;
@@ -395,7 +395,7 @@ export fn cursed_later_exit_nested_scope(scope_id: u32) void {
         const entry = enhanced_defer_stack[i];
         
         if (entry.scope_id == scope_id) {
-            std.debug.print("Executing nested scope defer for scope {}\n", .{scope_id});
+            std.debug.print("Executing nested scope defer for scope {s}\n", .{scope_id});
             entry.cleanup_func();
             
             // Clean up captured variables

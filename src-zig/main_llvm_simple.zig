@@ -76,13 +76,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -144,13 +144,13 @@ fn compileLLVM(allocator: Allocator, source: []const u8, filename: []const u8, o
     defer c.LLVMDisposeMessage(ir_str);
     
     const output_file_handle = std.fs.cwd().createFile(output_file, .{}) catch |err| {
-        print("❌ Error creating output file '{s}': {}\n", .{ output_file, err });
+        print("❌ Error creating output file '{s}': {s}\n", .{ output_file, err });
         return;
     };
     defer output_file_handle.close();
     
-    _ = output_file_handle.writeAll(std.mem.span(ir_str)) catch |err| {
-        print("❌ Error writing LLVM IR: {}\n", .{err});
+    _ = output_file_handle.writer().writeAll(std.mem.span(ir_str)) catch |err| {
+        print("❌ Error writing LLVM IR: {s}\n", .{err});
         return;
     };
     
@@ -174,7 +174,7 @@ fn compileLLVM(allocator: Allocator, source: []const u8, filename: []const u8, o
         .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", compile_cmd },
     }) catch |err| {
-        print("❌ Error running clang: {}\n", .{err});
+        print("❌ Error running clang: {s}\n", .{err});
         return;
     };
     defer allocator.free(result.stdout);

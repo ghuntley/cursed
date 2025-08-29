@@ -65,9 +65,9 @@ pub const TypeInferenceContext = struct {
     }
     
     pub fn deinit(self: *TypeInferenceContext) void {
-        self.inferred_types.deinit();
-        self.constraint_queue.deinit();
-        self.unification_cache.deinit();
+        self.inferred_types.deinit(self.allocator);
+        self.constraint_queue.deinit(self.allocator);
+        self.unification_cache.deinit(self.allocator);
     }
     
     /// Infer type parameters for a generic function call
@@ -102,12 +102,12 @@ pub const TypeInferenceContext = struct {
         try self.solveConstraints();
         
         // Extract inferred type arguments
-        var type_args = .empty;
+        var type_args = std.ArrayList(u8){};
         defer type_args.deinit();
         
         for (generic_decl.type_parameters.items) |param| {
             if (self.inferred_types.get(param.name)) |inferred_type| {
-                try type_args.append(inferred_type);
+                try type_args.append(allocator, inferred_type);
             } else {
                 // Could not infer this type parameter
                 return null;
@@ -503,7 +503,7 @@ pub const TypeInferenceContext = struct {
                     return replacement;
                 }
                 // Recursively substitute in type arguments
-                var new_args = std.ArrayList(ast.Type).init(allocator);
+                var new_args = std.ArrayList(ast.Type){};
                 for (generic.type_args.items) |arg| {
                     try new_args.append(self.substituteType(arg, param_name, replacement));
                 }
@@ -590,7 +590,7 @@ pub const GenericCallResolver = struct {
         }
         
         pub fn deinit(self: *ScopeInfo) void {
-            self.variables.deinit();
+            self.variables.deinit(self.allocator);
         }
     };
     
@@ -607,13 +607,13 @@ pub const GenericCallResolver = struct {
         if (self.current_scope) |scope| {
             scope.deinit();
         }
-        self.global_types.deinit();
+        self.global_types.deinit(self.allocator);
     }
     
     /// Resolve generic function call with automatic type inference
     pub fn resolveGenericCall(self: *GenericCallResolver, func_name: []const u8, args: []const ast.Expression, expected_return_type: ?ast.Type) !?[]const u8 {
         // Extract argument types
-        var arg_types = .empty;
+        var arg_types = std.ArrayList(u8){};
         defer arg_types.deinit();
         
         for (args) |arg| {
@@ -698,12 +698,12 @@ pub const GenericCallResolver = struct {
         if (self.inference_context.monomorphizer.generic_declarations.get(call.name)) |generic_decl| {
             if (generic_decl.kind == .Function) {
                 // Extract argument types for generic inference
-                var arg_types = std.ArrayList(ast.Type).init(allocator);
+                var arg_types = std.ArrayList(ast.Type){};
                 defer arg_types.deinit();
                 
                 for (call.arguments.items) |arg| {
                     const arg_type = try self.inferExpressionType(arg);
-                    try arg_types.append(arg_type);
+                    try arg_types.append(allocator, arg_type);
                 }
                 
                 // Attempt generic type inference
@@ -782,7 +782,7 @@ pub const GenericCallResolver = struct {
             },
             .Function => |func_type| {
                 // Substitute in parameter and return types
-                var new_param_types = std.ArrayList(ast.Type).init(allocator);
+                var new_param_types = std.ArrayList(ast.Type){};
                 defer new_param_types.deinit(self.allocator);
                 
                 for (func_type.parameter_types.items) |param_type| {
@@ -842,11 +842,7 @@ pub const PatternTypeInference = struct {
                     try self.inference_context.unifyTypes(hint, matched_type);
                 }
             },
-            .Tuple => |tuple_pattern| {
-                switch (matched_type) {
-                    .Tuple => |tuple_type| {
-                        if (tuple_pattern.patterns.len == tuple_type.element_types.len) {
-                            for (tuple_pattern.patterns, 0..) |sub_pattern, i| {
+             0..) |sub_pattern, i| {
                                 try self.inferFromPattern(sub_pattern, tuple_type.element_types[i]);
                             }
                         }

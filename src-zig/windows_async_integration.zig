@@ -54,8 +54,8 @@ pub const WindowsAsyncRuntime = struct {
         if (self.initialized.load(.acquire)) {
             self.stop();
         }
-        self.network_runtime.deinit();
-        self.iocp_runtime.deinit();
+        self.network_runtime.deinit(self.allocator);
+        self.iocp_runtime.deinit(self.allocator);
     }
     
     pub fn start(self: *Self) !void {
@@ -300,7 +300,7 @@ pub fn integrateWithGlobalScheduler(scheduler: *concurrency.Scheduler) void {
 // CURSED language bindings for async operations
 pub const CursedAsyncBindings = struct {
     // File operations for CURSED stdlib
-    pub fn cursed_async_read_file(file_path_ptr: [*]const u8, file_path_len: usize, buffer_ptr: [*]u8, buffer_len: usize) callconv(.C) i32 {
+    pub fn cursed_async_read_file(file_path_ptr: [*]const u8, file_path_len: usize, buffer_ptr: [*]u8, buffer_len: usize) callconv(.c) i32 {
         const file_path = file_path_ptr[0..file_path_len];
         const buffer = buffer_ptr[0..buffer_len];
         
@@ -315,7 +315,7 @@ pub const CursedAsyncBindings = struct {
         }
     }
     
-    pub fn cursed_async_write_file(file_path_ptr: [*]const u8, file_path_len: usize, data_ptr: [*]const u8, data_len: usize) callconv(.C) i32 {
+    pub fn cursed_async_write_file(file_path_ptr: [*]const u8, file_path_len: usize, data_ptr: [*]const u8, data_len: usize) callconv(.c) i32 {
         const file_path = file_path_ptr[0..file_path_len];
         const data = data_ptr[0..data_len];
         
@@ -331,7 +331,7 @@ pub const CursedAsyncBindings = struct {
     }
     
     // Network operations for CURSED stdlib
-    pub fn cursed_async_tcp_server_start(ip_ptr: [*]const u8, ip_len: usize, port: u16) callconv(.C) i32 {
+    pub fn cursed_async_tcp_server_start(ip_ptr: [*]const u8, ip_len: usize, port: u16) callconv(.c) i32 {
         const ip_str = ip_ptr[0..ip_len];
         
         const runtime = getGlobalAsyncRuntime() orelse return -1; // Runtime not initialized
@@ -345,7 +345,7 @@ pub const CursedAsyncBindings = struct {
         return 0; // Success
     }
     
-    pub fn cursed_async_tcp_client_connect(ip_ptr: [*]const u8, ip_len: usize, port: u16) callconv(.C) i32 {
+    pub fn cursed_async_tcp_client_connect(ip_ptr: [*]const u8, ip_len: usize, port: u16) callconv(.c) i32 {
         const ip_str = ip_ptr[0..ip_len];
         
         const runtime = getGlobalAsyncRuntime() orelse return -1; // Runtime not initialized
@@ -361,7 +361,7 @@ pub const CursedAsyncBindings = struct {
     }
     
     // CRITICAL FIX: Add async timer binding for CURSED stdlib
-    pub fn cursed_async_sleep(delay_ms: u32) callconv(.C) i32 {
+    pub fn cursed_async_sleep(delay_ms: u32) callconv(.c) i32 {
         const runtime = getGlobalAsyncRuntime() orelse return -1; // Runtime not initialized
         
         const result = runtime.sleepAsync(delay_ms) catch return -2; // Sleep failed

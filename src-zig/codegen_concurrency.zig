@@ -37,7 +37,7 @@ pub const ConcurrencyCodeGen = struct {
     }
 
     pub fn deinit(self: *ConcurrencyCodeGen) void {
-        self.output.deinit();
+        self.output.deinit(self.allocator);
     }
 
     /// Generate LLVM IR for entire program with concurrency support
@@ -174,11 +174,11 @@ pub const ConcurrencyCodeGen = struct {
         const reg = try self.nextRegister();
         const str_len = str_lit.value.len;
         
-        try self.output.writer().print("  %{s} = alloca [{} x i8]\n", .{ reg, str_len + 1 });
+        try self.output.writer().print("  %{s} = alloca [{s} x i8]\n", .{ reg, str_len + 1 });
         try self.output.writer().print("  store [{} x i8] c\"{s}\\00\", [{} x i8]* %{s}\n", .{ str_len + 1, str_lit.value, str_len + 1, reg });
         
         const ptr_reg = try self.nextRegister();
-        try self.output.writer().print("  %{s} = getelementptr [{} x i8], [{} x i8]* %{s}, i32 0, i32 0\n", .{ ptr_reg, str_len + 1, str_len + 1, reg });
+        try self.output.writer().print("  %{s} = getelementptr [{s} x i8], [{s} x i8]* %{s}, i32 0, i32 0\n", .{ ptr_reg, str_len + 1, str_len + 1, reg });
         
         return ptr_reg;
     }
@@ -229,12 +229,12 @@ pub const ConcurrencyCodeGen = struct {
     fn generateCallExpression(self: *ConcurrencyCodeGen, call_expr: *ast.CallExpression) ![]const u8 {
         const function_reg = try self.generateExpression(call_expr.function.*);
         
-        var arg_regs = .empty;
+        var arg_regs = std.ArrayList(u8){};
         defer arg_regs.deinit();
         
         for (call_expr.arguments.items) |arg| {
             const arg_reg = try self.generateExpression(arg);
-            try arg_regs.append(arg_reg);
+            try arg_regs.append(allocator, arg_reg);
         }
         
         const result_reg = try self.nextRegister();
@@ -324,7 +324,7 @@ pub const ConcurrencyCodeGen = struct {
         const ops_array_reg = try self.nextRegister();
         const num_cases = select_expr.cases.items.len;
         
-        try self.output.writer().print("  %{s} = alloca [{}] i8*\n", .{ ops_array_reg, num_cases });
+        try self.output.writer().print("  %{s} = alloca [{s}] i8*\n", .{ ops_array_reg, num_cases });
         
         // Generate each case
         for (select_expr.cases.items, 0..) |case_item, i| {
@@ -335,7 +335,7 @@ pub const ConcurrencyCodeGen = struct {
                     const channel_reg = try self.generateExpression(send_op.channel.*);
                     const value_reg = try self.generateExpression(send_op.value.*);
                     
-                    try self.output.writer().print("  ; Send operation case {}\n", .{i});
+                    try self.output.writer().print("  ; Send operation case {s}\n", .{i});
                     try self.output.writer().print("  %{s} = call i8* @malloc(i64 24)\n", .{case_reg});
                     
                     _ = channel_reg;
@@ -344,27 +344,27 @@ pub const ConcurrencyCodeGen = struct {
                 .receive => |recv_op| {
                     const channel_reg = try self.generateExpression(recv_op.channel.*);
                     
-                    try self.output.writer().print("  ; Receive operation case {}\n", .{i});
+                    try self.output.writer().print("  ; Receive operation case {s}\n", .{i});
                     try self.output.writer().print("  %{s} = call i8* @malloc(i64 16)\n", .{case_reg});
                     
                     _ = channel_reg;
                 },
                 .default => {
-                    try self.output.writer().print("  ; Default case {}\n", .{i});
+                    try self.output.writer().print("  ; Default case {s}\n", .{i});
                     try self.output.writer().print("  %{s} = call i8* @malloc(i64 8)\n", .{case_reg});
                 },
             }
             
             const array_ptr_reg = try self.nextRegister();
-            try self.output.writer().print("  %{s} = getelementptr [{}] i8*, [{}] i8** %{s}, i32 0, i32 {}\n", .{ array_ptr_reg, num_cases, num_cases, ops_array_reg, i });
+            try self.output.writer().print("  %{s} = getelementptr [{s}] i8*, [{s}] i8** %{s}, i32 0, i32 {s}\n", .{ array_ptr_reg, num_cases, num_cases, ops_array_reg, i });
             try self.output.writer().print("  store i8* %{s}, i8** %{s}\n", .{ case_reg, array_ptr_reg });
         }
         
         // Execute select
         const select_result_reg = try self.nextRegister();
         const array_cast_reg = try self.nextRegister();
-        try self.output.writer().print("  %{s} = bitcast [{}] i8** %{s} to i8*\n", .{ array_cast_reg, num_cases, ops_array_reg });
-        try self.output.writer().print("  %{s} = call i32 @cursed_runtime_select(i8* {s}, i64 {})\n", .{ select_result_reg, array_cast_reg, num_cases });
+        try self.output.writer().print("  %{s} = bitcast [{s}] i8** %{s} to i8*\n", .{ array_cast_reg, num_cases, ops_array_reg });
+        try self.output.writer().print("  %{s} = call i32 @cursed_runtime_select(i8* {s}, i64 {s})\n", .{ select_result_reg, array_cast_reg, num_cases });
         
         return select_result_reg;
     }
@@ -431,7 +431,7 @@ pub const ConcurrencyCodeGen = struct {
         const file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
         
-        try file.writeAll(self.output.items);
+        try file.writer().writeAll(self.output.items);
     }
 };
 

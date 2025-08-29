@@ -23,13 +23,13 @@ pub const StructInstance = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, type_name: []const u8) CursedError!StructInstance {
-        const type_name_copy = safeDupeString(allocator, type_name) catch |err| {
+        const type_name_copy = safeDupeString(allocator, type_name) catch {
             return err;
         };
         
         return StructInstance{
             .type_name = type_name_copy,
-            .fields = HashMap([]const u8, *Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .fields = HashMap([]const u8, *Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -43,7 +43,7 @@ pub const StructInstance = struct {
             self.allocator.free(entry.key_ptr.*);
         }
         self.allocator.free(self.type_name);
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
     
     pub fn setField(self: *StructInstance, name: []const u8, value: Value) !void {
@@ -86,20 +86,20 @@ pub const VTable = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, interface_name: []const u8) CursedError!VTable {
-        const interface_name_copy = safeDupeString(allocator, interface_name) catch |err| {
+        const interface_name_copy = safeDupeString(allocator, interface_name) catch {
             return err;
         };
         
         return VTable{
             .interface_name = interface_name_copy,
-            .methods = HashMap([]const u8, *FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .methods = HashMap([]const u8, *FunctionValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *VTable) void {
         self.allocator.free(self.interface_name);
-        self.methods.deinit();
+        self.methods.deinit(self.allocator);
     }
     
     pub fn setMethod(self: *VTable, name: []const u8, func: *FunctionValue) !void {
@@ -120,7 +120,7 @@ pub const FunctionValue = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, name: []const u8, parameters: [][]const u8, body: []ast.Statement, env: ?*Environment) CursedError!FunctionValue {
-        const name_copy = safeDupeString(allocator, name) catch |err| {
+        const name_copy = safeDupeString(allocator, name) catch {
             return err;
         };
         
@@ -149,7 +149,7 @@ pub const ErrorValue = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator, message: []const u8, code: i64) CursedError!ErrorValue {
-        const message_copy = safeDupeString(allocator, message) catch |err| {
+        const message_copy = safeDupeString(allocator, message) catch {
             return err;
         };
         
@@ -163,14 +163,14 @@ pub const ErrorValue = struct {
         var stack_frames: ?[][]const u8 = null;
         if (stack_trace_copy) |trace_str| {
             // Convert stack trace string to array of frames
-            var frame_list = std.ArrayList([]const u8).init(allocator);
+            var frame_list = std.ArrayList([]const u8){};
             defer frame_list.deinit();
             
             var lines = std.mem.split(u8, trace_str, "\n");
             while (lines.next()) |line| {
                 if (line.len > 0) {
                     const line_copy = allocator.dupe(u8, line) catch continue;
-                    frame_list.append(line_copy) catch continue;
+                    frame_list.append(allocator, line_copy) catch continue;
                 }
             }
             
@@ -211,6 +211,8 @@ pub const PointerValue = struct {
     }
 };
 
+const Variable = struct { name: []const u8, value: Value };
+
 pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
@@ -228,10 +230,7 @@ pub const Value = union(enum) {
     pub fn deinit(self: *Value, allocator: Allocator) void {
         switch (self.*) {
             .String => |str| allocator.free(str),
-            // .Tuple => |*tuple| {
-            //     for (tuple.items) |*item| {
-            //         item.deinit();
-            //     }
+            // }
             //     tuple.deinit();
             // },
             .Error => |*err| err.deinit(),
@@ -284,19 +283,6 @@ pub const Value = union(enum) {
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
             .Null => return allocator.dupe(u8, "cap"),
-            .Tuple => |tuple| {
-                var result = std.ArrayList(u8).init(self.allocator);
-                defer result.deinit();
-                try result.append('(');
-                for (tuple.items, 0..) |item, i| {
-                    if (i > 0) try result.appendSlice(", ");
-                    const item_str = try item.toString(allocator);
-                    defer allocator.free(item_str);
-                    try result.appendSlice(item_str);
-                }
-                try result.append(')');
-                return try allocator.dupe(u8, result.items);
-            },
             .Struct => |struct_inst| return std.fmt.allocPrint(allocator, "struct {s}", .{struct_inst.type_name}),
             .Interface => |interface_inst| return std.fmt.allocPrint(allocator, "interface {s}", .{interface_inst.vtable.interface_name}),
             .Error => |err| return std.fmt.allocPrint(allocator, "Error({s})", .{err.message}),
@@ -316,7 +302,7 @@ pub const Value = union(enum) {
             .Interface => return true, // Interfaces are always truthy if they exist
             .Error => return false,   // Errors are falsy
             .CursedError => return false, // CursedErrors are falsy
-            .Tuple => |tuple| return tuple.items.len > 0, // Tuples are truthy if non-empty
+             // Tuples are truthy if non-empty
         }
     }
 
@@ -343,14 +329,14 @@ pub const Environment = struct {
 
     pub fn init(allocator: Allocator, parent: ?*Environment) Environment {
         return Environment{
-            .variables = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .parent = parent,
             .allocator = allocator,
         };
     }
 
     pub fn deinit(self: *Environment) void {
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
@@ -397,17 +383,17 @@ pub const TypeRegistry = struct {
     
     pub fn init(allocator: Allocator) TypeRegistry {
         return TypeRegistry{
-            .struct_types = HashMap([]const u8, ast.StructStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .interface_types = HashMap([]const u8, ast.InterfaceStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .vtables = HashMap([]const u8, VTable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .struct_types = HashMap([]const u8, ast.StructStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .interface_types = HashMap([]const u8, ast.InterfaceStatement, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .vtables = HashMap([]const u8, VTable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
     
     pub fn deinit(self: *TypeRegistry) void {
-        self.struct_types.deinit();
-        self.interface_types.deinit();
-        self.vtables.deinit();
+        self.struct_types.deinit(self.allocator);
+        self.interface_types.deinit(self.allocator);
+        self.vtables.deinit(self.allocator);
     }
     
     pub fn registerStruct(self: *TypeRegistry, name: []const u8, struct_decl: ast.StructStatement) !void {
@@ -468,7 +454,7 @@ pub const Interpreter = struct {
         return Interpreter{
             .globals = globals,
             .environment = &globals,
-            .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .type_registry = TypeRegistry.init(allocator),
             // .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator), // Temporarily disabled
             .next_goroutine_id = 0,
@@ -484,11 +470,11 @@ pub const Interpreter = struct {
         // Execute any remaining deferred statements before cleanup
         self.executeAllDefers();
         
-        self.globals.deinit();
-        self.functions.deinit();
-        self.type_registry.deinit();
-        self.defer_stack.deinit();
-        self.error_handler.deinit();
+        self.globals.deinit(self.allocator);
+        self.functions.deinit(self.allocator);
+        self.type_registry.deinit(self.allocator);
+        self.defer_stack.deinit(self.allocator);
+        self.error_handler.deinit(self.allocator);
         
         // Clean up channel storage
         // var channel_iterator = self.channel_storage.iterator();
@@ -499,7 +485,7 @@ pub const Interpreter = struct {
         //     }
         //     entry.value_ptr.deinit();
         // }
-        // self.channel_storage.deinit();
+        // self.channel_storage.deinit(self.allocator);
     }
 
     pub fn interpret(self: *Interpreter, program: Program) InterpreterError!void {
@@ -530,8 +516,8 @@ pub const Interpreter = struct {
                     // Register implementations during the first pass
                     try self.executeImplementationStatement(impl_decl);
                 },
-                else => {},
-            }
+                else => {}
+        }
         }
         
         // Execute main_character function if it exists
@@ -547,7 +533,7 @@ pub const Interpreter = struct {
     }
 
     fn executeStatement(self: *Interpreter, stmt: Statement) InterpreterError!void {
-        std.debug.print("DEBUG: Executing statement type: {}\n", .{@tagName(stmt)});
+        std.debug.print("DEBUG: Executing statement type: {s}\n", .{ @tagName(stmt) });
         switch (stmt) {
             .Expression => |expr_ptr| {
                 const expr: *Expression = @ptrCast(@alignCast(expr_ptr));
@@ -576,8 +562,8 @@ pub const Interpreter = struct {
             .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
             .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
             else => {
-                std.debug.print("Unsupported statement type in interpreter: {}\n", .{@tagName(stmt)});
-            },
+                std.debug.print("Unsupported statement type in interpreter: {s}\n", .{ @tagName(stmt) });
+            }
         }
     }
 
@@ -596,6 +582,7 @@ pub const Interpreter = struct {
             
             switch (value) {
                 .Tuple => |tuple| {
+                    // Distribute tuple values to variable names
                     while (name_iter.next()) |raw_name| {
                         const trimmed_name = std.mem.trim(u8, raw_name, " \t");
                         if (name_index < tuple.items.len) {
@@ -633,18 +620,18 @@ pub const Interpreter = struct {
         }
         
         // Evaluate all values first
-        var evaluated_values = std.ArrayList(Value).init(self.allocator);
+        var evaluated_values = std.ArrayList(Value){};
         defer evaluated_values.deinit();
         
         for (short_decl.values.items) |value_expr| {
             const value = try self.evaluateExpression(value_expr.*);
-            try evaluated_values.append(value);
+            try evaluated_values.append(self.allocator, value);
         }
         
         // Define all variables
         for (short_decl.names.items, 0..) |name, i| {
             try self.environment.define(name, evaluated_values.items[i]);
-            std.debug.print("DEBUG: Defined variable '{s}' = {}\n", .{name, evaluated_values.items[i]});
+            std.debug.print("DEBUG: Defined variable '{s}' = {s}\n", .{name, evaluated_values.items[i]});
         }
     }
     
@@ -664,7 +651,7 @@ pub const Interpreter = struct {
                 try self.assignToMemberAccess(member, value);
             },
             else => {
-                std.debug.print("Unsupported assignment target: {s}\n", .{@tagName(target_expr.*)});
+                std.debug.print("Unsupported assignment target: {s}\n", .@tagName(target_expr.*)});
                 return InterpreterError.TypeMismatch;
             }
         }
@@ -690,13 +677,13 @@ pub const Interpreter = struct {
                                 ptr.pointee_value.* = Value{ .Struct = struct_inst.* };
                             },
                             else => {
-                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
+                                std.debug.print("Cannot assign to field of dereferenced non-struct: {s}\n", .@tagName(ptr.pointee_value.*)});
                                 return InterpreterError.TypeMismatch;
                             }
                         }
                     },
                     else => {
-                        std.debug.print("Cannot assign to field of non-struct type: {s}\n", .{@tagName(object_value)});
+                        std.debug.print("Cannot assign to field of non-struct type: {s}\n", .@tagName(object_value)});
                         return InterpreterError.TypeMismatch;
                     }
                 }
@@ -740,15 +727,15 @@ pub const Interpreter = struct {
     fn executeInterfaceStatement(self: *Interpreter, interface_stmt: ast.InterfaceStatement) InterpreterError!void {
         _ = self; // Interface statements are handled in the type registry during the first pass
         // Nothing to do here for execution - they're already registered in execute()
-        std.debug.print("DEBUG: Executing interface statement for '{}'\n", .{interface_stmt.name});
+        std.debug.print("DEBUG: Executing interface statement for '{s}'\n", .{interface_stmt.name});
     }
 
     fn executeImplementationStatement(self: *Interpreter, impl_stmt: ast.ImplementationStatement) InterpreterError!void {
-        std.debug.print("DEBUG: Executing implementation statement: {} for {}\n", .{impl_stmt.implementing_type, impl_stmt.interface_name});
+        std.debug.print("DEBUG: Executing implementation statement: {s} for {s}\n", .{impl_stmt.implementing_type, impl_stmt.interface_name});
         
         // Get the interface definition
         const interface_def = self.type_registry.getInterface(impl_stmt.interface_name) orelse {
-            std.debug.print("ERROR: Interface '{}' not found\n", .{impl_stmt.interface_name});
+            std.debug.print("ERROR: Interface '{s}' not found\n", .{impl_stmt.interface_name});
             return InterpreterError.UndefinedInterface;
         };
         
@@ -779,7 +766,7 @@ pub const Interpreter = struct {
                     
                     try vtable.setMethod(interface_method.name, func_value);
                     method_found = true;
-                    std.debug.print("DEBUG: Added method '{}' to vtable\n", .{interface_method.name});
+                    std.debug.print("DEBUG: Added method '{s}' to vtable\n", .{interface_method.name});
                     break;
                 }
             }
@@ -824,7 +811,7 @@ pub const Interpreter = struct {
     }
 
     pub fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
-        std.debug.print("DEBUG: Evaluating expression type: {}\n", .{@tagName(expr)});
+        std.debug.print("DEBUG: Evaluating expression type: {s}\n", .@tagName(expr)});
         switch (expr) {
             .Integer => |int| return Value{ .Integer = int },
             .Float => |float| return Value{ .Float = float },
@@ -842,7 +829,7 @@ pub const Interpreter = struct {
                         switch (self_value) {
                             .Struct => |struct_inst| {
                                 if (struct_inst.fields.get(name)) |field_value| {
-                                    std.debug.print("DEBUG: Implicit field access for '{s}' resolved to: {s}\n", .{name, @tagName(field_value)});
+                                    std.debug.print("DEBUG: Implicit field access for '{s}' resolved to: {s}\n", .name, @tagName(field_value)});
                                     return field_value;
                                 }
                             },
@@ -865,11 +852,11 @@ pub const Interpreter = struct {
             .Fam => |fam| return try self.evaluateFam(fam),
             .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
             .Match => |match| return try self.evaluateMatch(match),
-            .Tuple => |tuple| return try self.evaluateTuple(tuple),
+            
             else => {
-                std.debug.print("Unsupported expression type in interpreter: {s}\n", .{@tagName(expr)});
+                std.debug.print("Unsupported expression type in interpreter: {s}\n", .@tagName(expr)});
                 return Value.Null;
-            },
+            }
         }
     }
 
@@ -969,7 +956,7 @@ pub const Interpreter = struct {
                     return ptr.pointee_value.*;
                 },
                 else => {
-                    std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .{@tagName(operand)});
+                    std.debug.print("ERROR: Cannot dereference non-pointer value: {s}\n", .@tagName(operand)});
                     return InterpreterError.TypeMismatch;
                 }
             }
@@ -1013,7 +1000,7 @@ pub const Interpreter = struct {
                     return Value.Null;
                 } else {
                     // Handle method calls on objects (structs/interfaces)
-                    std.debug.print("DEBUG: Detected method call: {}.{}\n", .{@tagName(member.object.*), member.property});
+                    std.debug.print("DEBUG: Detected method call: {s}.{s}\n", .@tagName(member.object.*), member.property});
                     return try self.evaluateMethodCall(member.*, call.arguments.items);
                 }
             },
@@ -1115,16 +1102,16 @@ pub const Interpreter = struct {
                     const runtime_functions = @import("runtime_functions.zig");
                     const result = runtime_functions.runtime_get_env(self.allocator, name_str) catch {
                         // Create array with two strings: empty value and error message
-                        var result_array = ArrayList(Value).init(self.allocator);
+                        var result_array = ArrayList(Value){};
                         try result_array.append(Value{ .String = try self.allocator.dupe(u8, "") });
                         try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to get environment variable") });
                         return Value{ .Array = result_array };
                     };
                     
                     // Create array with two strings: value and error
-                    var result_array = ArrayList(Value).init(self.allocator);
-                    try result_array.append(Value{ .String = result[0] });
-                    try result_array.append(Value{ .String = result[1] });
+                    var result_array = ArrayList(Value){};
+                    try result_array.append(self.allocator, Value{ .String = result[0] });
+                    try result_array.append(self.allocator, Value{ .String = result[1] });
                     return Value{ .Array = result_array };
                 } else if (std.mem.eql(u8, name, "runtime_set_env")) {
                     if (call.arguments.items.len != 2) {
@@ -1167,22 +1154,22 @@ pub const Interpreter = struct {
                     const runtime_functions = @import("runtime_functions.zig");
                     const result = runtime_functions.runtime_list_env(self.allocator) catch {
                         // Create array with empty list and error message
-                        var result_array = ArrayList(Value).init(self.allocator);
-                        try result_array.append(Value{ .Array = ArrayList(Value).init(self.allocator) });
+                        var result_array = ArrayList(Value){};
+                        try result_array.append(self.allocator, Value{ .Array = ArrayList(Value){} });
                         try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to list environment variables") });
                         return Value{ .Array = result_array };
                     };
                     
                     // Convert ArrayList([]const u8) to ArrayList(Value)
-                    var env_values = ArrayList(Value).init(self.allocator);
+                    var env_values = ArrayList(Value){};
                     for (result[0].items) |env_str| {
-                        try env_values.append(Value{ .String = env_str });
+                        try env_values.append(self.allocator, Value{ .String = env_str });
                     }
                     
                     // Create array with env list and error string
-                    var result_array = ArrayList(Value).init(self.allocator);
-                    try result_array.append(Value{ .Array = env_values });
-                    try result_array.append(Value{ .String = result[1] });
+                    var result_array = ArrayList(Value){};
+                    try result_array.append(self.allocator, Value{ .Array = env_values });
+                    try result_array.append(self.allocator, Value{ .String = result[1] });
                     return Value{ .Array = result_array };
                 } else if (std.mem.eql(u8, name, "runtime_expand_env")) {
                     if (call.arguments.items.len != 1) {
@@ -1267,13 +1254,13 @@ pub const Interpreter = struct {
                     const runtime_functions = @import("runtime_functions.zig");
                     const result = runtime_functions.runtime_split_path(self.allocator, path_str) catch |err| switch (err) {
                         error.OutOfMemory => return InterpreterError.OutOfMemory,
-                        else => ArrayList([]const u8).init(self.allocator),
-                    };
+                        else => ArrayList([]const u8){}
+        };
                     
                     // Convert ArrayList([]const u8) to ArrayList(Value)
-                    var path_values = ArrayList(Value).init(self.allocator);
+                    var path_values = ArrayList(Value){};
                     for (result.items) |path_str_item| {
-                        try path_values.append(Value{ .String = path_str_item });
+                        try path_values.append(self.allocator, Value{ .String = path_str_item });
                     }
                     
                     return Value{ .Array = path_values };
@@ -1288,15 +1275,15 @@ pub const Interpreter = struct {
                     const runtime_functions = @import("runtime_functions.zig");
                     const result = runtime_functions.runtime_parse_int(self.allocator, input_str) catch {
                         // Create array with 0 and error message
-                        var result_array = ArrayList(Value).init(self.allocator);
-                        try result_array.append(Value{ .Integer = 0 });
+                        var result_array = ArrayList(Value){};
+                        try result_array.append(self.allocator, Value{ .Integer = 0 });
                         try result_array.append(Value{ .String = try self.allocator.dupe(u8, "Failed to parse integer") });
                         return Value{ .Array = result_array };
                     };
                     
                     // Create array with integer and error string
-                    var result_array = ArrayList(Value).init(self.allocator);
-                    try result_array.append(Value{ .Integer = result[0] });
+                    var result_array = ArrayList(Value){};
+                    try result_array.append(self.allocator, Value{ .Integer = result[0] });
                     try result_array.append(Value{ .String = try self.allocator.dupe(u8, result[1]) });
                     return Value{ .Array = result_array };
                 } else if (std.mem.eql(u8, name, "runtime_string_length")) {
@@ -1392,13 +1379,13 @@ pub const Interpreter = struct {
                     if (self.functions.get(name)) |func| {
                         std.debug.print("DEBUG: Calling user function '{s}'\n", .{name});
                         // Evaluate arguments
-                        var args = .empty;
+                        var args = std.ArrayList(u8){};
                         defer args.deinit();
                         errdefer args.deinit(); // Clean up on error
                         
                         for (call.arguments.items) |arg_expr| {
                             const arg = try self.evaluateExpression(arg_expr.*);
-                            try args.append(arg);
+                            try args.append(self.allocator, arg);
                         }
                         
                         return try self.callFunction(func, args.items);
@@ -1413,7 +1400,7 @@ pub const Interpreter = struct {
                     return InterpreterError.UndefinedFunction;
                 }
             },
-            else => {},
+            else => {}
         }
         
         return InterpreterError.UndefinedFunction;
@@ -1425,7 +1412,7 @@ pub const Interpreter = struct {
         switch (object) {
             .Struct => |struct_inst| {
                 if (struct_inst.fields.get(member.property)) |field_value| {
-                    std.debug.print("DEBUG: Found field '{s}' with value type: {s}\n", .{member.property, @tagName(field_value)});
+                    std.debug.print("DEBUG: Found field '{s}' with value type: {s}\n", .member.property, @tagName(field_value)});
                     return field_value;
                 } else {
                     std.debug.print("DEBUG: Field '{s}' not found in struct\n", .{member.property});
@@ -1448,7 +1435,7 @@ pub const Interpreter = struct {
                 switch (ptr.pointee_value.*) {
                     .Struct => |struct_inst| {
                         if (struct_inst.fields.get(member.property)) |field_value| {
-                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .{member.property, @tagName(field_value.*)});
+                            std.debug.print("DEBUG: Found field '{s}' via pointer dereference with value type: {s}\n", .member.property, @tagName(field_value.*)});
                             return field_value.*;
                         } else {
                             std.debug.print("DEBUG: Field '{s}' not found in dereferenced struct\n", .{member.property});
@@ -1456,13 +1443,13 @@ pub const Interpreter = struct {
                         }
                     },
                     else => {
-                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .{@tagName(ptr.pointee_value.*)});
+                        std.debug.print("DEBUG: Member access on pointer to non-struct: {s}\n", .@tagName(ptr.pointee_value.*)});
                         return InterpreterError.TypeMismatch;
                     }
                 }
             },
             else => {
-                std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .{@tagName(object)});
+                std.debug.print("DEBUG: Member access on non-struct type: {s}\n", .@tagName(object)});
                 return InterpreterError.TypeMismatch;
             }
         }
@@ -1471,7 +1458,7 @@ pub const Interpreter = struct {
     fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []*ast.Expression) InterpreterError!Value {
         std.debug.print("DEBUG: Method call - evaluating object for '{s}' method\n", .{member.property});
         const object = try self.evaluateExpression(member.object.*);
-        std.debug.print("DEBUG: Object evaluated to type: {s}\n", .{@tagName(object)});
+        std.debug.print("DEBUG: Object evaluated to type: {s}\n", .@tagName(object)});
         
         switch (object) {
             .Struct => |struct_inst| {
@@ -1517,10 +1504,10 @@ pub const Interpreter = struct {
                 
                 // Get method from vtable and execute it
                 if (interface_inst.vtable.getMethod(member.property)) |method_func| {
-                    std.debug.print("DEBUG: Found interface method '{}' in vtable, executing...\n", .{member.property});
+                    std.debug.print("DEBUG: Found interface method '{s}' in vtable, executing...\n", .{member.property});
                     return try self.executeInterfaceMethod(method_func, method_args.items);
                 } else {
-                    std.debug.print("DEBUG: Method '{}' not found in interface vtable\n", .{member.property});
+                    std.debug.print("DEBUG: Method '{s}' not found in interface vtable\n", .{member.property});
                     return InterpreterError.UndefinedMethod;
                 }
             },
@@ -1537,7 +1524,7 @@ pub const Interpreter = struct {
         
         // Bind parameters to arguments
         if (args.len != method_func.parameters.len + 1) { // +1 for 'self'
-            std.debug.print("ERROR: Interface method '{}' expects {} params but got {} args\n", .{method_func.name, method_func.parameters.len, args.len - 1});
+            std.debug.print("ERROR: Interface method '{s}' expects {s} params but got {s} args\n", .{method_func.name, method_func.parameters.len, args.len - 1});
             return InterpreterError.InvalidArgumentCount;
         }
         
@@ -1559,7 +1546,7 @@ pub const Interpreter = struct {
         defer self.environment = previous_env;
         
         for (method_func.body) |stmt| {
-            self.executeStatement(stmt) catch |err| {
+            self.executeStatement(stmt) catch {
                 return err;
             };
         }
@@ -1696,13 +1683,13 @@ pub const Interpreter = struct {
         }
         
         // Evaluate function arguments
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         errdefer args.deinit(); // Clean up on error
         
         for (arguments) |arg_expr| {
             const arg_value = try self.evaluateExpression(arg_expr);
-            try args.append(arg_value);
+            try args.append(self.allocator, arg_value);
         }
         
         std.debug.print("DEBUG: Calling generic function '{s}' with {d} arguments\n", 
@@ -1758,7 +1745,7 @@ pub const Interpreter = struct {
     
     /// Parse comma-separated type arguments
     fn parseTypeArguments(self: *Interpreter, type_args_str: []const u8) ![][]const u8 {
-        var type_args = .empty;
+        var type_args = std.ArrayList(u8){};
         defer type_args.deinit();
         
         var iterator = std.mem.splitScalar(u8, type_args_str, ',');
@@ -1802,7 +1789,7 @@ pub const Interpreter = struct {
         std.debug.print("DEBUG: Starting function specialization for types: {any}\n", .{type_args});
         
         // Create type parameter mapping
-        var type_substitutions = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var type_substitutions = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer type_substitutions.deinit();
         
         for (template_func.declaration.type_parameters.items, 0..) |type_param, i| {
@@ -2016,7 +2003,7 @@ pub const Interpreter = struct {
         var has_returned = false;
         
         // Track multiple return values for tuple returns
-        var return_values = .empty;
+        var return_values = std.ArrayList(u8){};
         defer return_values.deinit();
         errdefer return_values.deinit(); // Clean up on error
         
@@ -2028,9 +2015,6 @@ pub const Interpreter = struct {
                         const result = try self.evaluateExpression(expr.*);
                         // Check if this is a tuple expression (multiple values)
                         switch (result) {
-                            .Tuple => |_| {
-                                // Return multiple values as tuple
-                                return_value = result;
                             },
                             else => {
                                 // Single value return
@@ -2148,18 +2132,14 @@ pub const Interpreter = struct {
                     else => return false,
                 }
             },
-            .Tuple => |left_tuple| {
-                switch (right) {
-                    .Tuple => |right_tuple| {
-                        if (left_tuple.items.len != right_tuple.items.len) return false;
-                        for (left_tuple.items, right_tuple.items) |left_item, right_item| {
+             right_tuple.items) |left_item, right_item| {
                             if (!self.valuesEqual(left_item, right_item)) return false;
                         }
                         return true;
                     },
                     else => return false,
                 }
-            },
+            }
         }
     }
 
@@ -2200,8 +2180,8 @@ pub const Interpreter = struct {
             // Print the error with full context
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            error_ctx.format(stdout) catch |err| {
-                std.debug.print("Error formatting context: {}\n", .{err});
+            error_ctx.format(stdout) catch {
+                std.debug.print("Error formatting context: {s}\n", .{err});
             };
             return InterpreterError.RuntimeError;
         }
@@ -2221,7 +2201,7 @@ pub const Interpreter = struct {
         
         // Execute try body with error catching
         for (fam.try_body.items) |stmt| {
-            self.executeStatement(stmt) catch |err| {
+            self.executeStatement(stmt) catch {
                 // Create error context from interpreter error
                 const location = error_prop.ErrorContext.SourceLocation{
                     .file = if (self.current_file) |file| file else "unknown",
@@ -2272,8 +2252,8 @@ pub const Interpreter = struct {
                 // No matching catch block, propagate the error
                 var stdout_buffer: [4096]u8 = undefined;
                 const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-                stdout.print("Unhandled error in fam block: {s}\n", .{"unknown"}) catch {};
-                stdout.print("Error context: {s}\n", .{error_ctx.message}) catch {};
+                stdout.writer().print("Unhandled error in fam block: {s}\n", .{"unknown"}) catch {};
+                stdout.writer().print("Error context: {s}\n", .{error_ctx.message}) catch {};
                 return InterpreterError.RuntimeError;
             }
         }
@@ -2289,7 +2269,7 @@ pub const Interpreter = struct {
         if (try error_propagator.exitTryCatchBlock()) |unhandled_error| {
             var stdout_buffer: [4096]u8 = undefined;
             const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-            stdout.print("Unhandled error after fam block: {s}\n", .{unhandled_error.message}) catch {};
+            stdout.writer().print("Unhandled error after fam block: {s}\n", .{unhandled_error.message}) catch {};
             return InterpreterError.RuntimeError;
         }
     }
@@ -2330,7 +2310,7 @@ pub const Interpreter = struct {
         // Execute try body
         for (fam.try_body.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-            self.executeStatement(stmt.*) catch |err| {
+            self.executeStatement(stmt.*) catch {
                 error_occurred = try self.error_handler.yikes(
                     @errorName(err),
                     .Runtime,
@@ -2398,9 +2378,9 @@ pub const Interpreter = struct {
                 // Execute all statements in the goroutine body
                 for (context.statements.items) |stmt_ptr| {
                     const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                    context.interpreter.executeStatement(stmt.*) catch |err| {
+                    context.interpreter.executeStatement(stmt.*) catch {
                         // Handle goroutine errors gracefully
-                        std.debug.print("Goroutine error: {}\n", .{err});
+                        std.debug.print("Goroutine error: {s}\n", .{err});
                         return;
                     };
                 }
@@ -2416,13 +2396,13 @@ pub const Interpreter = struct {
         };
         
         // Spawn the goroutine
-        const goroutine_id = concurrency_runtime.executeStanFromInterpreter(context, GoroutineContext.execute) catch |err| {
-            std.debug.print("Failed to spawn goroutine: {}\n", .{err});
+        const goroutine_id = concurrency_runtime.executeStanFromInterpreter(context, GoroutineContext.execute) catch {
+            std.debug.print("Failed to spawn goroutine: {s}\n", .{err});
             self.allocator.destroy(context);
             return;
         };
         
-        std.debug.print("Spawned goroutine with ID: {}\n", .{goroutine_id});
+        std.debug.print("Spawned goroutine with ID: {s}\n", .{goroutine_id});
         
         // Wait a bit longer for goroutine to execute
         std.Thread.sleep(10_000_000); // 10ms
@@ -2573,14 +2553,8 @@ pub const Interpreter = struct {
             },
             .Wildcard => {
                 return true; // Wildcard matches anything
-            },
-            .Tuple => |tuple_pattern| {
-                if (value != .Tuple) return false;
-                const array_val = value.Tuple;
-                
-                if (array_val.items.len != tuple_pattern.items.len) {
-                    return false;
-                }
+            }
+        }
                 
                 // Match each element
                 for (tuple_pattern.items, 0..) |element_pattern, i| {
@@ -2614,7 +2588,7 @@ pub const Interpreter = struct {
                     errdefer rest_elements.deinit();
                     
                     for (array_val.items[array_pattern.items.len..]) |elem| {
-                        try rest_elements.append(elem);
+                        try rest_elements.append(self.allocator, elem);
                     }
                     
                     const rest_array = Value{ .Array = rest_elements };
@@ -2641,9 +2615,9 @@ pub const Interpreter = struct {
                 };
             },
             else => {
-                std.debug.print("Unsupported pattern type: {s}\n", .{@tagName(pattern)});
+                std.debug.print("Unsupported pattern type: {s}\n", .@tagName(pattern)});
                 return false;
-            },
+            }
         }
     }
 
@@ -2660,7 +2634,7 @@ pub const Interpreter = struct {
         };
         
         // Push onto defer stack (LIFO order)
-        try self.defer_stack.append(defer_entry);
+        try self.defer_stack.append(self.allocator, defer_entry);
         
         std.debug.print("✅ Defer statement pushed to stack (size: {d})\n", .{self.defer_stack.items.len});
     }
@@ -2679,8 +2653,8 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch |err| {
-                std.debug.print("Error executing deferred statement: {}\n", .{err});
+            self.executeStatement(defer_entry.?.statement) catch {
+                std.debug.print("Error executing deferred statement: {s}\n", .{err});
                 // Continue with other defers even if one fails
             };
             
@@ -2702,8 +2676,8 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing scoped deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch |err| {
-                std.debug.print("Error executing deferred statement: {}\n", .{err});
+            self.executeStatement(defer_entry.?.statement) catch {
+                std.debug.print("Error executing deferred statement: {s}\n", .{err});
                 // Continue with other defers even if one fails
             };
             
@@ -2720,7 +2694,7 @@ pub const Interpreter = struct {
         defer error_propagator.deinit();
         
         // Evaluate the wrapped expression
-        const result = self.evaluateExpression(shook.expression.*) catch |err| {
+        const result = self.evaluateExpression(shook.expression.*) catch {
             // Convert caught error to error context
             const location = error_prop.ErrorContext.SourceLocation{
                 .file = "unknown", // TODO: Get from context
@@ -2747,8 +2721,8 @@ pub const Interpreter = struct {
                 // Error should be propagated up the call stack
                 var stdout_buffer: [4096]u8 = undefined;
                 const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
-                stdout.print("Shook propagated error: {s}\n", .{"unknown"}) catch {};
-                stdout.print("Error context: {s}\n", .{error_ctx.message}) catch {};
+                stdout.writer().print("Shook propagated error: {s}\n", .{"unknown"}) catch {};
+                stdout.writer().print("Error context: {s}\n", .{error_ctx.message}) catch {};
                 return InterpreterError.RuntimeError;
             }
             
@@ -2809,18 +2783,18 @@ pub const Interpreter = struct {
             else => {
                 // Normal value, return as-is (shook operator passes through non-errors)
                 return result;
-            },
+            }
         }
     }
 
     // Enhanced channel simulation methods
     fn storeChannelValue(self: *Interpreter, channel_id: u64, value: Value) InterpreterError!void {
         if (self.channel_storage.getPtr(channel_id)) |channel_list| {
-            try channel_list.append(value);
+            try channel_list.append(self.allocator, value);
         } else {
-            var new_list = .empty;
+            var new_list = std.ArrayList(u8){};
             errdefer new_list.deinit(); // Clean up on error
-            try new_list.append(value);
+            try new_list.append(self.allocator, value);
             try self.channel_storage.put(channel_id, new_list);
         }
     }
@@ -2844,19 +2818,19 @@ pub const Interpreter = struct {
     }
     
     fn evaluateTuple(self: *Interpreter, tuple: ast.TupleExpression) InterpreterError!Value {
-        var tuple_values = .empty;
+        var tuple_values = std.ArrayList(u8){};
         errdefer tuple_values.deinit(); // Clean up on error
         
         for (tuple.elements.items) |element_expr| {
             const element_value = try self.evaluateExpression(element_expr.*);
-            try tuple_values.append(element_value);
+            try tuple_values.append(self.allocator, element_value);
         }
         
         return Value{ .Tuple = tuple_values };
     }
 
     fn evaluateStringInterpolation(self: *Interpreter, interpolation: ast.StringInterpolationExpression) InterpreterError!Value {
-        var result = std.ArrayList(u8).init(self.allocator);
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         for (interpolation.parts.items) |part| {

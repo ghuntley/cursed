@@ -165,23 +165,23 @@ pub fn main() !void {
 
     // Read and execute CURSED file
     const file_content = std.fs.cwd().readFileAlloc(allocator, filename, 1024 * 1024) catch |err| {
-        std.debug.print("Error reading file {s}: {}\n", .{ filename, err });
+        std.debug.print("Error reading file {s}: {s}\n", .{ filename, err });
         return;
     };
     defer allocator.free(file_content);
 
     // Basic lexer
-    var tokens = .empty;
+    var tokens = std.ArrayList(u8){};
     defer tokens.deinit();
     
     tokenizeBasic(file_content, &tokens) catch |err| {
-        std.debug.print("Lexing error: {}\n", .{err});
+        std.debug.print("Lexing error: {s}\n", .{err});
         return;
     };
 
     // Basic interpreter
     interpretBasic(allocator, &tokens) catch |err| {
-        std.debug.print("Interpretation error: {}\n", .{err});
+        std.debug.print("Interpretation error: {s}\n", .{err});
         return;
     };
 }

@@ -27,7 +27,7 @@ fn createToken(kind: TokenKind, lexeme: []const u8, line: u32, column: u32) Toke
 }
 
 fn createTokens(allocator: std.mem.Allocator, token_specs: []const struct { TokenKind, []const u8 }) ![]Token {
-    var tokens = .empty;
+    var tokens = std.ArrayList(u8){};
     defer tokens.deinit();
     
     for (token_specs, 0..) |spec, i| {

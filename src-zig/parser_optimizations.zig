@@ -53,7 +53,7 @@ const TokenPool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.tokens.deinit();
+        self.tokens.deinit(self.allocator);
     }
     
     pub fn getToken(self: *Self) *Token {
@@ -100,7 +100,7 @@ const FastTokenizer = struct {
     const Self = @This();
     
     pub fn init(allocator: Allocator, source: []const u8) !Self {
-        var keyword_map = HashMap([]const u8, TokenPool.TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+        var keyword_map = HashMap([]const u8, TokenPool.TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         
         // Pre-populate keyword map for O(1) lookup
         try keyword_map.put("sus", .sus);
@@ -135,8 +135,8 @@ const FastTokenizer = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.token_pool.deinit();
-        self.keyword_map.deinit();
+        self.token_pool.deinit(self.allocator);
+        self.keyword_map.deinit(self.allocator);
     }
     
     // Fast character classification using lookup tables
@@ -468,7 +468,7 @@ const ASTNodePool = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.nodes.deinit();
+        self.nodes.deinit(self.allocator);
     }
     
     pub fn getNode(self: *Self) *ASTNode {
@@ -525,7 +525,7 @@ pub const FastParser = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.ast_pool.deinit();
+        self.ast_pool.deinit(self.allocator);
     }
     
     pub fn parse(self: *Self) !*ASTNodePool.ASTNode {
@@ -1004,9 +1004,9 @@ pub const ParserBenchmark = struct {
         std.debug.print("Tokenization: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.tokenization_time_ns)) / 1_000_000.0});
         std.debug.print("Parsing: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.parsing_time_ns)) / 1_000_000.0});
         std.debug.print("Total: {d:.2}ms\n", .{@as(f64, @floatFromInt(self.tokenization_time_ns + self.parsing_time_ns)) / 1_000_000.0});
-        std.debug.print("Memory used: {} bytes\n", .{self.memory_used_bytes});
-        std.debug.print("Tokens created: {}\n", .{self.tokens_created});
-        std.debug.print("AST nodes created: {}\n", .{self.nodes_created});
+        std.debug.print("Memory used: {s} bytes\n", .{self.memory_used_bytes});
+        std.debug.print("Tokens created: {s}\n", .{self.tokens_created});
+        std.debug.print("AST nodes created: {s}\n", .{self.nodes_created});
         
         if (self.tokens_created > 0) {
             const tokens_per_ms = @as(f64, @floatFromInt(self.tokens_created)) / (@as(f64, @floatFromInt(self.tokenization_time_ns)) / 1_000_000.0);

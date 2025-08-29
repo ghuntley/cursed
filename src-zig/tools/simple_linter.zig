@@ -15,7 +15,7 @@ const LintIssue = struct {
 
 // Simple linter for CURSED code
 pub fn lintCursedCode(allocator: Allocator, source: []const u8, _: []const u8) ![]LintIssue {
-    var issues = ArrayList(LintIssue).init(allocator);
+    var issues = ArrayList(LintIssue){};
     defer issues.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
@@ -138,10 +138,10 @@ pub fn main() !void {
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
     
     if (issues.len == 0) {
-        try stdout.print("✅ No issues found in {s}\n", .{file_path});
+        try stdout.writer().print("✅ No issues found in {s}\n", .{file_path});
     } else {
         for (issues) |issue| {
-            try stdout.print("{s}:{}:{}: {s}: {s}\n", .{
+            try stdout.writer().print("{s}:{s}:{s}: {s}: {s}\n", .{{
                 file_path,
                 issue.line,
                 issue.column,
@@ -149,6 +149,6 @@ pub fn main() !void {
                 issue.message,
             });
         }
-        try stdout.print("\nFound {} issues in {s}\n", .{ issues.len, file_path });
+        try stdout.writer().print("\nFound {s} issues in {s}\n", .{{ issues.len, file_path });
     }
 }

@@ -43,7 +43,7 @@ pub const TypeVariable = struct {
     }
     
     pub fn deinit(self: *TypeVariable) void {
-        self.bounds.deinit();
+        self.bounds.deinit(self.allocator);
     }
 };
 
@@ -81,8 +81,9 @@ pub const RecursionDetector = struct {
     }
     
     pub fn deinit(self: *RecursionDetector, allocator: Allocator) void {
-        self.visiting.deinit();
-        self.visited.deinit();
+        _ = allocator;
+        self.visiting.deinit(self.allocator);
+        self.visited.deinit(self.allocator);
     }
     
     /// Check if entering a type variable would create a cycle
@@ -173,14 +174,14 @@ pub const TypeMemoization = struct {
     
     pub fn init() TypeMemoization {
         return TypeMemoization{
-            .unification_cache = HashMap(UnificationKey, ast.Type, UnificationKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .substitution_cache = HashMap(SubstitutionKey, ast.Type, SubstitutionKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .unification_cache = HashMap(UnificationKey, ast.Type, UnificationKeyContext, std.hash_map.default_max_load_percentage){},
+            .substitution_cache = HashMap(SubstitutionKey, ast.Type, SubstitutionKeyContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *TypeMemoization) void {
-        self.unification_cache.deinit();
-        self.substitution_cache.deinit();
+        self.unification_cache.deinit(self.allocator);
+        self.substitution_cache.deinit(self.allocator);
     }
     
     /// Hash a type for memoization
@@ -259,10 +260,10 @@ pub const TypeInferenceEngine = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.type_variables.deinit();
-        self.constraints.deinit();
-        self.recursion_detector.deinit();
-        self.memoization.deinit();
+        self.type_variables.deinit(self.allocator);
+        self.constraints.deinit(self.allocator);
+        self.recursion_detector.deinit(self.allocator);
+        self.memoization.deinit(self.allocator);
     }
     
     /// Create a fresh type variable
@@ -381,7 +382,7 @@ pub const TypeInferenceEngine = struct {
                         }
                         
                         // Unify parameters
-                        var unified_params = .empty;
+                        var unified_params = std.ArrayList(u8){};
                         for (left_func.parameters.items, right_func.parameters.items) |left_param, right_param| {
                             const unified_param = try self.unify(left_param, right_param);
                             try unified_params.append(self.allocator, unified_param);
@@ -419,10 +420,10 @@ pub const TypeInferenceEngine = struct {
                         }
                         
                         // Unify type arguments
-                        var unified_args = .empty;
+                        var unified_args = std.ArrayList(u8){};
                         for (left_generic.type_arguments.items, right_generic.type_arguments.items) |left_arg, right_arg| {
                             const unified_arg = try self.unify(left_arg, right_arg);
-                            try unified_args.append(unified_arg);
+                            try unified_args.append(allocator, unified_arg);
                         }
                         
                         return ast.Type{
@@ -535,7 +536,7 @@ pub const TypeInferenceEngine = struct {
                 };
             },
             .Function => |func| {
-                var new_params = .empty;
+                var new_params = std.ArrayList(u8){};
                 for (func.parameters.items) |param| {
                     const new_param = try self.substituteInternal(var_id, replacement, param);
                     try new_params.append(self.allocator, new_param);
@@ -611,12 +612,12 @@ pub fn inferTypes(allocator: Allocator, expressions: []const ast.Expression) Typ
     var engine = TypeInferenceEngine.init(allocator);
     defer engine.deinit();
     
-    var result_types = .empty;
+    var result_types = std.ArrayList(u8){};
     
     // Generate constraints for each expression
     for (expressions) |expr| {
         const expr_type = try inferExpressionType(&engine, expr);
-        try result_types.append(expr_type);
+        try result_types.append(allocator, expr_type);
     }
     
     // Solve all constraints
@@ -641,12 +642,12 @@ fn inferExpressionType(engine: *TypeInferenceEngine, expr: ast.Expression) TypeI
             // Infer function type and argument types with advanced constraint generation
             const func_type = try inferExpressionType(engine, call.function.*);
             
-            var arg_types = std.ArrayList(ast.Type).init(self.allocator);
+            var arg_types = std.ArrayList(ast.Type){};
             defer arg_types.deinit();
             
             for (call.arguments.items) |arg| {
                 const arg_type = try inferExpressionType(engine, arg);
-                try arg_types.append(arg_type);
+                try arg_types.append(allocator, arg_type);
             }
             
             // Generate complex constraints for advanced type scenarios
@@ -754,13 +755,13 @@ fn checkVarianceConstraints(engine: *TypeInferenceEngine, func_type: ast.Type, a
         },
         .Generic => |generic| {
             // Generic variance checking with constraints
-            var resolved_args = std.ArrayList(ast.Type).init(self.allocator);
+            var resolved_args = std.ArrayList(ast.Type){};
             defer resolved_args.deinit();
             
             for (arg_types) |arg_type| {
                 // Resolve generic type parameters with variance constraints
                 const resolved = try resolveGenericWithVariance(engine, generic, arg_type);
-                try resolved_args.append(resolved);
+                try resolved_args.append(allocator, resolved);
             }
             
             return ast.Type{ .Generic = .{
@@ -843,7 +844,7 @@ fn generateComplexConstraints(engine: *TypeInferenceEngine, func_type: ast.Type,
                 if (i < arg_types.len) {
                     const var_constraint = try generateVarianceConstraint(engine, param.parameter_type, arg_types[i]);
                     if (var_constraint) |vc| {
-                        try constraints.variance_constraints.append(vc);
+                        try constraints.variance_constraints.append(allocator, vc);
                     }
                 }
             }
@@ -873,15 +874,15 @@ fn analyzeNestedGenericDepth(generic: ast.GenericType, current_depth: u32) !u32 
 
 /// Extract nested generic types for constraint analysis
 fn extractNestedGenericTypes(allocator: Allocator, generic: ast.GenericType) ![]ast.Type {
-    var types = std.ArrayList(ast.Type).init(self.allocator);
+    var types = std.ArrayList(ast.Type){};
     
     for (generic.type_args.items) |arg| {
-        try types.append(arg);
+        try types.append(allocator, arg);
         switch (arg) {
             .Generic => |nested| {
                 const nested_types = try extractNestedGenericTypes(allocator, nested);
                 for (nested_types) |nested_type| {
-                    try types.append(nested_type);
+                    try types.append(allocator, nested_type);
                 }
             },
             else => {},
@@ -1024,12 +1025,12 @@ fn isVarianceConstraintSatisfied(engine: *TypeInferenceEngine, resolved_type: as
 /// Resolve nested generic constraints
 fn resolveNestedGenericConstraints(engine: *TypeInferenceEngine, nested_constraint: ComplexConstraints.NestedGenericConstraint) !?ast.Type {
     // Create fresh type variables for deeply nested generics
-    var resolved_args = std.ArrayList(ast.Type).init(self.allocator);
+    var resolved_args = std.ArrayList(ast.Type){};
     defer resolved_args.deinit();
     
     for (nested_constraint.inner_types) |inner_type| {
         const resolved_inner = try resolveTypeWithFreshVars(engine, inner_type);
-        try resolved_args.append(resolved_inner);
+        try resolved_args.append(allocator, resolved_inner);
     }
     
     switch (nested_constraint.outer_type) {
@@ -1068,12 +1069,12 @@ fn resolveBoundConstraint(engine: *TypeInferenceEngine, type_var_id: u32, bound:
 fn resolveTypeWithFreshVars(engine: *TypeInferenceEngine, type_to_resolve: ast.Type) !ast.Type {
     switch (type_to_resolve) {
         .Generic => |generic| {
-            var fresh_args = std.ArrayList(ast.Type).init(self.allocator);
+            var fresh_args = std.ArrayList(ast.Type){};
             defer fresh_args.deinit();
             
             for (generic.type_args.items) |arg| {
                 const fresh_arg = try resolveTypeWithFreshVars(engine, arg);
-                try fresh_args.append(fresh_arg);
+                try fresh_args.append(allocator, fresh_arg);
             }
             
             return ast.Type{ .Generic = .{
@@ -1115,12 +1116,12 @@ fn resolveFallbackWithConstraints(engine: *TypeInferenceEngine, func_type: ast.T
 fn instantiateGenericType(engine: *TypeInferenceEngine, generic: ast.GenericType, concrete_type: ast.Type) !ast.Type {
     // Simple instantiation - replace first type parameter with concrete type
     if (generic.type_args.items.len > 0) {
-        var instantiated_args = std.ArrayList(ast.Type).init(self.allocator);
+        var instantiated_args = std.ArrayList(ast.Type){};
         defer instantiated_args.deinit();
         
-        try instantiated_args.append(concrete_type);
+        try instantiated_args.append(allocator, concrete_type);
         for (generic.type_args.items[1..]) |arg| {
-            try instantiated_args.append(arg);
+            try instantiated_args.append(allocator, arg);
         }
         
         return ast.Type{ .Generic = .{
@@ -1197,8 +1198,8 @@ fn resolveGenericWithVariance(engine: *TypeInferenceEngine, generic: ast.Generic
     const var_id = engine.next_var_id;
     engine.next_var_id += 1;
     
-    var constraints = std.ArrayList(ast.Type).init(self.allocator);
-    try constraints.append(arg_type);
+    var constraints = std.ArrayList(ast.Type){};
+    try constraints.append(allocator, arg_type);
     
     const type_var = TypeVariable{
         .id = var_id,
@@ -1216,7 +1217,7 @@ fn resolveGenericWithVariance(engine: *TypeInferenceEngine, generic: ast.Generic
 /// Unify generic type with constraints
 fn unifyGenericWithConstraints(engine: *TypeInferenceEngine, generic: ast.GenericType, concrete_type: ast.Type) !ast.Type {
     // Create substitution map for generic parameters
-    var substitution_map = std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(engine.allocator);
+    var substitution_map = std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer substitution_map.deinit();
     
     // If we have type arguments, try to match them with concrete types
@@ -1233,12 +1234,12 @@ fn unifyGenericWithConstraints(engine: *TypeInferenceEngine, generic: ast.Generi
 fn applySubstitutions(engine: *TypeInferenceEngine, original_type: ast.Type, substitutions: std.HashMap([]const u8, ast.Type, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !ast.Type {
     switch (original_type) {
         .Generic => |generic| {
-            var substituted_args = std.ArrayList(ast.Type).init(self.allocator);
+            var substituted_args = std.ArrayList(ast.Type){};
             defer substituted_args.deinit();
             
             for (generic.type_args.items) |arg| {
                 const substituted_arg = try applySubstitutions(engine, arg, substitutions);
-                try substituted_args.append(substituted_arg);
+                try substituted_args.append(allocator, substituted_arg);
             }
             
             return ast.Type{ .Generic = .{

@@ -91,27 +91,27 @@ fn loadProfileData(allocator: Allocator, profile_path: []const u8) !ProfileData 
 /// Write optimized LLVM IR to file
 pub fn writeOptimizedLLVMIR(advanced_codegen: *AdvancedCodeGen, writer: anytype, filename: []const u8) !void {
     // Basic LLVM IR header
-    try writer.writeAll("; CURSED Compiler - Advanced Optimized LLVM IR\n");
-    try writer.writeAll("; Source: ");
-    try writer.writeAll(filename);
-    try writer.writeAll("\n");
-    try writer.writeAll("; Optimization Level: O");
-    try writer.print("{}\n", .{advanced_codegen.optimization_config.optimization_level});
+    try writer.writer().writeAll("; CURSED Compiler - Advanced Optimized LLVM IR\n");
+    try writer.writer().writeAll("; Source: ");
+    try writer.writer().writeAll(filename);
+    try writer.writer().writeAll("\n");
+    try writer.writer().writeAll("; Optimization Level: O");
+    try writer.print("{s}\n", .{advanced_codegen.optimization_config.optimization_level});
     
     if (advanced_codegen.optimization_config.lto_enabled) {
-        try writer.writeAll("; Link-Time Optimization: Enabled\n");
+        try writer.writer().writeAll("; Link-Time Optimization: Enabled\n");
     }
     if (advanced_codegen.optimization_config.pgo_enabled) {
-        try writer.writeAll("; Profile-Guided Optimization: Enabled\n");
+        try writer.writer().writeAll("; Profile-Guided Optimization: Enabled\n");
     }
     if (advanced_codegen.optimization_config.vectorization_enabled) {
-        try writer.writeAll("; Auto-Vectorization: Enabled\n");
+        try writer.writer().writeAll("; Auto-Vectorization: Enabled\n");
     }
     if (advanced_codegen.optimization_config.size_optimizations) {
-        try writer.writeAll("; Size Optimization: Enabled\n");
+        try writer.writer().writeAll("; Size Optimization: Enabled\n");
     }
     
-    try writer.writeAll("\n");
+    try writer.writer().writeAll("\n");
     
     // Module-level attributes (note: should be made configurable)
     const target_mapping = @import("target_mapping.zig");
@@ -129,38 +129,38 @@ pub fn writeOptimizedLLVMIR(advanced_codegen: *AdvancedCodeGen, writer: anytype,
     try writer.print("target triple = \"{s}\"\n\n", .{target_triple});
     
     // Generate main function with optimization attributes
-    try writer.writeAll("define dso_local i32 @main() ");
+    try writer.writer().writeAll("define dso_local i32 @main() ");
     
     // Add function attributes based on optimization settings
     if (advanced_codegen.optimization_config.optimization_level >= 2) {
-        try writer.writeAll("local_unnamed_addr ");
+        try writer.writer().writeAll("local_unnamed_addr ");
     }
     if (advanced_codegen.optimization_config.size_optimizations) {
-        try writer.writeAll("#0 ");
+        try writer.writer().writeAll("#0 ");
     } else {
-        try writer.writeAll("#1 ");
+        try writer.writer().writeAll("#1 ");
     }
     
-    try writer.writeAll("{\n");
-    try writer.writeAll("entry:\n");
+    try writer.writer().writeAll("{\n");
+    try writer.writer().writeAll("entry:\n");
     
     // Generate optimized IR body
     try generateOptimizedMainBody(advanced_codegen, writer);
     
-    try writer.writeAll("  ret i32 0\n");
-    try writer.writeAll("}\n\n");
+    try writer.writer().writeAll("  ret i32 0\n");
+    try writer.writer().writeAll("}\n\n");
     
     // Generate function attributes
     if (advanced_codegen.optimization_config.size_optimizations) {
-        try writer.writeAll("attributes #0 = { optsize noinline nounwind optnone ");
+        try writer.writer().writeAll("attributes #0 = { optsize noinline nounwind optnone ");
     } else {
-        try writer.writeAll("attributes #1 = { noinline nounwind optnone ");
+        try writer.writer().writeAll("attributes #1 = { noinline nounwind optnone ");
     }
     
     if (advanced_codegen.debug_enabled) {
-        try writer.writeAll("uwtable \"frame-pointer\"=\"all\" \"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" \"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" \"target-features\"=\"+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n");
+        try writer.writer().writeAll("uwtable \"frame-pointer\"=\"all\" \"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" \"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" \"target-features\"=\"+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n");
     } else {
-        try writer.writeAll("\"frame-pointer\"=\"all\" \"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" \"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" \"target-features\"=\"+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n");
+        try writer.writer().writeAll("\"frame-pointer\"=\"all\" \"min-legal-vector-width\"=\"0\" \"no-trapping-math\"=\"true\" \"stack-protector-buffer-size\"=\"8\" \"target-cpu\"=\"x86-64\" \"target-features\"=\"+cx8,+fxsr,+mmx,+sse,+sse2,+x87\" \"tune-cpu\"=\"generic\" }\n");
     }
     
     // Generate debug information if enabled
@@ -177,39 +177,39 @@ fn generateOptimizedMainBody(advanced_codegen: *AdvancedCodeGen, writer: anytype
     _ = advanced_codegen;
     
     // Basic "Hello, CURSED!" output for now
-    try writer.writeAll("  %1 = call i32 @puts(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @.str, i64 0, i64 0))\n");
+    try writer.writer().writeAll("  %1 = call i32 @puts(i8* getelementptr inbounds ([15 x i8], [15 x i8]* @.str, i64 0, i64 0))\n");
 }
 
 /// Generate debug information
 fn generateDebugInfo(advanced_codegen: *AdvancedCodeGen, writer: anytype, filename: []const u8) !void {
     _ = advanced_codegen;
     
-    try writer.writeAll("\n; Debug Information\n");
-    try writer.writeAll("!llvm.dbg.cu = !{!0}\n");
-    try writer.writeAll("!llvm.module.flags = !{!2, !3, !4, !5, !6}\n");
-    try writer.writeAll("!llvm.ident = !{!7}\n\n");
+    try writer.writer().writeAll("\n; Debug Information\n");
+    try writer.writer().writeAll("!llvm.dbg.cu = !{!0}\n");
+    try writer.writer().writeAll("!llvm.module.flags = !{!2, !3, !4, !5, !6}\n");
+    try writer.writer().writeAll("!llvm.ident = !{!7}\n\n");
     
-    try writer.writeAll("!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: \"CURSED Compiler\", isOptimized: true, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)\n");
-    try writer.writeAll("!1 = !DIFile(filename: \"");
-    try writer.writeAll(std.fs.path.basename(filename));
-    try writer.writeAll("\", directory: \"");
+    try writer.writer().writeAll("!0 = distinct !DICompileUnit(language: DW_LANG_C99, file: !1, producer: \"CURSED Compiler\", isOptimized: true, runtimeVersion: 0, emissionKind: FullDebug, splitDebugInlining: false, nameTableKind: None)\n");
+    try writer.writer().writeAll("!1 = !DIFile(filename: \"");
+    try writer.writer().writeAll(std.fs.path.basename(filename));
+    try writer.writer().writeAll("\", directory: \"");
     const dirname = std.fs.path.dirname(filename) orelse ".";
-    try writer.writeAll(dirname);
-    try writer.writeAll("\")\n");
-    try writer.writeAll("!2 = !{i32 7, !\"Dwarf Version\", i32 5}\n");
-    try writer.writeAll("!3 = !{i32 2, !\"Debug Info Version\", i32 3}\n");
-    try writer.writeAll("!4 = !{i32 1, !\"wchar_size\", i32 4}\n");
-    try writer.writeAll("!5 = !{i32 8, !\"PIC Level\", i32 2}\n");
-    try writer.writeAll("!6 = !{i32 7, !\"PIE Level\", i32 2}\n");
-    try writer.writeAll("!7 = !{!\"CURSED Compiler with Advanced Optimizations\"}\n");
+    try writer.writer().writeAll(dirname);
+    try writer.writer().writeAll("\")\n");
+    try writer.writer().writeAll("!2 = !{i32 7, !\"Dwarf Version\", i32 5}\n");
+    try writer.writer().writeAll("!3 = !{i32 2, !\"Debug Info Version\", i32 3}\n");
+    try writer.writer().writeAll("!4 = !{i32 1, !\"wchar_size\", i32 4}\n");
+    try writer.writer().writeAll("!5 = !{i32 8, !\"PIC Level\", i32 2}\n");
+    try writer.writer().writeAll("!6 = !{i32 7, !\"PIE Level\", i32 2}\n");
+    try writer.writer().writeAll("!7 = !{!\"CURSED Compiler with Advanced Optimizations\"}\n");
 }
 
 /// Generate runtime function declarations
 fn generateRuntimeDeclarations(writer: anytype) !void {
-    try writer.writeAll("\n; Runtime function declarations\n");
-    try writer.writeAll("@.str = private unnamed_addr constant [15 x i8] c\"Hello, CURSED!\\00\", align 1\n");
-    try writer.writeAll("declare dso_local i32 @puts(i8* nocapture readonly) local_unnamed_addr #2\n");
-    try writer.writeAll("attributes #2 = { nofree nounwind }\n");
+    try writer.writer().writeAll("\n; Runtime function declarations\n");
+    try writer.writer().writeAll("@.str = private unnamed_addr constant [15 x i8] c\"Hello, CURSED!\\00\", align 1\n");
+    try writer.writer().writeAll("declare dso_local i32 @puts(i8* nocapture readonly) local_unnamed_addr #2\n");
+    try writer.writer().writeAll("attributes #2 = { nofree nounwind }\n");
 }
 
 /// Compile with advanced optimizations and generate native executable
@@ -217,13 +217,13 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     print("[5/6] Compiling optimized IR to native executable...\n", .{});
     
     // Build clang command with optimization flags
-    var clang_args = std.ArrayList([]const u8).init(self.allocator);
+    var clang_args = std.ArrayList([]const u8){};
     defer clang_args.deinit();
     
-    try clang_args.append("clang");
-    try clang_args.append(ir_filename);
-    try clang_args.append("-o");
-    try clang_args.append(output_filename);
+    try clang_args.append(allocator, "clang");
+    try clang_args.append(allocator, ir_filename);
+    try clang_args.append(allocator, "-o");
+    try clang_args.append(allocator, output_filename);
     
     // Add optimization flags
     const opt_flag = switch (config.optimization_level) {
@@ -233,16 +233,16 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
         3 => "-O3",
         else => "-O2",
     };
-    try clang_args.append(opt_flag);
+    try clang_args.append(allocator, opt_flag);
     
     // Add size optimization if requested
     if (config.size_optimization) {
-        try clang_args.append("-Os");
+        try clang_args.append(allocator, "-Os");
     }
     
     // Add LTO if enabled
     if (config.lto_enabled) {
-        try clang_args.append("-flto");
+        try clang_args.append(allocator, "-flto");
         if (config.verbose) print("✅ Link-Time Optimization enabled in linking\n", .{});
     }
     
@@ -250,62 +250,62 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     if (config.pgo_enabled and config.pgo_profile_path != null) {
         const pgo_flag = try std.fmt.allocPrint(allocator, "-fprofile-use={s}", .{config.pgo_profile_path.?});
         defer allocator.free(pgo_flag);
-        try clang_args.append(pgo_flag);
+        try clang_args.append(allocator, pgo_flag);
         if (config.verbose) print("✅ Profile-Guided Optimization enabled in linking\n", .{});
     }
     
     // Add vectorization flags
     if (config.vectorization_enabled) {
-        try clang_args.append("-ftree-vectorize");
-        try clang_args.append("-fslp-vectorize");
+        try clang_args.append(allocator, "-ftree-vectorize");
+        try clang_args.append(allocator, "-fslp-vectorize");
     } else {
-        try clang_args.append("-fno-vectorize");
-        try clang_args.append("-fno-slp-vectorize");
+        try clang_args.append(allocator, "-fno-vectorize");
+        try clang_args.append(allocator, "-fno-slp-vectorize");
     }
     
     // Add target-specific flags
     if (config.target_cpu) |cpu| {
         const cpu_flag = try std.fmt.allocPrint(allocator, "-mcpu={s}", .{cpu});
         defer allocator.free(cpu_flag);
-        try clang_args.append(cpu_flag);
+        try clang_args.append(allocator, cpu_flag);
     }
     
     if (config.target_features) |features| {
         const features_flag = try std.fmt.allocPrint(allocator, "-mattr={s}", .{features});
         defer allocator.free(features_flag);
-        try clang_args.append(features_flag);
+        try clang_args.append(allocator, features_flag);
     }
     
     // Add static linking if requested
     if (config.static_link) {
-        try clang_args.append("-static");
+        try clang_args.append(allocator, "-static");
     }
     
     // Add debug information if requested
     if (config.debug_info) {
-        try clang_args.append("-g");
-        try clang_args.append("-gdwarf-4");
+        try clang_args.append(allocator, "-g");
+        try clang_args.append(allocator, "-gdwarf-4");
     }
     
     // Add target specification if provided
     if (config.target) |target| {
         const target_flag = try std.fmt.allocPrint(allocator, "--target={s}", .{target});
         defer allocator.free(target_flag);
-        try clang_args.append(target_flag);
+        try clang_args.append(allocator, target_flag);
     }
     
     // Add additional optimization flags for performance
     if (config.optimization_level >= 2) {
-        try clang_args.append("-ffast-math");
-        try clang_args.append("-funroll-loops");
-        try clang_args.append("-fomit-frame-pointer");
+        try clang_args.append(allocator, "-ffast-math");
+        try clang_args.append(allocator, "-funroll-loops");
+        try clang_args.append(allocator, "-fomit-frame-pointer");
     }
     
     if (config.optimization_level >= 3) {
-        try clang_args.append("-finline-functions");
-        try clang_args.append("-funswitch-loops");
-        try clang_args.append("-fpredictive-commoning");
-        try clang_args.append("-fgcse-after-reload");
+        try clang_args.append(allocator, "-finline-functions");
+        try clang_args.append(allocator, "-funswitch-loops");
+        try clang_args.append(allocator, "-fpredictive-commoning");
+        try clang_args.append(allocator, "-fgcse-after-reload");
     }
     
     // Execute clang compilation
@@ -313,7 +313,7 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
         .allocator = allocator,
         .argv = clang_args.items,
     }) catch |err| {
-        print("❌ Error executing clang: {}\n", .{err});
+        print("❌ Error executing clang: {s}\n", .{err});
         return;
     };
     defer allocator.free(result.stdout);
@@ -328,7 +328,7 @@ pub fn compileOptimizedLLVMToNative(allocator: Allocator, ir_filename: []const u
     
     if (config.verbose) {
         print("✅ Advanced optimizations applied:\n", .{});
-        print("   - Optimization Level: O{}\n", .{config.optimization_level});
+        print("   - Optimization Level: O{s}\n", .{config.optimization_level});
         if (config.lto_enabled) print("   - Link-Time Optimization: Enabled\n", .{});
         if (config.pgo_enabled) print("   - Profile-Guided Optimization: Enabled\n", .{});
         if (config.vectorization_enabled) print("   - Auto-Vectorization: Enabled\n", .{});
@@ -354,7 +354,7 @@ pub fn generatePerformanceBenchmark(allocator: Allocator, output_filename: []con
         .allocator = allocator,
         .argv = &[_][]const u8{ try std.fmt.allocPrint(allocator, "./{s}", .{output_filename}) },
     }) catch |err| {
-        print("❌ Error running benchmark: {}\n", .{err});
+        print("❌ Error running benchmark: {s}\n", .{err});
         return;
     };
     defer {
@@ -373,11 +373,11 @@ pub fn generatePerformanceBenchmark(allocator: Allocator, output_filename: []con
     defer file.close();
     
     const file_size = file.getEndPos() catch return;
-    print("📏 Binary size: {} bytes\n", .{file_size});
+    print("📏 Binary size: {s} bytes\n", .{file_size});
     
     if (result.term.Exited == 0) {
         print("✅ Benchmark complete - executable runs successfully\n", .{});
     } else {
-        print("❌ Benchmark failed - executable returned code {}\n", .{result.term.Exited});
+        print("❌ Benchmark failed - executable returned code {s}\n", .{result.term.Exited});
     }
 }

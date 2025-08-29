@@ -68,23 +68,23 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     // Parse
     var parser = parser_simple.Parser.init(allocator, tokens.items);
 
     const program = parser.parseProgram() catch |err| {
-        print("❌ Parser error: {}\n", .{err});
+        print("❌ Parser error: {s}\n", .{err});
         return;
     };
     defer {
@@ -92,7 +92,7 @@ pub fn main() !void {
         mut_program.deinit();
     }
 
-    if (verbose) print("✅ Parsed {} statements\n", .{program.statements.items.len});
+    if (verbose) print("✅ Parsed {s} statements\n", .{program.statements.items.len});
 
     if (compile_mode) {
         try compileToLLVM(allocator, program, output_name.?, verbose, debug_mode);
@@ -111,7 +111,7 @@ fn compileToLLVM(allocator: Allocator, program: ast.Program, output_name: []cons
 
     // Generate LLVM IR
     cg.generateProgramAdvanced(program) catch |err| {
-        print("❌ LLVM IR generation failed: {}\n", .{err});
+        print("❌ LLVM IR generation failed: {s}\n", .{err});
         return;
     };
 
@@ -157,7 +157,7 @@ fn compileToLLVM(allocator: Allocator, program: ast.Program, output_name: []cons
 
     if (verbose) {
         print("✅ Program executed successfully\n", .{});
-        print("📊 Exit code: {}\n", .{exit_code});
+        print("📊 Exit code: {s}\n", .{exit_code});
     }
 
     // For compilation to file, we would need to use:

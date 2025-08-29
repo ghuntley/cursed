@@ -46,7 +46,7 @@ pub const IntegrationTestRunner = struct {
     pub fn init() IntegrationTestRunner {
         return IntegrationTestRunner{
             .allocator = allocator,
-            .results = std.ArrayList(IntegrationTestResult).init(allocator),
+            .results = std.ArrayList(IntegrationTestResult){},
         };
     }
 
@@ -56,11 +56,11 @@ pub const IntegrationTestRunner = struct {
                 self.allocator.free(output);
             }
         }
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
 
     pub fn runTestCase(self: *IntegrationTestRunner, test_case: IntegrationTestCase) !void {
-        std.debug.print("🔄 Running integration test: {s}\n", .{test_case.name});
+        std.debug.writer().print("🔄 Running integration test: {s}\n", .{test_case.name});
 
         const start_time = std.time.milliTimestamp();
         var pipeline_result = PipelineResult{};
@@ -99,7 +99,7 @@ pub const IntegrationTestRunner = struct {
         pipeline_result.execution_time_ms = @as(u64, @intCast(end_time - start_time));
 
         const status = if (passed) "✅ PASS" else "❌ FAIL";
-        std.debug.print("  Result: {s}\n", .{status});
+        std.debug.writer().print("  Result: {s}\n", .{status});
 
         try self.results.append(IntegrationTestResult{
             .test_name = test_case.name,
@@ -174,8 +174,8 @@ pub const IntegrationTestRunner = struct {
     }
 
     pub fn printSummary(self: *IntegrationTestRunner) void {
-        std.debug.print("\n📊 Integration Test Summary:\n", .{});
-        std.debug.print("=" ** 50 ++ "\n");
+        std.debug.writer().print("\n📊 Integration Test Summary:\n", .{});
+        std.debug.writer().print("=" ** 50 ++ "\n");
 
         var total_tests: u32 = 0;
         var passed_tests: u32 = 0;
@@ -187,13 +187,13 @@ pub const IntegrationTestRunner = struct {
             total_time += result.pipeline_result.execution_time_ms;
         }
 
-        std.debug.print("Total Tests: {}\n", .{total_tests});
-        std.debug.print("Passed: {}\n", .{passed_tests});
-        std.debug.print("Failed: {}\n", .{total_tests - passed_tests});
-        std.debug.print("Success Rate: {d:.1}%\n", .{
+        std.debug.writer().print("Total Tests: {s}\n", .{{total_tests});
+        std.debug.writer().print("Passed: {s}\n", .{{passed_tests});
+        std.debug.writer().print("Failed: {s}\n", .{{total_tests - passed_tests});
+        std.debug.writer().print("Success Rate: {d:.1}%\n", .{
             if (total_tests > 0) (@as(f64, @floatFromInt(passed_tests)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0
         });
-        std.debug.print("Total Time: {}ms\n", .{total_time});
+        std.debug.writer().print("Total Time: {s}ms\n", .{{total_time});
 
         // Print pipeline stage statistics
         var lexer_success: u32 = 0;
@@ -208,14 +208,14 @@ pub const IntegrationTestRunner = struct {
             if (result.pipeline_result.execution_success) execution_success += 1;
         }
 
-        std.debug.print("\n🔧 Pipeline Stage Success Rates:\n", .{});
-        std.debug.print("  Lexer: {}/{} ({d:.1}%)\n", .{ lexer_success, total_tests, 
+        std.debug.writer().print("\n🔧 Pipeline Stage Success Rates:\n", .{});
+        std.debug.writer().print("  Lexer: {s}/{s} ({d:.1}%)\n", .{{ lexer_success, total_tests, 
             if (total_tests > 0) (@as(f64, @floatFromInt(lexer_success)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0 });
-        std.debug.print("  Parser: {}/{} ({d:.1}%)\n", .{ parser_success, total_tests,
+        std.debug.writer().print("  Parser: {s}/{s} ({d:.1}%)\n", .{{ parser_success, total_tests,
             if (total_tests > 0) (@as(f64, @floatFromInt(parser_success)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0 });
-        std.debug.print("  Codegen: {}/{} ({d:.1}%)\n", .{ codegen_success, total_tests,
+        std.debug.writer().print("  Codegen: {s}/{s} ({d:.1}%)\n", .{{ codegen_success, total_tests,
             if (total_tests > 0) (@as(f64, @floatFromInt(codegen_success)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0 });
-        std.debug.print("  Execution: {}/{} ({d:.1}%)\n", .{ execution_success, total_tests,
+        std.debug.writer().print("  Execution: {s}/{s} ({d:.1}%)\n", .{{ execution_success, total_tests,
             if (total_tests > 0) (@as(f64, @floatFromInt(execution_success)) / @as(f64, @floatFromInt(total_tests))) * 100.0 else 0.0 });
 
         // Print failed tests
@@ -223,14 +223,14 @@ pub const IntegrationTestRunner = struct {
         for (self.results.items) |result| {
             if (!result.passed) {
                 if (!has_failures) {
-                    std.debug.print("\n❌ Failed Tests:\n", .{});
+                    std.debug.writer().print("\n❌ Failed Tests:\n", .{});
                     has_failures = true;
                 }
-                std.debug.print("  • {s}", .{result.test_name});
+                std.debug.writer().print("  • {s}", .{result.test_name});
                 if (result.error_details) |details| {
-                    std.debug.print(" - {s}", .{details});
+                    std.debug.writer().print(" - {s}", .{details});
                 }
-                std.debug.print("\n", .{});
+                std.debug.writer().print("\n", .{});
             }
         }
     }
@@ -367,8 +367,9 @@ const integration_test_cases = [_]IntegrationTestCase{
 
 // Main integration test runner
 pub fn runAllIntegrationTests(allocator: Allocator) !void {
-    std.debug.print("🚀 Starting CURSED Integration Test Suite\n", .{});
-    std.debug.print("=" ** 60 ++ "\n");
+        _ = allocator;
+    std.debug.writer().print("🚀 Starting CURSED Integration Test Suite\n", .{});
+    std.debug.writer().print("=" ** 60 ++ "\n");
 
     var runner = IntegrationTestRunner.init(allocator);
     defer runner.deinit();
@@ -382,8 +383,9 @@ pub fn runAllIntegrationTests(allocator: Allocator) !void {
 
 // Cross-platform testing
 pub fn runCrossPlatformTests(allocator: Allocator) !void {
-    std.debug.print("🌍 Running Cross-Platform Integration Tests\n", .{});
-    std.debug.print("=" ** 50 ++ "\n");
+        _ = allocator;
+    std.debug.writer().print("🌍 Running Cross-Platform Integration Tests\n", .{});
+    std.debug.writer().print("=" ** 50 ++ "\n");
 
     // Test platform-specific functionality
     const platform_test = IntegrationTestCase{
@@ -408,8 +410,9 @@ pub fn runCrossPlatformTests(allocator: Allocator) !void {
 
 // Stress testing for compiler robustness
 pub fn runStressTests(allocator: Allocator) !void {
-    std.debug.print("💪 Running Compiler Stress Tests\n", .{});
-    std.debug.print("=" ** 40 ++ "\n");
+        _ = allocator;
+    std.debug.writer().print("💪 Running Compiler Stress Tests\n", .{});
+    std.debug.writer().print("=" ** 40 ++ "\n");
 
     // Large program test
     const large_program_test = IntegrationTestCase{

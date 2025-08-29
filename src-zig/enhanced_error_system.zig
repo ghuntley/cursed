@@ -56,7 +56,7 @@ pub const StackFrame = struct {
             .column_number = column,
             .scope_id = 0,
             .frame_address = null,
-            .locals = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .locals = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
         };
     }
@@ -70,7 +70,7 @@ pub const StackFrame = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.locals.deinit();
+        self.locals.deinit(self.allocator);
     }
 
     pub fn addLocal(self: *StackFrame, name: []const u8, value: []const u8) !void {
@@ -80,7 +80,7 @@ pub const StackFrame = struct {
     }
 
     pub fn format(self: StackFrame, writer: anytype) !void {
-        try writer.print("  at {s}() in {s}:{}:{}\n", .{ self.function_name, self.file_path, self.line_number, self.column_number });
+        try writer.print("  at {s}() in {s}:{s}:{s}\n", .{ self.function_name, self.file_path, self.line_number, self.column_number });
         
         if (self.locals.count() > 0) {
             try writer.print("    locals: ", .{});
@@ -116,14 +116,15 @@ pub const StackTrace = struct {
         for (self.frames.items) |*frame| {
             frame.deinit();
         }
-        self.frames.deinit();
+        self.frames.deinit(self.allocator);
     }
 
     pub fn addFrame(self: *StackTrace, frame: StackFrame) !void {
-        try self.frames.append(frame);
+        try self.frames.append(allocator, frame);
     }
 
     pub fn capture(allocator: Allocator) !StackTrace {
+        _ = allocator;
         var trace = StackTrace.init(allocator);
         
         // Capture current stack using platform-specific methods
@@ -186,7 +187,7 @@ pub const StackTrace = struct {
     }
 
     pub fn format(self: StackTrace, writer: anytype) !void {
-        try writer.print("Stack trace ({} frames):\n", .{self.frames.items.len});
+        try writer.print("Stack trace ({s} frames):\n", .{self.frames.items.len});
         for (self.frames.items) |frame| {
             try frame.format(writer);
         }
@@ -245,7 +246,7 @@ pub const YikesError = struct {
             .error_code = code,
             .source_location = null,
             .stack_trace = null,
-            .context_data = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .context_data = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .inner_error = null,
             .error_type = error_type,
             .severity = severity,
@@ -302,7 +303,7 @@ pub const YikesError = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.context_data.deinit();
+        self.context_data.deinit(self.allocator);
         
         if (self.inner_error) |inner| {
             inner.deinit();
@@ -322,7 +323,7 @@ pub const YikesError = struct {
 
     pub fn format(self: YikesError, writer: anytype) !void {
         // Error header
-        try writer.print("[{s}] yikes: {s} (code: {})\n", .{ 
+        try writer.print("[{s}] yikes: {s} (code: {s})\n", .{ 
             @tagName(self.severity), 
             self.message, 
             self.error_code 
@@ -330,7 +331,7 @@ pub const YikesError = struct {
         
         // Source location
         if (self.source_location) |loc| {
-            try writer.print("  at {s}() in {s}:{}:{}\n", .{ 
+            try writer.print("  at {s}() in {s}:{s}:{s}\n", .{ 
                 loc.function, 
                 loc.file, 
                 loc.line, 
@@ -364,7 +365,7 @@ pub const YikesError = struct {
     }
 
     pub fn toString(self: YikesError) ![]u8 {
-        var buffer = .empty;
+        var buffer = std.ArrayList(u8){};
         defer buffer.deinit();
         
         const writer = buffer.writer();
@@ -433,6 +434,7 @@ pub const ShookResult = union(enum) {
     }
 
     pub fn deinit(self: *ShookResult, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .Ok => |*value| {
                 switch (value.*) {
@@ -468,7 +470,7 @@ pub const DeferStack = struct {
     pub fn deinit(self: *DeferStack) void {
         // Execute all remaining defers before cleanup
         self.executeAll();
-        self.entries.deinit();
+        self.entries.deinit(self.allocator);
     }
 
     pub fn push(self: *DeferStack, cleanup_func: *const fn () void, context: []const u8) !void {
@@ -538,8 +540,8 @@ pub const FamBlock = struct {
     }
 
     pub fn deinit(self: *FamBlock) void {
-        self.defer_stack.deinit();
-        self.error_handlers.deinit();
+        self.defer_stack.deinit(self.allocator);
+        self.error_handlers.deinit(self.allocator);
     }
 
     pub fn addErrorHandler(self: *FamBlock, error_type: YikesError.ErrorType, handler: *const fn (YikesError) ShookResult) !void {
@@ -606,7 +608,7 @@ pub const ErrorContext = struct {
     }
 
     pub fn deinit(self: *ErrorContext) void {
-        self.defer_stack.deinit();
+        self.defer_stack.deinit(self.allocator);
     }
 
     pub fn setLocation(self: *ErrorContext, function: []const u8, file: []const u8, line: u32, column: u32) void {

@@ -28,7 +28,7 @@ pub const CursedSignalContext = extern struct {
 };
 
 // C-compatible callback function type
-pub const CursedSignalCallback = ?*const fn (signal: c_int, context: ?*CursedSignalContext) callconv(.C) void;
+pub const CursedSignalCallback = ?*const fn (signal: c_int, context: ?*CursedSignalContext) callconv(.c) void;
 
 // Storage for registered callbacks
 var signal_callbacks: [64]?CursedSignalCallback = [_]?CursedSignalCallback{null} ** 64;
@@ -319,7 +319,7 @@ export fn cursed_signal_is_signal_safe() c_int {
 }
 
 // Register cleanup handler
-export fn cursed_signal_register_cleanup(cleanup_fn: ?*const fn () callconv(.C) void) c_int {
+export fn cursed_signal_register_cleanup(cleanup_fn: ?*const fn () callconv(.c) void) c_int {
     if (global_signal_handler == null) {
         return CURSED_SIGNAL_ERROR;
     }
@@ -327,7 +327,7 @@ export fn cursed_signal_register_cleanup(cleanup_fn: ?*const fn () callconv(.C) 
     if (cleanup_fn) |fn_ptr| {
         // Wrap C function for Zig calling convention
         const wrapped_fn = struct {
-            var c_fn: *const fn () callconv(.C) void = undefined;
+            var c_fn: *const fn () callconv(.c) void = undefined;
             
             fn wrapper() void {
                 c_fn();

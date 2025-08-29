@@ -49,6 +49,7 @@ pub const PatternAnalysis = struct {
     };
     
     pub fn deinit(self: *PatternAnalysis, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.complexity_scores);
         allocator.free(self.reachability);
         
@@ -220,11 +221,7 @@ pub const PatternOptimizer = struct {
         return switch (pattern) {
             .Literal => 1,
             .Variable, .Wildcard => 0, // Always match
-            .Tuple => |tuple| blk: {
-                var complexity: usize = 2;
-                for (tuple.patterns) |sub_pattern| {
-                    complexity += try self.calculateComplexity(sub_pattern);
-                }
+            }
                 break :blk complexity;
             },
             .Struct => |struct_pattern| blk: {
@@ -288,16 +285,16 @@ pub const PatternOptimizer = struct {
     
     /// Identify optimization opportunities
     fn identifyOptimizations(self: *PatternOptimizer, patterns: []const ast.Pattern, literal_count: usize, guard_count: usize, complexity_scores: []const usize) ![]PatternAnalysis.OptimizationOpportunity {
-        var opportunities = ArrayList(PatternAnalysis.OptimizationOpportunity).init(self.allocator);
+        var opportunities = ArrayList(PatternAnalysis.OptimizationOpportunity){};
         
         // Jump table optimization
         if (literal_count >= self.jump_table_threshold) {
-            var literal_indices = ArrayList(usize).init(self.allocator);
+            var literal_indices = ArrayList(usize){};
             defer literal_indices.deinit();
             
             for (patterns, 0..) |pattern, i| {
                 if (pattern == .Literal) {
-                    try literal_indices.append(i);
+                    try literal_indices.append(allocator, i);
                 }
             }
             
@@ -326,12 +323,12 @@ pub const PatternOptimizer = struct {
         
         // Guard optimization
         if (guard_count > 0 and self.guard_optimization_enabled) {
-            var guard_indices = ArrayList(usize).init(self.allocator);
+            var guard_indices = ArrayList(usize){};
             defer guard_indices.deinit();
             
             for (patterns, 0..) |pattern, i| {
                 if (pattern == .Guard) {
-                    try guard_indices.append(i);
+                    try guard_indices.append(allocator, i);
                 }
             }
             
@@ -436,12 +433,12 @@ pub const PatternOptimizer = struct {
     
     /// Apply dead code elimination
     fn applyDeadCodeElimination(self: *PatternOptimizer, patterns: []ast.Pattern, reachability: []const bool) ![]ast.Pattern {
-        var reachable_patterns = ArrayList(ast.Pattern).init(self.allocator);
+        var reachable_patterns = ArrayList(ast.Pattern){};
         defer reachable_patterns.deinit();
         
         for (patterns, 0..) |pattern, i| {
             if (reachability[i]) {
-                try reachable_patterns.append(pattern);
+                try reachable_patterns.append(allocator, pattern);
             }
         }
         
@@ -466,7 +463,7 @@ pub const PatternOptimizer = struct {
         _ = self;
         _ = analysis;
         
-        try output.writer().print("    // Optimized jump table for {} literal patterns\n", .{analysis.literal_count});
+        try output.writer().print("    // Optimized jump table for {s} literal patterns\n", .{analysis.literal_count});
         try output.writer().print("    switch ({s}) {{\n", .{match_value});
         
         for (patterns, 0..) |pattern, i| {
@@ -474,17 +471,17 @@ pub const PatternOptimizer = struct {
                 const literal = pattern.Literal;
                 switch (literal.value) {
                     .Integer => |val| {
-                        try output.writer().print("    case {}:\n", .{val});
-                        try output.writer().print("        goto pattern_action_{};\n", .{i});
+                        try output.writer().print("    case {s}:\n", .{val});
+                        try output.writer().print("        goto pattern_action_{s};\n", .{i});
                     },
                     .Boolean => |val| {
                         const bool_val = if (val) 1 else 0;
-                        try output.writer().print("    case {}:\n", .{bool_val});
-                        try output.writer().print("        goto pattern_action_{};\n", .{i});
+                        try output.writer().print("    case {s}:\n", .{bool_val});
+                        try output.writer().print("        goto pattern_action_{s};\n", .{i});
                     },
                     else => {
                         // Non-integer literals require different handling
-                        try output.writer().print("    // Non-integer literal pattern {}\n", .{i});
+                        try output.writer().print("    // Non-integer literal pattern {s}\n", .{i});
                     },
                 }
             }
@@ -503,29 +500,29 @@ pub const PatternOptimizer = struct {
         try output.writer().print("    // Guard-optimized pattern matching\n", .{});
         
         // Group patterns by guard complexity
-        var simple_patterns = ArrayList(usize).init(self.allocator);
+        var simple_patterns = ArrayList(usize){};
         defer simple_patterns.deinit();
         
-        var guard_patterns = ArrayList(usize).init(self.allocator);
+        var guard_patterns = ArrayList(usize){};
         defer guard_patterns.deinit();
         
         for (patterns, 0..) |pattern, i| {
             switch (pattern) {
-                .Guard => try guard_patterns.append(i),
-                else => try simple_patterns.append(i),
+                .Guard => try guard_patterns.append(allocator, i),
+                else => try simple_patterns.append(allocator, i),
             }
         }
         
         // Test simple patterns first
         for (simple_patterns.items) |i| {
-            try output.writer().print("    // Simple pattern {}\n", .{i});
-            try output.writer().print("    if (test_pattern_{}({})) goto pattern_action_{};\n", .{ i, match_value, i });
+            try output.writer().print("    // Simple pattern {s}\n", .{i});
+            try output.writer().print("    if (test_pattern_{s}({s})) goto pattern_action_{s};\n", .{ i, match_value, i });
         }
         
         // Then test guard patterns with optimizations
         for (guard_patterns.items) |i| {
-            try output.writer().print("    // Optimized guard pattern {}\n", .{i});
-            try output.writer().print("    if (test_pattern_{}({}) && evaluate_guard_{}()) goto pattern_action_{};\n", .{ i, match_value, i, i });
+            try output.writer().print("    // Optimized guard pattern {s}\n", .{i});
+            try output.writer().print("    if (test_pattern_{s}({s}) && evaluate_guard_{s}()) goto pattern_action_{s};\n", .{ i, match_value, i, i });
         }
     }
     

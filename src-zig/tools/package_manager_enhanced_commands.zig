@@ -17,6 +17,7 @@ pub const EnhancedPackageManager = struct {
     package_registry: registry.PackageRegistry,
     
     pub fn init(allocator: Allocator) !EnhancedPackageManager {
+        _ = allocator;
         const registry_client = try api.RegistryApiClient.init(allocator, "https://packages.cursed.dev");
         const package_registry = try registry.PackageRegistry.init(allocator, "https://packages.cursed.dev");
         
@@ -28,8 +29,8 @@ pub const EnhancedPackageManager = struct {
     }
     
     pub fn deinit(self: *EnhancedPackageManager) void {
-        self.registry_client.deinit();
-        self.package_registry.deinit();
+        self.registry_client.deinit(self.allocator);
+        self.package_registry.deinit(self.allocator);
     }
     
     // ===== Enhanced Search Command =====
@@ -56,7 +57,7 @@ pub const EnhancedPackageManager = struct {
         // Apply filters from options
         if (options.category) |cat| {
             if (registry.PackageMetadata.Category.fromString(cat)) |category| {
-                try search_query.categories.append(category);
+                try search_query.categories.append(allocator, category);
                 print("   📂 Filtering by category: {s}\n", .{cat});
             }
         }
@@ -105,7 +106,7 @@ pub const EnhancedPackageManager = struct {
             return;
         }
         
-        print("\n✅ Found {} packages in {}ms\n\n", .{result.total_count, query_time_ms});
+        print("\n✅ Found {s} packages in {s}ms\n\n", .{{result.total_count, query_time_ms});
         
         for (result.packages.items, 0..) |pkg, i| {
             const security_badge = switch (pkg.security_status.status) {
@@ -120,7 +121,7 @@ pub const EnhancedPackageManager = struct {
                                 else if (pkg.quality_score.overall >= 70) "⭐"
                                 else "";
             
-            print("{}. {s}{s} {s}@{s} {s}\n", .{i + 1, security_badge, quality_badge, pkg.name, pkg.version, ""});
+            print("{s}. {s}{s} {s}@{s} {s}\n", .{{i + 1, security_badge, quality_badge, pkg.name, pkg.version, ""});
             print("   {s}\n", .{pkg.description});
             print("   📊 Quality: {d:.1f}/100  📥 Downloads: {}  👥 Authors: {}\n", 
                   .{pkg.quality_score.overall, pkg.downloads.total, pkg.authors.items.len});
@@ -158,13 +159,13 @@ pub const EnhancedPackageManager = struct {
         
         // Infer categories from search query
         if (std.mem.indexOf(u8, query, "web") != null or std.mem.indexOf(u8, query, "http") != null) {
-            try context.user_categories.append(.web);
+            try context.user_categories.append(allocator, .web);
         }
         if (std.mem.indexOf(u8, query, "crypto") != null) {
-            try context.user_categories.append(.crypto);
+            try context.user_categories.append(allocator, .crypto);
         }
         if (std.mem.indexOf(u8, query, "json") != null) {
-            try context.user_categories.append(.utilities);
+            try context.user_categories.append(allocator, .utilities);
         }
         
         // Get recommendations
@@ -279,10 +280,10 @@ pub const EnhancedPackageManager = struct {
         
         // Download Statistics
         print("\n📊 Download Statistics:\n", .{});
-        print("   Total downloads: {}\n", .{metadata.downloads.total});
-        print("   Last 30 days: {}\n", .{metadata.downloads.last_30_days});
-        print("   Last 7 days: {}\n", .{metadata.downloads.last_7_days});
-        print("   Last 24 hours: {}\n", .{metadata.downloads.last_24_hours});
+        print("   Total downloads: {s}\n", .{{metadata.downloads.total});
+        print("   Last 30 days: {s}\n", .{{metadata.downloads.last_30_days});
+        print("   Last 7 days: {s}\n", .{{metadata.downloads.last_7_days});
+        print("   Last 24 hours: {s}\n", .{{metadata.downloads.last_24_hours});
         print("   Trend: {s}\n", .{@tagName(metadata.downloads.trend)});
         
         // Quality Score
@@ -339,11 +340,11 @@ pub const EnhancedPackageManager = struct {
                 const verified = if (review.verified_download) " ✅" else "";
                 print("   {s} {s} by {s}{s}\n", .{stars, review.title, review.author, verified});
                 print("   \"{s}\"\n", .{review.content});
-                print("   👍 {} helpful\n\n", .{review.helpful_count});
+                print("   👍 {s} helpful\n\n", .{{review.helpful_count});
             }
             
             if (metadata.reviews.items.len > 3) {
-                print("   ... and {} more reviews\n", .{metadata.reviews.items.len - 3});
+                print("   ... and {s} more reviews\n", .{{metadata.reviews.items.len - 3});
             }
         }
     }
@@ -354,15 +355,15 @@ pub const EnhancedPackageManager = struct {
         var package_analytics = try self.registry_client.getPackageAnalytics(package_name, .last_30_days);
         defer package_analytics.deinit();
         
-        print("   Downloads: {}\n", .{package_analytics.total_downloads});
-        print("   Unique users: {}\n", .{package_analytics.unique_users});
+        print("   Downloads: {s}\n", .{{package_analytics.total_downloads});
+        print("   Unique users: {s}\n", .{{package_analytics.unique_users});
         print("   Growth rate: {d:.1f}%\n", .{package_analytics.growth_rate});
         
         if (package_analytics.geographic_distribution.count() > 0) {
             print("   Geographic distribution:\n", .{});
             var geo_iter = package_analytics.geographic_distribution.iterator();
             while (geo_iter.next()) |entry| {
-                print("     {s}: {}%\n", .{entry.key_ptr.*, entry.value_ptr.*});
+                print("     {s}: {s}%\n", .{{entry.key_ptr.*, entry.value_ptr.*});
             }
         }
         
@@ -370,7 +371,7 @@ pub const EnhancedPackageManager = struct {
             print("   Version distribution:\n", .{});
             var ver_iter = package_analytics.version_distribution.iterator();
             while (ver_iter.next()) |entry| {
-                print("     {s}: {}%\n", .{entry.key_ptr.*, entry.value_ptr.*});
+                print("     {s}: {s}%\n", .{{entry.key_ptr.*, entry.value_ptr.*});
             }
         }
     }
@@ -480,7 +481,7 @@ pub const EnhancedPackageManager = struct {
                                else if (pkg.growth_rate > 10) "📈"
                                else "📊";
             
-            print("{}. {s} {s}\n", .{i + 1, growth_icon, pkg.name});
+            print("{s}. {s} {s}\n", .{{i + 1, growth_icon, pkg.name});
             print("   Category: {s}\n", .{pkg.category.toString()});
             print("   Score: {d:.1f}  Growth: +{d:.1f}%\n", .{pkg.score, pkg.growth_rate});
             print("\n", .{});
@@ -520,8 +521,8 @@ pub const EnhancedPackageManager = struct {
     fn displayAnalyticsCharts(self: *EnhancedPackageManager, analytics_data: api.PackageAnalytics, timeframe: []const u8) !void {
         _ = self;
         
-        print("📥 Downloads: {}\n", .{analytics_data.total_downloads});
-        print("👥 Unique Users: {}\n", .{analytics_data.unique_users});
+        print("📥 Downloads: {s}\n", .{{analytics_data.total_downloads});
+        print("👥 Unique Users: {s}\n", .{{analytics_data.unique_users});
         print("📈 Growth Rate: {d:.1f}%\n\n", .{analytics_data.growth_rate});
         
         // Geographic distribution chart
@@ -531,7 +532,7 @@ pub const EnhancedPackageManager = struct {
             while (geo_iter.next()) |entry| {
                 const percentage = entry.value_ptr.*;
                 const bar = "█" ** @min(percentage / 2, 50); // Simple bar chart
-                print("   {s:>6}: {s} {}%\n", .{entry.key_ptr.*, bar, percentage});
+                print("   {s:>6}: {s} {s}%\n", .{{entry.key_ptr.*, bar, percentage});
             }
             print("\n", .{});
         }
@@ -543,7 +544,7 @@ pub const EnhancedPackageManager = struct {
             while (ver_iter.next()) |entry| {
                 const percentage = entry.value_ptr.*;
                 const bar = "█" ** @min(percentage / 2, 50);
-                print("   {s:>8}: {s} {}%\n", .{entry.key_ptr.*, bar, percentage});
+                print("   {s:>8}: {s} {s}%\n", .{{entry.key_ptr.*, bar, percentage});
             }
             print("\n", .{});
         }
@@ -592,6 +593,7 @@ pub const commands = struct {
     var manager: ?EnhancedPackageManager = null;
     
     pub fn init(allocator: Allocator) !void {
+        _ = allocator;
         manager = try EnhancedPackageManager.init(allocator);
     }
     
@@ -606,7 +608,7 @@ pub const commands = struct {
         
         // Parse options from args
         var search_options = SearchOptions{};
-        var search_args = ArrayList([]const u8).init(allocator);
+        var search_args = ArrayList([]const u8){};
         defer search_args.deinit();
         
         var i: usize = 0;
@@ -629,7 +631,7 @@ pub const commands = struct {
                     search_options.limit = std.fmt.parseInt(u32, args[i], 10) catch 20;
                 }
             } else {
-                try search_args.append(arg);
+                try search_args.append(allocator, arg);
             }
             i += 1;
         }

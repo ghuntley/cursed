@@ -72,13 +72,13 @@ test "CURSED language construct support" {
     defer struct_name.deinit();
     
     // Test function call expressions
-    var args = std.ArrayList(*ast.Expression).init(self.allocator);
+    var args = std.ArrayList(*ast.Expression){};
     defer args.deinit();
     
     const arg1 = try ast.createIntegerExpression(allocator, 10);
     const arg2 = try ast.createIntegerExpression(allocator, 20);
-    try args.append(arg1);
-    try args.append(arg2);
+    try args.append(allocator, arg1);
+    try args.append(allocator, arg2);
     
     const func_name = try ast.createIdentifierExpression(allocator, "test_function");
     const call_expr = try ast.createCallExpression(allocator, func_name, args);
@@ -103,7 +103,7 @@ test "AST performance validation" {
     
     // Create a large number of expressions to test performance
     const num_expressions = 1000;
-    var expressions = std.ArrayList(*ast.Expression).init(self.allocator);
+    var expressions = std.ArrayList(*ast.Expression){};
     defer {
         for (expressions.items) |expr| {
             expr.deinit();
@@ -114,11 +114,11 @@ test "AST performance validation" {
     // Create expressions rapidly
     for (0..num_expressions) |i| {
         const expr = try ast.createIntegerExpression(allocator, @intCast(i));
-        try expressions.append(expr);
+        try expressions.append(allocator, expr);
     }
     
     try std.testing.expect(expressions.items.len == num_expressions);
-    std.debug.print("✅ Performance test: Created and managed {} expressions successfully\n", .{num_expressions});
+    std.debug.print("✅ Performance test: Created and managed {s} expressions successfully\n", .{num_expressions});
 }
 
 // Final validation that demonstrates the solution
@@ -136,7 +136,7 @@ pub fn main() !void {
     defer program_expr.deinit();
     
     std.debug.print("\nWorking example:\n", .{});
-    try program_expr.print(0);
+    try program_expr.writer().print(0);
     std.debug.print("\n\n", .{});
     
     std.debug.print("✅ SOLUTION IMPLEMENTED:\n", .{});

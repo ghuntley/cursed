@@ -41,14 +41,14 @@ pub const CircularDependencyDetector = struct {
     pub fn init() CircularDependencyDetector {
         return CircularDependencyDetector{
             .allocator = allocator,
-            .visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .recursion_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .visited = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .recursion_stack = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *CircularDependencyDetector) void {
-        self.visited.deinit();
-        self.recursion_stack.deinit();
+        self.visited.deinit(self.allocator);
+        self.recursion_stack.deinit(self.allocator);
     }
     
     pub fn detectCircularDependencies(self: *CircularDependencyDetector, manifest: *const package_manager.PackageManifest) !void {
@@ -111,7 +111,7 @@ pub const VersionConflictResolver = struct {
     pub fn init() VersionConflictResolver {
         return VersionConflictResolver{
             .allocator = allocator,
-            .conflicts = ArrayList(VersionConflict).init(allocator),
+            .conflicts = ArrayList(VersionConflict){},
         };
     }
     
@@ -119,7 +119,7 @@ pub const VersionConflictResolver = struct {
         for (self.conflicts.items) |*conflict| {
             conflict.requirements.deinit();
         }
-        self.conflicts.deinit();
+        self.conflicts.deinit(self.allocator);
     }
     
     pub fn resolveVersionConflicts(self: *VersionConflictResolver, dependencies: []const package_manager.Dependency) !void {
@@ -137,9 +137,9 @@ pub const VersionConflictResolver = struct {
         for (dependencies) |dep| {
             const result = try package_requirements.getOrPut(dep.name);
             if (!result.found_existing) {
-                result.value_ptr.* = ArrayList(package_manager.VersionRequirement).init(self.allocator);
+                result.value_ptr.* = ArrayList(package_manager.VersionRequirement){};
             }
-            try result.value_ptr.append(dep.version_req);
+            try result.value_ptr.append(allocator, dep.version_req);
         }
         
         // Check for conflicts
@@ -203,18 +203,18 @@ pub const NetworkResilience = struct {
             .allocator = allocator,
             .max_retries = 3,
             .timeout_ms = 30000, // 30 second timeout
-            .fallback_registries = ArrayList([]const u8).init(allocator),
+            .fallback_registries = ArrayList([]const u8){},
         };
         
         // Add fallback registries
-        resilience.fallback_registries.append("https://backup.cursed.dev") catch {};
-        resilience.fallback_registries.append("https://mirror.cursed.dev") catch {};
+        resilience.fallback_registries.append(allocator, "https://backup.cursed.dev") catch {};
+        resilience.fallback_registries.append(allocator, "https://mirror.cursed.dev") catch {};
         
         return resilience;
     }
     
     pub fn deinit(self: *NetworkResilience) void {
-        self.fallback_registries.deinit();
+        self.fallback_registries.deinit(self.allocator);
     }
     
     pub fn downloadWithRetry(self: *NetworkResilience, url: []const u8, dest_path: []const u8) !void {
@@ -224,14 +224,14 @@ pub const NetworkResilience = struct {
             const result = self.attemptDownload(url, dest_path);
             
             if (result) |_| {
-                print("✅ Download successful on attempt {}\n", .{retry_count + 1});
+                print("✅ Download successful on attempt {s}\n", .{{retry_count + 1});
                 return;
             } else |err| switch (err) {
                 PackageManagerError.NetworkTimeout => {
                     retry_count += 1;
                     if (retry_count <= self.max_retries) {
                         const delay_ms = std.math.pow(u64, 2, retry_count) * 1000; // Exponential backoff
-                        print("⏳ Network timeout, retrying in {}ms (attempt {} of {})\n", .{delay_ms, retry_count + 1, self.max_retries + 1});
+                        print("⏳ Network timeout, retrying in {s}ms (attempt {s} of {s})\n", .{{delay_ms, retry_count + 1, self.max_retries + 1});
                         std.Thread.sleep(delay_ms * std.time.ns_per_ms);
                     }
                 },
@@ -270,7 +270,7 @@ pub const NetworkResilience = struct {
         const mock_content = "# Mock package content\nversion = \"1.0.0\"\n";
         const file = try std.fs.cwd().createFile(dest_path, .{});
         defer file.close();
-        try file.writeAll(mock_content);
+        try file.writer().writeAll(mock_content);
     }
 };
 
@@ -283,12 +283,12 @@ pub const SecurityValidator = struct {
     pub fn init() SecurityValidator {
         return SecurityValidator{
             .allocator = allocator,
-            .trusted_keys = ArrayList([]const u8).init(allocator),
+            .trusted_keys = ArrayList([]const u8){},
         };
     }
     
     pub fn deinit(self: *SecurityValidator) void {
-        self.trusted_keys.deinit();
+        self.trusted_keys.deinit(self.allocator);
     }
     
     pub fn validatePackageIntegrity(self: *SecurityValidator, package_path: []const u8, expected_checksum: []const u8) !void {
@@ -353,7 +353,7 @@ pub const SecurityValidator = struct {
         
         // Simple zip bomb detection
         if (file_size > 1024 * 1024 * 100) { // 100MB limit
-            print("🚨 Archive too large: {} bytes\n", .{file_size});
+            print("🚨 Archive too large: {s} bytes\n", .{{file_size});
             return PackageManagerError.SecurityViolation;
         }
         
@@ -402,7 +402,7 @@ pub const DiskSpaceManager = struct {
         _ = stat;
         
         if (required_bytes > available_space) {
-            print("🚨 Insufficient disk space: need {} bytes, available {} bytes\n", .{required_bytes, available_space});
+            print("🚨 Insufficient disk space: need {s} bytes, available {s} bytes\n", .{{required_bytes, available_space});
             
             // Attempt cache cleanup
             try self.cleanupCache();
@@ -432,7 +432,7 @@ pub const DiskSpaceManager = struct {
         defer cache_dir.close();
         
         var iterator = cache_dir.iterate();
-        var cache_entries = ArrayList(CacheEntry).init(self.allocator);
+        var cache_entries = ArrayList(CacheEntry){};
         defer cache_entries.deinit();
         
         // Collect cache entries with timestamps
@@ -461,7 +461,7 @@ pub const DiskSpaceManager = struct {
             
             cache_dir.deleteFile(entry.name) catch {};
             total_size -= entry.size;
-            print("🗑️  Removed cache entry: {s} ({} bytes)\n", .{entry.name, entry.size});
+            print("🗑️  Removed cache entry: {s} ({s} bytes)\n", .{{entry.name, entry.size});
         }
         
         // Cleanup memory
@@ -492,13 +492,13 @@ pub const ConcurrentAccessManager = struct {
     pub fn init() ConcurrentAccessManager {
         return ConcurrentAccessManager{
             .allocator = allocator,
-            .package_locks = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .package_locks = HashMap([]const u8, bool, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .mutex = std.Thread.Mutex{},
         };
     }
     
     pub fn deinit(self: *ConcurrentAccessManager) void {
-        self.package_locks.deinit();
+        self.package_locks.deinit(self.allocator);
     }
     
     pub fn acquirePackageLock(self: *ConcurrentAccessManager, package_name: []const u8) !void {
@@ -559,11 +559,11 @@ pub const EdgeCaseHandler = struct {
     }
     
     pub fn deinit(self: *EdgeCaseHandler) void {
-        self.circular_detector.deinit();
-        self.conflict_resolver.deinit();
-        self.network_resilience.deinit();
-        self.security_validator.deinit();
-        self.access_manager.deinit();
+        self.circular_detector.deinit(self.allocator);
+        self.conflict_resolver.deinit(self.allocator);
+        self.network_resilience.deinit(self.allocator);
+        self.security_validator.deinit(self.allocator);
+        self.access_manager.deinit(self.allocator);
     }
     
     pub fn validatePackageInstallation(self: *EdgeCaseHandler, manifest: *const package_manager.PackageManifest, package_name: []const u8) !void {

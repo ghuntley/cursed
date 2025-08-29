@@ -114,7 +114,7 @@ pub const PrecedenceClimbingParser = struct {
     }
     
     pub fn deinit(self: *PrecedenceClimbingParser) void {
-        self.precedence_table.deinit();
+        self.precedence_table.deinit(self.allocator);
     }
     
     // Main precedence climbing algorithm
@@ -237,14 +237,14 @@ fn parseBinary(parser: *Parser, left: ast.Expression) anyerror!ast.Expression {
 }
 
 fn parseCall(parser: *Parser, callee: ast.Expression) anyerror!ast.Expression {
-    var arguments = std.ArrayList(*ast.Expression).init(self.allocator);
+    var arguments = std.ArrayList(*ast.Expression){};
     
     if (!parser.check(.RightParen)) {
         while (true) {
             const arg = try parser.parseExpression();
             const arg_ptr = try parser.allocator.create(ast.Expression);
             arg_ptr.* = arg;
-            try arguments.append(arg_ptr);
+            try arguments.append(allocator, arg_ptr);
             
             if (!parser.match(.Comma)) break;
         }
@@ -307,14 +307,14 @@ fn parseAssignment(parser: *Parser, left: ast.Expression) anyerror!ast.Expressio
 }
 
 fn parseArrayLiteral(parser: *Parser) anyerror!ast.Expression {
-    var elements = std.ArrayList(*ast.Expression).init(self.allocator);
+    var elements = std.ArrayList(*ast.Expression){};
     
     if (!parser.check(.RightBracket)) {
         while (true) {
             const elem = try parser.parseExpression();
             const elem_ptr = try parser.allocator.create(ast.Expression);
             elem_ptr.* = elem;
-            try elements.append(elem_ptr);
+            try elements.append(allocator, elem_ptr);
             
             if (!parser.match(.Comma)) break;
         }
@@ -328,7 +328,7 @@ fn parseArrayLiteral(parser: *Parser) anyerror!ast.Expression {
 }
 
 fn parseStructLiteral(parser: *Parser) anyerror!ast.Expression {
-    var fields = std.ArrayList(ast.StructField).init(self.allocator);
+    var fields = std.ArrayList(ast.StructField){};
     
     while (!parser.check(.RightBrace) and !parser.isAtEnd()) {
         if (parser.match(.Newline)) continue;
@@ -381,7 +381,7 @@ fn parseShook(parser: *Parser) anyerror!ast.Expression {
 fn parseFam(parser: *Parser) anyerror!ast.Expression {
     _ = try parser.consume(.LeftBrace, "Expected '{' after 'fam'");
     
-    var try_body = std.ArrayList(*anyopaque).init(self.allocator);
+    var try_body = std.ArrayList(*anyopaque){};
     
     while (!parser.check(.RightBrace) and !parser.isAtEnd()) {
         if (parser.match(.Newline)) continue;
@@ -389,7 +389,7 @@ fn parseFam(parser: *Parser) anyerror!ast.Expression {
         const stmt = try parser.parseStatement();
         const stmt_ptr = try parser.allocator.create(@TypeOf(stmt));
         stmt_ptr.* = stmt;
-        try try_body.append(@ptrCast(stmt_ptr));
+        try try_body.append(allocator, @ptrCast(stmt_ptr));
     }
     
     _ = try parser.consume(.RightBrace, "Expected '}' after fam body");

@@ -37,11 +37,11 @@ pub const PackageRegistry = struct {
     pub fn deinit(self: *PackageRegistry) void {
         self.allocator.free(self.registry_url);
         if (self.auth_token) |token| self.allocator.free(token);
-        self.cache.deinit();
-        self.analytics.deinit();
-        self.security_scanner.deinit();
-        self.curator.deinit();
-        self.discovery.deinit();
+        self.cache.deinit(self.allocator);
+        self.analytics.deinit(self.allocator);
+        self.security_scanner.deinit(self.allocator);
+        self.curator.deinit(self.allocator);
+        self.discovery.deinit(self.allocator);
     }
     
     pub fn setAuthToken(self: *PackageRegistry, token: []const u8) !void {
@@ -205,33 +205,33 @@ pub const PackageMetadata = struct {
             .name = "",
             .version = "",
             .description = "",
-            .authors = ArrayList([]const u8).init(allocator),
+            .authors = ArrayList([]const u8){},
             .license = "",
             .repository = null,
             .homepage = null,
             .documentation = null,
-            .keywords = ArrayList([]const u8).init(allocator),
-            .categories = ArrayList(Category).init(allocator),
-            .dependencies = ArrayList(Dependency).init(allocator),
+            .keywords = ArrayList([]const u8){},
+            .categories = ArrayList(Category){},
+            .dependencies = ArrayList(Dependency){},
             .downloads = DownloadStats{ .total = 0, .last_30_days = 0, .last_7_days = 0, 
                                      .last_24_hours = 0, .peak_daily = 0, .trend = .stable },
             .quality_score = QualityScore{ .overall = 0, .documentation = 0, .testing = 0, 
                                          .maintenance = 0, .community = 0, .performance = 0, .security = 0 },
-            .security_status = SecurityStatus{ .status = .unknown, .vulnerabilities = ArrayList(SecurityStatus.Vulnerability).init(allocator),
+            .security_status = SecurityStatus{ .status = .unknown, .vulnerabilities = ArrayList(SecurityStatus.Vulnerability){},
                                              .last_scan = 0, .scan_version = "" },
-            .reviews = ArrayList(Review).init(allocator),
+            .reviews = ArrayList(Review){},
             .created_at = std.time.timestamp(),
             .updated_at = std.time.timestamp(),
         };
     }
     
     pub fn deinit(self: *PackageMetadata) void {
-        self.authors.deinit();
-        self.keywords.deinit();
-        self.categories.deinit();
-        self.dependencies.deinit();
+        self.authors.deinit(self.allocator);
+        self.keywords.deinit(self.allocator);
+        self.categories.deinit(self.allocator);
+        self.dependencies.deinit(self.allocator);
         self.security_status.vulnerabilities.deinit();
-        self.reviews.deinit();
+        self.reviews.deinit(self.allocator);
     }
 };
 
@@ -247,9 +247,9 @@ pub const RegistryCache = struct {
     pub fn init() RegistryCache {
         return RegistryCache{
             .allocator = allocator,
-            .package_cache = HashMap([]const u8, PackageMetadata, std.hash_map.StringContext, 80).init(allocator),
-            .search_cache = HashMap([]const u8, SearchResult, std.hash_map.StringContext, 80).init(allocator),
-            .ttl_cache = HashMap([]const u8, i64, std.hash_map.StringContext, 80).init(allocator),
+            .package_cache = HashMap([]const u8, PackageMetadata, std.hash_map.StringContext, 80){},
+            .search_cache = HashMap([]const u8, SearchResult, std.hash_map.StringContext, 80){},
+            .ttl_cache = HashMap([]const u8, i64, std.hash_map.StringContext, 80){},
         };
     }
     
@@ -267,9 +267,9 @@ pub const RegistryCache = struct {
             result.deinit();
         }
         
-        self.package_cache.deinit();
-        self.search_cache.deinit();
-        self.ttl_cache.deinit();
+        self.package_cache.deinit(self.allocator);
+        self.search_cache.deinit(self.allocator);
+        self.ttl_cache.deinit(self.allocator);
     }
     
     pub fn get(self: *RegistryCache, key: []const u8) ?PackageMetadata {
@@ -325,12 +325,12 @@ pub const SearchQuery = struct {
     pub fn init(allocator: Allocator, query: []const u8) SearchQuery {
         return SearchQuery{
             .query = query,
-            .categories = ArrayList(PackageMetadata.Category).init(allocator),
+            .categories = ArrayList(PackageMetadata.Category){},
         };
     }
     
     pub fn deinit(self: *SearchQuery) void {
-        self.categories.deinit();
+        self.categories.deinit(self.allocator);
     }
 };
 
@@ -342,10 +342,10 @@ pub const SearchResult = struct {
     
     pub fn init() SearchResult {
         return SearchResult{
-            .packages = ArrayList(PackageMetadata).init(allocator),
+            .packages = ArrayList(PackageMetadata){},
             .total_count = 0,
             .query_time_ms = 0,
-            .suggestions = ArrayList([]const u8).init(allocator),
+            .suggestions = ArrayList([]const u8){},
         };
     }
     
@@ -353,8 +353,8 @@ pub const SearchResult = struct {
         for (self.packages.items) |*pkg| {
             pkg.deinit();
         }
-        self.packages.deinit();
-        self.suggestions.deinit();
+        self.packages.deinit(self.allocator);
+        self.suggestions.deinit(self.allocator);
     }
 };
 
@@ -386,7 +386,7 @@ pub const SecurityScanner = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.vulnerability_db.deinit();
+        self.vulnerability_db.deinit(self.allocator);
     }
     
     pub fn scanPackage(self: *SecurityScanner, package_name: []const u8, version: []const u8) !PackageMetadata.SecurityStatus {
@@ -394,7 +394,7 @@ pub const SecurityScanner = struct {
         
         var status = PackageMetadata.SecurityStatus{
             .status = .secure,
-            .vulnerabilities = ArrayList(PackageMetadata.SecurityStatus.Vulnerability).init(self.allocator),
+            .vulnerabilities = ArrayList(PackageMetadata.SecurityStatus.Vulnerability){},
             .last_scan = std.time.timestamp(),
             .scan_version = "1.0.0",
         };
@@ -409,7 +409,7 @@ pub const SecurityScanner = struct {
                 .affected_versions = "< 1.2.3",
                 .patched_in = "1.2.3",
             };
-            try status.vulnerabilities.append(vuln);
+            try status.vulnerabilities.append(allocator, vuln);
             status.status = .warning;
         }
         
@@ -470,7 +470,7 @@ pub const PackageCurator = struct {
     pub fn init() PackageCurator {
         var curator = PackageCurator{
             .allocator = allocator,
-            .curation_rules = ArrayList(CurationRule).init(allocator),
+            .curation_rules = ArrayList(CurationRule){},
             .quality_metrics = QualityMetrics{},
         };
         
@@ -481,7 +481,7 @@ pub const PackageCurator = struct {
     }
     
     pub fn deinit(self: *PackageCurator) void {
-        self.curation_rules.deinit();
+        self.curation_rules.deinit(self.allocator);
     }
     
     fn initDefaultRules(self: *PackageCurator) !void {
@@ -531,22 +531,22 @@ pub const PackageCurator = struct {
     }
     
     pub fn generateRecommendations(self: *PackageCurator, metadata: *PackageMetadata) !ArrayList([]const u8) {
-        var recommendations = ArrayList([]const u8).init(self.allocator);
+        var recommendations = ArrayList([]const u8){};
         
         if (metadata.quality_score.documentation < 60.0) {
-            try recommendations.append("Improve documentation with more examples and API references");
+            try recommendations.append(allocator, "Improve documentation with more examples and API references");
         }
         
         if (metadata.quality_score.testing < 70.0) {
-            try recommendations.append("Add more comprehensive test coverage");
+            try recommendations.append(allocator, "Add more comprehensive test coverage");
         }
         
         if (metadata.quality_score.security < 80.0) {
-            try recommendations.append("Address security vulnerabilities and improve secure coding practices");
+            try recommendations.append(allocator, "Address security vulnerabilities and improve secure coding practices");
         }
         
         if (metadata.keywords.items.len < 3) {
-            try recommendations.append("Add more descriptive keywords to improve discoverability");
+            try recommendations.append(allocator, "Add more descriptive keywords to improve discoverability");
         }
         
         return recommendations;
@@ -630,8 +630,8 @@ pub const AnalyticsEngine = struct {
     pub fn init() AnalyticsEngine {
         return AnalyticsEngine{
             .allocator = allocator,
-            .events = ArrayList(AnalyticsEvent).init(allocator),
-            .aggregated_stats = HashMap([]const u8, PackageStats, std.hash_map.StringContext, 80).init(allocator),
+            .events = ArrayList(AnalyticsEvent){},
+            .aggregated_stats = HashMap([]const u8, PackageStats, std.hash_map.StringContext, 80){},
         };
     }
     
@@ -639,7 +639,7 @@ pub const AnalyticsEngine = struct {
         for (self.events.items) |*event| {
             event.metadata.deinit();
         }
-        self.events.deinit();
+        self.events.deinit(self.allocator);
         
         var stats_iter = self.aggregated_stats.iterator();
         while (stats_iter.next()) |entry| {
@@ -647,11 +647,11 @@ pub const AnalyticsEngine = struct {
             stats.daily_downloads.deinit();
             stats.geographic_distribution.deinit();
         }
-        self.aggregated_stats.deinit();
+        self.aggregated_stats.deinit(self.allocator);
     }
     
     pub fn recordEvent(self: *AnalyticsEngine, event: AnalyticsEvent) !void {
-        try self.events.append(event);
+        try self.events.append(allocator, event);
         try self.updateAggregatedStats(event);
     }
     
@@ -666,8 +666,8 @@ pub const AnalyticsEngine = struct {
             const new_stats = PackageStats{
                 .total_downloads = if (event.event_type == .download) 1 else 0,
                 .unique_users = 0,
-                .daily_downloads = ArrayList(PackageStats.DailyStats).init(self.allocator),
-                .geographic_distribution = HashMap([]const u8, u64, std.hash_map.StringContext, 80).init(self.allocator),
+                .daily_downloads = ArrayList(PackageStats.DailyStats){},
+                .geographic_distribution = HashMap([]const u8, u64, std.hash_map.StringContext, 80){},
             };
             
             const key = try self.allocator.dupe(u8, event.package_name);
@@ -676,18 +676,18 @@ pub const AnalyticsEngine = struct {
     }
     
     pub fn generateInsights(self: *AnalyticsEngine, package_name: []const u8) !ArrayList([]const u8) {
-        var insights = ArrayList([]const u8).init(self.allocator);
+        var insights = ArrayList([]const u8){};
         
         if (self.aggregated_stats.get(package_name)) |stats| {
             if (stats.total_downloads > 1000) {
-                try insights.append("Popular package with high download count");
+                try insights.append(allocator, "Popular package with high download count");
             }
             
             if (stats.total_downloads > 0) {
-                try insights.append("Active package with recent downloads");
+                try insights.append(allocator, "Active package with recent downloads");
             }
         } else {
-            try insights.append("New package with limited usage data");
+            try insights.append(allocator, "New package with limited usage data");
         }
         
         return insights;
@@ -712,7 +712,7 @@ pub const DiscoveryEngine = struct {
         return DiscoveryEngine{
             .allocator = allocator,
             .recommendation_cache = HashMap([]const u8, ArrayList([]const u8), std.hash_map.StringContext, 80).init(allocator),
-            .trending_packages = ArrayList(TrendingPackage).init(allocator),
+            .trending_packages = ArrayList(TrendingPackage){},
         };
     }
     
@@ -721,14 +721,14 @@ pub const DiscoveryEngine = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.recommendation_cache.deinit();
-        self.trending_packages.deinit();
+        self.recommendation_cache.deinit(self.allocator);
+        self.trending_packages.deinit(self.allocator);
     }
     
     pub fn getRecommendations(self: *DiscoveryEngine, context: RecommendationContext) !ArrayList([]const u8) {
         print("🔍 Generating package recommendations...\n", .{});
         
-        var recommendations = ArrayList([]const u8).init(self.allocator);
+        var recommendations = ArrayList([]const u8){};
         
         // Category-based recommendations
         for (context.user_categories.items) |category| {
@@ -754,27 +754,27 @@ pub const DiscoveryEngine = struct {
     }
     
     fn getCategoryRecommendations(self: *DiscoveryEngine, category: PackageMetadata.Category) !ArrayList([]const u8) {
-        var recommendations = ArrayList([]const u8).init(self.allocator);
+        var recommendations = ArrayList([]const u8){};
         
         // Simulate category-based recommendations
         switch (category) {
             .web => {
-                try recommendations.append("http-client");
-                try recommendations.append("json-parser");
-                try recommendations.append("web-framework");
+                try recommendations.append(allocator, "http-client");
+                try recommendations.append(allocator, "json-parser");
+                try recommendations.append(allocator, "web-framework");
             },
             .cli => {
-                try recommendations.append("arg-parser");
-                try recommendations.append("terminal-colors");
-                try recommendations.append("progress-bar");
+                try recommendations.append(allocator, "arg-parser");
+                try recommendations.append(allocator, "terminal-colors");
+                try recommendations.append(allocator, "progress-bar");
             },
             .crypto => {
-                try recommendations.append("hash-algorithms");
-                try recommendations.append("encryption-utils");
-                try recommendations.append("secure-random");
+                try recommendations.append(allocator, "hash-algorithms");
+                try recommendations.append(allocator, "encryption-utils");
+                try recommendations.append(allocator, "secure-random");
             },
             else => {
-                try recommendations.append("utility-library");
+                try recommendations.append(allocator, "utility-library");
             },
         }
         
@@ -782,7 +782,7 @@ pub const DiscoveryEngine = struct {
     }
     
     fn getPatternRecommendations(self: *DiscoveryEngine, dependencies: ArrayList([]const u8)) !ArrayList([]const u8) {
-        var recommendations = ArrayList([]const u8).init(self.allocator);
+        var recommendations = ArrayList([]const u8){};
         
         // Analyze dependency patterns
         var has_web = false;
@@ -798,12 +798,12 @@ pub const DiscoveryEngine = struct {
         }
         
         if (has_web and !has_testing) {
-            try recommendations.append("web-testing-framework");
+            try recommendations.append(allocator, "web-testing-framework");
         }
         
         if (has_web) {
-            try recommendations.append("request-validation");
-            try recommendations.append("security-middleware");
+            try recommendations.append(allocator, "request-validation");
+            try recommendations.append(allocator, "security-middleware");
         }
         
         return recommendations;
@@ -823,7 +823,7 @@ pub const DiscoveryEngine = struct {
         };
         
         for (trending_data) |pkg| {
-            try self.trending_packages.append(pkg);
+            try self.trending_packages.append(allocator, pkg);
         }
         
         print("✅ Updated trending packages list\n", .{});
@@ -839,14 +839,14 @@ pub const RecommendationContext = struct {
     
     pub fn init() RecommendationContext {
         return RecommendationContext{
-            .user_categories = ArrayList(PackageMetadata.Category).init(allocator),
-            .current_dependencies = ArrayList([]const u8).init(allocator),
+            .user_categories = ArrayList(PackageMetadata.Category){},
+            .current_dependencies = ArrayList([]const u8){},
         };
     }
     
     pub fn deinit(self: *RecommendationContext) void {
-        self.user_categories.deinit();
-        self.current_dependencies.deinit();
+        self.user_categories.deinit(self.allocator);
+        self.current_dependencies.deinit(self.allocator);
     }
 };
 

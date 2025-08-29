@@ -168,7 +168,7 @@ pub const MessageTemplate = struct {
     allocator: Allocator,
 
     pub fn init(allocator: Allocator, template: []const u8) !MessageTemplate {
-        var placeholders = .empty;
+        var placeholders = std.ArrayList(u8){};
         
         // Extract placeholders from template (format: {placeholder_name})
         var i: usize = 0;
@@ -198,12 +198,12 @@ pub const MessageTemplate = struct {
         for (self.placeholders.items) |placeholder| {
             self.allocator.free(placeholder);
         }
-        self.placeholders.deinit();
+        self.placeholders.deinit(self.allocator);
         self.allocator.free(self.template);
     }
 
     pub fn format(self: MessageTemplate, values: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) ![]u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         var i: usize = 0;
@@ -220,9 +220,9 @@ pub const MessageTemplate = struct {
                         try result.appendSlice(value);
                     } else {
                         // Keep placeholder if no value provided
-                        try result.append('{');
+                        try result.append(allocator, '{');
                         try result.appendSlice(placeholder);
-                        try result.append('}');
+                        try result.append(allocator, '}');
                     }
                     i += 1;
                 } else {
@@ -303,7 +303,7 @@ pub const LanguagePack = struct {
     pub fn init(allocator: Allocator, locale: Locale) LanguagePack {
         return LanguagePack{
             .locale = locale,
-            .messages = HashMap([]const u8, MessageTemplate, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .messages = HashMap([]const u8, MessageTemplate, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .pluralization_rules = getDefaultPluralRules(locale),
             .number_format = getDefaultNumberFormat(locale),
             .date_format = getDefaultDateFormat(locale),
@@ -317,7 +317,7 @@ pub const LanguagePack = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.messages.deinit();
+        self.messages.deinit(self.allocator);
     }
 
     pub fn addMessage(self: *LanguagePack, key: []const u8, template: []const u8) !void {
@@ -426,7 +426,7 @@ pub const UnicodeUtils = struct {
 
         var view = unicode.Utf8View.init(text) catch return error.InvalidUTF8;
         var iterator = view.iterator();
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         var count: usize = 0;
@@ -446,15 +446,15 @@ pub const UnicodeUtils = struct {
         if (!validateUTF8(text)) return error.InvalidUTF8;
         
         var view = unicode.Utf8View.init(text) catch return error.InvalidUTF8;
-        var codepoints = .empty;
+        var codepoints = std.ArrayList(u8){};
         defer codepoints.deinit();
 
         var iterator = view.iterator();
         while (iterator.nextCodepoint()) |codepoint| {
-            try codepoints.append(codepoint);
+            try codepoints.append(allocator, codepoint);
         }
 
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         var i: usize = codepoints.items.len;
@@ -505,7 +505,7 @@ pub const I18nManager = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.language_packs.deinit();
+        self.language_packs.deinit(self.allocator);
     }
 
     pub fn loadLanguagePack(self: *I18nManager, locale: Locale) !void {
@@ -550,7 +550,7 @@ pub const I18nManager = struct {
     }
 
     fn formatFallbackMessage(self: *I18nManager, key: []const u8, values: HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) ![]u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
 
         try result.appendSlice("UNTRANSLATED: ");
@@ -761,7 +761,7 @@ pub fn formatGlobalPanicMessage(message_key: []const u8, values: HashMap([]const
 
     // Fallback if i18n not initialized
     const allocator = std.heap.page_allocator;
-    var result = .empty;
+    var result = std.ArrayList(u8){};
     defer result.deinit();
 
     try result.appendSlice("🚨 CURSED Error: ");
@@ -822,7 +822,7 @@ test "message template formatting" {
     var template = try MessageTemplate.init(allocator, "Error: {message} (Code: {code})");
     defer template.deinit();
 
-    var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer values.deinit();
 
     try values.put("message", "Test error");
@@ -858,7 +858,7 @@ test "i18n manager basic functionality" {
 
     try i18n.loadLanguagePack(.en_US);
 
-    var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var values = HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer values.deinit();
     try values.put("message", "Test panic");
 

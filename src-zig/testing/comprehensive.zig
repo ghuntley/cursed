@@ -59,28 +59,28 @@ pub const TestRunner = struct {
     pub fn init() TestRunner {
         return TestRunner{
             .allocator = allocator,
-            .results = std.ArrayList(TestCaseResult).init(allocator),
+            .results = std.ArrayList(TestCaseResult){},
         };
     }
 
     pub fn deinit(self: *TestRunner) void {
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
 
     pub fn runSuite(self: *TestRunner, suite: TestSuite) !void {
-        std.debug.print("🧪 Running test suite: {s}\n", .{suite.name});
+        std.debug.writer().print("🧪 Running test suite: {s}\n", .{suite.name});
 
         // Run setup if provided
         if (suite.setup) |setup_fn| {
             setup_fn() catch |err| {
-                std.debug.print("❌ Setup failed for suite {s}: {}\n", .{ suite.name, err });
+                std.debug.writer().print("❌ Setup failed for suite {s}: {s}\n", .{{ suite.name, err });
                 return;
             };
         }
         defer {
             if (suite.teardown) |teardown_fn| {
                 teardown_fn() catch |err| {
-                    std.debug.print("⚠️  Teardown failed for suite {s}: {}\n", .{ suite.name, err });
+                    std.debug.writer().print("⚠️  Teardown failed for suite {s}: {s}\n", .{{ suite.name, err });
                 };
             }
         }
@@ -93,19 +93,19 @@ pub const TestRunner = struct {
 
             self.total_tests += 1;
 
-            std.debug.print("  • {s}... ", .{test_case.name});
+            std.debug.writer().print("  • {s}... ", .{test_case.name});
 
             // Run the test with timeout
             test_case.test_fn(self.allocator) catch |err| {
                 result = .fail;
                 error_msg = @errorName(err);
                 self.failed_tests += 1;
-                std.debug.print("❌ FAIL\n", .{});
+                std.debug.writer().print("❌ FAIL\n", .{});
             };
 
             if (result == .pass) {
                 self.passed_tests += 1;
-                std.debug.print("✅ PASS\n", .{});
+                std.debug.writer().print("✅ PASS\n", .{});
             }
 
             const duration = @as(u64, @intCast(std.time.milliTimestamp() - start_time));
@@ -121,28 +121,28 @@ pub const TestRunner = struct {
     }
 
     pub fn printSummary(self: *TestRunner) void {
-        std.debug.print("\n📊 Test Summary:\n", .{});
-        std.debug.print("  Total: {}\n", .{self.total_tests});
-        std.debug.print("  Passed: {}\n", .{self.passed_tests});
-        std.debug.print("  Failed: {}\n", .{self.failed_tests});
-        std.debug.print("  Skipped: {}\n", .{self.skipped_tests});
+        std.debug.writer().print("\n📊 Test Summary:\n", .{});
+        std.debug.writer().print("  Total: {s}\n", .{{self.total_tests});
+        std.debug.writer().print("  Passed: {s}\n", .{{self.passed_tests});
+        std.debug.writer().print("  Failed: {s}\n", .{{self.failed_tests});
+        std.debug.writer().print("  Skipped: {s}\n", .{{self.skipped_tests});
 
         const success_rate = if (self.total_tests > 0) 
             (@as(f64, @floatFromInt(self.passed_tests)) / @as(f64, @floatFromInt(self.total_tests))) * 100.0 
         else 
             0.0;
 
-        std.debug.print("  Success Rate: {d:.1}%\n", .{success_rate});
+        std.debug.writer().print("  Success Rate: {d:.1}%\n", .{success_rate});
 
         if (self.failed_tests > 0) {
-            std.debug.print("\n❌ Failed Tests:\n", .{});
+            std.debug.writer().print("\n❌ Failed Tests:\n", .{});
             for (self.results.items) |result| {
                 if (result.result == .fail) {
-                    std.debug.print("  • {s}::{s}", .{ result.suite_name, result.test_name });
+                    std.debug.writer().print("  • {s}::{s}", .{ result.suite_name, result.test_name });
                     if (result.error_message) |msg| {
-                        std.debug.print(" - {s}", .{msg});
+                        std.debug.writer().print(" - {s}", .{msg});
                     }
-                    std.debug.print("\n", .{});
+                    std.debug.writer().print("\n", .{});
                 }
             }
         }
@@ -530,8 +530,9 @@ const stdlib_tests = TestSuite{
 // ===== MAIN TEST RUNNER =====
 
 pub fn runAllTests(allocator: Allocator) !void {
-    std.debug.print("🚀 Starting CURSED Zig Comprehensive Test Suite\n", .{});
-    std.debug.print("=" ** 50 ++ "\n", .{});
+        _ = allocator;
+    std.debug.writer().print("🚀 Starting CURSED Zig Comprehensive Test Suite\n", .{});
+    std.debug.writer().print("=" ** 50 ++ "\n", .{});
 
     var runner = TestRunner.init(allocator);
     defer runner.deinit();
@@ -547,21 +548,21 @@ pub fn runAllTests(allocator: Allocator) !void {
 
     for (suites) |suite| {
         try runner.runSuite(suite);
-        std.debug.print("\n", .{});
+        std.debug.writer().print("\n", .{});
     }
 
     // Performance benchmarks
-    std.debug.print("⚡ Performance Benchmarks:\n", .{});
+    std.debug.writer().print("⚡ Performance Benchmarks:\n", .{});
     
     const lexer_time = try benchmarkLexerPerformance(allocator);
-    std.debug.print("  Lexer (100 iterations): {}ns\n", .{lexer_time});
+    std.debug.writer().print("  Lexer (100 iterations): {s}ns\n", .{{lexer_time});
     
     const parser_time = try benchmarkParserPerformance(allocator);
-    std.debug.print("  Parser (50 iterations): {}ns\n", .{parser_time});
+    std.debug.writer().print("  Parser (50 iterations): {s}ns\n", .{{parser_time});
 
     runner.printSummary();
     
-    std.debug.print("\n🎯 Test execution completed!\n", .{});
+    std.debug.writer().print("\n🎯 Test execution completed!\n", .{});
 }
 
 // ===== ZIG TEST INTEGRATION =====

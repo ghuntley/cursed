@@ -57,19 +57,19 @@ pub const RegistryApiClient = struct {
             json_pkg.name = try self.allocator.dupe(u8, "fast-json");
             json_pkg.version = try self.allocator.dupe(u8, "1.2.3");
             json_pkg.description = try self.allocator.dupe(u8, "High-performance JSON parser and serializer");
-            try json_pkg.authors.append("JSON Team <json@cursed.dev>");
+            try json_pkg.authors.append(allocator, "JSON Team <json@cursed.dev>");
             json_pkg.license = try self.allocator.dupe(u8, "MIT");
-            try json_pkg.keywords.append("json");
-            try json_pkg.keywords.append("parser");
-            try json_pkg.keywords.append("serialization");
-            try json_pkg.categories.append(.utilities);
+            try json_pkg.keywords.append(allocator, "json");
+            try json_pkg.keywords.append(allocator, "parser");
+            try json_pkg.keywords.append(allocator, "serialization");
+            try json_pkg.categories.append(allocator, .utilities);
             
             json_pkg.downloads.total = 15432;
             json_pkg.downloads.last_30_days = 2341;
             json_pkg.quality_score.overall = 92.5;
             json_pkg.security_status.status = .secure;
             
-            try result.packages.append(json_pkg);
+            try result.packages.append(allocator, json_pkg);
         }
         
         if (std.mem.indexOf(u8, query.query, "http") != null) {
@@ -77,19 +77,19 @@ pub const RegistryApiClient = struct {
             http_pkg.name = try self.allocator.dupe(u8, "secure-http");
             http_pkg.version = try self.allocator.dupe(u8, "2.1.0");
             http_pkg.description = try self.allocator.dupe(u8, "Secure HTTP client with advanced features");
-            try http_pkg.authors.append("HTTP Team <http@cursed.dev>");
+            try http_pkg.authors.append(allocator, "HTTP Team <http@cursed.dev>");
             http_pkg.license = try self.allocator.dupe(u8, "MIT");
-            try http_pkg.keywords.append("http");
-            try http_pkg.keywords.append("client");
-            try http_pkg.keywords.append("security");
-            try http_pkg.categories.append(.web);
+            try http_pkg.keywords.append(allocator, "http");
+            try http_pkg.keywords.append(allocator, "client");
+            try http_pkg.keywords.append(allocator, "security");
+            try http_pkg.categories.append(allocator, .web);
             
             http_pkg.downloads.total = 8923;
             http_pkg.downloads.last_30_days = 1567;
             http_pkg.quality_score.overall = 89.1;
             http_pkg.security_status.status = .secure;
             
-            try result.packages.append(http_pkg);
+            try result.packages.append(allocator, http_pkg);
         }
         
         if (std.mem.indexOf(u8, query.query, "crypto") != null) {
@@ -97,59 +97,59 @@ pub const RegistryApiClient = struct {
             crypto_pkg.name = try self.allocator.dupe(u8, "crypto-suite");
             crypto_pkg.version = try self.allocator.dupe(u8, "3.0.1");
             crypto_pkg.description = try self.allocator.dupe(u8, "Comprehensive cryptography library");
-            try crypto_pkg.authors.append("Crypto Team <crypto@cursed.dev>");
+            try crypto_pkg.authors.append(allocator, "Crypto Team <crypto@cursed.dev>");
             crypto_pkg.license = try self.allocator.dupe(u8, "MIT");
-            try crypto_pkg.keywords.append("crypto");
-            try crypto_pkg.keywords.append("encryption");
-            try crypto_pkg.keywords.append("security");
-            try crypto_pkg.categories.append(.crypto);
+            try crypto_pkg.keywords.append(allocator, "crypto");
+            try crypto_pkg.keywords.append(allocator, "encryption");
+            try crypto_pkg.keywords.append(allocator, "security");
+            try crypto_pkg.categories.append(allocator, .crypto);
             
             crypto_pkg.downloads.total = 12845;
             crypto_pkg.downloads.last_30_days = 2103;
             crypto_pkg.quality_score.overall = 95.3;
             crypto_pkg.security_status.status = .secure;
             
-            try result.packages.append(crypto_pkg);
+            try result.packages.append(allocator, crypto_pkg);
         }
         
         result.total_count = @intCast(result.packages.items.len);
         result.query_time_ms = 45; // Mock query time
         
         if (result.packages.items.len == 0) {
-            try result.suggestions.append("json-parser");
-            try result.suggestions.append("http-client");
-            try result.suggestions.append("utility-lib");
+            try result.suggestions.append(allocator, "json-parser");
+            try result.suggestions.append(allocator, "http-client");
+            try result.suggestions.append(allocator, "utility-lib");
         }
         
-        print("✅ Found {} packages in {}ms\n", .{result.total_count, result.query_time_ms});
+        print("✅ Found {s} packages in {s}ms\n", .{{result.total_count, result.query_time_ms});
         return result;
     }
     
     fn buildSearchUrl(self: *RegistryApiClient, query: registry.SearchQuery) ![]const u8 {
-        var url_parts = ArrayList(u8).init(self.allocator);
+        var url_parts = ArrayList(u8){};
         defer url_parts.deinit();
         
         const writer = url_parts.writer();
-        try writer.print("{s}/api/v1/search?q={s}", .{self.base_url, query.query});
+        try writer.writer().print("{s}/api/v1/search?q={s}", .{self.base_url, query.query});
         
         if (query.categories.items.len > 0) {
-            try writer.writeAll("&categories=");
+            try writer.writer().writeAll("&categories=");
             for (query.categories.items, 0..) |category, i| {
-                if (i > 0) try writer.writeAll(",");
-                try writer.writeAll(category.toString());
+                if (i > 0) try writer.writer().writeAll(",");
+                try writer.writer().writeAll(category.toString());
             }
         }
         
         if (query.min_quality) |min_qual| {
-            try writer.print("&min_quality={d}", .{min_qual});
+            try writer.writer().print("&min_quality={d}", .{min_qual});
         }
         
         if (query.only_secure) {
-            try writer.writeAll("&only_secure=true");
+            try writer.writer().writeAll("&only_secure=true");
         }
         
-        try writer.print("&sort={s}", .{@tagName(query.sort_by)});
-        try writer.print("&limit={}&offset={}", .{query.limit, query.offset});
+        try writer.writer().print("&sort={s}", .{@tagName(query.sort_by)});
+        try writer.writer().print("&limit={s}&offset={s}", .{{query.limit, query.offset});
         
         return try url_parts.toOwnedSlice();
     }
@@ -168,15 +168,15 @@ pub const RegistryApiClient = struct {
         // Simulate different packages
         if (std.mem.eql(u8, name, "json-parser")) {
             metadata.description = try self.allocator.dupe(u8, "Fast and reliable JSON parser for CURSED");
-            try metadata.authors.append("JSON Team <json@cursed.dev>");
+            try metadata.authors.append(allocator, "JSON Team <json@cursed.dev>");
             metadata.license = try self.allocator.dupe(u8, "MIT");
             metadata.repository = try self.allocator.dupe(u8, "https://github.com/cursed/json-parser");
             metadata.homepage = try self.allocator.dupe(u8, "https://json-parser.cursed.dev");
             
-            try metadata.keywords.append("json");
-            try metadata.keywords.append("parser");
-            try metadata.keywords.append("serialization");
-            try metadata.categories.append(.utilities);
+            try metadata.keywords.append(allocator, "json");
+            try metadata.keywords.append(allocator, "parser");
+            try metadata.keywords.append(allocator, "serialization");
+            try metadata.categories.append(allocator, .utilities);
             
             metadata.downloads.total = 25634;
             metadata.downloads.last_30_days = 3421;
@@ -206,10 +206,10 @@ pub const RegistryApiClient = struct {
                 .created_at = std.time.timestamp() - 86400,
                 .verified_download = true,
             };
-            try metadata.reviews.append(review);
+            try metadata.reviews.append(allocator, review);
         } else {
             metadata.description = try self.allocator.dupe(u8, "A useful CURSED package");
-            try metadata.authors.append("Package Author <author@cursed.dev>");
+            try metadata.authors.append(allocator, "Package Author <author@cursed.dev>");
             metadata.license = try self.allocator.dupe(u8, "MIT");
             
             metadata.downloads.total = 1234;
@@ -510,14 +510,14 @@ pub const PackageAnalytics = struct {
             .total_downloads = 0,
             .unique_users = 0,
             .growth_rate = 0.0,
-            .geographic_distribution = HashMap([]const u8, u32, std.hash_map.StringContext, 80).init(allocator),
-            .version_distribution = HashMap([]const u8, u32, std.hash_map.StringContext, 80).init(allocator),
+            .geographic_distribution = HashMap([]const u8, u32, std.hash_map.StringContext, 80){},
+            .version_distribution = HashMap([]const u8, u32, std.hash_map.StringContext, 80){},
         };
     }
     
     pub fn deinit(self: *PackageAnalytics) void {
-        self.geographic_distribution.deinit();
-        self.version_distribution.deinit();
+        self.geographic_distribution.deinit(self.allocator);
+        self.version_distribution.deinit(self.allocator);
     }
 };
 
@@ -562,7 +562,7 @@ test "search query building" {
     var query = registry.SearchQuery.init(allocator, "json parser");
     defer query.deinit();
     
-    try query.categories.append(.utilities);
+    try query.categories.append(allocator, .utilities);
     query.min_quality = 80.0;
     query.only_secure = true;
     

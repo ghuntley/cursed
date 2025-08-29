@@ -14,6 +14,7 @@ const Variable = union(enum) {
     Boolean: bool,
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
+        _ = allocator;
         switch (self) {
             .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
             .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
@@ -89,18 +90,18 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit(); // Fix memory leak: Clean up tokens ArrayList
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -180,7 +181,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     defer allocator.free(c_filename);
     
     // Generate optimized C code
-    var c_code = std.ArrayList(u8).init(self.allocator);
+    var c_code = std.ArrayList(u8){};
     defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n");
@@ -191,7 +192,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     try c_code.appendSlice(filename);
     try c_code.appendSlice("\n");
     try c_code.appendSlice("// Optimization level: ");
-    try c_code.append('0' + optimization_level);
+    try c_code.append(allocator, '0' + optimization_level);
     try c_code.appendSlice("\n\n");
     
     try c_code.appendSlice("int main() {\n");
@@ -260,7 +261,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     // Write C file
     const c_file = try std.fs.cwd().createFile(c_filename, .{});
     defer c_file.close();
-    try c_file.writeAll(c_code.items);
+    try c_file.writer().writeAll(c_code.items);
     
     if (verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -282,7 +283,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
         .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", compile_cmd },
     }) catch |err| {
-        print("❌ Compilation failed: {}\n", .{err});
+        print("❌ Compilation failed: {s}\n", .{err});
         print("Generated C code saved in: {s}\n", .{c_filename});
         return;
     };
@@ -291,7 +292,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     
     if (result.term.Exited == 0) {
         print("✅ Generated native executable: {s}\n", .{output_name});
-        print("📊 Compilation stats: {} tokens processed, optimization level {}\n", .{tokens.items.len, optimization_level});
+        print("📊 Compilation stats: {s} tokens processed, optimization level {s}\n", .{tokens.items.len, optimization_level});
         print("💡 Usage: ./{s}\n", .{output_name});
         
         // Clean up C file unless verbose mode
@@ -325,7 +326,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, verbose: bool) !vo
     // Validate all imported modules
     if (imports.items.len > 0) {
         if (verbose) {
-            print("📦 Validating {} imports...\n", .{imports.items.len});
+            print("📦 Validating {s} imports...\n", .{imports.items.len});
         }
         
         const all_valid = simple_import_resolver.validateImports(allocator, imports) catch |err| {
@@ -346,29 +347,29 @@ fn interpretProgram(allocator: Allocator, source: []const u8, verbose: bool) !vo
     // Tokenize the source code
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error during interpretation: {}\n", .{err});
+        print("❌ Lexer error during interpretation: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
     
-    if (verbose) print("🔍 Parsed {} tokens for interpretation\n", .{tokens.items.len});
+    if (verbose) print("🔍 Parsed {s} tokens for interpretation\n", .{tokens.items.len});
     
     // Parse into AST
     var parser = parser_simple.Parser.init(allocator, tokens.items);
     const program = parser.parseProgram() catch |err| {
-        print("❌ Parser error: {}\n", .{err});
+        print("❌ Parser error: {s}\n", .{err});
         return;
     };
     defer program.deinit();
     
-    if (verbose) print("🌳 Generated AST with {} statements\n", .{program.statements.items.len});
+    if (verbose) print("🌳 Generated AST with {s} statements\n", .{program.statements.items.len});
     
     // Execute with interpreter
     var cursed_interpreter = interpreter.Interpreter.init(allocator);
     defer cursed_interpreter.deinit();
     
     cursed_interpreter.execute(program) catch |err| {
-        print("❌ Runtime error: {}\n", .{err});
+        print("❌ Runtime error: {s}\n", .{err});
         return;
     };
     
@@ -492,7 +493,7 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             } else {
                 // Try to parse as literal value
                 if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
-                    print("{}\n", .{int_val});
+                    print("{s}\n", .{int_val});
                 } else |_| {
                     if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {
                         print("{d}\n", .{float_val});

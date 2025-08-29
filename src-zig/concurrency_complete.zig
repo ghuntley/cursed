@@ -55,6 +55,7 @@ pub const ConcurrencyRuntime = struct {
     total_context_switches: Atomic(u64) = Atomic(u64).init(0),
     
     pub fn init(allocator: Allocator) !*Self {
+        _ = allocator;
         const runtime = try allocator.create(Self);
         errdefer allocator.destroy(runtime);
         
@@ -97,15 +98,15 @@ pub const ConcurrencyRuntime = struct {
             // Each channel type would have its own cleanup method
             self.allocator.destroy(@as(*anyopaque, @ptrCast(entry.value_ptr.*)));
         }
-        self.channel_registry.deinit();
+        self.channel_registry.deinit(self.allocator);
         
         // Cleanup scheduler
-        self.scheduler.deinit();
+        self.scheduler.deinit(self.allocator);
         self.allocator.destroy(self.scheduler);
         
         // Final GC cleanup
         self.gc_instance.collectNow() catch {};
-        self.gc_instance.deinit();
+        self.gc_instance.deinit(self.allocator);
         self.allocator.destroy(self.gc_instance);
         
         const allocator = self.allocator;
@@ -118,7 +119,7 @@ pub const ConcurrencyRuntime = struct {
         }
         
         try self.scheduler.start();
-        print("[CONCURRENCY] ✅ Runtime started with {} workers\n", .{self.scheduler.config.num_workers});
+        print("[CONCURRENCY] ✅ Runtime started with {s} workers\n", .{self.scheduler.config.num_workers});
     }
     
     pub fn shutdown(self: *Self) void {
@@ -148,7 +149,7 @@ pub const ConcurrencyRuntime = struct {
         
         _ = self.total_goroutines_spawned.fetchAdd(1, .acq_rel);
         
-        print("[CONCURRENCY] Spawned goroutine {} (total: {})\n", .{ goroutine_id, self.total_goroutines_spawned.load(.acquire) });
+        print("[CONCURRENCY] Spawned goroutine {s} (total: {s})\n", .{ goroutine_id, self.total_goroutines_spawned.load(.acquire) });
         return goroutine_id;
     }
     
@@ -165,7 +166,7 @@ pub const ConcurrencyRuntime = struct {
         try self.channel_registry.put(channel_id, @ptrCast(channel));
         _ = self.total_channels_created.fetchAdd(1, .acq_rel);
         
-        print("[CONCURRENCY] Created channel {} with capacity {} (total: {})\n", .{ channel_id, capacity, self.total_channels_created.load(.acquire) });
+        print("[CONCURRENCY] Created channel {s} with capacity {s} (total: {s})\n", .{ channel_id, capacity, self.total_channels_created.load(.acquire) });
         return channel_id;
     }
     
@@ -246,7 +247,7 @@ pub const SelectStatement = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.cases.deinit();
+        self.cases.deinit(self.allocator);
     }
     
     pub fn addSendCase(self: *Self, comptime T: type, channel_id: ChannelId, value: T, case_id: u32) !void {
@@ -410,12 +411,12 @@ export fn cursed_concurrency_init() bool {
     
     const allocator = std.heap.c_allocator;
     global_runtime = ConcurrencyRuntime.init(allocator) catch |err| {
-        print("[CONCURRENCY] Failed to initialize runtime: {}\n", .{err});
+        print("[CONCURRENCY] Failed to initialize runtime: {s}\n", .{err});
         return false;
     };
     
     global_runtime.?.start() catch |err| {
-        print("[CONCURRENCY] Failed to start runtime: {}\n", .{err});
+        print("[CONCURRENCY] Failed to start runtime: {s}\n", .{err});
         global_runtime.?.deinit();
         global_runtime = null;
         return false;
@@ -436,7 +437,7 @@ export fn cursed_concurrency_shutdown() void {
 }
 
 /// Spawn goroutine - C FFI for 'stan' keyword
-export fn cursed_stan(func: ?*const fn (?*anyopaque) callconv(.C) void, context: ?*anyopaque) u64 {
+export fn cursed_stan(func: ?*const fn (?*anyopaque) callconv(.c) void, context: ?*anyopaque) u64 {
     global_mutex.lock();
     defer global_mutex.unlock();
     
@@ -451,7 +452,7 @@ export fn cursed_stan(func: ?*const fn (?*anyopaque) callconv(.C) void, context:
     
     // Wrapper to convert calling conventions
     const GoroutineWrapper = struct {
-        c_func: *const fn (?*anyopaque) callconv(.C) void,
+        c_func: *const fn (?*anyopaque) callconv(.c) void,
         c_context: ?*anyopaque,
         
         fn run(ctx: ?*anyopaque) void {

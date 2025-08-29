@@ -163,15 +163,15 @@ pub const GCTypeRegistry = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.types.deinit();
+        self.types.deinit(self.allocator);
         
-        self.collision_resistant_registry.deinit();
+        self.collision_resistant_registry.deinit(self.allocator);
         
         var mapping_iter = self.legacy_id_mapping.iterator();
         while (mapping_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.legacy_id_mapping.deinit();
+        self.legacy_id_mapping.deinit(self.allocator);
     }
 
     /// Enhanced type registration with collision detection
@@ -322,6 +322,7 @@ pub const TypedAllocator = struct {
         }
 
         pub fn deinit(self: *TypedObject, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.data);
             allocator.destroy(self);
         }
@@ -375,7 +376,7 @@ pub const TypedAllocator = struct {
         for (self.allocated_objects.items) |object| {
             object.deinit();
         }
-        self.allocated_objects.deinit();
+        self.allocated_objects.deinit(self.allocator);
     }
 
     pub fn allocateStruct(self: *TypedAllocator, type_id: u32) !*TypedObject {
@@ -486,7 +487,7 @@ pub const InterfaceRegistry = struct {
 
     pub fn init(allocator: std.mem.Allocator) InterfaceRegistry {
         return InterfaceRegistry{
-            .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage){},
             .collision_resistant_impls = type_collision.InterfaceImplRegistry.init(allocator),
             .vtable_storage = HashMap(u64, VTableEntry, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
@@ -494,9 +495,9 @@ pub const InterfaceRegistry = struct {
     }
 
     pub fn deinit(self: *InterfaceRegistry) void {
-        self.implementations.deinit();
-        self.collision_resistant_impls.deinit();
-        self.vtable_storage.deinit();
+        self.implementations.deinit(self.allocator);
+        self.collision_resistant_impls.deinit(self.allocator);
+        self.vtable_storage.deinit(self.allocator);
     }
 
     /// Enhanced registration with collision detection

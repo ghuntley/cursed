@@ -117,7 +117,7 @@ pub fn Channel(comptime T: type) type {
                 }
             }
             
-            self.buffer.deinit();
+            self.buffer.deinit(self.allocator);
         }
 
         /// Send a value to the channel (blocking) - RACE-CONDITION FREE
@@ -151,7 +151,7 @@ pub fn Channel(comptime T: type) type {
                 // For unbuffered channels, wait for receiver
                 if (self.capacity == 0) {
                     if (self.receiver_count.load(.acquire) > 0) {
-                        try self.buffer.append(value);
+                        try self.buffer.append(allocator, value);
                         self.recv_condition.signal();
                         self.stats.total_sent += 1;
                         return SendResult.sent;
@@ -168,7 +168,7 @@ pub fn Channel(comptime T: type) type {
 
                 // For buffered channels, check capacity
                 if (self.buffer.items.len < self.capacity) {
-                    try self.buffer.append(value);
+                    try self.buffer.append(allocator, value);
                     self.recv_condition.signal();
                     self.stats.total_sent += 1;
                     return SendResult.sent;
@@ -395,7 +395,7 @@ pub const WorkStealingDeque = struct {
     }
 
     pub fn deinit(self: *Self) void {
-        self.items.deinit();
+        self.items.deinit(self.allocator);
     }
 
     /// Push goroutine to bottom (owner thread only) - RACE-CONDITION FREE
@@ -404,7 +404,7 @@ pub const WorkStealingDeque = struct {
         defer self.mutex.unlock();
 
         goroutine.addRef(); // Add reference for the deque
-        try self.items.append(goroutine);
+        try self.items.append(allocator, goroutine);
         self.bottom.store(self.items.items.len, .release);
     }
 
@@ -470,7 +470,7 @@ pub const Worker = struct {
 
     pub fn deinit(self: *Worker) void {
         self.stop();
-        self.deque.deinit();
+        self.deque.deinit(self.allocator);
     }
 
     pub fn start(self: *Worker) !void {
@@ -592,7 +592,7 @@ pub const Scheduler = struct {
         try scheduler.workers.ensureTotalCapacity(allocator, config.num_workers);
         for (0..config.num_workers) |i| {
             const worker = Worker.init(allocator, i, &scheduler);
-            try scheduler.workers.append(worker);
+            try scheduler.workers.append(allocator, worker);
         }
 
         return scheduler;
@@ -604,7 +604,7 @@ pub const Scheduler = struct {
         for (self.workers.items) |*worker| {
             worker.deinit();
         }
-        self.workers.deinit();
+        self.workers.deinit(self.allocator);
     }
 
     pub fn start(self: *Self) !void {
@@ -702,6 +702,7 @@ pub fn getScheduler() ?*Scheduler {
 
 /// Shutdown the global scheduler - RACE-CONDITION FREE
 pub fn shutdownScheduler(allocator: Allocator) void {
+        _ = allocator;
     global_scheduler_mutex.lock();
     defer global_scheduler_mutex.unlock();
     

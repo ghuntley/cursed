@@ -12,8 +12,9 @@ var global_goroutines: ?ArrayList(std.Thread) = null;
 var global_allocator: ?Allocator = null;
 
 pub fn initGlobalConcurrency(allocator: Allocator) void {
+        _ = allocator;
     if (global_channels == null) {
-        global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+        global_channels = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         global_goroutines = .empty;
         global_allocator = allocator;
     }
@@ -49,7 +50,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         if (verbose) print("🚀 Spawning goroutine with block\n", .{});
         
         // Extract the body of the stan block (simplified for now)
-        var body_lines = .empty;
+        var body_lines = std.ArrayList(u8){};
         defer body_lines.deinit();
         
         // Find the corresponding closing brace (simplified)
@@ -59,7 +60,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
             if (std.mem.eql(u8, block_line, "}")) {
                 break;
             }
-            try body_lines.append(block_line);
+            try body_lines.append(allocator, block_line);
             current_line += 1;
         }
         
@@ -85,7 +86,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         // Spawn the goroutine
         const goroutine_fn = struct {
             fn run(ctx: *GoroutineContext) void {
-                if (ctx.verb) print("🏃 Goroutine executing {} lines\n", .{ctx.lines.len});
+                if (ctx.verb) print("🏃 Goroutine executing {s} lines\n", .{ctx.lines.len});
                 
                 // Execute each line in the goroutine
                 for (ctx.lines) |block_line| {
@@ -117,7 +118,7 @@ pub fn handleStanStatement(variables: *anyopaque, functions: *anyopaque, allocat
         
         const thread = try std.Thread.spawn(.{}, goroutine_fn, .{context});
         if (global_goroutines) |*goroutines| {
-            try goroutines.append(thread);
+            try goroutines.append(allocator, thread);
         }
         
         if (verbose) print("✅ Goroutine spawned\n", .{});
@@ -193,7 +194,7 @@ pub fn handleWaitFunction(variables: *anyopaque, allocator: Allocator, line: []c
                 const time_str = line[start + 1..end];
                 const wait_ms = std.fmt.parseInt(u64, time_str, 10) catch 100;
                 
-                if (verbose) print("⏳ Waiting for {}ms...\n", .{wait_ms});
+                if (verbose) print("⏳ Waiting for {s}ms...\n", .{wait_ms});
                 std.Thread.sleep(wait_ms * 1_000_000); // Convert ms to ns
                 if (verbose) print("✅ Wait completed\n", .{});
             }
@@ -216,5 +217,5 @@ pub fn handleMakeChannel(variables: *anyopaque, allocator: Allocator, var_name: 
         try channels.put(var_name, @as(u64, @intCast(channel_id)));
     }
     
-    if (verbose) print("✅ Channel created with ID: {}\n", .{channel_id});
+    if (verbose) print("✅ Channel created with ID: {s}\n", .{channel_id});
 }

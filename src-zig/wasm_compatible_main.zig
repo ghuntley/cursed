@@ -21,6 +21,7 @@ const Variable = union(enum) {
     Null,
     
     pub fn deinit(self: *Variable, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .String => |str| allocator.free(str),
             else => {},
@@ -28,6 +29,7 @@ const Variable = union(enum) {
     }
     
     pub fn clone(self: Variable, allocator: Allocator) !Variable {
+        _ = allocator;
         return switch (self) {
             .String => |str| Variable{ .String = try allocator.dupe(u8, str) },
             .Integer => |val| Variable{ .Integer = val },
@@ -67,7 +69,7 @@ const WasmRuntime = struct {
             self.allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
         
         // Clean up functions
         var func_iter = self.functions.iterator();
@@ -75,15 +77,15 @@ const WasmRuntime = struct {
             self.allocator.free(entry.key_ptr.*);
             // Functions are managed by AST cleanup
         }
-        self.functions.deinit();
+        self.functions.deinit(self.allocator);
         
-        self.output_buffer.deinit();
+        self.output_buffer.deinit(self.allocator);
     }
     
     // WASM print implementation - writes to buffer instead of stdout
     pub fn wasmPrint(self: *Self, text: []const u8) !void {
         try self.output_buffer.appendSlice(text);
-        try self.output_buffer.append('\n');
+        try self.output_buffer.append(allocator, '\n');
     }
     
     // Get output buffer contents

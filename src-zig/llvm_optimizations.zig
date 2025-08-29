@@ -88,7 +88,7 @@ pub const LLVMOptimizationEngine = struct {
             try self.addPass(pass);
         }
         
-        print("  ✅ Added {} basic optimization passes (O0)\n", .{passes.len});
+        print("  ✅ Added {s} basic optimization passes (O0)\n", .{passes.len});
     }
     
     /// O1 optimization passes - balanced performance and compile time
@@ -126,7 +126,7 @@ pub const LLVMOptimizationEngine = struct {
             try self.addPass(pass);
         }
         
-        print("  ✅ Added {} O1 optimization passes\n", .{passes.len});
+        print("  ✅ Added {s} O1 optimization passes\n", .{passes.len});
     }
     
     /// O2 optimization passes - good performance with reasonable compile time
@@ -337,7 +337,7 @@ pub const LLVMOptimizationEngine = struct {
     /// Get optimization recommendations based on code characteristics
     pub fn getOptimizationRecommendations(self: *LLVMOptimizationEngine, code_analysis: CodeAnalysis) []OptimizationRecommendation {
         _ = self;
-        var recommendations = std.ArrayList(OptimizationRecommendation).init(self.allocator);
+        var recommendations = std.ArrayList(OptimizationRecommendation){};
         
         // Loop-heavy code recommendations
         if (code_analysis.loop_count > 10) {

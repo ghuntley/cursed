@@ -230,7 +230,7 @@ const MemoryTracker = struct {
     }
     
     pub fn deinit(self: *MemoryTracker) void {
-        self.allocations.deinit();
+        self.allocations.deinit(self.allocator);
     }
     
     pub fn trackAllocation(self: *MemoryTracker, address: usize, info: AllocationInfo) !void {
@@ -262,7 +262,7 @@ const MemoryTracker = struct {
         self.tracker_mutex.lock();
         defer self.tracker_mutex.unlock();
         
-        var leaks = .empty;
+        var leaks = std.ArrayList(u8){};
         
         var iterator = self.allocations.iterator();
         while (iterator.next()) |entry| {
@@ -537,11 +537,11 @@ const FinalizationQueue = struct {
     }
     
     pub fn deinit(self: *FinalizationQueue) void {
-        self.critical_queue.deinit();
-        self.high_queue.deinit();
-        self.normal_queue.deinit();
-        self.low_queue.deinit();
-        self.retry_queue.deinit();
+        self.critical_queue.deinit(self.allocator);
+        self.high_queue.deinit(self.allocator);
+        self.normal_queue.deinit(self.allocator);
+        self.low_queue.deinit(self.allocator);
+        self.retry_queue.deinit(self.allocator);
     }
     
     pub fn enqueue(self: *FinalizationQueue, object: *ObjectHeader, finalizer: Finalizer) !void {
@@ -556,10 +556,10 @@ const FinalizationQueue = struct {
         defer self.queue_mutex.unlock();
         
         switch (finalizer.priority) {
-            .Critical => try self.critical_queue.append(entry),
-            .High => try self.high_queue.append(entry),
-            .Normal => try self.normal_queue.append(entry),
-            .Low => try self.low_queue.append(entry),
+            .Critical => try self.critical_queue.append(allocator, entry),
+            .High => try self.high_queue.append(allocator, entry),
+            .Normal => try self.normal_queue.append(allocator, entry),
+            .Low => try self.low_queue.append(allocator, entry),
         }
         
         _ = self.total_queued.fetchAdd(1, .acq_rel);
@@ -600,7 +600,7 @@ const FinalizationQueue = struct {
         
         var retry_entry = entry;
         retry_entry.attempts += 1;
-        try self.retry_queue.append(retry_entry);
+        try self.retry_queue.append(allocator, retry_entry);
         
         _ = self.total_retried.fetchAdd(1, .acq_rel);
     }
@@ -777,7 +777,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        self.mark_stack.append(header) catch {};
+                        self.mark_stack.append(allocator, header) catch {};
                     }
                 }
             }
@@ -1016,22 +1016,22 @@ pub const GCImpl = struct {
         self.deallocateHeap();
         
         // Clean up advanced memory management features
-        self.memory_tracker.deinit();
-        self.allocation_map.deinit();
-        self.ref_count_map.deinit();
-        self.memory_pools.deinit();
+        self.memory_tracker.deinit(self.allocator);
+        self.allocation_map.deinit(self.allocator);
+        self.ref_count_map.deinit(self.allocator);
+        self.memory_pools.deinit(self.allocator);
         
         // Clean up data structures
-        self.mark_stack.deinit();
-        self.roots.deinit();
-        self.stack_roots.deinit();
-        self.write_barriers.deinit();
-        self.finalizers.deinit();
-        self.finalization_queue.deinit();
-        self.quarantined_objects.deinit();
-        self.weak_refs.deinit();
-        self.heap_segments.deinit();
-        self.forwarding_table.deinit();
+        self.mark_stack.deinit(self.allocator);
+        self.roots.deinit(self.allocator);
+        self.stack_roots.deinit(self.allocator);
+        self.write_barriers.deinit(self.allocator);
+        self.finalizers.deinit(self.allocator);
+        self.finalization_queue.deinit(self.allocator);
+        self.quarantined_objects.deinit(self.allocator);
+        self.weak_refs.deinit(self.allocator);
+        self.heap_segments.deinit(self.allocator);
+        self.forwarding_table.deinit(self.allocator);
         
         // Clean up arena manager
         if (self.arena_manager) |manager| {
@@ -1081,8 +1081,8 @@ pub const GCImpl = struct {
             .generation = 1,
         };
         
-        try self.heap_segments.append(young_segment);
-        try self.heap_segments.append(old_segment);
+        try self.heap_segments.append(allocator, young_segment);
+        try self.heap_segments.append(allocator, old_segment);
         
         std.log.info("GC: Initialized heap - Total: {} bytes, Young: {} bytes ({}%), Old: {} bytes ({}%)", .{ 
             self.heap_size, young_gen_size, @as(u8, @intFromFloat(self.config.young_gen_ratio * 100)),
@@ -1384,7 +1384,7 @@ pub const GCImpl = struct {
         }
         defer self.finalization_mutex.unlock();
         
-        try self.finalizers.append(finalizer_entry);
+        try self.finalizers.append(allocator, finalizer_entry);
     }
     
     /// Set error handler for finalizer failures
@@ -1558,7 +1558,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
         }
@@ -1603,7 +1603,7 @@ pub const GCImpl = struct {
                     const child_header = ObjectHeader.fromData(ptr);
                     if (child_header.color == @intFromEnum(Color.White)) {
                         child_header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(child_header);
+                        try self.mark_stack.append(allocator, child_header);
                     }
                 }
             }
@@ -1622,7 +1622,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(barrier.new_ref);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
         }
@@ -1934,7 +1934,7 @@ pub const GCImpl = struct {
         self.finalization_mutex.lock();
         defer self.finalization_mutex.unlock();
         
-        try self.quarantined_objects.append(quarantine_entry);
+        try self.quarantined_objects.append(allocator, quarantine_entry);
         std.log.info("Object {*} quarantined for manual finalization", .{object});
     }
     
@@ -2224,7 +2224,7 @@ pub const GCImpl = struct {
         self.roots_mutex.lock();
         defer self.roots_mutex.unlock();
         
-        try self.stack_roots.append(ptr);
+        try self.stack_roots.append(allocator, ptr);
         std.log.debug("GC: Registered stack root at {*}", .{ptr});
     }
     
@@ -2267,7 +2267,7 @@ pub const GCImpl = struct {
                         if (header.color == @intFromEnum(Color.White)) {
                             // Mark as gray for further scanning
                             header.color = @intFromEnum(Color.Gray);
-                            self.mark_stack.append(header) catch {};
+                            self.mark_stack.append(allocator, header) catch {};
                         }
                     }
                 }
@@ -2429,7 +2429,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2485,7 +2485,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(element_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2507,7 +2507,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(field_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2529,7 +2529,7 @@ pub const GCImpl = struct {
                     const header = ObjectHeader.fromData(capture_ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        try self.mark_stack.append(header);
+                        try self.mark_stack.append(allocator, header);
                     }
                 }
             }
@@ -2551,7 +2551,7 @@ pub const GCImpl = struct {
                 const header = ObjectHeader.fromData(potential_ptr);
                 if (header.color == @intFromEnum(Color.White)) {
                     header.color = @intFromEnum(Color.Gray);
-                    try self.mark_stack.append(header);
+                    try self.mark_stack.append(allocator, header);
                 }
             }
             
@@ -2575,7 +2575,7 @@ pub const GCImpl = struct {
                     if (obj.finalize == 1) {
                         // Add to finalization queue
                         self.finalization_mutex.lock();
-                        try self.finalization_queue.append(obj);
+                        try self.finalization_queue.append(allocator, obj);
                         self.finalization_mutex.unlock();
                     } else {
                         // Free immediately
@@ -2633,7 +2633,7 @@ pub const GCImpl = struct {
                 if (obj.finalize == 1) {
                     // Add to finalization queue
                     self.finalization_mutex.lock();
-                    try self.finalization_queue.append(obj);
+                    try self.finalization_queue.append(allocator, obj);
                     self.finalization_mutex.unlock();
                 } else {
                     // Free immediately
@@ -2741,13 +2741,13 @@ pub const GCImpl = struct {
                 const length_ptr = @as(*usize, @ptrCast(@alignCast(ptr)));
                 const length = length_ptr.*;
                 
-                var arr = std.ArrayList(Variable).init(self.allocator);
+                var arr = std.ArrayList(Variable){};
                 try arr.ensureTotalCapacity(allocator, length);
                 
                 // Load array elements (recursive loading needed for GC objects)
                 for (0..length) |_| {
                     // For now, add placeholder integers
-                    try arr.append(Variable{ .Integer = 0 });
+                    try arr.append(allocator, Variable{ .Integer = 0 });
                 }
                 
                 return Variable{ .Array = arr };
@@ -3063,7 +3063,7 @@ export fn cursed_gc_create_weak_ref(gc: ?*GC, target: *anyopaque) ?*WeakRef {
         };
         
         g.weak_ref_mutex.lock();
-        g.weak_refs.append(weak_ref) catch {
+        g.weak_refs.append(allocator, weak_ref) catch {
             g.weak_ref_mutex.unlock();
             g.allocator.destroy(weak_ref);
             return null;
@@ -3089,7 +3089,7 @@ export fn cursed_gc_weak_ref_valid(weak_ref: ?*WeakRef) bool {
     return false;
 }
 
-export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: ?*const fn (*anyopaque) callconv(.C) void) void {
+export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: ?*const fn (*anyopaque) callconv(.c) void) void {
     if (gc) |g| {
         if (finalizer) |fn_ptr| {
             const header = ObjectHeader.fromData(object);
@@ -3097,7 +3097,7 @@ export fn cursed_gc_register_finalizer(gc: ?*GC, object: *anyopaque, finalizer: 
             
             g.finalization_mutex.lock();
             const finalizer_entry = Finalizer.init(header, @ptrCast(fn_ptr), .Normal, "c_export", 3);
-            g.finalizers.append(finalizer_entry) catch {};
+            g.finalizers.append(allocator, finalizer_entry) catch {};
             g.finalization_mutex.unlock();
         }
     }
@@ -3131,7 +3131,7 @@ export fn cursed_gc_scan_stack_frame(gc: ?*GC, frame_start: *anyopaque, frame_si
                     const header = ObjectHeader.fromData(ptr);
                     if (header.color == @intFromEnum(Color.White)) {
                         header.color = @intFromEnum(Color.Gray);
-                        g.mark_stack.append(header) catch {};
+                        g.mark_stack.append(allocator, header) catch {};
                     }
                 }
             }
@@ -3386,7 +3386,7 @@ test "GC stress test - allocation and collection cycles" {
     var gc = try GC.init(gpa, config);
     defer gc.deinit();
     
-    var allocated_ptrs = std.ArrayList(*anyopaque).init(gpa);
+    var allocated_ptrs = std.ArrayList(*anyopaque){};
     defer allocated_ptrs.deinit();
     
     // Stress test: allocate many objects
@@ -3396,7 +3396,7 @@ test "GC stress test - allocation and collection cycles" {
         const type_id = @as(u16, @intCast(i % 4)); // Different types
         
         const ptr = try gc.alloc(size, type_id);
-        try allocated_ptrs.append(ptr);
+        try allocated_ptrs.append(allocator, ptr);
         
         // Add some as roots to keep them alive
         if (i % 10 == 0) {
@@ -3419,11 +3419,11 @@ test "GC stress test - allocation and collection cycles" {
     
     // Print statistics for manual verification
     std.debug.print("\nGC Stress Test Results:\n", .{});
-    std.debug.print("Total allocations: {}\n", .{gc.stats.total_allocations});
-    std.debug.print("GC cycles: {}\n", .{gc.stats.gc_cycles});
-    std.debug.print("Total pause time: {} μs\n", .{gc.stats.total_pause_time_us});
-    std.debug.print("Max pause time: {} μs\n", .{gc.stats.max_pause_time_us});
-    std.debug.print("Current heap size: {} bytes\n", .{gc.heap_used});
+    std.debug.print("Total allocations: {s}\n", .{gc.stats.total_allocations});
+    std.debug.print("GC cycles: {s}\n", .{gc.stats.gc_cycles});
+    std.debug.print("Total pause time: {s} μs\n", .{gc.stats.total_pause_time_us});
+    std.debug.print("Max pause time: {s} μs\n", .{gc.stats.max_pause_time_us});
+    std.debug.print("Current heap size: {s} bytes\n", .{gc.heap_used});
 }
 
 test "GC memory leak detection" {
@@ -3451,7 +3451,7 @@ test "GC memory leak detection" {
     defer gpa.free(leaks);
     
     // Note: In a real test, we'd verify specific leak patterns
-    std.debug.print("Detected {} potential leaks\n", .{leaks.len});
+    std.debug.print("Detected {s} potential leaks\n", .{leaks.len});
 }
 
 test "GC concurrent collection safety" {
@@ -3492,12 +3492,12 @@ test "GC generational collection" {
     defer gc.deinit();
     
     // Allocate objects in young generation
-    var young_ptrs = std.ArrayList(*anyopaque).init(gpa);
+    var young_ptrs = std.ArrayList(*anyopaque){};
     defer young_ptrs.deinit();
     
     for (0..50) |i| {
         const ptr = try gc.alloc(32 + i, 0);
-        try young_ptrs.append(ptr);
+        try young_ptrs.append(allocator, ptr);
         
         // Make some objects roots so they survive
         if (i % 5 == 0) {
@@ -3666,8 +3666,8 @@ test "GC comprehensive memory statistics" {
     try expect(stats.memory_usage.current_usage > 0);
     try expect(stats.pressure_level != .Critical); // Should not be critical with small allocation
     
-    std.debug.print("Memory usage: {} bytes\n", .{stats.memory_usage.current_usage});
-    std.debug.print("Memory pressure: {}\n", .{stats.pressure_level});
+    std.debug.print("Memory usage: {s} bytes\n", .{stats.memory_usage.current_usage});
+    std.debug.print("Memory pressure: {s}\n", .{stats.pressure_level});
 }
 
 // Helper function to create comprehensive stats (missing implementation)
@@ -3820,7 +3820,7 @@ const GCImplHelpers = struct {
     
     /// Register stack root
     pub fn registerStackRoot(self: *GC, ptr: *anyopaque) !void {
-        try self.stack_roots.append(ptr);
+        try self.stack_roots.append(allocator, ptr);
     }
     
     /// Unregister stack root

@@ -38,6 +38,7 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn deinit(self: *SafeLoadedModule, allocator: Allocator) void {
+        _ = allocator;
             // Free all strings we own
             allocator.free(self.name);
             allocator.free(self.path);
@@ -46,13 +47,13 @@ pub const SafeModuleLoader = struct {
             for (self.functions.items) |*func| {
                 func.deinit();
             }
-            self.functions.deinit();
+            self.functions.deinit(self.allocator);
             
             // Clean up variables
             for (self.variables.items) |*var_info| {
                 var_info.deinit();
             }
-            self.variables.deinit();
+            self.variables.deinit(self.allocator);
         }
     };
 
@@ -74,6 +75,7 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn deinit(self: *SafeFunctionInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.name);
             if (self.return_type) |ret_type| {
                 allocator.free(ret_type);
@@ -95,6 +97,7 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn deinit(self: *SafeVariableInfo, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.name);
             if (self.type_annotation) |type_anno| {
                 allocator.free(type_anno);
@@ -117,7 +120,7 @@ pub const SafeModuleLoader = struct {
         }
 
         pub fn deinit(self: *AllocationTracker) void {
-            self.active_allocations.deinit();
+            self.active_allocations.deinit(self.allocator);
         }
 
         pub fn trackAllocation(self: *AllocationTracker, ptr: usize, size: usize) void {
@@ -139,9 +142,9 @@ pub const SafeModuleLoader = struct {
 
         pub fn printReport(self: *AllocationTracker) void {
             print("📊 Memory Report:\n", .{});
-            print("  Total allocations: {}\n", .{self.total_allocations});
-            print("  Total frees: {}\n", .{self.total_frees});
-            print("  Active allocations: {}\n", .{self.active_allocations.count()});
+            print("  Total allocations: {s}\n", .{self.total_allocations});
+            print("  Total frees: {s}\n", .{self.total_frees});
+            print("  Active allocations: {s}\n", .{self.active_allocations.count()});
             if (self.hasLeaks()) {
                 print("  ⚠️  Memory leaks detected!\n", .{});
             } else {
@@ -153,7 +156,7 @@ pub const SafeModuleLoader = struct {
     pub fn init(allocator: Allocator, verbose: bool) SafeModuleLoader {
         return SafeModuleLoader{
             .allocator = allocator,
-            .loaded_modules = HashMap([]const u8, SafeLoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loaded_modules = HashMap([]const u8, SafeLoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .telemetry = null,
             .allocation_tracker = AllocationTracker.init(allocator),
@@ -163,7 +166,7 @@ pub const SafeModuleLoader = struct {
     pub fn initWithTelemetry(allocator: Allocator, verbose: bool, telemetry: *crash_handler.CrashTelemetry) SafeModuleLoader {
         return SafeModuleLoader{
             .allocator = allocator,
-            .loaded_modules = HashMap([]const u8, SafeLoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .loaded_modules = HashMap([]const u8, SafeLoadedModule, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .verbose = verbose,
             .telemetry = telemetry,
             .allocation_tracker = AllocationTracker.init(allocator),
@@ -178,14 +181,14 @@ pub const SafeModuleLoader = struct {
             module.deinit();
             self.allocator.free(entry.key_ptr.*);
         }
-        self.loaded_modules.deinit();
+        self.loaded_modules.deinit(self.allocator);
         
         // Check for memory leaks
         if (self.verbose) {
             self.allocation_tracker.printReport();
         }
         
-        self.allocation_tracker.deinit();
+        self.allocation_tracker.deinit(self.allocator);
     }
 
     /// Safely load a module with comprehensive memory management
@@ -222,7 +225,7 @@ pub const SafeModuleLoader = struct {
         const cached_name = try self.allocator.dupe(u8, module_name);
         try self.loaded_modules.put(cached_name, loaded_module);
 
-        if (self.verbose) print("✅ Module '{s}' loaded with {} functions\n", .{ module_name, loaded_module.functions.items.len });
+        if (self.verbose) print("✅ Module '{s}' loaded with {s} functions\n", .{ module_name, loaded_module.functions.items.len });
 
         return loaded_module.functions.items;
     }
@@ -246,7 +249,7 @@ pub const SafeModuleLoader = struct {
         defer self.allocator.free(project_root);
 
         // Build stdlib path
-        var path_buf = .empty;
+        var path_buf = std.ArrayList(u8){};
         defer path_buf.deinit();
 
         try path_buf.appendSlice(project_root);
@@ -268,14 +271,14 @@ pub const SafeModuleLoader = struct {
 
         const markers = [_][]const u8{ "build.zig", "AGENT.md", ".git", "stdlib" };
 
-        var path_components = .empty;
+        var path_components = std.ArrayList(u8){};
         defer path_components.deinit();
 
         // Split path safely
         var iter = std.mem.splitScalar(u8, current_path, '/');
         while (iter.next()) |component| {
             if (component.len > 0) {
-                try path_components.append(component);
+                try path_components.append(allocator, component);
             }
         }
 
@@ -287,18 +290,18 @@ pub const SafeModuleLoader = struct {
             depth += 1;
 
             // Build test path
-            var test_path = .empty;
+            var test_path = std.ArrayList(u8){};
             defer test_path.deinit();
 
-            try test_path.append('/');
+            try test_path.append(allocator, '/');
             for (path_components.items) |component| {
                 try test_path.appendSlice(component);
-                try test_path.append('/');
+                try test_path.append(allocator, '/');
             }
 
             // Check for markers
             for (markers) |marker| {
-                var marker_path = .empty;
+                var marker_path = std.ArrayList(u8){};
                 defer marker_path.deinit();
 
                 try marker_path.appendSlice(test_path.items);
@@ -367,7 +370,7 @@ pub const SafeModuleLoader = struct {
             return err;
         };
 
-        if (self.verbose) print("🔍 Tokenized module '{s}' - {} tokens\n", .{ module_name, tokens.items.len });
+        if (self.verbose) print("🔍 Tokenized module '{s}' - {s} tokens\n", .{ module_name, tokens.items.len });
 
         // Parse safely
         var module_parser = parser.Parser.initWithFile(arena_allocator, tokens.items, module_path);
@@ -376,7 +379,7 @@ pub const SafeModuleLoader = struct {
             return err;
         };
 
-        if (self.verbose) print("🔍 Parsed module '{s}' - {} statements\n", .{ module_name, program.statements.items.len });
+        if (self.verbose) print("🔍 Parsed module '{s}' - {s} statements\n", .{ module_name, program.statements.items.len });
 
         // Extract functions and variables safely
         for (program.statements.items) |stmt_ptr| {
@@ -441,6 +444,7 @@ pub const SafeModuleLoader = struct {
 
 /// Test the safe module loader
 pub fn testSafeModuleLoader(allocator: Allocator) !void {
+        _ = allocator;
     print("🧪 Testing Safe Module Loader...\n", .{});
 
     var loader = SafeModuleLoader.init(allocator, true);
@@ -449,7 +453,7 @@ pub fn testSafeModuleLoader(allocator: Allocator) !void {
     // Test loading mathz module
     const functions = try loader.safeLoadModule("mathz");
     if (functions) |func_list| {
-        print("✅ Successfully loaded {} functions from mathz\n", .{func_list.len});
+        print("✅ Successfully loaded {s} functions from mathz\n", .{func_list.len});
         for (func_list) |func| {
             print("  - {s}\n", .{func.name});
         }

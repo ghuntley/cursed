@@ -11,12 +11,13 @@ pub const SimpleFunctionInfo = struct {
     available: bool,
     
     pub fn deinit(self: *SimpleFunctionInfo, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
     }
 };
 
 pub fn extractFunctionNames(allocator: Allocator, source: []const u8) !ArrayList(SimpleFunctionInfo) {
-    var functions = .empty;
+    var functions = std.ArrayList(u8){};
     
     // Simple regex-like parsing to find function declarations
     var lines = std.mem.splitScalar(u8, source, '\n');

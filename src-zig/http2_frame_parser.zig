@@ -159,6 +159,7 @@ pub const Frame = union(FrameType) {
     CONTINUATION: ContinuationFrame,
     
     pub fn deinit(self: *Frame, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .DATA => |*data| data.deinit(),
             .HEADERS => |*headers| headers.deinit(),
@@ -177,6 +178,7 @@ pub const DataFrame = struct {
     padding: []u8,
     
     pub fn deinit(self: *DataFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.data);
         allocator.free(self.padding);
     }
@@ -190,6 +192,7 @@ pub const HeadersFrame = struct {
     padding: []u8,
     
     pub fn deinit(self: *HeadersFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.header_block_fragment);
         allocator.free(self.padding);
     }
@@ -216,6 +219,7 @@ pub const SettingsFrame = struct {
     parameters: []SettingsParameter,
     
     pub fn deinit(self: *SettingsFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.parameters);
     }
 };
@@ -228,6 +232,7 @@ pub const PushPromiseFrame = struct {
     padding: []u8,
     
     pub fn deinit(self: *PushPromiseFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.header_block_fragment);
         allocator.free(self.padding);
     }
@@ -245,6 +250,7 @@ pub const GoAwayFrame = struct {
     additional_debug_data: []u8,
     
     pub fn deinit(self: *GoAwayFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.additional_debug_data);
     }
 };
@@ -259,6 +265,7 @@ pub const ContinuationFrame = struct {
     header_block_fragment: []u8,
     
     pub fn deinit(self: *ContinuationFrame, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.header_block_fragment);
     }
 };
@@ -280,6 +287,7 @@ pub const HeaderEntry = struct {
     }
     
     pub fn deinit(self: *HeaderEntry, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         allocator.free(self.value);
     }
@@ -370,7 +378,7 @@ pub const DynamicTable = struct {
         for (self.entries.items) |*entry| {
             entry.deinit();
         }
-        self.entries.deinit();
+        self.entries.deinit(self.allocator);
     }
     
     pub fn add(self: *DynamicTable, entry: HeaderEntry) !void {
@@ -417,12 +425,12 @@ pub const HpackDecoder = struct {
     }
     
     pub fn deinit(self: *HpackDecoder) void {
-        self.dynamic_table.deinit();
+        self.dynamic_table.deinit(self.allocator);
     }
     
     /// Decode HPACK-compressed header block
     pub fn decode(self: *HpackDecoder, data: []const u8) !ArrayList(HeaderEntry) {
-        var headers = .empty;
+        var headers = std.ArrayList(u8){};
         var pos: usize = 0;
         
         while (pos < data.len) {
@@ -600,10 +608,10 @@ pub const ConnectionState = struct {
     }
     
     pub fn deinit(self: *ConnectionState) void {
-        self.streams.deinit();
-        self.peer_settings.deinit();
-        self.local_settings.deinit();
-        self.hpack_decoder.deinit();
+        self.streams.deinit(self.allocator);
+        self.peer_settings.deinit(self.allocator);
+        self.local_settings.deinit(self.allocator);
+        self.hpack_decoder.deinit(self.allocator);
     }
     
     pub fn getStream(self: *ConnectionState, stream_id: u31) ?*Stream {
@@ -1080,7 +1088,7 @@ pub const Http2Connection = struct {
     }
     
     pub fn deinit(self: *Http2Connection) void {
-        self.state.deinit();
+        self.state.deinit(self.allocator);
     }
     
     /// Process incoming data buffer containing HTTP/2 frames
@@ -1107,7 +1115,7 @@ pub const Http2Connection = struct {
     
     /// Get settings frame for connection initialization
     pub fn getInitialSettings(self: *Http2Connection) ![]u8 {
-        var params = .empty;
+        var params = std.ArrayList(u8){};
         defer params.deinit();
         
         var iterator = self.state.local_settings.iterator();
@@ -1147,9 +1155,9 @@ pub fn testHttp2FrameParsing() !void {
         
         switch (f) {
             .SETTINGS => |settings| {
-                std.debug.print("Parsed SETTINGS frame with {} parameters\n", .{settings.parameters.len});
+                std.debug.print("Parsed SETTINGS frame with {s} parameters\n", .{settings.parameters.len});
                 for (settings.parameters) |param| {
-                    std.debug.print("  {s} = {}\n", .{ @tagName(param.id), param.value });
+                    std.debug.print("  {s} = {s}\n", .{ @tagName(param.id), param.value });
                 }
             },
             else => std.debug.print("Unexpected frame type\n", .{}),

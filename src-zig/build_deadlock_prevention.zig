@@ -134,7 +134,7 @@ pub const ResourcePool = struct {
 
     pub fn init() ResourcePool {
         return ResourcePool{
-            .resources = HashMap([]const u8, Resource, std.hash_map.StringContext, 80).init(allocator),
+            .resources = HashMap([]const u8, Resource, std.hash_map.StringContext, 80){},
             .allocator = allocator,
             .mutex = Mutex{},
         };
@@ -222,7 +222,7 @@ pub const DeadlockDetector = struct {
         var recursion_stack = HashMap(JobId, bool, std.hash_map.AutoContext(JobId), 80).init(self.allocator);
         defer recursion_stack.deinit(self.allocator);
 
-        var path = .empty;
+        var path = std.ArrayList(u8){};
         defer path.deinit(self.allocator);
 
         var job_iterator = self.jobs.iterator();
@@ -232,7 +232,7 @@ pub const DeadlockDetector = struct {
             if (!visited.contains(job_id)) {
                 if (try self.dfsDetectCycle(job_id, &visited, &recursion_stack, &path)) {
                     // Found a cycle, return the path
-                    var cycle = .empty;
+                    var cycle = std.ArrayList(u8){};
                     for (path.items) |id| {
                         try cycle.append(self.allocator, id);
                     }
@@ -278,10 +278,10 @@ pub const DeadlockDetector = struct {
         var in_degree = HashMap(JobId, u32, std.hash_map.AutoContext(JobId), 80).init(self.allocator);
         defer in_degree.deinit(self.allocator);
 
-        var queue = .empty;
+        var queue = std.ArrayList(u8){};
         defer queue.deinit(self.allocator);
 
-        var result = .empty;
+        var result = std.ArrayList(u8){};
 
         // Calculate in-degrees
         var job_iterator = self.jobs.iterator();
@@ -632,7 +632,7 @@ pub const BuildWorker = struct {
 
         // Complete the job
         self.scheduler.completeJob(job_id, self.id, success) catch |err| {
-            std.debug.print("⚠️ Error completing job {d}: {}\n", .{ job_id, err });
+            std.debug.print("⚠️ Error completing job {d}: {s}\n", .{ job_id, err });
         };
     }
 

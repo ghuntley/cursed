@@ -31,18 +31,19 @@ pub const CursedProject = struct {
     }
     
     pub fn deinit(self: *CursedProject) void {
-        self.authors.deinit();
+        self.authors.deinit(self.allocator);
         for (self.dependencies.items) |*dep| {
             dep.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
     }
     
     pub fn addDependency(self: *CursedProject, dep: CursedDependency) !void {
-        try self.dependencies.append(dep);
+        try self.dependencies.append(allocator, dep);
     }
     
     pub fn findMainFile(self: *CursedProject, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         if (self.main_file) |main| {
             return allocator.dupe(u8, main);
         }
@@ -460,7 +461,7 @@ pub const CursedBuilder = struct {
     }
     
     fn findFilesWithExtension(self: *CursedBuilder, dir_name: []const u8, extension: []const u8) !ArrayList([]const u8) {
-        var files = .empty;
+        var files = std.ArrayList(u8){};
         
         var dir = std.fs.cwd().openDir(dir_name, .{ .iterate = true }) catch return files;
         defer dir.close();

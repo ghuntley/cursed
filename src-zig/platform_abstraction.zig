@@ -597,18 +597,18 @@ pub fn runTests() !void {
     
     // Test capabilities
     std.debug.print("Capabilities:\n", .{});
-    std.debug.print("  Threading: {}\n", .{Capabilities.hasThreading()});
-    std.debug.print("  Networking: {}\n", .{Capabilities.hasNetworking()});
-    std.debug.print("  File System: {}\n", .{Capabilities.hasFileSystem()});
-    std.debug.print("  Process Control: {}\n", .{Capabilities.hasProcessControl()});
-    std.debug.print("  High-res Timer: {}\n", .{Capabilities.hasHighResTimer()});
+    std.debug.print("  Threading: {s}\n", .{Capabilities.hasThreading()});
+    std.debug.print("  Networking: {s}\n", .{Capabilities.hasNetworking()});
+    std.debug.print("  File System: {s}\n", .{Capabilities.hasFileSystem()});
+    std.debug.print("  Process Control: {s}\n", .{Capabilities.hasProcessControl()});
+    std.debug.print("  High-res Timer: {s}\n", .{Capabilities.hasHighResTimer()});
     
     // Test time operations
     const time1 = TimeOps.TimeStamp.now();
     TimeOps.sleepMs(1);
     const time2 = TimeOps.TimeStamp.now();
     
-    std.debug.print("Time test: {} -> {} (diff: {} ms)\n", .{
+    std.debug.print("Time test: {s} -> {s} (diff: {s} ms)\n", .{
         time1.toMillis(), time2.toMillis(), 
         time2.toMillis() - time1.toMillis()
     });
@@ -621,7 +621,7 @@ pub fn runTests() !void {
         // Test environment variables
         if (ProcessOps.getEnv(allocator, "PATH")) |path| {
             defer allocator.free(path);
-            std.debug.print("PATH length: {}\n", .{path.len});
+            std.debug.print("PATH length: {s}\n", .{path.len});
         }
         
         // Test current directory

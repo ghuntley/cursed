@@ -200,13 +200,13 @@ pub const LLVMBackendFixed = struct {
         defer llvm_dispose_message(module_str);
         
         const file = std.fs.cwd().createFile(filename, .{}) catch |err| {
-            print("Failed to create file {s}: {}\n", .{ filename, err });
+            print("Failed to create file {s}: {s}\n", .{ filename, err });
             return error.LLVMWriteFailed;
         };
         defer file.close();
         
-        _ = file.writeAll(std.mem.span(module_str)) catch |err| {
-            print("Failed to write to file {s}: {}\n", .{ filename, err });
+        _ = file.writer().writeAll(std.mem.span(module_str)) catch |err| {
+            print("Failed to write to file {s}: {s}\n", .{ filename, err });
             return error.LLVMWriteFailed;
         };
     }
@@ -229,6 +229,7 @@ pub const LLVMBackendFixed = struct {
 
 // Test function to verify the fixed backend works
 pub fn testLLVMBackendFixed(allocator: Allocator) !void {
+        _ = allocator;
     print("Testing fixed LLVM backend...\n", .{});
     
     var backend = try LLVMBackendFixed.init(allocator, "test_module");
@@ -289,8 +290,8 @@ fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: 
     const printf_func = try backend.createFunction("printf", int32_type, &param_types, true);
     
     // Store variables for reference with LLVM values
-    var variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
-    var llvm_variables = std.HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
+    var llvm_variables = std.HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var iterator = variables.iterator();
         while (iterator.next()) |entry| {
@@ -306,7 +307,7 @@ fn compileToLLVMFallback(allocator: Allocator, source: []const u8, output_file: 
     }
     
     // Store user-defined functions
-    var user_functions = std.HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator);
+    var user_functions = std.HashMap([]const u8, LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
     defer {
         var func_iterator = user_functions.iterator();
         while (func_iterator.next()) |entry| {
@@ -535,10 +536,10 @@ fn compileMultiArgumentPrint(
     variables: *std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)
 ) !void {
     // Parse arguments separated by commas
-    var args_list = std.ArrayList(LLVMValueRef).init(self.allocator);
+    var args_list = std.ArrayList(LLVMValueRef){};
     defer args_list.deinit();
     
-    var format_parts = std.ArrayList([]const u8).init(self.allocator);
+    var format_parts = std.ArrayList([]const u8){};
     defer {
         for (format_parts.items) |part| {
             allocator.free(part);
@@ -559,24 +560,24 @@ fn compileMultiArgumentPrint(
             // Variable argument
             try format_parts.append(try allocator.dupe(u8, " %ld"));
             const value_const = backend.buildConstInt(backend.getInt32Type(), @intCast(value));
-            try args_list.append(value_const);
+            try args_list.append(allocator, value_const);
             
         } else if (std.fmt.parseInt(i64, trimmed_arg, 10)) |value| {
             // Integer literal
             try format_parts.append(try allocator.dupe(u8, " %ld"));
             const value_const = backend.buildConstInt(backend.getInt32Type(), @intCast(value));
-            try args_list.append(value_const);
+            try args_list.append(allocator, value_const);
             
         } else |_| {
             // Unknown argument, treat as string
             try format_parts.append(try allocator.dupe(u8, " %s"));
             const string_value = try backend.buildConstString(trimmed_arg, "str_val");
-            try args_list.append(string_value);
+            try args_list.append(allocator, string_value);
         }
     }
     
     // Build format string
-    var format_string = std.ArrayList(u8).init(self.allocator);
+    var format_string = std.ArrayList(u8){};
     defer format_string.deinit();
     
     for (format_parts.items) |part| {
@@ -587,10 +588,10 @@ fn compileMultiArgumentPrint(
     const format_str = try backend.buildConstString(format_string.items, "fmt_str");
     
     // Create arguments array
-    var final_args = std.ArrayList(LLVMValueRef).init(self.allocator);
+    var final_args = std.ArrayList(LLVMValueRef){};
     defer final_args.deinit();
     
-    try final_args.append(format_str);
+    try final_args.append(allocator, format_str);
     try final_args.appendSlice(args_list.items);
     
     _ = try backend.buildCall(printf_func, final_args.items, "printf_call");
@@ -632,7 +633,7 @@ pub fn compileIRToNative(allocator: Allocator, ir_file: []const u8, output_file:
             if (err == error.FileNotFound) {
                 print("⚠️  {s} not found, trying next compiler...\n", .{compiler});
             } else {
-                print("⚠️  Error with {s}: {}, trying next compiler...\n", .{ compiler, err });
+                print("⚠️  Error with {s}: {s}, trying next compiler...\n", .{ compiler, err });
             }
         }
     }
@@ -677,7 +678,7 @@ fn generateFunctionBodies(
     var lines = std.mem.splitScalar(u8, source, '\n');
     var in_function = false;
     var current_function: ?LLVMValueRef = null;
-    var function_body_lines = std.ArrayList([]const u8).init(self.allocator);
+    var function_body_lines = std.ArrayList([]const u8){};
     defer function_body_lines.deinit();
     
     while (lines.next()) |line| {
@@ -714,7 +715,7 @@ fn generateFunctionBodies(
             } else {
                 // Collect function body line
                 const line_copy = try allocator.dupe(u8, trimmed);
-                try function_body_lines.append(line_copy);
+                try function_body_lines.append(allocator, line_copy);
             }
             continue;
         }
@@ -729,7 +730,7 @@ fn generateFunctionBodies(
         // Handle vibez.spill() statements
         if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
             compileVibesSpillStatement(allocator, trimmed, start, backend, printf_func, variables) catch |err| {
-                print("Warning: Failed to compile print statement: {}\n", .{err});
+                print("Warning: Failed to compile print statement: {s}\n", .{err});
             };
         }
         
@@ -911,7 +912,7 @@ fn evaluateExpressionLLVM(
             const args_str = trimmed[args_start..args_end];
             
             // Parse arguments (simplified - assume 2 integer arguments)
-            var args_list = std.ArrayList(LLVMValueRef).init(self.allocator);
+            var args_list = std.ArrayList(LLVMValueRef){};
             defer args_list.deinit();
             
             if (args_str.len > 0) {
@@ -919,7 +920,7 @@ fn evaluateExpressionLLVM(
                 while (arg_parts.next()) |arg| {
                     const trimmed_arg = std.mem.trim(u8, arg, " \t");
                     const arg_value = try evaluateExpressionLLVM(allocator, trimmed_arg, backend, variables, llvm_variables, user_functions);
-                    try args_list.append(arg_value);
+                    try args_list.append(allocator, arg_value);
                 }
             }
             

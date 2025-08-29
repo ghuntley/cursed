@@ -88,7 +88,7 @@ pub const CompilationCache = struct {
         const file = std.fs.cwd().createFile(cache_file, .{}) catch return;
         defer file.close();
         
-        file.writeAll(output) catch return;
+        file.writer().writeAll(output) catch return;
     }
 };
 
@@ -129,7 +129,7 @@ pub const FastLexer = struct {
             .source = source,
             .position = 0,
             .tokens = .empty,
-            .identifier_cache = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .identifier_cache = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         // Pre-populate keyword cache for fast lookup
@@ -139,8 +139,8 @@ pub const FastLexer = struct {
     }
     
     pub fn deinit(self: *FastLexer) void {
-        self.tokens.deinit();
-        self.identifier_cache.deinit();
+        self.tokens.deinit(self.allocator);
+        self.identifier_cache.deinit(self.allocator);
     }
     
     fn populateKeywordCache(self: *FastLexer) !void {
@@ -417,6 +417,7 @@ pub const OptimizedMemoryPool = struct {
         }
         
         pub fn deinit(self: *FixedPool, allocator: Allocator) void {
+        _ = allocator;
             allocator.free(self.items);
         }
         
@@ -436,6 +437,7 @@ pub const OptimizedMemoryPool = struct {
     };
     
     pub fn init(allocator: Allocator) !OptimizedMemoryPool {
+        _ = allocator;
         return OptimizedMemoryPool{
             .allocator = allocator,
             .pools = [_]FixedPool{
@@ -504,6 +506,7 @@ pub const PerformanceProfiler = struct {
     };
     
     pub fn init(allocator: Allocator) !PerformanceProfiler {
+        _ = allocator;
         return PerformanceProfiler{
             .allocator = allocator,
             .timer = try Timer.start(),

@@ -13,14 +13,15 @@ pub const JITExecutionEngine = struct {
     variables: HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     pub fn init(allocator: Allocator) !JITExecutionEngine {
+        _ = allocator;
         return JITExecutionEngine{
             .allocator = allocator,
-            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *JITExecutionEngine) void {
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
     
     /// Execute a function by name - for now just prints a working message
@@ -29,14 +30,14 @@ pub const JITExecutionEngine = struct {
         print("✅ JIT execution working! No more 'temporarily disabled' message.\n", .{});
         
         // Demonstrate actual interpretation capabilities
-        print("📊 Variable storage: {} variables in scope\n", .{self.variables.count()});
+        print("📊 Variable storage: {s} variables in scope\n", .{self.variables.count()});
         
         // Add a test variable
         try self.variables.put("test_var", 42);
         print("📝 Defined variable 'test_var' = 42\n", .{});
         
         if (self.variables.get("test_var")) |value| {
-            print("🔍 Retrieved variable 'test_var' = {}\n", .{value});
+            print("🔍 Retrieved variable 'test_var' = {s}\n", .{value});
         }
         
         // Demonstrate simple arithmetic
@@ -45,7 +46,7 @@ pub const JITExecutionEngine = struct {
         const sum = a + b;
         const product = a * b;
         
-        print("🧮 Arithmetic test: {} + {} = {}, {} * {} = {}\n", .{ a, b, sum, a, b, product });
+        print("🧮 Arithmetic test: {s} + {s} = {s}, {s} * {s} = {s}\n", .{ a, b, sum, a, b, product });
         
         // Show that we can handle different operations
         print("🔄 Control flow test: ", .{});
@@ -80,7 +81,7 @@ pub const JITExecutionEngine = struct {
     
     /// Define a variable
     pub fn defineVariable(self: *JITExecutionEngine, name: []const u8, value: i64) !void {
-        print("📌 Defining variable '{s}' = {}\n", .{ name, value });
+        print("📌 Defining variable '{s}' = {s}\n", .{ name, value });
         try self.variables.put(name, value);
     }
     
@@ -107,7 +108,7 @@ pub const JITExecutionEngine = struct {
         try self.defineVariable("sum", sum);
         
         // Simulate: vibez.spill("Result:", sum)
-        print("🗣️ vibez.spill output: Result: {}\n", .{sum});
+        print("🗣️ vibez.spill output: Result: {s}\n", .{sum});
         
         // Simulate function call
         try self.simulateFunction("calculate", x, y);
@@ -117,11 +118,11 @@ pub const JITExecutionEngine = struct {
     
     /// Simulate a function call
     fn simulateFunction(_: *JITExecutionEngine, func_name: []const u8, arg1: i64, arg2: i64) !void {
-        print("🔧 Calling function '{s}({}, {})'\n", .{ func_name, arg1, arg2 });
+        print("🔧 Calling function '{s}({s}, {s})'\n", .{ func_name, arg1, arg2 });
         
         if (std.mem.eql(u8, func_name, "calculate")) {
             const result = arg1 * arg2 + (arg1 - arg2);
-            print("🎯 Function '{s}' returned: {}\n", .{ func_name, result });
+            print("🎯 Function '{s}' returned: {s}\n", .{ func_name, result });
         } else {
             print("❓ Unknown function '{s}'\n", .{func_name});
         }
@@ -131,7 +132,7 @@ pub const JITExecutionEngine = struct {
     pub fn getStatus(self: *JITExecutionEngine) void {
         print("\n📊 JIT Execution Engine Status\n", .{});
         print("==============================\n", .{});
-        print("🔢 Variables in scope: {}\n", .{self.variables.count()});
+        print("🔢 Variables in scope: {s}\n", .{self.variables.count()});
         print("🏃 Status: FULLY OPERATIONAL\n", .{});
         print("✨ Features: Variable storage, arithmetic, function calls\n", .{});
         print("🚫 No longer disabled - fully functional interpreter!\n", .{});
@@ -141,7 +142,7 @@ pub const JITExecutionEngine = struct {
             print("\n📋 Current Variables:\n", .{});
             var iterator = self.variables.iterator();
             while (iterator.next()) |entry| {
-                print("  {s} = {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+                print("  {s} = {s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
             }
         }
     }
@@ -149,6 +150,7 @@ pub const JITExecutionEngine = struct {
 
 /// Test the new JIT execution engine
 pub fn testJITExecutionEngine(allocator: Allocator) !void {
+        _ = allocator;
     print("\n🧪 Testing NEW JIT Execution Engine\n", .{});
     print("===================================\n", .{});
     
@@ -162,16 +164,16 @@ pub fn testJITExecutionEngine(allocator: Allocator) !void {
     // Test 2: Expression evaluation
     print("\n📝 Test 2: Expression Evaluation\n", .{});
     var result = try engine.executeExpression("42");
-    print("Result: {}\n", .{result});
+    print("Result: {s}\n", .{result});
     
     result = try engine.executeExpression("10 + 5");
-    print("Result: {}\n", .{result});
+    print("Result: {s}\n", .{result});
     
     // Test 3: Variable operations
     print("\n📝 Test 3: Variable Operations\n", .{});
     try engine.defineVariable("my_var", 100);
     if (engine.getVariable("my_var")) |value| {
-        print("Retrieved my_var: {}\n", .{value});
+        print("Retrieved my_var: {s}\n", .{value});
     }
     
     // Test 4: Full CURSED program simulation

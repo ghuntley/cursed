@@ -224,10 +224,10 @@ test "arraylist compatibility" {
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
     
-    var list = .empty;
+    var list = std.ArrayList(u8){};
     defer list.deinit();
     
-    try list.append(42);
+    try list.append(allocator, 42);
     try TestCompat.expectEqual(@as(usize, 1), list.len());
     try TestCompat.expectEqual(@as(i32, 42), list.items()[0]);
 }

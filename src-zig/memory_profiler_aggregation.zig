@@ -86,6 +86,7 @@ pub const AllocationSample = struct {
     }
 
     pub fn deinit(self: *AllocationSample, allocator: Allocator) void {
+        _ = allocator;
         if (self.stack_trace) |trace| {
             for (trace) |frame| {
                 allocator.free(frame);
@@ -140,8 +141,8 @@ pub const SampleAggregation = struct {
             .avg_allocation_size = 0.0,
             .avg_lifetime_ns = 0.0,
             .fragmentation_ratio = 0.0,
-            .allocations_by_tag = HashMap(MemoryTag, u64).init(allocator),
-            .bytes_by_tag = HashMap(MemoryTag, u64).init(allocator),
+            .allocations_by_tag = HashMap(MemoryTag, u64){},
+            .bytes_by_tag = HashMap(MemoryTag, u64){},
             .small_allocations = 0,
             .medium_allocations = 0,
             .large_allocations = 0,
@@ -151,9 +152,9 @@ pub const SampleAggregation = struct {
     }
 
     pub fn deinit(self: *SampleAggregation) void {
-        self.allocations_by_tag.deinit();
-        self.bytes_by_tag.deinit();
-        self.leak_candidates.deinit();
+        self.allocations_by_tag.deinit(self.allocator);
+        self.bytes_by_tag.deinit(self.allocator);
+        self.leak_candidates.deinit(self.allocator);
     }
 
     pub fn window_duration_ns(self: *const SampleAggregation) u64 {
@@ -200,7 +201,7 @@ pub const LeakCandidate = struct {
     }
 
     pub fn deinit(self: *LeakCandidate) void {
-        self.related_allocations.deinit();
+        self.related_allocations.deinit(self.allocator);
     }
 };
 
@@ -261,7 +262,7 @@ pub const MemoryProfilerAggregator = struct {
             .config = config,
             .samples_mutex = Mutex{},
             .aggregations_mutex = Mutex{},
-            .active_samples = HashMap(u64, AllocationSample).init(allocator),
+            .active_samples = HashMap(u64, AllocationSample){},
             .sample_sequence = 1,
             .aggregation_windows = .empty,
             .current_window_start_ns = @intCast(u64, current_time_ns),
@@ -280,7 +281,7 @@ pub const MemoryProfilerAggregator = struct {
         while (sample_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.active_samples.deinit();
+        self.active_samples.deinit(self.allocator);
         
         // Clean up aggregation windows
         self.aggregations_mutex.lock();
@@ -289,7 +290,7 @@ pub const MemoryProfilerAggregator = struct {
         for (self.aggregation_windows.items) |*agg| {
             agg.deinit();
         }
-        self.aggregation_windows.deinit();
+        self.aggregation_windows.deinit(self.allocator);
     }
 
     // Record allocation sample
@@ -455,14 +456,14 @@ pub const MemoryProfilerAggregator = struct {
             
             if (age_ns > threshold_ns) {
                 aggregation.potential_leaks += 1;
-                try aggregation.leak_candidates.append(sample.id);
+                try aggregation.leak_candidates.append(allocator, sample.id);
             }
         }
     }
 
     // Analyze leak candidates and generate detailed leak reports
     pub fn analyzeLeakCandidates(self: *MemoryProfilerAggregator, allocation_ids: []const u64) !ArrayList(LeakCandidate) {
-        var leak_candidates = .empty;
+        var leak_candidates = std.ArrayList(u8){};
         
         self.samples_mutex.lock();
         defer self.samples_mutex.unlock();
@@ -482,7 +483,7 @@ pub const MemoryProfilerAggregator = struct {
                 // Find related allocations
                 try self.findRelatedAllocations(&sample, &candidate);
                 
-                try leak_candidates.append(candidate);
+                try leak_candidates.append(allocator, candidate);
             }
         }
         
@@ -556,7 +557,7 @@ pub const MemoryProfilerAggregator = struct {
             if (other_sample.tag == sample.tag and 
                 time_diff < 1_000_000_000 and // Within 1 second
                 size_ratio < 2.0) { // Similar size
-                try candidate.related_allocations.append(other_sample.id);
+                try candidate.related_allocations.append(allocator, other_sample.id);
             }
         }
     }
@@ -601,7 +602,7 @@ pub const MemoryProfilerAggregator = struct {
         defer self.samples_mutex.unlock();
         
         // Remove old deallocated samples
-        var samples_to_remove = .empty;
+        var samples_to_remove = std.ArrayList(u8){};
         defer samples_to_remove.deinit();
         
         var sample_iter = self.active_samples.iterator();
@@ -645,7 +646,7 @@ pub const MemoryProfilerAggregator = struct {
             self.aggregations_mutex.lock();
             defer self.aggregations_mutex.unlock();
             
-            try self.aggregation_windows.append(aggregation);
+            try self.aggregation_windows.append(allocator, aggregation);
             self.stats.aggregation_windows += 1;
             
             // Start new window

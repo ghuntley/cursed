@@ -24,7 +24,7 @@ const TypeVariable = struct {
     }
     
     pub fn deinit(self: *TypeVariable) void {
-        self.constraints.deinit();
+        self.constraints.deinit(self.allocator);
     }
 };
 
@@ -62,7 +62,7 @@ const ConstraintResolutionResult = struct {
     success: bool,
     
     pub fn deinit(self: *ConstraintResolutionResult) void {
-        self.resolved_constraints.deinit();
+        self.resolved_constraints.deinit(self.allocator);
     }
 };
 
@@ -71,6 +71,7 @@ pub const TypeCheckerIntegration = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) !TypeCheckerIntegration {
+        _ = allocator;
         return TypeCheckerIntegration{
             .type_checker = try comprehensive_type_system.ComprehensiveTypeChecker.init(allocator),
             .allocator = allocator,
@@ -78,7 +79,7 @@ pub const TypeCheckerIntegration = struct {
     }
     
     pub fn deinit(self: *TypeCheckerIntegration) void {
-        self.type_checker.deinit();
+        self.type_checker.deinit(self.allocator);
     }
     
     /// Main entry point for type checking a CURSED program
@@ -86,7 +87,7 @@ pub const TypeCheckerIntegration = struct {
         const success = try self.type_checker.checkProgram(program);
         const errors = self.type_checker.getErrorMessages();
         
-        var error_details = .empty;
+        var error_details = std.ArrayList(u8){};
         
         for (errors) |error_msg| {
             try error_details.append(TypeErrorDetail{
@@ -150,13 +151,13 @@ pub const TypeCheckerIntegration = struct {
     /// Support for constraint-based type resolution
     pub fn resolveConstraints(self: *TypeCheckerIntegration) !ConstraintResolutionResult {
         // Resolve all pending type constraints in the environment
-        var resolved_constraints = .empty;
+        var resolved_constraints = std.ArrayList(u8){};
         var remaining_unknowns: u32 = 0;
         
         // Constraint resolution algorithm implementation
         
         // Phase 1: Collect all type variables and their constraints
-        var type_variables = std.HashMap([]const u8, TypeVariable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var type_variables = std.HashMap([]const u8, TypeVariable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer type_variables.deinit();
         
         // Phase 2: Build constraint graph
@@ -232,8 +233,8 @@ pub const TypeCheckerIntegration = struct {
         return switch (struct_type) {
             .Struct => |struct_info| switch (interface_type) {
                 .Interface => |interface_info| {
-                    var missing_methods = .empty;
-                    var incorrect_signatures = .empty;
+                    var missing_methods = std.ArrayList(u8){};
+                    var incorrect_signatures = std.ArrayList(u8){};
                     
                     // Check each required method
                     for (interface_info.methods.items) |required_method| {
@@ -245,7 +246,7 @@ pub const TypeCheckerIntegration = struct {
                         _ = struct_info;
                         
                         if (!found) {
-                            try missing_methods.append(required_method.name);
+                            try missing_methods.append(allocator, required_method.name);
                         }
                     }
                     
@@ -305,7 +306,7 @@ pub const TypeCheckerIntegration = struct {
     }
     
     fn checkGenericFunctionDeclaration(self: *TypeCheckerIntegration, func_decl: *const ast.FunctionDeclaration) !GenericCheckResult {
-        var type_parameters = .empty;
+        var type_parameters = std.ArrayList(u8){};
         
         // Extract type parameters from function signature
         // This is a simplified implementation
@@ -384,7 +385,7 @@ pub const TypeCheckerIntegration = struct {
     }
     
     fn typeToDisplayString(self: *TypeCheckerIntegration, cursed_type: comprehensive_type_system.CursedType) ![]const u8 {
-        var buffer = .empty;
+        var buffer = std.ArrayList(u8){};
         const writer = buffer.writer();
         
         try cursed_type.format("", .{}, writer);
@@ -401,8 +402,8 @@ pub const TypeCheckResult = struct {
     warnings: ArrayList(TypeErrorDetail),
     
     pub fn deinit(self: *TypeCheckResult) void {
-        self.errors.deinit();
-        self.warnings.deinit();
+        self.errors.deinit(self.allocator);
+        self.warnings.deinit(self.allocator);
     }
 };
 
@@ -437,7 +438,7 @@ pub const GenericCheckResult = struct {
         for (self.type_parameters.items) |*param| {
             param.constraints.deinit();
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(self.allocator);
     }
 };
 
@@ -461,7 +462,7 @@ pub const ConstraintResolutionResult = struct {
     success: bool,
     
     pub fn deinit(self: *ConstraintResolutionResult) void {
-        self.resolved_constraints.deinit();
+        self.resolved_constraints.deinit(self.allocator);
     }
 };
 
@@ -476,8 +477,8 @@ pub const InterfaceCheckResult = struct {
     signature_mismatches: ArrayList(SignatureMismatch),
     
     pub fn deinit(self: *InterfaceCheckResult) void {
-        self.missing_methods.deinit();
-        self.signature_mismatches.deinit();
+        self.missing_methods.deinit(self.allocator);
+        self.signature_mismatches.deinit(self.allocator);
     }
 };
 
@@ -524,6 +525,7 @@ pub fn validateInterfaceImplementation(allocator: Allocator, struct_name: []cons
 // Error formatting for user-friendly output
 
 pub fn formatTypeError(error_detail: TypeErrorDetail, allocator: Allocator) ![]const u8 {
+        _ = allocator;
     return std.fmt.allocPrint(allocator, "[{s}] Line {d}, Column {d}: {s}", .{
         @tagName(error_detail.kind),
         error_detail.line,
@@ -533,20 +535,21 @@ pub fn formatTypeError(error_detail: TypeErrorDetail, allocator: Allocator) ![]c
 }
 
 pub fn formatTypeErrors(errors: []const TypeErrorDetail, allocator: Allocator) ![]const u8 {
-    var buffer = .empty;
+        _ = allocator;
+    var buffer = std.ArrayList(u8){};
     const writer = buffer.writer();
     
     if (errors.len == 0) {
-        try writer.writeAll("No type errors found.\n");
+        try writer.writer().writeAll("No type errors found.\n");
     } else {
-        try writer.print("Found {} type error(s):\n\n", .{errors.len});
+        try writer.print("Found {s} type error(s):\n\n", .{errors.len});
         
         for (errors, 0..) |error_detail, i| {
-            try writer.print("{}. ", .{i + 1});
+            try writer.print("{s}. ", .{i + 1});
             const formatted = try formatTypeError(error_detail, allocator);
             defer allocator.free(formatted);
-            try writer.writeAll(formatted);
-            try writer.writeAll("\n");
+            try writer.writer().writeAll(formatted);
+            try writer.writer().writeAll("\n");
         }
     }
     

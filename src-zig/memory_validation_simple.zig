@@ -69,11 +69,11 @@ test "arraylist with arena allocator" {
     
     const arena_allocator = arena.allocator();
     
-    var list = .empty;
+    var list = std.ArrayList(u8){};
     // No need to deinit - arena handles it
     
     for (0..100) |i| {
-        try list.append(@intCast(i));
+        try list.append(allocator, @intCast(i));
     }
     
     try testing.expect(list.items.len == 100);
@@ -390,12 +390,12 @@ test "comprehensive cleanup pattern" {
             }
             
             // Then clean up arena
-            self.arena.deinit();
+            self.arena.deinit(self.allocator);
         }
         
         fn addResource(self: *@This(), size: usize) !*Resource {
             const resource = try Resource.init(self.arena.child_allocator, size, @intCast(self.resources.items.len));
-            try self.resources.append(resource);
+            try self.resources.append(allocator, resource);
             return resource;
         }
     };

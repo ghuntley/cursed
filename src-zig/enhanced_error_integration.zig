@@ -36,9 +36,9 @@ pub const EnhancedParser = struct {
     }
 
     pub fn deinit(self: *EnhancedParser) void {
-        self.error_runtime.deinit();
+        self.error_runtime.deinit(self.allocator);
         self.allocator.destroy(self.error_runtime);
-        self.base_parser.deinit();
+        self.base_parser.deinit(self.allocator);
     }
 
     /// Parse with enhanced error handling and recovery
@@ -200,16 +200,16 @@ pub const EnhancedParser = struct {
         // Parse fam { try_body } catch(...) { catch_body } finally { finally_body }
         try self.base_parser.consume(.LeftBrace, "Expected '{' after 'fam'");
         
-        var try_body = .empty;
+        var try_body = std.ArrayList(u8){};
         while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
             const stmt = try self.parseStatement();
-            try try_body.append(stmt);
+            try try_body.append(allocator, stmt);
         }
         
         try self.base_parser.consume(.RightBrace, "Expected '}' after try body");
 
         // Parse catch blocks
-        var catch_blocks = .empty;
+        var catch_blocks = std.ArrayList(u8){};
         while (self.base_parser.match(.Catch) or self.base_parser.check(.Identifier)) {
             if (self.base_parser.previous().type == .Identifier and 
                 std.mem.eql(u8, self.base_parser.previous().lexeme, "catch")) {
@@ -226,10 +226,10 @@ pub const EnhancedParser = struct {
 
                 try self.base_parser.consume(.LeftBrace, "Expected '{' after catch clause");
                 
-                var catch_body = .empty;
+                var catch_body = std.ArrayList(u8){};
                 while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
                     const stmt = try self.parseStatement();
-                    try catch_body.append(stmt);
+                    try catch_body.append(allocator, stmt);
                 }
                 
                 try self.base_parser.consume(.RightBrace, "Expected '}' after catch body");
@@ -240,7 +240,7 @@ pub const EnhancedParser = struct {
                     .body = catch_body,
                 };
                 
-                try catch_blocks.append(catch_block);
+                try catch_blocks.append(allocator, catch_block);
             } else {
                 break;
             }
@@ -257,10 +257,10 @@ pub const EnhancedParser = struct {
             
             try self.base_parser.consume(.LeftBrace, "Expected '{' after 'finally'");
             
-            var finally_body = .empty;
+            var finally_body = std.ArrayList(u8){};
             while (!self.base_parser.check(.RightBrace) and !self.base_parser.isAtEnd()) {
                 const stmt = try self.parseStatement();
-                try finally_body.append(stmt);
+                try finally_body.append(allocator, stmt);
             }
             
             try self.base_parser.consume(.RightBrace, "Expected '}' after finally body");
@@ -284,6 +284,7 @@ pub const EnhancedInterpreter = struct {
     allocator: Allocator,
 
     pub fn init(allocator: Allocator) !EnhancedInterpreter {
+        _ = allocator;
         var error_runtime = try allocator.create(ErrorRuntime);
         error_runtime.* = ErrorRuntime.init(allocator);
 
@@ -295,9 +296,9 @@ pub const EnhancedInterpreter = struct {
     }
 
     pub fn deinit(self: *EnhancedInterpreter) void {
-        self.error_runtime.deinit();
+        self.error_runtime.deinit(self.allocator);
         self.allocator.destroy(self.error_runtime);
-        self.base_interpreter.deinit();
+        self.base_interpreter.deinit(self.allocator);
     }
 
     pub fn interpret(self: *EnhancedInterpreter, program: ast.Program) !void {

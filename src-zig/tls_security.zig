@@ -208,12 +208,12 @@ pub const TLSContext = struct {
             .ca_certificates = &[_]X509Certificate{},
             .client_certificate = null,
             .private_key = null,
-            .session_cache = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .session_cache = std.HashMap([]const u8, []const u8, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *TLSContext) void {
-        self.session_cache.deinit();
+        self.session_cache.deinit(self.allocator);
     }
     
     pub fn loadCACertificates(self: *TLSContext, ca_bundle_path: []const u8) !void {
@@ -247,8 +247,8 @@ pub const TLSContext = struct {
             .is_ca = true,
         };
         
-        var ca_list = std.ArrayList(X509Certificate).init(self.allocator);
-        try ca_list.append(example_ca);
+        var ca_list = std.ArrayList(X509Certificate){};
+        try ca_list.append(allocator, example_ca);
         self.ca_certificates = try ca_list.toOwnedSlice();
     }
     
@@ -405,7 +405,7 @@ pub const TLSContext = struct {
         
         const cert_chain = [_]X509Certificate{mock_cert};
         self.validateCertificateChain(&cert_chain, hostname) catch |err| {
-            print("Certificate validation failed: {}\n", .{err});
+            print("Certificate validation failed: {s}\n", .{err});
             return err;
         };
         
@@ -415,37 +415,37 @@ pub const TLSContext = struct {
 
 /// Security audit function to check for common TLS misconfigurations
 pub fn auditTLSConfiguration(config: TLSSecurityConfig) []const []const u8 {
-    var warnings = std.ArrayList([]const u8).init(self.allocator);
+    var warnings = std.ArrayList([]const u8){};
     
     // Check minimum TLS version
     if (@intFromEnum(config.min_tls_version) < @intFromEnum(TLSVersion.tls_1_2)) {
-        warnings.append("Warning: Minimum TLS version below 1.2 is deprecated") catch {};
+        warnings.append(allocator, "Warning: Minimum TLS version below 1.2 is deprecated") catch {};
     }
     
     // Check certificate validation
     if (!config.verify_certificates) {
-        warnings.append("CRITICAL: Certificate validation is disabled") catch {};
+        warnings.append(allocator, "CRITICAL: Certificate validation is disabled") catch {};
     }
     
     if (!config.verify_hostname) {
-        warnings.append("CRITICAL: Hostname verification is disabled") catch {};
+        warnings.append(allocator, "CRITICAL: Hostname verification is disabled") catch {};
     }
     
     if (config.allow_self_signed) {
-        warnings.append("Warning: Self-signed certificates are allowed") catch {};
+        warnings.append(allocator, "Warning: Self-signed certificates are allowed") catch {};
     }
     
     // Check security features
     if (!config.require_perfect_forward_secrecy) {
-        warnings.append("Warning: Perfect forward secrecy not required") catch {};
+        warnings.append(allocator, "Warning: Perfect forward secrecy not required") catch {};
     }
     
     if (!config.disable_compression) {
-        warnings.append("Warning: TLS compression enabled (CRIME vulnerability)") catch {};
+        warnings.append(allocator, "Warning: TLS compression enabled (CRIME vulnerability)") catch {};
     }
     
     if (!config.disable_renegotiation) {
-        warnings.append("Warning: TLS renegotiation enabled (potential DoS)") catch {};
+        warnings.append(allocator, "Warning: TLS renegotiation enabled (potential DoS)") catch {};
     }
     
     return warnings.toOwnedSlice() catch &[_][]const u8{};
@@ -453,6 +453,7 @@ pub fn auditTLSConfiguration(config: TLSSecurityConfig) []const []const u8 {
 
 /// Runtime function for CURSED language TLS operations
 pub fn runtime_create_secure_tls_context(allocator: Allocator) !*TLSContext {
+        _ = allocator;
     const config = TLSSecurityConfig.default();
     const context = try allocator.create(TLSContext);
     context.* = try TLSContext.init(allocator, config);
@@ -516,7 +517,7 @@ pub fn runTLSSecurityTests() !void {
     
     const cert_chain = [_]X509Certificate{mock_cert};
     context.validateCertificateChain(&cert_chain, "example.com") catch |err| {
-        print("Expected certificate validation error: {}\n", .{err});
+        print("Expected certificate validation error: {s}\n", .{err});
     };
     
     print("TLS Security Tests completed successfully\n", .{});

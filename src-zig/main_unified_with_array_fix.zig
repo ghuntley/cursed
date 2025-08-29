@@ -44,17 +44,18 @@ const StructInstance = struct {
     pub fn init(allocator: Allocator, type_name: []const u8) StructInstance {
         return StructInstance{
             .type_name = type_name,
-            .fields = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .fields = HashMap([]const u8, Variable, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *StructInstance, allocator: Allocator) void {
+        _ = allocator;
         var iter = self.fields.iterator();
         while (iter.next()) |entry| {
             allocator.free(entry.key_ptr.*);
             entry.value_ptr.deinit();
         }
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
     }
 };
 
@@ -129,6 +130,7 @@ const FunctionBody = struct {
     body_lines: [][]const u8,
     
     pub fn call(self: FunctionBody, instance: *StructInstance, args: []Variable, allocator: Allocator) !Variable {
+        _ = allocator;
         _ = self;
         _ = instance;
         _ = args;
@@ -158,6 +160,7 @@ const YikesError = struct {
     }
     
     pub fn deinit(self: *YikesError, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.message);
         allocator.free(self.file);
         if (self.stack_trace) |trace| {
@@ -169,6 +172,7 @@ const YikesError = struct {
     }
     
     pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
+        _ = allocator;
         return std.fmt.allocPrint(allocator, "yikes: {s} (code: {}) at {s}:{}:{}", .{ 
             self.message, self.code, self.file, self.line, self.column 
         });
@@ -190,6 +194,7 @@ pub const ManagedString = struct {
     }
     
     pub fn deinit(self: ManagedString, allocator: Allocator) void {
+        _ = allocator;
         if (self.owned and self.data.len > 0) {
             // Validate pointer before freeing
             if (@intFromPtr(self.data.ptr) != 0) {
@@ -224,6 +229,7 @@ pub const Variable = union(enum) {
     GoroutineId: concurrency.GoroutineId,  // Goroutine identifier
     
     pub fn toString(self: Variable, allocator: Allocator) ![]u8 {
+        _ = allocator;
         switch (self) {
             .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
             .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
@@ -240,17 +246,17 @@ pub const Variable = union(enum) {
                 defer arena.deinit();
                 const arena_allocator = arena.allocator();
                 
-                var result = std.ArrayList(u8).init(self.allocator);
+                var result = std.ArrayList(u8){};
                 errdefer result.deinit(); // Clean up on error
                 
-                try result.append('[');
+                try result.append(allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(", ");
                     // Use arena allocator for temporary item strings - automatically cleaned up
                     const item_str = try item.toString(arena_allocator);
                     try result.appendSlice(item_str);
                 }
-                try result.append(']');
+                try result.append(allocator, ']');
                 return result.toOwnedSlice();
             },
             .Struct => |struct_instance| {
@@ -265,6 +271,7 @@ pub const Variable = union(enum) {
     }
     
     pub fn clone(self: Variable, allocator: Allocator) !Variable {
+        _ = allocator;
         switch (self) {
             .Integer => |v| return Variable{ .Integer = v },
             .Float => |v| return Variable{ .Float = v },
@@ -274,11 +281,11 @@ pub const Variable = union(enum) {
                 return Variable{ .String = ManagedString.fromOwned(copy) };
             },
             .Array => |arr| {
-                var new_arr = std.ArrayList(Variable).init(self.allocator);
+                var new_arr = std.ArrayList(Variable){};
                 try new_arr.ensureTotalCapacity(allocator, arr.items.len);
                 for (arr.items) |item| {
                     const cloned = try item.clone(allocator);
-                    try new_arr.append(cloned);
+                    try new_arr.append(allocator, cloned);
                 }
                 return Variable{ .Array = new_arr };
             },
@@ -324,6 +331,7 @@ pub const Variable = union(enum) {
     }
 
     pub fn deinit(self: *Variable, allocator: Allocator) void {
+        _ = allocator;
         // Check if Variable is already in safe state to prevent double-free
         switch (self.*) {
             .Integer => return, // Already safe state, nothing to clean up
@@ -382,6 +390,7 @@ const StructField = struct {
     field_type: []const u8,
     
     pub fn deinit(self: *StructField, allocator: Allocator) void {
+        _ = allocator;
         allocator.free(self.name);
         allocator.free(self.field_type);
     }
@@ -400,10 +409,11 @@ const StructDefinition = struct {
     }
     
     pub fn deinit(self: *StructDefinition, allocator: Allocator) void {
+        _ = allocator;
         for (self.fields.items) |*field| {
             field.deinit();
         }
-        self.fields.deinit();
+        self.fields.deinit(self.allocator);
         allocator.free(self.name);
     }
 };
@@ -423,11 +433,12 @@ const InterfaceMethod = struct {
     }
     
     pub fn deinit(self: *InterfaceMethod, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |param| {
             allocator.free(param.name);
             allocator.free(param.param_type);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -459,26 +470,27 @@ pub const FunctionDefinition = struct {
     }
     
     pub fn deinit(self: *FunctionDefinition, allocator: Allocator) void {
+        _ = allocator;
         for (self.parameters.items) |param| {
             allocator.free(param.name);
             allocator.free(param.param_type);
         }
-        self.parameters.deinit();
+        self.parameters.deinit(self.allocator);
         
         for (self.body.items) |line| {
             allocator.free(line);
         }
-        self.body.deinit();
+        self.body.deinit(self.allocator);
         
         for (self.type_parameters.items) |type_param| {
             allocator.free(type_param);
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(self.allocator);
         
         for (self.interface_methods.items) |*method| {
             method.deinit();
         }
-        self.interface_methods.deinit();
+        self.interface_methods.deinit(self.allocator);
         
         if (self.return_type) |ret_type| {
             allocator.free(ret_type);
@@ -513,7 +525,7 @@ fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
             } };
         },
         .Function => |func| {
-            var new_params = .empty;
+            var new_params = std.ArrayList(u8){};
             for (func.parameters.items) |param| {
                 try new_params.append(try copyType(allocator, param));
             }
@@ -533,7 +545,7 @@ fn copyType(allocator: Allocator, original: ast.Type) !ast.Type {
             return ast.Type{ .Optional = ast.OptionalType{ .inner_type = inner_type } };
         },
         .Union => |union_type| {
-            var new_types = .empty;
+            var new_types = std.ArrayList(u8){};
             for (union_type.types.items) |t| {
                 try new_types.append(try copyType(allocator, t));
             }
@@ -692,18 +704,18 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename.?, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename.?, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -861,7 +873,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
     // Load functions from imported modules using the new module loader
     if (imports.items.len > 0) {
         if (verbose) {
-            print("📦 Loading {} modules...\n", .{imports.items.len});
+            print("📦 Loading {s} modules...\n", .{imports.items.len});
         }
         
         for (imports.items) |module_name| {
@@ -902,7 +914,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                     .name = try allocator.dupe(u8, param.name),
                     .param_type = try allocator.dupe(u8, type_str),
                     };
-                    try func_def.parameters.append(param_copy);
+                    try func_def.parameters.append(allocator, param_copy);
                     }
                     
                     // Set return type if available
@@ -950,12 +962,12 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
 
     
     // Split source into lines for processing
-    var source_lines = std.ArrayList([]const u8).init(self.allocator);
+    var source_lines = std.ArrayList([]const u8){};
     defer source_lines.deinit();
     
     var lines = std.mem.splitScalar(u8, source, '\n');
     while (lines.next()) |line| {
-        try source_lines.append(line);
+        try source_lines.append(allocator, line);
     }
     
     // Statement-by-statement interpretation with proper control flow
@@ -965,7 +977,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         const line = source_lines.items[line_index];
         const trimmed = std.mem.trim(u8, line, " \t\r\n");
         
-        if (verbose) print("📝 Processing line {}: '{s}'\n", .{ line_index + 1, trimmed });
+        if (verbose) print("📝 Processing line {s}: '{s}'\n", .{ line_index + 1, trimmed });
         
         // Skip empty lines and comments
         if (trimmed.len == 0 or std.mem.startsWith(u8, trimmed, "fr fr")) {
@@ -978,16 +990,16 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
             // Check if it's a single-line or multi-line stan block
             if (std.mem.indexOf(u8, trimmed, "}") == null) {
                 // Multi-line stan block - collect all lines until closing brace
-                var block_lines = std.ArrayList([]const u8).init(self.allocator);
+                var block_lines = std.ArrayList([]const u8){};
                 defer block_lines.deinit();
                 
-                try block_lines.append(trimmed); // Add the opening line
+                try block_lines.append(allocator, trimmed); // Add the opening line
                 line_index += 1;
                 
                 var brace_depth: i32 = 1;
                 while (line_index < source_lines.items.len and brace_depth > 0) {
                     const block_line = source_lines.items[line_index];
-                    try block_lines.append(block_line);
+                    try block_lines.append(allocator, block_line);
                     
                     // Count braces to find the end
                     for (block_line) |char| {
@@ -999,11 +1011,11 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 }
                 
                 // Reconstruct the full stan statement
-                var full_statement = std.ArrayList(u8).init(self.allocator);
+                var full_statement = std.ArrayList(u8){};
                 defer full_statement.deinit();
                 
                 for (block_lines.items, 0..) |block_line, i| {
-                    if (i > 0) try full_statement.append('\n');
+                    if (i > 0) try full_statement.append(allocator, '\n');
                     try full_statement.appendSlice(block_line);
                 }
                 
@@ -1036,13 +1048,13 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
                 if (verbose) print("🔍 Single-line function detected. Function: '{s}', Remaining: '{s}'\n", .{ func_part, remaining_part });
                 
                 // Create a temporary source_lines with just the function part
-                var temp_source_lines = .empty;
+                var temp_source_lines = std.ArrayList(u8){};
                 defer temp_source_lines.deinit();
                 
                 // Copy the function part as a new line
                 const func_part_copy = try allocator.dupe(u8, func_part);
                 defer allocator.free(func_part_copy);
-                try temp_source_lines.append(func_part_copy);
+                try temp_source_lines.append(allocator, func_part_copy);
                 
                 // Process the function declaration
                 _ = try handleFunctionDeclaration(&functions, allocator, temp_source_lines, 0, verbose);
@@ -1199,7 +1211,7 @@ fn interpretProgramWithVariables(allocator: Allocator, source: []const u8, verbo
         if (verbose) {
             const remaining = scheduler.activeGoroutineCount();
             if (remaining > 0) {
-                print("⚠️  {} goroutines still active after wait\n", .{remaining});
+                print("⚠️  {s} goroutines still active after wait\n", .{remaining});
             } else {
                 print("✅ All goroutines completed\n", .{});
             }
@@ -1230,7 +1242,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     
     // Split line by semicolons to handle multiple statements on one line
     // But be careful not to split inside braces
-    var statements = std.ArrayList([]const u8).init(self.allocator);
+    var statements = std.ArrayList([]const u8){};
     defer statements.deinit();
     
     var start: usize = 0;
@@ -1249,7 +1261,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
                 // Found a semicolon outside of braces, split here
                 const statement = std.mem.trim(u8, line[start..i], " \t\r\n");
                 if (statement.len > 0) {
-                    try statements.append(statement);
+                    try statements.append(allocator, statement);
                 }
                 start = i + 1;
             }
@@ -1259,7 +1271,7 @@ fn processStatements(variables: *VariableStore, functions: *FunctionStore, struc
     // Add the final statement
     const final_statement = std.mem.trim(u8, line[start..], " \t\r\n");
     if (final_statement.len > 0) {
-        try statements.append(final_statement);
+        try statements.append(allocator, final_statement);
     }
     
     for (statements.items) |statement| {
@@ -1720,7 +1732,7 @@ pub fn evaluateExpression(variables: *VariableStore, functions: *FunctionStore, 
                                     .Integer => |index_int| {
                                     // Use comprehensive memory safety runtime bounds checking
                                     memory_safety.checkArrayBounds(index_int, array_list.items.len) catch |err| {
-                                    print("❌ RUNTIME ERROR: {}\n", .{err});
+                                    print("❌ RUNTIME ERROR: {s}\n", .{err});
                                     print("❌ Array index {d} out of bounds for array '{s}' (length: {d})\n", .{ index_int, array_name, array_list.items.len });
                                         if (verbose) print("❌ Bounds check failed: index {d} for array {s} with length {d}\n", .{ index_int, array_name, array_list.items.len });
                                         return error.IndexOutOfBounds;
@@ -2245,7 +2257,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
     
     // Try to parse as integer
     if (std.fmt.parseInt(i64, value_str, 10)) |int_val| {
-        if (verbose) print("📊 Parsed as integer: {}\n", .{int_val});
+        if (verbose) print("📊 Parsed as integer: {s}\n", .{int_val});
         return Variable{ .Integer = int_val };
     } else |_| {}
     
@@ -2325,7 +2337,7 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
             return Variable{ .Array = .empty };
         }
         
-        var array = .empty;
+        var array = std.ArrayList(u8){};
         var iterator = std.mem.split(u8, elements_str, ",");
         
         while (iterator.next()) |element| {
@@ -2341,12 +2353,12 @@ fn evaluateSingleValue(variables: *VariableStore, functions: *FunctionStore, all
                     array.deinit();
                     return err;
                 };
-                try array.append(evaluated_element);
+                try array.append(allocator, evaluated_element);
                 if (verbose) print("📊 Added array element: {any}\n", .{evaluated_element});
             }
         }
         
-        if (verbose) print("📊 Created array with {} elements\n", .{array.items.len});
+        if (verbose) print("📊 Created array with {s} elements\n", .{array.items.len});
         return Variable{ .Array = array };
     }
     
@@ -2405,7 +2417,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
             if (verbose) print("🔍 AUTO TYPE: Expression evaluated to: {any}\n", .{result});
             break :blk result;
         } else |err| {
-            if (verbose) print("❌ AUTO TYPE: Failed to evaluate expression '{s}': {}\n", .{value_str, err});
+            if (verbose) print("❌ AUTO TYPE: Failed to evaluate expression '{s}': {s}\n", .{value_str, err});
             
             // Check if this is an UnknownIdentifier error
             if (err == error.UnknownIdentifier) {
@@ -2628,7 +2640,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
         
         if (trimmed_val.len >= 2 and trimmed_val[0] == '[' and trimmed_val[trimmed_val.len - 1] == ']') {
             // Parse array literal [1, 2, 3]
-            var array = .empty;
+            var array = std.ArrayList(u8){};
             const content = trimmed_val[1..trimmed_val.len - 1];
             
             if (content.len > 0) {
@@ -2641,7 +2653,7 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             if (verbose) print("❌ Error parsing array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Integer = int_val });
+                        try array.append(allocator, Variable{ .Integer = int_val });
                     } else if (std.mem.eql(u8, element_type, "tea")) {
                         // String elements - handle quoted strings
                         var clean_element = trimmed_element;
@@ -2649,16 +2661,16 @@ fn handleVariableDeclaration(variables: *VariableStore, functions: *FunctionStor
                             clean_element = clean_element[1..clean_element.len - 1];
                         }
                         const string_copy = try allocator.dupe(u8, clean_element);
-                        try array.append(Variable{ .String = ManagedString.fromOwned(string_copy) });
+                        try array.append(allocator, Variable{ .String = ManagedString.fromOwned(string_copy) });
                     } else if (std.mem.eql(u8, element_type, "meal")) {
                         const float_val = std.fmt.parseFloat(f64, trimmed_element) catch {
                             if (verbose) print("❌ Error parsing float array element '{s}'\n", .{trimmed_element});
                             continue;
                         };
-                        try array.append(Variable{ .Float = float_val });
+                        try array.append(allocator, Variable{ .Float = float_val });
                     } else if (std.mem.eql(u8, element_type, "lit")) {
                         const bool_val = std.mem.eql(u8, trimmed_element, "based");
-                        try array.append(Variable{ .Boolean = bool_val });
+                        try array.append(allocator, Variable{ .Boolean = bool_val });
                     } else {
                         if (verbose) print("❌ Unsupported array element type: {s}\n", .{element_type});
                     }
@@ -2858,7 +2870,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                                 .Integer => |index| {
                                 // Use comprehensive memory safety runtime bounds checking
                                 memory_safety.checkArrayBounds(index, array.items.len) catch |err| {
-                                print("❌ RUNTIME ERROR: {}\n", .{err});
+                                print("❌ RUNTIME ERROR: {s}\n", .{err});
                                 print("❌ Array index {d} out of bounds for array '{s}' (length: {d})\n", .{ index, array_name, array.items.len });
                                 if (verbose) print("❌ Bounds check failed: index {d} for array {s} with length {d}\n", .{ index, array_name, array.items.len });
                                     return error.IndexOutOfBounds;
@@ -2869,7 +2881,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
                                 defer allocator.free(element_str);
                                 print("{s}", .{element_str});
                                 if (add_newline) print("\n", .{});
-                                if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
+                                if (verbose) print("✅ Array access {s}[{s}={s}] = {s}\n", .{ array_name, index_expr, index, element_str });
                                 },
                                 else => {
                                     print("{s}", .{trimmed_content});
@@ -2970,7 +2982,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, functions: *FunctionStore
             
             // For other errors, try literal value parsing as fallback
             if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
-                print("{}", .{int_val});
+                print("{s}", .{int_val});
                 if (add_newline) print("\n", .{});
             } else |_| {
                 if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {
@@ -2999,7 +3011,7 @@ fn hasCommaOutsideQuotes(text: []const u8) bool {
 }
 
 fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8) {
-    var args = .empty;
+    var args = std.ArrayList(u8){};
     var start: usize = 0;
     var in_quotes = false;
     var paren_depth: usize = 0;
@@ -3014,7 +3026,7 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
                 if (paren_depth > 0) paren_depth -= 1;
             } else if (char == ',' and paren_depth == 0) {
                 const arg = std.mem.trim(u8, text[start..i], " \t");
-                try args.append(arg);
+                try args.append(allocator, arg);
                 start = i + 1;
             }
         }
@@ -3022,7 +3034,7 @@ fn parseArguments(allocator: Allocator, text: []const u8) !ArrayList([]const u8)
     
     // Add the last argument
     const arg = std.mem.trim(u8, text[start..], " \t");
-    try args.append(arg);
+    try args.append(allocator, arg);
     
     return args;
 }
@@ -3038,7 +3050,7 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
     if (concurrency.getScheduler() == null) {
         const config = concurrency.SchedulerConfig.default();
         try concurrency.initializeScheduler(allocator, config);
-        if (verbose) print("✅ Initialized concurrency scheduler with {} workers\n", .{config.num_workers});
+        if (verbose) print("✅ Initialized concurrency scheduler with {s} workers\n", .{config.num_workers});
     }
     
     // Handle block syntax: stan { statements }
@@ -3101,11 +3113,11 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
         
         // Spawn the goroutine
         const goroutine_id = try concurrency.stan(goroutineBlockFn, context);
-        if (verbose) print("✅ Spawned goroutine with ID: {}\n", .{goroutine_id});
+        if (verbose) print("✅ Spawned goroutine with ID: {s}\n", .{goroutine_id});
         
         // Check scheduler status
         if (concurrency.getScheduler()) |scheduler| {
-            if (verbose) print("📊 Scheduler status: active goroutines = {}\n", .{scheduler.activeGoroutineCount()});
+            if (verbose) print("📊 Scheduler status: active goroutines = {s}\n", .{scheduler.activeGoroutineCount()});
         }
         
     } 
@@ -3152,7 +3164,7 @@ fn handleStanGoroutine(variables: *VariableStore, functions: *FunctionStore, all
         
         // Spawn the goroutine
         const goroutine_id = try concurrency.stan(goroutineFunctionFn, context);
-        if (verbose) print("✅ Spawned function goroutine with ID: {}\n", .{goroutine_id});
+        if (verbose) print("✅ Spawned function goroutine with ID: {s}\n", .{goroutine_id});
     }
     else {
         if (verbose) print("❌ Invalid stan syntax: {s}\n", .{stan_content});
@@ -3188,7 +3200,7 @@ fn handleYikesError(variables: *VariableStore, allocator: Allocator, line: []con
     if (verbose) print("💥 Error created: {s}\n", .{yikes_error.message});
     
     // Print the error and propagate (terminate execution)
-    print("💥 yikes: {s} (code: {})\n", .{ yikes_error.message, yikes_error.code });
+    print("💥 yikes: {s} (code: {s})\n", .{ yikes_error.message, yikes_error.code });
     
     // Store error in a special variable for potential recovery
     const error_var = Variable{ .YikesError = yikes_error };
@@ -3320,7 +3332,7 @@ fn handleFormatCommand(allocator: Allocator, args: [][:0]u8) !void {
     
     // Check if target is file or directory
     const stat = std.fs.cwd().statFile(target) catch |err| {
-        print("❌ Error accessing {s}: {}\n", .{ target, err });
+        print("❌ Error accessing {s}: {s}\n", .{ target, err });
         return;
     };
 
@@ -3378,7 +3390,7 @@ fn handleLintCommand(allocator: Allocator, args: [][:0]u8) !void {
 
     // Check if target is file or directory
     const stat = std.fs.cwd().statFile(target) catch |err| {
-        print("❌ Error accessing {s}: {}\n", .{ target, err });
+        print("❌ Error accessing {s}: {s}\n", .{ target, err });
         return;
     };
 
@@ -3423,17 +3435,17 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
 
     // For type checking, we just need basic syntax validation
     // Use a simpler validation approach that matches the interpreter
@@ -3453,11 +3465,11 @@ fn handleCheckCommand(allocator: Allocator, args: [][:0]u8) !void {
         
         // Basic syntax validation for CURSED statements
         if (!isValidCursedStatement(trimmed)) {
-            print("❌ Syntax error on line {}: {s}\n", .{ line_number, trimmed });
+            print("❌ Syntax error on line {s}: {s}\n", .{ line_number, trimmed });
             validation_passed = false;
         }
         
-        if (verbose) print("✅ Line {} validated: {s}\n", .{ line_number, trimmed });
+        if (verbose) print("✅ Line {s} validated: {s}\n", .{ line_number, trimmed });
         line_number += 1;
     }
     
@@ -4368,7 +4380,7 @@ fn handleStdlibFunctionCall(allocator: Allocator, variables: *VariableStore, mod
 
 fn handleVibezSpill(allocator: Allocator, variables: *VariableStore, args: []const u8) !void {
     // Parse arguments and expand variables
-    var output = std.ArrayList(u8).init(self.allocator);
+    var output = std.ArrayList(u8){};
     defer output.deinit();
     
     // Split by commas and process each argument
@@ -4581,7 +4593,7 @@ fn handleTestzFunction(allocator: Allocator, variables: *VariableStore, function
             const expected = std.fmt.parseInt(i32, expected_str, 10) catch return;
             
             if (actual != expected) {
-                print("❌ Assertion failed: assert_eq_int({}, {}) - actual: {}, expected: {}\n", .{ actual, expected, actual, expected });
+                print("❌ Assertion failed: assert_eq_int({s}, {s}) - actual: {s}, expected: {s}\n", .{ actual, expected, actual, expected });
             }
         }
     }
@@ -4608,7 +4620,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     
     // Check for generic type parameters: func_name<T, U>
     var func_name = func_declaration;
-    var type_params = std.ArrayList([]const u8).init(self.allocator);
+    var type_params = std.ArrayList([]const u8){};
     defer type_params.deinit();
     
     if (std.mem.indexOf(u8, func_declaration, "<")) |angle_start| {
@@ -4620,7 +4632,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             var type_iter = std.mem.splitScalar(u8, type_params_str, ',');
             while (type_iter.next()) |type_param| {
                 const trimmed_type = std.mem.trim(u8, type_param, " \t");
-                try type_params.append(trimmed_type);
+                try type_params.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Parsing generic function: {s}<{s}>\n", .{func_name, type_params_str});
@@ -4639,7 +4651,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     // Store type parameters
     for (type_params.items) |type_param| {
         const type_param_copy = try allocator.dupe(u8, type_param);
-        try func_def.type_parameters.append(type_param_copy);
+        try func_def.type_parameters.append(allocator, type_param_copy);
         if (verbose) print("  📝 Type parameter: {s}\n", .{type_param});
     }
     
@@ -4672,7 +4684,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
                     .param_type = param_type_copy,
                 };
                 
-                try func_def.parameters.append(parameter);
+                try func_def.parameters.append(allocator, parameter);
                 if (verbose) print("  📝 Parameter: {s} {s}\n", .{ param_name, param_type });
             }
         }
@@ -4687,14 +4699,14 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
                 const body_line_copy = try allocator.dupe(u8, body_content);
                 errdefer allocator.free(body_line_copy);
                 
-                try func_def.body.append(body_line_copy);
+                try func_def.body.append(allocator, body_line_copy);
                 if (verbose) print("  📝 Single-line body: {s}\n", .{body_content});
             }
             
             // Store function in function store with proper key management
             const func_store_key = try allocator.dupe(u8, func_name);
             try functions.put(func_store_key, func_def);
-            if (verbose) print("✅ Single-line function {s} stored with {} parameters and {} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
+            if (verbose) print("✅ Single-line function {s} stored with {s} parameters and {s} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
             
             return 1; // Only consumed one line
         }
@@ -4718,7 +4730,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
             const body_line_copy = try allocator.dupe(u8, body_trimmed);
             errdefer allocator.free(body_line_copy);
             
-            try func_def.body.append(body_line_copy);
+            try func_def.body.append(allocator, body_line_copy);
             if (verbose) print("  📝 Body line: {s}\n", .{body_trimmed});
         }
         
@@ -4728,7 +4740,7 @@ fn handleFunctionDeclaration(functions: *FunctionStore, allocator: Allocator, so
     // Store function in function store with proper key management
     const func_store_key = try allocator.dupe(u8, func_name);
     try functions.put(func_store_key, func_def);
-    if (verbose) print("✅ Function {s} stored with {} parameters and {} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
+    if (verbose) print("✅ Function {s} stored with {s} parameters and {s} body lines\n", .{ func_name, func_def.parameters.items.len, func_def.body.items.len });
     
     return lines_consumed;
 }
@@ -4745,7 +4757,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
     // Check for generic function call syntax: func_name<T>
     var is_generic_call = false;
     var generic_base_name: []const u8 = func_name;
-    var type_args = std.ArrayList([]const u8).init(self.allocator);
+    var type_args = std.ArrayList([]const u8){};
     defer type_args.deinit();
     
     // Check for both angle brackets <> and square brackets [] for generic syntax
@@ -4759,7 +4771,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
             while (type_iter.next()) |type_arg| {
                 const trimmed_type = std.mem.trim(u8, type_arg, " \t");
-                try type_args.append(trimmed_type);
+                try type_args.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Generic function call detected: {s}<{s}>\n", .{generic_base_name, type_args_str});
@@ -4774,7 +4786,7 @@ fn handleFunctionCall(functions: *FunctionStore, variables: *VariableStore, allo
             var type_iter = std.mem.splitScalar(u8, type_args_str, ',');
             while (type_iter.next()) |type_arg| {
                 const trimmed_type = std.mem.trim(u8, type_arg, " \t");
-                try type_args.append(trimmed_type);
+                try type_args.append(allocator, trimmed_type);
             }
             
             if (verbose) print("🧬 Generic function call detected: {s}[{s}]\n", .{generic_base_name, type_args_str});
@@ -5237,7 +5249,7 @@ fn handleFamBlock(
             if (!in_try_block) {
                 in_try_block = true;
                 try_start_line = line_index + 1;
-                if (verbose) print("📍 Try block starts at line {}\n", .{try_start_line});
+                if (verbose) print("📍 Try block starts at line {s}\n", .{try_start_line});
             }
             brace_depth += 1;
         }
@@ -5247,12 +5259,12 @@ fn handleFamBlock(
             const is_shook_line = std.mem.indexOf(u8, line, "} shook ") != null;
             
             brace_depth -= 1;
-            if (verbose) print("🔧 Found '}}' at line {d}, brace_depth now: {d}, in_try_block: {}, is_shook_line: {}\n", .{line_index + 1, brace_depth, in_try_block, is_shook_line});
+            if (verbose) print("🔧 Found '}}' at line {d}, brace_depth now: {d}, in_try_block: {s}, is_shook_line: {s}\n", .{line_index + 1, brace_depth, in_try_block, is_shook_line});
             
             // Handle shook line that starts immediately after try block
             if (is_shook_line and in_try_block) {
                 in_try_block = false;
-                if (verbose) print("📍 Try block ends with shook at line {}: '{s}'\n", .{line_index + 1, line});
+                if (verbose) print("📍 Try block ends with shook at line {s}: '{s}'\n", .{line_index + 1, line});
                 
                 // Parse error variable: } shook err {
                 if (std.mem.indexOf(u8, line, "shook ")) |shook_pos| {
@@ -5267,7 +5279,7 @@ fn handleFamBlock(
                 // Don't break, continue to count opening brace if present
             } else if (brace_depth == 0 and in_try_block) {
                 in_try_block = false;
-                if (verbose) print("📍 Try block ends at line {}: '{s}'\n", .{line_index + 1, line});
+                if (verbose) print("📍 Try block ends at line {s}: '{s}'\n", .{line_index + 1, line});
                 break;
             }
         }
@@ -5278,7 +5290,7 @@ fn handleFamBlock(
     
     // Continue processing fam block if it was detected inline
     if (in_catch_block and catch_start_line > 0) {
-        if (verbose) print("📍 Processing fam block body starting at line {}\n", .{catch_start_line});
+        if (verbose) print("📍 Processing fam block body starting at line {s}\n", .{catch_start_line});
         
         while (line_index < source_lines.items.len and brace_depth > 0) {
             line_index += 1;
@@ -5291,7 +5303,7 @@ fn handleFamBlock(
             if (std.mem.indexOf(u8, line, "}")) |_| {
                 brace_depth -= 1;
                 if (brace_depth == 0) {
-                    if (verbose) print("📍 Fam block ends at line {}\n", .{line_index + 1});
+                    if (verbose) print("📍 Fam block ends at line {s}\n", .{line_index + 1});
                     break;
                 }
             }
@@ -5328,7 +5340,7 @@ fn handleFamBlock(
                     if (std.mem.indexOf(u8, line, "}")) |_| {
                         brace_depth -= 1;
                         if (brace_depth == 0) {
-                            if (verbose) print("📍 Fam block ends at line {}\n", .{line_index + 1});
+                            if (verbose) print("📍 Fam block ends at line {s}\n", .{line_index + 1});
                             break;
                         }
                     }
@@ -5341,10 +5353,10 @@ fn handleFamBlock(
     }
     
     // Collect try and catch statements for execution
-    var try_statements = .empty;
+    var try_statements = std.ArrayList(u8){};
     defer try_statements.deinit();
     
-    var catch_statements = .empty;
+    var catch_statements = std.ArrayList(u8){};
     defer catch_statements.deinit();
     
     // Collect try block statements
@@ -5355,7 +5367,7 @@ fn handleFamBlock(
             const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
-            try try_statements.append(exec_line);
+            try try_statements.append(allocator, exec_line);
             if (verbose) print("  📝 Collected try statement: {s}\n", .{exec_line});
         }
     }
@@ -5368,7 +5380,7 @@ fn handleFamBlock(
             const exec_line = std.mem.trim(u8, source_lines.items[exec_line_idx], " \t\r\n");
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) continue;
             
-            try catch_statements.append(exec_line);
+            try catch_statements.append(allocator, exec_line);
             if (verbose) print("  📝 Collected catch statement: {s}\n", .{exec_line});
         }
     }
@@ -5386,7 +5398,7 @@ fn handleFamBlock(
         verbose
     );
     
-    if (verbose) print("✅ Fam try-catch block processed, consumed {} lines\n", .{lines_consumed});
+    if (verbose) print("✅ Fam try-catch block processed, consumed {s} lines\n", .{lines_consumed});
     return lines_consumed;
 }
 
@@ -5432,7 +5444,7 @@ fn handleReadyOtherwiseBlock(
     start_line_index: usize,
     verbose: bool
 ) !usize {
-    if (verbose) print("🔍 Starting ready/otherwise block parsing at line {}\n", .{start_line_index + 1});
+    if (verbose) print("🔍 Starting ready/otherwise block parsing at line {s}\n", .{start_line_index + 1});
     
     const start_line = std.mem.trim(u8, source_lines.items[start_line_index], " \t\r\n");
     
@@ -5486,7 +5498,7 @@ fn handleReadyOtherwiseBlock(
         else => false,
     };
     
-    if (verbose) print("✅ Condition evaluated to: {}\n", .{condition_is_true});
+    if (verbose) print("✅ Condition evaluated to: {s}\n", .{condition_is_true});
     
     // Find block boundaries with improved logic
     var current_line = start_line_index;
@@ -5571,7 +5583,7 @@ fn handleReadyOtherwiseBlock(
     }
     
     // First, collect all lines to check if this is pattern matching
-    var block_content = std.ArrayList(u8).init(self.allocator);
+    var block_content = std.ArrayList(u8){};
     defer block_content.deinit();
     
     var has_pattern_matching = false;
@@ -5586,7 +5598,7 @@ fn handleReadyOtherwiseBlock(
         }
         
         try block_content.appendSlice(exec_line);
-        try block_content.append(';');
+        try block_content.append(allocator, ';');
     }
     
     if (has_pattern_matching) {
@@ -5604,7 +5616,7 @@ fn handleReadyOtherwiseBlock(
     } else {
         // Execute the appropriate block based on condition (traditional if/else)
         if (condition_is_true) {
-            if (verbose) print("🟢 Executing if block (lines {}-{})\n", .{ if_block_start + 1, if_block_end });
+            if (verbose) print("🟢 Executing if block (lines {s}-{s})\n", .{ if_block_start + 1, if_block_end });
             
             // Execute as regular statements
             for (if_block_start..if_block_end) |line_idx| {
@@ -5616,7 +5628,7 @@ fn handleReadyOtherwiseBlock(
                 try executeBlockLine(variables, functions, allocator, exec_line, verbose);
             }
         } else if (else_block_start != null and else_block_end != null) {
-            if (verbose) print("🔴 Executing else block (lines {}-{})\n", .{ else_block_start.? + 1, else_block_end.? });
+            if (verbose) print("🔴 Executing else block (lines {s}-{s})\n", .{ else_block_start.? + 1, else_block_end.? });
             for (else_block_start.?..else_block_end.?) |line_idx| {
                 if (line_idx >= source_lines.items.len) break;
                 const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
@@ -5636,7 +5648,7 @@ fn handleReadyOtherwiseBlock(
     else 
         (if_block_end + 1) - start_line_index;
         
-    if (verbose) print("✅ Ready/otherwise block processed, consumed {} lines\n", .{total_lines_consumed});
+    if (verbose) print("✅ Ready/otherwise block processed, consumed {s} lines\n", .{total_lines_consumed});
     return total_lines_consumed;
 }
 
@@ -5780,7 +5792,7 @@ fn matchesPattern(
         
         // Evaluate the condition in the guard scope
         const condition_result = evaluateExpression(&guard_variables, &guard_functions, allocator, condition_expr, verbose) catch |err| {
-            if (verbose) print("❌ Error evaluating when guard condition: {}\n", .{err});
+            if (verbose) print("❌ Error evaluating when guard condition: {s}\n", .{err});
             return false;
         };
         defer { var cond = condition_result; cond.deinit(); }
@@ -5795,7 +5807,7 @@ fn matchesPattern(
             }
         };
         
-        if (verbose) print("🛡️ When guard condition result: {}\n", .{matches});
+        if (verbose) print("🛡️ When guard condition result: {s}\n", .{matches});
         return matches;
     }
     
@@ -5810,7 +5822,7 @@ fn matchesPattern(
                 if (std.fmt.parseInt(i64, start_str, 10)) |start_val| {
                     if (std.fmt.parseInt(i64, end_str, 10)) |end_val| {
                         const matches = int_val >= start_val and int_val <= end_val;
-                        if (verbose) print("📏 Range pattern: {} <= {} <= {} -> {}\n", .{ start_val, int_val, end_val, matches });
+                        if (verbose) print("📏 Range pattern: {s} <= {s} <= {s} -> {s}\n", .{ start_val, int_val, end_val, matches });
                         return matches;
                     } else |_| {
                         if (verbose) print("❌ Could not parse range end '{s}' as integer\n", .{end_str});
@@ -5825,7 +5837,7 @@ fn matchesPattern(
             // Try to parse pattern as integer
             if (std.fmt.parseInt(i64, pattern, 10)) |pattern_int| {
                 const matches = int_val == pattern_int;
-                if (verbose) print("🔢 Integer pattern: {} == {} -> {}\n", .{ int_val, pattern_int, matches });
+                if (verbose) print("🔢 Integer pattern: {s} == {s} -> {s}\n", .{ int_val, pattern_int, matches });
                 return matches;
             } else |_| {
                 if (verbose) print("❌ Could not parse pattern '{s}' as integer\n", .{pattern});
@@ -5841,7 +5853,7 @@ fn matchesPattern(
                 if (std.fmt.parseFloat(f64, start_str)) |start_val| {
                     if (std.fmt.parseFloat(f64, end_str)) |end_val| {
                         const matches = float_val >= start_val and float_val <= end_val;
-                        if (verbose) print("📏 Float range pattern: {d} <= {d} <= {d} -> {}\n", .{ start_val, float_val, end_val, matches });
+                        if (verbose) print("📏 Float range pattern: {d} <= {d} <= {d} -> {s}\n", .{ start_val, float_val, end_val, matches });
                         return matches;
                     } else |_| {
                         if (verbose) print("❌ Could not parse range end '{s}' as float\n", .{end_str});
@@ -5856,7 +5868,7 @@ fn matchesPattern(
             // Try to parse pattern as float
             if (std.fmt.parseFloat(f64, pattern)) |pattern_float| {
                 const matches = float_val == pattern_float;
-                if (verbose) print("🔢 Float pattern: {d} == {d} -> {}\n", .{ float_val, pattern_float, matches });
+                if (verbose) print("🔢 Float pattern: {d} == {d} -> {s}\n", .{ float_val, pattern_float, matches });
                 return matches;
             } else |_| {
                 if (verbose) print("❌ Could not parse pattern '{s}' as float\n", .{pattern});
@@ -5867,11 +5879,11 @@ fn matchesPattern(
             // Handle boolean patterns
             if (std.mem.eql(u8, pattern, "based")) {
                 const matches = bool_val == true;
-                if (verbose) print("🔘 Boolean pattern: based -> {}\n", .{matches});
+                if (verbose) print("🔘 Boolean pattern: based -> {s}\n", .{matches});
                 return matches;
             } else if (std.mem.eql(u8, pattern, "cringe")) {
                 const matches = bool_val == false;
-                if (verbose) print("🔘 Boolean pattern: cringe -> {}\n", .{matches});
+                if (verbose) print("🔘 Boolean pattern: cringe -> {s}\n", .{matches});
                 return matches;
             } else {
                 if (verbose) print("❌ Unknown boolean pattern: '{s}'\n", .{pattern});
@@ -5883,12 +5895,12 @@ fn matchesPattern(
             if (pattern.len >= 2 and pattern[0] == '"' and pattern[pattern.len - 1] == '"') {
                 const pattern_str = pattern[1..pattern.len - 1];
                 const matches = std.mem.eql(u8, str_val.data, pattern_str);
-                if (verbose) print("📝 String pattern: '{s}' == '{s}' -> {}\n", .{ str_val.data, pattern_str, matches });
+                if (verbose) print("📝 String pattern: '{s}' == '{s}' -> {s}\n", .{ str_val.data, pattern_str, matches });
                 return matches;
             } else {
                 // Direct string comparison without quotes
                 const matches = std.mem.eql(u8, str_val.data, pattern);
-                if (verbose) print("📝 Direct string pattern: '{s}' == '{s}' -> {}\n", .{ str_val.data, pattern, matches });
+                if (verbose) print("📝 Direct string pattern: '{s}' == '{s}' -> {s}\n", .{ str_val.data, pattern, matches });
                 return matches;
             }
         },
@@ -5975,7 +5987,7 @@ fn handleSingleLineReady(
         else => false,
     };
     
-    if (verbose) print("✅ Condition evaluated to: {}\n", .{condition_is_true});
+    if (verbose) print("✅ Condition evaluated to: {s}\n", .{condition_is_true});
     
     // Find the first { after the condition
     const after_condition = line[condition_end.? + 1..];
@@ -6199,7 +6211,7 @@ fn handleInlineBestieLoop(
         
         // Execute loop body - split by semicolons and process each statement
         // Parse body statements manually to avoid circular dependency
-        var body_statements = std.ArrayList([]const u8).init(self.allocator);
+        var body_statements = std.ArrayList([]const u8){};
         defer body_statements.deinit();
         
         var start: usize = 0;
@@ -6217,7 +6229,7 @@ fn handleInlineBestieLoop(
                 } else if (char == ';' and brace_count == 0) {
                     const stmt = std.mem.trim(u8, body_text[start..i], " \t\r\n");
                     if (stmt.len > 0) {
-                        try body_statements.append(stmt);
+                        try body_statements.append(allocator, stmt);
                     }
                     start = i + 1;
                 }
@@ -6227,7 +6239,7 @@ fn handleInlineBestieLoop(
         // Add the final statement
         const final_stmt = std.mem.trim(u8, body_text[start..], " \t\r\n");
         if (final_stmt.len > 0) {
-            try body_statements.append(final_stmt);
+            try body_statements.append(allocator, final_stmt);
         }
         
         // Execute each statement
@@ -6240,9 +6252,9 @@ fn handleInlineBestieLoop(
     }
     
     if (iteration_count >= max_iterations) {
-        if (verbose) print("⚠️  Loop terminated after {} iterations (safety limit)\n", .{max_iterations});
+        if (verbose) print("⚠️  Loop terminated after {s} iterations (safety limit)\n", .{max_iterations});
     } else if (verbose) {
-        print("✅ Loop completed after {} iterations\n", .{iteration_count});
+        print("✅ Loop completed after {s} iterations\n", .{iteration_count});
     }
 }
 
@@ -6287,7 +6299,7 @@ fn handleBestieLoop(
     start_line_index: usize,
     verbose: bool
 ) !usize {
-    if (verbose) print("🔍 Starting bestie loop parsing at line {}\n", .{start_line_index + 1});
+    if (verbose) print("🔍 Starting bestie loop parsing at line {s}\n", .{start_line_index + 1});
     
     const start_line = std.mem.trim(u8, source_lines.items[start_line_index], " \t\r\n");
     
@@ -6366,7 +6378,7 @@ fn handleBestieLoop(
         current_line += 1;
     }
     
-    if (verbose) print("🔄 Loop body: lines {}-{}\n", .{ loop_body_start + 1, loop_body_end });
+    if (verbose) print("🔄 Loop body: lines {s}-{s}\n", .{ loop_body_start + 1, loop_body_end });
     
     // Execute the loop with safety limit
     const max_iterations = 10000; // Prevent infinite loops
@@ -6397,23 +6409,23 @@ fn handleBestieLoop(
         if (verbose and iteration_count == 0) print("🔄 Starting loop execution\n", .{});
         
         // Execute loop body using the main interpreter logic to handle nested structures
-        if (verbose) print("🐛 DEBUG: Executing loop body lines {} to {}\n", .{loop_body_start, loop_body_end});
+        if (verbose) print("🐛 DEBUG: Executing loop body lines {s} to {s}\n", .{loop_body_start, loop_body_end});
         
         // Create a sub-array of lines for the loop body
-        var body_lines = std.ArrayList([]const u8).init(self.allocator);
+        var body_lines = std.ArrayList([]const u8){};
         defer body_lines.deinit();
         
         for (loop_body_start..loop_body_end) |line_idx| {
             if (line_idx >= source_lines.items.len) break;
             const exec_line = std.mem.trim(u8, source_lines.items[line_idx], " \t\r\n");
-            try body_lines.append(exec_line);
+            try body_lines.append(allocator, exec_line);
         }
         
         // Execute the body using the main interpreter logic
         var body_line_idx: usize = 0;
         while (body_line_idx < body_lines.items.len) {
             const exec_line = std.mem.trim(u8, body_lines.items[body_line_idx], " \t\r\n");
-            if (verbose) print("🐛 DEBUG: Loop line {}: '{s}'\n", .{body_line_idx, exec_line});
+            if (verbose) print("🐛 DEBUG: Loop line {s}: '{s}'\n", .{body_line_idx, exec_line});
             
             if (exec_line.len == 0 or std.mem.eql(u8, exec_line, "{") or std.mem.eql(u8, exec_line, "}")) {
                 body_line_idx += 1;
@@ -6443,13 +6455,13 @@ fn handleBestieLoop(
     }
     
     if (iteration_count >= max_iterations) {
-        if (verbose) print("⚠️  Loop terminated after {} iterations (safety limit)\n", .{max_iterations});
+        if (verbose) print("⚠️  Loop terminated after {s} iterations (safety limit)\n", .{max_iterations});
     } else if (verbose) {
-        print("✅ Loop completed after {} iterations\n", .{iteration_count});
+        print("✅ Loop completed after {s} iterations\n", .{iteration_count});
     }
     
     const total_lines_consumed = (loop_body_end + 1) - start_line_index;
-    if (verbose) print("✅ Bestie loop processed, consumed {} lines\n", .{total_lines_consumed});
+    if (verbose) print("✅ Bestie loop processed, consumed {s} lines\n", .{total_lines_consumed});
     return total_lines_consumed;
 }
 
@@ -6628,7 +6640,7 @@ fn executeIfStatement(
             const condition_result = try evaluateExpression(variables, functions, allocator, condition_expr, verbose);
             const is_true = isVariableTruthy(condition_result);
             
-            if (verbose) print("  🔍 Condition '{s}' evaluated to: {any} (truthy: {})\n", .{ condition_expr, condition_result, is_true });
+            if (verbose) print("  🔍 Condition '{s}' evaluated to: {any} (truthy: {s})\n", .{ condition_expr, condition_result, is_true });
         }
     }
 }
@@ -6715,9 +6727,9 @@ fn executeArrayAssignment(
                             arr.items[index].deinit();
                             // Assign new value
                             arr.items[index] = try value.clone(allocator);
-                            if (verbose) print("  ✅ Array assignment: {s}[{}] = {any}\n", .{ array_name, index, value });
+                            if (verbose) print("  ✅ Array assignment: {s}[{s}] = {any}\n", .{ array_name, index, value });
                         } else {
-                            if (verbose) print("  ❌ Array index out of bounds: {}\n", .{index});
+                            if (verbose) print("  ❌ Array index out of bounds: {s}\n", .{index});
                         }
                     } else |_| {
                         if (verbose) print("  ❌ Invalid array index: {s}\n", .{index_expr});
@@ -6886,7 +6898,7 @@ fn handleInterfaceMethodDeclaration(functions: *FunctionStore, allocator: Alloca
                                 .name = try allocator.dupe(u8, param_name),
                                 .param_type = try allocator.dupe(u8, param_type),
                             };
-                            try method.parameters.append(param);
+                            try method.parameters.append(allocator, param);
                         }
                     }
                 }
@@ -6982,7 +6994,7 @@ fn handleStructFieldDeclaration(structs: *StructStore, allocator: Allocator, lin
             .field_type = try allocator.dupe(u8, field_type),
         };
         
-        try struct_def.fields.append(field);
+        try struct_def.fields.append(allocator, field);
         if (verbose) print("✅ Added field '{s}' to struct '{s}'\n", .{ field_name, struct_def.name });
     } else {
         if (verbose) print("❌ No struct definition found for field declaration\n", .{});

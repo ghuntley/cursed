@@ -25,7 +25,7 @@ pub const SimpleLLVMIRGenerator = struct {
     }
     
     pub fn deinit(self: *SimpleLLVMIRGenerator) void {
-        self.ir_buffer.deinit();
+        self.ir_buffer.deinit(self.allocator);
     }
     
     pub fn setVerbose(self: *SimpleLLVMIRGenerator, verbose: bool) void {
@@ -73,15 +73,15 @@ pub const SimpleLLVMIRGenerator = struct {
     fn generateHeader(self: *SimpleLLVMIRGenerator) !void {
         const writer = self.ir_buffer.writer();
         
-        try writer.writeAll("; Generated LLVM IR for CURSED program\n");
-        try writer.writeAll("target triple = \"x86_64-unknown-linux-gnu\"\n\n");
+        try writer.writer().writeAll("; Generated LLVM IR for CURSED program\n");
+        try writer.writer().writeAll("target triple = \"x86_64-unknown-linux-gnu\"\n\n");
         
         // External function declarations
-        try writer.writeAll("declare i32 @puts(i8*)\n");
-        try writer.writeAll("declare i32 @printf(i8*, ...)\n\n");
+        try writer.writer().writeAll("declare i32 @puts(i8*)\n");
+        try writer.writer().writeAll("declare i32 @printf(i8*, ...)\n\n");
         
         // String format constants
-        try writer.writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n\n");
+        try writer.writer().writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n\n");
     }
     
     /// Generate statement
@@ -112,13 +112,13 @@ pub const SimpleLLVMIRGenerator = struct {
         
         // Parameters
         for (func_stmt.parameters.items, 0..) |param, i| {
-            if (i > 0) try writer.writeAll(", ");
+            if (i > 0) try writer.writer().writeAll(", ");
             const param_type = try self.cursedTypeToLLVM(param.param_type);
             try writer.print("{s} %{s}", .{ param_type, param.name });
         }
         
-        try writer.writeAll(") {\n");
-        try writer.writeAll("entry:\n");
+        try writer.writer().writeAll(") {\n");
+        try writer.writer().writeAll("entry:\n");
         
         // Generate function body
         for (func_stmt.body.items) |stmt| {
@@ -127,10 +127,10 @@ pub const SimpleLLVMIRGenerator = struct {
         
         // Add return if not present
         if (func_stmt.return_type == null) {
-            try writer.writeAll("  ret void\n");
+            try writer.writer().writeAll("  ret void\n");
         }
         
-        try writer.writeAll("}\n\n");
+        try writer.writer().writeAll("}\n\n");
     }
     
     /// Generate statement in function body
@@ -282,18 +282,18 @@ pub const SimpleLLVMIRGenerator = struct {
         
         // Handle special functions
         if (std.mem.eql(u8, func_name, "vibez.spill")) {
-            var args = .empty;
+            var args = std.ArrayList(u8){};
             defer args.deinit();
             
             for (call.arguments.items) |arg_ptr| {
-                try args.append(arg_ptr.*);
+                try args.append(allocator, arg_ptr.*);
             }
             
             return try self.generatePrintCall(args.items);
         }
         
         // Regular function call
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         defer args.deinit();
         
         for (call.arguments.items) |arg_ptr| {
@@ -306,10 +306,10 @@ pub const SimpleLLVMIRGenerator = struct {
         
         try writer.print("  %{s} = call i64 @{s}(", .{ call_result, func_name });
         for (args.items, 0..) |arg, i| {
-            if (i > 0) try writer.writeAll(", ");
+            if (i > 0) try writer.writer().writeAll(", ");
             try writer.print("i64 {s}", .{arg});
         }
-        try writer.writeAll(")\n");
+        try writer.writer().writeAll(")\n");
         
         return call_result;
     }
@@ -419,16 +419,16 @@ pub const SimpleLLVMIRGenerator = struct {
         const writer = self.ir_buffer.writer();
         
         // Create main function
-        try writer.writeAll("define i32 @main() {\n");
-        try writer.writeAll("entry:\n");
+        try writer.writer().writeAll("define i32 @main() {\n");
+        try writer.writer().writeAll("entry:\n");
         
         // Call main_character if it exists
         if (std.mem.indexOf(u8, content, "define void @main_character") != null) {
-            try writer.writeAll("  call void @main_character()\n");
+            try writer.writer().writeAll("  call void @main_character()\n");
         }
         
-        try writer.writeAll("  ret i32 0\n");
-        try writer.writeAll("}\n");
+        try writer.writer().writeAll("  ret i32 0\n");
+        try writer.writer().writeAll("}\n");
     }
     
     /// Write IR to file
@@ -436,7 +436,7 @@ pub const SimpleLLVMIRGenerator = struct {
         const file = try std.fs.cwd().createFile(filename, .{});
         defer file.close();
         
-        try file.writeAll(self.ir_buffer.items);
+        try file.writer().writeAll(self.ir_buffer.items);
         
         if (self.verbose) {
             print("✅ LLVM IR written to: {s}\n", .{filename});

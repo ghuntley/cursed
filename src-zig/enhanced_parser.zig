@@ -43,7 +43,7 @@ pub const Parser = struct {
     }
     
     pub fn deinit(self: *Parser) void {
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     pub fn parseProgram(self: *Parser) !Program {
@@ -222,7 +222,7 @@ pub const Parser = struct {
         // Parse parameters
         _ = try self.consume(.LeftParen, "Expected '(' after function name");
         
-        var parameters = .empty;
+        var parameters = std.ArrayList(u8){};
         errdefer parameters.deinit(); // Clean up on error
         
         if (!self.check(.RightParen)) {
@@ -269,10 +269,10 @@ pub const Parser = struct {
         // Parse function body
         _ = try self.consume(.LeftBrace, "Expected '{' before function body");
         
-        var body = .empty;
+        var body = std.ArrayList(u8){};
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.parseStatement()) |stmt| {
-                try body.append(stmt);
+                try body.append(allocator, stmt);
             } else |err| {
                 try self.handleParseError(err, "Failed to parse statement in function body");
                 self.synchronize();
@@ -350,11 +350,11 @@ pub const Parser = struct {
         
         // Handle generic types Type<T>
         if (self.match(.Less)) {
-            var type_params = .empty;
+            var type_params = std.ArrayList(u8){};
             
             while (true) {
                 const param_type = try self.parseType();
-                try type_params.append(param_type);
+                try type_params.append(allocator, param_type);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -657,12 +657,12 @@ pub const Parser = struct {
     }
     
     fn finishCall(self: *Parser, callee: Expression) !Expression {
-        var arguments = .empty;
+        var arguments = std.ArrayList(u8){};
         
         if (!self.check(.RightParen)) {
             while (true) {
                 const arg = try self.parseExpression();
-                try arguments.append(arg);
+                try arguments.append(allocator, arg);
                 
                 if (!self.match(.Comma)) break;
                 

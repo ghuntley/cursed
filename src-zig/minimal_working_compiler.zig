@@ -235,13 +235,13 @@ const SimpleLexer = struct {
     }
     
     fn tokenize(self: *Self) !ArrayList(Token) {
-        var tokens = .empty;
+        var tokens = ArrayList(Token){};
         
         while (true) {
             const token = try self.nextToken();
             if (token.type == .EOF) break;
             if (token.type != .NEWLINE) { // Skip newlines
-                try tokens.append(token);
+                try tokens.append(allocator, token);
             }
         }
         
@@ -308,7 +308,7 @@ const SimpleParser = struct {
     }
     
     fn parseFunctionCall(self: *Self) !ASTNode {
-        var name_parts = .empty;
+        var name_parts = std.ArrayList(u8){};
         defer name_parts.deinit();
         
         // Parse "vibez.spill"
@@ -317,7 +317,7 @@ const SimpleParser = struct {
         
         if (self.peek().type == .DOT) {
             _ = self.advance(); // consume dot
-            try name_parts.append('.');
+            try name_parts.append(allocator, '.');
             
             const spill_token = self.advance();
             try name_parts.appendSlice(spill_token.value);
@@ -326,14 +326,14 @@ const SimpleParser = struct {
         const name = try name_parts.toOwnedSlice();
         
         // Parse arguments
-        var args = .empty;
+        var args = std.ArrayList(u8){};
         
         if (self.peek().type == .LPAREN) {
             _ = self.advance(); // consume (
             
             while (!self.isAtEnd() and self.peek().type != .RPAREN) {
                 const arg = try self.parseExpression();
-                try args.append(arg);
+                try args.append(allocator, arg);
                 
                 if (self.peek().type == .COMMA) {
                     _ = self.advance(); // consume comma
@@ -353,11 +353,11 @@ const SimpleParser = struct {
     }
     
     fn parse(self: *Self) !ASTNode {
-        var statements = .empty;
+        var statements = std.ArrayList(u8){};
         
         while (!self.isAtEnd()) {
             const stmt = try self.parseStatement();
-            try statements.append(stmt);
+            try statements.append(allocator, stmt);
             
             // Skip optional semicolon
             if (self.peek().type == .SEMICOLON) {
@@ -420,7 +420,7 @@ const SimpleCompiler = struct {
     
     fn compile(self: *Self, ast: ASTNode, output_path: []const u8) !void {
         // Generate a simple C program
-        var c_code = .empty;
+        var c_code = std.ArrayList(u8){};
         defer c_code.deinit();
         
         try c_code.appendSlice("#include <stdio.h>\n\nint main() {\n");
@@ -436,7 +436,7 @@ const SimpleCompiler = struct {
         const c_file = try std.fs.cwd().createFile(c_file_path, .{});
         defer c_file.close();
         
-        try c_file.writeAll(c_code.items);
+        try c_file.writer().writeAll(c_code.items);
         
         // Compile with gcc
         const compile_result = try std.process.Child.run(.{
@@ -524,13 +524,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -538,7 +538,7 @@ pub fn main() !void {
     // Tokenize
     var lexer = SimpleLexer.init(allocator, source);
     const tokens = lexer.tokenize() catch |err| {
-        print("Lexer error: {}\n", .{err});
+        print("Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit();
@@ -546,7 +546,7 @@ pub fn main() !void {
     if (debug_mode) {
         print("=== TOKENS ===\n", .{});
         for (tokens.items) |token| {
-            print("{}: '{s}'\n", .{ token.type, token.value });
+            print("{s}: '{s}'\n", .{ token.type, token.value });
         }
         print("\n", .{});
     }
@@ -554,7 +554,7 @@ pub fn main() !void {
     // Parse
     var parser = SimpleParser.init(allocator, tokens.items);
     const ast = parser.parse() catch |err| {
-        print("Parser error: {}\n", .{err});
+        print("Parser error: {s}\n", .{err});
         return;
     };
 
@@ -573,7 +573,7 @@ pub fn main() !void {
         
         var compiler = SimpleCompiler.init(allocator);
         compiler.compile(ast, output_name) catch |err| {
-            print("Compilation error: {}\n", .{err});
+            print("Compilation error: {s}\n", .{err});
             return;
         };
         
@@ -585,7 +585,7 @@ pub fn main() !void {
         
         var interpreter = SimpleInterpreter.init(allocator);
         interpreter.executeNode(ast) catch |err| {
-            print("Interpreter error: {}\n", .{err});
+            print("Interpreter error: {s}\n", .{err});
             return;
         };
         

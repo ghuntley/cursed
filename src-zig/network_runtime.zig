@@ -12,6 +12,7 @@ pub const NetworkRuntime = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) NetworkRuntime {
+        _ = allocator;
         return .{
             .allocator = allocator,
         };
@@ -82,18 +83,18 @@ pub const NetworkRuntime = struct {
         defer connection.close();
         
         // Build HTTP request
-        var request_buffer = ArrayList(u8).init(self.allocator);
+        var request_buffer = ArrayList(u8){};
         defer request_buffer.deinit();
         
         const writer = request_buffer.writer();
         try writer.print("GET {s} HTTP/1.1\r\n", .{parsed_url.path});
         try writer.print("Host: {s}\r\n", .{parsed_url.host});
-        try writer.writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
-        try writer.writeAll("Connection: close\r\n");
-        try writer.writeAll("\r\n");
+        try writer.writer().writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
+        try writer.writer().writeAll("Connection: close\r\n");
+        try writer.writer().writeAll("\r\n");
         
         // Send request
-        try connection.writeAll(request_buffer.items);
+        try connection.writer().writeAll(request_buffer.items);
         
         // Read response
         return try readHttpResponse(self.allocator, &connection);
@@ -111,21 +112,21 @@ pub const NetworkRuntime = struct {
         defer connection.close();
         
         // Build HTTP request
-        var request_buffer = ArrayList(u8).init(self.allocator);
+        var request_buffer = ArrayList(u8){};
         defer request_buffer.deinit();
         
         const writer = request_buffer.writer();
         try writer.print("POST {s} HTTP/1.1\r\n", .{parsed_url.path});
         try writer.print("Host: {s}\r\n", .{parsed_url.host});
-        try writer.writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
+        try writer.writer().writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
         try writer.print("Content-Type: {s}\r\n", .{content_type});
         try writer.print("Content-Length: {d}\r\n", .{body.len});
-        try writer.writeAll("Connection: close\r\n");
-        try writer.writeAll("\r\n");
-        try writer.writeAll(body);
+        try writer.writer().writeAll("Connection: close\r\n");
+        try writer.writer().writeAll("\r\n");
+        try writer.writer().writeAll(body);
         
         // Send request
-        try connection.writeAll(request_buffer.items);
+        try connection.writer().writeAll(request_buffer.items);
         
         // Read response
         return try readHttpResponse(self.allocator, &connection);
@@ -171,7 +172,7 @@ pub const TcpConnection = struct {
     }
     
     pub fn writeAll(self: *TcpConnection, data: []const u8) !void {
-        try self.stream.writeAll(data);
+        try self.stream.writer().writeAll(data);
     }
     
     pub fn readAll(self: *TcpConnection, buffer: []u8) !usize {
@@ -196,7 +197,7 @@ pub const TcpListener = struct {
     allocator: Allocator,
     
     pub fn close(self: *TcpListener) void {
-        self.listener.deinit();
+        self.listener.deinit(self.allocator);
     }
     
     pub fn accept(self: *TcpListener) !TcpConnection {
@@ -218,7 +219,7 @@ pub const TlsConnection = struct {
     
     pub fn writeAll(self: *TlsConnection, data: []const u8) !void {
         // In a real implementation, this would encrypt the data first
-        try self.tcp_connection.writeAll(data);
+        try self.tcp_connection.writer().writeAll(data);
     }
     
     pub fn read(self: *TlsConnection, buffer: []u8) !usize {
@@ -250,7 +251,7 @@ pub const HttpResponse = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.headers.deinit();
+        self.headers.deinit(self.allocator);
         
         // Free body
         self.allocator.free(self.body);
@@ -277,7 +278,7 @@ pub const HttpRequest = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.headers.deinit();
+        self.headers.deinit(self.allocator);
         
         self.allocator.free(self.body);
     }
@@ -299,8 +300,8 @@ pub const HttpResponseWriter = struct {
     
     pub fn init(allocator: Allocator, connection: *TcpConnection) HttpResponseWriter {
         return .{
-            .headers = std.StringHashMap([]const u8).init(allocator),
-            .body = ArrayList(u8).init(allocator),
+            .headers = std.StringHashMap([]const u8){},
+            .body = ArrayList(u8){},
             .connection = connection,
             .allocator = allocator,
         };
@@ -312,8 +313,8 @@ pub const HttpResponseWriter = struct {
             self.allocator.free(entry.key_ptr.*);
             self.allocator.free(entry.value_ptr.*);
         }
-        self.headers.deinit();
-        self.body.deinit();
+        self.headers.deinit(self.allocator);
+        self.body.deinit(self.allocator);
     }
     
     pub fn setStatus(self: *HttpResponseWriter, status: u16) void {
@@ -333,7 +334,7 @@ pub const HttpResponseWriter = struct {
     pub fn send(self: *HttpResponseWriter) !void {
         if (self.sent) return;
         
-        var response_buffer = ArrayList(u8).init(self.allocator);
+        var response_buffer = ArrayList(u8){};
         defer response_buffer.deinit();
         
         const writer = response_buffer.writer();
@@ -351,13 +352,13 @@ pub const HttpResponseWriter = struct {
         try writer.print("Content-Length: {d}\r\n", .{self.body.items.len});
         
         // End of headers
-        try writer.writeAll("\r\n");
+        try writer.writer().writeAll("\r\n");
         
         // Body
-        try writer.writeAll(self.body.items);
+        try writer.writer().writeAll(self.body.items);
         
         // Send response
-        try self.connection.writeAll(response_buffer.items);
+        try self.connection.writer().writeAll(response_buffer.items);
         self.sent = true;
     }
 };
@@ -418,7 +419,7 @@ pub fn parseUrl(url: []const u8) !ParsedUrl {
 // === HTTP RESPONSE PARSING ===
 
 pub fn readHttpResponse(allocator: Allocator, connection: *TcpConnection) !HttpResponse {
-    var response_buffer = ArrayList(u8).init(allocator);
+    var response_buffer = ArrayList(u8){};
     defer response_buffer.deinit();
     
     // Read response data
@@ -437,7 +438,7 @@ pub fn readHttpResponse(allocator: Allocator, connection: *TcpConnection) !HttpR
 }
 
 pub fn parseHttpResponse(allocator: Allocator, data: []const u8) !HttpResponse {
-    var headers = std.StringHashMap([]const u8).init(allocator);
+    var headers = std.StringHashMap([]const u8){};
     
     // Find end of headers
     const header_end = std.mem.indexOf(u8, data, "\r\n\r\n") orelse data.len;
@@ -476,7 +477,7 @@ pub fn parseHttpResponse(allocator: Allocator, data: []const u8) !HttpResponse {
 // === HTTP REQUEST PARSING ===
 
 pub fn parseHttpRequest(allocator: Allocator, data: []const u8) !HttpRequest {
-    var headers = std.StringHashMap([]const u8).init(allocator);
+    var headers = std.StringHashMap([]const u8){};
     
     // Find end of headers
     const header_end = std.mem.indexOf(u8, data, "\r\n\r\n") orelse data.len;
@@ -518,7 +519,7 @@ fn handleHttpConnection(allocator: Allocator, connection: TcpConnection, handler
     defer connection.close();
     
     // Read request
-    var request_buffer = ArrayList(u8).init(allocator);
+    var request_buffer = ArrayList(u8){};
     defer request_buffer.deinit();
     
     var read_buffer: [4096]u8 = undefined;

@@ -439,7 +439,7 @@ pub const PerformanceMonitor = struct {
     }
     
     pub fn deinit(self: *PerformanceMonitor) void {
-        self.compilation_phases.deinit();
+        self.compilation_phases.deinit(self.allocator);
     }
     
     pub fn startPhase(self: *PerformanceMonitor, name: []const u8) void {
@@ -448,7 +448,7 @@ pub const PerformanceMonitor = struct {
             .duration_ns = @intCast(std.time.nanoTimestamp()),
             .memory_delta = 0,
         };
-        self.compilation_phases.append(phase) catch {};
+        self.compilation_phases.append(allocator, phase) catch {};
     }
     
     pub fn endPhase(self: *PerformanceMonitor) void {

@@ -20,6 +20,7 @@ pub const TestResult = struct {
     execution_time_ms: u64,
     
     pub fn deinit(self: *TestResult, allocator: Allocator) void {
+        _ = allocator;
         if (self.error_message) |msg| {
             allocator.free(msg);
         }
@@ -50,11 +51,11 @@ pub const TestSuiteResult = struct {
         for (self.results.items) |*result| {
             result.deinit(self.results.allocator);
         }
-        self.results.deinit();
+        self.results.deinit(self.allocator);
     }
     
     pub fn addResult(self: *TestSuiteResult, result: TestResult) !void {
-        try self.results.append(result);
+        try self.results.append(allocator, result);
         self.total_tests += 1;
         if (result.passed) {
             self.passed_tests += 1;
@@ -124,7 +125,7 @@ pub const RegressionTestRunner = struct {
         var result = TestSuiteResult.init(self.allocator);
         
         var dir = fs.cwd().openDir(test_dir, .{ .iterate = true }) catch |err| {
-            print("Failed to open test directory '{s}': {}\n", .{ test_dir, err });
+            print("Failed to open test directory '{s}': {s}\n", .{ test_dir, err });
             return result;
         };
         defer dir.close();
@@ -239,7 +240,7 @@ pub const RegressionTestRunner = struct {
     fn runParserTest(self: *RegressionTestRunner, content: []const u8) !bool {
         // Validate content before processing
         if (content.len == 0 or content.len > 10 * 1024 * 1024) { // 10MB limit
-            if (self.verbose) print("⚠️ Invalid content size: {}\n", .{content.len});
+            if (self.verbose) print("⚠️ Invalid content size: {s}\n", .{content.len});
             return false;
         }
         
@@ -252,13 +253,13 @@ pub const RegressionTestRunner = struct {
         // Note: lexer.deinit() not needed as it uses arena allocator
         
         const tokens = lexer.tokenize() catch |err| {
-            if (self.verbose) print("Lexer error: {}\n", .{err});
+            if (self.verbose) print("Lexer error: {s}\n", .{err});
             return false;
         };
         
         // Validate token count to prevent memory issues
         if (tokens.items.len > 100000) { // Reasonable limit for regression tests
-            if (self.verbose) print("⚠️ Too many tokens: {}\n", .{tokens.items.len});
+            if (self.verbose) print("⚠️ Too many tokens: {s}\n", .{tokens.items.len});
             return false;
         }
         
@@ -267,7 +268,7 @@ pub const RegressionTestRunner = struct {
         defer parser.deinit();
         
         const ast = parser.parseProgram() catch |err| {
-            if (self.verbose) print("Parser error: {}\n", .{err});
+            if (self.verbose) print("Parser error: {s}\n", .{err});
             // Parser errors are expected for some regression tests
             return true; // Don't fail the test just because parsing failed
         };
@@ -315,13 +316,13 @@ pub const RegressionTestRunner = struct {
     fn runValgrindTest(self: *RegressionTestRunner, test_path: []const u8) !u32 {
         // Validate test path before execution
         if (test_path.len == 0 or test_path.len > 512) {
-            if (self.verbose) print("⚠️ Invalid test path length: {}\n", .{test_path.len});
+            if (self.verbose) print("⚠️ Invalid test path length: {s}\n", .{test_path.len});
             return 0;
         }
         
         // Run the test with valgrind and parse output for leaks
         const cmd = std.fmt.allocPrint(self.allocator, "timeout {d} valgrind --leak-check=summary --quiet --error-exitcode=1 ./zig-out/bin/cursed-zig {s} 2>&1", .{ self.test_timeout_ms / 1000, test_path }) catch |err| {
-            if (self.verbose) print("⚠️ Failed to format valgrind command: {}\n", .{err});
+            if (self.verbose) print("⚠️ Failed to format valgrind command: {s}\n", .{err});
             return 0;
         };
         defer self.allocator.free(cmd);
@@ -331,7 +332,7 @@ pub const RegressionTestRunner = struct {
             .argv = &[_][]const u8{ "bash", "-c", cmd },
             .max_output_bytes = 1024 * 1024, // 1MB limit
         }) catch |err| {
-            if (self.verbose) print("⚠️ Failed to execute valgrind: {}\n", .{err});
+            if (self.verbose) print("⚠️ Failed to execute valgrind: {s}\n", .{err});
             return 0;
         };
         defer self.allocator.free(result.stdout);
@@ -381,11 +382,11 @@ pub const RegressionTestRunner = struct {
     
     /// Serialize AST back to source code
     fn serializeAST(self: *RegressionTestRunner, allocator: Allocator, ast: AST.Program) ![]const u8 {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         
         for (ast.statements) |stmt| {
             try self.serializeStatement(&result, stmt);
-            try result.append('\n');
+            try result.append(allocator, '\n');
         }
         
         return result.toOwnedSlice();
@@ -425,7 +426,7 @@ pub fn runRegressionTests(allocator: Allocator, args: []const []const u8) !void 
     var runner = RegressionTestRunner.init(allocator);
     
     // Parse command line arguments
-    var test_directories = .empty;
+    var test_directories = std.ArrayList(u8){};
     defer test_directories.deinit();
     
     var i: usize = 0;
@@ -441,18 +442,18 @@ pub fn runRegressionTests(allocator: Allocator, args: []const []const u8) !void 
                 runner.test_timeout_ms = try std.fmt.parseInt(u32, args[i], 10);
             }
         } else if (!std.mem.startsWith(u8, arg, "--")) {
-            try test_directories.append(arg);
+            try test_directories.append(allocator, arg);
         }
         i += 1;
     }
     
     // Default test directories if none specified
     if (test_directories.items.len == 0) {
-        try test_directories.append("tests/regression/parser");
-        try test_directories.append("tests/regression/stdlib");
-        try test_directories.append("tests/regression/memory");
-        try test_directories.append("tests/regression/errors");
-        try test_directories.append("tests/regression/roundtrip");
+        try test_directories.append(allocator, "tests/regression/parser");
+        try test_directories.append(allocator, "tests/regression/stdlib");
+        try test_directories.append(allocator, "tests/regression/memory");
+        try test_directories.append(allocator, "tests/regression/errors");
+        try test_directories.append(allocator, "tests/regression/roundtrip");
     }
     
     var overall_results = TestSuiteResult.init(allocator);

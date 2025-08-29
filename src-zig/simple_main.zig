@@ -10,18 +10,19 @@ const VariableEnvironment = struct {
     arena: std.heap.ArenaAllocator,
     
     pub fn init(backing_allocator: Allocator) VariableEnvironment {
+        _ = allocator;
         var arena = std.heap.ArenaAllocator.init(backing_allocator);
         const arena_allocator = arena.allocator();
         
         return VariableEnvironment{
-            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(arena_allocator),
+            .variables = std.HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .arena = arena,
         };
     }
     
     pub fn deinit(self: *VariableEnvironment) void {
         // Arena allocator automatically cleans up all allocated strings
-        self.arena.deinit();
+        self.arena.deinit(self.allocator);
     }
     
     pub fn set(self: *VariableEnvironment, name: []const u8, value: i64) !void {
@@ -77,13 +78,13 @@ pub fn main() !void {
 
     // Read source file
     const file = std.fs.cwd().openFile(filename, .{}) catch |err| {
-        print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not open file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer file.close();
 
     const source = file.readToEndAlloc(allocator, 1024 * 1024) catch |err| {
-        print("Error: Could not read file '{s}': {}\n", .{ filename, err });
+        print("Error: Could not read file '{s}': {s}\n", .{ filename, err });
         return;
     };
     defer allocator.free(source);
@@ -100,7 +101,7 @@ pub fn main() !void {
     }
 
     const tokens = l.tokenize() catch |err| {
-        print("Lexer error: {}\n", .{err});
+        print("Lexer error: {s}\n", .{err});
         return;
     };
     defer tokens.deinit(); // Memory-safe token cleanup
@@ -116,13 +117,13 @@ pub fn main() !void {
     if (compile_mode) {
         // Real compilation mode - generate C code
         compileToC(allocator, filename, tokens) catch |err| {
-            print("Compilation error: {}\n", .{err});
+            print("Compilation error: {s}\n", .{err});
             return;
         };
     } else {
         // Interpretation mode - simple line execution
         interpretProgram(allocator, source) catch |err| {
-            print("Interpretation error: {}\n", .{err});
+            print("Interpretation error: {s}\n", .{err});
             return;
         };
     }
@@ -138,7 +139,7 @@ fn compileToC(allocator: Allocator, filename: []const u8, tokens: std.ArrayList(
     defer allocator.free(c_filename);
     
     // Generate C code
-    var c_code = std.ArrayList(u8).init(self.allocator);
+    var c_code = std.ArrayList(u8){};
     defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <string.h>\n\n");
@@ -192,10 +193,10 @@ fn compileToC(allocator: Allocator, filename: []const u8, tokens: std.ArrayList(
     // Write C file
     const c_file = try std.fs.cwd().createFile(c_filename, .{});
     defer c_file.close();
-    try c_file.writeAll(c_code.items);
+    try c_file.writer().writeAll(c_code.items);
     
     print("✅ Generated C code: {s}\n", .{c_filename});
-    print("📊 Compilation stats: {} tokens processed\n", .{tokens.items.len});
+    print("📊 Compilation stats: {s} tokens processed\n", .{tokens.items.len});
     print("💡 To complete compilation, run:\n", .{});
     print("   gcc -o {s} {s}\n", .{ output_name, c_filename });
     print("   ./{s}\n", .{output_name});
@@ -270,7 +271,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
                             print("{s}", .{trimmed_arg[1..trimmed_arg.len - 1]});
                         } else if (env.get(trimmed_arg)) |var_value| {
                             // Variable found - print its value
-                            print("{}", .{var_value});
+                            print("{s}", .{var_value});
                         } else {
                             // Not a string literal or variable - print as is
                             print("{s}", .{trimmed_arg});
@@ -283,7 +284,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8) !void {
             }
         } else {
             // Show parsing for other statements
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     

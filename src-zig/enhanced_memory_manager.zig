@@ -123,6 +123,7 @@ pub const EnhancedMemoryManager = struct {
         };
 
         pub fn init(allocator: Allocator) AllocationTracker {
+        _ = allocator;
             return AllocationTracker{
                 .allocations = HashMap(usize, AllocationInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
                 .tracker_mutex = Mutex{},
@@ -131,7 +132,7 @@ pub const EnhancedMemoryManager = struct {
         }
 
         pub fn deinit(self: *AllocationTracker) void {
-            self.allocations.deinit();
+            self.allocations.deinit(self.allocator);
         }
 
         pub fn trackAllocation(self: *AllocationTracker, address: usize, info: AllocationInfo) !void {
@@ -150,14 +151,14 @@ pub const EnhancedMemoryManager = struct {
             self.tracker_mutex.lock();
             defer self.tracker_mutex.unlock();
 
-            var leaks = ArrayList(AllocationInfo).init(self.allocator);
+            var leaks = ArrayList(AllocationInfo){};
             const current_time = @as(u64, @intCast(std.time.microTimestamp()));
 
             var iterator = self.allocations.iterator();
             while (iterator.next()) |entry| {
                 const age = current_time - entry.value_ptr.timestamp;
                 if (age > threshold_age_ms * 1000) { // Convert to microseconds
-                    try leaks.append(entry.value_ptr.*);
+                    try leaks.append(allocator, entry.value_ptr.*);
                 }
             }
 
@@ -204,7 +205,7 @@ pub const EnhancedMemoryManager = struct {
                 
                 // Check if this could be a valid heap pointer
                 if (self.isValidHeapPointer(potential_ptr, gc)) {
-                    try self.root_candidates.append(potential_ptr);
+                    try self.root_candidates.append(allocator, potential_ptr);
                 }
                 
                 offset += @sizeOf(usize);
@@ -257,14 +258,16 @@ pub const EnhancedMemoryManager = struct {
             }
 
             pub fn deinit(self: *Pool, allocator: Allocator) void {
+        _ = allocator;
                 for (self.chunks.items) |chunk| {
                     allocator.free(chunk);
                 }
-                self.chunks.deinit(allocator);
-                self.free_blocks.deinit(allocator);
+                self.chunks.deinit(self.allocator);
+                self.free_blocks.deinit(self.allocator);
             }
 
             pub fn allocate(self: *Pool, allocator: Allocator) !*anyopaque {
+        _ = allocator;
                 self.pool_mutex.lock();
                 defer self.pool_mutex.unlock();
 
@@ -280,18 +283,18 @@ pub const EnhancedMemoryManager = struct {
             pub fn deallocate(self: *Pool, ptr: *anyopaque) !void {
                 self.pool_mutex.lock();
                 defer self.pool_mutex.unlock();
-                try self.free_blocks.append(ptr);
+                try self.free_blocks.append(allocator, ptr);
             }
 
             fn addChunk(self: *Pool, allocator: Allocator) !void {
                 const blocks_per_chunk = 64;
                 const chunk_size = self.block_size * blocks_per_chunk;
                 const chunk = try allocator.alloc(u8, chunk_size);
-                try self.chunks.append(chunk);
+                try self.chunks.append(allocator, chunk);
 
                 var ptr = chunk.ptr;
                 for (0..blocks_per_chunk) |_| {
-                    try self.free_blocks.append(@ptrCast(ptr));
+                    try self.free_blocks.append(allocator, @ptrCast(ptr));
                     ptr += self.block_size;
                 }
             }
@@ -366,6 +369,7 @@ pub const EnhancedMemoryManager = struct {
         };
 
         pub fn init(allocator: Allocator) SafetyValidator {
+        _ = allocator;
             return SafetyValidator{
                 .bounds_tracker = HashMap(usize, BoundsInfo, std.hash_map.AutoContext(usize), std.hash_map.default_max_load_percentage).init(allocator),
                 .validator_mutex = Mutex{},
@@ -375,7 +379,7 @@ pub const EnhancedMemoryManager = struct {
         }
 
         pub fn deinit(self: *SafetyValidator) void {
-            self.bounds_tracker.deinit();
+            self.bounds_tracker.deinit(self.allocator);
         }
 
         pub fn registerAllocation(self: *SafetyValidator, ptr: *anyopaque, size: usize, allocation_type: []const u8) !void {
@@ -764,32 +768,33 @@ pub const EnhancedMemoryManager = struct {
 
     /// Get detailed memory usage report
     pub fn getMemoryReport(self: *EnhancedMemoryManager, allocator: Allocator) ![]u8 {
-        var report = ArrayList(u8).init(allocator);
+        _ = allocator;
+        var report = ArrayList(u8){};
         const writer = report.writer();
 
         try writer.print("=== Enhanced Memory Manager Report ===\n");
-        try writer.print("Total Allocated: {} bytes\n", .{self.stats.total_allocated.load(.acquire)});
-        try writer.print("Total Freed: {} bytes\n", .{self.stats.total_freed.load(.acquire)});
-        try writer.print("Current Usage: {} bytes\n", .{self.stats.getCurrentUsage()});
-        try writer.print("Peak Usage: {} bytes\n", .{self.stats.peak_usage.load(.acquire)});
+        try writer.print("Total Allocated: {s} bytes\n", .{self.stats.total_allocated.load(.acquire)});
+        try writer.print("Total Freed: {s} bytes\n", .{self.stats.total_freed.load(.acquire)});
+        try writer.print("Current Usage: {s} bytes\n", .{self.stats.getCurrentUsage()});
+        try writer.print("Peak Usage: {s} bytes\n", .{self.stats.peak_usage.load(.acquire)});
         try writer.print("Memory Pressure: {d:.2}%\n", .{self.stats.getPressure(self.config.gc_threshold) * 100});
-        try writer.print("GC Cycles: {}\n", .{self.stats.gc_cycles.load(.acquire)});
-        try writer.print("Total GC Time: {} μs\n", .{self.stats.total_gc_time_us.load(.acquire)});
-        try writer.print("Arena Allocations: {}\n", .{self.stats.arena_allocations.load(.acquire)});
-        try writer.print("Pool Allocations: {}\n", .{self.stats.pool_allocations.load(.acquire)});
-        try writer.print("Leaks Detected: {}\n", .{self.stats.leaks_detected.load(.acquire)});
-        try writer.print("Safety Violations: {}\n", .{self.stats.safety_violations.load(.acquire)});
+        try writer.print("GC Cycles: {s}\n", .{self.stats.gc_cycles.load(.acquire)});
+        try writer.print("Total GC Time: {s} μs\n", .{self.stats.total_gc_time_us.load(.acquire)});
+        try writer.print("Arena Allocations: {s}\n", .{self.stats.arena_allocations.load(.acquire)});
+        try writer.print("Pool Allocations: {s}\n", .{self.stats.pool_allocations.load(.acquire)});
+        try writer.print("Leaks Detected: {s}\n", .{self.stats.leaks_detected.load(.acquire)});
+        try writer.print("Safety Violations: {s}\n", .{self.stats.safety_violations.load(.acquire)});
 
         if (self.arena_manager) |arenas| {
             const usage = arenas.getTotalUsage();
             try writer.print("\n=== Arena Usage ===\n");
-            try writer.print("Total Arena Allocated: {} bytes\n", .{usage.total_allocated});
-            try writer.print("Total Arena Used: {} bytes\n", .{usage.total_used});
-            try writer.print("Parser Arena: {}/{} bytes\n", .{usage.parser.total_used, usage.parser.total_allocated});
-            try writer.print("AST Arena: {}/{} bytes\n", .{usage.ast.total_used, usage.ast.total_allocated});
-            try writer.print("Runtime Arena: {}/{} bytes\n", .{usage.runtime.total_used, usage.runtime.total_allocated});
-            try writer.print("String Arena: {}/{} bytes\n", .{usage.string.total_used, usage.string.total_allocated});
-            try writer.print("Temporary Arena: {}/{} bytes\n", .{usage.temporary.total_used, usage.temporary.total_allocated});
+            try writer.print("Total Arena Allocated: {s} bytes\n", .{usage.total_allocated});
+            try writer.print("Total Arena Used: {s} bytes\n", .{usage.total_used});
+            try writer.print("Parser Arena: {s}/{s} bytes\n", .{usage.parser.total_used, usage.parser.total_allocated});
+            try writer.print("AST Arena: {s}/{s} bytes\n", .{usage.ast.total_used, usage.ast.total_allocated});
+            try writer.print("Runtime Arena: {s}/{s} bytes\n", .{usage.runtime.total_used, usage.runtime.total_allocated});
+            try writer.print("String Arena: {s}/{s} bytes\n", .{usage.string.total_used, usage.string.total_allocated});
+            try writer.print("Temporary Arena: {s}/{s} bytes\n", .{usage.temporary.total_used, usage.temporary.total_allocated});
         }
 
         return report.toOwnedSlice();

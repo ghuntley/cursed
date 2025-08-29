@@ -85,7 +85,7 @@ fn runCursedFile(allocator: std.mem.Allocator, filename: []const u8) !void {
                 std.process.exit(1);
             },
             else => {
-                std.debug.print("Error: Could not open file '{s}': {}\n", .{ filename, err });
+                std.debug.print("Error: Could not open file '{s}': {s}\n", .{ filename, err });
                 std.process.exit(1);
             },
         }
@@ -101,7 +101,7 @@ fn runCursedFile(allocator: std.mem.Allocator, filename: []const u8) !void {
     
     std.debug.print("CURSED Interpreter (Oracle P2 Migration Build)\n", .{});
     std.debug.print("Executing: {s}\n", .{filename});
-    std.debug.print("File size: {} bytes\n\n", .{file_size});
+    std.debug.print("File size: {s} bytes\n\n", .{file_size});
     
     // Simple interpretation for basic CURSED constructs
     try interpretBasicCursed(allocator, contents);
@@ -132,7 +132,7 @@ fn interpretBasicCursed(allocator: std.mem.Allocator, source: []const u8) !void 
             try handleYeetStatement(allocator, trimmed, line_number);
         } else {
             // Unknown statement - just show it's being processed
-            std.debug.print("[Line {}] Processing: {s}\n", .{ line_number, trimmed });
+            std.debug.print("[Line {s}] Processing: {s}\n", .{ line_number, trimmed });
         }
     }
 }
@@ -163,11 +163,11 @@ fn handleSpillStatement(allocator: std.mem.Allocator, statement: []const u8, lin
 }
 
 fn handleSusStatement(_: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
-        std.debug.print("[Line {}] Variable declaration: {s}\n", .{ line_number, statement });
+        std.debug.print("[Line {s}] Variable declaration: {s}\n", .{ line_number, statement });
 }
 
 fn handleYeetStatement(_: std.mem.Allocator, statement: []const u8, line_number: u32) !void {
-        std.debug.print("[Line {}] Import statement: {s}\n", .{ line_number, statement });
+        std.debug.print("[Line {s}] Import statement: {s}\n", .{ line_number, statement });
 }
 
 // Test function to verify the build system works

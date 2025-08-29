@@ -28,17 +28,18 @@ pub const OptimizedThreadManager = struct {
     };
     
     pub fn init(allocator: Allocator) Self {
+        _ = allocator;
         return Self{
-            .waiting_threads = HashMap(Thread.Id, void, ThreadIdContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .thread_priorities = HashMap(Thread.Id, u8, ThreadIdContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .waiting_threads = HashMap(Thread.Id, void, ThreadIdContext, std.hash_map.default_max_load_percentage){},
+            .thread_priorities = HashMap(Thread.Id, u8, ThreadIdContext, std.hash_map.default_max_load_percentage){},
             .allocator = allocator,
             .mutex = Thread.Mutex{},
         };
     }
     
     pub fn deinit(self: *Self) void {
-        self.waiting_threads.deinit();
-        self.thread_priorities.deinit();
+        self.waiting_threads.deinit(self.allocator);
+        self.thread_priorities.deinit(self.allocator);
     }
     
     /// FIXED: O(1) HashMap insert instead of O(n) ArrayList append + search
@@ -89,14 +90,15 @@ pub const OptimizedThreadManager = struct {
     
     /// O(n) only when needed - get all waiting threads for notification
     pub fn getAllWaitingThreads(self: *Self, allocator: Allocator) !ArrayList(Thread.Id) {
+        _ = allocator;
         self.mutex.lock();
         defer self.mutex.unlock();
         
-        var result = ArrayList(Thread.Id).init(allocator);
+        var result = ArrayList(Thread.Id){};
         
         var iterator = self.waiting_threads.iterator();
         while (iterator.next()) |entry| {
-            try result.append(entry.key_ptr.*);
+            try result.append(allocator, entry.key_ptr.*);
         }
         
         return result;
@@ -133,6 +135,7 @@ pub const OptimizedThreadManager = struct {
 /// Performance benchmark comparing old vs new implementation
 pub const ThreadManagerBenchmark = struct {
     pub fn runPerformanceBenchmark(allocator: Allocator) !void {
+        _ = allocator;
         const print = std.debug.print;
         
         print("🚀 THREAD MANAGER PERFORMANCE BENCHMARK\n");
@@ -141,7 +144,7 @@ pub const ThreadManagerBenchmark = struct {
         const test_sizes = [_]u32{ 100, 1000, 10000 };
         
         for (test_sizes) |size| {
-            print("📊 Testing with {} threads:\n", .{size});
+            print("📊 Testing with {s} threads:\n", .{size});
             
             // Test optimized HashMap implementation
             var optimized_manager = OptimizedThreadManager.init(allocator);
@@ -178,18 +181,18 @@ pub const ThreadManagerBenchmark = struct {
             const remove_time = std.time.milliTimestamp() - start_remove;
             
             print("  ✅ HashMap Implementation:\n");
-            print("     - Insert: {}ms (O(1) per operation)\n", .{insert_time});
-            print("     - Lookup: {}ms (O(1) per operation)\n", .{lookup_time});
-            print("     - Remove: {}ms (O(1) per operation)\n", .{remove_time});
-            print("     - Total:  {}ms\n\n", .{insert_time + lookup_time + remove_time});
+            print("     - Insert: {s}ms (O(1) per operation)\n", .{insert_time});
+            print("     - Lookup: {s}ms (O(1) per operation)\n", .{lookup_time});
+            print("     - Remove: {s}ms (O(1) per operation)\n", .{remove_time});
+            print("     - Total:  {s}ms\n\n", .{insert_time + lookup_time + remove_time});
             
             // Estimate old linear search performance
             const linear_estimate = (size * (size / 2)) / 1000; // O(n) * n operations
-            print("  📉 Linear Search (OLD) Estimated: {}ms (O(n) per operation)\n", .{linear_estimate});
+            print("  📉 Linear Search (OLD) Estimated: {s}ms (O(n) per operation)\n", .{linear_estimate});
             
             if (linear_estimate > 0) {
                 const improvement = linear_estimate / (insert_time + lookup_time + remove_time + 1);
-                print("  🏆 Performance Improvement: {}x faster\n\n", .{improvement});
+                print("  🏆 Performance Improvement: {s}x faster\n\n", .{improvement});
             }
         }
         
@@ -211,6 +214,7 @@ pub const HighPerformanceSync = struct {
     pub const Benchmark = ThreadManagerBenchmark;
     
     pub fn createOptimizedThreadManager(allocator: Allocator) OptimizedThreadManager {
+        _ = allocator;
         return OptimizedThreadManager.init(allocator);
     }
 };

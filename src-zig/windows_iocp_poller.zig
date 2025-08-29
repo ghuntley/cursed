@@ -683,7 +683,7 @@ pub const AsyncRuntime = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.poller.deinit();
+        self.poller.deinit(self.allocator);
     }
     
     pub fn start(self: *Self) IOCPError!void {

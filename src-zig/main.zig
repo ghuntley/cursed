@@ -20,7 +20,7 @@ const SimpleJIT = struct {
     pub fn init(allocator: Allocator) SimpleJIT {
         return SimpleJIT{
             .allocator = allocator,
-            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, i64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){}
         };
     }
 
@@ -30,7 +30,7 @@ const SimpleJIT = struct {
         while (iter.next()) |entry| {
             self.allocator.free(entry.key_ptr.*);
         }
-        self.variables.deinit();
+        self.variables.deinit(self.allocator);
     }
 
     pub fn execute(self: *SimpleJIT, source: []const u8) !void {
@@ -72,7 +72,7 @@ const SimpleJIT = struct {
         const name_copy = try self.allocator.dupe(u8, name);
         try self.variables.put(name_copy, value);
         
-        print("🔧 JIT compiled variable assignment: {s} = {}\n", .{ name, value });
+        print("🔧 JIT compiled variable assignment: {s} = {s}\n", .{ name, value });
     }
 
     fn evaluateExpression(self: *SimpleJIT, expr: []const u8) !i64 {
@@ -84,7 +84,7 @@ const SimpleJIT = struct {
             const left_val = try self.getValue(left);
             const right_val = try self.getValue(right);
             
-            print("🧮 JIT computation: {} + {} = {}\n", .{ left_val, right_val, left_val + right_val });
+            print("🧮 JIT computation: {s} + {s} = {s}\n", .{ left_val, right_val, left_val + right_val });
             return left_val + right_val;
         }
         
@@ -127,7 +127,7 @@ const SimpleJIT = struct {
                 
                 // Try to get variable value
                 if (self.variables.get(trimmed)) |value| {
-                    print("{}", .{value});
+                    print("{s}", .{value});
                 } else {
                     print("{s}", .{trimmed});
                 }
@@ -337,8 +337,8 @@ pub fn main() !void {
         // Build system commands - delegate to CLI command handler (disabled)
         .init, .run, .clean, .doc, .install, .build => {
             print("Build system command '{s}' not yet implemented\n", .{@tagName(config.command)});
-        },
-    }
+        }
+        }
 }
 
 fn parseArgs(_: Allocator, args: [][:0]u8) !Config {
@@ -455,7 +455,7 @@ fn parseArgs(_: Allocator, args: [][:0]u8) !Config {
                 return error.InvalidArgs;
             };
             if (config.optimization_level > 3) {
-                print("Error: Optimization level must be 0-3, got {}\n", .{config.optimization_level});
+                print("Error: Optimization level must be 0-3, got {s}\n", .{config.optimization_level});
                 return error.InvalidArgs;
             }
         } else if (std.mem.eql(u8, arg, "-O") or std.mem.eql(u8, arg, "--optimize")) {
@@ -596,7 +596,7 @@ fn executeInterpret(allocator: Allocator, config: Config) !void {
     };
     defer allocator.free(source);
     
-    if (config.verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (config.verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
     
     // Tokenize if requested
     if (config.show_tokens) {
@@ -618,8 +618,8 @@ fn executeInterpret(allocator: Allocator, config: Config) !void {
         .wasm => {
             print("❌ WASM interpretation not yet implemented\n", .{});
             return error.NotImplemented;
-        },
-    }
+        }
+        }
 }
 
 fn executeCompile(allocator: Allocator, config: Config) !void {
@@ -767,10 +767,10 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
             
             if (!std.mem.eql(u8, src, fmt_line)) {
                 if (source_line != null) {
-                    print("-{}: {s}\n", .{ line_num, src });
+                    print("-{s}: {s}\n", .{ line_num, src });
                 }
                 if (formatted_line != null) {
-                    print("+{}: {s}\n", .{ line_num, fmt_line });
+                    print("+{s}: {s}\n", .{ line_num, fmt_line });
                 }
             }
             line_num += 1;
@@ -785,7 +785,7 @@ fn executeFormat(allocator: Allocator, config: Config) !void {
     };
     defer output_file.close();
     
-    output_file.writeAll(formatted) catch |err| {
+    output_file.writer().writeAll(formatted) catch |err| {
         print("❌ Error writing formatted output to {s}: {any}\n", .{ filename, err });
         return;
     };
@@ -889,7 +889,7 @@ fn runSingleTest(allocator: Allocator, filename: []const u8, verbose: bool, debu
     defer allocator.free(content);
     
     if (verbose) {
-        print("   🚀 Executing test ({} bytes)\n", .{content.len});
+        print("   🚀 Executing test ({s} bytes)\n", .{content.len});
     }
     
     // Execute the test by calling the interpreter directly
@@ -950,7 +950,7 @@ fn executeJIT(allocator: Allocator, config: Config) !void {
     };
     defer allocator.free(source);
     
-    if (config.verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (config.verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename, source.len });
     
     print("🚀 Using Fixed JIT Execution Engine\n", .{});
     
@@ -963,7 +963,7 @@ fn executeJIT(allocator: Allocator, config: Config) !void {
     
     while (i <= max_runs) {
         if (max_runs > 1) {
-            print("\n🔄 JIT Execution #{}\n", .{i});
+            print("\n🔄 JIT Execution #{s}\n", .{i});
             print("----------------------\n", .{});
         }
         
@@ -980,7 +980,7 @@ fn executeJIT(allocator: Allocator, config: Config) !void {
         print("📊 JIT Statistics: {} variables in scope\n", .{jit_engine.variables.count()});
         var var_iter = jit_engine.variables.iterator();
         while (var_iter.next()) |entry| {
-            print("  {s} = {}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
+            print("  {s} = {s}\n", .{ entry.key_ptr.*, entry.value_ptr.* });
         }
     }
     
@@ -993,7 +993,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     }
     
     // Discover test files using arena allocator (all memory cleaned up automatically)
-    var test_files = std.ArrayList([]const u8).init(allocator);
+    var test_files = std.ArrayList([]const u8){};
     defer test_files.deinit();
     
     try discoverTestFiles(allocator, &test_files, "tests");
@@ -1011,7 +1011,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
     var total_passed: u32 = 0;
     var total_failed: u32 = 0;
     var total_duration: u64 = 0;
-    var failed_tests = std.ArrayList([]const u8).init(allocator);
+    var failed_tests = std.ArrayList([]const u8){};
     defer failed_tests.deinit();
     
     const suite_start_time = std.time.milliTimestamp();
@@ -1041,7 +1041,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
         const result = runSingleTest(allocator, test_file, verbose, debug_mode) catch |err| {
             print("❌ ERROR ({any})\n", .{err});
             total_failed += 1;
-            try failed_tests.append(test_file);
+            try failed_tests.append(allocator, test_file);
             continue;
         };
         
@@ -1064,7 +1064,7 @@ fn runTestSuite(allocator: Allocator, verbose: bool, debug_mode: bool) !void {
             } else {
                 print("❌ FAIL\n", .{});
             }
-            try failed_tests.append(test_file);
+            try failed_tests.append(allocator, test_file);
         }
     }
     
@@ -1110,7 +1110,7 @@ fn discoverTestFiles(allocator: Allocator, test_files: *std.ArrayList([]const u8
             .file => {
                 // Check if it's a .csd file
                 if (std.mem.endsWith(u8, entry.name, ".csd")) {
-                    try test_files.append(full_path);
+                    try test_files.append(allocator, full_path);
                 } else {
                     allocator.free(full_path);
                 }
@@ -1122,7 +1122,7 @@ fn discoverTestFiles(allocator: Allocator, test_files: *std.ArrayList([]const u8
             },
             else => {
                 allocator.free(full_path);
-            },
+            }
         }
     }
 }
@@ -1143,16 +1143,16 @@ const Variable = union(enum) {
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Array => |arr| {
                 var result = std.ArrayList(u8){};
-                try result.append(allocator, '[');
+                try result.append(self.allocator, '[');
                 for (arr.items, 0..) |item, i| {
                     if (i > 0) try result.appendSlice(allocator, ", ");
                     const item_str = try item.toString(allocator);
                     defer allocator.free(item_str);
                     try result.appendSlice(allocator, item_str);
                 }
-                try result.append(allocator, ']');
+                try result.append(self.allocator, ']');
                 return result.toOwnedSlice(allocator);
-            },
+            }
         }
     }
 };
@@ -1172,13 +1172,13 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
         for (imports.items) |import_name| {
             allocator.free(import_name);
         }
-        imports.deinit(allocator);
+        imports.deinit();
     }
     
     // Validate imports
     if (imports.items.len > 0) {
         if (config.verbose) {
-            print("📦 Validating {} imports...\n", .{imports.items.len});
+            print("📦 Validating {s} imports...\n", .{imports.items.len});
         }
         
         const all_valid = simple_import_resolver.validateImports(allocator, imports) catch |err| {
@@ -1209,13 +1209,13 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
                     for (arr.items) |item| {
                         switch (item) {
                             .String => |str| allocator.free(str),
-                            else => {},
-                        }
+                            else => {}
+        }
                     }
-                    arr.deinit(allocator);
+                    arr.deinit();
                 },
-                else => {},
-            }
+                else => {}
+        }
         }
         variables.deinit();
     }
@@ -1233,7 +1233,7 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
             continue;
         }
         
-        if (config.verbose) print("🔍 Processing line: '{s}' (len: {})\n", .{ trimmed, trimmed.len });
+        if (config.verbose) print("🔍 Processing line: '{s}' (len: {s})\n", .{ trimmed, trimmed.len });
         
         // Skip import statements during execution
         if (std.mem.startsWith(u8, trimmed, "yeet ")) {
@@ -1252,7 +1252,7 @@ fn interpretScript(arena_manager: *CursedArenaManager, source: []const u8, confi
         if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |start| {
             try handleVibesSpill(&variables, allocator, trimmed, start, config.verbose);
         } else if (config.verbose) {
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     
@@ -1275,7 +1275,7 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
     defer tokens.deinit(parser_allocator);
     
     if (config.verbose) {
-        print("🔤 Tokenized {} tokens\n", .{tokens.items.len});
+        print("🔤 Tokenized {s} tokens\n", .{tokens.items.len});
     }
     
     // Parse tokens into AST using appropriate allocator
@@ -1288,7 +1288,7 @@ fn interpretAST(arena_manager: *CursedArenaManager, source: []const u8, config: 
     defer program.deinit(ast_allocator);
     
     if (config.verbose) {
-        print("🌳 Generated AST with {} statements\n", .{program.statements.items.len});
+        print("🌳 Generated AST with {s} statements\n", .{program.statements.items.len});
     }
     
     // Execute with proper interpreter 
@@ -1373,12 +1373,12 @@ fn readSourceFile(allocator: Allocator, filename: []const u8) ![]u8 {
 fn showTokens(allocator: Allocator, source: []const u8) !void {
     var l = lexer.Lexer.init(allocator, source);
     var tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {any}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
-    print("=== TOKENS ({}) ===\n", .{tokens.items.len});
+    print("=== TOKENS ({s}) ===\n", .{tokens.items.len});
     for (tokens.items) |token| {
         print("{any}: '{s}'\n", .{ token.kind, token.lexeme });
     }
@@ -1389,13 +1389,13 @@ fn checkSyntax(allocator: Allocator, source: []const u8, config: Config) !void {
     // Basic syntax checking - tokenize and check imports
     var l = lexer.Lexer.init(allocator, source);
     var tokens = l.tokenize() catch |err| {
-        print("❌ Syntax error during tokenization: {}\n", .{err});
+        print("❌ Syntax error during tokenization: {any}\n", .{err});
         return;
     };
-    defer tokens.deinit(allocator);
+    defer tokens.deinit();
     
     if (config.verbose) {
-        print("✅ Tokenization successful ({} tokens)\n", .{tokens.items.len});
+        print("✅ Tokenization successful ({s} tokens)\n", .{tokens.items.len});
     }
     
     // Check imports
@@ -1422,7 +1422,7 @@ fn checkSyntax(allocator: Allocator, source: []const u8, config: Config) !void {
         }
         
         if (config.verbose) {
-            print("✅ All {} imports validated\n", .{imports.items.len});
+            print("✅ All {s} imports validated\n", .{imports.items.len});
         }
     }
 }
@@ -1589,7 +1589,7 @@ fn handleVibesSpill(variables: *VariableStore, allocator: Allocator, line: []con
             if (hasCommaOutsideQuotes(trimmed_content)) {
                 // Handle multiple arguments - need to parse them properly respecting quotes
                 var args = try parseArguments(allocator, trimmed_content);
-                defer args.deinit(allocator);
+                defer args.deinit();
                 
                 var first_arg = true;
                 for (args.items) |arg| {
@@ -1665,11 +1665,11 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
                                 defer allocator.free(element_str);
                                 print("{s}", .{element_str});
                                 if (add_newline) print("\n", .{});
-                                if (verbose) print("✅ Array access {s}[{}] = {s}\n", .{ array_name, index, element_str });
+                                if (verbose) print("✅ Array access {s}[{s}] = {s}\n", .{ array_name, index, element_str });
                             } else {
                                 print("undefined", .{});
                                 if (add_newline) print("\n", .{});
-                                if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                                if (verbose) print("⚠️  Array index {s} out of bounds for {s} (length: {s})\n", .{ index, array_name, array.items.len });
                             }
                         } else |_| {
                             // Try to resolve index as a variable
@@ -1681,19 +1681,19 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
                                             defer allocator.free(element_str);
                                             print("{s}", .{element_str});
                                             if (add_newline) print("\n", .{});
-                                            if (verbose) print("✅ Array access {s}[{s}={}] = {s}\n", .{ array_name, index_expr, index, element_str });
+                                            if (verbose) print("✅ Array access {s}[{s}={s}] = {s}\n", .{ array_name, index_expr, index, element_str });
                                         } else {
                                             print("undefined", .{});
                                             if (add_newline) print("\n", .{});
-                                            if (verbose) print("⚠️  Array index {} out of bounds for {s} (length: {})\n", .{ index, array_name, array.items.len });
+                                            if (verbose) print("⚠️  Array index {s} out of bounds for {s} (length: {s})\n", .{ index, array_name, array.items.len });
                                         }
                                     },
                                     else => {
                                         print("{s}", .{trimmed_content});
                                         if (add_newline) print("\n", .{});
                                         if (verbose) print("⚠️  Index variable {s} is not an integer\n", .{index_expr});
-                                    },
-                                }
+                                    }
+        }
                             } else {
                                 print("{s}", .{trimmed_content});
                                 if (add_newline) print("\n", .{});
@@ -1705,8 +1705,8 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
                         print("{s}", .{trimmed_content});
                         if (add_newline) print("\n", .{});
                         if (verbose) print("⚠️  Variable {s} is not an array\n", .{array_name});
-                    },
-                }
+                    }
+        }
             } else {
                 print("{s}", .{trimmed_content});
                 if (add_newline) print("\n", .{});
@@ -1726,7 +1726,7 @@ fn evaluateAndPrintArgument(variables: *VariableStore, allocator: Allocator, tri
     } else {
         // Try to parse as literal value
         if (std.fmt.parseInt(i64, trimmed_content, 10)) |int_val| {
-            print("{}", .{int_val});
+            print("{s}", .{int_val});
             if (add_newline) print("\n", .{});
         } else |_| {
             if (std.fmt.parseFloat(f64, trimmed_content)) |float_val| {

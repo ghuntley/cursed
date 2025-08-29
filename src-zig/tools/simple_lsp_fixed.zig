@@ -30,21 +30,21 @@ pub fn main() !void {
         if (stdin.readUntilDelimiterOrEof(buffer[0..], '\n')) |maybe_line| {
             if (maybe_line) |line| {
                 if (std.mem.indexOf(u8, line, "initialize") != null) {
-                    try stdout.writeAll(init_response);
+                    try stdout.writer().writeAll(init_response);
                 } else if (std.mem.indexOf(u8, line, "completion") != null) {
                     const completion_response = 
                         \\Content-Length: 150
                         \\
                         \\{"jsonrpc":"2.0","id":2,"result":{"isIncomplete":false,"items":[{"label":"sus","kind":14},{"label":"slay","kind":14},{"label":"damn","kind":14}]}}
                     ;
-                    try stdout.writeAll(completion_response);
+                    try stdout.writer().writeAll(completion_response);
                 } else if (std.mem.indexOf(u8, line, "hover") != null) {
                     const hover_response = 
                         \\Content-Length: 120
                         \\
                         \\{"jsonrpc":"2.0","id":3,"result":{"contents":{"kind":"markdown","value":"CURSED language construct"}}}
                     ;
-                    try stdout.writeAll(hover_response);
+                    try stdout.writer().writeAll(hover_response);
                 }
             }
         } else |err| {

@@ -18,15 +18,16 @@ pub const TomlValue = union(enum) {
     table: HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
 
     pub fn deinit(self: *TomlValue, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
             .string => |str| {
                 allocator.free(str);
             },
             .array => |*arr| {
                 for (arr.items) |*item| {
-                    item.deinit(allocator);
+                    item.deinit();
                 }
-                arr.deinit(allocator);
+                arr.deinit();
             },
             .table => |*table| {
                 var iterator = table.iterator();
@@ -34,7 +35,7 @@ pub const TomlValue = union(enum) {
                     // Free the key (allocated string)
                     allocator.free(entry.key_ptr.*);
                     // Free the value
-                    entry.value_ptr.deinit(allocator);
+                    entry.value_ptr.deinit();
                 }
                 table.deinit();
             },
@@ -57,7 +58,7 @@ pub const TomlParser = struct {
     }
 
     pub fn parse(self: *TomlParser) !TomlValue {
-        var root = HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var root = HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         var current_section: ?[]const u8 = null;
         defer if (current_section) |section| self.allocator.free(section);
 
@@ -278,6 +279,7 @@ pub const Version = struct {
     build_metadata: ?[]const u8 = null,
 
     pub fn deinit(self: *Version, allocator: Allocator) void {
+        _ = allocator;
         if (self.pre_release) |pr| {
             allocator.free(pr);
             self.pre_release = null;
@@ -296,7 +298,7 @@ pub const Version = struct {
         
         // Reconstruct patch part including any remaining parts (for build metadata with dots)
         var patch_part_builder = std.ArrayList(u8){};
-        defer patch_part_builder.deinit(allocator);
+        defer patch_part_builder.deinit();
         
         try patch_part_builder.appendSlice(allocator, patch_part_start);
         while (parts.next()) |remaining_part| {
@@ -325,7 +327,7 @@ pub const Version = struct {
         var pre_release: ?[]const u8 = null;
         if (patch_parts.next()) |first_part| {
             var pre_release_parts = std.ArrayList(u8){};
-            defer pre_release_parts.deinit(allocator);
+            defer pre_release_parts.deinit();
             
             try pre_release_parts.appendSlice(allocator, first_part);
             while (patch_parts.next()) |part| {
@@ -346,6 +348,7 @@ pub const Version = struct {
     }
 
     pub fn toString(self: Version, allocator: Allocator) ![]const u8 {
+        _ = allocator;
         if (self.pre_release) |pr| {
             if (self.build_metadata) |bm| {
                 return try std.fmt.allocPrint(allocator, "{}.{}.{}-{s}+{s}", .{ self.major, self.minor, self.patch, pr, bm });
@@ -384,14 +387,14 @@ pub const Version = struct {
         _ = options;
         if (self.pre_release) |pr| {
             if (self.build_metadata) |bm| {
-                try writer.print("{}.{}.{}-{s}+{s}", .{ self.major, self.minor, self.patch, pr, bm });
+                try writer.writer().print("{}.{}.{}-{s}+{s}", .{ self.major, self.minor, self.patch, pr, bm });
             } else {
-                try writer.print("{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
+                try writer.writer().print("{}.{}.{}-{s}", .{ self.major, self.minor, self.patch, pr });
             }
         } else if (self.build_metadata) |bm| {
-            try writer.print("{}.{}.{}+{s}", .{ self.major, self.minor, self.patch, bm });
+            try writer.writer().print("{}.{}.{}+{s}", .{ self.major, self.minor, self.patch, bm });
         } else {
-            try writer.print("{}.{}.{}", .{ self.major, self.minor, self.patch });
+            try writer.writer().print("{}.{}.{}", .{ self.major, self.minor, self.patch });
         }
     }
 };
@@ -414,14 +417,15 @@ pub const VersionRequirement = struct {
     };
 
     pub fn deinit(self: *VersionRequirement, allocator: Allocator) void {
+        _ = allocator;
         switch (self.constraint) {
-            .exact => |*v| v.deinit(allocator),
-            .caret => |*v| v.deinit(allocator),
-            .tilde => |*v| v.deinit(allocator),
-            .greater => |*v| v.deinit(allocator),
-            .greater_eq => |*v| v.deinit(allocator),
-            .less => |*v| v.deinit(allocator),
-            .less_eq => |*v| v.deinit(allocator),
+            .exact => |*v| v.deinit(),
+            .caret => |*v| v.deinit(),
+            .tilde => |*v| v.deinit(),
+            .greater => |*v| v.deinit(),
+            .greater_eq => |*v| v.deinit(),
+            .less => |*v| v.deinit(),
+            .less_eq => |*v| v.deinit(),
             .wildcard => {}, // No allocated memory
         }
     }
@@ -554,7 +558,8 @@ pub const Dependency = struct {
     }
 
     pub fn deinit(self: *Dependency, allocator: Allocator) void {
-        self.features.deinit(allocator);
+        _ = allocator;
+        self.features.deinit(self.allocator);
     }
 };
 
@@ -596,6 +601,7 @@ pub const PackageManifest = struct {
     };
 
     pub fn init(allocator: Allocator) PackageManifest {
+        _ = allocator;
         return PackageManifest{
             .name = "",
             .version = Version{ .major = 0, .minor = 1, .patch = 0 },
@@ -629,6 +635,7 @@ pub const PackageManifest = struct {
     }
 
     pub fn deinit(self: *PackageManifest, allocator: Allocator) void {
+        _ = allocator;
         // Free allocated string fields
         if (!std.mem.eql(u8, self.name, "")) {
             allocator.free(self.name);
@@ -659,56 +666,56 @@ pub const PackageManifest = struct {
         }
         
         // Free version pre_release if allocated
-        self.version.deinit(allocator);
+        self.version.deinit(self.allocator);
         
         // Free authors array contents
         for (self.authors.items) |author| {
             allocator.free(author);
         }
-        self.authors.deinit(allocator);
+        self.authors.deinit(self.allocator);
         
         // Free keywords array contents
         for (self.keywords.items) |keyword| {
             allocator.free(keyword);
         }
-        self.keywords.deinit(allocator);
+        self.keywords.deinit(self.allocator);
         
         // Free categories array contents
         for (self.categories.items) |category| {
             allocator.free(category);
         }
-        self.categories.deinit(allocator);
+        self.categories.deinit(self.allocator);
         
         var dep_iter = self.dependencies.iterator();
         while (dep_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dependencies.deinit();
+        self.dependencies.deinit(self.allocator);
         
         var dev_dep_iter = self.dev_dependencies.iterator();
         while (dev_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.dev_dependencies.deinit();
+        self.dev_dependencies.deinit(self.allocator);
         
         var build_dep_iter = self.build_dependencies.iterator();
         while (build_dep_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.build_dependencies.deinit();
+        self.build_dependencies.deinit(self.allocator);
         
         var features_iter = self.features.iterator();
         while (features_iter.next()) |entry| {
-            entry.value_ptr.deinit(allocator);
+            entry.value_ptr.deinit();
         }
-        self.features.deinit();
+        self.features.deinit(self.allocator);
         
-        self.bin.deinit(allocator);
+        self.bin.deinit(self.allocator);
         if (self.lib) |*lib| {
-            lib.crate_type.deinit(allocator);
+            lib.crate_type.deinit();
         }
-        self.include_files.deinit(allocator);
-        self.exclude_files.deinit(allocator);
+        self.include_files.deinit(self.allocator);
+        self.exclude_files.deinit(self.allocator);
     }
 
     pub fn loadFromToml(allocator: Allocator, file_path: []const u8) !PackageManifest {
@@ -720,7 +727,7 @@ pub const PackageManifest = struct {
 
         var parser = TomlParser.init(allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit(allocator);
+        defer toml.deinit();
 
         return try PackageManifest.fromToml(allocator, toml);
     }
@@ -833,68 +840,69 @@ pub const PackageManifest = struct {
         const file = try std.fs.cwd().createFile(file_path, .{});
         defer file.close();
 
-        try file.writeAll(content);
+        try file.writer().writeAll(content);
     }
 
     pub fn toTomlString(self: *const PackageManifest, allocator: Allocator) ![]const u8 {
-        var content = ArrayList(u8).init(allocator);
+        _ = allocator;
+        var content = ArrayList(u8){};
         defer content.deinit();
         
         const writer = content.writer();
         
         // Package metadata
-        try writer.print("name = \"{s}\"\n", .{self.name});
+        try writer.writer().print("name = \"{s}\"\n", .{self.name});
         
         const version_str = try self.version.toString(allocator);
         defer allocator.free(version_str);
-        try writer.print("version = \"{s}\"\n", .{version_str});
+        try writer.writer().print("version = \"{s}\"\n", .{version_str});
         
         if (self.description) |desc| {
-            try writer.print("description = \"{s}\"\n", .{desc});
+            try writer.writer().print("description = \"{s}\"\n", .{desc});
         }
         
         // Authors
         if (self.authors.items.len > 0) {
-            try writer.writeAll("authors = [");
+            try writer.writer().writeAll("authors = [");
             for (self.authors.items, 0..) |author, i| {
-                if (i > 0) try writer.writeAll(", ");
-                try writer.print("\"{s}\"", .{author});
+                if (i > 0) try writer.writer().writeAll(", ");
+                try writer.writer().print("\"{s}\"", .{author});
             }
-            try writer.writeAll("]\n");
+            try writer.writer().writeAll("]\n");
         }
         
         // Keywords and categories
         if (self.keywords.items.len > 0) {
-            try writer.writeAll("keywords = [");
+            try writer.writer().writeAll("keywords = [");
             for (self.keywords.items, 0..) |keyword, i| {
-                if (i > 0) try writer.writeAll(", ");
-                try writer.print("\"{s}\"", .{keyword});
+                if (i > 0) try writer.writer().writeAll(", ");
+                try writer.writer().print("\"{s}\"", .{keyword});
             }
-            try writer.writeAll("]\n");
+            try writer.writer().writeAll("]\n");
         }
         
         if (self.categories.items.len > 0) {
-            try writer.writeAll("categories = [");
+            try writer.writer().writeAll("categories = [");
             for (self.categories.items, 0..) |category, i| {
-                if (i > 0) try writer.writeAll(", ");
-                try writer.print("\"{s}\"", .{category});
+                if (i > 0) try writer.writer().writeAll(", ");
+                try writer.writer().print("\"{s}\"", .{category});
             }
-            try writer.writeAll("]\n");
+            try writer.writer().writeAll("]\n");
         }
         
         // Dependencies sections
         if (self.dependencies.count() > 0) {
-            try writer.writeAll("\n[dependencies]\n");
+            try writer.writer().writeAll("\n[dependencies]\n");
             try writeDependencies(allocator, writer, self.dependencies);
         }
         
         if (self.dev_dependencies.count() > 0) {
-            try writer.writeAll("\n[dev-dependencies]\n");
+            try writer.writer().writeAll("\n[dev-dependencies]\n");
             try writeDependencies(allocator, writer, self.dev_dependencies);
         }
         
         if (self.build_dependencies.count() > 0) {
-            try writer.writeAll("\n[build-dependencies]\n");
+            try writer.writer().writeAll("\n[build-dependencies]\n");
             try writeDependencies(allocator, writer, self.build_dependencies);
         }
         
@@ -915,30 +923,30 @@ pub const PackageManifest = struct {
                     // Simple version for registry dependencies
                     const version_str = dep.version_req.constraint.exact.toString(allocator) catch "unknown";
                     defer if (!std.mem.eql(u8, version_str, "unknown")) allocator.free(version_str);
-                    try writer.print("{s} = \"{s}\"\n", .{ dep.name, version_str });
+                    try writer.writer().print("{s} = \"{s}\"\n", .{ dep.name, version_str });
                 },
                 .git => |git| {
-                    try writer.print("{s} = {{ git = \"{s}\"", .{ dep.name, git.url });
+                    try writer.writer().print("{s} = {{ git = \"{s}\"", .{ dep.name, git.url });
                     if (git.rev) |rev| {
-                        try writer.print(", rev = \"{s}\"", .{rev});
+                        try writer.writer().print(", rev = \"{s}\"", .{rev});
                     }
                     if (git.branch) |branch| {
-                        try writer.print(", branch = \"{s}\"", .{branch});
+                        try writer.writer().print(", branch = \"{s}\"", .{branch});
                     }
                     if (git.tag) |tag| {
-                        try writer.print(", tag = \"{s}\"", .{tag});
+                        try writer.writer().print(", tag = \"{s}\"", .{tag});
                     }
-                    try writer.writeAll(" }\n");
+                    try writer.writer().writeAll(" }\n");
                 },
                 .local => |local| {
-                    try writer.print("{s} = {{ path = \"{s}\" }}\n", .{ dep.name, local.path });
+                    try writer.writer().print("{s} = {{ path = \"{s}\" }}\n", .{ dep.name, local.path });
                 },
                 .url => |url| {
-                    try writer.print("{s} = {{ url = \"{s}\"", .{ dep.name, url.url });
+                    try writer.writer().print("{s} = {{ url = \"{s}\"", .{ dep.name, url.url });
                     if (url.checksum) |checksum| {
-                        try writer.print(", checksum = \"{s}\"", .{checksum});
+                        try writer.writer().print(", checksum = \"{s}\"", .{checksum});
                     }
-                    try writer.writeAll(" }\n");
+                    try writer.writer().writeAll(" }\n");
                 },
             }
         }
@@ -969,7 +977,7 @@ pub const LockFile = struct {
         }
         
         pub fn deinit(self: *LockedPackage) void {
-            self.dependencies.deinit();
+            self.dependencies.deinit(self.allocator);
         }
         
         pub fn fromToml(allocator: Allocator, toml_table: HashMap([]const u8, TomlValue, std.hash_map.StringContext, std.hash_map.default_max_load_percentage)) !LockedPackage {
@@ -1025,7 +1033,7 @@ pub const LockFile = struct {
         for (self.packages.items) |*pkg| {
             pkg.deinit();
         }
-        self.packages.deinit();
+        self.packages.deinit(self.allocator);
     }
 
     pub fn saveToFile(self: *const LockFile, allocator: Allocator, file_path: []const u8) !void {
@@ -1035,7 +1043,7 @@ pub const LockFile = struct {
         const file = try std.fs.cwd().createFile(file_path, .{});
         defer file.close();
 
-        try file.writeAll(content);
+        try file.writer().writeAll(content);
     }
 
     pub fn loadFromFile(allocator: Allocator, file_path: []const u8) !LockFile {
@@ -1050,7 +1058,7 @@ pub const LockFile = struct {
 
         var parser = TomlParser.init(allocator, content);
         var toml = try parser.parse();
-        defer toml.deinit(allocator);
+        defer toml.deinit();
 
         return try LockFile.fromToml(allocator, toml);
     }
@@ -1063,7 +1071,7 @@ pub const LockFile = struct {
                 for (packages_val.array.items) |pkg_val| {
                     if (pkg_val == .table) {
                         const pkg = try LockedPackage.fromToml(allocator, pkg_val.table);
-                        try lock_file.packages.append(pkg);
+                        try lock_file.packages.append(allocator, pkg);
                     }
                 }
             }
@@ -1073,48 +1081,49 @@ pub const LockFile = struct {
     }
 
     pub fn toTomlString(self: *const LockFile, allocator: Allocator) ![]const u8 {
-        var content = ArrayList(u8).init(allocator);
+        _ = allocator;
+        var content = ArrayList(u8){};
         defer content.deinit();
         
         const writer = content.writer();
         
-        try writer.print("version = {}\n\n", .{self.version});
+        try writer.writer().print("version = {s}\n\n", .{self.version});
         
         for (self.packages.items) |pkg| {
-            try writer.writeAll("[[package]]\n");
-            try writer.print("name = \"{s}\"\n", .{pkg.name});
+            try writer.writer().writeAll("[[package]]\n");
+            try writer.writer().print("name = \"{s}\"\n", .{pkg.name});
             
             const version_str = try pkg.version.toString(allocator);
             defer allocator.free(version_str);
-            try writer.print("version = \"{s}\"\n", .{version_str});
+            try writer.writer().print("version = \"{s}\"\n", .{version_str});
             
             switch (pkg.source) {
                 .registry => |registry| {
-                    try writer.print("source = \"registry+{s}\"\n", .{registry.url});
+                    try writer.writer().print("source = \"registry+{s}\"\n", .{registry.url});
                 },
                 .git => |git| {
-                    try writer.print("source = \"git+{s}\"\n", .{git.url});
+                    try writer.writer().print("source = \"git+{s}\"\n", .{git.url});
                 },
                 .local => |local| {
-                    try writer.print("source = \"path+{s}\"\n", .{local.path});
+                    try writer.writer().print("source = \"path+{s}\"\n", .{local.path});
                 },
                 .url => |url| {
-                    try writer.print("source = \"url+{s}\"\n", .{url.url});
+                    try writer.writer().print("source = \"url+{s}\"\n", .{url.url});
                 },
             }
             
-            try writer.print("checksum = \"{s}\"\n", .{pkg.checksum});
+            try writer.writer().print("checksum = \"{s}\"\n", .{pkg.checksum});
             
             if (pkg.dependencies.items.len > 0) {
-                try writer.writeAll("dependencies = [");
+                try writer.writer().writeAll("dependencies = [");
                 for (pkg.dependencies.items, 0..) |dep, i| {
-                    if (i > 0) try writer.writeAll(", ");
-                    try writer.print("\"{s}\"", .{dep});
+                    if (i > 0) try writer.writer().writeAll(", ");
+                    try writer.writer().print("\"{s}\"", .{dep});
                 }
-                try writer.writeAll("]\n");
+                try writer.writer().writeAll("]\n");
             }
             
-            try writer.writeAll("\n");
+            try writer.writer().writeAll("\n");
         }
         
         return try content.toOwnedSlice();
@@ -1128,6 +1137,7 @@ pub const DependencyResolver = struct {
     registry_cache: HashMap([]const u8, ArrayList(Version), std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     pub fn init(allocator: Allocator) DependencyResolver {
+        _ = allocator;
         return DependencyResolver{
             .allocator = allocator,
             .registry_cache = HashMap([]const u8, ArrayList(Version), std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -1139,12 +1149,12 @@ pub const DependencyResolver = struct {
         while (iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.registry_cache.deinit();
+        self.registry_cache.deinit(self.allocator);
     }
     
     pub fn resolve(self: *DependencyResolver, manifest: *const PackageManifest) !ArrayList(ResolvedDependency) {
-        var resolved = ArrayList(ResolvedDependency).init(self.allocator);
-        var visited = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(self.allocator);
+        var resolved = ArrayList(ResolvedDependency){};
+        var visited = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){};
         defer visited.deinit();
         
         // Resolve all dependencies
@@ -1174,7 +1184,7 @@ pub const DependencyResolver = struct {
         }
         
         pub fn deinit(self: *ResolvedDependency) void {
-            self.dependencies.deinit();
+            self.dependencies.deinit(self.allocator);
         }
     };
     
@@ -1202,7 +1212,7 @@ pub const DependencyResolver = struct {
             resolved_dep.version = version;
             resolved_dep.source = dep.source;
             
-            try resolved.append(resolved_dep);
+            try resolved.append(allocator, resolved_dep);
         }
     }
     
@@ -1465,19 +1475,19 @@ pub const BuildIntegration = struct {
         const build_file = try std.fs.cwd().createFile("build_generated.zig", .{});
         defer build_file.close();
         
-        try build_file.writeAll(build_content);
+        try build_file.writer().writeAll(build_content);
         
         print("Generated build_generated.zig with dependency information\n", .{});
     }
     
     fn generateBuildZigContent(self: *BuildIntegration, manifest: *const PackageManifest, resolved: ArrayList(DependencyResolver.ResolvedDependency)) ![]const u8 {
         _ = manifest;
-        var content = ArrayList(u8).init(self.allocator);
+        var content = ArrayList(u8){};
         defer content.deinit();
         
         const writer = content.writer();
         
-        try writer.writeAll(
+        try writer.writer().writeAll(
             \\// Generated build file for CURSED package
             \\const std = @import("std");
             \\
@@ -1490,7 +1500,7 @@ pub const BuildIntegration = struct {
             const package_path = try self.cache.getPackagePath(dep.name, dep.version);
             defer self.allocator.free(package_path);
             
-            try writer.print(
+            try writer.writer().print(
                 \\    // Dependency: {s} v{s}
                 \\    exe.addIncludePath(.{{ .path = "{s}/src" }});
                 \\    exe.addLibraryPath(.{{ .path = "{s}/lib" }});
@@ -1498,7 +1508,7 @@ pub const BuildIntegration = struct {
             , .{ dep.name, dep.version, package_path, package_path });
         }
         
-        try writer.writeAll(
+        try writer.writer().writeAll(
             \\}
             \\
             \\pub fn buildDependencies(b: *std.Build, target: std.Build.ResolvedTarget, optimize: std.builtin.OptimizeMode) !void {
@@ -1510,7 +1520,7 @@ pub const BuildIntegration = struct {
             const package_path = try self.cache.getPackagePath(dep.name, dep.version);
             defer self.allocator.free(package_path);
             
-            try writer.print(
+            try writer.writer().print(
                 \\    // Build dependency: {s}
                 \\    const {s}_lib = b.addStaticLibrary(.{{
                 \\        .name = "{s}",
@@ -1523,7 +1533,7 @@ pub const BuildIntegration = struct {
             , .{ dep.name, dep.name, dep.name, package_path, dep.name });
         }
         
-        try writer.writeAll("}\n");
+        try writer.writer().writeAll("}\n");
         
         return try content.toOwnedSlice();
     }
@@ -1581,7 +1591,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     const src_file = try std.fs.cwd().createFile("src/lib.csd", .{});
     defer src_file.close();
     
-    try src_file.writeAll(
+    try src_file.writer().writeAll(
         \\// Main library file for new CURSED package
         \\
         \\slay greet(name tea) tea {
@@ -1594,7 +1604,7 @@ pub fn cmdInit(allocator: Allocator, args: [][]const u8) !void {
     const test_file = try std.fs.cwd().createFile("tests/lib_test.csd", .{});
     defer test_file.close();
     
-    try test_file.writeAll(
+    try test_file.writer().writeAll(
         \\yeet "testz"
         \\yeet "../src/lib"
         \\
@@ -1695,7 +1705,7 @@ pub fn cmdInstall(allocator: Allocator, args: [][]const u8) !void {
         locked_pkg.source = dep.source;
         locked_pkg.checksum = "placeholder-checksum"; // TODO: Calculate actual checksum
         
-        try lock_file.packages.append(locked_pkg);
+        try lock_file.packages.append(allocator, locked_pkg);
     }
     
     try lock_file.saveToFile(allocator, "CursedPackage.lock");
@@ -1898,7 +1908,7 @@ test "package manifest loading" {
         std.fs.cwd().deleteFile("test_manifest.toml") catch {};
     }
     
-    try temp_file.writeAll(manifest_content);
+    try temp_file.writer().writeAll(manifest_content);
     
     var manifest = try PackageManifest.loadFromToml(allocator, "test_manifest.toml");
     defer manifest.deinit();

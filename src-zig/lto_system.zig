@@ -191,16 +191,16 @@ pub const LTOSystem = struct {
         pub fn printSummary(self: *const LTOMetrics) void {
             print("\n🔗 Link-Time Optimization Metrics\n", .{});
             print("==================================\n", .{});
-            print("Total LTO time: {} ms\n", .{self.total_lto_time_ms});
-            print("  Module linking: {} ms\n", .{self.module_linking_time_ms});
-            print("  Optimization: {} ms\n", .{self.optimization_time_ms});
-            print("  Code generation: {} ms\n", .{self.code_generation_time_ms});
-            print("Modules linked: {}\n", .{self.modules_linked});
-            print("Functions optimized: {}\n", .{self.functions_optimized});
-            print("Cross-module inlines: {}\n", .{self.functions_inlined_across_modules});
-            print("Global variables optimized: {}\n", .{self.global_variables_optimized});
-            print("Dead functions eliminated: {}\n", .{self.dead_functions_eliminated});
-            print("Bitcode size reduction: {} -> {} bytes ({:.1}%)\n", .{
+            print("Total LTO time: {s} ms\n", .{self.total_lto_time_ms});
+            print("  Module linking: {s} ms\n", .{self.module_linking_time_ms});
+            print("  Optimization: {s} ms\n", .{self.optimization_time_ms});
+            print("  Code generation: {s} ms\n", .{self.code_generation_time_ms});
+            print("Modules linked: {s}\n", .{self.modules_linked});
+            print("Functions optimized: {s}\n", .{self.functions_optimized});
+            print("Cross-module inlines: {s}\n", .{self.functions_inlined_across_modules});
+            print("Global variables optimized: {s}\n", .{self.global_variables_optimized});
+            print("Dead functions eliminated: {s}\n", .{self.dead_functions_eliminated});
+            print("Bitcode size reduction: {s} -> {s} bytes ({:.1}%)\n", .{
                 self.bitcode_size_before_bytes,
                 self.bitcode_size_after_bytes,
                 if (self.bitcode_size_before_bytes > 0)
@@ -235,11 +235,11 @@ pub const LTOSystem = struct {
         
         print("🔗 LTO System initialized\n", .{});
         print("  Mode: {s}\n", .{mode.toString()});
-        print("  Optimization level: {}\n", .{opt_level});
+        print("  Optimization level: {s}\n", .{opt_level});
         print("  Target: {s}\n", .{target_triple});
-        print("  Whole program optimization: {}\n", .{system.whole_program_optimization});
-        print("  Interprocedural optimization: {}\n", .{system.interprocedural_optimization});
-        print("  Cross-module inlining: {}\n", .{system.cross_module_inlining});
+        print("  Whole program optimization: {s}\n", .{system.whole_program_optimization});
+        print("  Interprocedural optimization: {s}\n", .{system.interprocedural_optimization});
+        print("  Cross-module inlining: {s}\n", .{system.cross_module_inlining});
         
         return system;
     }
@@ -250,7 +250,7 @@ pub const LTOSystem = struct {
         for (self.modules.items) |*module| {
             module.deinit();
         }
-        self.modules.deinit();
+        self.modules.deinit(self.allocator);
         
         // Cleanup LLVM resources
         if (self.linked_module) |module| {
@@ -278,9 +278,9 @@ pub const LTOSystem = struct {
         try self.modules.append(self.allocator, lto_module);
         
         print("📦 Added module for LTO: {s}\n", .{bitcode_path});
-        print("  Functions: {}\n", .{lto_module.function_count});
-        print("  Globals: {}\n", .{lto_module.global_count});
-        print("  Exported symbols: {}\n", .{lto_module.exported_symbols.items.len});
+        print("  Functions: {s}\n", .{lto_module.function_count});
+        print("  Globals: {s}\n", .{lto_module.global_count});
+        print("  Exported symbols: {s}\n", .{lto_module.exported_symbols.items.len});
     }
     
     /// Add module from bitcode file
@@ -342,7 +342,7 @@ pub const LTOSystem = struct {
         const end_time = std.time.milliTimestamp();
         self.lto_metrics.total_lto_time_ms = @intCast(end_time - start_time);
         
-        print("✅ Link-Time Optimization completed in {} ms\n", .{self.lto_metrics.total_lto_time_ms});
+        print("✅ Link-Time Optimization completed in {s} ms\n", .{self.lto_metrics.total_lto_time_ms});
         self.lto_metrics.printSummary();
         
         return LTOResult{
@@ -356,7 +356,7 @@ pub const LTOSystem = struct {
     
     /// Link all modules together
     fn linkModules(self: *Self) !void {
-        print("  Phase 1: Linking {} modules...\n", .{self.modules.items.len});
+        print("  Phase 1: Linking {s} modules...\n", .{self.modules.items.len});
         
         if (self.modules.items.len == 0) return;
         
@@ -385,7 +385,7 @@ pub const LTOSystem = struct {
             return error.ModuleVerificationFailed;
         }
         
-        print("    Successfully linked {} modules\n", .{self.lto_metrics.modules_linked});
+        print("    Successfully linked {s} modules\n", .{self.lto_metrics.modules_linked});
     }
     
     /// Perform whole-program optimization
@@ -614,7 +614,7 @@ pub const LTOSystem = struct {
         const end_time = std.time.milliTimestamp();
         self.lto_metrics.code_generation_time_ms = @intCast(end_time - start_time);
         
-        print("✅ Object code generated in {} ms\n", .{self.lto_metrics.code_generation_time_ms});
+        print("✅ Object code generated in {s} ms\n", .{self.lto_metrics.code_generation_time_ms});
     }
     
     /// Generate optimized bitcode
@@ -681,30 +681,30 @@ pub const LTOStatistics = struct {
         print("\n📊 Comprehensive LTO Statistics Report\n", .{});
         print("======================================\n", .{});
         print("LTO Mode: {s}\n", .{self.lto_mode.toString()});
-        print("Optimization Level: {}\n", .{self.optimization_level});
-        print("Modules Processed: {}\n", .{self.modules_processed});
+        print("Optimization Level: {s}\n", .{self.optimization_level});
+        print("Modules Processed: {s}\n", .{self.modules_processed});
         print("\n⏱️  Timing Breakdown:\n", .{});
-        print("  Total LTO time: {} ms\n", .{self.total_lto_time_ms});
-        print("  Module linking: {} ms ({:.1}%)\n", .{
+        print("  Total LTO time: {s} ms\n", .{self.total_lto_time_ms});
+        print("  Module linking: {s} ms ({:.1}%)\n", .{
             self.linking_time_ms,
             if (self.total_lto_time_ms > 0) @as(f64, @floatFromInt(self.linking_time_ms)) / @as(f64, @floatFromInt(self.total_lto_time_ms)) * 100.0 else 0.0
         });
-        print("  Optimization: {} ms ({:.1}%)\n", .{
+        print("  Optimization: {s} ms ({:.1}%)\n", .{
             self.optimization_time_ms,
             if (self.total_lto_time_ms > 0) @as(f64, @floatFromInt(self.optimization_time_ms)) / @as(f64, @floatFromInt(self.total_lto_time_ms)) * 100.0 else 0.0
         });
-        print("  Code generation: {} ms ({:.1}%)\n", .{
+        print("  Code generation: {s} ms ({:.1}%)\n", .{
             self.code_generation_time_ms,
             if (self.total_lto_time_ms > 0) @as(f64, @floatFromInt(self.code_generation_time_ms)) / @as(f64, @floatFromInt(self.total_lto_time_ms)) * 100.0 else 0.0
         });
         print("\n🎯 Optimization Results:\n", .{});
-        print("  Functions optimized: {}\n", .{self.functions_optimized});
-        print("  Cross-module inlines: {}\n", .{self.cross_module_inlines});
-        print("  Dead functions eliminated: {}\n", .{self.dead_functions_eliminated});
+        print("  Functions optimized: {s}\n", .{self.functions_optimized});
+        print("  Cross-module inlines: {s}\n", .{self.cross_module_inlines});
+        print("  Dead functions eliminated: {s}\n", .{self.dead_functions_eliminated});
         print("  Estimated runtime improvement: {:.2}x\n", .{self.estimated_improvement});
         print("\n🔧 Configuration:\n", .{});
-        print("  Whole-program optimization: {}\n", .{self.whole_program_optimization});
-        print("  Interprocedural optimization: {}\n", .{self.interprocedural_optimization});
+        print("  Whole-program optimization: {s}\n", .{self.whole_program_optimization});
+        print("  Interprocedural optimization: {s}\n", .{self.interprocedural_optimization});
         
         if (self.estimated_improvement > 1.3) {
             print("\n✨ Excellent LTO results achieved!\n", .{});

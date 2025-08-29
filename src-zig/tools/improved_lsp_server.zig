@@ -168,7 +168,7 @@ pub const LSPHandler = struct {
     pub fn init() LSPHandler {
         return LSPHandler{
             .allocator = allocator,
-            .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .documents = HashMap([]const u8, DocumentInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
             .language_data = CursedLanguageData.init(),
             .initialized = false,
             .shutdown_requested = false,
@@ -181,7 +181,7 @@ pub const LSPHandler = struct {
             var doc = entry.value_ptr;
             doc.deinit();
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
     }
 
     pub fn handleMessage(self: *LSPHandler, message_text: []const u8) !?[]u8 {
@@ -272,7 +272,7 @@ pub const LSPHandler = struct {
             return try self.createErrorResponse(id, -32602, "Invalid params");
         }
         
-        var items = ArrayList([]const u8).init(self.allocator);
+        var items = ArrayList([]const u8){};
         defer items.deinit();
         
         // Add keywords
@@ -280,7 +280,7 @@ pub const LSPHandler = struct {
             const item = try std.fmt.allocPrint(self.allocator,
                 \\{{"label":"{s}","kind":14,"detail":"CURSED keyword","insertText":"{s}"}}
             , .{ keyword, keyword });
-            try items.append(item);
+            try items.append(allocator, item);
         }
         
         // Add stdlib functions
@@ -291,7 +291,7 @@ pub const LSPHandler = struct {
             const item = try std.fmt.allocPrint(self.allocator,
                 \\{{"label":"{s}","kind":3,"detail":"CURSED function","documentation":"{s}","insertText":"{s}"}}
             , .{ full_name, func.description, full_name });
-            try items.append(item);
+            try items.append(allocator, item);
         }
         
         // Add types
@@ -299,11 +299,11 @@ pub const LSPHandler = struct {
             const item = try std.fmt.allocPrint(self.allocator,
                 \\{{"label":"{s}","kind":25,"detail":"CURSED type","insertText":"{s}"}}
             , .{ type_name, type_name });
-            try items.append(item);
+            try items.append(allocator, item);
         }
         
         // Build response
-        var response_builder = ArrayList(u8).init(self.allocator);
+        var response_builder = ArrayList(u8){};
         defer response_builder.deinit();
         
         try response_builder.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":");
@@ -413,7 +413,7 @@ pub fn main() !void {
     var stdout_buffer: [4096]u8 = undefined;
     const stdout = std.fs.File.stdout().writer(stdout_buffer[0..]);
 
-    var buffer = ArrayList(u8).init(allocator);
+    var buffer = ArrayList(u8){};
     defer buffer.deinit();
 
     while (!handler.shutdown_requested) {
@@ -438,7 +438,7 @@ pub fn main() !void {
                     defer allocator.free(response);
                     
                     // Send response
-                    try stdout.print("Content-Length: {}\r\n\r\n{s}", .{ response.len, response });
+                    try stdout.writer().print("Content-Length: {s}\r\n\r\n{s}", .{{ response.len, response });
                 }
             }
         } else {

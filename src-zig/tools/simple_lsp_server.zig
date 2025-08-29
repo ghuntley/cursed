@@ -78,7 +78,7 @@ const SimpleLSPHandler = struct {
     pub fn init() SimpleLSPHandler {
         return SimpleLSPHandler{
             .allocator = allocator,
-            .documents = std.StringHashMap(DocumentState).init(allocator),
+            .documents = std.StringHashMap(DocumentState){},
             .initialized = false,
         };
     }
@@ -88,7 +88,7 @@ const SimpleLSPHandler = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.documents.deinit();
+        self.documents.deinit(self.allocator);
     }
     
     pub fn handleMessage(self: *SimpleLSPHandler, message: []const u8) !?[]u8 {
@@ -147,7 +147,7 @@ const SimpleLSPHandler = struct {
     fn handleCompletion(self: *SimpleLSPHandler, message: []const u8) ![]u8 {
         _ = message;
         
-        var result = ArrayList(u8).init(self.allocator);
+        var result = ArrayList(u8){};
         defer result.deinit();
         
         try result.appendSlice("{\"jsonrpc\":\"2.0\",\"id\":2,\"result\":[");
@@ -198,7 +198,7 @@ const SimpleLSPHandler = struct {
     
     fn sendDiagnostics(self: *SimpleLSPHandler, uri: []const u8, content: []const u8) !void {
         // Simple syntax check - look for basic errors
-        var diagnostics = ArrayList(u8).init(self.allocator);
+        var diagnostics = ArrayList(u8){};
         defer diagnostics.deinit();
         
         try diagnostics.writer(&[_]u8{}).print("Content-Length: 200\r\n\r\n{{\"jsonrpc\":\"2.0\",\"method\":\"textDocument/publishDiagnostics\",\"params\":{{\"uri\":\"{s}\",\"diagnostics\":[", .{uri});
@@ -265,7 +265,7 @@ pub fn main() !void {
     
     var stdin_buffer: [4096]u8 = undefined;
     const stdin = std.fs.File.stdin().reader(stdin_buffer[0..]);
-    var buffer = ArrayList(u8).init(allocator);
+    var buffer = ArrayList(u8){};
     defer buffer.deinit();
     
     // Main LSP loop

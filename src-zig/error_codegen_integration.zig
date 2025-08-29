@@ -65,6 +65,7 @@ pub const ErrorCodeGen = struct {
     current_file: []const u8,
     
     pub fn init(context: c.LLVMContextRef, module: c.LLVMModuleRef, builder: c.LLVMBuilderRef, allocator: Allocator) ErrorCodeGen {
+        _ = allocator;
         return ErrorCodeGen{
             .context = context,
             .module = module,

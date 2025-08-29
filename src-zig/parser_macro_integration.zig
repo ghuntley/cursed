@@ -65,11 +65,11 @@ pub const MacroAwareParser = struct {
             self.base_parser.allocator.free(call.call.name);
             self.base_parser.allocator.free(call.call.arguments);
         }
-        self.pending_macro_calls.deinit();
+        self.pending_macro_calls.deinit(self.allocator);
         
-        self.expansion_context.deinit();
-        self.hygiene_context.deinit();
-        self.base_parser.deinit();
+        self.expansion_context.deinit(self.allocator);
+        self.hygiene_context.deinit(self.allocator);
+        self.base_parser.deinit(self.allocator);
     }
     
     /// Parse with macro expansion preprocessing
@@ -375,7 +375,7 @@ pub const MacroAwareParser = struct {
     
     /// Parse parameter list from tokens
     fn parseParameterList(self: *MacroAwareParser, tokens: []const Token) ![][]const u8 {
-        var params = .empty;
+        var params = std.ArrayList(u8){};
         defer params.deinit();
         
         if (tokens.len < 2 or tokens[0].kind != .LeftParen) {
@@ -401,7 +401,7 @@ pub const MacroAwareParser = struct {
     
     /// Build final token stream with macro expansions
     fn buildExpandedTokenStream(self: *MacroAwareParser, expansion_results: []const Token) ![]Token {
-        var result = .empty;
+        var result = std.ArrayList(u8){};
         defer result.deinit();
         
         var original_index: usize = 0;
@@ -413,7 +413,7 @@ pub const MacroAwareParser = struct {
         for (self.pending_macro_calls.items) |pending| {
             // Add tokens before this macro call/definition
             while (original_index < pending.token_range.start) {
-                try result.append(self.original_tokens[original_index]);
+                try result.append(self.allocator, self.original_tokens[original_index]);
                 original_index += 1;
             }
             
@@ -434,7 +434,7 @@ pub const MacroAwareParser = struct {
         
         // Add remaining original tokens
         while (original_index < self.original_tokens.len) {
-            try result.append(self.original_tokens[original_index]);
+            try result.append(self.allocator, self.original_tokens[original_index]);
             original_index += 1;
         }
         

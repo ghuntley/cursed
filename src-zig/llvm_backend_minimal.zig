@@ -34,8 +34,8 @@ pub const LLVMBackendMinimal = struct {
         for (self.globals.items) |global| {
             self.allocator.free(global);
         }
-        self.functions.deinit();
-        self.globals.deinit();
+        self.functions.deinit(self.allocator);
+        self.globals.deinit(self.allocator);
     }
     
     pub fn addFunction(self: *LLVMBackendMinimal, name: []const u8, return_type: []const u8, params: []const u8, body: []const u8) !void {
@@ -63,15 +63,15 @@ pub const LLVMBackendMinimal = struct {
         
         // Write global declarations
         for (self.globals.items) |global| {
-            try writer.writeAll(global);
+            try writer.writer().writeAll(global);
         }
         
         // Write function declarations for printf
-        try writer.writeAll("declare i32 @printf(i8*, ...)\n\n");
+        try writer.writer().writeAll("declare i32 @printf(i8*, ...)\n\n");
         
         // Write functions
         for (self.functions.items) |func| {
-            try writer.writeAll(func);
+            try writer.writer().writeAll(func);
         }
     }
     
@@ -110,7 +110,7 @@ pub const LLVMBackendMinimal = struct {
         // Parse function definitions and function calls
         var lines = std.mem.splitScalar(u8, source, '\n');
         var has_functions = false;
-        var main_statements = std.ArrayList([]const u8).init(self.allocator);
+        var main_statements = std.ArrayList([]const u8){};
         defer {
             // Fix memory leak: Free all duplicated strings before deinit
             for (main_statements.items) |stmt| {
@@ -154,7 +154,7 @@ pub const LLVMBackendMinimal = struct {
     }
     
     fn generateMainFunction(self: *LLVMBackendMinimal, statements: [][]const u8, has_functions: bool) !void {
-        var main_body = std.ArrayList(u8).init(self.allocator);
+        var main_body = std.ArrayList(u8){};
         defer main_body.deinit();
         
         for (statements) |stmt| {
@@ -273,7 +273,7 @@ pub fn compileIRToNative(allocator: Allocator, ir_file: []const u8, output_file:
     llc_process.stderr_behavior = .Pipe;
     
     const llc_result = llc_process.spawnAndWait() catch |err| {
-        print("❌ Failed to run llc: {}\n", .{err});
+        print("❌ Failed to run llc: {s}\n", .{err});
         return;
     };
     
@@ -290,7 +290,7 @@ pub fn compileIRToNative(allocator: Allocator, ir_file: []const u8, output_file:
     gcc_process.stderr_behavior = .Pipe;
     
     const gcc_result = gcc_process.spawnAndWait() catch |err| {
-        print("❌ Failed to run gcc: {}\n", .{err});
+        print("❌ Failed to run gcc: {s}\n", .{err});
         return;
     };
     

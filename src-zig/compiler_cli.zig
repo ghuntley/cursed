@@ -90,7 +90,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename.?, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{ filename.?, source.len });
 
     // Configure compiler
     const config = enhanced_compiler.CompilerConfig{

@@ -30,8 +30,8 @@ pub const Program = struct {
     }
     
     pub fn deinit(self: *Program) void {
-        self.imports.deinit();
-        self.statements.deinit();
+        self.imports.deinit(self.allocator);
+        self.statements.deinit(self.allocator);
     }
 };
 
@@ -74,7 +74,7 @@ pub const Statement = union(enum) {
             .Struct => |*struct_stmt| struct_stmt.deinit(),
             .Interface => |*interface| interface.deinit(),
             .Expression => |*expr| expr.deinit(),
-            else => {},
+            else => {}
         }
     }
 };
@@ -385,11 +385,8 @@ pub const Type = union(enum) {
                     ret_type.deinit();
                     allocator.destroy(ret_type);
                 }
-            },
-            .Tuple => |*tuple| {
-                for (tuple.elements) |*element| {
-                    element.deinit();
-                }
+            }
+        }
                 allocator.free(tuple.elements);
             },
             .Channel => |*channel| {
@@ -412,7 +409,7 @@ pub const Type = union(enum) {
                 allocator.destroy(result.ok_type);
                 allocator.destroy(result.error_type);
             },
-            else => {},
+            else => {}
         }
     }
 };
@@ -485,14 +482,11 @@ pub const Expression = union(enum) {
                     element.deinit();
                 }
                 allocator.free(array.elements);
-            },
-            .Tuple => |*tuple| {
-                for (tuple.elements) |*element| {
-                    element.deinit();
-                }
+            }
+        }
                 allocator.free(tuple.elements);
             },
-            else => {},
+            else => {}
         }
     }
 };
@@ -662,11 +656,9 @@ pub const Pattern = union(enum) {
     };
     
     pub fn deinit(self: *Pattern, allocator: Allocator) void {
+        _ = allocator;
         switch (self.*) {
-            .Tuple => |*tuple| {
-                for (tuple.patterns) |*pattern| {
-                    pattern.deinit();
-                }
+            }
                 allocator.free(tuple.patterns);
             },
             .Struct => |*struct_pattern| {
@@ -705,7 +697,7 @@ pub const Pattern = union(enum) {
                 }
                 allocator.free(enum_pattern.patterns);
             },
-            else => {},
+            else => {}
         }
     }
 };

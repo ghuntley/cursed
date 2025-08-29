@@ -162,7 +162,7 @@ pub const CompleteIRNodeGenerator = struct {
             "tuple_element"
         );
         
-        std.debug.print("✅ Tuple access .{} generated\n", .{tuple_expr.index});
+        std.debug.print("✅ Tuple access .{s} generated\n", .{tuple_expr.index});
         return element_value;
     }
     

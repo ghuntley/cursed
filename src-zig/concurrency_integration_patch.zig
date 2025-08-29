@@ -62,7 +62,7 @@ pub const EnhancedScheduler = struct {
     }
     
     pub fn deinit(self: *Self) void {
-        self.core_scheduler.deinit();
+        self.core_scheduler.deinit(self.allocator);
         self.allocator.destroy(self.core_scheduler);
         
         if (self.legacy_scheduler) |legacy| {
@@ -194,17 +194,18 @@ pub const EnhancedSchedulerStats = struct {
     race_conditions_prevented: u64,
     
     pub fn deinit(self: *EnhancedSchedulerStats, allocator: Allocator) void {
-        self.core_stats.deinit();
+        _ = allocator;
+        self.core_stats.deinit(self.allocator);
     }
     
     pub fn print(self: *const EnhancedSchedulerStats) void {
         print("📊 Enhanced Scheduler Statistics:\n", .{});
-        print("   Mode: {}\n", .{self.mode});
-        print("   Running: {}\n", .{self.core_stats.running});
-        print("   Workers: {}\n", .{self.core_stats.num_workers});
-        print("   Active Goroutines: {}\n", .{self.core_stats.active_goroutines});
-        print("   Total Goroutines: {}\n", .{self.core_stats.total_goroutines});
-        print("   Race Conditions Prevented: {}\n", .{self.race_conditions_prevented});
+        print("   Mode: {s}\n", .{self.mode});
+        print("   Running: {s}\n", .{self.core_stats.running});
+        print("   Workers: {s}\n", .{self.core_stats.num_workers});
+        print("   Active Goroutines: {s}\n", .{self.core_stats.active_goroutines});
+        print("   Total Goroutines: {s}\n", .{self.core_stats.total_goroutines});
+        print("   Race Conditions Prevented: {s}\n", .{self.race_conditions_prevented});
     }
 };
 
@@ -237,7 +238,8 @@ pub fn EnhancedChannel(comptime T: type) type {
         }
         
         pub fn deinit(self: *Self, allocator: Allocator) void {
-            self.core_channel.deinit();
+        _ = allocator;
+            self.core_channel.deinit(self.allocator);
             allocator.destroy(self.core_channel);
         }
         
@@ -314,12 +316,12 @@ pub const EnhancedChannelStats = struct {
     
     pub fn print(self: *const EnhancedChannelStats) void {
         print("📊 Enhanced Channel Statistics:\n", .{});
-        print("   Total Sends: {} (Success: {})\n", .{ self.total_sends, self.successful_sends });
-        print("   Total Receives: {} (Success: {})\n", .{ self.total_receives, self.successful_receives });
-        print("   Race Conditions Detected: {}\n", .{self.race_conditions_detected});
-        print("   Core Sends: {}\n", .{self.core_stats.total_sent});
-        print("   Core Receives: {}\n", .{self.core_stats.total_received});
-        print("   Messages Dropped: {}\n", .{self.core_stats.messages_dropped});
+        print("   Total Sends: {s} (Success: {s})\n", .{ self.total_sends, self.successful_sends });
+        print("   Total Receives: {s} (Success: {s})\n", .{ self.total_receives, self.successful_receives });
+        print("   Race Conditions Detected: {s}\n", .{self.race_conditions_detected});
+        print("   Core Sends: {s}\n", .{self.core_stats.total_sent});
+        print("   Core Receives: {s}\n", .{self.core_stats.total_received});
+        print("   Messages Dropped: {s}\n", .{self.core_stats.messages_dropped});
     }
 };
 
@@ -410,6 +412,7 @@ pub fn initEnhancedScheduler(allocator: Allocator, config: SchedulerConfig) !voi
 
 /// Shutdown global enhanced scheduler
 pub fn shutdownEnhancedScheduler(allocator: Allocator) void {
+        _ = allocator;
     global_enhanced_mutex.lock();
     defer global_enhanced_mutex.unlock();
     
@@ -445,6 +448,7 @@ pub fn spawnEnhanced(entry_fn: *const fn (?*anyopaque) void, context: ?*anyopaqu
 pub const Migration = struct {
     /// Migrate existing concurrency system to enhanced version
     pub fn migrateToEnhanced(allocator: Allocator) !void {
+        _ = allocator;
         print("🔄 Starting migration to enhanced scheduler...\n", .{});
         
         // Get current scheduler if it exists
@@ -454,7 +458,7 @@ pub const Migration = struct {
             // Wait for current goroutines to complete
             var wait_count: u32 = 0;
             while (legacy_scheduler.activeGoroutineCount() > 0 and wait_count < 100) {
-                print("   Waiting for {} goroutines to complete...\n", .{legacy_scheduler.activeGoroutineCount()});
+                print("   Waiting for {s} goroutines to complete...\n", .{legacy_scheduler.activeGoroutineCount()});
                 std.Thread.sleep(50_000_000); // 50ms
                 wait_count += 1;
             }

@@ -345,7 +345,7 @@ fn executeCompile(allocator: Allocator, config: Config) !void {
     }
     
     if (adjusted_config.verbose) {
-        print("🔨 Compiling {s} for target {s} with {s} backend (O{})\n", .{ 
+        print("🔨 Compiling {s} for target {s} with {s} backend (O{s})\n", .{ 
             filename, adjusted_config.target_platform.toString(), @tagName(adjusted_config.backend), adjusted_config.optimization_level 
         });
         print("🔗 Linking mode: {s}\n", .{adjusted_config.linking_mode.toString()});
@@ -471,7 +471,7 @@ fn interpretScript(allocator: Allocator, source: []const u8, config: Config) !vo
         if (std.mem.indexOf(u8, trimmed, "vibez.spill(")) |_| {
             try handleSimpleVibesSpill(trimmed);
         } else if (config.verbose) {
-            print("Line {}: {s}\n", .{ line_number, trimmed });
+            print("Line {s}: {s}\n", .{ line_number, trimmed });
         }
     }
     
@@ -511,18 +511,18 @@ fn checkBasicSyntax(allocator: Allocator, source: []const u8, config: Config) !v
         // Basic syntax checks
         if (std.mem.startsWith(u8, trimmed, "sus ")) {
             if (std.mem.indexOf(u8, trimmed, "=") == null) {
-                print("❌ Line {}: sus statement missing assignment\n", .{line_number});
+                print("❌ Line {s}: sus statement missing assignment\n", .{line_number});
                 error_count += 1;
             }
         }
         
         if (config.verbose) {
-            print("✅ Line {} syntax OK\n", .{line_number});
+            print("✅ Line {s} syntax OK\n", .{line_number});
         }
     }
     
     if (error_count > 0) {
-        print("❌ Found {} syntax error(s)\n", .{error_count});
+        print("❌ Found {s} syntax error(s)\n", .{error_count});
         return error.SyntaxError;
     }
 }

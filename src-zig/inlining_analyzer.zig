@@ -62,6 +62,7 @@ pub const InliningAnalyzer = struct {
     inlining_decisions_made: u32 = 0,
 
     pub fn init(allocator: Allocator) !InliningAnalyzer {
+        _ = allocator;
         return InliningAnalyzer{
             .allocator = allocator,
         };
@@ -73,7 +74,7 @@ pub const InliningAnalyzer = struct {
 
     /// Analyze module for inlining opportunities
     pub fn analyzeModule(self: *InliningAnalyzer, module: c.LLVMModuleRef, pgo_data: ?ProfileData) !ArrayList(InliningDecision) {
-        var decisions = .empty;
+        var decisions = std.ArrayList(u8){};
         
         // Iterate through all functions
         var function = c.LLVMGetFirstFunction(module);
@@ -111,7 +112,7 @@ pub const InliningAnalyzer = struct {
                 const called_function = c.LLVMGetCalledValue(instruction.?);
                 if (called_function != null and c.LLVMIsAFunction(called_function.?) != null) {
                     const decision = try self.analyzeCallSite(caller, called_function.?, instruction.?, pgo_data);
-                    try decisions.append(decision);
+                    try decisions.append(allocator, decision);
                     self.inlining_decisions_made += 1;
                 }
             }

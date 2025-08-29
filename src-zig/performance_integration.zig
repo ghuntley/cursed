@@ -270,7 +270,7 @@ pub fn initializePerformanceHooks(allocator: Allocator, is_production: bool) !vo
         
     try performance_hooks.initGlobalHooks(allocator, config);
     
-    print("Performance hooks initialized for {} mode\n", .{if (is_production) "production" else "development"});
+    print("Performance hooks initialized for {s} mode\n", .{if (is_production) "production" else "development"});
 }
 
 /// Generate performance report and save to file
@@ -280,13 +280,13 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         defer metrics.deinit();
         
         // Create report content
-        var report = std.ArrayList(u8).init(self.allocator);
+        var report = std.ArrayList(u8){};
         defer report.deinit();
         
         const writer = report.writer();
         
         try writer.print("# CURSED Performance Report\n\n", .{});
-        try writer.print("Generated: {}\n", .{std.time.timestamp()});
+        try writer.print("Generated: {s}\n", .{std.time.timestamp()});
         try writer.print("Uptime: {d:.2}s\n\n", .{@as(f64, @floatFromInt(metrics.timestamp)) / 1_000_000_000.0});
         
         try writer.print("## Summary\n", .{});
@@ -300,7 +300,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         try writer.print("\n## Hot Paths\n", .{});
         for (metrics.hot_paths, 0..) |hot_path, i| {
             if (i >= 20) break; // Top 20 hot paths
-            try writer.print("{}. **{}**: {} calls, {d:.3}ms avg, {d:.1} calls/sec\n", .{
+            try writer.print("{s}. **{s}**: {s} calls, {d:.3}ms avg, {d:.1} calls/sec\n", .{
                 i + 1,
                 hot_path.function_name,
                 hot_path.total_calls,
@@ -311,7 +311,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         
         try writer.print("\n## Bottlenecks\n", .{});
         for (metrics.bottlenecks, 0..) |bottleneck, i| {
-            try writer.print("{}. **{}** ({}): {s}\n", .{
+            try writer.print("{s}. **{s}** ({s}): {s}\n", .{
                 i + 1,
                 @tagName(bottleneck.severity),
                 @tagName(bottleneck.bottleneck_type),
@@ -332,7 +332,7 @@ pub fn generatePerformanceReport(allocator: Allocator, output_path: []const u8) 
         // Write report to file
         const file = try std.fs.cwd().createFile(output_path, .{});
         defer file.close();
-        try file.writeAll(report.items);
+        try file.writer().writeAll(report.items);
         
         print("Performance report saved to: {s}\n", .{output_path});
     } else {
@@ -348,6 +348,7 @@ pub fn cleanupPerformanceHooks() void {
 
 /// Test function for performance hooks integration
 pub fn testPerformanceIntegration(allocator: Allocator) !void {
+        _ = allocator;
     // Initialize hooks for development
     try initializePerformanceHooks(allocator, false);
     defer cleanupPerformanceHooks();

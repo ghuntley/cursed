@@ -202,7 +202,7 @@ fn handleCompileCommand(
     defer allocator.free(source);
     
     if (verbose) {
-        print("📁 Read {s} ({} bytes)\n", .{ input_file, source.len });
+        print("📁 Read {s} ({s} bytes)\n", .{ input_file, source.len });
     }
     
     // Tokenize
@@ -216,7 +216,7 @@ fn handleCompileCommand(
     defer tokens.deinit();
     
     if (verbose) {
-        print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+        print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
     }
     
     // Determine output file
@@ -228,8 +228,8 @@ fn handleCompileCommand(
     
     // Use available compiler for actual compilation
     if (verbose) {
-        print("Compiling with {} tokens...\n", .{tokens.items.len});
-        print("Optimization: {}\n", .{compile_args.opt_level orelse global_args.optimization});
+        print("Compiling with {s} tokens...\n", .{tokens.items.len});
+        print("Optimization: {s}\n", .{compile_args.opt_level orelse global_args.optimization});
     }
     
     // Fall back to interpreter mode for now
@@ -237,7 +237,7 @@ fn handleCompileCommand(
     defer interpreter.deinit();
     
     _ = interpreter.execute(ast) catch |err| {
-        print("Compilation failed: {}\n", .{err});
+        print("Compilation failed: {s}\n", .{err});
         return err;
     };
     const result = struct { 
@@ -253,10 +253,10 @@ fn handleCompileCommand(
         }
         print("Output: {s}\n", .{output_file});
         if (result.binary_size) |size| {
-            print("Binary size: {} bytes\n", .{size});
+            print("Binary size: {s} bytes\n", .{size});
         }
         if (result.compile_time_ms) |time| {
-            print("Compile time: {} ms\n", .{time});
+            print("Compile time: {s} ms\n", .{time});
         }
     }
     
@@ -294,7 +294,7 @@ fn handleRunCommand(
     defer allocator.free(source);
     
     if (verbose) {
-        print("📁 Read {s} ({} bytes)\n", .{ run_args.input, source.len });
+        print("📁 Read {s} ({s} bytes)\n", .{ run_args.input, source.len });
     }
     
     // Tokenize
@@ -308,7 +308,7 @@ fn handleRunCommand(
     defer tokens.deinit();
     
     if (verbose) {
-        print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+        print("🔍 Lexed {s} tokens\n", .{tokens.items.len});
     }
     
     // Choose execution mode
@@ -356,11 +356,11 @@ fn handleTestCommand(
     }
     
     if (verbose) {
-        print("Found {} test files\n", .{test_files.items.len});
+        print("Found {s} test files\n", .{test_files.items.len});
     }
     
     // Filter tests if specified
-    var filtered_tests = std.ArrayList([]const u8).init(self.allocator);
+    var filtered_tests = std.ArrayList([]const u8){};
     defer filtered_tests.deinit();
     
     for (test_files.items) |file| {
@@ -369,11 +369,11 @@ fn handleTestCommand(
                 continue;
             }
         }
-        try filtered_tests.append(file);
+        try filtered_tests.append(allocator, file);
     }
     
     if (verbose) {
-        print("Running {} tests\n", .{filtered_tests.items.len});
+        print("Running {s} tests\n", .{filtered_tests.items.len});
     }
     
     // Run tests
@@ -423,14 +423,14 @@ fn handleTestCommand(
     // Print test summary
     if (use_color) {
         print("\n\x1b[1;36mTest Results:\x1b[0m\n", .{});
-        print("  \x1b[1;32mPassed\x1b[0m: {}\n", .{passed});
-        print("  \x1b[1;31mFailed\x1b[0m: {}\n", .{failed});
-        print("  \x1b[1;33mTotal\x1b[0m: {}\n", .{passed + failed});
+        print("  \x1b[1;32mPassed\x1b[0m: {s}\n", .{passed});
+        print("  \x1b[1;31mFailed\x1b[0m: {s}\n", .{failed});
+        print("  \x1b[1;33mTotal\x1b[0m: {s}\n", .{passed + failed});
     } else {
         print("\nTest Results:\n", .{});
-        print("  Passed: {}\n", .{passed});
-        print("  Failed: {}\n", .{failed});
-        print("  Total: {}\n", .{passed + failed});
+        print("  Passed: {s}\n", .{passed});
+        print("  Failed: {s}\n", .{failed});
+        print("  Total: {s}\n", .{passed + failed});
     }
     
     // Generate coverage report if requested
@@ -568,7 +568,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
     defer parser.deinit();
     
     const parsed_ast = parser.parse(tokens.items) catch |err| {
-        print("Parse error: {}\n", .{err});
+        print("Parse error: {s}\n", .{err});
         return err;
     };
     
@@ -576,7 +576,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
     defer interpreter.deinit();
     
     _ = interpreter.execute(parsed_ast) catch |err| {
-        print("Execution error: {}\n", .{err});
+        print("Execution error: {s}\n", .{err});
         return err;
     };
 }
@@ -584,7 +584,7 @@ fn runInterpreter(allocator: Allocator, tokens: std.ArrayList(lexer.Token), file
 fn discoverTestFiles(allocator: Allocator, test_dir: []const u8, pattern: []const u8) !std.ArrayList([]const u8) {
     _ = pattern;
     
-    var test_files = std.ArrayList([]const u8).init(self.allocator);
+    var test_files = std.ArrayList([]const u8){};
     
     // Simple implementation - just add some placeholder test files
     // TODO: Implement proper file discovery with glob patterns

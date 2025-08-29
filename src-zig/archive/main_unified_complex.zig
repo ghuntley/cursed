@@ -76,17 +76,17 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    if (verbose) print("📁 Read {s} ({} bytes)\n", .{ filename, source.len });
+    if (verbose) print("📁 Read {s} ({s} bytes)\n", .{{ filename, source.len });
 
     // Tokenize
     var l = lexer.Lexer.init(allocator, source);
 
     const tokens = l.tokenize() catch |err| {
-        print("❌ Lexer error: {}\n", .{err});
+        print("❌ Lexer error: {s}\n", .{{err});
         return;
     };
 
-    if (verbose) print("🔍 Lexed {} tokens\n", .{tokens.items.len});
+    if (verbose) print("🔍 Lexed {s} tokens\n", .{{tokens.items.len});
 
     if (debug_tokens) {
         print("=== TOKENS ===\n", .{});
@@ -166,7 +166,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     defer allocator.free(c_filename);
     
     // Generate optimized C code
-    var c_code = std.ArrayList(u8).init(allocator);
+    var c_code = std.ArrayList(u8){};
     defer c_code.deinit();
     
     try c_code.appendSlice("#include <stdio.h>\n#include <stdlib.h>\n#include <string.h>\n\n");
@@ -177,7 +177,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     try c_code.appendSlice(filename);
     try c_code.appendSlice("\n");
     try c_code.appendSlice("// Optimization level: ");
-    try c_code.append('0' + optimization_level);
+    try c_code.append(allocator, '0' + optimization_level);
     try c_code.appendSlice("\n\n");
     
     try c_code.appendSlice("int main() {\n");
@@ -246,7 +246,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     // Write C file
     const c_file = try std.fs.cwd().createFile(c_filename, .{});
     defer c_file.close();
-    try c_file.writeAll(c_code.items);
+    try c_file.writer().writeAll(c_code.items);
     
     if (verbose) print("✅ Generated C code: {s}\n", .{c_filename});
     
@@ -268,7 +268,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
         .allocator = allocator,
         .argv = &[_][]const u8{ "sh", "-c", compile_cmd },
     }) catch |err| {
-        print("❌ Compilation failed: {}\n", .{err});
+        print("❌ Compilation failed: {s}\n", .{{err});
         print("Generated C code saved in: {s}\n", .{c_filename});
         return;
     };
@@ -277,7 +277,7 @@ fn compileToNativeExecutable(allocator: Allocator, filename: []const u8, _: []co
     
     if (result.term.Exited == 0) {
         print("✅ Generated native executable: {s}\n", .{output_name});
-        print("📊 Compilation stats: {} tokens processed, optimization level {}\n", .{tokens.items.len, optimization_level});
+        print("📊 Compilation stats: {s} tokens processed, optimization level {s}\n", .{{tokens.items.len, optimization_level});
         print("💡 Usage: ./{s}\n", .{output_name});
         
         // Clean up C file unless verbose mode
@@ -313,7 +313,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, tokens: ArrayList(
         if (p.parseProgram()) |program| {
             if (debug_ast) {
                 print("=== AST ===\n", .{});
-                print("Program with {} statements\n", .{program.statements.items.len});
+                print("Program with {s} statements\n", .{{program.statements.items.len});
             }
             
             // Execute parsed program
@@ -340,7 +340,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, tokens: ArrayList(
                 }
             }
         } else |err| {
-            if (verbose) print("⚠️ Parser failed ({}), falling back to simple interpretation\n", .{err});
+            if (verbose) print("⚠️ Parser failed ({s}), falling back to simple interpretation\n", .{{err});
             use_parser = false;
         }
     }
@@ -376,7 +376,7 @@ fn interpretProgram(allocator: Allocator, source: []const u8, tokens: ArrayList(
                 }
             } else if (verbose) {
                 // Show parsing for other statements in verbose mode
-                print("Line {}: {s}\n", .{ line_number, trimmed });
+                print("Line {s}: {s}\n", .{{ line_number, trimmed });
             }
         }
     }

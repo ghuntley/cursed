@@ -31,11 +31,11 @@ pub const AdvancedGenericType = struct {
     pub fn init(allocator: Allocator, name: []const u8) AdvancedGenericType {
         return AdvancedGenericType{
             .name = name,
-            .type_parameters = ArrayList(AdvancedTypeParameter).init(allocator),
-            .type_arguments = ArrayList(ast.Type).init(allocator),
-            .constraints = ArrayList(AdvancedTypeConstraint).init(allocator),
-            .specializations = HashMap([]const u8, *CompiledSpecialization).init(allocator),
-            .associated_types = HashMap([]const u8, ast.Type).init(allocator),
+            .type_parameters = ArrayList(AdvancedTypeParameter){},
+            .type_arguments = ArrayList(ast.Type){},
+            .constraints = ArrayList(AdvancedTypeConstraint){},
+            .specializations = HashMap([]const u8, *CompiledSpecialization){},
+            .associated_types = HashMap([]const u8, ast.Type){},
         };
     }
     
@@ -43,31 +43,31 @@ pub const AdvancedGenericType = struct {
         for (self.type_parameters.items) |*param| {
             param.deinit();
         }
-        self.type_parameters.deinit();
+        self.type_parameters.deinit(self.allocator);
         
         for (self.type_arguments.items) |*arg| {
             arg.deinit(self.type_parameters.allocator);
         }
-        self.type_arguments.deinit();
+        self.type_arguments.deinit(self.allocator);
         
         for (self.constraints.items) |*constraint| {
             constraint.deinit();
         }
-        self.constraints.deinit();
+        self.constraints.deinit(self.allocator);
         
         var spec_iter = self.specializations.iterator();
         while (spec_iter.next()) |entry| {
             entry.value_ptr.*.deinit();
             self.specializations.allocator.destroy(entry.value_ptr.*);
         }
-        self.specializations.deinit();
+        self.specializations.deinit(self.allocator);
         
-        self.associated_types.deinit();
+        self.associated_types.deinit(self.allocator);
     }
     
     /// Add a type parameter with constraints
     pub fn addTypeParameter(self: *AdvancedGenericType, param: AdvancedTypeParameter) !void {
-        try self.type_parameters.append(param);
+        try self.type_parameters.append(allocator, param);
     }
     
     /// Check if this generic can be instantiated with given type arguments
@@ -105,24 +105,24 @@ pub const AdvancedGenericType = struct {
     }
     
     fn createSpecializationSignature(self: *AdvancedGenericType, type_args: []const ast.Type) ![]u8 {
-        var signature = ArrayList(u8).init(self.type_parameters.allocator);
+        var signature = ArrayList(u8){};
         defer signature.deinit();
         
         try signature.appendSlice(self.name);
-        try signature.append('<');
+        try signature.append(allocator, '<');
         
         for (type_args, 0..) |type_arg, i| {
             if (i > 0) try signature.append(',');
             try signature.appendSlice(try type_arg.toString(self.type_parameters.allocator));
         }
         
-        try signature.append('>');
+        try signature.append(allocator, '>');
         return signature.toOwnedSlice();
     }
     
     fn createSpecialization(self: *AdvancedGenericType, type_args: []const ast.Type, type_env: *GenericTypeEnvironment) !CompiledSpecialization {
         // Create type substitution map
-        var substitutions = HashMap([]const u8, ast.Type).init(self.type_parameters.allocator);
+        var substitutions = HashMap([]const u8, ast.Type){};
         defer substitutions.deinit();
         
         for (self.type_parameters.items, 0..) |param, i| {
@@ -145,11 +145,11 @@ pub const AdvancedGenericType = struct {
         // For now, return a custom type with the applied substitutions
         _ = type_env; // TODO: Use for constraint validation
         
-        var concrete_name = ArrayList(u8).init(self.type_parameters.allocator);
+        var concrete_name = ArrayList(u8){};
         defer concrete_name.deinit();
         
         try concrete_name.appendSlice(self.name);
-        try concrete_name.append('<');
+        try concrete_name.append(allocator, '<');
         
         var sub_iter = substitutions.iterator();
         var first = true;
@@ -159,7 +159,7 @@ pub const AdvancedGenericType = struct {
             try concrete_name.appendSlice(try entry.value_ptr.toString(self.type_parameters.allocator));
         }
         
-        try concrete_name.append('>');
+        try concrete_name.append(allocator, '>');
         
         return ast.Type{ .Custom = try concrete_name.toOwnedSlice() };
     }
@@ -202,7 +202,7 @@ pub const AdvancedTypeParameter = struct {
         pub fn init(allocator: Allocator, name: []const u8) AssociatedType {
             return AssociatedType{
                 .name = name,
-                .constraints = ArrayList(AdvancedTypeConstraint).init(allocator),
+                .constraints = ArrayList(AdvancedTypeConstraint){},
             };
         }
         
@@ -210,7 +210,7 @@ pub const AdvancedTypeParameter = struct {
             for (self.constraints.items) |*constraint| {
                 constraint.deinit();
             }
-            self.constraints.deinit();
+            self.constraints.deinit(self.allocator);
         }
     };
     
@@ -229,10 +229,10 @@ pub const AdvancedTypeParameter = struct {
     pub fn init(allocator: Allocator, name: []const u8) AdvancedTypeParameter {
         return AdvancedTypeParameter{
             .name = name,
-            .constraints = ArrayList(AdvancedTypeConstraint).init(allocator),
-            .bounds = ArrayList(TypeBound).init(allocator),
-            .associated_types = HashMap([]const u8, AssociatedType).init(allocator),
-            .lifetime_bounds = ArrayList(LifetimeBound).init(allocator),
+            .constraints = ArrayList(AdvancedTypeConstraint){},
+            .bounds = ArrayList(TypeBound){},
+            .associated_types = HashMap([]const u8, AssociatedType){},
+            .lifetime_bounds = ArrayList(LifetimeBound){},
         };
     }
     
@@ -240,17 +240,17 @@ pub const AdvancedTypeParameter = struct {
         for (self.constraints.items) |*constraint| {
             constraint.deinit();
         }
-        self.constraints.deinit();
+        self.constraints.deinit(self.allocator);
         
-        self.bounds.deinit();
+        self.bounds.deinit(self.allocator);
         
         var assoc_iter = self.associated_types.iterator();
         while (assoc_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.associated_types.deinit();
+        self.associated_types.deinit(self.allocator);
         
-        self.lifetime_bounds.deinit();
+        self.lifetime_bounds.deinit(self.allocator);
         
         if (self.default_type) |*default| {
             default.deinit(self.constraints.allocator);
@@ -259,12 +259,12 @@ pub const AdvancedTypeParameter = struct {
     
     /// Add constraint to this type parameter
     pub fn addConstraint(self: *AdvancedTypeParameter, constraint: AdvancedTypeConstraint) !void {
-        try self.constraints.append(constraint);
+        try self.constraints.append(allocator, constraint);
     }
     
     /// Add type bound (T: SomeInterface or T = ConcreteType)
     pub fn addBound(self: *AdvancedTypeParameter, bound: TypeBound) !void {
-        try self.bounds.append(bound);
+        try self.bounds.append(allocator, bound);
     }
     
     /// Add associated type declaration
@@ -391,7 +391,7 @@ pub const AdvancedTypeConstraint = struct {
             return WhereClause{
                 .type_parameter = type_parameter,
                 .method_name = method_name,
-                .parameters = ArrayList(ast.Type).init(allocator),
+                .parameters = ArrayList(ast.Type){},
                 .return_type = return_type,
             };
         }
@@ -400,7 +400,7 @@ pub const AdvancedTypeConstraint = struct {
             for (self.parameters.items) |*param| {
                 param.deinit(self.parameters.allocator);
             }
-            self.parameters.deinit();
+            self.parameters.deinit(self.allocator);
             self.return_type.deinit(self.parameters.allocator);
         }
     };
@@ -408,7 +408,7 @@ pub const AdvancedTypeConstraint = struct {
     pub fn init(allocator: Allocator, kind: ConstraintKind) AdvancedTypeConstraint {
         return AdvancedTypeConstraint{
             .kind = kind,
-            .compound_constraints = ArrayList(*AdvancedTypeConstraint).init(allocator),
+            .compound_constraints = ArrayList(*AdvancedTypeConstraint){},
         };
     }
     
@@ -416,7 +416,7 @@ pub const AdvancedTypeConstraint = struct {
         return AdvancedTypeConstraint{
             .kind = .Interface,
             .interface_name = interface_name,
-            .compound_constraints = ArrayList(*AdvancedTypeConstraint).init(allocator),
+            .compound_constraints = ArrayList(*AdvancedTypeConstraint){},
         };
     }
     
@@ -424,7 +424,7 @@ pub const AdvancedTypeConstraint = struct {
         return AdvancedTypeConstraint{
             .kind = .ConstGeneric,
             .const_bounds = bounds,
-            .compound_constraints = ArrayList(*AdvancedTypeConstraint).init(allocator),
+            .compound_constraints = ArrayList(*AdvancedTypeConstraint){},
         };
     }
     
@@ -432,7 +432,7 @@ pub const AdvancedTypeConstraint = struct {
         return AdvancedTypeConstraint{
             .kind = .WhereClause,
             .where_clause = where_clause,
-            .compound_constraints = ArrayList(*AdvancedTypeConstraint).init(allocator),
+            .compound_constraints = ArrayList(*AdvancedTypeConstraint){},
         };
     }
     
@@ -449,12 +449,12 @@ pub const AdvancedTypeConstraint = struct {
             constraint.deinit();
             self.compound_constraints.allocator.destroy(constraint);
         }
-        self.compound_constraints.deinit();
+        self.compound_constraints.deinit(self.allocator);
     }
     
     /// Add a compound constraint (for A & B or A | B)
     pub fn addCompoundConstraint(self: *AdvancedTypeConstraint, constraint: *AdvancedTypeConstraint) !void {
-        try self.compound_constraints.append(constraint);
+        try self.compound_constraints.append(allocator, constraint);
     }
     
     /// Check if a concrete type satisfies this constraint
@@ -563,8 +563,8 @@ pub const GenericTypeEnvironment = struct {
         pub fn init(allocator: Allocator, name: []const u8) InterfaceDefinition {
             return InterfaceDefinition{
                 .name = name,
-                .methods = ArrayList(MethodSignature).init(allocator),
-                .associated_types = HashMap([]const u8, ast.Type).init(allocator),
+                .methods = ArrayList(MethodSignature){},
+                .associated_types = HashMap([]const u8, ast.Type){},
             };
         }
         
@@ -576,13 +576,13 @@ pub const GenericTypeEnvironment = struct {
                 method.parameters.deinit();
                 method.return_type.deinit(self.methods.allocator);
             }
-            self.methods.deinit();
+            self.methods.deinit(self.allocator);
             
             var assoc_iter = self.associated_types.iterator();
             while (assoc_iter.next()) |entry| {
                 entry.value_ptr.deinit(self.associated_types.allocator);
             }
-            self.associated_types.deinit();
+            self.associated_types.deinit(self.allocator);
         }
     };
     
@@ -599,11 +599,12 @@ pub const GenericTypeEnvironment = struct {
     };
     
     pub fn init(allocator: Allocator) GenericTypeEnvironment {
+        _ = allocator;
         var env = GenericTypeEnvironment{
             .allocator = allocator,
-            .type_definitions = HashMap([]const u8, *AdvancedGenericType).init(allocator),
-            .interface_definitions = HashMap([]const u8, InterfaceDefinition).init(allocator),
-            .builtin_constraints = HashMap([]const u8, BuiltinConstraintValidator).init(allocator),
+            .type_definitions = HashMap([]const u8, *AdvancedGenericType){},
+            .interface_definitions = HashMap([]const u8, InterfaceDefinition){},
+            .builtin_constraints = HashMap([]const u8, BuiltinConstraintValidator){},
         };
         
         // Initialize builtin constraints
@@ -619,16 +620,16 @@ pub const GenericTypeEnvironment = struct {
             entry.value_ptr.*.deinit();
             self.allocator.destroy(entry.value_ptr.*);
         }
-        self.type_definitions.deinit();
+        self.type_definitions.deinit(self.allocator);
         
         // Clean up interface definitions
         var interface_iter = self.interface_definitions.iterator();
         while (interface_iter.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.interface_definitions.deinit();
+        self.interface_definitions.deinit(self.allocator);
         
-        self.builtin_constraints.deinit();
+        self.builtin_constraints.deinit(self.allocator);
     }
     
     fn initBuiltinConstraints(self: *GenericTypeEnvironment) !void {
@@ -839,7 +840,7 @@ pub const GenericTypeChecker = struct {
         return GenericTypeChecker{
             .allocator = allocator,
             .type_env = type_env,
-            .instantiation_cache = HashMap([]const u8, ast.Type).init(allocator),
+            .instantiation_cache = HashMap([]const u8, ast.Type){},
         };
     }
     
@@ -848,7 +849,7 @@ pub const GenericTypeChecker = struct {
         while (cache_iter.next()) |entry| {
             entry.value_ptr.deinit(self.allocator);
         }
-        self.instantiation_cache.deinit();
+        self.instantiation_cache.deinit(self.allocator);
     }
     
     /// Check if a generic function call is valid

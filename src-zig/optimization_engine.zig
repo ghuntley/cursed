@@ -98,11 +98,11 @@ pub const OptimizationEngine = struct {
     }
 
     pub fn deinit(self: *OptimizationEngine) void {
-        self.inlining_analyzer.deinit();
-        self.dead_code_tracker.deinit();
-        self.constant_folder.deinit();
-        self.loop_optimizer.deinit();
-        self.memory_optimizer.deinit();
+        self.inlining_analyzer.deinit(self.allocator);
+        self.dead_code_tracker.deinit(self.allocator);
+        self.constant_folder.deinit(self.allocator);
+        self.loop_optimizer.deinit(self.allocator);
+        self.memory_optimizer.deinit(self.allocator);
         
         if (self.pass_manager) |pm| {
             c.LLVMDisposePassManager(pm);
@@ -498,7 +498,7 @@ pub const OptimizationEngine = struct {
         const end_time = std.time.nanoTimestamp();
         self.metrics.inlining_time = end_time - start_time;
         
-        std.debug.print("✅ Advanced inlining: {} functions inlined\n", .{inlined_count});
+        std.debug.print("✅ Advanced inlining: {s} functions inlined\n", .{inlined_count});
     }
 
     /// Advanced dead code elimination
@@ -525,7 +525,7 @@ pub const OptimizationEngine = struct {
         const end_time = std.time.nanoTimestamp();
         self.metrics.dead_code_elimination_time = end_time - start_time;
         
-        std.debug.print("✅ Dead code elimination: {} instructions eliminated\n", .{eliminated_count});
+        std.debug.print("✅ Dead code elimination: {s} instructions eliminated\n", .{eliminated_count});
     }
 
     /// Advanced constant folding and propagation
@@ -540,7 +540,7 @@ pub const OptimizationEngine = struct {
         const end_time = std.time.nanoTimestamp();
         self.metrics.constant_folding_time = end_time - start_time;
         
-        std.debug.print("✅ Constant folding: {} constants folded\n", .{folded_count});
+        std.debug.print("✅ Constant folding: {s} constants folded\n", .{folded_count});
     }
 
     /// Advanced loop optimization and vectorization
@@ -677,18 +677,18 @@ pub const OptimizationEngine = struct {
         try writer.print("CURSED Compiler Optimization Report\n", .{});
         try writer.print("===================================\n\n", .{});
         
-        try writer.print("Optimization Level: O{}\n", .{self.config.optimization_level});
-        try writer.print("Size Optimizations: {}\n", .{self.config.size_optimizations});
-        try writer.print("PGO Enabled: {}\n\n", .{self.config.pgo_enabled});
+        try writer.print("Optimization Level: O{s}\n", .{self.config.optimization_level});
+        try writer.print("Size Optimizations: {s}\n", .{self.config.size_optimizations});
+        try writer.print("PGO Enabled: {s}\n\n", .{self.config.pgo_enabled});
         
         try writer.print("Performance Metrics:\n", .{});
-        try writer.print("  Functions Optimized: {}\n", .{self.metrics.functions_optimized});
-        try writer.print("  Instructions Eliminated: {}\n", .{self.metrics.instructions_eliminated});
-        try writer.print("  Constants Folded: {}\n", .{self.metrics.constants_folded});
-        try writer.print("  Functions Inlined: {}\n", .{self.metrics.functions_inlined});
-        try writer.print("  Loops Optimized: {}\n", .{self.metrics.loops_optimized});
-        try writer.print("  Loops Vectorized: {}\n", .{self.metrics.loops_vectorized});
-        try writer.print("  Memory Allocations Optimized: {}\n", .{self.metrics.memory_allocations_optimized});
+        try writer.print("  Functions Optimized: {s}\n", .{self.metrics.functions_optimized});
+        try writer.print("  Instructions Eliminated: {s}\n", .{self.metrics.instructions_eliminated});
+        try writer.print("  Constants Folded: {s}\n", .{self.metrics.constants_folded});
+        try writer.print("  Functions Inlined: {s}\n", .{self.metrics.functions_inlined});
+        try writer.print("  Loops Optimized: {s}\n", .{self.metrics.loops_optimized});
+        try writer.print("  Loops Vectorized: {s}\n", .{self.metrics.loops_vectorized});
+        try writer.print("  Memory Allocations Optimized: {s}\n", .{self.metrics.memory_allocations_optimized});
         
         try writer.print("\nTiming Information:\n", .{});
         try writer.print("  Total Optimization Time: {d:.2} ms\n", .{@as(f64, @floatFromInt(self.metrics.total_optimization_time)) / 1_000_000.0});
@@ -798,16 +798,16 @@ pub const ProfileData = struct {
         return ProfileData{
             .hot_functions = .empty,
             .cold_functions = .empty,
-            .call_frequencies = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .branch_probabilities = HashMap([]const u8, f64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .call_frequencies = HashMap([]const u8, u64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .branch_probabilities = HashMap([]const u8, f64, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
     }
     
     pub fn deinit(self: *ProfileData) void {
-        self.hot_functions.deinit();
-        self.cold_functions.deinit();
-        self.call_frequencies.deinit();
-        self.branch_probabilities.deinit();
+        self.hot_functions.deinit(self.allocator);
+        self.cold_functions.deinit(self.allocator);
+        self.call_frequencies.deinit(self.allocator);
+        self.branch_probabilities.deinit(self.allocator);
     }
 };
 

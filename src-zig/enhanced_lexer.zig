@@ -174,7 +174,7 @@ pub const Lexer = struct {
             .allocator = allocator,
             .error_reporter = error_reporter,
             .tokens = .empty,
-            .keywords = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .keywords = std.HashMap([]const u8, TokenKind, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         try lexer.initKeywords();
@@ -182,8 +182,8 @@ pub const Lexer = struct {
     }
     
     pub fn deinit(self: *Lexer) void {
-        self.tokens.deinit();
-        self.keywords.deinit();
+        self.tokens.deinit(self.allocator);
+        self.keywords.deinit(self.allocator);
     }
     
     fn initKeywords(self: *Lexer) !void {

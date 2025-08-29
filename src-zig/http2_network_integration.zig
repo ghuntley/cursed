@@ -51,7 +51,7 @@ pub const Http2Request = struct {
         for (self.headers.items) |*header| {
             header.deinit(self.headers.allocator);
         }
-        self.headers.deinit();
+        self.headers.deinit(self.allocator);
     }
     
     pub fn setMethod(self: *Http2Request, method: []const u8) !void {
@@ -72,7 +72,7 @@ pub const Http2Request = struct {
     
     pub fn addHeader(self: *Http2Request, name: []const u8, value: []const u8) !void {
         const header = try http2.HeaderEntry.init(self.headers.allocator, name, value);
-        try self.headers.append(header);
+        try self.headers.append(allocator, header);
     }
     
     pub fn setBody(self: *Http2Request, body: []const u8) void {
@@ -100,8 +100,8 @@ pub const Http2Response = struct {
         for (self.headers.items) |*header| {
             header.deinit();
         }
-        self.headers.deinit();
-        self.body.deinit();
+        self.headers.deinit(self.allocator);
+        self.body.deinit(self.allocator);
     }
     
     pub fn setStatus(self: *Http2Response, status: u16) void {
@@ -156,8 +156,8 @@ pub const Http2Stream = struct {
     pub fn deinit(self: *Http2Stream) void {
         if (self.request) |*req| req.deinit();
         if (self.response) |*resp| resp.deinit();
-        self.data_buffer.deinit();
-        self.header_buffer.deinit();
+        self.data_buffer.deinit(self.allocator);
+        self.header_buffer.deinit(self.allocator);
     }
     
     pub fn appendHeaderData(self: *Http2Stream, data: []const u8) !void {
@@ -210,8 +210,8 @@ pub const Http2Client = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.streams.deinit();
-        self.connection.deinit();
+        self.streams.deinit(self.allocator);
+        self.connection.deinit(self.allocator);
         
         if (self.socket) |socket| {
             platform.Network.closeSocket(socket);
@@ -237,7 +237,7 @@ pub const Http2Client = struct {
         _ = settings_frame; // Would send via socket
         
         self.connected = true;
-        std.debug.print("HTTP/2 client connected to {}:{}\n", .{ host, port });
+        std.debug.print("HTTP/2 client connected to {s}:{s}\n", .{ host, port });
     }
     
     /// Send HTTP/2 request
@@ -266,14 +266,14 @@ pub const Http2Client = struct {
             _ = data_frame;
         }
         
-        std.debug.print("HTTP/2 request sent on stream {}\n", .{stream_id});
+        std.debug.print("HTTP/2 request sent on stream {s}\n", .{stream_id});
         return stream_id;
     }
     
     /// Create HEADERS frame for request
     fn createHeadersFrame(self: *Http2Client, stream_id: u31, request: *const Http2Request, end_stream: bool) ![]u8 {
         // Build pseudo-headers
-        var header_list = .empty;
+        var header_list = std.ArrayList(u8){};
         defer header_list.deinit();
         
         // :method
@@ -327,9 +327,9 @@ pub const Http2Client = struct {
         _ = self;
         
         // Simplified encoding - just store name and value lengths + data
-        try buffer.append(@intCast(name.len));
+        try buffer.append(allocator, @intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(@intCast(value.len));
+        try buffer.append(allocator, @intCast(value.len));
         try buffer.appendSlice(value);
     }
     
@@ -375,8 +375,8 @@ pub const Http2Server = struct {
         while (iterator.next()) |entry| {
             entry.value_ptr.deinit();
         }
-        self.streams.deinit();
-        self.connection.deinit();
+        self.streams.deinit(self.allocator);
+        self.connection.deinit(self.allocator);
     }
     
     /// Set request handler callback
@@ -425,7 +425,7 @@ pub const Http2Server = struct {
     
     /// Create HEADERS frame for response
     fn createResponseHeadersFrame(self: *Http2Server, stream_id: u31, response: *const Http2Response) ![]u8 {
-        var header_list = .empty;
+        var header_list = std.ArrayList(u8){};
         defer header_list.deinit();
         
         // :status pseudo-header
@@ -475,7 +475,7 @@ pub const Http2Server = struct {
         _ = self;
         try buffer.append(self.allocator, @intCast(name.len));
         try buffer.appendSlice(name);
-        try buffer.append(@intCast(value.len));
+        try buffer.append(allocator, @intCast(value.len));
         try buffer.appendSlice(value);
     }
 };
@@ -540,7 +540,7 @@ pub const Http2Utils = struct {
 
 /// Example request handler for server
 fn exampleRequestHandler(request: *Http2Request, response: *Http2Response) !void {
-    std.debug.print("Handling HTTP/2 request: {} {}\n", .{ request.method, request.path });
+    std.debug.print("Handling HTTP/2 request: {s} {s}\n", .{ request.method, request.path });
     
     // Set response status
     response.setStatus(200);
@@ -583,7 +583,7 @@ pub fn testHttp2Integration() !void {
     try request.addHeader("accept", "application/json");
     
     const stream_id = try client.sendRequest(request);
-    std.debug.print("Request sent on stream {}\n", .{stream_id});
+    std.debug.print("Request sent on stream {s}\n", .{stream_id});
     
     // Test HTTP/2 server
     const server_config = Http2ServerConfig{

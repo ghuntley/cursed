@@ -472,9 +472,9 @@ pub const EnhancedSemaphore = struct {
         self.condition.broadcast();
         
         // Clean up resources
-        self.mutex.deinit();
-        self.condition.deinit();
-        self.waiting_threads.deinit();
+        self.mutex.deinit(self.allocator);
+        self.condition.deinit(self.allocator);
+        self.waiting_threads.deinit(self.allocator);
     }
     
     /// Acquire semaphore with timeout
@@ -490,7 +490,7 @@ pub const EnhancedSemaphore = struct {
         
         // Add to waiting queue for priority handling
         const current_thread = Thread.getCurrentId();
-        try self.waiting_threads.append(current_thread);
+        try self.waiting_threads.append(allocator, current_thread);
         defer _ = self.removeFromWaitingQueue(current_thread);
         
         // Define predicate for condition wait
@@ -657,6 +657,7 @@ pub const ChannelSyncBridge = struct {
     destroyed: Atomic(bool),
     
     pub fn init(allocator: Allocator) !Self {
+        _ = allocator;
         return Self{
             .mutex = EnhancedMutex.init(),
             .condition = EnhancedCondition.init(),
@@ -677,9 +678,9 @@ pub const ChannelSyncBridge = struct {
             wait_count += 1;
         }
         
-        self.mutex.deinit();
-        self.condition.deinit();
-        self.channel_states.deinit();
+        self.mutex.deinit(self.allocator);
+        self.condition.deinit(self.allocator);
+        self.channel_states.deinit(self.allocator);
     }
     
     /// Register a channel with the sync bridge

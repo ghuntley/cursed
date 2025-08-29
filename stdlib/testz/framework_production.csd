@@ -253,7 +253,7 @@ fr fr ===== BOYER-MOORE STRING SEARCH ALGORITHM =====
 slay string_contains_boyer_moore(haystack tea, needle tea) lit {
     fr fr Implementation of Boyer-Moore string search algorithm
     lowkey (string_length_advanced(needle) == 0) {
-        damn based  fr fr Empty needle is always found
+        damn based  fr fr Empty string is contained in any string
     }
     
     lowkey (string_length_advanced(needle) > string_length_advanced(haystack)) {
@@ -278,7 +278,7 @@ slay string_contains_boyer_moore(haystack tea, needle tea) lit {
         
         fr fr If pattern found
         lowkey (j < 0) {
-            damn based
+            damn based  fr fr Pattern found at current position
         } otherwise {
             fr fr Calculate shift using bad character heuristic
             sus bad_char tea = char_at_advanced(haystack, shift + j)
@@ -722,14 +722,14 @@ slay discover_tests(pattern tea) normie {
 
 slay should_run_test(test_name tea, pattern tea) lit {
     lowkey pattern == "*" {
-        damn based
+        damn based  fr fr Run all tests
     }
     
     lowkey pattern == "test_*" {
-        damn based
+        damn based  fr fr Run tests starting with 'test_'
     }
     
-    damn based
+    damn based  fr fr Default: run all tests
 }
 
 fr fr ================================

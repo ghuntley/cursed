@@ -219,7 +219,7 @@ pub const VariadicCallBuilder = struct {
     }
     
     pub fn deinit(self: *VariadicCallBuilder) void {
-        self.arguments.deinit();
+        self.arguments.deinit(self.allocator);
     }
     
     /// Set the format string for printf-style functions
@@ -232,7 +232,7 @@ pub const VariadicCallBuilder = struct {
         if (self.arguments.items.len >= self.max_args) {
             return VariadicError.TooManyArguments;
         }
-        try self.arguments.append(arg);
+        try self.arguments.append(allocator, arg);
     }
     
     /// Add argument from CURSED value
@@ -316,7 +316,7 @@ pub const VariadicCallBuilder = struct {
         }
         
         // Prepare arguments for the call
-        var llvm_args = .empty;
+        var llvm_args = std.ArrayList(u8){};
         defer llvm_args.deinit();
         
         // Add format string if present
@@ -348,7 +348,7 @@ pub const VariadicCallBuilder = struct {
                 ),
                 .boolean => |val| llvm_c.LLVMConstInt(llvm_c.LLVMInt32TypeInContext(context), if (val) 1 else 0, 0),
             };
-            try llvm_args.append(llvm_value);
+            try llvm_args.append(allocator, llvm_value);
         }
         
         // Build the call
@@ -544,7 +544,7 @@ pub const CursedVariadicIntegration = struct {
         var integration = CursedVariadicIntegration{
             .allocator = allocator,
             .safe_wrapper = SafeVariadicWrapper.init(allocator),
-            .registered_functions = HashMap([]const u8, VariadicFunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .registered_functions = HashMap([]const u8, VariadicFunctionInfo, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
         };
         
         // Register common variadic functions
@@ -554,7 +554,7 @@ pub const CursedVariadicIntegration = struct {
     }
     
     pub fn deinit(self: *CursedVariadicIntegration) void {
-        self.registered_functions.deinit();
+        self.registered_functions.deinit(self.allocator);
     }
     
     fn registerCommonFunctions(self: *CursedVariadicIntegration) !void {
@@ -595,7 +595,7 @@ pub const CursedVariadicIntegration = struct {
     pub fn generateCursedWrapper(self: *CursedVariadicIntegration, func_name: []const u8) ![]const u8 {
         const func_info = self.registered_functions.get(func_name) orelse return VariadicError.InvalidFunctionSignature;
         
-        var wrapper = .empty;
+        var wrapper = std.ArrayList(u8){};
         defer wrapper.deinit();
         
         try wrapper.writer().print("// Auto-generated CURSED wrapper for variadic C function {s}\n", .{func_name});
@@ -614,7 +614,7 @@ pub const CursedVariadicIntegration = struct {
             try wrapper.writer().print("    }}\n\n", .{});
             
             try wrapper.writer().print("    // Validate argument count\n", .{});
-            try wrapper.writer().print("    ready (args.len < {} || args.len > {}) {{\n", .{ func_info.min_args - 1, func_info.max_args - 1 });
+            try wrapper.writer().print("    ready (args.len < {s} || args.len > {s}) {{\n", .{ func_info.min_args - 1, func_info.max_args - 1 });
             try wrapper.writer().print("        yikes \"Invalid number of arguments\"\n");
             try wrapper.writer().print("    }}\n\n", .{});
         }
@@ -635,7 +635,7 @@ pub const CursedVariadicIntegration = struct {
     
     /// Generate LLVM integration code for variadic functions
     pub fn generateLLVMIntegration(self: *CursedVariadicIntegration) ![]const u8 {
-        var code = .empty;
+        var code = std.ArrayList(u8){};
         defer code.deinit();
         
         try code.writer().print("// LLVM Variadic Function Integration\n\n", .{});
@@ -668,7 +668,7 @@ pub const CursedVariadicIntegration = struct {
         try code.writer().print("    func_name: []const u8,\n", .{});
         try code.writer().print("    args: []llvm_c.LLVMValueRef\n", .{});
         try code.writer().print(") !llvm_c.LLVMValueRef {{\n", .{});
-        try code.writer().print("    const func_name_z = try std.fmt.allocPrintZ(allocator, \"{s}\", .{{func_name}});\n");
+        try code.writer().print("    const func_name_z = try std.fmt.allocPrintZ(allocator, \"{s}\", .{func_name}});\n");
         try code.writer().print("    defer allocator.free(func_name_z);\n", .{});
         try code.writer().print("    \n", .{});
         try code.writer().print("    const func = llvm_c.LLVMGetNamedFunction(module, func_name_z) orelse {{\n", .{});

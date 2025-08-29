@@ -127,7 +127,7 @@ pub fn safeDupe(allocator: std.mem.Allocator, comptime T: type, slice: []const T
 
 /// Safe ArrayList operations
 pub fn safeAppend(comptime T: type, list: *std.ArrayList(T), item: T) CursedError!void {
-    return list.append(item) catch {
+    return list.append(allocator, item) catch {
         const context = ERROR_CONTEXT("ArrayList append failed");
         std.log.err("Failed to append item to ArrayList (current length: {})", .{list.items.len});
         reportError(CursedError.OutOfMemory, context);
@@ -239,7 +239,7 @@ test "error handling improvements" {
     try testing.expectEqualStrings(original, duplicated);
     
     // Test ArrayList operations  
-    var list = std.ArrayList(u32).init(allocator);
+    var list = std.ArrayList(u32){};
     defer list.deinit();
     
     try safeAppend(u32, &list, 42);
