@@ -136,15 +136,17 @@ pub const ErrorContext = struct {
         }
     }
     
-    pub fn format(self: ErrorContext, writer: anytype) !void {
-        try writer.print("Error: {s} - {s}\n", .{ @errorName(self.error_code), self.message });
+    pub fn format(self: ErrorContext, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
+        _ = fmt;
+        _ = options;
+        try std.fmt.format(writer, "Error: {s} - {s}\n", .{ @errorName(self.error_code), self.message });
         
         if (self.location) |loc| {
-            try writer.print("  at {s}:{s}:{s}\n", .{ loc.file, loc.line, loc.column });
+            try std.fmt.format(writer, "  at {s}:{}:{}\n", .{ loc.file, loc.line, loc.column });
         }
         
         if (self.inner_error) |inner| {
-            try writer.print("Caused by:\n", .{});
+            try writer.writeAll("Caused by:\n");
             try inner.format(writer);
         }
         

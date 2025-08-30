@@ -378,7 +378,7 @@ pub const ScopeManager = struct {
         try writer.print("Scope Report:\n", .{});
         try writer.print("Max depth: {s}\n", .{self.max_depth});
         try writer.print("Current depth: {s}\n", .{self.current_depth});
-        try writer.print("Function scopes: {s}\n", .{self.function_scopes.items.len});
+        try writer.print("Function scopes: {}\n", .{self.function_scopes.items.len});
         
         var all_variables = std.ArrayList(u8){};
         defer all_variables.deinit();
@@ -387,7 +387,7 @@ pub const ScopeManager = struct {
             try self.global_scope.getVariablesAtDepth(@intCast(depth), &all_variables);
         }
         
-        try writer.print("Total variables: {s}\n", .{all_variables.items.len});
+        try writer.print("Total variables: {}\n", .{all_variables.items.len});
         
         // Check for captured variables
         var captured_count: u32 = 0;

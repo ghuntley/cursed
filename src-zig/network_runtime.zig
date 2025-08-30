@@ -12,7 +12,7 @@ pub const NetworkRuntime = struct {
     allocator: Allocator,
     
     pub fn init(allocator: Allocator) NetworkRuntime {
-        _ = allocator;
+
         return .{
             .allocator = allocator,
         };
@@ -83,15 +83,15 @@ pub const NetworkRuntime = struct {
         defer connection.close();
         
         // Build HTTP request
-        var request_buffer = ArrayList(u8){};
+        var request_buffer = ArrayList(u8).init(self.allocator);
         defer request_buffer.deinit();
         
         const writer = request_buffer.writer();
         try writer.print("GET {s} HTTP/1.1\r\n", .{parsed_url.path});
         try writer.print("Host: {s}\r\n", .{parsed_url.host});
-        try writer.writer().writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
-        try writer.writer().writeAll("Connection: close\r\n");
-        try writer.writer().writeAll("\r\n");
+        try writer.writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
+        try writer.writeAll("Connection: close\r\n");
+        try writer.writeAll("\r\n");
         
         // Send request
         try connection.writer().writeAll(request_buffer.items);
@@ -112,18 +112,18 @@ pub const NetworkRuntime = struct {
         defer connection.close();
         
         // Build HTTP request
-        var request_buffer = ArrayList(u8){};
+        var request_buffer = ArrayList(u8).init(self.allocator);
         defer request_buffer.deinit();
         
         const writer = request_buffer.writer();
         try writer.print("POST {s} HTTP/1.1\r\n", .{parsed_url.path});
         try writer.print("Host: {s}\r\n", .{parsed_url.host});
-        try writer.writer().writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
+        try writer.writeAll("User-Agent: CURSED-HTTP/1.0\r\n");
         try writer.print("Content-Type: {s}\r\n", .{content_type});
         try writer.print("Content-Length: {d}\r\n", .{body.len});
-        try writer.writer().writeAll("Connection: close\r\n");
-        try writer.writer().writeAll("\r\n");
-        try writer.writer().writeAll(body);
+        try writer.writeAll("Connection: close\r\n");
+        try writer.writeAll("\r\n");
+        try writer.writeAll(body);
         
         // Send request
         try connection.writer().writeAll(request_buffer.items);
@@ -334,7 +334,7 @@ pub const HttpResponseWriter = struct {
     pub fn send(self: *HttpResponseWriter) !void {
         if (self.sent) return;
         
-        var response_buffer = ArrayList(u8){};
+        var response_buffer = ArrayList(u8).init(self.allocator);
         defer response_buffer.deinit();
         
         const writer = response_buffer.writer();
@@ -352,10 +352,10 @@ pub const HttpResponseWriter = struct {
         try writer.print("Content-Length: {d}\r\n", .{self.body.items.len});
         
         // End of headers
-        try writer.writer().writeAll("\r\n");
+        try writer.writeAll("\r\n");
         
         // Body
-        try writer.writer().writeAll(self.body.items);
+        try writer.writeAll(self.body.items);
         
         // Send response
         try self.connection.writer().writeAll(response_buffer.items);

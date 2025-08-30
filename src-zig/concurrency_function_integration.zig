@@ -157,7 +157,7 @@ pub fn executeInterpretedFunctionSafe(
         else => @as(usize, 0),
     };
     
-    print("Function '{s}' returned: {s} (converted to usize: {s})\n", .{ function_name, result, usize_result });
+    print("Function '{s}' returned: {s} (converted to usize: {d})\n", .{ function_name, result, usize_result });
     return usize_result;
 }
 

@@ -349,7 +349,7 @@ test "performance and resource cleanup" {
     const duration = end_time - start_time;
     
     std.debug.print("Performance test completed in {s}ms\n", .{duration});
-    std.debug.print("Created {s} errors and {s} channels\n", .{ errors.items.len, channels.items.len });
+    std.debug.print("Created {} errors and {} channels\n", .{ errors.items.len, channels.items.len });
     
     // Verify resource counts
     try testing.expect(errors.items.len == 100);

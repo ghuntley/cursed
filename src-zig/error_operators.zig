@@ -92,7 +92,7 @@ pub const YikesError = struct {
 
     pub fn toString(self: YikesError, allocator: Allocator) ![]u8 {
         _ = allocator;
-        var buffer = std.ArrayList(u8){};
+        var buffer = std.ArrayList(u8).init(allocator);
         defer buffer.deinit();
         
         const writer = buffer.writer();
@@ -191,7 +191,7 @@ pub const Value = union(enum) {
             .Ok => |value| value,
             .Error => |error_value| {
                 // Log the error but return a sensible default instead of panicking
-                std.log.err("Unwrap called on error: {s} (code: {})", .{ error_value.message, error_value.error_code });
+                std.log.err("Unwrap called on error: {s} (code: {d})", .{ error_value.message, error_value.error_code });
                 // Return a void value as the safest default
                 return Value{ .Void = {} };
             },

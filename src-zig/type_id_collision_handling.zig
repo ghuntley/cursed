@@ -189,9 +189,9 @@ pub const CollisionResistantTypeRegistry = struct {
     
     pub fn init(allocator: std.mem.Allocator) CollisionResistantTypeRegistry {
         return CollisionResistantTypeRegistry{
-            .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage){},
+            .primary_table = HashMap(u64, TypeEntry, HashContext, std.hash_map.default_max_load_percentage).init(allocator),
             .overflow_table = HashMap(u64, ArrayList(TypeEntry), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
-            .name_index = HashMap([]const u8, TypeId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .name_index = HashMap([]const u8, TypeId, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .fingerprint_index = HashMap(u64, ArrayList(TypeId), HashContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_stats = CollisionStats{},
             .allocator = allocator,
@@ -578,7 +578,7 @@ pub const InterfaceImplRegistry = struct {
     
     pub fn init(allocator: std.mem.Allocator) InterfaceImplRegistry {
         return InterfaceImplRegistry{
-            .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage){},
+            .impl_table = HashMap(ImplKey, bool, ImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_table = HashMap(u64, ArrayList(ImplEntry), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,
         };

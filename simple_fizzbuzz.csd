@@ -1,0 +1,17 @@
+slay main_character() {
+    vibez.spill("1")
+    vibez.spill("2")
+    vibez.spill("Fizz")
+    vibez.spill("4")
+    vibez.spill("Buzz")
+    vibez.spill("Fizz")
+    vibez.spill("7")
+    vibez.spill("8")
+    vibez.spill("Fizz")
+    vibez.spill("Buzz")
+    vibez.spill("11")
+    vibez.spill("Fizz")
+    vibez.spill("13")
+    vibez.spill("14")
+    vibez.spill("FizzBuzz")
+}

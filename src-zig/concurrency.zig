@@ -57,7 +57,16 @@ pub const Goroutine = struct {
     
     pub fn init(allocator: Allocator, id: GoroutineId, entry_fn: GoroutineEntry, context: ?*anyopaque) Goroutine {
         const stack_size = 64 * 1024; // 64KB default stack
-        const stack_memory = allocator.alloc(u8, stack_size) catch &.{};
+        const stack_memory = allocator.alloc(u8, stack_size) catch return Goroutine{
+            .id = id,
+            .state = Atomic(u8).init(@intFromEnum(GoroutineState.ready)),
+            .entry_fn = entry_fn,
+            .context = context,
+            .stack_memory = &.{},
+            .stack_size = 0,
+            .allocator = allocator,
+            .thread_handle = null,
+        };
         
         return Goroutine{
             .id = id,
@@ -87,7 +96,7 @@ pub const Goroutine = struct {
             .goroutine = self,
         };
         
-        self.thread_handle = try Thread.spawn(.{}, GoroutineWrapper.run, wrapper_context);
+        self.thread_handle = try Thread.spawn(.{}, GoroutineWrapper.run, .{wrapper_context});
         self.state.store(@intFromEnum(GoroutineState.running), .release);
     }
     
@@ -157,7 +166,7 @@ pub const Scheduler = struct {
             try worker.start();
         }
         
-        print("[SCHEDULER] Started with {s} workers\n", .{self.config.num_workers});
+        print("[SCHEDULER] Started with {d} workers\n", .{self.config.num_workers});
     }
     
     pub fn stop(self: *Scheduler) void {
@@ -241,7 +250,7 @@ pub const Scheduler = struct {
         
         pub fn start(self: *Worker) !void {
             self.running.store(true, .release);
-            self.thread_handle = try Thread.spawn(.{}, Worker.run, self);
+            self.thread_handle = try Thread.spawn(.{}, Worker.run, .{self});
         }
         
         pub fn stop(self: *Worker) void {
@@ -285,7 +294,7 @@ pub const Scheduler = struct {
             
             // Spawn the goroutine (it will run in its own thread)
             goroutine.spawn() catch |err| {
-                print("[WORKER {s}] Failed to spawn goroutine {s}: {s}\n", .{ self.id, goroutine.id, err });
+                print("[WORKER {d}] Failed to spawn goroutine {d}: {any}\n", .{ self.id, goroutine.id, err });
                 goroutine.state.store(@intFromEnum(GoroutineState.dead), .release);
             };
             

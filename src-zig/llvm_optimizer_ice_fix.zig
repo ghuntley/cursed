@@ -306,7 +306,7 @@ pub const LLVMOptimizerICEFix = struct {
                 // In a real implementation, you'd check bounds against the actual type
                 const constant_value = c.LLVMConstIntGetSExtValue(index);
                 if (constant_value < 0 or constant_value > 1000000) { // Arbitrary large bound
-                    std.log.warn("Found potentially problematic GEP index: {}", .{constant_value});
+                    std.log.warn("Found potentially problematic GEP index: {d}", .{constant_value});
                 }
             }
         }

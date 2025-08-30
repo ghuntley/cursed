@@ -1,9 +1,0 @@
-CURSED Interpreter (Oracle P2 Migration Build)
-Executing: examples/minimal.csd
-File size: 42 bytes
-
-[Line 1] Processing: slay main() {
-OUTPUT: Hello!
-[Line 3] Processing: }
-
-✓ Execution completed

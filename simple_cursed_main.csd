@@ -1,0 +1,2 @@
+slay main_character() {
+}

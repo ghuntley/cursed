@@ -74,7 +74,7 @@ pub const AttributeValue = union(enum) {
     pub fn deinit(self: *AttributeValue, allocator: Allocator) void {
         switch (self.*) {
             .Expression => |expr| {
-                expr.deinit();
+                expr.deinit(allocator);
                 allocator.destroy(expr);
             },
             else => {},
@@ -88,8 +88,7 @@ pub const AttributeParameter = struct {
     value: AttributeValue,
     
     pub fn deinit(self: *AttributeParameter, allocator: Allocator) void {
-        _ = allocator;
-        self.value.deinit(self.allocator);
+        self.value.deinit(allocator);
     }
 };
 
@@ -110,16 +109,15 @@ pub const Attribute = struct {
     }
     
     pub fn deinit(self: *Attribute, allocator: Allocator) void {
-        _ = allocator;
         for (self.parameters.items) |*param| {
-            param.deinit();
+            param.deinit(allocator);
         }
-        self.parameters.deinit(self.allocator);
+        self.parameters.deinit(allocator);
     }
     
     /// Add a parameter to this attribute
     pub fn addParameter(self: *Attribute, _: Allocator, name: []const u8, value: AttributeValue) !void {
-                try self.parameters.append(AttributeParameter{
+        try self.parameters.append(AttributeParameter{
             .name = name,
             .value = value,
         });
@@ -186,16 +184,15 @@ pub const AttributeList = struct {
     }
     
     pub fn deinit(self: *AttributeList, allocator: Allocator) void {
-        _ = allocator;
         for (self.attributes.items) |*attr| {
-            attr.deinit();
+            attr.deinit(allocator);
         }
-        self.attributes.deinit(self.allocator);
+        self.attributes.deinit(allocator);
     }
     
     /// Add an attribute to the list
     pub fn addAttribute(self: *AttributeList, attr: Attribute) !void {
-        try self.attributes.append(self.allocator, attr);
+        try self.attributes.append(attr);
     }
     
     /// Find attribute by type
@@ -401,7 +398,7 @@ test "attribute system basic functionality" {
     
     // Test creating attributes
     var attrs = try createTestAttributes(allocator);
-    defer attrs.deinit();
+    defer attrs.deinit(allocator);
     
     // Test finding attributes
     const perf_attr = attrs.findByType(.Performance);

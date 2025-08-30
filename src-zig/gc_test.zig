@@ -15,7 +15,7 @@ const TestObject = struct {
     
     fn finalizer(object: *anyopaque) void {
         const test_obj = @as(*TestObject, @ptrCast(@alignCast(object)));
-        std.log.info("Finalizing TestObject with value: {}", .{test_obj.value});
+        std.log.info("Finalizing TestObject with value: {d}", .{test_obj.value});
     }
 };
 

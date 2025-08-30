@@ -71,7 +71,7 @@ pub fn main() !void {
     };
     defer allocator.free(source);
 
-    print("📄 Source: {s} ({s} bytes)\n", .{ filename, source.len });
+    print("📄 Source: {s} ({d} bytes)\n", .{ filename, source.len });
 
     if (compile_mode) {
         // Complete LLVM Compilation Pipeline
@@ -104,7 +104,7 @@ fn demonstrateFullPipeline(allocator: Allocator, source: []const u8, filename: [
     // Step 1: Source Analysis
     print("\n1️⃣ Source Code Analysis\n", .{});
     print("   📝 Analyzing CURSED source code...\n", .{});
-    print("   🔍 Source size: {s} bytes\n", .{source.len});
+    print("   🔍 Source size: {d} bytes\n", .{source.len});
     if (std.mem.indexOf(u8, source, "vibez.spill")) |_| {
         print("   ✅ Found CURSED print statement\n", .{});
     }

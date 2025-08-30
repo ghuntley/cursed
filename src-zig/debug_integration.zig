@@ -73,7 +73,7 @@ pub const DebugInterpreter = struct {
             }
             
             // Execute the statement
-            print("📍 Executing line {d}: {s}\n", .{ self.current_line, @tagName(stmt.*) });
+            print("📍 Executing line {d}: {s}\n", .{ self.current_line, @tagName(stmt.*.*) });
             
             // Simulate execution delay for demonstration
             std.Thread.sleep(100_000_000); // 100ms
