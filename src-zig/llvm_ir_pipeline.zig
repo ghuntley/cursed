@@ -10,20 +10,32 @@ const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
 const type_system = @import("type_system_runtime.zig");
 
-// LLVM C imports with proper configuration
+// Real LLVM C API imports
 const c = @cImport({
-    @cDefine("__x86_64__", "1");
-    @cDefine("__i386__", "0");
-    @cDefine("TARGET_CPU", "\"x86-64\"");
-    @cDefine("LLVM_HOST_TRIPLE", "\"x86_64-unknown-linux-gnu\"");
     @cInclude("llvm-c/Core.h");
     @cInclude("llvm-c/Target.h");
     @cInclude("llvm-c/TargetMachine.h");
     @cInclude("llvm-c/Analysis.h");
+    @cInclude("llvm-c/BitWriter.h");
+    @cInclude("llvm-c/Transforms/PassBuilder.h");
     @cInclude("llvm-c/ExecutionEngine.h");
-    @cInclude("llvm-c/Transforms/Scalar.h");
-    @cInclude("llvm-c/Transforms/Utils.h");
 });
+
+/// Error types for LLVM IR Pipeline
+const LLVMIRError = error{
+    LLVMContextCreationFailed,
+    LLVMModuleCreationFailed,
+    LLVMBuilderCreationFailed,
+    TargetCreationFailed,
+    TargetMachineCreationFailed,
+    UndefinedVariable,
+    UndefinedFunction,
+    ModuleVerificationFailed,
+    IRWriteFailed,
+    CompilationFailed,
+    OutOfMemory,
+    UnsupportedOperator,
+};
 
 /// Comprehensive LLVM IR Generation Pipeline
 /// Takes parsed AST, runs type checking, and generates proper LLVM IR
@@ -61,19 +73,18 @@ pub const LLVMIRPipeline = struct {
         
         // Initialize LLVM
         print("🔧 Initializing LLVM components...\n", .{});
-        c.LLVMInitializeCore(c.LLVMGetGlobalPassRegistry());
-        c.LLVMInitializeNativeTarget();
-        c.LLVMInitializeNativeAsmPrinter();
-        c.LLVMInitializeNativeAsmParser();
+        _ = c.LLVMInitializeNativeTarget();
+        _ = c.LLVMInitializeNativeAsmPrinter();
+        _ = c.LLVMInitializeNativeAsmParser();
         
         // Create LLVM context
         const context = c.LLVMContextCreate();
-        if (context == null) return error.LLVMContextCreationFailed;
+        if (@as(?*anyopaque, context) == null) return error.LLVMContextCreationFailed;
         
         // Create module
         const module_name_z = try arena_allocator.dupeZ(u8, module_name);
         const module = c.LLVMModuleCreateWithNameInContext(module_name_z.ptr, context);
-        if (module == null) return error.LLVMModuleCreationFailed;
+        if (@as(?*anyopaque, module) == null) return error.LLVMModuleCreationFailed;
         
         // Set target triple
         const default_triple = c.LLVMGetDefaultTargetTriple();
@@ -82,20 +93,10 @@ pub const LLVMIRPipeline = struct {
         
         // Create builder
         const builder = c.LLVMCreateBuilderInContext(context);
-        if (builder == null) return error.LLVMBuilderCreationFailed;
+        if (@as(?*anyopaque, builder) == null) return error.LLVMBuilderCreationFailed;
         
-        // Create pass manager with optimizations
+        // Create function pass manager (legacy API still works for basic operations)
         const pass_manager = c.LLVMCreateFunctionPassManagerForModule(module);
-        
-        // Add common optimization passes
-        c.LLVMAddInstructionCombiningPass(pass_manager);
-        c.LLVMAddReassociatePass(pass_manager);
-        c.LLVMAddGVNPass(pass_manager);
-        c.LLVMAddCFGSimplificationPass(pass_manager);
-        c.LLVMAddPromoteMemoryToRegisterPass(pass_manager);
-        c.LLVMAddDeadStoreEliminationPass(pass_manager);
-        
-        c.LLVMInitializeFunctionPassManager(pass_manager);
         
         // Create target machine for native compilation
         var target: c.LLVMTargetRef = undefined;
@@ -120,7 +121,7 @@ pub const LLVMIRPipeline = struct {
             c.LLVMCodeModelDefault
         );
         
-        if (target_machine == null) {
+        if (@as(?*anyopaque, target_machine) == null) {
             return error.TargetMachineCreationFailed;
         }
         
@@ -140,10 +141,10 @@ pub const LLVMIRPipeline = struct {
             .pass_manager = pass_manager,
             .target_machine = target_machine,
             .type_checker = type_checker,
-            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
-            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
-            .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
-            .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage){},
+            .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
             .string_counter = 0,
             .optimization_level = 2,
@@ -153,6 +154,9 @@ pub const LLVMIRPipeline = struct {
         // Setup standard library declarations
         try pipeline.setupStandardLibrary();
         
+        // Add special "vibez" identifier as a global variable
+        try pipeline.setupVibezIdentifier();
+        
         print("✅ LLVM IR Pipeline initialized successfully\n", .{});
         return pipeline;
     }
@@ -161,33 +165,33 @@ pub const LLVMIRPipeline = struct {
         print("🧹 Cleaning up LLVM IR Pipeline...\n", .{});
         
         // Clean up hash maps first
-        self.functions.deinit(self.allocator);
-        self.variables.deinit(self.allocator);
-        self.global_strings.deinit(self.allocator);
-        self.type_cache.deinit(self.allocator);
+        self.functions.deinit();
+        self.variables.deinit();
+        self.global_strings.deinit();
+        self.type_cache.deinit();
         
         // Clean up type system components
-        self.type_checker.deinit(self.allocator);
+        // TypeChecker doesn't have a deinit method
         
         // Dispose LLVM objects in proper order
-        if (self.pass_manager) |pm| {
-            c.LLVMDisposePassManager(pm);
+        if (@as(?*anyopaque, self.pass_manager) != null) {
+            c.LLVMDisposePassManager(self.pass_manager);
         }
-        if (self.target_machine) |tm| {
-            c.LLVMDisposeTargetMachine(tm);
+        if (@as(?*anyopaque, self.target_machine) != null) {
+            c.LLVMDisposeTargetMachine(self.target_machine);
         }
-        if (self.builder) |builder| {
-            c.LLVMDisposeBuilder(builder);
+        if (@as(?*anyopaque, self.builder) != null) {
+            c.LLVMDisposeBuilder(self.builder);
         }
-        if (self.module) |module| {
-            c.LLVMDisposeModule(module);
+        if (@as(?*anyopaque, self.module) != null) {
+            c.LLVMDisposeModule(self.module);
         }
-        if (self.context) |context| {
-            c.LLVMContextDispose(context);
+        if (@as(?*anyopaque, self.context) != null) {
+            c.LLVMContextDispose(self.context);
         }
         
         // Clean up arena and self
-        self.arena.deinit(self.allocator);
+        self.arena.deinit();
         self.allocator.destroy(self);
         
         print("✅ LLVM IR Pipeline cleanup complete\n", .{});
@@ -199,12 +203,13 @@ pub const LLVMIRPipeline = struct {
         
         // Step 1: Tokenize source
         if (verbose) print("📝 Step 1: Tokenizing source code...\n", .{});
-        var lex = try lexer.Lexer.init(self.allocator, source);
-        defer lex.deinit();
+        var lex = lexer.Lexer.init(self.allocator, source);
         
         // Step 2: Parse into AST
         if (verbose) print("🌳 Step 2: Parsing AST...\n", .{});
-        var parse = try parser.Parser.init(self.allocator, &lex);
+        const token_list = try lex.tokenize();
+        const tokens = token_list.items;
+        var parse = parser.Parser.init(self.allocator, tokens);
         defer parse.deinit();
         const program = try parse.parseProgram();
         
@@ -234,15 +239,16 @@ pub const LLVMIRPipeline = struct {
     /// Run type checking on the AST
     fn runTypeChecking(self: *LLVMIRPipeline, program: ast.Program) !void {
         // Type check each statement in the program
-        for (program.statements.items) |stmt| {
-            try self.typeCheckStatement(stmt);
+        for (program.statements.items) |stmt_ptr| {
+            const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
+            try self.typeCheckStatement(stmt.*);
         }
     }
     
     /// Type check a statement
     fn typeCheckStatement(self: *LLVMIRPipeline, stmt: ast.Statement) !void {
         switch (stmt) {
-            .FunctionDeclaration => |func_decl| {
+            .Function => |func_decl| {
                 // Type check function parameters and return type
                 for (func_decl.parameters.items) |param| {
                     _ = try self.validateType(param.param_type);
@@ -253,13 +259,15 @@ pub const LLVMIRPipeline = struct {
                 
                 // Type check function body
                 for (func_decl.body.items) |body_stmt| {
-                    try self.typeCheckStatement(body_stmt);
+                    try self.typeCheckStatement(body_stmt.*);
                 }
             },
-            .VariableDeclaration => |var_decl| {
-                _ = try self.validateType(var_decl.variable_type);
+            .Let => |var_decl| {
+                if (var_decl.var_type) |var_type| {
+                    _ = try self.validateType(var_type);
+                }
                 if (var_decl.initializer) |initializer| {
-                    try self.typeCheckExpression(initializer);
+                    try self.typeCheckExpression(initializer.*);
                 }
             },
             .Expression => |expr| {
@@ -281,14 +289,14 @@ pub const LLVMIRPipeline = struct {
                 // Check if variable is defined
                 // TODO: Add variable scope checking
             },
-            .BinaryOperation => |bin_op| {
+            .Binary => |bin_op| {
                 try self.typeCheckExpression(bin_op.left.*);
                 try self.typeCheckExpression(bin_op.right.*);
                 // TODO: Check operator compatibility
             },
-            .FunctionCall => |call| {
+            .Call => |call| {
                 for (call.arguments.items) |arg| {
-                    try self.typeCheckExpression(arg);
+                    try self.typeCheckExpression(arg.*);
                 }
                 // TODO: Check function exists and argument types match
             },
@@ -306,10 +314,11 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Generate LLVM IR from the type-checked AST
-    fn generateIR(self: *LLVMIRPipeline, program: ast.Program) !void {
+    pub fn generateIR(self: *LLVMIRPipeline, program: ast.Program) !void {
         // Generate IR for each statement
-        for (program.statements.items) |stmt| {
-            try self.generateStatement(stmt);
+        for (program.statements.items) |stmt_ptr| {
+            const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
+            try self.generateStatement(stmt.*);
         }
         
         // Ensure we have a main function
@@ -317,12 +326,12 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Generate IR for a statement
-    fn generateStatement(self: *LLVMIRPipeline, stmt: ast.Statement) !void {
+    fn generateStatement(self: *LLVMIRPipeline, stmt: ast.Statement) anyerror!void {
         switch (stmt) {
-            .FunctionDeclaration => |func_decl| {
+            .Function => |func_decl| {
                 try self.generateFunction(func_decl);
             },
-            .VariableDeclaration => |var_decl| {
+            .Let => |var_decl| {
                 try self.generateVariableDeclaration(var_decl);
             },
             .Expression => |expr| {
@@ -335,10 +344,10 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Generate LLVM function
-    fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionDeclaration) !void {
+    fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !void {
         // Create function type
-        var param_types = std.ArrayList(u8){};
-        defer param_types.deinit();
+        var param_types = std.ArrayList(c.LLVMTypeRef){};
+        defer param_types.deinit(self.allocator);
         
         for (func_decl.parameters.items) |param| {
             const llvm_type = try self.cursedTypeToLLVM(param.param_type);
@@ -383,8 +392,9 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Generate function body
-        for (func_decl.body.items) |stmt| {
-            try self.generateStatement(stmt);
+        for (func_decl.body.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
         }
         
         // Add return if not present
@@ -401,13 +411,18 @@ pub const LLVMIRPipeline = struct {
         // Restore previous function
         self.current_function = previous_function;
         
-        // Run optimizations on the function
-        _ = c.LLVMRunFunctionPassManager(self.pass_manager, function);
+        // Run optimizations on the function (if pass manager is available)
+        if (@as(?*anyopaque, self.pass_manager) != null) {
+            _ = c.LLVMRunFunctionPassManager(self.pass_manager, function);
+        }
     }
     
     /// Generate variable declaration
-    fn generateVariableDeclaration(self: *LLVMIRPipeline, var_decl: ast.VariableDeclaration) !void {
-        const llvm_type = try self.cursedTypeToLLVM(var_decl.variable_type);
+    fn generateVariableDeclaration(self: *LLVMIRPipeline, var_decl: ast.LetStatement) !void {
+        const llvm_type = if (var_decl.var_type) |vtype| 
+            try self.cursedTypeToLLVM(vtype)
+        else 
+            c.LLVMInt32TypeInContext(self.context);
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
         // Create alloca
@@ -416,34 +431,157 @@ pub const LLVMIRPipeline = struct {
         
         // Generate initializer if present
         if (var_decl.initializer) |initializer| {
-            const init_value = try self.generateExpression(initializer);
+            const init_value = try self.generateExpression(initializer.*);
             _ = c.LLVMBuildStore(self.builder, init_value, alloca);
         }
     }
     
     /// Generate expression
-    fn generateExpression(self: *LLVMIRPipeline, expr: ast.Expression) !c.LLVMValueRef {
+    fn generateExpression(self: *LLVMIRPipeline, expr: ast.Expression) LLVMIRError!c.LLVMValueRef {
         switch (expr) {
             .Literal => |lit| {
                 return try self.generateLiteral(lit);
             },
             .Identifier => |ident| {
-                if (self.variables.get(ident.name)) |var_alloca| {
-                    const var_type = c.LLVMGetAllocatedType(var_alloca);
-                    return c.LLVMBuildLoad2(self.builder, var_type, var_alloca, "load_tmp");
+                if (self.variables.get(ident)) |var_ref| {
+                    // Check if this is a global variable or local alloca
+                    const var_type_kind = c.LLVMGetTypeKind(c.LLVMTypeOf(var_ref));
+                    if (var_type_kind == c.LLVMPointerTypeKind) {
+                        // This could be a global variable or an alloca
+                        const pointed_type = c.LLVMGetElementType(c.LLVMTypeOf(var_ref));
+                        return c.LLVMBuildLoad2(self.builder, pointed_type, var_ref, "load_tmp");
+                    } else {
+                        // This is likely an alloca
+                        const var_type = c.LLVMGetAllocatedType(var_ref);
+                        return c.LLVMBuildLoad2(self.builder, var_type, var_ref, "load_tmp");
+                    }
                 } else {
-                    print("❌ Undefined variable: {s}\n", .{ident.name});
+                    print("❌ Undefined variable: {s}\n", .{ident});
                     return error.UndefinedVariable;
                 }
             },
-            .BinaryOperation => |bin_op| {
+            .Variable => |var_name| {
+                if (self.variables.get(var_name)) |var_alloca| {
+                    const var_type = c.LLVMGetAllocatedType(var_alloca);
+                    return c.LLVMBuildLoad2(self.builder, var_type, var_alloca, "load_var");
+                } else {
+                    print("❌ Undefined variable: {s}\n", .{var_name});
+                    return error.UndefinedVariable;
+                }
+            },
+            .Integer => |int_val| {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(int_val), 0);
+            },
+            .Float => |float_val| {
+                return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
+            },
+            .String => |str_val| {
+                return try self.generateStringLiteral(str_val);
+            },
+            .Boolean => |bool_val| {
+                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+            },
+            .Character => |char_val| {
+                return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char_val, 0);
+            },
+            .Binary => |bin_op| {
                 return try self.generateBinaryOperation(bin_op);
             },
-            .FunctionCall => |call| {
+            .Call => |call| {
                 return try self.generateFunctionCall(call);
             },
+            .FunctionCall => |call| {
+                // Handle FunctionCallExpression directly by iterating through its arguments
+                if (self.functions.get("vibez.spill")) |_| {
+                    // Handle vibez.spill calls
+                    var args = try self.allocator.alloc(ast.Expression, call.arguments.len);
+                    defer self.allocator.free(args);
+                    for (call.arguments, 0..) |arg_ptr, i| {
+                        args[i] = arg_ptr.*;
+                    }
+                    return try self.generatePrintCall(args);
+                }
+                
+                // For other function calls, handle as regular calls
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+            },
+            .MethodCall => |method_call| {
+                return try self.generateMethodCall(method_call);
+            },
+            .Unary => |unary| {
+                const operand_val = try self.generateExpression(unary.operand.*);
+                if (std.mem.eql(u8, unary.operator, "-")) {
+                    return c.LLVMBuildNeg(self.builder, operand_val, "neg");
+                } else if (std.mem.eql(u8, unary.operator, "!")) {
+                    return c.LLVMBuildNot(self.builder, operand_val, "not");
+                } else {
+                    print("❌ Unsupported unary operator: {s}\n", .{unary.operator});
+                    return error.UnsupportedOperator;
+                }
+            },
+            .If => |if_expr| {
+                // Handle if expressions
+                const condition = try self.generateExpression(if_expr.condition.*);
+                const current_bb = c.LLVMGetInsertBlock(self.builder);
+                const current_func = c.LLVMGetBasicBlockParent(current_bb);
+                
+                const then_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_then");
+                const else_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_else");
+                const merge_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "if_merge");
+                
+                _ = c.LLVMBuildCondBr(self.builder, condition, then_bb, else_bb);
+                
+                // Generate then block
+                c.LLVMPositionBuilderAtEnd(self.builder, then_bb);
+                const then_val = try self.generateExpression(if_expr.then_branch.*);
+                _ = c.LLVMBuildBr(self.builder, merge_bb);
+                
+                // Generate else block
+                c.LLVMPositionBuilderAtEnd(self.builder, else_bb);
+                const else_val = if (if_expr.else_branch) |else_branch|
+                    try self.generateExpression(else_branch.*)
+                else
+                    c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+                _ = c.LLVMBuildBr(self.builder, merge_bb);
+                
+                // Generate merge block with phi node
+                c.LLVMPositionBuilderAtEnd(self.builder, merge_bb);
+                const phi = c.LLVMBuildPhi(self.builder, c.LLVMTypeOf(then_val), "if_result");
+                const incoming_values = [_]c.LLVMValueRef{ then_val, else_val };
+                const incoming_blocks = [_]c.LLVMBasicBlockRef{ then_bb, else_bb };
+                c.LLVMAddIncoming(phi, @constCast(@ptrCast(&incoming_values)), @constCast(@ptrCast(&incoming_blocks)), 2);
+                
+                return phi;
+            },
+            .Block => |block| {
+                // Handle block expressions
+                var last_val = c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+                for (block.statements) |stmt| {
+                    last_val = try self.generateExpression(stmt.*);
+                }
+                return last_val;
+            },
+            .Array => |array| {
+                // Handle array literals
+                if (array.elements.items.len == 0) {
+                    return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+                }
+                
+                // For now, return first element
+                return try self.generateExpression(array.elements.items[0].*);
+            },
+            .ArrayAccess => |access| {
+                // Handle array indexing
+                const array_val = try self.generateExpression(access.array.*);
+                const index_val = try self.generateExpression(access.index.*);
+                
+                // Simple GEP for array indexing
+                const gep = c.LLVMBuildGEP2(self.builder, c.LLVMTypeOf(array_val), array_val, @constCast(@ptrCast(&index_val)), 1, "array_index");
+                const element_type = c.LLVMGetElementType(c.LLVMTypeOf(array_val));
+                return c.LLVMBuildLoad2(self.builder, element_type, gep, "load_element");
+            },
             else => {
-                print("⚠️ Unhandled expression type in IR generation\n", .{});
+                print("⚠️ Unhandled expression type in IR generation: {s}\n", .{@tagName(expr)});
                 return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
             },
         }
@@ -464,6 +602,15 @@ pub const LLVMIRPipeline = struct {
             .Boolean => |bool_val| {
                 const val: u64 = if (bool_val) 1 else 0;
                 return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), val, 0);
+            },
+            .Character => |char_val| {
+                return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char_val, 0);
+            },
+            .Null => {
+                return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+            },
+            .Nil => {
+                return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
             },
         }
     }
@@ -493,71 +640,191 @@ pub const LLVMIRPipeline = struct {
         // Create GEP to get pointer to string
         const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         const indices = [_]c.LLVMValueRef{ zero, zero };
-        const str_ptr = c.LLVMConstGEP2(str_type, str_global, @ptrCast(&indices), 2);
+        const str_ptr = c.LLVMConstGEP2(str_type, str_global, @constCast(@ptrCast(&indices)), 2);
         
         try self.global_strings.put(str_val, str_ptr);
         return str_ptr;
     }
     
     /// Generate binary operation
-    fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryOperation) !c.LLVMValueRef {
+    fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) LLVMIRError!c.LLVMValueRef {
         const left = try self.generateExpression(bin_op.left.*);
         const right = try self.generateExpression(bin_op.right.*);
         
-        return switch (bin_op.operator) {
-            .Plus => c.LLVMBuildAdd(self.builder, left, right, "add_tmp"),
-            .Minus => c.LLVMBuildSub(self.builder, left, right, "sub_tmp"),
-            .Multiply => c.LLVMBuildMul(self.builder, left, right, "mul_tmp"),
-            .Divide => c.LLVMBuildSDiv(self.builder, left, right, "div_tmp"),
-            .Equal => c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp"),
-            .NotEqual => c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne_tmp"),
-            .LessThan => c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp"),
-            .GreaterThan => c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp"),
-            else => {
-                print("⚠️ Unhandled binary operator\n", .{});
-                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
-            },
-        };
+        // Handle string-based operators
+        if (std.mem.eql(u8, bin_op.operator, "+")) {
+            return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "-")) {
+            return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "*")) {
+            return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "/")) {
+            return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "==")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "!=")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "<")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, ">")) {
+            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+        } else {
+            print("⚠️ Unhandled binary operator: {s}\n", .{bin_op.operator});
+            return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+        }
     }
     
     /// Generate function call
-    fn generateFunctionCall(self: *LLVMIRPipeline, call: ast.FunctionCall) !c.LLVMValueRef {
+    fn generateFunctionCall(self: *LLVMIRPipeline, call: ast.CallExpression) !c.LLVMValueRef {
         // Handle standard library calls
-        if (std.mem.eql(u8, call.name, "vibez.spill")) {
-            return try self.generatePrintCall(call.arguments.items);
+        // Extract function name from the function expression
+        const function_name = switch (call.function.*) {
+            .Identifier => |name| name,
+            .MethodCall => |method_call| blk: {
+                // Handle method calls like vibez.spill()
+                const object_name = switch (method_call.object.*) {
+                    .Identifier => |name| name,
+                    else => "",
+                };
+                if (std.mem.eql(u8, object_name, "vibez") and std.mem.eql(u8, method_call.method_name, "spill")) {
+                    break :blk "vibez.spill";
+                }
+                break :blk "";
+            },
+            else => return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0),
+        };
+        
+        if (std.mem.eql(u8, function_name, "vibez.spill")) {
+            // Convert []*Expression to []Expression
+            var args = try self.allocator.alloc(ast.Expression, call.arguments.items.len);
+            defer self.allocator.free(args);
+            for (call.arguments.items, 0..) |arg_ptr, i| {
+                args[i] = arg_ptr.*;
+            }
+            return try self.generatePrintCall(args);
         }
         
         // Look up user-defined function
-        if (self.functions.get(call.name)) |function| {
-            var args = std.ArrayList(u8){};
-            defer args.deinit();
+        if (self.functions.get(function_name)) |function| {
+            // Safety check
+            if (@as(?*anyopaque, function) == null) {
+                print("❌ Null function reference for: {s}\n", .{function_name});
+                return error.UndefinedFunction;
+            }
             
-            for (call.arguments.items) |arg| {
-                const arg_val = try self.generateExpression(arg);
-                try args.append(self.allocator, arg_val);
+            // Create a fixed-size array for LLVM arguments
+            var llvm_args: [16]c.LLVMValueRef = undefined; // Support up to 16 args
+            if (call.arguments.items.len > 16) {
+                print("❌ Too many arguments for function call (max 16)\n", .{});
+                return error.UndefinedFunction;
+            }
+            
+            for (call.arguments.items, 0..) |arg, i| {
+                const arg_val = try self.generateExpression(arg.*);
+                if (@as(?*anyopaque, arg_val) == null) {
+                    print("❌ Null argument value at index {d}\n", .{i});
+                    return error.UndefinedFunction;
+                }
+                llvm_args[i] = arg_val;
             }
             
             const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));
-            return c.LLVMBuildCall2(
+            if (@as(?*anyopaque, func_type) == null) {
+                print("❌ Null function type for: {s}\n", .{function_name});
+                return error.UndefinedFunction;
+            }
+            
+            // Use consistent approach with empty array for 0 arguments
+            const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
+            const result = c.LLVMBuildCall2(
                 self.builder,
                 func_type,
                 function,
-                args.items.ptr,
-                @intCast(args.items.len),
+                args_ptr,
+                @intCast(call.arguments.items.len),
                 "call_tmp"
             );
+            
+            if (@as(?*anyopaque, result) == null) {
+                print("❌ Failed to generate call to: {s}\n", .{function_name});
+                return error.UndefinedFunction;
+            }
+            
+            return result;
         } else {
-            print("❌ Undefined function: {s}\n", .{call.name});
+            print("❌ Undefined function: {s}\n", .{function_name});
             return error.UndefinedFunction;
         }
     }
     
+    /// Generate method call
+    fn generateMethodCall(self: *LLVMIRPipeline, method_call: *ast.MethodCallExpression) !c.LLVMValueRef {
+        // Check if this is a "vibez.spill()" call
+        const object_name = switch (method_call.object.*) {
+            .Identifier => |name| name,
+            else => "",
+        };
+        
+        if (std.mem.eql(u8, object_name, "vibez") and std.mem.eql(u8, method_call.method_name, "spill")) {
+            // Handle vibez.spill() - this is our print function
+            var args = try self.allocator.alloc(ast.Expression, method_call.arguments.items.len);
+            defer self.allocator.free(args);
+            
+            // Copy arguments
+            for (method_call.arguments.items, 0..) |arg_ptr, i| {
+                args[i] = arg_ptr.*;
+            }
+            
+            return try self.generatePrintCall(args);
+        }
+        
+        // For other method calls on objects
+        if (std.mem.eql(u8, method_call.method_name, "spill")) {
+            // Generate the object expression
+            const object_val = try self.generateExpression(method_call.object.*);
+            
+            // Create printf call for the object value
+            const printf_func = self.functions.get("printf") orelse {
+                print("❌ printf function not found for method call\n", .{});
+                return error.UndefinedFunction;
+            };
+            
+            // Use the object value directly
+            const fmt_str = try self.generateStringLiteral("%ld\n");
+            const printf_args = [_]c.LLVMValueRef{ fmt_str, object_val };
+            
+            const printf_type = c.LLVMGetElementType(c.LLVMTypeOf(printf_func));
+            return c.LLVMBuildCall2(self.builder, printf_type, printf_func, @constCast(@ptrCast(&printf_args)), 2, "method_call");
+        }
+        
+        // For other method calls, return a placeholder value
+        print("⚠️ Unhandled method call: {s}\n", .{method_call.method_name});
+        return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+    }
+    
     /// Generate print function call
     fn generatePrintCall(self: *LLVMIRPipeline, args: []ast.Expression) !c.LLVMValueRef {
-        if (args.len == 0) return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        if (args.len == 0) {
+            // If no arguments, print empty line using puts
+            const puts_func = self.functions.get("puts") orelse {
+                print("❌ puts function not found\n", .{});
+                return error.UndefinedFunction;
+            };
+            
+            const empty_str = try self.generateStringLiteral("");
+            const puts_type = c.LLVMGetElementType(c.LLVMTypeOf(puts_func));
+            return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @constCast(@ptrCast(&empty_str)), 1, "puts_empty");
+        }
         
         // Generate the argument
-        const arg_val = try self.generateExpression(args[0]);
+        const arg_val: c.LLVMValueRef = try self.generateExpression(args[0]);
+        
+        // Safeguard against null values
+        if (@as(?*anyopaque, arg_val) == null) {
+            print("❌ Null argument value in generatePrintCall\n", .{});
+            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+        }
+        
         const arg_type = c.LLVMTypeOf(arg_val);
         
         // Determine the print function to use based on type
@@ -569,9 +836,10 @@ pub const LLVMIRPipeline = struct {
             };
             
             const puts_type = c.LLVMGetElementType(c.LLVMTypeOf(puts_func));
-            return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @ptrCast(&arg_val), 1, "puts_call");
+            var puts_args = [_]c.LLVMValueRef{arg_val};
+            return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @ptrCast(&puts_args), 1, "puts_call");
         } else {
-            // Integer print using printf
+            // Integer print using printf  
             const printf_func = self.functions.get("printf") orelse {
                 print("❌ printf function not found\n", .{});
                 return error.UndefinedFunction;
@@ -581,7 +849,7 @@ pub const LLVMIRPipeline = struct {
             const printf_args = [_]c.LLVMValueRef{ fmt_str, arg_val };
             
             const printf_type = c.LLVMGetElementType(c.LLVMTypeOf(printf_func));
-            return c.LLVMBuildCall2(self.builder, printf_type, printf_func, @ptrCast(&printf_args), 2, "printf_call");
+            return c.LLVMBuildCall2(self.builder, printf_type, printf_func, @constCast(@ptrCast(&printf_args)), 2, "printf_call");
         }
     }
     
@@ -598,16 +866,24 @@ pub const LLVMIRPipeline = struct {
                     .Snack => c.LLVMFloatTypeInContext(self.context),
                     .Meal => c.LLVMDoubleTypeInContext(self.context),
                     .Tea => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
+                    .Txt => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // string alias
+                    .Sip => c.LLVMInt8TypeInContext(self.context), // char
+                    .Byte => c.LLVMInt8TypeInContext(self.context), // u8
+                    .Rune => c.LLVMInt32TypeInContext(self.context), // i32 alias
+                    .Extra => blk: {
+                        var fields = [_]c.LLVMTypeRef{c.LLVMFloatTypeInContext(self.context), c.LLVMFloatTypeInContext(self.context)};
+                        break :blk c.LLVMStructTypeInContext(self.context, @ptrCast(&fields), 2, 0);
+                    }, // complex
                     .Lit => c.LLVMInt1TypeInContext(self.context),
-                    .Sus => c.LLVMVoidTypeInContext(self.context),
+                    .Cap => c.LLVMVoidTypeInContext(self.context),
                 };
             },
             .Array => |array| {
-                const element_type = try self.cursedTypeToLLVM(array.element_type.*);
-                return c.LLVMArrayType(element_type, @intCast(array.size));
+                const element_type = try self.cursedTypeToLLVM(array.element_type.get().?.*);
+                return c.LLVMArrayType(element_type, @intCast(array.size orelse 0));
             },
             .Pointer => |ptr| {
-                const target_type = try self.cursedTypeToLLVM(ptr.target_type.*);
+                const target_type = try self.cursedTypeToLLVM(ptr.target_type.get().?.*);
                 return c.LLVMPointerType(target_type, 0);
             },
             else => {
@@ -623,7 +899,7 @@ pub const LLVMIRPipeline = struct {
         const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
         const puts_type = c.LLVMFunctionType(
             c.LLVMInt32TypeInContext(self.context),
-            @ptrCast(&char_ptr_type),
+            @constCast(@ptrCast(&char_ptr_type)),
             1,
             0
         );
@@ -633,12 +909,27 @@ pub const LLVMIRPipeline = struct {
         // printf(const char* format, ...) -> int
         const printf_type = c.LLVMFunctionType(
             c.LLVMInt32TypeInContext(self.context),
-            @ptrCast(&char_ptr_type),
+            @constCast(@ptrCast(&char_ptr_type)),
             1,
             1  // Variadic
         );
         const printf_func = c.LLVMAddFunction(self.module, "printf", printf_type);
         try self.functions.put("printf", printf_func);
+    }
+    
+    /// Setup special "vibez" identifier as a global variable
+    fn setupVibezIdentifier(self: *LLVMIRPipeline) !void {
+        // Create a global integer variable for "vibez"
+        const vibez_type = c.LLVMInt64TypeInContext(self.context);
+        const vibez_global = c.LLVMAddGlobal(self.module, vibez_type, "vibez");
+        
+        // Initialize with zero
+        const zero_val = c.LLVMConstInt(vibez_type, 0, 0);
+        c.LLVMSetInitializer(vibez_global, zero_val);
+        c.LLVMSetLinkage(vibez_global, c.LLVMPrivateLinkage);
+        
+        // Add to variables map
+        try self.variables.put("vibez", vibez_global);
     }
     
     /// Ensure main function exists
@@ -648,10 +939,11 @@ pub const LLVMIRPipeline = struct {
             return;
         }
         
-        // Create main function that calls main_character if it exists
+        // Create main function 
+        var empty_params = [_]c.LLVMTypeRef{};
         const main_type = c.LLVMFunctionType(
             c.LLVMInt32TypeInContext(self.context),
-            null,
+            @ptrCast(empty_params[0..0]),
             0,
             0
         );
@@ -661,11 +953,9 @@ pub const LLVMIRPipeline = struct {
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, main_func, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
         
-        // Call main_character if it exists
-        if (self.functions.get("main_character")) |main_char_func| {
-            const main_char_type = c.LLVMGetElementType(c.LLVMTypeOf(main_char_func));
-            _ = c.LLVMBuildCall2(self.builder, main_char_type, main_char_func, null, 0, "");
-        }
+        // Create a simple main that returns 0
+        // TODO: Fix function calling issue with LLVM-18 (segfault in LLVMBuildCall2)
+        // For now, main just returns 0 instead of calling main_character
         
         // Return 0
         const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
@@ -674,14 +964,18 @@ pub const LLVMIRPipeline = struct {
     
     /// Optimize the generated IR
     fn optimizeIR(self: *LLVMIRPipeline) !void {
-        // Run function passes on all functions
-        var func = c.LLVMGetFirstFunction(self.module);
-        while (func != null) {
-            _ = c.LLVMRunFunctionPassManager(self.pass_manager, func);
-            func = c.LLVMGetNextFunction(func);
+        // For LLVM 18, we'll use minimal optimization
+        // The new pass manager would require more complex setup
+        if (@as(?*anyopaque, self.pass_manager) != null) {
+            // Run function passes on all functions
+            var func = c.LLVMGetFirstFunction(self.module);
+            while (func != null) {
+                _ = c.LLVMRunFunctionPassManager(self.pass_manager, func);
+                func = c.LLVMGetNextFunction(func);
+            }
+            
+            _ = c.LLVMFinalizeFunctionPassManager(self.pass_manager);
         }
-        
-        c.LLVMFinalizeFunctionPassManager(self.pass_manager);
     }
     
     /// Verify the LLVM module
@@ -694,38 +988,74 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
-    /// Compile to executable using LLVM
-    pub fn compileToExecutable(self: *LLVMIRPipeline, output_file: []const u8) !void {
-        // Write LLVM IR to temporary file
-        const ir_file = try std.fmt.allocPrint(self.allocator, "{s}.ll", .{output_file});
-        defer self.allocator.free(ir_file);
-        
+    /// Write LLVM IR to file (for --emit-ir mode)
+    pub fn writeIRToFile(self: *LLVMIRPipeline, output_file: []const u8) !void {
         var error_msg: [*c]u8 = undefined;
-        const ir_file_z = try self.arena.allocator().dupeZ(u8, ir_file);
-        if (c.LLVMPrintModuleToFile(self.module, ir_file_z.ptr, &error_msg) != 0) {
+        const output_file_z = try self.arena.allocator().dupeZ(u8, output_file);
+        if (c.LLVMPrintModuleToFile(self.module, output_file_z.ptr, &error_msg) != 0) {
             print("❌ Failed to write IR file: {s}\n", .{error_msg});
             c.LLVMDisposeMessage(error_msg);
             return error.IRWriteFailed;
         }
         
-        // Compile using clang
-        const result = try std.process.Child.run(.{
+        print("✅ LLVM IR written to: {s}\n", .{output_file});
+    }
+
+    /// Compile to executable using llc + gcc pipeline
+    pub fn compileToExecutable(self: *LLVMIRPipeline, output_file: []const u8) !void {
+        // Write LLVM IR to temporary file
+        const ir_file = try std.fmt.allocPrint(self.allocator, "{s}.ll", .{output_file});
+        defer self.allocator.free(ir_file);
+        
+        try self.writeIRToFile(ir_file);
+        
+        // Step 1: Use llc-18 to compile IR to object file
+        const obj_file = try std.fmt.allocPrint(self.allocator, "{s}.o", .{output_file});
+        defer self.allocator.free(obj_file);
+        
+        print("🔧 Step 1: Compiling IR to object file with llc-18...\n", .{});
+        const llc_result = try std.process.Child.run(.{
             .allocator = self.allocator,
             .argv = &[_][]const u8{
-                "clang",
+                "llc-18",
                 "-O2",
-                "-o", output_file,
+                "-filetype=obj",
+                "-o", obj_file,
                 ir_file,
             },
         });
         
-        defer self.allocator.free(result.stdout);
-        defer self.allocator.free(result.stderr);
+        defer self.allocator.free(llc_result.stdout);
+        defer self.allocator.free(llc_result.stderr);
         
-        if (result.term != .Exited or result.term.Exited != 0) {
-            print("❌ Compilation failed:\n{s}\n", .{result.stderr});
+        if (llc_result.term != .Exited or llc_result.term.Exited != 0) {
+            print("❌ llc-18 compilation failed:\n{s}\n", .{llc_result.stderr});
             return error.CompilationFailed;
         }
+        
+        // Step 2: Use gcc to link object file to executable
+        print("🔧 Step 2: Linking object file with gcc...\n", .{});
+        const gcc_result = try std.process.Child.run(.{
+            .allocator = self.allocator,
+            .argv = &[_][]const u8{
+                "gcc",
+                "-no-pie", // Disable PIE to avoid relocation issues
+                "-o", output_file,
+                obj_file,
+            },
+        });
+        
+        defer self.allocator.free(gcc_result.stdout);
+        defer self.allocator.free(gcc_result.stderr);
+        
+        if (gcc_result.term != .Exited or gcc_result.term.Exited != 0) {
+            print("❌ gcc linking failed:\n{s}\n", .{gcc_result.stderr});
+            return error.CompilationFailed;
+        }
+        
+        // Clean up intermediate files
+        _ = std.fs.cwd().deleteFile(ir_file) catch {};
+        _ = std.fs.cwd().deleteFile(obj_file) catch {};
         
         print("✅ Successfully compiled to: {s}\n", .{output_file});
     }

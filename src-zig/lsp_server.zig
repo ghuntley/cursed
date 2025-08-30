@@ -815,9 +815,9 @@ pub const CursedLanguageServer = struct {
         defer self.allocator.free(header);
         
         // Write to stdout  
-        const stdout = std.fs.File.stdout().writer();
-        try stdout.writer().print("{s}", .{header});
-        try stdout.writer().print("{s}", .{message});
+        const stdout = std.io.getStdOut().writer();
+        try stdout.print("{s}", .{header});
+        try stdout.print("{s}", .{message});
     }
 
     /// Send response helpers
@@ -951,7 +951,7 @@ pub fn runLspServer(allocator: Allocator) !void {
 
     std.log.info("CURSED LSP Server starting...", .{});
 
-    var buffer = ArrayList(u8){};
+    var buffer = ArrayList(u8).init(allocator);
     defer buffer.deinit();
 
     while (true) {
@@ -959,7 +959,7 @@ pub fn runLspServer(allocator: Allocator) !void {
         var content_length: usize = 0;
         while (true) {
             // Read line by line using byte-by-byte approach
-            var line_buffer = ArrayList(u8){};
+            var line_buffer = ArrayList(u8).init(allocator);
             defer line_buffer.deinit();
             
             var single_byte: [1]u8 = undefined;

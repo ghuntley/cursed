@@ -486,7 +486,7 @@ pub const InterfaceRegistry = struct {
 
     pub fn init(allocator: std.mem.Allocator) InterfaceRegistry {
         return InterfaceRegistry{
-            .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage){},
+            .implementations = HashMap(InterfaceImplKey, VTablePtr, InterfaceImplKeyContext, std.hash_map.default_max_load_percentage).init(allocator),
             .collision_resistant_impls = type_collision.InterfaceImplRegistry.init(allocator),
             .vtable_storage = HashMap(u64, VTableEntry, std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
             .allocator = allocator,

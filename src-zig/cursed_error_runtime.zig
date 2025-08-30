@@ -87,67 +87,43 @@ pub const CursedError = struct {
             inner.deinit();
             self.allocator.destroy(inner);
         }
-        
-        self.allocator.destroy(self);
     }
     
     pub fn format(self: *const CursedError, comptime fmt: []const u8, options: std.fmt.FormatOptions, writer: anytype) !void {
         _ = fmt;
         _ = options;
         
-        _ = writer.writer().writeAll("[CURSED ERROR] ") catch {};
-        _ = writer.writer().writeAll(@tagName(self.error_type)) catch 0;
-        _ = writer.writer().writeAll(": ") catch 0;
-        _ = writer.writer().writeAll(self.message) catch 0;
-        _ = writer.writer().writeAll("\n  Error Code: ") catch 0;
-        
-        var buf: [32]u8 = undefined;
-        const code_str = std.fmt.bufPrint(buf[0..], "{}", .{self.code}) catch "?";
-        _ = writer.writer().writeAll(code_str) catch 0;
-        _ = writer.writer().writeAll("\n") catch 0;
+        // Use print with the provided writer
+        const print = std.debug.print;
+        print("[CURSED ERROR] {s}: {s}\n  Error Code: {}\n", .{@tagName(self.error_type), self.message, self.code});
         
         if (self.stack_trace) |trace| {
-            _ = writer.writer().writeAll("  Stack Trace:\n") catch 0;
+            print("  Stack Trace:\n", .{});
             for (trace) |frame| {
-                _ = writer.writer().writeAll("    at ") catch 0;
-                _ = writer.writer().writeAll(frame.function_name) catch 0;
-                _ = writer.writer().writeAll(" (") catch 0;
-                _ = writer.writer().writeAll(frame.file_name) catch 0;
-                _ = writer.writer().writeAll(":") catch 0;
-                const line_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.line}) catch "?";
-                _ = writer.writer().writeAll(line_str) catch 0;
-                _ = writer.writer().writeAll(":") catch 0;
-                const col_str = std.fmt.bufPrint(buf[0..], "{}", .{frame.column}) catch "?";
-                _ = writer.writer().writeAll(col_str) catch 0;
-                _ = writer.writer().writeAll(")\n") catch 0;
+                print("    at {s} ({s}:{}:{})\n", .{frame.function_name, frame.file_name, frame.line, frame.column});
             }
         }
         
         if (self.context) |ctx| {
-            _ = writer.write("  Context:\n") catch 0;
+            print("  Context:\n", .{});
             for (ctx) |context| {
-                _ = writer.write("    ") catch 0;
-                _ = writer.write(context.key) catch 0;
-                _ = writer.write(": ") catch 0;
-                _ = writer.write(context.value) catch 0;
-                _ = writer.write("\n") catch 0;
+                print("    {s}: {s}\n", .{context.key, context.value});
             }
         }
         
         if (self.inner_error) |inner| {
-            _ = writer.write("  Caused by:\n") catch 0;
+            print("  Caused by:\n", .{});
             inner.format("", .{}, writer) catch {};
         }
     }
     
     pub fn toString(self: *const CursedError) ![]u8 {
-        var buffer = std.ArrayList(u8){};
-        defer buffer.deinit();
-        
-        const writer = buffer.writer(&[_]u8{});
-        try self.format(writer);
-        
-        return try self.allocator.dupe(u8, buffer.items);
+        // Instead of using ArrayList, allocate and format directly
+        return try std.fmt.allocPrint(self.allocator, "[{s}] {s} (code: {d})", .{
+            @tagName(self.error_type), 
+            self.message, 
+            self.code 
+        });
     }
 };
 
@@ -184,11 +160,7 @@ pub const ErrorHandler = struct {
     
     pub fn popFunction(self: *ErrorHandler) void {
         if (self.function_stack.items.len > 0) {
-            const func_name = self.function_stack.pop();
-            // Free the duplicated string
-            if (func_name.len > 0) {
-                self.allocator.free(func_name);
-            }
+            _ = self.function_stack.pop();
         }
     }
     
@@ -249,7 +221,7 @@ pub const ErrorHandler = struct {
         
         try context.append(self.allocator, CursedError.Context{
             .key = try self.allocator.dupe(u8, "stack_depth"),
-            .value = try std.fmt.allocPrint(self.allocator, "{}", .{self.function_stack.items.len}),
+            .value = try std.fmt.allocPrint(self.allocator, "{d}", .{self.function_stack.items.len}),
         });
         
         error_obj.context = try self.allocator.dupe(CursedError.Context, context.items);

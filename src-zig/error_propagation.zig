@@ -64,7 +64,8 @@ pub const ErrorPropagation = struct {
         
         fn executeAll(self: *DeferStack) void {
             while (self.entries.items.len > 0) {
-                const entry = self.entries.pop();
+                const entry = self.entries.items[self.entries.items.len - 1];
+                _ = self.entries.pop();
                 entry.cleanup_fn();
                 self.allocator.free(entry.context_data);
             }
@@ -120,11 +121,11 @@ pub const ErrorPropagation = struct {
         
         for (self.try_catch_stack.items) |*frame| {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit();
+                catch_block.body.deinit(self.allocator);
             }
-            frame.catch_blocks.deinit();
+            frame.catch_blocks.deinit(self.allocator);
             if (frame.finally_block) |*finally| {
-                finally.deinit();
+                finally.deinit(self.allocator);
             }
             if (frame.error_occurred) |*err| {
                 err.deinit();
@@ -132,7 +133,7 @@ pub const ErrorPropagation = struct {
         }
         self.try_catch_stack.deinit(self.allocator);
         
-        self.defer_entries.deinit(self.allocator);
+        self.defer_entries.deinit();
         self.propagation_handlers.deinit(self.allocator);
         
         if (self.current_file) |file| {
@@ -229,14 +230,14 @@ pub const ErrorPropagation = struct {
             return CursedError.RuntimeError;
         }
         
-        const frame: TryCatchFrame = self.try_catch_stack.pop() orelse return null;
+        var frame: TryCatchFrame = self.try_catch_stack.pop() orelse return null;
         defer {
             for (frame.catch_blocks.items) |*catch_block| {
-                catch_block.body.deinit();
+                catch_block.body.deinit(self.allocator);
             }
-            frame.catch_blocks.deinit();
+            frame.catch_blocks.deinit(self.allocator);
             if (frame.finally_block) |*finally| {
-                finally.deinit();
+                finally.deinit(self.allocator);
             }
         }
         

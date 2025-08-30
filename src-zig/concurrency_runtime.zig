@@ -13,7 +13,15 @@ const Thread = std.Thread;
 const Atomic = std.atomic.Value;
 
 const concurrency = @import("concurrency.zig");
-const Variable = @import("main_unified.zig").Variable;
+// Define Variable type for concurrency runtime
+const Variable = union(enum) {
+    Integer: i64,
+    Float: f64,
+    String: []const u8,
+    Boolean: bool,
+    Array: std.ArrayList(Variable),
+    Null,
+};
 
 /// Simple channel ID counter
 var next_channel_id: Atomic(u64) = Atomic(u64).init(1);

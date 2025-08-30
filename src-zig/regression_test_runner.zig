@@ -259,7 +259,7 @@ pub const RegressionTestRunner = struct {
         
         // Validate token count to prevent memory issues
         if (tokens.items.len > 100000) { // Reasonable limit for regression tests
-            if (self.verbose) print("⚠️ Too many tokens: {s}\n", .{tokens.items.len});
+            if (self.verbose) print("⚠️ Too many tokens: {}\n", .{tokens.items.len});
             return false;
         }
         

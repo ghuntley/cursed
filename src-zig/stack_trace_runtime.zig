@@ -127,11 +127,11 @@ pub const StackTraceCapture = struct {
     
     /// Format stack trace as a string
     pub fn toString(self: *StackTraceCapture) ![]u8 {
-        var buffer = ArrayList(u8){};
+        var buffer = ArrayList(u8).init(self.allocator);
         defer buffer.deinit();
         
         const writer = buffer.writer();
-        try writer.print("Stack trace ({s} frames):\n", .{self.frames.items.len});
+        try writer.print("Stack trace ({d} frames):\n", .{self.frames.items.len});
         
         for (self.frames.items) |frame| {
             try frame.format(writer);

@@ -385,7 +385,7 @@ pub const TypeCheckerIntegration = struct {
     }
     
     fn typeToDisplayString(self: *TypeCheckerIntegration, cursed_type: comprehensive_type_system.CursedType) ![]const u8 {
-        var buffer = std.ArrayList(u8){};
+        var buffer = std.ArrayList(u8).init(self.allocator);
         const writer = buffer.writer();
         
         try cursed_type.format("", .{}, writer);
@@ -536,20 +536,20 @@ pub fn formatTypeError(error_detail: TypeErrorDetail, allocator: Allocator) ![]c
 
 pub fn formatTypeErrors(errors: []const TypeErrorDetail, allocator: Allocator) ![]const u8 {
         _ = allocator;
-    var buffer = std.ArrayList(u8){};
+    var buffer = std.ArrayList(u8).init(allocator);
     const writer = buffer.writer();
     
     if (errors.len == 0) {
-        try writer.writer().writeAll("No type errors found.\n");
+        try writer.writeAll("No type errors found.\n");
     } else {
-        try writer.print("Found {s} type error(s):\n\n", .{errors.len});
+        try writer.print("Found {d} type error(s):\n\n", .{errors.len});
         
         for (errors, 0..) |error_detail, i| {
             try writer.print("{s}. ", .{i + 1});
             const formatted = try formatTypeError(error_detail, allocator);
             defer allocator.free(formatted);
-            try writer.writer().writeAll(formatted);
-            try writer.writer().writeAll("\n");
+            try writer.writeAll(formatted);
+            try writer.writeAll("\n");
         }
     }
     

@@ -573,8 +573,8 @@ pub const PGOSystem = struct {
         print("Branch profiles: {s}\n", .{self.branch_profiles.count()});
         print("Loop profiles: {s}\n", .{self.loop_profiles.count()});
         print("Memory access profiles: {s}\n", .{self.memory_profiles.count()});
-        print("Hot functions: {s}\n", .{self.hot_functions.items.len});
-        print("Cold functions: {s}\n", .{self.cold_functions.items.len});
+        print("Hot functions: {}\n", .{self.hot_functions.items.len});
+        print("Cold functions: {}\n", .{self.cold_functions.items.len});
         print("Profile collections: {s}\n", .{self.profile_collection_count});
         print("Profiling overhead: {:.2} ms\n", .{@as(f64, @floatFromInt(self.profiling_overhead_ns)) / 1_000_000.0});
         
@@ -623,9 +623,9 @@ pub const PGOAnalysisResult = struct {
     
     pub fn printSummary(self: *const PGOAnalysisResult) void {
         print("\n📊 PGO Analysis Summary:\n", .{});
-        print("Hot functions identified: {s}\n", .{self.hot_functions.items.len});
-        print("Cold functions identified: {s}\n", .{self.cold_functions.items.len});
-        print("Optimization recommendations: {s}\n", .{self.recommendations.items.len});
+        print("Hot functions identified: {}\n", .{self.hot_functions.items.len});
+        print("Cold functions identified: {}\n", .{self.cold_functions.items.len});
+        print("Optimization recommendations: {}\n", .{self.recommendations.items.len});
         print("Analysis time: {s} ms\n", .{self.total_analysis_time_ms});
         
         if (self.recommendations.items.len > 0) {

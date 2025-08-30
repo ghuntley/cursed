@@ -906,6 +906,7 @@ pub const TypeInferenceEngine = struct {
             .Boolean => CursedType.Lit,
             .Character => CursedType.Sip,
             .Null => CursedType.Vibes,
+            .Nil => CursedType.Vibes,
         };
         
         return InferenceResult{

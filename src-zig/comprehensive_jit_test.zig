@@ -80,7 +80,7 @@ fn testMultipleExecutions(allocator: Allocator) !void {
 
     var i: u32 = 1;
     while (i <= 3) {
-        print("  Execution #{s}: ", .{i});
+        print("  Execution #{}: ", .{i});
         try jit.execute(program);
         i += 1;
     }
@@ -95,7 +95,7 @@ fn testFileExecution(allocator: Allocator) !void {
     };
     defer allocator.free(file_content);
 
-    print("📁 Executing file: test_jit_comprehensive.csd ({s} bytes)\n", .{file_content.len});
+    print("📁 Executing file: test_jit_comprehensive.csd ({} bytes)\n", .{file_content.len});
 
     var jit = SimpleJIT.init(allocator);
     defer jit.deinit();

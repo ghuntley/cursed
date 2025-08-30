@@ -234,7 +234,7 @@ pub const StringBuilder = struct {
     }
     
     pub fn initWithCapacity(allocator: std.mem.Allocator, capacity: usize) !StringBuilder {
-        var buffer = std.ArrayList(u8){};
+        var buffer = std.ArrayList(u8).init(allocator);
         try buffer.ensureTotalCapacity(capacity);
         return StringBuilder{
             .buffer = buffer,

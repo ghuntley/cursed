@@ -2732,20 +2732,20 @@ pub const GCImpl = struct {
             1 => { // String
                 const data_ptr = @as([*:0]u8, @ptrCast(ptr));
                 const str_data = std.mem.span(data_ptr);
-                const copy = try allocator.dupe(u8, str_data);
+                const copy = try self.allocator.dupe(u8, str_data);
                 return Variable{ .String = ManagedString.fromOwned(copy) };
             },
             2 => { // Array
                 const length_ptr = @as(*usize, @ptrCast(@alignCast(ptr)));
                 const length = length_ptr.*;
                 
-                var arr = std.ArrayList(Variable){};
-                try arr.ensureTotalCapacity(allocator, length);
+                var arr = std.ArrayList(Variable).init(self.allocator);
+                try arr.ensureTotalCapacity(length);
                 
                 // Load array elements (recursive loading needed for GC objects)
                 for (0..length) |_| {
                     // For now, add placeholder integers
-                    try arr.append(allocator, Variable{ .Integer = 0 });
+                    try arr.append(Variable{ .Integer = 0 });
                 }
                 
                 return Variable{ .Array = arr };
@@ -2754,7 +2754,7 @@ pub const GCImpl = struct {
                 // Struct loading would require type registry
                 // Struct loading would require type registry for field names
                 // For now, return a simple struct placeholder
-                const struct_inst = @import("main_unified.zig").StructInstance.init(allocator, "Unknown");
+                const struct_inst = @import("main_unified.zig").StructInstance.init(self.allocator, "Unknown");
                 return Variable{ .Struct = struct_inst };
             },
             else => {

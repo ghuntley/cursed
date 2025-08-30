@@ -771,13 +771,13 @@ pub const ArgParser = struct {
             print("OS: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.os.tag)});
             print("Architecture: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.cpu.arch)});
             print("Endianness: \x1b[32m{s}\x1b[0m\n", .{@tagName(builtin.cpu.arch.endian())});
-            print("Pointer Width: \x1b[32m{s} bits\x1b[0m\n", .{@bitSizeOf(usize)});
+            print("Pointer Width: \x1b[32m{d} bits\x1b[0m\n", .{@bitSizeOf(usize)});
         } else {
             print("Platform Information:\n", .{});
             print("OS: {s}\n", .{@tagName(builtin.os.tag)});
             print("Architecture: {s}\n", .{@tagName(builtin.cpu.arch)});
             print("Endianness: {s}\n", .{@tagName(builtin.cpu.arch.endian())});
-            print("Pointer Width: {s} bits\n", .{@bitSizeOf(usize)});
+            print("Pointer Width: {d} bits\n", .{@bitSizeOf(usize)});
         }
     }
     

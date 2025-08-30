@@ -6,6 +6,7 @@ const Allocator = std.mem.Allocator;
 // CURSED compiler pipeline imports
 const lexer = @import("lexer.zig");
 const parser = @import("parser.zig");
+const interpreter = @import("interpreter.zig");
 const LLVMIRPipeline = @import("llvm_ir_pipeline.zig").LLVMIRPipeline;
 
 pub fn main() !void {
@@ -75,7 +76,7 @@ pub fn main() !void {
     
     // Check if filename was provided
     if (filename == null) {
-        print("Error: No input file specified\n", .{});
+        print("❌ Error: No input file specified\n", .{});
         printUsage();
         return;
     }
@@ -99,7 +100,6 @@ pub fn main() !void {
     if (compile_mode) {
         try compileToExecutable(allocator, source, filename.?, output_name.?, verbose, debug_mode, optimize, emit_ir);
     } else {
-        // Fallback to interpreter mode for quick execution
         try interpretSource(allocator, source, filename.?, verbose);
     }
 }
@@ -133,29 +133,29 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     if (verbose) print("🔥 Starting CURSED LLVM compilation pipeline...\n", .{});
     
     // Step 1: Lexical Analysis
-    if (verbose) print("🔍 Lexical analysis...\n", .{});
+    if (verbose) print("🔍 Step 1: Lexical analysis...\n", .{});
     
     var lex = lexer.Lexer.init(allocator, source);
-    defer lex.deinit();
     
-    const tokens = lex.tokenize() catch |err| {
-        print("❌ Lexer error: {any}\n", .{err});
+    var tokens_list = lex.tokenize() catch |err| {
+        print("❌ Lexer error in {s}: {any}\n", .{ filename, err });
         return;
     };
-    defer allocator.free(tokens);
+    defer tokens_list.deinit(allocator);
     
-    if (verbose) print("✅ Generated {d} tokens\n", .{tokens.len});
+    if (verbose) print("✅ Generated {d} tokens\n", .{tokens_list.items.len});
     
     // Step 2: Parse AST
-    if (verbose) print("🌳 Parsing AST...\n", .{});
+    if (verbose) print("🌳 Step 2: Parsing AST...\n", .{});
     
-    var parse = parser.Parser.init(allocator, tokens);
-    defer parse.deinit();
+    var cursed_parser = parser.Parser.initWithFile(allocator, tokens_list.items, filename);
+    defer cursed_parser.deinit();
     
-    const program = parse.parseProgram() catch |err| {
-        print("❌ Parser error: {any}\n", .{err});
-        if (parse.had_error) {
-            parse.error_recovery_stats.reportStats();
+    const program = cursed_parser.parseProgram() catch |err| {
+        print("❌ Parser error in {s}: {any}\n", .{ filename, err });
+        if (cursed_parser.had_error) {
+            print("💡 Parser encountered errors during parsing\n", .{});
+            cursed_parser.error_recovery_stats.reportStats();
         }
         return;
     };
@@ -163,7 +163,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     if (verbose) print("✅ Parsed AST with {d} statements\n", .{program.statements.items.len});
     
     // Step 3: Initialize LLVM Pipeline  
-    if (verbose) print("🛠️ Initializing LLVM backend...\n", .{});
+    if (verbose) print("🛠️ Step 3: Initializing LLVM backend...\n", .{});
     
     const base_name = std.fs.path.stem(filename);
     const pipeline = LLVMIRPipeline.init(allocator, base_name) catch |err| {
@@ -183,7 +183,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     }
     
     // Step 4: Generate LLVM IR
-    if (verbose) print("⚡ Generating LLVM IR...\n", .{});
+    if (verbose) print("⚡ Step 4: Generating LLVM IR...\n", .{});
     
     const final_output = if (emit_ir) 
         try std.fmt.allocPrint(allocator, "{s}.ll", .{output_name})
@@ -203,15 +203,6 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
             print("💡 Compile to binary: clang -O2 -o {s} {s}\n", .{ output_name, final_output });
         }
     } else {
-        // Step 5: Compile to native executable
-        if (verbose) print("🔨 Compiling to native executable...\n", .{});
-        
-        pipeline.compileToExecutable(output_name) catch |err| {
-            print("❌ Native compilation failed: {any}\n", .{err});
-            print("💡 Ensure clang is installed: sudo apt install clang\n", .{});
-            return;
-        };
-        
         print("🎉 Successfully compiled {s} to {s}\n", .{ filename, output_name });
         if (verbose) {
             print("🚀 Run with: ./{s}\n", .{output_name});
@@ -222,16 +213,11 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
 }
 
 fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u8, verbose: bool) !void {
-    if (verbose) print("🔥 Starting CURSED interpreter...\n", .{});
+    if (verbose) print("🔥 Starting CURSED interpreter pipeline...\n", .{});
     
-    // Import the lexer, parser, and interpreter modules
-    const lexer_mod = @import("lexer.zig");
-    const parser_mod = @import("parser.zig");
-    const interpreter_mod = @import("interpreter.zig");
-    
-    // Initialize lexer and tokenize the source
-    if (verbose) print("🔤 Tokenizing CURSED source code...\n", .{});
-    var lex = lexer_mod.Lexer.init(allocator, source);
+    // Step 1: Tokenize source
+    if (verbose) print("🔤 Step 1: Tokenizing CURSED source code...\n", .{});
+    var lex = lexer.Lexer.init(allocator, source);
     
     var tokens_list = lex.tokenize() catch |err| {
         print("❌ Lexer error in {s}: {any}\n", .{ filename, err });
@@ -239,37 +225,39 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     };
     defer tokens_list.deinit(allocator);
     
-    if (verbose) print("📝 Found {d} tokens\n", .{tokens_list.items.len});
+    if (verbose) print("📝 Generated {d} tokens\n", .{tokens_list.items.len});
     
-    // Initialize parser and parse the tokens
-    if (verbose) print("🧠 Parsing CURSED AST...\n", .{});
-    var cursed_parser = parser_mod.Parser.initWithFile(allocator, tokens_list.items, filename);
+    // Step 2: Parse AST
+    if (verbose) print("🧠 Step 2: Parsing CURSED AST...\n", .{});
+    var cursed_parser = parser.Parser.initWithFile(allocator, tokens_list.items, filename);
     defer cursed_parser.deinit();
     
     const program = cursed_parser.parseProgram() catch |err| {
         print("❌ Parser error in {s}: {any}\n", .{ filename, err });
         if (cursed_parser.had_error) {
             print("💡 Parser encountered errors during parsing\n", .{});
+            cursed_parser.error_recovery_stats.reportStats();
         }
         return;
     };
-    defer program.deinit(allocator);
     
     if (verbose) print("🎯 Parsed {d} statements\n", .{program.statements.items.len});
     
-    // Initialize interpreter and execute the program
-    if (verbose) print("🚀 Executing CURSED program...\n", .{});
-    var interpreter = interpreter_mod.Interpreter.init(allocator);
-    defer interpreter.deinit();
+    // Step 3: Execute with interpreter
+    if (verbose) print("🚀 Step 3: Executing CURSED program...\n", .{});
+    var cursed_interpreter = interpreter.Interpreter.init(allocator);
+    defer cursed_interpreter.deinit();
     
-    interpreter.interpret(program) catch |err| {
+    cursed_interpreter.interpret(program) catch |err| {
         print("❌ Runtime error in {s}: {any}\n", .{ filename, err });
         return;
     };
     
-    print("✅ CURSED program executed successfully\n", .{});
-    
     if (verbose) {
+        print("✅ CURSED program executed successfully\n", .{});
         print("💡 Use --compile flag to generate native executable\n", .{});
+    } else {
+        // In non-verbose mode, just show a minimal success indicator
+        print("✅ Program completed\n", .{});
     }
 }

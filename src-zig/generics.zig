@@ -459,7 +459,7 @@ pub const Monomorphizer = struct {
                 bounds.validate(value) catch |err| {
                     std.log.err("CRITICAL: Const generic bounds violation for '{s}' would cause optimizer ICE: {}", 
                         .{param_name, err});
-                    std.log.err("  Value: {}", .{value});
+                    std.log.err("  Value: {any}", .{value});
                     std.log.err("  This violation would cause Internal Compiler Error in optimizer");
                     return const_generics.ConstGenericError.BoundsCheckFailed;
                 };
@@ -508,9 +508,9 @@ pub const Monomorphizer = struct {
                     else => {},
                 }
                 
-                std.log.info("Const generic '{}' = {} passed bounds validation", .{param_name, value});
+                std.log.info("Const generic '{s}' = {any} passed bounds validation", .{param_name, value});
             } else {
-                std.log.err("CRITICAL: Const generic parameter '{}' has no value - would cause optimizer ICE", .{param_name});
+                std.log.err("CRITICAL: Const generic parameter '{s}' has no value - would cause optimizer ICE", .{param_name});
                 return const_generics.ConstGenericError.ParameterNotFound;
             }
         }

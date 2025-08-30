@@ -274,9 +274,9 @@ pub const ConstGenericInstantiation = struct {
         
         // Validate the value against parameter constraints
         param.validate(value) catch |err| {
-            std.log.err("Const generic validation failed for parameter '{}': {}", .{ name, err });
-            std.log.err("  Parameter type: {}", .{param.kind});
-            std.log.err("  Provided value: {}", .{value});
+            std.log.err("Const generic validation failed for parameter '{s}': {}", .{ name, err });
+            std.log.err("  Parameter type: {any}", .{param.kind});
+            std.log.err("  Provided value: {any}", .{value});
             return err;
         };
         
@@ -797,7 +797,7 @@ pub const ConstGenericsManager = struct {
             return err;
         };
         
-        std.log.info("Successfully processed const generic '{}' = {}", .{ name, const_value });
+        std.log.info("Successfully processed const generic '{s}' = {any}", .{ name, const_value });
         return llvm_value;
     }
     

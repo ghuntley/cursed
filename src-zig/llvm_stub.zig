@@ -29,3 +29,11 @@ export fn llvm_build_add(_: ?*anyopaque, _: ?*anyopaque, _: ?*anyopaque, _: [*c]
 export fn llvm_build_sub(_: ?*anyopaque, _: ?*anyopaque, _: ?*anyopaque, _: [*c]const u8) ?*anyopaque { return null; }
 export fn llvm_build_mul(_: ?*anyopaque, _: ?*anyopaque, _: ?*anyopaque, _: [*c]const u8) ?*anyopaque { return null; }
 export fn llvm_build_div(_: ?*anyopaque, _: ?*anyopaque, _: ?*anyopaque, _: [*c]const u8) ?*anyopaque { return null; }
+export fn LLVMAddInstructionCombiningPass(_: ?*anyopaque) void {}
+export fn LLVMCreatePassManager() ?*anyopaque { return null; }
+export fn LLVMAddReassociatePass(_: ?*anyopaque) void {}
+export fn LLVMAddGVNPass(_: ?*anyopaque) void {}
+export fn LLVMAddCFGSimplificationPass(_: ?*anyopaque) void {}
+export fn LLVMAddPromoteMemoryToRegisterPass(_: ?*anyopaque) void {}
+export fn LLVMAddDeadStoreEliminationPass(_: ?*anyopaque) void {}
+export fn LLVMInitializeFunctionPassManager(_: ?*anyopaque) void {}
