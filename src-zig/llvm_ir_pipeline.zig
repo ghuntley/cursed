@@ -858,9 +858,18 @@ pub const LLVMIRPipeline = struct {
                 return error.UndefinedFunction;
             };
             
-            const puts_type = c.LLVMGetElementType(c.LLVMTypeOf(puts_func));
+            // Get the function type - need to recreate it since we can't store it
+            const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const puts_function_type = c.LLVMFunctionType(
+                c.LLVMInt32TypeInContext(self.context),
+                @constCast(@ptrCast(&char_ptr_type)),
+                1,
+                0
+            );
+            
             var puts_args = [_]c.LLVMValueRef{arg_val};
-            return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @ptrCast(&puts_args), 1, "puts_call");
+            print("DEBUG: Calling puts with recreated function type\n", .{});
+            return c.LLVMBuildCall2(self.builder, puts_function_type, puts_func, @ptrCast(&puts_args), 1, "puts_call");
         } else {
             // Integer print using printf  
             const printf_func = self.functions.get("printf") orelse {
@@ -976,10 +985,24 @@ pub const LLVMIRPipeline = struct {
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, main_func, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
         
-        // Create a simple main that returns 0
-        // TODO: Fix function calling issue with LLVM-18 (segfault in LLVMBuildCall2)
-        // For now, main just returns 0 instead of calling main_character
-        
+        // Call main_character function if it exists
+        if (self.functions.get("main_character")) |main_char_func| {
+            print("DEBUG: Calling main_character from main\n", .{});
+            
+            // Create the function type for main_character: () -> void
+            var empty_param_types = [_]c.LLVMTypeRef{};
+            const main_char_function_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                @ptrCast(empty_param_types[0..0]),
+                0,
+                0
+            );
+            
+            // Call main_character() with no arguments  
+            var empty_args = [_]c.LLVMValueRef{};
+            _ = c.LLVMBuildCall2(self.builder, main_char_function_type, main_char_func, @ptrCast(empty_args[0..0]), 0, "");
+        }
+
         // Return 0
         const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         _ = c.LLVMBuildRet(self.builder, zero);
