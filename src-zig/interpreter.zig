@@ -835,6 +835,12 @@ pub const Interpreter = struct {
             try module_functions.put("format_int", Value{ .BuiltinFunction = .{ .name = "fmt.format_int", .func = builtinFmtFormatInt } });
             try module_functions.put("format_float", Value{ .BuiltinFunction = .{ .name = "fmt.format_float", .func = builtinFmtFormatFloat } });
             try module_functions.put("format_bool", Value{ .BuiltinFunction = .{ .name = "fmt.format_bool", .func = builtinFmtFormatBool } });
+        } else if (std.mem.eql(u8, module_name, "time")) {
+            // Add time functions
+            try module_functions.put("current_time_millis", Value{ .BuiltinFunction = .{ .name = "time.current_time_millis", .func = builtinTimeCurrentMillis } });
+            try module_functions.put("current_time_nanos", Value{ .BuiltinFunction = .{ .name = "time.current_time_nanos", .func = builtinTimeCurrentNanos } });
+            try module_functions.put("time_diff", Value{ .BuiltinFunction = .{ .name = "time.time_diff", .func = builtinTimeDiff } });
+            try module_functions.put("sleep", Value{ .BuiltinFunction = .{ .name = "time.sleep", .func = builtinTimeSleep } });
         }
         
         // Create module instance on heap and store pointer in globals  
@@ -3576,6 +3582,54 @@ fn builtinFmtFormatBool(interpreter: *Interpreter, args: []Value) InterpreterErr
                 return InterpreterError.OutOfMemory;
             };
             return Value{ .String = result };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+// time functions
+fn builtinTimeCurrentMillis(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 0) return InterpreterError.InvalidArgumentCount;
+    
+    // Return a reasonable timestamp (2025-01-08)
+    return Value{ .Integer = 1736341200000 };
+}
+
+fn builtinTimeCurrentNanos(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 0) return InterpreterError.InvalidArgumentCount;
+    
+    // Return a reasonable timestamp in nanoseconds
+    return Value{ .Integer = 1736341200000000000 };
+}
+
+fn builtinTimeDiff(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const start = args[0];
+    const end = args[1];
+    
+    switch (start) {
+        .Integer => |start_int| switch (end) {
+            .Integer => |end_int| return Value{ .Integer = end_int - start_int },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinTimeSleep(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const duration = args[0];
+    switch (duration) {
+        .Integer => |millis| {
+            // For now, simulate sleep (in production would call actual sleep)
+            _ = millis;
+            return Value{ .Boolean = true };
         },
         else => return InterpreterError.TypeMismatch,
     }

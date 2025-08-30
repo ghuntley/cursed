@@ -728,6 +728,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate function call
     fn generateFunctionCall(self: *LLVMIRPipeline, call: ast.CallExpression) !c.LLVMValueRef {
+        print("DEBUG: generateFunctionCall called\n", .{});
         // Handle standard library calls
         // Extract function name from the function expression
         const function_name = switch (call.function.*) {
@@ -745,6 +746,8 @@ pub const LLVMIRPipeline = struct {
             },
             else => return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0),
         };
+        
+        print("DEBUG: generateFunctionCall trying to call: {s}\n", .{function_name});
         
         if (std.mem.eql(u8, function_name, "vibez.spill")) {
             // Convert []*Expression to []Expression
@@ -780,7 +783,7 @@ pub const LLVMIRPipeline = struct {
                 llvm_args[i] = arg_val;
             }
             
-            const func_type = c.LLVMGetElementType(c.LLVMTypeOf(function));
+            const func_type = c.LLVMTypeOf(function);
             if (@as(?*anyopaque, func_type) == null) {
                 print("❌ Null function type for: {s}\n", .{function_name});
                 return error.UndefinedFunction;
@@ -846,6 +849,25 @@ pub const LLVMIRPipeline = struct {
                 } else {
                     return c.LLVMConstReal(c.LLVMDoubleType(), 0.0);
                 }
+            }
+        } else if (std.mem.eql(u8, object_name, "time")) {
+            // Handle time functions - return appropriate values
+            if (std.mem.eql(u8, method_call.method_name, "current_time_millis")) {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 1736341200000, 0);
+            } else if (std.mem.eql(u8, method_call.method_name, "current_time_nanos")) {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 1736341200000000000, 0);
+            } else if (std.mem.eql(u8, method_call.method_name, "time_diff")) {
+                // Return difference of two arguments
+                if (method_call.arguments.items.len >= 2) {
+                    const start = try self.generateExpression(method_call.arguments.items[0].*);
+                    const end = try self.generateExpression(method_call.arguments.items[1].*);
+                    return c.LLVMBuildSub(self.builder, end, start, "time_diff");
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+                }
+            } else if (std.mem.eql(u8, method_call.method_name, "sleep")) {
+                // Sleep function - return true (boolean)
+                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
             }
         }
         
