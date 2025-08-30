@@ -830,6 +830,11 @@ pub const Interpreter = struct {
             // Add stringz functions
             try module_functions.put("length", Value{ .BuiltinFunction = .{ .name = "stringz.length", .func = builtinStringzLength } });
             try module_functions.put("concat", Value{ .BuiltinFunction = .{ .name = "stringz.concat", .func = builtinStringzConcat } });
+        } else if (std.mem.eql(u8, module_name, "fmt")) {
+            // Add fmt (formatting) functions
+            try module_functions.put("format_int", Value{ .BuiltinFunction = .{ .name = "fmt.format_int", .func = builtinFmtFormatInt } });
+            try module_functions.put("format_float", Value{ .BuiltinFunction = .{ .name = "fmt.format_float", .func = builtinFmtFormatFloat } });
+            try module_functions.put("format_bool", Value{ .BuiltinFunction = .{ .name = "fmt.format_bool", .func = builtinFmtFormatBool } });
         }
         
         // Create module instance on heap and store pointer in globals  
@@ -3526,6 +3531,52 @@ fn builtinMathzRound(interpreter: *Interpreter, args: []Value) InterpreterError!
     switch (val) {
         .Float => |f| return Value{ .Integer = @as(i64, @intFromFloat(std.math.round(f))) },
         .Integer => |i| return Value{ .Integer = i }, // Round of integer is itself
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+// fmt functions
+fn builtinFmtFormatInt(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Integer => |i| {
+            const result = std.fmt.allocPrint(interpreter.allocator, "{}", .{i}) catch {
+                return InterpreterError.OutOfMemory;
+            };
+            return Value{ .String = result };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinFmtFormatFloat(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| {
+            const result = std.fmt.allocPrint(interpreter.allocator, "{d}", .{f}) catch {
+                return InterpreterError.OutOfMemory;
+            };
+            return Value{ .String = result };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinFmtFormatBool(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Boolean => |b| {
+            const result = interpreter.allocator.dupe(u8, if (b) "based" else "cap") catch {
+                return InterpreterError.OutOfMemory;
+            };
+            return Value{ .String = result };
+        },
         else => return InterpreterError.TypeMismatch,
     }
 }
