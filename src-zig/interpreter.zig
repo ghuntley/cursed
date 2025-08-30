@@ -217,6 +217,8 @@ const Variable = struct { name: []const u8, value: Value };
 
 pub const ModuleInstance = struct {
     functions: std.StringHashMap(Value),
+    // Keep the arena that owns the AST alive
+    arena: ?std.heap.ArenaAllocator,
     
     pub fn deinit(self: *ModuleInstance, allocator: Allocator) void {
         var iterator = self.functions.iterator();
@@ -224,6 +226,10 @@ pub const ModuleInstance = struct {
             entry.value_ptr.deinit(allocator);
         }
         self.functions.deinit();
+        // Free the arena last - this frees the AST
+        if (self.arena) |*arena| {
+            arena.deinit();
+        }
     }
 };
 
@@ -422,6 +428,7 @@ pub const Environment = struct {
             .parent = parent,
             .allocator = allocator,
         };
+        std.debug.print("DEBUG: Created new environment@{*} with parent@{*}\n", .{ env, parent });
         return env;
     }
 
@@ -437,11 +444,25 @@ pub const Environment = struct {
         var current: ?*Environment = self;
         var hops: usize = 0;
         while (current) |env| {
-            if (env.variables.get(name)) |value| return value;
+            const var_count = env.variables.count();
+            std.debug.print("DEBUG: Environment.get() hop {}: checking env@{*} with {} variables for '{s}'\n", .{ hops, env, var_count, name });
+            
+            // Safety check for corruption
+            if (var_count > 1000) {
+                std.debug.print("CORRUPTION DETECTED: Environment@{*} has impossible variable count: {}\n", .{ env, var_count });
+                std.debug.print("Parent chain: env@{*} -> parent@{*}\n", .{ env, env.parent });
+                return InterpreterError.MemoryCorruption;
+            }
+            
+            if (env.variables.get(name)) |value| {
+                std.debug.print("DEBUG: Found '{s}' in environment@{*}\n", .{ name, env });
+                return value;
+            }
             current = env.parent;
             hops += 1;
             std.debug.assert(hops < 1_000_000); // detect accidental cycles
         }
+        std.debug.print("DEBUG: Variable '{s}' not found in any environment after {} hops\n", .{ name, hops });
         return InterpreterError.UndefinedVariable;
     }
 
@@ -559,6 +580,7 @@ pub const Interpreter = struct {
             .allocator = allocator,
         };
         interp.environment = &interp.globals; // Correct pointer to the persistent globals
+        std.debug.print("DEBUG: Initialized interpreter with globals@{*} (parent: {*})\n", .{ &interp.globals, interp.globals.parent });
         return interp;
     }
 
@@ -670,17 +692,13 @@ pub const Interpreter = struct {
     fn executeImportStatement(self: *Interpreter, import_stmt: ast.ImportStatement) InterpreterError!void {
         std.debug.print("DEBUG: *** EXECUTING IMPORT STATEMENT: {s} ***\n", .{import_stmt.path});
         
-        // Try to load real stdlib module first, fall back to builtin if needed
-        self.loadRealStdlibModule(import_stmt.path) catch |err| {
-            std.debug.print("DEBUG: Failed to load real module {s}: {}, falling back to builtin\n", .{ import_stmt.path, err });
-            try self.loadBuiltinModule(import_stmt.path);
-        };
+        // For now, use builtin modules to avoid complex parsing issues
+        try self.loadBuiltinModule(import_stmt.path);
     }
     
     fn loadRealStdlibModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
-        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-        defer arena.deinit();
-        const temp_allocator = arena.allocator();
+        var module_arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        const temp_allocator = module_arena.allocator();
         
         // Try multiple possible paths for the module
         const possible_paths = [_][]const u8{
@@ -730,19 +748,21 @@ pub const Interpreter = struct {
             std.debug.print("DEBUG: Successfully parsed {s}, extracting functions...\n", .{path_str});
             
             // Extract function declarations and create a simple module representation
-            try self.createModuleFromProgram(module_name, module_program, path_str);
+            try self.createModuleFromProgram(module_name, module_program, path_str, module_arena);
             loaded_successfully = true;
             break;
         }
         
         if (!loaded_successfully) {
+            // Clean up arena if module loading failed
+            module_arena.deinit();
             return InterpreterError.ModuleNotFound;
         }
         
         std.debug.print("DEBUG: Successfully loaded real stdlib module: {s}\n", .{module_name});
     }
     
-    fn createModuleFromProgram(self: *Interpreter, module_name: []const u8, program: ast.Program, source_path: []const u8) InterpreterError!void {
+    fn createModuleFromProgram(self: *Interpreter, module_name: []const u8, program: ast.Program, source_path: []const u8, module_arena: std.heap.ArenaAllocator) InterpreterError!void {
         var module_functions = std.StringHashMap(Value).init(self.allocator);
         
         std.debug.print("DEBUG: Creating module {s} from program with {} statements\n", .{ module_name, program.statements.items.len });
@@ -772,7 +792,10 @@ pub const Interpreter = struct {
         
         // Create module instance on heap and store pointer in globals
         const module_ptr = try self.allocator.create(ModuleInstance);
-        module_ptr.* = .{ .functions = module_functions };
+        module_ptr.* = .{ 
+            .functions = module_functions,
+            .arena = module_arena, // Transfer ownership of arena to module
+        };
         
         const module_value = Value{ .Module = module_ptr };
         try self.globals.define(module_name, module_value);
@@ -809,13 +832,18 @@ pub const Interpreter = struct {
             try module_functions.put("concat", Value{ .BuiltinFunction = .{ .name = "stringz.concat", .func = builtinStringzConcat } });
         }
         
-        // Create module instance on heap and store pointer in globals
+        // Create module instance on heap and store pointer in globals  
         const module_ptr = try self.allocator.create(ModuleInstance);
-        module_ptr.* = .{ .functions = module_functions };
+        module_ptr.* = .{ 
+            .functions = module_functions,
+            .arena = null, // Builtin modules don't need arena as they don't have AST
+        };
         
         const module_value = Value{ .Module = module_ptr };
-        try self.globals.define(module_name, module_value);
+        try self.environment.define(module_name, module_value);
         
+        std.debug.print("DEBUG: Stored module {s} in environment@{*}, now has {} variables\n", .{ module_name, self.environment, self.environment.variables.count() });
+        std.debug.print("DEBUG: self.globals is at @{*}\n", .{&self.globals});
         std.debug.print("DEBUG: Loaded builtin module {s} with {} functions\n", .{ module_name, module_functions.count() });
     }
 
