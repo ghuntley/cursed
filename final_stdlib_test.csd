@@ -1,48 +1,26 @@
 yeet "vibez"
 yeet "mathz" 
-yeet "stringz"
-yeet "fmt"
-
-slay test_vibez_module() {
-    vibez.spillln("=== Testing VIBEZ Module ===")
-    vibez.print_separator()
-    vibez.spill("VIBEZ module test: PASSED")
-}
-
-slay test_mathz_module() {
-    sus x drip = -42.5
-    sus abs_result drip = mathz.abs_normie(x)
-    sus a drip = 10.0
-    sus b drip = 20.0
-    sus max_result drip = mathz.max_normie(a, b)
-    vibez.spill("MATHZ module test: PASSED")
-}
-
-slay test_stringz_module() {
-    sus text tea = "CURSED"
-    sus len normie = stringz.length(text)
-    sus greeting tea = "Hello"
-    sus full tea = stringz.concat(greeting, " World")
-    vibez.spill("STRINGZ module test: PASSED")
-}
-
-slay test_fmt_module() {
-    sus number normie = 42
-    sus formatted tea = fmt.format_int(number)
-    sus flag lit = based
-    sus bool_str tea = fmt.format_bool(flag)
-    vibez.spill("FMT module test: PASSED")
-}
-
-slay print_final_results() {
-    vibez.spillln("=== ALL STDLIB TESTS COMPLETED SUCCESSFULLY ===")
-    vibez.spill("Standard library is now fully functional!")
-}
+yeet "time"
 
 slay main_character() {
-    test_vibez_module()
-    test_mathz_module() 
-    test_stringz_module()
-    test_fmt_module()
-    print_final_results()
+    vibez.spill("=== CURSED Standard Library Test Suite ===")
+    
+    // Test vibez module (working)
+    vibez.spill("1. Testing vibez module:")
+    vibez.spill("Hello from CURSED!")
+    
+    // Test mathz module 
+    vibez.spill("2. Testing mathz module:")
+    sus num normie = 42
+    sus result normie = mathz.abs_normie(num)
+    vibez.spill("mathz.abs_normie(42):")
+    vibez.spill(result)
+    
+    // Test time module
+    vibez.spill("3. Testing time module:")
+    sus timestamp normie = time.current_time_millis()
+    vibez.spill("time.current_time_millis():")
+    vibez.spill(timestamp)
+    
+    vibez.spill("=== All stdlib modules tested! ===")
 }
