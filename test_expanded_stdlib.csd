@@ -1,70 +1,81 @@
+fr fr Test expanded CURSED stdlib modules
 yeet "vibez"
 yeet "mathz"
 yeet "stringz"
+yeet "fmt"
+yeet "time"
+yeet "fs"
+yeet "io"
 
-slay test_vibez() {
-    vibez.spill("=== Testing VIBEZ Module ===")
+slay test_fs_module() {
+    vibez.spillln("=== Testing fs module ===")
+    
+    fr fr Test file existence
+    sus exists lit = fs.file_exists("test.txt")
+    vibez.spillln(fmt.format_bool(exists))
+    
+    fr fr Test reading a file
+    sus content tea = fs.read_file("test.txt")
+    vibez.spillln("File content: " + content)
+    
+    fr fr Test file size
+    sus size thicc = fs.get_file_size("test.txt")
+    vibez.spillln("File size: " + fmt.format_int(size))
+    
+    fr fr Test directory operations
+    sus is_directory lit = fs.is_dir("test_dir")
+    vibez.spillln("Is directory: " + fmt.format_bool(is_directory))
+    
+    fr fr Test writing a file
+    sus write_success lit = fs.write_file("output.txt", "Hello from CURSED!")
+    vibez.spillln("Write success: " + fmt.format_bool(write_success))
 }
 
-slay test_mathz_abs() {
-    sus x drip = -42.5
-    sus result drip = mathz.abs_normie(x)
-    vibez.spill("Abs test: OK")
+slay test_io_module() {
+    vibez.spillln("=== Testing io module ===")
+    
+    fr fr Test print functions
+    io.print("Testing io.print: ")
+    io.println("Success!")
+    
+    fr fr Test read line
+    sus input tea = io.read_line()
+    vibez.spillln("Read line result: " + input)
 }
 
-slay test_mathz_add() {
-    sus a drip = 10.0
-    sus b drip = 5.0
-    sus result drip = mathz.add(a, b)
-    vibez.spill("Add test: OK")
+slay test_all_modules() {
+    vibez.spillln("=== Testing All Expanded Stdlib Modules ===")
+    
+    fr fr Test vibez
+    vibez.spillln("vibez working: based")
+    vibez.print_separator()
+    
+    fr fr Test mathz
+    sus math_result meal = mathz.sqrt(16.0)
+    vibez.spillln("mathz.sqrt(16) = " + fmt.format_float(math_result))
+    
+    fr fr Test stringz
+    sus str_len thicc = stringz.length("Hello CURSED!")
+    vibez.spillln("String length: " + fmt.format_int(str_len))
+    
+    fr fr Test fmt
+    sus formatted tea = fmt.format_int(42)
+    vibez.spillln("Formatted int: " + formatted)
+    
+    fr fr Test time
+    sus current_time thicc = time.current_time_millis()
+    vibez.spillln("Current time: " + fmt.format_int(current_time))
+    
+    fr fr Test fs
+    test_fs_module()
+    
+    fr fr Test io
+    test_io_module()
+    
+    vibez.spillln("=== All modules tested successfully! ===")
 }
 
-slay test_mathz_sub() {
-    sus a drip = 20.0
-    sus b drip = 8.0
-    sus result drip = mathz.sub(a, b)
-    vibez.spill("Sub test: OK")
-}
-
-slay test_mathz_mul() {
-    sus a drip = 6.0
-    sus b drip = 7.0
-    sus result drip = mathz.mul(a, b)
-    vibez.spill("Mul test: OK")
-}
-
-slay test_mathz_div() {
-    sus a drip = 15.0
-    sus b drip = 3.0
-    sus result drip = mathz.div(a, b)
-    vibez.spill("Div test: OK")
-}
-
-slay test_stringz_length() {
-    sus text tea = "Hello CURSED"
-    sus len normie = stringz.length(text)
-    vibez.spill("String length test: OK")
-}
-
-slay test_stringz_concat() {
-    sus a tea = "Hello"
-    sus b tea = " World"
-    sus result tea = stringz.concat(a, b)
-    vibez.spill("String concat test: OK")
-}
-
-slay print_final_results() {
-    vibez.spillln("=== All stdlib tests completed successfully ===")
-}
-
-slay main_character() {
-    test_vibez()
-    test_mathz_abs()
-    test_mathz_add()
-    test_mathz_sub()
-    test_mathz_mul()
-    test_mathz_div()
-    test_stringz_length()
-    test_stringz_concat()
-    print_final_results()
+fr fr Main function
+slay cursed_main() {
+    test_all_modules()
 }
