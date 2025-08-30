@@ -47,6 +47,10 @@ pub const CursedError = error{
     WriteError,
     InvalidPath,
     
+    // Module system errors
+    ModuleNotFound,
+    ModuleLoadError,
+    
     // Interface/struct errors
     InterfaceNotImplemented,
     InvalidStructField,

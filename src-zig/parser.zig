@@ -262,8 +262,16 @@ pub const Parser = struct {
             // Parse import statement with error recovery
             if (self.check(.Yeet)) {
                 if (self.parseImportStatement()) |import_stmt| {
-                    program.imports.append(self.allocator, import_stmt) catch {
-                        _ = self.reportErrorWithContext("Out of memory adding import", "parseProgram") catch {};
+                    // Add import as a regular statement
+                    const stmt = Statement{ .Import = import_stmt };
+                    const stmt_ptr = self.allocator.create(Statement) catch {
+                        _ = self.reportErrorWithContext("Out of memory allocating import statement", "parseProgram") catch {};
+                        return ParserError.OutOfMemory;
+                    };
+                    stmt_ptr.* = stmt;
+                    
+                    program.statements.append(self.allocator, @ptrCast(stmt_ptr)) catch {
+                        _ = self.reportErrorWithContext("Out of memory adding import statement", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
                 } else |err| {

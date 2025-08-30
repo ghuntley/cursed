@@ -624,6 +624,7 @@ pub const Statement = union(enum) {
     Fam: FamStatement,
     Const: ConstDecl,
     Block: BlockStatement,
+    Import: ImportStatement,
 
     pub fn deinit(self: *Statement, allocator: Allocator) void {
         switch (self.*) {
@@ -640,6 +641,7 @@ pub const Statement = union(enum) {
             .Implementation => |*impl_stmt| impl_stmt.deinit(allocator),
             .Stan => |*stan| stan.deinit(allocator),
             .Block => |*block| block.deinit(allocator),
+            .Import => |*import| import.deinit(allocator),
             // Add more cases as needed
             else => {}
         }
