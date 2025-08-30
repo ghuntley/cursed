@@ -337,6 +337,10 @@ pub const LLVMIRPipeline = struct {
             .Expression => |expr| {
                 _ = try self.generateExpression(expr);
             },
+            .Import => |import_stmt| {
+                // Handle import statements - for now just mark as processed
+                print("📦 Processing import: {s}\n", .{import_stmt.path});
+            },
             else => {
                 print("⚠️ Unhandled statement type in IR generation\n", .{});
             },
@@ -765,17 +769,36 @@ pub const LLVMIRPipeline = struct {
             else => "",
         };
         
-        if (std.mem.eql(u8, object_name, "vibez") and std.mem.eql(u8, method_call.method_name, "spill")) {
-            // Handle vibez.spill() - this is our print function
-            var args = try self.allocator.alloc(ast.Expression, method_call.arguments.items.len);
-            defer self.allocator.free(args);
-            
-            // Copy arguments
-            for (method_call.arguments.items, 0..) |arg_ptr, i| {
-                args[i] = arg_ptr.*;
+        if (std.mem.eql(u8, object_name, "vibez")) {
+            if (std.mem.eql(u8, method_call.method_name, "spill") or 
+                std.mem.eql(u8, method_call.method_name, "spillln")) {
+                // Handle vibez.spill() and vibez.spillln() - print functions
+                var args = try self.allocator.alloc(ast.Expression, method_call.arguments.items.len);
+                defer self.allocator.free(args);
+                
+                // Copy arguments
+                for (method_call.arguments.items, 0..) |arg_ptr, i| {
+                    args[i] = arg_ptr.*;
+                }
+                
+                return try self.generatePrintCall(args);
+            } else if (std.mem.eql(u8, method_call.method_name, "print_separator")) {
+                // Handle vibez.print_separator() - print separator
+                const separator_str = c.LLVMBuildGlobalStringPtr(self.builder, "--------------------------------\n", "separator");
+                return separator_str;
             }
-            
-            return try self.generatePrintCall(args);
+        } else if (std.mem.eql(u8, object_name, "mathz")) {
+            // Handle mathz functions - for now return placeholder values
+            if (std.mem.eql(u8, method_call.method_name, "abs_normie") or
+                std.mem.eql(u8, method_call.method_name, "max_normie") or
+                std.mem.eql(u8, method_call.method_name, "min_normie")) {
+                // Generate the argument and return it (placeholder implementation)
+                if (method_call.arguments.items.len > 0) {
+                    return try self.generateExpression(method_call.arguments.items[0].*);
+                } else {
+                    return c.LLVMConstReal(c.LLVMDoubleType(), 0.0);
+                }
+            }
         }
         
         // For other method calls on objects

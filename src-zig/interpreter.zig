@@ -4,6 +4,7 @@ const Allocator = std.mem.Allocator;
 const HashMap = std.HashMap;
 
 const ast = @import("ast.zig");
+const lexer = @import("lexer.zig");
 const error_handling = @import("error_handling.zig");
 const cursed_error = @import("cursed_error_runtime.zig");
 const concurrency = @import("concurrency.zig");
@@ -213,6 +214,23 @@ pub const PointerValue = struct {
 
 const Variable = struct { name: []const u8, value: Value };
 
+pub const ModuleInstance = struct {
+    functions: std.StringHashMap(Value),
+    
+    pub fn deinit(self: *ModuleInstance, allocator: Allocator) void {
+        var iterator = self.functions.iterator();
+        while (iterator.next()) |entry| {
+            entry.value_ptr.deinit(allocator);
+        }
+        self.functions.deinit();
+    }
+};
+
+pub const BuiltinFunctionValue = struct {
+    name: []const u8,
+    func: *const fn(*Interpreter, []Value) InterpreterError!Value,
+};
+
 pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
@@ -226,6 +244,8 @@ pub const Value = union(enum) {
     Error: ErrorValue,
     CursedError: *cursed_error.CursedError,
     Array: []Value,
+    Module: *ModuleInstance,
+    BuiltinFunction: BuiltinFunctionValue,
     // Tuple: *ArrayList(Value), // Temporarily disabled due to circular dependency
 
     pub fn deinit(self: *Value, allocator: Allocator) void {
@@ -248,6 +268,11 @@ pub const Value = union(enum) {
                 cursed_err.deinit();
                 allocator.destroy(cursed_err);
             },
+            .Module => |module_ptr| {
+                module_ptr.deinit(allocator);
+                allocator.destroy(module_ptr);
+            },
+            .BuiltinFunction => {}, // No cleanup needed
             else => {}, // Other types don't need cleanup
         }
     }
@@ -331,6 +356,8 @@ pub const Value = union(enum) {
                 result[idx] = ']';
                 return result;
             },
+            .Module => |module_ptr| return std.fmt.allocPrint(allocator, "module({} functions)", .{module_ptr.functions.count()}),
+            .BuiltinFunction => |builtin| return std.fmt.allocPrint(allocator, "builtin function {s}", .{builtin.name}),
         }
     }
 
@@ -348,6 +375,8 @@ pub const Value = union(enum) {
             .Error => return false,   // Errors are falsy
             .CursedError => return false, // CursedErrors are falsy
             .Array => |array| return array.len > 0, // Arrays are truthy if they have elements
+            .Module => return true, // Modules are always truthy if they exist
+            .BuiltinFunction => return true, // Builtin functions are always truthy
         }
     }
 
@@ -379,6 +408,17 @@ pub const Environment = struct {
             .allocator = allocator,
         };
     }
+    
+    // Create Environment on heap for long-lived use
+    pub fn newEnvironment(allocator: Allocator, parent: ?*Environment) !*Environment {
+        const env = try allocator.create(Environment);
+        env.* = .{
+            .variables = HashMap([]const u8, Value, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .parent = parent,
+            .allocator = allocator,
+        };
+        return env;
+    }
 
     pub fn deinit(self: *Environment) void {
         self.variables.deinit();
@@ -389,14 +429,14 @@ pub const Environment = struct {
     }
 
     pub fn get(self: *Environment, name: []const u8) InterpreterError!Value {
-        if (self.variables.get(name)) |value| {
-            return value;
+        var current: ?*Environment = self;
+        var hops: usize = 0;
+        while (current) |env| {
+            if (env.variables.get(name)) |value| return value;
+            current = env.parent;
+            hops += 1;
+            std.debug.assert(hops < 1_000_000); // detect accidental cycles
         }
-        
-        if (self.parent) |parent| {
-            return parent.get(name);
-        }
-        
         return InterpreterError.UndefinedVariable;
     }
 
@@ -497,11 +537,9 @@ pub const Interpreter = struct {
     const MAX_CALL_STACK_DEPTH = 1000;
 
     pub fn init(allocator: Allocator) Interpreter {
-        var globals = Environment.init(allocator, null);
-        
-        return Interpreter{
-            .globals = globals,
-            .environment = &globals,
+        var interp = Interpreter{
+            .globals = Environment.init(allocator, null),
+            .environment = undefined, // will be set correctly below
             .functions = HashMap([]const u8, CursedFunction, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_registry = TypeRegistry.init(allocator),
             .channel_storage = HashMap(u64, ArrayList(Value), std.hash_map.AutoContext(u64), std.hash_map.default_max_load_percentage).init(allocator),
@@ -515,6 +553,8 @@ pub const Interpreter = struct {
             .current_column = null,
             .allocator = allocator,
         };
+        interp.environment = &interp.globals; // Correct pointer to the persistent globals
+        return interp;
     }
 
     pub fn deinit(self: *Interpreter) void {
@@ -567,6 +607,10 @@ pub const Interpreter = struct {
                     // Register implementations during the first pass
                     try self.executeImplementationStatement(impl_decl);
                 },
+                .Import => |import_stmt| {
+                    // Process imports during the first pass
+                    try self.executeImportStatement(import_stmt);
+                },
                 else => {}
         }
         }
@@ -611,10 +655,52 @@ pub const Interpreter = struct {
             .Defer => |defer_stmt| try self.executeDeferStatement(defer_stmt),
             .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
             .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
+            .Import => |import_stmt| try self.executeImportStatement(import_stmt),
             else => {
                 std.debug.print("Unsupported statement type in interpreter: {s}\n", .{ @tagName(stmt) });
             }
         }
+    }
+
+    fn executeImportStatement(self: *Interpreter, import_stmt: ast.ImportStatement) InterpreterError!void {
+        std.debug.print("DEBUG: *** EXECUTING IMPORT STATEMENT: {s} ***\n", .{import_stmt.path});
+        
+        // For now, implement hardcoded stdlib modules
+        try self.loadBuiltinModule(import_stmt.path);
+    }
+    
+    fn loadBuiltinModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
+        var module_functions = std.StringHashMap(Value).init(self.allocator);
+        
+        // Hardcode stdlib functions for now
+        if (std.mem.eql(u8, module_name, "vibez")) {
+            // Add vibez functions
+            try module_functions.put("spill", Value{ .BuiltinFunction = .{ .name = "vibez.spill", .func = builtinVibezSpill } });
+            try module_functions.put("spillln", Value{ .BuiltinFunction = .{ .name = "vibez.spillln", .func = builtinVibezSpillln } });
+            try module_functions.put("print_separator", Value{ .BuiltinFunction = .{ .name = "vibez.print_separator", .func = builtinVibezPrintSeparator } });
+        } else if (std.mem.eql(u8, module_name, "mathz")) {
+            // Add mathz functions  
+            try module_functions.put("abs_normie", Value{ .BuiltinFunction = .{ .name = "mathz.abs_normie", .func = builtinMathzAbs } });
+            try module_functions.put("max_normie", Value{ .BuiltinFunction = .{ .name = "mathz.max_normie", .func = builtinMathzMax } });
+            try module_functions.put("min_normie", Value{ .BuiltinFunction = .{ .name = "mathz.min_normie", .func = builtinMathzMin } });
+            try module_functions.put("add", Value{ .BuiltinFunction = .{ .name = "mathz.add", .func = builtinMathzAdd } });
+            try module_functions.put("sub", Value{ .BuiltinFunction = .{ .name = "mathz.sub", .func = builtinMathzSub } });
+            try module_functions.put("mul", Value{ .BuiltinFunction = .{ .name = "mathz.mul", .func = builtinMathzMul } });
+            try module_functions.put("div", Value{ .BuiltinFunction = .{ .name = "mathz.div", .func = builtinMathzDiv } });
+        } else if (std.mem.eql(u8, module_name, "stringz")) {
+            // Add stringz functions
+            try module_functions.put("length", Value{ .BuiltinFunction = .{ .name = "stringz.length", .func = builtinStringzLength } });
+            try module_functions.put("concat", Value{ .BuiltinFunction = .{ .name = "stringz.concat", .func = builtinStringzConcat } });
+        }
+        
+        // Create module instance on heap and store pointer in globals
+        const module_ptr = try self.allocator.create(ModuleInstance);
+        module_ptr.* = .{ .functions = module_functions };
+        
+        const module_value = Value{ .Module = module_ptr };
+        try self.globals.define(module_name, module_value);
+        
+        std.debug.print("DEBUG: Loaded builtin module {s} with {} functions\n", .{ module_name, module_functions.count() });
     }
 
     fn executeLetStatement(self: *Interpreter, let: ast.LetStatement) InterpreterError!void {
@@ -1527,6 +1613,7 @@ pub const Interpreter = struct {
 
     fn evaluateMethodCall(self: *Interpreter, member: ast.MemberAccessExpression, args: []*ast.Expression) InterpreterError!Value {
         std.debug.print("DEBUG: Method call - evaluating object for '{s}' method\n", .{member.property});
+        std.debug.print("DEBUG: About to evaluate expression for object...\n", .{});
         const object = try self.evaluateExpression(member.object.*);
         std.debug.print("DEBUG: Object evaluated to type: {s}\n", .{@tagName(object)});
         
@@ -1581,6 +1668,36 @@ pub const Interpreter = struct {
                     return InterpreterError.UndefinedMethod;
                 }
             },
+            .Module => |module_ptr| {
+                // Look for function in module
+                if (module_ptr.functions.get(member.property)) |func_value| {
+                    std.debug.print("DEBUG: Found function '{s}' in module\n", .{member.property});
+                    
+                    switch (func_value) {
+                        .BuiltinFunction => |builtin_func| {
+                            // Call the builtin function
+                            var func_args = ArrayList(Value){};
+                            defer func_args.deinit(self.allocator);
+                            
+                            // Evaluate arguments
+                            for (args) |arg_expr| {
+                                const arg_val = try self.evaluateExpression(arg_expr.*);
+                                try func_args.append(self.allocator, arg_val);
+                            }
+                            
+                            // Call the builtin function
+                            return try builtin_func.func(self, func_args.items);
+                        },
+                        else => {
+                            std.debug.print("DEBUG: Module member '{s}' is not a function\n", .{member.property});
+                            return InterpreterError.TypeMismatch;
+                        }
+                    }
+                } else {
+                    std.debug.print("DEBUG: Function '{s}' not found in module\n", .{member.property});
+                    return InterpreterError.UndefinedFunction;
+                }
+            },
             else => {
                 return InterpreterError.TypeMismatch;
             }
@@ -1588,9 +1705,9 @@ pub const Interpreter = struct {
     }
 
     fn executeInterfaceMethod(self: *Interpreter, method_func: *FunctionValue, args: []Value) InterpreterError!Value {
-        // Create new environment for method execution
-        var method_env = Environment.init(self.allocator, self.environment);
-        defer method_env.deinit();
+        // Create new environment for method execution on heap
+        const method_env = try Environment.newEnvironment(self.allocator, self.environment);
+        // Note: Not deinitialized here as environment may escape via closures
         
         // Bind parameters to arguments
         if (args.len != method_func.parameters.len + 1) { // +1 for 'self'
@@ -1612,7 +1729,7 @@ pub const Interpreter = struct {
         
         // Execute method body
         const previous_env = self.environment;
-        self.environment = &method_env;
+        self.environment = method_env;
         defer self.environment = previous_env;
         
         for (method_func.body) |stmt| {
@@ -1625,9 +1742,9 @@ pub const Interpreter = struct {
     }
 
     fn executeMethodBody(self: *Interpreter, method: ast.FunctionStatement, args: []Value) InterpreterError!Value {
-        // Create new environment for method execution
-        var method_env = Environment.init(self.allocator, self.environment);
-        defer method_env.deinit();
+        // Create new environment for method execution on heap
+        const method_env = try Environment.newEnvironment(self.allocator, self.environment);
+        // Note: Not deinitialized here as environment may escape via closures
         
         // First argument is always 'self' (the struct instance)
         if (args.len > 0) {
@@ -1644,7 +1761,7 @@ pub const Interpreter = struct {
         
         // Save current environment
         const previous_env = self.environment;
-        self.environment = &method_env;
+        self.environment = method_env;
         defer self.environment = previous_env;
         
         // Execute method body
@@ -2048,9 +2165,9 @@ pub const Interpreter = struct {
         self.call_stack_depth += 1;
         defer self.call_stack_depth = old_depth;
         
-        // Create new environment for function execution
-        var function_env = Environment.init(self.allocator, func.closure);
-        defer function_env.deinit();
+        // Create new environment for function execution on heap
+        const function_env = try Environment.newEnvironment(self.allocator, func.closure);
+        // Note: Not deinitialized here as environment may escape via closures
         
         // Bind parameters
         if (args.len != func.declaration.parameters.items.len) {
@@ -2066,7 +2183,7 @@ pub const Interpreter = struct {
         
         // Execute function body
         const previous_env = self.environment;
-        self.environment = &function_env;
+        self.environment = function_env;
         defer {
             // Execute defers for this function scope in LIFO order
             self.executeDeferToSize(defer_stack_size_at_entry);
@@ -2229,6 +2346,23 @@ pub const Interpreter = struct {
                             if (!self.valuesEqual(left_element, right_array[i])) return false;
                         }
                         return true;
+                    },
+                    else => return false,
+                }
+            },
+            .Module => |left_module_ptr| {
+                switch (right) {
+                    .Module => |right_module_ptr| {
+                        // Compare pointers - same module if same pointer
+                        return left_module_ptr == right_module_ptr;
+                    },
+                    else => return false,
+                }
+            },
+            .BuiltinFunction => |left_builtin| {
+                switch (right) {
+                    .BuiltinFunction => |right_builtin| {
+                        return std.mem.eql(u8, left_builtin.name, right_builtin.name);
                     },
                     else => return false,
                 }
@@ -2895,6 +3029,263 @@ pub const Interpreter = struct {
         return Value{ .String = final_string };
     }
 };
+
+// ===== BUILTIN STDLIB FUNCTIONS =====
+
+// Use standard debug print for now - will be replaced with proper runtime bridge later
+
+fn builtinVibezSpill(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter; // Mark as unused to avoid warnings
+    if (args.len != 1) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const msg_value = args[0];
+    switch (msg_value) {
+        .String => |str| {
+            std.debug.print("{s}", .{str});
+            return Value{ .Boolean = true };
+        },
+        else => {
+            return InterpreterError.TypeMismatch;
+        }
+    }
+}
+
+fn builtinVibezSpillln(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter; // Mark as unused to avoid warnings
+    if (args.len != 1) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const msg_value = args[0];
+    switch (msg_value) {
+        .String => |str| {
+            std.debug.print("{s}\n", .{str});
+            return Value{ .Boolean = true };
+        },
+        else => {
+            return InterpreterError.TypeMismatch;
+        }
+    }
+}
+
+fn builtinVibezPrintSeparator(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    _ = args;
+    
+    std.debug.print("--------------------------------\n", .{});
+    return Value{ .Boolean = true };
+}
+
+fn builtinMathzAbs(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| return Value{ .Float = if (f < 0) -f else f },
+        .Integer => |i| return Value{ .Integer = if (i < 0) -i else i },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzMax(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| return Value{ .Float = if (a_f > b_f) a_f else b_f },
+            .Integer => |b_i| {
+                const b_f = @as(f64, @floatFromInt(b_i));
+                return Value{ .Float = if (a_f > b_f) a_f else b_f };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| return Value{ .Integer = if (a_i > b_i) a_i else b_i },
+            .Float => |b_f| {
+                const a_f = @as(f64, @floatFromInt(a_i));
+                return Value{ .Float = if (a_f > b_f) a_f else b_f };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzMin(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) {
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| return Value{ .Float = if (a_f < b_f) a_f else b_f },
+            .Integer => |b_i| {
+                const b_f = @as(f64, @floatFromInt(b_i));
+                return Value{ .Float = if (a_f < b_f) a_f else b_f };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| return Value{ .Integer = if (a_i < b_i) a_i else b_i },
+            .Float => |b_f| {
+                const a_f = @as(f64, @floatFromInt(a_i));
+                return Value{ .Float = if (a_f < b_f) a_f else b_f };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+// Additional mathz functions
+fn builtinMathzAdd(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| return Value{ .Float = a_f + b_f },
+            .Integer => |b_i| return Value{ .Float = a_f + @as(f64, @floatFromInt(b_i)) },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| return Value{ .Integer = a_i + b_i },
+            .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) + b_f },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzSub(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| return Value{ .Float = a_f - b_f },
+            .Integer => |b_i| return Value{ .Float = a_f - @as(f64, @floatFromInt(b_i)) },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| return Value{ .Integer = a_i - b_i },
+            .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) - b_f },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzMul(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| return Value{ .Float = a_f * b_f },
+            .Integer => |b_i| return Value{ .Float = a_f * @as(f64, @floatFromInt(b_i)) },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| return Value{ .Integer = a_i * b_i },
+            .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) * b_f },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzDiv(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .Float => |a_f| switch (b) {
+            .Float => |b_f| {
+                if (b_f == 0.0) return InterpreterError.DivisionByZero;
+                return Value{ .Float = a_f / b_f };
+            },
+            .Integer => |b_i| {
+                if (b_i == 0) return InterpreterError.DivisionByZero;
+                return Value{ .Float = a_f / @as(f64, @floatFromInt(b_i)) };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |a_i| switch (b) {
+            .Integer => |b_i| {
+                if (b_i == 0) return InterpreterError.DivisionByZero;
+                return Value{ .Float = @as(f64, @floatFromInt(a_i)) / @as(f64, @floatFromInt(b_i)) };
+            },
+            .Float => |b_f| {
+                if (b_f == 0.0) return InterpreterError.DivisionByZero;
+                return Value{ .Float = @as(f64, @floatFromInt(a_i)) / b_f };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+// stringz functions
+fn builtinStringzLength(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const str_value = args[0];
+    switch (str_value) {
+        .String => |str| return Value{ .Integer = @as(i64, @intCast(str.len)) },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinStringzConcat(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const a = args[0];
+    const b = args[1];
+    
+    switch (a) {
+        .String => |str_a| switch (b) {
+            .String => |str_b| {
+                const result = interpreter.allocator.alloc(u8, str_a.len + str_b.len) catch {
+                    return InterpreterError.OutOfMemory;
+                };
+                @memcpy(result[0..str_a.len], str_a);
+                @memcpy(result[str_a.len..], str_b);
+                return Value{ .String = result };
+            },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
 
 test "interpreter basic" {
     const allocator = std.testing.allocator;
