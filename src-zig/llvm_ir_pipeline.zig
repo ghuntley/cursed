@@ -448,16 +448,15 @@ pub const LLVMIRPipeline = struct {
             },
             .Identifier => |ident| {
                 if (self.variables.get(ident)) |var_ref| {
-                    // Check if this is a global variable or local alloca
-                    const var_type_kind = c.LLVMGetTypeKind(c.LLVMTypeOf(var_ref));
-                    if (var_type_kind == c.LLVMPointerTypeKind) {
-                        // This could be a global variable or an alloca
-                        const pointed_type = c.LLVMGetElementType(c.LLVMTypeOf(var_ref));
-                        return c.LLVMBuildLoad2(self.builder, pointed_type, var_ref, "load_tmp");
-                    } else {
-                        // This is likely an alloca
-                        const var_type = c.LLVMGetAllocatedType(var_ref);
+                    // For alloca'd variables, use LLVMGetAllocatedType
+                    print("DEBUG: Loading variable {s}\n", .{ident});
+                    const var_type = c.LLVMGetAllocatedType(var_ref);
+                    if (var_type != null) {
+                        print("DEBUG: Using allocated type for {s}\n", .{ident});
                         return c.LLVMBuildLoad2(self.builder, var_type, var_ref, "load_tmp");
+                    } else {
+                        print("❌ Could not determine type for variable: {s}\n", .{ident});
+                        return error.UndefinedVariable;
                     }
                 } else {
                     print("❌ Undefined variable: {s}\n", .{ident});
@@ -515,7 +514,16 @@ pub const LLVMIRPipeline = struct {
             .Unary => |unary| {
                 const operand_val = try self.generateExpression(unary.operand.*);
                 if (std.mem.eql(u8, unary.operator, "-")) {
-                    return c.LLVMBuildNeg(self.builder, operand_val, "neg");
+                    // Check if operand is floating point
+                    const operand_type = c.LLVMTypeOf(operand_val);
+                    const is_float = c.LLVMGetTypeKind(operand_type) == c.LLVMDoubleTypeKind or
+                                    c.LLVMGetTypeKind(operand_type) == c.LLVMFloatTypeKind;
+                    
+                    if (is_float) {
+                        return c.LLVMBuildFNeg(self.builder, operand_val, "fneg");
+                    } else {
+                        return c.LLVMBuildNeg(self.builder, operand_val, "neg");
+                    }
                 } else if (std.mem.eql(u8, unary.operator, "!")) {
                     return c.LLVMBuildNot(self.builder, operand_val, "not");
                 } else {
@@ -655,23 +663,63 @@ pub const LLVMIRPipeline = struct {
         const left = try self.generateExpression(bin_op.left.*);
         const right = try self.generateExpression(bin_op.right.*);
         
-        // Handle string-based operators
+        // Check if we're dealing with floating point values
+        const left_type = c.LLVMTypeOf(left);
+        const right_type = c.LLVMTypeOf(right);
+        const is_float = c.LLVMGetTypeKind(left_type) == c.LLVMDoubleTypeKind or
+                        c.LLVMGetTypeKind(right_type) == c.LLVMDoubleTypeKind or
+                        c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind or
+                        c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind;
+        
+        // Handle arithmetic operators with type-specific instructions
         if (std.mem.eql(u8, bin_op.operator, "+")) {
-            return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+            if (is_float) {
+                return c.LLVMBuildFAdd(self.builder, left, right, "fadd_tmp");
+            } else {
+                return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "-")) {
-            return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+            if (is_float) {
+                return c.LLVMBuildFSub(self.builder, left, right, "fsub_tmp");
+            } else {
+                return c.LLVMBuildSub(self.builder, left, right, "sub_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "*")) {
-            return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+            if (is_float) {
+                return c.LLVMBuildFMul(self.builder, left, right, "fmul_tmp");
+            } else {
+                return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
-            return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+            if (is_float) {
+                return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
+            } else {
+                return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "==")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left, right, "feq_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "!=")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne_tmp");
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealONE, left, right, "fne_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "<")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLT, left, right, "flt_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLT, left, right, "lt_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, ">")) {
-            return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGT, left, right, "fgt_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+            }
         } else {
             print("⚠️ Unhandled binary operator: {s}\n", .{bin_op.operator});
             return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
