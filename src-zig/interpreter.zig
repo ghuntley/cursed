@@ -5,6 +5,7 @@ const HashMap = std.HashMap;
 
 const ast = @import("ast.zig");
 const lexer = @import("lexer.zig");
+const parser = @import("parser.zig");
 const error_handling = @import("error_handling.zig");
 const cursed_error = @import("cursed_error_runtime.zig");
 const concurrency = @import("concurrency.zig");
@@ -246,6 +247,7 @@ pub const Value = union(enum) {
     Array: []Value,
     Module: *ModuleInstance,
     BuiltinFunction: BuiltinFunctionValue,
+    UserFunction: CursedFunction,
     // Tuple: *ArrayList(Value), // Temporarily disabled due to circular dependency
 
     pub fn deinit(self: *Value, allocator: Allocator) void {
@@ -273,6 +275,7 @@ pub const Value = union(enum) {
                 allocator.destroy(module_ptr);
             },
             .BuiltinFunction => {}, // No cleanup needed
+            .UserFunction => {}, // Function declarations are managed by the AST
             else => {}, // Other types don't need cleanup
         }
     }
@@ -358,6 +361,7 @@ pub const Value = union(enum) {
             },
             .Module => |module_ptr| return std.fmt.allocPrint(allocator, "module({} functions)", .{module_ptr.functions.count()}),
             .BuiltinFunction => |builtin| return std.fmt.allocPrint(allocator, "builtin function {s}", .{builtin.name}),
+            .UserFunction => |user_func| return std.fmt.allocPrint(allocator, "user function {s}", .{user_func.declaration.name}),
         }
     }
 
@@ -377,6 +381,7 @@ pub const Value = union(enum) {
             .Array => |array| return array.len > 0, // Arrays are truthy if they have elements
             .Module => return true, // Modules are always truthy if they exist
             .BuiltinFunction => return true, // Builtin functions are always truthy
+            .UserFunction => return true, // User functions are always truthy
         }
     }
 
@@ -665,8 +670,114 @@ pub const Interpreter = struct {
     fn executeImportStatement(self: *Interpreter, import_stmt: ast.ImportStatement) InterpreterError!void {
         std.debug.print("DEBUG: *** EXECUTING IMPORT STATEMENT: {s} ***\n", .{import_stmt.path});
         
-        // For now, implement hardcoded stdlib modules
-        try self.loadBuiltinModule(import_stmt.path);
+        // Try to load real stdlib module first, fall back to builtin if needed
+        self.loadRealStdlibModule(import_stmt.path) catch |err| {
+            std.debug.print("DEBUG: Failed to load real module {s}: {}, falling back to builtin\n", .{ import_stmt.path, err });
+            try self.loadBuiltinModule(import_stmt.path);
+        };
+    }
+    
+    fn loadRealStdlibModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
+        var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+        defer arena.deinit();
+        const temp_allocator = arena.allocator();
+        
+        // Try multiple possible paths for the module
+        const possible_paths = [_][]const u8{
+            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/mod.csd", .{module_name}),
+            try std.fmt.allocPrint(temp_allocator, "stdlib/layer1/{s}.csd", .{module_name}),
+            try std.fmt.allocPrint(temp_allocator, "stdlib/{s}/{s}.csd", .{ module_name, module_name }),
+        };
+        
+        var loaded_successfully = false;
+        
+        for (possible_paths) |path_str| {
+            std.debug.print("DEBUG: Trying to load module from: {s}\n", .{path_str});
+            
+            // Try to read the module file
+            const file = std.fs.cwd().openFile(path_str, .{}) catch |err| {
+                std.debug.print("DEBUG: Could not open {s}: {}\n", .{ path_str, err });
+                continue;
+            };
+            defer file.close();
+            
+            const source = file.readToEndAlloc(temp_allocator, std.math.maxInt(usize)) catch |err| {
+                std.debug.print("DEBUG: Could not read {s}: {}\n", .{ path_str, err });
+                continue;
+            };
+            defer temp_allocator.free(source);
+            
+            std.debug.print("DEBUG: Successfully loaded source from {s}, parsing...\n", .{path_str});
+            
+            // Parse the module
+            var module_lexer = lexer.Lexer.init(temp_allocator, source);
+            
+            var tokens = module_lexer.tokenize() catch |err| {
+                std.debug.print("DEBUG: Tokenize error for {s}: {}\n", .{ path_str, err });
+                continue;
+            };
+            defer tokens.deinit(temp_allocator);
+            
+            var module_parser = parser.Parser.init(temp_allocator, tokens.items);
+            defer module_parser.deinit();
+            
+            var module_program = module_parser.parseProgram() catch |err| {
+                std.debug.print("DEBUG: Parse error for {s}: {}\n", .{ path_str, err });
+                continue;
+            };
+            defer module_program.deinit(temp_allocator);
+            
+            std.debug.print("DEBUG: Successfully parsed {s}, extracting functions...\n", .{path_str});
+            
+            // Extract function declarations and create a simple module representation
+            try self.createModuleFromProgram(module_name, module_program, path_str);
+            loaded_successfully = true;
+            break;
+        }
+        
+        if (!loaded_successfully) {
+            return InterpreterError.ModuleNotFound;
+        }
+        
+        std.debug.print("DEBUG: Successfully loaded real stdlib module: {s}\n", .{module_name});
+    }
+    
+    fn createModuleFromProgram(self: *Interpreter, module_name: []const u8, program: ast.Program, source_path: []const u8) InterpreterError!void {
+        var module_functions = std.StringHashMap(Value).init(self.allocator);
+        
+        std.debug.print("DEBUG: Creating module {s} from program with {} statements\n", .{ module_name, program.statements.items.len });
+        
+        // Extract function declarations from the program
+        for (program.statements.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            switch (stmt.*) {
+                .Function => |func_decl| {
+                    std.debug.print("DEBUG: Found function {s} in module {s}\n", .{ func_decl.name, module_name });
+                    
+                    // Create a closure for this function with the module's environment
+                    const func_closure = CursedFunction{
+                        .declaration = func_decl,
+                        .closure = &self.globals, // Use global environment as closure for stdlib functions
+                    };
+                    
+                    // Store as a BuiltinFunction that calls the real function
+                    const wrapped_func = Value{ .UserFunction = func_closure };
+                    try module_functions.put(func_decl.name, wrapped_func);
+                },
+                else => {
+                    // Skip non-function statements for now
+                }
+            }
+        }
+        
+        // Create module instance on heap and store pointer in globals
+        const module_ptr = try self.allocator.create(ModuleInstance);
+        module_ptr.* = .{ .functions = module_functions };
+        
+        const module_value = Value{ .Module = module_ptr };
+        try self.globals.define(module_name, module_value);
+        
+        std.debug.print("DEBUG: Created real stdlib module {s} with {} functions from {s}\n", .{ module_name, module_functions.count(), source_path });
     }
     
     fn loadBuiltinModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
@@ -687,6 +798,11 @@ pub const Interpreter = struct {
             try module_functions.put("sub", Value{ .BuiltinFunction = .{ .name = "mathz.sub", .func = builtinMathzSub } });
             try module_functions.put("mul", Value{ .BuiltinFunction = .{ .name = "mathz.mul", .func = builtinMathzMul } });
             try module_functions.put("div", Value{ .BuiltinFunction = .{ .name = "mathz.div", .func = builtinMathzDiv } });
+            try module_functions.put("pow", Value{ .BuiltinFunction = .{ .name = "mathz.pow", .func = builtinMathzPow } });
+            try module_functions.put("sqrt", Value{ .BuiltinFunction = .{ .name = "mathz.sqrt", .func = builtinMathzSqrt } });
+            try module_functions.put("floor", Value{ .BuiltinFunction = .{ .name = "mathz.floor", .func = builtinMathzFloor } });
+            try module_functions.put("ceil", Value{ .BuiltinFunction = .{ .name = "mathz.ceil", .func = builtinMathzCeil } });
+            try module_functions.put("round", Value{ .BuiltinFunction = .{ .name = "mathz.round", .func = builtinMathzRound } });
         } else if (std.mem.eql(u8, module_name, "stringz")) {
             // Add stringz functions
             try module_functions.put("length", Value{ .BuiltinFunction = .{ .name = "stringz.length", .func = builtinStringzLength } });
@@ -1688,6 +1804,20 @@ pub const Interpreter = struct {
                             // Call the builtin function
                             return try builtin_func.func(self, func_args.items);
                         },
+                        .UserFunction => |user_func| {
+                            // Call the user-defined function from stdlib
+                            var func_args = ArrayList(Value){};
+                            defer func_args.deinit(self.allocator);
+                            
+                            // Evaluate arguments
+                            for (args) |arg_expr| {
+                                const arg_val = try self.evaluateExpression(arg_expr.*);
+                                try func_args.append(self.allocator, arg_val);
+                            }
+                            
+                            // Call the user function
+                            return try self.callFunction(user_func, func_args.items);
+                        },
                         else => {
                             std.debug.print("DEBUG: Module member '{s}' is not a function\n", .{member.property});
                             return InterpreterError.TypeMismatch;
@@ -2363,6 +2493,14 @@ pub const Interpreter = struct {
                 switch (right) {
                     .BuiltinFunction => |right_builtin| {
                         return std.mem.eql(u8, left_builtin.name, right_builtin.name);
+                    },
+                    else => return false,
+                }
+            },
+            .UserFunction => |left_func| {
+                switch (right) {
+                    .UserFunction => |right_func| {
+                        return std.mem.eql(u8, left_func.declaration.name, right_func.declaration.name);
                     },
                     else => return false,
                 }
@@ -3283,6 +3421,83 @@ fn builtinStringzConcat(interpreter: *Interpreter, args: []Value) InterpreterErr
             },
             else => return InterpreterError.TypeMismatch,
         },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+// New mathz functions
+fn builtinMathzPow(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 2) return InterpreterError.InvalidArgumentCount;
+    
+    const base = args[0];
+    const exponent = args[1];
+    
+    switch (base) {
+        .Float => |base_f| switch (exponent) {
+            .Float => |exp_f| return Value{ .Float = std.math.pow(f64, base_f, exp_f) },
+            .Integer => |exp_i| return Value{ .Float = std.math.pow(f64, base_f, @as(f64, @floatFromInt(exp_i))) },
+            else => return InterpreterError.TypeMismatch,
+        },
+        .Integer => |base_i| switch (exponent) {
+            .Integer => |exp_i| return Value{ .Float = std.math.pow(f64, @as(f64, @floatFromInt(base_i)), @as(f64, @floatFromInt(exp_i))) },
+            .Float => |exp_f| return Value{ .Float = std.math.pow(f64, @as(f64, @floatFromInt(base_i)), exp_f) },
+            else => return InterpreterError.TypeMismatch,
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzSqrt(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| {
+            if (f < 0.0) return InterpreterError.InvalidOperation;
+            return Value{ .Float = std.math.sqrt(f) };
+        },
+        .Integer => |i| {
+            if (i < 0) return InterpreterError.InvalidOperation;
+            return Value{ .Float = std.math.sqrt(@as(f64, @floatFromInt(i))) };
+        },
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzFloor(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| return Value{ .Integer = @as(i64, @intFromFloat(std.math.floor(f))) },
+        .Integer => |i| return Value{ .Integer = i }, // Floor of integer is itself
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzCeil(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| return Value{ .Integer = @as(i64, @intFromFloat(std.math.ceil(f))) },
+        .Integer => |i| return Value{ .Integer = i }, // Ceiling of integer is itself
+        else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinMathzRound(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter;
+    if (args.len != 1) return InterpreterError.InvalidArgumentCount;
+    
+    const val = args[0];
+    switch (val) {
+        .Float => |f| return Value{ .Integer = @as(i64, @intFromFloat(std.math.round(f))) },
+        .Integer => |i| return Value{ .Integer = i }, // Round of integer is itself
         else => return InterpreterError.TypeMismatch,
     }
 }
