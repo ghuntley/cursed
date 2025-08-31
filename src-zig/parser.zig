@@ -2230,11 +2230,12 @@ pub const Parser = struct {
         // Array literals [1, 2, 3]
         if (self.match(.LeftBracket)) {
             var elements = ArrayList(Expression){};
+            defer elements.deinit(self.allocator);
             
             if (!self.check(.RightBracket)) {
                 while (true) {
                     const elem = try self.parseExpression();
-                    try elements.append(self.arena_allocator, elem);
+                    try elements.append(self.allocator, elem);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -2259,12 +2260,13 @@ pub const Parser = struct {
             }
             
             var elements = ArrayList(Expression){};
+            defer elements.deinit(self.allocator);
             var has_comma = false;
             
             while (true) {
                 // Parse expression with full precedence
                 const elem = try self.parseExpression();
-                try elements.append(self.arena_allocator, elem);
+                try elements.append(self.allocator, elem);
                 
                 if (self.match(.Comma)) {
                     has_comma = true;
@@ -2279,7 +2281,6 @@ pub const Parser = struct {
             // Single element without comma is just grouped expression
             if (elements.items.len == 1 and !has_comma) {
                 const single_expr = elements.items[0];
-                elements.deinit(self.allocator);
                 return single_expr;
             }
             
