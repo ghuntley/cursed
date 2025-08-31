@@ -1,4 +1,4 @@
-yeet "mathz"
-sus result drip = mathz.add_two(5, 3)
-vibez.spill("Result:")
-vibez.spill(result)
+slay main_character() {
+    sus result normie = mathz.add_two(5, 3)
+    vibez.spill(result)
+}

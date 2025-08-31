@@ -400,6 +400,7 @@ pub const Parser = struct {
     fn parsePrattCall(self: *Parser, left: Expression) ParserError!Expression {
         _ = self.advance(); // consume '('
         var arguments = ArrayList(*Expression){};
+        defer arguments.deinit(self.allocator);
 
         if (!self.check(.RightParen)) {
             while (true) {
@@ -413,10 +414,16 @@ pub const Parser = struct {
         }
 
         _ = try self.consume(.RightParen, "Expected ')' after arguments");
+        
+        // CRITICAL FIX: Clone the arguments to prevent use-after-free
+        var arguments_copy = ArrayList(*Expression){};
+        for (arguments.items) |arg| {
+            try arguments_copy.append(self.allocator, arg);
+        }
 
         return Expression{ .Call = .{
             .function = try self.allocateExpression(left),
-            .arguments = arguments,
+            .arguments = arguments_copy,
         }};
     }
 
@@ -433,6 +440,7 @@ pub const Parser = struct {
         if (self.check(.LeftParen)) {
             _ = self.advance(); // '('
             var arguments = ArrayList(*Expression){};
+            defer arguments.deinit(self.allocator);
             
             if (!self.check(.RightParen)) {
                 while (true) {
@@ -450,10 +458,16 @@ pub const Parser = struct {
             }
             _ = try self.consume(.RightParen, "Expected ')' after arguments");
             
+            // CRITICAL FIX: Clone the arguments to prevent use-after-free
+            var arguments_copy = ArrayList(*Expression){};
+            for (arguments.items) |arg| {
+                try arguments_copy.append(self.allocator, arg);
+            }
+            
             return Expression{ .MethodCall = try self.allocateMethodCall(ast.MethodCallExpression{
                 .object = try self.allocateExpression(left),
                 .method_name = property,
-                .arguments = arguments,
+                .arguments = arguments_copy,
             })};
         }
         
@@ -518,7 +532,7 @@ pub const Parser = struct {
                     };
                     stmt_ptr.* = stmt;
                     
-                    program.statements.append(self.allocator, @ptrCast(stmt_ptr)) catch {
+                    program.statements.append(self.allocator, stmt_ptr) catch {
                         _ = self.reportErrorWithContext("Out of memory adding import statement", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
@@ -544,12 +558,7 @@ pub const Parser = struct {
                     _ = self.advance();
                 }
                 
-                const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |parse_err| {
-                    _ = self.reportErrorWithContext("Error converting statement to anyopaque", "parseProgram") catch {};
-                    return parse_err;
-                };
-                
-                program.statements.append(self.allocator, anyopaque_ptr) catch {
+                program.statements.append(self.allocator, stmt_ptr) catch {
                     _ = self.reportErrorWithContext("Out of memory adding statement to program", "parseProgram") catch {};
                     return ParserError.OutOfMemory;
                 };
@@ -1158,12 +1167,8 @@ pub const Parser = struct {
     fn parseBlockStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var statements = ArrayList(*anyopaque){};
-        errdefer {
-            // NOTE: Arena-allocated statements are automatically cleaned up when arena is destroyed
-            // Don't manually free arena-allocated objects, it causes "Invalid free" crashes
-            statements.deinit(self.allocator);
-        }
+        var statements = ArrayList(*Statement){};
+        defer statements.deinit(self.allocator);
         
         // Parse statements within the block
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1177,7 +1182,7 @@ pub const Parser = struct {
 
             stmt_ptr.* = stmt;
             
-            try statements.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+            try statements.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1544,6 +1549,7 @@ pub const Parser = struct {
                 _ = self.advance(); // consume '('
                 
                 var param_types = ArrayList(ast.Type){};
+                defer param_types.deinit(self.allocator);
                 
                 if (!self.check(.RightParen)) {
                     while (true) {
@@ -1576,6 +1582,7 @@ pub const Parser = struct {
             _ = self.advance();
             
             var elements = std.ArrayList(ast.Type){};
+            defer elements.deinit(self.allocator);
             
             if (!self.check(.RightParen)) {
                 while (true) {
@@ -1591,11 +1598,16 @@ pub const Parser = struct {
             // Single element in parens is just grouped, not a tuple
             if (elements.items.len == 1) {
                 const single_type = elements.items[0];
-                elements.deinit(self.allocator);
                 return single_type;
             }
             
-            return ast.Type{ .Tuple = ast.TupleType{ .elements = elements }};
+            // Clone elements before return since defer will clean up the list
+            var elements_copy = std.ArrayList(ast.Type){};
+            for (elements.items) |elem| {
+                try elements_copy.append(self.allocator, elem);
+            }
+            
+            return ast.Type{ .Tuple = ast.TupleType{ .elements = elements_copy }};
         }
 
         // Generic types with parameters Name<T, U>
@@ -1934,7 +1946,8 @@ pub const Parser = struct {
         // Parse fam { try_body } catch(error_var) { catch_body } finally { finally_body }
         _ = try self.consume(.LeftBrace, "Expected '{' after 'fam'");
         
-        var try_body = ArrayList(*anyopaque){};
+        var try_body = ArrayList(*Statement){};
+        defer try_body.deinit(self.allocator);
         
         // Parse try body statements
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1944,7 +1957,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.arena_allocator.create(Statement);
 
             stmt_ptr.* = stmt;
-            try try_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+            try try_body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}' after try body");
@@ -1961,7 +1974,7 @@ pub const Parser = struct {
                 
         _ = try self.consume(.LeftBrace, "Expected '{' for sus catch body");
             
-            var catch_body = ArrayList(*anyopaque){};
+            var catch_body = ArrayList(*Statement){};
             
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
@@ -1970,7 +1983,7 @@ pub const Parser = struct {
                 const stmt_ptr = try self.arena_allocator.create(Statement);
 
                 stmt_ptr.* = stmt;
-                try catch_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                try catch_body.append(self.allocator, stmt_ptr);
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after sus catch body");
@@ -1985,7 +1998,7 @@ pub const Parser = struct {
         if (self.matchKeyword("finally")) {
         _ = try self.consume(.LeftBrace, "Expected '{' for finally body");
             
-            var finally_body = ArrayList(*anyopaque){};
+            var finally_body = ArrayList(*Statement){};
             
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
@@ -1994,7 +2007,7 @@ pub const Parser = struct {
                 const stmt_ptr = try self.arena_allocator.create(Statement);
 
                 stmt_ptr.* = stmt;
-                try finally_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                try finally_body.append(self.allocator, stmt_ptr);
             }
             
         _ = try self.consume(.RightBrace, "Expected '}' after finally body");
@@ -2029,6 +2042,7 @@ pub const Parser = struct {
                     _ = self.advance(); // consume '('
                     
                     var arguments = ArrayList(*Expression){};
+                    defer arguments.deinit(self.allocator);
                     
                     if (!self.check(.RightParen)) {
                         while (true) {
@@ -2043,10 +2057,16 @@ pub const Parser = struct {
 
                     _ = try self.consume(.RightParen, "Expected ')' after method arguments");
 
+                    // CRITICAL FIX: Clone the arguments to prevent use-after-free
+                    var arguments_copy = ArrayList(*Expression){};
+                    for (arguments.items) |arg| {
+                        try arguments_copy.append(self.allocator, arg);
+                    }
+
                     expr = Expression{ .MethodCall = try self.allocateMethodCall(ast.MethodCallExpression{
                         .object = try self.allocateExpression(expr),
                         .method_name = property,
-                        .arguments = arguments,
+                        .arguments = arguments_copy,
                     })};
                 } else {
                     // Regular member access
@@ -2087,7 +2107,8 @@ pub const Parser = struct {
     }
 
     fn finishCall(self: *Parser, callee: Expression) ParserError!Expression {
-        var arguments = ArrayList(*Expression){}; // Use main allocator for list
+        var arguments = ArrayList(*Expression){};
+        defer arguments.deinit(self.allocator);
 
         if (!self.check(.RightParen)) {
             while (true) {
@@ -2113,10 +2134,16 @@ pub const Parser = struct {
         }
 
         _ = try self.consume(.RightParen, "Expected ')' after arguments");
+        
+        // CRITICAL FIX: Clone the arguments to prevent use-after-free
+        var arguments_copy = ArrayList(*Expression){};
+        for (arguments.items) |arg| {
+            try arguments_copy.append(self.allocator, arg);
+        }
 
         return Expression{ .Call = .{
             .function = try self.allocateExpression(callee),
-            .arguments = arguments,
+            .arguments = arguments_copy,
         }};
     }
 
@@ -2750,7 +2777,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var then_branch = ArrayList(*anyopaque){};
+        var then_branch = ArrayList(*Statement){};
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
@@ -2758,16 +2785,16 @@ pub const Parser = struct {
             const stmt_ptr = try self.arena_allocator.create(Statement); 
 
             stmt_ptr.* = stmt; 
-            try then_branch.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+            try then_branch.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
-        var else_branch: ?ArrayList(*anyopaque) = null;
+        var else_branch: ?ArrayList(*Statement) = null;
         
         // Parse else clause (highkey/otherwise)
         if (self.match(.Highkey) or self.match(.Otherwise)) {
-            var else_stmts = ArrayList(*anyopaque){};
+            var else_stmts = ArrayList(*Statement){};
             
             if (self.check(.Lowkey) or self.check(.Ready)) {
                 // else if
@@ -2776,7 +2803,7 @@ pub const Parser = struct {
                 const if_stmt_ptr = try self.arena_allocator.create(Statement);
         
                 if_stmt_ptr.* = if_stmt;
-                try else_stmts.append(self.allocator, try self.statementToAnyopaque(if_stmt_ptr));
+                try else_stmts.append(self.allocator, if_stmt_ptr);
             } else {
                 // else block
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -2788,7 +2815,7 @@ pub const Parser = struct {
                     const stmt_ptr = try self.arena_allocator.create(Statement); 
     
                     stmt_ptr.* = stmt; 
-                    try else_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    try else_stmts.append(self.allocator, stmt_ptr);
                 }
                 
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2825,7 +2852,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(*anyopaque){};
+        var body = ArrayList(*Statement){};
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -2833,7 +2860,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); 
+            stmt_ptr.* = stmt; 
+            try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2841,17 +2870,9 @@ pub const Parser = struct {
         const condition_ptr = try self.arena_allocator.create(Expression);
         condition_ptr.* = condition;
         
-        // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
-        var stmt_body = ArrayList(*Statement){};
-        for (body.items) |item| {
-            if (self.anyopaqueToStatement(item)) |stmt| {
-                try stmt_body.append(self.allocator, stmt);
-            }
-        }
-        
         return ast.WhileStatement{
             .condition = condition_ptr,
-            .body = stmt_body,
+            .body = body,
         };
     }
 
@@ -2874,7 +2895,7 @@ pub const Parser = struct {
             
         _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = ArrayList(*anyopaque){};
+            var body = ArrayList(*Statement){};
             self.in_loop = true;
             defer { self.in_loop = false; }
             
@@ -2882,7 +2903,9 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+                const stmt_ptr = try self.arena_allocator.create(Statement); 
+                stmt_ptr.* = stmt; 
+                try body.append(self.allocator, stmt_ptr);
             }
             
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3394,14 +3417,14 @@ pub const Parser = struct {
         // Parse block: stan { ... }
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = ArrayList(*anyopaque){};
+        var body = ArrayList(*Statement){};
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.arena_allocator.create(Statement); 
             stmt_ptr.* = stmt; 
-            try body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+            try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3419,14 +3442,14 @@ pub const Parser = struct {
             // Block form: stan { ... }
         _ = try self.consume(.LeftBrace, "Expected '{'");
             
-            var body = ArrayList(*anyopaque){};
+            var body = ArrayList(*Statement){};
             while (!self.check(.RightBrace) and !self.isAtEnd()) {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
                 const stmt_ptr = try self.arena_allocator.create(Statement); 
                 stmt_ptr.* = stmt; 
-                try body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                try body.append(self.allocator, stmt_ptr);
             }
             
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3462,22 +3485,17 @@ pub const Parser = struct {
             if (self.match(.Basic)) {
         _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = std.ArrayList(*anyopaque){};
+                var default_stmts = std.ArrayList(*Statement){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    const stmt_ptr = try self.arena_allocator.create(Statement); 
+                    stmt_ptr.* = stmt; 
+                    try default_stmts.append(self.allocator, stmt_ptr);
                 }
                 
-                // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
-                var stmt_list = ArrayList(*Statement){};
-                for (default_stmts.items) |item| {
-                    if (self.anyopaqueToStatement(item)) |stmt| {
-                        try stmt_list.append(self.allocator, stmt);
-                    }
-                }
-                default_case = stmt_list;
+                default_case = default_stmts;
                 continue;
             }
             
@@ -3541,22 +3559,17 @@ pub const Parser = struct {
             if (self.match(.Basic)) {
         _ = try self.consume(.Colon, "Expected ':' after 'basic'");
                 
-                var default_stmts = std.ArrayList(*anyopaque){};
+                var default_stmts = std.ArrayList(*Statement){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    const stmt_ptr = try self.arena_allocator.create(Statement); 
+                    stmt_ptr.* = stmt; 
+                    try default_stmts.append(self.allocator, stmt_ptr);
                 }
                 
-                // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
-                var stmt_list = ArrayList(*Statement){};
-                for (default_stmts.items) |item| {
-                    if (self.anyopaqueToStatement(item)) |stmt| {
-                        try stmt_list.append(self.allocator, stmt);
-                    }
-                }
-                default_case = stmt_list;
+                default_case = default_stmts;
                 continue;
             }
             
@@ -3566,14 +3579,14 @@ pub const Parser = struct {
                 
         _ = try self.consume(.Colon, "Expected ':' after channel operation");
                 
-                var case_body = ArrayList(*anyopaque){};
+                var case_body = ArrayList(*Statement){};
                 while (!self.check(.Mood) and !self.check(.Basic) and !self.check(.RightBrace) and !self.isAtEnd()) {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
                     const stmt_ptr = try self.arena_allocator.create(Statement); 
                     stmt_ptr.* = stmt; 
-                    try case_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    try case_body.append(self.allocator, stmt_ptr);
                 }
                 
                 try cases.append(self.allocator, ast.SelectCase{

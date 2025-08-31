@@ -6,6 +6,6 @@ fr fr This file intentionally omits the "vibe main" package declaration
 fr fr to test error recovery
 
 slay main_character() {
-    sus x drip = 42
+    sus x normie = 42
     damn 0
 }

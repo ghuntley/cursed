@@ -1,3 +1,5 @@
+vibe env
+
 fr fr CURSED Environment Module - Pure CURSED Self-hosting Implementation
 fr fr Core environment variable operations
 

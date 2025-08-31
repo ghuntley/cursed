@@ -344,7 +344,7 @@ export fn cursed_later_execute_all() void {
 
 /// Execute defers during early return
 export fn cursed_later_early_return(target_scope: u32) void {
-    std.debug.print("Executing defers for early return from scope {s}\n", .{target_scope});
+    // Debug output removed to match compiled mode behavior
     
     // Execute all defers from current scope up to target scope
     var i = enhanced_defer_count;

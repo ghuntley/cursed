@@ -9,32 +9,32 @@ slay main_character() {
     simple_function()
     
     fr fr Test single parameter function
-    sus result1 drip = double_value(21)
+    sus result1 normie = double_value(21)
     
     fr fr Test multiple parameter function
-    sus result2 drip = add_three(5, 10, 15)
+    sus result2 normie = add_three(5, 10, 15)
     
     fr fr Test function with boolean
     sus is_greater lit = compare_values(10, 5)
     
     fr fr Test nested function calls
-    sus nested_result drip = double_value(add_three(1, 2, 3))
+    sus nested_result normie = double_value(add_three(1, 2, 3))
     
     damn 0
 }
 
 slay simple_function() {
-    sus x drip = 42
+    sus x normie = 42
 }
 
-slay double_value(value drip) normie {
+slay double_value(value normie) normie {
     damn value * 2
 }
 
-slay add_three(a drip, b drip, c drip) normie {
+slay add_three(a normie, b normie, c normie) normie {
     damn a + b + c
 }
 
-slay compare_values(x drip, y drip) lit {
+slay compare_values(x normie, y normie) lit {
     damn x > y
 }

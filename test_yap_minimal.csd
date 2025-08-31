@@ -1,0 +1,2 @@
+yap("hello");
+yap("world");

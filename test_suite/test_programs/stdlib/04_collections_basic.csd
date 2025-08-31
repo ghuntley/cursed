@@ -7,7 +7,7 @@ slay main_character() {
     vibez.spill("=== Basic Collections Test ===")
     
     vibez.spill("Creating array:")
-    sus arr drip = collections.new_array()
+    sus arr normie = collections.new_array()
     
     vibez.spill("Adding elements:")
     collections.push(arr, 1)

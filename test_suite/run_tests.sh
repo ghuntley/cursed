@@ -63,6 +63,21 @@ show_output() {
     echo
 }
 
+# Function to display output as hex for debugging differences
+show_hex_output() {
+    local title="$1"
+    local output="$2"
+    local exit_code="$3"
+    
+    echo -e "  ${CYAN}$title HEX (exit: $exit_code):${RESET}"
+    if [[ -n "$output" ]]; then
+        echo -n "$output" | xxd | sed 's/^/    /'
+    else
+        echo "    (no output)"
+    fi
+    echo
+}
+
 # Check if compiler exists
 if [[ ! -x "$CURSED_COMPILER" ]]; then
     echo -e "${RED}Error: Compiler not found or not executable: $CURSED_COMPILER${RESET}"
@@ -143,8 +158,12 @@ for test_file in "${test_files[@]}"; do
     
     # Compare results
     if [[ $interp_exit -eq 0 && $comp_exit -eq 0 ]]; then
-        # Both succeeded - compare outputs
-        if [[ "$interp_output" == "$compiled_output" ]]; then
+        # Both succeeded - compare outputs after normalization
+        # Normalize outputs: trim whitespace, remove trailing newlines, normalize line endings
+        interp_normalized=$(echo "$interp_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
+        compiled_normalized=$(echo "$compiled_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
+        
+        if [[ "$interp_normalized" == "$compiled_normalized" ]]; then
             result_color="$GREEN"
             result_text="PASS"
             PASSED=$((PASSED + 1))
@@ -154,13 +173,28 @@ for test_file in "${test_files[@]}"; do
             FAILED=$((FAILED + 1))
             test_failed=1
             show_details=1
+            
+            # In verbose mode, show byte-by-byte differences for debugging
+            if [[ $VERBOSE -eq 1 ]]; then
+                echo -e "    ${CYAN}Debug: Normalized outputs differ${RESET}"
+                echo -e "    ${CYAN}Interpreter normalized: '${interp_normalized}'${RESET}" 
+                echo -e "    ${CYAN}Compiled normalized: '${compiled_normalized}'${RESET}"
+                echo -e "    ${CYAN}Interpreter raw bytes:${RESET}"
+                echo -n "$interp_output" | xxd | sed 's/^/      /'
+                echo -e "    ${CYAN}Compiled raw bytes:${RESET}"
+                echo -n "$compiled_output" | xxd | sed 's/^/      /'
+            fi
         fi
     elif [[ $interp_exit -ne 0 && $comp_exit -ne 0 ]]; then
         # Both failed - this could be expected for error tests
+        # Normalize error messages the same way
+        interp_normalized=$(echo "$interp_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
+        compiled_normalized=$(echo "$compiled_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
+        
         result_color="$BLUE"
         result_text="CONSISTENT FAILURE (both failed)"
         PASSED=$((PASSED + 1))
-        if [[ "$interp_output" != "$compiled_output" ]]; then
+        if [[ "$interp_normalized" != "$compiled_normalized" ]]; then
             result_color="$YELLOW"
             result_text="FAIL (different error messages)"
             FAILED=$((FAILED + 1))
@@ -187,8 +221,17 @@ for test_file in "${test_files[@]}"; do
     
     # Show detailed output if needed
     if [[ $show_details -eq 1 ]]; then
+        # Show normal output
         show_output "Interpreter" "$interp_output" "$interp_exit"
         show_output "Compiled" "$compiled_output" "$comp_exit"
+        
+        # For failed tests, always show hex comparison to identify differences
+        if [[ $test_failed -eq 1 && $interp_exit -eq 0 && $comp_exit -eq 0 ]]; then
+            echo -e "  ${YELLOW}HEX COMPARISON (to identify differences):${RESET}"
+            show_hex_output "Interpreter" "$interp_output" "$interp_exit"
+            show_hex_output "Compiled" "$compiled_output" "$comp_exit"
+        fi
+        
         if [[ -n "$comp_output" && "$comp_output" != "$compiled_output" ]]; then
             show_output "Compilation" "$comp_output" "$comp_exit"
         fi

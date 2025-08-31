@@ -20,7 +20,7 @@ slay main_character() {
     vibez.spill("=== Recursive Function Test ===")
     
     vibez.spill("Factorial of 5:")
-    sus fact drip = factorial(5)
+    sus fact normie = factorial(5)
     vibez.spill(fact)
     
     vibez.spill("Countdown from 3:")

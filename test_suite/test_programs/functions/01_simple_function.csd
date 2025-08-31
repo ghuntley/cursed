@@ -15,7 +15,7 @@ slay main_character() {
     vibez.spill("=== Simple Function Test ===")
     
     vibez.spill("Testing add_numbers:")
-    sus result drip = add_numbers(7, 3)
+    sus result normie = add_numbers(7, 3)
     vibez.spill(result)
     
     vibez.spill("Testing greet function:")

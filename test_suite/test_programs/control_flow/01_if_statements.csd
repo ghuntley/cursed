@@ -5,8 +5,8 @@ yeet "vibez"
 slay main_character() {
     vibez.spill("=== If Statement Test ===")
     
-    sus x drip = 10
-    sus y drip = 5
+    sus x normie = 10
+    sus y normie = 5
     
     vibez.spill("x = 10, y = 5")
     
@@ -20,7 +20,7 @@ slay main_character() {
         vibez.spill("x is not less than y")
     }
     
-    sus score drip = 85
+    sus score normie = 85
     vibez.spill("Score evaluation:")
     
     lowkey (score >= 90) {

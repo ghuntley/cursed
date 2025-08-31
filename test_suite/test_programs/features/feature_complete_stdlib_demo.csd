@@ -15,14 +15,14 @@ slay main_character() {
     fr fr Math library demonstrations
     vibez.spill("--- Math Operations ---")
     
-    sus num1 drip = 15
-    sus num2 drip = 7
-    sus negative_num drip = -25
+    sus num1 normie = 15
+    sus num2 normie = 7
+    sus negative_num normie = -25
     
-    sus sum drip = mathz.add_two(num1, num2)
-    sus absolute drip = mathz.abs(negative_num)
-    sus maximum drip = mathz.max(num1, num2)
-    sus minimum drip = mathz.min(num1, num2)
+    sus sum normie = mathz.add_two(num1, num2)
+    sus absolute normie = mathz.abs(negative_num)
+    sus maximum normie = mathz.max(num1, num2)
+    sus minimum normie = mathz.min(num1, num2)
     
     vibez.spill("add_two(15, 7):")
     vibez.spill(sum)
@@ -36,14 +36,14 @@ slay main_character() {
     fr fr String library demonstrations
     vibez.spill("--- String Operations ---")
     
-    sus first_str drip = "CURSED"
-    sus second_str drip = " Programming"
-    sus test_str drip = "Hello World"
+    sus first_str tea = "CURSED"
+    sus second_str tea = " Programming"
+    sus test_str tea = "Hello World"
     
-    sus concatenated drip = stringz.concat(first_str, second_str)
-    sus str_length drip = stringz.length(test_str)
-    sus upper_case drip = stringz.upper("cursed language")
-    sus lower_case drip = stringz.lower("PROGRAMMING ROCKS")
+    sus concatenated tea = stringz.concat(first_str, second_str)
+    sus str_length tea = stringz.length(test_str)
+    sus upper_case tea = stringz.upper("cursed language")
+    sus lower_case tea = stringz.lower("PROGRAMMING ROCKS")
     
     vibez.spill("concat('CURSED', ' Programming'):")
     vibez.spill(concatenated)
@@ -66,8 +66,8 @@ slay main_character() {
     fr fr Complex expressions combining multiple libraries
     vibez.spill("--- Complex Operations ---")
     
-    sus complex_math drip = mathz.abs(mathz.add_two(-10, 25))
-    sus complex_string drip = stringz.upper(stringz.concat("result: ", "success"))
+    sus complex_math normie = mathz.abs(mathz.add_two(-10, 25))
+    sus complex_string tea = stringz.upper(stringz.concat("result: ", "success"))
     
     vibez.spill("abs(add_two(-10, 25)):")
     vibez.spill(complex_math)

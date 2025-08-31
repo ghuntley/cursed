@@ -8,10 +8,10 @@ fr fr Expected: Operations should evaluate in proper order (*, / before +, -, et
 
 slay main_character() {
     fr fr Arithmetic precedence tests
-    sus result1 drip = 2 + 3 * 4        fr fr Should be 14, not 20
-    sus result2 drip = 20 / 4 + 2       fr fr Should be 7, not 3
-    sus result3 drip = (2 + 3) * 4      fr fr Should be 20
-    sus result4 drip = 2 * 3 + 4 * 5    fr fr Should be 26
+    sus result1 normie = 2 + 3 * 4        fr fr Should be 14, not 20
+    sus result2 normie = 20 / 4 + 2       fr fr Should be 7, not 3
+    sus result3 normie = (2 + 3) * 4      fr fr Should be 20
+    sus result4 normie = 2 * 3 + 4 * 5    fr fr Should be 26
     
     vibez.spill("2 + 3 * 4 = {}", result1)
     vibez.spill("20 / 4 + 2 = {}", result2)
@@ -31,9 +31,9 @@ slay main_character() {
     vibez.spill("(true || false) && true = {}", bool_result2)
     
     fr fr Comparison precedence
-    sus x drip = 5
-    sus y drip = 10
-    sus z drip = 3
+    sus x normie = 5
+    sus y normie = 10
+    sus z normie = 3
     
     sus comp_result lit = x + z > y - 2  fr fr Should be false (8 > 8 is false)
     vibez.spill("5 + 3 > 10 - 2 = {}", comp_result)

@@ -3,7 +3,7 @@ vibe main
 yeet "vibez"
 
 slay fizzbuzz(n) {
-    sus i drip = 1
+    sus i normie = 1
     periodt (i <= n) {
         lowkey (i % 15 == 0) {
             vibez.spill("FizzBuzz")

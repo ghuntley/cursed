@@ -5,10 +5,10 @@ yeet "vibez"
 slay main_character() {
     vibez.spill("=== Basic Syntax Test ===")
     
-    sus age drip = 25
+    sus age normie = 25
     vibez.spill(age)
     
-    sus name drip = "CURSED"
+    sus name tea = "CURSED"
     vibez.spill(name)
     
     sus is_cool lit = based

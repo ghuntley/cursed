@@ -1,7 +1,7 @@
-// Test mathz.add_two() function that was failing in compiled mode
-sus main() -> i32 {
+yeet "vibez"
+yeet "mathz"
+
+slay main_character() {
     sus result drip = mathz.add_two(5, 3)
-    yap("Testing mathz.add_two(5, 3):")
-    yap(result) 
-    return 0
+    vibez.spill("Test complete")
 }

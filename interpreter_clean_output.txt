@@ -1,0 +1,133 @@
+DEBUG: Registered global builtin functions (yap)
+DEBUG: Initialized interpreter with globals@interpreter.Environment@7ffcb014d0d8 (parent: *interpreter.Environment@0)
+DEBUG: Registering function 'main_character'
+DEBUG: Created new environment@interpreter.Environment@704995cc0040 with parent@*interpreter.Environment@7ffcb014d0d8
+DEBUG: Calling function with 0 parameters, got 0 args
+DEBUG: Function declaration ptr: @ast.FunctionStatement@7ffcb014a9d8, parameters ptr: @ast.Parameter@aaaaaaaaaaaaaaaa
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+"Hello World"
+Executing defers from size 0 to 0
+✅ Program completed
+Executing 0 deferred statements
+error(gpa): memory address 0x704995cc0040 leaked: 
+/home/ghuntley/cursed/src-zig/interpreter.zig:425:41: 0x123972a in newEnvironment (cursed_compiler_main.zig)
+        const env = try allocator.create(Environment);
+                                        ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:2639:60: 0x1239c50 in callFunction (cursed_compiler_main.zig)
+        // Note: Not deinitialized here as environment may escape via closures
+                                                           ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:666:38: 0x11f23b7 in execute (cursed_compiler_main.zig)
+        } else {
+                                     ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:629:28: 0x11c73f3 in interpret (cursed_compiler_main.zig)
+    }
+                           ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:251:33: 0x11a402c in interpretSource (cursed_compiler_main.zig)
+    cursed_interpreter.interpret(program) catch |err| {
+                                ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0x11a5f97 in main (cursed_compiler_main.zig)
+        try interpretSource(allocator, source, filename.?, verbose);
+                           ^
+
+error(gpa): memory address 0x704995d20200 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x132be2e in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x12e8855 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x128de92 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x1252f9c in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:400:37: 0x132475e in parsePrattCall (cursed_compiler_main.zig)
+                try arguments.append(self.allocator, arg_ptr);
+                                    ^
+/home/ghuntley/cursed/src-zig/parser.zig:1660:34: 0x128bb3b in parseExpressionPrattPrec (cursed_compiler_main.zig)
+            left = try infix_fn.?(self, left);
+                                 ^
+
+error(gpa): memory address 0x704995d20280 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x125c2ce in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x121dad5 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11dbd32 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11b69dc in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:1228:33: 0x1203d14 in parseFunctionStatement (cursed_compiler_main.zig)
+            try func.body.append(self.allocator, stmt_ptr);
+                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:942:70: 0x11d2ed5 in parseStatement (cursed_compiler_main.zig)
+            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+                                                                     ^
+
+error(gpa): memory address 0x704995d20300 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x1287c0e in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x1247355 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x1201cc2 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11d2acc in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:510:42: 0x11b22f9 in parseProgram (cursed_compiler_main.zig)
+                program.statements.append(self.allocator, anyopaque_ptr) catch {
+                                         ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0x11a3cdd in interpretSource (cursed_compiler_main.zig)
+    const program = cursed_parser.parseProgram() catch |err| {
+                                              ^
+
+error(gpa): memory address 0x704995ca0000 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0x10f4135 in alloc (std.zig)
+            (self.createNode(0, n + ptr_align) orelse return null);
+                            ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c6d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x1205740 in create__anon_30705 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:398:64: 0x132465b in parsePrattCall (cursed_compiler_main.zig)
+                const arg_ptr = try self.arena_allocator.create(Expression);
+                                                               ^
+/home/ghuntley/cursed/src-zig/parser.zig:1660:34: 0x128bb3b in parseExpressionPrattPrec (cursed_compiler_main.zig)
+            left = try infix_fn.?(self, left);
+                                 ^
+/home/ghuntley/cursed/src-zig/parser.zig:1643:45: 0x124e643 in parseExpressionPratt (cursed_compiler_main.zig)
+        return self.parseExpressionPrattPrec(.None);
+                                            ^
+
+error(gpa): memory address 0x704995d00400 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0x10f48a6 in alloc (std.zig)
+                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+                                          ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c6d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x1205740 in create__anon_30705 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:1096:53: 0x11d5b82 in parseStatement (cursed_compiler_main.zig)
+        const expr_ptr = self.arena_allocator.create(Expression) catch {
+                                                    ^
+/home/ghuntley/cursed/src-zig/parser.zig:1218:49: 0x1203adb in parseFunctionStatement (cursed_compiler_main.zig)
+            const stmt = try self.parseStatement();
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:942:70: 0x11d2ed5 in parseStatement (cursed_compiler_main.zig)
+            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+                                                                     ^
+

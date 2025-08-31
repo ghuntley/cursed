@@ -1,0 +1,12 @@
+// Test basic vibez functions (vibez is always available)
+vibez.spill("Testing vibez I/O functions")
+vibez.spill("This is spill without newline. ")
+vibez.spill("This is spillln with newline.")
+    
+vibez.spill("Number: ")
+vibez.spill(42)
+vibez.spill("String: ")
+vibez.spill("test string")
+vibez.spill("Boolean: ")
+vibez.spill(true)
+vibez.spill("All vibez tests completed!")

@@ -247,24 +247,22 @@ pub const Expression = union(enum) {
 };
 
 pub const Program = struct {
-    statements: ArrayList(*anyopaque),
+    statements: ArrayList(*Statement),
     imports: ArrayList(ImportStatement),
     package: ?PackageDeclaration,
 
     pub fn init(_: Allocator) Program {
         return Program{
-            .statements = ArrayList(*anyopaque){},
+            .statements = ArrayList(*Statement){},
             .imports = ArrayList(ImportStatement){},
             .package = null,
         };
     }
 
     pub fn deinit(self: *Program, allocator: Allocator) void {
-        for (self.statements.items) |stmt| {
-            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            stmt_ptr.deinit(allocator);
-            allocator.destroy(stmt_ptr);
-        }
+        // CRITICAL FIX: Don't destroy arena-allocated statements
+        // The arena allocator will clean up all Statement objects when it's deinitialized
+        // Only clean up the ArrayList that holds the pointers, not the statements themselves
         self.statements.deinit(allocator);
         
         for (self.imports.items) |*import| {
@@ -753,8 +751,8 @@ pub const ReturnStatement = struct {
 
 pub const IfStatement = struct {
     condition: *anyopaque,
-    then_branch: ArrayList(*anyopaque),
-    else_branch: ?ArrayList(*anyopaque),
+    then_branch: ArrayList(*Statement),
+    else_branch: ?ArrayList(*Statement),
 
     pub fn deinit(self: *IfStatement, allocator: Allocator) void {
         const condition_expr: *Expression = @ptrCast(@alignCast(self.condition));
@@ -864,7 +862,7 @@ pub const ForInStatement = struct {
 pub const SwitchStatement = struct {
     expression: *anyopaque,
     cases: ArrayList(SwitchCase),
-    default_case: ?ArrayList(*anyopaque),
+    default_case: ?ArrayList(*Statement),
 };
 
 pub const PatternSwitchStatement = struct {
@@ -878,11 +876,10 @@ pub const GoroutineStatement = struct {
 };
 
 pub const StanStatement = struct {
-    body: ArrayList(*anyopaque),
+    body: ArrayList(*Statement),
     
     pub fn deinit(self: *StanStatement, allocator: Allocator) void {
-        for (self.body.items) |stmt| {
-            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
+        for (self.body.items) |stmt_ptr| {
             stmt_ptr.deinit(allocator);
         }
         self.body.deinit(allocator);
@@ -969,7 +966,7 @@ pub const PanicStatement = struct {
 };
 
 pub const CatchStatement = struct {
-    body: ArrayList(*anyopaque),
+    body: ArrayList(*Statement),
     error_variable: ?[]const u8,
     error_type: ?Type,
 };
@@ -1022,7 +1019,7 @@ pub const ConstDecl = struct {
 
 /// Block statement for grouping statements
 pub const BlockStatement = struct {
-    statements: ArrayList(*anyopaque),
+    statements: ArrayList(*Statement),
     
     pub fn init() BlockStatement {
         return BlockStatement{
@@ -1031,8 +1028,7 @@ pub const BlockStatement = struct {
     }
     
     pub fn deinit(self: *BlockStatement, allocator: Allocator) void {
-        for (self.statements.items) |stmt| {
-            const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
+        for (self.statements.items) |stmt_ptr| {
             stmt_ptr.deinit(allocator);
             allocator.destroy(stmt_ptr);
         }
@@ -1082,7 +1078,7 @@ pub const UnaryExpression = struct {
 
 pub const CompositeLiteralExpression = struct {
     type_name: []const u8,
-    elements: ArrayList(*anyopaque),
+    elements: ArrayList(*Expression),
 };
 
 pub const ChannelSendExpression = struct {
@@ -1212,17 +1208,17 @@ pub const ShookExpression = struct {
 
 /// FAM - Panic recovery block
 pub const FamExpression = struct {
-    try_body: ArrayList(*anyopaque), // Points to Statement
+    try_body: ArrayList(*Statement), // Points to Statement
     catch_handler: ?CatchHandler,
     finally_handler: ?FinallyHandler,
     
     pub const CatchHandler = struct {
         error_variable: []const u8,
-        handler_body: ArrayList(*anyopaque), // Points to Statement
+        handler_body: ArrayList(*Statement), // Points to Statement
     };
     
     pub const FinallyHandler = struct {
-        finally_body: ArrayList(*anyopaque), // Points to Statement
+        finally_body: ArrayList(*Statement), // Points to Statement
     };
 };
 
@@ -1279,7 +1275,7 @@ pub const TypeSwitchExpression = struct {
 // Support structures
 pub const SwitchCase = struct {
     value: *anyopaque,
-    body: ArrayList(*anyopaque),
+    body: ArrayList(*Statement),
 };
 
 pub const PatternCase = struct {
@@ -1290,7 +1286,7 @@ pub const PatternCase = struct {
 
 pub const SelectCase = struct {
     channel_op: ChannelOperation,
-    body: ArrayList(*anyopaque),
+    body: ArrayList(*Statement),
 };
 
 pub const ChannelOperation = union(enum) {

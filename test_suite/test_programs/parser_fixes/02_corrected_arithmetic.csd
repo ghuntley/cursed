@@ -1,9 +1,9 @@
 vibe main
 
-sus main() -> std_int {
-    sus x drip = 15;
-    sus y drip = 7;
-    sus result drip = x + y;
+slay main() normie {
+    sus x normie = 15;
+    sus y normie = 7;
+    sus result normie = x + y;
     yap("Arithmetic test complete");
     damn 0;
 }

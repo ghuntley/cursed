@@ -466,10 +466,70 @@ pub const LLVMIRPipeline = struct {
         else
             func_decl.name;
         
+        // Check if function already exists
+        if (self.functions.get(qualified_name)) |existing_func| {
+            print("🔍 DEBUG: Function {s} already exists, checking if it's a forward declaration...\n", .{qualified_name});
+            
+            // Check if existing function has a body (if it's just a declaration or has implementation)
+            const first_block = c.LLVMGetFirstBasicBlock(existing_func);
+            if (first_block != null) {
+                print("⚠️ DEBUG: Function {s} already has implementation, skipping\n", .{qualified_name});
+                return; // Function already implemented
+            }
+            
+            print("🔧 DEBUG: Function {s} is forward declaration, replacing with proper implementation\n", .{qualified_name});
+            
+            // Get existing function type for comparison
+            const existing_type = c.LLVMGlobalGetValueType(existing_func);
+            const existing_param_count = c.LLVMCountParamTypes(existing_type);
+            
+            // Check if signatures are compatible
+            if (existing_param_count == @as(c_uint, @intCast(param_types.items.len))) {
+                // Signatures match parameter count, check parameter types
+                var param_types_match = true;
+                if (param_types.items.len > 0) {
+                    const existing_param_types = try self.allocator.alloc(c.LLVMTypeRef, param_types.items.len);
+                    defer self.allocator.free(existing_param_types);
+                    c.LLVMGetParamTypes(existing_type, existing_param_types.ptr);
+                    
+                    for (param_types.items, existing_param_types) |new_type, existing_param_type| {
+                        if (new_type != existing_param_type) {
+                            param_types_match = false;
+                            break;
+                        }
+                    }
+                }
+                
+                if (param_types_match) {
+                    print("✅ DEBUG: Forward declaration signature matches, using existing function {s}\n", .{qualified_name});
+                    // Generate function body using existing function
+                    try self.generateFunctionBody(existing_func, func_decl);
+                    return;
+                } else {
+                    print("❌ ERROR: Forward declaration signature mismatch for {s} - parameter types differ\n", .{qualified_name});
+                }
+            } else {
+                print("❌ ERROR: Forward declaration signature mismatch for {s}: forward={d}, actual={d}\n", .{qualified_name, existing_param_count, param_types.items.len});
+            }
+            
+            // If we reach here, signatures don't match - this is an error
+            return error.CompilationFailed;
+        }
+        
         const func_name_z = try self.arena.allocator().dupeZ(u8, qualified_name);
         const function = c.LLVMAddFunction(self.module, func_name_z.ptr, func_type);
         try self.functions.put(qualified_name, function);
+        print("🔧 DEBUG: Created new function {s} with {d} parameters\n", .{qualified_name, param_types.items.len});
         
+        // Generate function body
+        try self.generateFunctionBody(function, func_decl);
+    }
+    
+    /// Generate function body (extracted for reuse)
+    fn generateFunctionBody(self: *LLVMIRPipeline, function: c.LLVMValueRef, func_decl: ast.FunctionStatement) !void {
+        // Get function name for debugging
+        const func_name = c.LLVMGetValueName(function);
+        const function_name = if (func_name != null) std.mem.span(func_name) else "unknown";
         // Create entry block
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, function, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
@@ -501,9 +561,14 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Add return if not present
-        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+        const current_block = c.LLVMGetInsertBlock(self.builder);
+        if (current_block == null or c.LLVMGetBasicBlockTerminator(current_block) == null) {
             if (func_decl.return_type != null) {
                 // Return zero/null for non-void functions
+                const return_type = if (func_decl.return_type) |ret_type|
+                    try self.cursedTypeToLLVM(ret_type)
+                else
+                    c.LLVMVoidTypeInContext(self.context);
                 const zero_val = c.LLVMConstInt(return_type, 0, 0);
                 _ = c.LLVMBuildRet(self.builder, zero_val);
             } else {
@@ -521,7 +586,7 @@ pub const LLVMIRPipeline = struct {
         
         // Verify this specific function
         if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
-            print("❌ Function verification failed for: {s}\n", .{qualified_name});
+            print("❌ Function verification failed for: {s}\n", .{function_name});
             return LLVMIRError.ModuleVerificationFailed;
         }
     }
@@ -603,7 +668,7 @@ pub const LLVMIRPipeline = struct {
         
         // Verify this specific function
         if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
-            print("❌ Function verification failed for: {s}\n", .{qualified_name});
+            print("❌ Function verification failed for: {s}\n", .{function_name});
             return LLVMIRError.ModuleVerificationFailed;
         }
     }
@@ -618,11 +683,11 @@ pub const LLVMIRPipeline = struct {
             init_value = try self.generateExpression(initializer.*);
         }
         
-        // Determine type - if no explicit type, infer from initializer
-        const llvm_type = if (var_decl.var_type) |vtype| 
-            try self.cursedTypeToLLVM(vtype)
-        else if (init_value) |init_val|
-            c.LLVMTypeOf(init_val)
+        // Determine type - prioritize initializer type for better type safety
+        const llvm_type = if (init_value) |init_val|
+            c.LLVMTypeOf(init_val)  // Use initializer's type if available
+        else if (var_decl.var_type) |vtype| 
+            try self.cursedTypeToLLVM(vtype)  // Fall back to declared type
         else 
             c.LLVMDoubleTypeInContext(self.context); // Default to drip type (float/f64)
         
@@ -1354,11 +1419,21 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
-            if (is_float) {
-                return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
-            } else {
-                return c.LLVMBuildSDiv(self.builder, left, right, "div_tmp");
+            // Division should always produce floating-point result
+            // Convert integer operands to double first
+            if (!left_is_float) {
+                left = c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "int_to_double_left");
+            } else if (c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind) {
+                left = c.LLVMBuildFPExt(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "float_to_double_left");
             }
+            
+            if (!right_is_float) {
+                right = c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "int_to_double_right");
+            } else if (c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind) {
+                right = c.LLVMBuildFPExt(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "float_to_double_right");
+            }
+            
+            return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
         } else if (std.mem.eql(u8, bin_op.operator, "==")) {
             if (is_float) {
                 return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left, right, "feq_tmp");
@@ -1405,7 +1480,6 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate function call
     fn generateFunctionCall(self: *LLVMIRPipeline, call: ast.CallExpression) !c.LLVMValueRef {
-        // Removed DEBUG output
         // Handle standard library calls
         // Extract function name from the function expression
         const function_name = switch (call.function.*) {
@@ -1424,7 +1498,7 @@ pub const LLVMIRPipeline = struct {
             else => return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0),
         };
         
-        // Removed DEBUG output
+        print("🔍 DEBUG: Looking for function: {s}\n", .{function_name});
         
         if (std.mem.eql(u8, function_name, "vibez.spill")) {
             // Convert []*Expression to []Expression
@@ -1448,6 +1522,8 @@ pub const LLVMIRPipeline = struct {
         
         // Look up user-defined function
         if (self.functions.get(function_name)) |function| {
+            print("✅ DEBUG: Found function {s} in function table\n", .{function_name});
+            
             // Safety check
             if (@as(?*anyopaque, function) == null) {
                 print("❌ Null function reference for: {s}\n", .{function_name});
@@ -1494,9 +1570,74 @@ pub const LLVMIRPipeline = struct {
             
             return result;
         } else {
-            print("❌ Undefined function: {s}\n", .{function_name});
+            print("❌ DEBUG: Function {s} not found in function table, creating forward declaration...\n", .{function_name});
+            
+            // CRITICAL BUG FIX: Instead of returning error, create a forward declaration
+            // with the correct signature based on the call arguments
+            return try self.createForwardDeclaration(function_name, call);
+        }
+    }
+    
+    /// Create forward declaration for undefined function with proper signature
+    fn createForwardDeclaration(self: *LLVMIRPipeline, function_name: []const u8, call: ast.CallExpression) !c.LLVMValueRef {
+        print("🔧 DEBUG: Creating forward declaration for {s} with {d} arguments\n", .{function_name, call.arguments.items.len});
+        
+        // Analyze argument types to create proper function signature
+        var param_types = std.ArrayList(c.LLVMTypeRef){};
+        defer param_types.deinit(self.allocator);
+        var llvm_args: [16]c.LLVMValueRef = undefined;
+        
+        if (call.arguments.items.len > 16) {
+            print("❌ Too many arguments for forward declaration (max 16)\n", .{});
             return error.UndefinedFunction;
         }
+        
+        // Generate arguments and infer their types
+        for (call.arguments.items, 0..) |arg, i| {
+            const arg_val = try self.generateExpression(arg.*);
+            llvm_args[i] = arg_val;
+            
+            const arg_type = c.LLVMTypeOf(arg_val);
+            try param_types.append(self.allocator, arg_type);
+        }
+        
+        // For unknown functions, assume they return int32 (normie type in CURSED)
+        const return_type = c.LLVMInt32TypeInContext(self.context);
+        
+        // Create function type with proper signature
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @intCast(param_types.items.len),
+            0
+        );
+        
+        // Create forward declaration
+        const func_name_z = try self.arena.allocator().dupeZ(u8, function_name);
+        const function = c.LLVMAddFunction(self.module, func_name_z.ptr, func_type);
+        
+        // Store in function table for future use
+        try self.functions.put(function_name, function);
+        
+        print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params -> int32\n", .{function_name, param_types.items.len});
+        
+        // Generate the function call with proper signature
+        const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
+        const result = c.LLVMBuildCall2(
+            self.builder,
+            func_type,
+            function,
+            args_ptr,
+            @intCast(call.arguments.items.len),
+            "forward_call_tmp"
+        );
+        
+        if (@as(?*anyopaque, result) == null) {
+            print("❌ Failed to generate call to forward declaration: {s}\n", .{function_name});
+            return error.UndefinedFunction;
+        }
+        
+        return result;
     }
     
     /// Generate method call

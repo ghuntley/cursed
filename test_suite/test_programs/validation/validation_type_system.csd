@@ -5,11 +5,11 @@ yeet "vibez"
 slay main_character() {
     vibez.spill("=== Type System Test ===")
     
-    sus int_val drip = 42
+    sus int_val normie = 42
     vibez.spill("Integer:")
     vibez.spill(int_val)
     
-    sus string_val drip = "Hello CURSED"
+    sus string_val tea = "Hello CURSED"
     vibez.spill("String:")
     vibez.spill(string_val)
     

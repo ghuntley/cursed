@@ -18,6 +18,54 @@ const CursedError = error_handling.CursedError;
 const ErrorContext = error_handling.ErrorContext;
 const safeDupeString = error_handling.safeDupeString;
 
+// Helper function to format floats like C's %g format
+fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
+    // C's %g uses 6 significant digits total and removes trailing zeros
+    // It chooses between decimal and exponential notation
+    const abs_value = @abs(value);
+    
+    if (abs_value == 0.0) {
+        return std.fmt.allocPrint(allocator, "0", .{});
+    }
+    
+    // For very small or very large values, use scientific notation
+    if (abs_value < 0.0001 or abs_value >= 1000000.0) {
+        return std.fmt.allocPrint(allocator, "{e:.5}", .{value});
+    }
+    
+    // For integer values (within precision limits), show as integers
+    if (@trunc(value) == value and abs_value < 1000000.0) {
+        return std.fmt.allocPrint(allocator, "{d:.0}", .{value});
+    }
+    
+    // For decimal values, use %g-like behavior with limited significant digits
+    // Note: Zig's {d} doesn't have %g's exact rounding behavior, so we approximate
+    const formatted = std.fmt.allocPrint(allocator, "{d:.6}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
+    
+    // Remove trailing zeros after decimal point (like %g does)
+    var result = formatted;
+    var len = result.len;
+    
+    if (std.mem.indexOf(u8, result, ".") != null) {
+        // Remove trailing zeros
+        while (len > 0 and result[len - 1] == '0') {
+            len -= 1;
+        }
+        // If we removed everything after the decimal point, remove the decimal point too
+        if (len > 0 and result[len - 1] == '.') {
+            len -= 1;
+        }
+        
+        // Create new string with trimmed length
+        const trimmed = try allocator.alloc(u8, len);
+        @memcpy(trimmed, result[0..len]);
+        allocator.free(formatted);
+        return trimmed;
+    }
+    
+    return formatted;
+}
+
 // Forward declarations for struct and interface support
 pub const StructInstance = struct {
     type_name: []const u8,
@@ -243,6 +291,7 @@ pub const Value = union(enum) {
     Integer: i64,
     Float: f64,
     String: []const u8,
+    OwnedString: []u8,  // String that needs to be freed
     Boolean: bool,
     Character: u8,
     Null,
@@ -259,7 +308,8 @@ pub const Value = union(enum) {
     
     pub fn deinit(self: *Value, allocator: Allocator) void {
         switch (self.*) {
-            .String => |str| allocator.free(str),
+            .String => {}, // String is a reference, don't free
+            .OwnedString => |str| allocator.free(str),
             .Array => |array| {
                 for (array) |*item| {
                     item.deinit(allocator);
@@ -299,6 +349,12 @@ pub const Value = union(enum) {
             },
             .String => |a| switch (other) {
                 .String => |b| return std.mem.eql(u8, a, b),
+                .OwnedString => |b| return std.mem.eql(u8, a, b),
+                else => return false,
+            },
+            .OwnedString => |a| switch (other) {
+                .String => |b| return std.mem.eql(u8, a, b),
+                .OwnedString => |b| return std.mem.eql(u8, a, b),
                 else => return false,
             },
             .Boolean => |a| switch (other) {
@@ -320,8 +376,9 @@ pub const Value = union(enum) {
     pub fn toString(self: Value, allocator: Allocator) ![]u8 {
         switch (self) {
             .Integer => |int| return std.fmt.allocPrint(allocator, "{}", .{int}),
-            .Float => |float| return std.fmt.allocPrint(allocator, "{d}", .{float}),
+            .Float => |float| return formatFloatLikeC(allocator, float),
             .String => |str| return allocator.dupe(u8, str),
+            .OwnedString => |str| return allocator.dupe(u8, str),
             .Boolean => |bool_val| return allocator.dupe(u8, if (bool_val) "based" else "cap"),
             .Character => |char| return std.fmt.allocPrint(allocator, "{c}", .{char}),
             .Null => return allocator.dupe(u8, "cap"),
@@ -378,6 +435,7 @@ pub const Value = union(enum) {
             .Integer => |int| return int != 0,
             .Float => |float| return float != 0.0,
             .String => |str| return str.len > 0,
+            .OwnedString => |str| return str.len > 0,
             .Character => |char| return char != 0,
             .Null => return false,
             .Pointer => return true,  // Pointers are always truthy if they exist
@@ -401,7 +459,10 @@ pub const Value = union(enum) {
 
     pub fn toNumber(self: Value) InterpreterError!f64 {
         switch (self) {
-            .Integer => |int| return @as(f64, @floatFromInt(int)),
+            .Integer => |int| {
+                // Direct integer to float conversion
+                return @floatFromInt(int);
+            },
             .Float => |float| return float,
             else => return InterpreterError.TypeMismatch,
         }
@@ -578,11 +639,16 @@ pub const Interpreter = struct {
     current_file: ?[]const u8,
     current_line: ?u32,
     current_column: ?u32,
+    verbose: bool,
     allocator: Allocator,
 
     const MAX_CALL_STACK_DEPTH = 1000;
 
     pub fn init(allocator: Allocator) Interpreter {
+        return initWithVerbose(allocator, false);
+    }
+
+    pub fn initWithVerbose(allocator: Allocator, verbose: bool) Interpreter {
         const globals_env = Environment.newEnvironment(allocator, null) catch {
             @panic("Failed to create globals environment");
         };
@@ -601,6 +667,7 @@ pub const Interpreter = struct {
             .current_file = null,
             .current_line = null,
             .current_column = null,
+            .verbose = verbose,
             .allocator = allocator,
         };
         
@@ -734,12 +801,9 @@ pub const Interpreter = struct {
     }
 
     fn executeBlockStatement(self: *Interpreter, block: ast.BlockStatement) InterpreterError!void {
-        // Removed DEBUG output
-        
         // Execute each statement in the block sequentially
         for (block.statements.items) |stmt_ptr| {
-            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
-            try self.executeStatement(stmt.*);
+            try self.executeStatement(stmt_ptr.*);
         }
     }
 
@@ -1488,12 +1552,20 @@ pub const Interpreter = struct {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Float = left_num + right_num };
-            } else if (left == .String and right == .String) {
+            } else if ((left == .String or left == .OwnedString) and (right == .String or right == .OwnedString)) {
                 // String concatenation
-                const left_str = left.String;
-                const right_str = right.String;
+                const left_str = switch (left) {
+                    .String => |s| s,
+                    .OwnedString => |s| s,
+                    else => unreachable,
+                };
+                const right_str = switch (right) {
+                    .String => |s| s,
+                    .OwnedString => |s| s,
+                    else => unreachable,
+                };
                 const concatenated = try std.fmt.allocPrint(self.allocator, "{s}{s}", .{left_str, right_str});
-                return Value{ .String = concatenated };
+                return Value{ .OwnedString = concatenated };
             }
         } else if (std.mem.eql(u8, bin.operator, "-")) {
             if (left.isNumber() and right.isNumber()) {
@@ -1511,8 +1583,37 @@ pub const Interpreter = struct {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
-                if (right_num == 0.0) return InterpreterError.DivisionByZero;
-                return Value{ .Float = left_num / right_num };
+                std.debug.print("MEMORY_DEBUG: Division - left={d}, right={d}\n", .{left_num, right_num});
+                
+                if (right_num == 0.0) {
+                    std.debug.print("MEMORY_DEBUG: Division by zero detected\n", .{});
+                    return InterpreterError.DivisionByZero;
+                }
+                
+                // Check for potential overflow with very large numbers
+                if (@abs(left_num) > 1e100 or @abs(right_num) < 1e-100) {
+                    std.debug.print("MEMORY_DEBUG: Potential overflow in division: left={d}, right={d}\n", .{left_num, right_num});
+                }
+                
+                const result = left_num / right_num;
+                std.debug.print("MEMORY_DEBUG: Division result: {d}\n", .{result});
+                return Value{ .Float = result };
+            }
+        } else if (std.mem.eql(u8, bin.operator, "%")) {
+            if (left.isNumber() and right.isNumber()) {
+                const left_num = try left.toNumber();
+                const right_num = try right.toNumber();
+                std.debug.print("MEMORY_DEBUG: Modulo - left={d}, right={d}\n", .{left_num, right_num});
+                
+                if (right_num == 0.0) {
+                    std.debug.print("MEMORY_DEBUG: Modulo by zero detected\n", .{});
+                    return InterpreterError.DivisionByZero;
+                }
+                
+                // Special handling for negative operands
+                const result = @mod(left_num, right_num);
+                std.debug.print("MEMORY_DEBUG: Modulo result: {d}\n", .{result});
+                return Value{ .Float = result };
             }
         } else if (std.mem.eql(u8, bin.operator, "==")) {
             return Value{ .Boolean = self.valuesEqual(left, right) };
@@ -1740,15 +1841,15 @@ pub const Interpreter = struct {
                     const result = runtime_functions.runtime_get_env(self.allocator, name_str) catch {
                         // Create array with two strings: empty value and error message
                         var result_array = ArrayList(Value){};
-                        try result_array.append(self.allocator, Value{ .String = try self.allocator.dupe(u8, "") });
-                        try result_array.append(self.allocator, Value{ .String = try self.allocator.dupe(u8, "Failed to get environment variable") });
+                        try result_array.append(self.allocator, Value{ .OwnedString = try self.allocator.dupe(u8, "") });
+                        try result_array.append(self.allocator, Value{ .OwnedString = try self.allocator.dupe(u8, "Failed to get environment variable") });
                         return Value{ .Array = try result_array.toOwnedSlice(self.allocator) };
                     };
                     
                     // Create array with two strings: value and error
                     var result_array = ArrayList(Value){};
-                    try result_array.append(self.allocator, Value{ .String = result[0] });
-                    try result_array.append(self.allocator, Value{ .String = result[1] });
+                    try result_array.append(self.allocator, Value{ .OwnedString = @constCast(result[0]) });
+                    try result_array.append(self.allocator, Value{ .OwnedString = @constCast(result[1]) });
                     return Value{ .Array = try result_array.toOwnedSlice(self.allocator) };
                 } else if (std.mem.eql(u8, name, "runtime_set_env")) {
                     if (call.arguments.items.len != 2) {
@@ -2657,7 +2758,11 @@ pub const Interpreter = struct {
         
         // Create new environment for function execution on heap
         const function_env = try Environment.newEnvironment(self.allocator, func.closure);
-        // Note: Not deinitialized here as environment may escape via closures
+        defer {
+            // CRITICAL FIX: Ensure environment is properly cleaned up
+            function_env.deinit();
+            self.allocator.destroy(function_env);
+        }
         
         // Bind parameters
         // Removed DEBUG output for function call parameters
@@ -2741,6 +2846,14 @@ pub const Interpreter = struct {
             .String => |left_str| {
                 switch (right) {
                     .String => |right_str| return std.mem.eql(u8, left_str, right_str),
+                    .OwnedString => |right_str| return std.mem.eql(u8, left_str, right_str),
+                    else => return false,
+                }
+            },
+            .OwnedString => |left_str| {
+                switch (right) {
+                    .String => |right_str| return std.mem.eql(u8, left_str, right_str),
+                    .OwnedString => |right_str| return std.mem.eql(u8, left_str, right_str),
                     else => return false,
                 }
             },
@@ -3315,12 +3428,16 @@ pub const Interpreter = struct {
         // Push onto defer stack (LIFO order)
         try self.defer_stack.append(self.allocator, defer_entry);
         
-        std.debug.print("✅ Defer statement pushed to stack (size: {d})\n", .{self.defer_stack.items.len});
+        if (self.verbose) {
+            std.debug.print("✅ Defer statement pushed to stack (size: {d})\n", .{self.defer_stack.items.len});
+        }
     }
     
     /// Execute all deferred statements in LIFO order
     fn executeAllDefers(self: *Interpreter) void {
-        std.debug.print("Executing {d} deferred statements\n", .{self.defer_stack.items.len});
+        if (self.verbose) {
+            std.debug.print("Executing {d} deferred statements\n", .{self.defer_stack.items.len});
+        }
         
         // Execute in reverse order (LIFO - Last In, First Out)
         while (self.defer_stack.items.len > 0) {
@@ -3344,7 +3461,9 @@ pub const Interpreter = struct {
     
     /// Execute defers up to a specific stack size (for function scope cleanup)
     fn executeDeferToSize(self: *Interpreter, target_size: usize) void {
-        std.debug.print("Executing defers from size {d} to {d}\n", .{ self.defer_stack.items.len, target_size });
+        if (self.verbose) {
+            std.debug.print("Executing defers from size {d} to {d}\n", .{ self.defer_stack.items.len, target_size });
+        }
         
         while (self.defer_stack.items.len > target_size) {
             const defer_entry = self.defer_stack.pop();
@@ -3466,21 +3585,36 @@ pub const Interpreter = struct {
 
     // Enhanced channel simulation methods
     fn storeChannelValue(self: *Interpreter, channel_id: u64, value: Value) InterpreterError!void {
+        std.debug.print("MEMORY_DEBUG: storeChannelValue - channel_id={}, value={s}\n", .{channel_id, @tagName(value)});
+        
         if (self.channel_storage.getPtr(channel_id)) |channel_list| {
+            std.debug.print("MEMORY_DEBUG: storeChannelValue - found existing channel, current size={}\n", .{channel_list.items.len});
             try channel_list.append(self.allocator, value);
+            std.debug.print("MEMORY_DEBUG: storeChannelValue - appended to existing channel, new size={}\n", .{channel_list.items.len});
         } else {
+            std.debug.print("MEMORY_DEBUG: storeChannelValue - creating new channel\n", .{});
             var new_list = std.ArrayList(Value){};
             errdefer new_list.deinit(self.allocator); // Clean up on error
             try new_list.append(self.allocator, value);
             try self.channel_storage.put(channel_id, new_list);
+            std.debug.print("MEMORY_DEBUG: storeChannelValue - created new channel with 1 item\n", .{});
         }
     }
 
     fn retrieveChannelValue(self: *Interpreter, channel_id: u64) InterpreterError!Value {
+        std.debug.print("MEMORY_DEBUG: retrieveChannelValue - channel_id={}\n", .{channel_id});
+        
         if (self.channel_storage.getPtr(channel_id)) |channel_list| {
+            std.debug.print("MEMORY_DEBUG: retrieveChannelValue - found channel, size={}\n", .{channel_list.items.len});
             if (channel_list.items.len > 0) {
-                return channel_list.orderedRemove(0);
+                const value = channel_list.orderedRemove(0);
+                std.debug.print("MEMORY_DEBUG: retrieveChannelValue - retrieved value, remaining size={}\n", .{channel_list.items.len});
+                return value;
+            } else {
+                std.debug.print("MEMORY_DEBUG: retrieveChannelValue - channel empty\n", .{});
             }
+        } else {
+            std.debug.print("MEMORY_DEBUG: retrieveChannelValue - channel not found\n", .{});
         }
         return Value{ .Integer = 0 }; // Default value when channel is empty
     }
@@ -3901,7 +4035,7 @@ fn builtinFmtFormatFloat(interpreter: *Interpreter, args: []Value) InterpreterEr
     const val = args[0];
     switch (val) {
         .Float => |f| {
-            const result = std.fmt.allocPrint(interpreter.allocator, "{d}", .{f}) catch {
+            const result = formatFloatLikeC(interpreter.allocator, f) catch {
                 return InterpreterError.OutOfMemory;
             };
             return Value{ .String = result };
@@ -4106,7 +4240,9 @@ fn builtinIoPrint(interpreter: *Interpreter, args: []Value) InterpreterError!Val
             std.debug.print("{}", .{i});
         },
         .Float => |f| {
-            std.debug.print("{d}", .{f});
+            const formatted = formatFloatLikeC(std.heap.page_allocator, f) catch return InterpreterError.OutOfMemory;
+            std.debug.print("{s}", .{formatted});
+            std.heap.page_allocator.free(formatted);
         },
         .Boolean => |b| {
             std.debug.print("{s}", .{if (b) "based" else "cap"});
@@ -4131,7 +4267,9 @@ fn builtinIoPrintln(interpreter: *Interpreter, args: []Value) InterpreterError!V
             std.debug.print("{}\n", .{i});
         },
         .Float => |f| {
-            std.debug.print("{d}\n", .{f});
+            const formatted = formatFloatLikeC(std.heap.page_allocator, f) catch return InterpreterError.OutOfMemory;
+            std.debug.print("{s}\n", .{formatted});
+            std.heap.page_allocator.free(formatted);
         },
         .Boolean => |b| {
             std.debug.print("{s}\n", .{if (b) "based" else "cap"});
@@ -4661,7 +4799,7 @@ fn builtinJsonStringify(interpreter: *Interpreter, args: []Value) InterpreterErr
             return Value{ .String = result };
         },
         .Float => |float| {
-            const result = try std.fmt.allocPrint(interpreter.allocator, "{d}", .{float});
+            const result = try formatFloatLikeC(interpreter.allocator, float);
             return Value{ .String = result };
         },
         .Boolean => |bool_val| {
