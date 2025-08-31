@@ -951,7 +951,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     
     // Format strings for various types
     try writer.writer().writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
-    try writer.writer().writeAll("@.float_fmt = private unnamed_addr constant [7 x i8] c\"%.6f\\0A\\00\", align 1\n");
+    try writer.writer().writeAll("@.float_fmt = private unnamed_addr constant [5 x i8] c\"%g\\0A\\00\", align 1\n");
     try writer.writer().writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
     try writer.writer().writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
     

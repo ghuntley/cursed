@@ -5001,7 +5001,7 @@ pub const AdvancedCodeGen = struct {
                     try printf_args.append(allocator, arg_value);
                 }
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
-                try format_parts.appendSlice("%.2f");
+                try format_parts.appendSlice("%g");
                 try printf_args.append(allocator, arg_value);
             } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
                 try format_parts.appendSlice("%s");

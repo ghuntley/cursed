@@ -539,8 +539,8 @@ pub const RuntimeSystem = struct {
             "float_str_buffer"
         );
         
-        // Create format string "%.6f"
-        const float_fmt_str = c.LLVMConstStringInContext(context, "%.6f", 5, 0);
+        // Create format string "%g"
+const float_fmt_str = c.LLVMConstStringInContext(context, "%g", 2, 0);
         const global_float_fmt = c.LLVMAddGlobal(module, c.LLVMTypeOf(float_fmt_str), "float_fmt");
         c.LLVMSetInitializer(global_float_fmt, float_fmt_str);
         c.LLVMSetGlobalConstant(global_float_fmt, 1);

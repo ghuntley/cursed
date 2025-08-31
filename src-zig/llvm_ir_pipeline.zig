@@ -250,6 +250,10 @@ pub const LLVMIRPipeline = struct {
         var parse = parser.Parser.init(self.allocator, tokens);
         defer parse.deinit();
         const program = try parse.parseProgram();
+        defer {
+            var mutable_program = @constCast(&program);
+            mutable_program.deinit(self.allocator);
+        }
         
         // Step 3: Type checking
         if (verbose) print("🔍 Step 3: Type checking...\n", .{});
@@ -2005,13 +2009,13 @@ pub const LLVMIRPipeline = struct {
             
             if (type_kind == c.LLVMFloatTypeKind) {
                 // Float (32-bit) - convert to double for printf
-                // Use .6f to match interpreter's {d:.6} behavior (6 decimal places)
-                fmt_str = try self.generateStringLiteral("%.6f\n");
+                // Use %g to match interpreter's {d} behavior (compact format)
+                fmt_str = try self.generateStringLiteral("%g\n");
                 converted_arg = c.LLVMBuildFPExt(self.builder, arg_val, c.LLVMDoubleTypeInContext(self.context), "float_to_double");
             } else if (type_kind == c.LLVMDoubleTypeKind) {
                 // Double (64-bit float)
-                // Use .6f to match interpreter's {d:.6} behavior (6 decimal places)
-                fmt_str = try self.generateStringLiteral("%.6f\n");
+                // Use %g to match interpreter's {d} behavior (compact format)
+                fmt_str = try self.generateStringLiteral("%g\n");
             } else if (type_kind == c.LLVMIntegerTypeKind) {
                 // Integer types - check bit width
                 const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);
@@ -2137,7 +2141,12 @@ pub const LLVMIRPipeline = struct {
         const token_list = try lex.tokenize();
         const tokens = token_list.items;
         var parse = parser.Parser.init(tmp_allocator, tokens);
+        defer parse.deinit();
         const program = try parse.parseProgram();
+        defer {
+            var mutable_program = @constCast(&program);
+            mutable_program.deinit(tmp_allocator);
+        }
         
         print("DEBUG: Successfully parsed CURSED module {s} ({} statements)\n", .{ module_name, program.statements.items.len });
         
