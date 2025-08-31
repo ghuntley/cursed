@@ -1583,36 +1583,25 @@ pub const Interpreter = struct {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
-                std.debug.print("MEMORY_DEBUG: Division - left={d}, right={d}\n", .{left_num, right_num});
                 
                 if (right_num == 0.0) {
-                    std.debug.print("MEMORY_DEBUG: Division by zero detected\n", .{});
                     return InterpreterError.DivisionByZero;
                 }
                 
-                // Check for potential overflow with very large numbers
-                if (@abs(left_num) > 1e100 or @abs(right_num) < 1e-100) {
-                    std.debug.print("MEMORY_DEBUG: Potential overflow in division: left={d}, right={d}\n", .{left_num, right_num});
-                }
-                
                 const result = left_num / right_num;
-                std.debug.print("MEMORY_DEBUG: Division result: {d}\n", .{result});
                 return Value{ .Float = result };
             }
         } else if (std.mem.eql(u8, bin.operator, "%")) {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
-                std.debug.print("MEMORY_DEBUG: Modulo - left={d}, right={d}\n", .{left_num, right_num});
                 
                 if (right_num == 0.0) {
-                    std.debug.print("MEMORY_DEBUG: Modulo by zero detected\n", .{});
                     return InterpreterError.DivisionByZero;
                 }
                 
                 // Special handling for negative operands
                 const result = @mod(left_num, right_num);
-                std.debug.print("MEMORY_DEBUG: Modulo result: {d}\n", .{result});
                 return Value{ .Float = result };
             }
         } else if (std.mem.eql(u8, bin.operator, "==")) {

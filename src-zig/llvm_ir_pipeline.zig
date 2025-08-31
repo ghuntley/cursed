@@ -371,13 +371,18 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
+        print("🔍 DEBUG: About to generate {} functions\n", .{functions.items.len});
         // Generate IR for functions first
-        for (functions.items) |stmt| {
+        for (functions.items, 0..) |stmt, i| {
+            print("🔍 DEBUG: Generating function {} of {}\n", .{i + 1, functions.items.len});
             try self.generateStatement(stmt.*);
+            print("🔍 DEBUG: Successfully generated function {} of {}\n", .{i + 1, functions.items.len});
         }
         
+        print("🔍 DEBUG: About to ensure main function with {} global statements\n", .{global_statements.items.len});
         // Ensure we have a main function and generate global statements within it
         try self.ensureMainFunctionWithGlobalStatements(global_statements.items);
+        print("🔍 DEBUG: Successfully ensured main function\n", .{});
     }
     
     /// Generate IR for a statement
@@ -527,9 +532,6 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate function body (extracted for reuse)
     fn generateFunctionBody(self: *LLVMIRPipeline, function: c.LLVMValueRef, func_decl: ast.FunctionStatement) !void {
-        // Get function name for debugging
-        const func_name = c.LLVMGetValueName(function);
-        const function_name = if (func_name != null) std.mem.span(func_name) else "unknown";
         // Create entry block
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, function, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
@@ -586,7 +588,7 @@ pub const LLVMIRPipeline = struct {
         
         // Verify this specific function
         if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
-            print("❌ Function verification failed for: {s}\n", .{function_name});
+            print("❌ Function verification failed\n", .{});
             return LLVMIRError.ModuleVerificationFailed;
         }
     }
@@ -668,7 +670,7 @@ pub const LLVMIRPipeline = struct {
         
         // Verify this specific function
         if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
-            print("❌ Function verification failed for: {s}\n", .{function_name});
+            print("❌ Function verification failed for: {s}\n", .{qualified_name});
             return LLVMIRError.ModuleVerificationFailed;
         }
     }
@@ -1139,14 +1141,12 @@ pub const LLVMIRPipeline = struct {
             .Identifier => |ident| {
                 // First check if it's a builtin function (should not be used as variable)
                 if (self.functions.get(ident)) |function| {
-                    // Removed DEBUG output
                     // Return the function reference itself - this is for function pointers or calls
                     return function;
                 }
                 
                 // Then check if it's a variable
                 if (self.variables.get(ident)) |var_ref| {
-                    // Removed DEBUG output
                     
                     // Use stored type information
                     if (self.variable_types.get(ident)) |var_type| {
