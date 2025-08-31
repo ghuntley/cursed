@@ -951,7 +951,7 @@ fn generateProperLLVMIR(allocator: Allocator, source: []const u8, writer: anytyp
     
     // Format strings for various types
     try writer.writer().writeAll("@.int_fmt = private unnamed_addr constant [6 x i8] c\"%lld\\0A\\00\", align 1\n");
-    try writer.writer().writeAll("@.float_fmt = private unnamed_addr constant [4 x i8] c\"%f\\0A\\00\", align 1\n");
+    try writer.writer().writeAll("@.float_fmt = private unnamed_addr constant [7 x i8] c\"%.6f\\0A\\00\", align 1\n");
     try writer.writer().writeAll("@.bool_true = private unnamed_addr constant [6 x i8] c\"based\\00\", align 1\n");
     try writer.writer().writeAll("@.bool_false = private unnamed_addr constant [7 x i8] c\"cringe\\00\", align 1\n\n");
     
@@ -1411,7 +1411,7 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                         } else if (std.fmt.parseFloat(f64, trimmed_arg) catch null) |num| {
                             // Float literal  
                             if (verbose) try writer.print("  ; Float literal: {s}\n", .{num});
-                            try writer.print("  %fmt_ptr.{s} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                            try writer.print("  %fmt_ptr.{s} = getelementptr [7 x i8], [7 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
                             try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, double {s})\n", .{ variable_counter.*, num });
                             variable_counter.* += 1;
                         } else {
@@ -1444,7 +1444,7 @@ fn generateLLVMVibesSpill(line: []const u8, writer: anytype, string_literals: *s
                                     try writer.print("  call i32 @puts(i8* %select.{s})\n", .{variable_counter.*});
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "double")) {
                                     try writer.print("  %loaded.{s} = load double, double* %{s}, align 8\n", .{ variable_counter.*, var_info.var_name });
-                                    try writer.print("  %fmt_ptr.{s} = getelementptr [4 x i8], [4 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
+                                    try writer.print("  %fmt_ptr.{s} = getelementptr [7 x i8], [7 x i8]* @.float_fmt, i32 0, i32 0\n", .{variable_counter.*});
                                     try writer.print("  call i32 (i8*, ...) @printf(i8* %fmt_ptr.{s}, double %loaded.{s})\n", .{ variable_counter.*, variable_counter.* });
                                 } else if (std.mem.eql(u8, var_info.llvm_type, "tea")) {
                                     // String variable - get pointer to first character and print

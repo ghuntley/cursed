@@ -852,7 +852,7 @@ pub const RealLLVMCodeGen = struct {
                         _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
                     },
                     .Float => {
-                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%f ", "float_fmt");
+                        const fmt_str = llvm_build_global_string_ptr(self.builder, "%.6f ", "float_fmt");
                         const printf = try self.getOrCreatePrintf();
                         const printf_type = llvm_get_function_type(printf);
                         _ = llvm_build_call2(self.builder, printf_type, printf, &[_]?*anyopaque{ fmt_str, arg_value }, 2, "print");
