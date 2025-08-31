@@ -1,0 +1,24 @@
+// Loops Test
+// Tests: Loop constructs if available
+// Expected: Loops work consistently
+
+fn main() {
+    yap("=== Loops Test ===")
+    
+    yap("Simple counting:")
+    let i = 1
+    while (i <= 5) {
+        yap(i)
+        i = i + 1
+    }
+    
+    yap("Countdown:")
+    let j = 3
+    while (j > 0) {
+        yap(j)
+        j = j - 1
+    }
+    yap("Blast off!")
+    
+    yap("=== Test Complete ===")
+}

@@ -1,0 +1,24 @@
+// Boundary Values Test
+// Tests: Edge cases with numeric boundaries
+// Expected: Boundary conditions handled consistently
+
+fn main() {
+    yap("=== Boundary Values Test ===")
+    
+    yap("Small numbers:")
+    yap(1)
+    yap(0)
+    yap(-1)
+    
+    yap("Large numbers:")
+    yap(999999)
+    yap(1000000)
+    yap(-999999)
+    
+    yap("Decimal boundaries:")
+    yap(0.1)
+    yap(0.0)
+    yap(-0.1)
+    
+    yap("=== Test Complete ===")
+}

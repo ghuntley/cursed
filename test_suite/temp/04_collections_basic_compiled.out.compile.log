@@ -1,0 +1,454 @@
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:10 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:7:49 - Error parsing function statement
+INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd:26:1 - Failed to parse statement
+
+=== Error Recovery Statistics ===
+Total errors encountered: 2
+Semicolon recoveries: 3
+Statement recoveries: 2
+Expression recoveries: 0
+Delimiter recoveries: 0
+Total tokens skipped: 10
+================================
+🔧 Initializing LLVM components...
+✅ C library functions declared
+✅ Builtin functions registered (yap)
+✅ LLVM IR Pipeline initialized successfully
+🚀 Starting complete LLVM compilation pipeline...
+Error at unknown:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:7:10 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+Error at unknown:7:49 - Error parsing function statement
+INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:26:1 - Failed to parse statement
+
+=== Error Recovery Statistics ===
+Total errors encountered: 2
+Semicolon recoveries: 3
+Statement recoveries: 2
+Expression recoveries: 0
+Delimiter recoveries: 0
+Total tokens skipped: 10
+================================
+📦 Processing import: collections
+DEBUG: Loading and compiling CURSED module: collections
+DEBUG: Successfully read CURSED module stdlib/collections/mod.csd (25450 bytes)
+Error at unknown:17:10 - Error parsing function statement
+INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:26:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:37:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:37:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:40:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:60:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:72:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:78:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:78:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:81:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:85:14 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:88:38 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:88:38 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
+Error at unknown:89:5 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 12 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:101:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 14 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:113:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:119:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:119:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:122:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:127:18 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 2 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:133:18 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:140:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:140:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:143:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:152:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:158:31 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:274:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:286:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:294:14 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:488:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:504:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:634:14 - Expected '{'. Expected .LeftBrace, got .ColonEqual (context: consume)
+Error at unknown:634:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:650:9 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 11 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:672:14 - Expected '{'. Expected .LeftBrace, got .ColonEqual (context: consume)
+Error at unknown:672:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:682:5 - Failed to parse statement
+INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:686:13 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightParen' after skipping 9 tokens
+Error at unknown:686:46 - Failed to parse statement
+INFO: Recovered at statement keyword 'VibeCheck' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:693:21 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:693:21 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightBrace' after skipping 3 tokens
+Error at unknown:694:9 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:702:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:702:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:709:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:717:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:717:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:720:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:728:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:728:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:731:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:748:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:748:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:751:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:760:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:760:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:767:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:780:32 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:810:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:884:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:900:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:910:14 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:922:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:922:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:925:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:926:25 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+Error at unknown:926:31 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:927:26 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+Error at unknown:927:32 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:930:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:930:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:933:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:934:25 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+Error at unknown:934:31 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:935:26 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+Error at unknown:935:32 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:939:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:939:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at unknown:942:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:943:52 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:943:52 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightBracket' after skipping 7 tokens
+Error at unknown:944:21 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:946:49 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:946:49 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightBracket' after skipping 2 tokens
+Error at unknown:946:51 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:950:14 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:952:37 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at unknown:952:37 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+Error at unknown:952:46 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:964:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:967:19 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:975:14 - Error parsing function statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at unknown:978:19 - Failed to parse statement
+INFO: Recovered at delimiter 'RightBracket' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+
+=== Error Recovery Statistics ===
+Total errors encountered: 52
+Semicolon recoveries: 74
+Statement recoveries: 52
+Expression recoveries: 0
+Delimiter recoveries: 0
+Total tokens skipped: 349
+================================
+DEBUG: Successfully parsed CURSED module collections (125 statements)
+DEBUG: Compiling CURSED stdlib function: collections.Vec_is_empty
+❌ Undefined function: Vec_len
+❌ LLVM code generation failed: error.UndefinedFunction
+🧹 Cleaning up LLVM IR Pipeline...
+✅ LLVM IR Pipeline cleanup complete
+error(gpa): memory address 0x7c5908320000 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128193e in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x12422e5 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11fc932 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11ccdac in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:481:46: 0x11ab99e in parseProgram (cursed_compiler_main.zig)
+                    program.statements.append(self.allocator, @ptrCast(stmt_ptr)) catch {
+                                             ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:154:47: 0x119c760 in compileToExecutable (cursed_compiler_main.zig)
+    const program = cursed_parser.parseProgram() catch |err| {
+                                              ^
+
+error(gpa): memory address 0x7c5908320080 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x12573ae in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x1218745 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11d6012 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11b09cc in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:1230:33: 0x11fe984 in parseFunctionStatement (cursed_compiler_main.zig)
+            try func.body.append(self.allocator, stmt_ptr);
+                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:944:70: 0x11cd1b5 in parseStatement (cursed_compiler_main.zig)
+            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+                                                                     ^
+
+error(gpa): memory address 0x7c5908320200 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x128193e in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x12422e5 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11fc932 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11ccdac in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:481:46: 0x11ab99e in parseProgram (cursed_compiler_main.zig)
+                    program.statements.append(self.allocator, @ptrCast(stmt_ptr)) catch {
+                                             ^
+/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:252:47: 0x119bbe7 in compileSource (cursed_compiler_main.zig)
+        const program = try parse.parseProgram();
+                                              ^
+
+error(gpa): memory address 0x7c5908320280 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x12573ae in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x1218745 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11d6012 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11b09cc in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:1230:33: 0x11fe984 in parseFunctionStatement (cursed_compiler_main.zig)
+            try func.body.append(self.allocator, stmt_ptr);
+                                ^
+/home/ghuntley/cursed/src-zig/parser.zig:944:70: 0x11cd1b5 in parseStatement (cursed_compiler_main.zig)
+            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+                                                                     ^
+
+error(gpa): memory address 0x7c5908360000 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0x10ee135 in alloc (std.zig)
+            (self.createNode(0, n + ptr_align) orelse return null);
+                            ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c0d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x11ccc30 in create__anon_26059 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0x11ab767 in parseProgram (cursed_compiler_main.zig)
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+                                                                ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:154:47: 0x119c760 in compileToExecutable (cursed_compiler_main.zig)
+    const program = cursed_parser.parseProgram() catch |err| {
+                                              ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:101:32: 0x119fd61 in main (cursed_compiler_main.zig)
+        try compileToExecutable(allocator, source, filename.?, output_name.?, verbose, debug_mode, optimize, emit_ir);
+                               ^
+
+error(gpa): memory address 0x7c5908360600 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0x10ee135 in alloc (std.zig)
+            (self.createNode(0, n + ptr_align) orelse return null);
+                            ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c0d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x11ccc30 in create__anon_26059 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0x11ab767 in parseProgram (cursed_compiler_main.zig)
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+                                                                ^
+/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:252:47: 0x119bbe7 in compileSource (cursed_compiler_main.zig)
+        const program = try parse.parseProgram();
+                                              ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:194:27: 0x119cd9e in compileToExecutable (cursed_compiler_main.zig)
+    pipeline.compileSource(source, final_output, verbose) catch |err| {
+                          ^
+
+error(gpa): memory address 0x7c5908300000 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0x10ee8a6 in alloc (std.zig)
+                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+                                          ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c0d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x11ccc30 in create__anon_26059 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0x11ab767 in parseProgram (cursed_compiler_main.zig)
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+                                                                ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:154:47: 0x119c760 in compileToExecutable (cursed_compiler_main.zig)
+    const program = cursed_parser.parseProgram() catch |err| {
+                                              ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:101:32: 0x119fd61 in main (cursed_compiler_main.zig)
+        try compileToExecutable(allocator, source, filename.?, output_name.?, verbose, debug_mode, optimize, emit_ir);
+                               ^
+
+error(gpa): memory address 0x7c5908301000 leaked: 
+/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0x10ee8a6 in alloc (std.zig)
+                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+                                          ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0x10c0d2e in allocBytesWithAlignment__anon_8545 (std.zig)
+    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                         ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0x11ccc30 in create__anon_26059 (std.zig)
+    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                          ^
+/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0x11ab767 in parseProgram (cursed_compiler_main.zig)
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+                                                                ^
+/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:252:47: 0x119bbe7 in compileSource (cursed_compiler_main.zig)
+        const program = try parse.parseProgram();
+                                              ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:194:27: 0x119cd9e in compileToExecutable (cursed_compiler_main.zig)
+    pipeline.compileSource(source, final_output, verbose) catch |err| {
+                          ^
+
+error(gpa): memory address 0x7c5908342000 leaked: 
+/snap/zig/14937/lib/std/array_list.zig:1231:56: 0x123c0ae in ensureTotalCapacityPrecise (std.zig)
+                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+                                                       ^
+/snap/zig/14937/lib/std/array_list.zig:1207:51: 0x11f6705 in ensureTotalCapacity (std.zig)
+            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+                                                  ^
+/snap/zig/14937/lib/std/array_list.zig:1261:41: 0x11cae12 in addOne (std.zig)
+            try self.ensureTotalCapacity(gpa, newlen);
+                                        ^
+/snap/zig/14937/lib/std/array_list.zig:894:49: 0x11a7ff2 in append (std.zig)
+            const new_item_ptr = try self.addOne(gpa);
+                                                ^
+/home/ghuntley/cursed/src-zig/lexer.zig:242:34: 0x11934a1 in tokenize (cursed_compiler_main.zig)
+                try tokens.append(self.allocator, token);
+                                 ^
+/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:248:44: 0x119ba73 in compileSource (cursed_compiler_main.zig)
+        const token_list = try lex.tokenize();
+                                           ^
+

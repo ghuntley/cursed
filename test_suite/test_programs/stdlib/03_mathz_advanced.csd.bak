@@ -1,0 +1,26 @@
+// Advanced Mathz Test
+// Tests: More complex mathz module functionality
+// Expected: All mathz functions work consistently
+
+import mathz
+
+fn main() {
+    yap("=== Advanced Mathz Test ===")
+    
+    yap("Power function:")
+    yap(mathz.pow(2, 3))
+    yap(mathz.pow(5, 2))
+    
+    yap("Square root:")
+    yap(mathz.sqrt(16))
+    yap(mathz.sqrt(25))
+    
+    yap("Modulo operation:")
+    yap(mathz.mod(10, 3))
+    yap(mathz.mod(15, 4))
+    
+    yap("Multiple operations:")
+    yap(mathz.add_two(mathz.abs(-5), mathz.max(3, 7)))
+    
+    yap("=== Test Complete ===")
+}

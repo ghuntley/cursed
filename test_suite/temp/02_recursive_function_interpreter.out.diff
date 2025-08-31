@@ -1,0 +1,18 @@
+--- /tmp/tmp.kK7qrFHBuD	2025-08-31 11:45:12.148758834 +0300
++++ /tmp/tmp.MzIVEwqQ6j	2025-08-31 11:45:12.148758834 +0300
+@@ -1,15 +0,0 @@
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:5:17 - Error parsing function statement
+-INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
+-INFO: Attempting additional statement recovery
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/02_recursive_function.csd:31:1 - Failed to parse statement
+-
+-=== Error Recovery Statistics ===
+-Total errors encountered: 2
+-Semicolon recoveries: 2
+-Statement recoveries: 2
+-Expression recoveries: 0
+-Delimiter recoveries: 0
+-Total tokens skipped: 1
+-================================
+-✅ Program completed
+-Executing 0 deferred statements

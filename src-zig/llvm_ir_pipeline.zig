@@ -92,6 +92,7 @@ pub const LLVMIRPipeline = struct {
     
     // Current compilation state
     current_function: ?c.LLVMValueRef,
+    current_module_name: ?[]const u8,
     string_counter: u32,
     optimization_level: u32,
     debug_info: bool,
@@ -177,6 +178,7 @@ pub const LLVMIRPipeline = struct {
             .compiled_modules = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
+            .current_module_name = null,
             .string_counter = 0,
             .optimization_level = 2,
             .debug_info = false,
@@ -187,6 +189,9 @@ pub const LLVMIRPipeline = struct {
         
         // Declare standard C library functions
         try pipeline.declareCLibraryFunctions();
+        
+        // Register builtin functions 
+        try pipeline.registerBuiltinFunctions();
         
         print("✅ LLVM IR Pipeline initialized successfully\n", .{});
         return pipeline;
@@ -377,20 +382,22 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate IR for a statement
     fn generateStatement(self: *LLVMIRPipeline, stmt: ast.Statement) anyerror!void {
-        // Skip generating statements if current block already has a terminator
-        // But NOT for main function, since it needs to handle its own termination logic
+        // Only skip generating statements if current block already has a terminator AND we're not in a function body
+        // This check was being too aggressive and preventing function bodies from being generated
         if (self.current_function != null) {
             const current_block = c.LLVMGetInsertBlock(self.builder);
             if (current_block != null and c.LLVMGetBasicBlockTerminator(current_block) != null) {
-                // Check if we're in main function
+                // Only skip for main function global statements, not for function body statements
                 const main_func = self.functions.get("main");
-                if (main_func == null or self.current_function.? != main_func.?) {
-                    print("⚠️ Skipping statement generation - block already terminated\n", .{});
-                    return;
+                if (main_func != null and self.current_function.? == main_func.?) {
+                    // For main function, we'll create a new block to continue
+                    const cont_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "unreachable_cont");
+                    c.LLVMPositionBuilderAtEnd(self.builder, cont_block);
+                } else {
+                    // For other functions, don't skip - we need to generate all the statements in the function body
+                    // This was the main bug - we were returning early for all non-main functions
+                    print("⚠️ Current block has terminator in function, continuing anyway...\n", .{});
                 }
-                // For main function, we'll create a new block to continue
-                const cont_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "unreachable_cont");
-                c.LLVMPositionBuilderAtEnd(self.builder, cont_block);
             }
         }
         
@@ -453,10 +460,15 @@ pub const LLVMIRPipeline = struct {
             0
         );
         
-        // Create function
-        const func_name_z = try self.arena.allocator().dupeZ(u8, func_decl.name);
+        // Create function - use qualified name if in module context
+        const qualified_name = if (self.current_module_name) |module_name|
+            try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ module_name, func_decl.name })
+        else
+            func_decl.name;
+        
+        const func_name_z = try self.arena.allocator().dupeZ(u8, qualified_name);
         const function = c.LLVMAddFunction(self.module, func_name_z.ptr, func_type);
-        try self.functions.put(func_decl.name, function);
+        try self.functions.put(qualified_name, function);
         
         // Create entry block
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, function, "entry");
@@ -509,7 +521,7 @@ pub const LLVMIRPipeline = struct {
         
         // Verify this specific function
         if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
-            print("❌ Function verification failed for: {s}\n", .{func_decl.name});
+            print("❌ Function verification failed for: {s}\n", .{qualified_name});
             return LLVMIRError.ModuleVerificationFailed;
         }
     }
@@ -598,11 +610,21 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate variable declaration
     fn generateVariableDeclaration(self: *LLVMIRPipeline, var_decl: ast.LetStatement) !void {
+        const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
+        
+        // Generate initializer first if present to determine type
+        var init_value: ?c.LLVMValueRef = null;
+        if (var_decl.initializer) |initializer| {
+            init_value = try self.generateExpression(initializer.*);
+        }
+        
+        // Determine type - if no explicit type, infer from initializer
         const llvm_type = if (var_decl.var_type) |vtype| 
             try self.cursedTypeToLLVM(vtype)
+        else if (init_value) |init_val|
+            c.LLVMTypeOf(init_val)
         else 
-            c.LLVMInt64TypeInContext(self.context); // Default to drip type (64-bit int)
-        const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
+            c.LLVMDoubleTypeInContext(self.context); // Default to drip type (float/f64)
         
         // Check if we're in a function context or at global scope
         if (self.current_function) |func| {
@@ -611,10 +633,25 @@ pub const LLVMIRPipeline = struct {
             try self.variables.put(var_decl.name, alloca);
             try self.variable_types.put(var_decl.name, llvm_type);
             
-            // Generate initializer if present
-            if (var_decl.initializer) |initializer| {
-                const init_value = try self.generateExpression(initializer.*);
-                _ = c.LLVMBuildStore(self.builder, init_value, alloca);
+            // Store initializer if present
+            if (init_value) |init_val| {
+                // Check for type conversion needs
+                const init_type = c.LLVMTypeOf(init_val);
+                const init_type_kind = c.LLVMGetTypeKind(init_type);
+                const var_type_kind = c.LLVMGetTypeKind(llvm_type);
+                
+                var converted_value = init_val;
+                
+                // Convert float literal to integer if variable is integer type
+                if (init_type_kind == c.LLVMDoubleTypeKind and var_type_kind == c.LLVMIntegerTypeKind) {
+                    converted_value = c.LLVMBuildFPToSI(self.builder, init_val, llvm_type, "float_to_int");
+                } else if (init_type_kind == c.LLVMFloatTypeKind and var_type_kind == c.LLVMIntegerTypeKind) {
+                    converted_value = c.LLVMBuildFPToSI(self.builder, init_val, llvm_type, "float_to_int");
+                } else if (init_type_kind == c.LLVMIntegerTypeKind and (var_type_kind == c.LLVMDoubleTypeKind or var_type_kind == c.LLVMFloatTypeKind)) {
+                    converted_value = c.LLVMBuildSIToFP(self.builder, init_val, llvm_type, "int_to_float");
+                }
+                
+                _ = c.LLVMBuildStore(self.builder, converted_value, alloca);
             }
         } else {
             // At global scope - create global variable
@@ -1035,12 +1072,20 @@ pub const LLVMIRPipeline = struct {
                 return try self.generateLiteral(lit);
             },
             .Identifier => |ident| {
+                // First check if it's a builtin function (should not be used as variable)
+                if (self.functions.get(ident)) |function| {
+                    // Removed DEBUG output
+                    // Return the function reference itself - this is for function pointers or calls
+                    return function;
+                }
+                
+                // Then check if it's a variable
                 if (self.variables.get(ident)) |var_ref| {
-                    print("DEBUG: Loading variable {s}\n", .{ident});
+                    // Removed DEBUG output
                     
                     // Use stored type information
                     if (self.variable_types.get(ident)) |var_type| {
-                        print("DEBUG: Found stored type for variable {s}\n", .{ident});
+                        // Removed DEBUG output
                         
                         // Check if we're in a function context
                         if (self.current_function == null) {
@@ -1255,16 +1300,39 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate binary operation
     fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) anyerror!c.LLVMValueRef {
-        const left = try self.generateExpression(bin_op.left.*);
-        const right = try self.generateExpression(bin_op.right.*);
+        var left = try self.generateExpression(bin_op.left.*);
+        var right = try self.generateExpression(bin_op.right.*);
         
         // Check if we're dealing with floating point values
         const left_type = c.LLVMTypeOf(left);
         const right_type = c.LLVMTypeOf(right);
-        const is_float = c.LLVMGetTypeKind(left_type) == c.LLVMDoubleTypeKind or
-                        c.LLVMGetTypeKind(right_type) == c.LLVMDoubleTypeKind or
-                        c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind or
-                        c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind;
+        
+        const left_is_float = c.LLVMGetTypeKind(left_type) == c.LLVMDoubleTypeKind or
+                             c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind;
+        const right_is_float = c.LLVMGetTypeKind(right_type) == c.LLVMDoubleTypeKind or
+                              c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind;
+        
+        const is_float = left_is_float or right_is_float;
+        
+        // Handle type promotion for mixed integer/float operations
+        if (is_float) {
+            // Promote integer operands to double when mixed with float
+            if (!left_is_float) {
+                // Convert integer to double
+                left = c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "int_to_double_left");
+            } else if (c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind) {
+                // Convert float to double for consistency
+                left = c.LLVMBuildFPExt(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "float_to_double_left");
+            }
+            
+            if (!right_is_float) {
+                // Convert integer to double
+                right = c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "int_to_double_right");
+            } else if (c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind) {
+                // Convert float to double for consistency
+                right = c.LLVMBuildFPExt(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "float_to_double_right");
+            }
+        }
         
         // Handle arithmetic operators with type-specific instructions
         if (std.mem.eql(u8, bin_op.operator, "+")) {
@@ -1337,7 +1405,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate function call
     fn generateFunctionCall(self: *LLVMIRPipeline, call: ast.CallExpression) !c.LLVMValueRef {
-        print("DEBUG: generateFunctionCall called\n", .{});
+        // Removed DEBUG output
         // Handle standard library calls
         // Extract function name from the function expression
         const function_name = switch (call.function.*) {
@@ -1356,7 +1424,7 @@ pub const LLVMIRPipeline = struct {
             else => return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0),
         };
         
-        print("DEBUG: generateFunctionCall trying to call: {s}\n", .{function_name});
+        // Removed DEBUG output
         
         if (std.mem.eql(u8, function_name, "vibez.spill")) {
             // Convert []*Expression to []Expression
@@ -1441,39 +1509,27 @@ pub const LLVMIRPipeline = struct {
         
         if (std.mem.eql(u8, object_name, "vibez")) {
             if (std.mem.eql(u8, method_call.method_name, "spill") or 
-                std.mem.eql(u8, method_call.method_name, "spillln")) {
-                // Handle vibez.spill() - call runtime function based on argument type
-                if (method_call.arguments.items.len > 0) {
-                    const arg = try self.generateExpression(method_call.arguments.items[0].*);
-                    const arg_type = c.LLVMTypeOf(arg);
-                    
-                    if (c.LLVMGetTypeKind(arg_type) == c.LLVMDoubleTypeKind) {
-                        // Float argument - call cursed_dbg_spill_f64
-                        const spill_f64 = try self.getOrDeclareRuntimeFunction("cursed_dbg_spill_f64", &[_]c.LLVMTypeRef{ c.LLVMDoubleTypeInContext(self.context) }, c.LLVMInt32TypeInContext(self.context));
-                        const args = [_]c.LLVMValueRef{ arg };
-                        const func_type = c.LLVMGlobalGetValueType(spill_f64);
-                        return c.LLVMBuildCall2(self.builder, func_type, spill_f64, @constCast(@ptrCast(&args)), 1, "spill_f64_result");
-                    } else if (c.LLVMGetTypeKind(arg_type) == c.LLVMIntegerTypeKind) {
-                        // Integer argument - call cursed_dbg_spill_i64
-                        const spill_i64 = try self.getOrDeclareRuntimeFunction("cursed_dbg_spill_i64", &[_]c.LLVMTypeRef{ c.LLVMInt64TypeInContext(self.context) }, c.LLVMInt32TypeInContext(self.context));
-                        const args = [_]c.LLVMValueRef{ arg };
-                        const func_type = c.LLVMGlobalGetValueType(spill_i64);
-                        return c.LLVMBuildCall2(self.builder, func_type, spill_i64, @constCast(@ptrCast(&args)), 1, "spill_i64_result");
-                    } else {
-                        // String or other - use traditional printf approach for now
-                        var args_arr = try self.allocator.alloc(ast.Expression, method_call.arguments.items.len);
-                        defer self.allocator.free(args_arr);
-                        for (method_call.arguments.items, 0..) |arg_ptr, i| {
-                            args_arr[i] = arg_ptr.*;
-                        }
-                        return try self.generatePrintCall(args_arr);
-                    }
-                } else {
-                    // No arguments - just print newline
-                    const spill_newline = try self.getOrDeclareRuntimeFunction("cursed_dbg_spill_newline", &[_]c.LLVMTypeRef{}, c.LLVMInt32TypeInContext(self.context));
-                    const func_type = c.LLVMGlobalGetValueType(spill_newline);
-                    return c.LLVMBuildCall2(self.builder, func_type, spill_newline, @constCast(@ptrCast(&[_]c.LLVMValueRef{})), 0, "spill_newline_result");
-                }
+            std.mem.eql(u8, method_call.method_name, "spillln")) {
+            // Handle vibez.spill() - use printf for all types to avoid runtime execution issues
+            if (method_call.arguments.items.len > 0) {
+
+            var args_arr = try self.allocator.alloc(ast.Expression, method_call.arguments.items.len);
+            defer self.allocator.free(args_arr);
+            for (method_call.arguments.items, 0..) |arg_ptr, i| {
+            args_arr[i] = arg_ptr.*;
+            }
+            return try self.generatePrintCall(args_arr);
+            } else {
+            // No arguments - just print newline using puts
+            const puts_func = self.functions.get("puts") orelse {
+                print("❌ puts function not found\n", .{});
+            return error.UndefinedFunction;
+            };
+            
+            const empty_str = try self.generateStringLiteral("");
+            const puts_type = c.LLVMGetElementType(c.LLVMTypeOf(puts_func));
+            return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @constCast(@ptrCast(&empty_str)), 1, "puts_empty");
+            }
             } else if (std.mem.eql(u8, method_call.method_name, "print_separator")) {
                 // Handle vibez.print_separator() - print separator
                 const separator_str = c.LLVMBuildGlobalStringPtr(self.builder, "--------------------------------\n", "separator");
@@ -1790,17 +1846,50 @@ pub const LLVMIRPipeline = struct {
             );
             
             var puts_args = [_]c.LLVMValueRef{arg_val};
-            print("DEBUG: Calling puts with recreated function type\n", .{});
+            // Removed DEBUG output
             return c.LLVMBuildCall2(self.builder, puts_function_type, puts_func, @ptrCast(&puts_args), 1, "puts_call");
         } else {
-            // Integer print using printf  
+            // Integer or float print using printf  
             const printf_func = self.functions.get("printf") orelse {
                 print("❌ printf function not found\n", .{});
                 return error.UndefinedFunction;
             };
             
-            const fmt_str = try self.generateStringLiteral("%ld\n");
-            const printf_args = [_]c.LLVMValueRef{ fmt_str, arg_val };
+            // Determine format string based on LLVM type
+            const printf_arg_type = c.LLVMTypeOf(arg_val);
+            const type_kind = c.LLVMGetTypeKind(printf_arg_type);
+            
+            var fmt_str: c.LLVMValueRef = undefined;
+            var converted_arg: c.LLVMValueRef = arg_val;
+            
+            if (type_kind == c.LLVMFloatTypeKind) {
+                // Float (32-bit) - convert to double for printf
+                fmt_str = try self.generateStringLiteral("%g\n");
+                converted_arg = c.LLVMBuildFPExt(self.builder, arg_val, c.LLVMDoubleTypeInContext(self.context), "float_to_double");
+            } else if (type_kind == c.LLVMDoubleTypeKind) {
+                // Double (64-bit float)
+                fmt_str = try self.generateStringLiteral("%g\n");
+            } else if (type_kind == c.LLVMIntegerTypeKind) {
+                // Integer types - check bit width
+                const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);
+                if (bit_width <= 32) {
+                    // 32-bit or smaller integers
+                    fmt_str = try self.generateStringLiteral("%d\n");
+                    // Ensure it's 32-bit for printf
+                    converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt32TypeInContext(self.context), "extend_to_int32");
+                } else {
+                    // 64-bit integers
+                    fmt_str = try self.generateStringLiteral("%lld\n");
+                    // Ensure it's 64-bit for printf
+                    converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt64TypeInContext(self.context), "extend_to_int64");
+                }
+            } else {
+                // Fallback for unknown types
+                fmt_str = try self.generateStringLiteral("%d\n");
+                converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt32TypeInContext(self.context), "fallback_to_int32");
+            }
+            
+            const printf_args = [_]c.LLVMValueRef{ fmt_str, converted_arg };
             
             // Create printf function type properly
             const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
@@ -1811,7 +1900,29 @@ pub const LLVMIRPipeline = struct {
                 1  // Variadic
             );
             
-            return c.LLVMBuildCall2(self.builder, printf_function_type, printf_func, @constCast(@ptrCast(&printf_args)), 2, "printf_call");
+            const printf_call = c.LLVMBuildCall2(self.builder, printf_function_type, printf_func, @constCast(@ptrCast(&printf_args)), 2, "printf_call");
+            
+            // Add fflush(stdout) to ensure immediate output
+            const fflush_func = self.functions.get("fflush") orelse {
+                print("❌ fflush function not found\n", .{});
+                return error.UndefinedFunction;
+            };
+            
+            // Create null pointer for stdout (fflush(NULL) flushes all streams)
+            const null_ptr = c.LLVMConstNull(c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+            var fflush_args = [_]c.LLVMValueRef{null_ptr};
+            
+            const file_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+            const fflush_function_type = c.LLVMFunctionType(
+                c.LLVMInt32TypeInContext(self.context),
+                @constCast(@ptrCast(&file_ptr_type)),
+                1,
+                0
+            );
+            
+            _ = c.LLVMBuildCall2(self.builder, fflush_function_type, fflush_func, @ptrCast(&fflush_args), 1, "fflush_call");
+            
+            return printf_call;
         }
     }
     
@@ -1824,7 +1935,7 @@ pub const LLVMIRPipeline = struct {
                     .Mid => c.LLVMInt16TypeInContext(self.context),
                     .Normie => c.LLVMInt32TypeInContext(self.context),
                     .Thicc => c.LLVMInt64TypeInContext(self.context),
-                    .Drip => c.LLVMInt64TypeInContext(self.context),  // Default integer type
+                    .Drip => c.LLVMDoubleTypeInContext(self.context),  // Float type (f64)
                     .Snack => c.LLVMFloatTypeInContext(self.context),
                     .Meal => c.LLVMDoubleTypeInContext(self.context),
                     .Tea => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0),
@@ -1839,6 +1950,7 @@ pub const LLVMIRPipeline = struct {
                     .Lit => c.LLVMInt1TypeInContext(self.context),
                     .Cap => c.LLVMVoidTypeInContext(self.context),
                     .Yikes => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // error type (string-like)
+                    .Auto => c.LLVMInt32TypeInContext(self.context), // Auto type defaults to normie (32-bit int)
                 };
             },
             .Array => |array| {
@@ -1886,24 +1998,27 @@ pub const LLVMIRPipeline = struct {
         
         print("DEBUG: Successfully parsed CURSED module {s} ({} statements)\n", .{ module_name, program.statements.items.len });
         
-        // 3. Generate LLVM IR for each function with module-qualified names
+        // 3. Set current module context and generate LLVM IR for each function
+        const previous_module_name = self.current_module_name;
+        self.current_module_name = try self.arena.allocator().dupe(u8, module_name);
+        
         for (program.statements.items) |stmt_ptr| {
             const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
             switch (stmt.*) {
                 .Function => |func_decl| {
-                    // Generate qualified function name (module.function)
-                    const qualified_name = try self.arena.allocator().dupeZ(u8, 
-                        try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ module_name, func_decl.name }));
-                    print("DEBUG: Compiling CURSED stdlib function: {s}\n", .{qualified_name});
+                    print("DEBUG: Compiling CURSED stdlib function: {s}.{s}\n", .{module_name, func_decl.name});
                     
-                    // Generate LLVM function with qualified name
-                    try self.generateFunctionWithQualifiedName(func_decl, qualified_name);
+                    // Use the regular generateFunction which now handles qualified names
+                    try self.generateFunction(func_decl);
                 },
                 else => {
                     // For now, skip non-function statements in stdlib modules
                 }
             }
         }
+        
+        // Restore previous module context
+        self.current_module_name = previous_module_name;
         
         // Mark module as compiled
         const module_name_owned = try self.arena.allocator().dupe(u8, module_name);
@@ -1950,7 +2065,36 @@ pub const LLVMIRPipeline = struct {
         const puts_func = c.LLVMAddFunction(self.module, "puts", puts_type);
         try self.functions.put("puts", puts_func);
         
+        // Declare fflush: int fflush(FILE *stream)
+        const file_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0); // FILE* as void*
+        const fflush_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(self.context),
+            @constCast(@ptrCast(&file_ptr_type)),
+            1,
+            0 // not variadic
+        );
+        const fflush_func = c.LLVMAddFunction(self.module, "fflush", fflush_type);
+        try self.functions.put("fflush", fflush_func);
+        
         print("✅ C library functions declared\n", .{});
+    }
+    
+    /// Register builtin functions available globally without imports
+    fn registerBuiltinFunctions(self: *LLVMIRPipeline) !void {
+        // Register yap function as a builtin
+        // yap(value) -> i32 (returns 0 for success)
+        const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const yap_param_types = [_]c.LLVMTypeRef{char_ptr_type};
+        const yap_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(self.context), // return type
+            @constCast(@ptrCast(&yap_param_types)),
+            1, // param count
+            0  // not variadic
+        );
+        const yap_func = c.LLVMAddFunction(self.module, "yap", yap_type);
+        try self.functions.put("yap", yap_func);
+        
+        print("✅ Builtin functions registered (yap)\n", .{});
     }
     
     /// Ensure main function exists and includes global statements
@@ -1984,7 +2128,7 @@ pub const LLVMIRPipeline = struct {
         
         // Call main_character function if it exists
         if (self.functions.get("main_character")) |main_char_func| {
-            print("DEBUG: Calling main_character from main\n", .{});
+            // Removed DEBUG output
             
             // Create the function type for main_character: () -> void
             var empty_param_types = [_]c.LLVMTypeRef{};

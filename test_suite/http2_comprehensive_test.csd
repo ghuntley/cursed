@@ -1,6 +1,6 @@
-// http2_comprehensive_test.csd - Comprehensive HTTP/2 Implementation Tests
-// Complete test suite for HTTP/2 protocol features including frames, streams,
-// multiplexing, flow control, server push, and HPACK compression
+fr fr http2_comprehensive_test.csd - Comprehensive HTTP/2 Implementation Tests
+fr fr Complete test suite for HTTP/2 protocol features including frames, streams,
+fr fr multiplexing, flow control, server push, and HPACK compression
 
 yeet "networkz/http2"
 yeet "networkz/http2_advanced"
@@ -11,12 +11,12 @@ yeet "arrayz"
 yeet "mathz"
 yeet "timez"
 
-// ==== FRAME PROCESSING TESTS ====
+fr fr ==== FRAME PROCESSING TESTS ====
 
 slay test_http2_frame_creation() {
     testz.test_start("HTTP/2 Frame Creation")
     
-    // Test DATA frame creation
+fr fr Test DATA frame creation
     sus data_frame Http2Frame = create_data_frame(1, "Hello, HTTP/2!", based) fam {
         when err -> {
             testz.test_fail("Failed to create DATA frame", err.message)
@@ -30,7 +30,7 @@ slay test_http2_frame_creation() {
     testz.assert_eq_str(data_frame.payload, "Hello, HTTP/2!")
     testz.assert_eq_int(data_frame.payload_length, 14)
     
-    // Test HEADERS frame creation
+fr fr Test HEADERS frame creation
     sus headers []tea = [
         ":method: GET",
         ":path: /test",
@@ -51,7 +51,7 @@ slay test_http2_frame_creation() {
     testz.assert_eq_int(headers_frame.flags, HTTP2_FLAG_END_HEADERS)
     testz.assert_true(headers_frame.payload_length > 0)
     
-    // Test SETTINGS frame creation
+fr fr Test SETTINGS frame creation
     sus settings Http2Settings = Http2Settings{
         header_table_size: 4096,
         enable_push: 1,
@@ -64,9 +64,9 @@ slay test_http2_frame_creation() {
     sus settings_frame Http2Frame = create_settings_frame(settings, no_cap)
     testz.assert_eq_int(settings_frame.frame_type, HTTP2_FRAME_SETTINGS)
     testz.assert_eq_int(settings_frame.stream_id, 0)
-    testz.assert_eq_int(settings_frame.payload_length, 36)  // 6 settings * 6 bytes each
+    testz.assert_eq_int(settings_frame.payload_length, 36)  fr fr 6 settings * 6 bytes each
     
-    // Test WINDOW_UPDATE frame creation
+fr fr Test WINDOW_UPDATE frame creation
     sus window_frame Http2Frame = create_window_update_frame(5, 32768) fam {
         when err -> {
             testz.test_fail("Failed to create WINDOW_UPDATE frame", err.message)
@@ -84,11 +84,11 @@ slay test_http2_frame_creation() {
 slay test_http2_frame_parsing() {
     testz.test_start("HTTP/2 Frame Header Parsing")
     
-    // Create a frame header manually
+fr fr Create a frame header manually
     sus header_bytes tea = create_frame_header(HTTP2_FRAME_DATA, HTTP2_FLAG_END_STREAM, 7, 100)
     testz.assert_eq_int(stringz.len(header_bytes), 9)
     
-    // Parse the header back
+fr fr Parse the header back
     sus parsed_frame Http2Frame = parse_frame_header(header_bytes) fam {
         when err -> {
             testz.test_fail("Failed to parse frame header", err.message)
@@ -101,7 +101,7 @@ slay test_http2_frame_parsing() {
     testz.assert_eq_int(parsed_frame.stream_id, 7)
     testz.assert_eq_int(parsed_frame.payload_length, 100)
     
-    // Test invalid frame header (too short)
+fr fr Test invalid frame header (too short)
     sus invalid_header tea = "short"
     sus parse_result Http2Frame = parse_frame_header(invalid_header) fam {
         when err -> {
@@ -114,12 +114,12 @@ slay test_http2_frame_parsing() {
     testz.test_fail("Should have failed to parse invalid frame header", "")
 }
 
-// ==== HPACK COMPRESSION TESTS ====
+fr fr ==== HPACK COMPRESSION TESTS ====
 
 slay test_hpack_integer_encoding() {
     testz.test_start("HPACK Integer Encoding/Decoding")
     
-    // Test small integer (fits in prefix)
+fr fr Test small integer (fits in prefix)
     sus encoded tea = hpack_encode_integer(10, 5, 0x00)
     testz.assert_eq_int(stringz.len(encoded), 1)
     
@@ -132,7 +132,7 @@ slay test_hpack_integer_encoding() {
     testz.assert_eq_int(decoded_result[0], 10)
     testz.assert_eq_int(decoded_result[1], 1)
     
-    // Test large integer (requires multiple bytes)
+fr fr Test large integer (requires multiple bytes)
     sus large_encoded tea = hpack_encode_integer(1337, 5, 0x00)
     testz.assert_true(stringz.len(large_encoded) > 1)
     
@@ -150,12 +150,12 @@ slay test_hpack_integer_encoding() {
 slay test_hpack_string_encoding() {
     testz.test_start("HPACK String Encoding/Decoding")
     
-    // Test literal string encoding
+fr fr Test literal string encoding
     sus test_string tea = "example.com"
     sus encoded_string tea = hpack_encode_string(test_string, no_cap)
     testz.assert_true(stringz.len(encoded_string) > stringz.len(test_string))
     
-    // Test string decoding
+fr fr Test string decoding
     sus decoded_result [2]tea = hpack_decode_string(encoded_string, 0) fam {
         when err -> {
             testz.test_fail("Failed to decode string", err.message)
@@ -164,7 +164,7 @@ slay test_hpack_string_encoding() {
     }
     testz.assert_eq_str(decoded_result[0], test_string)
     
-    // Test empty string
+fr fr Test empty string
     sus empty_encoded tea = hpack_encode_string("", no_cap)
     sus empty_decoded [2]tea = hpack_decode_string(empty_encoded, 0) fam {
         when err -> {
@@ -185,11 +185,11 @@ slay test_hpack_dynamic_table() {
     testz.assert_eq_int(table.size, 0)
     testz.assert_eq_int(table.insertion_count, 0)
     
-    // Add entry to dynamic table
+fr fr Add entry to dynamic table
     sus entry HpackEntry = HpackEntry{
         name: "custom-header",
         value: "custom-value",
-        size: 57  // name.length + value.length + 32
+        size: 57  fr fr name.length + value.length + 32
     }
     
     hpack_add_to_dynamic_table(table, entry) fam {
@@ -202,7 +202,7 @@ slay test_hpack_dynamic_table() {
     testz.assert_eq_int(table.insertion_count, 1)
     testz.assert_eq_int(table.size, 57)
     
-    // Lookup entry from dynamic table
+fr fr Lookup entry from dynamic table
     sus retrieved_entry HpackEntry = hpack_lookup_dynamic(table, 1) fam {
         when err -> {
             testz.test_fail("Failed to lookup dynamic table entry", err.message)
@@ -218,7 +218,7 @@ slay test_hpack_dynamic_table() {
 slay test_hpack_static_table() {
     testz.test_start("HPACK Static Table Lookup")
     
-    // Test valid static table lookups
+fr fr Test valid static table lookups
     sus authority_entry HpackEntry = hpack_lookup_static(1) fam {
         when err -> {
             testz.test_fail("Failed to lookup static table entry 1", err.message)
@@ -236,7 +236,7 @@ slay test_hpack_static_table() {
     testz.assert_eq_str(method_get_entry.name, ":method")
     testz.assert_eq_str(method_get_entry.value, "GET")
     
-    // Test invalid static table lookup
+fr fr Test invalid static table lookup
     sus invalid_entry HpackEntry = hpack_lookup_static(999) fam {
         when err -> {
             testz.assert_true(stringz.contains(err.message, "Invalid static table index"))
@@ -248,12 +248,12 @@ slay test_hpack_static_table() {
     testz.test_fail("Should have failed to lookup invalid static table index", "")
 }
 
-// ==== STREAM MANAGEMENT TESTS ====
+fr fr ==== STREAM MANAGEMENT TESTS ====
 
 slay test_http2_stream_lifecycle() {
     testz.test_start("HTTP/2 Stream Lifecycle Management")
     
-    // Create mock socket for testing
+fr fr Create mock socket for testing
     sus mock_socket Socket = Socket{
         handle: 1234,
         socket_type: 1,
@@ -262,7 +262,7 @@ slay test_http2_stream_lifecycle() {
         remote_addr: "example.com",
         local_port: 45678,
         remote_port: 443,
-        state: 1,  // connected
+        state: 1,  fr fr connected
         send_buffer_size: 8192,
         recv_buffer_size: 8192,
         timeout_seconds: 30,
@@ -272,7 +272,7 @@ slay test_http2_stream_lifecycle() {
         bytes_received: 0
     }
     
-    // Create HTTP/2 connection
+fr fr Create HTTP/2 connection
     sus conn Http2Connection = create_http2_connection(mock_socket, no_cap) fam {
         when err -> {
             testz.test_fail("Failed to create HTTP/2 connection", err.message)
@@ -281,10 +281,10 @@ slay test_http2_stream_lifecycle() {
     }
     
     testz.assert_eq_int(conn.stream_count, 0)
-    testz.assert_eq_int(conn.next_stream_id, 1)  // Client uses odd numbers
+    testz.assert_eq_int(conn.next_stream_id, 1)  fr fr Client uses odd numbers
     testz.assert_false(conn.is_server)
     
-    // Create a new stream
+fr fr Create a new stream
     sus stream Http2StreamState = create_stream(conn, 1) fam {
         when err -> {
             testz.test_fail("Failed to create stream", err.message)
@@ -299,8 +299,8 @@ slay test_http2_stream_lifecycle() {
     testz.assert_eq_int(stream.priority_weight, 16)
     testz.assert_eq_int(conn.stream_count, 1)
     
-    // Test stream state transitions
-    transition_stream_state(stream, 1) fam {  // send/recv HEADERS
+fr fr Test stream state transitions
+    transition_stream_state(stream, 1) fam {  fr fr send/recv HEADERS
         when err -> {
             testz.test_fail("Failed to transition stream to OPEN", err.message)
             damn
@@ -308,7 +308,7 @@ slay test_http2_stream_lifecycle() {
     }
     testz.assert_eq_int(stream.state, HTTP2_STREAM_OPEN)
     
-    transition_stream_state(stream, 3) fam {  // send END_STREAM
+    transition_stream_state(stream, 3) fam {  fr fr send END_STREAM
         when err -> {
             testz.test_fail("Failed to transition stream to HALF_CLOSED_LOCAL", err.message)
             damn
@@ -316,7 +316,7 @@ slay test_http2_stream_lifecycle() {
     }
     testz.assert_eq_int(stream.state, HTTP2_STREAM_HALF_CLOSED_LOCAL)
     
-    transition_stream_state(stream, 4) fam {  // recv END_STREAM
+    transition_stream_state(stream, 4) fam {  fr fr recv END_STREAM
         when err -> {
             testz.test_fail("Failed to transition stream to CLOSED", err.message)
             damn
@@ -327,7 +327,7 @@ slay test_http2_stream_lifecycle() {
     testz.test_pass("HTTP/2 stream lifecycle successful")
 }
 
-// ==== FLOW CONTROL TESTS ====
+fr fr ==== FLOW CONTROL TESTS ====
 
 slay test_http2_flow_control() {
     testz.test_start("HTTP/2 Flow Control Implementation")
@@ -337,7 +337,7 @@ slay test_http2_flow_control() {
     testz.assert_eq_int(controller.default_window_size, 65535)
     testz.assert_eq_int(controller.update_threshold, 32767)
     
-    // Test flow control consumption
+fr fr Test flow control consumption
     flow_control_consume(controller, 1, 1000) fam {
         when err -> {
             testz.test_fail("Failed to consume from flow control window", err.message)
@@ -346,13 +346,13 @@ slay test_http2_flow_control() {
     }
     
     testz.assert_eq_int(controller.connection_window, 64535)
-    testz.assert_eq_int(controller.stream_windows[0], 64535)  // Stream ID 1 -> index 0
+    testz.assert_eq_int(controller.stream_windows[0], 64535)  fr fr Stream ID 1 -> index 0
     testz.assert_eq_int(controller.pending_updates[0], 1000)
     
-    // Test window update threshold
+fr fr Test window update threshold
     testz.assert_false(flow_control_should_update(controller, 1))
     
-    // Consume more to trigger update threshold
+fr fr Consume more to trigger update threshold
     flow_control_consume(controller, 1, 32000) fam {
         when err -> {
             testz.test_fail("Failed to consume large amount from flow control", err.message)
@@ -362,7 +362,7 @@ slay test_http2_flow_control() {
     
     testz.assert_true(flow_control_should_update(controller, 1))
     
-    // Test exceeding window size
+fr fr Test exceeding window size
     sus exceed_result lit = flow_control_consume(controller, 1, 100000) fam {
         when err -> {
             testz.assert_true(stringz.contains(err.message, "exceeds"))
@@ -374,12 +374,12 @@ slay test_http2_flow_control() {
     testz.test_fail("Should have failed when exceeding flow control window", "")
 }
 
-// ==== SERVER PUSH TESTS ====
+fr fr ==== SERVER PUSH TESTS ====
 
 slay test_http2_server_push() {
     testz.test_start("HTTP/2 Server Push Implementation")
     
-    // Test PUSH_PROMISE frame creation
+fr fr Test PUSH_PROMISE frame creation
     sus push_headers []tea = [
         ":method: GET",
         ":path: /style.css",
@@ -397,9 +397,9 @@ slay test_http2_server_push() {
     testz.assert_eq_int(push_promise_frame.frame_type, HTTP2_FRAME_PUSH_PROMISE)
     testz.assert_eq_int(push_promise_frame.stream_id, 1)
     testz.assert_eq_int(push_promise_frame.flags, HTTP2_FLAG_END_HEADERS)
-    testz.assert_true(push_promise_frame.payload_length > 4)  // At least 4 bytes for promised stream ID
+    testz.assert_true(push_promise_frame.payload_length > 4)  fr fr At least 4 bytes for promised stream ID
     
-    // Test invalid PUSH_PROMISE (same stream IDs)
+fr fr Test invalid PUSH_PROMISE (same stream IDs)
     sus invalid_push Http2Frame = create_push_promise_frame(1, 1, push_headers) fam {
         when err -> {
             testz.assert_true(stringz.contains(err.message, "cannot equal"))
@@ -411,19 +411,19 @@ slay test_http2_server_push() {
     testz.test_fail("Should have failed with same stream IDs", "")
 }
 
-// ==== PRIORITY TESTS ====
+fr fr ==== PRIORITY TESTS ====
 
 slay test_http2_priority_management() {
     testz.test_start("HTTP/2 Priority Frame Implementation")
     
-    // Create priority frame
+fr fr Create priority frame
     sus priority_frame Http2Frame = create_priority_frame(5, 3, 200, based)
     testz.assert_eq_int(priority_frame.frame_type, HTTP2_FRAME_PRIORITY)
     testz.assert_eq_int(priority_frame.stream_id, 5)
     testz.assert_eq_int(priority_frame.payload_length, 5)
     testz.assert_eq_int(priority_frame.flags, 0)
     
-    // Create mock connection for processing
+fr fr Create mock connection for processing
     sus mock_socket Socket = Socket{
         handle: 5678,
         socket_type: 1,
@@ -449,7 +449,7 @@ slay test_http2_priority_management() {
         }
     }
     
-    // Process priority frame
+fr fr Process priority frame
     sus stream_dep Http2StreamDependency = process_priority_frame(conn, priority_frame) fam {
         when err -> {
             testz.test_fail("Failed to process priority frame", err.message)
@@ -465,7 +465,7 @@ slay test_http2_priority_management() {
     testz.test_pass("HTTP/2 priority management successful")
 }
 
-// ==== MULTIPLEXED CONNECTION TESTS ====
+fr fr ==== MULTIPLEXED CONNECTION TESTS ====
 
 slay test_http2_multiplexed_connection() {
     testz.test_start("HTTP/2 Multiplexed Connection Management")
@@ -499,7 +499,7 @@ slay test_http2_multiplexed_connection() {
     testz.assert_eq_int(mux_conn.stream_creation_rate, 0)
     testz.assert_false(mux_conn.connection.is_server)
     
-    // Test stream creation
+fr fr Test stream creation
     sus stream_id drip = multiplex_create_stream(mux_conn) fam {
         when err -> {
             testz.test_fail("Failed to create multiplexed stream", err.message)
@@ -508,10 +508,10 @@ slay test_http2_multiplexed_connection() {
     }
     
     testz.assert_eq_int(stream_id, 1)
-    testz.assert_true(mux_conn.active_streams[0])  // Stream ID 1 -> index 0
+    testz.assert_true(mux_conn.active_streams[0])  fr fr Stream ID 1 -> index 0
     testz.assert_eq_int(mux_conn.connection.stream_count, 1)
     
-    // Test stream closure
+fr fr Test stream closure
     multiplex_close_stream(mux_conn, stream_id) fam {
         when err -> {
             testz.test_fail("Failed to close multiplexed stream", err.message)
@@ -524,7 +524,7 @@ slay test_http2_multiplexed_connection() {
     testz.test_pass("HTTP/2 multiplexed connection successful")
 }
 
-// ==== CONNECTION POOL TESTS ====
+fr fr ==== CONNECTION POOL TESTS ====
 
 slay test_http2_connection_pool() {
     testz.test_start("HTTP/2 Connection Pool Management")
@@ -541,12 +541,12 @@ slay test_http2_connection_pool() {
     testz.test_pass("HTTP/2 connection pool management successful")
 }
 
-// ==== INTEGRATION TESTS ====
+fr fr ==== INTEGRATION TESTS ====
 
 slay test_http2_end_to_end_simulation() {
     testz.test_start("HTTP/2 End-to-End Simulation")
     
-    // Simulate HTTP/2 GET request workflow
+fr fr Simulate HTTP/2 GET request workflow
     sus mock_socket Socket = Socket{
         handle: 12345,
         socket_type: 1,
@@ -572,13 +572,13 @@ slay test_http2_end_to_end_simulation() {
         }
     }
     
-    // Simulate connection setup
+fr fr Simulate connection setup
     conn.connection_preface_sent = based
     conn.connection_preface_received = based
     conn.settings_sent = based
     conn.settings_acked = based
     
-    // Create request stream
+fr fr Create request stream
     sus stream Http2StreamState = create_stream(conn, 1) fam {
         when err -> {
             testz.test_fail("Failed to create request stream", err.message)
@@ -586,7 +586,7 @@ slay test_http2_end_to_end_simulation() {
         }
     }
     
-    // Create request headers
+fr fr Create request headers
     sus request_headers []tea = [
         ":method: GET",
         ":path: /get",
@@ -596,7 +596,7 @@ slay test_http2_end_to_end_simulation() {
         "accept: application/json"
     ]
     
-    // Create HEADERS frame
+fr fr Create HEADERS frame
     sus headers_frame Http2Frame = create_headers_frame(1, request_headers, based, based) fam {
         when err -> {
             testz.test_fail("Failed to create request headers frame", err.message)
@@ -609,7 +609,7 @@ slay test_http2_end_to_end_simulation() {
     testz.assert_true(headers_frame.flags & HTTP2_FLAG_END_STREAM)
     testz.assert_true(headers_frame.flags & HTTP2_FLAG_END_HEADERS)
     
-    // Simulate response headers
+fr fr Simulate response headers
     sus response_headers []tea = [
         ":status: 200",
         "content-type: application/json",
@@ -624,7 +624,7 @@ slay test_http2_end_to_end_simulation() {
         }
     }
     
-    // Simulate response data
+fr fr Simulate response data
     sus response_body tea = "{\"args\": {}, \"headers\": {\"Accept\": \"application/json\", \"Host\": \"httpbin.org\", \"User-Agent\": \"CURSED-HTTP2-Test/1.0\"}, \"origin\": \"192.168.1.100\", \"url\": \"https://httpbin.org/get\"}"
     
     sus response_data_frame Http2Frame = create_data_frame(1, response_body, based) fam {
@@ -642,12 +642,12 @@ slay test_http2_end_to_end_simulation() {
     testz.test_pass("HTTP/2 end-to-end simulation successful")
 }
 
-// ==== PERFORMANCE TESTS ====
+fr fr ==== PERFORMANCE TESTS ====
 
 slay test_http2_performance_characteristics() {
     testz.test_start("HTTP/2 Performance Characteristics")
     
-    // Test frame creation performance
+fr fr Test frame creation performance
     sus start_time drip = timez.now()
     sus i drip = 0
     
@@ -665,10 +665,10 @@ slay test_http2_performance_characteristics() {
     sus end_time drip = timez.now()
     sus duration drip = end_time - start_time
     
-    // Should be able to create 1000 frames in less than 1 second
+fr fr Should be able to create 1000 frames in less than 1 second
     testz.assert_true(duration < 1000)
     
-    // Test HPACK encoding performance
+fr fr Test HPACK encoding performance
     sus hpack_start drip = timez.now()
     sus j drip = 0
     
@@ -687,18 +687,18 @@ slay test_http2_performance_characteristics() {
     sus hpack_end drip = timez.now()
     sus hpack_duration drip = hpack_end - hpack_start
     
-    // HPACK encoding should be efficient
+fr fr HPACK encoding should be efficient
     testz.assert_true(hpack_duration < 2000)
     
     testz.test_pass("HTTP/2 performance characteristics acceptable")
 }
 
-// ==== ERROR HANDLING TESTS ====
+fr fr ==== ERROR HANDLING TESTS ====
 
 slay test_http2_error_conditions() {
     testz.test_start("HTTP/2 Error Condition Handling")
     
-    // Test invalid stream ID for DATA frame
+fr fr Test invalid stream ID for DATA frame
     sus invalid_data Http2Frame = create_data_frame(0, "test", no_cap) fam {
         when err -> {
             testz.assert_true(stringz.contains(err.message, "stream ID 0"))
@@ -709,51 +709,51 @@ slay test_http2_error_conditions() {
     testz.test_fail("Should have failed with stream ID 0 for DATA frame", "")
 }
 
-// ==== MAIN TEST RUNNER ====
+fr fr ==== MAIN TEST RUNNER ====
 
 slay run_all_http2_tests() {
     testz.test_suite_start("HTTP/2 Comprehensive Test Suite")
     
-    // Frame processing tests
+fr fr Frame processing tests
     test_http2_frame_creation()
     test_http2_frame_parsing()
     
-    // HPACK compression tests
+fr fr HPACK compression tests
     test_hpack_integer_encoding()
     test_hpack_string_encoding()
     test_hpack_dynamic_table()
     test_hpack_static_table()
     
-    // Stream management tests
+fr fr Stream management tests
     test_http2_stream_lifecycle()
     
-    // Flow control tests
+fr fr Flow control tests
     test_http2_flow_control()
     
-    // Server push tests
+fr fr Server push tests
     test_http2_server_push()
     
-    // Priority tests
+fr fr Priority tests
     test_http2_priority_management()
     
-    // Multiplexed connection tests
+fr fr Multiplexed connection tests
     test_http2_multiplexed_connection()
     
-    // Connection pool tests
+fr fr Connection pool tests
     test_http2_connection_pool()
     
-    // Integration tests
+fr fr Integration tests
     test_http2_end_to_end_simulation()
     
-    // Performance tests
+fr fr Performance tests
     test_http2_performance_characteristics()
     
-    // Error handling tests
+fr fr Error handling tests
     test_http2_error_conditions()
     
     testz.test_suite_end()
     testz.print_test_summary()
 }
 
-// Run all tests
+fr fr Run all tests
 run_all_http2_tests()

@@ -30,7 +30,8 @@ pub const TokenKind = enum {
     // CURSED Gen Z Keywords
     Slay, // function definition
     SlayMacro, // slay_macro! hygienic macro definition
-    Yolo, // return statement
+    Yolo, // return statement (deprecated)
+    Damn, // return statement (canonical)
     Sus, // mutable variable
     Facts, // immutable constant
     Lowkey, // if statement
@@ -766,6 +767,7 @@ pub const Lexer = struct {
         if (std.mem.eql(u8, text, "slay")) return .Slay;
         if (std.mem.eql(u8, text, "slay_macro!")) return .SlayMacro;
         if (std.mem.eql(u8, text, "yolo")) return .Yolo;
+        if (std.mem.eql(u8, text, "damn")) return .Damn;
         if (std.mem.eql(u8, text, "sus")) return .Sus;
         if (std.mem.eql(u8, text, "facts")) return .Facts;
         if (std.mem.eql(u8, text, "lowkey")) return .Lowkey;

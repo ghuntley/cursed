@@ -1,0 +1,37 @@
+// If Statement Test
+// Tests: Conditional logic and branching
+// Expected: Control flow works identically
+
+fn main() {
+    yap("=== If Statement Test ===")
+    
+    let x = 10
+    let y = 5
+    
+    yap("x = 10, y = 5")
+    
+    if (x > y) {
+        yap("x is greater than y")
+    }
+    
+    if (y > x) {
+        yap("y is greater than x")
+    } else {
+        yap("x is not less than y")
+    }
+    
+    let score = 85
+    yap("Score evaluation:")
+    
+    if (score >= 90) {
+        yap("Grade A")
+    } else if (score >= 80) {
+        yap("Grade B")
+    } else if (score >= 70) {
+        yap("Grade C")
+    } else {
+        yap("Grade F")
+    }
+    
+    yap("=== Test Complete ===")
+}

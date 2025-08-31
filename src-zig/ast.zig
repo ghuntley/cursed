@@ -413,6 +413,7 @@ pub const BasicType = enum {
     Lit,       // bool
     Cap,       // null/nil
     Yikes,     // error type
+    Auto,      // auto type inference
 };
 
 pub const ChannelType = struct {

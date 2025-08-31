@@ -1,0 +1,81 @@
+--- /tmp/tmp.ov6RMgIEDa	2025-08-31 12:01:51.416082560 +0300
++++ /tmp/tmp.a793CS1IJp	2025-08-31 12:01:51.417082555 +0300
+@@ -1,78 +0,0 @@
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:10 - Synchronizing parser after error (context: synchronize)
+-INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:6:44 - Error parsing function statement
+-INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
+-INFO: Attempting additional statement recovery
+-Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:37:1 - Failed to parse statement
+-
+-=== Error Recovery Statistics ===
+-Total errors encountered: 2
+-Semicolon recoveries: 3
+-Statement recoveries: 2
+-Expression recoveries: 0
+-Delimiter recoveries: 0
+-Total tokens skipped: 11
+-================================
+-✅ Program completed
+-Executing 0 deferred statements
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+-                                                       ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1230:33: 0xADDRESS in parseFunctionStatement (cursed_compiler_main.zig)
+-            try func.body.append(self.allocator, stmt_ptr);
+-                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:944:70: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+-                                                                     ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0xADDRESS in alloc (std.zig)
+-            (self.createNode(0, n + ptr_align) orelse return null);
+-                            ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_30719 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:3795:59: 0xADDRESS in parseAssignmentStatement (cursed_compiler_main.zig)
+-        const target_ptr = try self.arena_allocator.create(Expression);
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1086:53: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return try self.parseAssignmentStatement();
+-                                                    ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1220:49: 0xADDRESS in parseFunctionStatement (cursed_compiler_main.zig)
+-            const stmt = try self.parseStatement();
+-                                                ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0xADDRESS in alloc (std.zig)
+-                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+-                                          ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_26059 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1221:61: 0xADDRESS in parseFunctionStatement (cursed_compiler_main.zig)
+-            const stmt_ptr = try self.arena_allocator.create(Statement); 
+-                                                            ^
+-/home/ghuntley/cursed/src-zig/parser.zig:944:70: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+-                                                                     ^
+-/home/ghuntley/cursed/src-zig/parser.zig:494:36: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-            if (self.parseStatement()) |stmt| {
+-                                   ^
+-

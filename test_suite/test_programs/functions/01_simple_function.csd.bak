@@ -1,0 +1,25 @@
+// Simple Function Test
+// Tests: Function definition and calls
+// Expected: Functions work identically in both modes
+
+fn add_numbers(a, b) {
+    return a + b
+}
+
+fn greet(name) {
+    yap("Hello,")
+    yap(name)
+}
+
+fn main() {
+    yap("=== Simple Function Test ===")
+    
+    yap("Testing add_numbers:")
+    let result = add_numbers(7, 3)
+    yap(result)
+    
+    yap("Testing greet function:")
+    greet("CURSED Developer")
+    
+    yap("=== Test Complete ===")
+}

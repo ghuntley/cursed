@@ -1,0 +1,28 @@
+// FizzBuzz Test
+// Tests: Complex logic combining multiple concepts
+// Expected: Classic FizzBuzz works identically
+
+fn fizzbuzz(n) {
+    let i = 1
+    while (i <= n) {
+        if (i % 15 == 0) {
+            yap("FizzBuzz")
+        } else if (i % 3 == 0) {
+            yap("Fizz")  
+        } else if (i % 5 == 0) {
+            yap("Buzz")
+        } else {
+            yap(i)
+        }
+        i = i + 1
+    }
+}
+
+fn main() {
+    yap("=== FizzBuzz Test ===")
+    
+    yap("FizzBuzz from 1 to 15:")
+    fizzbuzz(15)
+    
+    yap("=== Test Complete ===")
+}
