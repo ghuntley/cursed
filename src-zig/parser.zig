@@ -761,8 +761,8 @@ pub const Parser = struct {
             }
         }
         
-        // Return statement (damn only - canonical spec)
-        if (self.matchIdentifier("damn")) {
+        // Return statement (return/yolo/damn - multiple supported forms)
+        if (self.match(.Return) or self.match(.Yolo) or self.matchIdentifier("return") or self.matchIdentifier("damn")) {
             return try self.parseReturnStatement();
         }
         
@@ -887,9 +887,8 @@ pub const Parser = struct {
         
         var statements = ArrayList(*anyopaque){};
         errdefer {
-            for (statements.items) |stmt_ptr| {
-                self.allocator.destroy(@as(*Statement, @ptrCast(@alignCast(stmt_ptr))));
-            }
+            // NOTE: Arena-allocated statements are automatically cleaned up when arena is destroyed
+            // Don't manually free arena-allocated objects, it causes "Invalid free" crashes
             statements.deinit(self.allocator);
         }
         
@@ -2389,7 +2388,7 @@ pub const Parser = struct {
 
     // Helper methods for parsing statements
     fn parseReturnStatement(self: *Parser) ParserError!Statement {
-        // SPEC CONFORMANCE: "damn" token has already been consumed by caller
+        // SPEC CONFORMANCE: Return token (return/yolo/damn) has already been consumed by caller
         var return_stmt = ast.ReturnStatement{ .value = null };
         
         // Parse optional return value

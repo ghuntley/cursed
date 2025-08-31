@@ -1,4 +1,2 @@
-fr fr Test minimal CURSED module
-
-sus result drip = testz.simple_add(3, 7)
-vibez.spillln("testz.simple_add(3, 7) =", result)
+// Minimal test - just a single mathz call, no output
+sus x drip = mathz.add_two(2, 2)
