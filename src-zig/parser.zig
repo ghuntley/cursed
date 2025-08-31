@@ -1168,7 +1168,7 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var statements = ArrayList(*Statement){};
-        defer statements.deinit(self.allocator);
+        // CRITICAL FIX: Do NOT defer statements.deinit - the ArrayList will be owned by BlockStatement
         
         // Parse statements within the block
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
@@ -1187,6 +1187,7 @@ pub const Parser = struct {
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
+        // Transfer ownership of the ArrayList to the BlockStatement
         return Statement{ .Block = ast.BlockStatement{
             .statements = statements,
         }};
