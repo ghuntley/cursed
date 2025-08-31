@@ -10,8 +10,8 @@ slay fibonacci(n) {
 }
 
 slay sum_range(start, end) {
-    sus sum drip = 0
-    sus i drip = start
+    sus sum normie = 0
+    sus i normie = start
     periodt (i <= end) {
         sum = sum + i
         i = i + 1

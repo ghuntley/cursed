@@ -13,7 +13,7 @@ slay main_character() {
     vibez.spill("=== Empty Inputs Test ===")
     
     vibez.spill("Empty string:")
-    sus empty_str drip = ""
+    sus empty_str tea = ""
     vibez.spill(empty_str)
     vibez.spill("After empty string")
     

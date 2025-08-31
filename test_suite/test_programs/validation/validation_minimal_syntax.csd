@@ -6,20 +6,20 @@ fr fr Expected: Should parse and execute basic operations
 
 slay main_character() {
     fr fr Basic variable declarations
-    sus x drip = 42
-    sus y drip = 10
-    sus z drip = x + y
+    sus x normie = 42
+    sus y normie = 10
+    sus z normie = x + y
     
     fr fr Simple control flow
     ready x > y {
-        sus result drip = x * 2
+        sus result normie = x * 2
     } otherwise {
-        sus result drip = y * 2
+        sus result normie = y * 2
     }
     
     fr fr Simple arithmetic
-    sus sum drip = x + y + z
-    sus product drip = x * y
+    sus sum normie = x + y + z
+    sus product normie = x * y
     
     damn 0
 }

@@ -12,9 +12,9 @@ slay main_character() {
     vibez.spill("=== Comprehensive CURSED Syntax Test ===")
     
     fr fr Variable declarations with proper syntax
-    sus number drip = 42
-    sus text drip = "Hello, CURSED!"
-    sus result drip = mathz.add_two(10, 15)
+    sus number normie = 42
+    sus text tea = "Hello, CURSED!"
+    sus result normie = mathz.add_two(10, 15)
     
     vibez.spill("Number:")
     vibez.spill(number)
@@ -24,8 +24,8 @@ slay main_character() {
     vibez.spill(result)
     
     fr fr String operations
-    sus greeting drip = stringz.concat("Welcome to ", "CURSED Language")
-    sus length drip = stringz.length(greeting)
+    sus greeting tea = stringz.concat("Welcome to ", "CURSED Language")
+    sus length normie = stringz.length(greeting)
     
     vibez.spill("Greeting:")
     vibez.spill(greeting)
@@ -33,11 +33,11 @@ slay main_character() {
     vibez.spill(length)
     
     fr fr Arithmetic expressions
-    sus a drip = 5
-    sus b drip = 3
-    sus addition drip = a + b
-    sus multiplication drip = a * b
-    sus complex_expr drip = (a + b) * 2 - 1
+    sus a normie = 5
+    sus b normie = 3
+    sus addition normie = a + b
+    sus multiplication normie = a * b
+    sus complex_expr normie = (a + b) * 2 - 1
     
     vibez.spill("Addition result:")
     vibez.spill(addition)
@@ -49,7 +49,7 @@ slay main_character() {
     fr fr Control flow
     ready number > 30 {
         vibez.spill("Number is greater than 30")
-        sus doubled drip = number * 2
+        sus doubled normie = number * 2
         vibez.spill("Doubled:")
         vibez.spill(doubled)
     } otherwise {

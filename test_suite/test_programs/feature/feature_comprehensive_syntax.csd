@@ -1,0 +1,107 @@
+vibe main
+yeet "vibez"
+yeet "mathz"
+yeet "stringz"
+yeet "collections"
+
+// Comprehensive syntax validation test covering all major language constructs
+// Tests variables, functions, control flow, expressions, and module interactions
+// Expected: Complex program demonstrating full language capabilities
+
+slay calculate_fibonacci(n) {
+    sus if n <= 1 {
+        return n
+    }
+    
+    sus prev1 normie = 0
+    sus prev2 normie = 1
+    sus current normie = 0
+    sus i normie = 2
+    
+    sus while i <= n {
+        current = mathz.add(prev1, prev2)
+        prev1 = prev2
+        prev2 = current
+        i = mathz.add(i, 1)
+    }
+    
+    return current
+}
+
+slay process_array(arr) {
+    sus length normie = collections.length(arr)
+    sus sum normie = 0
+    sus i normie = 0
+    
+    sus while i < length {
+        sus element normie = collections.get(arr, i)
+        sum = mathz.add(sum, element)
+        i = mathz.add(i, 1)
+    }
+    
+    return sum
+}
+
+slay main_character() {
+    vibez.spill("=== COMPREHENSIVE SYNTAX VALIDATION ===")
+    
+    // Test variable declarations and assignments
+    sus number normie = 10
+    sus message tea = "Testing comprehensive syntax"
+    sus flag lit = based
+    
+    vibez.spill("Initial values:")
+    vibez.spill(message)
+    vibez.spill(number)
+    vibez.spill(flag)
+    
+    // Test conditional statements
+    sus if number > 5 {
+        vibez.spill("Number is greater than 5")
+    } else {
+        vibez.spill("Number is 5 or less")
+    }
+    
+    // Test nested conditionals
+    sus if flag {
+        sus if number == 10 {
+            vibez.spill("Flag is true and number is 10")
+        }
+    }
+    
+    // Test loop constructs
+    sus i normie = 0
+    sus while i < 3 {
+        vibez.spill("Loop iteration:")
+        vibez.spill(i)
+        i = mathz.add(i, 1)
+    }
+    
+    // Test function calls
+    sus fib_result normie = calculate_fibonacci(8)
+    vibez.spill("Fibonacci of 8:")
+    vibez.spill(fib_result)
+    
+    // Test array operations
+    sus test_array []normie = [1, 2, 3, 4, 5]
+    sus array_sum normie = process_array(test_array)
+    vibez.spill("Array sum:")
+    vibez.spill(array_sum)
+    
+    // Test complex expressions
+    sus complex_calc normie = mathz.add(mathz.multiply(3, 4), mathz.divide(20, 5))
+    vibez.spill("Complex calculation (3*4 + 20/5):")
+    vibez.spill(complex_calc)
+    
+    // Test string operations
+    sus greeting tea = stringz.concat("Hello, ", "CURSED!")
+    vibez.spill("String concatenation:")
+    vibez.spill(greeting)
+    
+    // Test boolean operations
+    sus bool_result normie = (number > 5) && flag
+    vibez.spill("Boolean expression result:")
+    vibez.spill(bool_result)
+    
+    vibez.spill("=== SYNTAX VALIDATION COMPLETE ===")
+}

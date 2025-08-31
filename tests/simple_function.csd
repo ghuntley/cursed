@@ -1,4 +1,0 @@
-vibe test
-
-slay empty() {
-}

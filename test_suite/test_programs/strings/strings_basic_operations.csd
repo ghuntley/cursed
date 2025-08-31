@@ -6,9 +6,9 @@ fr fr Expected: String literals should parse and be handled correctly
 
 slay main_character() {
     fr fr String literal declarations
-    sus greeting drip = "Hello"
-    sus name drip = "CURSED"
-    sus empty drip = ""
+    sus greeting tea = "Hello"
+    sus name tea = "CURSED"
+    sus empty tea = ""
     
     fr fr String comparisons (if supported)
     ready greeting == "Hello" {
@@ -25,9 +25,9 @@ slay main_character() {
     }
     
     fr fr Multi-character strings
-    sus sentence drip = "This is a longer sentence with spaces and punctuation!"
-    sus symbols drip = "!@#$%^&*()"
-    sus numbers drip = "12345"
+    sus sentence tea = "This is a longer sentence with spaces and punctuation!"
+    sus symbols tea = "!@#$%^&*()"
+    sus numbers tea = "12345"
     
     damn 0
 }

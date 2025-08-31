@@ -165,6 +165,11 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
         }
         return;
     };
+    defer {
+        // Need to cast to mutable pointer for deinit
+        var mutable_program = @constCast(&program);
+        mutable_program.deinit(allocator);
+    }
     
     if (verbose) print("✅ Parsed AST with {d} statements\n", .{program.statements.items.len});
     
@@ -236,7 +241,6 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     // Step 2: Parse AST
     if (verbose) print("🧠 Step 2: Parsing CURSED AST...\n", .{});
     var cursed_parser = parser.Parser.initWithFile(allocator, tokens_list.items, filename);
-    defer cursed_parser.deinit();
     
     const program = cursed_parser.parseProgram() catch |err| {
         print("❌ Parser error in {s}: {any}\n", .{ filename, err });
@@ -244,14 +248,22 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
             print("💡 Parser encountered errors during parsing\n", .{});
             cursed_parser.error_recovery_stats.reportStats();
         }
+        cursed_parser.deinit(); // Clean up parser on error
         return;
     };
+    defer {
+        // Clean up parser AFTER program execution to keep arena memory alive
+        cursed_parser.deinit();
+        // Need to cast to mutable pointer for deinit
+        var mutable_program = @constCast(&program);
+        mutable_program.deinit(allocator);
+    }
     
     if (verbose) print("🎯 Parsed {d} statements\n", .{program.statements.items.len});
     
     // Step 3: Execute with interpreter
     if (verbose) print("🚀 Step 3: Executing CURSED program...\n", .{});
-    var cursed_interpreter = interpreter.Interpreter.init(allocator);
+    var cursed_interpreter = interpreter.Interpreter.initWithVerbose(allocator, verbose);
     defer cursed_interpreter.deinit();
     
     cursed_interpreter.interpret(program) catch |err| {
@@ -262,8 +274,5 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     if (verbose) {
         print("✅ CURSED program executed successfully\n", .{});
         print("💡 Use --compile flag to generate native executable\n", .{});
-    } else {
-        // In non-verbose mode, just show a minimal success indicator
-        print("✅ Program completed\n", .{});
     }
 }

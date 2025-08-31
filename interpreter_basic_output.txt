@@ -1,0 +1,195 @@
+Error at comprehensive_stdlib_validation_basic.csd:29:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.csd:29:5 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
+Error at comprehensive_stdlib_validation_basic.csd:30:28 - Error parsing function statement
+INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
+INFO: Attempting additional statement recovery
+Error at comprehensive_stdlib_validation_basic.csd:42:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at comprehensive_stdlib_validation_basic.csd:46:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.csd:46:5 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
+Error at comprehensive_stdlib_validation_basic.csd:47:23 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+INFO: Attempting additional statement recovery
+Error at comprehensive_stdlib_validation_basic.csd:58:35 - Error parsing variable declaration
+INFO: Recovered at delimiter 'RightParen' after skipping 5 tokens
+Error at comprehensive_stdlib_validation_basic.csd:60:31 - Error parsing function statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+Error at comprehensive_stdlib_validation_basic.csd:70:5 - Failed to parse statement
+INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+INFO: Attempting additional statement recovery
+Error at comprehensive_stdlib_validation_basic.csd:83:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+Error at comprehensive_stdlib_validation_basic.csd:83:1 - Synchronizing parser after error (context: synchronize)
+INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+Error at comprehensive_stdlib_validation_basic.csd:85:1 - Failed to parse statement
+INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+INFO: Attempting additional statement recovery
+
+=== Error Recovery Statistics ===
+Total errors encountered: 6
+Semicolon recoveries: 10
+Statement recoveries: 6
+Expression recoveries: 0
+Delimiter recoveries: 0
+Total tokens skipped: 48
+================================
+DEBUG: Registered global builtin functions (yap)
+DEBUG: Initialized interpreter with globals@interpreter.Environment@7fffa5a2f948 (parent: *interpreter.Environment@0)
+DEBUG: Registering function 'test_basic_arithmetic'
+DEBUG: Registering function 'run_comprehensive_validation'
+DEBUG: Registering function 'main_character'
+DEBUG: Created new environment@interpreter.Environment@7fc248d80000 with parent@*interpreter.Environment@7fffa5a2f948
+DEBUG: Calling function with 0 parameters, got 0 args
+DEBUG: Function declaration ptr: @ast.FunctionStatement@7fffa5a2d248, parameters ptr: @ast.Parameter@aaaaaaaaaaaaaaaa
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Calling user function 'run_comprehensive_validation'
+DEBUG: Created new environment@interpreter.Environment@7fc248d80040 with parent@*interpreter.Environment@7fffa5a2f948
+DEBUG: Calling function with 0 parameters, got 0 args
+DEBUG: Function declaration ptr: @ast.FunctionStatement@7fffa5a0d408, parameters ptr: @ast.Parameter@aaaaaaaaaaaaaaaa
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+CURSED BASIC VALIDATION SUITE
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+=============================
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Calling user function 'test_basic_arithmetic'
+DEBUG: Created new environment@interpreter.Environment@7fc248d80080 with parent@*interpreter.Environment@7fffa5a2f948
+DEBUG: Calling function with 0 parameters, got 0 args
+DEBUG: Function declaration ptr: @ast.FunctionStatement@7fffa59ed5c8, parameters ptr: @ast.Parameter@aaaaaaaaaaaaaaaa
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Integer
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Integer
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Binary
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 2 variables for 'a'
+DEBUG: Found 'a' in environment@interpreter.Environment@7fc248d80080
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 2 variables for 'b'
+DEBUG: Found 'b' in environment@interpreter.Environment@7fc248d80080
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Binary
+DEBUG: Evaluating expression type: Integer
+DEBUG: Evaluating expression type: Integer
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Binary
+DEBUG: Evaluating expression type: Integer
+DEBUG: Evaluating expression type: Integer
+DEBUG: Executing statement type: Let
+DEBUG: Evaluating expression type: Binary
+DEBUG: Evaluating expression type: Integer
+DEBUG: Evaluating expression type: Integer
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+=== BASIC ARITHMETIC TESTS ===
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+15 + 25 =
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 6 variables for 'add_result'
+DEBUG: Found 'add_result' in environment@interpreter.Environment@7fc248d80080
+40
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+30 - 12 =
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 6 variables for 'sub_result'
+DEBUG: Found 'sub_result' in environment@interpreter.Environment@7fc248d80080
+18
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+6 * 7 =
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 6 variables for 'mult_result'
+DEBUG: Found 'mult_result' in environment@interpreter.Environment@7fc248d80080
+42
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: String
+20 / 4 =
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Evaluating expression type: Identifier
+DEBUG: Environment.get() hop 0: checking env@interpreter.Environment@7fc248d80080 with 6 variables for 'div_result'
+DEBUG: Found 'div_result' in environment@interpreter.Environment@7fc248d80080
+5
+Executing defers from size 0 to 0
+DEBUG: Executing statement type: Expression
+DEBUG: Evaluating expression type: Call
+DEBUG: Function 'test_conditionals' not found
+thread 1681496 panic: integer overflow
+/home/ghuntley/cursed/src-zig/interpreter.zig:2011:21: 0x12b8ef6 in evaluateCall (cursed_compiler_main.zig)
+                    return InterpreterError.UndefinedFunction;
+                    ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:1419:36: 0x126d750 in evaluateExpression (cursed_compiler_main.zig)
+            .Call => |call| return try self.evaluateCall(call),
+                                   ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:680:21: 0x123a70f in executeStatement (cursed_compiler_main.zig)
+                _ = try self.evaluateExpression(expr);
+                    ^
+/snap/zig/14937/lib/std/mem.zig:4356:61: 0x1312d4c in sliceAsBytes__anon_46119 (std.zig)
+    return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                            ^
+/snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x12cca54 in free__anon_42212 (std.zig)
+    const bytes = mem.sliceAsBytes(memory);
+                                  ^
+/snap/zig/14937/lib/std/array_list.zig:655:21: 0x126f719 in deinit (std.zig)
+            gpa.free(self.allocatedSlice());
+                    ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:2671:35: 0x1239acd in callFunction (cursed_compiler_main.zig)
+        defer return_values.deinit(self.allocator);
+                                  ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:2002:53: 0x12b8a74 in evaluateCall (cursed_compiler_main.zig)
+                        return try self.callFunction(func, args.items);
+                                                    ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:1419:57: 0x126d72c in evaluateExpression (cursed_compiler_main.zig)
+            .Call => |call| return try self.evaluateCall(call),
+                                                        ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:680:48: 0x123a6e3 in executeStatement (cursed_compiler_main.zig)
+                _ = try self.evaluateExpression(expr);
+                                               ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:2693:50: 0x12399d2 in callFunction (cursed_compiler_main.zig)
+                else => try self.executeStatement(stmt.*),
+                                                 ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:666:38: 0x11f1a67 in execute (cursed_compiler_main.zig)
+            _ = try self.callFunction(main_func, &[_]Value{});
+                                     ^
+/home/ghuntley/cursed/src-zig/interpreter.zig:629:28: 0x11c6ed3 in interpret (cursed_compiler_main.zig)
+        return self.execute(program);
+                           ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:251:33: 0x11a3cfc in interpretSource (cursed_compiler_main.zig)
+    cursed_interpreter.interpret(program) catch |err| {
+                                ^
+/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0x11a5c67 in main (cursed_compiler_main.zig)
+        try interpretSource(allocator, source, filename.?, verbose);
+                           ^
+/snap/zig/14937/lib/std/start.zig:627:37: 0x11a6a7d in main (std.zig)
+            const result = root.main() catch |err| {
+                                    ^
+../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7fc250a2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+../csu/libc-start.c:360:3: 0x7fc250a2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+???:?:?: 0x14ff284 in ??? (???)
+???:?:?: 0x0 in ??? (???)

@@ -11,11 +11,11 @@ slay main_character() {
     say_hello()
     
     fr fr Test function with parameters
-    sus result1 drip = add_numbers(5, 3)
+    sus result1 normie = add_numbers(5, 3)
     vibez.spill("Addition result: {}", result1)
     
     fr fr Test function with multiple parameter types
-    sus message drip = format_message("Hello", 42, based)
+    sus message normie = format_message("Hello", 42, based)
     vibez.spill(message)
     
     fr fr Test function returning different types
@@ -31,12 +31,12 @@ slay say_hello() {
 }
 
 fr fr Function with return type
-slay add_numbers(a drip, b drip) normie {
+slay add_numbers(a normie, b normie) normie {
     damn a + b
 }
 
 fr fr Function with mixed parameter types
-slay format_message(text tea, number drip, flag lit) tea {
+slay format_message(text tea, number normie, flag lit) tea {
     fr fr Note: This is a simplified implementation
     ready flag {
         damn text
@@ -46,6 +46,6 @@ slay format_message(text tea, number drip, flag lit) tea {
 }
 
 fr fr Function returning boolean
-slay check_validity(value drip) lit {
+slay check_validity(value normie) lit {
     damn value > 0
 }

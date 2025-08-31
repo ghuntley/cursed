@@ -9,8 +9,8 @@ fr fr Expected: Type handling should be consistent
 slay main_character() {
     vibez.spill("=== Mixed Type Arithmetic Test ===")
     
-    sus int_val drip = 10
-    sus float_val drip = 3.5
+    sus int_val normie = 10
+    sus float_val meal = 3.5
     
     vibez.spill("Integer value:")
     vibez.spill(int_val)

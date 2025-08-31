@@ -6,11 +6,11 @@ fr fr Expected: Should parse successfully with valid CURSED syntax
 
 slay main_character() {
     fr fr Valid variable declarations
-    sus x drip = 42
-    sus y drip = x + 10
+    sus x normie = 42
+    sus y normie = x + 10
     
     fr fr Valid function calls  
-    sus result drip = calculate(x, y)
+    sus result normie = calculate(x, y)
     
     fr fr Valid control flow
     ready result > 50 {
@@ -22,6 +22,6 @@ slay main_character() {
     damn 0
 }
 
-slay calculate(a drip, b drip) normie {
+slay calculate(a normie, b normie) normie {
     damn a * b
 }

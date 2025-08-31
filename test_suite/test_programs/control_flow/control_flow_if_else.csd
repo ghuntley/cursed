@@ -6,26 +6,26 @@ fr fr Expected: Control flow should work correctly
 
 slay main_character() {
     fr fr Simple if-else
-    sus x drip = 15
-    sus y drip = 10
+    sus x normie = 15
+    sus y normie = 10
     
     ready x > y {
-        sus winner drip = x
+        sus winner normie = x
     } otherwise {
-        sus winner drip = y
+        sus winner normie = y
     }
     
     fr fr Nested if statements  
-    sus score drip = 85
+    sus score normie = 85
     ready score >= 90 {
-        sus grade drip = 1  fr fr A grade
+        sus grade normie = 1  fr fr A grade
         ready score >= 95 {
-            sus honor drip = 1  fr fr High honor
+            sus honor normie = 1  fr fr High honor
         }
     } otherwise ready score >= 80 {
-        sus grade drip = 2  fr fr B grade
+        sus grade normie = 2  fr fr B grade
     } otherwise {
-        sus grade drip = 3  fr fr C or below
+        sus grade normie = 3  fr fr C or below
     }
     
     fr fr Boolean conditions
@@ -33,11 +33,11 @@ slay main_character() {
     sus isEven lit = (x % 2) == 0
     
     ready isPositive && isEven {
-        sus result drip = 1
+        sus result normie = 1
     } otherwise ready isPositive {
-        sus result drip = 2  
+        sus result normie = 2  
     } otherwise {
-        sus result drip = 0
+        sus result normie = 0
     }
     
     damn 0

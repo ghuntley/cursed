@@ -1,6 +1,6 @@
 vibe main
 
 slay main_character() {
-    sus x drip = 42
-    sus y drip = x + 5
+    sus x normie = 42
+    sus y normie = x + 5
 }

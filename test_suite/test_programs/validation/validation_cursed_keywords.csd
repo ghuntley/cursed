@@ -8,12 +8,12 @@ fr fr Expected: All keywords should parse without errors
 
 slay main_character() {
     fr fr Variable declarations using sus
-    sus x drip = 42
-    sus y drip = "no cap"
+    sus x normie = 42
+    sus y tea = "no cap"
     sus z lit = based
     
     fr fr Function call test
-    sus result drip = calculate_something(x)
+    sus result normie = calculate_something(x)
     
     fr fr Control flow with CURSED keywords
     ready x > 0 {
@@ -26,8 +26,8 @@ slay main_character() {
     damn 0
 }
 
-slay calculate_something(value drip) normie {
+slay calculate_something(value normie) normie {
     fr fr Basic arithmetic to test operators
-    sus doubled drip = value * 2
+    sus doubled normie = value * 2
     damn doubled + 10
 }
