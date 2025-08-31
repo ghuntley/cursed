@@ -1,0 +1,1843 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 68 test files
+
+[1m[1/68] Testing: arithmetic/01_mixed_types.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[2/68] Testing: arithmetic/02_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[3/68] Testing: arithmetic/03_operator_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[4/68] Testing: arithmetic/04_complex_expressions.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[5/68] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[6/68] Testing: basic/01_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[7/68] Testing: basic/02_simple_arithmetic.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[8/68] Testing: basic/03_variable_assignment.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[9/68] Testing: basic/basic_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[10/68] Testing: basic/hello_world_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[11/68] Testing: complex/01_nested_operations.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Nested Operations Test ===" 
+    "Complex arithmetic:" 
+    15 
+    "Nested function calls:" 
+    39 
+    "Nested conditionals:" 
+    "x is between 10 and 20" 
+    "Multiple operations:" 
+    12 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[12/68] Testing: complex/02_fizzbuzz.csd[0m
+  Result: [33mFAIL (different outputs)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:11 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at statement keyword 'Lowkey' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:10:16 - Error parsing function statement
+    INFO: Recovered at statement keyword 'Slay' after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/complex/02_fizzbuzz.csd:21:1 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+    INFO: Attempting additional statement recovery
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 3
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 5
+    ================================
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 3
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 5
+    ================================
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 4572 726f 7220 6174 202f 686f 6d65 2f67  Error at /home/g
+    00000010: 6875 6e74 6c65 792f 6375 7273 6564 2f74  huntley/cursed/t
+    00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
+    00000030: 726f 6772 616d 732f 636f 6d70 6c65 782f  rograms/complex/
+    00000040: 3032 5f66 697a 7a62 757a 7a2e 6373 643a  02_fizzbuzz.csd:
+    00000050: 3130 3a31 3120 2d20 4572 726f 7220 7061  10:11 - Error pa
+    00000060: 7273 696e 6720 636f 6d70 6c65 7820 6578  rsing complex ex
+    00000070: 7072 6573 7369 6f6e 2073 7461 7465 6d65  pression stateme
+    00000080: 6e74 202d 2063 6865 636b 2066 6f72 206d  nt - check for m
+    00000090: 6973 706c 6163 6564 2062 7261 6365 7320  isplaced braces 
+    000000a0: 6f72 206f 7065 7261 746f 7220 7072 6563  or operator prec
+    000000b0: 6564 656e 6365 2069 7373 7565 7320 2863  edence issues (c
+    000000c0: 6f6e 7465 7874 3a20 7061 7273 6553 7461  ontext: parseSta
+    000000d0: 7465 6d65 6e74 290a 4572 726f 7220 6174  tement).Error at
+    000000e0: 202f 686f 6d65 2f67 6875 6e74 6c65 792f   /home/ghuntley/
+    000000f0: 6375 7273 6564 2f74 6573 745f 7375 6974  cursed/test_suit
+    00000100: 652f 7465 7374 5f70 726f 6772 616d 732f  e/test_programs/
+    00000110: 636f 6d70 6c65 782f 3032 5f66 697a 7a62  complex/02_fizzb
+    00000120: 757a 7a2e 6373 643a 3130 3a31 3120 2d20  uzz.csd:10:11 - 
+    00000130: 5379 6e63 6872 6f6e 697a 696e 6720 7061  Synchronizing pa
+    00000140: 7273 6572 2061 6674 6572 2065 7272 6f72  rser after error
+    00000150: 2028 636f 6e74 6578 743a 2073 796e 6368   (context: synch
+    00000160: 726f 6e69 7a65 290a 494e 464f 3a20 5265  ronize).INFO: Re
+    00000170: 636f 7665 7265 6420 6174 2073 7461 7465  covered at state
+    00000180: 6d65 6e74 206b 6579 776f 7264 2027 4c6f  ment keyword 'Lo
+    00000190: 776b 6579 2720 6166 7465 7220 736b 6970  wkey' after skip
+    000001a0: 7069 6e67 2031 2074 6f6b 656e 730a 4572  ping 1 tokens.Er
+    000001b0: 726f 7220 6174 202f 686f 6d65 2f67 6875  ror at /home/ghu
+    000001c0: 6e74 6c65 792f 6375 7273 6564 2f74 6573  ntley/cursed/tes
+    000001d0: 745f 7375 6974 652f 7465 7374 5f70 726f  t_suite/test_pro
+    000001e0: 6772 616d 732f 636f 6d70 6c65 782f 3032  grams/complex/02
+    000001f0: 5f66 697a 7a62 757a 7a2e 6373 643a 3130  _fizzbuzz.csd:10
+    00000200: 3a31 3620 2d20 4572 726f 7220 7061 7273  :16 - Error pars
+    00000210: 696e 6720 6675 6e63 7469 6f6e 2073 7461  ing function sta
+    00000220: 7465 6d65 6e74 0a49 4e46 4f3a 2052 6563  tement.INFO: Rec
+    00000230: 6f76 6572 6564 2061 7420 7374 6174 656d  overed at statem
+    00000240: 656e 7420 6b65 7977 6f72 6420 2753 6c61  ent keyword 'Sla
+    00000250: 7927 2061 6674 6572 2073 6b69 7070 696e  y' after skippin
+    00000260: 6720 3120 746f 6b65 6e73 0a49 4e46 4f3a  g 1 tokens.INFO:
+    00000270: 2041 7474 656d 7074 696e 6720 6164 6469   Attempting addi
+    00000280: 7469 6f6e 616c 2073 7461 7465 6d65 6e74  tional statement
+    00000290: 2072 6563 6f76 6572 790a 4572 726f 7220   recovery.Error 
+    000002a0: 6174 202f 686f 6d65 2f67 6875 6e74 6c65  at /home/ghuntle
+    000002b0: 792f 6375 7273 6564 2f74 6573 745f 7375  y/cursed/test_su
+    000002c0: 6974 652f 7465 7374 5f70 726f 6772 616d  ite/test_program
+    000002d0: 732f 636f 6d70 6c65 782f 3032 5f66 697a  s/complex/02_fiz
+    000002e0: 7a62 757a 7a2e 6373 643a 3231 3a31 202d  zbuzz.csd:21:1 -
+    000002f0: 2046 6169 6c65 6420 746f 2070 6172 7365   Failed to parse
+    00000300: 2073 7461 7465 6d65 6e74 0a49 4e46 4f3a   statement.INFO:
+    00000310: 2052 6563 6f76 6572 6564 2061 7420 6465   Recovered at de
+    00000320: 6c69 6d69 7465 7220 2752 6967 6874 5061  limiter 'RightPa
+    00000330: 7265 6e27 2061 6674 6572 2073 6b69 7070  ren' after skipp
+    00000340: 696e 6720 3320 746f 6b65 6e73 0a49 4e46  ing 3 tokens.INF
+    00000350: 4f3a 2041 7474 656d 7074 696e 6720 6164  O: Attempting ad
+    00000360: 6469 7469 6f6e 616c 2073 7461 7465 6d65  ditional stateme
+    00000370: 6e74 2072 6563 6f76 6572 790a 0a3d 3d3d  nt recovery..===
+    00000380: 2045 7272 6f72 2052 6563 6f76 6572 7920   Error Recovery 
+    00000390: 5374 6174 6973 7469 6373 203d 3d3d 0a54  Statistics ===.T
+    000003a0: 6f74 616c 2065 7272 6f72 7320 656e 636f  otal errors enco
+    000003b0: 756e 7465 7265 643a 2032 0a53 656d 6963  untered: 2.Semic
+    000003c0: 6f6c 6f6e 2072 6563 6f76 6572 6965 733a  olon recoveries:
+    000003d0: 2033 0a53 7461 7465 6d65 6e74 2072 6563   3.Statement rec
+    000003e0: 6f76 6572 6965 733a 2032 0a45 7870 7265  overies: 2.Expre
+    000003f0: 7373 696f 6e20 7265 636f 7665 7269 6573  ssion recoveries
+    00000400: 3a20 300a 4465 6c69 6d69 7465 7220 7265  : 0.Delimiter re
+    00000410: 636f 7665 7269 6573 3a20 300a 546f 7461  coveries: 0.Tota
+    00000420: 6c20 746f 6b65 6e73 2073 6b69 7070 6564  l tokens skipped
+    00000430: 3a20 350a 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  : 5.============
+    00000440: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000450: 3d3d 3d3d 0a0a 3d3d 3d20 4572 726f 7220  ====..=== Error 
+    00000460: 5265 636f 7665 7279 2053 7461 7469 7374  Recovery Statist
+    00000470: 6963 7320 3d3d 3d0a 546f 7461 6c20 6572  ics ===.Total er
+    00000480: 726f 7273 2065 6e63 6f75 6e74 6572 6564  rors encountered
+    00000490: 3a20 320a 5365 6d69 636f 6c6f 6e20 7265  : 2.Semicolon re
+    000004a0: 636f 7665 7269 6573 3a20 330a 5374 6174  coveries: 3.Stat
+    000004b0: 656d 656e 7420 7265 636f 7665 7269 6573  ement recoveries
+    000004c0: 3a20 320a 4578 7072 6573 7369 6f6e 2072  : 2.Expression r
+    000004d0: 6563 6f76 6572 6965 733a 2030 0a44 656c  ecoveries: 0.Del
+    000004e0: 696d 6974 6572 2072 6563 6f76 6572 6965  imiter recoverie
+    000004f0: 733a 2030 0a54 6f74 616c 2074 6f6b 656e  s: 0.Total token
+    00000500: 7320 736b 6970 7065 643a 2035 0a3d 3d3d  s skipped: 5.===
+    00000510: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000520: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d         =============
+
+  [36mCompiled HEX (exit: 0):[0m
+    (no output)
+
+---
+[1m[13/68] Testing: control_flow/01_if_statements.csd[0m
+  Result: [33mFAIL (different outputs)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:7 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:7 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at statement keyword 'Lowkey' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:28:12 - Error parsing function statement
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/01_if_statements.csd:37:1 - Failed to parse statement
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 3
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 1
+    ================================
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 3
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 1
+    ================================
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 4572 726f 7220 6174 202f 686f 6d65 2f67  Error at /home/g
+    00000010: 6875 6e74 6c65 792f 6375 7273 6564 2f74  huntley/cursed/t
+    00000020: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
+    00000030: 726f 6772 616d 732f 636f 6e74 726f 6c5f  rograms/control_
+    00000040: 666c 6f77 2f30 315f 6966 5f73 7461 7465  flow/01_if_state
+    00000050: 6d65 6e74 732e 6373 643a 3238 3a37 202d  ments.csd:28:7 -
+    00000060: 2045 7272 6f72 2070 6172 7369 6e67 2063   Error parsing c
+    00000070: 6f6d 706c 6578 2065 7870 7265 7373 696f  omplex expressio
+    00000080: 6e20 7374 6174 656d 656e 7420 2d20 6368  n statement - ch
+    00000090: 6563 6b20 666f 7220 6d69 7370 6c61 6365  eck for misplace
+    000000a0: 6420 6272 6163 6573 206f 7220 6f70 6572  d braces or oper
+    000000b0: 6174 6f72 2070 7265 6365 6465 6e63 6520  ator precedence 
+    000000c0: 6973 7375 6573 2028 636f 6e74 6578 743a  issues (context:
+    000000d0: 2070 6172 7365 5374 6174 656d 656e 7429   parseStatement)
+    000000e0: 0a45 7272 6f72 2061 7420 2f68 6f6d 652f  .Error at /home/
+    000000f0: 6768 756e 746c 6579 2f63 7572 7365 642f  ghuntley/cursed/
+    00000100: 7465 7374 5f73 7569 7465 2f74 6573 745f  test_suite/test_
+    00000110: 7072 6f67 7261 6d73 2f63 6f6e 7472 6f6c  programs/control
+    00000120: 5f66 6c6f 772f 3031 5f69 665f 7374 6174  _flow/01_if_stat
+    00000130: 656d 656e 7473 2e63 7364 3a32 383a 3720  ements.csd:28:7 
+    00000140: 2d20 5379 6e63 6872 6f6e 697a 696e 6720  - Synchronizing 
+    00000150: 7061 7273 6572 2061 6674 6572 2065 7272  parser after err
+    00000160: 6f72 2028 636f 6e74 6578 743a 2073 796e  or (context: syn
+    00000170: 6368 726f 6e69 7a65 290a 494e 464f 3a20  chronize).INFO: 
+    00000180: 5265 636f 7665 7265 6420 6174 2073 7461  Recovered at sta
+    00000190: 7465 6d65 6e74 206b 6579 776f 7264 2027  tement keyword '
+    000001a0: 4c6f 776b 6579 2720 6166 7465 7220 736b  Lowkey' after sk
+    000001b0: 6970 7069 6e67 2031 2074 6f6b 656e 730a  ipping 1 tokens.
+    000001c0: 4572 726f 7220 6174 202f 686f 6d65 2f67  Error at /home/g
+    000001d0: 6875 6e74 6c65 792f 6375 7273 6564 2f74  huntley/cursed/t
+    000001e0: 6573 745f 7375 6974 652f 7465 7374 5f70  est_suite/test_p
+    000001f0: 726f 6772 616d 732f 636f 6e74 726f 6c5f  rograms/control_
+    00000200: 666c 6f77 2f30 315f 6966 5f73 7461 7465  flow/01_if_state
+    00000210: 6d65 6e74 732e 6373 643a 3238 3a31 3220  ments.csd:28:12 
+    00000220: 2d20 4572 726f 7220 7061 7273 696e 6720  - Error parsing 
+    00000230: 6675 6e63 7469 6f6e 2073 7461 7465 6d65  function stateme
+    00000240: 6e74 0a45 7272 6f72 2061 7420 2f68 6f6d  nt.Error at /hom
+    00000250: 652f 6768 756e 746c 6579 2f63 7572 7365  e/ghuntley/curse
+    00000260: 642f 7465 7374 5f73 7569 7465 2f74 6573  d/test_suite/tes
+    00000270: 745f 7072 6f67 7261 6d73 2f63 6f6e 7472  t_programs/contr
+    00000280: 6f6c 5f66 6c6f 772f 3031 5f69 665f 7374  ol_flow/01_if_st
+    00000290: 6174 656d 656e 7473 2e63 7364 3a33 373a  atements.csd:37:
+    000002a0: 3120 2d20 4661 696c 6564 2074 6f20 7061  1 - Failed to pa
+    000002b0: 7273 6520 7374 6174 656d 656e 740a 0a3d  rse statement..=
+    000002c0: 3d3d 2045 7272 6f72 2052 6563 6f76 6572  == Error Recover
+    000002d0: 7920 5374 6174 6973 7469 6373 203d 3d3d  y Statistics ===
+    000002e0: 0a54 6f74 616c 2065 7272 6f72 7320 656e  .Total errors en
+    000002f0: 636f 756e 7465 7265 643a 2032 0a53 656d  countered: 2.Sem
+    00000300: 6963 6f6c 6f6e 2072 6563 6f76 6572 6965  icolon recoverie
+    00000310: 733a 2033 0a53 7461 7465 6d65 6e74 2072  s: 3.Statement r
+    00000320: 6563 6f76 6572 6965 733a 2032 0a45 7870  ecoveries: 2.Exp
+    00000330: 7265 7373 696f 6e20 7265 636f 7665 7269  ression recoveri
+    00000340: 6573 3a20 300a 4465 6c69 6d69 7465 7220  es: 0.Delimiter 
+    00000350: 7265 636f 7665 7269 6573 3a20 300a 546f  recoveries: 0.To
+    00000360: 7461 6c20 746f 6b65 6e73 2073 6b69 7070  tal tokens skipp
+    00000370: 6564 3a20 310a 3d3d 3d3d 3d3d 3d3d 3d3d  ed: 1.==========
+    00000380: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000390: 3d3d 3d3d 3d3d 0a0a 3d3d 3d20 4572 726f  ======..=== Erro
+    000003a0: 7220 5265 636f 7665 7279 2053 7461 7469  r Recovery Stati
+    000003b0: 7374 6963 7320 3d3d 3d0a 546f 7461 6c20  stics ===.Total 
+    000003c0: 6572 726f 7273 2065 6e63 6f75 6e74 6572  errors encounter
+    000003d0: 6564 3a20 320a 5365 6d69 636f 6c6f 6e20  ed: 2.Semicolon 
+    000003e0: 7265 636f 7665 7269 6573 3a20 330a 5374  recoveries: 3.St
+    000003f0: 6174 656d 656e 7420 7265 636f 7665 7269  atement recoveri
+    00000400: 6573 3a20 320a 4578 7072 6573 7369 6f6e  es: 2.Expression
+    00000410: 2072 6563 6f76 6572 6965 733a 2030 0a44   recoveries: 0.D
+    00000420: 656c 696d 6974 6572 2072 6563 6f76 6572  elimiter recover
+    00000430: 6965 733a 2030 0a54 6f74 616c 2074 6f6b  ies: 0.Total tok
+    00000440: 656e 7320 736b 6970 7065 643a 2031 0a3d  ens skipped: 1.=
+    00000450: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d  ================
+    00000460: 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d3d 3d    ===============
+
+  [36mCompiled HEX (exit: 0):[0m
+    (no output)
+
+---
+[1m[14/68] Testing: control_flow/02_loops.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Loops Test ===" 
+    "Simple counting:" 
+    thread 1834359 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1458:31: 0x1278a33 in executeWhileStatement (cursed_compiler_main.zig)
+                const condition = try self.evaluateExpression(while_stmt.condition.*);
+                                  ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:782:36: 0x123f36c in executeStatement (cursed_compiler_main.zig)
+                .While => |while_stmt| try self.executeWhileStatement(while_stmt),
+                                       ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x74ca0ee2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x74ca0ee2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    "=== Loops Test ==="
+    "Simple counting:"
+    "Countdown:"
+    3
+    2
+    1
+    "Blast off!"
+    "=== Test Complete ==="
+
+---
+[1m[15/68] Testing: control_flow/control_flow_comprehensive.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:14:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:14:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:15:42 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:22:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:22:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 15 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:24:59 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:34:16 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:44:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:44:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:45:30 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:56:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:56:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:57:45 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:15 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:15 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/control_flow/control_flow_comprehensive.csd:64:56 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 6
+    Semicolon recoveries: 12
+    Statement recoveries: 6
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 63
+    ================================
+    General protection exception (no address available)
+    /home/ghuntley/cursed/src-zig/interpreter.zig:808:38: 0x12811d9 in executeBlockStatement (cursed_compiler_main.zig)
+                try self.executeStatement(stmt_ptr.*);
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:796:61: 0x123fcea in executeStatement (cursed_compiler_main.zig)
+                .Block => |block| try self.executeBlockStatement(block),
+                                                                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:762:42: 0x11f4642 in execute (cursed_compiler_main.zig)
+                    try self.executeStatement(stmt.*);
+                                             ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x73703442a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x73703442a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[16/68] Testing: control_flow/control_flow_if_else.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    thread 1834414 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a8d7e62a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7a8d7e62a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[17/68] Testing: edge_cases/01_boundary_values.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[18/68] Testing: edge_cases/02_empty_inputs.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Empty Inputs Test ===" 
+    "Empty string:" 
+    "" 
+    "After empty string" 
+    "Zero value:" 
+    thread 1834467 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2110:53: 0x12be2ac in evaluateCall (cursed_compiler_main.zig)
+                            return try self.callFunction(func, args.items);
+                                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1512:57: 0x1274215 in evaluateExpression (cursed_compiler_main.zig)
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:70: 0x1274f11 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:48: 0x123ee98 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2797:50: 0x123e0d7 in callFunction (cursed_compiler_main.zig)
+                    else => try self.executeStatement(stmt.*),
+                                                     ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7483f342a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7483f342a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[19/68] Testing: edge_cases/edge_case_boundary_values.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:31:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:31:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:32:9 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 8 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd:65:1 - Failed to parse statement
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 4
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 14
+    ================================
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_boundary_values.csd: error.UndefinedFunction
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 4
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 14
+    ================================
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[20/68] Testing: edge_cases/edge_case_complex_expressions.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:32:15 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:35:47 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:35:47 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at semicolon after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:36:5 - Failed to parse statement
+    INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:49:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:49:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd:49:1 - Failed to parse statement
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 3
+    Semicolon recoveries: 6
+    Statement recoveries: 3
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 15
+    ================================
+    "Complex float expression: {}" 5.071429 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/edge_cases/edge_case_complex_expressions.csd: error.TypeMismatch
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 3
+    Semicolon recoveries: 6
+    Statement recoveries: 3
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 15
+    ================================
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[21/68] Testing: edge_cases/edge_case_operator_precedence.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    thread 1834528 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7e407ca2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7e407ca2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[22/68] Testing: errors/01_division_by_zero.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Division by Zero Test ===" 
+    "Normal division:" 
+    5 
+    "Attempting division by zero:" 
+    thread 1834557 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1588:39: 0x12a97fc in evaluateBinary (cursed_compiler_main.zig)
+                    if (right_num == 0.0) return InterpreterError.DivisionByZero;
+                                          ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:43: 0x1274f35 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:21: 0x123eec4 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                        ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7b072862a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7b072862a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    "=== Division by Zero Test ==="
+    "Normal division:"
+    5
+    "Attempting division by zero:"
+    inf
+    "This line should not execute if error handling works"
+
+---
+[1m[23/68] Testing: errors/02_undefined_variable.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Undefined Variable Test ===" 
+    "Using undefined variable:" 
+    module(0 functions) 
+    "This should not execute" 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[24/68] Testing: errors/error_missing_package.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[25/68] Testing: errors/error_recovery_missing_imports.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    General protection exception (no address available)
+    /home/ghuntley/cursed/src-zig/interpreter.zig:808:38: 0x12811d9 in executeBlockStatement (cursed_compiler_main.zig)
+                try self.executeStatement(stmt_ptr.*);
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:796:61: 0x123fcea in executeStatement (cursed_compiler_main.zig)
+                .Block => |block| try self.executeBlockStatement(block),
+                                                                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:762:42: 0x11f4642 in execute (cursed_compiler_main.zig)
+                    try self.executeStatement(stmt.*);
+                                             ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a996542a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7a996542a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 139):[0m
+    Runtime error (exit 139)
+
+---
+[1m[26/68] Testing: errors/error_syntax_recovery.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[27/68] Testing: feature/feature_comprehensive_syntax.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:12:9 - Error parsing variable declaration
+    INFO: Recovered at delimiter 'RightBrace' after skipping 7 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:14:5 - Error parsing function statement
+    INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:17:5 - Failed to parse statement
+    INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:21:9 - Error parsing variable declaration
+    INFO: Recovered at delimiter 'RightParen' after skipping 14 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:22:41 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 16 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:36:9 - Error parsing variable declaration
+    INFO: Recovered at statement keyword 'Sus' after skipping 5 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:37:9 - Error parsing function statement
+    INFO: Recovered at delimiter 'RightBrace' after skipping 2 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:45:1 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 3 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:59:9 - Error parsing variable declaration
+    INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:60:47 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightBrace' after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:66:9 - Error parsing variable declaration
+    INFO: Recovered at statement keyword 'Sus' after skipping 3 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:67:9 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 11 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:74:9 - Error parsing variable declaration
+    INFO: Recovered at delimiter 'RightParen' after skipping 10 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:75:38 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:86:31 - Error parsing variable declaration
+    INFO: Recovered at delimiter 'RightBracket' after skipping 10 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:86:45 - Failed to parse statement
+    INFO: Recovered at statement keyword 'Sus' after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd:107:1 - Failed to parse statement
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 10
+    Semicolon recoveries: 18
+    Statement recoveries: 10
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 110
+    ================================
+    "Initial values:" 
+    "Testing comprehensive syntax" 
+    10 
+    based 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/feature/feature_comprehensive_syntax.csd: error.UndefinedFunction
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 10
+    Semicolon recoveries: 18
+    Statement recoveries: 10
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 110
+    ================================
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[28/68] Testing: features/feature_complete_stdlib_demo.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Complete CURSED Stdlib Demo ===" 
+    "--- Math Operations ---" 
+    thread 1834680 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x76729de2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x76729de2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[29/68] Testing: features/feature_control_flow_simple.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Control Flow Test ===" 
+    "x is greater than 5" 
+    thread 1834709 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a0b9342a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7a0b9342a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    "=== Control Flow Test ==="
+    "x is greater than 5"
+    "Grade: B or below"
+    "=== Test Complete ==="
+
+---
+[1m[30/68] Testing: features/feature_function_definitions.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "Hello from CURSED!" 
+    "Addition result: {}" 8 
+    cap 
+    "Is valid: {}" based 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[31/68] Testing: features/feature_stdlib_imports.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:39:5 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:39:5 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:39:21 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 7 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:49:1 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:49:1 - Synchronizing parser after error (context: synchronize)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd:49:1 - Failed to parse statement
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 4
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 15
+    ================================
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_imports.csd: error.UndefinedFunction
+    
+    === Error Recovery Statistics ===
+    Total errors encountered: 2
+    Semicolon recoveries: 4
+    Statement recoveries: 2
+    Expression recoveries: 0
+    Delimiter recoveries: 0
+    Total tokens skipped: 15
+    ================================
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[32/68] Testing: features/feature_stdlib_integration.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Stdlib Test ===" 
+    "abs(-42):" 
+    thread 1834766 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:43: 0x1274f35 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:21: 0x123eec4 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                        ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x740d8aa2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x740d8aa2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[33/68] Testing: functions/01_simple_function.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Simple Function Test ===" 
+    "Testing add_numbers:" 
+    10 
+    "Testing greet function:" 
+    "Hello," 
+    "CURSED Developer" 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[34/68] Testing: functions/02_recursive_function.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Recursive Function Test ===" 
+    "Factorial of 5:" 
+    thread 1834811 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2110:53: 0x12be2ac in evaluateCall (cursed_compiler_main.zig)
+                            return try self.callFunction(func, args.items);
+                                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1512:57: 0x1274215 in evaluateExpression (cursed_compiler_main.zig)
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:40: 0x1276749 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:55: 0x123ef73 in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                                                          ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2797:50: 0x123e0d7 in callFunction (cursed_compiler_main.zig)
+                    else => try self.executeStatement(stmt.*),
+                                                     ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a5b57c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7a5b57c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[35/68] Testing: functions/03_nested_function_calls.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Nested Function Calls Test ===" 
+    "double_value(5):" 
+    10 
+    "add_one(7):" 
+    8 
+    "complex_calc(3) = double_value(add_one(3)):" 
+    8 
+    "Nested in expression:" 
+    7 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[36/68] Testing: functions/04_function_parameters.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Function Parameters Test ===" 
+    "No parameters:" 
+    42 
+    "One parameter:" 
+    20 
+    "Multiple parameters:" 
+    6 
+    "Parameters with expressions:" 
+    20 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[37/68] Testing: functions/functions_parameter_return.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[38/68] Testing: parser_fixes/01_corrected_hello_world.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    General protection exception (no address available)
+    /home/ghuntley/cursed/src-zig/interpreter.zig:808:38: 0x12811d9 in executeBlockStatement (cursed_compiler_main.zig)
+                try self.executeStatement(stmt_ptr.*);
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:796:61: 0x123fcea in executeStatement (cursed_compiler_main.zig)
+                .Block => |block| try self.executeBlockStatement(block),
+                                                                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:762:42: 0x11f4642 in execute (cursed_compiler_main.zig)
+                    try self.executeStatement(stmt.*);
+                                             ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7d635782a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7d635782a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[39/68] Testing: parser_fixes/02_corrected_arithmetic.csd[0m
+  Result: [33mFAIL (different outputs)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 0):[0m
+    "Arithmetic test complete"
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    (no output)
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 2241 7269 7468 6d65 7469 6320 7465 7374  "Arithmetic test
+    00000010: 2063 6f6d 706c 6574 6522                  complete"
+
+---
+[1m[40/68] Testing: parser_fixes/03_corrected_function_parameters.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[41/68] Testing: parser/parser_expression_precedence.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "2 + 3 * 4 = {}" 14 
+    "20 / 4 + 2 = {}" 7 
+    "(2 + 3) * 4 = {}" 20 
+    "2 * 3 + 4 * 5 = {}" 26 
+    thread 1834952 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1550:23: 0x12a857e in evaluateBinary (cursed_compiler_main.zig)
+            const right = try self.evaluateExpression(bin.right.*);
+                          ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x792e1582a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x792e1582a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[42/68] Testing: performance/01_recursive_depth.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Recursive Depth Test ===" 
+    "Shallow recursion:" 
+    thread 1834981 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2110:53: 0x12be2ac in evaluateCall (cursed_compiler_main.zig)
+                            return try self.callFunction(func, args.items);
+                                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1512:57: 0x1274215 in evaluateExpression (cursed_compiler_main.zig)
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:70: 0x1274f11 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:48: 0x123ee98 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2797:50: 0x123e0d7 in callFunction (cursed_compiler_main.zig)
+                    else => try self.executeStatement(stmt.*),
+                                                     ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x746492c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x746492c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[43/68] Testing: performance/02_computation_intensive.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Computation Intensive Test ===" 
+    "Fibonacci sequence:" 
+    thread 1835010 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1632:9: 0x12ab026 in evaluateBinary (cursed_compiler_main.zig)
+            return InterpreterError.TypeMismatch;
+            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1510:37: 0x1273f98 in evaluateExpression (cursed_compiler_main.zig)
+                .Binary => |bin| return try self.evaluateBinary(bin),
+                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1441:27: 0x12781f6 in executeIfStatement (cursed_compiler_main.zig)
+            const condition = try self.evaluateExpression(condition_expr.*);
+                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:781:30: 0x123f285 in executeStatement (cursed_compiler_main.zig)
+                .If => |if_stmt| try self.executeIfStatement(if_stmt),
+                                 ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2110:53: 0x12be2ac in evaluateCall (cursed_compiler_main.zig)
+                            return try self.callFunction(func, args.items);
+                                                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1512:57: 0x1274215 in evaluateExpression (cursed_compiler_main.zig)
+                .Call => |call| return try self.evaluateCall(call),
+                                                            ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:70: 0x1274f11 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:48: 0x123ee98 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                                                   ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2797:50: 0x123e0d7 in callFunction (cursed_compiler_main.zig)
+                    else => try self.executeStatement(stmt.*),
+                                                     ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a36f3a2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7a36f3a2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[44/68] Testing: regression/regression_memory_management.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[45/68] Testing: regression/regression_parser_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[46/68] Testing: regression/regression_parser_recovery.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[47/68] Testing: regression/regression_string_float_precision.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== STRING & FLOAT PRECISION REGRESSION ===" 
+    "Special string length:" 
+    38 
+    "Float precision test (3.14159 + 2.71828):" 
+    5.85987 
+    thread 1835101 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x79b94a62a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x79b94a62a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[48/68] Testing: stdlib/01_mathz_basic.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Mathz Stdlib Test ===" 
+    "Testing mathz.add_two:" 
+    thread 1835130 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7665fbe2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7665fbe2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[49/68] Testing: stdlib/02_stringz_basic.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Stringz Stdlib Test ===" 
+    "Testing stringz.concat:" 
+    "Hello"" World" 
+    "Testing stringz.length:" 
+    8 
+    "Testing stringz.upper:" 
+    thread 1835159 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7ced0882a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7ced0882a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[50/68] Testing: stdlib/03_mathz_advanced.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Advanced Mathz Test ===" 
+    "Power function:" 
+    8 
+    25 
+    "Square root:" 
+    4 
+    5 
+    "Modulo operation:" 
+    thread 1835190 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1525:43: 0x1274f35 in evaluateExpression (cursed_compiler_main.zig)
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:771:21: 0x123eec4 in executeStatement (cursed_compiler_main.zig)
+                    _ = try self.evaluateExpression(expr);
+                        ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7476ec62a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7476ec62a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[51/68] Testing: stdlib/04_collections_basic.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 134):[0m
+    "=== Basic Collections Test ===" 
+    "Creating array:" 
+    thread 1835219 panic: integer overflow
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2276:21: 0x12d0269 in evaluateMethodCall (cursed_compiler_main.zig)
+                        return InterpreterError.UndefinedFunction;
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1538:24: 0x12753d9 in evaluateExpression (cursed_compiler_main.zig)
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:1226:13: 0x1276775 in executeLetStatement (cursed_compiler_main.zig)
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:773:27: 0x123efab in executeStatement (cursed_compiler_main.zig)
+                .Let => |let| try self.executeLetStatement(let),
+                              ^
+    /snap/zig/14937/lib/std/mem.zig:4356:61: 0x1281bec in sliceAsBytes__anon_39722 (std.zig)
+        return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+                                                                ^
+    /snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0x1240fa4 in free__anon_34328 (std.zig)
+        const bytes = mem.sliceAsBytes(memory);
+                                      ^
+    /snap/zig/14937/lib/std/array_list.zig:655:21: 0x11f6769 in deinit (std.zig)
+                gpa.free(self.allocatedSlice());
+                        ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:2775:35: 0x123e1d2 in callFunction (cursed_compiler_main.zig)
+            defer return_values.deinit(self.allocator);
+                                      ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:757:38: 0x11f44b7 in execute (cursed_compiler_main.zig)
+                _ = try self.callFunction(main_func, &[_]Value{});
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x77c3fde2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x77c3fde2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 0):[0m
+    "=== Basic Collections Test ==="
+    "Creating array:"
+    "Adding elements:"
+    "Array length:"
+    0
+    "Getting elements:"
+    0
+    0
+    0
+    "=== Test Complete ==="
+
+---
+[1m[52/68] Testing: stdlib/stdlib_mathz_operations.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Segmentation fault at address 0x7510987e0000
+    /home/ghuntley/cursed/src-zig/interpreter.zig:807:30: 0x1281189 in executeBlockStatement (cursed_compiler_main.zig)
+            for (block.statements.items) |stmt_ptr| {
+                                 ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:796:61: 0x123fcea in executeStatement (cursed_compiler_main.zig)
+                .Block => |block| try self.executeBlockStatement(block),
+                                                                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:762:42: 0x11f4642 in execute (cursed_compiler_main.zig)
+                    try self.executeStatement(stmt.*);
+                                             ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7510a042a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7510a042a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 127):[0m
+    Runtime error (exit 127)
+
+---
+[1m[53/68] Testing: stdlib/stdlib_vibez_output.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    General protection exception (no address available)
+    /home/ghuntley/cursed/src-zig/interpreter.zig:808:38: 0x12811d9 in executeBlockStatement (cursed_compiler_main.zig)
+                try self.executeStatement(stmt_ptr.*);
+                                         ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:796:61: 0x123fcea in executeStatement (cursed_compiler_main.zig)
+                .Block => |block| try self.executeBlockStatement(block),
+                                                                ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:762:42: 0x11f4642 in execute (cursed_compiler_main.zig)
+                    try self.executeStatement(stmt.*);
+                                             ^
+    /home/ghuntley/cursed/src-zig/interpreter.zig:720:28: 0x11c4f03 in interpret (cursed_compiler_main.zig)
+            return self.execute(program);
+                               ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:267:33: 0x11a1749 in interpretSource (cursed_compiler_main.zig)
+        cursed_interpreter.interpret(program) catch |err| {
+                                    ^
+    /home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:109:28: 0x11a385c in main (cursed_compiler_main.zig)
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+    /snap/zig/14937/lib/std/start.zig:627:37: 0x11a46cd in main (std.zig)
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x712ea122a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x712ea122a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1483914 in ??? (???)
+
+  [36mCompiled (exit: 139):[0m
+    Runtime error (exit 139)
+
+---
+[1m[54/68] Testing: stress/stress_deep_nested_operations.csd[0m

@@ -2005,11 +2005,13 @@ pub const LLVMIRPipeline = struct {
             
             if (type_kind == c.LLVMFloatTypeKind) {
                 // Float (32-bit) - convert to double for printf
-                fmt_str = try self.generateStringLiteral("%.6g\n");
+                // Use .6f to match interpreter's {d:.6} behavior (6 decimal places)
+                fmt_str = try self.generateStringLiteral("%.6f\n");
                 converted_arg = c.LLVMBuildFPExt(self.builder, arg_val, c.LLVMDoubleTypeInContext(self.context), "float_to_double");
             } else if (type_kind == c.LLVMDoubleTypeKind) {
                 // Double (64-bit float)
-                fmt_str = try self.generateStringLiteral("%.6g\n");
+                // Use .6f to match interpreter's {d:.6} behavior (6 decimal places)
+                fmt_str = try self.generateStringLiteral("%.6f\n");
             } else if (type_kind == c.LLVMIntegerTypeKind) {
                 // Integer types - check bit width
                 const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);

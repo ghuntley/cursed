@@ -7,9 +7,9 @@ slay fizzbuzz(n) {
     periodt (i <= n) {
         ready (i % 15 == 0) {
             vibez.spill("FizzBuzz")
-        } else ready (i % 3 == 0) {
+        } otherwise ready (i % 3 == 0) {
             vibez.spill("Fizz")  
-        } else ready (i % 5 == 0) {
+        } otherwise ready (i % 5 == 0) {
             vibez.spill("Buzz")
         } otherwise {
             vibez.spill(i)
