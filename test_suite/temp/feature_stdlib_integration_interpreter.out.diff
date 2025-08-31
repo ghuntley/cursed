@@ -1,0 +1,188 @@
+--- /tmp/tmp.JErsQGWeX9	2025-08-31 12:06:46.944538811 +0300
++++ /tmp/tmp.TcZVRKWZhs	2025-08-31 12:06:46.946538801 +0300
+@@ -1,3 +1,4 @@
++COMPILE_ERROR: Exit code 0
+ Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+ Error at /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd:7:10 - Synchronizing parser after error (context: synchronize)
+ INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+@@ -12,87 +13,100 @@
+ Delimiter recoveries: 0
+ Total tokens skipped: 4
+ ================================
+-ERROR: No CURSED stdlib implementation found for module 'mathz': error.ModuleNotFound
+-SELF-HOSTING: Please implement stdlib/mathz/mod.csd for true self-hosting
+-❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/features/feature_stdlib_integration.csd: error.ModuleNotFound
+-Executing 0 deferred statements
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
++🔧 Initializing LLVM components...
++✅ C library functions declared
++✅ Builtin functions registered (yap)
++✅ LLVM IR Pipeline initialized successfully
++🚀 Starting complete LLVM compilation pipeline...
++Error at unknown:7:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
++Error at unknown:7:10 - Synchronizing parser after error (context: synchronize)
++INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
++Error at unknown:7:38 - Error parsing function statement
++Error at unknown:19:1 - Failed to parse statement
++
++=== Error Recovery Statistics ===
++Total errors encountered: 2
++Semicolon recoveries: 3
++Statement recoveries: 2
++Expression recoveries: 0
++Delimiter recoveries: 0
++Total tokens skipped: 4
++================================
++📦 Processing import: mathz
++DEBUG: Loading and compiling CURSED module: mathz
++DEBUG: Successfully read CURSED module stdlib/mathz/mod.csd (1357 bytes)
++DEBUG: Successfully parsed CURSED module mathz (11 statements)
++DEBUG: Compiling CURSED stdlib function: mathz.abs
++DEBUG: Compiling CURSED stdlib function: mathz.max
++DEBUG: Compiling CURSED stdlib function: mathz.min
++DEBUG: Compiling CURSED stdlib function: mathz.add_two
++DEBUG: Compiling CURSED stdlib function: mathz.subtract_two
++DEBUG: Compiling CURSED stdlib function: mathz.multiply_two
++DEBUG: Compiling CURSED stdlib function: mathz.power_int
++DEBUG: Compiling CURSED stdlib function: mathz.factorial
++DEBUG: Compiling CURSED stdlib function: mathz.is_even
++DEBUG: Compiling CURSED stdlib function: mathz.is_odd
++DEBUG: Compiling CURSED stdlib function: mathz.clamp
++DEBUG: Successfully compiled CURSED module: mathz
++📦 Processing import: vibez
++DEBUG: Loading and compiling CURSED module: vibez
++DEBUG: Successfully read CURSED module stdlib/vibez/mod.csd (655 bytes)
++DEBUG: Successfully parsed CURSED module vibez (6 statements)
++DEBUG: Compiling CURSED stdlib function: vibez.spill
++thread 1725585 panic: reached unreachable code
++/snap/zig/14937/lib/std/debug.zig:559:14: 0xADDRESS in assert (std.zig)
++    if (!ok) unreachable; // assertion failure
++             ^
++/snap/zig/14937/lib/std/hash_map.zig:873:19: 0xADDRESS in putAssumeCapacityNoClobberContext (std.zig)
++            assert(!self.containsContext(key, ctx));
++                  ^
++/snap/zig/14937/lib/std/hash_map.zig:1449:58: 0xADDRESS in grow (std.zig)
++                    map.putAssumeCapacityNoClobberContext(k, v, ctx);
++                                                         ^
++/snap/zig/14937/lib/std/hash_map.zig:1296:30: 0xADDRESS in growIfNeeded (std.zig)
++                try self.grow(allocator, capacityForSize(self.load() + new_count), ctx);
++                             ^
++/snap/zig/14937/lib/std/hash_map.zig:1115:34: 0xADDRESS in getOrPutContextAdapted__anon_36567 (std.zig)
++                self.growIfNeeded(allocator, 1, ctx) catch |err| {
++                                 ^
++/snap/zig/14937/lib/std/hash_map.zig:1100:56: 0xADDRESS in getOrPutContext (std.zig)
++            const gop = try self.getOrPutContextAdapted(allocator, key, ctx, ctx);
+                                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:481:46: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-                    program.statements.append(self.allocator, @ptrCast(stmt_ptr)) catch {
++/snap/zig/14937/lib/std/hash_map.zig:1026:52: 0xADDRESS in putContext (std.zig)
++            const result = try self.getOrPutContext(allocator, key, ctx);
++                                                   ^
++/snap/zig/14937/lib/std/hash_map.zig:323:45: 0xADDRESS in put (std.zig)
++            return self.unmanaged.putContext(self.allocator, key, value, self.ctx);
++                                            ^
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:491:35: 0xADDRESS in generateFunction (cursed_compiler_main.zig)
++            try self.variables.put(param.name, param_alloca);
++                                  ^
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:1942:46: 0xADDRESS in loadAndCompileModule (cursed_compiler_main.zig)
++                    try self.generateFunction(func_decl);
+                                              ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    const program = cursed_parser.parseProgram() catch |err| {
+-                                              ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:415:46: 0xADDRESS in generateStatement (cursed_compiler_main.zig)
++                try self.loadAndCompileModule(import_stmt.path);
++                                             ^
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:2045:39: 0xADDRESS in ensureMainFunctionWithGlobalStatements (cursed_compiler_main.zig)
++            try self.generateStatement(stmt.*);
++                                      ^
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:380:56: 0xADDRESS in generateIR (cursed_compiler_main.zig)
++        try self.ensureMainFunctionWithGlobalStatements(global_statements.items);
+                                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1230:33: 0xADDRESS in parseFunctionStatement (cursed_compiler_main.zig)
+-            try func.body.append(self.allocator, stmt_ptr);
+-                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:944:70: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+-                                                                     ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0xADDRESS in alloc (std.zig)
+-            (self.createNode(0, n + ptr_align) orelse return null);
+-                            ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_26059 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+-                                                                ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    const program = cursed_parser.parseProgram() catch |err| {
+-                                              ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0xADDRESS in main (cursed_compiler_main.zig)
+-        try interpretSource(allocator, source, filename.?, verbose);
+-                           ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0xADDRESS in alloc (std.zig)
+-                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+-                                          ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_26059 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:475:65: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+-                                                                ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    const program = cursed_parser.parseProgram() catch |err| {
+-                                              ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0xADDRESS in main (cursed_compiler_main.zig)
+-        try interpretSource(allocator, source, filename.?, verbose);
++/home/ghuntley/cursed/src-zig/llvm_ir_pipeline.zig:260:28: 0xADDRESS in compileSource (cursed_compiler_main.zig)
++        try self.generateIR(program);
+                            ^
+-
++/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:194:27: 0xADDRESS in compileToExecutable (cursed_compiler_main.zig)
++    pipeline.compileSource(source, final_output, verbose) catch |err| {
++                          ^
++/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:101:32: 0xADDRESS in main (cursed_compiler_main.zig)
++        try compileToExecutable(allocator, source, filename.?, output_name.?, verbose, debug_mode, optimize, emit_ir);
++                               ^
++/snap/zig/14937/lib/std/start.zig:627:37: 0xADDRESS in main (std.zig)
++            const result = root.main() catch |err| {
++                                    ^
++../sysdeps/nptl/libc_start_call_main.h:58:16: 0xADDRESS in __libc_start_call_main (../sysdeps/x86/libc-start.c)
++../csu/libc-start.c:360:3: 0xADDRESS in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
++???:?:?: 0xADDRESS in ??? (???)
++???:?:?: 0xADDRESS in ??? (???)
++timeout: the monitored command dumped core

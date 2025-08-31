@@ -1,0 +1,31 @@
+// Mixed Type Arithmetic Test
+// Tests: Integer and float arithmetic operations
+// Expected: Type handling should be consistent
+
+fn main() {
+    yap("=== Mixed Type Arithmetic Test ===")
+    
+    let int_val = 10
+    let float_val = 3.5
+    
+    yap("Integer value:")
+    yap(int_val)
+    
+    yap("Float value:")
+    yap(float_val)
+    
+    yap("Integer + Integer:")
+    yap(int_val + 5)
+    
+    yap("Float + Float:")
+    yap(float_val + 2.5)
+    
+    // Test mixed operations if supported
+    yap("Integer * 2:")
+    yap(int_val * 2)
+    
+    yap("Float / 2:")
+    yap(float_val / 2)
+    
+    yap("=== Test Complete ===")
+}

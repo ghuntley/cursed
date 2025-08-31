@@ -1,0 +1,18 @@
+--- /tmp/tmp.yEWs1ASOt9	2025-08-31 11:45:12.444757623 +0300
++++ /tmp/tmp.RgZAn8UglI	2025-08-31 11:45:12.445757619 +0300
+@@ -1,15 +0,0 @@
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:5:20 - Error parsing function statement
+-INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+-INFO: Attempting additional statement recovery
+-Error at /home/ghuntley/cursed/test_suite/test_programs/functions/03_nested_function_calls.csd:33:1 - Failed to parse statement
+-
+-=== Error Recovery Statistics ===
+-Total errors encountered: 2
+-Semicolon recoveries: 2
+-Statement recoveries: 2
+-Expression recoveries: 0
+-Delimiter recoveries: 0
+-Total tokens skipped: 4
+-================================
+-✅ Program completed
+-Executing 0 deferred statements

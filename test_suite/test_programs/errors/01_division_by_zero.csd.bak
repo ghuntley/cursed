@@ -1,0 +1,15 @@
+// Division by Zero Test
+// Tests: Error handling consistency
+// Expected: Both modes should handle errors the same way
+
+fn main() {
+    yap("=== Division by Zero Test ===")
+    
+    yap("Normal division:")
+    yap(10 / 2)
+    
+    yap("Attempting division by zero:")
+    yap(10 / 0)
+    
+    yap("This line should not execute if error handling works")
+}

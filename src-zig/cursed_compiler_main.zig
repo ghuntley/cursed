@@ -42,9 +42,13 @@ pub fn main() !void {
     var output_name: ?[]const u8 = null;
     var optimize = false;
     var filename: ?[]const u8 = null;
+    var expect_output_next = false;
     
     for (args[1..]) |arg| {
-        if (std.mem.eql(u8, arg, "--version")) {
+        if (expect_output_next) {
+            output_name = arg;
+            expect_output_next = false;
+        } else if (std.mem.eql(u8, arg, "--version")) {
             print("CURSED Unified Compiler v1.0.0 (Production Ready)\n", .{});
             print("Full LLVM backend with CURSED language support\n", .{});
             print("Copyright (C) 2025 - Built with ❤️ by the CURSED team\n", .{});
@@ -68,6 +72,8 @@ pub fn main() !void {
             output_name = arg[9..];
         } else if (std.mem.startsWith(u8, arg, "-o") and arg.len > 2) {
             output_name = arg[2..];
+        } else if (std.mem.eql(u8, arg, "-o")) {
+            expect_output_next = true;
         } else if (!std.mem.startsWith(u8, arg, "-") and filename == null) {
             // First non-flag argument is the filename
             filename = arg;

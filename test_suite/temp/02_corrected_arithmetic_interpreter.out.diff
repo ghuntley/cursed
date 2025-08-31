@@ -1,0 +1,151 @@
+--- /tmp/tmp.cjwvA8rHsS	2025-08-31 12:06:50.554520651 +0300
++++ /tmp/tmp.2UDfNexyPH	2025-08-31 12:06:50.554520651 +0300
+@@ -1,148 +0,0 @@
+-Unsupported expression type in interpreter: Literal
+-Unsupported expression type in interpreter: Literal
+-Unsupported expression type in interpreter: Literal
+-"Arithmetic test complete"
+-Unsupported expression type in interpreter: Literal
+-Unsupported expression type in interpreter: Literal
+-✅ Program completed
+-Executing 0 deferred statements
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+-                                                       ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:512:42: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-                program.statements.append(self.allocator, anyopaque_ptr) catch {
+-                                         ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    const program = cursed_parser.parseProgram() catch |err| {
+-                                              ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+-                                                       ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1132:34: 0xADDRESS in parseBlockStatement (cursed_compiler_main.zig)
+-            try statements.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+-                                 ^
+-/home/ghuntley/cursed/src-zig/parser.zig:939:48: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return try self.parseBlockStatement();
+-                                               ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/array_list.zig:1231:56: 0xADDRESS in ensureTotalCapacityPrecise (std.zig)
+-                const new_memory = try gpa.alignedAlloc(T, alignment, new_capacity);
+-                                                       ^
+-/snap/zig/14937/lib/std/array_list.zig:1207:51: 0xADDRESS in ensureTotalCapacity (std.zig)
+-            return self.ensureTotalCapacityPrecise(gpa, growCapacity(self.capacity, new_capacity));
+-                                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:1261:41: 0xADDRESS in addOne (std.zig)
+-            try self.ensureTotalCapacity(gpa, newlen);
+-                                        ^
+-/snap/zig/14937/lib/std/array_list.zig:894:49: 0xADDRESS in append (std.zig)
+-            const new_item_ptr = try self.addOne(gpa);
+-                                                ^
+-/home/ghuntley/cursed/src-zig/parser.zig:400:37: 0xADDRESS in parsePrattCall (cursed_compiler_main.zig)
+-                try arguments.append(self.allocator, arg_ptr);
+-                                    ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1665:34: 0xADDRESS in parseExpressionPrattPrec (cursed_compiler_main.zig)
+-            left = try infix_fn.?(self, left);
+-                                 ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:193:29: 0xADDRESS in alloc (std.zig)
+-            (self.createNode(0, n + ptr_align) orelse return null);
+-                            ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_39180 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1507:66: 0xADDRESS in parseType (cursed_compiler_main.zig)
+-                    return_type = try self.arena_allocator.create(ast.Type);
+-                                                                 ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1263:51: 0xADDRESS in parseLetStatement (cursed_compiler_main.zig)
+-            let_stmt.var_type = try self.parseType();
+-                                                  ^
+-/home/ghuntley/cursed/src-zig/parser.zig:957:60: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+-                                                           ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0xADDRESS in alloc (std.zig)
+-                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+-                                          ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_26059 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:495:61: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-                const stmt_ptr = self.arena_allocator.create(Statement) catch {
+-                                                            ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:235:47: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    const program = cursed_parser.parseProgram() catch |err| {
+-                                              ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0xADDRESS in main (cursed_compiler_main.zig)
+-        try interpretSource(allocator, source, filename.?, verbose);
+-                           ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0xADDRESS in alloc (std.zig)
+-                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+-                                          ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_30719 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1270:61: 0xADDRESS in parseLetStatement (cursed_compiler_main.zig)
+-            const init_ptr = try self.arena_allocator.create(Expression);
+-                                                            ^
+-/home/ghuntley/cursed/src-zig/parser.zig:957:60: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+-                                                           ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1127:49: 0xADDRESS in parseBlockStatement (cursed_compiler_main.zig)
+-            const stmt = try self.parseStatement();
+-                                                ^
+-
+-error(gpa): memory address 0xADDRESS leaked: 
+-/snap/zig/14937/lib/std/heap/arena_allocator.zig:213:43: 0xADDRESS in alloc (std.zig)
+-                cur_node = self.createNode(cur_buf.len, n + ptr_align) orelse return null;
+-                                          ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:129:26: 0xADDRESS in allocBytesWithAlignment__anon_8545 (std.zig)
+-    return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+-                         ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:157:59: 0xADDRESS in create__anon_26059 (std.zig)
+-    const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+-                                                          ^
+-/home/ghuntley/cursed/src-zig/parser.zig:1128:61: 0xADDRESS in parseBlockStatement (cursed_compiler_main.zig)
+-            const stmt_ptr = try self.arena_allocator.create(Statement);
+-                                                            ^
+-/home/ghuntley/cursed/src-zig/parser.zig:939:48: 0xADDRESS in parseStatement (cursed_compiler_main.zig)
+-            return try self.parseBlockStatement();
+-                                               ^
+-/home/ghuntley/cursed/src-zig/parser.zig:494:36: 0xADDRESS in parseProgram (cursed_compiler_main.zig)
+-            if (self.parseStatement()) |stmt| {
+-                                   ^
+-

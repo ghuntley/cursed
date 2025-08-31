@@ -1,0 +1,7 @@
+// Basic Hello World Test
+// Tests: Simple vibez.spill() function call
+// Expected: Identical output in both modes
+
+slay main_character() {
+    vibez.spill("Hello, CURSED World!")
+}

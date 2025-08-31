@@ -19,6 +19,29 @@ const LetStatement = ast.LetStatement;
 const Type = ast.Type;
 const Parameter = ast.Parameter;
 
+// Pratt Parser Types
+pub const Prec = enum {
+    None,
+    Assignment,  // =
+    Or,          // ||
+    And,         // &&
+    Equality,    // == !=
+    Comparison,  // > >= < <=
+    Term,        // + -
+    Factor,      // * / %
+    Unary,       // ! - * &
+    Access,      // .
+    Call,        // () []
+    Primary,
+
+    pub fn lessThan(self: Prec, other: Prec) bool {
+        return @intFromEnum(self) < @intFromEnum(other);
+    }
+};
+
+pub const PrefixParseFn = ?*const fn(*Parser) ParserError!Expression;
+pub const InfixParseFn = ?*const fn(*Parser, Expression) ParserError!Expression;
+
 pub const ParserError = error{
     UnexpectedToken,
     UnexpectedEof,
@@ -78,6 +101,7 @@ pub const Parser = struct {
     telemetry: ?*crash_handler.CrashTelemetry,
     error_recovery_stats: ErrorRecoveryStats,
     macro_system: ?*hygienic_macro_system.HygienicMacroSystem,
+    use_pratt: bool = true,
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
@@ -95,11 +119,19 @@ pub const Parser = struct {
             .telemetry = null,
             .error_recovery_stats = ErrorRecoveryStats.init(),
             .macro_system = null,
+            .use_pratt = true,
         };
     }
 
     pub fn deinit(self: *Parser) void {
+        // FIXED: Ensure all arena-allocated memory is properly cleaned up
+        // The arena automatically cleans up all its allocations
         self.arena.deinit();
+        
+        // Report final error recovery stats if there were issues
+        if (self.error_recovery_stats.total_errors > 0) {
+            self.error_recovery_stats.reportStats();
+        }
     }
 
     /// Check if the current token is a keyword that can be used as a method name
@@ -136,6 +168,7 @@ pub const Parser = struct {
             .telemetry = null,
             .error_recovery_stats = ErrorRecoveryStats.init(),
             .macro_system = null,
+            .use_pratt = true,
         };
     }
     
@@ -154,6 +187,8 @@ pub const Parser = struct {
             .file_path = file_path,
             .telemetry = telemetry,
             .error_recovery_stats = ErrorRecoveryStats.init(),
+            .macro_system = null,
+            .use_pratt = true,
         };
     }
 
@@ -230,9 +265,222 @@ pub const Parser = struct {
         return @ptrCast(@alignCast(ptr));
     }
 
+    // Pratt Parser Implementation Functions
+
+    /// Get precedence for a given token kind
+    fn getPrecedence(self: *Parser, token_kind: TokenKind) Prec {
+        _ = self;
+        return switch (token_kind) {
+            .Equal, .PlusEqual, .MinusEqual, .StarEqual, .SlashEqual, .PercentEqual => .Assignment,
+            .PipePipe => .Or,
+            .AmpAmp => .And,
+            .EqualEqual, .BangEqual => .Equality,
+            .Greater, .GreaterEqual, .Less, .LessEqual => .Comparison,
+            .Plus, .Minus => .Term,
+            .Star, .Slash, .Percent => .Factor,
+            .LeftParen, .LeftBracket => .Call,
+            .Dot => .Access,
+            else => .None,
+        };
+    }
+
+    /// Get prefix parsing function for a given token kind
+    fn getPrefixFunction(self: *Parser, token_kind: TokenKind) PrefixParseFn {
+        _ = self;
+        return switch (token_kind) {
+            .Identifier => parsePrattIdentifier,
+            .Number, .Integer => parsePrattNumber,
+            .StringLiteral, .String => parsePrattString,
+            .Based, .Cringe, .Truth => parsePrattBoolean,
+            .Nah => parsePrattNil,
+            .LeftParen => parsePrattGrouping,
+            .Bang, .Minus, .Star, .Amp => parsePrattUnary,
+            else => null,
+        };
+    }
+
+    /// Get infix parsing function for a given token kind  
+    fn getInfixFunction(self: *Parser, token_kind: TokenKind) InfixParseFn {
+        _ = self;
+        return switch (token_kind) {
+            .Plus, .Minus, .Star, .Slash, .Percent => parsePrattBinary,
+            .EqualEqual, .BangEqual => parsePrattBinary,
+            .Greater, .GreaterEqual, .Less, .LessEqual => parsePrattBinary,
+            .AmpAmp, .PipePipe => parsePrattBinary,
+            .Equal, .PlusEqual, .MinusEqual, .StarEqual, .SlashEqual, .PercentEqual => parsePrattAssignment,
+            .LeftParen => parsePrattCall,
+            .Dot => parsePrattMemberAccess,
+            .LeftBracket => parsePrattArrayAccess,
+            else => null,
+        };
+    }
+
+    // Prefix parsing functions
+
+    fn parsePrattIdentifier(self: *Parser) ParserError!Expression {
+        const name = self.advance().lexeme;
+        return Expression{ .Identifier = name };
+    }
+
+    fn parsePrattNumber(self: *Parser) ParserError!Expression {
+        const token = self.advance();
+        if (std.mem.indexOf(u8, token.lexeme, ".")) |_| {
+            const value = std.fmt.parseFloat(f64, token.lexeme) catch {
+                return ParserError.InvalidSyntax;
+            };
+            return Expression{ .Float = value };
+        } else {
+            const value = std.fmt.parseInt(i64, token.lexeme, 10) catch {
+                return ParserError.InvalidSyntax;
+            };
+            return Expression{ .Integer = value };
+        }
+    }
+
+    fn parsePrattString(self: *Parser) ParserError!Expression {
+        const value = self.advance().lexeme;
+        return Expression{ .String = value };
+    }
+
+    fn parsePrattBoolean(self: *Parser) ParserError!Expression {
+        const token = self.advance();
+        return Expression{ .Boolean = switch (token.kind) {
+            .Based, .Truth => true,
+            .Cringe => false,
+            else => unreachable,
+        }};
+    }
+
+    fn parsePrattNil(self: *Parser) ParserError!Expression {
+        _ = self.advance();
+        return Expression{ .Literal = ast.Literal{ .Nil = {} } };
+    }
+
+    fn parsePrattGrouping(self: *Parser) ParserError!Expression {
+        _ = self.advance(); // consume '('
+        const expr = try self.parseExpression();
+        _ = try self.consume(.RightParen, "Expected ')' after expression");
+        return expr;
+    }
+
+    fn parsePrattUnary(self: *Parser) ParserError!Expression {
+        const operator = self.advance().lexeme;
+        const right = try self.parseExpressionPrattPrec(.Unary);
+        return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
+            .operator = operator,
+            .operand = try self.allocateExpression(right),
+        })};
+    }
+
+    // Infix parsing functions
+
+    fn parsePrattBinary(self: *Parser, left: Expression) ParserError!Expression {
+        const operator_token = self.advance();
+        const precedence = self.getPrecedence(operator_token.kind);
+        const right = try self.parseExpressionPrattPrec(precedence);
+        
+        return Expression{ .Binary = ast.BinaryExpression{
+            .left = try self.allocateExpression(left),
+            .operator = operator_token.lexeme,
+            .right = try self.allocateExpression(right),
+        }};
+    }
+
+    fn parsePrattAssignment(self: *Parser, left: Expression) ParserError!Expression {
+        const operator_token = self.advance();
+        const value = try self.parseExpressionPrattPrec(.Assignment);
+        
+        return Expression{ .Binary = ast.BinaryExpression{
+            .left = try self.allocateExpression(left),
+            .operator = operator_token.lexeme,
+            .right = try self.allocateExpression(value),
+        }};
+    }
+
+    fn parsePrattCall(self: *Parser, left: Expression) ParserError!Expression {
+        _ = self.advance(); // consume '('
+        var arguments = ArrayList(*Expression){};
+
+        if (!self.check(.RightParen)) {
+            while (true) {
+                const arg = try self.parseExpression();
+                const arg_ptr = try self.arena_allocator.create(Expression);
+                arg_ptr.* = arg;
+                try arguments.append(self.allocator, arg_ptr);
+
+                if (!self.match(.Comma)) break;
+            }
+        }
+
+        _ = try self.consume(.RightParen, "Expected ')' after arguments");
+
+        return Expression{ .Call = .{
+            .function = try self.allocateExpression(left),
+            .arguments = arguments,
+        }};
+    }
+
+    fn parsePrattMemberAccess(self: *Parser, left: Expression) ParserError!Expression {
+        _ = self.advance(); // consume '.'
+        // FIXED: Better method name validation with debugging
+        if (!self.check(.Identifier) and !self.isKeywordAllowedAsMethodName()) {
+            std.debug.print("DEBUG: Expected method name after '.', found: {any}\n", .{self.peek().kind});
+            return ParserError.UnexpectedToken;
+        }
+        const property = self.advance().lexeme;
+        
+        // If next token is '(', treat as method call
+        if (self.check(.LeftParen)) {
+            _ = self.advance(); // '('
+            var arguments = ArrayList(*Expression){};
+            
+            if (!self.check(.RightParen)) {
+                while (true) {
+                    // FIXED: Better error handling for method arguments
+                    const arg = self.parseExpression() catch |parse_err| {
+                        std.debug.print("DEBUG: Failed to parse method argument: {any}\n", .{parse_err});
+                        return parse_err;
+                    };
+                    const arg_ptr = try self.arena_allocator.create(Expression);
+                    arg_ptr.* = arg;
+                    try arguments.append(self.allocator, arg_ptr);
+                    
+                    if (!self.match(.Comma)) break;
+                }
+            }
+            _ = try self.consume(.RightParen, "Expected ')' after arguments");
+            
+            return Expression{ .MethodCall = try self.allocateMethodCall(ast.MethodCallExpression{
+                .object = try self.allocateExpression(left),
+                .method_name = property,
+                .arguments = arguments,
+            })};
+        }
+        
+        // plain member access
+        return Expression{ .MemberAccess = try self.allocateMemberAccess(ast.MemberAccessExpression{
+            .object = try self.allocateExpression(left),
+            .property = property,
+        })};
+    }
+
+    fn parsePrattArrayAccess(self: *Parser, left: Expression) ParserError!Expression {
+        _ = self.advance(); // consume '['
+        const index = try self.parseExpression();
+        _ = try self.consume(.RightBracket, "Expected ']'");
+        
+        return Expression{ .ArrayAccess = ast.ArrayAccessExpression{
+            .array = try self.allocateExpression(left),
+            .index = try self.allocateExpression(index),
+        }};
+    }
+
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.allocator);
-        errdefer program.deinit(self.allocator);
+        errdefer {
+            program.deinit(self.allocator);
+            self.arena.deinit();
+        }
         
         var statement_count: usize = 0;
         const max_statements = 10000; // Prevent infinite loops/excessive memory usage
@@ -290,6 +538,11 @@ pub const Parser = struct {
                 };
 
                 stmt_ptr.* = stmt;
+                
+                // Consume optional semicolon after statement
+                if (self.check(.Semicolon)) {
+                    _ = self.advance();
+                }
                 
                 const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |parse_err| {
                     _ = self.reportErrorWithContext("Error converting statement to anyopaque", "parseProgram") catch {};
@@ -701,11 +954,25 @@ pub const Parser = struct {
         }
         return lexeme;
     }
+    
+    /// Create an empty expression for empty statements (standalone semicolons)
+    fn createEmptyExpression(self: *Parser) Expression {
+        _ = self; // Suppress unused parameter warning
+        return Expression{ .Literal = ast.Literal{ .Nil = {} } };
+    }
 
     fn parseStatement(self: *Parser) ParserError!Statement {
         // Skip comments at statement level
         while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
             _ = self.advance();
+        }
+        
+        // DEBUG: parseStatement entry logging removed for production
+        
+        // Handle empty statements (standalone semicolons)
+        if (self.check(.Semicolon)) {
+            _ = self.advance();
+            return Statement{ .Expression = self.createEmptyExpression() };
         }
         
         // CRITICAL FIX: Block statement parsing - handle standalone braces
@@ -762,7 +1029,7 @@ pub const Parser = struct {
         }
         
         // Return statement (return/yolo/damn - multiple supported forms)
-        if (self.match(.Return) or self.match(.Yolo) or self.matchIdentifier("return") or self.matchIdentifier("damn")) {
+        if (self.match(.Return) or self.match(.Yolo) or self.match(.Damn) or self.matchIdentifier("return")) {
             return try self.parseReturnStatement();
         }
         
@@ -853,11 +1120,13 @@ pub const Parser = struct {
         
         // Short variable declaration (x := value or (a, b) := (1, 2))
         if (self.isShortDeclaration()) {
+            // DEBUG: Short declaration detection removed
             return try self.parseShortDeclaration();
         }
 
         // Assignment statement
         if (self.isAssignment()) {
+            // DEBUG: Assignment detection removed
             return try self.parseAssignmentStatement();
         }
         
@@ -870,13 +1139,17 @@ pub const Parser = struct {
             return parse_err;
         };
         
-        const expr_ptr = self.arena_allocator.create(Expression) catch {
+        // FIXED: Proper memory allocation with arena safety check
+        const expr_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
+            // Log the specific allocation error for debugging
+            std.debug.print("MEMORY ERROR: Failed to allocate Expression in parseStatement: {any}\n", .{alloc_err});
             _ = self.reportErrorWithContext("Out of memory allocating expression", "parseStatement") catch {};
             return ParserError.OutOfMemory;
         };
 
         expr_ptr.* = expr;
         
+        // DEBUG: Successful parsing - logging removed
         return Statement{ .Expression = expr };
     }
 
@@ -989,13 +1262,25 @@ pub const Parser = struct {
         defer { self.in_function = false; }
         
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
-            // Skip newlines
-            if (self.match(.Newline)) continue;
+            // Skip newlines and comments
+            while (self.match(.Newline) or self.match(.LineComment) or self.match(.BlockComment) or self.match(.Comment)) {
+                // continue
+            }
             
+            // Break if we hit the closing brace
+            if (self.check(.RightBrace)) break;
+            
+            // DEBUG: Function body statement parsing - logging removed
             const stmt = try self.parseStatement();
             const stmt_ptr = try self.arena_allocator.create(Statement); 
 
-            stmt_ptr.* = stmt; 
+            stmt_ptr.* = stmt;
+            
+            // Consume optional semicolon or newline after statement in function body
+            while (self.match(.Semicolon) or self.match(.Newline)) {
+                // continue consuming
+            }
+            
             try func.body.append(self.allocator, stmt_ptr);
         }
         
@@ -1052,8 +1337,11 @@ pub const Parser = struct {
         
         const name = self.advance().lexeme;
         
-        // Parse type (required for parameters in CURSED)
-        const param_type = try self.parseType();
+        // Parse type (optional for parameters in CURSED, defaults to 'auto')
+        var param_type: Type = Type{ .Basic = ast.BasicType.Auto };
+        if (self.checkType()) {
+            param_type = try self.parseType();
+        }
         
         var param = Parameter{
             .name = name,
@@ -1401,8 +1689,38 @@ pub const Parser = struct {
         return ParserError.InvalidType;
     }
 
-    fn parseExpression(self: *Parser) ParserError!Expression {
-        return self.parseAssignment();
+    pub fn parseExpression(self: *Parser) ParserError!Expression {
+        if (self.use_pratt) {
+            return self.parseExpressionPratt();
+        } else {
+            return self.parseAssignment();
+        }
+    }
+
+    /// Pratt parser implementation with precedence-based expression parsing
+    pub fn parseExpressionPratt(self: *Parser) ParserError!Expression {
+        return self.parseExpressionPrattPrec(.None);
+    }
+
+    /// Core Pratt parser algorithm - parses expressions based on precedence
+    pub fn parseExpressionPrattPrec(self: *Parser, precedence: Prec) ParserError!Expression {
+        const current_token = self.peek();
+        const prefix_fn = self.getPrefixFunction(current_token.kind);
+        if (prefix_fn == null) {
+            return ParserError.UnexpectedToken;
+        }
+
+        var left = try prefix_fn.?(self);
+
+        while (precedence.lessThan(self.getPrecedence(self.peek().kind))) {
+            const infix_fn = self.getInfixFunction(self.peek().kind);
+            if (infix_fn == null) {
+                break;
+            }
+            left = try infix_fn.?(self, left);
+        }
+
+        return left;
     }
 
     fn parseAssignment(self: *Parser) ParserError!Expression {
@@ -1769,7 +2087,7 @@ pub const Parser = struct {
     }
 
     fn finishCall(self: *Parser, callee: Expression) ParserError!Expression {
-        var arguments = ArrayList(*Expression){};
+        var arguments = ArrayList(*Expression){}; // Use main allocator for list
 
         if (!self.check(.RightParen)) {
             while (true) {
@@ -1781,9 +2099,9 @@ pub const Parser = struct {
                 if (self.check(.RightParen)) break;
                 
                 const arg = try self.parseExpression();
-                const arg_ptr = try self.arena_allocator.create(Expression);
+                const arg_ptr = try self.arena_allocator.create(Expression); // Arena for expressions
                 arg_ptr.* = arg;
-                try arguments.append(self.allocator, arg_ptr);
+                try arguments.append(self.allocator, arg_ptr); // Use main allocator for list operations
 
                 if (!self.match(.Comma)) break;
                 
@@ -1852,7 +2170,14 @@ pub const Parser = struct {
                                  token.lexeme[1..token.lexeme.len-1] // Remove quotes
                                  else token.lexeme;
             
-            // Check for string interpolation patterns
+            // FIXED: Better string interpolation detection
+            // Check for {} patterns that are format placeholders (NOT arithmetic expressions)
+            if (std.mem.indexOf(u8, str_content, "{}")) |_| {
+                // This is a format string with placeholders, not interpolation
+                return Expression{ .String = str_content };
+            }
+            
+            // Check for string interpolation patterns like ${variable}
             if (std.mem.indexOf(u8, str_content, "${")) |_| {
                 return try self.parseStringInterpolation(str_content);
             }
@@ -1881,7 +2206,7 @@ pub const Parser = struct {
             if (!self.check(.RightBracket)) {
                 while (true) {
                     const elem = try self.parseExpression();
-                    try elements.append(self.allocator, elem);
+                    try elements.append(self.arena_allocator, elem);
                     
                     if (!self.match(.Comma)) break;
                 }
@@ -1911,7 +2236,7 @@ pub const Parser = struct {
             while (true) {
                 // Parse expression with full precedence
                 const elem = try self.parseExpression();
-                try elements.append(self.allocator, elem);
+                try elements.append(self.arena_allocator, elem);
                 
                 if (self.match(.Comma)) {
                     has_comma = true;
@@ -3737,17 +4062,22 @@ pub const Parser = struct {
             return true;
         }
         
-        // For more complex left-hand sides, search for assignment operators
-        while (pos < self.tokens.len) {
+        // FIXED: Only check for simple member access assignment like obj.prop = value
+        // Don't scan too far ahead as it can find unrelated assignments in later statements
+        const initial_pos = pos;
+        const max_lookahead = 5;  // Limit lookahead to prevent false positives
+        
+        while (pos < self.tokens.len and (pos - initial_pos) < max_lookahead) {
             const current_kind = self.tokens[pos].kind;
             if (current_kind == .Equal or current_kind == .PlusEqual or 
                current_kind == .MinusEqual or current_kind == .StarEqual or
                current_kind == .SlashEqual or current_kind == .PercentEqual) {
                 return true;
             }
-            // Stop at statement terminators
+            // Stop at statement terminators or function calls (which indicate this is not an assignment)
             if (current_kind == .Semicolon or current_kind == .Newline or 
-               current_kind == .LeftBrace or current_kind == .RightBrace) {
+               current_kind == .LeftBrace or current_kind == .RightBrace or
+               current_kind == .LeftParen) {  // LeftParen indicates a function call, not assignment
                 return false;
             }
             pos += 1;

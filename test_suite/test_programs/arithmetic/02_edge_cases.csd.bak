@@ -1,0 +1,23 @@
+// Arithmetic Edge Cases Test
+// Tests: Zero, negative numbers, and edge conditions
+// Expected: Consistent handling of edge cases
+
+fn main() {
+    yap("=== Arithmetic Edge Cases Test ===")
+    
+    yap("Zero operations:")
+    yap(0 + 5)
+    yap(5 - 5)
+    yap(0 * 10)
+    
+    yap("Negative numbers:")
+    yap(-5 + 3)
+    yap(-2 - 4)
+    yap(-3 * 2)
+    
+    yap("Large numbers:")
+    yap(1000 + 2000)
+    yap(999999 - 1)
+    
+    yap("=== Test Complete ===")
+}

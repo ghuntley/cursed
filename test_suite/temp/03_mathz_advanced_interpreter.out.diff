@@ -1,0 +1,66 @@
+--- /tmp/tmp.H7WQRocPow	2025-08-31 12:02:17.464941082 +0300
++++ /tmp/tmp.buPZHbD7wR	2025-08-31 12:02:17.467473603 +0300
+@@ -1,62 +1 @@
+-"=== Advanced Mathz Test ==="
+-"Power function:"
+-ERROR: No CURSED stdlib implementation found for module 'mathz': error.ModuleNotFound
+-SELF-HOSTING: Please implement stdlib/mathz/mod.csd for true self-hosting
+-thread 1724961 panic: integer overflow
+-/home/ghuntley/cursed/src-zig/interpreter.zig:465:9: 0xADDRESS in get (cursed_compiler_main.zig)
+-        return InterpreterError.UndefinedVariable;
+-        ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:1413:21: 0xADDRESS in evaluateExpression (cursed_compiler_main.zig)
+-                    return InterpreterError.UndefinedVariable;
+-                    ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:2071:24: 0xADDRESS in evaluateMethodCall (cursed_compiler_main.zig)
+-        const object = try self.evaluateExpression(member.object.*);
+-                       ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:1601:28: 0xADDRESS in evaluateCall (cursed_compiler_main.zig)
+-                    return try self.evaluateMethodCall(member.*, call.arguments.items);
+-                           ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:1418:36: 0xADDRESS in evaluateExpression (cursed_compiler_main.zig)
+-            .Call => |call| return try self.evaluateCall(call),
+-                                   ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:1587:37: 0xADDRESS in evaluateCall (cursed_compiler_main.zig)
+-                        const arg = try self.evaluateExpression(arg_expr.*);
+-                                    ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:1418:36: 0xADDRESS in evaluateExpression (cursed_compiler_main.zig)
+-            .Call => |call| return try self.evaluateCall(call),
+-                                   ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:679:21: 0xADDRESS in executeStatement (cursed_compiler_main.zig)
+-                _ = try self.evaluateExpression(expr);
+-                    ^
+-/snap/zig/14937/lib/std/mem.zig:4356:61: 0xADDRESS in sliceAsBytes__anon_38537 (std.zig)
+-    return @as(cast_target, @ptrCast(slice))[0 .. slice.len * @sizeOf(std.meta.Elem(Slice))];
+-                                                            ^
+-/snap/zig/14937/lib/std/mem/Allocator.zig:424:35: 0xADDRESS in free__anon_33739 (std.zig)
+-    const bytes = mem.sliceAsBytes(memory);
+-                                  ^
+-/snap/zig/14937/lib/std/array_list.zig:655:21: 0xADDRESS in deinit (std.zig)
+-            gpa.free(self.allocatedSlice());
+-                    ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:2662:35: 0xADDRESS in callFunction (cursed_compiler_main.zig)
+-        defer return_values.deinit(self.allocator);
+-                                  ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:665:38: 0xADDRESS in execute (cursed_compiler_main.zig)
+-            _ = try self.callFunction(main_func, &[_]Value{});
+-                                     ^
+-/home/ghuntley/cursed/src-zig/interpreter.zig:628:28: 0xADDRESS in interpret (cursed_compiler_main.zig)
+-        return self.execute(program);
+-                           ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:251:33: 0xADDRESS in interpretSource (cursed_compiler_main.zig)
+-    cursed_interpreter.interpret(program) catch |err| {
+-                                ^
+-/home/ghuntley/cursed/src-zig/cursed_compiler_main.zig:103:28: 0xADDRESS in main (cursed_compiler_main.zig)
+-        try interpretSource(allocator, source, filename.?, verbose);
+-                           ^
+-/snap/zig/14937/lib/std/start.zig:627:37: 0xADDRESS in main (std.zig)
+-            const result = root.main() catch |err| {
+-                                    ^
+-../sysdeps/nptl/libc_start_call_main.h:58:16: 0xADDRESS in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+-../csu/libc-start.c:360:3: 0xADDRESS in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+-???:?:?: 0xADDRESS in ??? (???)
+-???:?:?: 0xADDRESS in ??? (???)
+-timeout: the monitored command dumped core
+-INTERPRETER_ERROR: Exit code 134
++COMPILE_ERROR: Binary not created at /home/ghuntley/cursed/test_suite/../03_mathz_advanced

@@ -1,0 +1,40 @@
+// Nested Operations Test
+// Tests: Complex nested expressions and operations
+// Expected: Complex expressions evaluate consistently
+
+fn calculate_complex(a, b, c) {
+    return (a + b) * c - (a - b) / 2
+}
+
+fn main() {
+    yap("=== Nested Operations Test ===")
+    
+    yap("Complex arithmetic:")
+    let result1 = (5 + 3) * 2 - 1
+    yap(result1)
+    
+    yap("Nested function calls:")
+    let result2 = calculate_complex(10, 4, 3)
+    yap(result2)
+    
+    yap("Nested conditionals:")
+    let x = 15
+    if (x > 10) {
+        if (x < 20) {
+            yap("x is between 10 and 20")
+        } else {
+            yap("x is 20 or greater")
+        }
+    } else {
+        yap("x is 10 or less")
+    }
+    
+    yap("Multiple operations:")
+    let a = 2
+    let b = 3
+    let c = 4
+    let final = (a * b) + (b * c) - (a + c)
+    yap(final)
+    
+    yap("=== Test Complete ===")
+}

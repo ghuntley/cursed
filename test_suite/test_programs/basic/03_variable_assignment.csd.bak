@@ -1,0 +1,21 @@
+// Variable Assignment Test
+// Tests: Variable declarations and assignments
+// Expected: Identical behavior in both modes
+
+fn main() {
+    yap("=== Variable Assignment Test ===")
+    
+    let x = 42
+    yap("x =")
+    yap(x)
+    
+    let y = x + 8
+    yap("y = x + 8 =")
+    yap(y)
+    
+    let name = "CURSED"
+    yap("name =")
+    yap(name)
+    
+    yap("=== Test Complete ===")
+}

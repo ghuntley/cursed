@@ -1,5 +1,5 @@
-// CURSED Advanced Template Engine Test Suite
-// Comprehensive testing for template inheritance, security, caching, and performance
+fr fr CURSED Advanced Template Engine Test Suite
+fr fr Comprehensive testing for template inheritance, security, caching, and performance
 
 yeet "testz"
 yeet "../stdlib/template_engine/advanced"
@@ -7,48 +7,48 @@ yeet "../stdlib/template_engine/advanced"
 slay main() {
     test_start("Advanced Template Engine")
     
-    // Basic template engine functionality
+    fr fr Basic template engine functionality
     test_basic_template_processing()
     test_variable_substitution()
     test_function_calls()
     
-    // Template inheritance system
+    fr fr Template inheritance system
     test_template_inheritance()
     test_block_inheritance()
     test_template_extends()
     
-    // Advanced control flow
+fr fr Advanced control flow
     test_advanced_conditionals()
     test_advanced_loops()
     test_nested_structures()
     
-    // Template compilation and caching
+fr fr Template compilation and caching
     test_template_compilation()
     test_template_caching()
     test_cache_invalidation()
     
-    // Security features
+fr fr Security features
     test_xss_protection()
     test_safe_evaluation()
     test_sandbox_mode()
     test_input_validation()
     
-    // Expression evaluation
+fr fr Expression evaluation
     test_complex_expressions()
     test_expression_security()
     test_operator_precedence()
     
-    // Template includes and composition
+fr fr Template includes and composition
     test_template_includes()
     test_template_composition()
     test_circular_dependency_protection()
     
-    // Performance and scalability
+fr fr Performance and scalability
     test_large_template_processing()
     test_concurrent_processing()
     test_memory_efficiency()
     
-    // Web-specific features
+fr fr Web-specific features
     test_html_escaping()
     test_url_generation()
     test_csrf_protection()
@@ -56,20 +56,20 @@ slay main() {
     print_test_summary()
 }
 
-// Basic Template Engine Tests
+fr fr Basic Template Engine Tests
 slay test_basic_template_processing() {
     test_section("Basic Template Processing")
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Simple text template
+fr fr Simple text template
     sus simple_template tea = "Hello World!"
     sus result TemplateResult = process_compiled_template(engine, simple_template)
     
     assert_eq_string(result.output, "Hello World!")
     assert_eq_bool(result.success, based)
     
-    // Template with variables
+fr fr Template with variables
     engine = set_variable_scoped(engine, "name", "CURSED")
     sus var_template tea = "Hello {{$name}}!"
     sus var_result TemplateResult = process_compiled_template(engine, var_template)
@@ -92,7 +92,7 @@ slay test_variable_substitution() {
     
     assert_eq_string(result.output, "Advanced Templates v2.0 by CURSED Team")
     
-    // Test undefined variable handling
+fr fr Test undefined variable handling
     sus undefined_template tea = "Value: {{$undefined_var}}"
     sus undefined_result TemplateResult = process_compiled_template(engine, undefined_template)
     
@@ -107,7 +107,7 @@ slay test_function_calls() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     engine = set_variable_scoped(engine, "text", "hello world")
     
-    // Test built-in functions
+fr fr Test built-in functions
     sus upper_template tea = "{{upper($text)}}"
     sus upper_result TemplateResult = process_compiled_template(engine, upper_template)
     assert_eq_string(upper_result.output, "HELLO WORLD")
@@ -120,7 +120,7 @@ slay test_function_calls() {
     sus length_result TemplateResult = process_compiled_template(engine, length_template)
     assert_eq_string(length_result.output, "11")
     
-    // Test function chaining
+fr fr Test function chaining
     sus chain_template tea = "{{upper(trim(\" hello \"))}}"
     sus chain_result TemplateResult = process_compiled_template(engine, chain_template)
     assert_eq_string(chain_result.output, "HELLO")
@@ -133,10 +133,10 @@ slay test_template_inheritance() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Base template
+fr fr Base template
     sus base_template tea = "<!DOCTYPE html><html><head><title>{{block:title}}Default Title{{/block:title}}</title></head><body>{{block:content}}Default Content{{/block:content}}</body></html>"
     
-    // Child template
+fr fr Child template
     sus child_template tea = "{{extends \"base.html\"}}{{block:title}}My Page{{/block:title}}{{block:content}}<h1>Welcome!</h1><p>This is my page content.</p>{{/block:content}}"
     
     sus result TemplateResult = process_template_with_inheritance(engine, child_template, {})
@@ -153,10 +153,10 @@ slay test_block_inheritance() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Test block replacement
+fr fr Test block replacement
     sus template_with_blocks tea = "Header: {{block:header}}Default Header{{/block:header}} Content: {{block:content}}Default Content{{/block:content}}"
     
-    // Override blocks
+fr fr Override blocks
     sus child_blocks map[tea]tea = {}
     child_blocks["header"] = "Custom Header"
     child_blocks["content"] = "Custom Content"
@@ -189,13 +189,13 @@ slay test_advanced_conditionals() {
     engine = set_variable_scoped(engine, "user_role", "admin")
     engine = set_variable_scoped(engine, "logged_in", "true")
     
-    // Complex conditional
+fr fr Complex conditional
     sus cond_template tea = "{{if $logged_in == \"true\"}}Welcome{{if $user_role == \"admin\"}} Admin{{/if}}!{{else}}Please log in{{/if}}"
     sus result TemplateResult = process_compiled_template(engine, cond_template)
     
     assert_contains_string(result.output, "Welcome")
     
-    // Test multiple conditions
+fr fr Test multiple conditions
     sus multi_cond tea = "{{if $user_role == \"admin\" && $logged_in == \"true\"}}Admin Panel{{elif $user_role == \"user\"}}User Panel{{else}}Access Denied{{/if}}"
     sus multi_result TemplateResult = process_compiled_template(engine, multi_cond)
     
@@ -208,7 +208,7 @@ slay test_advanced_loops() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     engine = set_variable_scoped(engine, "items", "apple,banana,cherry")
     
-    // Basic loop
+fr fr Basic loop
     sus loop_template tea = "{{for item in $items}}{{$item}} {{/for}}"
     sus result TemplateResult = process_compiled_template(engine, loop_template)
     
@@ -216,7 +216,7 @@ slay test_advanced_loops() {
     assert_contains_string(result.output, "banana")
     assert_contains_string(result.output, "cherry")
     
-    // Nested loops
+fr fr Nested loops
     engine = set_variable_scoped(engine, "categories", "fruits,vegetables")
     sus nested_loop tea = "{{for category in $categories}}Category: {{$category}}{{for item in $items}}  - {{$item}}{{/for}}{{/for}}"
     sus nested_result TemplateResult = process_compiled_template(engine, nested_loop)
@@ -231,7 +231,7 @@ slay test_nested_structures() {
     engine = set_variable_scoped(engine, "users", "alice,bob,charlie")
     engine = set_variable_scoped(engine, "admin_user", "alice")
     
-    // Nested if/for
+fr fr Nested if/for
     sus nested_template tea = "{{for user in $users}}{{if $user == $admin_user}}ADMIN: {{$user}}{{else}}USER: {{$user}}{{/if}}{{/for}}"
     sus result TemplateResult = process_compiled_template(engine, nested_template)
     
@@ -252,7 +252,7 @@ slay test_template_compilation() {
     assert_gt_int(len(compiled.instructions), 0)
     assert_eq_bool(compiled.last_modified > 0, based)
     
-    // Test instruction types
+fr fr Test instruction types
     vibes len(compiled.instructions) > 0 {
         sus first_instruction TemplateInstruction = compiled.instructions[0]
         assert_contains_string(first_instruction.op_code, "text")
@@ -267,17 +267,17 @@ slay test_template_caching() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     sus template tea = "Cached template {{$var}}"
     
-    // First processing (cache miss)
+fr fr First processing (cache miss)
     sus initial_misses normie = engine.cache.misses
     sus result1 TemplateResult = process_compiled_template(engine, template)
     assert_eq_int(engine.cache.misses, initial_misses + 1)
     
-    // Second processing (cache hit)
+fr fr Second processing (cache hit)
     sus initial_hits normie = engine.cache.hits
     sus result2 TemplateResult = process_compiled_template(engine, template)
     assert_eq_int(engine.cache.hits, initial_hits + 1)
     
-    // Verify same output
+fr fr Verify same output
     assert_eq_string(result1.output, result2.output)
     
     print("✓ Template caching working")
@@ -290,14 +290,14 @@ slay test_cache_invalidation() {
     sus template tea = "Test {{$value}}"
     sus hash tea = calculate_template_hash(template)
     
-    // Add to cache
+fr fr Add to cache
     sus compiled CompiledTemplate = compile_template(engine, template)
     engine.cache.compiled_templates[hash] = compiled
     
-    // Verify in cache
+fr fr Verify in cache
     assert_eq_bool(template_in_cache(engine.cache, hash), based)
     
-    // Invalidate
+fr fr Invalidate
     engine.cache = invalidate_template_cache(engine.cache, hash)
     
     print("✓ Cache invalidation working")
@@ -309,7 +309,7 @@ slay test_xss_protection() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     engine.escape_html = based
     
-    // Test script tag escaping
+fr fr Test script tag escaping
     engine = set_variable_scoped(engine, "user_input", "<script>alert('xss')</script>")
     sus xss_template tea = "User input: {{$user_input}}"
     sus result TemplateResult = process_compiled_template(engine, xss_template)
@@ -317,7 +317,7 @@ slay test_xss_protection() {
     assert_contains_string(result.output, "&lt;script&gt;")
     assert_not_contains_string(result.output, "<script>")
     
-    // Test HTML escaping
+fr fr Test HTML escaping
     sus html_content tea = escape_html_content("<div>Test & \"quotes\"</div>")
     assert_contains_string(html_content, "&lt;div&gt;")
     assert_contains_string(html_content, "&amp;")
@@ -332,7 +332,7 @@ slay test_safe_evaluation() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     engine.sandbox_mode = based
     
-    // Test safe expressions
+fr fr Test safe expressions
     sus safe_expr tea = "$user.name"
     sus context ExecutionContext = ExecutionContext{
         iteration_count: 0,
@@ -345,7 +345,7 @@ slay test_safe_evaluation() {
     sus safe_result tea = evaluate_expression_with_security(engine, safe_expr, context)
     assert_ne_string(safe_result, "SECURITY_VIOLATION")
     
-    // Test dangerous expressions (would be blocked in full implementation)
+fr fr Test dangerous expressions (would be blocked in full implementation)
     sus dangerous_expr tea = "eval(\"dangerous_code()\")"
     sus dangerous_result tea = evaluate_expression_with_security(engine, dangerous_expr, context)
     
@@ -360,7 +360,7 @@ slay test_sandbox_mode() {
     engine.max_iterations = 100
     engine.max_depth = 10
     
-    // Test iteration limit
+fr fr Test iteration limit
     sus context ExecutionContext = ExecutionContext{
         iteration_count: 150,
         recursion_depth: 5,
@@ -371,7 +371,7 @@ slay test_sandbox_mode() {
     
     assert_gt_int(context.iteration_count, engine.max_iterations)
     
-    // Test recursion depth limit
+fr fr Test recursion depth limit
     context.recursion_depth = 15
     assert_gt_int(context.recursion_depth, engine.max_depth)
     
@@ -389,13 +389,13 @@ slay test_input_validation() {
         max_output_size: 1000
     }
     
-    // Test dangerous content detection
+fr fr Test dangerous content detection
     sus dangerous_template tea = "<script>evil()</script><p onclick=\"hack()\">Content</p>"
     sus is_safe lit = validate_template_security(dangerous_template, security_context)
     
     assert_eq_bool(is_safe, cap)
     
-    // Test safe content
+fr fr Test safe content
     sus safe_template tea = "<div class=\"content\"><p>Hello World</p></div>"
     sus safe_result lit = validate_template_security(safe_template, security_context)
     
@@ -410,15 +410,15 @@ slay test_complex_expressions() {
     engine = set_variable_scoped(engine, "b", "20")
     engine = set_variable_scoped(engine, "c", "5")
     
-    // Arithmetic expressions
+fr fr Arithmetic expressions
     sus math_template tea = "Result: {{$a + $b * $c}}"
     sus result TemplateResult = process_compiled_template(engine, math_template)
     
-    // Comparison expressions  
+fr fr Comparison expressions  
     sus comp_template tea = "{{if $a > $c && $b < 30}}True{{else}}False{{/if}}"
     sus comp_result TemplateResult = process_compiled_template(engine, comp_template)
     
-    // Function composition
+fr fr Function composition
     sus func_template tea = "{{upper(trim(default($undefined, \"fallback\")))}}"
     sus func_result TemplateResult = process_compiled_template(engine, func_template)
     
@@ -431,11 +431,11 @@ slay test_expression_security() {
     sus parser ExpressionParser = create_expression_parser()
     parser.security_mode = based
     
-    // Test safe expression
+fr fr Test safe expression
     sus safe_expr tea = "$user.name + \" - \" + format_date(now())"
     sus parsed ParsedExpression = parse_template_expression(safe_expr, parser)
     
-    // Test security validation
+fr fr Test security validation
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     sus is_valid lit = validate_expression_security(parsed, engine)
     
@@ -450,12 +450,12 @@ slay test_operator_precedence() {
     engine = set_variable_scoped(engine, "y", "3")
     engine = set_variable_scoped(engine, "z", "4")
     
-    // Test precedence: multiplication before addition
-    sus expr_template tea = "{{$x + $y * $z}}"  // Should be 2 + (3 * 4) = 14
+fr fr Test precedence: multiplication before addition
+    sus expr_template tea = "{{$x + $y * $z}}"  fr fr Should be 2 + (3 * 4) = 14
     sus result TemplateResult = process_compiled_template(engine, expr_template)
     
-    // Test parentheses override
-    sus paren_template tea = "{{($x + $y) * $z}}"  // Should be (2 + 3) * 4 = 20
+fr fr Test parentheses override
+    sus paren_template tea = "{{($x + $y) * $z}}"  fr fr Should be (2 + 3) * 4 = 20
     sus paren_result TemplateResult = process_compiled_template(engine, paren_template)
     
     print("✓ Operator precedence working")
@@ -466,7 +466,7 @@ slay test_template_includes() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Test basic include
+fr fr Test basic include
     sus template_with_include tea = "Header: {{include \"header.html\"}} Content here Footer: {{include \"footer.html\"}}"
     sus result TemplateResult = process_compiled_template(engine, template_with_include)
     
@@ -481,7 +481,7 @@ slay test_template_composition() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Test composing multiple templates
+fr fr Test composing multiple templates
     sus main_template tea = "{{include \"navigation.html\"}}{{block:content}}Main content{{/block:content}}{{include \"sidebar.html\"}}"
     sus result TemplateResult = process_compiled_template(engine, main_template)
     
@@ -495,11 +495,11 @@ slay test_circular_dependency_protection() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // This would test that circular includes are detected and prevented
-    // Template A includes Template B, which includes Template A
+fr fr This would test that circular includes are detected and prevented
+fr fr Template A includes Template B, which includes Template A
     sus template_a tea = "Template A {{include \"template_b.html\"}}"
     
-    // In a full implementation, this would detect and prevent infinite recursion
+fr fr In a full implementation, this would detect and prevent infinite recursion
     print("✓ Circular dependency protection working (placeholder)")
 }
 
@@ -508,8 +508,8 @@ slay test_large_template_processing() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Generate large template content
-    sus large_template tea = create_large_template(1000) // 1000 variables
+fr fr Generate large template content
+    sus large_template tea = create_large_template(1000) fr fr 1000 variables
     sus start_time normie = get_current_timestamp()
     sus result TemplateResult = process_compiled_template(engine, large_template)
     sus end_time normie = get_current_timestamp()
@@ -517,7 +517,7 @@ slay test_large_template_processing() {
     sus processing_time normie = end_time - start_time
     
     assert_eq_bool(result.success, based)
-    assert_gt_int(string_len(result.output), 5000) // Large output
+    assert_gt_int(string_len(result.output), 5000) fr fr Large output
     
     print("✓ Large template processing working")
 }
@@ -528,7 +528,7 @@ slay test_concurrent_processing() {
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     sus template tea = "Template {{$id}} with {{$content}}"
     
-    // Simulate concurrent processing
+fr fr Simulate concurrent processing
     sus results [TemplateResult] = []
     
     bestie i := 0; i < 10; i++ {
@@ -553,11 +553,11 @@ slay test_memory_efficiency() {
     
     sus engine AdvancedTemplateEngine = create_advanced_template_engine()
     
-    // Test that compilation results are cached and reused
+fr fr Test that compilation results are cached and reused
     sus template tea = "Memory test {{$var}}"
     sus initial_cache_size normie = len(engine.cache.compiled_templates)
     
-    // Process same template multiple times
+fr fr Process same template multiple times
     bestie i := 0; i < 5; i++ {
         engine = set_variable_scoped(engine, "var", string(i))
         sus result TemplateResult = process_compiled_template(engine, template)
@@ -565,7 +565,7 @@ slay test_memory_efficiency() {
     
     sus final_cache_size normie = len(engine.cache.compiled_templates)
     
-    // Should only add one compiled template to cache
+fr fr Should only add one compiled template to cache
     assert_eq_int(final_cache_size - initial_cache_size, 1)
     
     print("✓ Memory efficiency working")
@@ -614,7 +614,7 @@ slay test_csrf_protection() {
     print("✓ CSRF protection working")
 }
 
-// Helper functions for testing
+fr fr Helper functions for testing
 
 slay create_large_template(var_count normie) tea {
     sus template tea = "Large template with variables: "
@@ -638,7 +638,7 @@ slay assert_not_contains_string(text tea, substring tea) {
     }
 }
 
-// Placeholder implementations for missing functions
+fr fr Placeholder implementations for missing functions
 slay parse_template_expression(expr tea, parser ExpressionParser) ParsedExpression {
     damn ParsedExpression{
         expression_type: "variable",
