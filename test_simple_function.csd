@@ -1,2 +1,5 @@
-sus result drip = simple_test.just_five()
-vibez.spillln("Result:", result)
+// Test simple function with return statement
+sus test_function() -> i32 {
+    sus x drip = 42
+    return x
+}

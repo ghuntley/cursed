@@ -377,6 +377,23 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate IR for a statement
     fn generateStatement(self: *LLVMIRPipeline, stmt: ast.Statement) anyerror!void {
+        // Skip generating statements if current block already has a terminator
+        // But NOT for main function, since it needs to handle its own termination logic
+        if (self.current_function != null) {
+            const current_block = c.LLVMGetInsertBlock(self.builder);
+            if (current_block != null and c.LLVMGetBasicBlockTerminator(current_block) != null) {
+                // Check if we're in main function
+                const main_func = self.functions.get("main");
+                if (main_func == null or self.current_function.? != main_func.?) {
+                    print("⚠️ Skipping statement generation - block already terminated\n", .{});
+                    return;
+                }
+                // For main function, we'll create a new block to continue
+                const cont_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "unreachable_cont");
+                c.LLVMPositionBuilderAtEnd(self.builder, cont_block);
+            }
+        }
+        
         switch (stmt) {
             .Function => |func_decl| {
                 try self.generateFunction(func_decl);
@@ -459,7 +476,10 @@ pub const LLVMIRPipeline = struct {
             const param_type = try self.cursedTypeToLLVM(param.param_type);
             const param_alloca = self.buildEntryAlloca(function, param_type, param_name_z.ptr);
             _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
+            
+            // Store both variable reference and type information
             try self.variables.put(param.name, param_alloca);
+            try self.variable_types.put(param.name, param_type);
         }
         
         // Generate function body
@@ -485,6 +505,12 @@ pub const LLVMIRPipeline = struct {
         // Run optimizations on the function (if pass manager is available)
         if (@as(?*anyopaque, self.pass_manager) != null) {
             _ = c.LLVMRunFunctionPassManager(self.pass_manager, function);
+        }
+        
+        // Verify this specific function
+        if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
+            print("❌ Function verification failed for: {s}\n", .{func_decl.name});
+            return LLVMIRError.ModuleVerificationFailed;
         }
     }
     
@@ -561,6 +587,12 @@ pub const LLVMIRPipeline = struct {
         // Run optimizations on the function (if pass manager is available)
         if (@as(?*anyopaque, self.pass_manager) != null) {
             _ = c.LLVMRunFunctionPassManager(self.pass_manager, function);
+        }
+        
+        // Verify this specific function
+        if (c.LLVMVerifyFunction(function, c.LLVMPrintMessageAction) != 0) {
+            print("❌ Function verification failed for: {s}\n", .{qualified_name});
+            return LLVMIRError.ModuleVerificationFailed;
         }
     }
     
@@ -760,11 +792,13 @@ pub const LLVMIRPipeline = struct {
         }
         
         // Add branch to merge block if no terminator exists
-        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+        const then_has_terminator = c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) != null;
+        if (!then_has_terminator) {
             _ = c.LLVMBuildBr(self.builder, merge_block);
         }
         
         // Generate else block if present
+        var else_has_terminator = false;
         if (if_stmt.else_branch) |else_branch| {
             if (else_block) |eb| {
                 c.LLVMPositionBuilderAtEnd(self.builder, eb);
@@ -774,14 +808,21 @@ pub const LLVMIRPipeline = struct {
                 }
                 
                 // Add branch to merge block if no terminator exists
-                if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+                else_has_terminator = c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) != null;
+                if (!else_has_terminator) {
                     _ = c.LLVMBuildBr(self.builder, merge_block);
                 }
             }
         }
         
-        // Position builder at merge block for next statements
-        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+        // Only position at merge block if it's reachable (at least one branch doesn't have a terminator)
+        if (!then_has_terminator or !else_has_terminator) {
+            c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+        } else {
+            // Both branches terminate, so the merge block is unreachable
+            // Delete it to avoid validation errors
+            c.LLVMDeleteBasicBlock(merge_block);
+        }
     }
     
     /// Generate Return statement (damn statements)
@@ -813,9 +854,10 @@ pub const LLVMIRPipeline = struct {
             _ = c.LLVMBuildRetVoid(self.builder);
         }
         
-        // Create a continuation block so later statements have somewhere to go
-        const cont_blk = c.LLVMAppendBasicBlockInContext(self.context, parent, "after_ret");
-        c.LLVMPositionBuilderAtEnd(self.builder, cont_blk);
+        // Note: We do NOT create a continuation block here since this is a terminator.
+        // If there are more statements after this return, they will be unreachable and
+        // that's correct behavior. The function generation will handle adding a final
+        // return if needed.
     }
     
     /// Build alloca in entry block to ensure dominance
@@ -927,14 +969,20 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate constant literal with specific target type
     fn generateConstantLiteralWithType(self: *LLVMIRPipeline, lit: ast.Literal, target_type: c.LLVMTypeRef) !c.LLVMValueRef {
+        const type_kind = c.LLVMGetTypeKind(target_type);
+        
         switch (lit) {
             .Integer => |int_val| {
-                // Use the target type instead of hardcoded int64
-                return c.LLVMConstInt(target_type, @intCast(int_val), 0);
+                // Only use target_type if it's an integer type
+                if (type_kind == c.LLVMIntegerTypeKind) {
+                    return c.LLVMConstInt(target_type, @bitCast(@as(u64, @intCast(int_val))), 0);
+                } else {
+                    // For non-integer targets, create i64 constant
+                    return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @bitCast(@as(u64, @intCast(int_val))), 0);
+                }
             },
             .Float => |float_val| {
                 // Check if target type is float or double
-                const type_kind = c.LLVMGetTypeKind(target_type);
                 if (type_kind == c.LLVMFloatTypeKind or type_kind == c.LLVMDoubleTypeKind) {
                     return c.LLVMConstReal(target_type, float_val);
                 } else {
@@ -943,11 +991,20 @@ pub const LLVMIRPipeline = struct {
                 }
             },
             .String => |str_val| {
-                return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
+                // Strings are always pointer types - check if target expects a pointer
+                if (type_kind == c.LLVMPointerTypeKind) {
+                    return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
+                } else {
+                    // Create global string if target is not a pointer
+                    const str_global = c.LLVMAddGlobal(self.module, c.LLVMArrayType(c.LLVMInt8TypeInContext(self.context), @intCast(str_val.len + 1)), "str_literal");
+                    const str_const = c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 1);
+                    c.LLVMSetInitializer(str_global, str_const);
+                    c.LLVMSetLinkage(str_global, c.LLVMPrivateLinkage);
+                    return str_global;
+                }
             },
             .Boolean => |bool_val| {
-                // Check if target type is i1 (boolean) or use it directly
-                const type_kind = c.LLVMGetTypeKind(target_type);
+                // Check if target type is i1 (boolean)
                 if (type_kind == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(target_type) == 1) {
                     return c.LLVMConstInt(target_type, if (bool_val) 1 else 0, 0);
                 } else {
@@ -955,7 +1012,12 @@ pub const LLVMIRPipeline = struct {
                 }
             },
             .Character => |char_val| {
-                return c.LLVMConstInt(target_type, char_val, 0);
+                // Only use target type if it's an integer type
+                if (type_kind == c.LLVMIntegerTypeKind) {
+                    return c.LLVMConstInt(target_type, char_val, 0);
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char_val, 0);
+                }
             },
             .Null => {
                 return c.LLVMConstNull(target_type);
@@ -1340,7 +1402,7 @@ pub const LLVMIRPipeline = struct {
                 llvm_args[i] = arg_val;
             }
             
-            const func_type = c.LLVMTypeOf(function);
+            const func_type = c.LLVMGlobalGetValueType(function);
             if (@as(?*anyopaque, func_type) == null) {
                 print("❌ Null function type for: {s}\n", .{function_name});
                 return error.UndefinedFunction;
@@ -1939,7 +2001,13 @@ pub const LLVMIRPipeline = struct {
         }
 
         // Add proper terminator if block doesn't have one
-        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+        const current_block = c.LLVMGetInsertBlock(self.builder);
+        if (current_block == null or c.LLVMGetBasicBlockTerminator(current_block) == null) {
+            // If the current block is null (all statements were skipped), reposition to entry block
+            if (current_block == null) {
+                c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+            }
+            
             // Return 0 with correct type
             const func_type = c.LLVMGlobalGetValueType(main_func);
             const func_ret_ty = c.LLVMGetReturnType(func_type);

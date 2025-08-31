@@ -702,9 +702,20 @@ pub const Interpreter = struct {
             .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
             .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
             .Import => |import_stmt| try self.executeImportStatement(import_stmt),
+            .Block => |block| try self.executeBlockStatement(block),
             else => {
                 std.debug.print("Unsupported statement type in interpreter: {s}\n", .{ @tagName(stmt) });
             }
+        }
+    }
+
+    fn executeBlockStatement(self: *Interpreter, block: ast.BlockStatement) InterpreterError!void {
+        std.debug.print("DEBUG: Executing block with {} statements\n", .{block.statements.items.len});
+        
+        // Execute each statement in the block sequentially
+        for (block.statements.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.executeStatement(stmt.*);
         }
     }
 
