@@ -1423,21 +1423,26 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMBuildMul(self.builder, left, right, "mul_tmp");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
-            // Division should always produce floating-point result
-            // Convert integer operands to double first
-            if (!left_is_float) {
-                left = c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "int_to_double_left");
-            } else if (c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind) {
-                left = c.LLVMBuildFPExt(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "float_to_double_left");
+            if (!left_is_float and !right_is_float) {
+                // Integer / Integer -> Integer division (like Go, C, etc.)
+                return c.LLVMBuildSDiv(self.builder, left, right, "sdiv_tmp");
+            } else {
+                // If either operand is float, perform float division
+                // Convert integer operands to double first
+                if (!left_is_float) {
+                    left = c.LLVMBuildSIToFP(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "int_to_double_left");
+                } else if (c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind) {
+                    left = c.LLVMBuildFPExt(self.builder, left, c.LLVMDoubleTypeInContext(self.context), "float_to_double_left");
+                }
+                
+                if (!right_is_float) {
+                    right = c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "int_to_double_right");
+                } else if (c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind) {
+                    right = c.LLVMBuildFPExt(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "float_to_double_right");
+                }
+                
+                return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
             }
-            
-            if (!right_is_float) {
-                right = c.LLVMBuildSIToFP(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "int_to_double_right");
-            } else if (c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind) {
-                right = c.LLVMBuildFPExt(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "float_to_double_right");
-            }
-            
-            return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
         } else if (std.mem.eql(u8, bin_op.operator, "==")) {
             if (is_float) {
                 return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left, right, "feq_tmp");
