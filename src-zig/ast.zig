@@ -412,6 +412,7 @@ pub const BasicType = enum {
     Extra,     // complex
     Lit,       // bool
     Cap,       // null/nil
+    Yikes,     // error type
 };
 
 pub const ChannelType = struct {

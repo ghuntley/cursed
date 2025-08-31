@@ -1,0 +1,22 @@
+yeet "mathz"
+
+sus add_result drip = mathz.add_two(5, 3)
+sus subtract_result drip = mathz.subtract_two(10, 4) 
+sus multiply_result drip = mathz.multiply_two(6, 7)
+sus abs_result drip = mathz.abs_normie(-15)
+sus max_result drip = mathz.max_normie(20, 30)
+sus min_result drip = mathz.min_normie(20, 30)
+
+vibez.spill("Math Results:")
+vibez.spill("add_two(5, 3):")
+vibez.spill(add_result)
+vibez.spill("subtract_two(10, 4):")
+vibez.spill(subtract_result)
+vibez.spill("multiply_two(6, 7):")
+vibez.spill(multiply_result)
+vibez.spill("abs_normie(-15):")
+vibez.spill(abs_result)
+vibez.spill("max_normie(20, 30):")
+vibez.spill(max_result)
+vibez.spill("min_normie(20, 30):")
+vibez.spill(min_result)

@@ -35,6 +35,31 @@ const LLVMIRError = error{
     CompilationFailed,
     OutOfMemory,
     UnsupportedOperator,
+    // Lexer errors
+    UnexpectedCharacter,
+    InvalidEscapeSequence,
+    InvalidHexEscape,
+    InvalidUnicodeEscape,
+    UnterminatedString,
+    UnterminatedChar,
+    UnterminatedBlockComment,
+    // Parser errors
+    ParseError,
+    SyntaxError,
+    InvalidExpression,
+    UnexpectedToken,
+    UnexpectedEof,
+    InvalidSyntax,
+    MissingToken,
+    InvalidStatement,
+    InvalidType,
+    InvalidFunction,
+    InvalidParameter,
+    InvalidBlock,
+    InvalidAssignment,
+    InvalidPattern,
+    InvalidGeneric,
+    AlignmentError,
 };
 
 /// Comprehensive LLVM IR Generation Pipeline
@@ -56,7 +81,11 @@ pub const LLVMIRPipeline = struct {
     // Symbol tables
     functions: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     variables: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    variable_types: HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     global_strings: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    
+    // CURSED module compilation tracking
+    compiled_modules: HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     // Type mapping
     type_cache: HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
@@ -143,7 +172,9 @@ pub const LLVMIRPipeline = struct {
             .type_checker = type_checker,
             .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .variable_types = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .compiled_modules = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
             .string_counter = 0,
@@ -151,11 +182,11 @@ pub const LLVMIRPipeline = struct {
             .debug_info = false,
         };
         
-        // Setup standard library declarations
-        try pipeline.setupStandardLibrary();
-        
         // Add special "vibez" identifier as a global variable
         try pipeline.setupVibezIdentifier();
+        
+        // Declare standard C library functions
+        try pipeline.declareCLibraryFunctions();
         
         print("✅ LLVM IR Pipeline initialized successfully\n", .{});
         return pipeline;
@@ -167,7 +198,9 @@ pub const LLVMIRPipeline = struct {
         // Clean up hash maps first
         self.functions.deinit();
         self.variables.deinit();
+        self.variable_types.deinit();
         self.global_strings.deinit();
+        self.compiled_modules.deinit();
         self.type_cache.deinit();
         
         // Clean up type system components
@@ -315,14 +348,31 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate LLVM IR from the type-checked AST
     pub fn generateIR(self: *LLVMIRPipeline, program: ast.Program) !void {
-        // Generate IR for each statement
+        // Separate functions from other statements
+        var functions = ArrayList(*ast.Statement){};
+        defer functions.deinit(self.allocator);
+        var global_statements = ArrayList(*ast.Statement){};
+        defer global_statements.deinit(self.allocator);
+        
         for (program.statements.items) |stmt_ptr| {
             const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
+            switch (stmt.*) {
+                .Function => {
+                    try functions.append(self.allocator, stmt);
+                },
+                else => {
+                    try global_statements.append(self.allocator, stmt);
+                }
+            }
+        }
+        
+        // Generate IR for functions first
+        for (functions.items) |stmt| {
             try self.generateStatement(stmt.*);
         }
         
-        // Ensure we have a main function
-        try self.ensureMainFunction();
+        // Ensure we have a main function and generate global statements within it
+        try self.ensureMainFunctionWithGlobalStatements(global_statements.items);
     }
     
     /// Generate IR for a statement
@@ -338,11 +388,21 @@ pub const LLVMIRPipeline = struct {
                 _ = try self.generateExpression(expr);
             },
             .Import => |import_stmt| {
-                // Handle import statements - for now just mark as processed
+                // Handle import statements by loading and compiling the module
                 print("📦 Processing import: {s}\n", .{import_stmt.path});
+                try self.loadAndCompileModule(import_stmt.path);
+            },
+            .While => |while_stmt| {
+                try self.generateWhileStatement(while_stmt);
+            },
+            .For => |for_stmt| {
+                try self.generateForStatement(for_stmt);
+            },
+            .Assignment => |assign_stmt| {
+                try self.generateAssignmentStatement(assign_stmt);
             },
             else => {
-                print("⚠️ Unhandled statement type in IR generation\n", .{});
+                print("⚠️ Unhandled statement type in IR generation: {s}\n", .{@tagName(stmt)});
             },
         }
     }
@@ -421,41 +481,386 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
+    /// Generate function with qualified name (for stdlib modules)
+    fn generateFunctionWithQualifiedName(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement, qualified_name: []const u8) !void {
+        // Create function type
+        var param_types = std.ArrayList(c.LLVMTypeRef){};
+        defer param_types.deinit(self.allocator);
+        
+        for (func_decl.parameters.items) |param| {
+            const llvm_type = try self.cursedTypeToLLVM(param.param_type);
+            try param_types.append(self.allocator, llvm_type);
+        }
+        
+        const return_type = if (func_decl.return_type) |ret_type|
+            try self.cursedTypeToLLVM(ret_type)
+        else
+            c.LLVMVoidTypeInContext(self.context);
+        
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @intCast(param_types.items.len),
+            0
+        );
+        
+        // Create function with qualified name
+        const func_name_z = try self.arena.allocator().dupeZ(u8, qualified_name);
+        const function = c.LLVMAddFunction(self.module, func_name_z.ptr, func_type);
+        try self.functions.put(qualified_name, function);
+        
+        // Create entry block
+        const entry_block = c.LLVMAppendBasicBlockInContext(self.context, function, "entry");
+        c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        
+        // Set current function
+        const previous_function = self.current_function;
+        self.current_function = function;
+        
+        // Generate function parameters
+        for (func_decl.parameters.items, 0..) |param, i| {
+            const llvm_param = c.LLVMGetParam(function, @intCast(i));
+            const param_name_z = try self.arena.allocator().dupeZ(u8, param.name);
+            c.LLVMSetValueName(llvm_param, param_name_z.ptr);
+            
+            // Create alloca for parameter and store value
+            const param_alloca = c.LLVMBuildAlloca(self.builder, try self.cursedTypeToLLVM(param.param_type), param_name_z.ptr);
+            _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
+            try self.variables.put(param.name, param_alloca);
+        }
+        
+        // Generate function body
+        for (func_decl.body.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Add return if not present
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            if (func_decl.return_type != null) {
+                // Return zero/null for non-void functions
+                const zero_val = c.LLVMConstInt(return_type, 0, 0);
+                _ = c.LLVMBuildRet(self.builder, zero_val);
+            } else {
+                _ = c.LLVMBuildRetVoid(self.builder);
+            }
+        }
+        
+        // Restore previous function
+        self.current_function = previous_function;
+        
+        // Run optimizations on the function (if pass manager is available)
+        if (@as(?*anyopaque, self.pass_manager) != null) {
+            _ = c.LLVMRunFunctionPassManager(self.pass_manager, function);
+        }
+    }
+    
     /// Generate variable declaration
     fn generateVariableDeclaration(self: *LLVMIRPipeline, var_decl: ast.LetStatement) !void {
         const llvm_type = if (var_decl.var_type) |vtype| 
             try self.cursedTypeToLLVM(vtype)
         else 
-            c.LLVMInt32TypeInContext(self.context);
+            c.LLVMInt64TypeInContext(self.context); // Default to drip type (64-bit int)
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
-        // Create alloca
-        const alloca = c.LLVMBuildAlloca(self.builder, llvm_type, var_name_z.ptr);
-        try self.variables.put(var_decl.name, alloca);
+        // Check if we're in a function context or at global scope
+        if (self.current_function) |_| {
+            // Inside a function - create alloca
+            const alloca = c.LLVMBuildAlloca(self.builder, llvm_type, var_name_z.ptr);
+            try self.variables.put(var_decl.name, alloca);
+            try self.variable_types.put(var_decl.name, llvm_type);
+            
+            // Generate initializer if present
+            if (var_decl.initializer) |initializer| {
+                const init_value = try self.generateExpression(initializer.*);
+                _ = c.LLVMBuildStore(self.builder, init_value, alloca);
+            }
+        } else {
+            // At global scope - create global variable
+            const initializer_value = if (var_decl.initializer) |initializer| 
+                try self.generateConstantExpressionWithType(initializer.*, llvm_type)
+            else 
+                c.LLVMConstNull(llvm_type);
+                
+            const global_var = c.LLVMAddGlobal(self.module, llvm_type, var_name_z.ptr);
+            c.LLVMSetInitializer(global_var, initializer_value);
+            try self.variables.put(var_decl.name, global_var);
+            try self.variable_types.put(var_decl.name, llvm_type);
+        }
+    }
+    
+    /// Generate while statement (bestie loops)
+    fn generateWhileStatement(self: *LLVMIRPipeline, while_stmt: ast.WhileStatement) !void {
+        if (self.current_function == null) {
+            print("❌ While loops can only be used inside functions\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        }
         
-        // Generate initializer if present
-        if (var_decl.initializer) |initializer| {
-            const init_value = try self.generateExpression(initializer.*);
-            _ = c.LLVMBuildStore(self.builder, init_value, alloca);
+        // Create basic blocks for loop
+        const condition_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "while_cond");
+        const body_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "while_body");
+        const exit_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "while_exit");
+        
+        // Jump to condition block
+        _ = c.LLVMBuildBr(self.builder, condition_block);
+        
+        // Generate condition block
+        c.LLVMPositionBuilderAtEnd(self.builder, condition_block);
+        const condition_val = try self.generateExpression(while_stmt.condition.*);
+        
+        // Convert condition to boolean if needed
+        const bool_condition = if (c.LLVMGetTypeKind(c.LLVMTypeOf(condition_val)) == c.LLVMIntegerTypeKind) 
+            c.LLVMBuildICmp(self.builder, c.LLVMIntNE, condition_val, c.LLVMConstInt(c.LLVMTypeOf(condition_val), 0, 0), "while_bool")
+        else 
+            condition_val;
+            
+        _ = c.LLVMBuildCondBr(self.builder, bool_condition, body_block, exit_block);
+        
+        // Generate body block
+        c.LLVMPositionBuilderAtEnd(self.builder, body_block);
+        for (while_stmt.body.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Jump back to condition
+        _ = c.LLVMBuildBr(self.builder, condition_block);
+        
+        // Position builder at exit block for next statements
+        c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
+    }
+    
+    /// Generate for statement (C-style for loops)
+    fn generateForStatement(self: *LLVMIRPipeline, for_stmt: ast.ForStatement) !void {
+        if (self.current_function == null) {
+            print("❌ For loops can only be used inside functions\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        }
+        
+        // Generate init statement if present
+        if (for_stmt.init) |init_stmt| {
+            try self.generateStatement(init_stmt.*);
+        }
+        
+        // Create basic blocks
+        const condition_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "for_cond");
+        const body_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "for_body");
+        const update_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "for_update");
+        const exit_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "for_exit");
+        
+        // Jump to condition
+        _ = c.LLVMBuildBr(self.builder, condition_block);
+        
+        // Generate condition block
+        c.LLVMPositionBuilderAtEnd(self.builder, condition_block);
+        if (for_stmt.condition) |condition| {
+            const condition_val = try self.generateExpression(condition.*);
+            const bool_condition = if (c.LLVMGetTypeKind(c.LLVMTypeOf(condition_val)) == c.LLVMIntegerTypeKind) 
+                c.LLVMBuildICmp(self.builder, c.LLVMIntNE, condition_val, c.LLVMConstInt(c.LLVMTypeOf(condition_val), 0, 0), "for_bool")
+            else 
+                condition_val;
+            _ = c.LLVMBuildCondBr(self.builder, bool_condition, body_block, exit_block);
+        } else {
+            // No condition - infinite loop, just branch to body
+            _ = c.LLVMBuildBr(self.builder, body_block);
+        }
+        
+        // Generate body block
+        c.LLVMPositionBuilderAtEnd(self.builder, body_block);
+        for (for_stmt.body.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Jump to update block
+        _ = c.LLVMBuildBr(self.builder, update_block);
+        
+        // Generate update block
+        c.LLVMPositionBuilderAtEnd(self.builder, update_block);
+        if (for_stmt.update) |update_stmt| {
+            try self.generateStatement(update_stmt.*);
+        }
+        
+        // Jump back to condition
+        _ = c.LLVMBuildBr(self.builder, condition_block);
+        
+        // Position builder at exit block
+        c.LLVMPositionBuilderAtEnd(self.builder, exit_block);
+    }
+    
+    /// Generate assignment statement
+    fn generateAssignmentStatement(self: *LLVMIRPipeline, assign_stmt: ast.AssignmentStatement) !void {
+        // Cast value from *anyopaque to *Expression
+        const value_expr: *ast.Expression = @ptrCast(@alignCast(assign_stmt.value));
+        const value = try self.generateExpression(value_expr.*);
+        
+        // Get the target variable 
+        const target_expr: *ast.Expression = @ptrCast(@alignCast(assign_stmt.target));
+        switch (target_expr.*) {
+            .Identifier => |var_name| {
+                if (self.variables.get(var_name)) |var_ref| {
+                    _ = c.LLVMBuildStore(self.builder, value, var_ref);
+                } else {
+                    print("❌ Undefined variable in assignment: {s}\n", .{var_name});
+                    return LLVMIRError.UndefinedVariable;
+                }
+            },
+            else => {
+                print("❌ Unsupported assignment target\n", .{});
+                return LLVMIRError.UndefinedVariable;
+            }
+        }
+    }
+    
+    /// Generate constant expression (for global variable initializers)
+    fn generateConstantExpression(self: *LLVMIRPipeline, expr: ast.Expression) !c.LLVMValueRef {
+        switch (expr) {
+            .Literal => |lit| {
+                return try self.generateConstantLiteral(lit);
+            },
+            .Binary => |bin_op| {
+                // For constants, we can only handle simple arithmetic at compile time
+                const left = try self.generateConstantExpression(bin_op.left.*);
+                const right = try self.generateConstantExpression(bin_op.right.*);
+                
+                if (std.mem.eql(u8, bin_op.operator, "+")) {
+                    return c.LLVMConstAdd(left, right);
+                } else if (std.mem.eql(u8, bin_op.operator, "-")) {
+                    return c.LLVMConstSub(left, right);
+                } else if (std.mem.eql(u8, bin_op.operator, "*")) {
+                    return c.LLVMConstMul(left, right);
+                } else {
+                    // For complex expressions, just return zero
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                }
+            },
+            else => {
+                // For other expressions, return null/zero constant
+                return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+            }
+        }
+    }
+    
+    /// Generate constant expression with specific target type
+    fn generateConstantExpressionWithType(self: *LLVMIRPipeline, expr: ast.Expression, target_type: c.LLVMTypeRef) !c.LLVMValueRef {
+        switch (expr) {
+            .Literal => |lit| {
+                return try self.generateConstantLiteralWithType(lit, target_type);
+            },
+            .Binary => |bin_op| {
+                // For constants, we can only handle simple arithmetic at compile time
+                const left = try self.generateConstantExpressionWithType(bin_op.left.*, target_type);
+                const right = try self.generateConstantExpressionWithType(bin_op.right.*, target_type);
+                
+                if (std.mem.eql(u8, bin_op.operator, "+")) {
+                    return c.LLVMConstAdd(left, right);
+                } else if (std.mem.eql(u8, bin_op.operator, "-")) {
+                    return c.LLVMConstSub(left, right);
+                } else if (std.mem.eql(u8, bin_op.operator, "*")) {
+                    return c.LLVMConstMul(left, right);
+                } else {
+                    // For complex expressions, just return zero of target type
+                    return c.LLVMConstNull(target_type);
+                }
+            },
+            else => {
+                // For other expressions, return null/zero constant of target type
+                return c.LLVMConstNull(target_type);
+            }
+        }
+    }
+    
+    /// Generate constant literal (for global constants)
+    fn generateConstantLiteral(self: *LLVMIRPipeline, lit: ast.Literal) !c.LLVMValueRef {
+        switch (lit) {
+            .Integer => |int_val| {
+                return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), @intCast(int_val), 0);
+            },
+            .Float => |float_val| {
+                return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
+            },
+            .String => |str_val| {
+                return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
+            },
+            .Boolean => |bool_val| {
+                return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+            },
+            .Character => |char_val| {
+                return c.LLVMConstInt(c.LLVMInt8TypeInContext(self.context), char_val, 0);
+            },
+            .Null => {
+                return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+            },
+            .Nil => {
+                return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+            },
+        }
+    }
+    
+    /// Generate constant literal with specific target type
+    fn generateConstantLiteralWithType(self: *LLVMIRPipeline, lit: ast.Literal, target_type: c.LLVMTypeRef) !c.LLVMValueRef {
+        switch (lit) {
+            .Integer => |int_val| {
+                // Use the target type instead of hardcoded int64
+                return c.LLVMConstInt(target_type, @intCast(int_val), 0);
+            },
+            .Float => |float_val| {
+                // Check if target type is float or double
+                const type_kind = c.LLVMGetTypeKind(target_type);
+                if (type_kind == c.LLVMFloatTypeKind or type_kind == c.LLVMDoubleTypeKind) {
+                    return c.LLVMConstReal(target_type, float_val);
+                } else {
+                    // Fallback to double
+                    return c.LLVMConstReal(c.LLVMDoubleTypeInContext(self.context), float_val);
+                }
+            },
+            .String => |str_val| {
+                return c.LLVMConstStringInContext(self.context, str_val.ptr, @intCast(str_val.len), 0);
+            },
+            .Boolean => |bool_val| {
+                // Check if target type is i1 (boolean) or use it directly
+                const type_kind = c.LLVMGetTypeKind(target_type);
+                if (type_kind == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(target_type) == 1) {
+                    return c.LLVMConstInt(target_type, if (bool_val) 1 else 0, 0);
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), if (bool_val) 1 else 0, 0);
+                }
+            },
+            .Character => |char_val| {
+                return c.LLVMConstInt(target_type, char_val, 0);
+            },
+            .Null => {
+                return c.LLVMConstNull(target_type);
+            },
+            .Nil => {
+                return c.LLVMConstNull(target_type);
+            },
         }
     }
     
     /// Generate expression
-    fn generateExpression(self: *LLVMIRPipeline, expr: ast.Expression) LLVMIRError!c.LLVMValueRef {
+    fn generateExpression(self: *LLVMIRPipeline, expr: ast.Expression) anyerror!c.LLVMValueRef {
         switch (expr) {
             .Literal => |lit| {
                 return try self.generateLiteral(lit);
             },
             .Identifier => |ident| {
                 if (self.variables.get(ident)) |var_ref| {
-                    // For alloca'd variables, use LLVMGetAllocatedType
                     print("DEBUG: Loading variable {s}\n", .{ident});
-                    const var_type = c.LLVMGetAllocatedType(var_ref);
-                    if (var_type != null) {
-                        print("DEBUG: Using allocated type for {s}\n", .{ident});
-                        return c.LLVMBuildLoad2(self.builder, var_type, var_ref, "load_tmp");
+                    
+                    // Use stored type information
+                    if (self.variable_types.get(ident)) |var_type| {
+                        print("DEBUG: Found stored type for variable {s}\n", .{ident});
+                        
+                        // Check if we're in a function context
+                        if (self.current_function == null) {
+                            print("❌ Cannot load variable {s} outside of function context\n", .{ident});
+                            return error.UndefinedVariable;
+                        }
+                        
+                        return c.LLVMBuildLoad2(self.builder, var_type, var_ref, "load_var");
                     } else {
-                        print("❌ Could not determine type for variable: {s}\n", .{ident});
+                        print("❌ No type information stored for variable: {s}\n", .{ident});
                         return error.UndefinedVariable;
                     }
                 } else {
@@ -659,7 +1064,7 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Generate binary operation
-    fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) LLVMIRError!c.LLVMValueRef {
+    fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) anyerror!c.LLVMValueRef {
         const left = try self.generateExpression(bin_op.left.*);
         const right = try self.generateExpression(bin_op.right.*);
         
@@ -759,6 +1164,16 @@ pub const LLVMIRPipeline = struct {
             return try self.generatePrintCall(args);
         }
         
+        if (std.mem.eql(u8, function_name, "yap")) {
+            // Convert []*Expression to []Expression  
+            var args = try self.allocator.alloc(ast.Expression, call.arguments.items.len);
+            defer self.allocator.free(args);
+            for (call.arguments.items, 0..) |arg_ptr, i| {
+                args[i] = arg_ptr.*;
+            }
+            return try self.generatePrintCall(args);
+        }
+        
         // Look up user-defined function
         if (self.functions.get(function_name)) |function| {
             // Safety check
@@ -813,7 +1228,7 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Generate method call
-    fn generateMethodCall(self: *LLVMIRPipeline, method_call: *ast.MethodCallExpression) !c.LLVMValueRef {
+    fn generateMethodCall(self: *LLVMIRPipeline, method_call: *ast.MethodCallExpression) anyerror!c.LLVMValueRef {
         // Check if this is a "vibez.spill()" call
         const object_name = switch (method_call.object.*) {
             .Identifier => |name| name,
@@ -861,7 +1276,31 @@ pub const LLVMIRPipeline = struct {
                 return separator_str;
             }
         } else if (std.mem.eql(u8, object_name, "mathz")) {
-            // Handle mathz functions by calling runtime functions
+            // Handle mathz functions by calling the CURSED-compiled stdlib functions
+            // First try to load the module if not already loaded
+            try self.loadAndCompileModule("mathz");
+            
+            // Generate the qualified function name (module.function)
+            const qualified_name = try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ object_name, method_call.method_name });
+            
+            // Check if the function exists in the compiled functions
+            if (self.functions.get(qualified_name)) |stdlib_func| {
+                // Generate arguments
+                var args = std.ArrayList(c.LLVMValueRef){};
+                defer args.deinit(self.allocator);
+                
+                for (method_call.arguments.items) |arg| {
+                    const arg_val = try self.generateExpression(arg.*);
+                    try args.append(self.allocator, arg_val);
+                }
+                
+                // Get the function type and call it
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
+                return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
+            }
+            
+            // Fallback to hardcoded runtime functions for backwards compatibility
             if (std.mem.eql(u8, method_call.method_name, "add")) {
                 if (method_call.arguments.items.len >= 2) {
                     const left = try self.generateExpression(method_call.arguments.items[0].*);
@@ -991,6 +1430,75 @@ pub const LLVMIRPipeline = struct {
                 // Return success 
                 return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
             }
+        } else if (std.mem.eql(u8, object_name, "path")) {
+            // Handle path functions by calling runtime
+            if (std.mem.eql(u8, method_call.method_name, "basename")) {
+                if (method_call.arguments.items.len >= 1) {
+                    _ = try self.generateExpression(method_call.arguments.items[0].*);
+                    // For now, return a sample basename
+                    const basename_str = c.LLVMBuildGlobalStringPtr(self.builder, "file.txt", "basename_result");
+                    return basename_str;
+                } else {
+                    const empty_str = c.LLVMBuildGlobalStringPtr(self.builder, "", "empty_basename");
+                    return empty_str;
+                }
+            } else if (std.mem.eql(u8, method_call.method_name, "dirname")) {
+                if (method_call.arguments.items.len >= 1) {
+                    _ = try self.generateExpression(method_call.arguments.items[0].*);
+                    // For now, return a sample dirname
+                    const dirname_str = c.LLVMBuildGlobalStringPtr(self.builder, "/home/user", "dirname_result");
+                    return dirname_str;
+                } else {
+                    const current_dir_str = c.LLVMBuildGlobalStringPtr(self.builder, ".", "current_dir");
+                    return current_dir_str;
+                }
+            } else if (std.mem.eql(u8, method_call.method_name, "exists")) {
+                if (method_call.arguments.items.len >= 1) {
+                    _ = try self.generateExpression(method_call.arguments.items[0].*);
+                    // Return true for demonstration
+                    return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
+                }
+            } else if (std.mem.eql(u8, method_call.method_name, "is_dir")) {
+                if (method_call.arguments.items.len >= 1) {
+                    _ = try self.generateExpression(method_call.arguments.items[0].*);
+                    // Return true for demonstration
+                    return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 1, 0);
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt1TypeInContext(self.context), 0, 0);
+                }
+            }
+        }
+        
+        // Generic stdlib module handling - try to call compiled CURSED functions first
+        if (!std.mem.eql(u8, object_name, "vibez") and !std.mem.eql(u8, object_name, "")) {
+            // Try to load the module if it's a stdlib module
+            self.loadAndCompileModule(object_name) catch {
+                // If module loading fails, continue to fallback handling
+            };
+            
+            // Generate the qualified function name (module.function)
+            const qualified_name = try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ object_name, method_call.method_name });
+            
+            // Check if the function exists in the compiled functions
+            if (self.functions.get(qualified_name)) |stdlib_func| {
+                print("DEBUG: Calling compiled CURSED stdlib function: {s}\n", .{qualified_name});
+                
+                // Generate arguments
+                var args = std.ArrayList(c.LLVMValueRef){};
+                defer args.deinit(self.allocator);
+                
+                for (method_call.arguments.items) |arg| {
+                    const arg_val = try self.generateExpression(arg.*);
+                    try args.append(self.allocator, arg_val);
+                }
+                
+                // Get the function type and call it
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
+                return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
+            }
         }
         
         // For other method calls on objects
@@ -1013,7 +1521,7 @@ pub const LLVMIRPipeline = struct {
         }
         
         // For other method calls, return a placeholder value
-        print("⚠️ Unhandled method call: {s}\n", .{method_call.method_name});
+        print("⚠️ Unhandled method call: {s}.{s}\n", .{object_name, method_call.method_name});
         return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
     }
     
@@ -1126,6 +1634,7 @@ pub const LLVMIRPipeline = struct {
                     }, // complex
                     .Lit => c.LLVMInt1TypeInContext(self.context),
                     .Cap => c.LLVMVoidTypeInContext(self.context),
+                    .Yikes => c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), // error type (string-like)
                 };
             },
             .Array => |array| {
@@ -1143,30 +1652,61 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
-    /// Setup standard library function declarations
-    fn setupStandardLibrary(self: *LLVMIRPipeline) !void {
-        // puts(const char* str) -> int
-        const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-        const puts_type = c.LLVMFunctionType(
-            c.LLVMInt32TypeInContext(self.context),
-            @constCast(@ptrCast(&char_ptr_type)),
-            1,
-            0
-        );
-        const puts_func = c.LLVMAddFunction(self.module, "puts", puts_type);
-        try self.functions.put("puts", puts_func);
+    /// Load and compile CURSED stdlib module
+    fn loadAndCompileModule(self: *LLVMIRPipeline, module_name: []const u8) anyerror!void {
+        // Check if already compiled
+        if (self.compiled_modules.contains(module_name)) return;
         
-        // printf(const char* format, ...) -> int
-        const printf_type = c.LLVMFunctionType(
-            c.LLVMInt32TypeInContext(self.context),
-            @constCast(@ptrCast(&char_ptr_type)),
-            1,
-            1  // Variadic
-        );
-        const printf_func = c.LLVMAddFunction(self.module, "printf", printf_type);
-        try self.functions.put("printf", printf_func);
+        print("DEBUG: Loading and compiling CURSED module: {s}\n", .{module_name});
+        
+        // Create temporary arena for module compilation
+        var module_arena = std.heap.ArenaAllocator.init(self.allocator);
+        defer module_arena.deinit();
+        const tmp_allocator = module_arena.allocator();
+        
+        // 1. Locate the .csd file
+        const stdlib_path = try std.fmt.allocPrint(tmp_allocator, "stdlib/{s}/mod.csd", .{module_name});
+        const source = std.fs.cwd().readFileAlloc(tmp_allocator, stdlib_path, std.math.maxInt(usize)) catch |err| {
+            print("DEBUG: Could not read CURSED module {s}: {}\n", .{ stdlib_path, err });
+            return;
+        };
+        
+        print("DEBUG: Successfully read CURSED module {s} ({} bytes)\n", .{ stdlib_path, source.len });
+        
+        // 2. Front-end: tokenize and parse
+        var lex = lexer.Lexer.init(tmp_allocator, source);
+        const token_list = try lex.tokenize();
+        const tokens = token_list.items;
+        var parse = parser.Parser.init(tmp_allocator, tokens);
+        const program = try parse.parseProgram();
+        
+        print("DEBUG: Successfully parsed CURSED module {s} ({} statements)\n", .{ module_name, program.statements.items.len });
+        
+        // 3. Generate LLVM IR for each function with module-qualified names
+        for (program.statements.items) |stmt_ptr| {
+            const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
+            switch (stmt.*) {
+                .Function => |func_decl| {
+                    // Generate qualified function name (module.function)
+                    const qualified_name = try self.arena.allocator().dupeZ(u8, 
+                        try std.fmt.allocPrint(self.arena.allocator(), "{s}.{s}", .{ module_name, func_decl.name }));
+                    print("DEBUG: Compiling CURSED stdlib function: {s}\n", .{qualified_name});
+                    
+                    // Generate LLVM function with qualified name
+                    try self.generateFunctionWithQualifiedName(func_decl, qualified_name);
+                },
+                else => {
+                    // For now, skip non-function statements in stdlib modules
+                }
+            }
+        }
+        
+        // Mark module as compiled
+        const module_name_owned = try self.arena.allocator().dupe(u8, module_name);
+        try self.compiled_modules.put(module_name_owned, {});
+        print("DEBUG: Successfully compiled CURSED module: {s}\n", .{module_name});
     }
-    
+
     /// Setup special "vibez" identifier as a global variable
     fn setupVibezIdentifier(self: *LLVMIRPipeline) !void {
         // Create a global integer variable for "vibez"
@@ -1180,10 +1720,37 @@ pub const LLVMIRPipeline = struct {
         
         // Add to variables map
         try self.variables.put("vibez", vibez_global);
+        try self.variable_types.put("vibez", vibez_type);
     }
     
-    /// Ensure main function exists
-    fn ensureMainFunction(self: *LLVMIRPipeline) !void {
+    /// Declare standard C library functions
+    fn declareCLibraryFunctions(self: *LLVMIRPipeline) !void {
+        // Declare printf: int printf(const char *format, ...)
+        const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const printf_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(self.context),
+            @constCast(@ptrCast(&char_ptr_type)),
+            1,
+            1 // variadic
+        );
+        const printf_func = c.LLVMAddFunction(self.module, "printf", printf_type);
+        try self.functions.put("printf", printf_func);
+        
+        // Declare puts: int puts(const char *s)
+        const puts_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(self.context),
+            @constCast(@ptrCast(&char_ptr_type)),
+            1,
+            0 // not variadic
+        );
+        const puts_func = c.LLVMAddFunction(self.module, "puts", puts_type);
+        try self.functions.put("puts", puts_func);
+        
+        print("✅ C library functions declared\n", .{});
+    }
+    
+    /// Ensure main function exists and includes global statements
+    fn ensureMainFunctionWithGlobalStatements(self: *LLVMIRPipeline, global_statements: []*ast.Statement) !void {
         // Check if main already exists
         if (self.functions.contains("main")) {
             return;
@@ -1202,6 +1769,14 @@ pub const LLVMIRPipeline = struct {
         
         const entry_block = c.LLVMAppendBasicBlockInContext(self.context, main_func, "entry");
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        
+        // Set current function context
+        self.current_function = main_func;
+        
+        // Generate global statements within main function context
+        for (global_statements) |stmt| {
+            try self.generateStatement(stmt.*);
+        }
         
         // Call main_character function if it exists
         if (self.functions.get("main_character")) |main_char_func| {
@@ -1224,6 +1799,9 @@ pub const LLVMIRPipeline = struct {
         // Return 0
         const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
         _ = c.LLVMBuildRet(self.builder, zero);
+        
+        // Clear current function context
+        self.current_function = null;
     }
     
     /// Optimize the generated IR

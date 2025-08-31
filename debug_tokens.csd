@@ -1,3 +1,3 @@
-slay test() {
-    vibez.spill("hello")
+slay test_function(x drip) drip {
+    damn x + 1
 }

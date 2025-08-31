@@ -644,6 +644,14 @@ pub const GoroutineFunctionExecutor = struct {
                     .Float => |r| Value{ .Float = l + r },
                     else => error.TypeError,
                 },
+                .String => |l| switch (right) {
+                    .String => |r| blk: {
+                        // String concatenation
+                        const concatenated = std.fmt.allocPrint(std.heap.page_allocator, "{s}{s}", .{l, r}) catch return error.OutOfMemory;
+                        break :blk Value{ .String = concatenated };
+                    },
+                    else => error.TypeError,
+                },
                 else => error.TypeError,
             },
             .Subtract => switch (left) {

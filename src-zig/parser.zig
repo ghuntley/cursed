@@ -264,7 +264,7 @@ pub const Parser = struct {
                 if (self.parseImportStatement()) |import_stmt| {
                     // Add import as a regular statement
                     const stmt = Statement{ .Import = import_stmt };
-                    const stmt_ptr = self.allocator.create(Statement) catch {
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
                         _ = self.reportErrorWithContext("Out of memory allocating import statement", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
@@ -284,11 +284,11 @@ pub const Parser = struct {
 
             // Parse regular statements with enhanced error handling and recovery
             if (self.parseStatement()) |stmt| {
-                const stmt_ptr = self.allocator.create(Statement) catch {
+                const stmt_ptr = self.arena_allocator.create(Statement) catch {
                     _ = self.reportErrorWithContext("Out of memory allocating statement", "parseProgram") catch {};
                     return ParserError.OutOfMemory;
                 };
-                errdefer self.allocator.destroy(stmt_ptr);
+
                 stmt_ptr.* = stmt;
                 
                 const anyopaque_ptr = self.statementToAnyopaque(stmt_ptr) catch |parse_err| {
@@ -745,7 +745,7 @@ pub const Parser = struct {
             if (self.current + 1 < self.tokens.len and self.tokens[self.current + 1].kind == .LeftParen) {
                 // This is facts(...) function call - parse as expression statement
                 const expr = try self.parseExpression();
-                const expr_ptr = try self.allocator.create(Expression);
+                const expr_ptr = try self.arena_allocator.create(Expression);
                 expr_ptr.* = expr;
                 return Statement{ .Expression = expr };
             } else {
@@ -821,8 +821,8 @@ pub const Parser = struct {
         // Match expression (match)
         if (self.check(.Match)) {
             const match_expr = try self.parseMatchExpression();
-            const expr_ptr = try self.allocator.create(Expression);
-            errdefer self.allocator.destroy(expr_ptr);
+            const expr_ptr = try self.arena_allocator.create(Expression);
+
             expr_ptr.* = match_expr;
             return Statement{ .Expression = match_expr };
         }
@@ -870,11 +870,11 @@ pub const Parser = struct {
             return parse_err;
         };
         
-        const expr_ptr = self.allocator.create(Expression) catch {
+        const expr_ptr = self.arena_allocator.create(Expression) catch {
             _ = self.reportErrorWithContext("Out of memory allocating expression", "parseStatement") catch {};
             return ParserError.OutOfMemory;
         };
-        errdefer self.allocator.destroy(expr_ptr);
+
         expr_ptr.* = expr;
         
         return Statement{ .Expression = expr };
@@ -901,8 +901,8 @@ pub const Parser = struct {
             }
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement);
-            errdefer self.allocator.destroy(stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement);
+
             stmt_ptr.* = stmt;
             
             try statements.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
@@ -994,8 +994,8 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); 
-            errdefer self.allocator.destroy(stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); 
+
             stmt_ptr.* = stmt; 
             try func.body.append(self.allocator, stmt_ptr);
         }
@@ -1037,8 +1037,8 @@ pub const Parser = struct {
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {
             const init_expr = try self.parseExpression();
-            const init_ptr = try self.allocator.create(Expression);
-            errdefer self.allocator.destroy(init_ptr);
+            const init_ptr = try self.arena_allocator.create(Expression);
+    
             init_ptr.* = init_expr;
             let_stmt.initializer = init_ptr;
         }
@@ -1066,8 +1066,8 @@ pub const Parser = struct {
         // Parse default value
         if (self.match(.Equal)) {
             const default_expr = try self.parseExpression(); 
-            const default_ptr = try self.allocator.create(Expression); 
-            errdefer self.allocator.destroy(default_ptr);
+            const default_ptr = try self.arena_allocator.create(Expression); 
+
             default_ptr.* = default_expr; 
             param.default_value = try self.expressionToAnyopaque(default_ptr);
         }
@@ -1089,8 +1089,8 @@ pub const Parser = struct {
                     size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
                 } else if (self.checkBasicType()) {
                     // Handle [element_type] syntax (non-standard but used in stdlib)
-                    element_type_ptr = try self.allocator.create(ast.Type);
-                    errdefer self.allocator.destroy(element_type_ptr.?);
+                    element_type_ptr = try self.arena_allocator.create(ast.Type);
+        
                     element_type_ptr.?.* = try self.parseBasicType();
                 }
             }
@@ -1099,8 +1099,8 @@ pub const Parser = struct {
             
             if (element_type_ptr == null) {
                 // Standard []element_type syntax
-                element_type_ptr = try self.allocator.create(ast.Type);
-                errdefer self.allocator.destroy(element_type_ptr.?);
+                element_type_ptr = try self.arena_allocator.create(ast.Type);
+    
                 element_type_ptr.?.* = try self.parseType();
             }
             
@@ -1115,6 +1115,45 @@ pub const Parser = struct {
         if (self.checkBasicType()) {
             const base_type = try self.parseBasicType();
             
+            // Check for generic syntax < > (e.g., yikes<drip>)
+            if (self.check(.Less) or self.check(.LeftAngle)) {
+                // For basic types that support generics (like yikes), handle as special case
+                switch (base_type) {
+                    .Basic => |basic| {
+                        switch (basic) {
+                            .Yikes => {
+                                // Simple parsing for yikes<T> - just consume tokens until >
+                                _ = self.advance(); // consume < or LeftAngle
+                                
+                                // Parse the type argument (should be drip in most cases)
+                                const inner_type = try self.parseType();
+                                
+                                // Consume the closing >
+                                if (!self.match(.Greater) and !self.match(.RightAngle)) {
+                                    return ParserError.InvalidType;
+                                }
+                                
+                                // For now, just return a generic type with yikes as base
+                                // In the future, this could be expanded to proper generic support
+                                return ast.Type{ .Generic = ast.GenericType{
+                                    .name = "yikes",
+                                    .type_arguments = blk: {
+                                        var args = std.ArrayList(ast.Type){};
+                                        try args.append(self.allocator, inner_type);
+                                        break :blk args;
+                                    },
+                                    .constraints = std.ArrayList(ast.TypeConstraint){},
+                                }};
+                            },
+                            else => {
+                                // Other basic types don't support generics, continue normal parsing
+                            }
+                        }
+                    },
+                    else => {}
+                }
+            }
+            
             // Check for array suffix []
             if (self.match(.LeftBracket)) {
                 // Check for size or empty for slice
@@ -1128,8 +1167,8 @@ pub const Parser = struct {
                 
         _ = try self.consume(.RightBracket, "Expected ']'");
                 
-                const element_type_ptr = try self.allocator.create(ast.Type);
-                errdefer self.allocator.destroy(element_type_ptr);
+                const element_type_ptr = try self.arena_allocator.create(ast.Type);
+        
                 element_type_ptr.* = base_type;
                 
                 return ast.Type{ .Array = ast.ArrayType{
@@ -1155,8 +1194,8 @@ pub const Parser = struct {
             
         _ = try self.consume(.RightBracket, "Expected ']'");
             
-            const element_type_ptr = try self.allocator.create(ast.Type);
-            errdefer self.allocator.destroy(element_type_ptr);
+            const element_type_ptr = try self.arena_allocator.create(ast.Type);
+    
             element_type_ptr.* = try self.parseType();
             
             return ast.Type{ .Array = ast.ArrayType{
@@ -1169,14 +1208,14 @@ pub const Parser = struct {
         if (self.matchIdentifier("map")) {
         _ = try self.consume(.LeftBracket, "Expected '[' after 'map'");
             
-            const key_type_ptr = try self.allocator.create(ast.Type);
-            errdefer self.allocator.destroy(key_type_ptr);
+            const key_type_ptr = try self.arena_allocator.create(ast.Type);
+
             key_type_ptr.* = try self.parseType();
             
         _ = try self.consume(.RightBracket, "Expected ']'");
             
-            const value_type_ptr = try self.allocator.create(ast.Type);
-            errdefer self.allocator.destroy(value_type_ptr);
+            const value_type_ptr = try self.arena_allocator.create(ast.Type);
+
             value_type_ptr.* = try self.parseType();
             
             return ast.Type{ .Map = ast.MapType{
@@ -1190,8 +1229,8 @@ pub const Parser = struct {
         if (self.check(.Dm) or self.matchIdentifier("dm")) {
             _ = self.advance();
             if (self.match(.Less) or self.match(.LeftAngle) or self.match(.LeftBracket)) {
-                const element_type_ptr = try self.allocator.create(ast.Type);
-                errdefer self.allocator.destroy(element_type_ptr);
+                const element_type_ptr = try self.arena_allocator.create(ast.Type);
+        
                 element_type_ptr.* = try self.parseType();
                 
                 // Match the corresponding closing bracket
@@ -1232,8 +1271,8 @@ pub const Parser = struct {
                 
                 var return_type: ?*ast.Type = null;
                 if (self.match(.Arrow)) {
-                    return_type = try self.allocator.create(ast.Type);
-                    errdefer self.allocator.destroy(return_type.?);
+                    return_type = try self.arena_allocator.create(ast.Type);
+            
                     return_type.?.* = try self.parseType();
                 }
                 
@@ -1296,6 +1335,7 @@ pub const Parser = struct {
             if (std.mem.eql(u8, type_name, "extra")) return ast.Type{ .Basic = .Extra };
             if (std.mem.eql(u8, type_name, "lit")) return ast.Type{ .Basic = .Lit };
             if (std.mem.eql(u8, type_name, "cap")) return ast.Type{ .Basic = .Cap };
+            if (std.mem.eql(u8, type_name, "yikes")) return ast.Type{ .Basic = .Yikes };
             
             // Custom struct or interface type
             return ast.Type{ .Struct = ast.StructType{
@@ -1324,8 +1364,8 @@ pub const Parser = struct {
             // Parse return type (optional)
             var return_type: ?*ast.Type = null;
             if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd()) {
-                return_type = try self.allocator.create(ast.Type);
-                errdefer self.allocator.destroy(return_type.?);
+                return_type = try self.arena_allocator.create(ast.Type);
+        
                 return_type.?.* = try self.parseType();
             }
             
@@ -1336,7 +1376,14 @@ pub const Parser = struct {
             }};
         }
 
-        // Basic types using keywords
+        // Basic types using keywords (with generic support for yikes)
+        if (self.match(.Yikes)) {
+            // Check for generic syntax yikes<T>
+            if (self.match(.Less) or self.match(.LeftAngle)) {
+                return try self.parseGenericType("yikes");
+            }
+            return ast.Type{ .Basic = .Yikes };
+        }
         if (self.match(.Normie)) return ast.Type{ .Basic = .Normie };
         if (self.match(.Tea)) return ast.Type{ .Basic = .Tea };
         if (self.match(.Txt)) return ast.Type{ .Basic = .Txt };
@@ -1489,7 +1536,8 @@ pub const Parser = struct {
     fn isStringExpression(_: *Parser, expr: Expression) bool {
         switch (expr) {
             .String => return true,
-            .Identifier => return true, // Could be a string variable
+            // Only treat identifiers as strings if we have clear evidence
+            // Identifiers alone should not trigger string concatenation to avoid conflicts with arithmetic
             .Call => return true, // Could return a string
             .MemberAccess => return true, // Could be a string property
             else => return false,
@@ -1514,7 +1562,7 @@ pub const Parser = struct {
     }
 
     fn parseUnary(self: *Parser) ParserError!Expression {
-        if (self.match(.Bang) or self.match(.Minus) or self.match(.Plus) or self.match(.Star) or self.match(.Amp)) {
+        if (self.match(.Bang) or self.match(.Minus) or self.match(.Star) or self.match(.Amp)) {
             const operator = self.previous().lexeme;
             const right = try self.parseUnary();
             
@@ -1576,8 +1624,8 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement);
-            errdefer self.allocator.destroy(stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement);
+
             stmt_ptr.* = stmt;
             try try_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
         }
@@ -1602,8 +1650,8 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement);
-                errdefer self.allocator.destroy(stmt_ptr);
+                const stmt_ptr = try self.arena_allocator.create(Statement);
+
                 stmt_ptr.* = stmt;
                 try catch_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
             }
@@ -1626,8 +1674,8 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement);
-                errdefer self.allocator.destroy(stmt_ptr);
+                const stmt_ptr = try self.arena_allocator.create(Statement);
+
                 stmt_ptr.* = stmt;
                 try finally_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
             }
@@ -1668,7 +1716,7 @@ pub const Parser = struct {
                     if (!self.check(.RightParen)) {
                         while (true) {
                             const arg = try self.parseExpression();
-                            const arg_ptr = try self.allocator.create(Expression);
+                            const arg_ptr = try self.arena_allocator.create(Expression);
                             arg_ptr.* = arg;
                             try arguments.append(self.allocator, arg_ptr);
 
@@ -1734,7 +1782,7 @@ pub const Parser = struct {
                 if (self.check(.RightParen)) break;
                 
                 const arg = try self.parseExpression();
-                const arg_ptr = try self.allocator.create(Expression);
+                const arg_ptr = try self.arena_allocator.create(Expression);
                 arg_ptr.* = arg;
                 try arguments.append(self.allocator, arg_ptr);
 
@@ -1899,9 +1947,9 @@ pub const Parser = struct {
         _ = try self.consume(.Colon, "Expected ':' after map key");
                     const value = try self.parseExpression();
                     
-                    const key_ptr = try self.allocator.create(Expression);
+                    const key_ptr = try self.arena_allocator.create(Expression);
                     key_ptr.* = key;
-                    const value_ptr = try self.allocator.create(Expression);
+                    const value_ptr = try self.arena_allocator.create(Expression);
                     value_ptr.* = value;
                     
                     try entries.append(self.allocator, ast.MapEntry{
@@ -1963,7 +2011,7 @@ pub const Parser = struct {
                 var buffer_size: ?*Expression = null;
                 if (!self.check(.RightParen)) {
                     const buffer_expr = try self.parseExpression();
-                    const buffer_ptr = try self.allocator.create(Expression);
+                    const buffer_ptr = try self.arena_allocator.create(Expression);
                     buffer_ptr.* = buffer_expr;
                     buffer_size = buffer_ptr;
                 }
@@ -1987,7 +2035,7 @@ pub const Parser = struct {
                 var buffer_size: ?*Expression = null;
                 if (!self.check(.RightParen)) {
                     const buffer_expr = try self.parseExpression();
-                    const buffer_ptr = try self.allocator.create(Expression);
+                    const buffer_ptr = try self.arena_allocator.create(Expression);
                     buffer_ptr.* = buffer_expr;
                     buffer_size = buffer_ptr;
                 }
@@ -2043,7 +2091,7 @@ pub const Parser = struct {
         _ = try self.consume(.Colon, "Expected ':' after field name");
                 const value = try self.parseExpression();
                 
-                const value_ptr = try self.allocator.create(Expression);
+                const value_ptr = try self.arena_allocator.create(Expression);
                 value_ptr.* = value;
                 
                 try fields.append(self.allocator, ast.FieldInitializer{
@@ -2099,12 +2147,12 @@ pub const Parser = struct {
             
             var guard_ptr: ?*anyopaque = null;
             if (guard) |g| {
-                const g_ptr = try self.allocator.create(Expression);
+                const g_ptr = try self.arena_allocator.create(Expression);
                 g_ptr.* = g;
                 guard_ptr = try self.expressionToAnyopaque(g_ptr);
             }
             
-            const result_ptr = try self.allocator.create(Expression);
+            const result_ptr = try self.arena_allocator.create(Expression);
             result_ptr.* = result;
             
             try cases.append(self.allocator, ast.MatchCase{
@@ -2168,8 +2216,8 @@ pub const Parser = struct {
             
             // For now, convert patterns to expressions (simplified)
             // In a full implementation, you'd handle pattern-to-expression conversion properly
-            const start_expr = try self.allocator.create(Expression);
-            const end_expr = try self.allocator.create(Expression);
+            const start_expr = try self.arena_allocator.create(Expression);
+            const end_expr = try self.arena_allocator.create(Expression);
             
             // Convert literal patterns to expressions
             switch (start_pattern) {
@@ -2347,8 +2395,8 @@ pub const Parser = struct {
         // Parse optional return value
         if (!self.check(.Semicolon) and !self.check(.Newline) and !self.isAtEnd() and !self.check(.RightBrace)) {
             const value_expr = try self.parseExpression();
-            const value_ptr = try self.allocator.create(Expression);
-            errdefer self.allocator.destroy(value_ptr);
+            const value_ptr = try self.arena_allocator.create(Expression);
+
             value_ptr.* = value_expr;
             return_stmt.value = try self.expressionToAnyopaque(value_ptr);
         }
@@ -2383,8 +2431,8 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); 
-            errdefer self.allocator.destroy(stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); 
+
             stmt_ptr.* = stmt; 
             try then_branch.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
         }
@@ -2401,8 +2449,8 @@ pub const Parser = struct {
                 // else if
                 const elif_stmt = try self.parseIfStatement();
                 const if_stmt = Statement{ .If = elif_stmt };
-                const if_stmt_ptr = try self.allocator.create(Statement);
-                errdefer self.allocator.destroy(if_stmt_ptr);
+                const if_stmt_ptr = try self.arena_allocator.create(Statement);
+        
                 if_stmt_ptr.* = if_stmt;
                 try else_stmts.append(self.allocator, try self.statementToAnyopaque(if_stmt_ptr));
             } else {
@@ -2413,8 +2461,8 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); 
-                    errdefer self.allocator.destroy(stmt_ptr);
+                    const stmt_ptr = try self.arena_allocator.create(Statement); 
+    
                     stmt_ptr.* = stmt; 
                     try else_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
                 }
@@ -2425,8 +2473,8 @@ pub const Parser = struct {
             else_branch = else_stmts;
         }
         
-        const condition_ptr = try self.allocator.create(Expression);
-        errdefer self.allocator.destroy(condition_ptr);
+        const condition_ptr = try self.arena_allocator.create(Expression);
+
         condition_ptr.* = condition;
         
         return ast.IfStatement{
@@ -2461,12 +2509,12 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
-        const condition_ptr = try self.allocator.create(Expression);
+        const condition_ptr = try self.arena_allocator.create(Expression);
         condition_ptr.* = condition;
         
         // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
@@ -2510,14 +2558,14 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+                const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
             }
             
         _ = try self.consume(.RightBrace, "Expected '}'");
             
             var condition_ptr: ?*Expression = null;
             if (condition) |cond| {
-                const cond_ptr = try self.allocator.create(Expression);
+                const cond_ptr = try self.arena_allocator.create(Expression);
                 cond_ptr.* = cond;
                 condition_ptr = cond_ptr;
             }
@@ -2563,24 +2611,24 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
         
         return Statement{ .For = ast.ForStatement{
             .init = if (init_stmt) |stmt| blk: {
-                const stmt_ptr = try self.allocator.create(Statement);
+                const stmt_ptr = try self.arena_allocator.create(Statement);
                 stmt_ptr.* = stmt;
                 break :blk stmt_ptr;
             } else null,
             .condition = if (condition) |cond| blk: {
-                const cond_ptr = try self.allocator.create(Expression);
+                const cond_ptr = try self.arena_allocator.create(Expression);
                 cond_ptr.* = cond;
                 break :blk cond_ptr;
             } else null,
             .update = if (update) |stmt| blk: {
-                const stmt_ptr = try self.allocator.create(Statement);
+                const stmt_ptr = try self.arena_allocator.create(Statement);
                 stmt_ptr.* = stmt;
                 break :blk stmt_ptr;
             } else null,
@@ -2614,7 +2662,7 @@ pub const Parser = struct {
         
         // Parse iterable expression
         const iterable = try self.parseExpression();
-        const iterable_ptr = try self.allocator.create(Expression);
+        const iterable_ptr = try self.arena_allocator.create(Expression);
         iterable_ptr.* = iterable;
         
         // Parse body
@@ -2628,7 +2676,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2793,7 +2841,7 @@ pub const Parser = struct {
             }
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement);
+            const stmt_ptr = try self.arena_allocator.create(Statement);
             stmt_ptr.* = stmt;
             try body.append(self.allocator, stmt_ptr);
         }
@@ -3027,7 +3075,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); 
+            const stmt_ptr = try self.arena_allocator.create(Statement); 
             stmt_ptr.* = stmt; 
             try body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
         }
@@ -3052,7 +3100,7 @@ pub const Parser = struct {
                 if (self.match(.Newline)) continue;
                 
                 const stmt = try self.parseStatement();
-                const stmt_ptr = try self.allocator.create(Statement); 
+                const stmt_ptr = try self.arena_allocator.create(Statement); 
                 stmt_ptr.* = stmt; 
                 try body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
             }
@@ -3075,7 +3123,7 @@ pub const Parser = struct {
         _ = try self.consume(.VibeCheck, "Expected 'vibe check'");
         
         const expression = try self.parseExpression();
-        const expression_ptr = try self.allocator.create(Expression);
+        const expression_ptr = try self.arena_allocator.create(Expression);
         expression_ptr.* = expression;
         
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -3095,7 +3143,7 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
                 }
                 
                 // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
@@ -3116,7 +3164,7 @@ pub const Parser = struct {
                 var guard: ?*Expression = null;
                 if (self.matchIdentifier("if")) {
                     const guard_expr = try self.parseExpression();
-                    const guard_ptr = try self.allocator.create(Expression);
+                    const guard_ptr = try self.arena_allocator.create(Expression);
                     guard_ptr.* = guard_expr;
                     guard = guard_ptr;
                 }
@@ -3128,7 +3176,7 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try case_body.append(self.allocator, stmt_ptr);
+                    const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try case_body.append(self.allocator, stmt_ptr);
                 }
                 
                 try patterns.append(self.allocator, ast.PatternCase{
@@ -3174,7 +3222,7 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
+                    const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try default_stmts.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
                 }
                 
                 // Convert ArrayList(*anyopaque) to ArrayList(*Statement)
@@ -3199,7 +3247,7 @@ pub const Parser = struct {
                     if (self.match(.Newline)) continue;
                     
                     const stmt = try self.parseStatement();
-                    const stmt_ptr = try self.allocator.create(Statement); 
+                    const stmt_ptr = try self.arena_allocator.create(Statement); 
                     stmt_ptr.* = stmt; 
                     try case_body.append(self.allocator, try self.statementToAnyopaque(stmt_ptr));
                 }
@@ -3226,9 +3274,9 @@ pub const Parser = struct {
         if (self.match(.LeftArrow)) {
             // Send operation: channel <- value
             const value = try self.parseExpression();
-            const channel_ptr = try self.allocator.create(Expression);
+            const channel_ptr = try self.arena_allocator.create(Expression);
             channel_ptr.* = channel;
-            const value_ptr = try self.allocator.create(Expression);
+            const value_ptr = try self.arena_allocator.create(Expression);
             value_ptr.* = value;
             return ast.ChannelOperation{ .Send = .{
                 .channel = channel_ptr,
@@ -3253,7 +3301,7 @@ pub const Parser = struct {
                 // Expect <- and then the actual channel
         _ = try self.consume(.LeftArrow, "Expected '<-'");
                 const actual_channel = try self.parseExpression();
-                const actual_channel_ptr = try self.allocator.create(Expression);
+                const actual_channel_ptr = try self.arena_allocator.create(Expression);
                 actual_channel_ptr.* = actual_channel;
                 
                 return ast.ChannelOperation{ .Receive = .{
@@ -3262,7 +3310,7 @@ pub const Parser = struct {
                 }};
             } else {
                 // Just receiving: <-channel
-                const channel_ptr = try self.allocator.create(Expression);
+                const channel_ptr = try self.arena_allocator.create(Expression);
                 channel_ptr.* = channel;
                 return ast.ChannelOperation{ .Receive = .{
                     .channel = channel_ptr,
@@ -3275,7 +3323,7 @@ pub const Parser = struct {
     fn parseDeferStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.Later, "Expected 'later'");
         
-        const stmt_ptr = try self.allocator.create(Statement);
+        const stmt_ptr = try self.arena_allocator.create(Statement);
         stmt_ptr.* = try self.parseStatement();
         
         return Statement{ .Defer = ast.DeferStatement{ .statement = stmt_ptr } };
@@ -3286,7 +3334,7 @@ pub const Parser = struct {
         
         // Parse error message expression
         const message_expr = try self.parseExpression();
-        const message_ptr = try self.allocator.create(Expression);
+        const message_ptr = try self.arena_allocator.create(Expression);
         message_ptr.* = message_expr;
         
         // Optional error type annotation (yikes "message" as RuntimeError)
@@ -3396,7 +3444,7 @@ pub const Parser = struct {
         _ = try self.consume(.Equal, "Expected '=' after constant name");
         
         const value = try self.parseExpression();
-        const value_ptr = try self.allocator.create(Expression);
+        const value_ptr = try self.arena_allocator.create(Expression);
         value_ptr.* = value;
         
         return ast.ConstDecl{
@@ -3450,7 +3498,7 @@ pub const Parser = struct {
             // Tuple values: (1, 2, 3)
             while (!self.check(.RightParen) and !self.isAtEnd()) {
                 const value = try self.parseExpression();
-                const value_ptr = try self.allocator.create(Expression);
+                const value_ptr = try self.arena_allocator.create(Expression);
                 value_ptr.* = value;
                 try values.append(self.allocator, value_ptr);
                 
@@ -3461,13 +3509,13 @@ pub const Parser = struct {
         } else {
             // Single value or comma-separated: 1, 2
             const value = try self.parseExpression();
-            const value_ptr = try self.allocator.create(Expression);
+            const value_ptr = try self.arena_allocator.create(Expression);
             value_ptr.* = value;
             try values.append(self.allocator, value_ptr);
             
             while (self.match(.Comma)) {
                 const next_value = try self.parseExpression();
-                const next_value_ptr = try self.allocator.create(Expression);
+                const next_value_ptr = try self.arena_allocator.create(Expression);
                 next_value_ptr.* = next_value;
                 try values.append(self.allocator, next_value_ptr);
             }
@@ -3480,14 +3528,13 @@ pub const Parser = struct {
     }
 
     fn parseAssignmentStatement(self: *Parser) ParserError!Statement {
-        // CRITICAL FIX: Enhanced assignment parsing to handle complex expressions correctly
-        const target = try self.parseExpression();
-        const target_ptr = try self.allocator.create(Expression);
-        errdefer self.allocator.destroy(target_ptr);
+        // Parse only the left-hand side (target) without consuming assignment operator
+        const target = try self.parsePrimary(); // Use parsePrimary instead of parseExpression
+        const target_ptr = try self.arena_allocator.create(Expression);
+
         target_ptr.* = target;
         
-        // CRITICAL: Enhanced assignment operator validation
-        // This prevents complex expressions from being misinterpreted as assignments
+        // Now check for assignment operator
         if (self.match(.Equal) or self.match(.PlusEqual) or self.match(.MinusEqual) or
            self.match(.StarEqual) or self.match(.SlashEqual) or self.match(.PercentEqual)) {
             const operator = self.previous().lexeme;
@@ -3499,8 +3546,8 @@ pub const Parser = struct {
             }
             
             const value = try self.parseExpression();
-            const value_ptr = try self.allocator.create(Expression);
-            errdefer self.allocator.destroy(value_ptr);
+            const value_ptr = try self.arena_allocator.create(Expression);
+
             value_ptr.* = value;
             
             return Statement{ .Assignment = ast.AssignmentStatement{
@@ -3578,7 +3625,7 @@ pub const Parser = struct {
                self.check(.Sip) or self.check(.Smol) or self.check(.Mid) or
                self.check(.Thicc) or self.check(.Snack) or self.check(.Meal) or
                self.check(.Byte) or self.check(.Rune) or self.check(.Extra) or
-               self.check(.Lit) or self.check(.Cap) or self.check(.Identifier);
+               self.check(.Lit) or self.check(.Cap) or self.check(.Yikes) or self.check(.Identifier);
     }
 
     fn advance(self: *Parser) Token {
@@ -3670,24 +3717,42 @@ pub const Parser = struct {
     }
 
     fn isAssignment(self: *Parser) bool {
-        // Simple assignment detection
+        // Enhanced assignment detection for simple cases like "x = 10"
         var pos = self.current;
         
-        // Skip over primary expression tokens
+        // Must start with an identifier for assignment
+        if (pos >= self.tokens.len or self.tokens[pos].kind != .Identifier) {
+            return false;
+        }
+        pos += 1;
+        
+        // Look for assignment operator immediately after identifier
+        if (pos >= self.tokens.len) {
+            return false;
+        }
+        
+        const token_kind = self.tokens[pos].kind;
+        if (token_kind == .Equal or token_kind == .PlusEqual or 
+           token_kind == .MinusEqual or token_kind == .StarEqual or
+           token_kind == .SlashEqual or token_kind == .PercentEqual) {
+            return true;
+        }
+        
+        // For more complex left-hand sides, search for assignment operators
         while (pos < self.tokens.len) {
-            const token_kind = self.tokens[pos].kind;
-            if (token_kind == .Equal or token_kind == .PlusEqual or 
-               token_kind == .MinusEqual or token_kind == .StarEqual or
-               token_kind == .SlashEqual or token_kind == .PercentEqual) {
+            const current_kind = self.tokens[pos].kind;
+            if (current_kind == .Equal or current_kind == .PlusEqual or 
+               current_kind == .MinusEqual or current_kind == .StarEqual or
+               current_kind == .SlashEqual or current_kind == .PercentEqual) {
                 return true;
             }
-            if (token_kind == .Semicolon or token_kind == .Newline or 
-               token_kind == .LeftBrace or token_kind == .RightBrace) {
+            // Stop at statement terminators
+            if (current_kind == .Semicolon or current_kind == .Newline or 
+               current_kind == .LeftBrace or current_kind == .RightBrace) {
                 return false;
             }
             pos += 1;
         }
-        
         return false;
     }
 
@@ -3819,13 +3884,13 @@ pub const Parser = struct {
 
     // Memory allocation helpers
     fn allocateExpression(self: *Parser, expr: Expression) ParserError!*Expression {
-        const ptr = self.allocator.create(Expression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(Expression) catch return ParserError.OutOfMemory;
         ptr.* = expr;
         return ptr;
     }
 
     fn allocateUnaryExpression(self: *Parser, unary: ast.UnaryExpression) ParserError!*ast.UnaryExpression {
-        const ptr = self.allocator.create(ast.UnaryExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.UnaryExpression) catch return ParserError.OutOfMemory;
         ptr.* = unary;
         return ptr;
     }
@@ -3874,31 +3939,31 @@ pub const Parser = struct {
     }
 
     fn allocateMemberAccess(self: *Parser, member_access: ast.MemberAccessExpression) ParserError!*ast.MemberAccessExpression {
-        const ptr = self.allocator.create(ast.MemberAccessExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.MemberAccessExpression) catch return ParserError.OutOfMemory;
         ptr.* = member_access;
         return ptr;
     }
 
     fn allocateArrayExpression(self: *Parser, array_expr: ast.ArrayExpression) ParserError!*ast.ArrayExpression {
-        const ptr = self.allocator.create(ast.ArrayExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.ArrayExpression) catch return ParserError.OutOfMemory;
         ptr.* = array_expr;
         return ptr;
     }
 
     fn allocateMapExpression(self: *Parser, map_expr: ast.MapExpression) ParserError!*ast.MapExpression {
-        const ptr = self.allocator.create(ast.MapExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.MapExpression) catch return ParserError.OutOfMemory;
         ptr.* = map_expr;
         return ptr;
     }
 
     fn allocateMethodCall(self: *Parser, method_call: ast.MethodCallExpression) ParserError!*ast.MethodCallExpression {
-        const ptr = self.allocator.create(ast.MethodCallExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.MethodCallExpression) catch return ParserError.OutOfMemory;
         ptr.* = method_call;
         return ptr;
     }
 
     fn allocateStructExpression(self: *Parser, struct_expr: ast.StructExpression) ParserError!*ast.StructExpression {
-        const ptr = self.allocator.create(ast.StructExpression) catch return ParserError.OutOfMemory;
+        const ptr = self.arena_allocator.create(ast.StructExpression) catch return ParserError.OutOfMemory;
         ptr.* = struct_expr;
         return ptr;
     }
@@ -4162,6 +4227,10 @@ pub const Parser = struct {
             return ast.Type{ .Basic = ast.BasicType.Cap };
         }
         
+        if (self.match(.Yikes)) {
+            return ast.Type{ .Basic = ast.BasicType.Yikes };
+        }
+        
         // Function types with slay keyword
         if (self.match(.Slay)) {
             // Parse function type: slay() return_type or slay(param_types) return_type
@@ -4182,8 +4251,8 @@ pub const Parser = struct {
             // Parse return type (optional)
             var return_type: ?*ast.Type = null;
             if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd() and !self.check(.RightBrace)) {
-                return_type = try self.allocator.create(ast.Type);
-                errdefer self.allocator.destroy(return_type.?);
+                return_type = try self.arena_allocator.create(ast.Type);
+        
                 return_type.?.* = try self.parseType();
             }
             
@@ -4297,7 +4366,7 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.allocator.create(Statement); 
+            const stmt_ptr = try self.arena_allocator.create(Statement); 
             stmt_ptr.* = stmt; 
             try func.body.append(self.allocator, stmt_ptr);
         }
@@ -4326,7 +4395,7 @@ pub const Parser = struct {
 
         // Parse default value
         if (self.match(.Equal)) {
-            const default_expr = try self.parseExpression(); const default_ptr = try self.allocator.create(Expression); default_ptr.* = default_expr; param.default_value = @ptrCast(default_ptr);
+            const default_expr = try self.parseExpression(); const default_ptr = try self.arena_allocator.create(Expression); default_ptr.* = default_expr; param.default_value = @ptrCast(default_ptr);
         }
         
         return param;
@@ -4356,7 +4425,7 @@ pub const Parser = struct {
                     const expr_text = str_content[expr_start..end];
                     
                     // Parse expression from text (simplified for now)
-                    const expr_ptr = try self.allocator.create(Expression);
+                    const expr_ptr = try self.arena_allocator.create(Expression);
                     expr_ptr.* = Expression{ .Identifier = expr_text };
                     
                     try interpolation.parts.append(self.allocator, ast.InterpolationPart{
