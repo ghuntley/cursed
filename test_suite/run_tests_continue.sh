@@ -237,9 +237,18 @@ for test_file in "${test_files[@]}"; do
         fi
     fi
     
-    # Continue on all failures to get complete analysis
-    if [[ $test_failed -eq 1 ]]; then
-        echo -e "${YELLOW}Test failed. Continuing...${RESET}"
+    # Exit on first failure unless continue flag is set
+    if [[ $test_failed -eq 1 && 1 -eq 0 ]]; then
+        echo -e "${RED}Test failed. Stopping execution.${RESET}"
+        echo ""
+        echo -e "${BOLD}Results at failure:${RESET}"
+        echo "  Passed: $PASSED"
+        echo "  Failed: $FAILED"
+        echo "  Interpreter Errors: $INTERPRETER_ERRORS"
+        echo "  Compile Errors: $COMPILE_ERRORS"
+        echo "  Total Processed: $TOTAL"
+        echo "  Remaining: $((${#test_files[@]} - TOTAL))"
+        exit 1
     fi
     
     echo "---"
