@@ -25,9 +25,9 @@ slay main_character() {
     
     ready (score >= 90) {
         vibez.spill("Grade A")
-    } else ready (score >= 80) {
+    } otherwise ready (score >= 80) {
         vibez.spill("Grade B")
-    } else ready (score >= 70) {
+    } otherwise ready (score >= 70) {
         vibez.spill("Grade C")
     } otherwise {
         vibez.spill("Grade F")
