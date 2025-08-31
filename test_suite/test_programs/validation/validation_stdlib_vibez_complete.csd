@@ -1,31 +1,31 @@
 vibe main
 yeet "vibez"
 
-// Comprehensive validation test for the vibez stdlib module
-// Tests all output functionality and basic vibez module operations
-// Expected: Multiple lines of output demonstrating vibez.spill() functionality
+fr fr Comprehensive validation test for the vibez stdlib module
+fr fr Tests all output functionality and basic vibez module operations
+fr fr Expected: Multiple lines of output demonstrating vibez.spill() functionality
 
 slay main_character() {
-    // Test basic string output
+    fr fr Test basic tea output
     vibez.spill("=== VIBEZ MODULE VALIDATION ===")
     
-    // Test multiple spill calls
-    vibez.spill("Testing basic string output")
+    fr fr Test multiple spill calls
+    vibez.spill("Testing basic tea output")
     vibez.spill("Testing another line")
     
-    // Test numeric output through spill
+    fr fr Test numeric output through spill
     sus number normie = 42
     vibez.spill("Number test:")
     vibez.spill(number)
     
-    // Test boolean output
+    fr fr Test boolean output
     sus flag lit = based
     vibez.spill("Boolean test:")
     vibez.spill(flag)
     
-    // Test empty output
+    fr fr Test empty output
     vibez.spill("")
     
-    // Test completion message
+    fr fr Test completion message
     vibez.spill("=== VIBEZ VALIDATION COMPLETE ===")
 }

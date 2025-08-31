@@ -9,7 +9,7 @@ fr fr Expected: All keywords should parse without errors
 slay main_character() {
     fr fr Variable declarations using sus
     sus x normie = 42
-    sus y tea = "no cap"
+    sus y tea = "no cringe"
     sus z lit = based
     
     fr fr Function call test

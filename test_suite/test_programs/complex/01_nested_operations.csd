@@ -19,13 +19,13 @@ slay main_character() {
     
     vibez.spill("Nested conditionals:")
     sus x normie = 15
-    lowkey (x > 10) {
-        lowkey (x < 20) {
+    ready (x > 10) {
+        ready (x < 20) {
             vibez.spill("x is between 10 and 20")
-        } highkey {
+        } otherwise {
             vibez.spill("x is 20 or greater")
         }
-    } highkey {
+    } otherwise {
         vibez.spill("x is 10 or less")
     }
     

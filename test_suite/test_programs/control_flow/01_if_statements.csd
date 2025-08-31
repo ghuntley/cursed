@@ -10,26 +10,26 @@ slay main_character() {
     
     vibez.spill("x = 10, y = 5")
     
-    lowkey (x > y) {
+    ready (x > y) {
         vibez.spill("x is greater than y")
     }
     
-    lowkey (y > x) {
+    ready (y > x) {
         vibez.spill("y is greater than x")
-    } highkey {
+    } otherwise {
         vibez.spill("x is not less than y")
     }
     
     sus score normie = 85
     vibez.spill("Score evaluation:")
     
-    lowkey (score >= 90) {
+    ready (score >= 90) {
         vibez.spill("Grade A")
-    } else lowkey (score >= 80) {
+    } else ready (score >= 80) {
         vibez.spill("Grade B")
-    } else lowkey (score >= 70) {
+    } else ready (score >= 70) {
         vibez.spill("Grade C")
-    } highkey {
+    } otherwise {
         vibez.spill("Grade F")
     }
     

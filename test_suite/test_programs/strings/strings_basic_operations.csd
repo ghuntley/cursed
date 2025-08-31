@@ -1,7 +1,7 @@
 vibe main
 
-fr fr Test: Basic string operations
-fr fr Purpose: Test string literals and basic string handling
+fr fr Test: Basic tea operations
+fr fr Purpose: Test tea literals and basic tea handling
 fr fr Expected: String literals should parse and be handled correctly
 
 slay main_character() {
@@ -19,7 +19,7 @@ slay main_character() {
         sus different lit = based  
     }
     
-    fr fr Empty string check
+    fr fr Empty tea check
     ready empty == "" {
         sus is_empty lit = based
     }

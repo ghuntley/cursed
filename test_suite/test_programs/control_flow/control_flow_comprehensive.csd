@@ -6,11 +6,11 @@ fr fr Test: Comprehensive control flow structures
 fr fr Purpose: Validate all control flow constructs work correctly
 fr fr Expected: All control flow should execute in proper sequence
 
-damn main() {
+slay main_character() {
     vibez.spill("=== Testing Control Flow ===");
     
 fr fr Simple if-else
-    sus x: i32 = 10;
+    sus x: normie = 10;
     if x > 5 {
         vibez.spill("x is greater than 5");
     } else {
@@ -18,7 +18,7 @@ fr fr Simple if-else
     }
     
 fr fr Nested if statements
-    sus y: i32 = 15;
+    sus y: normie = 15;
     if x > 0 {
         if y > x {
             vibez.spill("Both x and y are positive, y > x");
@@ -28,8 +28,8 @@ fr fr Nested if statements
     }
     
 fr fr Complex boolean conditions
-    sus a: bool = true;
-    sus b: bool = false;
+    sus a: lit = true;
+    sus b: lit = false;
     
     if (a && !b) || (x > y) {
         vibez.spill("Complex boolean condition 1 passed");
@@ -40,7 +40,7 @@ fr fr Complex boolean conditions
     }
     
 fr fr Multiple else-if chain (if supported)
-    sus grade: i32 = 85;
+    sus grade: normie = 85;
     if grade >= 90 {
         vibez.spill("Grade A");
     } else if grade >= 80 {
@@ -52,7 +52,7 @@ fr fr Multiple else-if chain (if supported)
     }
     
 fr fr Control flow with function calls
-    sus result: bool = check_condition(x, y);
+    sus result: lit = check_condition(x, y);
     if result {
         vibez.spill("Function returned true");
     } else {
@@ -64,9 +64,9 @@ fr fr Control flow with expressions
         vibez.spill("Expression-based condition passed");
     }
     
-    return 0;
+    damn 0;
 }
 
-damn check_condition(val1: i32, val2: i32) -> bool {
-    return val1 < val2;
+damn check_condition(val1: normie, val2: normie) -> lit {
+    damn val1 < val2;
 }

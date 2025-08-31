@@ -4,9 +4,9 @@ yeet "mathz"
 yeet "stringz"
 yeet "collections"
 
-// Large-scale processing stress test
-// Tests handling of large datasets, extensive loops, and memory management
-// Expected: Successful processing of large amounts of data
+fr fr Large-scale processing stress test
+fr fr Tests handling of large datasets, extensive loops, and memory management
+fr fr Expected: Successful processing of large amounts of data
 
 slay generate_large_array(size) {
     sus result []normie = []
@@ -18,7 +18,7 @@ slay generate_large_array(size) {
         i = mathz.add(i, 1)
     }
     
-    return result
+    damn result
 }
 
 slay process_large_dataset(data) {
@@ -33,10 +33,10 @@ slay process_large_dataset(data) {
     sus while i < length {
         sus element normie = collections.get(data, i)
         
-        // Accumulate sum
+        fr fr Accumulate sum
         sum = mathz.add(sum, element)
         
-        // Track max/min
+        fr fr Track max/min
         sus if element > max_value {
             max_value = element
         }
@@ -44,7 +44,7 @@ slay process_large_dataset(data) {
             min_value = element
         }
         
-        // Count even/odd
+        fr fr Count even/odd
         sus mod_result normie = mathz.mod(element, 2)
         sus if mod_result == 0 {
             even_count = mathz.add(even_count, 1)
@@ -67,7 +67,7 @@ slay process_large_dataset(data) {
     vibez.spill("Odd count:")
     vibez.spill(odd_count)
     
-    return sum
+    damn sum
 }
 
 slay intensive_string_processing() {
@@ -83,7 +83,7 @@ slay intensive_string_processing() {
         i = mathz.add(i, 1)
     }
     
-    return result
+    damn result
 }
 
 slay mathematical_stress_test() {
@@ -100,33 +100,33 @@ slay mathematical_stress_test() {
         i = mathz.add(i, 1)
     }
     
-    return accumulator
+    damn accumulator
 }
 
 slay main_character() {
     vibez.spill("=== LARGE-SCALE PROCESSING STRESS TEST ===")
     
-    // Generate and process a large dataset
+    fr fr Generate and process a large dataset
     vibez.spill("Generating large array (size 100)...")
     sus large_array normie = generate_large_array(100)
     
     vibez.spill("Processing large dataset...")
     sus dataset_sum normie = process_large_dataset(large_array)
     
-    // Intensive string processing
-    vibez.spill("Performing intensive string processing...")
+    fr fr Intensive tea processing
+    vibez.spill("Performing intensive tea processing...")
     sus complex_string normie = intensive_string_processing()
     sus string_length tea = stringz.length(complex_string)
-    vibez.spill("Complex string length:")
+    vibez.spill("Complex tea length:")
     vibez.spill(string_length)
     
-    // Mathematical stress test
+    fr fr Mathematical stress test
     vibez.spill("Running mathematical stress test...")
     sus math_result normie = mathematical_stress_test()
     vibez.spill("Mathematical stress test result:")
     vibez.spill(math_result)
     
-    // Combined operations stress test
+    fr fr Combined operations stress test
     vibez.spill("Combined operations test...")
     sus combined_result normie = 0
     sus outer_loop normie = 0
@@ -147,7 +147,7 @@ slay main_character() {
     vibez.spill("Combined operations result:")
     vibez.spill(combined_result)
     
-    // Final comprehensive validation
+    fr fr Final comprehensive validation
     sus final_validation normie = (dataset_sum > 0) && (string_length > 50) && (math_result > 0.0)
     vibez.spill("All stress tests passed:")
     vibez.spill(final_validation)
