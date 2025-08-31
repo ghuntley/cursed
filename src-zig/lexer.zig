@@ -237,14 +237,111 @@ pub const Lexer = struct {
         
         while (!self.isAtEnd()) {
             const token = try self.nextToken();
-            // Skip comments and newlines like the Rust version
-            if (token.kind != .Newline and token.kind != .LineComment and token.kind != .BlockComment) {
+            // Skip comments but keep newlines for semicolon insertion
+            if (token.kind != .LineComment and token.kind != .BlockComment) {
                 try tokens.append(self.allocator, token);
             }
             if (token.kind == .Eof) break;
         }
         
-        return tokens;
+        // Apply automatic semicolon insertion rules
+        return try self.insertAutomaticSemicolons(tokens);
+    }
+
+    /// Implements automatic semicolon insertion following Go's rules
+    fn insertAutomaticSemicolons(self: *Lexer, mut_tokens: ArrayList(Token)) !ArrayList(Token) {
+        var tokens = mut_tokens;
+        var result = ArrayList(Token){};
+        errdefer result.deinit(self.allocator);
+        
+        var i: usize = 0;
+        while (i < tokens.items.len) {
+            const current_token = tokens.items[i];
+            try result.append(self.allocator, current_token);
+            
+            // Check if we should insert a semicolon after this token
+            if (i + 1 < tokens.items.len) {
+                const next_token = tokens.items[i + 1];
+                
+                // If the next token is a newline and the current token can end a statement
+                if (next_token.kind == .Newline and self.canEndStatement(current_token.kind)) {
+                    // Look ahead to see if the token after the newline can start a new statement
+                    var next_non_newline_idx = i + 1;
+                    while (next_non_newline_idx < tokens.items.len and tokens.items[next_non_newline_idx].kind == .Newline) {
+                        next_non_newline_idx += 1;
+                    }
+                    
+                    if (next_non_newline_idx < tokens.items.len) {
+                        const token_after_newline = tokens.items[next_non_newline_idx];
+                        
+                        // Only insert semicolon if the next non-newline token doesn't prevent it
+                        if (!self.preventsAutomaticSemicolon(token_after_newline.kind)) {
+                            // Insert semicolon
+                            const semicolon_token = Token{
+                                .kind = .Semicolon,
+                                .lexeme = ";",
+                                .line = current_token.line,
+                                .column = current_token.column + @as(u32, @intCast(current_token.lexeme.len)),
+                                .offset = current_token.offset + current_token.lexeme.len,
+                            };
+                            try result.append(self.allocator, semicolon_token);
+                        }
+                    }
+                }
+            }
+            
+            i += 1;
+        }
+        
+        // Clean up original tokens
+        tokens.deinit(self.allocator);
+        return result;
+    }
+    
+    /// Check if a token can legally end a statement (requires semicolon insertion)
+    fn canEndStatement(self: *Lexer, token_kind: TokenKind) bool {
+        _ = self;
+        return switch (token_kind) {
+            // Identifiers
+            .Identifier => true,
+            
+            // Literals
+            .Number, .Integer, .StringLiteral, .String, .Character,
+            .Based, .Cringe, .Nah, .Boolean => true,
+            
+            // Keywords that can end statements
+            .Damn, .Yolo, .Ghosted, .Simp => true, // return, break, continue
+            
+            // Closing punctuation
+            .RightParen, .RightBracket, .RightBrace => true,
+            
+            // Increment/decrement operators
+            .PlusPlus, .MinusMinus => true,
+            
+            else => false,
+        };
+    }
+    
+    /// Check if a token prevents automatic semicolon insertion
+    fn preventsAutomaticSemicolon(self: *Lexer, token_kind: TokenKind) bool {
+        _ = self;
+        return switch (token_kind) {
+            // Binary operators that can continue on the next line
+            .Plus, .Minus, .Star, .Slash, .Percent => true,
+            .EqualEqual, .BangEqual, .Less, .LessEqual, .Greater, .GreaterEqual => true,
+            .AmpAmp, .PipePipe => true,
+            
+            // Punctuation that can continue expressions
+            .Comma, .Dot => true,
+            
+            // Opening punctuation
+            .LeftParen, .LeftBracket => true,
+            
+            // else, otherwise keywords  
+            .Else, .Otherwise => true,
+            
+            else => false,
+        };
     }
 
     pub fn nextToken(self: *Lexer) !Token {
