@@ -5,13 +5,13 @@ yeet "vibez"
 slay fizzbuzz(n) {
     sus i normie = 1
     periodt (i <= n) {
-        lowkey (i % 15 == 0) {
+        ready (i % 15 == 0) {
             vibez.spill("FizzBuzz")
-        } else lowkey (i % 3 == 0) {
+        } else ready (i % 3 == 0) {
             vibez.spill("Fizz")  
-        } else lowkey (i % 5 == 0) {
+        } else ready (i % 5 == 0) {
             vibez.spill("Buzz")
-        } highkey {
+        } otherwise {
             vibez.spill(i)
         }
         i = i + 1

@@ -1,6 +1,6 @@
 vibe main
 
-fr fr Test: Function parameters and return values
+fr fr Test: Function parameters and damn values
 fr fr Purpose: Test function definition and calling with various signatures
 fr fr Expected: All function calls should work correctly
 

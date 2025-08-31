@@ -1,6 +1,7 @@
 vibe main
+yeet "vibez"
 
-sus main() -> std_int {
-    yap("Hello, CURSED World!");
+sus main_character() -> std_int {
+    vibez.spill("Hello, CURSED World!");
     damn 0;
 }

@@ -3,14 +3,14 @@ vibe main
 yeet "vibez"
 
 slay factorial(n) {
-    lowkey (n <= 1) {
+    ready (n <= 1) {
         damn 1
     }
     damn n * factorial(n - 1)
 }
 
 slay countdown(n) {
-    lowkey (n > 0) {
+    ready (n > 0) {
         vibez.spill(n)
         countdown(n - 1)
     }

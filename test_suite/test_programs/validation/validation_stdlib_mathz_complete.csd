@@ -2,14 +2,14 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 
-// Comprehensive validation test for the mathz stdlib module
-// Tests all mathematical operations and edge cases
-// Expected: Mathematical operations with correct results
+fr fr Comprehensive validation test for the mathz stdlib module
+fr fr Tests all mathematical operations and edge cases
+fr fr Expected: Mathematical operations with correct results
 
 slay main_character() {
     vibez.spill("=== MATHZ MODULE VALIDATION ===")
     
-    // Test basic arithmetic operations
+    fr fr Test basic arithmetic operations
     sus result_add normie = mathz.add(15, 27)
     vibez.spill("15 + 27 =")
     vibez.spill(result_add)
@@ -26,7 +26,7 @@ slay main_character() {
     vibez.spill("84 / 4 =")
     vibez.spill(result_div)
     
-    // Test absolute value
+    fr fr Test absolute value
     sus result_abs_pos normie = mathz.abs(42)
     sus result_abs_neg normie = mathz.abs(-42)
     vibez.spill("abs(42) =")
@@ -34,12 +34,12 @@ slay main_character() {
     vibez.spill("abs(-42) =")
     vibez.spill(result_abs_neg)
     
-    // Test power operation
+    fr fr Test power operation
     sus result_pow normie = mathz.power(2, 8)
     vibez.spill("2^8 =")
     vibez.spill(result_pow)
     
-    // Test modulo
+    fr fr Test modulo
     sus result_mod normie = mathz.mod(17, 5)
     vibez.spill("17 % 5 =")
     vibez.spill(result_mod)

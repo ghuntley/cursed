@@ -1,4 +1,5 @@
 vibe main
+yeet "vibez"
 
 slay no_params() normie {
     damn 42;
@@ -13,11 +14,11 @@ slay multiple_params(a normie, b normie, c normie) normie {
     damn result;
 }
 
-slay main() normie {
-    yap("Function parameters test");
+slay main_character() normie {
+    vibez.spill("Function parameters test");
     sus result1 normie = no_params();
     sus result2 normie = one_param(10);
     sus result3 normie = multiple_params(1, 2, 3);
-    yap("All function calls completed");
+    vibez.spill("All function calls completed");
     damn 0;
 }

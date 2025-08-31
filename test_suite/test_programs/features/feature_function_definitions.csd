@@ -30,7 +30,7 @@ slay say_hello() {
     vibez.spill("Hello from CURSED!")
 }
 
-fr fr Function with return type
+fr fr Function with damn type
 slay add_numbers(a normie, b normie) normie {
     damn a + b
 }

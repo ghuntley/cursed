@@ -3,7 +3,7 @@ vibe main
 yeet "vibez"
 
 slay deep_recursion(n) {
-    lowkey (n <= 0) {
+    ready (n <= 0) {
         damn 0
     }
     damn 1 + deep_recursion(n - 1)

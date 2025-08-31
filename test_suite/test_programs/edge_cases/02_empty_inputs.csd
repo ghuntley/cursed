@@ -3,7 +3,7 @@ vibe main
 yeet "vibez"
 
 slay handle_empty(x) {
-    lowkey (x == 0) {
+    ready (x == 0) {
         damn "zero"
     }
     damn "non-zero"
@@ -12,10 +12,10 @@ slay handle_empty(x) {
 slay main_character() {
     vibez.spill("=== Empty Inputs Test ===")
     
-    vibez.spill("Empty string:")
+    vibez.spill("Empty tea:")
     sus empty_str tea = ""
     vibez.spill(empty_str)
-    vibez.spill("After empty string")
+    vibez.spill("After empty tea")
     
     vibez.spill("Zero value:")
     vibez.spill(handle_empty(0))

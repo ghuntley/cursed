@@ -3,7 +3,7 @@ vibe main
 yeet "vibez"
 
 slay fibonacci(n) {
-    lowkey (n <= 1) {
+    ready (n <= 1) {
         damn n
     }
     damn fibonacci(n - 1) + fibonacci(n - 2)

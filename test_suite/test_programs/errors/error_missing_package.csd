@@ -1,3 +1,4 @@
+vibe main
 fr fr Test: Missing package declaration error
 fr fr Purpose: Test error handling when package declaration is missing
 fr fr Expected: Should fail with clear error message
