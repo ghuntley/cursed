@@ -1,5 +1,4 @@
-yeet "vibez"
+fr fr Test calling simple CURSED function
 
-slay main_character() {
-    vibez.spill("Hello")
-}
+sus result drip = testz.simple_add(2, 3)
+vibez.spillln("Result:", result)

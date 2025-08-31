@@ -1,12 +1,3 @@
-yeet "fmt"
-yeet "vibez"
+fr fr FMT MODULE TEST
 
-slay test_fmt() {
-    sus num normie = 42
-    sus formatted tea = fmt.format_int(num)
-    vibez.spill("Format test completed")
-}
-
-slay main_character() {
-    test_fmt()
-}
+sus result = fmt.simple_format(42)
