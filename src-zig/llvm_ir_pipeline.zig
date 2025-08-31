@@ -401,6 +401,12 @@ pub const LLVMIRPipeline = struct {
             .Assignment => |assign_stmt| {
                 try self.generateAssignmentStatement(assign_stmt);
             },
+            .If => |if_stmt| {
+                try self.generateIfStatement(if_stmt);
+            },
+            .Return => |return_stmt| {
+                try self.generateReturnStatement(return_stmt);
+            },
             else => {
                 print("⚠️ Unhandled statement type in IR generation: {s}\n", .{@tagName(stmt)});
             },
@@ -450,7 +456,8 @@ pub const LLVMIRPipeline = struct {
             c.LLVMSetValueName(llvm_param, param_name_z.ptr);
             
             // Create alloca for parameter and store value
-            const param_alloca = c.LLVMBuildAlloca(self.builder, try self.cursedTypeToLLVM(param.param_type), param_name_z.ptr);
+            const param_type = try self.cursedTypeToLLVM(param.param_type);
+            const param_alloca = self.buildEntryAlloca(function, param_type, param_name_z.ptr);
             _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
             try self.variables.put(param.name, param_alloca);
         }
@@ -524,9 +531,11 @@ pub const LLVMIRPipeline = struct {
             c.LLVMSetValueName(llvm_param, param_name_z.ptr);
             
             // Create alloca for parameter and store value
-            const param_alloca = c.LLVMBuildAlloca(self.builder, try self.cursedTypeToLLVM(param.param_type), param_name_z.ptr);
+            const param_type = try self.cursedTypeToLLVM(param.param_type);
+            const param_alloca = self.buildEntryAlloca(self.current_function.?, param_type, param_name_z.ptr);
             _ = c.LLVMBuildStore(self.builder, llvm_param, param_alloca);
             try self.variables.put(param.name, param_alloca);
+            try self.variable_types.put(param.name, param_type);
         }
         
         // Generate function body
@@ -564,9 +573,9 @@ pub const LLVMIRPipeline = struct {
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
         // Check if we're in a function context or at global scope
-        if (self.current_function) |_| {
-            // Inside a function - create alloca
-            const alloca = c.LLVMBuildAlloca(self.builder, llvm_type, var_name_z.ptr);
+        if (self.current_function) |func| {
+            // Inside a function - create alloca in entry block
+            const alloca = self.buildEntryAlloca(func, llvm_type, var_name_z.ptr);
             try self.variables.put(var_decl.name, alloca);
             try self.variable_types.put(var_decl.name, llvm_type);
             
@@ -712,6 +721,125 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
+    /// Generate If statement (lowkey statements)
+    fn generateIfStatement(self: *LLVMIRPipeline, if_stmt: ast.IfStatement) !void {
+        if (self.current_function == null) {
+            print("❌ If statements can only be used inside functions\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        }
+        
+        // Cast condition from *anyopaque to *Expression
+        const condition_expr: *ast.Expression = @ptrCast(@alignCast(if_stmt.condition));
+        
+        // Create basic blocks for then, else (if present), and merge
+        const then_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "if_then");
+        const else_block = if (if_stmt.else_branch != null) 
+            c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "if_else") 
+        else 
+            null;
+        const merge_block = c.LLVMAppendBasicBlockInContext(self.context, self.current_function.?, "if_merge");
+        
+        // Generate condition
+        const condition_val = try self.generateExpression(condition_expr.*);
+        
+        // Convert condition to boolean if needed
+        const bool_condition = if (c.LLVMGetTypeKind(c.LLVMTypeOf(condition_val)) == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(c.LLVMTypeOf(condition_val)) != 1)
+            c.LLVMBuildICmp(self.builder, c.LLVMIntNE, condition_val, c.LLVMConstInt(c.LLVMTypeOf(condition_val), 0, 0), "if_bool")
+        else 
+            condition_val;
+            
+        // Create conditional branch
+        const else_target = else_block orelse merge_block;
+        _ = c.LLVMBuildCondBr(self.builder, bool_condition, then_block, else_target);
+        
+        // Generate then block
+        c.LLVMPositionBuilderAtEnd(self.builder, then_block);
+        for (if_stmt.then_branch.items) |stmt_ptr| {
+            const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+            try self.generateStatement(stmt.*);
+        }
+        
+        // Add branch to merge block if no terminator exists
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            _ = c.LLVMBuildBr(self.builder, merge_block);
+        }
+        
+        // Generate else block if present
+        if (if_stmt.else_branch) |else_branch| {
+            if (else_block) |eb| {
+                c.LLVMPositionBuilderAtEnd(self.builder, eb);
+                for (else_branch.items) |stmt_ptr| {
+                    const stmt: *ast.Statement = @ptrCast(@alignCast(stmt_ptr));
+                    try self.generateStatement(stmt.*);
+                }
+                
+                // Add branch to merge block if no terminator exists
+                if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+                    _ = c.LLVMBuildBr(self.builder, merge_block);
+                }
+            }
+        }
+        
+        // Position builder at merge block for next statements
+        c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+    }
+    
+    /// Generate Return statement (damn statements)
+    fn generateReturnStatement(self: *LLVMIRPipeline, return_stmt: ast.ReturnStatement) !void {
+        const parent = self.current_function orelse {
+            print("❌ Return statements can only be used inside functions\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        };
+        
+        if (return_stmt.value) |value_ptr| {
+            // Cast return value from *anyopaque to *Expression
+            const return_expr: *ast.Expression = @ptrCast(@alignCast(value_ptr));
+            const ret_val = try self.generateExpression(return_expr.*);
+            
+            // Ensure return type matches function signature
+            const func_type = c.LLVMGlobalGetValueType(parent);
+            const func_ret_ty = c.LLVMGetReturnType(func_type);
+            const final_val = if (func_ret_ty == c.LLVMTypeOf(ret_val))
+                ret_val
+            else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMIntegerTypeKind and
+                     c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMIntegerTypeKind)
+                c.LLVMBuildIntCast(self.builder, ret_val, func_ret_ty, "ret.cast")
+            else
+                return LLVMIRError.UndefinedVariable; // Type mismatch
+                
+            _ = c.LLVMBuildRet(self.builder, final_val);
+        } else {
+            // Void return
+            _ = c.LLVMBuildRetVoid(self.builder);
+        }
+        
+        // Create a continuation block so later statements have somewhere to go
+        const cont_blk = c.LLVMAppendBasicBlockInContext(self.context, parent, "after_ret");
+        c.LLVMPositionBuilderAtEnd(self.builder, cont_blk);
+    }
+    
+    /// Build alloca in entry block to ensure dominance
+    fn buildEntryAlloca(
+        self: *LLVMIRPipeline,
+        function: c.LLVMValueRef,
+        ty: c.LLVMTypeRef,
+        name: [*:0]const u8) c.LLVMValueRef {
+
+        const entry = c.LLVMGetEntryBasicBlock(function);
+
+        // A throw-away builder just for the alloca
+        const tmp = c.LLVMCreateBuilderInContext(self.context);
+        defer c.LLVMDisposeBuilder(tmp);
+
+        if (c.LLVMGetFirstInstruction(entry) != null) {
+            c.LLVMPositionBuilderBefore(tmp, c.LLVMGetFirstInstruction(entry));
+        } else {
+            c.LLVMPositionBuilderAtEnd(tmp, entry);
+        }
+
+        return c.LLVMBuildAlloca(tmp, ty, name);
+    }
+
     /// Generate constant expression (for global variable initializers)
     fn generateConstantExpression(self: *LLVMIRPipeline, expr: ast.Expression) !c.LLVMValueRef {
         switch (expr) {
@@ -1124,6 +1252,20 @@ pub const LLVMIRPipeline = struct {
                 return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGT, left, right, "fgt_tmp");
             } else {
                 return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
+            }
+        } else if (std.mem.eql(u8, bin_op.operator, "=")) {
+            // Single = is equality comparison in CURSED (like == in other languages)
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left, right, "feq_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
+            }
+        } else if (std.mem.eql(u8, bin_op.operator, "%")) {
+            // Modulo operation
+            if (is_float) {
+                return c.LLVMBuildFRem(self.builder, left, right, "fmod_tmp");
+            } else {
+                return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
             }
         } else {
             print("⚠️ Unhandled binary operator: {s}\n", .{bin_op.operator});
@@ -1796,9 +1938,14 @@ pub const LLVMIRPipeline = struct {
             _ = c.LLVMBuildCall2(self.builder, main_char_function_type, main_char_func, @ptrCast(empty_args[0..0]), 0, "");
         }
 
-        // Return 0
-        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
-        _ = c.LLVMBuildRet(self.builder, zero);
+        // Add proper terminator if block doesn't have one
+        if (c.LLVMGetBasicBlockTerminator(c.LLVMGetInsertBlock(self.builder)) == null) {
+            // Return 0 with correct type
+            const func_type = c.LLVMGlobalGetValueType(main_func);
+            const func_ret_ty = c.LLVMGetReturnType(func_type);
+            const zero = c.LLVMConstInt(func_ret_ty, 0, 0);
+            _ = c.LLVMBuildRet(self.builder, zero);
+        }
         
         // Clear current function context
         self.current_function = null;
