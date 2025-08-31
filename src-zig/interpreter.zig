@@ -40,7 +40,7 @@ fn formatFloatLikeC(allocator: Allocator, value: f64) ![]u8 {
     
     // For decimal values, use %g-like behavior with limited significant digits
     // Note: Zig's {d} doesn't have %g's exact rounding behavior, so we approximate
-    const formatted = std.fmt.allocPrint(allocator, "{d:.6}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
+    const formatted = std.fmt.allocPrint(allocator, "{d:.5}", .{value}) catch return std.fmt.allocPrint(allocator, "{d}", .{value});
     
     // Remove trailing zeros after decimal point (like %g does)
     var result = formatted;
@@ -1548,7 +1548,17 @@ pub const Interpreter = struct {
         const right = try self.evaluateExpression(bin.right.*);
         
         if (std.mem.eql(u8, bin.operator, "+")) {
-            if (left.isNumber() and right.isNumber()) {
+            if (left == .Integer and right == .Integer) {
+                // Integer + Integer with overflow checking
+                const result = @addWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    const left_float = @as(f64, @floatFromInt(left.Integer));
+                    const right_float = @as(f64, @floatFromInt(right.Integer));
+                    return Value{ .Float = left_float + right_float };
+                }
+                return Value{ .Integer = result[0] };
+            } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Float = left_num + right_num };
@@ -1568,28 +1578,66 @@ pub const Interpreter = struct {
                 return Value{ .OwnedString = concatenated };
             }
         } else if (std.mem.eql(u8, bin.operator, "-")) {
-            if (left.isNumber() and right.isNumber()) {
+            if (left == .Integer and right == .Integer) {
+                // Integer - Integer with overflow checking
+                const result = @subWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    const left_float = @as(f64, @floatFromInt(left.Integer));
+                    const right_float = @as(f64, @floatFromInt(right.Integer));
+                    return Value{ .Float = left_float - right_float };
+                }
+                return Value{ .Integer = result[0] };
+            } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Float = left_num - right_num };
             }
         } else if (std.mem.eql(u8, bin.operator, "*")) {
-            if (left.isNumber() and right.isNumber()) {
+            if (left == .Integer and right == .Integer) {
+                // Integer * Integer with overflow checking
+                const result = @mulWithOverflow(left.Integer, right.Integer);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    const left_float = @as(f64, @floatFromInt(left.Integer));
+                    const right_float = @as(f64, @floatFromInt(right.Integer));
+                    return Value{ .Float = left_float * right_float };
+                }
+                return Value{ .Integer = result[0] };
+            } else if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Float = left_num * right_num };
             }
         } else if (std.mem.eql(u8, bin.operator, "/")) {
             if (left.isNumber() and right.isNumber()) {
-                const left_num = try left.toNumber();
-                const right_num = try right.toNumber();
+                // Check if both operands are integers
+                const is_left_integer = left == .Integer;
+                const is_right_integer = right == .Integer;
                 
-                if (right_num == 0.0) {
-                    return InterpreterError.DivisionByZero;
+                if (is_left_integer and is_right_integer) {
+                    // Integer / Integer -> Integer division (like Go, C, etc.)
+                    const left_int = left.Integer;
+                    const right_int = right.Integer;
+                    
+                    if (right_int == 0) {
+                        return InterpreterError.DivisionByZero;
+                    }
+                    
+                    const result = @divTrunc(left_int, right_int);
+                    return Value{ .Integer = result };
+                } else {
+                    // If either operand is float, perform float division
+                    const left_num = try left.toNumber();
+                    const right_num = try right.toNumber();
+                    
+                    if (right_num == 0.0) {
+                        return InterpreterError.DivisionByZero;
+                    }
+                    
+                    const result = left_num / right_num;
+                    return Value{ .Float = result };
                 }
-                
-                const result = left_num / right_num;
-                return Value{ .Float = result };
             }
         } else if (std.mem.eql(u8, bin.operator, "%")) {
             if (left.isNumber() and right.isNumber()) {
@@ -1646,7 +1694,16 @@ pub const Interpreter = struct {
         
         if (std.mem.eql(u8, unary.operator, "-")) {
             // Unary minus
-            if (operand.isNumber()) {
+            if (operand == .Integer) {
+                // Check for overflow on integer negation
+                // For CURSED normie (32-bit), minimum value is -2^31 = -2147483648
+                if (operand.Integer == -2147483648) {
+                    // Convert to float to avoid overflow
+                    const pos_float = -@as(f64, @floatFromInt(operand.Integer));
+                    return Value{ .Float = pos_float };
+                }
+                return Value{ .Integer = -operand.Integer };
+            } else if (operand.isNumber()) {
                 const num = try operand.toNumber();
                 return Value{ .Float = -num };
             } else {
@@ -3725,7 +3782,20 @@ fn builtinMathzAbs(interpreter: *Interpreter, args: []Value) InterpreterError!Va
     const val = args[0];
     switch (val) {
         .Float => |f| return Value{ .Float = if (f < 0) -f else f },
-        .Integer => |i| return Value{ .Integer = if (i < 0) -i else i },
+        .Integer => |i| {
+            if (i < 0) {
+                // Check for overflow when negating minimum integer value
+                // For CURSED normie (32-bit), minimum value is -2^31 = -2147483648
+                if (i == -2147483648) {
+                    // Convert to float to avoid overflow - use positive conversion
+                    const pos_float = -@as(f64, @floatFromInt(i));
+                    return Value{ .Float = pos_float };
+                }
+                return Value{ .Integer = -i };
+            } else {
+                return Value{ .Integer = i };
+            }
+        },
         else => return InterpreterError.TypeMismatch,
     }
 }
@@ -3805,7 +3875,15 @@ fn builtinMathzAdd(interpreter: *Interpreter, args: []Value) InterpreterError!Va
             else => return InterpreterError.TypeMismatch,
         },
         .Integer => |a_i| switch (b) {
-            .Integer => |b_i| return Value{ .Integer = a_i + b_i },
+            .Integer => |b_i| {
+                // Check for overflow and promote to float if needed
+                const result = @addWithOverflow(a_i, b_i);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(a_i)) + @as(f64, @floatFromInt(b_i)) };
+                }
+                return Value{ .Integer = result[0] };
+            },
             .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) + b_f },
             else => return InterpreterError.TypeMismatch,
         },
@@ -3827,7 +3905,15 @@ fn builtinMathzSub(interpreter: *Interpreter, args: []Value) InterpreterError!Va
             else => return InterpreterError.TypeMismatch,
         },
         .Integer => |a_i| switch (b) {
-            .Integer => |b_i| return Value{ .Integer = a_i - b_i },
+            .Integer => |b_i| {
+                // Check for overflow and promote to float if needed
+                const result = @subWithOverflow(a_i, b_i);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(a_i)) - @as(f64, @floatFromInt(b_i)) };
+                }
+                return Value{ .Integer = result[0] };
+            },
             .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) - b_f },
             else => return InterpreterError.TypeMismatch,
         },
@@ -3849,7 +3935,15 @@ fn builtinMathzMul(interpreter: *Interpreter, args: []Value) InterpreterError!Va
             else => return InterpreterError.TypeMismatch,
         },
         .Integer => |a_i| switch (b) {
-            .Integer => |b_i| return Value{ .Integer = a_i * b_i },
+            .Integer => |b_i| {
+                // Check for overflow and promote to float if needed
+                const result = @mulWithOverflow(a_i, b_i);
+                if (result[1] != 0) {
+                    // Overflow occurred, promote to float
+                    return Value{ .Float = @as(f64, @floatFromInt(a_i)) * @as(f64, @floatFromInt(b_i)) };
+                }
+                return Value{ .Integer = result[0] };
+            },
             .Float => |b_f| return Value{ .Float = @as(f64, @floatFromInt(a_i)) * b_f },
             else => return InterpreterError.TypeMismatch,
         },
@@ -3879,7 +3973,8 @@ fn builtinMathzDiv(interpreter: *Interpreter, args: []Value) InterpreterError!Va
         .Integer => |a_i| switch (b) {
             .Integer => |b_i| {
                 if (b_i == 0) return InterpreterError.DivisionByZero;
-                return Value{ .Float = @as(f64, @floatFromInt(a_i)) / @as(f64, @floatFromInt(b_i)) };
+                // Integer / Integer -> Integer division (following CURSED semantics)
+                return Value{ .Integer = @divTrunc(a_i, b_i) };
             },
             .Float => |b_f| {
                 if (b_f == 0.0) return InterpreterError.DivisionByZero;
