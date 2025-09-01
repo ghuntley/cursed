@@ -2068,7 +2068,18 @@ pub const LLVMIRPipeline = struct {
             } else if (type_kind == c.LLVMIntegerTypeKind) {
                 // Integer types - check bit width
                 const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);
-                if (bit_width <= 32) {
+                if (bit_width == 1) {
+                    // Boolean type (i1) - convert to "based" or "cap" string
+                    const based_str = try self.generateStringLiteral("based\n");
+                    const cap_str = try self.generateStringLiteral("cap\n");
+                    
+                    // Select the appropriate string based on the boolean value
+                    const selected_str = c.LLVMBuildSelect(self.builder, arg_val, based_str, cap_str, "bool_to_string");
+                    
+                    // Use %s format for string output
+                    fmt_str = try self.generateStringLiteral("%s");
+                    converted_arg = selected_str;
+                } else if (bit_width <= 32) {
                     // 32-bit or smaller integers
                     fmt_str = try self.generateStringLiteral("%d\n");
                     // Ensure it's 32-bit for printf
