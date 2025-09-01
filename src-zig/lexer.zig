@@ -252,7 +252,10 @@ pub const Lexer = struct {
     fn insertAutomaticSemicolons(self: *Lexer, mut_tokens: ArrayList(Token)) !ArrayList(Token) {
         var tokens = mut_tokens;
         var result = ArrayList(Token){};
-        errdefer result.deinit(self.allocator);
+        errdefer {
+            result.deinit(self.allocator);
+            tokens.deinit(self.allocator); // FIXED: Clean up original tokens on error too
+        }
         
         var i: usize = 0;
         while (i < tokens.items.len) {
@@ -293,7 +296,7 @@ pub const Lexer = struct {
             i += 1;
         }
         
-        // Clean up original tokens
+        // FIXED: Clean up original tokens properly
         tokens.deinit(self.allocator);
         return result;
     }
