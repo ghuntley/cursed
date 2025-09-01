@@ -770,6 +770,16 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate variable declaration
     fn generateVariableDeclaration(self: *LLVMIRPipeline, var_decl: ast.LetStatement) !void {
+        // MEMORY SAFETY: Validate variable name before using it
+        if (var_decl.name.len == 0) {
+            print("❌ ERROR: Empty variable name in declaration\n", .{});
+            return LLVMIRError.UndefinedVariable;
+        }
+        // Basic memory safety check by trying to access first character
+        const first_char = var_decl.name[0]; // This will crash if pointer is bad
+        _ = first_char; // Use the variable to prevent compiler warnings
+        print("🔍 DEBUG: Processing variable declaration: '{s}' (len: {d})\n", .{var_decl.name, var_decl.name.len});
+        
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
         // Generate initializer first if present to determine type
@@ -790,8 +800,11 @@ pub const LLVMIRPipeline = struct {
         if (self.current_function) |func| {
             // Inside a function - create alloca in entry block
             const alloca = self.buildEntryAlloca(func, llvm_type, var_name_z.ptr);
-            try self.variables.put(var_decl.name, alloca);
-            try self.variable_types.put(var_decl.name, llvm_type);
+            // MEMORY SAFETY: Create a proper owned copy for HashMap key
+            const safe_name = try self.arena.allocator().dupe(u8, var_decl.name);
+            print("🔧 DEBUG: Created safe copy of variable name: '{s}'\n", .{safe_name});
+            try self.variables.put(safe_name, alloca);
+            try self.variable_types.put(safe_name, llvm_type);
             
             // Store initializer if present
             if (init_value) |init_val| {
@@ -822,8 +835,11 @@ pub const LLVMIRPipeline = struct {
                 
             const global_var = c.LLVMAddGlobal(self.module, llvm_type, var_name_z.ptr);
             c.LLVMSetInitializer(global_var, initializer_value);
-            try self.variables.put(var_decl.name, global_var);
-            try self.variable_types.put(var_decl.name, llvm_type);
+            // MEMORY SAFETY: Create a proper owned copy for HashMap key
+            const safe_name = try self.arena.allocator().dupe(u8, var_decl.name);
+            print("🔧 DEBUG: Created safe copy of global variable name: '{s}'\n", .{safe_name});
+            try self.variables.put(safe_name, global_var);
+            try self.variable_types.put(safe_name, llvm_type);
         }
     }
     
