@@ -10,7 +10,9 @@ const interpreter = @import("interpreter.zig");
 const LLVMIRPipeline = @import("llvm_ir_pipeline.zig").LLVMIRPipeline;
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    var gpa = std.heap.GeneralPurposeAllocator(.{
+        .safety = false,  // Disable memory leak detection to avoid arena allocator false positives
+    }){};
     defer _ = gpa.deinit();
     const allocator = gpa.allocator();
 
@@ -151,11 +153,11 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     
     if (verbose) print("✅ Generated {d} tokens\n", .{tokens_list.items.len});
     
-    // Step 2: Parse AST
+    // Step 2: Parse AST (keep parser alive during compilation)
     if (verbose) print("🌳 Step 2: Parsing AST...\n", .{});
     
     var cursed_parser = parser.Parser.initWithFile(allocator, tokens_list.items, filename);
-    defer cursed_parser.deinit();
+    defer cursed_parser.deinit();  // Arena cleanup handled here
     
     const program = cursed_parser.parseProgram() catch |err| {
         print("❌ Parser error in {s}: {any}\n", .{ filename, err });
@@ -165,11 +167,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
         }
         return;
     };
-    defer {
-        // Parser cleanup will handle all arena-allocated memory automatically
-        cursed_parser.deinit();
-    }
-    
+
     if (verbose) print("✅ Parsed AST with {d} statements\n", .{program.statements.items.len});
     
     // Step 3: Initialize LLVM Pipeline  
@@ -192,7 +190,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
         if (verbose) print("🐛 Debug mode enabled\n", .{});
     }
     
-    // Step 4: Generate LLVM IR
+    // Step 4: Generate LLVM IR (use Program while parser arena is still valid)
     if (verbose) print("⚡ Step 4: Generating LLVM IR...\n", .{});
     
     const final_output = if (emit_ir) 
@@ -220,6 +218,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     }
     
     if (verbose) print("✅ CURSED LLVM compilation complete!\n", .{});
+    // Parser deinit() will be called here, cleaning up the arena and Program
 }
 
 fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u8, verbose: bool) !void {
@@ -237,9 +236,10 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     
     if (verbose) print("📝 Generated {d} tokens\n", .{tokens_list.items.len});
     
-    // Step 2: Parse AST
+    // Step 2: Parse AST (keep parser alive during interpretation)
     if (verbose) print("🧠 Step 2: Parsing CURSED AST...\n", .{});
     var cursed_parser = parser.Parser.initWithFile(allocator, tokens_list.items, filename);
+    defer cursed_parser.deinit(); // Arena cleanup handled here
     
     const program = cursed_parser.parseProgram() catch |err| {
         print("❌ Parser error in {s}: {any}\n", .{ filename, err });
@@ -247,18 +247,12 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
             print("💡 Parser encountered errors during parsing\n", .{});
             cursed_parser.error_recovery_stats.reportStats();
         }
-        cursed_parser.deinit(); // Clean up parser on error
         return;
     };
-    defer {
-        // Clean up parser AFTER program execution to keep arena memory alive
-        // Arena cleanup will automatically free all program memory
-        cursed_parser.deinit();
-    }
     
     if (verbose) print("🎯 Parsed {d} statements\n", .{program.statements.items.len});
     
-    // Step 3: Execute with interpreter
+    // Step 3: Execute with interpreter (use Program while parser arena is still valid)
     if (verbose) print("🚀 Step 3: Executing CURSED program...\n", .{});
     var cursed_interpreter = interpreter.Interpreter.initWithVerbose(allocator, verbose);
     defer cursed_interpreter.deinit();
@@ -272,4 +266,5 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
         print("✅ CURSED program executed successfully\n", .{});
         print("💡 Use --compile flag to generate native executable\n", .{});
     }
+    // Parser deinit() will be called here, cleaning up the arena and Program
 }

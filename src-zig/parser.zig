@@ -415,7 +415,7 @@ pub const Parser = struct {
 
         _ = try self.consume(.RightParen, "Expected ')' after arguments");
         
-        // FIXED: Use arena allocator for arguments_copy to prevent memory leaks
+        // FIXED: Use arena allocator for arguments_copy to prevent memory leaks  
         var arguments_copy = ArrayList(*Expression){};
         for (arguments.items) |arg| {
             try arguments_copy.append(self.arena_allocator, arg);
@@ -492,8 +492,8 @@ pub const Parser = struct {
     pub fn parseProgram(self: *Parser) ParserError!Program {
         var program = Program.init(self.arena_allocator);
         errdefer {
-            program.deinit(self.arena_allocator);
-            self.arena.deinit();
+            // Skip program.deinit() - arena cleanup will handle all allocations
+            // No need to deinit arena here - it will be handled by parser.deinit()
         }
         
         var statement_count: usize = 0;

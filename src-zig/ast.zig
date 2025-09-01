@@ -260,9 +260,8 @@ pub const Program = struct {
     }
 
     pub fn deinit(self: *Program, allocator: Allocator) void {
-        // CRITICAL FIX: Don't destroy arena-allocated statements
-        // The arena allocator will clean up all Statement objects when it's deinitialized
-        // Only clean up the ArrayList that holds the pointers, not the statements themselves
+        // When using arena allocator, the arena cleanup handles all allocations
+        // Only clean up the ArrayList containers, not their contents
         self.statements.deinit(allocator);
         
         for (self.imports.items) |*import| {
