@@ -502,8 +502,10 @@ pub const Environment = struct {
         // Clean up all values (names are not duplicated)
         var iterator = self.variables.iterator();
         while (iterator.next()) |entry| {
-            entry.value_ptr.*.deinit(self.allocator);
-            self.allocator.destroy(entry.value_ptr.*);
+            // entry.value_ptr is **Value (pointer to *Value), so:
+            // entry.value_ptr.* is *Value (the stored pointer)
+            entry.value_ptr.*.deinit(self.allocator);  // deinit the Value
+            self.allocator.destroy(entry.value_ptr.*); // destroy the Value pointer
         }
         self.variables.deinit();
     }
@@ -1463,7 +1465,7 @@ pub const Interpreter = struct {
     }
 
     pub fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
-        // Removed DEBUG: Evaluating expression type: {s}\n", .{@tagName(expr)});
+
         switch (expr) {
             .Integer => |int| return Value{ .Integer = int },
             .Float => |float| return Value{ .Float = float },
@@ -1557,9 +1559,7 @@ pub const Interpreter = struct {
     fn evaluateBinary(self: *Interpreter, bin: ast.BinaryExpression) InterpreterError!Value {
         const left = try self.evaluateExpression(bin.left.*);
         const right = try self.evaluateExpression(bin.right.*);
-        
 
-        
         if (std.mem.eql(u8, bin.operator, "+")) {
             if (left == .Integer and right == .Integer) {
                 // Integer + Integer with overflow checking
