@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 
 yeet "mathz"
 yeet "vibez"

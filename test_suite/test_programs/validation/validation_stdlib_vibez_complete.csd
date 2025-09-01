@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 yeet "vibez"
 
 fr fr Comprehensive validation test for the vibez stdlib module

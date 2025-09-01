@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 
 fr fr Test: Parser error recovery
 fr fr Purpose: Test that parser can handle and recover from various syntax scenarios  

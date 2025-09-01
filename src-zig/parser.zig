@@ -400,14 +400,14 @@ pub const Parser = struct {
     fn parsePrattCall(self: *Parser, left: Expression) ParserError!Expression {
         _ = self.advance(); // consume '('
         var arguments = ArrayList(*Expression){};
-        defer arguments.deinit(self.allocator);
+        defer arguments.deinit(self.arena_allocator);
 
         if (!self.check(.RightParen)) {
             while (true) {
                 const arg = try self.parseExpression();
                 const arg_ptr = try self.arena_allocator.create(Expression);
                 arg_ptr.* = arg;
-                try arguments.append(self.allocator, arg_ptr);
+                try arguments.append(self.arena_allocator, arg_ptr);
 
                 if (!self.match(.Comma)) break;
             }
@@ -415,10 +415,10 @@ pub const Parser = struct {
 
         _ = try self.consume(.RightParen, "Expected ')' after arguments");
         
-        // CRITICAL FIX: Clone the arguments to prevent use-after-free
+        // FIXED: Use arena allocator for arguments_copy to prevent memory leaks
         var arguments_copy = ArrayList(*Expression){};
         for (arguments.items) |arg| {
-            try arguments_copy.append(self.allocator, arg);
+            try arguments_copy.append(self.arena_allocator, arg);
         }
 
         return Expression{ .Call = .{
@@ -440,7 +440,7 @@ pub const Parser = struct {
         if (self.check(.LeftParen)) {
             _ = self.advance(); // '('
             var arguments = ArrayList(*Expression){};
-            defer arguments.deinit(self.allocator);
+            defer arguments.deinit(self.arena_allocator);
             
             if (!self.check(.RightParen)) {
                 while (true) {
@@ -451,17 +451,17 @@ pub const Parser = struct {
                     };
                     const arg_ptr = try self.arena_allocator.create(Expression);
                     arg_ptr.* = arg;
-                    try arguments.append(self.allocator, arg_ptr);
+                    try arguments.append(self.arena_allocator, arg_ptr);
                     
                     if (!self.match(.Comma)) break;
                 }
             }
             _ = try self.consume(.RightParen, "Expected ')' after arguments");
             
-            // CRITICAL FIX: Clone the arguments to prevent use-after-free
+            // FIXED: Use arena allocator for arguments_copy to prevent memory leaks
             var arguments_copy = ArrayList(*Expression){};
             for (arguments.items) |arg| {
-                try arguments_copy.append(self.allocator, arg);
+                try arguments_copy.append(self.arena_allocator, arg);
             }
             
             return Expression{ .MethodCall = try self.allocateMethodCall(ast.MethodCallExpression{
@@ -490,9 +490,9 @@ pub const Parser = struct {
     }
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
-        var program = Program.init(self.allocator);
+        var program = Program.init(self.arena_allocator);
         errdefer {
-            program.deinit(self.allocator);
+            program.deinit(self.arena_allocator);
             self.arena.deinit();
         }
         
@@ -532,7 +532,7 @@ pub const Parser = struct {
                     };
                     stmt_ptr.* = stmt;
                     
-                    program.statements.append(self.allocator, stmt_ptr) catch {
+                    program.statements.append(self.arena_allocator, stmt_ptr) catch {
                         _ = self.reportErrorWithContext("Out of memory adding import statement", "parseProgram") catch {};
                         return ParserError.OutOfMemory;
                     };
@@ -558,7 +558,7 @@ pub const Parser = struct {
                     _ = self.advance();
                 }
                 
-                program.statements.append(self.allocator, stmt_ptr) catch {
+                program.statements.append(self.arena_allocator, stmt_ptr) catch {
                     _ = self.reportErrorWithContext("Out of memory adding statement to program", "parseProgram") catch {};
                     return ParserError.OutOfMemory;
                 };
@@ -1210,7 +1210,7 @@ pub const Parser = struct {
             return ParserError.InvalidFunction;
         }
         
-        var func = FunctionStatement.init(self.allocator, name);
+        var func = FunctionStatement.init(self.arena_allocator, name);
         
         // Parse generic type parameters <T, U>
         if (self.match(.Less) or self.match(.LeftAngle)) {
@@ -1288,7 +1288,7 @@ pub const Parser = struct {
                 // continue consuming
             }
             
-            try func.body.append(self.allocator, stmt_ptr);
+            try func.body.append(self.arena_allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -1302,28 +1302,27 @@ pub const Parser = struct {
             _ = self.match(.Facts);
         }
         
+        // CURSED syntax: sus <identifier> <type> = <expr>
+        // First parse the identifier (variable name), then optional type
         if (!self.check(.Identifier)) {
             return ParserError.UnexpectedToken;
         }
         
         const name = self.advance().lexeme;
         
+        // Parse optional type annotation after identifier
+        var var_type: ?Type = null;
+        if (self.checkBasicType()) {
+            var_type = try self.parseType();
+        }
+        
         var let_stmt = LetStatement{
             .name = name,
-            .var_type = null,
-            .type_annotation = null,
+            .var_type = var_type,
+            .type_annotation = var_type,
             .initializer = null,
             .is_mutable = is_mutable,
         };
-        
-        // Parse type annotation (sus x tea = "hello" or sus x: tea)
-        if (self.match(.Colon)) {
-            let_stmt.var_type = try self.parseType();
-            let_stmt.type_annotation = let_stmt.var_type;
-        } else if (self.checkType()) {
-            let_stmt.var_type = try self.parseType();
-            let_stmt.type_annotation = let_stmt.var_type;
-        }
         
         // Parse initializer
         if (self.match(.Equal) or self.match(.ColonEqual)) {

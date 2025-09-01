@@ -1,9 +1,7 @@
 vibe main
-
 yeet "vibez"
 
 slay main_character() {
-    sus x drip = 42
-    vibez.spill("Number:")
+    sus x normie = 10
     vibez.spill(x)
 }

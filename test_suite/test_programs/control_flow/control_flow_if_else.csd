@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 yeet "vibez"
 
 fr fr Test: If-else control flow

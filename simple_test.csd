@@ -1,3 +1,5 @@
-slay hello() {
-    vibez.spill("Hello World")
+vibe main
+
+slay main_character() {
+    
 }
