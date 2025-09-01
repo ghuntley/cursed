@@ -278,6 +278,7 @@ pub const Parser = struct {
             .Greater, .GreaterEqual, .Less, .LessEqual => .Comparison,
             .Plus, .Minus => .Term,
             .Star, .Slash, .Percent => .Factor,
+            .PlusPlus, .MinusMinus => .Unary,
             .LeftParen, .LeftBracket => .Call,
             .Dot => .Access,
             else => .None,
@@ -297,6 +298,7 @@ pub const Parser = struct {
             .LeftBracket => parsePrattArrayOrComposite,
             .LeftBrace => parsePrattMapOrComposite,
             .Bang, .Minus, .Star, .Amp => parsePrattUnary,
+            .PlusPlus, .MinusMinus => parsePrattPrefixIncrement,
             else => null,
         };
     }
@@ -313,6 +315,7 @@ pub const Parser = struct {
             .LeftParen => parsePrattCall,
             .Dot => parsePrattMemberAccess,
             .LeftBracket => parsePrattArrayAccess,
+            .PlusPlus, .MinusMinus => parsePrattPostfixIncrement,
             else => null,
         };
     }
@@ -665,6 +668,29 @@ pub const Parser = struct {
             .array = array_ptr,
             .index = index_ptr,
         }};
+    }
+
+    // Prefix increment/decrement: ++x, --x
+    fn parsePrattPrefixIncrement(self: *Parser) ParserError!Expression {
+        const operator_token = self.advance(); // consume ++ or --
+        const operator = operator_token.lexeme;
+        const operand = try self.parseExpressionPrattPrec(.Unary);
+        
+        return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
+            .operator = operator,
+            .operand = try self.allocateExpression(operand),
+        })};
+    }
+
+    // Postfix increment/decrement: x++, x--
+    fn parsePrattPostfixIncrement(self: *Parser, left: Expression) ParserError!Expression {
+        const operator_token = self.advance(); // consume ++ or --
+        const operator = operator_token.lexeme;
+        
+        return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
+            .operator = operator,
+            .operand = try self.allocateExpression(left),
+        })};
     }
 
     pub fn parseProgram(self: *Parser) ParserError!Program {
@@ -1228,9 +1254,14 @@ pub const Parser = struct {
             return Statement{ .If = try self.parseIfStatement() };
         }
         
-        // While statement (periodt/flex/bestie)
-        if (self.check(.Periodt) or self.check(.Flex) or self.check(.Bestie)) {
+        // While statement (periodt/flex) or For statement (bestie)
+        if (self.check(.Periodt) or self.check(.Flex)) {
             return Statement{ .While = try self.parseWhileStatement() };
+        }
+        
+        // For statement (bestie)
+        if (self.check(.Bestie)) {
+            return try self.parseForStatement();
         }
         
         // Break/continue
@@ -3162,13 +3193,23 @@ pub const Parser = struct {
     fn parseForStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.Bestie, "Expected 'bestie'");
         
+        if (builtin.mode == .Debug) {
+            std.debug.print("DEBUG: parseForStatement started\n", .{});
+        }
+        
         // Check for range-for loop (bestie var := flex ...)
         if (self.isRangeForLoop()) {
+            if (builtin.mode == .Debug) {
+                std.debug.print("DEBUG: detected range for loop\n", .{});
+            }
             return try self.parseRangeForStatement();
         }
         
         // Check if it's a while-style for loop (no semicolons)
         if (!self.hasSemicolonsBeforeBrace()) {
+            if (builtin.mode == .Debug) {
+                std.debug.print("DEBUG: detected while-style for loop\n", .{});
+            }
             // While-style for loop: bestie condition { ... }
             var condition: ?Expression = null;
             
@@ -3233,7 +3274,7 @@ pub const Parser = struct {
         // Parse body
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = std.ArrayList(u8){};
+        var body = ArrayList(*Statement){};
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -3241,7 +3282,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement);
+            stmt_ptr.* = stmt;
+            try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -3298,7 +3341,7 @@ pub const Parser = struct {
         // Parse body
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
-        var body = std.ArrayList(u8){};
+        var body = ArrayList(*Statement){};
         self.in_loop = true;
         defer { self.in_loop = false; }
         
@@ -3306,7 +3349,9 @@ pub const Parser = struct {
             if (self.match(.Newline)) continue;
             
             const stmt = try self.parseStatement();
-            const stmt_ptr = try self.arena_allocator.create(Statement); stmt_ptr.* = stmt; try body.append(self.allocator, stmt_ptr);
+            const stmt_ptr = try self.arena_allocator.create(Statement);
+            stmt_ptr.* = stmt;
+            try body.append(self.allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -4464,8 +4509,15 @@ pub const Parser = struct {
         var pos = self.current;
         var semicolon_count: usize = 0;
         
+        if (builtin.mode == .Debug) {
+            std.debug.print("DEBUG: hasSemicolonsBeforeBrace starting at pos {}, current token: {any}\n", .{ pos, if (pos < self.tokens.len) self.tokens[pos].kind else .Eof });
+        }
+        
         while (pos < self.tokens.len) {
             const token = self.tokens[pos];
+            if (builtin.mode == .Debug) {
+                std.debug.print("DEBUG: checking token {}: {any}\n", .{ pos, token.kind });
+            }
             if (token.kind == .LeftBrace) {
                 break;
             }
@@ -4478,6 +4530,9 @@ pub const Parser = struct {
             pos += 1;
         }
         
+        if (builtin.mode == .Debug) {
+            std.debug.print("DEBUG: hasSemicolonsBeforeBrace found {} semicolons\n", .{semicolon_count});
+        }
         return semicolon_count > 0;
     }
 

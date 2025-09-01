@@ -667,9 +667,19 @@ pub const LLVMIRPipeline = struct {
             try self.generateStatement(stmt.*);
         }
         
+        // Ensure we are positioned in the correct function before adding terminator
+        // Module compilation may have moved the builder to a different function
+        var target_block = c.LLVMGetInsertBlock(self.builder);
+        
+        // If the current block doesn't belong to this function, use the last block of this function
+        if (target_block == null or c.LLVMGetBasicBlockParent(target_block) != function) {
+            target_block = c.LLVMGetLastBasicBlock(function);
+            if (target_block == null) target_block = c.LLVMGetEntryBasicBlock(function);
+            c.LLVMPositionBuilderAtEnd(self.builder, target_block);
+        }
+        
         // Add return if not present
-        const current_block = c.LLVMGetInsertBlock(self.builder);
-        if (current_block == null or c.LLVMGetBasicBlockTerminator(current_block) == null) {
+        if (c.LLVMGetBasicBlockTerminator(target_block) == null) {
             if (func_decl.return_type != null) {
                 // Return zero/null for non-void functions
                 const return_type = if (func_decl.return_type) |ret_type|
@@ -1039,6 +1049,7 @@ pub const LLVMIRPipeline = struct {
         // Only position at merge block if it's reachable (at least one branch doesn't have a terminator)
         if (!then_has_terminator or !else_has_terminator) {
             c.LLVMPositionBuilderAtEnd(self.builder, merge_block);
+            // Note: The merge block terminator will be added by subsequent statements or function terminator logic
         } else {
             // Both branches terminate, so the merge block is unreachable
             // Delete it to avoid validation errors
@@ -2081,11 +2092,17 @@ pub const LLVMIRPipeline = struct {
                 if (method_call.arguments.items.len > 0) {
                     const arg = try self.generateExpression(method_call.arguments.items[0].*);
                     
-                    // Call runtime function mathz_abs_normie
-                    const mathz_abs_fn = try self.getOrDeclareRuntimeFunction("mathz_abs_normie", &[_]c.LLVMTypeRef{ c.LLVMDoubleTypeInContext(self.context) }, c.LLVMDoubleTypeInContext(self.context));
-                    const args = [_]c.LLVMValueRef{ arg };
+                    // Convert i64 argument to i32 for normie type consistency
+                    const arg_i32 = c.LLVMBuildTrunc(self.builder, arg, c.LLVMInt32TypeInContext(self.context), "arg_trunc_i32");
+                    
+                    // Call runtime function mathz_abs_normie (normie -> i32 types as per CURSED type system)
+                    const mathz_abs_fn = try self.getOrDeclareRuntimeFunction("mathz_abs_normie", &[_]c.LLVMTypeRef{ c.LLVMInt32TypeInContext(self.context) }, c.LLVMInt32TypeInContext(self.context));
+                    const args = [_]c.LLVMValueRef{ arg_i32 };
                     const func_type = c.LLVMGlobalGetValueType(mathz_abs_fn);
-                    return c.LLVMBuildCall2(self.builder, func_type, mathz_abs_fn, @constCast(@ptrCast(&args)), 1, "mathz_abs_result");
+                    const result_i32 = c.LLVMBuildCall2(self.builder, func_type, mathz_abs_fn, @constCast(@ptrCast(&args)), 1, "mathz_abs_result");
+                    
+                    // Convert i32 result back to i64 for compatibility with variable storage
+                    return c.LLVMBuildSExt(self.builder, result_i32, c.LLVMInt64TypeInContext(self.context), "result_ext_i64");
                 }
             } else if (std.mem.eql(u8, method_call.method_name, "sub")) {
                 if (method_call.arguments.items.len >= 2) {
@@ -2154,6 +2171,35 @@ pub const LLVMIRPipeline = struct {
                     return c.LLVMBuildCall2(self.builder, func_type, vec_len_fn, @constCast(@ptrCast(&args)), 1, "vec_len_result");
                 } else {
                     return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+                }
+            }
+        } else if (std.mem.eql(u8, object_name, "stringz")) {
+            // Handle stringz functions
+            if (std.mem.eql(u8, method_call.method_name, "length")) {
+                if (method_call.arguments.items.len > 0) {
+                    const str_arg = try self.generateExpression(method_call.arguments.items[0].*);
+                    // Call runtime stringz_length function
+                    const stringz_len_fn = try self.getOrDeclareRuntimeFunction("stringz_length", &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, c.LLVMInt32TypeInContext(self.context));
+                    const args = [_]c.LLVMValueRef{ str_arg };
+                    const func_type = c.LLVMGlobalGetValueType(stringz_len_fn);
+                    const result_i32 = c.LLVMBuildCall2(self.builder, func_type, stringz_len_fn, @constCast(@ptrCast(&args)), 1, "stringz_length_result");
+                    // Convert i32 result to i64 for compatibility with variable storage
+                    return c.LLVMBuildSExt(self.builder, result_i32, c.LLVMInt64TypeInContext(self.context), "length_result_ext_i64");
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
+                }
+            } else if (std.mem.eql(u8, method_call.method_name, "concat")) {
+                if (method_call.arguments.items.len >= 2) {
+                    const str1_arg = try self.generateExpression(method_call.arguments.items[0].*);
+                    const str2_arg = try self.generateExpression(method_call.arguments.items[1].*);
+                    // Call runtime stringz_concat function
+                    const stringz_concat_fn = try self.getOrDeclareRuntimeFunction("stringz_concat", &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0), c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0));
+                    const args = [_]c.LLVMValueRef{ str1_arg, str2_arg };
+                    const func_type = c.LLVMGlobalGetValueType(stringz_concat_fn);
+                    return c.LLVMBuildCall2(self.builder, func_type, stringz_concat_fn, @constCast(@ptrCast(&args)), 2, "stringz_concat_result");
+                } else {
+                    // Return empty string if insufficient arguments
+                    return c.LLVMBuildGlobalStringPtr(self.builder, "", "empty_string");
                 }
             }
         } else if (std.mem.eql(u8, object_name, "json")) {
@@ -2525,6 +2571,10 @@ pub const LLVMIRPipeline = struct {
         // Check if already compiled
         if (self.compiled_modules.contains(module_name)) return;
         
+        // Save the current LLVM builder context
+        const saved_function = self.current_function;
+        const saved_block = c.LLVMGetInsertBlock(self.builder);
+        
         print("DEBUG: Loading and compiling CURSED module: {s}\n", .{module_name});
         
         // Create temporary arena for module compilation
@@ -2581,6 +2631,12 @@ pub const LLVMIRPipeline = struct {
         const module_name_owned = try self.arena.allocator().dupe(u8, module_name);
         try self.compiled_modules.put(module_name_owned, {});
         print("DEBUG: Successfully compiled CURSED module: {s}\n", .{module_name});
+        
+        // Restore the LLVM builder context
+        self.current_function = saved_function;
+        if (saved_block != null) {
+            c.LLVMPositionBuilderAtEnd(self.builder, saved_block);
+        }
     }
 
     /// Setup special "vibez" identifier as a global variable
@@ -2844,7 +2900,7 @@ pub const LLVMIRPipeline = struct {
                 "-no-pie", // Disable PIE to avoid relocation issues
                 "-o", output_file,
                 obj_file,
-                "runtime/libcursed_stdlib.a", // Link runtime library
+                "/home/ghuntley/cursed/runtime/libcursed_stdlib.a", // Link runtime library
                 "-lm", // Link math library for pow, sqrt, etc.
             },
         });

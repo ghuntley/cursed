@@ -823,6 +823,18 @@ pub const Interpreter = struct {
                 }
                 return false; // Continue execution
             },
+            .For => |for_stmt| {
+                if (try self.executeForStatement(for_stmt)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
+            .ForIn => |for_in_stmt| {
+                if (try self.executeForInStatement(for_in_stmt)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
             .Function => {
                 // Functions are already collected, skip execution
                 return false; // Continue execution
@@ -1561,6 +1573,49 @@ pub const Interpreter = struct {
         return false; // Continue execution
     }
 
+    fn executeForStatement(self: *Interpreter, for_stmt: ast.ForStatement) InterpreterError!bool {
+        // Execute initialization statement if present
+        if (for_stmt.init) |init_stmt| {
+            if (try self.executeStatement(init_stmt.*)) {
+                return true; // Propagate early return from init
+            }
+        }
+        
+        // Execute the for loop
+        while (true) {
+            // Check condition if present
+            if (for_stmt.condition) |condition_expr| {
+                const condition = try self.evaluateExpression(condition_expr.*);
+                if (!condition.toBool()) break;
+            }
+            
+            // Execute body
+            for (for_stmt.body.items) |stmt| {
+                if (try self.executeStatement(stmt.*)) {
+                    return true; // Propagate early return
+                }
+            }
+            
+            // Execute update statement if present
+            if (for_stmt.update) |update_stmt| {
+                if (try self.executeStatement(update_stmt.*)) {
+                    return true; // Propagate early return from update
+                }
+            }
+        }
+        
+        return false; // Continue execution
+    }
+
+    fn executeForInStatement(self: *Interpreter, for_in_stmt: ast.ForInStatement) InterpreterError!bool {
+        // For range-based for loops (bestie var := flex iterable)
+        // This is a simplified implementation
+        _ = self;
+        _ = for_in_stmt;
+        std.debug.print("ForIn statements not yet fully implemented\n", .{});
+        return false; // Continue execution
+    }
+
     pub fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
 
         switch (expr) {
@@ -1857,10 +1912,36 @@ pub const Interpreter = struct {
                 .pointee_value = pointee_ptr,
                 .allocator = self.allocator,
             }};
+        } else if (std.mem.eql(u8, unary.operator, "++") or std.mem.eql(u8, unary.operator, "--")) {
+            // Increment/decrement operators
+            return try self.evaluateIncrementDecrement(unary.operand.*, unary.operator);
         } else {
             std.debug.print("ERROR: Unsupported unary operator: {s}\n", .{unary.operator});
             return InterpreterError.TypeMismatch;
         }
+    }
+
+    fn evaluateIncrementDecrement(self: *Interpreter, operand_expr: ast.Expression, operator: []const u8) InterpreterError!Value {
+        // For increment/decrement, we need to modify the variable
+        // Currently this is a simplified implementation that just returns the modified value
+        // TODO: Properly handle variable modification in the environment
+        
+        const current_value = try self.evaluateExpression(operand_expr);
+        
+        if (current_value != .Integer) {
+            std.debug.print("ERROR: Increment/decrement can only be applied to integers\n", .{});
+            return InterpreterError.TypeMismatch;
+        }
+        
+        const is_increment = std.mem.eql(u8, operator, "++");
+        const new_value = if (is_increment) 
+            current_value.Integer + 1 
+        else 
+            current_value.Integer - 1;
+        
+        // TODO: Update the variable in the environment
+        // For now, we'll just return the new value
+        return Value{ .Integer = new_value };
     }
 
     fn evaluateCall(self: *Interpreter, call: ast.CallExpression) InterpreterError!Value {

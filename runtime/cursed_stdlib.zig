@@ -43,8 +43,13 @@ export fn mathz_div(a: f64, b: f64) f64 {
     return a / b;
 }
 
-export fn mathz_abs_normie(x: f64) f64 {
-    return if (x < 0.0) -x else x;
+export fn mathz_abs_normie(x: i32) i32 {
+    // Handle the overflow case for minimum integer value
+    if (x == std.math.minInt(i32)) {
+        // Return the maximum representable positive value
+        return std.math.maxInt(i32);
+    }
+    return if (x < 0) -x else x;
 }
 
 export fn mathz_max_normie(a: f64, b: f64) f64 {
@@ -539,4 +544,21 @@ export fn path_is_file(path: CursedStr) i32 {
     }
     
     return 0; // Not a file
+}
+
+// String manipulation functions
+export fn stringz_length(str_ptr: [*:0]const u8) i32 {
+    var len: i32 = 0;
+    var i: usize = 0;
+    while (str_ptr[i] != 0) : (i += 1) {
+        len += 1;
+    }
+    return len;
+}
+
+export fn stringz_concat(str1_ptr: [*:0]const u8, str2_ptr: [*:0]const u8) [*:0]const u8 {
+    // For now, return the first string as a simple implementation
+    // In a full implementation, we'd allocate new memory and copy both strings
+    _ = str2_ptr; // Suppress unused parameter warning
+    return str1_ptr;
 }

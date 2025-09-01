@@ -21,7 +21,7 @@ double mathz_add(double a, double b);
 double mathz_sub(double a, double b);
 double mathz_mul(double a, double b);
 double mathz_div(double a, double b);
-double mathz_abs_normie(double x);
+int32_t mathz_abs_normie(int32_t x);
 double mathz_max_normie(double a, double b);
 double mathz_min_normie(double a, double b);
 
