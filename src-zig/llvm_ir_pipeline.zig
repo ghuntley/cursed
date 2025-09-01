@@ -1926,6 +1926,41 @@ pub const LLVMIRPipeline = struct {
         
         print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params\n", .{function_name, param_types.items.len});
         
+        // Convert arguments to match function parameter types from the actual signature
+        const param_count = c.LLVMCountParamTypes(func_type);
+        var func_param_types: [16]c.LLVMTypeRef = undefined;
+        if (param_count > 0) {
+            c.LLVMGetParamTypes(func_type, @ptrCast(&func_param_types));
+        }
+        
+        // Apply type conversions to arguments
+        for (call.arguments.items, 0..) |_, i| {
+            if (i < param_count) {
+                const expected_type = func_param_types[i];
+                const actual_type = c.LLVMTypeOf(llvm_args[i]);
+                
+                if (expected_type != actual_type) {
+                    // Handle integer type conversions
+                    if (c.LLVMGetTypeKind(expected_type) == c.LLVMIntegerTypeKind and 
+                        c.LLVMGetTypeKind(actual_type) == c.LLVMIntegerTypeKind) {
+                        
+                        const expected_width = c.LLVMGetIntTypeWidth(expected_type);
+                        const actual_width = c.LLVMGetIntTypeWidth(actual_type);
+                        
+                        if (expected_width < actual_width) {
+                            // Truncate to smaller type
+                            llvm_args[i] = c.LLVMBuildTrunc(self.builder, llvm_args[i], expected_type, "fwd_arg_trunc");
+                            print("🔧 DEBUG: Truncated argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
+                        } else if (expected_width > actual_width) {
+                            // Extend to larger type  
+                            llvm_args[i] = c.LLVMBuildSExt(self.builder, llvm_args[i], expected_type, "fwd_arg_extend");
+                            print("🔧 DEBUG: Extended argument {d} from i{d} to i{d}\n", .{i, actual_width, expected_width});
+                        }
+                    }
+                }
+            }
+        }
+        
         // Generate the function call with proper signature
         const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
         const result = c.LLVMBuildCall2(
