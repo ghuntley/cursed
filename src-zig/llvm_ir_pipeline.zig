@@ -253,7 +253,7 @@ pub const LLVMIRPipeline = struct {
         const token_list = try lex.tokenize();
         const tokens = token_list.items;
         var parse = parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit();  // This will clean up all arena-allocated memory including the program
+        // CRITICAL FIX: Don't free parser until after code generation to prevent use-after-free
         const program = try parse.parseProgram();
         
         // Step 3: Type checking
@@ -263,6 +263,9 @@ pub const LLVMIRPipeline = struct {
         // Step 4: Generate LLVM IR
         if (verbose) print("⚡ Step 4: Generating LLVM IR...\n", .{});
         try self.generateIR(program);
+        
+        // CRITICAL FIX: Only free parser after all AST data usage is complete
+        parse.deinit();
         
         // Step 5: Optimize IR
         if (verbose) print("🔧 Step 5: Optimizing IR...\n", .{});
@@ -778,7 +781,7 @@ pub const LLVMIRPipeline = struct {
         // Basic memory safety check by trying to access first character
         const first_char = var_decl.name[0]; // This will crash if pointer is bad
         _ = first_char; // Use the variable to prevent compiler warnings
-        print("🔍 DEBUG: Processing variable declaration: '{s}' (len: {d})\n", .{var_decl.name, var_decl.name.len});
+        print("🔍 DEBUG: Processing variable declaration: '{s}' (len: {d}) ptr: 0x{x}\n", .{var_decl.name, var_decl.name.len, @intFromPtr(var_decl.name.ptr)});
         
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
@@ -802,7 +805,8 @@ pub const LLVMIRPipeline = struct {
             const alloca = self.buildEntryAlloca(func, llvm_type, var_name_z.ptr);
             // MEMORY SAFETY: Create a proper owned copy for HashMap key
             const safe_name = try self.arena.allocator().dupe(u8, var_decl.name);
-            print("🔧 DEBUG: Created safe copy of variable name: '{s}'\n", .{safe_name});
+            print("🔧 DEBUG: Created safe copy of variable name: '{s}' (len: {d}) ptr: 0x{x}\n", .{safe_name, safe_name.len, @intFromPtr(safe_name.ptr)});
+            print("🔧 DEBUG: About to put in HashMap, current variables count: {d}\n", .{self.variables.count()});
             try self.variables.put(safe_name, alloca);
             try self.variable_types.put(safe_name, llvm_type);
             
