@@ -4,7 +4,7 @@
 vibe main
 yeet "vibez"
 
-slay main_character() {
+slay main() {
     vibez.spill("Testing function calls")
     vibez.spill("Multiple statements test")
     vibez.spill("Variable test placeholder")

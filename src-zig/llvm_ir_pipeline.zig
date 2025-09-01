@@ -96,6 +96,7 @@ pub const LLVMIRPipeline = struct {
     // Current compilation state
     current_function: ?c.LLVMValueRef,
     current_module_name: ?[]const u8,
+    program_package: ?[]const u8,
     string_counter: u32,
     optimization_level: u32,
     debug_info: bool,
@@ -183,6 +184,7 @@ pub const LLVMIRPipeline = struct {
             .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
             .current_module_name = null,
+            .program_package = null,
             .string_counter = 0,
             .optimization_level = 2,
             .debug_info = false,
@@ -361,6 +363,13 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate LLVM IR from the type-checked AST
     pub fn generateIR(self: *LLVMIRPipeline, program: ast.Program) !void {
+        // CRITICAL FIX: Store program package for main function resolution
+        if (program.package) |pkg| {
+            self.program_package = pkg.name;
+        } else {
+            self.program_package = null;
+        }
+        
         // Separate functions from other statements
         var functions = ArrayList(*ast.Statement){};
         defer functions.deinit(self.allocator);
@@ -2681,20 +2690,29 @@ pub const LLVMIRPipeline = struct {
         self.current_function = main_func;
         c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
         
-        // Call main_character function if it exists
-        if (self.functions.get("main_character")) |main_char_func| {
-            // Create the function type for main_character: () -> void
+        // CRITICAL FIX: Call appropriate main function based on package name
+        // If package is "main", call "main" function
+        // If package is "main_character" or missing, call "main_character" function
+        var main_function_name: []const u8 = "main_character"; // default
+        if (self.program_package) |pkg_name| {
+            if (std.mem.eql(u8, pkg_name, "main")) {
+                main_function_name = "main";
+            }
+        }
+        
+        if (self.functions.get(main_function_name)) |cursed_main_func| {
+            // Create the function type for main function: () -> void
             var empty_param_types = [_]c.LLVMTypeRef{};
-            const main_char_function_type = c.LLVMFunctionType(
+            const main_function_type = c.LLVMFunctionType(
                 c.LLVMVoidTypeInContext(self.context),
                 @ptrCast(empty_param_types[0..0]),
                 0,
                 0
             );
             
-            // Call main_character() with no arguments  
+            // Call main function with no arguments  
             var empty_args = [_]c.LLVMValueRef{};
-            _ = c.LLVMBuildCall2(self.builder, main_char_function_type, main_char_func, @ptrCast(empty_args[0..0]), 0, "");
+            _ = c.LLVMBuildCall2(self.builder, main_function_type, cursed_main_func, @ptrCast(empty_args[0..0]), 0, "");
         }
 
         // Add proper terminator if block doesn't have one
