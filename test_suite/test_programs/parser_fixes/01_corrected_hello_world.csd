@@ -1,7 +1,7 @@
-vibe main
-yeet "vibez"
+vibe main;
+yeet "vibez";
 
-sus main_character() -> std_int {
+slay main_character() {
     vibez.spill("Hello, CURSED World!");
     damn 0;
 }

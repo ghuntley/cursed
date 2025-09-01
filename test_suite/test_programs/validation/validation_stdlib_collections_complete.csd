@@ -6,11 +6,11 @@ fr fr Comprehensive validation test for the collections stdlib module
 fr fr Tests array and collection operations and edge cases
 fr fr Expected: Collection operations with proper manipulation results
 
-slay main_character() {
+slay main_character() lit {
     vibez.spill("=== COLLECTIONS MODULE VALIDATION ===")
     
     fr fr Test array creation and length
-    sus numbers []normie = [1, 2, 3, 4, 5]
+    sus numbers []normie = []normie{1, 2, 3, 4, 5}
     sus array_len normie = collections.length(numbers)
     vibez.spill("Array length test:")
     vibez.spill(array_len)
@@ -46,10 +46,11 @@ slay main_character() {
     vibez.spill(total)
     
     fr fr Test empty array
-    sus empty_array []normie = []
+    sus empty_array []normie = []normie{}
     sus empty_len normie = collections.length(empty_array)
     vibez.spill("Empty array length:")
     vibez.spill(empty_len)
     
     vibez.spill("=== COLLECTIONS VALIDATION COMPLETE ===")
+    damn based
 }

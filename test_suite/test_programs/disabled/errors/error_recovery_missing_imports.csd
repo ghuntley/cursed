@@ -12,8 +12,8 @@ fr fr This should fail because vibez module is not imported
     vibez.spill("This should cause an import error");
     
 fr fr Test other operations that don't require imports
-    sus x: normie = 42;
-    sus y: normie = x + 10;
+    sus x normie = 42;
+    sus y normie = x + 10;
     
 fr fr This should also fail due to missing import
     vibez.spill("Result: {}", y);

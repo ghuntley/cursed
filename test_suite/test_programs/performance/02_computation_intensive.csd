@@ -2,14 +2,14 @@ vibe main
 
 yeet "vibez"
 
-slay fibonacci(n) {
+slay fibonacci(n normie) {
     ready (n <= 1) {
         damn n
     }
     damn fibonacci(n - 1) + fibonacci(n - 2)
 }
 
-slay sum_range(start, end) {
+slay sum_range(start normie, end normie) {
     sus sum normie = 0
     sus i normie = start
     periodt (i <= end) {

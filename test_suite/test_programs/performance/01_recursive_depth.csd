@@ -2,7 +2,7 @@ vibe main
 
 yeet "vibez"
 
-slay deep_recursion(n) {
+slay deep_recursion(n normie) {
     ready (n <= 0) {
         damn 0
     }

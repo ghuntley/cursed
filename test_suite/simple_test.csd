@@ -1,6 +1,6 @@
-vibe main
-yeet "vibez"
+vibe main;
+yeet "vibez";
 
 slay main_character() {
-    vibez.spill("Test works!")
+    vibez.spill("Test works!");
 }

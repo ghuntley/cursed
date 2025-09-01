@@ -12,22 +12,22 @@ slay main_character() {
     
     fr fr Test basic conditional
     sus value normie = 15
-    lowkey (value > 10) {
+    ready (value > 10) {
         vibez.spill("Value is greater than 10")
     }
     
     fr fr Test if-else structure
     sus check normie = 5
-    lowkey (check > 7) {
+    ready (check > 7) {
         vibez.spill("Check is greater than 7")
-    } highkey {
+    } otherwise {
         vibez.spill("Check is not greater than 7")
     }
     
     fr fr Test while loop
     sus counter normie = 0
     vibez.spill("Starting loop count:")
-    bestie (counter < 3) {
+    periodt (counter < 3) {
         vibez.spill(counter)
         counter = counter + 1
     }
@@ -35,15 +35,15 @@ slay main_character() {
     fr fr Test nested conditions
     sus a normie = 8
     sus b normie = 12
-    lowkey (a < 10) {
-        lowkey (b > 10) {
+    ready (a < 10) {
+        ready (b > 10) {
             vibez.spill("Both conditions met")
         }
     }
     
     fr fr Test boolean logic
     sus flag lit = based
-    lowkey (flag) {
+    ready (flag) {
         vibez.spill("Boolean test passed")
     }
     

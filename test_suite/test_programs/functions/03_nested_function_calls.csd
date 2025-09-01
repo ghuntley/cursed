@@ -2,15 +2,15 @@ vibe main
 
 yeet "vibez"
 
-slay double_value(x) {
+slay double_value(x normie) normie {
     damn x * 2
 }
 
-slay add_one(x) {
+slay add_one(x normie) normie {
     damn x + 1
 }
 
-slay complex_calc(x) {
+slay complex_calc(x normie) normie {
     damn double_value(add_one(x))
 }
 

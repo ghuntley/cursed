@@ -16,10 +16,10 @@ slay print_message(msg tea) {
 }
 
 slay is_positive(num normie) lit {
-    lowkey (num > 0) {
+    ready (num > 0) {
         damn based
-    } highkey {
-        damn cap
+    } otherwise {
+        damn cringe
     }
 }
 

@@ -19,7 +19,7 @@ slay main_character() {
     vibez.spill(10 - 3 + 2)
     
     vibez.spill("8 / 2 * 3 should be 12:")
-    sus expr4 meal = 8 / 2 * 3
+    sus expr4 normie = 8 / 2 * 3
     vibez.spill(expr4)
     
     vibez.spill("=== Test Complete ===")

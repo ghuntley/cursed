@@ -5,19 +5,19 @@ fr fr Function Definitions Test
 fr fr Tests: Various function declaration patterns and return types
 fr fr Expected: Functions compile and execute correctly in both modes
 
-slay add_numbers(a, b) {
+slay add_numbers(a normie, b normie) {
     damn a + b
 }
 
-slay multiply_three(x, y, z) {
+slay multiply_three(x normie, y normie, z normie) {
     damn x * y * z
 }
 
-slay print_message(msg) {
+slay print_message(msg tea) {
     vibez.spill(msg)
 }
 
-slay calculate_average(a, b, c) {
+slay calculate_average(a normie, b normie, c normie) {
     sus sum = a + b + c
     damn sum / 3
 }

@@ -8,8 +8,8 @@ fr fr Comprehensive syntax validation test covering all major language construct
 fr fr Tests variables, functions, control flow, expressions, and module interactions
 fr fr Expected: Complex program demonstrating full language capabilities
 
-slay calculate_fibonacci(n) {
-    sus if n <= 1 {
+slay calculate_fibonacci(n normie) {
+    ready n <= 1 {
         damn n
     }
     
@@ -18,7 +18,7 @@ slay calculate_fibonacci(n) {
     sus current normie = 0
     sus i normie = 2
     
-    sus while i <= n {
+    periodt i <= n {
         current = mathz.add(prev1, prev2)
         prev1 = prev2
         prev2 = current
@@ -28,12 +28,12 @@ slay calculate_fibonacci(n) {
     damn current
 }
 
-slay process_array(arr) {
+slay process_array(arr flex) {
     sus length normie = collections.length(arr)
     sus sum normie = 0
     sus i normie = 0
     
-    sus while i < length {
+    periodt i < length {
         sus element normie = collections.get(arr, i)
         sum = mathz.add(sum, element)
         i = mathz.add(i, 1)
@@ -56,22 +56,22 @@ slay main_character() {
     vibez.spill(flag)
     
     fr fr Test conditional statements
-    sus if number > 5 {
+    ready number > 5 {
         vibez.spill("Number is greater than 5")
-    } else {
+    } otherwise {
         vibez.spill("Number is 5 or less")
     }
     
     fr fr Test nested conditionals
-    sus if flag {
-        sus if number == 10 {
+    ready flag {
+        ready number == 10 {
             vibez.spill("Flag is true and number is 10")
         }
     }
     
     fr fr Test loop constructs
     sus i normie = 0
-    sus while i < 3 {
+    periodt i < 3 {
         vibez.spill("Loop iteration:")
         vibez.spill(i)
         i = mathz.add(i, 1)
@@ -83,7 +83,7 @@ slay main_character() {
     vibez.spill(fib_result)
     
     fr fr Test array operations
-    sus test_array []normie = [1, 2, 3, 4, 5]
+    sus test_array [5]normie = [1, 2, 3, 4, 5]
     sus array_sum normie = process_array(test_array)
     vibez.spill("Array sum:")
     vibez.spill(array_sum)
@@ -99,7 +99,7 @@ slay main_character() {
     vibez.spill(greeting)
     
     fr fr Test boolean operations
-    sus bool_result normie = (number > 5) && flag
+    sus bool_result lit = (number > 5) && flag
     vibez.spill("Boolean expression result:")
     vibez.spill(bool_result)
     

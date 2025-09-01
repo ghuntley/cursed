@@ -6,7 +6,7 @@ fr fr Test: Validation of all CURSED Gen Z slang keywords
 fr fr Purpose: Ensure all language keywords are recognized and parsed correctly
 fr fr Expected: All keywords should parse without errors
 
-slay main_character() {
+slay main_character() normie {
     fr fr Variable declarations using sus
     sus x normie = 42
     sus y tea = "no cringe"

@@ -9,70 +9,70 @@ fr fr Complete Standard Library Demonstration
 fr fr Tests: All available stdlib functions with proper CURSED syntax
 fr fr Expected: Shows comprehensive stdlib functionality
 
-slay main_character() {
-    vibez.spill("=== Complete CURSED Stdlib Demo ===")
+slay main() {
+    vibez.Print("=== Complete CURSED Stdlib Demo ===")
     
     fr fr Math library demonstrations
-    vibez.spill("--- Math Operations ---")
+    vibez.Print("--- Math Operations ---")
     
-    sus num1 normie = 15
-    sus num2 normie = 7
-    sus negative_num normie = -25
+    sus num1 = 15
+    sus num2 = 7
+    sus negative_num = -25
     
-    sus sum normie = mathz.add_two(num1, num2)
-    sus absolute normie = mathz.abs(negative_num)
-    sus maximum normie = mathz.max(num1, num2)
-    sus minimum normie = mathz.min(num1, num2)
+    sus absolute = mathz.abs_normie(negative_num)
+    sus maximum = mathz.max_normie(num1, num2)
+    sus minimum = mathz.min_normie(num1, num2)
+    sus sum = num1 + num2
     
-    vibez.spill("add_two(15, 7):")
-    vibez.spill(sum)
-    vibez.spill("abs(-25):")
-    vibez.spill(absolute)
-    vibez.spill("max(15, 7):")
-    vibez.spill(maximum)
-    vibez.spill("min(15, 7):")
-    vibez.spill(minimum)
+    vibez.Print("add(15, 7):")
+    vibez.Print(sum)
+    vibez.Print("abs(-25):")
+    vibez.Print(absolute)
+    vibez.Print("max(15, 7):")
+    vibez.Print(maximum)
+    vibez.Print("min(15, 7):")
+    vibez.Print(minimum)
     
     fr fr String library demonstrations
-    vibez.spill("--- String Operations ---")
+    vibez.Print("--- String Operations ---")
     
-    sus first_str tea = "CURSED"
-    sus second_str tea = " Programming"
-    sus test_str tea = "Hello World"
+    sus first_str = "CURSED"
+    sus second_str = " Programming"
+    sus test_str = "Hello World"
     
-    sus concatenated tea = stringz.concat(first_str, second_str)
-    sus str_length tea = stringz.length(test_str)
-    sus upper_case tea = stringz.upper("cursed language")
-    sus lower_case tea = stringz.lower("PROGRAMMING ROCKS")
+    sus concatenated = first_str + second_str
+    sus str_length = stringz.Length(test_str)
+    sus upper_case = stringz.ToUpper("cursed language")
+    sus lower_case = stringz.ToLower("PROGRAMMING ROCKS")
     
-    vibez.spill("concat('CURSED', ' Programming'):")
-    vibez.spill(concatenated)
-    vibez.spill("length('Hello World'):")
-    vibez.spill(str_length)
-    vibez.spill("upper('cursed language'):")
-    vibez.spill(upper_case)
-    vibez.spill("lower('PROGRAMMING ROCKS'):")
-    vibez.spill(lower_case)
+    vibez.Print("concat('CURSED', ' Programming'):")
+    vibez.Print(concatenated)
+    vibez.Print("length('Hello World'):")
+    vibez.Print(str_length)
+    vibez.Print("upper('cursed language'):")
+    vibez.Print(upper_case)
+    vibez.Print("lower('PROGRAMMING ROCKS'):")
+    vibez.Print(lower_case)
     
     fr fr Collections library demonstrations
-    vibez.spill("--- Collection Operations ---")
+    vibez.Print("--- Collection Operations ---")
     
     fr fr Note: Collections functions may vary based on implementation
     fr fr This demonstrates the expected API structure
     
-    vibez.spill("Collections functionality would go here")
-    vibez.spill("(Implementation may be pending)")
+    vibez.Print("Collections functionality would go here")
+    vibez.Print("(Implementation may be pending)")
     
     fr fr Complex expressions combining multiple libraries
-    vibez.spill("--- Complex Operations ---")
+    vibez.Print("--- Complex Operations ---")
     
-    sus complex_math normie = mathz.abs(mathz.add_two(-10, 25))
-    sus complex_string tea = stringz.upper(stringz.concat("result: ", "success"))
+    sus complex_math = mathz.abs_normie(-10 + 25)
+    sus complex_string = stringz.ToUpper("result: " + "success")
     
-    vibez.spill("abs(add_two(-10, 25)):")
-    vibez.spill(complex_math)
-    vibez.spill("upper(concat('result: ', 'success')):")
-    vibez.spill(complex_string)
+    vibez.Print("abs(-10 + 25):")
+    vibez.Print(complex_math)
+    vibez.Print("upper(concat('result: ', 'success')):")
+    vibez.Print(complex_string)
     
-    vibez.spill("=== Demo Complete ===")
+    vibez.Print("=== Demo Complete ===")
 }
