@@ -643,6 +643,7 @@ pub const Interpreter = struct {
     current_column: ?u32,
     verbose: bool,
     allocator: Allocator,
+    return_value: Value, // For propagating return values from nested statements
 
     const MAX_CALL_STACK_DEPTH = 1000;
 
@@ -671,6 +672,7 @@ pub const Interpreter = struct {
             .current_column = null,
             .verbose = verbose,
             .allocator = allocator,
+            .return_value = Value.Null, // Initialize to null
         };
         
         // Register global builtin functions
@@ -761,52 +763,125 @@ pub const Interpreter = struct {
             // Execute statements in order
             for (program.statements.items) |stmt_ptr| {
                 const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                try self.executeStatement(stmt.*);
+                _ = try self.executeStatement(stmt.*);
             }
         }
     }
 
-    fn executeStatement(self: *Interpreter, stmt: Statement) InterpreterError!void {
+    fn executeStatementIgnoreReturn(self: *Interpreter, stmt: Statement) InterpreterError!void {
+        _ = try self.executeStatement(stmt);
+    }
+    
+    fn executeStatement(self: *Interpreter, stmt: Statement) InterpreterError!bool {
         // Removed DEBUG output
         switch (stmt) {
             .Expression => |expr| {
                 _ = try self.evaluateExpression(expr);
+                return false; // Continue execution
             },
-            .Let => |let| try self.executeLetStatement(let),
-            .ShortDeclaration => |short_decl| try self.executeShortDeclarationStatement(short_decl),
-            .Assignment => |assign| try self.executeAssignmentStatement(assign),
+            .Let => |let| {
+                try self.executeLetStatement(let);
+                return false; // Continue execution
+            },
+            .ShortDeclaration => |short_decl| {
+                try self.executeShortDeclarationStatement(short_decl);
+                return false; // Continue execution
+            },
+            .Assignment => |assign| {
+                try self.executeAssignmentStatement(assign);
+                return false; // Continue execution
+            },
             .Return => |ret| {
-                // Return statements are handled in function context
-                _ = ret;
-                // For now, just ignore returns outside functions
+                // Process return statement and signal early return
+                if (ret.value) |value| {
+                    const expr: *ast.Expression = @ptrCast(@alignCast(value));
+                    self.return_value = try self.evaluateExpression(expr.*);
+                } else {
+                    self.return_value = Value.Null;
+                }
+                return true; // Signal early return
             },
-            .If => |if_stmt| try self.executeIfStatement(if_stmt),
-            .While => |while_stmt| try self.executeWhileStatement(while_stmt),
+            .If => |if_stmt| {
+                if (try self.executeIfStatement(if_stmt)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
+            .While => |while_stmt| {
+                if (try self.executeWhileStatement(while_stmt)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
             .Function => {
                 // Functions are already collected, skip execution
+                return false; // Continue execution
             },
-            .Struct => |struct_stmt| try self.executeStructStatement(struct_stmt),
-            .Interface => |interface_stmt| try self.executeInterfaceStatement(interface_stmt),
-            .Implementation => |impl_stmt| try self.executeImplementationStatement(impl_stmt),
-            .Stan => |stan| try self.executeStanStatement(stan),
-            .Yikes => |yikes| try self.executeYikesStatement(yikes),
-            .Fam => |fam| try self.executeFamStatement(fam),
-            .Defer => |defer_stmt| try self.executeDeferStatement(defer_stmt),
-            .Switch => |switch_stmt| try self.executeSwitchStatement(switch_stmt),
-            .PatternSwitch => |pattern_switch| try self.executePatternSwitchStatement(pattern_switch),
-            .Import => |import_stmt| try self.executeImportStatement(import_stmt),
-            .Block => |block| try self.executeBlockStatement(block),
+            .Struct => |struct_stmt| {
+                try self.executeStructStatement(struct_stmt);
+                return false; // Continue execution
+            },
+            .Interface => |interface_stmt| {
+                try self.executeInterfaceStatement(interface_stmt);
+                return false; // Continue execution
+            },
+            .Implementation => |impl_stmt| {
+                try self.executeImplementationStatement(impl_stmt);
+                return false; // Continue execution
+            },
+            .Stan => |stan| {
+                try self.executeStanStatement(stan);
+                return false; // Continue execution
+            },
+            .Yikes => |yikes| {
+                try self.executeYikesStatement(yikes);
+                return false; // Continue execution
+            },
+            .Fam => |fam| {
+                try self.executeFamStatement(fam);
+                return false; // Continue execution
+            },
+            .Defer => |defer_stmt| {
+                try self.executeDeferStatement(defer_stmt);
+                return false; // Continue execution
+            },
+            .Switch => |switch_stmt| {
+                if (try self.executeSwitchStatement(switch_stmt)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
+            .PatternSwitch => |pattern_switch| {
+                if (try self.executePatternSwitchStatement(pattern_switch)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
+            .Import => |import_stmt| {
+                try self.executeImportStatement(import_stmt);
+                return false; // Continue execution
+            },
+            .Block => |block| {
+                if (try self.executeBlockStatement(block)) {
+                    return true; // Propagate early return
+                }
+                return false; // Continue execution
+            },
             else => {
                 std.debug.print("Unsupported statement type in interpreter: {s}\n", .{ @tagName(stmt) });
+                return false; // Continue execution
             }
         }
     }
 
-    fn executeBlockStatement(self: *Interpreter, block: ast.BlockStatement) InterpreterError!void {
+    fn executeBlockStatement(self: *Interpreter, block: ast.BlockStatement) InterpreterError!bool {
         // Execute each statement in the block sequentially
         for (block.statements.items) |stmt_ptr| {
-            try self.executeStatement(stmt_ptr.*);
+            if (try self.executeStatement(stmt_ptr.*)) {
+                return true; // Propagate early return
+            }
         }
+        return false; // Continue execution
     }
 
     fn executeImportStatement(self: *Interpreter, import_stmt: ast.ImportStatement) InterpreterError!void {
@@ -1016,7 +1091,7 @@ pub const Interpreter = struct {
         // Second pass: execute all statements in the CURSED stdlib module
         for (program.statements.items) |stmt| {
             const stmt_ptr: *Statement = @ptrCast(@alignCast(stmt));
-            self.executeStatement(stmt_ptr.*) catch |err| {
+            self.executeStatementIgnoreReturn(stmt_ptr.*) catch |err| {
                 // Restore environment before returning error
                 self.environment = saved_env;
                 // Removed DEBUG: Failed to execute statement in CURSED stdlib {s}: {}\n", .{ stdlib_path, err });
@@ -1436,32 +1511,40 @@ pub const Interpreter = struct {
         try self.type_registry.registerImplementation(impl_stmt.implementing_type, impl_stmt.interface_name, &vtable);
     }
 
-    fn executeIfStatement(self: *Interpreter, if_stmt: ast.IfStatement) InterpreterError!void {
+    fn executeIfStatement(self: *Interpreter, if_stmt: ast.IfStatement) InterpreterError!bool {
         const condition_expr: *Expression = @ptrCast(@alignCast(if_stmt.condition));
         const condition = try self.evaluateExpression(condition_expr.*);
         
         if (condition.toBool()) {
             for (if_stmt.then_branch.items) |stmt_ptr| {
                 const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                try self.executeStatement(stmt.*);
+                if (try self.executeStatement(stmt.*)) {
+                    return true; // Propagate early return
+                }
             }
         } else if (if_stmt.else_branch) |else_stmts| {
             for (else_stmts.items) |stmt_ptr| {
                 const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                try self.executeStatement(stmt.*);
+                if (try self.executeStatement(stmt.*)) {
+                    return true; // Propagate early return
+                }
             }
         }
+        return false; // Continue execution
     }
 
-    fn executeWhileStatement(self: *Interpreter, while_stmt: ast.WhileStatement) InterpreterError!void {
+    fn executeWhileStatement(self: *Interpreter, while_stmt: ast.WhileStatement) InterpreterError!bool {
         while (true) {
             const condition = try self.evaluateExpression(while_stmt.condition.*);
             if (!condition.toBool()) break;
             
             for (while_stmt.body.items) |stmt| {
-                try self.executeStatement(stmt.*);
+                if (try self.executeStatement(stmt.*)) {
+                    return true; // Propagate early return
+                }
             }
         }
+        return false; // Continue execution
     }
 
     pub fn evaluateExpression(self: *Interpreter, expr: Expression) InterpreterError!Value {
@@ -2397,7 +2480,7 @@ pub const Interpreter = struct {
         defer self.environment = previous_env;
         
         for (method_func.body) |stmt| {
-            self.executeStatement(stmt) catch |err| {
+            self.executeStatementIgnoreReturn(stmt) catch |err| {
                 return err;
             };
         }
@@ -2435,7 +2518,7 @@ pub const Interpreter = struct {
                 return_value = ret_val;
                 break;
             }
-            try self.executeStatement(stmt.*);
+            _ = try self.executeStatement(stmt.*);
         }
         
         return return_value orelse Value.Null;
@@ -2862,25 +2945,11 @@ pub const Interpreter = struct {
         errdefer return_values.deinit(self.allocator); // Clean up on error
         
         for (func.declaration.body.items) |stmt| {
-            switch (stmt.*) {
-                .Return => |ret| {
-                    if (ret.value) |value| {
-                        const expr: *ast.Expression = @ptrCast(@alignCast(value));
-                        const result = try self.evaluateExpression(expr.*);
-                        // Check if this is a tuple expression (multiple values)
-                        switch (result) {
-                            else => {
-                                // Single value return
-                                return_value = result;
-                            }
-                        }
-                    } else {
-                        return_value = Value.Null;
-                    }
-                    has_returned = true;
-                    break; // Exit function body loop
-                },
-                else => try self.executeStatement(stmt.*),
+            if (try self.executeStatement(stmt.*)) {
+                // Early return detected - use the stored return value
+                return_value = self.return_value;
+                has_returned = true;
+                break; // Exit function body loop
             }
         }
         
@@ -3103,7 +3172,7 @@ pub const Interpreter = struct {
         
         // Execute try body with error catching
         for (fam.try_body.items) |stmt| {
-            self.executeStatement(stmt) catch |err| {
+            self.executeStatementIgnoreReturn(stmt) catch |err| {
                 // Create error context from interpreter error
                 const location = error_prop.ErrorContext.SourceLocation{
                     .file = if (self.current_file) |file| file else "unknown",
@@ -3142,7 +3211,7 @@ pub const Interpreter = struct {
                     
                     // Execute catch block code
                     for (catch_block.body.items) |stmt| {
-                        try self.executeStatement(stmt);
+                        _ = try self.executeStatement(stmt);
                     }
                     
                     handled = true;
@@ -3161,7 +3230,7 @@ pub const Interpreter = struct {
         // Execute finally block if it exists
         if (fam.finally_block) |finally_stmts| {
             for (finally_stmts.items) |stmt| {
-                try self.executeStatement(stmt);
+                _ = try self.executeStatement(stmt);
             }
         }
         
@@ -3208,7 +3277,7 @@ pub const Interpreter = struct {
         // Execute try body
         for (fam.try_body.items) |stmt_ptr| {
             const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-            self.executeStatement(stmt.*) catch |err| {
+            self.executeStatementIgnoreReturn(stmt.*) catch |err| {
                 error_occurred = try self.error_handler.yikes(
                     @errorName(err),
                     .Runtime,
@@ -3229,7 +3298,7 @@ pub const Interpreter = struct {
             // Execute catch body
             for (catch_handler.handler_body.items) |stmt_ptr| {
                 const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                self.executeStatement(stmt.*) catch {
+                self.executeStatementIgnoreReturn(stmt.*) catch {
                     // Ignore errors in catch handler
                 };
             }
@@ -3241,7 +3310,7 @@ pub const Interpreter = struct {
         if (fam.finally_handler) |finally_handler| {
             for (finally_handler.finally_body.items) |stmt_ptr| {
                 const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                _ = self.executeStatement(stmt.*) catch {}; // Ignore errors in finally
+                _ = self.executeStatementIgnoreReturn(stmt.*) catch {}; // Ignore errors in finally
             }
         }
         
@@ -3276,7 +3345,7 @@ pub const Interpreter = struct {
                 // Execute all statements in the goroutine body
                 for (context.statements.items) |stmt_ptr| {
                     const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                    context.interpreter.executeStatement(stmt.*) catch |err| {
+                    _ = context.interpreter.executeStatement(stmt.*) catch |err| {
                         // Handle goroutine errors gracefully
                         std.debug.print("Goroutine error: {}\n", .{err});
                         return;
@@ -3307,7 +3376,7 @@ pub const Interpreter = struct {
     }
     
     /// Execute basic switch statement (simple value matching)
-    pub fn executeSwitchStatement(self: *Interpreter, switch_stmt: ast.SwitchStatement) InterpreterError!void {
+    pub fn executeSwitchStatement(self: *Interpreter, switch_stmt: ast.SwitchStatement) InterpreterError!bool {
         const switch_expr: *Expression = @ptrCast(@alignCast(switch_stmt.expression));
         const switch_value = try self.evaluateExpression(switch_expr.*);
         
@@ -3321,7 +3390,7 @@ pub const Interpreter = struct {
                 matched = true;
                 for (case.body.items) |stmt_ptr| {
                     const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                    try self.executeStatement(stmt.*);
+                    _ = try self.executeStatement(stmt.*);
                 }
                 break; // Break after first match (no fallthrough)
             }
@@ -3332,14 +3401,15 @@ pub const Interpreter = struct {
             if (switch_stmt.default_case) |default_stmts| {
                 for (default_stmts.items) |stmt_ptr| {
                     const stmt: *Statement = @ptrCast(@alignCast(stmt_ptr));
-                    try self.executeStatement(stmt.*);
+                    _ = try self.executeStatement(stmt.*);
                 }
             }
         }
+        return false; // Continue execution
     }
 
     /// Execute pattern switch statement (advanced pattern matching)
-    pub fn executePatternSwitchStatement(self: *Interpreter, pattern_switch: ast.PatternSwitchStatement) InterpreterError!void {
+    pub fn executePatternSwitchStatement(self: *Interpreter, pattern_switch: ast.PatternSwitchStatement) InterpreterError!bool {
         const switch_value = try self.evaluateExpression(pattern_switch.expression.*);
         
         // Try each pattern case
@@ -3367,7 +3437,7 @@ pub const Interpreter = struct {
                 matched = true;
                 // Execute case body
                 for (case.body.items) |stmt| {
-                    try self.executeStatement(stmt.*);
+                    _ = try self.executeStatement(stmt.*);
                 }
                 break; // Exit after first successful match
             }
@@ -3380,7 +3450,7 @@ pub const Interpreter = struct {
             
             // Execute default case body
             for (default_case.items) |stmt| {
-                try self.executeStatement(stmt.*);
+                _ = try self.executeStatement(stmt.*);
             }
         }
         
@@ -3388,6 +3458,7 @@ pub const Interpreter = struct {
         if (!matched) {
             return InterpreterError.PatternMatchFailed;
         }
+        return false; // Continue execution
     }
 
     /// Evaluate match expression with pattern matching
@@ -3515,7 +3586,7 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch |err| {
+            self.executeStatementIgnoreReturn(defer_entry.?.statement) catch |err| {
                 std.debug.print("Error executing deferred statement: {}\n", .{err});
                 // Continue with other defers even if one fails
             };
@@ -3540,7 +3611,7 @@ pub const Interpreter = struct {
             
             // Execute the deferred statement
             std.debug.print("Executing scoped deferred statement\n", .{});
-            self.executeStatement(defer_entry.?.statement) catch |err| {
+            self.executeStatementIgnoreReturn(defer_entry.?.statement) catch |err| {
                 std.debug.print("Error executing deferred statement: {}\n", .{err});
                 // Continue with other defers even if one fails
             };

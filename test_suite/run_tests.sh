@@ -110,13 +110,15 @@ for test_file in "${test_files[@]}"; do
     interp_output=""
     interp_stderr=""
     interp_exit=1
-    if stderr_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1 >/dev/null); then
-        # Extract only the program output lines (before memory errors)
-        interp_output=$(echo "$stderr_output" | sed '/error(gpa):/q' | head -n -1)
+    if combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1); then
+        # Extract only the program output lines (filter out memory errors and debug info)  
+        # Step 1: Split on error(gpa) and take only the first part (program output)
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
         interp_exit=0
     else
         interp_exit=$?
-        interp_output=$(echo "$stderr_output" | sed '/error(gpa):/q' | head -n -1)
+        combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1 || true)
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
     fi
     
     # Try to compile (also from cursed root)

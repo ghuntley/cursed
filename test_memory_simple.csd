@@ -1,7 +1,7 @@
-yeet "memory"
+vibe main
 
-vibez.spill("Testing memory module...")
-sus ptr normie = memory.malloc(100)
-vibez.spill("Memory allocated successfully!")
-memory.free(ptr)
-vibez.spill("Memory freed successfully!")
+yeet "vibez"
+
+slay main() {
+    vibez.spill("Hello, world!")
+}

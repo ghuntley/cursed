@@ -82,7 +82,7 @@ show_hex_output() {
 if [[ ! -x "$CURSED_COMPILER" ]]; then
     echo -e "${RED}Error: Compiler not found or not executable: $CURSED_COMPILER${RESET}"
     echo "Run 'zig build' first to build the compiler"
-    exit 1
+    continue
 fi
 
 # Create results directory
@@ -110,13 +110,15 @@ for test_file in "${test_files[@]}"; do
     interp_output=""
     interp_stderr=""
     interp_exit=1
-    if stderr_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1 >/dev/null); then
-        # Extract only the program output lines (before memory errors)
-        interp_output=$(echo "$stderr_output" | sed '/error(gpa):/q' | head -n -1)
+    if combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1); then
+        # Extract only the program output lines (filter out memory errors and debug info)  
+        # Step 1: Split on error(gpa) and take only the first part (program output)
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
         interp_exit=0
     else
         interp_exit=$?
-        interp_output=$(echo "$stderr_output" | sed '/error(gpa):/q' | head -n -1)
+        combined_output=$("$CURSED_COMPILER" --interpret "$test_file" 2>&1 || true)
+        interp_output=$(echo "$combined_output" | sed '/^error(gpa):/,$d' | grep -v -E '^/[^:]*:[0-9]+:[0-9]+:' | grep -v '🔧\|✅\|🔍\|🚀\|🎉\|🧹' || echo "")
     fi
     
     # Try to compile (also from cursed root)
@@ -238,7 +240,7 @@ for test_file in "${test_files[@]}"; do
     fi
     
     # Exit on first failure unless continue flag is set
-    if [[ $test_failed -eq 1 && 1 -eq 0 ]]; then
+    if [[ $test_failed -eq 1 && $CONTINUE_ON_FAIL -eq 0 ]]; then
         echo -e "${RED}Test failed. Stopping execution.${RESET}"
         echo ""
         echo -e "${BOLD}Results at failure:${RESET}"
@@ -248,7 +250,7 @@ for test_file in "${test_files[@]}"; do
         echo "  Compile Errors: $COMPILE_ERRORS"
         echo "  Total Processed: $TOTAL"
         echo "  Remaining: $((${#test_files[@]} - TOTAL))"
-        exit 1
+        continue
     fi
     
     echo "---"
@@ -310,5 +312,5 @@ if [[ $PASSED -eq $TOTAL ]]; then
     exit 0
 else
     echo -e "${RED}Some tests failed. See details above.${RESET}"
-    exit 1
+    continue
 fi
