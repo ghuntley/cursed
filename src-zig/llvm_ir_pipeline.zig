@@ -1536,7 +1536,27 @@ pub const LLVMIRPipeline = struct {
             }
         } else if (std.mem.eql(u8, bin_op.operator, "/")) {
             if (!left_is_float and !right_is_float) {
-                // Integer / Integer -> Integer division (like Go, C, etc.)
+                // Integer / Integer -> Integer division with division by zero check
+                // Check if divisor is zero
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(right), 0, 0);
+                const is_zero = c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, right, zero_val, "div_by_zero_check");
+                
+                // Create basic blocks for division by zero handling
+                const current_bb = c.LLVMGetInsertBlock(self.builder);
+                const current_func = c.LLVMGetBasicBlockParent(current_bb);
+                const zero_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "div_by_zero");
+                const div_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "div_ok");
+                
+                // Branch based on zero check
+                _ = c.LLVMBuildCondBr(self.builder, is_zero, zero_bb, div_bb);
+                
+                // Generate division by zero panic block
+                c.LLVMPositionBuilderAtEnd(self.builder, zero_bb);
+                try self.generateDivisionByZeroPanic();
+                // Note: generateDivisionByZeroPanic() should terminate the block, so no need for further instructions
+                
+                // Generate normal division block  
+                c.LLVMPositionBuilderAtEnd(self.builder, div_bb);
                 return c.LLVMBuildSDiv(self.builder, left, right, "sdiv_tmp");
             } else {
                 // If either operand is float, perform float division
@@ -1553,6 +1573,8 @@ pub const LLVMIRPipeline = struct {
                     right = c.LLVMBuildFPExt(self.builder, right, c.LLVMDoubleTypeInContext(self.context), "float_to_double_right");
                 }
                 
+                // For float division, we don't need to check for zero since IEEE 754 defines behavior
+                // Float division by zero returns infinity, not an error
                 return c.LLVMBuildFDiv(self.builder, left, right, "fdiv_tmp");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "==")) {
@@ -1603,6 +1625,25 @@ pub const LLVMIRPipeline = struct {
             if (is_float) {
                 return c.LLVMBuildFRem(self.builder, left, right, "fmod_tmp");
             } else {
+                // Integer modulo with division by zero check
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(right), 0, 0);
+                const is_zero = c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, right, zero_val, "mod_by_zero_check");
+                
+                // Create basic blocks for modulo by zero handling
+                const current_bb = c.LLVMGetInsertBlock(self.builder);
+                const current_func = c.LLVMGetBasicBlockParent(current_bb);
+                const zero_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "mod_by_zero");
+                const mod_bb = c.LLVMAppendBasicBlockInContext(self.context, current_func, "mod_ok");
+                
+                // Branch based on zero check
+                _ = c.LLVMBuildCondBr(self.builder, is_zero, zero_bb, mod_bb);
+                
+                // Generate modulo by zero panic block
+                c.LLVMPositionBuilderAtEnd(self.builder, zero_bb);
+                try self.generateDivisionByZeroPanic();
+                
+                // Generate normal modulo block  
+                c.LLVMPositionBuilderAtEnd(self.builder, mod_bb);
                 return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "&&")) {
@@ -2701,5 +2742,59 @@ pub const LLVMIRPipeline = struct {
     pub fn dumpIR(self: *LLVMIRPipeline) void {
         print("🔍 LLVM IR:\n", .{});
         c.LLVMDumpModule(self.module);
+    }
+    
+    /// Generate division by zero panic following CURSED error handling specification
+    fn generateDivisionByZeroPanic(self: *LLVMIRPipeline) !void {
+        // Generate call to printf to print the panic message
+        const printf_func = self.functions.get("printf") orelse {
+            print("❌ printf function not found for panic\n", .{});
+            return error.UndefinedFunction;
+        };
+        
+        // Create panic message string
+        const panic_msg = try self.generateStringLiteral("Division by zero");
+        
+        // Call printf with panic message
+        const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
+        const printf_function_type = c.LLVMFunctionType(
+            c.LLVMInt32TypeInContext(self.context),
+            @constCast(@ptrCast(&char_ptr_type)),
+            1,
+            1  // Variadic
+        );
+        
+        const printf_args = [_]c.LLVMValueRef{panic_msg};
+        _ = c.LLVMBuildCall2(self.builder, printf_function_type, printf_func, @constCast(@ptrCast(&printf_args)), 1, "");
+        
+        // Generate call to exit(1) to terminate the program
+        // First declare exit function if not already declared
+        const exit_func = if (self.functions.get("exit")) |existing_exit|
+            existing_exit
+        else blk: {
+            const exit_type = c.LLVMFunctionType(
+                c.LLVMVoidTypeInContext(self.context),
+                @constCast(@ptrCast(&c.LLVMInt32TypeInContext(self.context))),
+                1,
+                0
+            );
+            const exit_fn = c.LLVMAddFunction(self.module, "exit", exit_type);
+            try self.functions.put("exit", exit_fn);
+            break :blk exit_fn;
+        };
+        
+        // Call exit(1)
+        const exit_code = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 1, 0);
+        const exit_args = [_]c.LLVMValueRef{exit_code};
+        const exit_function_type = c.LLVMFunctionType(
+            c.LLVMVoidTypeInContext(self.context),
+            @constCast(@ptrCast(&c.LLVMInt32TypeInContext(self.context))),
+            1,
+            0
+        );
+        _ = c.LLVMBuildCall2(self.builder, exit_function_type, exit_func, @constCast(@ptrCast(&exit_args)), 1, "");
+        
+        // Add unreachable instruction since exit() never returns
+        _ = c.LLVMBuildUnreachable(self.builder);
     }
 };
