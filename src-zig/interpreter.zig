@@ -1470,6 +1470,17 @@ pub const Interpreter = struct {
             .String => |str| return Value{ .String = str },
             .Boolean => |bool_val| return Value{ .Boolean = bool_val },
             .Character => |char| return Value{ .Character = char },
+            .Literal => |literal| {
+                switch (literal) {
+                    .Integer => |int| return Value{ .Integer = int },
+                    .Float => |float| return Value{ .Float = float },
+                    .String => |str| return Value{ .String = str },
+                    .Boolean => |bool_val| return Value{ .Boolean = bool_val },
+                    .Character => |char| return Value{ .Character = char },
+                    .Null => return Value.Null,
+                    .Nil => return Value.Null,
+                }
+            },
             .Identifier => |name| {
                 // Try to find in current environment first
                 if (self.environment.get(name)) |value| {
@@ -1546,6 +1557,8 @@ pub const Interpreter = struct {
     fn evaluateBinary(self: *Interpreter, bin: ast.BinaryExpression) InterpreterError!Value {
         const left = try self.evaluateExpression(bin.left.*);
         const right = try self.evaluateExpression(bin.right.*);
+        
+
         
         if (std.mem.eql(u8, bin.operator, "+")) {
             if (left == .Integer and right == .Integer) {
@@ -1662,30 +1675,37 @@ pub const Interpreter = struct {
                 const right_num = try right.toNumber();
                 return Value{ .Boolean = left_num < right_num };
             }
+            return InterpreterError.TypeMismatch;
         } else if (std.mem.eql(u8, bin.operator, "<=")) {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Boolean = left_num <= right_num };
             }
+            return InterpreterError.TypeMismatch;
         } else if (std.mem.eql(u8, bin.operator, ">")) {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Boolean = left_num > right_num };
             }
+            return InterpreterError.TypeMismatch;
         } else if (std.mem.eql(u8, bin.operator, ">=")) {
             if (left.isNumber() and right.isNumber()) {
                 const left_num = try left.toNumber();
                 const right_num = try right.toNumber();
                 return Value{ .Boolean = left_num >= right_num };
             }
+            return InterpreterError.TypeMismatch;
         } else if (std.mem.eql(u8, bin.operator, "&&")) {
             return Value{ .Boolean = left.toBool() and right.toBool() };
         } else if (std.mem.eql(u8, bin.operator, "||")) {
             return Value{ .Boolean = left.toBool() or right.toBool() };
+        } else if (std.mem.eql(u8, bin.operator, "=")) {
+            // Assignment operator - this should not normally be encountered in expression context
+            // but handle it gracefully
+            return right; // Return the right-hand value
         }
-        
         return InterpreterError.TypeMismatch;
     }
 
