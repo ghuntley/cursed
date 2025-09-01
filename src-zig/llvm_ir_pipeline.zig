@@ -781,8 +781,6 @@ pub const LLVMIRPipeline = struct {
         // Basic memory safety check by trying to access first character
         const first_char = var_decl.name[0]; // This will crash if pointer is bad
         _ = first_char; // Use the variable to prevent compiler warnings
-        print("🔍 DEBUG: Processing variable declaration: '{s}' (len: {d}) ptr: 0x{x}\n", .{var_decl.name, var_decl.name.len, @intFromPtr(var_decl.name.ptr)});
-        
         const var_name_z = try self.arena.allocator().dupeZ(u8, var_decl.name);
         
         // Generate initializer first if present to determine type
@@ -805,8 +803,6 @@ pub const LLVMIRPipeline = struct {
             const alloca = self.buildEntryAlloca(func, llvm_type, var_name_z.ptr);
             // MEMORY SAFETY: Create a proper owned copy for HashMap key
             const safe_name = try self.arena.allocator().dupe(u8, var_decl.name);
-            print("🔧 DEBUG: Created safe copy of variable name: '{s}' (len: {d}) ptr: 0x{x}\n", .{safe_name, safe_name.len, @intFromPtr(safe_name.ptr)});
-            print("🔧 DEBUG: About to put in HashMap, current variables count: {d}\n", .{self.variables.count()});
             try self.variables.put(safe_name, alloca);
             try self.variable_types.put(safe_name, llvm_type);
             
@@ -841,7 +837,6 @@ pub const LLVMIRPipeline = struct {
             c.LLVMSetInitializer(global_var, initializer_value);
             // MEMORY SAFETY: Create a proper owned copy for HashMap key
             const safe_name = try self.arena.allocator().dupe(u8, var_decl.name);
-            print("🔧 DEBUG: Created safe copy of global variable name: '{s}'\n", .{safe_name});
             try self.variables.put(safe_name, global_var);
             try self.variable_types.put(safe_name, llvm_type);
         }
