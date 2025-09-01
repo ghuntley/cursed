@@ -355,6 +355,8 @@ pub const Lexer = struct {
         const start_line = self.line;
         const start_column = self.column - 1;
 
+
+
         switch (c) {
             '(' => return self.makeToken(.LeftParen, start_line, start_column),
             ')' => return self.makeToken(.RightParen, start_line, start_column),
@@ -425,9 +427,15 @@ pub const Lexer = struct {
                 return self.makeToken(.Bang, start_line, start_column);
             },
             '<' => {
-                if (self.match('=')) return self.makeToken(.LessEqual, start_line, start_column);
-                if (self.match('<')) return self.makeToken(.LeftShift, start_line, start_column);
-                if (self.match('-')) return self.makeToken(.LeftArrow, start_line, start_column);
+                if (self.match('=')) {
+                    return self.makeToken(.LessEqual, start_line, start_column);
+                }
+                if (self.match('<')) {
+                    return self.makeToken(.LeftShift, start_line, start_column);
+                }
+                if (self.match('-')) {
+                    return self.makeToken(.LeftArrow, start_line, start_column);
+                }
                 return self.makeToken(.Less, start_line, start_column);
             },
             '>' => {
@@ -579,7 +587,14 @@ pub const Lexer = struct {
     }
 
     fn makeToken(self: *Lexer, kind: TokenKind, line: usize, column: usize) Token {
-        const start = if (self.position > 0) self.position - 1 else 0;
+        // For most tokens, calculate length based on columns
+        // But handle newlines and special cases carefully
+        var token_len: usize = 1; // Default to single character
+        if (self.column >= column and line == self.line) {
+            token_len = self.column - column;
+        }
+        
+        const start = if (self.position >= token_len) self.position - token_len else 0;
         const lexeme = self.input[start..self.position];
         return Token.init(kind, lexeme, line, column);
     }

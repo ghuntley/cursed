@@ -1249,7 +1249,7 @@ pub const Parser = struct {
         if (!self.check(.RightParen)) {
             while (true) {
                 const param = try self.parseParameter();
-                try func.parameters.append(self.allocator, param);
+                try func.parameters.append(self.arena_allocator, param);
                 
                 if (!self.match(.Comma)) break;
             }
@@ -2780,6 +2780,9 @@ pub const Parser = struct {
         _ = try self.consume(.LeftBrace, "Expected '{'");
         
         var then_branch = ArrayList(*Statement){};
+        // Use arena allocator consistently for ArrayList management
+        errdefer then_branch.deinit(self.arena_allocator);
+        
         while (!self.check(.RightBrace) and !self.isAtEnd()) {
             if (self.match(.Newline)) continue;
             
@@ -2787,7 +2790,7 @@ pub const Parser = struct {
             const stmt_ptr = try self.arena_allocator.create(Statement); 
 
             stmt_ptr.* = stmt; 
-            try then_branch.append(self.allocator, stmt_ptr);
+            try then_branch.append(self.arena_allocator, stmt_ptr);
         }
         
         _ = try self.consume(.RightBrace, "Expected '}'");
@@ -2797,6 +2800,8 @@ pub const Parser = struct {
         // Parse else clause (highkey/otherwise)
         if (self.match(.Highkey) or self.match(.Otherwise)) {
             var else_stmts = ArrayList(*Statement){};
+            // Use arena allocator consistently and add error cleanup
+            errdefer else_stmts.deinit(self.arena_allocator);
             
             if (self.check(.Lowkey) or self.check(.Ready)) {
                 // else if
@@ -2805,7 +2810,7 @@ pub const Parser = struct {
                 const if_stmt_ptr = try self.arena_allocator.create(Statement);
         
                 if_stmt_ptr.* = if_stmt;
-                try else_stmts.append(self.allocator, if_stmt_ptr);
+                try else_stmts.append(self.arena_allocator, if_stmt_ptr);
             } else {
                 // else block
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -2817,7 +2822,7 @@ pub const Parser = struct {
                     const stmt_ptr = try self.arena_allocator.create(Statement); 
     
                     stmt_ptr.* = stmt; 
-                    try else_stmts.append(self.allocator, stmt_ptr);
+                    try else_stmts.append(self.arena_allocator, stmt_ptr);
                 }
                 
         _ = try self.consume(.RightBrace, "Expected '}'");

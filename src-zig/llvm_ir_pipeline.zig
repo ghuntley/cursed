@@ -1420,12 +1420,47 @@ pub const LLVMIRPipeline = struct {
         const left_type = c.LLVMTypeOf(left);
         const right_type = c.LLVMTypeOf(right);
         
+
+        
         const left_is_float = c.LLVMGetTypeKind(left_type) == c.LLVMDoubleTypeKind or
                              c.LLVMGetTypeKind(left_type) == c.LLVMFloatTypeKind;
         const right_is_float = c.LLVMGetTypeKind(right_type) == c.LLVMDoubleTypeKind or
                               c.LLVMGetTypeKind(right_type) == c.LLVMFloatTypeKind;
         
         const is_float = left_is_float or right_is_float;
+        
+        // Handle integer type normalization for all operations
+        if (!left_is_float and !right_is_float) {
+            // Both are integers - normalize to consistent types
+            const left_width = if (c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind) 
+                c.LLVMGetIntTypeWidth(left_type) else 64;
+            const right_width = if (c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind) 
+                c.LLVMGetIntTypeWidth(right_type) else 64;
+            
+            // Use the wider type, or default to i64 for consistency
+            const target_width = @max(left_width, right_width);
+            const target_type = if (target_width <= 32) 
+                c.LLVMInt32TypeInContext(self.context) 
+            else 
+                c.LLVMInt64TypeInContext(self.context);
+            
+            // Convert both operands to the target type if needed
+            if (c.LLVMTypeOf(left) != target_type) {
+                if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(left)) < target_width) {
+                    left = c.LLVMBuildSExt(self.builder, left, target_type, "extend_left");
+                } else {
+                    left = c.LLVMBuildTrunc(self.builder, left, target_type, "trunc_left");
+                }
+            }
+            
+            if (c.LLVMTypeOf(right) != target_type) {
+                if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(right)) < target_width) {
+                    right = c.LLVMBuildSExt(self.builder, right, target_type, "extend_right");
+                } else {
+                    right = c.LLVMBuildTrunc(self.builder, right, target_type, "trunc_right");
+                }
+            }
+        }
         
         // Handle type promotion for mixed integer/float operations
         if (is_float) {
@@ -1511,6 +1546,18 @@ pub const LLVMIRPipeline = struct {
             } else {
                 return c.LLVMBuildICmp(self.builder, c.LLVMIntSGT, left, right, "gt_tmp");
             }
+        } else if (std.mem.eql(u8, bin_op.operator, "<=")) {
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOLE, left, right, "fle_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSLE, left, right, "le_tmp");
+            }
+        } else if (std.mem.eql(u8, bin_op.operator, ">=")) {
+            if (is_float) {
+                return c.LLVMBuildFCmp(self.builder, c.LLVMRealOGE, left, right, "fge_tmp");
+            } else {
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntSGE, left, right, "ge_tmp");
+            }
         } else if (std.mem.eql(u8, bin_op.operator, "=")) {
             // Single = is equality comparison in CURSED (like == in other languages)
             if (is_float) {
@@ -1583,6 +1630,13 @@ pub const LLVMIRPipeline = struct {
                 return error.UndefinedFunction;
             }
             
+            // Get function type first
+            const func_type = c.LLVMGlobalGetValueType(function);
+            if (@as(?*anyopaque, func_type) == null) {
+                print("❌ Null function type for: {s}\n", .{function_name});
+                return error.UndefinedFunction;
+            }
+            
             // Create a fixed-size array for LLVM arguments
             var llvm_args: [16]c.LLVMValueRef = undefined; // Support up to 16 args
             if (call.arguments.items.len > 16) {
@@ -1590,30 +1644,62 @@ pub const LLVMIRPipeline = struct {
                 return error.UndefinedFunction;
             }
             
+            // Get function parameter types for type conversion
+            const param_count = c.LLVMCountParamTypes(func_type);
+            var param_types: [16]c.LLVMTypeRef = undefined;
+            if (param_count > 0) {
+                c.LLVMGetParamTypes(func_type, @ptrCast(&param_types));
+            }
+            
             for (call.arguments.items, 0..) |arg, i| {
-                const arg_val = try self.generateExpression(arg.*);
+                var arg_val = try self.generateExpression(arg.*);
                 if (@as(?*anyopaque, arg_val) == null) {
                     print("❌ Null argument value at index {d}\n", .{i});
                     return error.UndefinedFunction;
                 }
+                
+                // Convert argument type to match function parameter type
+                if (i < param_count) {
+                    const expected_type = param_types[i];
+                    const actual_type = c.LLVMTypeOf(arg_val);
+                    
+                    if (expected_type != actual_type) {
+                        // Handle integer type conversions
+                        if (c.LLVMGetTypeKind(expected_type) == c.LLVMIntegerTypeKind and 
+                            c.LLVMGetTypeKind(actual_type) == c.LLVMIntegerTypeKind) {
+                            
+                            const expected_width = c.LLVMGetIntTypeWidth(expected_type);
+                            const actual_width = c.LLVMGetIntTypeWidth(actual_type);
+                            
+                            if (expected_width < actual_width) {
+                                // Truncate to smaller type
+                                arg_val = c.LLVMBuildTrunc(self.builder, arg_val, expected_type, "arg_trunc");
+                            } else if (expected_width > actual_width) {
+                                // Extend to larger type
+                                arg_val = c.LLVMBuildSExt(self.builder, arg_val, expected_type, "arg_extend");
+                            }
+                        }
+                        // TODO: Handle float/int conversions if needed
+                    }
+                }
+                
                 llvm_args[i] = arg_val;
-            }
-            
-            const func_type = c.LLVMGlobalGetValueType(function);
-            if (@as(?*anyopaque, func_type) == null) {
-                print("❌ Null function type for: {s}\n", .{function_name});
-                return error.UndefinedFunction;
             }
             
             // Use consistent approach with empty array for 0 arguments
             const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
+            
+            // Check if function returns void - if so, don't assign result to a variable
+            const return_type = c.LLVMGetReturnType(func_type);
+            const is_void = c.LLVMGetTypeKind(return_type) == c.LLVMVoidTypeKind;
+            
             const result = c.LLVMBuildCall2(
                 self.builder,
                 func_type,
                 function,
                 args_ptr,
                 @intCast(call.arguments.items.len),
-                "call_tmp"
+                if (is_void) "" else "call_tmp"
             );
             
             if (@as(?*anyopaque, result) == null) {
