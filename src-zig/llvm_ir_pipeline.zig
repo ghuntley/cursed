@@ -523,7 +523,8 @@ pub const LLVMIRPipeline = struct {
                     c.LLVMGetParamTypes(existing_type, existing_param_types.ptr);
                     
                     for (param_types.items, existing_param_types) |new_type, existing_param_type| {
-                        if (new_type != existing_param_type) {
+                        // Check if types are compatible (not just identical)
+                        if (!self.areTypesCompatible(new_type, existing_param_type)) {
                             param_types_match = false;
                             break;
                         }
@@ -531,19 +532,39 @@ pub const LLVMIRPipeline = struct {
                 }
                 
                 if (param_types_match) {
-                    print("✅ DEBUG: Forward declaration signature matches, using existing function {s}\n", .{qualified_name});
-                    // Generate function body using existing function
-                    try self.generateFunctionBody(existing_func, func_decl);
-                    return;
+                    print("✅ DEBUG: Forward declaration signature is compatible with {s}\n", .{qualified_name});
+                    
+                    // Check if types are compatible but not identical - need signature update
+                    var need_replacement = false;
+                    const existing_param_types = try self.allocator.alloc(c.LLVMTypeRef, param_types.items.len);
+                    defer self.allocator.free(existing_param_types);
+                    c.LLVMGetParamTypes(existing_type, existing_param_types.ptr);
+                    
+                    for (param_types.items, existing_param_types) |new_type, existing_param_type| {
+                        if (new_type != existing_param_type) {
+                            need_replacement = true;
+                            break;
+                        }
+                    }
+                    
+                    if (need_replacement) {
+                        // Remove and replace forward declaration with correct signature
+                        _ = self.functions.remove(qualified_name);
+                        c.LLVMDeleteFunction(existing_func);
+                        // Continue to create new function with correct signature
+                    } else {
+                        // Generate function body using existing function
+                        try self.generateFunctionBody(existing_func, func_decl);
+                        return;
+                    }
                 } else {
-                    print("❌ ERROR: Forward declaration signature mismatch for {s} - parameter types differ\n", .{qualified_name});
+                    print("❌ ERROR: Forward declaration signature mismatch for {s} - parameter types incompatible\n", .{qualified_name});
                 }
             } else {
                 print("❌ ERROR: Forward declaration signature mismatch for {s}: forward={d}, actual={d}\n", .{qualified_name, existing_param_count, param_types.items.len});
+                // If we reach here, signatures don't match - this is an error
+                return error.CompilationFailed;
             }
-            
-            // If we reach here, signatures don't match - this is an error
-            return error.CompilationFailed;
         }
         
         const func_name_z = try self.arena.allocator().dupeZ(u8, qualified_name);
@@ -1429,35 +1450,47 @@ pub const LLVMIRPipeline = struct {
         
         const is_float = left_is_float or right_is_float;
         
-        // Handle integer type normalization for all operations
-        if (!left_is_float and !right_is_float) {
-            // Both are integers - normalize to consistent types
-            const left_width = if (c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind) 
-                c.LLVMGetIntTypeWidth(left_type) else 64;
-            const right_width = if (c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind) 
-                c.LLVMGetIntTypeWidth(right_type) else 64;
+        // Skip type normalization for logical operators (&&, ||) - they handle their own boolean conversions
+        const is_logical_op = std.mem.eql(u8, bin_op.operator, "&&") or std.mem.eql(u8, bin_op.operator, "||");
+        
+        // Handle integer type normalization for all operations (except logical operators)
+        if (!left_is_float and !right_is_float and !is_logical_op) {
+            // Check if operands are boolean (i1) - don't normalize boolean values for comparison operations
+            const left_is_bool = c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(left_type) == 1;
+            const right_is_bool = c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(right_type) == 1;
             
-            // Use the wider type, or default to i64 for consistency
-            const target_width = @max(left_width, right_width);
-            const target_type = if (target_width <= 32) 
-                c.LLVMInt32TypeInContext(self.context) 
-            else 
-                c.LLVMInt64TypeInContext(self.context);
-            
-            // Convert both operands to the target type if needed
-            if (c.LLVMTypeOf(left) != target_type) {
-                if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(left)) < target_width) {
-                    left = c.LLVMBuildSExt(self.builder, left, target_type, "extend_left");
-                } else {
-                    left = c.LLVMBuildTrunc(self.builder, left, target_type, "trunc_left");
+            // Don't normalize if both operands are already booleans for comparison operations
+            if (left_is_bool and right_is_bool) {
+                // Keep boolean types as-is for comparison operations
+            } else {
+                // Both are integers - normalize to consistent types
+                const left_width = if (c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind) 
+                    c.LLVMGetIntTypeWidth(left_type) else 64;
+                const right_width = if (c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind) 
+                    c.LLVMGetIntTypeWidth(right_type) else 64;
+                
+                // Use the wider type, or default to i64 for consistency
+                const target_width = @max(left_width, right_width);
+                const target_type = if (target_width <= 32) 
+                    c.LLVMInt32TypeInContext(self.context) 
+                else 
+                    c.LLVMInt64TypeInContext(self.context);
+                
+                // Convert both operands to the target type if needed
+                if (c.LLVMTypeOf(left) != target_type) {
+                    if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(left)) < target_width) {
+                        left = c.LLVMBuildSExt(self.builder, left, target_type, "extend_left");
+                    } else {
+                        left = c.LLVMBuildTrunc(self.builder, left, target_type, "trunc_left");
+                    }
                 }
-            }
-            
-            if (c.LLVMTypeOf(right) != target_type) {
-                if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(right)) < target_width) {
-                    right = c.LLVMBuildSExt(self.builder, right, target_type, "extend_right");
-                } else {
-                    right = c.LLVMBuildTrunc(self.builder, right, target_type, "trunc_right");
+                
+                if (c.LLVMTypeOf(right) != target_type) {
+                    if (c.LLVMGetIntTypeWidth(c.LLVMTypeOf(right)) < target_width) {
+                        right = c.LLVMBuildSExt(self.builder, right, target_type, "extend_right");
+                    } else {
+                        right = c.LLVMBuildTrunc(self.builder, right, target_type, "trunc_right");
+                    }
                 }
             }
         }
@@ -1572,6 +1605,40 @@ pub const LLVMIRPipeline = struct {
             } else {
                 return c.LLVMBuildSRem(self.builder, left, right, "mod_tmp");
             }
+        } else if (std.mem.eql(u8, bin_op.operator, "&&")) {
+            // Logical AND - ensure operands are boolean (i1) type
+            const bool_type = c.LLVMInt1TypeInContext(self.context);
+            
+            // Convert operands to boolean if needed
+            if (c.LLVMTypeOf(left) != bool_type) {
+                // Check if value is zero for integer types
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(left), 0, 0);
+                left = c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, zero_val, "bool_cast_left");
+            }
+            if (c.LLVMTypeOf(right) != bool_type) {
+                // Check if value is zero for integer types  
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(right), 0, 0);
+                right = c.LLVMBuildICmp(self.builder, c.LLVMIntNE, right, zero_val, "bool_cast_right");
+            }
+            
+            return c.LLVMBuildAnd(self.builder, left, right, "and_tmp");
+        } else if (std.mem.eql(u8, bin_op.operator, "||")) {
+            // Logical OR - ensure operands are boolean (i1) type
+            const bool_type = c.LLVMInt1TypeInContext(self.context);
+            
+            // Convert operands to boolean if needed
+            if (c.LLVMTypeOf(left) != bool_type) {
+                // Check if value is zero for integer types
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(left), 0, 0);
+                left = c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, zero_val, "bool_cast_left");
+            }
+            if (c.LLVMTypeOf(right) != bool_type) {
+                // Check if value is zero for integer types
+                const zero_val = c.LLVMConstInt(c.LLVMTypeOf(right), 0, 0);
+                right = c.LLVMBuildICmp(self.builder, c.LLVMIntNE, right, zero_val, "bool_cast_right");
+            }
+            
+            return c.LLVMBuildOr(self.builder, left, right, "or_tmp");
         } else {
             print("⚠️ Unhandled binary operator: {s}\n", .{bin_op.operator});
             return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
@@ -2097,8 +2164,17 @@ pub const LLVMIRPipeline = struct {
             return c.LLVMBuildCall2(self.builder, puts_type, puts_func, @constCast(@ptrCast(&empty_str)), 1, "puts_empty");
         }
         
+        // Handle multiple arguments by making separate print calls
+        var result: c.LLVMValueRef = undefined;
+        for (args, 0..) |arg, i| {
+            result = try self.generateSinglePrintCall(arg, i == args.len - 1);
+        }
+        return result;
+    }
+    
+    fn generateSinglePrintCall(self: *LLVMIRPipeline, arg: ast.Expression, is_last: bool) !c.LLVMValueRef {
         // Generate the argument
-        const arg_val: c.LLVMValueRef = try self.generateExpression(args[0]);
+        const arg_val: c.LLVMValueRef = try self.generateExpression(arg);
         
         // Safeguard against null values
         if (@as(?*anyopaque, arg_val) == null) {
@@ -2110,24 +2186,27 @@ pub const LLVMIRPipeline = struct {
         
         // Determine the print function to use based on type
         if (c.LLVMGetTypeKind(arg_type) == c.LLVMPointerTypeKind) {
-            // String print using puts
-            const puts_func = self.functions.get("puts") orelse {
-                print("❌ puts function not found\n", .{});
+            // String print using printf with proper formatting
+            const printf_func = self.functions.get("printf") orelse {
+                print("❌ printf function not found\n", .{});
                 return error.UndefinedFunction;
             };
             
-            // Get the function type - need to recreate it since we can't store it
+            // Use printf with %s format and proper suffix
+            const fmt_str = if (is_last) try self.generateStringLiteral("%s\n") else try self.generateStringLiteral("%s ");
+            
+            const printf_args = [_]c.LLVMValueRef{ fmt_str, arg_val };
+            
+            // Create printf function type
             const char_ptr_type = c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0);
-            const puts_function_type = c.LLVMFunctionType(
+            const printf_function_type = c.LLVMFunctionType(
                 c.LLVMInt32TypeInContext(self.context),
                 @constCast(@ptrCast(&char_ptr_type)),
                 1,
-                0
+                1  // Variadic
             );
             
-            var puts_args = [_]c.LLVMValueRef{arg_val};
-            // Removed DEBUG output
-            return c.LLVMBuildCall2(self.builder, puts_function_type, puts_func, @ptrCast(&puts_args), 1, "puts_call");
+            return c.LLVMBuildCall2(self.builder, printf_function_type, printf_func, @constCast(@ptrCast(&printf_args)), 2, "printf_string_call");
         } else {
             // Integer or float print using printf  
             const printf_func = self.functions.get("printf") orelse {
@@ -2144,20 +2223,18 @@ pub const LLVMIRPipeline = struct {
             
             if (type_kind == c.LLVMFloatTypeKind) {
                 // Float (32-bit) - convert to double for printf
-                // Use %g to match interpreter's {d} behavior (compact format)
-                fmt_str = try self.generateStringLiteral("%g\n");
+                fmt_str = if (is_last) try self.generateStringLiteral("%g\n") else try self.generateStringLiteral("%g ");
                 converted_arg = c.LLVMBuildFPExt(self.builder, arg_val, c.LLVMDoubleTypeInContext(self.context), "float_to_double");
             } else if (type_kind == c.LLVMDoubleTypeKind) {
                 // Double (64-bit float)
-                // Use %g to match interpreter's {d} behavior (compact format)
-                fmt_str = try self.generateStringLiteral("%g\n");
+                fmt_str = if (is_last) try self.generateStringLiteral("%g\n") else try self.generateStringLiteral("%g ");
             } else if (type_kind == c.LLVMIntegerTypeKind) {
                 // Integer types - check bit width
                 const bit_width = c.LLVMGetIntTypeWidth(printf_arg_type);
                 if (bit_width == 1) {
                     // Boolean type (i1) - convert to "based" or "cap" string
-                    const based_str = try self.generateStringLiteral("based\n");
-                    const cap_str = try self.generateStringLiteral("cap\n");
+                    const based_str = if (is_last) try self.generateStringLiteral("based\n") else try self.generateStringLiteral("based ");
+                    const cap_str = if (is_last) try self.generateStringLiteral("cap\n") else try self.generateStringLiteral("cap ");
                     
                     // Select the appropriate string based on the boolean value
                     const selected_str = c.LLVMBuildSelect(self.builder, arg_val, based_str, cap_str, "bool_to_string");
@@ -2167,18 +2244,18 @@ pub const LLVMIRPipeline = struct {
                     converted_arg = selected_str;
                 } else if (bit_width <= 32) {
                     // 32-bit or smaller integers
-                    fmt_str = try self.generateStringLiteral("%d\n");
+                    fmt_str = if (is_last) try self.generateStringLiteral("%d\n") else try self.generateStringLiteral("%d ");
                     // Ensure it's 32-bit for printf
                     converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt32TypeInContext(self.context), "extend_to_int32");
                 } else {
                     // 64-bit integers
-                    fmt_str = try self.generateStringLiteral("%lld\n");
+                    fmt_str = if (is_last) try self.generateStringLiteral("%lld\n") else try self.generateStringLiteral("%lld ");
                     // Ensure it's 64-bit for printf
                     converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt64TypeInContext(self.context), "extend_to_int64");
                 }
             } else {
                 // Fallback for unknown types
-                fmt_str = try self.generateStringLiteral("%d\n");
+                fmt_str = if (is_last) try self.generateStringLiteral("%d\n") else try self.generateStringLiteral("%d ");
                 converted_arg = c.LLVMBuildSExt(self.builder, arg_val, c.LLVMInt32TypeInContext(self.context), "fallback_to_int32");
             }
             
@@ -2220,6 +2297,30 @@ pub const LLVMIRPipeline = struct {
     }
     
     /// Convert CURSED type to LLVM type
+    /// Check if two LLVM types are compatible for function signatures
+    /// This allows for integer types with different widths to be considered compatible
+    /// if they are both integer types (handles int64 <-> int32 compatibility)
+    fn areTypesCompatible(self: *LLVMIRPipeline, type1: c.LLVMTypeRef, type2: c.LLVMTypeRef) bool {
+        _ = self; // unused parameter
+        // If types are identical, they're compatible
+        if (type1 == type2) return true;
+        
+        const kind1 = c.LLVMGetTypeKind(type1);
+        const kind2 = c.LLVMGetTypeKind(type2);
+        
+        // Both must be the same kind of type
+        if (kind1 != kind2) return false;
+        
+        // For integer types, we allow different widths to be compatible
+        // This handles cases where forward declaration infers i64 but actual function uses i32
+        if (kind1 == c.LLVMIntegerTypeKind) {
+            return true; // All integer types are compatible with each other
+        }
+        
+        // For other types, they must be identical
+        return false;
+    }
+
     fn cursedTypeToLLVM(self: *LLVMIRPipeline, cursed_type: ast.Type) !c.LLVMTypeRef {
         switch (cursed_type) {
             .Basic => |basic| {
@@ -2496,6 +2597,27 @@ pub const LLVMIRPipeline = struct {
             c.LLVMDisposeMessage(error_msg);
             return error.ModuleVerificationFailed;
         }
+        
+        // Check if main function exists and has content
+        const main_func = c.LLVMGetNamedFunction(self.module, "main");
+        if (main_func == null) {
+            print("❌ No main function generated - compilation incomplete\n", .{});
+            return error.EmptyCodeGeneration;
+        }
+        
+        // Check if main function has any basic blocks (non-empty body)
+        const first_bb = c.LLVMGetFirstBasicBlock(main_func);
+        if (first_bb == null) {
+            print("❌ Main function has empty body - code generation failed\n", .{});
+            return error.EmptyCodeGeneration;
+        }
+        
+        // Check if there are any instructions in the first basic block
+        const first_instr = c.LLVMGetFirstInstruction(first_bb);
+        if (first_instr == null) {
+            print("❌ Main function basic block is empty - code generation failed\n", .{});
+            return error.EmptyCodeGeneration;
+        }
     }
     
     /// Write LLVM IR to file (for --emit-ir mode)
@@ -2513,6 +2635,9 @@ pub const LLVMIRPipeline = struct {
 
     /// Compile to executable using llc + gcc pipeline
     pub fn compileToExecutable(self: *LLVMIRPipeline, output_file: []const u8) !void {
+        // Verify module before compilation
+        try self.verifyModule();
+        
         // Write LLVM IR to temporary file
         const ir_file = try std.fmt.allocPrint(self.allocator, "{s}.ll", .{output_file});
         defer self.allocator.free(ir_file);
