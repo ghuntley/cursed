@@ -201,7 +201,7 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
     
     pipeline.compileSource(source, final_output, verbose) catch |err| {
         print("❌ LLVM code generation failed: {any}\n", .{err});
-        return;
+        return err;
     };
     
     if (emit_ir) {
@@ -259,7 +259,7 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     
     cursed_interpreter.interpret(program) catch |err| {
         print("❌ Runtime error in {s}: {any}\n", .{ filename, err });
-        return;
+        return err;
     };
     
     if (verbose) {

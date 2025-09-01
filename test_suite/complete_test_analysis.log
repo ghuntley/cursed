@@ -658,17 +658,19 @@ Found 112 test files
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
-                                                                ^
+            const expr_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
+                                                        ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
             try interpretSource(allocator, source, filename.?, verbose);
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a8d14c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7a8d14c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7b75eec2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7b75eec2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -694,7 +696,7 @@ Found 112 test files
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
                                                                 ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
@@ -702,9 +704,9 @@ Found 112 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7a1299c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7a1299c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7e84ada2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7e84ada2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -767,9 +769,9 @@ Found 112 test files
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7c5ba642a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7c5ba642a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x74c8b782a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x74c8b782a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1107,8 +1109,8 @@ Total tokens skipped: 7
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const arg_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
-                                                               ^
+                    const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                   ^
                 left = try infix_fn.?(self, left);
                                      ^
             return self.parseExpressionPrattPrec(.None);
@@ -1127,9 +1129,9 @@ Total tokens skipped: 7
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7e64f922a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7e64f922a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x75865402a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x75865402a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1375,8 +1377,8 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const arg_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
-                                                               ^
+                    const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                   ^
                 left = try infix_fn.?(self, left);
                                      ^
             return self.parseExpressionPrattPrec(.None);
@@ -1395,9 +1397,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7f0b9a02a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7f0b9a02a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x70efafc2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x70efafc2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1423,8 +1425,8 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const arg_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
-                                                               ^
+                    const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                   ^
                 left = try infix_fn.?(self, left);
                                      ^
             return self.parseExpressionPrattPrec(.None);
@@ -1443,9 +1445,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7bbde382a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7bbde382a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x711b8fe2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x711b8fe2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1477,8 +1479,8 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                        const arg_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
-                                                                   ^
+                        const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                       ^
                 left = try infix_fn.?(self, left);
                                      ^
             return self.parseExpressionPrattPrec(.None);
@@ -1499,9 +1501,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7133daa2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7133daa2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x715d2ae2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x715d2ae2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1546,9 +1548,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7e9f9d02a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7e9f9d02a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7bed0442a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7bed0442a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1808,7 +1810,7 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
                                                                 ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
@@ -1816,9 +1818,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x77530682a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x77530682a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x77ef1182a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x77ef1182a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1844,7 +1846,7 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
                                                                 ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
@@ -1852,9 +1854,9 @@ Total tokens skipped: 3
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x78d256c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x78d256c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x72981e02a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x72981e02a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -1886,17 +1888,19 @@ Total tokens skipped: 3
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
-                                                                ^
+            const expr_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
+                                                        ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
             try interpretSource(allocator, source, filename.?, verbose);
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x78bc56c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x78bc56c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x70a94062a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x70a94062a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -2164,9 +2168,9 @@ Total tokens skipped: 4
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7d329162a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x7d329162a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7c7c7282a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7c7c7282a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -2394,9 +2398,9 @@ Total tokens skipped: 4
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x779d1282a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x779d1282a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7492a942a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7492a942a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -2444,9 +2448,9 @@ Total tokens skipped: 4
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x70e084c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x70e084c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7d4a3102a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7d4a3102a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -2472,17 +2476,19 @@ Total tokens skipped: 4
                              ^
         const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
                                                               ^
-                    const stmt_ptr = self.arena_allocator.create(Statement) catch |alloc_err| {
-                                                                ^
+            const expr_ptr = self.arena_allocator.create(Expression) catch |alloc_err| {
+                                                        ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
         const program = cursed_parser.parseProgram() catch |err| {
                                                   ^
             try interpretSource(allocator, source, filename.?, verbose);
                                ^
                 const result = root.main() catch |err| {
                                         ^
-    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x76bc9b42a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
-    ../csu/libc-start.c:360:3: 0x76bc9b42a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
-    ???:?:?: 0x14893c4 in ??? (???)
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7aa77ac2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7aa77ac2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
     ???:?:?: 0x0 in ??? (???)
 
   [36mCompiled (exit: 134):[0m
@@ -2900,3 +2906,1210 @@ Total tokens skipped: 4
 
 ---
 [1m[81/112] Testing: stdlib/01_comprehensive_multi_module.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_comprehensive_multi_module.csd:11:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_comprehensive_multi_module.csd:11:17 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_comprehensive_multi_module.csd:11:18 - Error parsing function statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 14 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_comprehensive_multi_module.csd:24:5 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightBracket' after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xe
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+            const ptr = self.arena_allocator.create(Expression) catch return ParserError.OutOfMemory;
+                                                   ^
+                .array = try self.allocateExpression(left),
+                                                    ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+                const init_expr = try self.parseExpression();
+                                                          ^
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+                                                               ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x72e84d82a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x72e84d82a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[82/112] Testing: stdlib/01_mathz_basic.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Mathz Stdlib Test ===" 
+    "Testing mathz.add_two:" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/01_mathz_basic.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                const value = try self.evaluateExpression(value_expr.*);
+                              ^
+                    try self.executeShortDeclarationStatement(short_decl);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[83/112] Testing: stdlib/01_stdlib_integration_basic.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[84/112] Testing: stdlib/02_cross_module_dependencies.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_cross_module_dependencies.csd:10:22 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_cross_module_dependencies.csd:10:22 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_cross_module_dependencies.csd:10:23 - Error parsing function statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_cross_module_dependencies.csd:20:9 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 8 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xe
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                        const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                       ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+                const init_expr = try self.parseExpression();
+                                                          ^
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+                                                               ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x76898762a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x76898762a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[85/112] Testing: stdlib/02_stdlib_cross_module_simple.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[86/112] Testing: stdlib/02_stringz_basic.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Stringz Stdlib Test ===" 
+    "Testing stringz.concat:" 
+    "Hello"" World" 
+    "Testing stringz.length:" 
+    8 
+    "Testing stringz.upper:" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/02_stringz_basic.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[87/112] Testing: stdlib/03_mathz_advanced.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Advanced Mathz Test ===" 
+    "Power function:" 
+    8 
+    25 
+    "Square root:" 
+    4 
+    5 
+    "Modulo operation:" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/03_mathz_advanced.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                            const arg_value = try self.evaluateExpression(arg_ptr.*);
+                                              ^
+                    _ = try self.evaluateExpression(expr);
+                        ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[88/112] Testing: stdlib/04_collections_basic.csd[0m
+  Result: [31mINTERPRETER ERROR (compiled worked)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Basic Collections Test ===" 
+    "Creating array:" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/04_collections_basic.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 0):[0m
+    "=== Basic Collections Test ==="
+    "Creating array:"
+    "Adding elements:"
+    "Array length:"
+    0
+    "Getting elements:"
+    0
+    0
+    0
+    "=== Test Complete ==="
+
+---
+[1m[89/112] Testing: stdlib/feature_stdlib_integration.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Stdlib Integration Test ===" 
+    "Testing mathz.abs with negative:" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/stdlib/feature_stdlib_integration.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[90/112] Testing: stdlib/stdlib_mathz_operations.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:10 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:10 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at semicolon after skipping 5 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:12:25 - Error parsing function statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 4 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stdlib/stdlib_mathz_operations.csd:29:5 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xe
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                    const stmt_ptr = self.arena_allocator.create(Statement) catch {
+                                                                ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x77cb9aa2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x77cb9aa2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[91/112] Testing: stdlib/stdlib_vibez_output.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "Hello, CURSED world!" 
+    "I am {} years old" 25 
+    "{} scored {} points" "Alice" 95 
+    "Valid: {}, Complete: {}" based cap 
+    "Pi value: {}" 3.14159 
+    "No formatting needed" 
+    "" 
+    "Result: {} + {} = {}" 10 20 30 
+
+  [36mCompiled (exit: 0):[0m
+    "Hello, CURSED world!"
+    "I am {} years old" 25
+    "{} scored {} points" "Alice" 95
+    "Valid: {}, Complete: {}" based cap
+    "Pi value: {}" 3.14159
+    "No formatting needed"
+    ""
+    "Result: {} + {} = {}" 10 20 30
+
+---
+[1m[92/112] Testing: stress/stress_deep_nested_operations.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:30:35 - Expected ')' after parameters. Expected .RightParen, got .Flex (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:30:35 - Error parsing function statement
+    INFO: Recovered at semicolon after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_deep_nested_operations.csd:53:5 - Failed to parse statement
+    INFO: Recovered at semicolon after skipping 2 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xb
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                        const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                       ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+            const expr = self.parseExpression() catch |parse_err| {
+                                             ^
+                const stmt = try self.parseStatement();
+                                                    ^
+                return Statement{ .Function = self.parseFunctionStatement() catch |parse_err| {
+                                                                         ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x723ad3c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x723ad3c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[93/112] Testing: stress/stress_large_scale_processing.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:12:16 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:12:16 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:12:17 - Error parsing function statement
+    INFO: Recovered at newline after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:24:1 - Failed to parse statement
+    INFO: Recovered at statement keyword 'Flex' after skipping 4 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/stress/stress_large_scale_processing.csd:24:37 - Failed to parse statement
+    INFO: Recovered at newline after skipping 2 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xd
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                        const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                       ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+                const init_expr = try self.parseExpression();
+                                                          ^
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+                                                               ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7dfa77c2a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7dfa77c2a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[94/112] Testing: strings/01_string_operations.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== String Operations Test ===" 
+    "Individual strings:" 
+    "Hello" 
+    "World" 
+    "String with numbers:" 
+    "Value: 42" 
+    "Empty string:" 
+    "" 
+    "After empty string" 
+    "Special characters:" 
+    "Hello\nWorld" 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== String Operations Test ==="
+    "Individual strings:"
+    "Hello"
+    "World"
+    "String with numbers:"
+    "Value: 42"
+    "Empty string:"
+    ""
+    "After empty string"
+    "Special characters:"
+    "Hello\nWorld"
+    "=== Test Complete ==="
+
+---
+[1m[95/112] Testing: strings/strings_basic_operations.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:16:13 - Error parsing variable declaration
+    INFO: Recovered at semicolon after skipping 4 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:16:30 - Error parsing function statement
+    INFO: Recovered at newline after skipping 1 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/strings/strings_basic_operations.csd:19:5 - Failed to parse statement
+    INFO: Recovered at newline after skipping 5 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xe
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                const init_ptr = try self.arena_allocator.create(Expression);
+                                                                ^
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+                                                               ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7ae59c82a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7ae59c82a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[96/112] Testing: validation_cursed_arithmetic.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "Testing arithmetic operations" 
+    "Addition: 10 + 5" 
+    "Subtraction: 10 - 5" 
+    "Multiplication: 10 * 5" 
+    "Division: 10 / 5" 
+    "Mathz abs test:" 
+    42 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[97/112] Testing: validation_cursed_basic.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "Hello CURSED World!" 
+    "Basic test complete" 
+
+  [36mCompiled (exit: 0):[0m
+    "Hello CURSED World!"
+    "Basic test complete"
+
+---
+[1m[98/112] Testing: validation_cursed_variables.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "Testing function calls" 
+    "Multiple statements test" 
+    "Variable test placeholder" 
+    "Types: normie meal tea lit" 
+
+  [36mCompiled (exit: 0):[0m
+    "Testing function calls"
+    "Multiple statements test"
+    "Variable test placeholder"
+    "Types: normie meal tea lit"
+
+---
+[1m[99/112] Testing: validation/floating_point_format_parity.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Floating Point Format Test ===" 
+    "Simple float:" 
+    3.5 
+    "Calculated result:" 
+    1.75 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== Floating Point Format Test ==="
+    "Simple float:"
+    3.5
+    "Calculated result:"
+    1.75
+    "=== Test Complete ==="
+
+---
+[1m[100/112] Testing: validation/validation_basic_cursed_syntax.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== CURSED Syntax Validation ===" 
+    "Integer variable:" 
+    42 
+    "Float variable:" 
+    3.14 
+    "String variable:" 
+    "Hello CURSED" 
+    "Boolean variable (based):" 
+    based 
+    "Conditional test passed" 
+    "=== Syntax Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== CURSED Syntax Validation ==="
+    "Integer variable:"
+    42
+    "Float variable:"
+    3.14
+    "String variable:"
+    "Hello CURSED"
+    "Boolean variable (based):"
+    based
+    "Conditional test passed"
+    "=== Syntax Test Complete ==="
+
+---
+[1m[101/112] Testing: validation/validation_basic_syntax.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Basic Syntax Test ===" 
+    25 
+    "CURSED" 
+    based 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== Basic Syntax Test ==="
+    25
+    "CURSED"
+    based
+    "=== Test Complete ==="
+
+---
+[1m[102/112] Testing: validation/validation_comprehensive_syntax.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== Comprehensive CURSED Syntax Test ===" 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_comprehensive_syntax.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[103/112] Testing: validation/validation_cursed_keywords.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "positive vibes" 
+
+  [36mCompiled (exit: 0):[0m
+    "positive vibes"
+
+---
+[1m[104/112] Testing: validation/validation_float_precision.csd[0m
+    [36mDebug: Normalized outputs differ[0m
+    [36mInterpreter normalized: '"=== Float Precision Validation ==="
+1.00000e-7
+1000000
+0.3
+1.11111e10
+0.33333
+1
+9.99201e-16
+123.45679
+"=== Test Complete ==="'[0m
+    [36mCompiled normalized: '"=== Float Precision Validation ==="
+1e-07
+1e+06
+0.3
+1.11111e+10
+0.333333
+1
+9.99201e-16
+123.457
+"=== Test Complete ==="'[0m
+    [36mInterpreter raw bytes:[0m
+      00000000: 223d 3d3d 2046 6c6f 6174 2050 7265 6369  "=== Float Preci
+      00000010: 7369 6f6e 2056 616c 6964 6174 696f 6e20  sion Validation 
+      00000020: 3d3d 3d22 200a 312e 3030 3030 3065 2d37  ===" .1.00000e-7
+      00000030: 200a 3130 3030 3030 3020 0a30 2e33 200a   .1000000 .0.3 .
+      00000040: 312e 3131 3131 3165 3130 200a 302e 3333  1.11111e10 .0.33
+      00000050: 3333 3320 0a31 200a 392e 3939 3230 3165  333 .1 .9.99201e
+      00000060: 2d31 3620 0a31 3233 2e34 3536 3739 200a  -16 .123.45679 .
+      00000070: 223d 3d3d 2054 6573 7420 436f 6d70 6c65  "=== Test Comple
+      00000080: 7465 203d 3d3d 2220                      te ===" 
+    [36mCompiled raw bytes:[0m
+      00000000: 223d 3d3d 2046 6c6f 6174 2050 7265 6369  "=== Float Preci
+      00000010: 7369 6f6e 2056 616c 6964 6174 696f 6e20  sion Validation 
+      00000020: 3d3d 3d22 0a31 652d 3037 0a31 652b 3036  ===".1e-07.1e+06
+      00000030: 0a30 2e33 0a31 2e31 3131 3131 652b 3130  .0.3.1.11111e+10
+      00000040: 0a30 2e33 3333 3333 330a 310a 392e 3939  .0.333333.1.9.99
+      00000050: 3230 3165 2d31 360a 3132 332e 3435 370a  201e-16.123.457.
+      00000060: 223d 3d3d 2054 6573 7420 436f 6d70 6c65  "=== Test Comple
+      00000070: 7465 203d 3d3d 22                        te ==="
+  Result: [33mFAIL (different outputs)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Float Precision Validation ===" 
+    1.00000e-7 
+    1000000 
+    0.3 
+    1.11111e10 
+    0.33333 
+    1 
+    9.99201e-16 
+    123.45679 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== Float Precision Validation ==="
+    1e-07
+    1e+06
+    0.3
+    1.11111e+10
+    0.333333
+    1
+    9.99201e-16
+    123.457
+    "=== Test Complete ==="
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 223d 3d3d 2046 6c6f 6174 2050 7265 6369  "=== Float Preci
+    00000010: 7369 6f6e 2056 616c 6964 6174 696f 6e20  sion Validation 
+    00000020: 3d3d 3d22 200a 312e 3030 3030 3065 2d37  ===" .1.00000e-7
+    00000030: 200a 3130 3030 3030 3020 0a30 2e33 200a   .1000000 .0.3 .
+    00000040: 312e 3131 3131 3165 3130 200a 302e 3333  1.11111e10 .0.33
+    00000050: 3333 3320 0a31 200a 392e 3939 3230 3165  333 .1 .9.99201e
+    00000060: 2d31 3620 0a31 3233 2e34 3536 3739 200a  -16 .123.45679 .
+    00000070: 223d 3d3d 2054 6573 7420 436f 6d70 6c65  "=== Test Comple
+    00000080: 7465 203d 3d3d 2220                      te ===" 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 223d 3d3d 2046 6c6f 6174 2050 7265 6369  "=== Float Preci
+    00000010: 7369 6f6e 2056 616c 6964 6174 696f 6e20  sion Validation 
+    00000020: 3d3d 3d22 0a31 652d 3037 0a31 652b 3036  ===".1e-07.1e+06
+    00000030: 0a30 2e33 0a31 2e31 3131 3131 652b 3130  .0.3.1.11111e+10
+    00000040: 0a30 2e33 3333 3333 330a 310a 392e 3939  .0.333333.1.9.99
+    00000050: 3230 3165 2d31 360a 3132 332e 3435 370a  201e-16.123.457.
+    00000060: 223d 3d3d 2054 6573 7420 436f 6d70 6c65  "=== Test Comple
+    00000070: 7465 203d 3d3d 22                        te ==="
+
+---
+[1m[105/112] Testing: validation/validation_function_definitions.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_function_definitions.csd:11:30 - Expected ')' after parameters. Expected .RightParen, got .Normie (context: consume)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_function_definitions.csd:11:30 - Error parsing function statement
+    INFO: Recovered at semicolon after skipping 3 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_function_definitions.csd:30:17 - Failed to parse statement
+    INFO: Recovered at newline after skipping 5 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xb
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+            const ptr = self.arena_allocator.create(Expression) catch return ParserError.OutOfMemory;
+                                                   ^
+                .left = try self.allocateExpression(left),
+                                                   ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+            const condition = try self.parseExpression();
+                                                      ^
+                return Statement{ .If = try self.parseIfStatement() };
+                                                                 ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7483c542a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7483c542a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[106/112] Testing: validation/validation_minimal_syntax.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    (no output)
+
+  [36mCompiled (exit: 0):[0m
+    (no output)
+
+---
+[1m[107/112] Testing: validation/validation_stdlib_collections_complete.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 134):[0m
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.csd:13:17 - Error parsing complex expression statement - check for misplaced braces or operator precedence issues (context: parseStatement)
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.csd:13:17 - Synchronizing parser after error (context: synchronize)
+    INFO: Recovered at delimiter 'RightBracket' after skipping 1 tokens
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.csd:13:18 - Error parsing function statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 6 tokens
+    INFO: Attempting additional statement recovery
+    Error at /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_collections_complete.csd:28:5 - Failed to parse statement
+    INFO: Recovered at delimiter 'RightParen' after skipping 11 tokens
+    INFO: Attempting additional statement recovery
+    Segmentation fault at address 0xe
+        return a.vtable.resize(a.ptr, memory, alignment, new_len, ret_addr);
+                              ^
+        return a.vtable.alloc(a.ptr, len, alignment, ret_addr);
+                             ^
+        const ptr: *T = @ptrCast(try a.allocBytesWithAlignment(.of(T), @sizeOf(T), @returnAddress()));
+                                                              ^
+                        const arg_ptr = try self.arena_allocator.create(Expression);
+                                                                       ^
+                left = try infix_fn.?(self, left);
+                                     ^
+            return self.parseExpressionPrattPrec(.None);
+                                                ^
+                return self.parseExpressionPratt();
+                                                ^
+                const init_expr = try self.parseExpression();
+                                                          ^
+                return Statement{ .Let = self.parseLetStatement() catch |parse_err| {
+                                                               ^
+                if (self.parseStatement()) |stmt| {
+                                       ^
+        const program = cursed_parser.parseProgram() catch |err| {
+                                                  ^
+            try interpretSource(allocator, source, filename.?, verbose);
+                               ^
+                const result = root.main() catch |err| {
+                                        ^
+    ../sysdeps/nptl/libc_start_call_main.h:58:16: 0x7b109a02a1c9 in __libc_start_call_main (../sysdeps/x86/libc-start.c)
+    ../csu/libc-start.c:360:3: 0x7b109a02a28a in __libc_start_main_impl (../sysdeps/x86/libc-start.c)
+    ???:?:?: 0x1487094 in ??? (???)
+    ???:?:?: 0x0 in ??? (???)
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[108/112] Testing: validation/validation_stdlib_complete.csd[0m
+    [36mDebug: Normalized outputs differ[0m
+    [36mInterpreter normalized: '"=== Comprehensive Stdlib Validation ==="
+"Testing vibez.spill function"
+"Integer test:"
+42
+-17
+0
+"Float test:"
+3.14159
+-2.71828
+0
+"Boolean test:"
+based
+cap
+"String test:"
+"Simple tea"
+"Complex tea with numbers: 123"
+"String with symbols: !@#$%"
+""
+"Large number test:"
+999999999
+-123456789
+"Precision test:"
+123.45679
+1.00000e-6
+"Expression test:"
+70
+3.14286
+"=== Stdlib Validation Complete ==="'[0m
+    [36mCompiled normalized: '"=== Comprehensive Stdlib Validation ==="
+"Testing vibez.spill function"
+"Integer test:"
+42
+-17
+0
+"Float test:"
+3.14159
+-2.71828
+0
+"Boolean test:"
+based
+cap
+"String test:"
+"Simple tea"
+"Complex tea with numbers: 123"
+"String with symbols: !@#$%"
+""
+"Large number test:"
+999999999
+-123456789
+"Precision test:"
+123.457
+1e-06
+"Expression test:"
+70
+3.14286
+"=== Stdlib Validation Complete ==="'[0m
+    [36mInterpreter raw bytes:[0m
+      00000000: 223d 3d3d 2043 6f6d 7072 6568 656e 7369  "=== Comprehensi
+      00000010: 7665 2053 7464 6c69 6220 5661 6c69 6461  ve Stdlib Valida
+      00000020: 7469 6f6e 203d 3d3d 2220 0a22 5465 7374  tion ===" ."Test
+      00000030: 696e 6720 7669 6265 7a2e 7370 696c 6c20  ing vibez.spill 
+      00000040: 6675 6e63 7469 6f6e 2220 0a22 496e 7465  function" ."Inte
+      00000050: 6765 7220 7465 7374 3a22 200a 3432 200a  ger test:" .42 .
+      00000060: 2d31 3720 0a30 200a 2246 6c6f 6174 2074  -17 .0 ."Float t
+      00000070: 6573 743a 2220 0a33 2e31 3431 3539 200a  est:" .3.14159 .
+      00000080: 2d32 2e37 3138 3238 200a 3020 0a22 426f  -2.71828 .0 ."Bo
+      00000090: 6f6c 6561 6e20 7465 7374 3a22 200a 6261  olean test:" .ba
+      000000a0: 7365 6420 0a63 6170 200a 2253 7472 696e  sed .cap ."Strin
+      000000b0: 6720 7465 7374 3a22 200a 2253 696d 706c  g test:" ."Simpl
+      000000c0: 6520 7465 6122 200a 2243 6f6d 706c 6578  e tea" ."Complex
+      000000d0: 2074 6561 2077 6974 6820 6e75 6d62 6572   tea with number
+      000000e0: 733a 2031 3233 2220 0a22 5374 7269 6e67  s: 123" ."String
+      000000f0: 2077 6974 6820 7379 6d62 6f6c 733a 2021   with symbols: !
+      00000100: 4023 2425 2220 0a22 2220 0a22 4c61 7267  @#$%" ."" ."Larg
+      00000110: 6520 6e75 6d62 6572 2074 6573 743a 2220  e number test:" 
+      00000120: 0a39 3939 3939 3939 3939 200a 2d31 3233  .999999999 .-123
+      00000130: 3435 3637 3839 200a 2250 7265 6369 7369  456789 ."Precisi
+      00000140: 6f6e 2074 6573 743a 2220 0a31 3233 2e34  on test:" .123.4
+      00000150: 3536 3739 200a 312e 3030 3030 3065 2d36  5679 .1.00000e-6
+      00000160: 200a 2245 7870 7265 7373 696f 6e20 7465   ."Expression te
+      00000170: 7374 3a22 200a 3730 200a 332e 3134 3238  st:" .70 .3.1428
+      00000180: 3620 0a22 3d3d 3d20 5374 646c 6962 2056  6 ."=== Stdlib V
+      00000190: 616c 6964 6174 696f 6e20 436f 6d70 6c65  alidation Comple
+      000001a0: 7465 203d 3d3d 2220                      te ===" 
+    [36mCompiled raw bytes:[0m
+      00000000: 223d 3d3d 2043 6f6d 7072 6568 656e 7369  "=== Comprehensi
+      00000010: 7665 2053 7464 6c69 6220 5661 6c69 6461  ve Stdlib Valida
+      00000020: 7469 6f6e 203d 3d3d 220a 2254 6573 7469  tion ==="."Testi
+      00000030: 6e67 2076 6962 657a 2e73 7069 6c6c 2066  ng vibez.spill f
+      00000040: 756e 6374 696f 6e22 0a22 496e 7465 6765  unction"."Intege
+      00000050: 7220 7465 7374 3a22 0a34 320a 2d31 370a  r test:".42.-17.
+      00000060: 300a 2246 6c6f 6174 2074 6573 743a 220a  0."Float test:".
+      00000070: 332e 3134 3135 390a 2d32 2e37 3138 3238  3.14159.-2.71828
+      00000080: 0a30 0a22 426f 6f6c 6561 6e20 7465 7374  .0."Boolean test
+      00000090: 3a22 0a62 6173 6564 0a63 6170 0a22 5374  :".based.cap."St
+      000000a0: 7269 6e67 2074 6573 743a 220a 2253 696d  ring test:"."Sim
+      000000b0: 706c 6520 7465 6122 0a22 436f 6d70 6c65  ple tea"."Comple
+      000000c0: 7820 7465 6120 7769 7468 206e 756d 6265  x tea with numbe
+      000000d0: 7273 3a20 3132 3322 0a22 5374 7269 6e67  rs: 123"."String
+      000000e0: 2077 6974 6820 7379 6d62 6f6c 733a 2021   with symbols: !
+      000000f0: 4023 2425 220a 2222 0a22 4c61 7267 6520  @#$%".""."Large 
+      00000100: 6e75 6d62 6572 2074 6573 743a 220a 3939  number test:".99
+      00000110: 3939 3939 3939 390a 2d31 3233 3435 3637  9999999.-1234567
+      00000120: 3839 0a22 5072 6563 6973 696f 6e20 7465  89."Precision te
+      00000130: 7374 3a22 0a31 3233 2e34 3537 0a31 652d  st:".123.457.1e-
+      00000140: 3036 0a22 4578 7072 6573 7369 6f6e 2074  06."Expression t
+      00000150: 6573 743a 220a 3730 0a33 2e31 3432 3836  est:".70.3.14286
+      00000160: 0a22 3d3d 3d20 5374 646c 6962 2056 616c  ."=== Stdlib Val
+      00000170: 6964 6174 696f 6e20 436f 6d70 6c65 7465  idation Complete
+      00000180: 203d 3d3d 22                              ==="
+  Result: [33mFAIL (different outputs)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Comprehensive Stdlib Validation ===" 
+    "Testing vibez.spill function" 
+    "Integer test:" 
+    42 
+    -17 
+    0 
+    "Float test:" 
+    3.14159 
+    -2.71828 
+    0 
+    "Boolean test:" 
+    based 
+    cap 
+    "String test:" 
+    "Simple tea" 
+    "Complex tea with numbers: 123" 
+    "String with symbols: !@#$%" 
+    "" 
+    "Large number test:" 
+    999999999 
+    -123456789 
+    "Precision test:" 
+    123.45679 
+    1.00000e-6 
+    "Expression test:" 
+    70 
+    3.14286 
+    "=== Stdlib Validation Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== Comprehensive Stdlib Validation ==="
+    "Testing vibez.spill function"
+    "Integer test:"
+    42
+    -17
+    0
+    "Float test:"
+    3.14159
+    -2.71828
+    0
+    "Boolean test:"
+    based
+    cap
+    "String test:"
+    "Simple tea"
+    "Complex tea with numbers: 123"
+    "String with symbols: !@#$%"
+    ""
+    "Large number test:"
+    999999999
+    -123456789
+    "Precision test:"
+    123.457
+    1e-06
+    "Expression test:"
+    70
+    3.14286
+    "=== Stdlib Validation Complete ==="
+
+  [33mHEX COMPARISON (to identify differences):[0m
+  [36mInterpreter HEX (exit: 0):[0m
+    00000000: 223d 3d3d 2043 6f6d 7072 6568 656e 7369  "=== Comprehensi
+    00000010: 7665 2053 7464 6c69 6220 5661 6c69 6461  ve Stdlib Valida
+    00000020: 7469 6f6e 203d 3d3d 2220 0a22 5465 7374  tion ===" ."Test
+    00000030: 696e 6720 7669 6265 7a2e 7370 696c 6c20  ing vibez.spill 
+    00000040: 6675 6e63 7469 6f6e 2220 0a22 496e 7465  function" ."Inte
+    00000050: 6765 7220 7465 7374 3a22 200a 3432 200a  ger test:" .42 .
+    00000060: 2d31 3720 0a30 200a 2246 6c6f 6174 2074  -17 .0 ."Float t
+    00000070: 6573 743a 2220 0a33 2e31 3431 3539 200a  est:" .3.14159 .
+    00000080: 2d32 2e37 3138 3238 200a 3020 0a22 426f  -2.71828 .0 ."Bo
+    00000090: 6f6c 6561 6e20 7465 7374 3a22 200a 6261  olean test:" .ba
+    000000a0: 7365 6420 0a63 6170 200a 2253 7472 696e  sed .cap ."Strin
+    000000b0: 6720 7465 7374 3a22 200a 2253 696d 706c  g test:" ."Simpl
+    000000c0: 6520 7465 6122 200a 2243 6f6d 706c 6578  e tea" ."Complex
+    000000d0: 2074 6561 2077 6974 6820 6e75 6d62 6572   tea with number
+    000000e0: 733a 2031 3233 2220 0a22 5374 7269 6e67  s: 123" ."String
+    000000f0: 2077 6974 6820 7379 6d62 6f6c 733a 2021   with symbols: !
+    00000100: 4023 2425 2220 0a22 2220 0a22 4c61 7267  @#$%" ."" ."Larg
+    00000110: 6520 6e75 6d62 6572 2074 6573 743a 2220  e number test:" 
+    00000120: 0a39 3939 3939 3939 3939 200a 2d31 3233  .999999999 .-123
+    00000130: 3435 3637 3839 200a 2250 7265 6369 7369  456789 ."Precisi
+    00000140: 6f6e 2074 6573 743a 2220 0a31 3233 2e34  on test:" .123.4
+    00000150: 3536 3739 200a 312e 3030 3030 3065 2d36  5679 .1.00000e-6
+    00000160: 200a 2245 7870 7265 7373 696f 6e20 7465   ."Expression te
+    00000170: 7374 3a22 200a 3730 200a 332e 3134 3238  st:" .70 .3.1428
+    00000180: 3620 0a22 3d3d 3d20 5374 646c 6962 2056  6 ."=== Stdlib V
+    00000190: 616c 6964 6174 696f 6e20 436f 6d70 6c65  alidation Comple
+    000001a0: 7465 203d 3d3d 2220                      te ===" 
+
+  [36mCompiled HEX (exit: 0):[0m
+    00000000: 223d 3d3d 2043 6f6d 7072 6568 656e 7369  "=== Comprehensi
+    00000010: 7665 2053 7464 6c69 6220 5661 6c69 6461  ve Stdlib Valida
+    00000020: 7469 6f6e 203d 3d3d 220a 2254 6573 7469  tion ==="."Testi
+    00000030: 6e67 2076 6962 657a 2e73 7069 6c6c 2066  ng vibez.spill f
+    00000040: 756e 6374 696f 6e22 0a22 496e 7465 6765  unction"."Intege
+    00000050: 7220 7465 7374 3a22 0a34 320a 2d31 370a  r test:".42.-17.
+    00000060: 300a 2246 6c6f 6174 2074 6573 743a 220a  0."Float test:".
+    00000070: 332e 3134 3135 390a 2d32 2e37 3138 3238  3.14159.-2.71828
+    00000080: 0a30 0a22 426f 6f6c 6561 6e20 7465 7374  .0."Boolean test
+    00000090: 3a22 0a62 6173 6564 0a63 6170 0a22 5374  :".based.cap."St
+    000000a0: 7269 6e67 2074 6573 743a 220a 2253 696d  ring test:"."Sim
+    000000b0: 706c 6520 7465 6122 0a22 436f 6d70 6c65  ple tea"."Comple
+    000000c0: 7820 7465 6120 7769 7468 206e 756d 6265  x tea with numbe
+    000000d0: 7273 3a20 3132 3322 0a22 5374 7269 6e67  rs: 123"."String
+    000000e0: 2077 6974 6820 7379 6d62 6f6c 733a 2021   with symbols: !
+    000000f0: 4023 2425 220a 2222 0a22 4c61 7267 6520  @#$%".""."Large 
+    00000100: 6e75 6d62 6572 2074 6573 743a 220a 3939  number test:".99
+    00000110: 3939 3939 3939 390a 2d31 3233 3435 3637  9999999.-1234567
+    00000120: 3839 0a22 5072 6563 6973 696f 6e20 7465  89."Precision te
+    00000130: 7374 3a22 0a31 3233 2e34 3537 0a31 652d  st:".123.457.1e-
+    00000140: 3036 0a22 4578 7072 6573 7369 6f6e 2074  06."Expression t
+    00000150: 6573 743a 220a 3730 0a33 2e31 3432 3836  est:".70.3.14286
+    00000160: 0a22 3d3d 3d20 5374 646c 6962 2056 616c  ."=== Stdlib Val
+    00000170: 6964 6174 696f 6e20 436f 6d70 6c65 7465  idation Complete
+    00000180: 203d 3d3d 22                              ==="
+
+---
+[1m[109/112] Testing: validation/validation_stdlib_mathz_complete.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== MATHZ MODULE VALIDATION ===" 
+    "15 + 27 =" 
+    42 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_mathz_complete.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+---
+[1m[110/112] Testing: validation/validation_stdlib_stringz_complete.csd[0m
+  Result: [33mFAIL (different error messages)[0m
+  [36mInterpreter (exit: 1):[0m
+    "=== STRINGZ MODULE VALIDATION ===" 
+    "concat('Hello', 'World') =" 
+    "Hello""World" 
+    "length('Testing') =" 
+    9 
+    "length('') =" 
+    2 
+    ❌ Runtime error in /home/ghuntley/cursed/test_suite/test_programs/validation/validation_stdlib_stringz_complete.csd: error.UndefinedFunction
+    error: UndefinedFunction
+                        return InterpreterError.UndefinedFunction;
+                        ^
+                    return try self.evaluateMethodCall(object_as_member, method_call.arguments.items);
+                           ^
+                try self.evaluateExpression(initializer_expr.*)
+                ^
+                    try self.executeLetStatement(let);
+                    ^
+                if (try self.executeStatement(stmt.*)) {
+                    ^
+                _ = try self.callFunction(main_func, &[_]Value{});
+                    ^
+            return self.execute(program);
+            ^
+            return err;
+            ^
+            try interpretSource(allocator, source, filename.?, verbose);
+            ^
+
+  [36mCompiled (exit: 134):[0m
+    Compilation failed
+
+---
+[1m[111/112] Testing: validation/validation_stdlib_vibez_complete.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== VIBEZ MODULE VALIDATION ===" 
+    "Testing basic tea output" 
+    "Testing another line" 
+    "Number test:" 
+    42 
+    "Boolean test:" 
+    based 
+    "" 
+    "=== VIBEZ VALIDATION COMPLETE ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== VIBEZ MODULE VALIDATION ==="
+    "Testing basic tea output"
+    "Testing another line"
+    "Number test:"
+    42
+    "Boolean test:"
+    based
+    ""
+    "=== VIBEZ VALIDATION COMPLETE ==="
+
+---
+[1m[112/112] Testing: validation/validation_type_system.csd[0m
+  Result: [32mPASS[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Type System Test ===" 
+    "Integer:" 
+    42 
+    "String:" 
+    "Hello CURSED" 
+    "Boolean:" 
+    based 
+    "=== Test Complete ===" 
+
+  [36mCompiled (exit: 0):[0m
+    "=== Type System Test ==="
+    "Integer:"
+    42
+    "String:"
+    "Hello CURSED"
+    "Boolean:"
+    based
+    "=== Test Complete ==="
+
+---
+
+[1mFinal Results:[0m
+==============
+  Total Tests: 112
+  Passed: 52
+  Failed: 46
+  Interpreter Errors: 1
+  Compile Errors: 13
+
+  Pass Rate: 46%
+Report saved to: /home/ghuntley/cursed/test_suite/results/test_suite_report_20250901_100326.md
+[31mSome tests failed. See details above.[0m

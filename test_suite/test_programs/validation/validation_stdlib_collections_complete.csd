@@ -10,7 +10,7 @@ slay main_character() lit {
     vibez.spill("=== COLLECTIONS MODULE VALIDATION ===")
     
     fr fr Test array creation and length
-    sus numbers []normie = []normie{1, 2, 3, 4, 5}
+    sus numbers []normie = [1, 2, 3, 4, 5]
     sus array_len normie = collections.length(numbers)
     vibez.spill("Array length test:")
     vibez.spill(array_len)
@@ -46,7 +46,7 @@ slay main_character() lit {
     vibez.spill(total)
     
     fr fr Test empty array
-    sus empty_array []normie = []normie{}
+    sus empty_array []normie = []
     sus empty_len normie = collections.length(empty_array)
     vibez.spill("Empty array length:")
     vibez.spill(empty_len)

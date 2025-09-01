@@ -2,7 +2,7 @@
 // Expected behavior: Both interpreter and compiler should reject undefined variables
 // with UndefinedVariable error at compile time, NOT during runtime
 
-vibe main
+vibe main_character
 
 yeet "vibez"
 

@@ -82,7 +82,7 @@ show_hex_output() {
 if [[ ! -x "$CURSED_COMPILER" ]]; then
     echo -e "${RED}Error: Compiler not found or not executable: $CURSED_COMPILER${RESET}"
     echo "Run 'zig build' first to build the compiler"
-    continue
+    exit 1
 fi
 
 # Create results directory
@@ -250,7 +250,7 @@ for test_file in "${test_files[@]}"; do
         echo "  Compile Errors: $COMPILE_ERRORS"
         echo "  Total Processed: $TOTAL"
         echo "  Remaining: $((${#test_files[@]} - TOTAL))"
-        continue
+        exit 1
     fi
     
     echo "---"
@@ -312,5 +312,5 @@ if [[ $PASSED -eq $TOTAL ]]; then
     exit 0
 else
     echo -e "${RED}Some tests failed. See details above.${RESET}"
-    continue
+    exit 1
 fi
