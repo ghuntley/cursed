@@ -1,0 +1,114 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 112 test files
+
+[1m[1/112] Testing: arithmetic/01_mixed_types.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[2/112] Testing: arithmetic/02_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[3/112] Testing: arithmetic/03_operator_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[4/112] Testing: arithmetic/04_complex_expressions.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[5/112] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[6/112] Testing: arithmetic/division_semantics_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[7/112] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[8/112] Testing: arithmetic/overflow_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[9/112] Testing: basic/01_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[10/112] Testing: basic/02_simple_arithmetic.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[11/112] Testing: basic/03_variable_assignment.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[12/112] Testing: basic/basic_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[13/112] Testing: basic/hello_world_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[14/112] Testing: complex/01_nested_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[15/112] Testing: complex/02_fizzbuzz.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[16/112] Testing: comprehensive/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[17/112] Testing: comprehensive/function_definitions_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[18/112] Testing: control_flow/01_if_statements.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[19/112] Testing: control_flow/02_loops.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[20/112] Testing: control_flow/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[21/112] Testing: control_flow/control_flow_if_else.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[22/112] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[23/112] Testing: disabled/errors/error_missing_package.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[24/112] Testing: disabled/errors/error_recovery_missing_imports.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[25/112] Testing: disabled/errors/error_syntax_recovery.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[26/112] Testing: disabled/feature/feature_error_recovery.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Error Recovery Feature Test ===" 
+    "Safe division result:" 
+    5 
+    "Boundary test result:" 
+    100 
+    "Absolute value test:" 
+    15 
+    "Positive test:" 
+    25 
+    "Local scope test:" 
+    25 
+    "Function result:" 
+    "Success: Input processed" 
+    "=== Error Recovery Tests Complete ===" 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+[31mTest failed. Stopping execution.[0m
+
+[1mResults at failure:[0m
+  Passed: 25
+  Failed: 0
+  Interpreter Errors: 0
+  Compile Errors: 1
+  Total Processed: 26
+  Remaining: 86

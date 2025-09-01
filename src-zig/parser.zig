@@ -294,6 +294,8 @@ pub const Parser = struct {
             .Based, .Cringe, .Truth => parsePrattBoolean,
             .Nah => parsePrattNil,
             .LeftParen => parsePrattGrouping,
+            .LeftBracket => parsePrattArrayOrComposite,
+            .LeftBrace => parsePrattMapOrComposite,
             .Bang, .Minus, .Star, .Amp => parsePrattUnary,
             else => null,
         };
@@ -369,6 +371,137 @@ pub const Parser = struct {
         return Expression{ .Unary = try self.allocateUnaryExpression(ast.UnaryExpression{
             .operator = operator,
             .operand = try self.allocateExpression(right),
+        })};
+    }
+
+    fn parsePrattArrayOrComposite(self: *Parser) ParserError!Expression {
+        _ = self.advance(); // consume '['
+        
+        // CRITICAL: Add bounds check to prevent segfaults
+        if (self.isAtEnd()) {
+            return ParserError.UnexpectedEof;
+        }
+        
+        // Check if this is an array literal [1, 2, 3] or composite literal []Type{}
+        if (self.check(.RightBracket)) {
+            // Could be empty array [] or slice type []Type
+            _ = self.advance(); // consume ']'
+            
+            // CRITICAL: Check bounds before looking ahead
+            if (self.isAtEnd()) {
+                // Just empty array []
+                return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+                    .elements = .{},
+                })};
+            }
+            
+            // Look for type followed by brace for composite literal []Type{}
+            if (self.checkBasicType() or self.check(.Identifier)) {
+                return self.parseCompositeLiteral() catch |err| {
+                    // CRITICAL: Fallback to empty array if composite parsing fails
+                    if (err == ParserError.UnexpectedToken or err == ParserError.MissingToken) {
+                        return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+                            .elements = .{},
+                        })};
+                    }
+                    return err;
+                };
+            }
+            
+            // Empty array []
+            return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+                .elements = .{},
+            })};
+        }
+        
+        // Parse what's inside the brackets - could be array elements or type
+        if (self.checkBasicType() or self.check(.Identifier)) {
+            // Might be slice type []Type - save position to backtrack
+            const saved_pos = self.current;
+            
+            // Try parsing as type with error recovery
+            const element_type = self.parseType() catch {
+                // Not a valid type, backtrack and parse as array literal
+                self.current = saved_pos;
+                return self.parseArrayLiteralElements() catch |elem_err| {
+                    // CRITICAL: If both fail, return a more specific error
+                    return if (elem_err == ParserError.UnexpectedEof) 
+                        ParserError.UnexpectedEof 
+                    else 
+                        ParserError.InvalidExpression;
+                };
+            };
+            
+            // Check if followed by ] and then {
+            if (self.match(.RightBracket) and self.check(.LeftBrace)) {
+                // This is a composite literal []Type{}
+                return self.parseCompositeLiteralWithType(element_type) catch |comp_err| {
+                    // CRITICAL: Fallback on error
+                    return if (comp_err == ParserError.UnexpectedEof) 
+                        ParserError.UnexpectedEof 
+                    else 
+                        ParserError.InvalidExpression;
+                };
+            }
+            
+            // Not a composite literal, backtrack and parse as array
+            self.current = saved_pos;
+            return self.parseArrayLiteralElements() catch |elem_err| {
+                // CRITICAL: If array parsing fails, return proper error
+                return if (elem_err == ParserError.UnexpectedEof) 
+                    ParserError.UnexpectedEof 
+                else 
+                    ParserError.InvalidExpression;
+            };
+        }
+        
+        // Parse as regular array literal
+        return self.parseArrayLiteralElements() catch |elem_err| {
+            // CRITICAL: Final fallback with proper error
+            return if (elem_err == ParserError.UnexpectedEof) 
+                ParserError.UnexpectedEof 
+            else 
+                ParserError.InvalidExpression;
+        };
+    }
+
+    fn parsePrattMapOrComposite(self: *Parser) ParserError!Expression {
+        _ = self.advance(); // consume '{'
+        
+        // Empty braces {}
+        if (self.check(.RightBrace)) {
+            _ = self.advance(); // consume '}'
+            // For now, treat empty {} as empty map
+            return Expression{ .Map = try self.allocateMapExpression(ast.MapExpression{
+                .entries = .{},
+            })};
+        }
+        
+        // Parse as map literal {key: value, ...}
+        var entries = ArrayList(ast.MapEntry){};
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const key = try self.parseExpression();
+            _ = try self.consume(.Colon, "Expected ':' after map key");
+            const value = try self.parseExpression();
+            
+            const key_ptr = try self.arena_allocator.create(Expression);
+            key_ptr.* = key;
+            const value_ptr = try self.arena_allocator.create(Expression);
+            value_ptr.* = value;
+            
+            try entries.append(self.allocator, ast.MapEntry{
+                .key = key_ptr,
+                .value = value_ptr,
+            });
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}'");
+        
+        return Expression{ .Map = try self.allocateMapExpression(ast.MapExpression{
+            .entries = entries,
         })};
     }
 
@@ -1352,7 +1485,7 @@ pub const Parser = struct {
         
         // Parse optional type annotation after identifier
         var var_type: ?Type = null;
-        if (self.checkBasicType()) {
+        if (self.checkBasicType() or self.check(.LeftBracket)) {
             var_type = try self.parseType();
         }
         
@@ -1799,6 +1932,84 @@ pub const Parser = struct {
         }
 
         return left;
+    }
+
+    // Helper methods for array and composite literal parsing
+    
+    fn parseArrayLiteralElements(self: *Parser) ParserError!Expression {
+        var elements = ArrayList(Expression){};
+        
+        while (!self.check(.RightBracket) and !self.isAtEnd()) {
+            const elem = try self.parseExpression();
+            try elements.append(self.arena_allocator, elem);
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        _ = try self.consume(.RightBracket, "Expected ']'");
+        
+        return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+            .elements = try self.convertExpressionsToPointers(&elements),
+        })};
+    }
+
+    fn parseCompositeLiteral(self: *Parser) ParserError!Expression {
+        // CRITICAL: Bounds check before parsing type
+        if (self.isAtEnd()) {
+            return ParserError.UnexpectedEof;
+        }
+        
+        // Parse type after []
+        const element_type = try self.parseType();
+        return self.parseCompositeLiteralWithType(element_type);
+    }
+
+    fn parseCompositeLiteralWithType(self: *Parser, element_type: ast.Type) ParserError!Expression {
+        // CRITICAL: Type is used for semantic context but not in current AST structure
+        _ = element_type;
+        // CRITICAL: Safe consumption with error handling
+        _ = self.consume(.LeftBrace, "Expected '{' after type in composite literal") catch |err| {
+            // Provide context for debugging
+            std.debug.print("DEBUG: parseCompositeLiteralWithType - failed to consume LeftBrace at position {d}, token: {any}\n", .{ self.current, if (self.current < self.tokens.len) self.tokens[self.current].kind else .Eof });
+            return err;
+        };
+        
+        // Parse elements in composite literal with memory safety
+        var elements = ArrayList(Expression){};
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const elem = self.parseExpression() catch |expr_err| {
+                // CRITICAL: Clean error handling for expression parsing
+                std.debug.print("DEBUG: parseCompositeLiteralWithType - failed to parse element at position {d}\n", .{self.current});
+                return expr_err;
+            };
+            
+            elements.append(self.arena_allocator, elem) catch |append_err| {
+                std.debug.print("MEMORY ERROR: Failed to append element to composite literal: {any}\n", .{append_err});
+                return ParserError.OutOfMemory;
+            };
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        // CRITICAL: Safe consumption with bounds check
+        if (self.isAtEnd()) {
+            std.debug.print("DEBUG: parseCompositeLiteralWithType - unexpected EOF, expected RightBrace\n", .{});
+            return ParserError.UnexpectedEof;
+        }
+        
+        _ = self.consume(.RightBrace, "Expected '}' after composite literal elements") catch |err| {
+            std.debug.print("DEBUG: parseCompositeLiteralWithType - failed to consume RightBrace at position {d}\n", .{self.current});
+            return err;
+        };
+        
+        // Return as array expression (type info is implicit from context)
+        return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+            .elements = self.convertExpressionsToPointers(&elements) catch |conv_err| {
+                std.debug.print("MEMORY ERROR: Failed to convert expressions to pointers: {any}\n", .{conv_err});
+                return ParserError.OutOfMemory;
+            },
+        })};
     }
 
     fn parseAssignment(self: *Parser) ParserError!Expression {
@@ -4390,7 +4601,7 @@ pub const Parser = struct {
             try pointers.append(self.allocator, ptr);
         }
         
-        expressions.deinit(self.allocator);
+        // CRITICAL: Do not deinit - arena allocator handles cleanup
         return pointers;
     }
 

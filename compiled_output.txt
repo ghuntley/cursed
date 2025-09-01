@@ -1,18 +1,20 @@
-"=== FizzBuzz Test ==="
-"FizzBuzz from 1 to 15:"
-1
-2
-"Fizz"
-4
-"Buzz"
-"Fizz"
-7
-8
-"Fizz"
-"Buzz"
-11
-"Fizz"
-13
-14
-"FizzBuzz"
-"=== Test Complete ==="
+"=== Boundary Conditions Test ==="
+"Testing zero values..."
+"Zero value:" 0
+"Zero abs:" 0
+"Testing negative values..."
+"Negative abs:" 999
+"Testing string boundaries..."
+"Empty string:" ""
+"Single char:" "a"
+"Testing extreme arithmetic..."
+"Large + zero:" 999999
+"Large - zero:" 999999
+"Large * zero:" 0
+"Testing boundary math operations..."
+"Max(999, -999):" 999
+"Min(999, -999):" -999
+"Testing zero division safety..."
+"999 / 1:" 999
+"0 / 1:" 0
+"Boundary conditions test completed"
