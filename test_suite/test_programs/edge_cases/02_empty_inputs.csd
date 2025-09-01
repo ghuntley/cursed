@@ -1,15 +1,15 @@
-vibe main
+vibe main;
 
-yeet "vibez"
+yeet "vibez";
 
-slay handle_empty(x) {
+slay handle_empty(x normie) tea {
     ready (x == 0) {
         damn "zero"
     }
     damn "non-zero"
 }
 
-slay main_character() {
+slay main_character() lit {
     vibez.spill("=== Empty Inputs Test ===")
     
     vibez.spill("Empty tea:")
@@ -24,4 +24,5 @@ slay main_character() {
     vibez.spill(handle_empty(5))
     
     vibez.spill("=== Test Complete ===")
+    damn based
 }

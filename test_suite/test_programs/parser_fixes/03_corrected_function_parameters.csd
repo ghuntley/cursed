@@ -1,5 +1,5 @@
-vibe main
-yeet "vibez"
+vibe main;
+yeet "vibez";
 
 slay no_params() normie {
     damn 42;
@@ -14,7 +14,7 @@ slay multiple_params(a normie, b normie, c normie) normie {
     damn result;
 }
 
-slay main_character() normie {
+slay main() normie {
     vibez.spill("Function parameters test");
     sus result1 normie = no_params();
     sus result2 normie = one_param(10);

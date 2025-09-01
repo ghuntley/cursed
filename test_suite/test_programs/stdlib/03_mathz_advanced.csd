@@ -1,9 +1,7 @@
-vibe main
+vibe main;
 
-yeet "mathz"
-yeet "vibez"
-
-using mathz
+yeet "mathz";
+yeet "vibez";
 
 slay main_character() {
     vibez.spill("=== Advanced Mathz Test ===")
@@ -24,4 +22,4 @@ slay main_character() {
     vibez.spill(mathz.add_two(mathz.abs(-5), mathz.max(3, 7)))
     
     vibez.spill("=== Test Complete ===")
-}
+};

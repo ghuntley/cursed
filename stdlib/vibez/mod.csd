@@ -1,4 +1,9 @@
 vibe vibez
 
-// vibez.spill() is implemented as a built-in function in the interpreter
-// This file serves as the CURSED stdlib module interface
+slay spill(message tea) {
+    # Built-in print function - implementation provided by runtime
+}
+
+slay spill(value normie) {
+    # Built-in print function for integers - implementation provided by runtime
+}

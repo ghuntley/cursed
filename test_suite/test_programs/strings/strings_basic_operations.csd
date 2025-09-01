@@ -1,4 +1,5 @@
 vibe main
+yeet "vibez"
 
 fr fr Test: Basic tea operations
 fr fr Purpose: Test tea literals and basic tea handling
@@ -28,6 +29,9 @@ slay main_character() {
     sus sentence tea = "This is a longer sentence with spaces and punctuation!"
     sus symbols tea = "!@#$%^&*()"
     sus numbers tea = "12345"
+    
+    fr fr Output to demonstrate functionality
+    vibez.spill("String operations test completed successfully")
     
     damn 0
 }

@@ -1,6 +1,6 @@
-vibe main
+vibe main;
 
-yeet "vibez"
+yeet "vibez";
 
 fr fr Test: Various function definition patterns
 fr fr Purpose: Validate different function signature patterns work correctly

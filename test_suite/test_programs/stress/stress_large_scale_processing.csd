@@ -8,11 +8,11 @@ fr fr Large-scale processing stress test
 fr fr Tests handling of large datasets, extensive loops, and memory management
 fr fr Expected: Successful processing of large amounts of data
 
-slay generate_large_array(size) {
+slay generate_large_array(size normie) {
     sus result []normie = []
     sus i normie = 0
     
-    sus while i < size {
+    periodt i < size {
         sus value normie = mathz.mod(mathz.multiply(i, 7), 100)
         collections.push(result, value)
         i = mathz.add(i, 1)
@@ -21,7 +21,7 @@ slay generate_large_array(size) {
     damn result
 }
 
-slay process_large_dataset(data) {
+slay process_large_dataset(data flex) {
     sus length normie = collections.length(data)
     sus sum normie = 0
     sus max_value normie = -999999
@@ -30,23 +30,23 @@ slay process_large_dataset(data) {
     sus odd_count normie = 0
     sus i normie = 0
     
-    sus while i < length {
+    periodt i < length {
         sus element normie = collections.get(data, i)
         
         fr fr Accumulate sum
         sum = mathz.add(sum, element)
         
         fr fr Track max/min
-        sus if element > max_value {
+        ready element > max_value {
             max_value = element
         }
-        sus if element < min_value {
+        ready element < min_value {
             min_value = element
         }
         
         fr fr Count even/odd
         sus mod_result normie = mathz.mod(element, 2)
-        sus if mod_result == 0 {
+        ready mod_result == 0 {
             even_count = mathz.add(even_count, 1)
         } else {
             odd_count = mathz.add(odd_count, 1)
@@ -72,10 +72,10 @@ slay process_large_dataset(data) {
 
 slay intensive_string_processing() {
     sus base_string tea = "CURSED"
-    sus result normie = base_string
+    sus result tea = base_string
     sus i normie = 0
     
-    sus while i < 20 {
+    periodt i < 20 {
         sus iteration_marker tea = stringz.from_number(i)
         sus separator tea = "_"
         sus temp tea = stringz.concat(separator, iteration_marker)
@@ -90,8 +90,8 @@ slay mathematical_stress_test() {
     sus accumulator meal = 1.0
     sus i normie = 1
     
-    sus while i <= 50 {
-        sus factorial_component normie = mathz.divide(1.0, i)
+    periodt i <= 50 {
+        sus factorial_component meal = mathz.divide(1.0, i)
         accumulator = mathz.add(accumulator, factorial_component)
         
         sus power_component normie = mathz.power(2, mathz.mod(i, 10))
@@ -115,14 +115,14 @@ slay main_character() {
     
     fr fr Intensive tea processing
     vibez.spill("Performing intensive tea processing...")
-    sus complex_string normie = intensive_string_processing()
-    sus string_length tea = stringz.length(complex_string)
+    sus complex_string tea = intensive_string_processing()
+    sus string_length normie = stringz.length(complex_string)
     vibez.spill("Complex tea length:")
     vibez.spill(string_length)
     
     fr fr Mathematical stress test
     vibez.spill("Running mathematical stress test...")
-    sus math_result normie = mathematical_stress_test()
+    sus math_result meal = mathematical_stress_test()
     vibez.spill("Mathematical stress test result:")
     vibez.spill(math_result)
     
@@ -131,9 +131,9 @@ slay main_character() {
     sus combined_result normie = 0
     sus outer_loop normie = 0
     
-    sus while outer_loop < 5 {
+    periodt outer_loop < 5 {
         sus inner_loop normie = 0
-        sus while inner_loop < 10 {
+        periodt inner_loop < 10 {
             sus calculation normie = mathz.add(
                 mathz.multiply(outer_loop, inner_loop),
                 mathz.mod(dataset_sum, 13)
@@ -148,7 +148,7 @@ slay main_character() {
     vibez.spill(combined_result)
     
     fr fr Final comprehensive validation
-    sus final_validation normie = (dataset_sum > 0) && (string_length > 50) && (math_result > 0.0)
+    sus final_validation lit = (dataset_sum > 0) && (string_length > 50) && (math_result > 0.0)
     vibez.spill("All stress tests passed:")
     vibez.spill(final_validation)
     

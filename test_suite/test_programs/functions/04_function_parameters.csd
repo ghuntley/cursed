@@ -2,15 +2,15 @@ vibe main
 
 yeet "vibez"
 
-slay no_params() {
+slay no_params() normie {
     damn 42
 }
 
-slay one_param(x) {
+slay one_param(x normie) normie {
     damn x * 2
 }
 
-slay multiple_params(a, b, c) {
+slay multiple_params(a normie, b normie, c normie) normie {
     damn a + b + c
 }
 

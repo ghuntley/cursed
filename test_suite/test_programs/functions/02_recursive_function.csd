@@ -2,14 +2,14 @@ vibe main
 
 yeet "vibez"
 
-slay factorial(n) {
+slay factorial(n normie) normie {
     ready (n <= 1) {
         damn 1
     }
     damn n * factorial(n - 1)
 }
 
-slay countdown(n) {
+slay countdown(n normie) {
     ready (n > 0) {
         vibez.spill(n)
         countdown(n - 1)

@@ -2,11 +2,11 @@ vibe main
 
 yeet "vibez"
 
-slay add_numbers(a, b) {
+slay add_numbers(a normie, b normie) normie {
     damn a + b
 }
 
-slay greet(name) {
+slay greet(name tea) {
     vibez.spill("Hello,")
     vibez.spill(name)
 }

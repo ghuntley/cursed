@@ -830,11 +830,12 @@ pub const Parser = struct {
     fn parsePackageDeclaration(self: *Parser) ParserError!ast.PackageDeclaration {
         _ = try self.consume(.Vibe, "Expected 'vibe'");
         
-        if (!self.check(.Identifier)) {
+        // Accept either Identifier or MainCharacter for package names
+        if (!self.check(.Identifier) and !self.check(.MainCharacter)) {
             return ParserError.UnexpectedToken;
         }
         
-        const name = self.previous().lexeme;
+        const name = self.peek().lexeme;
         _ = self.advance();
         
         return ast.PackageDeclaration{

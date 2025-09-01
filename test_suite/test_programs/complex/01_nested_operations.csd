@@ -2,7 +2,7 @@ vibe main
 
 yeet "vibez"
 
-slay calculate_complex(a, b, c) {
+slay calculate_complex(a, b, c normie) normie {
     damn (a + b) * c - (a - b) / 2
 }
 

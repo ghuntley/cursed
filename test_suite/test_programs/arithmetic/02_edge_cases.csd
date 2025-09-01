@@ -6,7 +6,7 @@ fr fr Arithmetic Edge Cases Test
 fr fr Tests: Zero, negative numbers, and edge conditions
 fr fr Expected: Consistent handling of edge cases
 
-slay main_character() {
+slay main_character() lit {
     vibez.spill("=== Arithmetic Edge Cases Test ===")
     
     vibez.spill("Zero operations:")
@@ -24,4 +24,5 @@ slay main_character() {
     vibez.spill(999999 - 1)
     
     vibez.spill("=== Test Complete ===")
+    damn based
 }

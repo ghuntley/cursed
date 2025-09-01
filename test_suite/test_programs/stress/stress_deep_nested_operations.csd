@@ -8,8 +8,8 @@ fr fr Stress test for deeply nested operations and complex expressions
 fr fr Tests parser limits, expression evaluation, and memory management
 fr fr Expected: Successful evaluation of complex nested operations
 
-slay deeply_nested_calculation(depth) {
-    sus if depth <= 0 {
+slay deeply_nested_calculation(depth normie) {
+    ready depth <= 0 {
         damn 1
     }
     
@@ -17,8 +17,8 @@ slay deeply_nested_calculation(depth) {
     damn result
 }
 
-slay nested_string_operations(base_string, count) {
-    sus if count <= 0 {
+slay nested_string_operations(base_string tea, count normie) {
+    ready count <= 0 {
         damn base_string
     }
     
@@ -27,11 +27,11 @@ slay nested_string_operations(base_string, count) {
     damn nested_string_operations(new_string, mathz.subtract(count, 1))
 }
 
-slay complex_array_processing(arr, operations) {
+slay complex_array_processing(arr flex, operations normie) {
     sus length normie = collections.length(arr)
     sus i normie = 0
     
-    sus while i < length {
+    periodt i < length {
         sus element normie = collections.get(arr, i)
         
         fr fr Nested mathematical operations

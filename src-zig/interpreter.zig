@@ -1717,10 +1717,10 @@ pub const Interpreter = struct {
             if (operand == .Integer) {
                 // Check for overflow on integer negation
                 // For CURSED normie (32-bit), minimum value is -2^31 = -2147483648
+                // According to spec: promote normie -> thicc -> meal
                 if (operand.Integer == -2147483648) {
-                    // Convert to float to avoid overflow
-                    const pos_float = -@as(f64, @floatFromInt(operand.Integer));
-                    return Value{ .Float = pos_float };
+                    // Result is 2147483648, which fits in i64 (thicc), so keep as integer
+                    return Value{ .Integer = 2147483648 };
                 }
                 return Value{ .Integer = -operand.Integer };
             } else if (operand.isNumber()) {

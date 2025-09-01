@@ -11,7 +11,7 @@ slay main_character() {
 fr fr Test basic mathz functions
     sus x: normie = -42;
     sus y: normie = 15;
-    sus z: flex_float = -7.5;
+    sus z: meal = -7.5;
     
 fr fr Test absolute value
     sus abs_x: normie = mathz.abs(x);
@@ -32,7 +32,7 @@ fr fr Test power function (if available)
     vibez.spill("{}^{} = {}", base, exponent, power_result);
     
 fr fr Test square root (if available)
-    sus sqrt_val: flex_float = mathz.sqrt(16.0);
+    sus sqrt_val: meal = mathz.sqrt(16.0);
     vibez.spill("sqrt(16.0) = {}", sqrt_val);
     
 fr fr Test multiple operations in sequence

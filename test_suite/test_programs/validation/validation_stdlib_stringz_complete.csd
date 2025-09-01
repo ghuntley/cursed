@@ -17,12 +17,12 @@ slay main_character() {
     vibez.spill(result_concat)
     
     fr fr Test tea length
-    sus result_len tea = stringz.length("Testing")
+    sus result_len normie = stringz.length("Testing")
     vibez.spill("length('Testing') =")
     vibez.spill(result_len)
     
     fr fr Test empty tea length
-    sus empty_len tea = stringz.length("")
+    sus empty_len normie = stringz.length("")
     vibez.spill("length('') =")
     vibez.spill(empty_len)
     
@@ -33,7 +33,7 @@ slay main_character() {
     vibez.spill(sub_result)
     
     fr fr Test contains
-    sus contains_result tea = stringz.contains(original, "CURSED")
+    sus contains_result lit = stringz.contains(original, "CURSED")
     vibez.spill("contains('CURSED Language', 'CURSED') =")
     vibez.spill(contains_result)
     

@@ -1,3 +1,5 @@
+vibe main
+
 fr fr http2_comprehensive_test.csd - Comprehensive HTTP/2 Implementation Tests
 fr fr Complete test suite for HTTP/2 protocol features including frames, streams,
 fr fr multiplexing, flow control, server push, and HPACK compression
@@ -39,7 +41,7 @@ fr fr Test HEADERS frame creation
         "user-agent: CURSED-HTTP2-Test/1.0"
     ]
     
-    sus headers_frame Http2Frame = create_headers_frame(3, headers, no_cap, based) fam {
+    sus headers_frame Http2Frame = create_headers_frame(3, headers, cringe, based) fam {
         when err -> {
             testz.test_fail("Failed to create HEADERS frame", err.message)
             damn
@@ -61,7 +63,7 @@ fr fr Test SETTINGS frame creation
         max_header_list_size: 8192
     }
     
-    sus settings_frame Http2Frame = create_settings_frame(settings, no_cap)
+    sus settings_frame Http2Frame = create_settings_frame(settings, cringe)
     testz.assert_eq_int(settings_frame.frame_type, HTTP2_FRAME_SETTINGS)
     testz.assert_eq_int(settings_frame.stream_id, 0)
     testz.assert_eq_int(settings_frame.payload_length, 36)  fr fr 6 settings * 6 bytes each
@@ -152,7 +154,7 @@ slay test_hpack_string_encoding() {
     
 fr fr Test literal string encoding
     sus test_string tea = "example.com"
-    sus encoded_string tea = hpack_encode_string(test_string, no_cap)
+    sus encoded_string tea = hpack_encode_string(test_string, cringe)
     testz.assert_true(stringz.len(encoded_string) > stringz.len(test_string))
     
 fr fr Test string decoding
@@ -165,7 +167,7 @@ fr fr Test string decoding
     testz.assert_eq_str(decoded_result[0], test_string)
     
 fr fr Test empty string
-    sus empty_encoded tea = hpack_encode_string("", no_cap)
+    sus empty_encoded tea = hpack_encode_string("", cringe)
     sus empty_decoded [2]tea = hpack_decode_string(empty_encoded, 0) fam {
         when err -> {
             testz.test_fail("Failed to decode empty string", err.message)
@@ -273,7 +275,7 @@ fr fr Create mock socket for testing
     }
     
 fr fr Create HTTP/2 connection
-    sus conn Http2Connection = create_http2_connection(mock_socket, no_cap) fam {
+    sus conn Http2Connection = create_http2_connection(mock_socket, cringe) fam {
         when err -> {
             testz.test_fail("Failed to create HTTP/2 connection", err.message)
             damn
@@ -442,7 +444,7 @@ fr fr Create mock connection for processing
         bytes_received: 0
     }
     
-    sus conn Http2Connection = create_http2_connection(mock_socket, no_cap) fam {
+    sus conn Http2Connection = create_http2_connection(mock_socket, cringe) fam {
         when err -> {
             testz.test_fail("Failed to create connection for priority test", err.message)
             damn
@@ -488,7 +490,7 @@ slay test_http2_multiplexed_connection() {
         bytes_received: 0
     }
     
-    sus mux_conn Http2MultiplexedConnection = create_multiplexed_connection(mock_socket, no_cap) fam {
+    sus mux_conn Http2MultiplexedConnection = create_multiplexed_connection(mock_socket, cringe) fam {
         when err -> {
             testz.test_fail("Failed to create multiplexed connection", err.message)
             damn
@@ -565,7 +567,7 @@ fr fr Simulate HTTP/2 GET request workflow
         bytes_received: 0
     }
     
-    sus conn Http2Connection = create_http2_connection(mock_socket, no_cap) fam {
+    sus conn Http2Connection = create_http2_connection(mock_socket, cringe) fam {
         when err -> {
             testz.test_fail("Failed to create connection for E2E test", err.message)
             damn
@@ -617,7 +619,7 @@ fr fr Simulate response headers
         "server: nginx/1.20.1"
     ]
     
-    sus response_headers_frame Http2Frame = create_headers_frame(1, response_headers, no_cap, based) fam {
+    sus response_headers_frame Http2Frame = create_headers_frame(1, response_headers, cringe, based) fam {
         when err -> {
             testz.test_fail("Failed to create response headers frame", err.message)
             damn
@@ -653,7 +655,7 @@ fr fr Test frame creation performance
     
     bestie (i < 1000) {
         sus test_data tea = stringz.concat(["Test data frame ", stringz.from_int(i)])
-        sus data_frame Http2Frame = create_data_frame(i + 1, test_data, no_cap) fam {
+        sus data_frame Http2Frame = create_data_frame(i + 1, test_data, cringe) fam {
             when err -> {
                 testz.test_fail("Performance test failed creating frame", err.message)
                 damn
@@ -678,8 +680,8 @@ fr fr Test HPACK encoding performance
             stringz.concat(["custom-value-", stringz.from_int(j * 2)])
         ]
         
-        sus encoded_headers tea = hpack_encode_string(test_headers[0], no_cap)
-        encoded_headers = stringz.concat([encoded_headers, hpack_encode_string(test_headers[1], no_cap)])
+        sus encoded_headers tea = hpack_encode_string(test_headers[0], cringe)
+        encoded_headers = stringz.concat([encoded_headers, hpack_encode_string(test_headers[1], cringe)])
         
         j = j + 1
     }
@@ -699,7 +701,7 @@ slay test_http2_error_conditions() {
     testz.test_start("HTTP/2 Error Condition Handling")
     
 fr fr Test invalid stream ID for DATA frame
-    sus invalid_data Http2Frame = create_data_frame(0, "test", no_cap) fam {
+    sus invalid_data Http2Frame = create_data_frame(0, "test", cringe) fam {
         when err -> {
             testz.assert_true(stringz.contains(err.message, "stream ID 0"))
             testz.test_pass("DATA frame stream ID validation working")

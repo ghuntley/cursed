@@ -11,7 +11,7 @@ slay main_character() {
     
     fr fr Test variable declarations with all types
     sus integer_var normie = 42
-    sus float_var drip = 3.14
+    sus float_var snack = 3.14
     sus string_var tea = "Hello CURSED"
     sus boolean_var lit = based
     

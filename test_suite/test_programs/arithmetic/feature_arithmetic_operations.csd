@@ -1,6 +1,6 @@
-vibe main
+vibe main;
 
-yeet "vibez"
+yeet "vibez";
 
 fr fr Arithmetic Operations Feature Test
 fr fr Tests: Complete arithmetic operations with proper precedence

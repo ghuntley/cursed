@@ -2,8 +2,8 @@ vibe main
 
 yeet "vibez"
 
-slay fizzbuzz(n) {
-    sus i normie = 1
+slay fizzbuzz(n normie) {
+    sus i drip = 1
     periodt (i <= n) {
         ready (i % 15 == 0) {
             vibez.spill("FizzBuzz")
