@@ -756,8 +756,18 @@ pub const Interpreter = struct {
         }
         }
         
-        // Execute main_character function if it exists
-        if (self.functions.get("main_character")) |main_func| {
+        // CRITICAL FIX: Determine main function based on package clause
+        // If package is "main", look for "main" function
+        // If package is "main_character" or missing, look for "main_character" function  
+        var main_function_name: []const u8 = "main_character"; // default
+        if (program.package) |pkg| {
+            if (std.mem.eql(u8, pkg.name, "main")) {
+                main_function_name = "main";
+            }
+        }
+        
+        // Execute the determined main function if it exists
+        if (self.functions.get(main_function_name)) |main_func| {
             _ = try self.callFunction(main_func, &[_]Value{});
         } else {
             // Execute statements in order
@@ -2943,10 +2953,7 @@ pub const Interpreter = struct {
         var return_value: Value = Value.Null;
         var has_returned = false;
         
-        // Track multiple return values for tuple returns
-        var return_values = std.ArrayList(Value){};
-        defer return_values.deinit(self.allocator);
-        errdefer return_values.deinit(self.allocator); // Clean up on error
+        // Removed unused return_values ArrayList that was causing double-deinit issues
         
         for (func.declaration.body.items) |stmt| {
             if (try self.executeStatement(stmt.*)) {

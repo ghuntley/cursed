@@ -3,7 +3,7 @@
 vibe main
 yeet "vibez"
 
-slay main_character() {
+slay main() {
     vibez.spill("Hello CURSED World!")
     vibez.spill("Basic test complete")
 }

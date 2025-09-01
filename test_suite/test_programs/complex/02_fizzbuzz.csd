@@ -18,7 +18,7 @@ slay fizzbuzz(n normie) {
     }
 }
 
-slay main_character() {
+slay main() {
     vibez.spill("=== FizzBuzz Test ===")
     
     vibez.spill("FizzBuzz from 1 to 15:")
