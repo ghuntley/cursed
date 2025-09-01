@@ -84,6 +84,9 @@ pub const LLVMIRPipeline = struct {
     variable_types: HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     global_strings: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
+    // Function signature registry for forward declarations
+    function_signatures: HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    
     // CURSED module compilation tracking
     compiled_modules: HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
@@ -175,6 +178,7 @@ pub const LLVMIRPipeline = struct {
             .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variable_types = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+            .function_signatures = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .compiled_modules = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .type_cache = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .current_function = null,
@@ -205,6 +209,7 @@ pub const LLVMIRPipeline = struct {
         self.variables.deinit();
         self.variable_types.deinit();
         self.global_strings.deinit();
+        self.function_signatures.deinit();
         self.compiled_modules.deinit();
         self.type_cache.deinit();
         
@@ -371,6 +376,14 @@ pub const LLVMIRPipeline = struct {
             }
         }
         
+        print("🔍 DEBUG: Building function signature registry for {} functions\n", .{functions.items.len});
+        // First pass: Build function signatures for forward declaration support
+        for (functions.items) |stmt| {
+            if (stmt.* == .Function) {
+                try self.buildFunctionSignature(stmt.Function);
+            }
+        }
+        
         print("🔍 DEBUG: About to generate {} functions\n", .{functions.items.len});
         // Generate IR for functions first
         for (functions.items, 0..) |stmt, i| {
@@ -442,6 +455,40 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
+    /// Build function signature and store in registry for forward declarations
+    fn buildFunctionSignature(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !void {
+        print("🔧 DEBUG: Building function signature for {s}\n", .{func_decl.name});
+        
+        // Create parameter types
+        var param_types = std.ArrayList(c.LLVMTypeRef){};
+        defer param_types.deinit(self.allocator);
+        
+        for (func_decl.parameters.items) |param| {
+            const llvm_type = try self.cursedTypeToLLVM(param.param_type);
+            try param_types.append(self.allocator, llvm_type);
+        }
+        
+        // Determine return type
+        const return_type = if (func_decl.return_type) |ret_type|
+            try self.cursedTypeToLLVM(ret_type)
+        else
+            try self.inferReturnTypeFromFunctionBody(func_decl);
+        
+        // Create function type
+        const func_type = c.LLVMFunctionType(
+            return_type,
+            param_types.items.ptr,
+            @intCast(param_types.items.len),
+            0
+        );
+        
+        // Store function signature for forward declarations
+        const func_name_duped = try self.arena.allocator().dupe(u8, func_decl.name);
+        try self.function_signatures.put(func_name_duped, func_type);
+        
+        print("✅ DEBUG: Stored function signature for {s} with return type\n", .{func_decl.name});
+    }
+
     /// Infer return type from function body by analyzing return statements
     fn inferReturnTypeFromFunctionBody(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !c.LLVMTypeRef {
         print("🔍 DEBUG: Inferring return type for function {s}\n", .{func_decl.name});
@@ -1002,6 +1049,10 @@ pub const LLVMIRPipeline = struct {
                      c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMIntegerTypeKind) blk: {
                 print("🔍 DEBUG: Return type needs integer cast\n", .{});
                 break :blk c.LLVMBuildIntCast(self.builder, ret_val, func_ret_ty, "ret.cast");
+            } else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMPointerTypeKind and
+                     c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMPointerTypeKind) blk: {
+                print("🔍 DEBUG: Return type needs pointer cast\n", .{});
+                break :blk c.LLVMBuildPointerCast(self.builder, ret_val, func_ret_ty, "ret.ptr.cast");
             } else {
                 print("❌ RETURN TYPE MISMATCH ERROR! Expected: {}, Got: {}\n", .{c.LLVMGetTypeKind(func_ret_ty), c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val))});
                 return LLVMIRError.UndefinedVariable; // Type mismatch
@@ -1848,16 +1899,23 @@ pub const LLVMIRPipeline = struct {
             try param_types.append(self.allocator, arg_type);
         }
         
-        // For unknown functions, assume they return int32 (normie type in CURSED)
-        const return_type = c.LLVMInt32TypeInContext(self.context);
-        
-        // Create function type with proper signature
-        const func_type = c.LLVMFunctionType(
-            return_type,
-            param_types.items.ptr,
-            @intCast(param_types.items.len),
-            0
-        );
+        // Check if we have the function signature in our registry
+        const func_type = if (self.function_signatures.get(function_name)) |stored_func_type| blk: {
+            print("✅ DEBUG: Found function signature for {s} in registry\n", .{function_name});
+            break :blk stored_func_type;
+        } else blk: {
+            print("⚠️ DEBUG: Function {s} not in signature registry, falling back to inferred type\n", .{function_name});
+            // For unknown functions, assume they return int32 (normie type in CURSED)
+            const return_type = c.LLVMInt32TypeInContext(self.context);
+            
+            // Create function type with proper signature
+            break :blk c.LLVMFunctionType(
+                return_type,
+                param_types.items.ptr,
+                @intCast(param_types.items.len),
+                0
+            );
+        };
         
         // Create forward declaration
         const func_name_z = try self.arena.allocator().dupeZ(u8, function_name);
@@ -1866,7 +1924,7 @@ pub const LLVMIRPipeline = struct {
         // Store in function table for future use
         try self.functions.put(function_name, function);
         
-        print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params -> int32\n", .{function_name, param_types.items.len});
+        print("✅ DEBUG: Created forward declaration for {s} with signature: {d} params\n", .{function_name, param_types.items.len});
         
         // Generate the function call with proper signature
         const args_ptr = if (call.arguments.items.len > 0) @as([*]c.LLVMValueRef, @ptrCast(&llvm_args)) else null;
