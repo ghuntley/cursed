@@ -446,6 +446,31 @@ pub const LLVMIRPipeline = struct {
         }
     }
     
+    /// Infer return type from function body by analyzing return statements
+    fn inferReturnTypeFromFunctionBody(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !c.LLVMTypeRef {
+        print("🔍 DEBUG: Inferring return type for function {s}\n", .{func_decl.name});
+        
+        // Look for return statements in the function body
+        for (func_decl.body.items) |stmt_ptr| {
+            const stmt = @as(*ast.Statement, @alignCast(@ptrCast(stmt_ptr)));
+            switch (stmt.*) {
+                .Return => |return_stmt| {
+                    if (return_stmt.value) |_| {
+                        // Found a return statement with a value - infer it's an integer for now
+                        // TODO: In a more sophisticated implementation, we would analyze the expression type
+                        print("🔍 DEBUG: Found return statement with value, inferring integer type\n", .{});
+                        return c.LLVMInt32TypeInContext(self.context);
+                    }
+                },
+                else => continue,
+            }
+        }
+        
+        // No return statements with values found, assume void
+        print("🔍 DEBUG: No return statements with values found, assuming void\n", .{});
+        return c.LLVMVoidTypeInContext(self.context);
+    }
+
     /// Generate LLVM function
     fn generateFunction(self: *LLVMIRPipeline, func_decl: ast.FunctionStatement) !void {
         // Create function type
@@ -460,7 +485,7 @@ pub const LLVMIRPipeline = struct {
         const return_type = if (func_decl.return_type) |ret_type|
             try self.cursedTypeToLLVM(ret_type)
         else
-            c.LLVMVoidTypeInContext(self.context);
+            try self.inferReturnTypeFromFunctionBody(func_decl);
         
         const func_type = c.LLVMFunctionType(
             return_type,
@@ -935,6 +960,7 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate Return statement (damn statements)
     fn generateReturnStatement(self: *LLVMIRPipeline, return_stmt: ast.ReturnStatement) !void {
+        print("🔍 DEBUG: Generating return statement\n", .{});
         const parent = self.current_function orelse {
             print("❌ Return statements can only be used inside functions\n", .{});
             return LLVMIRError.UndefinedVariable;
@@ -943,18 +969,26 @@ pub const LLVMIRPipeline = struct {
         if (return_stmt.value) |value_ptr| {
             // Cast return value from *anyopaque to *Expression
             const return_expr: *ast.Expression = @ptrCast(@alignCast(value_ptr));
+            print("🔍 DEBUG: Generating return value expression\n", .{});
             const ret_val = try self.generateExpression(return_expr.*);
+            print("🔍 DEBUG: Return value generated successfully\n", .{});
             
             // Ensure return type matches function signature
             const func_type = c.LLVMGlobalGetValueType(parent);
             const func_ret_ty = c.LLVMGetReturnType(func_type);
-            const final_val = if (func_ret_ty == c.LLVMTypeOf(ret_val))
-                ret_val
-            else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMIntegerTypeKind and
-                     c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMIntegerTypeKind)
-                c.LLVMBuildIntCast(self.builder, ret_val, func_ret_ty, "ret.cast")
-            else
+            
+            print("🔍 DEBUG: Checking type compatibility for return value\n", .{});
+            const final_val = if (func_ret_ty == c.LLVMTypeOf(ret_val)) blk: {
+                print("🔍 DEBUG: Return type matches exactly\n", .{});
+                break :blk ret_val;
+            } else if (c.LLVMGetTypeKind(func_ret_ty) == c.LLVMIntegerTypeKind and
+                     c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val)) == c.LLVMIntegerTypeKind) blk: {
+                print("🔍 DEBUG: Return type needs integer cast\n", .{});
+                break :blk c.LLVMBuildIntCast(self.builder, ret_val, func_ret_ty, "ret.cast");
+            } else {
+                print("❌ RETURN TYPE MISMATCH ERROR! Expected: {}, Got: {}\n", .{c.LLVMGetTypeKind(func_ret_ty), c.LLVMGetTypeKind(c.LLVMTypeOf(ret_val))});
                 return LLVMIRError.UndefinedVariable; // Type mismatch
+            };
                 
             _ = c.LLVMBuildRet(self.builder, final_val);
         } else {
@@ -1143,18 +1177,22 @@ pub const LLVMIRPipeline = struct {
                 return try self.generateLiteral(lit);
             },
             .Identifier => |ident| {
+                print("🔍 DEBUG: Looking up identifier: {s}\n", .{ident});
+                
                 // First check if it's a builtin function (should not be used as variable)
                 if (self.functions.get(ident)) |function| {
+                    print("🔍 DEBUG: Found {s} as function reference\n", .{ident});
                     // Return the function reference itself - this is for function pointers or calls
                     return function;
                 }
                 
                 // Then check if it's a variable
                 if (self.variables.get(ident)) |var_ref| {
+                    print("🔍 DEBUG: Found {s} as variable reference\n", .{ident});
                     
                     // Use stored type information
                     if (self.variable_types.get(ident)) |var_type| {
-                        // Removed DEBUG output
+                        print("🔍 DEBUG: Found type info for variable {s}\n", .{ident});
                         
                         // Check if we're in a function context
                         if (self.current_function == null) {
@@ -1169,6 +1207,11 @@ pub const LLVMIRPipeline = struct {
                     }
                 } else {
                     print("❌ Undefined variable: {s}\n", .{ident});
+                    print("🔍 DEBUG: Available variables:\n", .{});
+                    var iter = self.variables.iterator();
+                    while (iter.next()) |entry| {
+                        print("  - {s}\n", .{entry.key_ptr.*});
+                    }
                     return error.UndefinedVariable;
                 }
             },
@@ -1369,8 +1412,13 @@ pub const LLVMIRPipeline = struct {
     
     /// Generate binary operation
     fn generateBinaryOperation(self: *LLVMIRPipeline, bin_op: ast.BinaryExpression) anyerror!c.LLVMValueRef {
+        print("🔍 DEBUG: Generating binary operation: {s}\n", .{bin_op.operator});
+        print("🔍 DEBUG: Generating left operand\n", .{});
         var left = try self.generateExpression(bin_op.left.*);
+        print("🔍 DEBUG: Generated left operand successfully\n", .{});
+        print("🔍 DEBUG: Generating right operand\n", .{});
         var right = try self.generateExpression(bin_op.right.*);
+        print("🔍 DEBUG: Generated right operand successfully\n", .{});
         
         // Check if we're dealing with floating point values
         const left_type = c.LLVMTypeOf(left);
