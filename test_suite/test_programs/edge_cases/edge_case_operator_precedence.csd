@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 
 fr fr Test: Operator precedence edge cases
 fr fr Purpose: Test complex precedence scenarios

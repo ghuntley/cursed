@@ -166,9 +166,8 @@ fn compileToExecutable(allocator: Allocator, source: []const u8, filename: []con
         return;
     };
     defer {
-        // Need to cast to mutable pointer for deinit
-        var mutable_program = @constCast(&program);
-        mutable_program.deinit(allocator);
+        // Parser cleanup will handle all arena-allocated memory automatically
+        cursed_parser.deinit();
     }
     
     if (verbose) print("✅ Parsed AST with {d} statements\n", .{program.statements.items.len});
@@ -253,10 +252,8 @@ fn interpretSource(allocator: Allocator, source: []const u8, filename: []const u
     };
     defer {
         // Clean up parser AFTER program execution to keep arena memory alive
+        // Arena cleanup will automatically free all program memory
         cursed_parser.deinit();
-        // Need to cast to mutable pointer for deinit
-        var mutable_program = @constCast(&program);
-        mutable_program.deinit(allocator);
     }
     
     if (verbose) print("🎯 Parsed {d} statements\n", .{program.statements.items.len});

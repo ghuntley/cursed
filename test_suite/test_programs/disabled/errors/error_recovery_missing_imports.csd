@@ -1,4 +1,4 @@
-vibe main
+vibe main_character
 
 fr fr Test: Parser error recovery with missing imports
 fr fr Purpose: Test that parser can gracefully handle missing import errors

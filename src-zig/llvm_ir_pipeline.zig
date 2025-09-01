@@ -248,12 +248,8 @@ pub const LLVMIRPipeline = struct {
         const token_list = try lex.tokenize();
         const tokens = token_list.items;
         var parse = parser.Parser.init(self.allocator, tokens);
-        defer parse.deinit();
+        defer parse.deinit();  // This will clean up all arena-allocated memory including the program
         const program = try parse.parseProgram();
-        defer {
-            var mutable_program = @constCast(&program);
-            mutable_program.deinit(self.allocator);
-        }
         
         // Step 3: Type checking
         if (verbose) print("🔍 Step 3: Type checking...\n", .{});
@@ -2328,13 +2324,18 @@ pub const LLVMIRPipeline = struct {
         
         // Generate global statements within main function context
         for (global_statements) |stmt| {
+            // Ensure we're still in the main function after each statement
+            self.current_function = main_func;
+            c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
             try self.generateStatement(stmt.*);
         }
         
+        // Restore main function context explicitly 
+        self.current_function = main_func;
+        c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        
         // Call main_character function if it exists
         if (self.functions.get("main_character")) |main_char_func| {
-            // Removed DEBUG output
-            
             // Create the function type for main_character: () -> void
             var empty_param_types = [_]c.LLVMTypeRef{};
             const main_char_function_type = c.LLVMFunctionType(
@@ -2351,18 +2352,24 @@ pub const LLVMIRPipeline = struct {
 
         // Add proper terminator if block doesn't have one
         const current_block = c.LLVMGetInsertBlock(self.builder);
-        if (current_block == null or c.LLVMGetBasicBlockTerminator(current_block) == null) {
-            // If the current block is null (all statements were skipped), reposition to entry block
-            if (current_block == null) {
-                c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        if (current_block == null) {
+            c.LLVMPositionBuilderAtEnd(self.builder, entry_block);
+        } else {
+            const terminator = c.LLVMGetBasicBlockTerminator(current_block);
+            if (terminator == null) {
+                // No terminator, add return statement
+            } else {
+                // Already has terminator, clear context and return
+                self.current_function = null;
+                return;
             }
-            
-            // Return 0 with correct type
-            const func_type = c.LLVMGlobalGetValueType(main_func);
-            const func_ret_ty = c.LLVMGetReturnType(func_type);
-            const zero = c.LLVMConstInt(func_ret_ty, 0, 0);
-            _ = c.LLVMBuildRet(self.builder, zero);
         }
+        
+        // Return 0 with correct type
+        const func_type = c.LLVMGlobalGetValueType(main_func);
+        const func_ret_ty = c.LLVMGetReturnType(func_type);
+        const zero = c.LLVMConstInt(func_ret_ty, 0, 0);
+        _ = c.LLVMBuildRet(self.builder, zero);
         
         // Clear current function context
         self.current_function = null;
