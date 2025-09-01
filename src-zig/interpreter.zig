@@ -1264,6 +1264,10 @@ pub const Interpreter = struct {
             try module_functions.put("exists", Value{ .BuiltinFunction = .{ .name = "path.exists", .func = builtinPathExists } });
             try module_functions.put("is_dir", Value{ .BuiltinFunction = .{ .name = "path.is_dir", .func = builtinPathIsDir } });
             try module_functions.put("is_file", Value{ .BuiltinFunction = .{ .name = "path.is_file", .func = builtinPathIsFile } });
+        } else {
+            // Unknown module - return error instead of creating empty module
+            module_functions.deinit();
+            return InterpreterError.ModuleNotFound;
         }
         
         // Create module instance on heap and store pointer in globals  
