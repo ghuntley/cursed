@@ -42,7 +42,7 @@ assert_true(len(search_path) > 0)
 
 fr fr Test command line arguments
 test_start("Command Line Arguments")
-test_args := []tea{"program", "arg1", "arg2"}
+test_args := tea[value]{"program", "arg1", "arg2"}
 env.set_args(3, test_args)
 assert_eq_int(env.get_argc(), 3)
 assert_eq_string(env.get_program_name(), "program")

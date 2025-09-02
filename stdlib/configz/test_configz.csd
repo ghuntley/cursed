@@ -37,7 +37,7 @@ slay test_config_manager_creation() lit {
     sus config ConfigManager = config_create()
     
     fr fr Verify initial state
-    sus all_keys []tea = config_get_all_keys(config)
+    sus all_keys tea[value] = config_get_all_keys(config)
     sus key_count drip = array_length(all_keys)
     
     ready (key_count != 0) {
@@ -919,17 +919,17 @@ slay test_key_operations() lit {
     map_set_string(config.values, "server.port", val4)
     
     fr fr Test getting all keys
-    sus all_keys []tea = config_get_all_keys(config)
+    sus all_keys tea[value] = config_get_all_keys(config)
     sus key_count drip = array_length(all_keys)
     
     fr fr In real implementation, this would return the actual keys
     vibez.spill("Found " + number_to_string(normie(key_count)) + " configuration keys")
     
     fr fr Test getting keys with prefix
-    sus db_keys []tea = config_get_keys_with_prefix(config, "database")
+    sus db_keys tea[value] = config_get_keys_with_prefix(config, "database")
     sus db_key_count drip = array_length(db_keys)
     
-    sus server_keys []tea = config_get_keys_with_prefix(config, "server")
+    sus server_keys tea[value] = config_get_keys_with_prefix(config, "server")
     sus server_key_count drip = array_length(server_keys)
     
     vibez.spill("Found " + number_to_string(normie(db_key_count)) + " database keys")

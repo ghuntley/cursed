@@ -13,7 +13,7 @@ yeet "networkz/http2"
 
 squad Http2PushPromise {
     sus promised_stream_id drip    // Stream ID for the pushed resource
-    sus request_headers []tea      // Headers for the pushed request
+    sus request_headers tea[value]      // Headers for the pushed request
     sus authority tea              // :authority pseudo-header
     sus method tea                 // :method pseudo-header
     sus path tea                   // :path pseudo-header
@@ -24,21 +24,21 @@ squad Http2ServerPush {
     sus enabled lit
     sus max_concurrent_pushes drip
     sus active_pushes drip
-    sus push_promises []Http2PushPromise
-    sus push_cache []Http2PushCacheEntry
+    sus push_promises Http2PushPromise[value]
+    sus push_cache Http2PushCacheEntry[value]
     sus cache_size drip
 }
 
 squad Http2PushCacheEntry {
     sus path tea
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus expires_at drip
     sus etag tea
     sus last_modified tea
 }
 
-slay create_push_promise_frame(stream_id drip, promised_stream_id drip, headers []tea) yikes<Http2Frame> {
+slay create_push_promise_frame(stream_id drip, promised_stream_id drip, headers tea[value]) yikes<Http2Frame> {
     ready (stream_id == 0 || promised_stream_id == 0) {
         yikes create_network_error_advanced("http2_push", "Invalid stream IDs for PUSH_PROMISE", HTTP2_PROTOCOL_ERROR, "")
     }
@@ -96,16 +96,16 @@ slay process_push_promise_frame(conn Http2Connection, frame Http2Frame) yikes<Ht
     }
 
     // Extract promised stream ID
-    sus bytes []drip = stringz.to_bytes(frame.payload)
+    sus bytes drip[value] = stringz.to_bytes(frame.payload)
     sus promised_stream_id drip = ((bytes[0] & 0x7F) << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]
 
     // Decode headers starting after the promised stream ID
-    sus headers []tea = []
+    sus headers tea[value] = []
     sus offset drip = 4
     sus payload tea = frame.payload
 
     bestie (offset < stringz.len(payload)) {
-        sus header_bytes []drip = stringz.to_bytes(stringz.substring(payload, offset, stringz.len(payload)))
+        sus header_bytes drip[value] = stringz.to_bytes(stringz.substring(payload, offset, stringz.len(payload)))
         sus pattern drip = header_bytes[0] & 0xF0
 
         sick pattern {
@@ -113,14 +113,14 @@ slay process_push_promise_frame(conn Http2Connection, frame Http2Frame) yikes<Ht
                 offset = offset + 1  // Skip pattern byte
                 
                 // Decode name
-                sus name_result [2]tea = hpack_decode_string(payload, offset) fam {
+                sus name_result tea[2] = hpack_decode_string(payload, offset) fam {
                     when err -> yikes err
                 }
                 sus name tea = name_result[0]
                 offset = offset + mathz.parse_int(name_result[1])
 
                 // Decode value  
-                sus value_result [2]tea = hpack_decode_string(payload, offset) fam {
+                sus value_result tea[2] = hpack_decode_string(payload, offset) fam {
                     when err -> yikes err
                 }
                 sus value tea = value_result[0]
@@ -182,7 +182,7 @@ slay http2_server_push_resource(conn Http2Connection, parent_stream_id drip, pat
     conn.next_stream_id = conn.next_stream_id + 2
 
     // Create push promise headers
-    sus push_headers []tea = [
+    sus push_headers tea[value] = [
         ":method: GET",
         stringz.concat([":path: ", path]),
         ":scheme: https",
@@ -208,7 +208,7 @@ slay http2_server_push_resource(conn Http2Connection, parent_stream_id drip, pat
     }
 
     // Send response headers for pushed resource
-    sus response_headers []tea = [
+    sus response_headers tea[value] = [
         ":status: 200",
         stringz.concat(["content-type: ", content_type]),
         stringz.concat(["content-length: ", stringz.from_int(stringz.len(body))]),
@@ -246,8 +246,8 @@ slay http2_server_push_resource(conn Http2Connection, parent_stream_id drip, pat
 squad Http2FlowController {
     sus connection_window drip
     sus default_window_size drip
-    sus stream_windows [1000]drip  // Flow control windows for each stream
-    sus pending_updates [1000]drip // Pending window updates
+    sus stream_windows drip[1000]  // Flow control windows for each stream
+    sus pending_updates drip[1000] // Pending window updates
     sus update_threshold drip      // Threshold for sending window updates
 }
 
@@ -358,7 +358,7 @@ squad Http2StreamDependency {
     sus depends_on drip
     sus weight drip
     sus exclusive lit
-    sus children []drip  // Child stream IDs
+    sus children drip[value]  // Child stream IDs
 }
 
 slay create_priority_frame(stream_id drip, dependency drip, weight drip, exclusive lit) Http2Frame {
@@ -393,7 +393,7 @@ slay process_priority_frame(conn Http2Connection, frame Http2Frame) yikes<Http2S
         yikes create_network_error_advanced("http2_priority", "Invalid PRIORITY frame size", HTTP2_FRAME_SIZE_ERROR, "")
     }
 
-    sus bytes []drip = stringz.to_bytes(frame.payload)
+    sus bytes drip[value] = stringz.to_bytes(frame.payload)
     sus dependency_with_flag drip = (bytes[0] << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]
     sus exclusive lit = (dependency_with_flag & 0x80000000) != 0
     sus dependency drip = dependency_with_flag & 0x7FFFFFFF
@@ -418,8 +418,8 @@ slay process_priority_frame(conn Http2Connection, frame Http2Frame) yikes<Http2S
 
 squad Http2MultiplexedConnection {
     sus connection Http2Connection
-    sus active_streams [1000]lit     // Track which stream slots are active
-    sus stream_priorities [1000]drip // Stream priority weights
+    sus active_streams lit[1000]     // Track which stream slots are active
+    sus stream_priorities drip[1000] // Stream priority weights
     sus max_concurrent_streams drip
     sus stream_creation_rate drip    // Streams created per second
     sus last_stream_created_time drip
@@ -514,9 +514,9 @@ slay multiplex_close_stream(mux_conn Http2MultiplexedConnection, stream_id drip)
     damn based
 }
 
-slay multiplex_send_concurrent(mux_conn Http2MultiplexedConnection, requests []Http2ConcurrentRequest) yikes<[]HttpResponse> {
-    sus responses []HttpResponse = []
-    sus request_channels [100]chan<HttpResponse>  // Max 100 concurrent requests
+slay multiplex_send_concurrent(mux_conn Http2MultiplexedConnection, requests Http2ConcurrentRequest[value]) yikes<HttpResponse[value]> {
+    sus responses HttpResponse[value] = []
+    sus request_channels chan[100]<HttpResponse>  // Max 100 concurrent requests
 
     ready (arrayz.len(requests) > 100) {
         yikes create_network_error_advanced("http2_multiplex", "Too many concurrent requests", HTTP2_ENHANCE_YOUR_CALM, "")
@@ -606,7 +606,7 @@ slay multiplex_send_concurrent(mux_conn Http2MultiplexedConnection, requests []H
             }
 
             // Receive response (simplified - would need proper frame multiplexing)
-            sus response_headers []tea = []
+            sus response_headers tea[value] = []
             sus response_body tea = ""
             sus response_complete lit = no_cap
 
@@ -709,7 +709,7 @@ slay multiplex_send_concurrent(mux_conn Http2MultiplexedConnection, requests []H
 squad Http2ConcurrentRequest {
     sus method tea
     sus url tea
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus priority drip
     sus timeout drip
@@ -718,7 +718,7 @@ squad Http2ConcurrentRequest {
 // ==== CONNECTION POOLING FOR HTTP/2 ====
 
 squad Http2ConnectionPool {
-    sus connections []Http2MultiplexedConnection
+    sus connections Http2MultiplexedConnection[value]
     sus max_connections drip
     sus active_connections drip
     sus host tea

@@ -10,8 +10,8 @@ fr fr ===== VALIDATION STRUCTURES =====
 squad ValidationContext {
     sus config_manager ConfigManager
     sus current_path tea
-    sus validation_errors []ValidationError
-    sus validation_warnings []ValidationWarning
+    sus validation_errors ValidationError[value]
+    sus validation_warnings ValidationWarning[value]
     sus strict_mode lit
     sus fail_fast lit
 }
@@ -47,11 +47,11 @@ squad ValidationSchema {
     sus name tea
     sus description tea
     sus version tea
-    sus required_keys []tea
-    sus optional_keys []tea
+    sus required_keys tea[value]
+    sus optional_keys tea[value]
     sus type_constraints map<tea, tea>
     sus value_constraints map<tea, tea>
-    sus custom_validators []tea
+    sus custom_validators tea[value]
 }
 
 fr fr ===== CORE VALIDATION ENGINE =====
@@ -91,7 +91,7 @@ slay validation_validate_config(context ValidationContext) ValidationContext {
     context.validation_warnings = []
     
     fr fr Validate all configuration values
-    sus all_keys []tea = config_get_all_keys(context.config_manager)
+    sus all_keys tea[value] = config_get_all_keys(context.config_manager)
     sus key_count drip = array_length(all_keys)
     
     sus i drip = 0
@@ -239,7 +239,7 @@ slay validation_check_range(context ValidationContext, key tea, value ConfigValu
     }
     
     fr fr Parse range from constraint value (format: "min:max")
-    sus range_parts []tea = split_string(rule.constraint_value, ":", 2)
+    sus range_parts tea[value] = split_string(rule.constraint_value, ":", 2)
     ready (array_length(range_parts) != 2) {
         context = validation_add_error(context, key, "config_error", "Invalid range format in rule", "error", "Fix validation rule")
         damn context
@@ -284,7 +284,7 @@ slay validation_check_enum(context ValidationContext, key tea, value ConfigValue
         damn context
     }
     
-    sus allowed_values []tea = split_string(rule.constraint_value, ",", 0)
+    sus allowed_values tea[value] = split_string(rule.constraint_value, ",", 0)
     sus allowed_count drip = array_length(allowed_values)
     sus is_valid lit = cringe
     
@@ -410,7 +410,7 @@ slay validation_validate_against_schema(context ValidationContext, schema Valida
     }
     
     fr fr Check type constraints
-    sus all_keys []tea = config_get_all_keys(context.config_manager)
+    sus all_keys tea[value] = config_get_all_keys(context.config_manager)
     sus key_count drip = array_length(all_keys)
     
     sus j drip = 0
@@ -814,7 +814,7 @@ slay is_valid_email_domain_part(domain tea) lit {
     ready (string_contains(domain, "..")) { damn cringe }
     
     fr fr Split by dots and validate each part
-    sus parts []tea = split_string(domain, ".", 0)
+    sus parts tea[value] = split_string(domain, ".", 0)
     sus part_count drip = array_length(parts)
     
     sus i drip = 0

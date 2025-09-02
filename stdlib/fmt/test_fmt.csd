@@ -67,18 +67,18 @@ assert_eq_string(fmt.format_percentage(0.5), "50.0%")
 assert_eq_string(fmt.format_percentage(1.0), "100.0%")
 
 fr fr Test string formatting with args
-sus args := []tea{"world", "CURSED"}
+sus args := tea[value]{"world", "CURSED"}
 assert_eq_string(fmt.format_string("Hello", args), "Hello world CURSED")
 
-sus single_arg := []tea{"42"}
+sus single_arg := tea[value]{"42"}
 assert_eq_string(fmt.format_string("The answer is", single_arg), "The answer is 42")
 
-sus no_args := []tea{}
+sus no_args := tea[value]{}
 assert_eq_string(fmt.format_string("No args", no_args), "No args")
 
 fr fr Test table formatting
-sus columns := []tea{"Name", "Age"}
-sus widths := []normie{10, 5}
+sus columns := tea[value]{"Name", "Age"}
+sus widths := normie[value]{10, 5}
 sus header := fmt.format_table_header(columns, widths)
 assert_true(stringz.contains(header, "Name"))
 assert_true(stringz.contains(header, "Age"))

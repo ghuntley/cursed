@@ -72,15 +72,15 @@ slay WriteByte(ptr CursedPtr, b normie) {
     fr fr Simplified: no-op for pure CURSED
 }
 
-slay ReadBytes(ptr CursedPtr, size normie) []normie {
-    sus result := make([]normie, size)
+slay ReadBytes(ptr CursedPtr, size normie) normie[value]{
+    sus result := make(normie[value], size)
     for i := 0; i < size; i++ {
         result[i] = ReadByte(Add(ptr, i))
     }
     damn result
 }
 
-slay WriteBytes(ptr CursedPtr, data []normie) {
+slay WriteBytes(ptr CursedPtr, data normie[value]) {
     for i := 0; i < len(data); i++ {
         WriteByte(Add(ptr, i), data[i])
     }
@@ -156,15 +156,15 @@ slay AtomicAdd(ptr CursedPtr, delta normie) normie {
 }
 
 fr fr String/bytes conversion (simplified)
-slay StringToBytes(s tea) []normie {
-    sus result := make([]normie, len(s))
+slay StringToBytes(s tea) normie[value]{
+    sus result := make(normie[value], len(s))
     for i := 0; i < len(s); i++ {
         result[i] = normie(s[i])
     }
     damn result
 }
 
-slay BytesToString(b []normie) tea {
+slay BytesToString(b normie[value]) tea {
     sus result tea = ""
     for i := 0; i < len(b); i++ {
         result = result + tea(rune(b[i]))

@@ -476,7 +476,7 @@ fr fr ===== UTILITY FUNCTIONS =====
 
 slay is_valid_ipv4(ip tea) lit {
     fr fr Basic IPv4 validation
-    sus parts []tea = stringz.split(ip, ".")
+    sus parts tea[value] = stringz.split(ip, ".")
     ready (array_length(parts) != 4) {
         damn cringe
     }

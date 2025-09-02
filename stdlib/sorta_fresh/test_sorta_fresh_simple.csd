@@ -8,8 +8,8 @@ yeet "sorta_fresh"
 slay test_sort_ints() {
     test_start("SortInts basic functionality")
     
-    sus arr []normie = [3, 1, 4, 1, 5]
-    sus sorted []normie = SortInts(arr)
+    sus arr normie[value] = [3, 1, 4, 1, 5]
+    sus sorted normie[value] = SortInts(arr)
     
     assert_eq_int(sorted[0], 1)
     assert_eq_int(sorted[1], 1)
@@ -18,8 +18,8 @@ slay test_sort_ints() {
     assert_eq_int(sorted[4], 5)
     
     test_start("SortInts single element")
-    sus single []normie = [42]
-    sus sorted_single []normie = SortInts(single)
+    sus single normie[value] = [42]
+    sus sorted_single normie[value] = SortInts(single)
     assert_eq_int(sorted_single[0], 42)
 }
 
@@ -27,8 +27,8 @@ slay test_sort_ints() {
 slay test_sort_strings() {
     test_start("SortStrings basic functionality")
     
-    sus arr []tea = ["zebra", "apple", "banana"]
-    sus sorted []tea = SortStrings(arr)
+    sus arr tea[value] = ["zebra", "apple", "banana"]
+    sus sorted tea[value] = SortStrings(arr)
     
     assert_eq_string(sorted[0], "apple")
     assert_eq_string(sorted[1], "banana")
@@ -38,18 +38,18 @@ slay test_sort_strings() {
 // Test sorted checking
 slay test_is_sorted() {
     test_start("IntsAreSorted true case")
-    sus sorted []normie = [1, 2, 3, 4, 5]
+    sus sorted normie[value] = [1, 2, 3, 4, 5]
     assert_true(IntsAreSorted(sorted))
     
     test_start("IntsAreSorted false case")
-    sus unsorted []normie = [3, 1, 4, 1, 5]
+    sus unsorted normie[value] = [3, 1, 4, 1, 5]
     assert_false(IntsAreSorted(unsorted))
 }
 
 // Test binary search
 slay test_binary_search() {
     test_start("SearchInts basic functionality")
-    sus arr []normie = [1, 2, 3, 4, 5]
+    sus arr normie[value] = [1, 2, 3, 4, 5]
     
     assert_eq_int(SearchInts(arr, 3), 2)
     assert_eq_int(SearchInts(arr, 1), 0)
@@ -62,8 +62,8 @@ slay test_binary_search() {
 // Test reverse sorting
 slay test_reverse_sort() {
     test_start("ReverseSort basic functionality")
-    sus arr []normie = [1, 3, 2, 5, 4]
-    sus reversed []normie = ReverseSort(arr)
+    sus arr normie[value] = [1, 3, 2, 5, 4]
+    sus reversed normie[value] = ReverseSort(arr)
     
     assert_eq_int(reversed[0], 5)
     assert_eq_int(reversed[1], 4)
@@ -75,16 +75,16 @@ slay test_reverse_sort() {
 // Test Gen Z sorting
 slay test_gen_z_sorting() {
     test_start("NoCapSort basic functionality")
-    sus arr []normie = [5, 3, 8, 1, 9]
-    sus no_cap_sorted []normie = NoCapSort(arr)
+    sus arr normie[value] = [5, 3, 8, 1, 9]
+    sus no_cap_sorted normie[value] = NoCapSort(arr)
     assert_true(IntsAreSorted(no_cap_sorted))
     
     test_start("SlaySort basic functionality")
-    sus slay_sorted []normie = SlaySort(arr)
+    sus slay_sorted normie[value] = SlaySort(arr)
     assert_true(IntsAreSorted(slay_sorted))
     
     test_start("YeetSort basic functionality")
-    sus yeet_sorted []normie = YeetSort(arr, 5)
+    sus yeet_sorted normie[value] = YeetSort(arr, 5)
     
     // Should only contain elements >= 5
     bestie i := 0; i < array_length(yeet_sorted); i++ {
@@ -96,20 +96,20 @@ slay test_gen_z_sorting() {
 // Test edge cases
 slay test_edge_cases() {
     test_start("single element arrays")
-    sus single_int []normie = [42]
-    sus sorted_single_int []normie = SortInts(single_int)
+    sus single_int normie[value] = [42]
+    sus sorted_single_int normie[value] = SortInts(single_int)
     assert_eq_int(sorted_single_int[0], 42)
     
     test_start("duplicate elements")
-    sus duplicates []normie = [5, 5, 5]
-    sus sorted_duplicates []normie = SortInts(duplicates)
+    sus duplicates normie[value] = [5, 5, 5]
+    sus sorted_duplicates normie[value] = SortInts(duplicates)
     assert_true(IntsAreSorted(sorted_duplicates))
     assert_eq_int(sorted_duplicates[0], 5)
     assert_eq_int(sorted_duplicates[2], 5)
     
     test_start("already sorted arrays")
-    sus already_sorted []normie = [1, 2, 3, 4, 5]
-    sus sorted_already []normie = SortInts(already_sorted)
+    sus already_sorted normie[value] = [1, 2, 3, 4, 5]
+    sus sorted_already normie[value] = SortInts(already_sorted)
     assert_true(IntsAreSorted(sorted_already))
 }
 

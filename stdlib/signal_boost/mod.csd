@@ -31,7 +31,7 @@ be_like SignalHandler = slay(signal normie) lit
 
 fr fr Signal mask for blocking signals - privacy mode activated
 be_like SignalMask = {
-    signals [64]lit
+    signals lit[64]
 }
 
 fr fr Signal registration result - success vibes only
@@ -43,7 +43,7 @@ be_like SignalResult = {
 fr fr Signal pending status - see what signals are waiting in the DMs
 be_like PendingSignals = {
     count normie
-    signals [64]normie
+    signals normie[64]
 }
 
 fr fr Register signal handler - slide into those signal DMs 💬

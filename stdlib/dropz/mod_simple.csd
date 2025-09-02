@@ -145,14 +145,14 @@ slay create(filename tea) (*File, tea) {
 }
 
 fr fr File methods (simplified)
-slay (f *File) read(b []byte) (normie, tea) {
+slay (f *File) read(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
     damn 10, "" fr fr Return fixed read count
 }
 
-slay (f *File) write(b []byte) (normie, tea) {
+slay (f *File) write(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
@@ -191,12 +191,12 @@ slay (f *File) stat() (FileInfo, tea) {
 }
 
 fr fr High-level file operations
-slay read_file(filename tea) ([]byte, tea) {
+slay read_file(filename tea) (byte[value], tea) {
     sus file, err := open(filename)
     check err != "" {
         damn [], err
     }
-    sus data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
+    sus data byte[value] = byte[value]{72, 101, 108, 108, 111} fr fr "Hello"
     file.close()
     damn data, ""
 }
@@ -209,7 +209,7 @@ slay read_text_file(filename tea) (tea, tea) {
     damn "Hello from file", ""
 }
 
-slay write_file(filename tea, data []byte, perm normie) tea {
+slay write_file(filename tea, data byte[value], perm normie) tea {
     sus file, err := create(filename)
     check err != "" {
         damn err
@@ -224,8 +224,8 @@ slay mkdir(dirname tea, perm normie) tea {
     damn ""
 }
 
-slay read_dir(dirname tea) ([]DirEntry, tea) {
-    sus entries []DirEntry = []DirEntry{
+slay read_dir(dirname tea) (DirEntry[value], tea) {
+    sus entries DirEntry[value] = DirEntry[value]{
         DirEntry{
             name: "file1.txt",
             is_dir: cap,

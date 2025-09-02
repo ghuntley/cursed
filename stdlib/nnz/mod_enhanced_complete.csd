@@ -187,9 +187,9 @@ slay mish_activation(x meal) meal {
     damn x * tanh_activation(softplus_x)
 }
 
-slay softmax_activation(values []meal) []meal {
+slay softmax_activation(values meal[value]) meal[value]{
     sus max_val meal = tensor_max_1d(values)
-    sus result []meal = []
+    sus result meal[value] = []
     sus sum_exp meal = 0.0
     
     fr fr Compute exp(x - max) for numerical stability
@@ -242,15 +242,15 @@ squad Layer {
     layer_type drip
     input_size drip
     output_size drip
-    weights []meal
-    biases []meal
+    weights meal[value]
+    biases meal[value]
     activation_type drip
     
     fr fr Advanced layer parameters
-    weight_gradients []meal
-    bias_gradients []meal
-    input_cache []meal
-    output_cache []meal
+    weight_gradients meal[value]
+    bias_gradients meal[value]
+    input_cache meal[value]
+    output_cache meal[value]
     
     fr fr Convolutional parameters
     input_height drip
@@ -262,30 +262,30 @@ squad Layer {
     padding drip
     
     fr fr Batch/Layer normalization
-    gamma []meal
-    beta []meal
-    running_mean []meal
-    running_var []meal
+    gamma meal[value]
+    beta meal[value]
+    running_mean meal[value]
+    running_var meal[value]
     momentum_bn meal
     epsilon_bn meal
     
     fr fr Dropout parameters
     dropout_rate meal
-    dropout_mask []meal
+    dropout_mask meal[value]
     
     fr fr LSTM/GRU parameters
-    forget_gate_weights []meal
-    input_gate_weights []meal
-    output_gate_weights []meal
-    candidate_weights []meal
-    hidden_state []meal
-    cell_state []meal
+    forget_gate_weights meal[value]
+    input_gate_weights meal[value]
+    output_gate_weights meal[value]
+    candidate_weights meal[value]
+    hidden_state meal[value]
+    cell_state meal[value]
     
     fr fr Attention parameters
-    query_weights []meal
-    key_weights []meal
-    value_weights []meal
-    attention_weights []meal
+    query_weights meal[value]
+    key_weights meal[value]
+    value_weights meal[value]
+    attention_weights meal[value]
     
     fr fr Training state
     training lit
@@ -293,10 +293,10 @@ squad Layer {
 
 fr fr === PROPER WEIGHT INITIALIZATION ===
 
-slay xavier_normal_init(input_size drip, output_size drip) []meal {
+slay xavier_normal_init(input_size drip, output_size drip) meal[value]{
     sus variance meal = 2.0 / (input_size + output_size)
     sus std_dev meal = sqrt_meal(variance)
-    sus weights []meal = []
+    sus weights meal[value] = []
     
     sus i drip = 0
     bestie (i < input_size * output_size) {
@@ -308,10 +308,10 @@ slay xavier_normal_init(input_size drip, output_size drip) []meal {
     damn weights
 }
 
-slay he_normal_init(input_size drip, output_size drip) []meal {
+slay he_normal_init(input_size drip, output_size drip) meal[value]{
     sus variance meal = 2.0 / input_size
     sus std_dev meal = sqrt_meal(variance)
-    sus weights []meal = []
+    sus weights meal[value] = []
     
     sus i drip = 0
     bestie (i < input_size * output_size) {
@@ -324,7 +324,7 @@ slay he_normal_init(input_size drip, output_size drip) []meal {
 }
 
 slay layer_create_dense_advanced(input_size drip, output_size drip, activation_type drip, weight_init tea) Layer {
-    sus weights []meal
+    sus weights meal[value]
     
     ready (weight_init == "xavier") {
         weights = xavier_normal_init(input_size, output_size)
@@ -334,7 +334,7 @@ slay layer_create_dense_advanced(input_size drip, output_size drip, activation_t
         weights = xavier_normal_init(input_size, output_size)
     }
     
-    sus biases []meal = tensor_zeros_1d(output_size)
+    sus biases meal[value] = tensor_zeros_1d(output_size)
     
     damn Layer{
         layer_type: LAYER_TYPE_DENSE(),
@@ -386,14 +386,14 @@ slay layer_create_conv2d_complete(input_height drip, input_width drip, input_cha
     sus std_dev meal = sqrt_meal(variance)
     
     sus num_weights drip = output_channels * input_channels * kernel_size * kernel_size
-    sus weights []meal = []
+    sus weights meal[value] = []
     sus i drip = 0
     bestie (i < num_weights) {
         weights = append(weights, random_gaussian() * std_dev)
         i = i + 1
     }
     
-    sus biases []meal = tensor_zeros_1d(output_channels)
+    sus biases meal[value] = tensor_zeros_1d(output_channels)
     
     damn Layer{
         layer_type: LAYER_TYPE_CONV2D(),
@@ -437,13 +437,13 @@ slay layer_create_conv2d_complete(input_height drip, input_width drip, input_cha
 
 fr fr === PROPER CONVOLUTIONAL OPERATIONS ===
 
-slay conv2d_forward_complete(input []meal, weights []meal, biases []meal, input_height drip, input_width drip, input_channels drip, output_channels drip, kernel_size drip, stride drip, padding drip) []meal {
+slay conv2d_forward_complete(input meal[value], weights meal[value], biases meal[value], input_height drip, input_width drip, input_channels drip, output_channels drip, kernel_size drip, stride drip, padding drip) meal[value]{
     fr fr Calculate output dimensions
     sus output_height drip = (input_height + 2 * padding - kernel_size) / stride + 1
     sus output_width drip = (input_width + 2 * padding - kernel_size) / stride + 1
     sus output_size drip = output_height * output_width * output_channels
     
-    sus output []meal = tensor_zeros_1d(output_size)
+    sus output meal[value] = tensor_zeros_1d(output_size)
     
     fr fr Perform convolution
     sus oc drip = 0
@@ -493,12 +493,12 @@ slay conv2d_forward_complete(input []meal, weights []meal, biases []meal, input_
 
 fr fr === PROPER POOLING OPERATIONS ===
 
-slay maxpool2d_forward_complete(input []meal, input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) []meal {
+slay maxpool2d_forward_complete(input meal[value], input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) meal[value]{
     sus output_height drip = (input_height - pool_size) / stride + 1
     sus output_width drip = (input_width - pool_size) / stride + 1
     sus output_size drip = output_height * output_width * input_channels
     
-    sus output []meal = tensor_zeros_1d(output_size)
+    sus output meal[value] = tensor_zeros_1d(output_size)
     
     sus c drip = 0
     bestie (c < input_channels) {
@@ -538,12 +538,12 @@ slay maxpool2d_forward_complete(input []meal, input_height drip, input_width dri
     damn output
 }
 
-slay avgpool2d_forward_complete(input []meal, input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) []meal {
+slay avgpool2d_forward_complete(input meal[value], input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) meal[value]{
     sus output_height drip = (input_height - pool_size) / stride + 1
     sus output_width drip = (input_width - pool_size) / stride + 1
     sus output_size drip = output_height * output_width * input_channels
     
-    sus output []meal = tensor_zeros_1d(output_size)
+    sus output meal[value] = tensor_zeros_1d(output_size)
     sus pool_area meal = pool_size * pool_size
     
     sus c drip = 0
@@ -624,14 +624,14 @@ slay layer_create_batch_norm_complete(size drip, momentum meal, epsilon meal) La
     }
 }
 
-slay batch_norm_forward_complete(layer Layer, input []meal, batch_size drip) []meal {
+slay batch_norm_forward_complete(layer Layer, input meal[value], batch_size drip) meal[value]{
     sus feature_size drip = layer.input_size
-    sus output []meal = tensor_zeros_1d(len(input))
+    sus output meal[value] = tensor_zeros_1d(len(input))
     
     ready (layer.training) {
         fr fr Training mode: compute batch statistics
-        sus batch_mean []meal = tensor_zeros_1d(feature_size)
-        sus batch_var []meal = tensor_zeros_1d(feature_size)
+        sus batch_mean meal[value] = tensor_zeros_1d(feature_size)
+        sus batch_var meal[value] = tensor_zeros_1d(feature_size)
         
         fr fr Compute mean
         sus f drip = 0
@@ -705,10 +705,10 @@ fr fr === PROPER LSTM LAYER ===
 slay layer_create_lstm_complete(input_size drip, hidden_size drip) Layer {
     fr fr Initialize LSTM gates with Xavier initialization
     sus total_weights drip = 4 * (input_size + hidden_size) * hidden_size
-    sus forget_weights []meal = xavier_normal_init(input_size + hidden_size, hidden_size)
-    sus input_weights []meal = xavier_normal_init(input_size + hidden_size, hidden_size)
-    sus output_weights []meal = xavier_normal_init(input_size + hidden_size, hidden_size)
-    sus candidate_weights []meal = xavier_normal_init(input_size + hidden_size, hidden_size)
+    sus forget_weights meal[value] = xavier_normal_init(input_size + hidden_size, hidden_size)
+    sus input_weights meal[value] = xavier_normal_init(input_size + hidden_size, hidden_size)
+    sus output_weights meal[value] = xavier_normal_init(input_size + hidden_size, hidden_size)
+    sus candidate_weights meal[value] = xavier_normal_init(input_size + hidden_size, hidden_size)
     
     damn Layer{
         layer_type: LAYER_TYPE_LSTM(),
@@ -750,12 +750,12 @@ slay layer_create_lstm_complete(input_size drip, hidden_size drip) Layer {
     }
 }
 
-slay lstm_forward_complete(layer Layer, input []meal) []meal {
+slay lstm_forward_complete(layer Layer, input meal[value]) meal[value]{
     sus input_size drip = layer.input_size
     sus hidden_size drip = layer.output_size
     
     fr fr Concatenate input and previous hidden state
-    sus combined_input []meal = []
+    sus combined_input meal[value] = []
     sus i drip = 0
     bestie (i < input_size) {
         combined_input = append(combined_input, input[i])
@@ -768,7 +768,7 @@ slay lstm_forward_complete(layer Layer, input []meal) []meal {
     }
     
     fr fr Compute forget gate
-    sus forget_gate []meal = tensor_zeros_1d(hidden_size)
+    sus forget_gate meal[value] = tensor_zeros_1d(hidden_size)
     i = 0
     bestie (i < hidden_size) {
         sus sum meal = 0.0
@@ -783,7 +783,7 @@ slay lstm_forward_complete(layer Layer, input []meal) []meal {
     }
     
     fr fr Compute input gate
-    sus input_gate []meal = tensor_zeros_1d(hidden_size)
+    sus input_gate meal[value] = tensor_zeros_1d(hidden_size)
     i = 0
     bestie (i < hidden_size) {
         sus sum meal = 0.0
@@ -798,7 +798,7 @@ slay lstm_forward_complete(layer Layer, input []meal) []meal {
     }
     
     fr fr Compute candidate values
-    sus candidate_values []meal = tensor_zeros_1d(hidden_size)
+    sus candidate_values meal[value] = tensor_zeros_1d(hidden_size)
     i = 0
     bestie (i < hidden_size) {
         sus sum meal = 0.0
@@ -821,7 +821,7 @@ slay lstm_forward_complete(layer Layer, input []meal) []meal {
     }
     
     fr fr Compute output gate
-    sus output_gate []meal = tensor_zeros_1d(hidden_size)
+    sus output_gate meal[value] = tensor_zeros_1d(hidden_size)
     i = 0
     bestie (i < hidden_size) {
         sus sum meal = 0.0
@@ -849,9 +849,9 @@ fr fr === PROPER ATTENTION MECHANISM ===
 
 slay layer_create_attention_complete(input_size drip, hidden_size drip, num_heads drip) Layer {
     sus head_dim drip = hidden_size / num_heads
-    sus query_weights []meal = xavier_normal_init(input_size, hidden_size)
-    sus key_weights []meal = xavier_normal_init(input_size, hidden_size)
-    sus value_weights []meal = xavier_normal_init(input_size, hidden_size)
+    sus query_weights meal[value] = xavier_normal_init(input_size, hidden_size)
+    sus key_weights meal[value] = xavier_normal_init(input_size, hidden_size)
+    sus value_weights meal[value] = xavier_normal_init(input_size, hidden_size)
     
     damn Layer{
         layer_type: LAYER_TYPE_ATTENTION(),
@@ -893,18 +893,18 @@ slay layer_create_attention_complete(input_size drip, hidden_size drip, num_head
     }
 }
 
-slay attention_forward_complete(layer Layer, input []meal, sequence_length drip) []meal {
+slay attention_forward_complete(layer Layer, input meal[value], sequence_length drip) meal[value]{
     sus input_size drip = layer.input_size
     sus hidden_size drip = layer.output_size
     sus num_heads drip = layer.output_channels
     sus head_dim drip = layer.kernel_size
     
     fr fr Compute Q, K, V matrices
-    sus queries []meal = tensor_matrix_multiply_flat(input, layer.query_weights, sequence_length, input_size, hidden_size)
-    sus keys []meal = tensor_matrix_multiply_flat(input, layer.key_weights, sequence_length, input_size, hidden_size)
-    sus values []meal = tensor_matrix_multiply_flat(input, layer.value_weights, sequence_length, input_size, hidden_size)
+    sus queries meal[value] = tensor_matrix_multiply_flat(input, layer.query_weights, sequence_length, input_size, hidden_size)
+    sus keys meal[value] = tensor_matrix_multiply_flat(input, layer.key_weights, sequence_length, input_size, hidden_size)
+    sus values meal[value] = tensor_matrix_multiply_flat(input, layer.value_weights, sequence_length, input_size, hidden_size)
     
-    sus output []meal = tensor_zeros_1d(sequence_length * hidden_size)
+    sus output meal[value] = tensor_zeros_1d(sequence_length * hidden_size)
     
     fr fr Multi-head attention
     sus h drip = 0
@@ -912,9 +912,9 @@ slay attention_forward_complete(layer Layer, input []meal, sequence_length drip)
         sus head_offset drip = h * head_dim
         
         fr fr Extract head-specific Q, K, V
-        sus head_queries []meal = []
-        sus head_keys []meal = []
-        sus head_values []meal = []
+        sus head_queries meal[value] = []
+        sus head_keys meal[value] = []
+        sus head_values meal[value] = []
         
         sus seq drip = 0
         bestie (seq < sequence_length) {
@@ -930,7 +930,7 @@ slay attention_forward_complete(layer Layer, input []meal, sequence_length drip)
         }
         
         fr fr Compute attention scores
-        sus attention_scores []meal = tensor_zeros_1d(sequence_length * sequence_length)
+        sus attention_scores meal[value] = tensor_zeros_1d(sequence_length * sequence_length)
         sus scale meal = 1.0 / sqrt_meal(head_dim)
         
         sus i drip = 0
@@ -954,14 +954,14 @@ slay attention_forward_complete(layer Layer, input []meal, sequence_length drip)
         fr fr Apply softmax to attention scores
         i = 0
         bestie (i < sequence_length) {
-            sus row_scores []meal = []
+            sus row_scores meal[value] = []
             sus j drip = 0
             bestie (j < sequence_length) {
                 row_scores = append(row_scores, attention_scores[i * sequence_length + j])
                 j = j + 1
             }
             
-            sus softmax_scores []meal = softmax_activation(row_scores)
+            sus softmax_scores meal[value] = softmax_activation(row_scores)
             j = 0
             bestie (j < sequence_length) {
                 attention_scores[i * sequence_length + j] = softmax_scores[j]
@@ -999,13 +999,13 @@ slay attention_forward_complete(layer Layer, input []meal, sequence_length drip)
 
 fr fr === PROPER GRADIENT COMPUTATION ===
 
-slay compute_dense_gradients_complete(layer Layer, input []meal, output_gradient []meal) ([]meal, []meal, []meal) {
+slay compute_dense_gradients_complete(layer Layer, input meal[value], output_gradient meal[value]) (meal[value], meal[value], meal[value]) {
     sus input_size drip = layer.input_size
     sus output_size drip = layer.output_size
     
-    sus weight_gradients []meal = tensor_zeros_1d(len(layer.weights))
-    sus bias_gradients []meal = tensor_zeros_1d(output_size)
-    sus input_gradients []meal = tensor_zeros_1d(input_size)
+    sus weight_gradients meal[value] = tensor_zeros_1d(len(layer.weights))
+    sus bias_gradients meal[value] = tensor_zeros_1d(output_size)
+    sus input_gradients meal[value] = tensor_zeros_1d(input_size)
     
     fr fr Compute bias gradients (equal to output gradients)
     sus o drip = 0
@@ -1035,7 +1035,7 @@ slay compute_dense_gradients_complete(layer Layer, input []meal, output_gradient
     damn (weight_gradients, bias_gradients, input_gradients)
 }
 
-slay compute_conv2d_gradients_complete(layer Layer, input []meal, output_gradient []meal) ([]meal, []meal, []meal) {
+slay compute_conv2d_gradients_complete(layer Layer, input meal[value], output_gradient meal[value]) (meal[value], meal[value], meal[value]) {
     sus input_height drip = layer.input_height
     sus input_width drip = layer.input_width
     sus input_channels drip = layer.input_channels
@@ -1047,9 +1047,9 @@ slay compute_conv2d_gradients_complete(layer Layer, input []meal, output_gradien
     sus output_height drip = (input_height + 2 * padding - kernel_size) / stride + 1
     sus output_width drip = (input_width + 2 * padding - kernel_size) / stride + 1
     
-    sus weight_gradients []meal = tensor_zeros_1d(len(layer.weights))
-    sus bias_gradients []meal = tensor_zeros_1d(output_channels)
-    sus input_gradients []meal = tensor_zeros_1d(len(input))
+    sus weight_gradients meal[value] = tensor_zeros_1d(len(layer.weights))
+    sus bias_gradients meal[value] = tensor_zeros_1d(output_channels)
+    sus input_gradients meal[value] = tensor_zeros_1d(len(input))
     
     fr fr Compute bias gradients
     sus oc drip = 0
@@ -1157,11 +1157,11 @@ slay compute_conv2d_gradients_complete(layer Layer, input []meal, output_gradien
 
 fr fr === PROPER OPTIMIZERS ===
 
-slay adam_optimizer_update_complete(weights []meal, gradients []meal, m []meal, v []meal, learning_rate meal, beta1 meal, beta2 meal, epsilon meal, timestep drip) []meal {
+slay adam_optimizer_update_complete(weights meal[value], gradients meal[value], m meal[value], v meal[value], learning_rate meal, beta1 meal, beta2 meal, epsilon meal, timestep drip) meal[value]{
     sus bias_correction1 meal = 1.0 - power_float_approx(beta1, timestep)
     sus bias_correction2 meal = 1.0 - power_float_approx(beta2, timestep)
     
-    sus updated_weights []meal = []
+    sus updated_weights meal[value] = []
     sus i drip = 0
     bestie (i < len(weights)) {
         fr fr Update biased first moment estimate
@@ -1186,8 +1186,8 @@ slay adam_optimizer_update_complete(weights []meal, gradients []meal, m []meal, 
     damn updated_weights
 }
 
-slay rmsprop_optimizer_update_complete(weights []meal, gradients []meal, v []meal, learning_rate meal, decay meal, epsilon meal) []meal {
-    sus updated_weights []meal = []
+slay rmsprop_optimizer_update_complete(weights meal[value], gradients meal[value], v meal[value], learning_rate meal, decay meal, epsilon meal) meal[value]{
+    sus updated_weights meal[value] = []
     sus i drip = 0
     bestie (i < len(weights)) {
         fr fr Update moving average of squared gradients
@@ -1205,7 +1205,7 @@ slay rmsprop_optimizer_update_complete(weights []meal, gradients []meal, v []mea
 
 fr fr === PROPER LOSS FUNCTIONS ===
 
-slay categorical_crossentropy_loss_complete(predictions []meal, targets []meal) meal {
+slay categorical_crossentropy_loss_complete(predictions meal[value], targets meal[value]) meal {
     ready (len(predictions) != len(targets)) {
         damn 1000000.0  fr fr Large loss for dimension mismatch
     }
@@ -1222,8 +1222,8 @@ slay categorical_crossentropy_loss_complete(predictions []meal, targets []meal) 
     damn loss
 }
 
-slay categorical_crossentropy_gradient_complete(predictions []meal, targets []meal) []meal {
-    sus gradients []meal = []
+slay categorical_crossentropy_gradient_complete(predictions meal[value], targets meal[value]) meal[value]{
+    sus gradients meal[value] = []
     sus i drip = 0
     bestie (i < len(predictions)) {
         sus p meal = clamp_meal(predictions[i], EPSILON_STABILITY(), 1.0 - EPSILON_STABILITY())
@@ -1235,7 +1235,7 @@ slay categorical_crossentropy_gradient_complete(predictions []meal, targets []me
     damn gradients
 }
 
-slay focal_loss_complete(predictions []meal, targets []meal, alpha meal, gamma meal) meal {
+slay focal_loss_complete(predictions meal[value], targets meal[value], alpha meal, gamma meal) meal {
     sus loss meal = 0.0
     sus i drip = 0
     bestie (i < len(predictions)) {
@@ -1255,8 +1255,8 @@ squad GPUContext {
     is_initialized lit
     device_count drip
     current_device drip
-    memory_pools []GPUBuffer
-    compute_streams []drip
+    memory_pools GPUBuffer[value]
+    compute_streams drip[value]
     cuda_available lit
     opencl_available lit
     metal_available lit
@@ -1264,7 +1264,7 @@ squad GPUContext {
 
 squad GPUTensor {
     data GPUBuffer
-    shape []drip
+    shape drip[value]
     dtype drip
     device_id drip
 }
@@ -1310,10 +1310,10 @@ slay gpu_initialize_complete() lit {
     damn cap
 }
 
-slay gpu_conv2d_optimized_complete(input []meal, weights []meal, biases []meal, output []meal, input_height drip, input_width drip, input_channels drip, output_channels drip, kernel_size drip, stride drip, padding drip) lit {
+slay gpu_conv2d_optimized_complete(input meal[value], weights meal[value], biases meal[value], output meal[value], input_height drip, input_width drip, input_channels drip, output_channels drip, kernel_size drip, stride drip, padding drip) lit {
     ready (!global_gpu_context.is_initialized) {
         fr fr Fallback to CPU implementation
-        sus cpu_result []meal = conv2d_forward_complete(input, weights, biases, input_height, input_width, input_channels, output_channels, kernel_size, stride, padding)
+        sus cpu_result meal[value] = conv2d_forward_complete(input, weights, biases, input_height, input_width, input_channels, output_channels, kernel_size, stride, padding)
         sus i drip = 0
         bestie (i < len(cpu_result) && i < len(output)) {
             output[i] = cpu_result[i]
@@ -1340,7 +1340,7 @@ slay gpu_conv2d_optimized_complete(input []meal, weights []meal, biases []meal, 
         gpu_free_managed(gpu_output)
         
         fr fr Fallback to CPU
-        sus cpu_result []meal = conv2d_forward_complete(input, weights, biases, input_height, input_width, input_channels, output_channels, kernel_size, stride, padding)
+        sus cpu_result meal[value] = conv2d_forward_complete(input, weights, biases, input_height, input_width, input_channels, output_channels, kernel_size, stride, padding)
         sus i drip = 0
         bestie (i < len(cpu_result) && i < len(output)) {
             output[i] = cpu_result[i]
@@ -1390,9 +1390,9 @@ slay gpu_conv2d_optimized_complete(input []meal, weights []meal, biases []meal, 
     damn based
 }
 
-slay gpu_matrix_multiply_optimized_complete(a []meal, b []meal, c []meal, m drip, n drip, k drip) lit {
+slay gpu_matrix_multiply_optimized_complete(a meal[value], b meal[value], c meal[value], m drip, n drip, k drip) lit {
     ready (!global_gpu_context.is_initialized) {
-        sus cpu_result []meal = tensor_matrix_multiply_flat(a, b, m, n, k)
+        sus cpu_result meal[value] = tensor_matrix_multiply_flat(a, b, m, n, k)
         sus i drip = 0
         bestie (i < len(cpu_result) && i < len(c)) {
             c[i] = cpu_result[i]
@@ -1415,7 +1415,7 @@ slay gpu_matrix_multiply_optimized_complete(a []meal, b []meal, c []meal, m drip
         gpu_free_managed(gpu_b)
         gpu_free_managed(gpu_c)
         
-        sus cpu_result []meal = tensor_matrix_multiply_flat(a, b, m, n, k)
+        sus cpu_result meal[value] = tensor_matrix_multiply_flat(a, b, m, n, k)
         sus i drip = 0
         bestie (i < len(cpu_result) && i < len(c)) {
             c[i] = cpu_result[i]
@@ -1449,7 +1449,7 @@ slay gpu_matrix_multiply_optimized_complete(a []meal, b []meal, c []meal, m drip
 
 fr fr === PROPER TENSOR SERIALIZATION ===
 
-slay tensor_serialize_complete(tensor []meal, shape []drip) tea {
+slay tensor_serialize_complete(tensor meal[value], shape drip[value]) tea {
     fr fr Create proper binary tensor format
     sus header tea = "CURSED_TENSOR_V1\n"
     header = header + "SHAPE:" + drip_array_to_string(shape) + "\n"
@@ -1468,11 +1468,11 @@ slay tensor_serialize_complete(tensor []meal, shape []drip) tea {
     damn header + data_hex
 }
 
-slay tensor_deserialize_complete(serialized tea) ([]meal, []drip) {
+slay tensor_deserialize_complete(serialized tea) (meal[value], drip[value]) {
     fr fr Parse tensor format
-    sus lines []tea = string_split(serialized, "\n")
-    sus shape []drip = []
-    sus data []meal = []
+    sus lines tea[value] = string_split(serialized, "\n")
+    sus shape drip[value] = []
+    sus data meal[value] = []
     
     sus parsing_data lit = cap
     sus i drip = 0
@@ -1487,7 +1487,7 @@ slay tensor_deserialize_complete(serialized tea) ([]meal, []drip) {
             parsing_data = based
         }
         ready (parsing_data && len(line) > 0) {
-            sus hex_values []tea = string_split(line, " ")
+            sus hex_values tea[value] = string_split(line, " ")
             sus j drip = 0
             bestie (j < len(hex_values)) {
                 ready (len(hex_values[j]) > 0) {
@@ -1506,7 +1506,7 @@ slay tensor_deserialize_complete(serialized tea) ([]meal, []drip) {
 
 fr fr === ENHANCED TRAINING LOOP ===
 
-slay neural_network_train_advanced(network NeuralNetwork, train_data []meal, train_labels []meal, val_data []meal, val_labels []meal, num_train drip, num_val drip, input_size drip, num_epochs drip, batch_size drip) NeuralNetwork {
+slay neural_network_train_advanced(network NeuralNetwork, train_data meal[value], train_labels meal[value], val_data meal[value], val_labels meal[value], num_train drip, num_val drip, input_size drip, num_epochs drip, batch_size drip) NeuralNetwork {
     sus best_val_loss meal = 1000000.0
     sus patience drip = 10
     sus patience_counter drip = 0
@@ -1532,13 +1532,13 @@ slay neural_network_train_advanced(network NeuralNetwork, train_data []meal, tra
             sus current_batch_size drip = end_idx - start_idx
             
             fr fr Extract batch
-            sus batch_inputs [][]meal = []
-            sus batch_targets [][]meal = []
+            sus batch_inputs meal[value][value] = []
+            sus batch_targets meal[value][value] = []
             
             sus i drip = start_idx
             bestie (i < end_idx) {
-                sus input []meal = extract_sample(train_data, i, input_size)
-                sus target []meal = extract_sample(train_labels, i, network.layers[len(network.layers) - 1].output_size)
+                sus input meal[value] = extract_sample(train_data, i, input_size)
+                sus target meal[value] = extract_sample(train_labels, i, network.layers[len(network.layers) - 1].output_size)
                 
                 batch_inputs = append(batch_inputs, input)
                 batch_targets = append(batch_targets, target)
@@ -1546,10 +1546,10 @@ slay neural_network_train_advanced(network NeuralNetwork, train_data []meal, tra
             }
             
             fr fr Forward pass
-            sus batch_predictions [][]meal = []
+            sus batch_predictions meal[value][value] = []
             i = 0
             bestie (i < current_batch_size) {
-                sus prediction []meal = neural_network_forward_complete(network, batch_inputs[i])
+                sus prediction meal[value] = neural_network_forward_complete(network, batch_inputs[i])
                 batch_predictions = append(batch_predictions, prediction)
                 i = i + 1
             }
@@ -1619,8 +1619,8 @@ slay set_training_mode(network NeuralNetwork, training lit) NeuralNetwork {
     damn network
 }
 
-slay extract_sample(data []meal, sample_idx drip, sample_size drip) []meal {
-    sus sample []meal = []
+slay extract_sample(data meal[value], sample_idx drip, sample_size drip) meal[value]{
+    sus sample meal[value] = []
     sus i drip = 0
     bestie (i < sample_size) {
         sus data_idx drip = sample_idx * sample_size + i
@@ -1634,8 +1634,8 @@ slay extract_sample(data []meal, sample_idx drip, sample_size drip) []meal {
     damn sample
 }
 
-slay neural_network_forward_complete(network NeuralNetwork, input []meal) []meal {
-    sus current_input []meal = input
+slay neural_network_forward_complete(network NeuralNetwork, input meal[value]) meal[value]{
+    sus current_input meal[value] = input
     sus layer_idx drip = 0
     
     bestie (layer_idx < len(network.layers)) {
@@ -1669,9 +1669,9 @@ slay neural_network_forward_complete(network NeuralNetwork, input []meal) []meal
     damn current_input
 }
 
-slay dense_forward_complete(layer Layer, input []meal) []meal {
+slay dense_forward_complete(layer Layer, input meal[value]) meal[value]{
     fr fr Matrix multiplication: output = input * weights + biases
-    sus output []meal = tensor_matrix_multiply_flat(input, layer.weights, 1, layer.input_size, layer.output_size)
+    sus output meal[value] = tensor_matrix_multiply_flat(input, layer.weights, 1, layer.input_size, layer.output_size)
     
     fr fr Add biases
     sus i drip = 0
@@ -1698,8 +1698,8 @@ slay dense_forward_complete(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay conv2d_layer_forward_complete(layer Layer, input []meal) []meal {
-    sus output []meal = conv2d_forward_complete(input, layer.weights, layer.biases,
+slay conv2d_layer_forward_complete(layer Layer, input meal[value]) meal[value]{
+    sus output meal[value] = conv2d_forward_complete(input, layer.weights, layer.biases,
                                                 layer.input_height, layer.input_width, layer.input_channels,
                                                 layer.output_channels, layer.kernel_size, layer.stride, layer.padding)
     
@@ -1716,8 +1716,8 @@ slay conv2d_layer_forward_complete(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay maxpool2d_layer_forward_complete(layer Layer, input []meal) []meal {
-    sus output []meal = maxpool2d_forward_complete(input, layer.input_height, layer.input_width, 
+slay maxpool2d_layer_forward_complete(layer Layer, input meal[value]) meal[value]{
+    sus output meal[value] = maxpool2d_forward_complete(input, layer.input_height, layer.input_width, 
                                                    layer.input_channels, layer.kernel_size, layer.stride)
     
     layer.input_cache = input
@@ -1726,12 +1726,12 @@ slay maxpool2d_layer_forward_complete(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay dropout_forward_complete(layer Layer, input []meal) []meal {
+slay dropout_forward_complete(layer Layer, input meal[value]) meal[value]{
     ready (!layer.training) {
         damn input
     }
     
-    sus output []meal = []
+    sus output meal[value] = []
     sus scale meal = 1.0 / (1.0 - layer.dropout_rate)
     layer.dropout_mask = []
     
@@ -1751,7 +1751,7 @@ slay dropout_forward_complete(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay neural_network_backward_complete(network NeuralNetwork, batch_inputs [][]meal, batch_targets [][]meal, batch_predictions [][]meal) NeuralNetwork {
+slay neural_network_backward_complete(network NeuralNetwork, batch_inputs meal[value][value], batch_targets meal[value][value], batch_predictions meal[value][value]) NeuralNetwork {
     sus batch_size drip = len(batch_inputs)
     
     fr fr Initialize gradients
@@ -1766,19 +1766,19 @@ slay neural_network_backward_complete(network NeuralNetwork, batch_inputs [][]me
     sus sample_idx drip = 0
     bestie (sample_idx < batch_size) {
         fr fr Compute output gradient
-        sus output_gradient []meal = categorical_crossentropy_gradient_complete(batch_predictions[sample_idx], batch_targets[sample_idx])
+        sus output_gradient meal[value] = categorical_crossentropy_gradient_complete(batch_predictions[sample_idx], batch_targets[sample_idx])
         
         fr fr Backpropagate through all layers
-        sus current_gradient []meal = output_gradient
+        sus current_gradient meal[value] = output_gradient
         layer_idx = len(network.layers) - 1
         
         bestie (layer_idx >= 0) {
             sus layer Layer = network.layers[layer_idx]
             
             ready (layer.layer_type == LAYER_TYPE_DENSE()) {
-                sus weight_grad []meal
-                sus bias_grad []meal
-                sus input_grad []meal
+                sus weight_grad meal[value]
+                sus bias_grad meal[value]
+                sus input_grad meal[value]
                 (weight_grad, bias_grad, input_grad) = compute_dense_gradients_complete(layer, layer.input_cache, current_gradient)
                 
                 fr fr Accumulate gradients
@@ -1858,13 +1858,13 @@ slay neural_network_backward_complete(network NeuralNetwork, batch_inputs [][]me
     damn network
 }
 
-slay neural_network_evaluate_loss(network NeuralNetwork, data []meal, labels []meal, num_samples drip, input_size drip) meal {
+slay neural_network_evaluate_loss(network NeuralNetwork, data meal[value], labels meal[value], num_samples drip, input_size drip) meal {
     sus total_loss meal = 0.0
     sus i drip = 0
     bestie (i < num_samples) {
-        sus input []meal = extract_sample(data, i, input_size)
-        sus target []meal = extract_sample(labels, i, network.layers[len(network.layers) - 1].output_size)
-        sus prediction []meal = neural_network_forward_complete(network, input)
+        sus input meal[value] = extract_sample(data, i, input_size)
+        sus target meal[value] = extract_sample(labels, i, network.layers[len(network.layers) - 1].output_size)
+        sus prediction meal[value] = neural_network_forward_complete(network, input)
         
         sus sample_loss meal = categorical_crossentropy_loss_complete(prediction, target)
         total_loss = total_loss + sample_loss
@@ -1874,13 +1874,13 @@ slay neural_network_evaluate_loss(network NeuralNetwork, data []meal, labels []m
     damn total_loss / num_samples
 }
 
-slay neural_network_evaluate_accuracy(network NeuralNetwork, data []meal, labels []meal, num_samples drip, input_size drip) meal {
+slay neural_network_evaluate_accuracy(network NeuralNetwork, data meal[value], labels meal[value], num_samples drip, input_size drip) meal {
     sus correct_predictions drip = 0
     sus i drip = 0
     bestie (i < num_samples) {
-        sus input []meal = extract_sample(data, i, input_size)
-        sus target []meal = extract_sample(labels, i, network.layers[len(network.layers) - 1].output_size)
-        sus prediction []meal = neural_network_forward_complete(network, input)
+        sus input meal[value] = extract_sample(data, i, input_size)
+        sus target meal[value] = extract_sample(labels, i, network.layers[len(network.layers) - 1].output_size)
+        sus prediction meal[value] = neural_network_forward_complete(network, input)
         
         sus predicted_class drip = tensor_argmax_1d(prediction)
         sus target_class drip = tensor_argmax_1d(target)
@@ -1962,10 +1962,10 @@ slay demo_complete_neural_network() cringe {
     sus input_size drip = 784
     sus num_classes drip = 10
     
-    sus train_data []meal = generate_synthetic_data(num_samples, input_size)
-    sus train_labels []meal = generate_synthetic_labels(num_samples, num_classes)
-    sus val_data []meal = generate_synthetic_data(200, input_size)
-    sus val_labels []meal = generate_synthetic_labels(200, num_classes)
+    sus train_data meal[value] = generate_synthetic_data(num_samples, input_size)
+    sus train_labels meal[value] = generate_synthetic_labels(num_samples, num_classes)
+    sus val_data meal[value] = generate_synthetic_data(200, input_size)
+    sus val_labels meal[value] = generate_synthetic_labels(200, num_classes)
     
     fr fr Train with advanced features
     vibez.spill("Starting advanced training with early stopping, learning rate scheduling...")
@@ -1977,8 +1977,8 @@ slay demo_complete_neural_network() cringe {
     vibez.spill("Final validation accuracy: ", final_accuracy * 100.0, "%")
     
     fr fr Demonstrate tensor serialization
-    sus sample_input []meal = extract_sample(val_data, 0, input_size)
-    sus prediction []meal = neural_network_forward_complete(network, sample_input)
+    sus sample_input meal[value] = extract_sample(val_data, 0, input_size)
+    sus prediction meal[value] = neural_network_forward_complete(network, sample_input)
     sus serialized tea = tensor_serialize_complete(prediction, [10])
     
     vibez.spill("Tensor serialization demo:")
@@ -1994,8 +1994,8 @@ slay demo_complete_neural_network() cringe {
 
 fr fr === HELPER FUNCTIONS ===
 
-slay generate_synthetic_data(num_samples drip, input_size drip) []meal {
-    sus data []meal = []
+slay generate_synthetic_data(num_samples drip, input_size drip) meal[value]{
+    sus data meal[value] = []
     sus i drip = 0
     bestie (i < num_samples * input_size) {
         data = append(data, random_gaussian() * 0.5)
@@ -2004,8 +2004,8 @@ slay generate_synthetic_data(num_samples drip, input_size drip) []meal {
     damn data
 }
 
-slay generate_synthetic_labels(num_samples drip, num_classes drip) []meal {
-    sus labels []meal = []
+slay generate_synthetic_labels(num_samples drip, num_classes drip) meal[value]{
+    sus labels meal[value] = []
     sus i drip = 0
     bestie (i < num_samples) {
         sus class_idx drip = i % num_classes
@@ -2031,8 +2031,8 @@ slay gpu_get_device_count() drip { damn 0 }
 slay gpu_create_memory_pool(device_id drip, size drip) GPUBuffer { damn GPUBuffer{is_allocated: cap, size: 0, device_id: 0} }
 slay gpu_allocate_managed(size drip) GPUBuffer { damn GPUBuffer{is_allocated: cap, size: size, device_id: 0} }
 slay gpu_free_managed(buffer GPUBuffer) cringe { }
-slay gpu_memcpy_host_to_device(host_data []meal, buffer GPUBuffer) cringe { }
-slay gpu_memcpy_device_to_host(buffer GPUBuffer, host_data []meal) cringe { }
+slay gpu_memcpy_host_to_device(host_data meal[value], buffer GPUBuffer) cringe { }
+slay gpu_memcpy_device_to_host(buffer GPUBuffer, host_data meal[value]) cringe { }
 slay gpu_launch_cuda_conv2d_optimized(input GPUBuffer, weights GPUBuffer, biases GPUBuffer, output GPUBuffer, height drip, width drip, in_channels drip, out_channels drip, kernel drip, stride drip, padding drip, gx drip, gy drip, gz drip, bx drip, by drip, bz drip) cringe { }
 slay gpu_launch_opencl_conv2d_optimized(input GPUBuffer, weights GPUBuffer, biases GPUBuffer, output GPUBuffer, height drip, width drip, in_channels drip, out_channels drip, kernel drip, stride drip, padding drip) cringe { }
 slay gpu_launch_metal_conv2d_optimized(input GPUBuffer, weights GPUBuffer, biases GPUBuffer, output GPUBuffer, height drip, width drip, in_channels drip, out_channels drip, kernel drip, stride drip, padding drip) cringe { }
@@ -2042,11 +2042,11 @@ slay gpu_metal_dgemm(a GPUBuffer, b GPUBuffer, c GPUBuffer, m drip, n drip, k dr
 slay gpu_cleanup_complete() cringe { }
 
 fr fr String utility stubs
-slay drip_array_to_string(arr []drip) tea { damn "[array]" }
+slay drip_array_to_string(arr drip[value]) tea { damn "[array]" }
 slay float_to_hex_string(val meal) tea { damn "0x0000" }
-slay string_split(str tea, delim tea) []tea { damn [] }
+slay string_split(str tea, delim tea) tea[value]{ damn [] }
 slay string_starts_with(str tea, prefix tea) lit { damn cap }
 slay string_substring(str tea, start drip, end drip) tea { damn "" }
 slay string_equals(a tea, b tea) lit { damn cap }
-slay parse_drip_array(str tea) []drip { damn [] }
+slay parse_drip_array(str tea) drip[value]{ damn [] }
 slay hex_string_to_float(hex tea) meal { damn 0.0 }

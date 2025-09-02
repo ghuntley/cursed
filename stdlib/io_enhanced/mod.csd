@@ -14,7 +14,7 @@ fr fr Source file reading with error recovery
 squad SourceFile {
     spill path tea
     spill content tea
-    spill lines []tea
+    spill lines tea[value]
     spill line_count normie
     spill encoding tea
 }
@@ -26,7 +26,7 @@ slay SourceFile_read(file_path tea) (SourceFile, tea) {
         damn (empty, err)
     }
     
-    sus lines []tea = split_lines(content)
+    sus lines tea[value] = split_lines(content)
     sus source SourceFile = SourceFile{
         path: file_path,
         content: content,
@@ -45,12 +45,12 @@ slay SourceFile_get_line(source SourceFile, line_number normie) tea {
     damn ""
 }
 
-slay SourceFile_get_line_range(source SourceFile, start_line normie, end_line normie) []tea {
+slay SourceFile_get_line_range(source SourceFile, start_line normie, end_line normie) tea[value]{
     vibes start_line < 1 || end_line > source.line_count || start_line > end_line {
-        damn []tea{}
+        damn tea[value]{}
     }
     
-    sus result []tea = []tea{}
+    sus result tea[value] = tea[value]{}
     bestie i := start_line; i <= end_line; i = i + 1 {
         result = append_string(result, source.lines[i - 1])
     }
@@ -171,7 +171,7 @@ slay clean_output_directory(dir_path tea) tea {
     }
     
     bestie i := 0; i < len(files); i = i + 1 {
-        sus file_path tea = path_join([]tea{dir_path, files[i]})
+        sus file_path tea = path_join(tea[value]{dir_path, files[i]})
         vibes file_exists(file_path) {
             sus delete_err tea = delete_file(file_path)
             vibes delete_err != "" {
@@ -193,11 +193,11 @@ slay delete_file(filename tea) tea {
 
 fr fr Module file resolution
 squad ModuleResolver {
-    spill search_paths []tea
+    spill search_paths tea[value]
     spill cache SymbolTable<tea>
 }
 
-slay ModuleResolver_new(search_paths []tea) ModuleResolver {
+slay ModuleResolver_new(search_paths tea[value]) ModuleResolver {
     damn ModuleResolver{
         search_paths: search_paths,
         cache: SymbolTable_new<tea>()
@@ -215,7 +215,7 @@ slay ModuleResolver_resolve(resolver ModuleResolver, module_name tea) (tea, tea)
     bestie i := 0; i < len(resolver.search_paths); i = i + 1 {
         sus base_path tea = resolver.search_paths[i]
         sus module_file tea = module_path_to_file_path(module_name)
-        sus full_path tea = path_join([]tea{base_path, module_file})
+        sus full_path tea = path_join(tea[value]{base_path, module_file})
         
         vibes file_exists(full_path) {
             fr fr Cache the result
@@ -235,16 +235,16 @@ slay ModuleResolver_add_search_path(resolver ModuleResolver, path tea) ModuleRes
 fr fr Compiler output management
 squad CompilerOutput {
     spill files SymbolTable<tea>
-    spill errors []tea
-    spill warnings []tea
+    spill errors tea[value]
+    spill warnings tea[value]
     spill output_dir tea
 }
 
 slay CompilerOutput_new(output_dir tea) CompilerOutput {
     damn CompilerOutput{
         files: SymbolTable_new<tea>(),
-        errors: []tea{},
-        warnings: []tea{},
+        errors: tea[value]{},
+        warnings: tea[value]{},
         output_dir: output_dir
     }
 }
@@ -270,12 +270,12 @@ slay CompilerOutput_write_all(output CompilerOutput) tea {
         damn dir_err
     }
     
-    sus filenames []tea = SymbolTable_keys(output.files)
+    sus filenames tea[value] = SymbolTable_keys(output.files)
     bestie i := 0; i < len(filenames); i = i + 1 {
         sus filename tea = filenames[i]
         (content, found) := SymbolTable_get(output.files, filename)
         vibes found {
-            sus file_path tea = path_join([]tea{output.output_dir, filename})
+            sus file_path tea = path_join(tea[value]{output.output_dir, filename})
             sus write_err tea = write_file(file_path, content)
             vibes write_err != "" {
                 damn "Failed to write " + filename + ": " + write_err
@@ -312,7 +312,7 @@ slay read_build_config(config_path tea) (SymbolTable<tea>, tea) {
     
     fr fr Parse simple key=value configuration
     sus config SymbolTable<tea> = SymbolTable_new<tea>()
-    sus lines []tea = split_lines(content)
+    sus lines tea[value] = split_lines(content)
     
     bestie i := 0; i < len(lines); i = i + 1 {
         sus line tea = string_trim(lines[i])
@@ -329,7 +329,7 @@ slay read_build_config(config_path tea) (SymbolTable<tea>, tea) {
     damn (config, "")
 }
 
-slay write_build_manifest(manifest_path tea, files []tea, dependencies []tea) tea {
+slay write_build_manifest(manifest_path tea, files tea[value], dependencies tea[value]) tea {
     sus buffer CodeBuffer = CodeBuffer_new("  ")
     
     buffer = CodeBuffer_write_line(buffer, "# Build Manifest")
@@ -351,9 +351,9 @@ slay write_build_manifest(manifest_path tea, files []tea, dependencies []tea) te
 }
 
 fr fr Utility functions for enhanced I/O
-slay split_lines(content tea) []tea {
+slay split_lines(content tea) tea[value]{
     fr fr Simple line splitting implementation
-    sus lines []tea = []tea{}
+    sus lines tea[value] = tea[value]{}
     sus current_line RuntimeStringBuilder = RuntimeStringBuilder_new()
     
     bestie i := 0; i < string_length(content); i = i + 1 {
@@ -376,12 +376,12 @@ slay split_lines(content tea) []tea {
     damn lines
 }
 
-slay append_string(arr []tea, str tea) []tea {
+slay append_string(arr tea[value], str tea) tea[value]{
     fr fr Runtime-provided dynamic append
     damn runtime_slice_append<tea>(arr, str)
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     fr fr Runtime-provided array length
     damn runtime_slice_length(arr)
 }

@@ -22,7 +22,7 @@ squad QrDecomposition {
 
 squad SvdDecomposition {
     u Matrix            # Left singular vectors (m x m)
-    sigma []drip        # Singular values
+    sigma drip[value]        # Singular values
     v_transpose Matrix  # Right singular vectors transposed (n x n)
     rank drip          # Matrix rank
     condition_number drip
@@ -30,9 +30,9 @@ squad SvdDecomposition {
 }
 
 squad EigenDecomposition {
-    eigenvalues []drip     # Real eigenvalues
+    eigenvalues drip[value]     # Real eigenvalues
     eigenvectors Matrix    # Eigenvectors as columns
-    complex_eigenvals []ComplexNumber  # Complex eigenvalues if any
+    complex_eigenvals ComplexNumber[value]  # Complex eigenvalues if any
     is_symmetric lit       # Whether matrix is symmetric
     condition_number drip
 }
@@ -43,11 +43,11 @@ squad ComplexNumber {
 }
 
 squad IterativeResult {
-    solution []drip
+    solution drip[value]
     residual_norm drip
     iterations drip
     converged lit
-    convergence_history []drip
+    convergence_history drip[value]
 }
 
 squad MatrixNorms {
@@ -61,7 +61,7 @@ squad MatrixNorms {
 # ===== ADVANCED MATRIX OPERATIONS =====
 
 slay create_identity_matrix(n drip) Matrix {
-    sus data []drip = create_zeros(n * n)
+    sus data drip[value] = create_zeros(n * n)
     
     bestie (sus i drip = 0; i < n; i = i + 1) {
         data[i * n + i] = 1.0
@@ -71,7 +71,7 @@ slay create_identity_matrix(n drip) Matrix {
 }
 
 slay create_random_matrix(rows drip, cols drip, seed drip) Matrix {
-    sus data []drip = create_zeros(rows * cols)
+    sus data drip[value] = create_zeros(rows * cols)
     sus rng_state drip = seed
     
     bestie (sus i drip = 0; i < rows * cols; i = i + 1) {
@@ -85,7 +85,7 @@ slay create_random_matrix(rows drip, cols drip, seed drip) Matrix {
 }
 
 slay matrix_transpose(m Matrix) Matrix {
-    sus result_data []drip = create_zeros(m.rows * m.cols)
+    sus result_data drip[value] = create_zeros(m.rows * m.cols)
     
     bestie (sus i drip = 0; i < m.rows; i = i + 1) {
         bestie (sus j drip = 0; j < m.cols; j = j + 1) {
@@ -102,7 +102,7 @@ slay matrix_add(a Matrix, b Matrix) Matrix {
         damn create_zero_matrix(1, 1)
     }
     
-    sus result_data []drip = create_zeros(a.rows * a.cols)
+    sus result_data drip[value] = create_zeros(a.rows * a.cols)
     
     bestie (sus i drip = 0; i < a.rows * a.cols; i = i + 1) {
         result_data[i] = a.data[i] + b.data[i]
@@ -117,7 +117,7 @@ slay matrix_subtract(a Matrix, b Matrix) Matrix {
         damn create_zero_matrix(1, 1)
     }
     
-    sus result_data []drip = create_zeros(a.rows * a.cols)
+    sus result_data drip[value] = create_zeros(a.rows * a.cols)
     
     bestie (sus i drip = 0; i < a.rows * a.cols; i = i + 1) {
         result_data[i] = a.data[i] - b.data[i]
@@ -127,7 +127,7 @@ slay matrix_subtract(a Matrix, b Matrix) Matrix {
 }
 
 slay matrix_scalar_multiply(m Matrix, scalar drip) Matrix {
-    sus result_data []drip = create_zeros(m.rows * m.cols)
+    sus result_data drip[value] = create_zeros(m.rows * m.cols)
     
     bestie (sus i drip = 0; i < m.rows * m.cols; i = i + 1) {
         result_data[i] = m.data[i] * scalar
@@ -145,10 +145,10 @@ slay lu_decomposition_pivoting(m Matrix) LuDecomposition {
     }
     
     sus n drip = m.rows
-    sus l_data []drip = create_zeros(n * n)
-    sus u_data []drip = copy_matrix_data(m.data, n * n)
-    sus p_data []drip = create_zeros(n * n)
-    sus permutations []drip = create_range(n)
+    sus l_data drip[value] = create_zeros(n * n)
+    sus u_data drip[value] = copy_matrix_data(m.data, n * n)
+    sus p_data drip[value] = create_zeros(n * n)
+    sus permutations drip[value] = create_range(n)
     sus determinant drip = 1.0
     sus rank drip = 0
     
@@ -226,13 +226,13 @@ slay matrix_inverse_lu(m Matrix) Matrix {
     }
     
     # Solve AX = I using forward and back substitution
-    sus inverse_data []drip = create_zeros(n * n)
+    sus inverse_data drip[value] = create_zeros(n * n)
     sus identity Matrix = create_identity_matrix(n)
     
     # Solve for each column of the inverse
     bestie (sus col drip = 0; col < n; col = col + 1) {
         # Get column from identity matrix (permuted by P)
-        sus b []drip = create_zeros(n)
+        sus b drip[value] = create_zeros(n)
         bestie (sus i drip = 0; i < n; i = i + 1) {
             bestie (sus j drip = 0; j < n; j = j + 1) {
                 ready (lu.p.data[i * n + j] == 1.0) {
@@ -243,7 +243,7 @@ slay matrix_inverse_lu(m Matrix) Matrix {
         }
         
         # Forward substitution: solve Ly = b
-        sus y []drip = create_zeros(n)
+        sus y drip[value] = create_zeros(n)
         bestie (sus i drip = 0; i < n; i = i + 1) {
             sus sum drip = 0.0
             bestie (sus j drip = 0; j < i; j = j + 1) {
@@ -253,7 +253,7 @@ slay matrix_inverse_lu(m Matrix) Matrix {
         }
         
         # Back substitution: solve Ux = y
-        sus x []drip = create_zeros(n)
+        sus x drip[value] = create_zeros(n)
         bestie (sus i drip = n - 1; i >= 0; i = i - 1) {
             sus sum drip = 0.0
             bestie (sus j drip = i + 1; j < n; j = j + 1) {
@@ -279,8 +279,8 @@ slay qr_decomposition_householder(m Matrix) QrDecomposition {
     sus min_dim drip = min_val(rows, cols)
     
     # Copy matrix data for Q and R
-    sus q_data []drip = create_zeros(rows * rows)  # Q is rows x rows
-    sus r_data []drip = copy_matrix_data(m.data, rows * cols)
+    sus q_data drip[value] = create_zeros(rows * rows)  # Q is rows x rows
+    sus r_data drip[value] = copy_matrix_data(m.data, rows * cols)
     
     # Initialize Q as identity
     bestie (sus i drip = 0; i < rows; i = i + 1) {
@@ -307,7 +307,7 @@ slay qr_decomposition_householder(m Matrix) QrDecomposition {
         rank = rank + 1
         
         # Create Householder vector
-        sus v []drip = create_zeros(rows)
+        sus v drip[value] = create_zeros(rows)
         sus alpha drip = r_data[k * cols + k]
         
         ready (alpha >= 0) {
@@ -393,7 +393,7 @@ slay svd_decomposition_jacobi(m Matrix) SvdDecomposition {
     
     # Singular values are square roots of eigenvalues
     sus min_dim drip = min_val(rows, cols)
-    sus sigma []drip = create_zeros(min_dim)
+    sus sigma drip[value] = create_zeros(min_dim)
     sus rank drip = 0
     sus nuclear_norm drip = 0.0
     
@@ -436,9 +436,9 @@ slay eigendecomposition_jacobi(m Matrix) EigenDecomposition {
     }
     
     sus n drip = m.rows
-    sus eigenvals []drip = create_zeros(n)
-    sus eigenvecs_data []drip = create_zeros(n * n)
-    sus a_data []drip = copy_matrix_data(m.data, n * n)
+    sus eigenvals drip[value] = create_zeros(n)
+    sus eigenvecs_data drip[value] = create_zeros(n * n)
+    sus a_data drip[value] = copy_matrix_data(m.data, n * n)
     sus is_symmetric lit = check_matrix_symmetry(m)
     
     # Initialize eigenvector matrix as identity
@@ -518,20 +518,20 @@ slay eigendecomposition_jacobi(m Matrix) EigenDecomposition {
 
 # ===== ITERATIVE METHODS FOR SOLVING LINEAR SYSTEMS =====
 
-slay conjugate_gradient_solve(a Matrix, b []drip, x0 []drip, tolerance drip, max_iterations drip) IterativeResult {
+slay conjugate_gradient_solve(a Matrix, b drip[value], x0 drip[value], tolerance drip, max_iterations drip) IterativeResult {
     ready (!a.is_square || a.rows != len_array(b)) {
         vibez.spill("[Matrix] Error: Incompatible dimensions for CG solver")
         damn create_empty_iterative_result()
     }
     
     sus n drip = a.rows
-    sus x []drip = copy_array(x0, n)
-    sus convergence_history []drip = create_zeros(max_iterations)
+    sus x drip[value] = copy_array(x0, n)
+    sus convergence_history drip[value] = create_zeros(max_iterations)
     
     # Calculate initial residual: r = b - Ax
-    sus ax []drip = matrix_vector_multiply(a, x)
-    sus r []drip = vector_subtract(b, ax, n)
-    sus p []drip = copy_array(r, n)
+    sus ax drip[value] = matrix_vector_multiply(a, x)
+    sus r drip[value] = vector_subtract(b, ax, n)
+    sus p drip[value] = copy_array(r, n)
     
     sus rsold drip = vector_dot_product(r, r, n)
     sus iteration drip = 0
@@ -545,7 +545,7 @@ slay conjugate_gradient_solve(a Matrix, b []drip, x0 []drip, tolerance drip, max
         }
         
         # ap = A * p
-        sus ap []drip = matrix_vector_multiply(a, p)
+        sus ap drip[value] = matrix_vector_multiply(a, p)
         sus pap drip = vector_dot_product(p, ap, n)
         
         ready (abs_val(pap) < 1e-15) {
@@ -593,19 +593,19 @@ slay conjugate_gradient_solve(a Matrix, b []drip, x0 []drip, tolerance drip, max
     }
 }
 
-slay gmres_solve(a Matrix, b []drip, x0 []drip, restart_dim drip, tolerance drip, max_iterations drip) IterativeResult {
+slay gmres_solve(a Matrix, b drip[value], x0 drip[value], restart_dim drip, tolerance drip, max_iterations drip) IterativeResult {
     # Simplified GMRES implementation
     sus n drip = a.rows
-    sus x []drip = copy_array(x0, n)
-    sus convergence_history []drip = create_zeros(max_iterations)
+    sus x drip[value] = copy_array(x0, n)
+    sus convergence_history drip[value] = create_zeros(max_iterations)
     
     sus outer_iteration drip = 0
     sus total_iterations drip = 0
     
     bestie (outer_iteration < max_iterations / restart_dim) {
         # Calculate initial residual
-        sus ax []drip = matrix_vector_multiply(a, x)
-        sus r []drip = vector_subtract(b, ax, n)
+        sus ax drip[value] = matrix_vector_multiply(a, x)
+        sus r drip[value] = vector_subtract(b, ax, n)
         sus residual_norm drip = vector_norm(r, n)
         
         convergence_history[total_iterations] = residual_norm
@@ -615,11 +615,11 @@ slay gmres_solve(a Matrix, b []drip, x0 []drip, restart_dim drip, tolerance drip
         }
         
         # Arnoldi process (simplified)
-        sus v_matrix [][]drip = create_krylov_basis(a, r, restart_dim, n)
-        sus h_matrix [][]drip = create_hessenberg_matrix(a, v_matrix, restart_dim, n)
+        sus v_matrix drip[value][value] = create_krylov_basis(a, r, restart_dim, n)
+        sus h_matrix drip[value][value] = create_hessenberg_matrix(a, v_matrix, restart_dim, n)
         
         # Solve least squares problem (simplified)
-        sus y []drip = solve_least_squares_hessenberg(h_matrix, residual_norm, restart_dim)
+        sus y drip[value] = solve_least_squares_hessenberg(h_matrix, residual_norm, restart_dim)
         
         # Update solution
         bestie (sus i drip = 0; i < n; i = i + 1) {
@@ -633,8 +633,8 @@ slay gmres_solve(a Matrix, b []drip, x0 []drip, restart_dim drip, tolerance drip
     }
     
     # Final residual calculation
-    sus ax []drip = matrix_vector_multiply(a, x)
-    sus r []drip = vector_subtract(b, ax, n)
+    sus ax drip[value] = matrix_vector_multiply(a, x)
+    sus r drip[value] = vector_subtract(b, ax, n)
     sus final_residual drip = vector_norm(r, n)
     
     damn IterativeResult{
@@ -708,10 +708,10 @@ slay matrix_infinity_norm(m Matrix) drip {
 
 # ===== SPECIALIZED MATRICES AND ALGORITHMS =====
 
-slay create_toeplitz_matrix(first_row []drip, first_col []drip) Matrix {
+slay create_toeplitz_matrix(first_row drip[value], first_col drip[value]) Matrix {
     sus n drip = len_array(first_row)
     sus m drip = len_array(first_col)
-    sus data []drip = create_zeros(m * n)
+    sus data drip[value] = create_zeros(m * n)
     
     bestie (sus i drip = 0; i < m; i = i + 1) {
         bestie (sus j drip = 0; j < n; j = j + 1) {
@@ -728,13 +728,13 @@ slay create_toeplitz_matrix(first_row []drip, first_col []drip) Matrix {
     damn create_matrix(m, n, data)
 }
 
-slay create_hankel_matrix(first_row []drip, last_col []drip) Matrix {
+slay create_hankel_matrix(first_row drip[value], last_col drip[value]) Matrix {
     sus n drip = len_array(first_row)
     sus m drip = len_array(last_col)
-    sus data []drip = create_zeros(m * n)
+    sus data drip[value] = create_zeros(m * n)
     
     # Combine first_row and last_col into single sequence
-    sus combined []drip = create_zeros(n + m - 1)
+    sus combined drip[value] = create_zeros(n + m - 1)
     bestie (sus i drip = 0; i < n; i = i + 1) {
         combined[i] = first_row[i]
     }
@@ -752,9 +752,9 @@ slay create_hankel_matrix(first_row []drip, last_col []drip) Matrix {
     damn create_matrix(m, n, data)
 }
 
-slay create_circulant_matrix(first_row []drip) Matrix {
+slay create_circulant_matrix(first_row drip[value]) Matrix {
     sus n drip = len_array(first_row)
-    sus data []drip = create_zeros(n * n)
+    sus data drip[value] = create_zeros(n * n)
     
     bestie (sus i drip = 0; i < n; i = i + 1) {
         bestie (sus j drip = 0; j < n; j = j + 1) {
@@ -890,39 +890,39 @@ slay matrix_power_integer(m Matrix, exponent drip) Matrix {
 
 # ===== UTILITY FUNCTIONS =====
 
-slay create_zeros(size drip) []drip {
-    sus arr []drip = create_array(size)
+slay create_zeros(size drip) drip[value]{
+    sus arr drip[value] = create_array(size)
     bestie (sus i drip = 0; i < size; i = i + 1) {
         arr[i] = 0.0
     }
     damn arr
 }
 
-slay create_range(n drip) []drip {
-    sus arr []drip = create_array(n)
+slay create_range(n drip) drip[value]{
+    sus arr drip[value] = create_array(n)
     bestie (sus i drip = 0; i < n; i = i + 1) {
         arr[i] = i
     }
     damn arr
 }
 
-slay copy_matrix_data(data []drip, size drip) []drip {
-    sus copied []drip = create_zeros(size)
+slay copy_matrix_data(data drip[value], size drip) drip[value]{
+    sus copied drip[value] = create_zeros(size)
     bestie (sus i drip = 0; i < size; i = i + 1) {
         copied[i] = data[i]
     }
     damn copied
 }
 
-slay copy_array(data []drip, size drip) []drip {
-    sus copied []drip = create_zeros(size)
+slay copy_array(data drip[value], size drip) drip[value]{
+    sus copied drip[value] = create_zeros(size)
     bestie (sus i drip = 0; i < size; i = i + 1) {
         copied[i] = data[i]
     }
     damn copied
 }
 
-slay swap_matrix_rows(data []drip, cols drip, row1 drip, row2 drip) {
+slay swap_matrix_rows(data drip[value], cols drip, row1 drip, row2 drip) {
     bestie (sus j drip = 0; j < cols; j = j + 1) {
         sus temp drip = data[row1 * cols + j]
         data[row1 * cols + j] = data[row2 * cols + j]
@@ -930,8 +930,8 @@ slay swap_matrix_rows(data []drip, cols drip, row1 drip, row2 drip) {
     }
 }
 
-slay matrix_vector_multiply(a Matrix, x []drip) []drip {
-    sus result []drip = create_zeros(a.rows)
+slay matrix_vector_multiply(a Matrix, x drip[value]) drip[value]{
+    sus result drip[value] = create_zeros(a.rows)
     
     bestie (sus i drip = 0; i < a.rows; i = i + 1) {
         sus sum drip = 0.0
@@ -944,15 +944,15 @@ slay matrix_vector_multiply(a Matrix, x []drip) []drip {
     damn result
 }
 
-slay vector_subtract(a []drip, b []drip, n drip) []drip {
-    sus result []drip = create_zeros(n)
+slay vector_subtract(a drip[value], b drip[value], n drip) drip[value]{
+    sus result drip[value] = create_zeros(n)
     bestie (sus i drip = 0; i < n; i = i + 1) {
         result[i] = a[i] - b[i]
     }
     damn result
 }
 
-slay vector_dot_product(a []drip, b []drip, n drip) drip {
+slay vector_dot_product(a drip[value], b drip[value], n drip) drip {
     sus sum drip = 0.0
     bestie (sus i drip = 0; i < n; i = i + 1) {
         sum = sum + a[i] * b[i]
@@ -960,7 +960,7 @@ slay vector_dot_product(a []drip, b []drip, n drip) drip {
     damn sum
 }
 
-slay vector_norm(v []drip, n drip) drip {
+slay vector_norm(v drip[value], n drip) drip {
     sus sum_sq drip = 0.0
     bestie (sus i drip = 0; i < n; i = i + 1) {
         sum_sq = sum_sq + v[i] * v[i]
@@ -1012,7 +1012,7 @@ slay check_matrix_symmetry(m Matrix) lit {
     damn based
 }
 
-slay apply_jacobi_rotation(a_data []drip, eigenvecs_data []drip, n drip, p drip, q drip, c drip, s drip) {
+slay apply_jacobi_rotation(a_data drip[value], eigenvecs_data drip[value], n drip, p drip, q drip, c drip, s drip) {
     # Apply rotation to matrix A
     bestie (sus j drip = 0; j < n; j = j + 1) {
         ready (j != p && j != q) {
@@ -1043,7 +1043,7 @@ slay apply_jacobi_rotation(a_data []drip, eigenvecs_data []drip, n drip, p drip,
     }
 }
 
-slay sort_eigenvalues_and_vectors(eigenvals []drip, eigenvecs_data []drip, n drip) {
+slay sort_eigenvalues_and_vectors(eigenvals drip[value], eigenvecs_data drip[value], n drip) {
     # Bubble sort eigenvalues and corresponding eigenvectors in descending order
     bestie (sus i drip = 0; i < n - 1; i = i + 1) {
         bestie (sus j drip = 0; j < n - i - 1; j = j + 1) {
@@ -1064,7 +1064,7 @@ slay sort_eigenvalues_and_vectors(eigenvals []drip, eigenvecs_data []drip, n dri
     }
 }
 
-slay sort_singular_values_and_vectors(sigma []drip, v_matrix Matrix, u_matrix Matrix, n drip) {
+slay sort_singular_values_and_vectors(sigma drip[value], v_matrix Matrix, u_matrix Matrix, n drip) {
     # Sort singular values in descending order with corresponding vectors
     bestie (sus i drip = 0; i < n - 1; i = i + 1) {
         bestie (sus j drip = 0; j < n - i - 1; j = j + 1) {
@@ -1092,7 +1092,7 @@ slay sort_singular_values_and_vectors(sigma []drip, v_matrix Matrix, u_matrix Ma
     }
 }
 
-slay calculate_condition_number_qr(r_data []drip, min_dim drip, cols drip) drip {
+slay calculate_condition_number_qr(r_data drip[value], min_dim drip, cols drip) drip {
     # Condition number based on R matrix diagonal elements
     sus max_diag drip = abs_val(r_data[0])
     sus min_diag drip = abs_val(r_data[0])
@@ -1114,7 +1114,7 @@ slay calculate_condition_number_qr(r_data []drip, min_dim drip, cols drip) drip 
     damn max_diag / min_diag
 }
 
-slay calculate_eigenvalue_condition_number(eigenvals []drip, n drip) drip {
+slay calculate_eigenvalue_condition_number(eigenvals drip[value], n drip) drip {
     sus max_eigenval drip = abs_val(eigenvals[0])
     sus min_eigenval drip = abs_val(eigenvals[0])
     
@@ -1184,27 +1184,27 @@ slay create_empty_iterative_result() IterativeResult {
     }
 }
 
-slay create_zeros_complex(size drip) []ComplexNumber {
+slay create_zeros_complex(size drip) ComplexNumber[value]{
     # Simplified - return empty array for now
-    sus empty []ComplexNumber = []
+    sus empty ComplexNumber[value] = []
     damn empty
 }
 
 # Simplified stubs for GMRES components (full implementation would be much larger)
-slay create_krylov_basis(a Matrix, r []drip, restart_dim drip, n drip) [][]drip {
-    sus basis [][]drip = []
+slay create_krylov_basis(a Matrix, r drip[value], restart_dim drip, n drip) drip[value][value] {
+    sus basis drip[value][value] = []
     # Simplified: would implement full Arnoldi process
     damn basis
 }
 
-slay create_hessenberg_matrix(a Matrix, v_matrix [][]drip, restart_dim drip, n drip) [][]drip {
-    sus h [][]drip = []
+slay create_hessenberg_matrix(a Matrix, v_matrix drip[value][value], restart_dim drip, n drip) drip[value][value] {
+    sus h drip[value][value] = []
     # Simplified: would compute upper Hessenberg matrix
     damn h
 }
 
-slay solve_least_squares_hessenberg(h_matrix [][]drip, rhs_norm drip, restart_dim drip) []drip {
-    sus y []drip = create_zeros(restart_dim)
+slay solve_least_squares_hessenberg(h_matrix drip[value][value], rhs_norm drip, restart_dim drip) drip[value]{
+    sus y drip[value] = create_zeros(restart_dim)
     # Simplified: would solve triangular system
     damn y
 }
@@ -1214,7 +1214,7 @@ slay matrix_inverse_advanced(m Matrix) Matrix {
     damn matrix_inverse_lu(m)
 }
 
-slay eigenvalues_advanced(m Matrix) []drip {
+slay eigenvalues_advanced(m Matrix) drip[value]{
     sus eigen EigenDecomposition = eigendecomposition_jacobi(m)
     damn eigen.eigenvalues
 }

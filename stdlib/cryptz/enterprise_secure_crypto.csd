@@ -11,12 +11,12 @@ fr fr ===== CRYPTOGRAPHICALLY SECURE PRNG (ChaCha20-based) =====
 
 fr fr ChaCha20 state structure
 squad ChaCha20State {
-    sus state [16]drip
+    sus state drip[16]
     sus counter drip
 }
 
 fr fr Initialize ChaCha20 CSPRNG with 256-bit seed
-slay chacha20_csprng_init(seed [32]drip) ChaCha20State {
+slay chacha20_csprng_init(seed drip[32]) ChaCha20State {
     sus csprng ChaCha20State = ChaCha20State{}
     
     fr fr ChaCha20 constants "expand 32-byte k"
@@ -44,7 +44,7 @@ slay chacha20_csprng_init(seed [32]drip) ChaCha20State {
 }
 
 fr fr ChaCha20 quarter round (constant-time)
-slay chacha20_quarter_round(state []drip, a drip, b drip, c drip, d drip) {
+slay chacha20_quarter_round(state drip[value], a drip, b drip, c drip, d drip) {
     state[a] = (state[a] + state[b]) & 0xFFFFFFFF
     state[d] = rotl32(state[d] ^ state[a], 16)
     state[c] = (state[c] + state[d]) & 0xFFFFFFFF
@@ -61,8 +61,8 @@ slay rotl32(x drip, n drip) drip {
 }
 
 fr fr Generate cryptographically secure random bytes
-slay chacha20_csprng_bytes(csprng ChaCha20State, output []drip) {
-    sus working_state [16]drip = csprng.state
+slay chacha20_csprng_bytes(csprng ChaCha20State, output drip[value]) {
+    sus working_state drip[16] = csprng.state
     working_state[12] = csprng.counter
     
     fr fr Perform 20 rounds (10 double rounds)
@@ -111,7 +111,7 @@ slay chacha20_csprng_bytes(csprng ChaCha20State, output []drip) {
 fr fr ===== ENTERPRISE-GRADE AES-256 WITH CONSTANT-TIME OPERATIONS =====
 
 fr fr AES S-box (precomputed, constant-time lookup)
-sus AES_SBOX [256]drip = [
+sus AES_SBOX drip[256] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -131,7 +131,7 @@ sus AES_SBOX [256]drip = [
 ]
 
 fr fr AES Inverse S-box for decryption
-sus AES_INV_SBOX [256]drip = [
+sus AES_INV_SBOX drip[256] = [
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -151,17 +151,17 @@ sus AES_INV_SBOX [256]drip = [
 ]
 
 fr fr Enterprise-grade AES-256 encryption (constant-time, side-channel resistant)
-slay enterprise_aes256_encrypt(plaintext []drip, key [32]drip) []drip {
+slay enterprise_aes256_encrypt(plaintext drip[value], key drip[32]) drip[value]{
     fr fr Expand key schedule (256-bit key, 14 rounds)
-    sus round_keys [240]drip = expand_aes256_key(key)
+    sus round_keys drip[240] = expand_aes256_key(key)
     
     fr fr Encrypt in 16-byte blocks
-    sus ciphertext []drip = []
+    sus ciphertext drip[value] = []
     sus block_count drip = (len(plaintext) + 15) / 16
     
     sus block_idx drip = 0
     bestie block_idx < block_count {
-        sus block [16]drip = []
+        sus block drip[16] = []
         sus i drip = 0
         bestie i < 16 {
             ready (block_idx * 16 + i) < len(plaintext) {
@@ -173,7 +173,7 @@ slay enterprise_aes256_encrypt(plaintext []drip, key [32]drip) []drip {
             i = i + 1
         }
         
-        sus encrypted_block [16]drip = aes_encrypt_block(block, round_keys)
+        sus encrypted_block drip[16] = aes_encrypt_block(block, round_keys)
         ciphertext = append_bytes(ciphertext, encrypted_block)
         block_idx = block_idx + 1
     }
@@ -182,23 +182,23 @@ slay enterprise_aes256_encrypt(plaintext []drip, key [32]drip) []drip {
 }
 
 fr fr Enterprise-grade AES-256 decryption (proper inverse operations)
-slay enterprise_aes256_decrypt(ciphertext []drip, key [32]drip) []drip {
+slay enterprise_aes256_decrypt(ciphertext drip[value], key drip[32]) drip[value]{
     fr fr Expand key schedule for decryption
-    sus round_keys [240]drip = expand_aes256_key_decrypt(key)
+    sus round_keys drip[240] = expand_aes256_key_decrypt(key)
     
-    sus plaintext []drip = []
+    sus plaintext drip[value] = []
     sus block_count drip = len(ciphertext) / 16
     
     sus block_idx drip = 0
     bestie block_idx < block_count {
-        sus block [16]drip = []
+        sus block drip[16] = []
         sus i drip = 0
         bestie i < 16 {
             block[i] = ciphertext[block_idx * 16 + i]
             i = i + 1
         }
         
-        sus decrypted_block [16]drip = aes_decrypt_block(block, round_keys)
+        sus decrypted_block drip[16] = aes_decrypt_block(block, round_keys)
         plaintext = append_bytes(plaintext, decrypted_block)
         block_idx = block_idx + 1
     }
@@ -300,7 +300,7 @@ slay miller_rabin_test(n drip, rounds drip) lit {
 
 fr fr ===== CONSTANT-TIME COMPARISON FOR TIMING ATTACK RESISTANCE =====
 
-slay constant_time_compare_bytes(a []drip, b []drip) lit {
+slay constant_time_compare_bytes(a drip[value], b drip[value]) lit {
     ready len(a) != len(b) {
         damn cringe
     }
@@ -317,7 +317,7 @@ slay constant_time_compare_bytes(a []drip, b []drip) lit {
 
 fr fr ===== SECURE MEMORY OPERATIONS =====
 
-slay secure_zero_memory(data []drip) {
+slay secure_zero_memory(data drip[value]) {
     fr fr Volatile memory clearing to prevent key recovery
     sus i drip = 0
     bestie i < len(data) {

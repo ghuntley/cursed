@@ -132,11 +132,11 @@ assert_false(validate_not_equals(based, based))
 
 fr fr Test fact checking utilities
 test_start("check_consistency with all true")
-sus all_true_facts []lit = [based, based, based]
+sus all_true_facts lit[value] = [based, based, based]
 assert_true(check_consistency(all_true_facts))
 
 test_start("check_consistency with mixed")
-sus mixed_facts []lit = [based, cap, based]
+sus mixed_facts lit[value] = [based, cap, based]
 assert_false(check_consistency(mixed_facts))
 
 test_start("check_contradiction - true case")
@@ -146,49 +146,49 @@ test_start("check_contradiction - false case")
 assert_false(check_contradiction(based, based))
 
 test_start("check_tautology with all true")
-sus tautology_facts []lit = [based, based, based]
+sus tautology_facts lit[value] = [based, based, based]
 assert_true(check_tautology(tautology_facts))
 
 test_start("check_tautology with mixed")
-sus mixed_tautology []lit = [based, cap, based]
+sus mixed_tautology lit[value] = [based, cap, based]
 assert_false(check_tautology(mixed_tautology))
 
 test_start("check_satisfiability with at least one true")
-sus satisfiable []lit = [cap, based, cap]
+sus satisfiable lit[value] = [cap, based, cap]
 assert_true(check_satisfiability(satisfiable))
 
 test_start("check_satisfiability with all false")
-sus unsatisfiable []lit = [cap, cap, cap]
+sus unsatisfiable lit[value] = [cap, cap, cap]
 assert_false(check_satisfiability(unsatisfiable))
 
 fr fr Test advanced truth operations
 test_start("truth_table_and with all true")
-sus and_inputs []lit = [based, based, based]
+sus and_inputs lit[value] = [based, based, based]
 assert_true(truth_table_and(and_inputs))
 
 test_start("truth_table_and with mixed")
-sus and_mixed []lit = [based, cap, based]
+sus and_mixed lit[value] = [based, cap, based]
 assert_false(truth_table_and(and_mixed))
 
 test_start("truth_table_or with all false")
-sus or_inputs []lit = [cap, cap, cap]
+sus or_inputs lit[value] = [cap, cap, cap]
 assert_false(truth_table_or(or_inputs))
 
 test_start("truth_table_or with mixed")
-sus or_mixed []lit = [cap, based, cap]
+sus or_mixed lit[value] = [cap, based, cap]
 assert_true(truth_table_or(or_mixed))
 
 test_start("majority_vote with majority true")
-sus majority_true []lit = [based, based, cap]
+sus majority_true lit[value] = [based, based, cap]
 assert_true(majority_vote(majority_true))
 
 test_start("majority_vote with majority false")
-sus majority_false []lit = [cap, cap, based]
+sus majority_false lit[value] = [cap, cap, based]
 assert_false(majority_vote(majority_false))
 
 fr fr Test utility functions
 test_start("count_truths")
-sus count_test []lit = [based, cap, based, based]
+sus count_test lit[value] = [based, cap, based, based]
 assert_eq_int(count_truths(count_test), 3)
 
 test_start("count_falsehoods")
@@ -199,32 +199,32 @@ sus ratio_result meal = truth_ratio(count_test)
 assert_true(ratio_result > 0.7 && ratio_result < 0.8)
 
 test_start("all_true with all true")
-sus all_true_test []lit = [based, based, based]
+sus all_true_test lit[value] = [based, based, based]
 assert_true(all_true(all_true_test))
 
 test_start("all_true with mixed")
-sus all_true_mixed []lit = [based, cap, based]
+sus all_true_mixed lit[value] = [based, cap, based]
 assert_false(all_true(all_true_mixed))
 
 test_start("any_true with at least one true")
-sus any_true_test []lit = [cap, based, cap]
+sus any_true_test lit[value] = [cap, based, cap]
 assert_true(any_true(any_true_test))
 
 test_start("any_true with all false")
-sus any_true_false []lit = [cap, cap, cap]
+sus any_true_false lit[value] = [cap, cap, cap]
 assert_false(any_true(any_true_false))
 
 test_start("none_true with all false")
-sus none_true_test []lit = [cap, cap, cap]
+sus none_true_test lit[value] = [cap, cap, cap]
 assert_true(none_true(none_true_test))
 
 test_start("none_true with at least one true")
-sus none_true_mixed []lit = [cap, based, cap]
+sus none_true_mixed lit[value] = [cap, based, cap]
 assert_false(none_true(none_true_mixed))
 
 fr fr Test empty arrays
 test_start("truth_ratio with empty array")
-sus empty_array []lit = []
+sus empty_array lit[value] = []
 assert_eq_int(truth_ratio(empty_array).(normie), 0)
 
 test_start("all_true with empty array")

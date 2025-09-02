@@ -8,7 +8,7 @@ yeet "memoryz"
 
 fr fr ===== ADVANCED FFT IMPLEMENTATION =====
 
-slay audioz_fft_radix2_production(complex_data [4096]drip, size normie) lit {
+slay audioz_fft_radix2_production(complex_data drip[4096], size normie) lit {
     fr fr Cooley-Tukey Radix-2 FFT with optimizations
     ready (!audioz_is_power_of_two(size)) {
         vibez.spill("Error: FFT size must be power of 2")
@@ -65,7 +65,7 @@ slay audioz_fft_radix2_production(complex_data [4096]drip, size normie) lit {
     damn true
 }
 
-slay audioz_bit_reversal_optimized(complex_data [4096]drip, size normie) lit {
+slay audioz_bit_reversal_optimized(complex_data drip[4096], size normie) lit {
     fr fr Optimized bit-reversal using iterative approach
     sus j normie = 0
     bestie (sus i normie = 1; i < size; i++) {
@@ -156,7 +156,7 @@ slay audioz_biquad_filter_production(samples tea, frames normie, channels normie
     sus output_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
     
     fr fr Calculate biquad coefficients
-    sus coeffs [6]drip = audioz_calculate_biquad_coefficients(filter, sample_rate)
+    sus coeffs drip[6] = audioz_calculate_biquad_coefficients(filter, sample_rate)
     sus b0 drip = coeffs[0]
     sus b1 drip = coeffs[1]
     sus b2 drip = coeffs[2]
@@ -165,10 +165,10 @@ slay audioz_biquad_filter_production(samples tea, frames normie, channels normie
     sus gain drip = coeffs[5]
     
     fr fr Filter state variables per channel
-    sus x1 [8]drip fr fr Previous input samples
-    sus x2 [8]drip fr fr Previous input samples
-    sus y1 [8]drip fr fr Previous output samples
-    sus y2 [8]drip fr fr Previous output samples
+    sus x1 drip[8] fr fr Previous input samples
+    sus x2 drip[8] fr fr Previous input samples
+    sus y1 drip[8] fr fr Previous output samples
+    sus y2 drip[8] fr fr Previous output samples
     
     bestie (sus frame normie = 0; frame < frames; frame++) {
         bestie (sus channel normie = 0; channel < channels; channel++) {
@@ -195,7 +195,7 @@ slay audioz_biquad_filter_production(samples tea, frames normie, channels normie
 
 slay audioz_calculate_biquad_coefficients(filter AudioFilter, sample_rate normie) [6]drip {
     fr fr Calculate biquad filter coefficients based on filter type
-    sus coeffs [6]drip
+    sus coeffs drip[6]
     sus omega drip = 2.0 * mathz_pi() * filter.frequency / mathz_int_to_float(sample_rate)
     sus sin_omega drip = mathz_sin(omega)
     sus cos_omega drip = mathz_cos(omega)
@@ -248,32 +248,32 @@ slay audioz_calculate_biquad_coefficients(filter AudioFilter, sample_rate normie
 
 fr fr ===== ADVANCED COMPRESSOR/LIMITER =====
 
-slay audioz_multiband_compressor_production(samples tea, frames normie, channels normie, sample_rate normie, params [10]drip) tea {
+slay audioz_multiband_compressor_production(samples tea, frames normie, channels normie, sample_rate normie, params drip[10]) tea {
     fr fr Professional multiband compressor
     sus output_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
     
     fr fr Frequency bands (Hz)
-    sus crossover_freqs [3]drip = [250.0, 2000.0, 8000.0]
+    sus crossover_freqs drip[3] = [250.0, 2000.0, 8000.0]
     sus band_count normie = 4
     
     fr fr Band filters (Linkwitz-Riley 4th order)
-    sus band_filters [4][8]drip fr fr Filter states for each band
+    sus band_filters drip[4][8] fr fr Filter states for each band
     
     fr fr Compressor parameters per band
-    sus thresholds [4]drip = [params[0], params[1], params[2], params[3]]
-    sus ratios [4]drip = [params[4], params[5], params[6], params[7]]
+    sus thresholds drip[4] = [params[0], params[1], params[2], params[3]]
+    sus ratios drip[4] = [params[4], params[5], params[6], params[7]]
     sus attack_time drip = params[8]
     sus release_time drip = params[9]
     
     fr fr Envelope followers per band
-    sus envelope_state [4][8]drip fr fr Per channel envelope state
+    sus envelope_state drip[4][8] fr fr Per channel envelope state
     sus attack_coeff drip = mathz_exp(-1.0 / (attack_time * mathz_int_to_float(sample_rate)))
     sus release_coeff drip = mathz_exp(-1.0 / (release_time * mathz_int_to_float(sample_rate)))
     
     bestie (sus frame normie = 0; frame < frames; frame++) {
         bestie (sus channel normie = 0; channel < channels; channel++) {
             sus input_sample drip = audioz_get_sample_float(samples, frame, channel, channels)
-            sus band_samples [4]drip
+            sus band_samples drip[4]
             sus output_sample drip = 0.0
             
             fr fr Split into frequency bands
@@ -325,7 +325,7 @@ slay audioz_convolution_reverb_production(samples tea, frames normie, channels n
     sus hop_size normie = fft_size / 2
     
     fr fr Prepare IR in frequency domain
-    sus ir_fft [8192]drip fr fr Complex FFT of impulse response
+    sus ir_fft drip[8192] fr fr Complex FFT of impulse response
     audioz_prepare_impulse_response_fft(impulse_response, ir_length, ir_fft, fft_size)
     
     fr fr Overlap-add buffer
@@ -337,8 +337,8 @@ slay audioz_convolution_reverb_production(samples tea, frames normie, channels n
         
         fr fr Process block through FFT convolution
         bestie (sus channel normie = 0; channel < channels; channel++) {
-            sus input_block [4096]drip fr fr Complex input block
-            sus output_block [4096]drip fr fr Complex output block
+            sus input_block drip[4096] fr fr Complex input block
+            sus output_block drip[4096] fr fr Complex output block
             
             fr fr Prepare input block
             bestie (sus i normie = 0; i < block_size; i++) {
@@ -416,16 +416,16 @@ slay audioz_set_sample_float(buffer tea, frame normie, channel normie, channels 
     cursed_runtime_write_audio_buffer_float(buffer, sample_index, value)
 }
 
-slay audioz_apply_band_filter(sample drip, band normie, channel normie, filter_state [8]drip, crossovers [3]drip) drip {
+slay audioz_apply_band_filter(sample drip, band normie, channel normie, filter_state drip[8], crossovers drip[3]) drip {
     fr fr Apply band-split filtering
     damn sample fr fr Placeholder implementation
 }
 
-slay audioz_prepare_impulse_response_fft(impulse tea, length normie, ir_fft [8192]drip, fft_size normie) lit {
+slay audioz_prepare_impulse_response_fft(impulse tea, length normie, ir_fft drip[8192], fft_size normie) lit {
     fr fr Prepare IR for frequency domain processing
 }
 
-slay audioz_ifft_radix2_production(complex_data [4096]drip, size normie) lit {
+slay audioz_ifft_radix2_production(complex_data drip[4096], size normie) lit {
     fr fr Inverse FFT - conjugate input, FFT, conjugate output, scale
     bestie (sus i normie = 0; i < size; i++) {
         complex_data[i * 2 + 1] = -complex_data[i * 2 + 1] fr fr Conjugate

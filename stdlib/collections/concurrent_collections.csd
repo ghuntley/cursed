@@ -194,12 +194,12 @@ slay lockfree_queue_is_empty(queue LockFreeQueue) lit {
 // ================================
 
 be_like ConcurrentHashMapBucket squad {
-    entries []HashMapEntry
+    entries HashMapEntry[value]
     lock *lit  // Simplified lock representation
 }
 
 be_like ConcurrentHashMapAdvanced squad {
-    buckets []ConcurrentHashMapBucket
+    buckets ConcurrentHashMapBucket[value]
     bucket_count normie
     size *normie
     resize_lock *lit
@@ -207,14 +207,14 @@ be_like ConcurrentHashMapAdvanced squad {
 
 slay concurrent_hashmap_advanced_new(bucket_count normie) ConcurrentHashMapAdvanced {
     sus chm ConcurrentHashMapAdvanced
-    chm.buckets = make([]ConcurrentHashMapBucket, bucket_count)
+    chm.buckets = make(ConcurrentHashMapBucket[value], bucket_count)
     chm.bucket_count = bucket_count
     chm.size = &normie{0}
     chm.resize_lock = &lit{cap}
     
     sus i normie = 0
     bestie i < bucket_count {
-        chm.buckets[i].entries = make([]HashMapEntry, 0)
+        chm.buckets[i].entries = make(HashMapEntry[value], 0)
         chm.buckets[i].lock = &lit{cap}
         i = i + 1
     }
@@ -402,7 +402,7 @@ slay concurrent_set_size(set ConcurrentSet) normie {
 // ================================
 
 be_like WorkStealingQueue squad {
-    items []tea
+    items tea[value]
     head *normie
     tail *normie
     capacity normie
@@ -410,7 +410,7 @@ be_like WorkStealingQueue squad {
 
 slay work_stealing_queue_new(capacity normie) WorkStealingQueue {
     sus wsq WorkStealingQueue
-    wsq.items = make([]tea, capacity)
+    wsq.items = make(tea[value], capacity)
     wsq.head = &normie{0}
     wsq.tail = &normie{0}
     wsq.capacity = capacity

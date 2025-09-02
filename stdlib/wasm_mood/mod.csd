@@ -159,7 +159,7 @@ slay wasm_load_module(runtime normie, module normie) normie {
 fr fr Call WASM function from CURSED
 slay wasm_call_function(instance normie, func_name tea, arg_count normie) normie {
     yeet "wasm_mood/wasm_runtime"
-    sus args []drip = [] fr fr Convert arg_count to actual args array
+    sus args drip[value] = [] fr fr Convert arg_count to actual args array
     bestie i in 0..arg_count { args.push(0) } fr fr Placeholder args
     damn wasm_call_function_real(instance, func_name, args)
 }
@@ -468,7 +468,7 @@ slay wasm_get_memory_size(memory normie) normie {
     damn WASM_MEMORY_PAGE_SIZE * WASM_DEFAULT_MEMORY_PAGES
 }
 
-slay wasm_write_memory(memory normie, offset normie, data []normie) lit {
+slay wasm_write_memory(memory normie, offset normie, data normie[value]) lit {
     bestie i in 0..data.len() {
         yikes !wasm_write_memory_byte(memory, offset + i, data[i]) {
             damn cap
@@ -477,8 +477,8 @@ slay wasm_write_memory(memory normie, offset normie, data []normie) lit {
     damn based
 }
 
-slay wasm_read_memory(memory normie, offset normie, size normie) []normie {
-    sus result []normie = []
+slay wasm_read_memory(memory normie, offset normie, size normie) normie[value]{
+    sus result normie[value] = []
     bestie i in 0..size {
         sus byte = wasm_read_memory_byte(memory, offset + i)
         result.push(byte)

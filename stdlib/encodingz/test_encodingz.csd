@@ -68,7 +68,7 @@ slay test_base64_decoding() {
     test_decode_success(base64_decode_url_safe("QUJD"), "ABC", "URL-safe three chars")
     
     fr fr Test round-trip encoding/decoding
-    sus test_strings []tea = ["", "A", "AB", "ABC", "Hello", "Hello World!", "The quick brown fox jumps over the lazy dog"]
+    sus test_strings tea[value] = ["", "A", "AB", "ABC", "Hello", "Hello World!", "The quick brown fox jumps over the lazy dog"]
     sus i drip = 0
     bestie i < array_length(test_strings) {
         sus original tea = test_strings[i]
@@ -138,7 +138,7 @@ slay test_hex_decoding() {
     test_decode_success(hex_decode("48656c6C6f"), "Hello", "Mixed case hex decode")
     
     fr fr Test round-trip
-    sus test_data []tea = ["", "A", "Hello", "The quick brown fox", "1234567890", "Special chars: !@#$%^&*()"]
+    sus test_data tea[value] = ["", "A", "Hello", "The quick brown fox", "1234567890", "Special chars: !@#$%^&*()"]
     sus i drip = 0
     bestie i < array_length(test_data) {
         sus original tea = test_data[i]
@@ -235,7 +235,7 @@ slay test_url_decoding() {
     test_decode_success(url_decode("Hello+World"), "Hello World", "Plus as space")
     
     fr fr Test round-trip encoding
-    sus test_urls []tea = [
+    sus test_urls tea[value] = [
         "Hello World!",
         "user@example.com",
         "path/to/resource?query=value&other=data",

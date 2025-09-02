@@ -175,7 +175,7 @@ slay test_comprehensive_panic_recover() {
 slay test_stack_unwinding() {
     test_start("Stack unwinding test")
     
-    sus cleanup_order []tea = []
+    sus cleanup_order tea[value] = []
     
     // Simulate stack unwinding with multiple defer statements
     // defer cleanup_order = append(cleanup_order, "cleanup1")

@@ -171,7 +171,7 @@ slay example_streaming_file_encoding() {
     vibez.spill("=" * 42)
     
     fr fr Simulate processing a large file in chunks
-    sus file_chunks []tea = [
+    sus file_chunks tea[value] = [
         "First chunk of large file data...",
         "Second chunk continues the data stream...",
         "Third chunk with more binary content...",
@@ -303,7 +303,7 @@ slay example_api_key_encoding() {
         vibez.spill("Decoded API key: " + decoded_key)
         
         fr fr Parse key components (simplified)
-        sus key_parts []tea = split(decoded_key, ":")
+        sus key_parts tea[value] = split(decoded_key, ":")
         ready array_length(key_parts) == 4 {
             vibez.spill("User ID: " + key_parts[0])
             vibez.spill("Project ID: " + key_parts[1])
@@ -380,7 +380,7 @@ slay example_data_export() {
     vibez.spill("=" * 38)
     
     fr fr Simulate database records with various data types
-    sus records []tea = [
+    sus records tea[value] = [
         '{"id":1,"name":"Alice","avatar":"binary_image_data_here","active":true}',
         '{"id":2,"name":"Bob","avatar":"another_binary_image","active":false}',
         '{"id":3,"name":"Charlie","avatar":"third_binary_image","active":true}'

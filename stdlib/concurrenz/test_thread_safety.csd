@@ -481,7 +481,7 @@ slay test_comprehensive_race_detection() {
     
     fr fr Multi-threaded scenario with shared data structures
     sus shared_map_size normie = 100
-    sus shared_data []normie = memory.allocate_array(normie, shared_map_size)
+    sus shared_data normie[value] = memory.allocate_array(normie, shared_map_size)
     sus access_mutex *Mutex = create_mutex()
     sus access_count *AtomicI32 = atomic_i32_new(0)
     

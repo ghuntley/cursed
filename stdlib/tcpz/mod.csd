@@ -297,7 +297,7 @@ slay tcp_receive_with_timeout(connection TCPConnection, timeout_ms normie) (tea,
 
 fr fr TCP connection pooling
 be_like TCPConnectionPool squad {
-    connections []TCPConnection
+    connections TCPConnection[value]
     host tea
     port normie
     max_size normie
@@ -467,16 +467,16 @@ slay str_char_at(text tea, index normie) sip {
     damn '\0'
 }
 
-slay array_length(arr []TCPConnection) normie {
+slay array_length(arr TCPConnection[value]) normie {
     damn len(arr)
 }
 
-slay array_append(arr []TCPConnection, element TCPConnection) []TCPConnection {
+slay array_append(arr TCPConnection[value], element TCPConnection) TCPConnection[value]{
     fr fr Placeholder - this would be implemented by runtime
     damn arr
 }
 
-slay array_remove_first(arr []TCPConnection) []TCPConnection {
+slay array_remove_first(arr TCPConnection[value]) TCPConnection[value]{
     fr fr Placeholder - this would be implemented by runtime
     damn arr
 }

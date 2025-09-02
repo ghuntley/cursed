@@ -111,7 +111,7 @@ slay test_binary_tree() {
     assert_true(tree != cringe)
     assert_eq_int(binary_tree_size(tree), 0)
     assert_true(binary_tree_is_empty(tree)) fr fr Insert values in random order
-    sus values []normie = []normie{50, 30, 70, 20, 40, 60, 80, 10, 25, 35, 45}
+    sus values normie[value] = normie[value]{50, 30, 70, 20, 40, 60, 80, 10, 25, 35, 45}
     bestie _, value := range values {
         binary_tree_insert(tree, value)
     }
@@ -124,7 +124,7 @@ slay test_binary_tree() {
     
     assert_false(binary_tree_contains(tree, 99))
     assert_false(binary_tree_contains(tree, 0)) fr fr Test tree traversal
-    sus inorder []normie = binary_tree_inorder_traversal(tree)
+    sus inorder normie[value] = binary_tree_inorder_traversal(tree)
     assert_eq_int(len(inorder), 11) fr fr Verify inorder traversal is sorted
     bestie i := 0; i < len(inorder) - 1; i++ {
         assert_true(inorder[i] < inorder[i+1])
@@ -249,7 +249,7 @@ slay test_circular_buffer() {
     }
     
     assert_true(circular_buffer_is_full(buffer)) fr fr Verify correct order after wraparound
-    sus expected []normie = []normie{4, 5, 6, 7, 8, 9, 10, 11}
+    sus expected normie[value] = normie[value]{4, 5, 6, 7, 8, 9, 10, 11}
     bestie i := 0; i < 8; i++ {
         sus value normie = circular_buffer_dequeue(buffer)
         assert_eq_int(value, expected[i])
@@ -270,7 +270,7 @@ slay test_priority_queue() {
     assert_true(pq != cringe)
     assert_eq_int(priority_queue_size(pq), 0)
     assert_true(priority_queue_is_empty(pq)) fr fr Insert elements with different priorities
-    sus items []PriorityItem = []PriorityItem{
+    sus items PriorityItem[value] = PriorityItem[value]{
         {value: 10, priority: 1},
         {value: 30, priority: 3},
         {value: 20, priority: 2},
@@ -284,7 +284,7 @@ slay test_priority_queue() {
     
     assert_eq_int(priority_queue_size(pq), 5)
     assert_false(priority_queue_is_empty(pq)) fr fr Extract elements (should come out in priority order)
-    sus expected []normie = []normie{50, 40, 30, 20, 10} fr fr Highest priority first
+    sus expected normie[value] = normie[value]{50, 40, 30, 20, 10} fr fr Highest priority first
     bestie i := 0; i < 5; i++ {
         sus value normie = priority_queue_extract_max(pq)
         assert_eq_int(value, expected[i])

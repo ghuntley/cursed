@@ -128,15 +128,15 @@ vibez.spill("✅ Complex schema validation passed")
 
 fr fr Test 16: API endpoint batch validation
 test_start("API endpoint batch validation")
-sus endpoints [3]tea = ["/api/users", "/api/orders", "/api/products"]
-sus schemas [3]tea = [
+sus endpoints tea[3] = ["/api/users", "/api/orders", "/api/products"]
+sus schemas tea[3] = [
     "{\"type\": \"array\"}",
     "{\"type\": \"array\"}",
     "{\"type\": \"array\"}"
 ]
-sus responses [3]tea = ["[]", "[]", "[]"]
+sus responses tea[3] = ["[]", "[]", "[]"]
 
-sus batch_results [3]lit
+sus batch_results lit[3]
 bestie i := 0; i < 3; i++ {
     batch_results[i] = validate_api_contract(endpoints[i], schemas[i], responses[i])
 }
@@ -147,13 +147,13 @@ vibez.spill("✅ API endpoint batch validation passed")
 
 fr fr Test 17: Performance metrics validation
 test_start("performance metrics validation")
-sus performance_services [2]tea = ["FastService", "SlowService"]
-sus performance_specs [2]tea = [
+sus performance_services tea[2] = ["FastService", "SlowService"]
+sus performance_specs tea[2] = [
     "{\"max_response_time\": 50}",
     "{\"max_response_time\": 500}"
 ]
 
-sus perf_results [2]lit
+sus perf_results lit[2]
 bestie j := 0; j < 2; j++ {
     perf_results[j] = performance_contract_test(performance_services[j], performance_specs[j])
 }

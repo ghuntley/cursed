@@ -37,12 +37,12 @@ squad JsonNull {}
 
 squad JsonObject {
     sus fields map<tea, JsonValue>
-    sus field_order []tea
+    sus field_order tea[value]
     sus allow_duplicates lit
 }
 
 squad JsonArray {
-    sus elements []JsonValue
+    sus elements JsonValue[value]
     sus capacity drip
 }
 
@@ -818,7 +818,7 @@ slay stringify_object_formatted(value JsonValue, context JsonStringifyContext) t
     }
     
     fr fr Get keys and optionally sort them
-    sus keys []tea = get_object_keys(obj)
+    sus keys tea[value] = get_object_keys(obj)
     ready (context.options.sort_keys) {
         keys = sort_string_array(keys)
     }

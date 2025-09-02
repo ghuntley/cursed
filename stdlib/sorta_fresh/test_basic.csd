@@ -5,7 +5,7 @@
 slay test_sort_basic() {
     vibez.spill("Testing basic sorting...")
     
-    sus arr []normie = [3, 1, 4, 1, 5]
+    sus arr normie[value] = [3, 1, 4, 1, 5]
     vibez.spill("Original array: ", arr)
     
     // This will test if the function exists and basic parsing works
@@ -33,7 +33,7 @@ slay test_string_compare() {
 slay test_array_ops() {
     vibez.spill("Testing array operations...")
     
-    sus numbers []normie = [5, 2, 8, 1, 9]
+    sus numbers normie[value] = [5, 2, 8, 1, 9]
     vibez.spill("Array created: ", numbers)
     
     sus first normie = numbers[0]

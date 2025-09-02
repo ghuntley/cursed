@@ -86,7 +86,7 @@ print_test_summary()
 fr fr Test pattern finding
 test_start("Find pattern matches")
 sus find_regex Regex = compile_pattern("test")
-sus matches []Match = find_matches(find_regex, "test this test case")
+sus matches Match[value] = find_matches(find_regex, "test this test case")
 assert_true(len(matches) >= 1)  fr fr Should find at least one match
 print_test_summary()
 

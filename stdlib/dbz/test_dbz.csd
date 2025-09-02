@@ -30,11 +30,11 @@ assert_eq_int(db_execute("DELETE FROM users WHERE id=1"), 0)
 
 test_start("SELECT Queries")
 
-sus user_results []tea = db_query("SELECT * FROM users")
+sus user_results tea[value] = db_query("SELECT * FROM users")
 assert_true(len(user_results) > 0)
 assert_true(contains_substring(user_results[0], "name"))
 
-sus product_results []tea = db_query("SELECT * FROM products")
+sus product_results tea[value] = db_query("SELECT * FROM products")
 assert_true(len(product_results) > 0)
 
 test_start("Single Result Queries")
@@ -71,10 +71,10 @@ test_start("Schema Operations")
 assert_eq_int(db_create_table("test_table", "id INT PRIMARY KEY, name TEXT"), 0)
 assert_true(db_table_exists("test_table"))
 
-sus tables []tea = db_list_tables()
+sus tables tea[value] = db_list_tables()
 assert_true(len(tables) > 0)
 
-sus table_desc []tea = db_describe_table("users")
+sus table_desc tea[value] = db_describe_table("users")
 assert_true(len(table_desc) > 0)
 
 assert_eq_int(db_drop_table("test_table"), 0)
@@ -84,7 +84,7 @@ test_start("CRUD Operations")
 assert_eq_int(db_insert("users", "name, email", "'Bob', 'bob@example.com'"), 0)
 assert_eq_int(db_update("users", "name='Robert'", "name='Bob'"), 0)
 
-sus selected_users []tea = db_select("users", "*", "name='Robert'")
+sus selected_users tea[value] = db_select("users", "*", "name='Robert'")
 assert_true(len(selected_users) > 0)
 
 sus user_count_num drip = db_count("users", "")
@@ -112,8 +112,8 @@ assert_false(contains_substring(unsafe_table, ";"))
 
 test_start("Query Builder")
 
-sus columns []tea = ["name", "email"]
-sus conditions []tea = ["id > 0", "name IS NOT NULL"]
+sus columns tea[value] = ["name", "email"]
+sus conditions tea[value] = ["id > 0", "name IS NOT NULL"]
 sus select_query tea = build_select_query("users", columns, conditions)
 
 assert_true(contains_substring(select_query, "SELECT"))

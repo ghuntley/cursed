@@ -31,13 +31,13 @@ squad PackageMetadata {
     sus name tea
     sus version tea
     sus description tea
-    sus authors []tea
+    sus authors tea[value]
     sus license tea
     sus homepage tea
     sus repository tea
-    sus keywords []tea
-    sus categories []tea
-    sus dependencies []PackageDependency
+    sus keywords tea[value]
+    sus categories tea[value]
+    sus dependencies PackageDependency[value]
     sus download_url tea
     sus checksum tea
 }
@@ -47,7 +47,7 @@ squad PackageDependency {
     sus name tea
     sus version_req tea
     sus optional lit
-    sus features []tea
+    sus features tea[value]
 }
 
 # Package version specification
@@ -65,7 +65,7 @@ squad InstalledPackage {
     sus version tea
     sus install_path tea
     sus installed_at tea
-    sus dependencies []tea
+    sus dependencies tea[value]
 }
 
 # Package registry client
@@ -77,7 +77,7 @@ squad PackageRegistry {
 squad PackageInstaller {
     sus install_dir tea
     sus temp_dir tea
-    sus installed_packages []InstalledPackage
+    sus installed_packages InstalledPackage[value]
 }
 
 # Package manager main struct
@@ -120,7 +120,7 @@ slay init_package_manager(registry_url tea, cache_dir tea) PackageManager {
 
 # Parse version string into structured version
 slay parse_version(version_str tea) PackageVersion {
-    sus parts []tea = stringz.split(version_str, ".")
+    sus parts tea[value] = stringz.split(version_str, ".")
     
     ready (arrayz.len(parts) < 3) {
         damn PackageVersion { major: 0, minor: 0, patch: 0, pre_release: "", build: "" }
@@ -160,7 +160,7 @@ slay compare_versions(v1 PackageVersion, v2 PackageVersion) drip {
 }
 
 # Search for packages in registry with real HTTP client
-slay search_packages(manager PackageManager, query tea) []PackageMetadata {
+slay search_packages(manager PackageManager, query tea) PackageMetadata[value]{
     sus search_url tea = manager.registry.config.url + "/api/v1/packages/search"
     
     # Build query parameters
@@ -196,7 +196,7 @@ slay search_packages(manager PackageManager, query tea) []PackageMetadata {
         damn []
     }
     
-    sus packages []PackageMetadata = []
+    sus packages PackageMetadata[value] = []
     bestie (sus i drip = 0; i < arrayz.len(packages_json.array_values); i = i + 1) {
         sus pkg_json JsonValue = packages_json.array_values[i]
         sus metadata PackageMetadata = parse_package_metadata(pkg_json)
@@ -218,7 +218,7 @@ slay parse_package_metadata(json JsonValue) PackageMetadata {
     sus checksum tea = jsonz.json_get_string(json, "checksum")
     
     # Parse authors array
-    sus authors []tea = []
+    sus authors tea[value] = []
     ready (jsonz.json_has_key(json, "authors")) {
         sus authors_json JsonValue = jsonz.json_get_object(json, "authors")
         ready (authors_json.type == "array") {
@@ -230,7 +230,7 @@ slay parse_package_metadata(json JsonValue) PackageMetadata {
     }
     
     # Parse keywords array
-    sus keywords []tea = []
+    sus keywords tea[value] = []
     ready (jsonz.json_has_key(json, "keywords")) {
         sus keywords_json JsonValue = jsonz.json_get_object(json, "keywords")
         ready (keywords_json.type == "array") {
@@ -242,7 +242,7 @@ slay parse_package_metadata(json JsonValue) PackageMetadata {
     }
     
     # Parse dependencies array
-    sus dependencies []PackageDependency = []
+    sus dependencies PackageDependency[value] = []
     ready (jsonz.json_has_key(json, "dependencies")) {
         sus deps_json JsonValue = jsonz.json_get_object(json, "dependencies")
         ready (deps_json.type == "array") {
@@ -347,7 +347,7 @@ slay install_package(manager PackageManager, name tea, version_spec tea) lit {
     }
     
     # Search for the package to get metadata
-    sus search_results []PackageMetadata = search_packages(manager, name)
+    sus search_results PackageMetadata[value] = search_packages(manager, name)
     sus target_package PackageMetadata = PackageMetadata{}
     
     bestie (sus i drip = 0; i < arrayz.len(search_results); i = i + 1) {
@@ -368,7 +368,7 @@ slay install_package(manager PackageManager, name tea, version_spec tea) lit {
     
     # Use advanced dependency resolver
     sus resolver DependencyResolver = init_dependency_resolver(manager.registry)
-    sus root_packages []tea = [name]
+    sus root_packages tea[value] = [name]
     sus resolution_result ResolutionResult = resolve_dependencies_advanced(resolver, root_packages)
     
     ready (!resolution_result.success) {
@@ -451,8 +451,8 @@ slay extract_package(archive_path tea, extract_dir tea) lit {
 }
 
 # Get dependency names from dependency list
-slay get_dependency_names(dependencies []PackageDependency) []tea {
-    sus names []tea = []
+slay get_dependency_names(dependencies PackageDependency[value]) tea[value]{
+    sus names tea[value] = []
     bestie (sus i drip = 0; i < arrayz.len(dependencies); i = i + 1) {
         sus dep PackageDependency = dependencies[i]
         names = arrayz.append(names, dep.name)
@@ -525,7 +525,7 @@ slay install_single_package(manager PackageManager, pkg PackageMetadata) lit {
     }
     
     # Update or add to installed packages list
-    sus updated_packages []InstalledPackage = []
+    sus updated_packages InstalledPackage[value] = []
     sus found lit = cap
     
     bestie (sus i drip = 0; i < arrayz.len(manager.installer.installed_packages); i = i + 1) {
@@ -565,7 +565,7 @@ slay uninstall_package(manager PackageManager, name tea) lit {
     }
     
     # Check if other packages depend on this one
-    sus dependents []tea = find_dependent_packages(manager, name)
+    sus dependents tea[value] = find_dependent_packages(manager, name)
     ready (arrayz.len(dependents) > 0) {
         vibez.spill("Cannot uninstall", name, "- required by:", stringz.join(dependents, ", "))
         damn cap
@@ -578,7 +578,7 @@ slay uninstall_package(manager PackageManager, name tea) lit {
     }
     
     # Remove from installed packages list
-    sus updated_packages []InstalledPackage = []
+    sus updated_packages InstalledPackage[value] = []
     bestie (sus i drip = 0; i < arrayz.len(manager.installer.installed_packages); i = i + 1) {
         sus pkg InstalledPackage = manager.installer.installed_packages[i]
         ready (pkg.name != name) {
@@ -594,8 +594,8 @@ slay uninstall_package(manager PackageManager, name tea) lit {
 }
 
 # Find packages that depend on the given package
-slay find_dependent_packages(manager PackageManager, target_name tea) []tea {
-    sus dependents []tea = []
+slay find_dependent_packages(manager PackageManager, target_name tea) tea[value]{
+    sus dependents tea[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(manager.installer.installed_packages); i = i + 1) {
         sus pkg InstalledPackage = manager.installer.installed_packages[i]
@@ -624,7 +624,7 @@ slay get_installed_package(manager PackageManager, name tea) InstalledPackage {
 }
 
 # List all installed packages
-slay list_installed_packages(manager PackageManager) []InstalledPackage {
+slay list_installed_packages(manager PackageManager) InstalledPackage[value]{
     damn manager.installer.installed_packages
 }
 
@@ -639,7 +639,7 @@ slay update_package(manager PackageManager, name tea) lit {
     }
     
     # Find latest version
-    sus search_results []PackageMetadata = search_packages(manager, name)
+    sus search_results PackageMetadata[value] = search_packages(manager, name)
     sus latest_version tea = ""
     sus latest_metadata PackageMetadata = PackageMetadata{}
     
@@ -731,7 +731,7 @@ slay load_installed_packages(manager PackageManager) lit {
         damn cap
     }
     
-    sus packages []InstalledPackage = []
+    sus packages InstalledPackage[value] = []
     bestie (sus i drip = 0; i < arrayz.len(packages_json.array_values); i = i + 1) {
         sus pkg_json JsonValue = packages_json.array_values[i]
         
@@ -741,7 +741,7 @@ slay load_installed_packages(manager PackageManager) lit {
         sus installed_at tea = jsonz.json_get_string(pkg_json, "installed_at")
         
         # Load dependencies
-        sus deps []tea = []
+        sus deps tea[value] = []
         ready (jsonz.json_has_key(pkg_json, "dependencies")) {
             sus deps_json JsonValue = jsonz.json_get_object(pkg_json, "dependencies")
             ready (deps_json.type == "array") {

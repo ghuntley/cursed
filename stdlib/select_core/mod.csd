@@ -170,7 +170,7 @@ slay channel_create(buffer_size normie) normie {
     channel_state["buffer_size"] = buffer_size
     channel_state["buffer_count"] = 0
     channel_state["closed"] = cap
-    channel_state["buffer"] = make([]tea, buffer_size)
+    channel_state["buffer"] = make(tea[value], buffer_size)
     
     channel_store[channel_id] = channel_state
     

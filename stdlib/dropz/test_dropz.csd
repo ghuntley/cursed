@@ -49,11 +49,11 @@ slay test_file_read_write() {
     
     sus file, err := dropz.create("rw_test.txt")
     assert_eq_string(err, "") fr fr Test writing
-    sus write_data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
+    sus write_data byte[value] = byte[value]{72, 101, 108, 108, 111} fr fr "Hello"
     sus write_count, write_err := file.write(write_data)
     assert_eq_string(write_err, "")
     assert_eq_int(write_count, 10) fr fr Test reading
-    sus read_data []byte = []byte{0, 0, 0, 0, 0}
+    sus read_data byte[value] = byte[value]{0, 0, 0, 0, 0}
     sus read_count, read_err := file.read(read_data)
     assert_eq_string(read_err, "")
     assert_eq_int(read_count, 10) fr fr Test file seeking
@@ -81,12 +81,12 @@ slay test_high_level_file_ops() {
     sus text, text_err := dropz.read_text_file("test.txt")
     assert_eq_string(text_err, "")
     assert_eq_string(text, "Hello from file") fr fr Test write_file
-    sus write_data []byte = []byte{87, 111, 114, 108, 100} fr fr "World"
+    sus write_data byte[value] = byte[value]{87, 111, 114, 108, 100} fr fr "World"
     sus write_err := dropz.write_file("output.txt", write_data, dropz.MODE_REGULAR)
     assert_eq_string(write_err, "") fr fr Test write_text_file
     sus text_write_err := dropz.write_text_file("text_output.txt", "Hello World", dropz.MODE_REGULAR)
     assert_eq_string(text_write_err, "") fr fr Test append_file
-    sus append_data []byte = []byte{33} fr fr "!"
+    sus append_data byte[value] = byte[value]{33} fr fr "!"
     sus append_err := dropz.append_file("output.txt", append_data, dropz.MODE_REGULAR)
     assert_eq_string(append_err, "") fr fr Test copy_file
     sus copy_size, copy_err := dropz.copy_file("output.txt", "copy_output.txt")
@@ -185,7 +185,7 @@ slay test_buffered_io() {
     sus custom_writer := dropz.new_writer_size(file, 2048)
     assert_true(custom_writer != cringe)
     assert_eq_int(custom_writer.size, 2048) fr fr Test reader operations
-    sus read_data []byte = []byte{0, 0, 0, 0, 0}
+    sus read_data byte[value] = byte[value]{0, 0, 0, 0, 0}
     sus read_count, read_err := reader.read(read_data)
     assert_eq_string(read_err, "")
     assert_eq_int(read_count, 10)
@@ -202,7 +202,7 @@ slay test_buffered_io() {
     sus string_data, string_err := reader.read_string(10) fr fr Read until newline
     assert_eq_string(string_err, "")
     assert_eq_string(string_data, "Hello line") fr fr Test writer operations
-    sus write_data []byte = []byte{72, 101, 108, 108, 111}
+    sus write_data byte[value] = byte[value]{72, 101, 108, 108, 111}
     sus write_count, write_err := writer.write(write_data)
     assert_eq_string(write_err, "")
     assert_eq_int(write_count, 10)
@@ -231,7 +231,7 @@ slay test_utility_functions() {
     sus copy_size, copy_err := dropz.copy_data(dst_file, src_file)
     assert_eq_string(copy_err, "")
     assert_eq_int(copy_size.(normie), 1024) fr fr Test copy_buffer
-    sus buffer []byte = []byte{0, 0, 0, 0, 0}
+    sus buffer byte[value] = byte[value]{0, 0, 0, 0, 0}
     sus buffer_size, buffer_err := dropz.copy_buffer(dst_file, src_file, buffer)
     assert_eq_string(buffer_err, "")
     assert_eq_int(buffer_size.(normie), 512) fr fr Test copy_n
@@ -264,7 +264,7 @@ slay test_self_hosting_support() {
     assert_true(temp_file != cringe)
     assert_true(temp_file.is_open)
     temp_file.close() fr fr Test write_object_file
-    sus obj_data []byte = []byte{0x7f, 0x45, 0x4c, 0x46} fr fr ELF magic
+    sus obj_data byte[value] = byte[value]{0x7f, 0x45, 0x4c, 0x46} fr fr ELF magic
     sus obj_err := dropz.write_object_file("output.o", obj_data)
     assert_eq_string(obj_err, "") fr fr Test read_config_file
     sus config_content, config_err := dropz.read_config_file("config.toml")
@@ -316,11 +316,11 @@ slay test_error_handling() {
     
     sus close_err := file.close()
     assert_eq_string(close_err, "") fr fr Test read on closed file
-    sus read_data []byte = []byte{0, 0, 0}
+    sus read_data byte[value] = byte[value]{0, 0, 0}
     sus read_count, read_err := file.read(read_data)
     assert_eq_int(read_count, 0)
     assert_eq_string(read_err, dropz.ErrClosed) fr fr Test write on closed file
-    sus write_data []byte = []byte{72, 101, 108, 108, 111}
+    sus write_data byte[value] = byte[value]{72, 101, 108, 108, 111}
     sus write_count, write_err := file.write(write_data)
     assert_eq_int(write_count, 0)
     assert_eq_string(write_err, dropz.ErrClosed) fr fr Test seek on closed file

@@ -10,7 +10,7 @@ struct AllocationEntry {
     spill addr *void
     spill size normie
     spill timestamp thicc
-    spill stack_trace []tea
+    spill stack_trace tea[value]
     spill thread_id normie
     spill generation normie
     spill freed lit
@@ -75,7 +75,7 @@ slay profiler_disable() lit {
 }
 
 fr fr Capture stack trace for allocation (real implementation)
-slay capture_stack_trace() []tea {
+slay capture_stack_trace() tea[value]{
     fr fr Real stack trace implementation using platform APIs
     yo platform_is_linux() {
         damn capture_linux_stack_trace()
@@ -89,13 +89,13 @@ slay capture_stack_trace() []tea {
 }
 
 fr fr Linux stack trace using backtrace()
-slay capture_linux_stack_trace() []tea {
+slay capture_linux_stack_trace() tea[value]{
     fr fr Use libexecinfo backtrace() function
     sus max_frames normie = 16
-    sus trace []tea = []
+    sus trace tea[value] = []
     
     fr fr Get stack addresses
-    sus addrs []uintptr = get_backtrace_addresses(max_frames)
+    sus addrs uintptr[value] = get_backtrace_addresses(max_frames)
     
     fr fr Resolve symbols for each address
     bestie i := 0; i < addrs.len() && i < max_frames; i = i + 1 {
@@ -109,9 +109,9 @@ slay capture_linux_stack_trace() []tea {
 }
 
 fr fr Windows stack trace using StackWalk64()
-slay capture_windows_stack_trace() []tea {
+slay capture_windows_stack_trace() tea[value]{
     fr fr Use Windows DbgHelp APIs
-    sus trace []tea = []
+    sus trace tea[value] = []
     
     fr fr Initialize symbol handler
     yo !init_windows_symbol_handler() {
@@ -134,13 +134,13 @@ slay capture_windows_stack_trace() []tea {
 }
 
 fr fr Darwin stack trace using dladdr()
-slay capture_darwin_stack_trace() []tea {
+slay capture_darwin_stack_trace() tea[value]{
     fr fr Use dladdr() for symbol resolution on macOS
     sus max_frames normie = 16
-    sus trace []tea = []
+    sus trace tea[value] = []
     
     fr fr Get stack addresses
-    sus addrs []uintptr = get_darwin_backtrace_addresses(max_frames)
+    sus addrs uintptr[value] = get_darwin_backtrace_addresses(max_frames)
     
     fr fr Resolve symbols
     bestie i := 0; i < addrs.len() && i < max_frames; i = i + 1 {
@@ -154,9 +154,9 @@ slay capture_darwin_stack_trace() []tea {
 }
 
 fr fr Generic fallback stack trace
-slay capture_generic_stack_trace() []tea {
+slay capture_generic_stack_trace() tea[value]{
     fr fr Simplified trace when platform APIs unavailable
-    sus trace []tea = []
+    sus trace tea[value] = []
     trace.push("stack_frame_1")
     trace.push("stack_frame_2") 
     trace.push("stack_frame_3")
@@ -178,10 +178,10 @@ slay platform_is_darwin() lit {
 }
 
 fr fr Get backtrace addresses (Linux implementation)
-slay get_backtrace_addresses(max_frames normie) []uintptr {
+slay get_backtrace_addresses(max_frames normie) uintptr[value]{
     fr fr Real implementation would use:
-    fr fr extern slay backtrace(array []uintptr, size normie) normie
-    sus addrs []uintptr = []
+    fr fr extern slay backtrace(array uintptr[value], size normie) normie
+    sus addrs uintptr[value] = []
     
     fr fr Simulate getting actual addresses from the call stack
     bestie i := 0; i < max_frames && i < 8; i = i + 1 {
@@ -235,9 +235,9 @@ slay get_windows_stack_frame(frame_index normie) tea {
 }
 
 fr fr Darwin backtrace implementation
-slay get_darwin_backtrace_addresses(max_frames normie) []uintptr {
+slay get_darwin_backtrace_addresses(max_frames normie) uintptr[value]{
     fr fr macOS implementation using execinfo.h
-    sus addrs []uintptr = []
+    sus addrs uintptr[value] = []
     
     bestie i := 0; i < max_frames && i < 8; i = i + 1 {
         sus base_addr uintptr = 0x100000000  fr fr Typical macOS base
@@ -424,7 +424,7 @@ slay profiler_detect_leaks() lit {
     
     sus leak_count normie = 0
     sus total_leaked_bytes normie = 0
-    sus large_leaks []AllocationEntry = []
+    sus large_leaks AllocationEntry[value] = []
     
     vibez.spill("Memory Leak Detection Report")
     vibez.spill("=" * 50)

@@ -128,14 +128,14 @@ slay print_debug(msg tea) tea {
 
 fr fr ===== ADVANCED FORMATTING =====
 
-slay print_table(headers []tea, rows [][]tea) lit {
+slay print_table(headers tea[value], rows tea[value][value]) lit {
     ready (len(headers) == 0 || len(rows) == 0) {
         print_error("Empty table data")
         damn based
     }
     
     fr fr Calculate column widths
-    sus col_widths []drip = make([]drip, len(headers))
+    sus col_widths drip[value] = make(drip[value], len(headers))
     sus i drip = 0
     bestie (i < len(headers)) {
         col_widths[i] = len(headers[i])
@@ -145,7 +145,7 @@ slay print_table(headers []tea, rows [][]tea) lit {
     fr fr Check all rows for max width
     sus row_idx drip = 0
     bestie (row_idx < len(rows)) {
-        sus row []tea = rows[row_idx]
+        sus row tea[value] = rows[row_idx]
         sus col_idx drip = 0
         bestie (col_idx < len(row) && col_idx < len(col_widths)) {
             ready (len(row[col_idx]) > col_widths[col_idx]) {
@@ -170,7 +170,7 @@ slay print_table(headers []tea, rows [][]tea) lit {
     damn based
 }
 
-slay print_table_row(row []tea, col_widths []drip) lit {
+slay print_table_row(row tea[value], col_widths drip[value]) lit {
     spill("|")
     sus i drip = 0
     bestie (i < len(row)) {
@@ -191,7 +191,7 @@ slay print_table_row(row []tea, col_widths []drip) lit {
     damn based
 }
 
-slay print_table_separator(col_widths []drip) lit {
+slay print_table_separator(col_widths drip[value]) lit {
     spill("+")
     sus i drip = 0
     bestie (i < len(col_widths)) {

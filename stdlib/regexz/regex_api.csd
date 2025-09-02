@@ -22,8 +22,8 @@ slay regex_match_at(engine *RegexEngine, text tea, start_pos drip) yikes<MatchRe
     damn match_regex(engine, text, start_pos)
 }
 
-slay regex_find_all(engine *RegexEngine, text tea) yikes<[]MatchResult> {
-    sus matches []MatchResult = create_array()
+slay regex_find_all(engine *RegexEngine, text tea) yikes<MatchResult[value]> {
+    sus matches MatchResult[value] = create_array()
     sus position drip = 0
     
     bestie (position < text.len()) {
@@ -49,7 +49,7 @@ slay regex_find_all(engine *RegexEngine, text tea) yikes<[]MatchResult> {
 
 # Replacement functions
 slay regex_replace(engine *RegexEngine, text tea, replacement tea) yikes<tea> {
-    sus matches []MatchResult = regex_find_all(engine, text) fam {
+    sus matches MatchResult[value] = regex_find_all(engine, text) fam {
         when error -> yikes error
     }
     
@@ -77,7 +77,7 @@ slay regex_replace(engine *RegexEngine, text tea, replacement tea) yikes<tea> {
 }
 
 slay regex_replace_func(engine *RegexEngine, text tea, replacer slay(MatchResult) tea) yikes<tea> {
-    sus matches []MatchResult = regex_find_all(engine, text) fam {
+    sus matches MatchResult[value] = regex_find_all(engine, text) fam {
         when error -> yikes error
     }
     
@@ -99,8 +99,8 @@ slay regex_replace_func(engine *RegexEngine, text tea, replacer slay(MatchResult
 }
 
 # String splitting
-slay regex_split(engine *RegexEngine, text tea) yikes<[]tea> {
-    sus matches []MatchResult = regex_find_all(engine, text) fam {
+slay regex_split(engine *RegexEngine, text tea) yikes<tea[value]> {
+    sus matches MatchResult[value] = regex_find_all(engine, text) fam {
         when error -> yikes error
     }
     
@@ -108,7 +108,7 @@ slay regex_split(engine *RegexEngine, text tea) yikes<[]tea> {
         damn [text]
     }
     
-    sus parts []tea = create_array()
+    sus parts tea[value] = create_array()
     sus last_pos drip = 0
     
     bestie (match in matches) {

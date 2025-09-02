@@ -223,9 +223,9 @@ slay test_error_aggregation() {
     sus aggregator error_aggregator = new_error_aggregator(5, 10000)
     
     fr fr Create multiple errors with different characteristics
-    sus correlations []correlation_id = []
-    sus contexts []trace_context = []
-    sus errors []enhanced_error = []
+    sus correlations correlation_id[value] = []
+    sus contexts trace_context[value] = []
+    sus errors enhanced_error[value] = []
     
     fr fr Create 3 different correlation groups
     bestie i := 0; i < 3; i++ {

@@ -98,9 +98,9 @@ slay minimal_config() LinterConfig {
 }
 
 // Main linting function - comprehensive analysis
-slay lint_code(source tea, config LinterConfig, file_path tea) []LintIssue {
-    sus issues []LintIssue = []
-    sus lines []tea = split_str(source, "\n")
+slay lint_code(source tea, config LinterConfig, file_path tea) LintIssue[value]{
+    sus issues LintIssue[value] = []
+    sus lines tea[value] = split_str(source, "\n")
     sus line_num drip = 1
     sus nesting_level drip = 0
     sus in_function lit = cringe
@@ -163,7 +163,7 @@ slay lint_code(source tea, config LinterConfig, file_path tea) []LintIssue {
 }
 
 // === CRITICAL RULES 1-5: STYLE ENFORCEMENT ===
-slay check_style_rules(issues []LintIssue, line tea, line_num drip, config LinterConfig, file_path tea) {
+slay check_style_rules(issues LintIssue[value], line tea, line_num drip, config LinterConfig, file_path tea) {
     // RULE 1: Line length enforcement
     ready (len_str(line) > config.max_line_length) {
         sus issue LintIssue = LintIssue{
@@ -241,7 +241,7 @@ slay check_style_rules(issues []LintIssue, line tea, line_num drip, config Linte
 }
 
 // === CRITICAL RULES 6-15: SECURITY ANALYSIS ===
-slay check_security_rules(issues []LintIssue, line tea, line_num drip, file_path tea) {
+slay check_security_rules(issues LintIssue[value], line tea, line_num drip, file_path tea) {
     // RULE 6: Hardcoded secrets detection
     ready (contains_hardcoded_secret(line)) {
         sus issue LintIssue = LintIssue{
@@ -319,7 +319,7 @@ slay check_security_rules(issues []LintIssue, line tea, line_num drip, file_path
 }
 
 // === CRITICAL RULES 16-25: SAFETY PATTERNS ===
-slay check_safety_rules(issues []LintIssue, line tea, line_num drip, file_path tea) {
+slay check_safety_rules(issues LintIssue[value], line tea, line_num drip, file_path tea) {
     // RULE 16: Division by zero
     ready (contains_division_by_zero(line)) {
         sus issue LintIssue = LintIssue{
@@ -397,7 +397,7 @@ slay check_safety_rules(issues []LintIssue, line tea, line_num drip, file_path t
 }
 
 // === CRITICAL RULES 26-35: PERFORMANCE OPTIMIZATION ===
-slay check_performance_rules(issues []LintIssue, line tea, line_num drip, file_path tea) {
+slay check_performance_rules(issues LintIssue[value], line tea, line_num drip, file_path tea) {
     // RULE 26: String concatenation in loops
     ready (contains_inefficient_string_concat(line)) {
         sus issue LintIssue = LintIssue{
@@ -475,7 +475,7 @@ slay check_performance_rules(issues []LintIssue, line tea, line_num drip, file_p
 }
 
 // === CRITICAL RULES 36-42: PATTERN DETECTION ===
-slay check_pattern_rules(issues []LintIssue, line tea, line_num drip, file_path tea) {
+slay check_pattern_rules(issues LintIssue[value], line tea, line_num drip, file_path tea) {
     // RULE 36: Dead code detection
     ready (contains_dead_code(line)) {
         sus issue LintIssue = LintIssue{
@@ -644,7 +644,7 @@ slay update_nesting_level(line tea, current_level drip) drip {
 
 // Security pattern detection helpers
 slay contains_hardcoded_secret(line tea) lit {
-    sus secret_patterns []tea = [
+    sus secret_patterns tea[value] = [
         "password",
         "secret", 
         "api_key",
@@ -669,7 +669,7 @@ slay contains_hardcoded_secret(line tea) lit {
 
 slay contains_api_key_pattern(line tea) lit {
     // Common API key prefixes
-    sus api_prefixes []tea = [
+    sus api_prefixes tea[value] = [
         "sk_",
         "pk_", 
         "ak_",
@@ -698,7 +698,7 @@ slay contains_sql_injection_risk(line tea) lit {
 }
 
 slay contains_unsafe_operation(line tea) lit {
-    sus unsafe_patterns []tea = [
+    sus unsafe_patterns tea[value] = [
         "unsafe_",
         "raw_pointer",
         "direct_memory",
@@ -720,7 +720,7 @@ slay contains_unsafe_operation(line tea) lit {
 }
 
 slay contains_weak_crypto(line tea) lit {
-    sus weak_functions []tea = [
+    sus weak_functions tea[value] = [
         "md5(",
         "sha1(",
         "des(",
@@ -780,7 +780,7 @@ slay contains_redundant_computation(line tea) lit {
 }
 
 slay contains_expensive_loop_operation(line tea) lit {
-    sus expensive_ops []tea = [
+    sus expensive_ops tea[value] = [
         "sort(",
         "search(",
         "parse(",
@@ -971,7 +971,7 @@ slay find_camel_case_pos(line tea) drip {
 }
 
 slay find_secret_position(line tea) drip {
-    sus secret_words []tea = ["password", "secret", "api_key", "token"]
+    sus secret_words tea[value] = ["password", "secret", "api_key", "token"]
     sus i drip = 0
     bestie (i < len(secret_words)) {
         sus pos drip = index_of(line, secret_words[i])
@@ -984,7 +984,7 @@ slay find_secret_position(line tea) drip {
 }
 
 slay find_api_key_position(line tea) drip {
-    sus prefixes []tea = ["sk_", "pk_", "ak_", "key_", "api_"]
+    sus prefixes tea[value] = ["sk_", "pk_", "ak_", "key_", "api_"]
     sus i drip = 0
     bestie (i < len(prefixes)) {
         sus pos drip = index_of(line, prefixes[i])
@@ -1013,7 +1013,7 @@ slay find_unsafe_position(line tea) drip {
 }
 
 slay find_crypto_function_position(line tea) drip {
-    sus crypto_funcs []tea = ["md5(", "sha1(", "des("]
+    sus crypto_funcs tea[value] = ["md5(", "sha1(", "des("]
     sus i drip = 0
     bestie (i < len(crypto_funcs)) {
         sus pos drip = index_of(line, crypto_funcs[i])
@@ -1091,7 +1091,7 @@ slay find_redundant_computation_position(line tea) drip {
 }
 
 slay find_expensive_operation_position(line tea) drip {
-    sus expensive_ops []tea = ["sort(", "search(", "parse("]
+    sus expensive_ops tea[value] = ["sort(", "search(", "parse("]
     sus i drip = 0
     bestie (i < len(expensive_ops)) {
         sus pos drip = index_of(line, expensive_ops[i])
@@ -1148,7 +1148,7 @@ slay find_error_handling_position(line tea) drip {
 }
 
 // Complexity and nesting issue helpers
-slay add_complexity_issue(issues []LintIssue, line_num drip, current_complexity drip, max_complexity drip, file_path tea) {
+slay add_complexity_issue(issues LintIssue[value], line_num drip, current_complexity drip, max_complexity drip, file_path tea) {
     sus issue LintIssue = LintIssue{
         rule_id: "function-complexity",
         severity: "warning",
@@ -1162,7 +1162,7 @@ slay add_complexity_issue(issues []LintIssue, line_num drip, current_complexity 
     push(issues, issue)
 }
 
-slay add_nesting_issue(issues []LintIssue, line_num drip, current_depth drip, max_depth drip, file_path tea) {
+slay add_nesting_issue(issues LintIssue[value], line_num drip, current_depth drip, max_depth drip, file_path tea) {
     sus issue LintIssue = LintIssue{
         rule_id: "excessive-nesting",
         severity: "warning", 
@@ -1177,7 +1177,7 @@ slay add_nesting_issue(issues []LintIssue, line_num drip, current_depth drip, ma
 }
 
 // Result formatting and statistics
-slay calculate_stats(issues []LintIssue) LinterStats {
+slay calculate_stats(issues LintIssue[value]) LinterStats {
     sus stats LinterStats = LinterStats{
         total_issues: len(issues),
         errors: 0,
@@ -1201,7 +1201,7 @@ slay calculate_stats(issues []LintIssue) LinterStats {
     damn stats
 }
 
-slay format_results(issues []LintIssue, file_path tea) tea {
+slay format_results(issues LintIssue[value], file_path tea) tea {
     ready (len(issues) == 0) {
         damn "✅ No lint issues found! Your CURSED code is absolutely fire! 🔥\n"
     }
@@ -1228,11 +1228,11 @@ slay format_results(issues []LintIssue, file_path tea) tea {
     output = concat_str(output, "\n")
     
     // Group issues by category
-    sus categories []tea = ["security", "safety", "style", "performance", "patterns", "complexity"]
+    sus categories tea[value] = ["security", "safety", "style", "performance", "patterns", "complexity"]
     sus c drip = 0
     bestie (c < len(categories)) {
         sus category tea = categories[c]
-        sus category_issues []LintIssue = filter_issues_by_category(issues, category)
+        sus category_issues LintIssue[value] = filter_issues_by_category(issues, category)
         
         ready (len(category_issues) > 0) {
             output = concat_str(output, "🔍 " + uppercase_first(category) + " Issues (" + int_to_str(len(category_issues)) + "):\n")
@@ -1272,8 +1272,8 @@ slay format_results(issues []LintIssue, file_path tea) tea {
     damn output
 }
 
-slay filter_issues_by_category(issues []LintIssue, category tea) []LintIssue {
-    sus filtered []LintIssue = []
+slay filter_issues_by_category(issues LintIssue[value], category tea) LintIssue[value]{
+    sus filtered LintIssue[value] = []
     sus i drip = 0
     bestie (i < len(issues)) {
         sus issue LintIssue = issues[i]
@@ -1307,28 +1307,28 @@ slay uppercase_first(text tea) tea {
 // Public API functions
 slay lint_production(source tea, file_path tea) tea {
     sus config LinterConfig = production_config()
-    sus issues []LintIssue = lint_code(source, config, file_path)
+    sus issues LintIssue[value] = lint_code(source, config, file_path)
     damn format_results(issues, file_path)
 }
 
 slay lint_development(source tea, file_path tea) tea {
     sus config LinterConfig = dev_config()
-    sus issues []LintIssue = lint_code(source, config, file_path)
+    sus issues LintIssue[value] = lint_code(source, config, file_path)
     damn format_results(issues, file_path)
 }
 
 slay lint_minimal(source tea, file_path tea) tea {
     sus config LinterConfig = minimal_config()
-    sus issues []LintIssue = lint_code(source, config, file_path)
+    sus issues LintIssue[value] = lint_code(source, config, file_path)
     damn format_results(issues, file_path)
 }
 
 slay lint_with_config(source tea, config LinterConfig, file_path tea) tea {
-    sus issues []LintIssue = lint_code(source, config, file_path)
+    sus issues LintIssue[value] = lint_code(source, config, file_path)
     damn format_results(issues, file_path)
 }
 
-slay lint_and_get_issues(source tea, config LinterConfig, file_path tea) []LintIssue {
+slay lint_and_get_issues(source tea, config LinterConfig, file_path tea) LintIssue[value]{
     damn lint_code(source, config, file_path)
 }
 

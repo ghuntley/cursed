@@ -26,7 +26,7 @@ slay main() {
     vibez.spill("🏃 Phase 2: Executing all discovered tests...")
     sus execution_start normie = clock_bait.now_ns()
     
-    sus execution_results []TestExecutionResult = execute_all_stdlib_tests()
+    sus execution_results TestExecutionResult[value] = execute_all_stdlib_tests()
     
     sus execution_duration normie = (clock_bait.now_ns() - execution_start) / 1000000
     vibez.spillf("✅ Test execution completed in {} ms", execution_duration)
@@ -59,7 +59,7 @@ slay main() {
 }
 
 fr fr Analyze test execution results
-slay analyze_test_results(results []TestExecutionResult) lit {
+slay analyze_test_results(results TestExecutionResult[value]) lit {
     sus total_passed normie = 0
     sus total_failed normie = 0
     sus successful_modules normie = 0
@@ -97,7 +97,7 @@ slay analyze_test_results(results []TestExecutionResult) lit {
 
 fr fr Generate comprehensive coverage report
 slay generate_comprehensive_coverage_report(discovery TestDiscoveryResult, 
-                                           results []TestExecutionResult) lit {
+                                           results TestExecutionResult[value]) lit {
     vibez.spill("📈 Comprehensive Coverage Report")
     vibez.spill("=" * 45)
     
@@ -164,7 +164,7 @@ slay generate_comprehensive_coverage_report(discovery TestDiscoveryResult,
 }
 
 fr fr Analyze performance metrics
-slay analyze_performance_metrics(results []TestExecutionResult) lit {
+slay analyze_performance_metrics(results TestExecutionResult[value]) lit {
     sus fastest_module tea = ""
     sus slowest_module tea = ""
     sus fastest_time normie = 999999999
@@ -229,7 +229,7 @@ slay analyze_performance_metrics(results []TestExecutionResult) lit {
 
 fr fr Helper functions for module categorization
 slay is_core_module(module_name tea) lit {
-    sus core_modules []tea = [
+    sus core_modules tea[value] = [
         "testz", "collections", "string_simple", "mathz", "error_drip",
         "atomic_drip", "concurrenz", "io", "fs", "memory", "gc", "runtime_core"
     ]
@@ -269,7 +269,7 @@ slay categorize_module(module_name tea) tea {
 
 fr fr Print final comprehensive summary
 slay print_final_test_summary(discovery TestDiscoveryResult, 
-                             results []TestExecutionResult) lit {
+                             results TestExecutionResult[value]) lit {
     vibez.spill("🎯 FINAL TEST SUITE SUMMARY")
     vibez.spill("=" * 50)
     

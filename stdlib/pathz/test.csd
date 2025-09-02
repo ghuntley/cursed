@@ -292,16 +292,16 @@ slay test_directory_operations() {
     test_group("Directory operations")
     
     fr fr Test directory listing
-    sus contents1 []tea = path_list_dir("/home/user")
+    sus contents1 tea[value] = path_list_dir("/home/user")
     assert_true(len(contents1) > 0)
     assert_true(array_contains(contents1, "Documents"))
     
-    sus contents2 []tea = path_list_dir("/usr/bin")
+    sus contents2 tea[value] = path_list_dir("/usr/bin")
     assert_true(len(contents2) > 0)
     assert_true(array_contains(contents2, "ls"))
     
     fr fr Test non-existent directory
-    sus empty []tea = path_list_dir("/nonexistent")
+    sus empty tea[value] = path_list_dir("/nonexistent")
     assert_eq_int(len(empty), 0)
     
     fr fr Test directory creation (simulated)
@@ -506,7 +506,7 @@ slay string_ends_with(str tea, suffix tea) lit {
     damn len(str) >= len(suffix)
 }
 
-slay array_contains(arr []tea, item tea) lit {
+slay array_contains(arr tea[value], item tea) lit {
     fr fr Check if array contains item
     sus i normie = 0
     bestie i < len(arr) {

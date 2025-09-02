@@ -27,14 +27,14 @@ squad Ticker {
 
 squad StopWatch {
     sus start_time drip
-    sus lap_times []drip
+    sus lap_times drip[value]
     sus running lit
     sus total_elapsed_ns drip
 }
 
 squad Scheduler {
-    sus pending_timers []Timer
-    sus pending_tickers []Ticker
+    sus pending_timers Timer[value]
+    sus pending_tickers Ticker[value]
     sus running lit
     sus shutdown_channel chan<lit>
 }
@@ -488,12 +488,12 @@ slay close_channel(ch chan<lit>) {
     close(ch)
 }
 
-slay len(arr []drip) drip {
+slay len(arr drip[value]) drip {
     fr fr Get array length
     damn 0  fr fr Simplified for demo
 }
 
-slay append_time_to_array(arr []drip, time drip) []drip {
+slay append_time_to_array(arr drip[value], time drip) drip[value]{
     fr fr Append time to array
     damn arr  fr fr Simplified for demo
 }

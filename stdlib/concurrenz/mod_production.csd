@@ -31,14 +31,14 @@ fr fr ==========================================================================
 
 fr fr Complete CPU register context (platform-specific sizes)
 struct ProductionCpuContext {
-    spill registers [32]thicc       fr fr General purpose registers
-    spill xmm_registers [16]thicc   fr fr SSE/AVX vector registers  
+    spill registers thicc[32]       fr fr General purpose registers
+    spill xmm_registers thicc[16]   fr fr SSE/AVX vector registers  
     spill flags_register thicc      fr fr CPU flags register
     spill stack_pointer thicc       fr fr Stack pointer register
     spill instruction_pointer thicc  fr fr Instruction pointer register
     spill frame_pointer thicc       fr fr Frame pointer register
     spill tls_pointer thicc         fr fr Thread-local storage pointer
-    spill fpu_state [512]normie     fr fr x87/SSE floating point state
+    spill fpu_state normie[512]     fr fr x87/SSE floating point state
 }
 
 fr fr Production goroutine with complete OS integration
@@ -63,8 +63,8 @@ struct ProductionGoroutine {
 
 fr fr Work-stealing queue for load balancing
 struct ProductionWorkQueue {
-    spill tasks []thicc             fr fr Task function pointers array
-    spill task_data []thicc         fr fr Task context data array
+    spill tasks thicc[value]             fr fr Task function pointers array
+    spill task_data thicc[value]         fr fr Task context data array
     spill head normie               fr fr Queue head position (atomic)
     spill tail normie               fr fr Queue tail position (atomic)  
     spill size normie               fr fr Current queue size (atomic)
@@ -92,7 +92,7 @@ struct ProductionWorkerThread {
 
 fr fr Global scheduler with work-stealing and load balancing
 struct ProductionScheduler {
-    spill worker_threads []ProductionWorkerThread  fr fr Array of OS worker threads
+    spill worker_threads ProductionWorkerThread[value]  fr fr Array of OS worker threads
     spill num_workers normie        fr fr Number of worker threads
     spill global_queue ProductionWorkQueue  fr fr Global work queue
     spill active_goroutines normie  fr fr Active goroutine count (atomic)

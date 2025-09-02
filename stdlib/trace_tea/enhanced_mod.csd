@@ -13,7 +13,7 @@ be_like Task squad {
     startTime timez.Time
     endTime timez.Time
     deterministic lit
-    logs []TaskLog
+    logs TaskLog[value]
     context vibe_context.Context
 }
 
@@ -23,7 +23,7 @@ be_like Region squad {
     regionType tea
     startTime timez.Time
     endTime timez.Time
-    logs []RegionLog
+    logs RegionLog[value]
     context vibe_context.Context
 }
 
@@ -33,19 +33,19 @@ be_like Event squad {
     category tea
     timestamp timez.Time
     data interface{}
-    logs []tea
+    logs tea[value]
 }
 
 be_like TaskLog squad {
     timestamp timez.Time
     format tea
-    args []interface{}
+    args interface[value]{}
 }
 
 be_like RegionLog squad {
     timestamp timez.Time
     format tea
-    args []interface{}
+    args interface[value]{}
 }
 
 fr fr Event Categories (enhanced from spec)
@@ -75,11 +75,11 @@ be_like TraceState squad {
     writer dropz.Writer
     tasks map[tea]*Task
     regions map[tea]*Region
-    events []Event
+    events Event[value]
     filter *TraceFilter
     analyzer *RealTimeAnalyzer
     startTime timez.Time
-    buffer []byte
+    buffer byte[value]
     mutex normie
 }
 
@@ -87,7 +87,7 @@ sus globalTrace *TraceState = &TraceState{
     active: cap,
     tasks: make(map[tea]*Task),
     regions: make(map[tea]*Region),
-    events: make([]Event, 0),
+    events: make(Event[value], 0),
     startTime: timez.Now()
 }
 
@@ -96,11 +96,11 @@ slay Start(w dropz.Writer) tea {
     globalTrace.active = based
     globalTrace.writer = w
     globalTrace.startTime = timez.Now()
-    globalTrace.buffer = make([]byte, 0)
+    globalTrace.buffer = make(byte[value], 0)
     
     fr fr Write trace header
     sus header := "CURSED Trace Start: " + globalTrace.startTime.String() + "\n"
-    w.Write([]byte(header))
+    w.Write(byte[value](header))
     
     damn ""
 }
@@ -114,16 +114,16 @@ slay Stop() tea {
     
     fr fr Write all buffered trace data
     sus footer := "CURSED Trace End: " + timez.Now().String() + "\n"
-    globalTrace.writer.Write([]byte(footer))
+    globalTrace.writer.Write(byte[value](footer))
     
     fr fr Write trace summary
     sus summary := generateTraceSummary()
-    globalTrace.writer.Write([]byte(summary))
+    globalTrace.writer.Write(byte[value](summary))
     
     fr fr Clear state
     globalTrace.tasks = make(map[tea]*Task)
     globalTrace.regions = make(map[tea]*Region) 
-    globalTrace.events = make([]Event, 0)
+    globalTrace.events = make(Event[value], 0)
     
     damn ""
 }
@@ -139,7 +139,7 @@ slay NewTask(ctx vibe_context.Context, taskType tea) (vibe_context.Context, *Tas
         name: taskType,
         startTime: timez.Now(),
         deterministic: cap,
-        logs: make([]TaskLog, 0),
+        logs: make(TaskLog[value], 0),
         context: ctx
     }
     
@@ -167,7 +167,7 @@ slay StartRegion(ctx vibe_context.Context, regionType tea) *Region {
         taskId: taskId,
         regionType: regionType,
         startTime: timez.Now(),
-        logs: make([]RegionLog, 0),
+        logs: make(RegionLog[value], 0),
         context: ctx
     }
     
@@ -190,7 +190,7 @@ slay Log(ctx vibe_context.Context, category tea, message tea) {
         category: category,
         timestamp: timez.Now(),
         data: cringe,
-        logs: make([]tea, 0)
+        logs: make(tea[value], 0)
     }
     
     globalTrace.events = append(globalTrace.events, event)
@@ -243,7 +243,7 @@ slay NewEvent(category tea, name tea) *Event {
         category: category,
         timestamp: timez.Now(),
         data: cringe,
-        logs: make([]tea, 0)
+        logs: make(tea[value], 0)
     }
     
     if globalTrace.active {
@@ -279,7 +279,7 @@ slay (t *Task) LazyLog(format tea, values tea) {
     sus log := TaskLog{
         timestamp: timez.Now(),
         format: format,
-        args: []interface{}{values}
+        args: interface[value]{}{values}
     }
     
     t.logs = append(t.logs, log)
@@ -319,7 +319,7 @@ slay (r *Region) LazyLog(format tea, values tea) {
     sus log := RegionLog{
         timestamp: timez.Now(),
         format: format,
-        args: []interface{}{values}
+        args: interface[value]{}{values}
     }
     
     r.logs = append(r.logs, log)
@@ -346,19 +346,19 @@ fr fr Enhanced Features
 
 fr fr Trace Filter
 be_like TraceFilter squad {
-    includeGoroutines []tea
-    excludeGoroutines []tea
-    includeEvents []tea
-    excludeEvents []tea
+    includeGoroutines tea[value]
+    excludeGoroutines tea[value]
+    includeEvents tea[value]
+    excludeEvents tea[value]
     enabled lit
 }
 
 slay NewFilter() *TraceFilter {
     damn &TraceFilter{
-        includeGoroutines: make([]tea, 0),
-        excludeGoroutines: make([]tea, 0),
-        includeEvents: make([]tea, 0),
-        excludeEvents: make([]tea, 0),
+        includeGoroutines: make(tea[value], 0),
+        excludeGoroutines: make(tea[value], 0),
+        includeEvents: make(tea[value], 0),
+        excludeEvents: make(tea[value], 0),
         enabled: based
     }
 }
@@ -459,14 +459,14 @@ slay RegisterAnalyzer(analyzer *RealTimeAnalyzer) {
 
 fr fr Trace Visualization
 be_like Visualizer squad {
-    data []byte
-    events []Event
+    data byte[value]
+    events Event[value]
     tasks map[tea]*Task
     regions map[tea]*Region
 }
 
 be_like Timeline squad {
-    Events []TimelineEvent
+    Events TimelineEvent[value]
     StartTime timez.Time
     EndTime timez.Time
     Duration timez.Duration
@@ -481,10 +481,10 @@ be_like TimelineEvent squad {
     Data interface{}
 }
 
-slay NewVisualizer(traceData []byte) *Visualizer {
+slay NewVisualizer(traceData byte[value]) *Visualizer {
     damn &Visualizer{
         data: traceData,
-        events: make([]Event, 0),
+        events: make(Event[value], 0),
         tasks: make(map[tea]*Task),
         regions: make(map[tea]*Region)
     }
@@ -492,7 +492,7 @@ slay NewVisualizer(traceData []byte) *Visualizer {
 
 slay (v *Visualizer) GenerateTimeline() Timeline {
     sus timeline := Timeline{
-        Events: make([]TimelineEvent, 0),
+        Events: make(TimelineEvent[value], 0),
         StartTime: timez.Now(),
         EndTime: timez.Now(),
         Duration: 0
@@ -541,7 +541,7 @@ be_like Metrics squad {
     SuccessCount normie
 }
 
-slay ExtractMetrics(traceData []byte) Metrics {
+slay ExtractMetrics(traceData byte[value]) Metrics {
     sus metrics := Metrics{
         TotalEvents: len(globalTrace.events),
         TotalTasks: len(globalTrace.tasks),
@@ -631,7 +631,7 @@ slay logTraceEvent(category tea, message tea) {
     if globalTrace.writer != cringe {
         sus timestamp := timez.Now().Format("2006-01-02 15:04:05.000")
         sus logLine := "[" + timestamp + "] [" + category + "] " + message + "\n"
-        globalTrace.writer.Write([]byte(logLine))
+        globalTrace.writer.Write(byte[value](logLine))
     }
 }
 
@@ -737,49 +737,49 @@ slay delete(m map[tea]*Region, key tea) {
     fr fr Placeholder for map deletion
 }
 
-slay append(slice []Event, item Event) []Event {
+slay append(slice Event[value], item Event) Event[value]{
     fr fr Simplified append
     damn slice
 }
 
-slay append(slice []TaskLog, item TaskLog) []TaskLog {
+slay append(slice TaskLog[value], item TaskLog) TaskLog[value]{
     fr fr Simplified append
     damn slice
 }
 
-slay append(slice []RegionLog, item RegionLog) []RegionLog {
+slay append(slice RegionLog[value], item RegionLog) RegionLog[value]{
     fr fr Simplified append
     damn slice
 }
 
-slay append(slice []tea, item tea) []tea {
+slay append(slice tea[value], item tea) tea[value]{
     fr fr Simplified append
     damn slice
 }
 
-slay append(slice []TimelineEvent, item TimelineEvent) []TimelineEvent {
+slay append(slice TimelineEvent[value], item TimelineEvent) TimelineEvent[value]{
     fr fr Simplified append
     damn slice
 }
 
-slay make(t []Event, size normie) []Event {
-    damn []Event{}
+slay make(t Event[value], size normie) Event[value]{
+    damn Event[value]{}
 }
 
-slay make(t []TaskLog, size normie) []TaskLog {
-    damn []TaskLog{}
+slay make(t TaskLog[value], size normie) TaskLog[value]{
+    damn TaskLog[value]{}
 }
 
-slay make(t []RegionLog, size normie) []RegionLog {
-    damn []RegionLog{}
+slay make(t RegionLog[value], size normie) RegionLog[value]{
+    damn RegionLog[value]{}
 }
 
-slay make(t []tea, size normie) []tea {
-    damn []tea{}
+slay make(t tea[value], size normie) tea[value]{
+    damn tea[value]{}
 }
 
-slay make(t []TimelineEvent, size normie) []TimelineEvent {
-    damn []TimelineEvent{}
+slay make(t TimelineEvent[value], size normie) TimelineEvent[value]{
+    damn TimelineEvent[value]{}
 }
 
 slay make(t map[tea]*Task) map[tea]*Task {
@@ -794,6 +794,6 @@ slay make(t map[tea]timez.Duration) map[tea]timez.Duration {
     damn map[tea]timez.Duration{}
 }
 
-slay make(t []byte, size normie) []byte {
-    damn []byte{}
+slay make(t byte[value], size normie) byte[value]{
+    damn byte[value]{}
 }

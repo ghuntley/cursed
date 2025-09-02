@@ -52,7 +52,7 @@ slay test_style_rules() {
     sus config LinterConfig = production_config()
     
     vibez.spill("Testing long line violation...")
-    sus long_line_issues []LintIssue = lint_and_get_issues(long_line_test, config, "style_test.csd")
+    sus long_line_issues LintIssue[value] = lint_and_get_issues(long_line_test, config, "style_test.csd")
     ready (len(long_line_issues) > 0) {
         vibez.spill("  ✅ Rule 1 (line-too-long) triggered correctly")
     } otherwise {
@@ -60,7 +60,7 @@ slay test_style_rules() {
     }
     
     vibez.spill("Testing variable naming violation...")
-    sus var_naming_issues []LintIssue = lint_and_get_issues(camel_case_test, config, "style_test.csd")
+    sus var_naming_issues LintIssue[value] = lint_and_get_issues(camel_case_test, config, "style_test.csd")
     ready (len(var_naming_issues) > 0) {
         vibez.spill("  ✅ Rule 2 (variable-naming) triggered correctly")
     } otherwise {
@@ -68,7 +68,7 @@ slay test_style_rules() {
     }
     
     vibez.spill("Testing function naming violation...")
-    sus func_naming_issues []LintIssue = lint_and_get_issues(function_naming_test, config, "style_test.csd")
+    sus func_naming_issues LintIssue[value] = lint_and_get_issues(function_naming_test, config, "style_test.csd")
     ready (len(func_naming_issues) > 0) {
         vibez.spill("  ✅ Rule 3 (function-naming) triggered correctly")
     } otherwise {
@@ -100,7 +100,7 @@ slay test_security_rules() {
     sus config LinterConfig = production_config()
     
     vibez.spill("Testing hardcoded secret detection...")
-    sus secret_issues []LintIssue = lint_and_get_issues(hardcoded_secret_test, config, "security_test.csd")
+    sus secret_issues LintIssue[value] = lint_and_get_issues(hardcoded_secret_test, config, "security_test.csd")
     ready (len(secret_issues) > 0) {
         vibez.spill("  ✅ Rule 6 (hardcoded-secret) triggered correctly")
     } otherwise {
@@ -108,7 +108,7 @@ slay test_security_rules() {
     }
     
     vibez.spill("Testing API key pattern detection...")
-    sus api_issues []LintIssue = lint_and_get_issues(api_key_test, config, "security_test.csd")
+    sus api_issues LintIssue[value] = lint_and_get_issues(api_key_test, config, "security_test.csd")
     ready (len(api_issues) > 0) {
         vibez.spill("  ✅ Rule 7 (api-key-pattern) triggered correctly")
     } otherwise {
@@ -116,7 +116,7 @@ slay test_security_rules() {
     }
     
     vibez.spill("Testing SQL injection detection...")
-    sus sql_issues []LintIssue = lint_and_get_issues(sql_injection_test, config, "security_test.csd")
+    sus sql_issues LintIssue[value] = lint_and_get_issues(sql_injection_test, config, "security_test.csd")
     ready (len(sql_issues) > 0) {
         vibez.spill("  ✅ Rule 8 (sql-injection) triggered correctly")
     } otherwise {
@@ -124,7 +124,7 @@ slay test_security_rules() {
     }
     
     vibez.spill("Testing unsafe operation detection...")
-    sus unsafe_issues []LintIssue = lint_and_get_issues(unsafe_operation_test, config, "security_test.csd")
+    sus unsafe_issues LintIssue[value] = lint_and_get_issues(unsafe_operation_test, config, "security_test.csd")
     ready (len(unsafe_issues) > 0) {
         vibez.spill("  ✅ Rule 9 (unsafe-operation) triggered correctly")
     } otherwise {
@@ -132,7 +132,7 @@ slay test_security_rules() {
     }
     
     vibez.spill("Testing weak cryptography detection...")
-    sus crypto_issues []LintIssue = lint_and_get_issues(weak_crypto_test, config, "security_test.csd")
+    sus crypto_issues LintIssue[value] = lint_and_get_issues(weak_crypto_test, config, "security_test.csd")
     ready (len(crypto_issues) > 0) {
         vibez.spill("  ✅ Rule 10 (weak-crypto) triggered correctly")
     } otherwise {
@@ -164,7 +164,7 @@ slay test_safety_rules() {
     sus config LinterConfig = production_config()
     
     vibez.spill("Testing division by zero detection...")
-    sus div_zero_issues []LintIssue = lint_and_get_issues(division_zero_test, config, "safety_test.csd")
+    sus div_zero_issues LintIssue[value] = lint_and_get_issues(division_zero_test, config, "safety_test.csd")
     ready (len(div_zero_issues) > 0) {
         vibez.spill("  ✅ Rule 16 (division-by-zero) triggered correctly")
     } otherwise {
@@ -172,7 +172,7 @@ slay test_safety_rules() {
     }
     
     vibez.spill("Testing unsafe array access detection...")
-    sus array_issues []LintIssue = lint_and_get_issues(unsafe_array_test, config, "safety_test.csd")
+    sus array_issues LintIssue[value] = lint_and_get_issues(unsafe_array_test, config, "safety_test.csd")
     ready (len(array_issues) > 0) {
         vibez.spill("  ✅ Rule 17 (unsafe-array-access) triggered correctly")
     } otherwise {
@@ -180,7 +180,7 @@ slay test_safety_rules() {
     }
     
     vibez.spill("Testing null dereference detection...")
-    sus null_issues []LintIssue = lint_and_get_issues(null_deref_test, config, "safety_test.csd")
+    sus null_issues LintIssue[value] = lint_and_get_issues(null_deref_test, config, "safety_test.csd")
     ready (len(null_issues) > 0) {
         vibez.spill("  ✅ Rule 18 (null-dereference) triggered correctly")
     } otherwise {
@@ -188,7 +188,7 @@ slay test_safety_rules() {
     }
     
     vibez.spill("Testing memory leak detection...")
-    sus memory_issues []LintIssue = lint_and_get_issues(memory_leak_test, config, "safety_test.csd")
+    sus memory_issues LintIssue[value] = lint_and_get_issues(memory_leak_test, config, "safety_test.csd")
     ready (len(memory_issues) > 0) {
         vibez.spill("  ✅ Rule 19 (memory-leak) triggered correctly")
     } otherwise {
@@ -196,7 +196,7 @@ slay test_safety_rules() {
     }
     
     vibez.spill("Testing integer overflow detection...")
-    sus overflow_issues []LintIssue = lint_and_get_issues(overflow_test, config, "safety_test.csd")
+    sus overflow_issues LintIssue[value] = lint_and_get_issues(overflow_test, config, "safety_test.csd")
     ready (len(overflow_issues) > 0) {
         vibez.spill("  ✅ Rule 20 (integer-overflow) triggered correctly")
     } otherwise {
@@ -214,7 +214,7 @@ slay test_performance_rules() {
     sus inefficient_concat_test tea = "bestie (i < count) { result = result + \"data\" }"
     
     // Rule 27: Unnecessary array copying
-    sus array_copy_test tea = "sus new_array []drip = copy(original_array)"
+    sus array_copy_test tea = "sus new_array drip[value] = copy(original_array)"
     
     // Rule 28: Redundant computation
     sus redundant_test tea = "bestie (i < len(array)) { process(len(array)) }"
@@ -228,7 +228,7 @@ slay test_performance_rules() {
     sus config LinterConfig = production_config()
     
     vibez.spill("Testing inefficient string concatenation...")
-    sus concat_issues []LintIssue = lint_and_get_issues(inefficient_concat_test, config, "performance_test.csd")
+    sus concat_issues LintIssue[value] = lint_and_get_issues(inefficient_concat_test, config, "performance_test.csd")
     ready (len(concat_issues) > 0) {
         vibez.spill("  ✅ Rule 26 (inefficient-string-concat) triggered correctly")
     } otherwise {
@@ -236,7 +236,7 @@ slay test_performance_rules() {
     }
     
     vibez.spill("Testing unnecessary array copying...")
-    sus copy_issues []LintIssue = lint_and_get_issues(array_copy_test, config, "performance_test.csd")
+    sus copy_issues LintIssue[value] = lint_and_get_issues(array_copy_test, config, "performance_test.csd")
     ready (len(copy_issues) > 0) {
         vibez.spill("  ✅ Rule 27 (unnecessary-array-copy) triggered correctly")
     } otherwise {
@@ -244,7 +244,7 @@ slay test_performance_rules() {
     }
     
     vibez.spill("Testing redundant computation...")
-    sus redundant_issues []LintIssue = lint_and_get_issues(redundant_test, config, "performance_test.csd")
+    sus redundant_issues LintIssue[value] = lint_and_get_issues(redundant_test, config, "performance_test.csd")
     ready (len(redundant_issues) > 0) {
         vibez.spill("  ✅ Rule 28 (redundant-computation) triggered correctly")
     } otherwise {
@@ -252,7 +252,7 @@ slay test_performance_rules() {
     }
     
     vibez.spill("Testing expensive loop operation...")
-    sus expensive_issues []LintIssue = lint_and_get_issues(expensive_loop_test, config, "performance_test.csd")
+    sus expensive_issues LintIssue[value] = lint_and_get_issues(expensive_loop_test, config, "performance_test.csd")
     ready (len(expensive_issues) > 0) {
         vibez.spill("  ✅ Rule 29 (expensive-loop-operation) triggered correctly")
     } otherwise {
@@ -260,7 +260,7 @@ slay test_performance_rules() {
     }
     
     vibez.spill("Testing inefficient data structure...")
-    sus ds_issues []LintIssue = lint_and_get_issues(inefficient_ds_test, config, "performance_test.csd")
+    sus ds_issues LintIssue[value] = lint_and_get_issues(inefficient_ds_test, config, "performance_test.csd")
     ready (len(ds_issues) > 0) {
         vibez.spill("  ✅ Rule 30 (inefficient-data-structure) triggered correctly")
     } otherwise {
@@ -298,7 +298,7 @@ slay test_pattern_rules() {
     sus config LinterConfig = production_config()
     
     vibez.spill("Testing dead code detection...")
-    sus dead_issues []LintIssue = lint_and_get_issues(dead_code_test, config, "pattern_test.csd")
+    sus dead_issues LintIssue[value] = lint_and_get_issues(dead_code_test, config, "pattern_test.csd")
     ready (len(dead_issues) > 0) {
         vibez.spill("  ✅ Rule 36 (dead-code) triggered correctly")
     } otherwise {
@@ -306,7 +306,7 @@ slay test_pattern_rules() {
     }
     
     vibez.spill("Testing magic number detection...")
-    sus magic_issues []LintIssue = lint_and_get_issues(magic_number_test, config, "pattern_test.csd")
+    sus magic_issues LintIssue[value] = lint_and_get_issues(magic_number_test, config, "pattern_test.csd")
     ready (len(magic_issues) > 0) {
         vibez.spill("  ✅ Rule 37 (magic-numbers) triggered correctly")
     } otherwise {
@@ -314,7 +314,7 @@ slay test_pattern_rules() {
     }
     
     vibez.spill("Testing complex boolean detection...")
-    sus boolean_issues []LintIssue = lint_and_get_issues(complex_boolean_test, config, "pattern_test.csd")
+    sus boolean_issues LintIssue[value] = lint_and_get_issues(complex_boolean_test, config, "pattern_test.csd")
     ready (len(boolean_issues) > 0) {
         vibez.spill("  ✅ Rule 39 (complex-boolean) triggered correctly")
     } otherwise {
@@ -322,7 +322,7 @@ slay test_pattern_rules() {
     }
     
     vibez.spill("Testing long parameter list detection...")
-    sus param_issues []LintIssue = lint_and_get_issues(long_params_test, config, "pattern_test.csd")
+    sus param_issues LintIssue[value] = lint_and_get_issues(long_params_test, config, "pattern_test.csd")
     ready (len(param_issues) > 0) {
         vibez.spill("  ✅ Rule 40 (long-parameter-list) triggered correctly")
     } otherwise {
@@ -330,7 +330,7 @@ slay test_pattern_rules() {
     }
     
     vibez.spill("Testing inconsistent error handling...")
-    sus error_issues []LintIssue = lint_and_get_issues(inconsistent_error_test, config, "pattern_test.csd")
+    sus error_issues LintIssue[value] = lint_and_get_issues(inconsistent_error_test, config, "pattern_test.csd")
     ready (len(error_issues) > 0) {
         vibez.spill("  ✅ Rule 41 (inconsistent-error-handling) triggered correctly")
     } otherwise {
@@ -338,7 +338,7 @@ slay test_pattern_rules() {
     }
     
     vibez.spill("Testing missing return detection...")
-    sus return_issues []LintIssue = lint_and_get_issues(missing_return_test, config, "pattern_test.csd")
+    sus return_issues LintIssue[value] = lint_and_get_issues(missing_return_test, config, "pattern_test.csd")
     ready (len(return_issues) > 0) {
         vibez.spill("  ✅ Rule 42 (missing-return) triggered correctly")
     } otherwise {
@@ -357,19 +357,19 @@ slay test_configuration_modes() {
     // Test production config (strict)
     vibez.spill("Testing production configuration (strict)...")
     sus prod_config LinterConfig = production_config()
-    sus prod_issues []LintIssue = lint_and_get_issues(test_code, prod_config, "config_test.csd")
+    sus prod_issues LintIssue[value] = lint_and_get_issues(test_code, prod_config, "config_test.csd")
     vibez.spill("  Production mode found " + int_to_str(len(prod_issues)) + " issues")
     
     // Test development config (relaxed)
     vibez.spill("Testing development configuration (relaxed)...")
     sus dev_config LinterConfig = dev_config()
-    sus dev_issues []LintIssue = lint_and_get_issues(test_code, dev_config, "config_test.csd")
+    sus dev_issues LintIssue[value] = lint_and_get_issues(test_code, dev_config, "config_test.csd")
     vibez.spill("  Development mode found " + int_to_str(len(dev_issues)) + " issues")
     
     // Test minimal config (essential only)
     vibez.spill("Testing minimal configuration (essential only)...")
     sus min_config LinterConfig = minimal_config()
-    sus min_issues []LintIssue = lint_and_get_issues(test_code, min_config, "config_test.csd")
+    sus min_issues LintIssue[value] = lint_and_get_issues(test_code, min_config, "config_test.csd")
     vibez.spill("  Minimal mode found " + int_to_str(len(min_issues)) + " issues")
     
     ready (len(prod_issues) >= len(dev_issues) && len(dev_issues) >= len(min_issues)) {

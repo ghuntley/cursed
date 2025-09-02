@@ -11,12 +11,12 @@ sus CHANNEL_BLOCKED normie = 2
 fr fr Channel representation
 vibe Channel<T> = smash {
     id normie,
-    buffer []T,
+    buffer T[value],
     capacity normie,
     size normie,
     state normie,
-    send_queue []normie,
-    recv_queue []normie,
+    send_queue normie[value],
+    recv_queue normie[value],
     closed lit
 }
 
@@ -39,7 +39,7 @@ slay make_channel<T>(capacity normie) normie {
     
     sus new_channel Channel<T>
     new_channel.id = channel_id
-    new_channel.buffer = []T{}
+    new_channel.buffer = T[value]{}
     new_channel.capacity = capacity
     new_channel.size = 0
     new_channel.state = CHANNEL_OPEN

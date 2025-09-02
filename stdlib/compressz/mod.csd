@@ -11,7 +11,7 @@ squad CompressionContext {
     sus algorithm tea
     sus level drip
     sus window_size drip
-    sus hash_table []drip
+    sus hash_table drip[value]
     sus dictionary tea
 }
 
@@ -256,8 +256,8 @@ squad HuffmanNode {
 
 slay build_huffman_tree(data tea) tea {
     fr fr Build Huffman tree from frequency analysis
-    sus frequencies []drip = calculate_frequencies(data)
-    sus nodes []tea = create_huffman_nodes(frequencies)
+    sus frequencies drip[value] = calculate_frequencies(data)
+    sus nodes tea[value] = create_huffman_nodes(frequencies)
     
     fr fr Build tree bottom-up
     bestie (array_length(nodes) > 1) {
@@ -444,7 +444,7 @@ slay auto_detect_best_compression(data tea) drip {
 
 slay calculate_entropy(data tea) normie {
     fr fr Shannon entropy calculation
-    sus frequencies []drip = calculate_frequencies(data)
+    sus frequencies drip[value] = calculate_frequencies(data)
     sus total normie = normie(string_length(data))
     sus entropy normie = 0.0
     
@@ -512,9 +512,9 @@ slay brotli_encode(data tea, context CompressionContext) tea {
     damn "BROTLI:" + data  fr fr Mock encoding
 }
 
-slay calculate_frequencies(data tea) []drip {
+slay calculate_frequencies(data tea) drip[value]{
     fr fr Calculate character frequencies
-    sus frequencies []drip = allocate_int_array(256)
+    sus frequencies drip[value] = allocate_int_array(256)
     sus data_len drip = string_length(data)
     sus i drip = 0
     
@@ -527,8 +527,8 @@ slay calculate_frequencies(data tea) []drip {
     damn frequencies
 }
 
-slay allocate_int_array(size drip) []drip {
-    sus array []drip = []
+slay allocate_int_array(size drip) drip[value]{
+    sus array drip[value] = []
     sus i drip = 0
     bestie (i < size) {
         array[i] = 0
@@ -630,9 +630,9 @@ slay encode_match_result(distance drip, length drip) tea {
 
 fr fr ===== HUFFMAN TREE IMPLEMENTATION =====
 
-slay create_huffman_nodes(frequencies []drip) []tea {
+slay create_huffman_nodes(frequencies drip[value]) tea[value]{
     fr fr Create leaf nodes from frequency table
-    sus nodes []tea = []
+    sus nodes tea[value] = []
     sus i drip = 0
     bestie (i < 256) {
         ready (frequencies[i] > 0) {
@@ -649,7 +649,7 @@ slay create_huffman_leaf_node(character tea, frequency drip) tea {
     damn "LEAF:" + character + ":" + number_to_string(frequency)
 }
 
-slay extract_min_frequency_node(nodes []tea) tea {
+slay extract_min_frequency_node(nodes tea[value]) tea {
     fr fr Find and remove node with minimum frequency
     sus min_freq drip = 999999999
     sus min_index drip = 0
@@ -672,16 +672,16 @@ slay extract_min_frequency_node(nodes []tea) tea {
 
 slay extract_huffman_frequency(node tea) drip {
     fr fr Extract frequency from node string
-    sus parts []tea = split_huffman_node(node)
+    sus parts tea[value] = split_huffman_node(node)
     ready (array_length(parts) >= 3) {
         damn string_to_number(parts[2])
     }
     damn 0
 }
 
-slay split_huffman_node(node tea) []tea {
+slay split_huffman_node(node tea) tea[value]{
     fr fr Split node string on colons (simplified)
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus current tea = ""
     sus i drip = 0
     
@@ -703,9 +703,9 @@ slay split_huffman_node(node tea) []tea {
     damn parts
 }
 
-slay append_string_array(array []tea, item tea) []tea {
+slay append_string_array(array tea[value], item tea) tea[value]{
     fr fr Append string to array (simplified implementation)
-    sus new_array []tea = array
+    sus new_array tea[value] = array
     new_array[array_length(array)] = item
     damn new_array
 }
@@ -719,13 +719,13 @@ slay create_internal_huffman_node(node1 tea, node2 tea) tea {
     damn "INTERNAL:" + node1 + "|" + node2 + ":" + number_to_string(combined_freq)
 }
 
-slay add_huffman_node(nodes []tea, node tea) []tea {
+slay add_huffman_node(nodes tea[value], node tea) tea[value]{
     damn append_huffman_node(nodes, node)
 }
 
-slay append_huffman_node(nodes []tea, node tea) []tea {
+slay append_huffman_node(nodes tea[value], node tea) tea[value]{
     fr fr Add node to array
-    sus new_nodes []tea = nodes
+    sus new_nodes tea[value] = nodes
     new_nodes[array_length(nodes)] = node
     damn new_nodes
 }
@@ -761,7 +761,7 @@ slay is_huffman_leaf_node(node tea) lit {
 
 slay extract_leaf_character(node tea) tea {
     ready (!is_huffman_leaf_node(node)) { damn "" }
-    sus parts []tea = split_huffman_node(node)
+    sus parts tea[value] = split_huffman_node(node)
     ready (array_length(parts) >= 2) { damn parts[1] }
     damn ""
 }
@@ -787,7 +787,7 @@ slay get_bit(data tea, bit_pos drip) drip {
 slay get_left_child(node tea) tea {
     fr fr Extract left child from internal node
     ready (is_huffman_leaf_node(node)) { damn node }
-    sus parts []tea = split_on_pipe(extract_children_part(node))
+    sus parts tea[value] = split_on_pipe(extract_children_part(node))
     ready (array_length(parts) >= 1) { damn parts[0] }
     damn node
 }
@@ -795,7 +795,7 @@ slay get_left_child(node tea) tea {
 slay get_right_child(node tea) tea {
     fr fr Extract right child from internal node
     ready (is_huffman_leaf_node(node)) { damn node }
-    sus parts []tea = split_on_pipe(extract_children_part(node))
+    sus parts tea[value] = split_on_pipe(extract_children_part(node))
     ready (array_length(parts) >= 2) { damn parts[1] }
     damn node
 }
@@ -832,9 +832,9 @@ slay find_last_colon(text tea) drip {
     damn -1
 }
 
-slay split_on_pipe(text tea) []tea {
+slay split_on_pipe(text tea) tea[value]{
     fr fr Split text on pipe character
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus current tea = ""
     sus i drip = 0
     

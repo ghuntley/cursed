@@ -9,7 +9,7 @@ yeet "filez"
 
 # Test backend that captures log entries for verification
 squad TestBackend {
-    sus entries []LogEntry
+    sus entries LogEntry[value]
     sus formatter LogFormatter
     sus write_count drip
     sus flush_count drip
@@ -17,7 +17,7 @@ squad TestBackend {
     
     slay new(formatter LogFormatter) TestBackend {
         damn TestBackend{
-            entries: []LogEntry{},
+            entries: LogEntry[value]{},
             formatter: formatter,
             write_count: 0,
             flush_count: 0,
@@ -25,7 +25,7 @@ squad TestBackend {
         }
     }
     
-    slay get_entries(self TestBackend) []LogEntry {
+    slay get_entries(self TestBackend) LogEntry[value]{
         damn self.entries
     }
     
@@ -37,7 +37,7 @@ squad TestBackend {
     }
     
     slay clear(mut self TestBackend) {
-        self.entries = []LogEntry{}
+        self.entries = LogEntry[value]{}
         self.write_count = 0
         self.flush_count = 0
         self.close_called = nah
@@ -246,7 +246,7 @@ slay test_logger_basic() {
     logger.warn("test warn message")
     logger.error("test error message")
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), 3)
     
     assert_eq_string(entries[0].message, "test info message")
@@ -276,7 +276,7 @@ slay test_logger_with_fields() {
     
     logger.info_with_fields("user login successful", fields)
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), 1)
     
     sus entry LogEntry = entries[0]
@@ -303,7 +303,7 @@ slay test_logger_filtering() {
     logger.warn("warn message")
     logger.error("error message")
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), 2)  # Only WARN and ERROR should pass
     
     assert_eq_string(entries[0].level.name, "WARN")
@@ -421,8 +421,8 @@ slay test_multi_backend() {
     }
     
     # Verify both backends received the entry
-    sus entries1 []LogEntry = test_backend1.get_entries()
-    sus entries2 []LogEntry = test_backend2.get_entries()
+    sus entries1 LogEntry[value] = test_backend1.get_entries()
+    sus entries2 LogEntry[value] = test_backend2.get_entries()
     
     assert_eq_int(len(entries1), 1)
     assert_eq_int(len(entries2), 1)
@@ -446,7 +446,7 @@ slay test_logging_performance() {
     sus duration drip = benchmark.end_benchmark()
     
     # Verify all messages were logged
-    sus entries []LogEntry = benchmark.test_backend.get_entries()
+    sus entries LogEntry[value] = benchmark.test_backend.get_entries()
     assert_eq_int(len(entries), message_count)
     
     # Calculate performance metrics
@@ -499,7 +499,7 @@ slay test_concurrent_logging() {
     # Give async logging time to complete
     sleep_milliseconds(100)
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), total_expected)
     
     # Verify message content and thread safety
@@ -540,7 +540,7 @@ slay test_async_logging() {
     logger.flush()
     sleep_milliseconds(100)
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), message_count)
     
     test_end()
@@ -569,7 +569,7 @@ slay test_memory_usage() {
         }
     }
     
-    sus entries []LogEntry = test_backend.get_entries()
+    sus entries LogEntry[value] = test_backend.get_entries()
     assert_eq_int(len(entries), large_message_count)
     
     spill("Successfully logged", drip_to_string(large_message_count), "messages")

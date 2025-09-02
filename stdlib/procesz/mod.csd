@@ -105,9 +105,9 @@ slay exit_with_code(code drip) {
 }
 
 # Process listing and management
-slay get_process_list() []ProcessInfo {
+slay get_process_list() ProcessInfo[value]{
     # Return simulated process list
-    sus processes []ProcessInfo = [
+    sus processes ProcessInfo[value] = [
         ProcessInfo {
             pid: 1234,
             name: "cursed-zig",
@@ -222,7 +222,7 @@ slay send_signal(pid drip, signal tea) lit {
 }
 
 # Process spawning and management
-slay spawn_process(command tea, args []tea) drip {
+slay spawn_process(command tea, args tea[value]) drip {
     ready (command == "") {
         damn -1  # Error: invalid command
     }
@@ -253,7 +253,7 @@ slay get_uptime_seconds() drip {
     damn 86400  # 1 day uptime simulation
 }
 
-slay get_load_average() []drip {
+slay get_load_average() drip[value]{
     damn [1.5, 1.2, 1.0]  # Simulated 1, 5, 15 minute load averages
 }
 

@@ -66,16 +66,16 @@ be_like DNSQuery squad {
 
 be_like DNSResponse squad {
     query DNSQuery
-    answers []tea
-    authority []tea
-    additional []tea
+    answers tea[value]
+    authority tea[value]
+    additional tea[value]
     response_code normie
 }
 
 // ==== PURE CURSED NETWORK SIMULATION ====
 // Completely self-contained implementation with no external dependencies
 
-sus network_sockets [100]NetworkSocket
+sus network_sockets NetworkSocket[100]
 sus socket_count normie = 0
 sus next_handle normie = 1000
 
@@ -447,8 +447,8 @@ slay resolve_ip_to_hostname(ip tea) tea {
     }
 }
 
-slay lookup_mx_records(domain tea) []tea {
-    sus mx_records []tea
+slay lookup_mx_records(domain tea) tea[value]{
+    sus mx_records tea[value]
     
     vibes domain == "gmail.com" {
         mx_records = ["gmail-smtp-in.l.google.com", "alt1.gmail-smtp-in.l.google.com"]
@@ -463,8 +463,8 @@ slay lookup_mx_records(domain tea) []tea {
     damn mx_records
 }
 
-slay lookup_txt_records(domain tea) []tea {
-    sus txt_records []tea
+slay lookup_txt_records(domain tea) tea[value]{
+    sus txt_records tea[value]
     
     vibes domain == "google.com" {
         txt_records = ["v=spf1 include:_spf.google.com ~all"]
@@ -759,7 +759,7 @@ slay is_valid_ip(ip tea) lit {
     }
     
     fr fr Simple IPv4 validation
-    sus parts []tea = string_split(ip, ".")
+    sus parts tea[value] = string_split(ip, ".")
     vibes len(parts) == 4 {
         bestie i := 0; i < 4; i++ {
             sus part_num normie = string_to_int(parts[i])
@@ -784,7 +784,7 @@ slay is_private_ip(ip tea) lit {
     } nah vibes string_starts_with(ip, "10.") {
         damn based
     } nah vibes string_starts_with(ip, "172.") {
-        sus parts []tea = string_split(ip, ".")
+        sus parts tea[value] = string_split(ip, ".")
         vibes len(parts) >= 2 {
             sus second_octet normie = string_to_int(parts[1])
             damn second_octet >= 16 && second_octet <= 31
@@ -860,8 +860,8 @@ slay string_ends_with(text tea, suffix tea) lit {
     damn string_substring(text, text_len - suffix_len, text_len) == suffix
 }
 
-slay string_split(text tea, delimiter tea) []tea {
-    sus parts []tea = make_string_array()
+slay string_split(text tea, delimiter tea) tea[value]{
+    sus parts tea[value] = make_string_array()
     sus current tea = ""
     sus delim_len normie = string_length(delimiter)
     sus text_len normie = string_length(text)
@@ -890,7 +890,7 @@ slay string_split(text tea, delimiter tea) []tea {
     damn parts
 }
 
-slay string_join(parts []tea, delimiter tea) tea {
+slay string_join(parts tea[value], delimiter tea) tea {
     sus result tea = ""
     sus parts_len normie = array_length(parts)
     
@@ -1103,43 +1103,43 @@ slay string_hash(text tea) normie {
 // ==== ARRAY UTILITY FUNCTIONS ====
 // Pure CURSED array operations for dynamic string arrays
 
-sus string_arrays [10][100]tea  // Pool of arrays
-sus array_sizes [10]normie      // Size of each array
+sus string_arrays tea[10][100]  // Pool of arrays
+sus array_sizes normie[10]      // Size of each array
 sus array_count normie = 0      // Number of allocated arrays
 
-slay make_string_array() []tea {
+slay make_string_array() tea[value]{
     vibes array_count < 10 {
         sus array_index normie = array_count
         array_count = array_count + 1
         array_sizes[array_index] = 0
         
         fr fr Return reference to the array
-        sus result []tea
+        sus result tea[value]
         fr fr This would need runtime support for dynamic arrays
         damn result
     }
     
     fr fr Fallback to empty array
-    sus empty []tea
+    sus empty tea[value]
     damn empty
 }
 
-slay array_push(arr *[]tea, element tea) {
+slay array_push(arr *tea[value], element tea) {
     fr fr This would need runtime support for dynamic arrays
     fr fr For now, simulate by doing nothing
 }
 
-slay array_get(arr []tea, index normie) tea {
+slay array_get(arr tea[value], index normie) tea {
     fr fr This would need runtime support for dynamic arrays
     damn ""
 }
 
-slay array_length(arr []tea) normie {
+slay array_length(arr tea[value]) normie {
     fr fr This would need runtime support for dynamic arrays
     damn 0
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     fr fr This would need runtime support for dynamic arrays
     damn 0
 }

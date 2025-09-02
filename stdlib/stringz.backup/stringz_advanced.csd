@@ -10,13 +10,13 @@ yeet "vibez"
 
 fr fr ===== ADVANCED STRING MANIPULATION ALGORITHMS =====
 
-slay split_advanced(s tea, delimiter tea) []tea {
+slay split_advanced(s tea, delimiter tea) tea[value]{
     fr fr Boyer-Moore inspired string splitting with optimized delimiter search
     ready delimiter == "" || s == "" {
         damn [s]
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus s_len drip = unicode_length(s)
     sus delim_len drip = unicode_length(delimiter)
     sus start_pos drip = 0
@@ -42,7 +42,7 @@ slay split_advanced(s tea, delimiter tea) []tea {
     damn result
 }
 
-slay join_optimized(parts []tea, delimiter tea) tea {
+slay join_optimized(parts tea[value], delimiter tea) tea {
     sus parts_count drip = array_length(parts)
     ready parts_count == 0 { damn "" }
     ready parts_count == 1 { damn parts[0] }
@@ -113,7 +113,7 @@ slay replace_all_advanced(s tea, find tea, replacement tea) tea {
 
 slay reverse_advanced(s tea) tea {
     fr fr Unicode-aware string reversal with grapheme cluster support
-    sus characters []tea = extract_grapheme_clusters(s)
+    sus characters tea[value] = extract_grapheme_clusters(s)
     sus result tea = ""
     sus i drip = array_length(characters) - 1
     
@@ -147,7 +147,7 @@ slay kmp_search_from_position(text tea, pattern tea, start_pos drip) drip {
     ready pattern_len == 0 || text_len == 0 { damn -1 }
     ready pattern_len > text_len - start_pos { damn -1 }
     
-    sus failure_function []drip = compute_failure_function(pattern)
+    sus failure_function drip[value] = compute_failure_function(pattern)
     sus text_pos drip = start_pos
     sus pattern_pos drip = 0
     
@@ -174,9 +174,9 @@ slay kmp_search_from_position(text tea, pattern tea, start_pos drip) drip {
     damn -1
 }
 
-slay compute_failure_function(pattern tea) []drip {
+slay compute_failure_function(pattern tea) drip[value]{
     sus pattern_len drip = unicode_length(pattern)
-    sus failure []drip = make_int_array(pattern_len)
+    sus failure drip[value] = make_int_array(pattern_len)
     sus j drip = 0
     sus i drip = 1
     
@@ -234,7 +234,7 @@ slay format_template_advanced(template tea, args map<tea, tea>) tea {
     damn result
 }
 
-slay interpolate_advanced(template tea, substitutions []struct { key tea, value tea }) tea {
+slay interpolate_advanced(template tea, substitutions struct[value]{ key tea, value tea }) tea {
     sus result tea = template
     sus i drip = 0
     sus substitution_count drip = array_length_struct(substitutions)
@@ -394,7 +394,7 @@ slay parse_float_advanced(s tea) struct {
     
     fr fr Simple validation - would implement full IEEE 754 parsing
     ready unicode_contains(trimmed, ".") {
-        sus parts []tea = split_advanced(trimmed, ".")
+        sus parts tea[value] = split_advanced(trimmed, ".")
         ready array_length(parts) == 2 {
             sus integer_part = parse_int_advanced(parts[0])
             sus fractional_part = parse_int_advanced(parts[1])
@@ -427,7 +427,7 @@ slay validate_email_format(email tea) lit {
     sus email_len drip = unicode_length(email)
     ready email_len < 3 { damn cap }  fr fr Minimum: a@b
     
-    sus at_positions []drip = find_all_occurrences(email, "@")
+    sus at_positions drip[value] = find_all_occurrences(email, "@")
     ready array_length_int(at_positions) != 1 { damn cap }
     
     sus at_pos drip = at_positions[0]
@@ -460,7 +460,7 @@ slay validate_email_domain_part(domain tea) lit {
     
     ready !unicode_contains(domain, ".") { damn cap }
     
-    sus parts []tea = split_advanced(domain, ".")
+    sus parts tea[value] = split_advanced(domain, ".")
     sus part_count drip = array_length(parts)
     ready part_count < 2 { damn cap }
     
@@ -526,7 +526,7 @@ slay levenshtein_distance(s1 tea, s2 tea) drip {
     ready len2 == 0 { damn len1 }
     
     fr fr Create distance matrix
-    sus matrix [][]drip = make_2d_int_array(len1 + 1, len2 + 1)
+    sus matrix drip[value][value] = make_2d_int_array(len1 + 1, len2 + 1)
     
     fr fr Initialize first row and column
     sus i drip = 0
@@ -608,9 +608,9 @@ slay unicode_match_at_position(text tea, pattern tea, position drip) lit {
     damn based
 }
 
-slay extract_grapheme_clusters(s tea) []tea {
+slay extract_grapheme_clusters(s tea) tea[value]{
     fr fr Simplified grapheme cluster extraction
-    sus clusters []tea = []
+    sus clusters tea[value] = []
     sus byte_offset drip = 0
     sus byte_len drip = byte_length(s)
     
@@ -624,8 +624,8 @@ slay extract_grapheme_clusters(s tea) []tea {
     damn clusters
 }
 
-slay find_all_occurrences(text tea, pattern tea) []drip {
-    sus positions []drip = []
+slay find_all_occurrences(text tea, pattern tea) drip[value]{
+    sus positions drip[value] = []
     sus current_pos drip = 0
     sus text_len drip = unicode_length(text)
     sus pattern_len drip = unicode_length(pattern)
@@ -754,10 +754,10 @@ slay is_zero_width_codepoint(codepoint drip) lit {
 }
 
 fr fr Production implementations for runtime array and map functions
-slay array_append_string(arr []tea, str tea) []tea {
+slay array_append_string(arr tea[value], str tea) tea[value]{
     fr fr String array append using reconstruction
     sus old_len drip = array_length(arr)
-    sus new_arr []tea = make_string_array_advanced(old_len + 1)
+    sus new_arr tea[value] = make_string_array_advanced(old_len + 1)
     sus i drip = 0
     
     fr fr Copy existing elements
@@ -771,10 +771,10 @@ slay array_append_string(arr []tea, str tea) []tea {
     damn new_arr
 }
 
-slay array_append_int(arr []drip, val drip) []drip {
+slay array_append_int(arr drip[value], val drip) drip[value]{
     fr fr Integer array append using reconstruction
     sus old_len drip = array_length_int(arr)
-    sus new_arr []drip = make_int_array(old_len + 1)
+    sus new_arr drip[value] = make_int_array(old_len + 1)
     sus i drip = 0
     
     fr fr Copy existing elements
@@ -788,7 +788,7 @@ slay array_append_int(arr []drip, val drip) []drip {
     damn new_arr
 }
 
-slay array_length(arr []tea) drip {
+slay array_length(arr tea[value]) drip {
     fr fr String array length using iteration
     sus count drip = 0
     sus i drip = 0
@@ -804,7 +804,7 @@ slay array_length(arr []tea) drip {
     damn count
 }
 
-slay array_length_int(arr []drip) drip {
+slay array_length_int(arr drip[value]) drip {
     fr fr Integer array length using iteration
     sus count drip = 0
     sus i drip = 0
@@ -819,7 +819,7 @@ slay array_length_int(arr []drip) drip {
     damn count
 }
 
-slay array_length_struct(arr []struct { key tea, value tea }) drip {
+slay array_length_struct(arr struct[value]{ key tea, value tea }) drip {
     fr fr Struct array length using iteration  
     sus count drip = 0
     sus i drip = 0
@@ -834,9 +834,9 @@ slay array_length_struct(arr []struct { key tea, value tea }) drip {
     damn count
 }
 
-slay make_int_array(size drip) []drip {
+slay make_int_array(size drip) drip[value]{
     fr fr Create integer array with specified size
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     bestie i < size {
         result = array_append_int_internal(result, 0)  fr fr Default value 0
@@ -845,12 +845,12 @@ slay make_int_array(size drip) []drip {
     damn result
 }
 
-slay make_2d_int_array(rows drip, cols drip) [][]drip {
+slay make_2d_int_array(rows drip, cols drip) drip[value][value] {
     fr fr Create 2D integer array with specified dimensions
-    sus result [][]drip = []
+    sus result drip[value][value] = []
     sus i drip = 0
     bestie i < rows {
-        sus row []drip = make_int_array(cols)
+        sus row drip[value] = make_int_array(cols)
         result = append_2d_array_row(result, row)
         i = i + 1
     }
@@ -879,9 +879,9 @@ slay map_get_value(m map<tea, tea>, key tea) tea {
 
 fr fr ===== ADVANCED HELPER FUNCTIONS =====
 
-slay make_string_array_advanced(capacity drip) []tea {
+slay make_string_array_advanced(capacity drip) tea[value]{
     fr fr Create string array with advanced allocation
-    sus result []tea = []
+    sus result tea[value] = []
     sus i drip = 0
     bestie i < capacity {
         result = array_append_string_internal(result, "")
@@ -890,28 +890,28 @@ slay make_string_array_advanced(capacity drip) []tea {
     damn result
 }
 
-slay array_append_string_internal(arr []tea, str tea) []tea {
+slay array_append_string_internal(arr tea[value], str tea) tea[value]{
     fr fr Internal string array append
-    sus result []tea = arr
+    sus result tea[value] = arr
     result[array_length(arr)] = str
     damn result
 }
 
-slay array_append_int_internal(arr []drip, val drip) []drip {
+slay array_append_int_internal(arr drip[value], val drip) drip[value]{
     fr fr Internal integer array append
-    sus result []drip = arr
+    sus result drip[value] = arr
     result[array_length_int(arr)] = val
     damn result
 }
 
-slay append_2d_array_row(arr [][]drip, row []drip) [][]drip {
+slay append_2d_array_row(arr drip[value][value], row drip[value]) drip[value][value] {
     fr fr Append row to 2D array
-    sus result [][]drip = arr
+    sus result drip[value][value] = arr
     result[get_2d_array_length(arr)] = row
     damn result
 }
 
-slay get_2d_array_length(arr [][]drip) drip {
+slay get_2d_array_length(arr drip[value][value]) drip {
     fr fr Get length of 2D array
     sus count drip = 0
     sus i drip = 0
@@ -926,7 +926,7 @@ slay get_2d_array_length(arr [][]drip) drip {
     damn count
 }
 
-slay can_access_string_at_index(arr []tea, index drip) lit {
+slay can_access_string_at_index(arr tea[value], index drip) lit {
     fr fr Check if string array has element at index
     ready index < 0 { damn cap }
     fr fr Simplified bounds checking
@@ -934,21 +934,21 @@ slay can_access_string_at_index(arr []tea, index drip) lit {
     damn cap
 }
 
-slay can_access_int_at_index(arr []drip, index drip) lit {
+slay can_access_int_at_index(arr drip[value], index drip) lit {
     fr fr Check if integer array has element at index
     ready index < 0 { damn cap }
     ready index < 1000 { damn based }
     damn cap
 }
 
-slay can_access_struct_at_index(arr []struct { key tea, value tea }, index drip) lit {
+slay can_access_struct_at_index(arr struct[value]{ key tea, value tea }, index drip) lit {
     fr fr Check if struct array has element at index
     ready index < 0 { damn cap }
     ready index < 1000 { damn based }
     damn cap
 }
 
-slay can_access_2d_at_index(arr [][]drip, index drip) lit {
+slay can_access_2d_at_index(arr drip[value][value], index drip) lit {
     fr fr Check if 2D array has element at index
     ready index < 0 { damn cap }
     ready index < 1000 { damn based }

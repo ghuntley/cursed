@@ -10,7 +10,7 @@ yeet "cryptz"
 yeet "compressionz"
 
 squad KafkaConfig {
-    brokers []tea = ["localhost:9092"]
+    brokers tea[value] = ["localhost:9092"]
     client_id tea = "cursed-kafka-client"
     security_protocol tea = "PLAINTEXT"  // PLAINTEXT, SSL, SASL_PLAINTEXT, SASL_SSL
     sasl_mechanism tea = "PLAIN"         // PLAIN, SCRAM-SHA-256, SCRAM-SHA-512
@@ -58,9 +58,9 @@ squad ConsumerConfig {
 squad Message {
     topic tea
     partition drip = -1                  // -1 for automatic assignment
-    key []lit
-    value []lit
-    headers map<tea, []lit>
+    key lit[value]
+    value lit[value]
+    headers map<tea, lit[value]>
     timestamp drip = 0                   // 0 for current time
     offset drip = -1                     // Set by Kafka
 }
@@ -91,7 +91,7 @@ squad Producer {
     producer_config ProducerConfig
     broker_connections map<tea, networkz.TcpSocket>
     metadata TopicMetadata
-    pending_batches map<tea, []Message>
+    pending_batches map<tea, Message[value]>
     send_buffer chan<Message>
     metrics ProducerMetrics
     transaction_id tea = ""
@@ -293,13 +293,13 @@ squad Producer {
         }
         
         sus conn networkz.TcpSocket = self.broker_connections[broker]
-        sus metadata_request []lit = build_metadata_request()
+        sus metadata_request lit[value] = build_metadata_request()
         
         conn.write(metadata_request) fam {
             when _ -> yikes "failed to send metadata request"
         }
         
-        sus response []lit = read_response(conn) fam {
+        sus response lit[value] = read_response(conn) fam {
             when _ -> yikes "failed to read metadata response"
         }
         
@@ -315,8 +315,8 @@ squad Consumer {
     consumer_config ConsumerConfig
     broker_connections map<tea, networkz.TcpSocket>
     metadata TopicMetadata
-    subscribed_topics []tea
-    assigned_partitions []TopicPartition
+    subscribed_topics tea[value]
+    assigned_partitions TopicPartition[value]
     position map<TopicPartition, drip>
     committed_offsets map<TopicPartition, OffsetAndMetadata>
     metrics ConsumerMetrics
@@ -354,7 +354,7 @@ squad Consumer {
         damn consumer
     }
     
-    slay subscribe(topics []tea) yikes<tea> {
+    slay subscribe(topics tea[value]) yikes<tea> {
         self.subscribed_topics = topics
         
         // Join consumer group
@@ -368,8 +368,8 @@ squad Consumer {
         }
     }
     
-    slay poll(timeout_ms drip) yikes<[]Message> {
-        sus messages []Message = []
+    slay poll(timeout_ms drip) yikes<Message[value]> {
+        sus messages Message[value] = []
         sus start_time drip = timez.now_millis()
         
         bestie (timez.now_millis() - start_time < timeout_ms) {
@@ -385,7 +385,7 @@ squad Consumer {
             
             // Fetch messages from assigned partitions
             bestie (tp := range self.assigned_partitions) {
-                sus partition_messages []Message = self.fetch_from_partition(tp) fam {
+                sus partition_messages Message[value] = self.fetch_from_partition(tp) fam {
                     when err -> {
                         vibez.spill("Fetch failed for", tp.topic, "partition", tp.partition, ":", err)
                         continue
@@ -462,7 +462,7 @@ squad Consumer {
         self.position[partition] = offset
     }
     
-    slay seek_to_beginning(partitions []TopicPartition) yikes<tea> {
+    slay seek_to_beginning(partitions TopicPartition[value]) yikes<tea> {
         bestie (tp := range partitions) {
             sus earliest_offset drip = self.get_earliest_offset(tp) fam {
                 when err -> yikes "failed to get earliest offset: " + err
@@ -471,7 +471,7 @@ squad Consumer {
         }
     }
     
-    slay seek_to_end(partitions []TopicPartition) yikes<tea> {
+    slay seek_to_end(partitions TopicPartition[value]) yikes<tea> {
         bestie (tp := range partitions) {
             sus latest_offset drip = self.get_latest_offset(tp) fam {
                 when err -> yikes "failed to get latest offset: " + err
@@ -501,14 +501,14 @@ squad Consumer {
 
 // Message Streaming and Kafka Streams-like functionality
 squad StreamProcessor {
-    input_topics []tea
+    input_topics tea[value]
     output_topic tea
     processor slay(Message) yikes<Message>
     consumer Consumer
     producer Producer
     
     slay create_stream_processor(
-        input_topics []tea,
+        input_topics tea[value],
         output_topic tea,
         processor slay(Message) yikes<Message>,
         kafka_config KafkaConfig
@@ -547,7 +547,7 @@ squad StreamProcessor {
         
         go {
             bestie (based) {
-                sus messages []Message = self.consumer.poll(1000) fam {
+                sus messages Message[value] = self.consumer.poll(1000) fam {
                     when err -> {
                         vibez.spill("Poll failed:", err)
                         continue
@@ -619,8 +619,8 @@ squad AdminClient {
         damn admin
     }
     
-    slay create_topics(topics []TopicConfig) yikes<tea> {
-        sus request []lit = build_create_topics_request(topics)
+    slay create_topics(topics TopicConfig[value]) yikes<tea> {
+        sus request lit[value] = build_create_topics_request(topics)
         
         sus conn networkz.TcpSocket = self.get_controller_connection() fam {
             when err -> yikes "failed to get controller connection: " + err
@@ -630,7 +630,7 @@ squad AdminClient {
             when _ -> yikes "failed to send create topics request"
         }
         
-        sus response []lit = read_response(conn) fam {
+        sus response lit[value] = read_response(conn) fam {
             when _ -> yikes "failed to read create topics response"
         }
         
@@ -639,8 +639,8 @@ squad AdminClient {
         }
     }
     
-    slay delete_topics(topic_names []tea) yikes<tea> {
-        sus request []lit = build_delete_topics_request(topic_names)
+    slay delete_topics(topic_names tea[value]) yikes<tea> {
+        sus request lit[value] = build_delete_topics_request(topic_names)
         
         sus conn networkz.TcpSocket = self.get_controller_connection() fam {
             when err -> yikes "failed to get controller connection: " + err
@@ -650,7 +650,7 @@ squad AdminClient {
             when _ -> yikes "failed to send delete topics request"
         }
         
-        sus response []lit = read_response(conn) fam {
+        sus response lit[value] = read_response(conn) fam {
             when _ -> yikes "failed to read delete topics response"
         }
         
@@ -659,8 +659,8 @@ squad AdminClient {
         }
     }
     
-    slay list_topics() yikes<[]TopicMetadata> {
-        sus request []lit = build_metadata_request()
+    slay list_topics() yikes<TopicMetadata[value]> {
+        sus request lit[value] = build_metadata_request()
         
         sus conn networkz.TcpSocket = self.get_any_broker_connection()
         
@@ -668,7 +668,7 @@ squad AdminClient {
             when _ -> yikes "failed to send metadata request"
         }
         
-        sus response []lit = read_response(conn) fam {
+        sus response lit[value] = read_response(conn) fam {
             when _ -> yikes "failed to read metadata response"
         }
         
@@ -688,7 +688,7 @@ squad TopicConfig {
 }
 
 // Factory functions and utilities
-slay create_simple_producer(brokers []tea) yikes<Producer> {
+slay create_simple_producer(brokers tea[value]) yikes<Producer> {
     sus kafka_config KafkaConfig = {
         .brokers = brokers,
         .client_id = "cursed-producer",
@@ -703,7 +703,7 @@ slay create_simple_producer(brokers []tea) yikes<Producer> {
     damn create_producer(kafka_config, producer_config)
 }
 
-slay create_simple_consumer(brokers []tea, group_id tea) yikes<Consumer> {
+slay create_simple_consumer(brokers tea[value], group_id tea) yikes<Consumer> {
     sus kafka_config KafkaConfig = {
         .brokers = brokers,
         .client_id = "cursed-consumer",
@@ -757,7 +757,7 @@ slay example_consumer_usage() yikes<tea> {
     }
     
     bestie (based) {
-        sus messages []Message = consumer.poll(1000) fam {
+        sus messages Message[value] = consumer.poll(1000) fam {
             when err -> {
                 vibez.spill("Poll error:", err)
                 continue

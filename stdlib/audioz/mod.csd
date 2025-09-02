@@ -93,16 +93,16 @@ be_like AudioMetadata = struct {
 }
 
 be_like AudioSpectrum = struct {
-    frequencies [1024]drip,
-    magnitudes [1024]drip,
-    phases [1024]drip,
+    frequencies drip[1024],
+    magnitudes drip[1024],
+    phases drip[1024],
     sample_rate normie,
     window_size normie
 }
 
 be_like AudioEffect = struct {
     effect_type normie,
-    parameters [10]drip,
+    parameters drip[10],
     wet_mix drip,
     dry_mix drip,
     enabled lit
@@ -605,7 +605,7 @@ slay audioz_calculate_peak(audio AudioData) drip {
 }
 
 slay audioz_detect_silence(audio AudioData, threshold drip) [drip] {
-    sus silence_regions [100]drip fr fr Maximum 100 regions
+    sus silence_regions drip[100] fr fr Maximum 100 regions
     audioz_find_silence_regions(audio.samples, audio.frame_count, audio.channels, audio.sample_rate, threshold, silence_regions)
     damn silence_regions
 }
@@ -763,7 +763,7 @@ slay audioz_encode_wav(audio AudioData) tea {
 
 fr fr Enhanced FFT with production algorithms
 slay audioz_compute_fft(samples tea, frames normie, channels normie, spectrum AudioSpectrum, window normie) lit {
-    sus complex_data [4096]drip
+    sus complex_data drip[4096]
     
     fr fr Convert samples to complex format with windowing
     bestie (sus i normie = 0; i < mathz_min(2048, frames); i++) {
@@ -795,14 +795,14 @@ slay audioz_interpolate_samples(samples tea, old_frames normie, new_frames normi
 }
 
 fr fr Enhanced audio effects with production algorithms
-slay audioz_apply_reverb(samples tea, frames normie, channels normie, params [10]drip) tea {
+slay audioz_apply_reverb(samples tea, frames normie, channels normie, params drip[10]) tea {
     fr fr Use convolution reverb for high quality
     sus ir_length normie = mathz_float_to_int(params[0] * 44100.0) fr fr Reverb time in samples
     sus impulse_response tea = audioz_generate_reverb_impulse(ir_length, params[1], params[2])
     damn audioz_convolution_reverb_production(samples, frames, channels, impulse_response, ir_length, params[3])
 }
 
-slay audioz_apply_compressor(samples tea, frames normie, channels normie, params [10]drip) tea {
+slay audioz_apply_compressor(samples tea, frames normie, channels normie, params drip[10]) tea {
     fr fr Use multiband compressor for professional results
     damn audioz_multiband_compressor_production(samples, frames, channels, 44100, params)
 }
@@ -874,17 +874,17 @@ slay audioz_multichannel_to_stereo(samples tea, frames normie, channels normie) 
 slay audioz_generic_channel_conversion(samples tea, frames normie, old_channels normie, new_channels normie) tea { damn samples }
 slay audioz_extract_sample_range(samples tea, start normie, end normie, channels normie) tea { damn samples }
 slay audioz_blend_samples(samples1 tea, samples2 tea, frames1 normie, frames2 normie, channels normie, ratio drip) tea { damn samples1 }
-slay audioz_apply_reverb(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_echo(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_chorus(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_flanger(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_phaser(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_distortion(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_compressor(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_limiter(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_eq(samples tea, frames normie, channels normie, sample_rate normie, params [10]drip) tea { damn samples }
-slay audioz_apply_noise_gate(samples tea, frames normie, channels normie, params [10]drip) tea { damn samples }
-slay audioz_apply_pitch_shift(samples tea, frames normie, channels normie, sample_rate normie, params [10]drip) tea { damn samples }
+slay audioz_apply_reverb(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_echo(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_chorus(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_flanger(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_phaser(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_distortion(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_compressor(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_limiter(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_eq(samples tea, frames normie, channels normie, sample_rate normie, params drip[10]) tea { damn samples }
+slay audioz_apply_noise_gate(samples tea, frames normie, channels normie, params drip[10]) tea { damn samples }
+slay audioz_apply_pitch_shift(samples tea, frames normie, channels normie, sample_rate normie, params drip[10]) tea { damn samples }
 slay audioz_apply_time_stretch(audio AudioData, factor drip) AudioData { damn audio }
 slay audioz_normalize_audio(samples tea, frames normie, channels normie) tea { damn samples }
 slay audioz_apply_fade_in(samples tea, frames normie, channels normie, duration drip) tea { damn samples }
@@ -894,7 +894,7 @@ slay audioz_shape_envelope(samples tea, frames normie, channels normie, sample_r
 slay audioz_compute_fft(samples tea, frames normie, channels normie, spectrum AudioSpectrum, window normie) lit {
     fr fr Implement Cooley-Tukey FFT algorithm
     sus fft_size normie = 1024
-    sus complex_data [2048]drip fr fr Real and imaginary parts interleaved
+    sus complex_data drip[2048] fr fr Real and imaginary parts interleaved
     
     fr fr Convert audio samples to complex format
     bestie (sus i normie = 0; i < fft_size && i < frames; i++) {
@@ -963,7 +963,7 @@ slay audioz_analyze_beat_detection(samples tea, frames normie, channels normie, 
 slay audioz_autocorrelation_pitch_detection(samples tea, frames normie, channels normie, sample_rate normie) drip { damn 440.0 }
 slay audioz_compute_rms_level(samples tea, frames normie, channels normie) drip { damn 0.5 }
 slay audioz_find_peak_level(samples tea, frames normie, channels normie) drip { damn 1.0 }
-slay audioz_find_silence_regions(samples tea, frames normie, channels normie, sample_rate normie, threshold drip, regions [100]drip) lit {
+slay audioz_find_silence_regions(samples tea, frames normie, channels normie, sample_rate normie, threshold drip, regions drip[100]) lit {
     fr fr Find regions of silence below threshold
     sus region_count normie = 0
     sus in_silence lit = false
@@ -1135,7 +1135,7 @@ slay audioz_get_window_coefficient(window_type normie, index normie, size normie
     damn 1.0 fr fr Default rectangular window
 }
 
-slay audioz_bit_reverse_fft(complex_data [2048]drip, size normie) lit {
+slay audioz_bit_reverse_fft(complex_data drip[2048], size normie) lit {
     fr fr Bit-reversal permutation for FFT
     bestie (sus i normie = 0; i < size; i++) {
         sus j normie = audioz_reverse_bits(i, mathz_log2(size))
@@ -1174,10 +1174,10 @@ slay audioz_write_sample_to_buffer(buffer tea, index normie, sample normie) lit 
 
 fr fr ===== AUDIO EFFECTS IMPLEMENTATIONS =====
 
-slay audioz_apply_reverb(samples tea, frames normie, channels normie, params [10]drip) tea {
+slay audioz_apply_reverb(samples tea, frames normie, channels normie, params drip[10]) tea {
     fr fr Simple convolution reverb with multiple delay lines
     sus reverb_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
-    sus delay_lengths [4]normie = [441, 661, 882, 1323] fr fr Different delay lengths
+    sus delay_lengths normie[4] = [441, 661, 882, 1323] fr fr Different delay lengths
     sus feedback drip = params[0] fr fr Feedback amount (0.0 - 0.95)
     sus mix_level drip = params[1] fr fr Reverb mix level
     
@@ -1206,7 +1206,7 @@ slay audioz_apply_reverb(samples tea, frames normie, channels normie, params [10
     damn reverb_buffer
 }
 
-slay audioz_apply_echo(samples tea, frames normie, channels normie, params [10]drip) tea {
+slay audioz_apply_echo(samples tea, frames normie, channels normie, params drip[10]) tea {
     fr fr Digital echo/delay effect
     sus echo_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
     sus delay_samples normie = mathz_float_to_int(params[0] * 44100.0) fr fr Delay time in seconds
@@ -1233,7 +1233,7 @@ slay audioz_apply_echo(samples tea, frames normie, channels normie, params [10]d
     damn echo_buffer
 }
 
-slay audioz_apply_compressor(samples tea, frames normie, channels normie, params [10]drip) tea {
+slay audioz_apply_compressor(samples tea, frames normie, channels normie, params drip[10]) tea {
     fr fr Dynamic range compressor
     sus comp_buffer tea = memoryz_allocate_buffer(frames * channels * 4)
     sus threshold drip = params[0] fr fr Compression threshold

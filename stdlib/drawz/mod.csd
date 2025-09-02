@@ -61,7 +61,7 @@ be_like Color = struct {
 be_like Canvas = struct {
     width normie,
     height normie,
-    pixels [1048576]normie,  fr fr RGBA pixels (1024x1024 max)
+    pixels normie[1048576],  fr fr RGBA pixels (1024x1024 max)
     stroke_color Color,
     fill_color Color,
     line_width drip,
@@ -451,7 +451,7 @@ slay drawz_draw_bezier_curve(canvas Canvas, curve BezierCurve) lit {
 
 fr fr ===== POLYGON DRAWING =====
 
-slay drawz_draw_polygon(canvas Canvas, points [100]Point2D, num_points normie, mode normie) lit {
+slay drawz_draw_polygon(canvas Canvas, points Point2D[100], num_points normie, mode normie) lit {
     ready (num_points < 3) {
         damn false
     }
@@ -482,7 +482,7 @@ slay drawz_draw_polygon(canvas Canvas, points [100]Point2D, num_points normie, m
         fr fr Scanline fill
         sus y normie = min_y
         bestie (y <= max_y) {
-            sus intersections [100]drip
+            sus intersections drip[100]
             sus intersection_count normie = 0
             
             fr fr Find intersections with polygon edges

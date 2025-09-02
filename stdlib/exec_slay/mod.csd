@@ -16,7 +16,7 @@ vibe ProcessResult = smash {
 
 // Pipeline builder for command chaining
 vibe Pipeline = smash {
-    commands []tea,
+    commands tea[value],
     env_vars map[tea]tea,
     working_dir tea,
     timeout normie
@@ -33,7 +33,7 @@ vibe ProcessHandle = smash {
 // Command builder for complex executions
 vibe CommandBuilder = smash {
     program tea,
-    args []tea,
+    args tea[value],
     env map[tea]tea,
     cwd tea,
     stdin_data tea
@@ -42,7 +42,7 @@ vibe CommandBuilder = smash {
 // ===== CORE PROCESS EXECUTION =====
 
 // Execute command with arguments and return result
-slay exec_command(cmd tea, args []tea) ProcessResult {
+slay exec_command(cmd tea, args tea[value]) ProcessResult {
     sus result ProcessResult
     result.success = cap
     
@@ -95,7 +95,7 @@ slay exec_background(cmd tea) ProcessHandle {
 // Create new pipeline builder
 slay create_pipeline() Pipeline {
     sus pipeline Pipeline
-    pipeline.commands = []tea{}
+    pipeline.commands = tea[value]{}
     pipeline.env_vars = map[tea]tea{}
     pipeline.working_dir = "/tmp"
     pipeline.timeout = 30
@@ -120,7 +120,7 @@ slay execute_pipeline(pipeline Pipeline) ProcessResult {
     // Execute each command in sequence
     bestie i := 0; i < len(pipeline.commands); i++ {
         sus cmd tea = pipeline.commands[i]
-        sus args []tea = []tea{}  // Parse args from command string
+        sus args tea[value] = tea[value]{}  // Parse args from command string
         
         sus result ProcessResult = exec_command(cmd, args)
         sketchy !result.success {
@@ -142,7 +142,7 @@ slay execute_pipeline(pipeline Pipeline) ProcessResult {
 slay build_command(program tea) CommandBuilder {
     sus builder CommandBuilder
     builder.program = program
-    builder.args = []tea{}
+    builder.args = tea[value]{}
     builder.env = map[tea]tea{}
     builder.cwd = ""
     builder.stdin_data = ""
@@ -247,7 +247,7 @@ slay run_llvm_compile(ir_file tea, obj_file tea) ProcessResult {
 }
 
 // Link object files to executable
-slay link_objects(obj_files []tea, output_exe tea) ProcessResult {
+slay link_objects(obj_files tea[value], output_exe tea) ProcessResult {
     sus builder CommandBuilder = build_command("clang")
     
     // Add all object files
@@ -293,7 +293,7 @@ slay compile_pipeline(source_file tea, executable tea, optimize lit) ProcessResu
     }
     
     // Step 4: Link to executable
-    sus obj_files []tea = []tea{obj_file}
+    sus obj_files tea[value] = tea[value]{obj_file}
     sus link_result ProcessResult = link_objects(obj_files, executable)
     
     damn link_result
@@ -303,7 +303,7 @@ slay compile_pipeline(source_file tea, executable tea, optimize lit) ProcessResu
 
 // Check if command exists in PATH
 slay command_exists(cmd tea) lit {
-    sus test_result ProcessResult = exec_command("which", []tea{cmd})
+    sus test_result ProcessResult = exec_command("which", tea[value]{cmd})
     damn test_result.success
 }
 
@@ -313,13 +313,13 @@ slay get_system_path() tea {
 }
 
 // Execute shell command with timeout
-slay exec_with_timeout(cmd tea, args []tea, timeout_seconds normie) ProcessResult {
+slay exec_with_timeout(cmd tea, args tea[value], timeout_seconds normie) ProcessResult {
     // For now, just execute normally
     damn exec_command(cmd, args)
 }
 
 // Capture command output to file
-slay exec_to_file(cmd tea, args []tea, output_file tea) ProcessResult {
+slay exec_to_file(cmd tea, args tea[value], output_file tea) ProcessResult {
     sus result ProcessResult = exec_command(cmd, args)
     
     sketchy result.success {

@@ -40,7 +40,7 @@ slay test_text_to_codepoints_real() {
     vibez.spill("=== Testing text_to_codepoints_real() ===")
     
     # Test ASCII text
-    sus ascii_codepoints []drip = text_to_codepoints_real("ABC")
+    sus ascii_codepoints drip[value] = text_to_codepoints_real("ABC")
     assert_eq_int(len(ascii_codepoints), 3)
     assert_eq_int(ascii_codepoints[0], 65)   # A
     assert_eq_int(ascii_codepoints[1], 66)   # B
@@ -48,7 +48,7 @@ slay test_text_to_codepoints_real() {
     vibez.spill("✓ ASCII 'ABC' -> [65, 66, 67]")
     
     # Test mixed ASCII and UTF-8
-    sus mixed_codepoints []drip = text_to_codepoints_real("Hé€🚀")
+    sus mixed_codepoints drip[value] = text_to_codepoints_real("Hé€🚀")
     assert_eq_int(len(mixed_codepoints), 4)
     assert_eq_int(mixed_codepoints[0], 72)      # H
     assert_eq_int(mixed_codepoints[1], 233)     # é (U+00E9)
@@ -57,14 +57,14 @@ slay test_text_to_codepoints_real() {
     vibez.spill("✓ Mixed 'Hé€🚀' -> [72, 233, 8364, 128640]")
     
     # Test Chinese characters (测试 = U+6D4B U+8BD5)
-    sus chinese_codepoints []drip = text_to_codepoints_real("测试")
+    sus chinese_codepoints drip[value] = text_to_codepoints_real("测试")
     assert_eq_int(len(chinese_codepoints), 2)
     assert_eq_int(chinese_codepoints[0], 27979)  # 测 (U+6D4B)
     assert_eq_int(chinese_codepoints[1], 35797)  # 试 (U+8BD5)
     vibez.spill("✓ Chinese '测试' -> [27979, 35797]")
     
     # Test empty string
-    sus empty_codepoints []drip = text_to_codepoints_real("")
+    sus empty_codepoints drip[value] = text_to_codepoints_real("")
     assert_eq_int(len(empty_codepoints), 0)
     vibez.spill("✓ Empty string -> []")
     
@@ -119,25 +119,25 @@ slay test_codepoints_to_utf8_string() {
     vibez.spill("=== Testing codepoints_to_utf8_string() ===")
     
     # Test ASCII codepoints
-    sus ascii_codepoints []drip = [65, 66, 67]  # A, B, C
+    sus ascii_codepoints drip[value] = [65, 66, 67]  # A, B, C
     sus ascii_string tea = codepoints_to_utf8_string(ascii_codepoints)
     assert_eq_string(ascii_string, "ABC")
     vibez.spill("✓ [65, 66, 67] -> 'ABC'")
     
     # Test mixed codepoints
-    sus mixed_codepoints []drip = [72, 233, 8364, 128640]  # H, é, €, 🚀
+    sus mixed_codepoints drip[value] = [72, 233, 8364, 128640]  # H, é, €, 🚀
     sus mixed_string tea = codepoints_to_utf8_string(mixed_codepoints)
     assert_eq_string(mixed_string, "Hé€🚀")
     vibez.spill("✓ [72, 233, 8364, 128640] -> 'Hé€🚀'")
     
     # Test Chinese codepoints
-    sus chinese_codepoints []drip = [27979, 35797]  # 测, 试
+    sus chinese_codepoints drip[value] = [27979, 35797]  # 测, 试
     sus chinese_string tea = codepoints_to_utf8_string(chinese_codepoints)
     assert_eq_string(chinese_string, "测试")
     vibez.spill("✓ [27979, 35797] -> '测试'")
     
     # Test empty array
-    sus empty_codepoints []drip = []
+    sus empty_codepoints drip[value] = []
     sus empty_string tea = codepoints_to_utf8_string(empty_codepoints)
     assert_eq_string(empty_string, "")
     vibez.spill("✓ [] -> ''")
@@ -150,7 +150,7 @@ slay test_regex_unicode_integration() {
     
     # Test that Unicode functions work together for regex processing
     sus test_text tea = "Hello 世界! 🌍"
-    sus codepoints []drip = text_to_codepoints_real(test_text)
+    sus codepoints drip[value] = text_to_codepoints_real(test_text)
     
     # Verify we get the correct number of characters (not bytes)
     assert_eq_int(len(codepoints), 10)  # H,e,l,l,o, ,世,界,!, ,🌍

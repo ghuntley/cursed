@@ -5,7 +5,7 @@ fr fr ================================
 fr fr QuickSort Implementation (O(n log n) average, O(n²) worst case)
 fr fr ================================
 
-slay quick_sort_integers(arr []normie) []normie {
+slay quick_sort_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
     ready (length <= 1) {
         damn arr
@@ -14,12 +14,12 @@ slay quick_sort_integers(arr []normie) []normie {
         damn insertion_sort_integers(arr)  fr fr Use insertion sort for small arrays
     }
     
-    sus result []normie = copy_array_integers(arr)
+    sus result normie[value] = copy_array_integers(arr)
     quick_sort_partition(result, 0, length - 1)
     damn result
 }
 
-slay quick_sort_partition(arr []normie, low normie, high normie) {
+slay quick_sort_partition(arr normie[value], low normie, high normie) {
     ready (low < high) {
         sus pivot normie = quick_sort_partition_hoare(arr, low, high)
         quick_sort_partition(arr, low, pivot)
@@ -27,7 +27,7 @@ slay quick_sort_partition(arr []normie, low normie, high normie) {
     }
 }
 
-slay quick_sort_partition_hoare(arr []normie, low normie, high normie) normie {
+slay quick_sort_partition_hoare(arr normie[value], low normie, high normie) normie {
     sus pivot normie = arr[low]
     sus i normie = low - 1
     sus j normie = high + 1
@@ -58,7 +58,7 @@ fr fr ================================
 fr fr MergeSort Implementation (O(n log n) guaranteed)
 fr fr ================================
 
-slay merge_sort_integers(arr []normie) []normie {
+slay merge_sort_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
     ready (length <= 1) {
         damn arr
@@ -67,13 +67,13 @@ slay merge_sort_integers(arr []normie) []normie {
         damn insertion_sort_integers(arr)  fr fr Use insertion sort for small arrays
     }
     
-    sus result []normie = copy_array_integers(arr)
-    sus temp []normie = allocate_array_integers(length)
+    sus result normie[value] = copy_array_integers(arr)
+    sus temp normie[value] = allocate_array_integers(length)
     merge_sort_recursive(result, temp, 0, length - 1)
     damn result
 }
 
-slay merge_sort_recursive(arr []normie, temp []normie, left normie, right normie) {
+slay merge_sort_recursive(arr normie[value], temp normie[value], left normie, right normie) {
     ready (left >= right) {
         return
     }
@@ -84,7 +84,7 @@ slay merge_sort_recursive(arr []normie, temp []normie, left normie, right normie
     merge_arrays(arr, temp, left, mid, right)
 }
 
-slay merge_arrays(arr []normie, temp []normie, left normie, mid normie, right normie) {
+slay merge_arrays(arr normie[value], temp normie[value], left normie, mid normie, right normie) {
     fr fr Copy to temp array
     bestie i := left; i <= right; i++ {
         temp[i] = arr[i]
@@ -122,13 +122,13 @@ fr fr ================================
 fr fr HeapSort Implementation (O(n log n) guaranteed, in-place)
 fr fr ================================
 
-slay heap_sort_integers(arr []normie) []normie {
+slay heap_sort_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
     ready (length <= 1) {
         damn arr
     }
     
-    sus result []normie = copy_array_integers(arr)
+    sus result normie[value] = copy_array_integers(arr)
     
     fr fr Build max heap
     bestie i := (length / 2) - 1; i >= 0; i-- {
@@ -149,7 +149,7 @@ slay heap_sort_integers(arr []normie) []normie {
     damn result
 }
 
-slay heapify(arr []normie, n normie, i normie) {
+slay heapify(arr normie[value], n normie, i normie) {
     sus largest normie = i
     sus left normie = 2 * i + 1
     sus right normie = 2 * i + 2
@@ -176,13 +176,13 @@ fr fr Insertion Sort (O(n²) worst case, O(n) best case)
 fr fr Best for small arrays (< 16 elements)
 fr fr ================================
 
-slay insertion_sort_integers(arr []normie) []normie {
+slay insertion_sort_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
     ready (length <= 1) {
         damn arr
     }
     
-    sus result []normie = copy_array_integers(arr)
+    sus result normie[value] = copy_array_integers(arr)
     
     bestie i := 1; i < length; i++ {
         sus key normie = result[i]
@@ -203,7 +203,7 @@ fr fr TimSort Implementation (Hybrid Merge Sort + Insertion Sort)
 fr fr Optimized for partially sorted data
 fr fr ================================
 
-slay tim_sort_integers(arr []normie) []normie {
+slay tim_sort_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
     ready (length <= 1) {
         damn arr
@@ -212,7 +212,7 @@ slay tim_sort_integers(arr []normie) []normie {
         damn insertion_sort_integers(arr)
     }
     
-    sus result []normie = copy_array_integers(arr)
+    sus result normie[value] = copy_array_integers(arr)
     sus min_run normie = compute_min_run_length(length)
     
     fr fr Sort individual subarrays using insertion sort
@@ -247,7 +247,7 @@ slay compute_min_run_length(n normie) normie {
     damn n + r
 }
 
-slay insertion_sort_range(arr []normie, left normie, right normie) {
+slay insertion_sort_range(arr normie[value], left normie, right normie) {
     bestie i := left + 1; i <= right; i++ {
         sus key normie = arr[i]
         sus j normie = i - 1
@@ -260,12 +260,12 @@ slay insertion_sort_range(arr []normie, left normie, right normie) {
     }
 }
 
-slay merge_ranges(arr []normie, left normie, mid normie, right normie) {
+slay merge_ranges(arr normie[value], left normie, mid normie, right normie) {
     sus left_length normie = mid - left + 1
     sus right_length normie = right - mid
     
-    sus left_arr []normie = allocate_array_integers(left_length)
-    sus right_arr []normie = allocate_array_integers(right_length)
+    sus left_arr normie[value] = allocate_array_integers(left_length)
+    sus right_arr normie[value] = allocate_array_integers(right_length)
     
     bestie i := 0; i < left_length; i++ {
         left_arr[i] = arr[left + i]
@@ -316,7 +316,7 @@ slay boyer_moore_search(text tea, pattern tea) normie {
     }
     
     fr fr Build bad character table
-    sus bad_char []normie = build_bad_char_table(pattern)
+    sus bad_char normie[value] = build_bad_char_table(pattern)
     
     sus shift normie = 0
     periodt (shift <= text_len - pattern_len) {
@@ -346,7 +346,7 @@ slay kmp_search(text tea, pattern tea) normie {
         damn -1
     }
     
-    sus lps []normie = compute_lps_array(pattern)
+    sus lps normie[value] = compute_lps_array(pattern)
     
     sus i normie = 0  fr fr index for text
     sus j normie = 0  fr fr index for pattern
@@ -418,7 +418,7 @@ fr fr Graph Algorithms
 fr fr ================================
 
 fr fr Depth-First Search
-slay depth_first_search(graph [][]normie, start normie, visited []lit) {
+slay depth_first_search(graph normie[value][value], start normie, visited lit[value]) {
     visited[start] = based
     
     bestie neighbor := 0; neighbor < len(graph[start]); neighbor++ {
@@ -429,10 +429,10 @@ slay depth_first_search(graph [][]normie, start normie, visited []lit) {
 }
 
 fr fr Breadth-First Search
-slay breadth_first_search(graph [][]normie, start normie) []normie {
-    sus visited []lit = allocate_boolean_array(len(graph))
-    sus queue []normie = [start]
-    sus result []normie = []
+slay breadth_first_search(graph normie[value][value], start normie) normie[value]{
+    sus visited lit[value] = allocate_boolean_array(len(graph))
+    sus queue normie[value] = [start]
+    sus result normie[value] = []
     
     visited[start] = based
     
@@ -456,33 +456,33 @@ fr fr ================================
 fr fr Utility Functions
 fr fr ================================
 
-slay copy_array_integers(arr []normie) []normie {
+slay copy_array_integers(arr normie[value]) normie[value]{
     sus length normie = len(arr)
-    sus result []normie = allocate_array_integers(length)
+    sus result normie[value] = allocate_array_integers(length)
     bestie i := 0; i < length; i++ {
         result[i] = arr[i]
     }
     damn result
 }
 
-slay allocate_array_integers(size normie) []normie {
-    sus result []normie = []
+slay allocate_array_integers(size normie) normie[value]{
+    sus result normie[value] = []
     bestie i := 0; i < size; i++ {
         result = append_integer(result, 0)
     }
     damn result
 }
 
-slay allocate_boolean_array(size normie) []lit {
-    sus result []lit = []
+slay allocate_boolean_array(size normie) lit[value]{
+    sus result lit[value] = []
     bestie i := 0; i < size; i++ {
         result = append_boolean(result, cringe)
     }
     damn result
 }
 
-slay append_integer(arr []normie, value normie) []normie {
-    sus result []normie = allocate_array_integers(len(arr) + 1)
+slay append_integer(arr normie[value], value normie) normie[value]{
+    sus result normie[value] = allocate_array_integers(len(arr) + 1)
     bestie i := 0; i < len(arr); i++ {
         result[i] = arr[i]
     }
@@ -490,8 +490,8 @@ slay append_integer(arr []normie, value normie) []normie {
     damn result
 }
 
-slay append_boolean(arr []lit, value lit) []lit {
-    sus result []lit = allocate_boolean_array(len(arr) + 1)
+slay append_boolean(arr lit[value], value lit) lit[value]{
+    sus result lit[value] = allocate_boolean_array(len(arr) + 1)
     bestie i := 0; i < len(arr); i++ {
         result[i] = arr[i]
     }
@@ -513,8 +513,8 @@ fr fr String utility functions (placeholders - would need proper implementation)
 slay string_length(str tea) normie { damn 0 }
 slay char_at(str tea, index normie) tea { damn "" }
 slay char_code_at(str tea, index normie) normie { damn 0 }
-slay slice_array_integers(arr []normie, start normie, end normie) []normie { damn [] }
+slay slice_array_integers(arr normie[value], start normie, end normie) normie[value]{ damn [] }
 
 fr fr Placeholder functions for string algorithms
-slay build_bad_char_table(pattern tea) []normie { damn [] }
-slay compute_lps_array(pattern tea) []normie { damn [] }
+slay build_bad_char_table(pattern tea) normie[value]{ damn [] }
+slay compute_lps_array(pattern tea) normie[value]{ damn [] }

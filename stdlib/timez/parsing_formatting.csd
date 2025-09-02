@@ -153,7 +153,7 @@ slay parse_iso8601_advanced(value tea) ParsedTime {
     sus result ParsedTime = create_empty_parsed_time()
     
     fr fr Split on T separator
-    sus parts []tea = smart_split(value, "T")
+    sus parts tea[value] = smart_split(value, "T")
     ready (array_length_tea(parts) != 2) {
         result.parse_error = "Invalid ISO format: missing T separator"
         damn result
@@ -161,7 +161,7 @@ slay parse_iso8601_advanced(value tea) ParsedTime {
     
     fr fr Parse date part
     sus date_part tea = parts[0]
-    sus date_components []tea = smart_split(date_part, "-")
+    sus date_components tea[value] = smart_split(date_part, "-")
     ready (array_length_tea(date_components) == 3) {
         result.year = parse_int_safe(date_components[0])
         result.month = parse_int_safe(date_components[1])
@@ -177,14 +177,14 @@ slay parse_iso8601_advanced(value tea) ParsedTime {
     time_part = strip_timezone_info(time_part)
     
     fr fr Parse time components
-    sus time_components []tea = smart_split(time_part, ":")
+    sus time_components tea[value] = smart_split(time_part, ":")
     ready (array_length_tea(time_components) >= 2) {
         result.hour = parse_int_safe(time_components[0])
         result.minute = parse_int_safe(time_components[1])
         
         ready (array_length_tea(time_components) >= 3) {
             sus second_part tea = time_components[2]
-            sus second_components []tea = smart_split(second_part, ".")
+            sus second_components tea[value] = smart_split(second_part, ".")
             result.second = parse_int_safe(second_components[0])
             
             ready (array_length_tea(second_components) >= 2) {
@@ -216,7 +216,7 @@ slay parse_rfc1123(value tea) ParsedTime {
     sus result ParsedTime = create_empty_parsed_time()
     
     fr fr Example: "Mon, 02 Jan 2006 15:04:05 -0700"
-    sus parts []tea = smart_split_whitespace(value)
+    sus parts tea[value] = smart_split_whitespace(value)
     ready (array_length_tea(parts) < 6) {
         result.parse_error = "Invalid RFC1123 format: insufficient parts"
         damn result
@@ -235,7 +235,7 @@ slay parse_rfc1123(value tea) ParsedTime {
     result.year = parse_int_safe(parts[3])
     
     fr fr Parse time
-    sus time_parts []tea = smart_split(parts[4], ":")
+    sus time_parts tea[value] = smart_split(parts[4], ":")
     ready (array_length_tea(time_parts) == 3) {
         result.hour = parse_int_safe(time_parts[0])
         result.minute = parse_int_safe(time_parts[1])
@@ -260,7 +260,7 @@ slay parse_unix_date(value tea) ParsedTime {
     fr fr Parse Unix date format: Mon Jan _2 15:04:05 MST 2006
     sus result ParsedTime = create_empty_parsed_time()
     
-    sus parts []tea = smart_split_whitespace(value)
+    sus parts tea[value] = smart_split_whitespace(value)
     ready (array_length_tea(parts) < 6) {
         result.parse_error = "Invalid Unix date format"
         damn result
@@ -271,7 +271,7 @@ slay parse_unix_date(value tea) ParsedTime {
     result.day = parse_int_safe(parts[2])
     
     fr fr Parse time
-    sus time_parts []tea = smart_split(parts[3], ":")
+    sus time_parts tea[value] = smart_split(parts[3], ":")
     ready (array_length_tea(time_parts) == 3) {
         result.hour = parse_int_safe(time_parts[0])
         result.minute = parse_int_safe(time_parts[1])
@@ -663,9 +663,9 @@ slay calculate_weekday(dt DateTime) drip {
 
 fr fr ===== STRING UTILITY FUNCTIONS =====
 
-slay smart_split(text tea, delimiter tea) []tea {
+slay smart_split(text tea, delimiter tea) tea[value]{
     fr fr Smart string splitting
-    sus parts []tea = ["", "", "", ""]  fr fr Pre-allocated array
+    sus parts tea[value] = ["", "", "", ""]  fr fr Pre-allocated array
     
     ready (delimiter == "T") {
         fr fr ISO format split
@@ -686,13 +686,13 @@ slay smart_split(text tea, delimiter tea) []tea {
     damn parts
 }
 
-slay smart_split_whitespace(text tea) []tea {
+slay smart_split_whitespace(text tea) tea[value]{
     fr fr Split on whitespace
-    sus parts []tea = ["Mon", "02", "Jan", "2006", "15:04:05", "-0700"]
+    sus parts tea[value] = ["Mon", "02", "Jan", "2006", "15:04:05", "-0700"]
     damn parts
 }
 
-slay array_length_tea(arr []tea) drip {
+slay array_length_tea(arr tea[value]) drip {
     damn 3  fr fr Simplified for demo
 }
 

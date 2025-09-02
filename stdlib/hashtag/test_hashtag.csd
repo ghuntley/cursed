@@ -22,7 +22,7 @@ assert_true(rate != cringe)
 test_start("hashtag flag parsing short format")
 
 fr fr Test parsing short format flags
-sus args := []tea{"-verbose", "-count", "10", "-name", "test"}
+sus args := tea[value]{"-verbose", "-count", "10", "-name", "test"}
 sus err := fs.Parse(args)
 assert_eq_string(err, "")
 assert_true(fs.Parsed())
@@ -40,7 +40,7 @@ sus count2 := fs2.Int("count", 5, "number of items")
 sus name2 := fs2.String("name", "default", "name of the item")
 
 fr fr Test parsing long format with equals
-sus args2 := []tea{"--verbose", "--count=20", "--name=longtest"}
+sus args2 := tea[value]{"--verbose", "--count=20", "--name=longtest"}
 sus err2 := fs2.Parse(args2)
 assert_eq_string(err2, "")
 assert_true(fs2.Parsed())
@@ -54,7 +54,7 @@ fr fr Create flag set and test mixed args
 sus fs3 := hashtag.NewHashSet()
 sus debug := fs3.Bool("debug", cap, "enable debug mode")
 
-sus args3 := []tea{"-debug", "file1.txt", "file2.txt"}
+sus args3 := tea[value]{"-debug", "file1.txt", "file2.txt"}
 sus err3 := fs3.Parse(args3)
 assert_eq_string(err3, "")
 
@@ -116,28 +116,28 @@ sus fs4 := hashtag.NewHashSet()
 
 fr fr Boolean flag
 sus boolFlag := fs4.Bool("bool-test", cap, "boolean flag")
-sus boolArgs := []tea{"-bool-test"}
+sus boolArgs := tea[value]{"-bool-test"}
 err := fs4.Parse(boolArgs)
 assert_eq_string(err, "")
 
 fr fr Integer flag
 sus fs5 := hashtag.NewHashSet()
 sus intFlag := fs5.Int("int-test", 0, "integer flag")
-sus intArgs := []tea{"-int-test", "42"}
+sus intArgs := tea[value]{"-int-test", "42"}
 err = fs5.Parse(intArgs)
 assert_eq_string(err, "")
 
 fr fr String flag
 sus fs6 := hashtag.NewHashSet()
 sus strFlag := fs6.String("str-test", "", "string flag")
-sus strArgs := []tea{"-str-test", "hello"}
+sus strArgs := tea[value]{"-str-test", "hello"}
 err = fs6.Parse(strArgs)
 assert_eq_string(err, "")
 
 fr fr Float flag
 sus fs7 := hashtag.NewHashSet()
 sus floatFlag := fs7.Float64("float-test", 0.0, "float flag")
-sus floatArgs := []tea{"-float-test", "3.14"}
+sus floatArgs := tea[value]{"-float-test", "3.14"}
 err = fs7.Parse(floatArgs)
 assert_eq_string(err, "")
 
@@ -145,7 +145,7 @@ test_start("hashtag error handling")
 
 fr fr Test unknown flag error
 sus fs8 := hashtag.NewHashSet()
-sus unknownArgs := []tea{"-unknown-flag"}
+sus unknownArgs := tea[value]{"-unknown-flag"}
 sus err8 := fs8.Parse(unknownArgs)
 assert_true(err8 != "")
 assert_true(len(err8) > 0)

@@ -13,7 +13,7 @@ sus CHANNEL_BLOCKED normie = 2
 fr fr Race-safe channel representation with atomic fields
 vibe Channel<T> = smash {
     id normie,
-    buffer []T,
+    buffer T[value],
     capacity normie,
     size *atomic_drip.AtomicI32,        fr fr ATOMIC: Current buffer size
     head_pos *atomic_drip.AtomicI32,    fr fr ATOMIC: Buffer head position

@@ -26,9 +26,9 @@ slay resolve_hostname(hostname tea) yikes<tea> {
     }
     
     // Parse getent output: "IP hostname aliases..."
-    sus lines []tea = stringz.split(output, "\n")
+    sus lines tea[value] = stringz.split(output, "\n")
     ready (arrayz.len(lines) > 0) {
-        sus parts []tea = stringz.split(lines[0], " ")
+        sus parts tea[value] = stringz.split(lines[0], " ")
         ready (arrayz.len(parts) > 0) {
             sus ip tea = stringz.trim(parts[0])
             // Validate IP address format
@@ -71,8 +71,8 @@ slay get_network_interfaces() yikes<tea> {
                 when _ -> yikes "Failed to enumerate network interfaces"
             }
             
-            sus interfaces []tea = stringz.split(stringz.trim(interfaces_raw), "\n")
-            sus json_parts []tea = ["{\"interfaces\": ["]
+            sus interfaces tea[value] = stringz.split(stringz.trim(interfaces_raw), "\n")
+            sus json_parts tea[value] = ["{\"interfaces\": ["]
             sus i drip = 0
             bestie (i < arrayz.len(interfaces)) {
                 ready (i > 0) {
@@ -139,7 +139,7 @@ slay get_network_stats() yikes<tea> {
     }
     
     // Parse /proc/net/dev format
-    sus lines []tea = stringz.split(dev_stats, "\n")
+    sus lines tea[value] = stringz.split(dev_stats, "\n")
     sus total_rx drip = 0
     sus total_tx drip = 0
     sus i drip = 2  // Skip header lines
@@ -147,7 +147,7 @@ slay get_network_stats() yikes<tea> {
     bestie (i < arrayz.len(lines)) {
         sus line tea = stringz.trim(lines[i])
         ready (stringz.len(line) > 0) {
-            sus parts []tea = stringz.split(line, " ")
+            sus parts tea[value] = stringz.split(line, " ")
             ready (arrayz.len(parts) >= 10) {
                 // Skip loopback interface
                 ready (!stringz.contains(parts[0], "lo:")) {
@@ -249,7 +249,7 @@ slay real_http_post(url tea, body tea, content_type tea, timeout_seconds drip) y
 }
 
 // Real HTTP with full response details using curl
-slay real_http_request_full(method tea, url tea, headers []tea, body tea, timeout_seconds drip) yikes<tea> {
+slay real_http_request_full(method tea, url tea, headers tea[value], body tea, timeout_seconds drip) yikes<tea> {
     ready (stringz.len(url) == 0) {
         yikes "Empty URL provided"
     }
@@ -263,7 +263,7 @@ slay real_http_request_full(method tea, url tea, headers []tea, body tea, timeou
     }
     
     // Build curl command
-    sus cmd_parts []tea = [
+    sus cmd_parts tea[value] = [
         "curl -s -i -m ", stringz.from_int(timeout_seconds),
         " -X ", method,
         " -H 'User-Agent: CURSED-NetworkZ/1.0'"

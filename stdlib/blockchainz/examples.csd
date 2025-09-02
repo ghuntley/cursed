@@ -58,7 +58,7 @@ slay demo_merkle_tree() {
     vibez.spill("\n=== Merkle Tree Demo ===")
     
     # Create sample transaction IDs
-    sus tx_ids []tea = [
+    sus tx_ids tea[value] = [
         "tx1_hash_0123456789abcdef",
         "tx2_hash_fedcba9876543210", 
         "tx3_hash_1122334455667788",
@@ -94,7 +94,7 @@ slay demo_block_mining() {
     sus signed_tx1 SignedTransaction = sign_transaction(tx1, wallet1.private_key)
     sus signed_tx2 SignedTransaction = sign_transaction(tx2, wallet2.private_key)
     
-    sus transactions []SignedTransaction = [signed_tx1, signed_tx2]
+    sus transactions SignedTransaction[value] = [signed_tx1, signed_tx2]
     
     vibez.spill("Created block with", len(transactions), "transactions")
     
@@ -120,7 +120,7 @@ slay demo_blockchain_validation() {
     vibez.spill("\n=== Blockchain Validation Demo ===")
     
     # Create genesis block
-    sus genesis_transactions []SignedTransaction = []
+    sus genesis_transactions SignedTransaction[value] = []
     sus genesis Block = create_block(genesis_transactions)
     genesis.header.previous_hash = "0000000000000000000000000000000000000000000000000000000000000000"
     sus mined_genesis Block = mine_block(genesis, 4)
@@ -136,7 +136,7 @@ slay demo_blockchain_validation() {
     sus mined_block2 Block = mine_block(block2, 4)
     
     # Create blockchain
-    sus blockchain []Block = [mined_genesis, mined_block2]
+    sus blockchain Block[value] = [mined_genesis, mined_block2]
     
     vibez.spill("Created blockchain with", len(blockchain), "blocks")
     vibez.spill("Genesis block hash:", blockchain[0].hash[0:32] + "...")
@@ -151,7 +151,7 @@ slay demo_blockchain_validation() {
 slay demo_hash_functions() {
     vibez.spill("\n=== Hash Functions Demo ===")
     
-    sus test_data []tea = [
+    sus test_data tea[value] = [
         "Hello, World!",
         "CURSED Blockchain",
         "The quick brown fox jumps over the lazy dog",

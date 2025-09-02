@@ -17,8 +17,8 @@ struct ValidationError {
 
 struct ValidationResult {
     is_valid lit,                    # Whether validation passed
-    errors []ValidationError,       # List of validation errors
-    warnings []ValidationError      # List of validation warnings
+    errors ValidationError[value],       # List of validation errors
+    warnings ValidationError[value]      # List of validation warnings
 }
 
 fr fr Common validation error codes
@@ -265,7 +265,7 @@ slay validate_required_if(value tea, condition lit, field_name tea) ValidationRe
 
 fr fr ===== COMPOSITE VALIDATION =====
 
-slay combine_results(results []ValidationResult) ValidationResult {
+slay combine_results(results ValidationResult[value]) ValidationResult {
     sus combined ValidationResult = new_validation_result()
     
     sus i normie = 0
@@ -295,8 +295,8 @@ slay combine_results(results []ValidationResult) ValidationResult {
     damn combined
 }
 
-slay validate_all(validators []func() ValidationResult) ValidationResult {
-    sus results []ValidationResult = []
+slay validate_all(validators func[value]() ValidationResult) ValidationResult {
+    sus results ValidationResult[value] = []
     
     sus i normie = 0
     bestie i < len_validators(validators) {
@@ -313,7 +313,7 @@ fr fr ===== VALIDATION CHAINS =====
 struct ValidationChain {
     field_name tea,
     value tea,
-    validators []func(tea, tea) ValidationResult,
+    validators func[value](tea, tea) ValidationResult,
     current_result ValidationResult
 }
 
@@ -422,10 +422,10 @@ slay merge_validation_results(result1 ValidationResult, result2 ValidationResult
 }
 
 fr fr Array helper functions (PRODUCTION IMPLEMENTATION)
-slay append_error(arr []ValidationError, error ValidationError) []ValidationError {
+slay append_error(arr ValidationError[value], error ValidationError) ValidationError[value]{
     # Real implementation - resize array and add error
     sus new_length normie = len_errors(arr) + 1
-    sus new_arr []ValidationError = make_error_array(new_length)
+    sus new_arr ValidationError[value] = make_error_array(new_length)
     
     # Copy existing errors
     sus i normie = 0
@@ -439,7 +439,7 @@ slay append_error(arr []ValidationError, error ValidationError) []ValidationErro
     damn new_arr
 }
 
-slay len_errors(arr []ValidationError) normie {
+slay len_errors(arr ValidationError[value]) normie {
     # Real implementation - count actual array elements
     sus count normie = 0
     bestie count < 1000 {  # Safety limit to prevent infinite loops
@@ -451,7 +451,7 @@ slay len_errors(arr []ValidationError) normie {
     damn count  # Return actual count up to safety limit
 }
 
-slay len_validation_results(arr []ValidationResult) normie {
+slay len_validation_results(arr ValidationResult[value]) normie {
     # Real implementation - count actual result elements
     sus count normie = 0
     bestie count < 1000 {  # Safety limit
@@ -464,11 +464,11 @@ slay len_validation_results(arr []ValidationResult) normie {
     damn count
 }
 
-slay append_validation_result(arr []ValidationResult, result ValidationResult) []ValidationResult {
+slay append_validation_result(arr ValidationResult[value], result ValidationResult) ValidationResult[value]{
     # Real implementation - resize and add result
     sus current_length normie = len_validation_results(arr)
     sus new_length normie = current_length + 1
-    sus new_arr []ValidationResult = make_result_array(new_length)
+    sus new_arr ValidationResult[value] = make_result_array(new_length)
     
     # Copy existing results
     sus i normie = 0
@@ -482,7 +482,7 @@ slay append_validation_result(arr []ValidationResult, result ValidationResult) [
     damn new_arr
 }
 
-slay len_validators(arr []func() ValidationResult) normie {
+slay len_validators(arr func[value]() ValidationResult) normie {
     # Real implementation - count non-null function pointers
     sus count normie = 0
     bestie count < 100 {  # Reasonable limit for validator functions
@@ -499,9 +499,9 @@ slay len_validators(arr []func() ValidationResult) normie {
 }
 
 fr fr Array creation helper functions
-slay make_error_array(size normie) []ValidationError {
+slay make_error_array(size normie) ValidationError[value]{
     # Create new ValidationError array with specified size
-    sus arr []ValidationError
+    sus arr ValidationError[value]
     sus i normie = 0
     bestie i < size {
         sus empty_error ValidationError = ValidationError{
@@ -517,9 +517,9 @@ slay make_error_array(size normie) []ValidationError {
     damn arr
 }
 
-slay make_result_array(size normie) []ValidationResult {
+slay make_result_array(size normie) ValidationResult[value]{
     # Create new ValidationResult array with specified size
-    sus arr []ValidationResult
+    sus arr ValidationResult[value]
     sus i normie = 0
     bestie i < size {
         sus empty_result ValidationResult = ValidationResult{
@@ -585,7 +585,7 @@ slay validate_sql_injection_protection(input tea, field_name tea) ValidationResu
     sus result ValidationResult = new_validation_result()
     
     # Check for common SQL injection patterns
-    sus dangerous_patterns []tea = [
+    sus dangerous_patterns tea[value] = [
         "'; DROP TABLE",
         "' OR '1'='1",
         "' UNION SELECT",
@@ -618,7 +618,7 @@ slay validate_xss_protection(input tea, field_name tea) ValidationResult {
     sus result ValidationResult = new_validation_result()
     
     # Check for XSS patterns
-    sus xss_patterns []tea = [
+    sus xss_patterns tea[value] = [
         "<script",
         "</script>",
         "javascript:",
@@ -667,7 +667,7 @@ slay validate_path_traversal_protection(path tea, field_name tea) ValidationResu
     sus result ValidationResult = new_validation_result()
     
     # Check for path traversal patterns
-    sus dangerous_paths []tea = [
+    sus dangerous_paths tea[value] = [
         "../",
         "..\\",
         "/etc/passwd",

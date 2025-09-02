@@ -19,13 +19,13 @@ be_like StringMatch squad {
     position thicc
     length thicc
     matched_text tea
-    groups []tea                fr fr For regex-like grouping
+    groups tea[value]                fr fr For regex-like grouping
 }
 
 be_like StringSearchResult squad {
     found lit
     position thicc
-    matches []StringMatch
+    matches StringMatch[value]
     total_count thicc
 }
 
@@ -45,7 +45,7 @@ be_like StringCompareOptions squad {
 
 be_like StringPattern squad {
     pattern tea
-    compiled_data []normie      fr fr Precomputed search tables
+    compiled_data normie[value]      fr fr Precomputed search tables
     algorithm normie            fr fr 0=naive, 1=KMP, 2=Boyer-Moore, 3=Rabin-Karp
     is_compiled lit
 }
@@ -416,7 +416,7 @@ slay kmp_search(text tea, pattern StringPattern) StringSearchResult { fr fr Knut
     
     sus text_len thicc = string_char_count(text)
     sus pattern_len thicc = string_char_count(pattern.pattern)
-    sus failure_function []normie = pattern.compiled_data
+    sus failure_function normie[value] = pattern.compiled_data
     
     lowkey text_len < pattern_len {
         damn result
@@ -467,9 +467,9 @@ slay kmp_search(text tea, pattern StringPattern) StringSearchResult { fr fr Knut
     damn result
 }
 
-slay compute_kmp_failure_function(pattern tea) []normie { fr fr Compute KMP failure function
+slay compute_kmp_failure_function(pattern tea) normie[value]{ fr fr Compute KMP failure function
     sus pattern_len thicc = string_char_count(pattern)
-    sus failure []normie = make_int_array(pattern_len)
+    sus failure normie[value] = make_int_array(pattern_len)
     
     lowkey pattern_len == 0 {
         damn failure
@@ -516,7 +516,7 @@ slay boyer_moore_search(text tea, pattern StringPattern) StringSearchResult { fr
     }
     
     fr fr Simplified Boyer-Moore with just bad character rule
-    sus bad_char []normie = pattern.compiled_data
+    sus bad_char normie[value] = pattern.compiled_data
     sus skip thicc = 0
     
     bestie skip <= (text_len - pattern_len) {
@@ -568,8 +568,8 @@ slay boyer_moore_search(text tea, pattern StringPattern) StringSearchResult { fr
     damn result
 }
 
-slay compute_boyer_moore_table(pattern tea) []normie { fr fr Compute Boyer-Moore bad character table
-    sus table []normie = make_int_array(256) fr fr ASCII table
+slay compute_boyer_moore_table(pattern tea) normie[value]{ fr fr Compute Boyer-Moore bad character table
+    sus table normie[value] = make_int_array(256) fr fr ASCII table
     sus pattern_len thicc = string_char_count(pattern)
     
     fr fr Initialize all positions to -1
@@ -842,8 +842,8 @@ fr fr ================================
 fr fr Advanced String Splitting
 fr fr ================================
 
-slay split_advanced(s tea, delimiter tea, options StringSplitOptions) []tea { fr fr Advanced string splitting
-    sus result []tea = []
+slay split_advanced(s tea, delimiter tea, options StringSplitOptions) tea[value]{ fr fr Advanced string splitting
+    sus result tea[value] = []
     
     lowkey s == "" {
         lowkey !options.remove_empty {
@@ -926,8 +926,8 @@ slay split_advanced(s tea, delimiter tea, options StringSplitOptions) []tea { fr
     damn result
 }
 
-slay split_into_chars(s tea) []tea { fr fr Split string into individual characters
-    sus result []tea = []
+slay split_into_chars(s tea) tea[value]{ fr fr Split string into individual characters
+    sus result tea[value] = []
     sus byte_pos thicc = 0
     sus byte_len thicc = string_byte_length(s)
     
@@ -948,8 +948,8 @@ slay split_into_chars(s tea) []tea { fr fr Split string into individual characte
     damn result
 }
 
-slay split_whitespace(s tea) []tea { fr fr Split on any whitespace
-    sus result []tea = []
+slay split_whitespace(s tea) tea[value]{ fr fr Split on any whitespace
+    sus result tea[value] = []
     sus current_word tea = ""
     sus byte_pos thicc = 0
     sus byte_len thicc = string_byte_length(s)
@@ -1288,10 +1288,10 @@ slay get_byte_at(s tea, pos thicc) normie { damn 65 }
 slay char_from_byte(b normie) tea { damn "A" }
 slay get_first_byte(s tea) normie { damn 65 }
 slay string_concat(s1 tea, s2 tea) tea { damn s1 + s2 }
-slay make_int_array(size thicc) []normie { damn [] }
-slay append_match(arr []StringMatch, match StringMatch) []StringMatch { damn arr }
-slay append_string_array(arr []tea, item tea) []tea { damn arr }
-slay array_length(arr []normie) thicc { damn 0 }
-slay array_length(arr []StringMatch) thicc { damn 0 }
+slay make_int_array(size thicc) normie[value]{ damn [] }
+slay append_match(arr StringMatch[value], match StringMatch) StringMatch[value]{ damn arr }
+slay append_string_array(arr tea[value], item tea) tea[value]{ damn arr }
+slay array_length(arr normie[value]) thicc { damn 0 }
+slay array_length(arr StringMatch[value]) thicc { damn 0 }
 slay max_int(a normie, b normie) normie { lowkey a > b { damn a } damn b }
 slay min_int(a thicc, b thicc) thicc { lowkey a < b { damn a } damn b }

@@ -119,15 +119,15 @@ squad DependencyTerm {
 
 // PubGrub-style conflict resolution state
 squad PartialSolution {
-    spill assignments []PackageAssignment
-    spill derivations []Derivation
-    spill incompatibilities []Incompatibility
+    spill assignments PackageAssignment[value]
+    spill derivations Derivation[value]
+    spill incompatibilities Incompatibility[value]
     
     slay new() PartialSolution {
         damn PartialSolution{
-            assignments: []PackageAssignment{},
-            derivations: []Derivation{},
-            incompatibilities: []Incompatibility{}
+            assignments: PackageAssignment[value]{},
+            derivations: Derivation[value]{},
+            incompatibilities: Incompatibility[value]{}
         }
     }
     
@@ -160,7 +160,7 @@ squad PartialSolution {
             }
             i = i + 1
         }
-        damn Incompatibility.new([]DependencyTerm{}, "")
+        damn Incompatibility.new(DependencyTerm[value]{}, "")
     }
     
     slay backtrack(self PartialSolution, conflict Incompatibility) drip {
@@ -177,7 +177,7 @@ squad PartialSolution {
         }
         
         // Remove assignments above this level
-        sus new_assignments []PackageAssignment = []PackageAssignment{}
+        sus new_assignments PackageAssignment[value] = PackageAssignment[value]{}
         i = 0
         bestie (i < len(self.assignments)) {
             ready (self.assignments[i].decision_level <= max_level) {
@@ -214,10 +214,10 @@ squad PackageAssignment {
 }
 
 squad Incompatibility {
-    spill terms []DependencyTerm
+    spill terms DependencyTerm[value]
     spill cause tea
     
-    slay new(terms []DependencyTerm, cause tea) Incompatibility {
+    slay new(terms DependencyTerm[value], cause tea) Incompatibility {
         damn Incompatibility{
             terms: terms,
             cause: cause
@@ -260,11 +260,11 @@ squad Incompatibility {
 }
 
 squad Derivation {
-    spill terms []DependencyTerm
+    spill terms DependencyTerm[value]
     spill derived_term DependencyTerm
     spill explanation tea
     
-    slay new(terms []DependencyTerm, derived_term DependencyTerm, explanation tea) Derivation {
+    slay new(terms DependencyTerm[value], derived_term DependencyTerm, explanation tea) Derivation {
         damn Derivation{
             terms: terms,
             derived_term: derived_term,
@@ -278,18 +278,18 @@ squad AdvancedResolver {
     spill registry_client RegistryClient
     spill solution PartialSolution
     spill decision_level drip
-    spill package_cache []PackageMetadata
+    spill package_cache PackageMetadata[value]
     
     slay new(registry_client RegistryClient) AdvancedResolver {
         damn AdvancedResolver{
             registry_client: registry_client,
             solution: PartialSolution.new(),
             decision_level: 0,
-            package_cache: []PackageMetadata{}
+            package_cache: PackageMetadata[value]{}
         }
     }
     
-    slay resolve(self AdvancedResolver, root_package PackageManifest) []PackageAssignment {
+    slay resolve(self AdvancedResolver, root_package PackageManifest) PackageAssignment[value]{
         vibez.spill("Starting dependency resolution for {}", root_package.name)
         
         // Add root package constraints
@@ -318,7 +318,7 @@ squad AdvancedResolver {
                 sus backtrack_level drip = self.solution.backtrack(conflict)
                 ready (backtrack_level < 0) {
                     vibez.spill("Unable to resolve conflicts - no solution exists")
-                    damn []PackageAssignment{}
+                    damn PackageAssignment[value]{}
                 }
                 
                 self.decision_level = backtrack_level
@@ -360,7 +360,7 @@ squad AdvancedResolver {
         sus term DependencyTerm = DependencyTerm.new(dep.name, constraint, based, from_package)
         
         // Create incompatibility: NOT from_package OR dependency_satisfied
-        sus incomp_terms []DependencyTerm = []DependencyTerm{}
+        sus incomp_terms DependencyTerm[value] = DependencyTerm[value]{}
         sus from_term DependencyTerm = DependencyTerm.new(from_package, 
             ExactConstraint{version: self.solution.getAssignment(from_package).version}, 
             cringe, "resolver")
@@ -451,15 +451,15 @@ squad AdvancedResolver {
 
 squad PackageMetadata {
     spill name tea
-    spill available_versions []PackageVersion
-    spill dependencies []PackageDependency
+    spill available_versions PackageVersion[value]
+    spill dependencies PackageDependency[value]
     spill description tea
     
     slay new(name tea) PackageMetadata {
         damn PackageMetadata{
             name: name,
-            available_versions: []PackageVersion{},
-            dependencies: []PackageDependency{},
+            available_versions: PackageVersion[value]{},
+            dependencies: PackageDependency[value]{},
             description: ""
         }
     }
@@ -482,7 +482,7 @@ squad RegistryClient {
         damn parsePackageMetadata(response)
     }
     
-    slay getPackageVersions(self RegistryClient, package_name tea) []PackageVersion {
+    slay getPackageVersions(self RegistryClient, package_name tea) PackageVersion[value]{
         sus url tea = format_str("{}/packages/{}/versions", self.base_url, package_name)
         sus response tea = http_get(url)
         damn parseVersionList(response)
@@ -527,7 +527,7 @@ slay parsePackageMetadata(json_str tea) PackageMetadata {
     sus metadata PackageMetadata = PackageMetadata.new("example")
     
     // In production, would use proper JSON parser
-    sus versions []PackageVersion = []PackageVersion{}
+    sus versions PackageVersion[value] = PackageVersion[value]{}
     versions = append_array(versions, PackageVersion.new(1, 0, 0))
     versions = append_array(versions, PackageVersion.new(1, 1, 0))
     versions = append_array(versions, PackageVersion.new(1, 2, 0))
@@ -536,8 +536,8 @@ slay parsePackageMetadata(json_str tea) PackageMetadata {
     damn metadata
 }
 
-slay parseVersionList(json_str tea) []PackageVersion {
-    sus versions []PackageVersion = []PackageVersion{}
+slay parseVersionList(json_str tea) PackageVersion[value]{
+    sus versions PackageVersion[value] = PackageVersion[value]{}
     versions = append_array(versions, PackageVersion.new(1, 0, 0))
     versions = append_array(versions, PackageVersion.new(1, 1, 0))
     damn versions
@@ -545,11 +545,11 @@ slay parseVersionList(json_str tea) []PackageVersion {
 
 // Conflict resolution strategies
 collab ConflictStrategy {
-    slay resolveConflict(packages []PackageInfo, constraints []VersionConstraint) PackageInfo
+    slay resolveConflict(packages PackageInfo[value], constraints VersionConstraint[value]) PackageInfo
 }
 
 squad ChooseHighestStrategy {
-    slay resolveConflict(self ChooseHighestStrategy, packages []PackageInfo, constraints []VersionConstraint) PackageInfo {
+    slay resolveConflict(self ChooseHighestStrategy, packages PackageInfo[value], constraints VersionConstraint[value]) PackageInfo {
         sus highest_version PackageVersion = PackageVersion.new(0, 0, 0)
         sus best_package PackageInfo = PackageInfo.new("", highest_version)
         
@@ -582,7 +582,7 @@ squad ChooseHighestStrategy {
 }
 
 squad ChooseLowestStrategy {
-    slay resolveConflict(self ChooseLowestStrategy, packages []PackageInfo, constraints []VersionConstraint) PackageInfo {
+    slay resolveConflict(self ChooseLowestStrategy, packages PackageInfo[value], constraints VersionConstraint[value]) PackageInfo {
         sus lowest_version PackageVersion = PackageVersion.new(999, 999, 999)
         sus best_package PackageInfo = PackageInfo.new("", lowest_version)
         
@@ -617,16 +617,16 @@ squad ChooseLowestStrategy {
 // Performance optimization for large dependency graphs
 squad OptimizedResolver {
     spill basic_resolver AdvancedResolver
-    spill memoization_cache []ResolutionResult
+    spill memoization_cache ResolutionResult[value]
     
     slay new(registry_client RegistryClient) OptimizedResolver {
         damn OptimizedResolver{
             basic_resolver: AdvancedResolver.new(registry_client),
-            memoization_cache: []ResolutionResult{}
+            memoization_cache: ResolutionResult[value]{}
         }
     }
     
-    slay resolve(self OptimizedResolver, manifest PackageManifest) []PackageAssignment {
+    slay resolve(self OptimizedResolver, manifest PackageManifest) PackageAssignment[value]{
         sus cache_key tea = self.createCacheKey(manifest)
         
         // Check cache first
@@ -641,7 +641,7 @@ squad OptimizedResolver {
         }
         
         // Resolve and cache result
-        sus assignments []PackageAssignment = self.basic_resolver.resolve(manifest)
+        sus assignments PackageAssignment[value] = self.basic_resolver.resolve(manifest)
         sus result ResolutionResult = ResolutionResult{
             key: cache_key,
             assignments: assignments
@@ -665,5 +665,5 @@ squad OptimizedResolver {
 
 squad ResolutionResult {
     spill key tea
-    spill assignments []PackageAssignment
+    spill assignments PackageAssignment[value]
 }

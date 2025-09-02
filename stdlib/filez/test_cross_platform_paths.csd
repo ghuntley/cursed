@@ -64,7 +64,7 @@ slay test_windows_drive_paths() {
     assert_path_equals(normalized, expected_normalized, "Mixed separators normalized")
     
     fr fr Test path joining
-    sus parts []tea = ["C:\\Users", "Developer", "Documents", "file.txt"]
+    sus parts tea[value] = ["C:\\Users", "Developer", "Documents", "file.txt"]
     sus joined tea = cross_platform_join(parts)
     sus expected_join tea = "C:\\Users\\Developer\\Documents\\file.txt"
     assert_path_equals(joined, expected_join, "Windows path joining")
@@ -106,7 +106,7 @@ slay test_windows_path_validation() {
     assert_eq_lit(validate_path_chars(valid_path), based)
     
     fr fr Test invalid characters
-    sus invalid_chars []tea = ["<", ">", ":", "\"", "|", "?", "*"]
+    sus invalid_chars tea[value] = ["<", ">", ":", "\"", "|", "?", "*"]
     sus i drip = 0
     bestie (i < array_length(invalid_chars)) {
         sus invalid_path tea = "C:\\Users\\file" + invalid_chars[i] + ".txt"
@@ -154,13 +154,13 @@ slay test_unix_path_operations() {
     vibez.spill("\n=== Testing Unix Path Operations ===")
     
     fr fr Test path joining
-    sus parts []tea = ["/home", "user", "documents", "file.txt"]
+    sus parts tea[value] = ["/home", "user", "documents", "file.txt"]
     sus joined tea = cross_platform_join(parts)
     sus expected tea = "/home/user/documents/file.txt"
     assert_path_equals(joined, expected, "Unix path joining")
     
     fr fr Test path components
-    sus components []tea = get_path_components("/home/user/documents/file.txt")
+    sus components tea[value] = get_path_components("/home/user/documents/file.txt")
     assert_eq_tea(components[0], "/")
     assert_eq_tea(components[1], "home")
     assert_eq_tea(components[2], "user")
@@ -320,7 +320,7 @@ slay test_cross_platform_compatibility() {
     vibez.spill("\n=== Testing Cross-Platform Compatibility ===")
     
     fr fr Test path joining with mixed types
-    sus mixed_parts []tea = ["C:\\Users", "user", "documents/subfolder", "file.txt"]
+    sus mixed_parts tea[value] = ["C:\\Users", "user", "documents/subfolder", "file.txt"]
     sus mixed_joined tea = cross_platform_join(mixed_parts)
     vibez.spill("Mixed path joining: " + mixed_joined)
     

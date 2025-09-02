@@ -12,7 +12,7 @@ fr fr ===== BASIC ENCODING/DECODING TESTS =====
 slay test_basic_null_encoding() lit {
     fr fr Test null value encoding/decoding
     sus value BinzValue = binz_create_null()
-    sus encoded []drip = binz_encode(value)
+    sus encoded drip[value] = binz_encode(value)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == TAG_NULL, "Null encoding roundtrip failed")
@@ -25,8 +25,8 @@ slay test_basic_boolean_encoding() lit {
     sus true_val BinzValue = binz_create_bool(based)
     sus false_val BinzValue = binz_create_bool(cringe)
     
-    sus true_encoded []drip = binz_encode(true_val)
-    sus false_encoded []drip = binz_encode(false_val)
+    sus true_encoded drip[value] = binz_encode(true_val)
+    sus false_encoded drip[value] = binz_encode(false_val)
     
     sus true_decoded BinzValue = binz_decode(true_encoded)
     sus false_decoded BinzValue = binz_decode(false_encoded)
@@ -42,13 +42,13 @@ slay test_basic_boolean_encoding() lit {
 
 slay test_integer_encoding() lit {
     fr fr Test various integer values
-    sus test_values []drip = [0, 1, 42, -1, -42, 2147483647, -2147483648]
+    sus test_values drip[value] = [0, 1, 42, -1, -42, 2147483647, -2147483648]
     sus i drip = 0
     sus count drip = array_length(test_values)
     
     bestie (i < count) {
         sus value BinzValue = binz_create_int(test_values[i])
-        sus encoded []drip = binz_encode(value)
+        sus encoded drip[value] = binz_encode(value)
         sus decoded BinzValue = binz_decode(encoded)
         
         test_assert(decoded.type_tag == TAG_INT32, "Integer encoding type mismatch")
@@ -63,13 +63,13 @@ slay test_integer_encoding() lit {
 
 slay test_float_encoding() lit {
     fr fr Test floating point values
-    sus test_values []normie = [0.0, 1.0, -1.0, 3.14159, -3.14159, 1.23456789]
+    sus test_values normie[value] = [0.0, 1.0, -1.0, 3.14159, -3.14159, 1.23456789]
     sus i drip = 0
     sus count drip = array_length(test_values)
     
     bestie (i < count) {
         sus value BinzValue = binz_create_float(test_values[i])
-        sus encoded []drip = binz_encode(value)
+        sus encoded drip[value] = binz_encode(value)
         sus decoded BinzValue = binz_decode(encoded)
         
         test_assert(decoded.type_tag == TAG_FLOAT64, "Float encoding type mismatch")
@@ -87,13 +87,13 @@ slay test_float_encoding() lit {
 
 slay test_string_encoding() lit {
     fr fr Test string encoding (both short and long)
-    sus test_strings []tea = ["", "hello", "world", "The quick brown fox jumps over the lazy dog"]
+    sus test_strings tea[value] = ["", "hello", "world", "The quick brown fox jumps over the lazy dog"]
     sus i drip = 0
     sus count drip = array_length(test_strings)
     
     bestie (i < count) {
         sus value BinzValue = binz_create_string(test_strings[i])
-        sus encoded []drip = binz_encode(value)
+        sus encoded drip[value] = binz_encode(value)
         sus decoded BinzValue = binz_decode(encoded)
         
         sus expected_tag drip = ready (string_length(test_strings[i]) < 256) { TAG_STRING_SHORT } otherwise { TAG_STRING_LONG }
@@ -106,7 +106,7 @@ slay test_string_encoding() lit {
     fr fr Test very long string (> 255 chars)
     sus long_string tea = generate_long_string(300)
     sus long_value BinzValue = binz_create_string(long_string)
-    sus long_encoded []drip = binz_encode(long_value)
+    sus long_encoded drip[value] = binz_encode(long_value)
     sus long_decoded BinzValue = binz_decode(long_encoded)
     
     test_assert(long_decoded.type_tag == TAG_STRING_LONG, "Long string should use TAG_STRING_LONG")
@@ -129,7 +129,7 @@ slay test_array_encoding() lit {
     array_val.array_values[3] = binz_create_float(3.14)
     array_val.array_values[4] = binz_create_null()
     
-    sus encoded []drip = binz_encode(array_val)
+    sus encoded drip[value] = binz_encode(array_val)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == TAG_ARRAY_MIXED, "Array encoding type mismatch")
@@ -166,7 +166,7 @@ slay test_struct_encoding() lit {
     struct_val.struct_fields[3] = "score"
     struct_val.struct_values[3] = binz_create_float(98.5)
     
-    sus encoded []drip = binz_encode(struct_val)
+    sus encoded drip[value] = binz_encode(struct_val)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == TAG_STRUCT, "Struct encoding type mismatch")
@@ -227,7 +227,7 @@ slay test_nested_structures() lit {
     outer_struct.struct_fields[1] = "numbers"
     outer_struct.struct_values[1] = inner_array
     
-    sus encoded []drip = binz_encode(outer_struct)
+    sus encoded drip[value] = binz_encode(outer_struct)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == TAG_STRUCT, "Nested structure root type")
@@ -285,7 +285,7 @@ slay test_schema_creation_and_validation() lit {
     test_assert(validation_result, "Valid user data should pass schema validation")
     
     fr fr Test schema encoding/decoding
-    sus encoded []drip = binz_encode_with_schema(user_data, user_schema)
+    sus encoded drip[value] = binz_encode_with_schema(user_data, user_schema)
     test_assert(array_length(encoded) > 0, "Schema-based encoding should produce output")
     
     sus decoded BinzValue = binz_decode_with_schema(encoded, user_schema)
@@ -340,17 +340,17 @@ slay test_compression() lit {
     compressed_value.type_tag = TAG_COMPRESSED
     compressed_value = large_struct  fr fr Content to compress
     
-    sus encoded []drip = binz_encode(compressed_value)
+    sus encoded drip[value] = binz_encode(compressed_value)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == large_struct.type_tag, "Compressed data should decode to original type")
     
     fr fr Test that compression actually reduces size for repetitive data
     sus repetitive_data BinzValue = create_repetitive_data()
-    sus normal_encoded []drip = binz_encode(repetitive_data)
+    sus normal_encoded drip[value] = binz_encode(repetitive_data)
     
     repetitive_data.type_tag = TAG_COMPRESSED
-    sus compressed_encoded []drip = binz_encode(repetitive_data)
+    sus compressed_encoded drip[value] = binz_encode(repetitive_data)
     
     fr fr Compressed should be smaller (simplified test)
     test_assert(array_length(compressed_encoded) <= array_length(normal_encoded), "Compression should not increase size significantly")
@@ -373,7 +373,7 @@ slay test_large_data_structures() lit {
     }
     
     sus start_time drip = get_current_time()
-    sus encoded []drip = binz_encode(large_array)
+    sus encoded drip[value] = binz_encode(large_array)
     sus encode_time drip = get_current_time() - start_time
     
     start_time = get_current_time()
@@ -396,8 +396,8 @@ slay test_edge_cases() lit {
     sus empty_array BinzValue = binz_create_array()
     sus empty_struct BinzValue = binz_create_struct()
     
-    sus encoded_array []drip = binz_encode(empty_array)
-    sus encoded_struct []drip = binz_encode(empty_struct)
+    sus encoded_array drip[value] = binz_encode(empty_array)
+    sus encoded_struct drip[value] = binz_encode(empty_struct)
     
     sus decoded_array BinzValue = binz_decode(encoded_array)
     sus decoded_struct BinzValue = binz_decode(encoded_struct)
@@ -411,8 +411,8 @@ slay test_edge_cases() lit {
     sus max_int BinzValue = binz_create_int(2147483647)
     sus min_int BinzValue = binz_create_int(-2147483648)
     
-    sus max_encoded []drip = binz_encode(max_int)
-    sus min_encoded []drip = binz_encode(min_int)
+    sus max_encoded drip[value] = binz_encode(max_int)
+    sus min_encoded drip[value] = binz_encode(min_int)
     
     sus max_decoded BinzValue = binz_decode(max_encoded)
     sus min_decoded BinzValue = binz_decode(min_encoded)
@@ -422,7 +422,7 @@ slay test_edge_cases() lit {
     
     fr fr Unicode strings
     sus unicode_val BinzValue = binz_create_string("Hello 世界 🌍")
-    sus unicode_encoded []drip = binz_encode(unicode_val)
+    sus unicode_encoded drip[value] = binz_encode(unicode_val)
     sus unicode_decoded BinzValue = binz_decode(unicode_encoded)
     
     test_assert(unicode_decoded.string_value == "Hello 世界 🌍", "Unicode string handling")
@@ -439,7 +439,7 @@ slay test_memory_pool_optimization() lit {
     test_data.struct_fields[0] = "message"
     test_data.struct_values[0] = binz_create_string("High performance encoding")
     
-    sus encoded []drip = binz_encode_with_pool(test_data, pool)
+    sus encoded drip[value] = binz_encode_with_pool(test_data, pool)
     test_assert(array_length(encoded) > 0, "Memory pool encoding should work")
     
     sus decoded BinzValue = binz_decode(encoded)
@@ -451,15 +451,15 @@ slay test_memory_pool_optimization() lit {
 
 slay test_batch_operations() lit {
     fr fr Test batch encoding/decoding
-    sus values []BinzValue = []
+    sus values BinzValue[value] = []
     
     values[0] = binz_create_int(100)
     values[1] = binz_create_string("batch test")
     values[2] = binz_create_bool(based)
     values[3] = binz_create_float(2.718)
     
-    sus batch_encoded []drip = binz_encode_batch(values)
-    sus batch_decoded []BinzValue = binz_decode_batch(batch_encoded)
+    sus batch_encoded drip[value] = binz_encode_batch(values)
+    sus batch_decoded BinzValue[value] = binz_decode_batch(batch_encoded)
     
     test_assert(array_length(batch_decoded) == 4, "Batch decode count")
     test_assert(batch_decoded[0].int_value == 100, "Batch element 0")
@@ -476,17 +476,17 @@ slay test_error_handling() lit {
     fr fr Test various error conditions
     
     fr fr Invalid magic header
-    sus invalid_data []drip = [0x12, 0x34, 0x56, 0x78, 0x01, 0x00, 0x00, 0x00]
+    sus invalid_data drip[value] = [0x12, 0x34, 0x56, 0x78, 0x01, 0x00, 0x00, 0x00]
     sus invalid_decoded BinzValue = binz_decode(invalid_data)
     test_assert(invalid_decoded.type_tag == TAG_NULL, "Invalid header should return null")
     
     fr fr Truncated data
-    sus truncated_data []drip = [0x42, 0x49, 0x4E, 0x5A]  fr fr Just "BINZ" magic
+    sus truncated_data drip[value] = [0x42, 0x49, 0x4E, 0x5A]  fr fr Just "BINZ" magic
     sus truncated_decoded BinzValue = binz_decode(truncated_data)
     test_assert(truncated_decoded.type_tag == TAG_NULL, "Truncated data should return null")
     
     fr fr Empty input
-    sus empty_data []drip = []
+    sus empty_data drip[value] = []
     sus empty_decoded BinzValue = binz_decode(empty_data)
     test_assert(empty_decoded.type_tag == TAG_NULL, "Empty data should return null")
     
@@ -515,7 +515,7 @@ slay test_reflection_serialization() lit {
     reflected_value.struct_fields[2] = "score"
     reflected_value.struct_values[2] = binz_create_float(95.5)
     
-    sus encoded []drip = binz_encode(reflected_value)
+    sus encoded drip[value] = binz_encode(reflected_value)
     sus decoded BinzValue = binz_decode(encoded)
     
     test_assert(decoded.type_tag == TAG_STRUCT, "Reflection serialization type")
@@ -529,7 +529,7 @@ fr fr ===== SIZE CALCULATION TESTS =====
 
 slay test_size_calculations() lit {
     fr fr Test encoded size prediction
-    sus test_values []BinzValue = []
+    sus test_values BinzValue[value] = []
     
     test_values[0] = binz_create_null()
     test_values[1] = binz_create_bool(based)
@@ -541,7 +541,7 @@ slay test_size_calculations() lit {
     
     bestie (i < count) {
         sus predicted_size drip = binz_get_encoded_size(test_values[i])
-        sus encoded []drip = binz_encode(test_values[i])
+        sus encoded drip[value] = binz_encode(test_values[i])
         sus actual_size drip = array_length(encoded)
         
         test_assert(predicted_size == actual_size, "Size prediction should match actual size")

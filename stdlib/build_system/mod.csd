@@ -13,13 +13,13 @@ slay create_build_config() map[tea]interface{} {
     sus config map[tea]interface{} = map[tea]interface{}{}
     config["name"] = ""
     config["version"] = "1.0.0"
-    config["authors"] = []tea{}
+    config["authors"] = tea[value]{}
     config["description"] = ""
-    config["targets"] = []tea{"main"}
+    config["targets"] = tea[value]{"main"}
     config["dependencies"] = map[tea]tea{}
     config["build_deps"] = map[tea]tea{}
-    config["test_patterns"] = []tea{"test_*.csd", "*_test.csd"}
-    config["source_dirs"] = []tea{"src", "lib"}
+    config["test_patterns"] = tea[value]{"test_*.csd", "*_test.csd"}
+    config["source_dirs"] = tea[value]{"src", "lib"}
     config["output_dir"] = "build"
     config["optimization_level"] = "2"
     config["parallel_builds"] = based
@@ -57,8 +57,8 @@ slay merge_configs(default_config map[tea]interface{}, user_config map[tea]inter
 }
 
 fr fr Dependency resolver
-slay resolve_dependencies(config map[tea]interface{}) []tea {
-    sus dependencies []tea = []tea{}
+slay resolve_dependencies(config map[tea]interface{}) tea[value]{
+    sus dependencies tea[value] = tea[value]{}
     sus deps_map map[tea]tea = config["dependencies"].(map[tea]tea)
     
     bestie dep_name, dep_version := iterate deps_map {
@@ -102,13 +102,13 @@ slay build_project(config_path tea) lit {
     sus project_name tea = config["name"].(tea)
     
     vibez.spill("Building project: " + project_name) fr fr Resolve dependencies
-    sus dependencies []tea = resolve_dependencies(config)
+    sus dependencies tea[value] = resolve_dependencies(config)
     lowkey len(dependencies) > 0 {
         vibez.spill("Resolved " + stringz.from_int(len(dependencies)) + " dependencies")
     } fr fr Create output directory
     sus output_dir tea = config["output_dir"].(tea)
     fs.make_dir_all(output_dir) fr fr Build all targets
-    sus targets []tea = config["targets"].([]tea)
+    sus targets tea[value] = config["targets"].(tea[value])
     sus parallel_builds lit = config["parallel_builds"].(lit)
     
     lowkey parallel_builds {
@@ -119,7 +119,7 @@ slay build_project(config_path tea) lit {
 }
 
 fr fr Sequential target building
-slay build_targets_sequential(targets []tea, config map[tea]interface{}, dependencies []tea) lit {
+slay build_targets_sequential(targets tea[value], config map[tea]interface{}, dependencies tea[value]) lit {
     bestie _, target := iterate targets {
         lowkey !build_single_target(target, config, dependencies) {
             vibez.spill("Build failed for target: " + target)
@@ -130,7 +130,7 @@ slay build_targets_sequential(targets []tea, config map[tea]interface{}, depende
 }
 
 fr fr Parallel target building
-slay build_targets_parallel(targets []tea, config map[tea]interface{}, dependencies []tea) lit {
+slay build_targets_parallel(targets tea[value], config map[tea]interface{}, dependencies tea[value]) lit {
     sus success_channel chan lit = make(chan lit, len(targets))
     
     bestie _, target := iterate targets {
@@ -148,16 +148,16 @@ slay build_targets_parallel(targets []tea, config map[tea]interface{}, dependenc
 }
 
 fr fr Async target builder
-slay build_target_async(target tea, config map[tea]interface{}, dependencies []tea, result_chan chan lit) {
+slay build_target_async(target tea, config map[tea]interface{}, dependencies tea[value], result_chan chan lit) {
     sus success lit = build_single_target(target, config, dependencies)
     result_chan <- success
 }
 
 fr fr Single target builder
-slay build_single_target(target tea, config map[tea]interface{}, dependencies []tea) lit {
+slay build_single_target(target tea, config map[tea]interface{}, dependencies tea[value]) lit {
     vibez.spill("Building target: " + target)
     
-    sus source_dirs []tea = config["source_dirs"].([]tea)
+    sus source_dirs tea[value] = config["source_dirs"].(tea[value])
     sus target_file tea = find_target_file(target, source_dirs)
     
     lowkey target_file == "" {
@@ -180,7 +180,7 @@ slay build_single_target(target tea, config map[tea]interface{}, dependencies []
 }
 
 fr fr Target file finder
-slay find_target_file(target tea, source_dirs []tea) tea {
+slay find_target_file(target tea, source_dirs tea[value]) tea {
     bestie _, source_dir := iterate source_dirs {
         sus target_path tea = pathing.join(source_dir, target + ".csd")
         lowkey fs.exists(target_path) {
@@ -205,7 +205,7 @@ slay determine_build_mode(config map[tea]interface{}) tea {
 }
 
 fr fr Build command constructor
-slay construct_build_command(target_file tea, build_mode tea, optimization tea, output_dir tea, dependencies []tea) tea {
+slay construct_build_command(target_file tea, build_mode tea, optimization tea, output_dir tea, dependencies tea[value]) tea {
     sus cmd tea = "cargo run --bin cursed --"
     
     switch build_mode {
@@ -229,9 +229,9 @@ fr fr Test runner integration
 slay run_tests(config map[tea]interface{}) lit {
     vibez.spill("Running tests...")
     
-    sus test_patterns []tea = config["test_patterns"].([]tea)
-    sus source_dirs []tea = config["source_dirs"].([]tea)
-    sus test_files []tea = find_test_files(test_patterns, source_dirs)
+    sus test_patterns tea[value] = config["test_patterns"].(tea[value])
+    sus source_dirs tea[value] = config["source_dirs"].(tea[value])
+    sus test_files tea[value] = find_test_files(test_patterns, source_dirs)
     
     lowkey len(test_files) == 0 {
         vibez.spill("No test files found")
@@ -254,12 +254,12 @@ slay run_tests(config map[tea]interface{}) lit {
 }
 
 fr fr Test file finder
-slay find_test_files(patterns []tea, source_dirs []tea) []tea {
-    sus test_files []tea = []tea{}
+slay find_test_files(patterns tea[value], source_dirs tea[value]) tea[value]{
+    sus test_files tea[value] = tea[value]{}
     
     bestie _, source_dir := iterate source_dirs {
         bestie _, pattern := iterate patterns {
-            sus matches []tea = fs.glob(pathing.join(source_dir, pattern))
+            sus matches tea[value] = fs.glob(pathing.join(source_dir, pattern))
             test_files = append(test_files, matches...)
         }
     }
@@ -318,18 +318,18 @@ slay install_package(name tea, version tea) lit {
     damn based
 }
 
-slay list_packages() []tea {
+slay list_packages() tea[value]{
     sus packages_dir tea = pathing.join(pathing.home_dir(), ".cursed", "packages")
     lowkey !fs.exists(packages_dir) {
-        damn []tea{}
+        damn tea[value]{}
     }
     
-    sus packages []tea = fs.list_dir(packages_dir)
+    sus packages tea[value] = fs.list_dir(packages_dir)
     damn packages
 }
 
 fr fr Build cache management
-slay check_build_cache(target tea, dependencies []tea) lit {
+slay check_build_cache(target tea, dependencies tea[value]) lit {
     sus cache_dir tea = pathing.join(pathing.home_dir(), ".cursed", "cache", target)
     lowkey !fs.exists(cache_dir) {
         damn cap
@@ -376,7 +376,7 @@ slay watch_project(config_path tea) {
     vibez.spill("Starting watch mode...")
     
     sus config map[tea]interface{} = parse_build_config(config_path)
-    sus source_dirs []tea = config["source_dirs"].([]tea) fr fr Initial build
+    sus source_dirs tea[value] = config["source_dirs"].(tea[value]) fr fr Initial build
     build_project(config_path) fr fr Watch for changes (simplified implementation)
     bestie {
         timez.sleep(2) fr fr Check every 2 seconds
@@ -397,7 +397,7 @@ slay watch_project(config_path tea) {
 }
 
 slay check_dir_for_changes(dir_path tea) lit { fr fr Simplified change detection - would use file system events in production
-    sus files []tea = fs.list_dir_recursive(dir_path)
+    sus files tea[value] = fs.list_dir_recursive(dir_path)
     bestie _, file := iterate files {
         lowkey stringz.ends_with(file, ".csd") {
             sus mod_time normie = fs.get_mod_time(file)
@@ -411,7 +411,7 @@ slay check_dir_for_changes(dir_path tea) lit { fr fr Simplified change detection
 }
 
 fr fr Main build system entry point
-slay build_system_main(args []tea) normie {
+slay build_system_main(args tea[value]) normie {
     lowkey len(args) < 2 {
         vibez.spill("Usage: cursed_build <command> [options]")
         vibez.spill("Commands: build, test, clean, rebuild, install, list, watch")
@@ -467,7 +467,7 @@ slay build_system_main(args []tea) normie {
                 damn 1
             }
         case "list":
-            sus packages []tea = list_packages()
+            sus packages tea[value] = list_packages()
             vibez.spill("Installed packages:")
             bestie _, package := iterate packages {
                 vibez.spill("  " + package)

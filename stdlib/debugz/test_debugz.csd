@@ -65,12 +65,12 @@ slay test_logging_functions() lit {
     testz.assert_true(debugz.log_debug("Number: ", "42", " String: ", "test"))
     
     fr fr Test log buffer
-    sus log_entries []tea = debugz.get_debug_log()
+    sus log_entries tea[value] = debugz.get_debug_log()
     testz.assert_true(log_entries.len() > 0)
     
     fr fr Clear log and verify
     testz.assert_true(debugz.clear_debug_log())
-    sus cleared_log []tea = debugz.get_debug_log()
+    sus cleared_log tea[value] = debugz.get_debug_log()
     testz.assert_eq_int(cleared_log.len(), 0)
     
     damn based
@@ -92,7 +92,7 @@ slay test_log_level_filtering() lit {
     debugz.log_debug("Debug message")
     debugz.log_trace("Trace message")
     
-    sus log_entries []tea = debugz.get_debug_log()
+    sus log_entries tea[value] = debugz.get_debug_log()
     testz.assert_eq_int(log_entries.len(), 3)  fr fr Only ERROR, WARN, INFO
     
     fr fr Test with DEBUG level
@@ -102,7 +102,7 @@ slay test_log_level_filtering() lit {
     debugz.log_debug("Debug message")
     debugz.log_trace("Trace message")  fr fr Should not be logged
     
-    sus debug_log []tea = debugz.get_debug_log()
+    sus debug_log tea[value] = debugz.get_debug_log()
     testz.assert_eq_int(debug_log.len(), 1)  fr fr Only DEBUG
     
     damn based
@@ -129,7 +129,7 @@ slay test_stack_trace_operations() lit {
     testz.assert_eq_int(debugz.get_call_depth(), 2)
     
     fr fr Get full stack trace
-    sus stack_trace []debugz.StackFrame = debugz.get_stack_trace()
+    sus stack_trace debugz[value].StackFrame = debugz.get_stack_trace()
     testz.assert_eq_int(stack_trace.len(), 2)
     testz.assert_eq_string(stack_trace[0].function_name, "test_function")
     testz.assert_eq_string(stack_trace[1].function_name, "nested_function")
@@ -205,7 +205,7 @@ slay test_profiling_operations() lit {
     testz.assert_true(debugz.end_profiling("test_function_1", 1500000))  fr fr 1.5ms
     
     fr fr Get profiler results
-    sus results []debugz.ProfilerResult = debugz.get_profiler_results()
+    sus results debugz[value].ProfilerResult = debugz.get_profiler_results()
     testz.assert_eq_int(results.len(), 2)
     
     fr fr Check first function results
@@ -222,7 +222,7 @@ slay test_profiling_operations() lit {
     
     fr fr Reset profiler
     testz.assert_true(debugz.reset_profiler())
-    sus reset_results []debugz.ProfilerResult = debugz.get_profiler_results()
+    sus reset_results debugz[value].ProfilerResult = debugz.get_profiler_results()
     testz.assert_eq_int(reset_results.len(), 0)
     
     damn based
@@ -430,11 +430,11 @@ slay test_debug_integration() lit {
     debugz.pop_stack_frame()
     
     fr fr Verify state
-    sus profiler_results []debugz.ProfilerResult = debugz.get_profiler_results()
+    sus profiler_results debugz[value].ProfilerResult = debugz.get_profiler_results()
     testz.assert_eq_int(profiler_results.len(), 1)
     testz.assert_eq_string(profiler_results[0].function_name, "integration_test")
     
-    sus log_entries []tea = debugz.get_debug_log()
+    sus log_entries tea[value] = debugz.get_debug_log()
     testz.assert_true(log_entries.len() > 0)
     
     fr fr Clean up

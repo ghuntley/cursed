@@ -350,7 +350,7 @@ slay test_splitting() drip {
     
     # Basic splitting
     sus split_engine RegexEngine = regex_new(",\\s*") shook test_failed("Failed to compile comma pattern")
-    sus parts []tea = regex_split(&split_engine, "apple, banana, cherry, date") shook test_failed("Failed to split")
+    sus parts tea[value] = regex_split(&split_engine, "apple, banana, cherry, date") shook test_failed("Failed to split")
     assert_eq_int(parts.len(), 4, "Should have 4 parts")
     assert_eq_str(parts[0], "apple", "First part should be 'apple'")
     assert_eq_str(parts[1], "banana", "Second part should be 'banana'")
@@ -359,7 +359,7 @@ slay test_splitting() drip {
     
     # Split with complex pattern
     sus complex_split_engine RegexEngine = regex_new("[;,]\\s*") shook test_failed("Failed to compile delimiter pattern")
-    sus complex_parts []tea = regex_split(&complex_split_engine, "a;b, c,d;  e") shook test_failed("Failed to split complex")
+    sus complex_parts tea[value] = regex_split(&complex_split_engine, "a;b, c,d;  e") shook test_failed("Failed to split complex")
     assert_eq_int(complex_parts.len(), 5, "Should have 5 parts")
     assert_eq_str(complex_parts[0], "a", "Should be 'a'")
     assert_eq_str(complex_parts[1], "b", "Should be 'b'")
@@ -369,7 +369,7 @@ slay test_splitting() drip {
     
     # No matches case
     sus no_match_engine RegexEngine = regex_new("xyz") shook test_failed("Failed to compile no match pattern")
-    sus no_match_parts []tea = regex_split(&no_match_engine, "hello world") shook test_failed("Failed to split no match")
+    sus no_match_parts tea[value] = regex_split(&no_match_engine, "hello world") shook test_failed("Failed to split no match")
     assert_eq_int(no_match_parts.len(), 1, "Should have 1 part when no matches")
     assert_eq_str(no_match_parts[0], "hello world", "Should return original string")
     
@@ -451,7 +451,7 @@ slay test_find_all() drip {
     
     # Multiple matches
     sus all_engine RegexEngine = regex_new("\\d+") shook test_failed("Failed to compile digit pattern")
-    sus all_matches []MatchResult = regex_find_all(&all_engine, "I have 5 apples, 3 oranges, and 12 bananas") shook test_failed("Failed to find all")
+    sus all_matches MatchResult[value] = regex_find_all(&all_engine, "I have 5 apples, 3 oranges, and 12 bananas") shook test_failed("Failed to find all")
     
     assert_eq_int(all_matches.len(), 3, "Should find 3 matches")
     assert_eq_str(all_matches[0].full_match, "5", "First match should be '5'")
@@ -460,7 +460,7 @@ slay test_find_all() drip {
     
     # Overlapping matches test
     sus overlap_engine RegexEngine = regex_new("a.") shook test_failed("Failed to compile overlap pattern")
-    sus overlap_matches []MatchResult = regex_find_all(&overlap_engine, "abacad") shook test_failed("Failed to find overlapping")
+    sus overlap_matches MatchResult[value] = regex_find_all(&overlap_engine, "abacad") shook test_failed("Failed to find overlapping")
     
     assert_eq_int(overlap_matches.len(), 3, "Should find 3 non-overlapping matches")
     assert_eq_str(overlap_matches[0].full_match, "ab", "First match should be 'ab'")
@@ -469,7 +469,7 @@ slay test_find_all() drip {
     
     # No matches case
     sus no_all_engine RegexEngine = regex_new("xyz") shook test_failed("Failed to compile no match pattern")
-    sus no_all_matches []MatchResult = regex_find_all(&no_all_engine, "hello world") shook test_failed("Failed to find all no matches")
+    sus no_all_matches MatchResult[value] = regex_find_all(&no_all_engine, "hello world") shook test_failed("Failed to find all no matches")
     assert_eq_int(no_all_matches.len(), 0, "Should find no matches")
     
     test_passed("Find all tests")

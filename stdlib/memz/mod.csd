@@ -27,7 +27,7 @@ sus peak_memory_usage normie = 0
 
 fr fr Arena allocator state
 struct ArenaAllocator {
-    data []byte,
+    data byte[value],
     offset normie,
     size normie,
     alloc_count normie,
@@ -51,8 +51,8 @@ struct MemoryStats {
 }
 
 fr fr Global memory tracking
-sus memory_blocks []MemoryBlock = []
-sus active_arenas []ArenaAllocator = []
+sus memory_blocks MemoryBlock[value] = []
+sus active_arenas ArenaAllocator[value] = []
 sus next_ptr_address normie = 0x100000  # Starting address for simulation
 
 fr fr ===== ARENA ALLOCATOR FUNCTIONS =====
@@ -345,8 +345,8 @@ slay gc_should_collect() lit {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay make_byte_array(size normie) []byte {
-    sus arr []byte = []
+slay make_byte_array(size normie) byte[value]{
+    sus arr byte[value] = []
     sus i normie = 0
     bestie i < size {
         arr = append_byte(arr, 0)
@@ -355,24 +355,24 @@ slay make_byte_array(size normie) []byte {
     damn arr
 }
 
-slay append_byte(arr []byte, b byte) []byte {
+slay append_byte(arr byte[value], b byte) byte[value]{
     # Simplified array append
     damn arr
 }
 
-slay len(arr []byte) normie {
+slay len(arr byte[value]) normie {
     # Simplified array length
     damn 0
 }
 
-slay append_memory_block(arr []MemoryBlock, block MemoryBlock) []MemoryBlock {
+slay append_memory_block(arr MemoryBlock[value], block MemoryBlock) MemoryBlock[value]{
     # Simplified array append
     damn arr
 }
 
-slay compact_memory_blocks(arr []MemoryBlock) []MemoryBlock {
+slay compact_memory_blocks(arr MemoryBlock[value]) MemoryBlock[value]{
     # Remove freed blocks from array
-    sus compacted []MemoryBlock = []
+    sus compacted MemoryBlock[value] = []
     sus i normie = 0
     
     bestie i < len_memory_blocks(arr) {
@@ -384,7 +384,7 @@ slay compact_memory_blocks(arr []MemoryBlock) []MemoryBlock {
     damn compacted
 }
 
-slay len_memory_blocks(arr []MemoryBlock) normie {
+slay len_memory_blocks(arr MemoryBlock[value]) normie {
     # Count memory blocks
     sus count normie = 0
     sus i normie = 0
@@ -395,7 +395,7 @@ slay len_memory_blocks(arr []MemoryBlock) normie {
     damn count
 }
 
-slay append_memory_block_simple(arr []MemoryBlock, block MemoryBlock) []MemoryBlock {
+slay append_memory_block_simple(arr MemoryBlock[value], block MemoryBlock) MemoryBlock[value]{
     damn arr
 }
 

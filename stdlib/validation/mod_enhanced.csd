@@ -10,8 +10,8 @@ yeet "regexz"
 // Enhanced validation result with detailed metadata
 be_like ValidationResult squad {
     is_valid lit
-    errors []tea
-    warnings []tea  
+    errors tea[value]
+    warnings tea[value]  
     metadata map[tea]tea
     severity tea  // "low", "medium", "high", "critical"
     field_name tea
@@ -35,13 +35,13 @@ sus validation_last_reset drip = timez.now_unix()
 // Enhanced string processing with Unicode support
 be_like UnicodeString squad {
     data tea
-    runes []rune
+    runes rune[value]
     byte_length drip
     rune_length drip
 }
 
 slay create_unicode_string(s tea) UnicodeString {
-    sus runes []rune = stringz.to_runes(s)
+    sus runes rune[value] = stringz.to_runes(s)
     damn UnicodeString{
         data: s,
         runes: runes, 
@@ -75,7 +75,7 @@ slay safe_substring(str tea, start drip, end drip) yikes<tea> {
         yikes "substring range exceeds string length"
     }
     
-    sus result_runes []rune = u_str.runes[start:end]
+    sus result_runes rune[value] = u_str.runes[start:end]
     damn stringz.from_runes(result_runes)
 }
 
@@ -85,8 +85,8 @@ slay create_enhanced_validation_result(field_name tea, context *ValidationContex
     
     sus result ValidationResult = ValidationResult{
         is_valid: based,
-        errors: []tea{},
-        warnings: []tea{},
+        errors: tea[value]{},
+        warnings: tea[value]{},
         metadata: make(map[tea]tea),
         severity: "low",
         field_name: field_name,
@@ -303,7 +303,7 @@ slay validate_email_comprehensive(email tea, context *ValidationContext) Validat
     }
     
     // Check for dangerous characters (security)
-    sus dangerous_chars []tea = ["<", ">", "\"", "'", "&", ";", "|", "`"]
+    sus dangerous_chars tea[value] = ["<", ">", "\"", "'", "&", ";", "|", "`"]
     bestie (char := range dangerous_chars) {
         ready stringz.contains(clean_email, char) {
             add_error_with_severity(&result, "Email contains potentially dangerous character: " + char, "high")
@@ -316,7 +316,7 @@ slay validate_email_comprehensive(email tea, context *ValidationContext) Validat
     }
     
     // Check for valid TLD (basic check for common TLDs)
-    sus domain_parts []tea = stringz.split(domain_part, ".")
+    sus domain_parts tea[value] = stringz.split(domain_part, ".")
     ready len(domain_parts) < 2 {
         add_error_with_severity(&result, "Email domain must have valid TLD", "medium")
     } else {
@@ -465,7 +465,7 @@ slay check_common_patterns(password tea) lit {
     sus lower_pass tea = stringz.to_lower(password)
     
     // Sequential patterns
-    sus sequences []tea = [
+    sus sequences tea[value] = [
         "123456", "abcdef", "qwerty", "asdf", "zxcv",
         "098765", "fedcba", "ytrewq", "fdsa", "vcxz",
     ]
@@ -477,7 +477,7 @@ slay check_common_patterns(password tea) lit {
     }
     
     // Keyboard patterns  
-    sus keyboard_patterns []tea = [
+    sus keyboard_patterns tea[value] = [
         "qwertyuiop", "asdfghjkl", "zxcvbnm",
         "poiuytrewq", "lkjhgfdsa", "mnbvcxz",
     ]
@@ -501,7 +501,7 @@ slay check_common_patterns(password tea) lit {
 slay check_common_passwords(password tea) lit {
     sus lower_pass tea = stringz.to_lower(password)
     
-    sus common_passwords []tea = [
+    sus common_passwords tea[value] = [
         "password", "123456", "password123", "admin", "letmein",
         "welcome", "monkey", "dragon", "master", "hello",
         "freedom", "whatever", "qwerty", "trustno1", "jordan23",
@@ -651,7 +651,7 @@ slay extract_url_domain(url tea) tea {
     // Find end of domain (before port, path, query, or fragment)
     sus domain_end drip = len(domain_with_path)
     
-    bestie (char := range []tea{":", "/", "?", "#"}) {
+    bestie (char := range tea[value]{":", "/", "?", "#"}) {
         sus pos drip = stringz.index_of(domain_with_path, char)
         ready pos != -1 && pos < domain_end {
             domain_end = pos
@@ -684,7 +684,7 @@ slay extract_url_port(url tea) tea {
             
             // Extract port until next delimiter
             sus port_end drip = len(port_part)
-            bestie (char := range []tea{"/", "?", "#"}) {
+            bestie (char := range tea[value]{"/", "?", "#"}) {
                 sus pos drip = stringz.index_of(port_part, char)
                 ready pos != -1 && pos < port_end {
                     port_end = pos
@@ -727,7 +727,7 @@ slay extract_url_path(url tea) tea {
 
 // Security helper functions
 slay is_suspicious_domain(domain tea) lit {
-    sus suspicious_patterns []tea = [
+    sus suspicious_patterns tea[value] = [
         "bit.ly", "tinyurl", "t.co", "goo.gl", // URL shorteners
         "tempmail", "10minutemail", "guerrillamail", // Temp email services
         ".tk", ".ml", ".ga", ".cf", // Free TLD services
@@ -747,7 +747,7 @@ slay is_suspicious_domain(domain tea) lit {
 
 slay is_suspicious_port(port drip) lit {
     // Common suspicious ports used for malware, backdoors, etc.
-    sus suspicious_ports []drip = [
+    sus suspicious_ports drip[value] = [
         1337, 4444, 5555, 6666, 7777, 8888, 9999, // Common backdoor ports
         31337, 12345, 54321, 65000, // Hacker ports
         4445, 5554, 9995, // Variations
@@ -838,13 +838,13 @@ slay validate_ipv4_address(ip tea, context *ValidationContext) ValidationResult 
     }
     
     // Parse octets for additional validation
-    sus octets []tea = stringz.split(ip, ".")
+    sus octets tea[value] = stringz.split(ip, ".")
     ready len(octets) != 4 {
         add_error_with_severity(&result, "IPv4 address must have exactly 4 octets", "medium")
         damn result
     }
     
-    sus parsed_octets []drip = []
+    sus parsed_octets drip[value] = []
     bestie (octet_str := range octets) {
         sus octet drip = stringz.to_int(octet_str) fam {
             when _ -> {
@@ -945,7 +945,7 @@ slay is_private_ip(ip tea) lit {
         damn cap
     } else {
         // IPv4 private ranges: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16
-        sus octets []tea = stringz.split(ip, ".")
+        sus octets tea[value] = stringz.split(ip, ".")
         ready len(octets) == 4 {
             sus first drip = stringz.to_int(octets[0]) fam { when _ -> 0 }
             sus second drip = stringz.to_int(octets[1]) fam { when _ -> 0 }
@@ -979,7 +979,7 @@ slay is_reserved_ip(ip tea) lit {
         damn cap
     } else {
         // IPv4 reserved ranges
-        sus octets []tea = stringz.split(ip, ".")
+        sus octets tea[value] = stringz.split(ip, ".")
         ready len(octets) == 4 {
             sus first drip = stringz.to_int(octets[0]) fam { when _ -> 0 }
             
@@ -1011,7 +1011,7 @@ slay is_multicast_ip(ip tea) lit {
         damn based // IPv6 multicast
     }
     
-    sus octets []tea = stringz.split(ip, ".")
+    sus octets tea[value] = stringz.split(ip, ".")
     ready len(octets) == 4 {
         sus first drip = stringz.to_int(octets[0]) fam { when _ -> 0 }
         ready first >= 224 && first <= 239 {
@@ -1028,7 +1028,7 @@ slay is_link_local_ip(ip tea) lit {
         damn based // IPv6 link-local
     }
     
-    sus octets []tea = stringz.split(ip, ".")
+    sus octets tea[value] = stringz.split(ip, ".")
     ready len(octets) == 4 {
         sus first drip = stringz.to_int(octets[0]) fam { when _ -> 0 }
         sus second drip = stringz.to_int(octets[1]) fam { when _ -> 0 }
@@ -1051,7 +1051,7 @@ slay estimate_ip_region(ip tea) tea {
     }
     
     // Basic IPv4 regional estimation based on first octet
-    sus octets []tea = stringz.split(ip, ".")
+    sus octets tea[value] = stringz.split(ip, ".")
     ready len(octets) == 4 {
         sus first drip = stringz.to_int(octets[0]) fam { when _ -> 0 }
         
@@ -1073,7 +1073,7 @@ slay estimate_ip_region(ip tea) tea {
 
 // FINALIZED VALIDATION EXECUTION WITH COMPREHENSIVE REPORTING
 
-slay execute_validation_suite(validations []ValidationResult, context *ValidationContext) ValidationResult {
+slay execute_validation_suite(validations ValidationResult[value], context *ValidationContext) ValidationResult {
     sus start_time drip = timez.now_microseconds()
     sus suite_result ValidationResult = create_enhanced_validation_result("validation_suite", context)
     

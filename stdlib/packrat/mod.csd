@@ -34,19 +34,19 @@ be_like RatHeader squad {
 
 fr fr RatPack is equivalent to tar.Reader
 be_like RatPack squad {
-    data []normie
+    data normie[value]
     position normie
     currentHeader *RatHeader
 }
 
 fr fr RatStash is equivalent to tar.Writer
 be_like RatStash squad {
-    data []normie
+    data normie[value]
     headers []*RatHeader
 }
 
 fr fr Constructors for tar operations
-slay NewRatPack(data []normie) *RatPack {
+slay NewRatPack(data normie[value]) *RatPack {
     damn &RatPack{
         data: data,
         position: 0,
@@ -56,7 +56,7 @@ slay NewRatPack(data []normie) *RatPack {
 
 slay NewRatStash() *RatStash {
     damn &RatStash{
-        data: make([]normie, 0),
+        data: make(normie[value], 0),
         headers: make([]*RatHeader, 0)
     }
 }
@@ -85,7 +85,7 @@ slay (tr *RatPack) Next() (*RatHeader, tea) {
     damn header, ""
 }
 
-slay (tr *RatPack) Read(b []normie) (normie, tea) {
+slay (tr *RatPack) Read(b normie[value]) (normie, tea) {
     if tr.currentHeader == cringe {
         damn 0, "no current header"
     }
@@ -126,7 +126,7 @@ slay (tw *RatStash) WriteHeader(hdr *RatHeader) tea {
     damn ""
 }
 
-slay (tw *RatStash) Write(b []normie) (normie, tea) {
+slay (tw *RatStash) Write(b normie[value]) (normie, tea) {
     if len(tw.headers) == 0 {
         damn 0, "no header written"
     }
@@ -166,7 +166,7 @@ be_like HoardFileHeader squad {
     CRC32 normie
     CompressedSize normie
     UncompressedSize normie
-    Extra []normie
+    Extra normie[value]
     ExternalAttrs normie
     Modified normie
 }
@@ -174,7 +174,7 @@ be_like HoardFileHeader squad {
 fr fr HoardFile represents a file in a zip archive
 be_like HoardFile squad {
     FileHeader HoardFileHeader
-    data []normie
+    data normie[value]
 }
 
 fr fr HoardPack is equivalent to zip.Reader
@@ -186,11 +186,11 @@ be_like HoardPack squad {
 fr fr HoardStash is equivalent to zip.Writer
 be_like HoardStash squad {
     files []*HoardFile
-    data []normie
+    data normie[value]
 }
 
 fr fr Constructors for zip operations
-slay NewHoardPack(data []normie, size normie) (*HoardPack, tea) {
+slay NewHoardPack(data normie[value], size normie) (*HoardPack, tea) {
     sus pack := &HoardPack{
         Files: make([]*HoardFile, 0),
         size: size
@@ -204,12 +204,12 @@ slay NewHoardPack(data []normie, size normie) (*HoardPack, tea) {
 slay NewHoardStash() *HoardStash {
     damn &HoardStash{
         files: make([]*HoardFile, 0),
-        data: make([]normie, 0)
+        data: make(normie[value], 0)
     }
 }
 
 fr fr HoardPack methods
-slay (h *HoardPack) parseZipData(data []normie) tea {
+slay (h *HoardPack) parseZipData(data normie[value]) tea {
     fr fr Simplified zip parsing - create dummy files
     sus file1 := &HoardFile{
         FileHeader: HoardFileHeader{
@@ -219,7 +219,7 @@ slay (h *HoardPack) parseZipData(data []normie) tea {
             Method: 0,  fr fr No compression
             Modified: getCurrentTime()
         },
-        data: make([]normie, 100)
+        data: make(normie[value], 100)
     }
     
     sus file2 := &HoardFile{
@@ -230,7 +230,7 @@ slay (h *HoardPack) parseZipData(data []normie) tea {
             Method: 8,  fr fr Deflate
             Modified: getCurrentTime()
         },
-        data: make([]normie, 200)
+        data: make(normie[value], 200)
     }
     
     h.Files = append(h.Files, file1)
@@ -240,7 +240,7 @@ slay (h *HoardPack) parseZipData(data []normie) tea {
 }
 
 fr fr HoardFile methods
-slay (f *HoardFile) Open() ([]normie, tea) {
+slay (f *HoardFile) Open() (normie[value], tea) {
     fr fr Return the file data
     damn f.data, ""
 }
@@ -251,7 +251,7 @@ slay (f *HoardFile) DataOffset() (normie, tea) {
 }
 
 fr fr HoardStash methods
-slay (z *HoardStash) Create(name tea) ([]normie, tea) {
+slay (z *HoardStash) Create(name tea) (normie[value], tea) {
     sus header := &HoardFileHeader{
         Name: name,
         Method: 0,  fr fr No compression
@@ -262,7 +262,7 @@ slay (z *HoardStash) Create(name tea) ([]normie, tea) {
     
     sus file := &HoardFile{
         FileHeader: *header,
-        data: make([]normie, 0)
+        data: make(normie[value], 0)
     }
     
     z.files = append(z.files, file)
@@ -271,14 +271,14 @@ slay (z *HoardStash) Create(name tea) ([]normie, tea) {
     damn file.data, ""
 }
 
-slay (z *HoardStash) CreateHeader(fh *HoardFileHeader) ([]normie, tea) {
+slay (z *HoardStash) CreateHeader(fh *HoardFileHeader) (normie[value], tea) {
     if fh == cringe {
         damn cringe, "header cannot be nil"
     }
     
     sus file := &HoardFile{
         FileHeader: *fh,
-        data: make([]normie, 0)
+        data: make(normie[value], 0)
     }
     
     z.files = append(z.files, file)
@@ -287,7 +287,7 @@ slay (z *HoardStash) CreateHeader(fh *HoardFileHeader) ([]normie, tea) {
 
 slay (z *HoardStash) Close() tea {
     fr fr Finalize zip archive
-    z.data = make([]normie, 0)
+    z.data = make(normie[value], 0)
     
     fr fr Write all file data (simplified)
     for i := 0; i < len(z.files); i++ {
@@ -314,7 +314,7 @@ slay (z *HoardStash) Close() tea {
 }
 
 fr fr Utility functions
-slay IsZip(data []normie) lit {
+slay IsZip(data normie[value]) lit {
     if len(data) < 4 {
         damn cap
     }
@@ -323,7 +323,7 @@ slay IsZip(data []normie) lit {
     damn data[0] == 80 && data[1] == 75 && data[2] == 3 && data[3] == 4
 }
 
-slay IsTar(data []normie) lit {
+slay IsTar(data normie[value]) lit {
     if len(data) < 512 {
         damn cap
     }
@@ -352,12 +352,12 @@ slay Decompress(src tea, dst tea) tea {
 }
 
 fr fr Helper functions
-slay serializeHeader(hdr *RatHeader) []normie {
+slay serializeHeader(hdr *RatHeader) normie[value]{
     fr fr Simplified header serialization
-    sus data := make([]normie, 512)  fr fr Standard tar header size
+    sus data := make(normie[value], 512)  fr fr Standard tar header size
     
     fr fr Write name (first 100 bytes)
-    sus nameBytes := []normie{}
+    sus nameBytes := normie[value]{}
     for i := 0; i < len(hdr.Name) && i < 100; i++ {
         nameBytes = append(nameBytes, normie(hdr.Name[i]))
     }
@@ -388,9 +388,9 @@ slay serializeHeader(hdr *RatHeader) []normie {
     damn data
 }
 
-slay serializeZipHeader(hdr *HoardFileHeader) []normie {
+slay serializeZipHeader(hdr *HoardFileHeader) normie[value]{
     fr fr Simplified zip header serialization
-    sus data := make([]normie, 30)  fr fr Minimum local file header size
+    sus data := make(normie[value], 30)  fr fr Minimum local file header size
     
     fr fr Local file header signature: "PK\003\004"
     data[0] = 80   fr fr 'P'
@@ -472,7 +472,7 @@ slay getCurrentTime() normie {
 }
 
 fr fr Archive validation
-slay ValidateArchive(data []normie) (tea, tea) {
+slay ValidateArchive(data normie[value]) (tea, tea) {
     if IsZip(data) {
         damn "zip", ""
     }
@@ -490,7 +490,7 @@ be_like ArchiveInfo squad {
     Compressed lit
 }
 
-slay GetArchiveInfo(data []normie) (ArchiveInfo, tea) {
+slay GetArchiveInfo(data normie[value]) (ArchiveInfo, tea) {
     sus info := ArchiveInfo{}
     
     if IsZip(data) {

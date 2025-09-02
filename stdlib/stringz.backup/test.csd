@@ -218,7 +218,7 @@ fr fr ===== STRING SPLITTING TESTS =====
 test_group("String Splitting")
 
 fr fr Test string splitting
-sus split_result []tea = split_string("Hello,World,Test", ",")
+sus split_result tea[value] = split_string("Hello,World,Test", ",")
 assert_eq_int(array_length(split_result), 3, "Split into three parts")
 assert_string_equals(split_result[0], "Hello", "First split part")
 assert_string_equals(split_result[1], "World", "Second split part")
@@ -229,14 +229,14 @@ assert_eq_int(array_length(split_result), 1, "No separator returns original")
 assert_string_equals(split_result[0], "NoSeparator", "Original string returned")
 
 fr fr Test split by whitespace
-sus whitespace_split []tea = split_whitespace("Hello World Test")
+sus whitespace_split tea[value] = split_whitespace("Hello World Test")
 assert_eq_int(array_length(whitespace_split), 3, "Whitespace split count")
 assert_string_equals(whitespace_split[0], "Hello", "First word")
 assert_string_equals(whitespace_split[1], "World", "Second word")
 assert_string_equals(whitespace_split[2], "Test", "Third word")
 
 fr fr Test split lines
-sus line_split []tea = split_lines("Line1\nLine2\nLine3")
+sus line_split tea[value] = split_lines("Line1\nLine2\nLine3")
 assert_eq_int(array_length(line_split), 3, "Line split count")
 assert_string_equals(line_split[0], "Line1", "First line")
 assert_string_equals(line_split[1], "Line2", "Second line")
@@ -247,18 +247,18 @@ fr fr ===== STRING JOINING TESTS =====
 test_group("String Joining")
 
 fr fr Test array joining
-sus join_array []tea = ["A", "B", "C"]
+sus join_array tea[value] = ["A", "B", "C"]
 sus join_result tea = join_strings(join_array, ",")
 assert_string_equals(join_result, "A,B,C", "Join with comma separator")
 
 join_result = join_strings(join_array, " - ")
 assert_string_equals(join_result, "A - B - C", "Join with multi-char separator")
 
-sus empty_array []tea = []
+sus empty_array tea[value] = []
 join_result = join_strings(empty_array, ",")
 assert_string_equals(join_result, "", "Join empty array")
 
-sus single_array []tea = ["Only"]
+sus single_array tea[value] = ["Only"]
 join_result = join_strings(single_array, ",")
 assert_string_equals(join_result, "Only", "Join single element")
 

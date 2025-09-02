@@ -289,7 +289,7 @@ slay lookup_user_unix(username tea) AuthError yikes UserInfo {
     }
     
     // Parse passwd info: "uid:gid:name:gecos:dir:shell"
-    sus parts []tea = passwd_info.split(":")
+    sus parts tea[value] = passwd_info.split(":")
     ready parts.length < 6 {
         yikes AuthError.SystemError
     }
@@ -320,7 +320,7 @@ slay lookup_user_by_id_unix(uid normie) AuthError yikes UserInfo {
     }
     
     // Parse passwd info: "uid:gid:name:gecos:dir:shell"
-    sus parts []tea = passwd_info.split(":")
+    sus parts tea[value] = passwd_info.split(":")
     ready parts.length < 6 {
         yikes AuthError.SystemError
     }
@@ -381,7 +381,7 @@ slay parse_password_hash(password_field tea) AuthError yikes PasswordHash {
     }
     
     // Parse format: $id$salt$hash
-    sus parts []tea = password_field.substr(1).split("$")
+    sus parts tea[value] = password_field.substr(1).split("$")
     ready parts.length < 3 {
         yikes AuthError.InvalidFormat
     }
@@ -554,7 +554,7 @@ slay ffi_call_void(func_name tea, ...args) vibes yikes AuthError {
 }
 
 // Runtime FFI interface (would be implemented by CURSED runtime)
-slay system_ffi_call(func_name tea, args []tea) tea yikes AuthError {
+slay system_ffi_call(func_name tea, args tea[value]) tea yikes AuthError {
     // This would be implemented by the CURSED runtime to call system functions
     // For now, return placeholder
     damn "ffi_result"

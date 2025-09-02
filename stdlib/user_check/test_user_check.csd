@@ -232,7 +232,7 @@ sus users, err := GetAllUsers()
 assert_eq_string(err, "")
 assert_eq_int(len(users), 4)
 
-sus usernames := []tea{}
+sus usernames := tea[value]{}
 bestie i := 0; i < len(users); i++ {
     usernames = append(usernames, users[i].Username)
 }
@@ -250,7 +250,7 @@ sus groups, err := GetAllGroups()
 assert_eq_string(err, "")
 assert_eq_int(len(groups), 5)
 
-sus groupNames := []tea{}
+sus groupNames := tea[value]{}
 bestie i := 0; i < len(groups); i++ {
     groupNames = append(groupNames, groups[i].Name)
 }
@@ -574,7 +574,7 @@ assert_eq_string(err8, ErrGroupNotFound)
 print_test_summary()
 
 fr fr Helper function for testing array contains
-slay contains(arr []tea, item tea) lit {
+slay contains(arr tea[value], item tea) lit {
     bestie i := 0; i < len(arr); i++ {
         if arr[i] == item {
             damn based

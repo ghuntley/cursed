@@ -123,10 +123,10 @@ assert_eq_string(abs_signature, "slay abs(n normie) normie")
 
 fr fr Test 11: Method listing and info
 test_start("method_listing_info")
-sus tea_methods []tea = list_methods("tea")
+sus tea_methods tea[value] = list_methods("tea")
 assert_eq_int(len(tea_methods), 5)  fr fr len, char_at, contains, to_upper, to_lower
 
-sus int_methods []tea = list_methods("normie")
+sus int_methods tea[value] = list_methods("normie")
 assert_eq_int(len(int_methods), 3)  fr fr abs, min, max
 
 sus method_info MethodInfo = get_method_info("tea", "char_at")

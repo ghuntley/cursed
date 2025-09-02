@@ -40,7 +40,7 @@ slay http_get_smart(url tea) yikes<HttpResponse> {
 }
 
 slay http_post_smart(url tea, body tea, content_type tea) yikes<HttpResponse> {
-    sus headers []tea = []
+    sus headers tea[value] = []
     ready (stringz.len(content_type) > 0) {
         headers = arrayz.push(headers, stringz.concat(["Content-Type: ", content_type]))
     }
@@ -48,7 +48,7 @@ slay http_post_smart(url tea, body tea, content_type tea) yikes<HttpResponse> {
     damn http_request_smart("POST", url, headers, body, default_client_config)
 }
 
-slay http_request_smart(method tea, url tea, headers []tea, body tea, config HttpClientConfig) yikes<HttpResponse> {
+slay http_request_smart(method tea, url tea, headers tea[value], body tea, config HttpClientConfig) yikes<HttpResponse> {
     // Parse URL to determine protocol capabilities
     sus url_parts UrlParts = parse_url(url) fam {
         when err -> yikes err
@@ -135,7 +135,7 @@ squad ConcurrentRequest {
     sus id tea                     // Request identifier
     sus method tea                 // HTTP method
     sus url tea                    // Request URL
-    sus headers []tea              // Request headers
+    sus headers tea[value]              // Request headers
     sus body tea                   // Request body
     sus timeout drip               // Request timeout
     sus priority drip              // Request priority (1-256)
@@ -149,8 +149,8 @@ squad ConcurrentResponse {
     sus error NetworkError         // Error if request failed
 }
 
-slay http_concurrent_requests(requests []ConcurrentRequest, config HttpClientConfig) yikes<[]ConcurrentResponse> {
-    sus responses []ConcurrentResponse = []
+slay http_concurrent_requests(requests ConcurrentRequest[value], config HttpClientConfig) yikes<ConcurrentResponse[value]> {
+    sus responses ConcurrentResponse[value] = []
     sus request_count drip = arrayz.len(requests)
     
     ready (request_count == 0) {
@@ -192,8 +192,8 @@ slay http_concurrent_requests(requests []ConcurrentRequest, config HttpClientCon
     ready (config.prefer_http2 && request_count <= config.max_concurrent_streams) {
         // Group requests by host for HTTP/2 multiplexing
         sus host_groups squad {
-            sus hosts [10]tea
-            sus host_requests [10][]ConcurrentRequest
+            sus hosts tea[10]
+            sus host_requests ConcurrentRequest[10][value]
             sus host_count drip
         }
         
@@ -241,11 +241,11 @@ slay http_concurrent_requests(requests []ConcurrentRequest, config HttpClientCon
         sus n drip = 0
         bestie (n < host_groups.host_count) {
             sus host tea = host_groups.hosts[n]
-            sus host_requests []ConcurrentRequest = host_groups.host_requests[n]
+            sus host_requests ConcurrentRequest[value] = host_groups.host_requests[n]
             
             ready (arrayz.len(host_requests) > 1) {
                 // Multiple requests to same host - try HTTP/2 multiplexing
-                sus host_responses []ConcurrentResponse = process_host_requests_http2(host, host_requests, config) fam {
+                sus host_responses ConcurrentResponse[value] = process_host_requests_http2(host, host_requests, config) fam {
                     when err -> {
                         // Fallback to sequential HTTP/1.1 requests
                         host_responses = process_host_requests_http1(host_requests, config)
@@ -298,11 +298,11 @@ slay http_concurrent_requests(requests []ConcurrentRequest, config HttpClientCon
     damn process_host_requests_http1(requests, config)
 }
 
-slay process_host_requests_http2(host tea, requests []ConcurrentRequest, config HttpClientConfig) yikes<[]ConcurrentResponse> {
-    sus responses []ConcurrentResponse = []
+slay process_host_requests_http2(host tea, requests ConcurrentRequest[value], config HttpClientConfig) yikes<ConcurrentResponse[value]> {
+    sus responses ConcurrentResponse[value] = []
     
     // Convert to HTTP/2 concurrent request format
-    sus http2_requests []Http2ConcurrentRequest = []
+    sus http2_requests Http2ConcurrentRequest[value] = []
     sus q drip = 0
     
     bestie (q < arrayz.len(requests)) {
@@ -340,7 +340,7 @@ slay process_host_requests_http2(host tea, requests []ConcurrentRequest, config 
     }
     
     // Send concurrent requests
-    sus http2_responses []HttpResponse = multiplex_send_concurrent(mux_conn, http2_requests) fam {
+    sus http2_responses HttpResponse[value] = multiplex_send_concurrent(mux_conn, http2_requests) fam {
         when err -> {
             tcp_close(socket)
             yikes err
@@ -374,8 +374,8 @@ slay process_host_requests_http2(host tea, requests []ConcurrentRequest, config 
     damn responses
 }
 
-slay process_host_requests_http1(requests []ConcurrentRequest, config HttpClientConfig) []ConcurrentResponse {
-    sus responses []ConcurrentResponse = []
+slay process_host_requests_http1(requests ConcurrentRequest[value], config HttpClientConfig) ConcurrentResponse[value]{
+    sus responses ConcurrentResponse[value] = []
     
     sus s drip = 0
     bestie (s < arrayz.len(requests)) {
@@ -415,7 +415,7 @@ slay process_host_requests_http1(requests []ConcurrentRequest, config HttpClient
 // ==== CONVENIENCE FUNCTIONS FOR COMMON USE CASES ====
 
 slay json_get_smart(url tea) yikes<HttpResponse> {
-    sus headers []tea = ["Accept: application/json"]
+    sus headers tea[value] = ["Accept: application/json"]
     sus config HttpClientConfig = default_client_config
     config.prefer_http2 = based
     
@@ -423,7 +423,7 @@ slay json_get_smart(url tea) yikes<HttpResponse> {
 }
 
 slay json_post_smart(url tea, json_body tea) yikes<HttpResponse> {
-    sus headers []tea = [
+    sus headers tea[value] = [
         "Content-Type: application/json",
         "Accept: application/json"
     ]
@@ -433,9 +433,9 @@ slay json_post_smart(url tea, json_body tea) yikes<HttpResponse> {
     damn http_request_smart("POST", url, headers, json_body, config)
 }
 
-slay form_post_smart(url tea, form_data []tea) yikes<HttpResponse> {
+slay form_post_smart(url tea, form_data tea[value]) yikes<HttpResponse> {
     sus body tea = encode_url_params(form_data)
-    sus headers []tea = ["Content-Type: application/x-www-form-urlencoded"]
+    sus headers tea[value] = ["Content-Type: application/x-www-form-urlencoded"]
     sus config HttpClientConfig = default_client_config
     config.prefer_http2 = based
     
@@ -520,6 +520,6 @@ slay json_post(url tea, json_body tea) yikes<HttpResponse> {
     damn json_post_smart(url, json_body)
 }
 
-slay form_post(url tea, form_data []tea) yikes<HttpResponse> {
+slay form_post(url tea, form_data tea[value]) yikes<HttpResponse> {
     damn form_post_smart(url, form_data)
 }

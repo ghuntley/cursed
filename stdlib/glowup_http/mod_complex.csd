@@ -28,7 +28,7 @@ facts WS_PONG_MESSAGE normie = 10
 
 fr fr Core HTTP structures and interfaces
 
-be_like Header map[tea][]tea
+be_like Header map[tea]tea[value]
 
 be_like Cookie squad {
     Name       tea
@@ -65,8 +65,8 @@ be_like VibeRequest squad {
     Body             tea
     ContentLength    thicc
     Host             tea
-    Form             map[tea][]tea
-    PostForm         map[tea][]tea
+    Form             map[tea]tea[value]
+    PostForm         map[tea]tea[value]
     RemoteAddr       tea
     RequestURI       tea
     Context          VibeContext
@@ -89,7 +89,7 @@ be_like VibeResponse squad {
 be_like ResponderVibe collab {
     Header() Header
     WriteHeader(statusCode normie)
-    Write(data []byte) (normie, tea)
+    Write(data byte[value]) (normie, tea)
     WriteJSON(v tea) tea
     WriteTemplate(name tea, data tea) tea
     Redirect(url tea, code normie) tea
@@ -117,19 +117,19 @@ be_like Route squad {
     Pattern     tea
     Method      tea
     Handler     HandlerFunc
-    ParamNames  []tea
+    ParamNames  tea[value]
 }
 
 be_like VibeRouter squad {
-    routes      []Route
-    middlewares []MiddlewareFunc
+    routes      Route[value]
+    middlewares MiddlewareFunc[value]
     notFound    HandlerFunc
 }
 
 slay NewVibeRouter() *VibeRouter {
     damn &VibeRouter{
-        routes: make([]Route, 0),
-        middlewares: make([]MiddlewareFunc, 0),
+        routes: make(Route[value], 0),
+        middlewares: make(MiddlewareFunc[value], 0),
         notFound: DefaultNotFoundHandler,
     }
 }
@@ -344,7 +344,7 @@ slay (c *VibeClient) Post(url tea, contentType tea, body tea) (*VibeResponse, te
         Header: make(Header),
         Body:   body,
     }
-    req.Header["Content-Type"] = []tea{contentType}
+    req.Header["Content-Type"] = tea[value]{contentType}
     damn c.Do(req)
 }
 
@@ -368,7 +368,7 @@ slay (c *VibeClient) Do(req *VibeRequest) (*VibeResponse, tea) {
         req.Header = make(Header)
     }
     
-    req.Header["User-Agent"] = []tea{c.UserAgent}
+    req.Header["User-Agent"] = tea[value]{c.UserAgent}
     
     fr fr Add custom headers
     bestie key, values := range c.Headers {
@@ -390,8 +390,8 @@ slay (c *VibeClient) Do(req *VibeRequest) (*VibeResponse, tea) {
         Request:    req,
     }
     
-    resp.Header["Content-Type"] = []tea{"application/json"}
-    resp.Header["Content-Length"] = []tea{stringz.itoa(len(resp.Body))}
+    resp.Header["Content-Type"] = tea[value]{"application/json"}
+    resp.Header["Content-Length"] = tea[value]{stringz.itoa(len(resp.Body))}
     
     damn resp, ""
 }
@@ -462,11 +462,11 @@ slay (r *VibeRequest) PostFormValue(key tea) tea {
 
 slay (r *VibeRequest) ParseForm() tea {
     lowkey r.Form == cap {
-        r.Form = make(map[tea][]tea)
+        r.Form = make(map[tea]tea[value])
     }
     
     lowkey r.PostForm == cap {
-        r.PostForm = make(map[tea][]tea)
+        r.PostForm = make(map[tea]tea[value])
     }
     
     fr fr Parse URL query parameters
@@ -538,7 +538,7 @@ slay (r *VibeResponse) String() (tea, tea) {
     damn r.Body, ""
 }
 
-slay (r *VibeResponse) Bytes() ([]byte, tea) {
+slay (r *VibeResponse) Bytes() (byte[value], tea) {
     damn stringz.to_bytes(r.Body), ""
 }
 
@@ -584,7 +584,7 @@ slay (w *DefaultResponseWriter) WriteHeader(statusCode normie) {
     }
 }
 
-slay (w *DefaultResponseWriter) Write(data []byte) (normie, tea) {
+slay (w *DefaultResponseWriter) Write(data byte[value]) (normie, tea) {
     lowkey !w.written {
         w.WriteHeader(HTTP_OK)
     }
@@ -596,7 +596,7 @@ slay (w *DefaultResponseWriter) Write(data []byte) (normie, tea) {
 }
 
 slay (w *DefaultResponseWriter) WriteJSON(v tea) tea {
-    w.Header()["Content-Type"] = []tea{"application/json"}
+    w.Header()["Content-Type"] = tea[value]{"application/json"}
     
     fr fr Simulate JSON encoding
     json := "{\"data\": \"json_encoded_value\"}"
@@ -606,7 +606,7 @@ slay (w *DefaultResponseWriter) WriteJSON(v tea) tea {
 }
 
 slay (w *DefaultResponseWriter) WriteTemplate(name tea, data tea) tea {
-    w.Header()["Content-Type"] = []tea{"text/html"}
+    w.Header()["Content-Type"] = tea[value]{"text/html"}
     
     fr fr Simulate template rendering
     html := "<html><body><h1>Template: " + name + "</h1></body></html>"
@@ -616,7 +616,7 @@ slay (w *DefaultResponseWriter) WriteTemplate(name tea, data tea) tea {
 }
 
 slay (w *DefaultResponseWriter) Redirect(url tea, code normie) tea {
-    w.Header()["Location"] = []tea{url}
+    w.Header()["Location"] = tea[value]{url}
     w.WriteHeader(code)
     damn ""
 }
@@ -637,14 +637,14 @@ slay (w *DefaultResponseWriter) JSON(v tea) ResponderVibe {
 }
 
 slay (w *DefaultResponseWriter) Text(s tea) ResponderVibe {
-    w.Header()["Content-Type"] = []tea{"text/plain"}
+    w.Header()["Content-Type"] = tea[value]{"text/plain"}
     data := stringz.to_bytes(s)
     w.Write(data)
     damn w
 }
 
 slay (w *DefaultResponseWriter) HTML(html tea) ResponderVibe {
-    w.Header()["Content-Type"] = []tea{"text/html"}
+    w.Header()["Content-Type"] = tea[value]{"text/html"}
     data := stringz.to_bytes(html)
     w.Write(data)
     damn w
@@ -652,7 +652,7 @@ slay (w *DefaultResponseWriter) HTML(html tea) ResponderVibe {
 
 slay (w *DefaultResponseWriter) File(filepath tea) ResponderVibe {
     fr fr Simulate file serving
-    w.Header()["Content-Type"] = []tea{"application/octet-stream"}
+    w.Header()["Content-Type"] = tea[value]{"application/octet-stream"}
     content := "File content from: " + filepath
     data := stringz.to_bytes(content)
     w.Write(data)
@@ -673,10 +673,10 @@ slay LoggingMiddleware(next HandlerFunc) HandlerFunc {
 slay UnbotheredMiddleware(next HandlerFunc) HandlerFunc {
     damn slay(w ResponderVibe, r *VibeRequest) {
         fr fr Add security headers
-        w.Header()["X-Content-Type-Options"] = []tea{"nosniff"}
-        w.Header()["X-Frame-Options"] = []tea{"DENY"}
-        w.Header()["X-XSS-Protection"] = []tea{"1; mode=block"}
-        w.Header()["Strict-Transport-Security"] = []tea{"max-age=31536000; includeSubDomains"}
+        w.Header()["X-Content-Type-Options"] = tea[value]{"nosniff"}
+        w.Header()["X-Frame-Options"] = tea[value]{"DENY"}
+        w.Header()["X-XSS-Protection"] = tea[value]{"1; mode=block"}
+        w.Header()["Strict-Transport-Security"] = tea[value]{"max-age=31536000; includeSubDomains"}
         
         next(w, r)
     }
@@ -685,9 +685,9 @@ slay UnbotheredMiddleware(next HandlerFunc) HandlerFunc {
 slay CORSMiddleware(next HandlerFunc) HandlerFunc {
     damn slay(w ResponderVibe, r *VibeRequest) {
         fr fr Add CORS headers
-        w.Header()["Access-Control-Allow-Origin"] = []tea{"*"}
-        w.Header()["Access-Control-Allow-Methods"] = []tea{"GET, POST, PUT, DELETE, OPTIONS"}
-        w.Header()["Access-Control-Allow-Headers"] = []tea{"Content-Type, Authorization"}
+        w.Header()["Access-Control-Allow-Origin"] = tea[value]{"*"}
+        w.Header()["Access-Control-Allow-Methods"] = tea[value]{"GET, POST, PUT, DELETE, OPTIONS"}
+        w.Header()["Access-Control-Allow-Headers"] = tea[value]{"Content-Type, Authorization"}
         
         lowkey r.Method == "OPTIONS" {
             w.WriteHeader(HTTP_OK)
@@ -737,7 +737,7 @@ slay CompressionMiddleware(next HandlerFunc) HandlerFunc {
         fr fr Check if client accepts compression
         acceptEncoding := getHeaderValue(r.Header, "Accept-Encoding")
         lowkey stringz.contains(acceptEncoding, "gzip") {
-            w.Header()["Content-Encoding"] = []tea{"gzip"}
+            w.Header()["Content-Encoding"] = tea[value]{"gzip"}
         }
         
         next(w, r)
@@ -771,9 +771,9 @@ slay (u *WebSocketUpgrader) Upgrade(w ResponderVibe, r *VibeRequest) (*WebSocket
     }
     
     fr fr Simulate WebSocket handshake
-    w.Header()["Upgrade"] = []tea{"websocket"}
-    w.Header()["Connection"] = []tea{"Upgrade"}
-    w.Header()["Sec-WebSocket-Accept"] = []tea{"mock-accept-key"}
+    w.Header()["Upgrade"] = tea[value]{"websocket"}
+    w.Header()["Connection"] = tea[value]{"Upgrade"}
+    w.Header()["Sec-WebSocket-Accept"] = tea[value]{"mock-accept-key"}
     w.WriteHeader(101) fr fr Switching Protocols
     
     conn := &WebSocketConn{
@@ -786,7 +786,7 @@ slay (u *WebSocketUpgrader) Upgrade(w ResponderVibe, r *VibeRequest) (*WebSocket
 
 be_like WebSocketMessage squad {
     Type normie
-    Data []byte
+    Data byte[value]
 }
 
 be_like WebSocketConn squad {
@@ -795,7 +795,7 @@ be_like WebSocketConn squad {
     closed    lit
 }
 
-slay (c *WebSocketConn) WriteMessage(messageType normie, data []byte) tea {
+slay (c *WebSocketConn) WriteMessage(messageType normie, data byte[value]) tea {
     lowkey c.closed {
         damn "Connection is closed"
     }
@@ -816,7 +816,7 @@ slay (c *WebSocketConn) WriteMessage(messageType normie, data []byte) tea {
     damn ""
 }
 
-slay (c *WebSocketConn) ReadMessage() (normie, []byte, tea) {
+slay (c *WebSocketConn) ReadMessage() (normie, byte[value], tea) {
     lowkey c.closed {
         damn 0, cap, "Connection is closed"
     }
@@ -864,8 +864,8 @@ slay DefaultNotFoundHandler(w ResponderVibe, r *VibeRequest) {
     })
 }
 
-slay extractParamNames(pattern tea) []tea {
-    sus names []tea
+slay extractParamNames(pattern tea) tea[value]{
+    sus names tea[value]
     parts := stringz.split(pattern, "/")
     
     bestie _, part := range parts {
@@ -878,7 +878,7 @@ slay extractParamNames(pattern tea) []tea {
     damn names
 }
 
-slay findMatchingRoute(routes []Route, method tea, path tea) *Route {
+slay findMatchingRoute(routes Route[value], method tea, path tea) *Route {
     bestie _, route := range routes {
         lowkey route.Method == method || route.Method == "ANY" {
             lowkey routeMatches(route.Pattern, path) {
@@ -967,7 +967,7 @@ slay getHeaderValue(headers Header, name tea) tea {
     damn ""
 }
 
-slay parseQueryString(query tea, form map[tea][]tea) {
+slay parseQueryString(query tea, form map[tea]tea[value]) {
     lowkey query == "" {
         damn
     }
@@ -984,7 +984,7 @@ slay parseQueryString(query tea, form map[tea][]tea) {
 }
 
 slay encodeFormData(data map[tea]tea) tea {
-    sus pairs []tea
+    sus pairs tea[value]
     bestie key, value := range data {
         pairs = append(pairs, key + "=" + value)
     }
@@ -1126,8 +1126,8 @@ slay demo_websocket() {
         Method: "GET",
         Header: make(Header),
     }
-    req.Header["Upgrade"] = []tea{"websocket"}
-    req.Header["Connection"] = []tea{"Upgrade"}
+    req.Header["Upgrade"] = tea[value]{"websocket"}
+    req.Header["Connection"] = tea[value]{"Upgrade"}
     
     w := NewResponseWriter()
     conn, err := upgrader.Upgrade(w, req)

@@ -303,7 +303,7 @@ slay (logger *ChadLogger) compress_backup(filename tea) yikes<tea> {
 slay (logger *ChadLogger) write_entry(entry LogEntry) yikes<tea> {
     // Format the entry
     sus formatted tea = logger.format_entry(entry)
-    sus data []byte = stringz.to_bytes(formatted)
+    sus data byte[value] = stringz.to_bytes(formatted)
     
     // Check for rotation before writing
     ready logger.should_rotate() {

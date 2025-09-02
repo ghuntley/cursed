@@ -24,7 +24,7 @@ slay test_base64_rfc4648_compliance() lit {
     
     fr fr Test standard vectors from RFC 4648
     test_total = test_total + 1
-    sus test_vectors []tea = [
+    sus test_vectors tea[value] = [
         "f", "Zg==",
         "fo", "Zm8=",
         "foo", "Zm9v",
@@ -206,8 +206,8 @@ slay test_secure_array_operations() lit {
     
     fr fr Test array copy with bounds checking
     test_total = test_total + 1
-    sus source [5]normie = [1, 2, 3, 4, 5]
-    sus dest [5]normie = [0; 5]
+    sus source normie[5] = [1, 2, 3, 4, 5]
+    sus dest normie[5] = [0; 5]
     sus copy_result lit = secure_array_copy(source, dest, 5)
     bestie copy_result && dest[0] == 1 && dest[4] == 5 {
         test_passed = test_passed + 1
@@ -218,9 +218,9 @@ slay test_secure_array_operations() lit {
     
     fr fr Test constant-time array comparison
     test_total = test_total + 1
-    sus arr1 [3]normie = [1, 2, 3]
-    sus arr2 [3]normie = [1, 2, 3]
-    sus arr3 [3]normie = [1, 2, 4]
+    sus arr1 normie[3] = [1, 2, 3]
+    sus arr2 normie[3] = [1, 2, 3]
+    sus arr3 normie[3] = [1, 2, 4]
     bestie secure_array_compare(arr1, arr2, 3) && !secure_array_compare(arr1, arr3, 3) {
         test_passed = test_passed + 1
         vibez.spill("✅ Array comparison test passed")
@@ -230,7 +230,7 @@ slay test_secure_array_operations() lit {
     
     fr fr Test array fill operation
     test_total = test_total + 1
-    sus fill_arr [4]normie = [0; 4]
+    sus fill_arr normie[4] = [0; 4]
     secure_array_fill(fill_arr, 42, 4)
     bestie fill_arr[0] == 42 && fill_arr[3] == 42 {
         test_passed = test_passed + 1
@@ -241,7 +241,7 @@ slay test_secure_array_operations() lit {
     
     fr fr Test array reverse operation
     test_total = test_total + 1
-    sus rev_arr [4]normie = [1, 2, 3, 4]
+    sus rev_arr normie[4] = [1, 2, 3, 4]
     secure_array_reverse(rev_arr, 4)
     bestie rev_arr[0] == 4 && rev_arr[3] == 1 {
         test_passed = test_passed + 1

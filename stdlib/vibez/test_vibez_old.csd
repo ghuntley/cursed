@@ -195,7 +195,7 @@ slay test_formatted_output() {
     test_pass("print_header function works")
     
     // Test table row
-    sus columns []tea = ["Column1", "Column2", "Column3"]
+    sus columns tea[value] = ["Column1", "Column2", "Column3"]
     print_row(columns, 30)
     test_pass("print_row function works")
 }

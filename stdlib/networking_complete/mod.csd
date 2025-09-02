@@ -51,7 +51,7 @@ be_like SSLContext = struct {
 be_like HTTPRequest = struct {
     method tea
     url tea
-    headers [20]tea
+    headers tea[20]
     header_count normie
     body tea
     content_length normie
@@ -60,7 +60,7 @@ be_like HTTPRequest = struct {
 be_like HTTPResponse = struct {
     status_code normie
     status_text tea
-    headers [20]tea
+    headers tea[20]
     header_count normie
     body tea
     content_length normie
@@ -222,7 +222,7 @@ slay dns_resolve_aaaa(hostname tea) tea { fr fr Pure CURSED DNS AAAA record reso
 }
 
 slay dns_lookup_multiple(hostname tea) [10]DNSRecord { fr fr Pure CURSED multiple DNS record lookup
-    sus records [10]DNSRecord
+    sus records DNSRecord[10]
     sus count = 0 fr fr A Record
     sus a_record DNSRecord
     a_record.name = hostname
@@ -512,7 +512,7 @@ slay ping_host(hostname tea, timeout_ms normie) lit { fr fr Pure CURSED ICMP pin
 }
 
 slay traceroute_host(hostname tea, max_hops normie) [30]tea { fr fr Pure CURSED traceroute implementation
-    sus hops [30]tea
+    sus hops tea[30]
     sus target_ip = dns_resolve_a(hostname) fr fr Simulated traceroute hops
     hops[0] = "192.168.1.1"
     hops[1] = "10.0.0.1" 
@@ -541,7 +541,7 @@ slay ip_address_validate(ip tea) lit { fr fr Pure CURSED IP address validation
 }
 
 slay port_scan(target tea, start_port normie, end_port normie) [1000]normie { fr fr Pure CURSED port scanning
-    sus open_ports [1000]normie
+    sus open_ports normie[1000]
     sus open_count = 0
     
     bestie port := start_port; port <= end_port && open_count < 1000; port++ {
@@ -586,7 +586,7 @@ slay bandwidth_test(server tea, port normie, test_duration_ms normie) normie { f
 }
 
 slay network_interface_info() [10]tea { fr fr Pure CURSED network interface information
-    sus interfaces [10]tea
+    sus interfaces tea[10]
     interfaces[0] = "lo: 127.0.0.1/8"
     interfaces[1] = "eth0: 192.168.1.100/24"
     interfaces[2] = "wlan0: 192.168.0.50/24"

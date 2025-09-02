@@ -301,7 +301,7 @@ slay test_parallel_execution() {
     slay task_b() normie { damn 20 }
     slay task_c() normie { damn 30 }
     
-    sus tasks []slay() normie = [task_a, task_b, task_c]
+    sus tasks slay[value]() normie = [task_a, task_b, task_c]
     
     fr fr Test parallel execution
     sus parallel_future *Future = async_parallel(tasks, 3)
@@ -321,7 +321,7 @@ slay test_sequential_execution() {
     slay multiply_by_two(value normie) normie { damn value * 2 }
     slay subtract_five(value normie) normie { damn value - 5 }
     
-    sus tasks []slay(normie) normie = [add_ten, multiply_by_two, subtract_five]
+    sus tasks slay[value](normie) normie = [add_ten, multiply_by_two, subtract_five]
     
     fr fr Test sequential execution starting with 5
     fr fr Expected: 5 -> 15 -> 30 -> 25

@@ -55,7 +55,7 @@ sus parent_pid normie = getppid()
 assert_eq_int(parent_pid, 1234)
 
 fr fr Test process listing
-sus processes []Process = get_processes()
+sus processes Process[value] = get_processes()
 assert_true(processes.length() >= 2)
 assert_eq_string(processes[0].command, "init")
 
@@ -103,7 +103,7 @@ assert_false(unsetenv(""))
 test_start("Environment Listing Tests")
 
 fr fr Test environment variable listing
-sus env_vars []tea = environ()
+sus env_vars tea[value] = environ()
 assert_true(env_vars.length() > 0)
 assert_true(env_vars[0].contains("PATH="))
 

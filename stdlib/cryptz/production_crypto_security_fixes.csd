@@ -9,8 +9,8 @@ fr fr =============================================
 // SECURITY: Secure collection hashing using SipHash
 slay secure_collection_hash(key tea, modulus normie) normie {
     // Use SipHash instead of vulnerable XOR-based hashing
-    sus key_bytes []drip = stringz.to_bytes(key)
-    sus hash_key [16]drip = generate_siphash_key()
+    sus key_bytes drip[value] = stringz.to_bytes(key)
+    sus hash_key drip[16] = generate_siphash_key()
     sus hash_result drip = siphash_hash(key_bytes, hash_key)
     
     ready (modulus > 0) {
@@ -21,7 +21,7 @@ slay secure_collection_hash(key tea, modulus normie) normie {
 
 // SECURITY: Generate cryptographically secure SipHash keys
 slay generate_siphash_key() [16]drip {
-    sus key [16]drip
+    sus key drip[16]
     bestie (i := 0; i < 16; i += 1) {
         key[i] = cryptz.random_byte()
     }
@@ -29,7 +29,7 @@ slay generate_siphash_key() [16]drip {
 }
 
 // SECURITY: SipHash implementation (cryptographically secure)
-slay siphash_hash(data []drip, key [16]drip) drip {
+slay siphash_hash(data drip[value], key drip[16]) drip {
     sus v0 drip = 0x736f6d6570736575
     sus v1 drip = 0x646f72616e646f6d
     sus v2 drip = 0x6c7967656e657261
@@ -110,22 +110,22 @@ slay secure_string_compare(a tea, b tea) lit {
         damn cringe
     }
     
-    sus a_bytes []drip = stringz.to_bytes(a)
-    sus b_bytes []drip = stringz.to_bytes(b)
+    sus a_bytes drip[value] = stringz.to_bytes(a)
+    sus b_bytes drip[value] = stringz.to_bytes(b)
     
     damn secure_constant_time_compare(a_bytes, b_bytes)
 }
 
 // SECURITY: Constant-time byte array comparison using HMAC
-slay secure_constant_time_compare(a []drip, b []drip) lit {
+slay secure_constant_time_compare(a drip[value], b drip[value]) lit {
     ready (len(a) != len(b)) {
         damn cringe
     }
     
     // Use HMAC-based comparison instead of XOR
-    sus key [32]drip = generate_comparison_key()
-    sus hmac_a []drip = hmac_sha256(a, key)
-    sus hmac_b []drip = hmac_sha256(b, key)
+    sus key drip[32] = generate_comparison_key()
+    sus hmac_a drip[value] = hmac_sha256(a, key)
+    sus hmac_b drip[value] = hmac_sha256(b, key)
     
     // Standard constant-time comparison of HMACs
     sus result drip = 0
@@ -138,7 +138,7 @@ slay secure_constant_time_compare(a []drip, b []drip) lit {
 
 // Generate secure key for constant-time comparisons
 slay generate_comparison_key() [32]drip {
-    sus key [32]drip
+    sus key drip[32]
     bestie (i := 0; i < 32; i += 1) {
         key[i] = cryptz.random_byte()
     }
@@ -146,9 +146,9 @@ slay generate_comparison_key() [32]drip {
 }
 
 // HMAC-SHA256 for secure constant-time comparison
-slay hmac_sha256(data []drip, key [32]drip) []drip {
-    sus ipad [64]drip
-    sus opad [64]drip
+slay hmac_sha256(data drip[value], key drip[32]) drip[value]{
+    sus ipad drip[64]
+    sus opad drip[64]
     
     // Initialize pads
     bestie (i := 0; i < 64; i += 1) {
@@ -162,16 +162,16 @@ slay hmac_sha256(data []drip, key [32]drip) []drip {
     }
     
     // Inner hash: SHA256(ipad || data)
-    sus inner_data []drip = append_bytes(ipad[:], data)
-    sus inner_hash []drip = sha256_hash(inner_data)
+    sus inner_data drip[value] = append_bytes(ipad[:], data)
+    sus inner_hash drip[value] = sha256_hash(inner_data)
     
     // Outer hash: SHA256(opad || inner_hash)
-    sus outer_data []drip = append_bytes(opad[:], inner_hash)
+    sus outer_data drip[value] = append_bytes(opad[:], inner_hash)
     damn sha256_hash(outer_data)
 }
 
 // Utility functions
-slay bytes_to_uint64(data []drip, offset normie) drip {
+slay bytes_to_uint64(data drip[value], offset normie) drip {
     sus result drip = 0
     bestie (i := 0; i < 8; i += 1) {
         ready (offset + i < len(data)) {
@@ -185,23 +185,23 @@ slay rotl64(x drip, n normie) drip {
     damn (x << n) | (x >> (64 - n))
 }
 
-slay append_bytes(a []drip, b []drip) []drip {
-    sus result []drip = a
+slay append_bytes(a drip[value], b drip[value]) drip[value]{
+    sus result drip[value] = a
     bestie (i := 0; i < len(b); i += 1) {
         result = append(result, b[i])
     }
     damn result
 }
 
-slay sha256_hash(data []drip) []drip {
+slay sha256_hash(data drip[value]) drip[value]{
     // Use existing cryptz SHA256 implementation
     damn cryptz.sha256(data)
 }
 
 // SECURITY: Secure BLAKE2b mixing function
-slay secure_blake2b_mix(input []drip) []drip {
+slay secure_blake2b_mix(input drip[value]) drip[value]{
     // Implement secure BLAKE2b mixing using ChaCha20 primitives
-    sus state [16]drip
+    sus state drip[16]
     
     // Initialize state with BLAKE2b constants
     state[0] = 0x6A09E667  // BLAKE2b IV
@@ -228,7 +228,7 @@ slay secure_blake2b_mix(input []drip) []drip {
     }
     
     // Convert state back to bytes
-    sus result []drip = []drip{}
+    sus result drip[value] = drip[value]{}
     bestie (i := 0; i < 8; i += 1) {
         bestie (j := 0; j < 4; j += 1) {
             sus byte_val drip = (state[i] >> (j * 8)) & 0xFF

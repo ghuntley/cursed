@@ -98,7 +98,7 @@ squad MySQLConnection {
     connected lit
     server_version tea
     connection_id drip
-    auth_plugin_data []rune
+    auth_plugin_data rune[value]
     capability_flags drip
     character_set rune
     status_flags drip
@@ -108,7 +108,7 @@ squad MySQLConnection {
 fr fr ===== Connection Pool Management =====
 
 sus MAX_MYSQL_CONNECTIONS drip = 100
-sus mysql_connection_pool []MySQLConnection = []
+sus mysql_connection_pool MySQLConnection[value] = []
 sus mysql_pool_initialized lit = cringe
 
 slay init_mysql_pool() {
@@ -164,51 +164,51 @@ slay get_mysql_connection(host tea, port drip, database tea, username tea, passw
 
 fr fr ===== Binary Protocol Utilities =====
 
-slay write_int24_le(data []rune, value drip) {
+slay write_int24_le(data rune[value], value drip) {
     data[0] = value & 0xFF
     data[1] = (value >> 8) & 0xFF
     data[2] = (value >> 16) & 0xFF
 }
 
-slay read_int24_le(data []rune) drip {
+slay read_int24_le(data rune[value]) drip {
     damn (data[0] | (data[1] << 8) | (data[2] << 16))
 }
 
-slay write_int32_le(data []rune, value drip) {
+slay write_int32_le(data rune[value], value drip) {
     data[0] = value & 0xFF
     data[1] = (value >> 8) & 0xFF
     data[2] = (value >> 16) & 0xFF
     data[3] = (value >> 24) & 0xFF
 }
 
-slay read_int32_le(data []rune) drip {
+slay read_int32_le(data rune[value]) drip {
     damn (data[0] | (data[1] << 8) | (data[2] << 16) | (data[3] << 24))
 }
 
-slay write_int16_le(data []rune, value drip) {
+slay write_int16_le(data rune[value], value drip) {
     data[0] = value & 0xFF
     data[1] = (value >> 8) & 0xFF
 }
 
-slay read_int16_le(data []rune) drip {
+slay read_int16_le(data rune[value]) drip {
     damn (data[0] | (data[1] << 8))
 }
 
-slay encode_length_encoded_integer(value drip) []rune {
+slay encode_length_encoded_integer(value drip) rune[value]{
     ready (value < 251) {
         damn [value]
     } otherwise ready (value < 65536) {
-        sus result []rune = make_array<rune>(3)
+        sus result rune[value] = make_array<rune>(3)
         result[0] = 0xfc
         write_int16_le(result[1:3], value)
         damn result
     } otherwise ready (value < 16777216) {
-        sus result []rune = make_array<rune>(4)
+        sus result rune[value] = make_array<rune>(4)
         result[0] = 0xfd
         write_int24_le(result[1:4], value)
         damn result
     } otherwise {
-        sus result []rune = make_array<rune>(9)
+        sus result rune[value] = make_array<rune>(9)
         result[0] = 0xfe
         write_int32_le(result[1:5], value)
         write_int32_le(result[5:9], 0)  // High 32 bits
@@ -216,7 +216,7 @@ slay encode_length_encoded_integer(value drip) []rune {
     }
 }
 
-slay decode_length_encoded_integer(data []rune, offset drip) (drip, drip) {
+slay decode_length_encoded_integer(data rune[value], offset drip) (drip, drip) {
     ready (offset >= data.len()) {
         damn 0, offset
     }
@@ -243,8 +243,8 @@ slay decode_length_encoded_integer(data []rune, offset drip) (drip, drip) {
 
 fr fr ===== Packet Management =====
 
-slay send_mysql_packet(conn *MySQLConnection, packet_data []rune, sequence_id rune) lit {
-    sus header []rune = make_array<rune>(4)
+slay send_mysql_packet(conn *MySQLConnection, packet_data rune[value], sequence_id rune) lit {
+    sus header rune[value] = make_array<rune>(4)
     write_int24_le(header[0:3], packet_data.len())
     header[3] = sequence_id
     
@@ -257,8 +257,8 @@ slay send_mysql_packet(conn *MySQLConnection, packet_data []rune, sequence_id ru
     damn bytes_sent == packet_data.len()
 }
 
-slay receive_mysql_packet(conn *MySQLConnection) ([]rune, rune) {
-    sus header []rune = make_array<rune>(4)
+slay receive_mysql_packet(conn *MySQLConnection) (rune[value], rune) {
+    sus header rune[value] = make_array<rune>(4)
     sus bytes_received drip = networkz.socket_receive(conn.socket_fd, header)
     
     ready (bytes_received != 4) {
@@ -268,7 +268,7 @@ slay receive_mysql_packet(conn *MySQLConnection) ([]rune, rune) {
     sus packet_length drip = read_int24_le(header[0:3])
     sus sequence_id rune = header[3]
     
-    sus packet_data []rune = make_array<rune>(packet_length)
+    sus packet_data rune[value] = make_array<rune>(packet_length)
     bytes_received = networkz.socket_receive(conn.socket_fd, packet_data)
     
     ready (bytes_received != packet_length) {
@@ -280,24 +280,24 @@ slay receive_mysql_packet(conn *MySQLConnection) ([]rune, rune) {
 
 fr fr ===== Authentication =====
 
-slay sha1_hash(data []rune) []rune {
+slay sha1_hash(data rune[value]) rune[value]{
     fr fr Use cryptz module for SHA1 hashing
     sus input tea = stringz.from_bytes(data)
     sus hash_hex tea = cryptz.sha1_hex(input)
     damn stringz.to_bytes(hash_hex)[0:20]  // SHA1 is 20 bytes
 }
 
-slay mysql_native_password_auth(password tea, auth_data []rune) []rune {
+slay mysql_native_password_auth(password tea, auth_data rune[value]) rune[value]{
     ready (password == "") {
         damn []
     }
     
-    sus password_bytes []rune = stringz.to_bytes(password)
-    sus stage1 []rune = sha1_hash(password_bytes)
-    sus stage2 []rune = sha1_hash(stage1)
+    sus password_bytes rune[value] = stringz.to_bytes(password)
+    sus stage1 rune[value] = sha1_hash(password_bytes)
+    sus stage2 rune[value] = sha1_hash(stage1)
     
-    sus combined []rune = auth_data + stage2
-    sus stage3 []rune = sha1_hash(combined)
+    sus combined rune[value] = auth_data + stage2
+    sus stage3 rune[value] = sha1_hash(combined)
     
     fr fr XOR stage1 with stage3
     bestie (sus i drip = 0; i < stage1.len() && i < stage3.len(); i++) {
@@ -308,7 +308,7 @@ slay mysql_native_password_auth(password tea, auth_data []rune) []rune {
 }
 
 slay send_handshake_response(conn *MySQLConnection) lit {
-    sus response []rune = make_array<rune>(1024)
+    sus response rune[value] = make_array<rune>(1024)
     sus pos drip = 0
     
     fr fr Capability flags (4 bytes)
@@ -330,7 +330,7 @@ slay send_handshake_response(conn *MySQLConnection) lit {
     }
     
     fr fr Username (null-terminated)
-    sus username_bytes []rune = stringz.to_bytes(conn.username)
+    sus username_bytes rune[value] = stringz.to_bytes(conn.username)
     bestie (sus b rune : username_bytes) {
         response[pos] = b
         pos++
@@ -339,7 +339,7 @@ slay send_handshake_response(conn *MySQLConnection) lit {
     pos++
     
     fr fr Password authentication
-    sus auth_response []rune = mysql_native_password_auth(conn.password, conn.auth_plugin_data)
+    sus auth_response rune[value] = mysql_native_password_auth(conn.password, conn.auth_plugin_data)
     response[pos] = auth_response.len()
     pos++
     bestie (sus b rune : auth_response) {
@@ -349,7 +349,7 @@ slay send_handshake_response(conn *MySQLConnection) lit {
     
     fr fr Database name (null-terminated)
     ready (conn.database != "") {
-        sus database_bytes []rune = stringz.to_bytes(conn.database)
+        sus database_bytes rune[value] = stringz.to_bytes(conn.database)
         bestie (sus b rune : database_bytes) {
             response[pos] = b
             pos++
@@ -360,7 +360,7 @@ slay send_handshake_response(conn *MySQLConnection) lit {
     
     fr fr Authentication plugin name
     sus plugin_name tea = "mysql_native_password"
-    sus plugin_bytes []rune = stringz.to_bytes(plugin_name)
+    sus plugin_bytes rune[value] = stringz.to_bytes(plugin_name)
     bestie (sus b rune : plugin_bytes) {
         response[pos] = b
         pos++
@@ -371,7 +371,7 @@ slay send_handshake_response(conn *MySQLConnection) lit {
     damn send_mysql_packet(conn, response[0:pos], 1)
 }
 
-slay process_handshake(conn *MySQLConnection, handshake []rune) lit {
+slay process_handshake(conn *MySQLConnection, handshake rune[value]) lit {
     ready (handshake.len() < 10) {
         damn cringe
     }
@@ -464,7 +464,7 @@ slay mysql_connect(conn *MySQLConnection) lit {
     }
     
     fr fr Receive initial handshake packet
-    sus handshake []rune, sus seq_id rune = receive_mysql_packet(conn)
+    sus handshake rune[value], sus seq_id rune = receive_mysql_packet(conn)
     ready (handshake.len() == 0) {
         vibez.spill("ERROR: Failed to receive MySQL handshake")
         networkz.socket_close(conn.socket_fd)
@@ -486,7 +486,7 @@ slay mysql_connect(conn *MySQLConnection) lit {
     }
     
     fr fr Receive authentication result
-    sus auth_result []rune, sus auth_seq rune = receive_mysql_packet(conn)
+    sus auth_result rune[value], sus auth_seq rune = receive_mysql_packet(conn)
     ready (auth_result.len() == 0) {
         vibez.spill("ERROR: Failed to receive MySQL auth result")
         networkz.socket_close(conn.socket_fd)
@@ -524,8 +524,8 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
     }
     
     fr fr Send COM_QUERY packet
-    sus sql_bytes []rune = stringz.to_bytes(sql)
-    sus query_packet []rune = make_array<rune>(sql_bytes.len() + 1)
+    sus sql_bytes rune[value] = stringz.to_bytes(sql)
+    sus query_packet rune[value] = make_array<rune>(sql_bytes.len() + 1)
     query_packet[0] = COM_QUERY
     bestie (sus i drip = 0; i < sql_bytes.len(); i++) {
         query_packet[i + 1] = sql_bytes[i]
@@ -537,7 +537,7 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
     }
     
     fr fr Receive response
-    sus response []rune, sus seq rune = receive_mysql_packet(conn)
+    sus response rune[value], sus seq rune = receive_mysql_packet(conn)
     ready (response.len() == 0) {
         result.error_message = "Failed to receive MySQL response"
         damn result
@@ -575,7 +575,7 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
     fr fr Read column definitions
     result.column_names = make_array<tea>(column_count)
     bestie (sus i drip = 0; i < column_count; i++) {
-        sus col_packet []rune, sus col_seq rune = receive_mysql_packet(conn)
+        sus col_packet rune[value], sus col_seq rune = receive_mysql_packet(conn)
         ready (col_packet.len() == 0) {
             result.error_message = "Failed to receive MySQL column definition"
             damn result
@@ -598,7 +598,7 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
     }
     
     fr fr EOF packet after column definitions
-    sus eof_packet []rune, sus eof_seq rune = receive_mysql_packet(conn)
+    sus eof_packet rune[value], sus eof_seq rune = receive_mysql_packet(conn)
     ready (eof_packet.len() == 0 || eof_packet[0] != EOF_PACKET) {
         result.error_message = "Expected MySQL EOF packet after columns"
         damn result
@@ -607,7 +607,7 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
     fr fr Read data rows
     result.rows = []
     bestie (based) {
-        sus row_packet []rune, sus row_seq rune = receive_mysql_packet(conn)
+        sus row_packet rune[value], sus row_seq rune = receive_mysql_packet(conn)
         ready (row_packet.len() == 0) {
             break
         }
@@ -617,7 +617,7 @@ slay mysql_execute_query(conn *MySQLConnection, sql tea) QueryResult {
         }
         
         fr fr Parse row data
-        sus row []tea = make_array<tea>(column_count)
+        sus row tea[value] = make_array<tea>(column_count)
         sus row_pos drip = 0
         
         bestie (sus col drip = 0; col < column_count && row_pos < row_packet.len(); col++) {
@@ -661,7 +661,7 @@ slay mysql_real_query_simple(connection_string tea, sql tea) QueryResult {
     sus username tea = "root"
     sus password tea = ""
     
-    sus params []tea = stringz.split(connection_string, " ")
+    sus params tea[value] = stringz.split(connection_string, " ")
     bestie (sus param tea : params) {
         ready (stringz.starts_with(param, "host=")) {
             host = param[5:]
@@ -703,7 +703,7 @@ slay mysql_close_all_connections() {
         bestie (sus i drip = 0; i < MAX_MYSQL_CONNECTIONS; i++) {
             ready (mysql_connection_pool[i].connected) {
                 fr fr Send COM_QUIT
-                sus quit_packet []rune = [COM_QUIT]
+                sus quit_packet rune[value] = [COM_QUIT]
                 send_mysql_packet(&mysql_connection_pool[i], quit_packet, 0)
                 
                 networkz.socket_close(mysql_connection_pool[i].socket_fd)

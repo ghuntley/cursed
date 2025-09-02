@@ -1,0 +1,164 @@
+[1mCURSED Test Suite - Fixed Version[0m
+====================================
+Compiler: /home/ghuntley/cursed/test_suite/../zig-out/bin/cursed-compiler
+Test directory: /home/ghuntley/cursed/test_suite/test_programs
+Working from: /home/ghuntley/cursed/test_suite/.. (for stdlib loading)
+
+Scanning for test files...
+Found 107 test files
+
+[1m[1/107] Testing: arithmetic/01_mixed_types.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[2/107] Testing: arithmetic/02_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[3/107] Testing: arithmetic/03_operator_precedence.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[4/107] Testing: arithmetic/04_complex_expressions.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[5/107] Testing: arithmetic/arithmetic_basic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[6/107] Testing: arithmetic/division_semantics_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[7/107] Testing: arithmetic/feature_arithmetic_operations.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[8/107] Testing: arithmetic/overflow_edge_cases.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[9/107] Testing: basic/01_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[10/107] Testing: basic/02_simple_arithmetic.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[11/107] Testing: basic/03_variable_assignment.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[12/107] Testing: basic/basic_hello_world.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[13/107] Testing: basic/hello_world_simple.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[14/107] Testing: complex/01_nested_operations.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 24, output correct)[0m
+---
+[1m[15/107] Testing: complex/02_fizzbuzz.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 112, output correct)[0m
+---
+[1m[16/107] Testing: comprehensive/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[17/107] Testing: comprehensive/function_definitions_test.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[18/107] Testing: control_flow/01_if_statements.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[19/107] Testing: control_flow/02_loops.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[20/107] Testing: control_flow/control_flow_comprehensive.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[21/107] Testing: control_flow/control_flow_if_else.csd[0m
+  Result: [32mPASS[0m
+---
+[1m[22/107] Testing: control_flow/feature_control_flow_comprehensive.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 37, output correct)[0m
+---
+[1m[23/107] Testing: edge_cases/01_boundary_conditions.csd[0m
+  Result: [33mPASS (EXIT_CODE_ISSUE: exit 37, output correct)[0m
+---
+[1m[24/107] Testing: edge_cases/01_boundary_values.csd[0m
+  Result: [31mCOMPILE ERROR (interpreted worked)[0m
+  [36mInterpreter (exit: 0):[0m
+    "=== Comprehensive Edge Case Tests ===" 
+    "=== Numeric Boundary Tests ===" 
+    "Zero value tests:" 
+    "Zero:" 0 
+    "Zero abs:" 0 
+    "Zero power 0:" 1 
+    "Zero power 1:" 0 
+    "Negative value tests:" 
+    "Negative:" -999 
+    "Negative abs:" 999 
+    "Negative squared:" 998001 
+    "Large value tests:" 
+    "Large value:" 999999 
+    "Large abs:" 999999 
+    "Edge arithmetic tests:" 
+    "1 + 0 =" 1 
+    "1 * 0 =" 0 
+    "0 * 999 =" 0 
+    "1 - 1 =" 0 
+    "=== String Boundary Tests ===" 
+    "Empty string tests:" 
+    "Empty string length:" 2 
+    "Single character tests:" 
+    "Single char:" "a" 
+    "Single char length:" 3 
+    "Single char concat test:" "a""b" 
+    "Special character tests:" 
+    "Special chars:" "!@#$%^&*()" 
+    "Special length:" 12 
+    "Repeated character tests:" 
+    "Repeated 'a':" "aaaaaaaaaa" 
+    "Repeated length:" 12 
+    "Whitespace tests:" 
+    "Whitespace length:" 5 
+    "=== Array Boundary Tests ===" 
+    "Array tests:" 
+    "Array creation test: simulated with variables" 
+    "Element 0:" 42 
+    "Element 1:" 0 
+    "Element 2:" 999 
+    "Array-like pattern tests:" 
+    "Sum of elements:" 1041 
+    "Element count:" 3 
+    "=== Edge Case Combinations ===" 
+    "Edge combinations:" 
+    "0 + (-1) =" -1 
+    "0 * (-1) =" 0 
+    "(-1) * 1 =" -1 
+    "1 - 1 =" 0 
+    "String edge combinations:" 
+    "Empty + letter:" """x" "(len:" 5 ")" 
+    "Space + letter:" " ""x" "(len:" 6 ")" 
+    "Letter + empty:" "x""" "(len:" 5 ")" 
+    "=== Mathematical Edge Cases ===" 
+    "Division edge cases:" 
+    "8 / 1 =" 8 
+    "8 / 2 =" 4 
+    "8 / 4 =" 2 
+    "8 / 8 =" 1 
+    "Power edge cases:" 
+    "1 ^ 100 =" 1 
+    "2 ^ 0 =" 1 
+    "0 ^ 2 =" 0 
+    "Modulo edge cases:" 
+    "0 % 5 =" 0 
+    "1 % 1 =" 0 
+    "7 % 1 =" 0 
+    "7 % 7 =" 0 
+    "All edge case tests completed" 
+
+  [36mCompiled (exit: 1):[0m
+    Compilation failed
+
+[31mTest failed. Stopping execution.[0m
+
+[1mResults at failure:[0m
+  Passed: 23
+  Failed: 0
+  Exit Code Warnings: 4
+  Interpreter Errors: 0
+  Compile Errors: 1
+  Total Processed: 24
+  Remaining: 83

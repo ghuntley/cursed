@@ -29,7 +29,7 @@ slay parse_email(raw_email tea) yikes<ParsedEmail> {
     sus raw_body tea = stringz.substring(raw_email, separator_pos + 4, stringz.len(raw_email))  // +4 for \r\n\r\n
     
     // Parse headers
-    sus headers []EmailHeader = parse_email_headers(raw_headers) fam {
+    sus headers EmailHeader[value] = parse_email_headers(raw_headers) fam {
         when err -> yikes err
     }
     
@@ -43,8 +43,8 @@ slay parse_email(raw_email tea) yikes<ParsedEmail> {
     sus content_type tea = get_header_value(headers, "Content-Type")
     
     // Parse TO addresses
-    sus to_addresses []tea = parse_address_list(to_header)
-    sus cc_addresses []tea = parse_address_list(cc_header)
+    sus to_addresses tea[value] = parse_address_list(to_header)
+    sus cc_addresses tea[value] = parse_address_list(cc_header)
     
     // Initialize parsed email structure
     sus parsed ParsedEmail = ParsedEmail{
@@ -81,16 +81,16 @@ slay parse_email(raw_email tea) yikes<ParsedEmail> {
 }
 
 // Parses email headers from raw header section
-slay parse_email_headers(header_section tea) yikes<[]EmailHeader> {
+slay parse_email_headers(header_section tea) yikes<EmailHeader[value]> {
     ready (stringz.len(header_section) == 0) {
         damn []
     }
     
-    sus headers []EmailHeader = []
-    sus lines []tea = stringz.split(header_section, "\r\n")
+    sus headers EmailHeader[value] = []
+    sus lines tea[value] = stringz.split(header_section, "\r\n")
     
     // Handle line-wrapped headers (RFC 5322 folding)
-    sus unfolded_lines []tea = unfold_header_lines(lines)
+    sus unfolded_lines tea[value] = unfold_header_lines(lines)
     
     sus i drip = 0
     bestie (i < arrayz.len(unfolded_lines)) {
@@ -129,7 +129,7 @@ slay parse_email_headers(header_section tea) yikes<[]EmailHeader> {
 }
 
 // Gets the value of a specific header (case-insensitive)
-slay get_header_value(headers []EmailHeader, header_name tea) tea {
+slay get_header_value(headers EmailHeader[value], header_name tea) tea {
     sus target_name tea = stringz.to_lower(header_name)
     
     sus i drip = 0
@@ -147,9 +147,9 @@ slay get_header_value(headers []EmailHeader, header_name tea) tea {
 }
 
 // Gets all values for headers with the same name
-slay get_header_values(headers []EmailHeader, header_name tea) []tea {
+slay get_header_values(headers EmailHeader[value], header_name tea) tea[value]{
     sus target_name tea = stringz.to_lower(header_name)
-    sus values []tea = []
+    sus values tea[value] = []
     
     sus i drip = 0
     bestie (i < arrayz.len(headers)) {
@@ -178,7 +178,7 @@ slay parse_multipart_body(parsed ParsedEmail) yikes<ParsedEmail> {
     }
     
     // Split body into parts using boundary
-    sus parts []tea = split_mime_parts(parsed.raw_body, boundary)
+    sus parts tea[value] = split_mime_parts(parsed.raw_body, boundary)
     
     sus i drip = 0
     bestie (i < arrayz.len(parts)) {
@@ -222,8 +222,8 @@ slay extract_mime_boundary(content_type tea) tea {
 }
 
 // Splits multipart body into individual parts
-slay split_mime_parts(body tea, boundary tea) []tea {
-    sus parts []tea = []
+slay split_mime_parts(body tea, boundary tea) tea[value]{
+    sus parts tea[value] = []
     sus boundary_delimiter tea = stringz.concat(["--", boundary])
     sus end_boundary tea = stringz.concat([boundary_delimiter, "--"])
     
@@ -287,7 +287,7 @@ slay process_mime_part(parsed ParsedEmail, part_content tea) yikes<ParsedEmail> 
     sus part_body tea = stringz.substring(part_content, header_end + 4, stringz.len(part_content))
     
     // Parse part headers
-    sus part_headers []EmailHeader = parse_email_headers(part_headers_raw) fam {
+    sus part_headers EmailHeader[value] = parse_email_headers(part_headers_raw) fam {
         when err -> yikes err
     }
     
@@ -321,7 +321,7 @@ slay process_mime_part(parsed ParsedEmail, part_content tea) yikes<ParsedEmail> 
         // Nested multipart - recursively process
         sus nested_boundary tea = extract_mime_boundary(content_type)
         ready (stringz.len(nested_boundary) > 0) {
-            sus nested_parts []tea = split_mime_parts(decoded_body, nested_boundary)
+            sus nested_parts tea[value] = split_mime_parts(decoded_body, nested_boundary)
             sus j drip = 0
             bestie (j < arrayz.len(nested_parts)) {
                 parsed = process_mime_part(parsed, nested_parts[j]) fam {
@@ -343,7 +343,7 @@ slay process_mime_part(parsed ParsedEmail, part_content tea) yikes<ParsedEmail> 
 }
 
 // Creates an attachment from a MIME part
-slay create_attachment_from_mime_part(headers []EmailHeader, content tea) EmailAttachment {
+slay create_attachment_from_mime_part(headers EmailHeader[value], content tea) EmailAttachment {
     sus content_type tea = get_header_value(headers, "Content-Type")
     sus content_disposition tea = get_header_value(headers, "Content-Disposition")
     sus content_id tea = get_header_value(headers, "Content-ID")
@@ -503,7 +503,7 @@ slay decode_encoded_word(encoded_word tea) yikes<tea> {
     sus inner tea = stringz.substring(encoded_word, 2, stringz.len(encoded_word) - 2)
     
     // Split into parts: charset?encoding?data
-    sus parts []tea = stringz.split(inner, "?")
+    sus parts tea[value] = stringz.split(inner, "?")
     ready (arrayz.len(parts) != 3) {
         yikes email_format_error("Invalid encoded word format - expected 3 parts")
     }
@@ -540,13 +540,13 @@ slay decode_encoded_word(encoded_word tea) yikes<tea> {
 // ============================================================================
 
 // Parses a comma-separated list of email addresses
-slay parse_address_list(address_header tea) []tea {
+slay parse_address_list(address_header tea) tea[value]{
     ready (stringz.len(address_header) == 0) {
         damn []
     }
     
-    sus addresses []tea = []
-    sus parts []tea = stringz.split(address_header, ",")
+    sus addresses tea[value] = []
+    sus parts tea[value] = stringz.split(address_header, ",")
     
     sus i drip = 0
     bestie (i < arrayz.len(parts)) {
@@ -595,12 +595,12 @@ slay parse_single_address(address_string tea) tea {
 // ============================================================================
 
 // Unfolds header lines (handles RFC 5322 line continuation)
-slay unfold_header_lines(lines []tea) []tea {
+slay unfold_header_lines(lines tea[value]) tea[value]{
     ready (arrayz.len(lines) == 0) {
         damn []
     }
     
-    sus unfolded []tea = []
+    sus unfolded tea[value] = []
     sus current_line tea = ""
     
     sus i drip = 0
@@ -630,7 +630,7 @@ slay unfold_header_lines(lines []tea) []tea {
 }
 
 // Gets content encoding from headers
-slay get_content_encoding(headers []EmailHeader) tea {
+slay get_content_encoding(headers EmailHeader[value]) tea {
     sus encoding tea = get_header_value(headers, "Content-Transfer-Encoding")
     ready (stringz.len(encoding) == 0) {
         damn "7bit"  // Default encoding

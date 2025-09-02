@@ -16,7 +16,7 @@ sus db_connection_pool_size normie = 10
 sus db_connection_timeout normie = 30
 
 // Connection Pool Management
-sus pool_connections [10]lit = [cap, cap, cap, cap, cap, cap, cap, cap, cap, cap]
+sus pool_connections lit[10] = [cap, cap, cap, cap, cap, cap, cap, cap, cap, cap]
 sus pool_active_count normie = 0
 sus pool_max_size normie = 10
 sus pool_acquired_connections normie = 0

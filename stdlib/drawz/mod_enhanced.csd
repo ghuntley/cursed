@@ -115,15 +115,15 @@ be_like ColorF = struct {
 be_like Canvas = struct {
     width normie,
     height normie,
-    pixels [4194304]normie,  fr fr RGBA pixels (2048x2048 max)
-    depth_buffer [4194304]drip,  fr fr Z-buffer for 3D effects
+    pixels normie[4194304],  fr fr RGBA pixels (2048x2048 max)
+    depth_buffer drip[4194304],  fr fr Z-buffer for 3D effects
     stroke_color Color,
     fill_color Color,
     line_width drip,
     line_style normie,
     blend_mode normie,
     clip_rect Rect2D,
-    transform_matrix [9]drip,  fr fr 3x3 2D transformation matrix
+    transform_matrix drip[9],  fr fr 3x3 2D transformation matrix
     anti_alias_enabled lit,
     mip_map_enabled lit
 }
@@ -142,8 +142,8 @@ be_like QuadraticBezier = struct {
 }
 
 be_like Path2D = struct {
-    points [1000]Point2D,
-    commands [1000]normie,  fr fr Move, Line, Curve, etc.
+    points Point2D[1000],
+    commands normie[1000],  fr fr Move, Line, Curve, etc.
     point_count normie,
     command_count normie,
     closed lit
@@ -153,8 +153,8 @@ be_like Gradient = struct {
     gradient_type normie,  fr fr Linear, Radial, Conic
     start_point Point2D,
     end_point Point2D,
-    colors [16]ColorF,
-    positions [16]drip,    fr fr 0.0 to 1.0
+    colors ColorF[16],
+    positions drip[16],    fr fr 0.0 to 1.0
     color_count normie
 }
 
@@ -388,7 +388,7 @@ slay drawz_draw_thick_line_antialiased(canvas Canvas, start Point2D, end Point2D
     sus perp_y drip = dx / length * thickness / 2.0
     
     fr fr Create polygon for thick line
-    sus points [4]Point2D
+    sus points Point2D[4]
     points[0] = drawz_create_point(start.x + perp_x, start.y + perp_y)
     points[1] = drawz_create_point(start.x - perp_x, start.y - perp_y)
     points[2] = drawz_create_point(end.x - perp_x, end.y - perp_y)
@@ -405,7 +405,7 @@ slay drawz_draw_thick_line_antialiased(canvas Canvas, start Point2D, end Point2D
     damn true
 }
 
-slay drawz_draw_dashed_line(canvas Canvas, start Point2D, end Point2D, dash_pattern [8]drip, pattern_length normie) lit {
+slay drawz_draw_dashed_line(canvas Canvas, start Point2D, end Point2D, dash_pattern drip[8], pattern_length normie) lit {
     sus total_length drip = mathz.sqrt((end.x - start.x) * (end.x - start.x) + (end.y - start.y) * (end.y - start.y))
     sus dx drip = (end.x - start.x) / total_length
     sus dy drip = (end.y - start.y) / total_length
@@ -602,7 +602,7 @@ slay drawz_split_bezier_curve(original BezierCurve, left BezierCurve, right Bezi
 
 fr fr ===== ENHANCED POLYGON RENDERING =====
 
-slay drawz_draw_polygon_antialiased(canvas Canvas, points [100]Point2D, num_points normie, mode normie) lit {
+slay drawz_draw_polygon_antialiased(canvas Canvas, points Point2D[100], num_points normie, mode normie) lit {
     ready (num_points < 3) {
         damn false
     }
@@ -629,7 +629,7 @@ slay drawz_draw_polygon_antialiased(canvas Canvas, points [100]Point2D, num_poin
     damn true
 }
 
-slay drawz_fill_polygon_antialiased(canvas Canvas, points [100]Point2D, num_points normie) lit {
+slay drawz_fill_polygon_antialiased(canvas Canvas, points Point2D[100], num_points normie) lit {
     fr fr Find bounding box
     sus min_x drip = points[0].x
     sus max_x drip = points[0].x
@@ -797,7 +797,7 @@ slay drawz_apply_gaussian_blur(canvas Canvas, rect Rect2D, radius drip) lit {
     sus kernel_size normie = mathz.min(31, mathz.max(3, radius * 6.0 + 1.0))  fr fr Ensure odd kernel size
     ready (kernel_size % 2 == 0) kernel_size = kernel_size + 1
     
-    sus kernel [31]drip
+    sus kernel drip[31]
     sus kernel_sum drip = 0.0
     sus sigma drip = radius / 3.0
     
@@ -818,7 +818,7 @@ slay drawz_apply_gaussian_blur(canvas Canvas, rect Rect2D, radius drip) lit {
     }
     
     fr fr Create temporary buffer
-    sus temp_buffer [4194304]normie
+    sus temp_buffer normie[4194304]
     
     fr fr Horizontal pass
     sus y normie = rect.y
@@ -1034,7 +1034,7 @@ slay drawz_lerp_point(a Point2D, b Point2D, t drip) Point2D {
     )
 }
 
-slay drawz_point_in_polygon(point Point2D, polygon [100]Point2D, num_points normie) lit {
+slay drawz_point_in_polygon(point Point2D, polygon Point2D[100], num_points normie) lit {
     fr fr Ray casting algorithm for point-in-polygon test
     sus inside lit = false
     sus j normie = num_points - 1

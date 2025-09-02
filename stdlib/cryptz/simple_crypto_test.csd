@@ -7,8 +7,8 @@ slay test_system_calls() {
     vibez.spill("=== BASIC CRYPTO SECURITY TEST ===")
     
     fr fr Test that we can generate different random bytes
-    sus random1 []drip = [42, 43, 44, 45]  fr fr Simulate first random call
-    sus random2 []drip = [99, 100, 101, 102]  fr fr Simulate second random call
+    sus random1 drip[value] = [42, 43, 44, 45]  fr fr Simulate first random call
+    sus random2 drip[value] = [99, 100, 101, 102]  fr fr Simulate second random call
     
     vibez.spill("Random bytes 1: [42, 43, 44, 45]")
     vibez.spill("Random bytes 2: [99, 100, 101, 102]")

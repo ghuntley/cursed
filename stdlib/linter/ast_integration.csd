@@ -10,15 +10,15 @@ squad ASTNode {
     spill content tea
     spill line drip
     spill column drip
-    spill children []ASTNode
+    spill children ASTNode[value]
 }
 
 // AST-based analysis context
 squad ASTAnalysisContext {
-    spill current_scope []tea
-    spill variable_scopes [][]tea
-    spill function_stack []tea
-    spill complexity_stack []drip
+    spill current_scope tea[value]
+    spill variable_scopes tea[value][value]
+    spill function_stack tea[value]
+    spill complexity_stack drip[value]
 }
 
 // Initialize AST analysis
@@ -32,9 +32,9 @@ slay init_ast_analysis() ASTAnalysisContext {
 }
 
 // Parse CURSED code into simplified AST for linting
-slay parse_for_linting(source tea) []ASTNode {
-    sus nodes []ASTNode = []
-    sus lines []tea = split_str(source, "\n")
+slay parse_for_linting(source tea) ASTNode[value]{
+    sus nodes ASTNode[value] = []
+    sus lines tea[value] = split_str(source, "\n")
     
     sus line_num drip = 0
     bestie (line_num < len(lines)) {
@@ -137,8 +137,8 @@ slay classify_line_to_node(line tea, line_num drip) ASTNode {
 }
 
 // Advanced variable scope analysis using AST
-slay analyze_variable_scopes(nodes []ASTNode, context ASTAnalysisContext) []VariableInfo {
-    sus variables []VariableInfo = []
+slay analyze_variable_scopes(nodes ASTNode[value], context ASTAnalysisContext) VariableInfo[value]{
+    sus variables VariableInfo[value] = []
     sus scope_depth drip = 0
     
     sus i drip = 0
@@ -167,7 +167,7 @@ slay analyze_variable_scopes(nodes []ASTNode, context ASTAnalysisContext) []Vari
 // Extract variable information from AST node
 slay extract_variable_from_ast(node ASTNode, scope_depth drip) VariableInfo {
     sus content tea = node.content
-    sus parts []tea = split_str(content, " ")
+    sus parts tea[value] = split_str(content, " ")
     
     sus var_name tea = ""
     sus var_type tea = ""
@@ -192,8 +192,8 @@ slay extract_variable_from_ast(node ASTNode, scope_depth drip) VariableInfo {
 }
 
 // Analyze function complexity using AST
-slay analyze_function_complexity(nodes []ASTNode) []FunctionInfo {
-    sus functions []FunctionInfo = []
+slay analyze_function_complexity(nodes ASTNode[value]) FunctionInfo[value]{
+    sus functions FunctionInfo[value] = []
     sus current_func FunctionInfo = FunctionInfo{}
     sus in_function lit = cringe
     sus complexity drip = 0
@@ -265,8 +265,8 @@ slay calculate_control_flow_complexity(node ASTNode) drip {
 }
 
 // Advanced import analysis using AST
-slay analyze_imports(nodes []ASTNode) []ImportInfo {
-    sus imports []ImportInfo = []
+slay analyze_imports(nodes ASTNode[value]) ImportInfo[value]{
+    sus imports ImportInfo[value] = []
     
     sus i drip = 0
     bestie (i < len(nodes)) {
@@ -306,7 +306,7 @@ slay extract_import_from_ast(node ASTNode) ImportInfo {
 
 // Check if module is part of standard library
 slay is_stdlib_module(module_name tea) lit {
-    sus stdlib_modules []tea = [
+    sus stdlib_modules tea[value] = [
         "stringz", "arrayz", "mathz", "testz", "vibez", 
         "cryptz", "timez", "filez", "httpz", "jsonz"
     ]
@@ -323,8 +323,8 @@ slay is_stdlib_module(module_name tea) lit {
 }
 
 // Detect code patterns using AST
-slay detect_code_patterns(nodes []ASTNode) []CodePattern {
-    sus patterns []CodePattern = []
+slay detect_code_patterns(nodes ASTNode[value]) CodePattern[value]{
+    sus patterns CodePattern[value] = []
     
     sus i drip = 0
     bestie (i < len(nodes)) {
@@ -364,8 +364,8 @@ squad CodePattern {
 }
 
 // Advanced dead code detection using AST
-slay detect_dead_code(nodes []ASTNode, variables []VariableInfo) []DeadCodeInfo {
-    sus dead_code []DeadCodeInfo = []
+slay detect_dead_code(nodes ASTNode[value], variables VariableInfo[value]) DeadCodeInfo[value]{
+    sus dead_code DeadCodeInfo[value] = []
     
     // Check for unreachable code after return statements
     sus i drip = 0
@@ -400,7 +400,7 @@ squad DeadCodeInfo {
 
 // Helper functions for AST analysis
 slay extract_function_name_from_line(line tea) tea {
-    sus parts []tea = split_str(line, " ")
+    sus parts tea[value] = split_str(line, " ")
     ready (len(parts) >= 2) {
         sus func_part tea = parts[1]
         sus paren_pos drip = index_of(func_part, "(")
@@ -427,7 +427,7 @@ slay count_function_parameters_from_line(line tea) drip {
         damn 0
     }
     
-    sus params []tea = split_str(trimmed, ",")
+    sus params tea[value] = split_str(trimmed, ",")
     damn len(params)
 }
 
@@ -457,19 +457,19 @@ slay max_int(a drip, b drip) drip {
 }
 
 // Main API for AST-integrated linting
-slay lint_with_ast_integration(source tea, config LinterConfig) []LintIssue {
-    sus nodes []ASTNode = parse_for_linting(source)
+slay lint_with_ast_integration(source tea, config LinterConfig) LintIssue[value]{
+    sus nodes ASTNode[value] = parse_for_linting(source)
     sus context ASTAnalysisContext = init_ast_analysis()
     
     // Perform AST-based analysis
-    sus variables []VariableInfo = analyze_variable_scopes(nodes, context)
-    sus functions []FunctionInfo = analyze_function_complexity(nodes)
-    sus imports []ImportInfo = analyze_imports(nodes)
-    sus patterns []CodePattern = detect_code_patterns(nodes)
-    sus dead_code []DeadCodeInfo = detect_dead_code(nodes, variables)
+    sus variables VariableInfo[value] = analyze_variable_scopes(nodes, context)
+    sus functions FunctionInfo[value] = analyze_function_complexity(nodes)
+    sus imports ImportInfo[value] = analyze_imports(nodes)
+    sus patterns CodePattern[value] = detect_code_patterns(nodes)
+    sus dead_code DeadCodeInfo[value] = detect_dead_code(nodes, variables)
     
     // Convert analysis results to lint issues
-    sus issues []LintIssue = []
+    sus issues LintIssue[value] = []
     
     // Add AST-based issues here
     # TODO: Convert analysis results to LintIssue format

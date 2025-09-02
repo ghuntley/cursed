@@ -34,14 +34,14 @@ squad Statistics {
 squad Matrix {
     rows drip
     cols drip
-    data []drip
+    data drip[value]
     is_square lit
     determinant drip
 }
 
 squad Vector {
     size drip
-    data []drip
+    data drip[value]
     magnitude drip
 }
 
@@ -50,7 +50,7 @@ squad Regression {
     intercept drip
     r_squared drip
     correlation drip
-    residuals []drip
+    residuals drip[value]
     std_error drip
     p_value drip
 }
@@ -61,7 +61,7 @@ squad TTestResult {
     p_value drip
     critical_value drip
     significant lit
-    confidence_interval []drip
+    confidence_interval drip[value]
 }
 
 squad AnovaResult {
@@ -76,7 +76,7 @@ squad AnovaResult {
 
 squad Distribution {
     distribution_type tea
-    parameters []drip
+    parameters drip[value]
     mean drip
     variance drip
     std_dev drip
@@ -87,8 +87,8 @@ squad Plot {
     title tea
     x_label tea
     y_label tea
-    x_data []drip
-    y_data []drip
+    x_data drip[value]
+    y_data drip[value]
     width drip
     height drip
     svg_content tea
@@ -96,7 +96,7 @@ squad Plot {
 
 squad SvdResult {
     u Matrix
-    sigma []drip
+    sigma drip[value]
     v_transpose Matrix
     rank drip
 }
@@ -109,14 +109,14 @@ squad NumericalResult {
 }
 
 # Core statistical functions
-slay calculate_statistics(data []drip) Statistics {
+slay calculate_statistics(data drip[value]) Statistics {
     sus n drip = len_array(data)
     ready (n == 0) {
         damn create_empty_statistics()
     }
     
     # Sort data for median and quartile calculations
-    sus sorted_data []drip = sort_array(data)
+    sus sorted_data drip[value] = sort_array(data)
     
     # Basic statistics
     sus mean drip = calculate_mean(data)
@@ -157,7 +157,7 @@ slay calculate_statistics(data []drip) Statistics {
     }
 }
 
-slay calculate_mean(data []drip) drip {
+slay calculate_mean(data drip[value]) drip {
     sus sum drip = 0
     sus n drip = len_array(data)
     
@@ -168,7 +168,7 @@ slay calculate_mean(data []drip) drip {
     damn sum / n
 }
 
-slay calculate_median(sorted_data []drip) drip {
+slay calculate_median(sorted_data drip[value]) drip {
     sus n drip = len_array(sorted_data)
     
     ready (n % 2 == 1) {
@@ -180,7 +180,7 @@ slay calculate_median(sorted_data []drip) drip {
     }
 }
 
-slay calculate_mode(data []drip) drip {
+slay calculate_mode(data drip[value]) drip {
     # Simplified mode calculation - finds most frequent value
     sus n drip = len_array(data)
     sus max_count drip = 0
@@ -203,7 +203,7 @@ slay calculate_mode(data []drip) drip {
     damn mode_value
 }
 
-slay calculate_variance(data []drip, mean drip) drip {
+slay calculate_variance(data drip[value], mean drip) drip {
     sus sum_sq_diff drip = 0
     sus n drip = len_array(data)
     
@@ -215,7 +215,7 @@ slay calculate_variance(data []drip, mean drip) drip {
     damn sum_sq_diff / (n - 1)  # Sample variance
 }
 
-slay calculate_quartile(sorted_data []drip, percentile drip) drip {
+slay calculate_quartile(sorted_data drip[value], percentile drip) drip {
     sus n drip = len_array(sorted_data)
     sus index drip = percentile * (n - 1)
     sus lower_index drip = floor_func(index)
@@ -229,7 +229,7 @@ slay calculate_quartile(sorted_data []drip, percentile drip) drip {
     }
 }
 
-slay calculate_skewness(data []drip, mean drip, std_dev drip) drip {
+slay calculate_skewness(data drip[value], mean drip, std_dev drip) drip {
     sus n drip = len_array(data)
     sus sum_cubed drip = 0
     
@@ -241,7 +241,7 @@ slay calculate_skewness(data []drip, mean drip, std_dev drip) drip {
     damn sum_cubed / n
 }
 
-slay calculate_kurtosis(data []drip, mean drip, std_dev drip) drip {
+slay calculate_kurtosis(data drip[value], mean drip, std_dev drip) drip {
     sus n drip = len_array(data)
     sus sum_fourth drip = 0
     
@@ -255,7 +255,7 @@ slay calculate_kurtosis(data []drip, mean drip, std_dev drip) drip {
 }
 
 # Correlation and regression analysis
-slay pearson_correlation(x_data []drip, y_data []drip) drip {
+slay pearson_correlation(x_data drip[value], y_data drip[value]) drip {
     sus n drip = len_array(x_data)
     ready (n != len_array(y_data) || n < 2) {
         damn 0  # Invalid data
@@ -285,7 +285,7 @@ slay pearson_correlation(x_data []drip, y_data []drip) drip {
     damn numerator / denominator
 }
 
-slay linear_regression(x_data []drip, y_data []drip) Regression {
+slay linear_regression(x_data drip[value], y_data drip[value]) Regression {
     sus n drip = len_array(x_data)
     sus x_mean drip = calculate_mean(x_data)
     sus y_mean drip = calculate_mean(y_data)
@@ -309,7 +309,7 @@ slay linear_regression(x_data []drip, y_data []drip) Regression {
     sus r_squared drip = correlation * correlation
     
     # Calculate residuals and standard error
-    sus residuals []drip = calculate_residuals(x_data, y_data, slope, intercept)
+    sus residuals drip[value] = calculate_residuals(x_data, y_data, slope, intercept)
     sus std_error drip = calculate_standard_error(residuals, n)
     
     damn Regression{
@@ -323,9 +323,9 @@ slay linear_regression(x_data []drip, y_data []drip) Regression {
     }
 }
 
-slay calculate_residuals(x_data []drip, y_data []drip, slope drip, intercept drip) []drip {
+slay calculate_residuals(x_data drip[value], y_data drip[value], slope drip, intercept drip) drip[value]{
     sus n drip = len_array(x_data)
-    sus residuals []drip = create_array(n)
+    sus residuals drip[value] = create_array(n)
     
     bestie (sus i drip = 0; i < n; i = i + 1) {
         sus predicted drip = slope * x_data[i] + intercept
@@ -335,7 +335,7 @@ slay calculate_residuals(x_data []drip, y_data []drip, slope drip, intercept dri
     damn residuals
 }
 
-slay calculate_standard_error(residuals []drip, n drip) drip {
+slay calculate_standard_error(residuals drip[value], n drip) drip {
     sus sum_sq_residuals drip = 0
     
     bestie (sus i drip = 0; i < len_array(residuals); i = i + 1) {
@@ -346,7 +346,7 @@ slay calculate_standard_error(residuals []drip, n drip) drip {
 }
 
 # Matrix operations
-slay create_matrix(rows drip, cols drip, data []drip) Matrix {
+slay create_matrix(rows drip, cols drip, data drip[value]) Matrix {
     sus is_square lit = (rows == cols)
     sus det drip = 0
     
@@ -371,7 +371,7 @@ slay matrix_multiply(a Matrix, b Matrix) Matrix {
     
     sus result_rows drip = a.rows
     sus result_cols drip = b.cols
-    sus result_data []drip = create_array(result_rows * result_cols)
+    sus result_data drip[value] = create_array(result_rows * result_cols)
     
     bestie (sus i drip = 0; i < result_rows; i = i + 1) {
         bestie (sus j drip = 0; j < result_cols; j = j + 1) {
@@ -390,7 +390,7 @@ slay matrix_multiply(a Matrix, b Matrix) Matrix {
     damn create_matrix(result_rows, result_cols, result_data)
 }
 
-slay calculate_determinant(rows drip, cols drip, data []drip) drip {
+slay calculate_determinant(rows drip, cols drip, data drip[value]) drip {
     ready (rows == 1) {
         damn data[0]
     }
@@ -426,7 +426,7 @@ slay matrix_inverse(m Matrix) Matrix {
     damn matrix_inverse_lu(m)
 }
 
-slay eigenvalues(m Matrix) []drip {
+slay eigenvalues(m Matrix) drip[value]{
     ready (!m.is_square) {
         vibez.spill("[Matrix] Error: Eigenvalues only for square matrices")
         damn create_array(0)
@@ -557,7 +557,7 @@ slay erf_approx(x drip) drip {
 }
 
 # Statistical tests
-slay t_test_one_sample(sample []drip, population_mean drip) TTestResult {
+slay t_test_one_sample(sample drip[value], population_mean drip) TTestResult {
     sus n drip = len_array(sample)
     sus sample_mean drip = calculate_mean(sample)
     sus sample_std drip = sqrt_newton(calculate_variance(sample, sample_mean))
@@ -590,7 +590,7 @@ slay t_cdf_approx(t drip, df drip) drip {
 }
 
 # Data visualization
-slay create_line_plot(x_data []drip, y_data []drip, title tea) Plot {
+slay create_line_plot(x_data drip[value], y_data drip[value], title tea) Plot {
     sus plot Plot = Plot{
         plot_type: "line",
         title: title,
@@ -607,7 +607,7 @@ slay create_line_plot(x_data []drip, y_data []drip, title tea) Plot {
     damn plot
 }
 
-slay create_scatter_plot(x_data []drip, y_data []drip, title tea) Plot {
+slay create_scatter_plot(x_data drip[value], y_data drip[value], title tea) Plot {
     sus plot Plot = Plot{
         plot_type: "scatter",
         title: title,
@@ -624,9 +624,9 @@ slay create_scatter_plot(x_data []drip, y_data []drip, title tea) Plot {
     damn plot
 }
 
-slay create_histogram(data []drip, bins drip, title tea) Plot {
-    sus hist_data []drip = calculate_histogram_bins(data, bins)
-    sus x_bins []drip = create_bin_centers(data, bins)
+slay create_histogram(data drip[value], bins drip, title tea) Plot {
+    sus hist_data drip[value] = calculate_histogram_bins(data, bins)
+    sus x_bins drip[value] = create_bin_centers(data, bins)
     
     sus plot Plot = Plot{
         plot_type: "histogram",
@@ -821,9 +821,9 @@ slay ceil_func(x drip) drip {
 }
 
 # Array utility functions
-slay sort_array(data []drip) []drip {
+slay sort_array(data drip[value]) drip[value]{
     sus n drip = len_array(data)
-    sus sorted []drip = copy_array(data)
+    sus sorted drip[value] = copy_array(data)
     
     # Bubble sort (simplified)
     bestie (sus i drip = 0; i < n - 1; i = i + 1) {
@@ -839,7 +839,7 @@ slay sort_array(data []drip) []drip {
     damn sorted
 }
 
-slay min_array(data []drip) drip {
+slay min_array(data drip[value]) drip {
     sus min_val drip = data[0]
     bestie (sus i drip = 1; i < len_array(data); i = i + 1) {
         ready (data[i] < min_val) {
@@ -849,7 +849,7 @@ slay min_array(data []drip) drip {
     damn min_val
 }
 
-slay max_array(data []drip) drip {
+slay max_array(data drip[value]) drip {
     sus max_val drip = data[0]
     bestie (sus i drip = 1; i < len_array(data); i = i + 1) {
         ready (data[i] > max_val) {
@@ -859,35 +859,35 @@ slay max_array(data []drip) drip {
     damn max_val
 }
 
-slay create_array(size drip) []drip {
+slay create_array(size drip) drip[value]{
     # Simplified array creation
-    sus arr []drip = []
+    sus arr drip[value] = []
     bestie (sus i drip = 0; i < size; i = i + 1) {
         # In real implementation, would append 0
     }
     damn arr
 }
 
-slay copy_array(data []drip) []drip {
+slay copy_array(data drip[value]) drip[value]{
     # Simplified array copying
     damn data
 }
 
-slay len_array(data []drip) drip {
+slay len_array(data drip[value]) drip {
     # Simplified length function
     damn 10  # Fixed for demo
 }
 
-slay calculate_histogram_bins(data []drip, bins drip) []drip {
+slay calculate_histogram_bins(data drip[value], bins drip) drip[value]{
     # Simplified histogram calculation
-    sus hist []drip = create_array(bins)
+    sus hist drip[value] = create_array(bins)
     # In real implementation, would calculate actual frequencies
     damn hist
 }
 
-slay create_bin_centers(data []drip, bins drip) []drip {
+slay create_bin_centers(data drip[value], bins drip) drip[value]{
     # Create x-coordinates for histogram bins
-    sus centers []drip = create_array(bins)
+    sus centers drip[value] = create_array(bins)
     sus min_val drip = min_array(data)
     sus max_val drip = max_array(data)
     sus bin_width drip = (max_val - min_val) / bins
@@ -908,7 +908,7 @@ slay create_empty_statistics() Statistics {
 }
 
 slay create_zero_matrix(rows drip, cols drip) Matrix {
-    sus data []drip = create_array(rows * cols)
+    sus data drip[value] = create_array(rows * cols)
     damn create_matrix(rows, cols, data)
 }
 

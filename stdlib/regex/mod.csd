@@ -19,7 +19,7 @@ be_like Match squad {
     text tea
     start normie
     end normie
-    groups []tea
+    groups tea[value]
 }
 
 fr fr Regex flags
@@ -96,8 +96,8 @@ slay (p Pattern) find(text tea) Match {
 }
 
 fr fr Find all matches in text
-slay (p Pattern) find_all(text tea) []Match {
-    sus matches []Match = []
+slay (p Pattern) find_all(text tea) Match[value]{
+    sus matches Match[value] = []
     sus pos normie = 0
     
     bestie pos < text.length() {
@@ -151,7 +151,7 @@ slay (p Pattern) replace(text tea, replacement tea) tea {
 fr fr Replace all matches with replacement
 slay (p Pattern) replace_all(text tea, replacement tea) tea {
     sus result tea = text
-    sus matches []Match = p.find_all(text)
+    sus matches Match[value] = p.find_all(text)
     
     fr fr Replace from end to beginning to maintain positions
     sus i normie = matches.length() - 1
@@ -167,9 +167,9 @@ slay (p Pattern) replace_all(text tea, replacement tea) tea {
 }
 
 fr fr Split text by pattern
-slay (p Pattern) split(text tea) []tea {
-    sus parts []tea = []
-    sus matches []Match = p.find_all(text)
+slay (p Pattern) split(text tea) tea[value]{
+    sus parts tea[value] = []
+    sus matches Match[value] = p.find_all(text)
     sus last_end normie = 0
     
     bestie i := 0; i < matches.length(); i++ {
@@ -246,7 +246,7 @@ slay find_match_position(p Pattern, text tea, offset normie) normie {
     
     fr fr Handle simple alternation
     bestie p.compiled.contains("|") {
-        sus alternatives []tea = p.compiled.split("|")
+        sus alternatives tea[value] = p.compiled.split("|")
         bestie i := 0; i < alternatives.length(); i++ {
             sus alt_pattern Pattern = compile(alternatives[i])
             sus pos normie = find_match_position(alt_pattern, text, offset)
@@ -299,10 +299,10 @@ slay find_match_end(p Pattern, text tea, start normie) normie {
 }
 
 fr fr Extract capture groups from match
-slay extract_groups(p Pattern, text tea, start normie, end normie) []tea {
+slay extract_groups(p Pattern, text tea, start normie, end normie) tea[value]{
     fr fr Simplified group extraction
     fr fr Real implementation would parse the pattern and track group boundaries
-    sus groups []tea = []
+    sus groups tea[value] = []
     
     bestie p.groups > 0 {
         fr fr For demonstration, extract the whole match as group 0
@@ -568,10 +568,10 @@ slay match_phone_number(text tea) lit {
     damn phone_pattern.test(text)
 }
 
-slay extract_numbers(text tea) []tea {
+slay extract_numbers(text tea) tea[value]{
     sus number_pattern Pattern = compile("\\d+")
-    sus matches []Match = number_pattern.find_all(text)
-    sus numbers []tea = []
+    sus matches Match[value] = number_pattern.find_all(text)
+    sus numbers tea[value] = []
     
     bestie i := 0; i < matches.length(); i++ {
         numbers = numbers + [matches[i].text]
@@ -580,10 +580,10 @@ slay extract_numbers(text tea) []tea {
     damn numbers
 }
 
-slay extract_words(text tea) []tea {
+slay extract_words(text tea) tea[value]{
     sus word_pattern Pattern = compile("\\w+")
-    sus matches []Match = word_pattern.find_all(text)
-    sus words []tea = []
+    sus matches Match[value] = word_pattern.find_all(text)
+    sus words tea[value] = []
     
     bestie i := 0; i < matches.length(); i++ {
         words = words + [matches[i].text]
@@ -613,7 +613,7 @@ slay quote(text tea) tea {
 }
 
 fr fr Build pattern for matching any of the provided strings
-slay build_alternation(strings []tea) tea {
+slay build_alternation(strings tea[value]) tea {
     bestie strings.length() == 0 {
         damn ""
     }

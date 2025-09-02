@@ -219,7 +219,7 @@ slay file_watcher_stop(watcher WatchError) {
 // Platform-specific event processing
 slay process_linux_events(fd drip) WatchEvent {
     // Read inotify events via minimal FFI
-    sus buffer [4096]drip
+    sus buffer drip[4096]
     sus bytes_read drip = platformz.syscall("read", fd, buffer, 4096)
     
     ready (bytes_read <= 0) {
@@ -254,7 +254,7 @@ slay process_linux_events(fd drip) WatchEvent {
 
 slay process_macos_events(kq drip) WatchEvent {
     // Wait for kevent via minimal FFI
-    sus event [6]drip  // struct kevent
+    sus event drip[6]  // struct kevent
     sus result drip = platformz.syscall("kevent_wait", kq, event, 1, 1000)  // 1 second timeout
     
     ready (result <= 0) {
@@ -283,7 +283,7 @@ slay process_macos_events(kq drip) WatchEvent {
 
 slay process_windows_events(handle drip) WatchEvent {
     // ReadDirectoryChangesW via minimal FFI
-    sus buffer [8192]drip
+    sus buffer drip[8192]
     sus bytes_returned drip = 0
     
     sus result drip = platformz.win32_call("ReadDirectoryChangesW", 
@@ -322,7 +322,7 @@ slay process_windows_events(handle drip) WatchEvent {
 }
 
 // Utility functions
-slay extract_string(buffer []drip, offset drip, length drip) tea {
+slay extract_string(buffer drip[value], offset drip, length drip) tea {
     // Extract null-terminated string from buffer
     sus result tea = ""
     bestie (length > 0) {
@@ -337,7 +337,7 @@ slay extract_string(buffer []drip, offset drip, length drip) tea {
     damn result
 }
 
-slay extract_wide_string(buffer []drip, offset drip, length drip) tea {
+slay extract_wide_string(buffer drip[value], offset drip, length drip) tea {
     // Extract wide string (Windows WCHAR) from buffer
     sus result tea = ""
     sus pos drip = offset

@@ -11,7 +11,7 @@ yeet "regexz"
 squad DTDDefinition {
     name tea
     elements map[tea]DTDElement
-    attributes map[tea][]DTDAttribute
+    attributes map[tea]DTDAttribute[value]
     entities map[tea]tea
     notations map[tea]DTDNotation
     parameter_entities map[tea]tea
@@ -21,7 +21,7 @@ squad DTDElement {
     name tea
     content_model tea
     content_type tea  # "EMPTY", "ANY", "PCDATA", "ELEMENT"
-    children []tea
+    children tea[value]
     occurrence tea    # "", "?", "*", "+"
 }
 
@@ -31,7 +31,7 @@ squad DTDAttribute {
     attr_type tea     # "CDATA", "ID", "IDREF", "IDREFS", "NMTOKEN", "NMTOKENS", etc.
     default_decl tea  # "#REQUIRED", "#IMPLIED", "#FIXED", or default value
     default_value tea
-    allowed_values []tea  # For enumerated types
+    allowed_values tea[value]  # For enumerated types
 }
 
 squad DTDNotation {
@@ -78,11 +78,11 @@ squad XSDType {
 squad XSDComplexType {
     name tea
     content_type tea  # "empty", "simple", "element", "mixed"
-    sequence []XSDElement
-    choice []XSDElement
-    all []XSDElement
-    attributes []XSDAttribute
-    attribute_groups []tea
+    sequence XSDElement[value]
+    choice XSDElement[value]
+    all XSDElement[value]
+    attributes XSDAttribute[value]
+    attribute_groups tea[value]
     base_type tea
     derivation tea
 }
@@ -93,7 +93,7 @@ squad XSDSimpleType {
     derivation tea
     restrictions XSDRestrictions
     list_item_type tea
-    union_types []tea
+    union_types tea[value]
 }
 
 squad XSDRestrictions {
@@ -101,7 +101,7 @@ squad XSDRestrictions {
     max_length drip
     length drip
     pattern tea
-    enumeration []tea
+    enumeration tea[value]
     max_inclusive tea
     max_exclusive tea
     min_inclusive tea
@@ -125,14 +125,14 @@ squad XSDGroup {
     name tea
     min_occurs drip
     max_occurs drip
-    sequence []XSDElement
-    choice []XSDElement
-    all []XSDElement
+    sequence XSDElement[value]
+    choice XSDElement[value]
+    all XSDElement[value]
 }
 
 squad XSDAttributeGroup {
     name tea
-    attributes []XSDAttribute
+    attributes XSDAttribute[value]
 }
 
 # ========================
@@ -150,7 +150,7 @@ slay parse_dtd(dtd_content tea) yikes<DTDDefinition> {
         parameter_entities: {}
     }
     
-    sus lines []tea = stringz.split(dtd_content, "\n")
+    sus lines tea[value] = stringz.split(dtd_content, "\n")
     
     bestie (sus line tea in lines) {
         sus trimmed tea = stringz.trim(line)
@@ -184,7 +184,7 @@ slay parse_dtd(dtd_content tea) yikes<DTDDefinition> {
 slay parse_dtd_element(declaration tea, dtd sus DTDDefinition) yikes<tea> {
     # Extract element name and content model
     # <!ELEMENT element-name content-model>
-    sus parts []tea = stringz.split(declaration, " ")
+    sus parts tea[value] = stringz.split(declaration, " ")
     ready (parts.len() < 3) {
         yikes "Invalid DTD element declaration: " + declaration
     }
@@ -209,7 +209,7 @@ slay parse_dtd_element(declaration tea, dtd sus DTDDefinition) yikes<tea> {
 # Parse DTD attribute list declaration
 slay parse_dtd_attlist(declaration tea, dtd sus DTDDefinition) yikes<tea> {
     # <!ATTLIST element-name attribute-definitions>
-    sus parts []tea = stringz.split(declaration, " ")
+    sus parts tea[value] = stringz.split(declaration, " ")
     ready (parts.len() < 3) {
         yikes "Invalid DTD attribute list declaration: " + declaration
     }
@@ -219,7 +219,7 @@ slay parse_dtd_attlist(declaration tea, dtd sus DTDDefinition) yikes<tea> {
     sus attr_end drip = stringz.last_index_of(declaration, ">")
     sus attr_content tea = stringz.trim(stringz.substring(declaration, attr_start, attr_end - attr_start))
     
-    sus attributes []DTDAttribute = parse_dtd_attributes(attr_content, element_name) fam {
+    sus attributes DTDAttribute[value] = parse_dtd_attributes(attr_content, element_name) fam {
         when err -> yikes err
     }
     
@@ -240,7 +240,7 @@ slay parse_dtd_entity(declaration tea, dtd sus DTDDefinition) yikes<tea> {
     }
     
     sus content tea = stringz.trim(stringz.substring(declaration, start_pos, stringz.last_index_of(declaration, ">") - start_pos))
-    sus parts []tea = stringz.split(content, " ")
+    sus parts tea[value] = stringz.split(content, " ")
     
     ready (parts.len() < 2) {
         yikes "Invalid DTD entity declaration: " + declaration
@@ -426,7 +426,7 @@ slay validate_element_against_dtd(element XmlNode, dtd DTDDefinition, result sus
     
     # Validate attributes
     ready (element.name in dtd.attributes) {
-        sus required_attrs []DTDAttribute = dtd.attributes[element.name]
+        sus required_attrs DTDAttribute[value] = dtd.attributes[element.name]
         validate_attributes_against_dtd(element, required_attrs, result)
     }
     
@@ -521,7 +521,7 @@ slay determine_content_type(content_model tea) tea {
 }
 
 # Extract child elements from DTD content model
-slay extract_child_elements(content_model tea) []tea {
+slay extract_child_elements(content_model tea) tea[value]{
     ready (content_model == "EMPTY" || content_model == "ANY") {
         damn []
     }
@@ -532,14 +532,14 @@ slay extract_child_elements(content_model tea) []tea {
     
     # Parse element names from content model
     # This is simplified - real DTD parsing would need full grammar
-    sus elements []tea = []
+    sus elements tea[value] = []
     sus cleaned tea = stringz.replace_all(content_model, "(", "")
     cleaned = stringz.replace_all(cleaned, ")", "")
     cleaned = stringz.replace_all(cleaned, "*", "")
     cleaned = stringz.replace_all(cleaned, "+", "")
     cleaned = stringz.replace_all(cleaned, "?", "")
     
-    sus parts []tea = stringz.split(cleaned, ",")
+    sus parts tea[value] = stringz.split(cleaned, ",")
     bestie (sus part tea in parts) {
         sus trimmed tea = stringz.trim(part)
         ready (trimmed != "" && !stringz.contains(trimmed, "|")) {

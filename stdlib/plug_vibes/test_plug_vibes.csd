@@ -33,8 +33,8 @@ sus opts := plug_vibes.LoadOptions{
     Isolation: based,
     Sandbox: cap,
     Timeout: 60,
-    Dependencies: []tea{"math", "string"},
-    AllowedImports: []tea{"stdlib"},
+    Dependencies: tea[value]{"math", "string"},
+    AllowedImports: tea[value]{"stdlib"},
     LogLevel: 2
 }
 
@@ -240,8 +240,8 @@ sus sandboxOpts := plug_vibes.SandboxOptions{
     TimeLimit: 30,
     FileAccess: cap,
     NetworkAccess: cap,
-    AllowedPaths: []tea{"/tmp", "/var/tmp"},
-    AllowedHosts: []tea{"localhost", "127.0.0.1"}
+    AllowedPaths: tea[value]{"/tmp", "/var/tmp"},
+    AllowedHosts: tea[value]{"localhost", "127.0.0.1"}
 }
 
 sus sandbox := plug_vibes.NewSandbox(sandboxOpts)

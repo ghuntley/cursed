@@ -20,7 +20,7 @@ sus writeErr := writer.WriteHeader(header)
 assert_eq_string(writeErr, "")
 
 fr fr Write data
-sus testData := []normie{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33, 10}  fr fr "Hello World!\n"
+sus testData := normie[value]{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100, 33, 10}  fr fr "Hello World!\n"
 sus bytesWritten, writeDataErr := writer.Write(testData)
 assert_eq_string(writeDataErr, "")
 assert_eq_int(bytesWritten, 13)
@@ -43,7 +43,7 @@ assert_true(len(readHeader.Name) > 0)
 assert_eq_int(readHeader.Mode, 644)
 
 fr fr Read some data
-sus buffer := make([]normie, 10)
+sus buffer := make(normie[value], 10)
 sus bytesRead, readErr := reader.Read(buffer)
 assert_eq_string(readErr, "")
 assert_true(bytesRead > 0)
@@ -77,7 +77,7 @@ assert_eq_string(zipCloseErr, "")
 test_start("packrat zip reading")
 
 fr fr Create test zip data with ZIP signature
-sus zipData := []normie{80, 75, 3, 4}  fr fr ZIP signature "PK\003\004"
+sus zipData := normie[value]{80, 75, 3, 4}  fr fr ZIP signature "PK\003\004"
 for i := 0; i < 100; i++ {
     zipData = append(zipData, normie(i))
 }
@@ -107,14 +107,14 @@ assert_eq_int(offset, 0)
 test_start("packrat format detection")
 
 fr fr Test ZIP detection
-sus zipSig := []normie{80, 75, 3, 4, 20, 0, 0, 0}  fr fr ZIP signature
+sus zipSig := normie[value]{80, 75, 3, 4, 20, 0, 0, 0}  fr fr ZIP signature
 assert_true(packrat.IsZip(zipSig))
 
-sus notZip := []normie{1, 2, 3, 4}
+sus notZip := normie[value]{1, 2, 3, 4}
 assert_false(packrat.IsZip(notZip))
 
 fr fr Test TAR detection
-sus tarData := make([]normie, 600)  fr fr Large enough for tar header
+sus tarData := make(normie[value], 600)  fr fr Large enough for tar header
 tarData[257] = 117  fr fr 'u'
 tarData[258] = 115  fr fr 's'
 tarData[259] = 116  fr fr 't'
@@ -123,11 +123,11 @@ tarData[261] = 114  fr fr 'r'
 tarData[262] = 0    fr fr null
 assert_true(packrat.IsTar(tarData))
 
-sus notTar := make([]normie, 600)
+sus notTar := make(normie[value], 600)
 assert_false(packrat.IsTar(notTar))
 
 fr fr Test with insufficient data
-sus tooSmall := []normie{1, 2}
+sus tooSmall := normie[value]{1, 2}
 assert_false(packrat.IsZip(tooSmall))
 assert_false(packrat.IsTar(tooSmall))
 
@@ -159,7 +159,7 @@ sus tarFormat, tarValidateErr := packrat.ValidateArchive(tarData)
 assert_eq_string(tarValidateErr, "")
 assert_eq_string(tarFormat, "tar")
 
-sus unknownFormat, unknownErr := packrat.ValidateArchive([]normie{1, 2, 3, 4})
+sus unknownFormat, unknownErr := packrat.ValidateArchive(normie[value]{1, 2, 3, 4})
 assert_eq_string(unknownFormat, "unknown")
 assert_true(unknownErr != "")
 
@@ -180,7 +180,7 @@ assert_eq_int(tarInfo.FileCount, 1)
 assert_false(tarInfo.Compressed)
 
 fr fr Test GetArchiveInfo for unknown format
-sus unknownInfo, unknownInfoErr := packrat.GetArchiveInfo([]normie{1, 2, 3})
+sus unknownInfo, unknownInfoErr := packrat.GetArchiveInfo(normie[value]{1, 2, 3})
 assert_true(unknownInfoErr != "")
 
 test_start("packrat header creation")
@@ -222,14 +222,14 @@ sus emptyCloseErr := emptyWriter.Close()
 assert_eq_string(emptyCloseErr, "")
 
 fr fr Test reading from empty data
-sus emptyReader := packrat.NewRatPack([]normie{})
+sus emptyReader := packrat.NewRatPack(normie[value]{})
 sus emptyHeader, emptyNextErr := emptyReader.Next()
 assert_true(emptyNextErr != "")
 assert_true(emptyHeader == cringe)
 
 fr fr Test writing without header
 sus noHeaderWriter := packrat.NewRatStash()
-sus noHeaderData := []normie{1, 2, 3}
+sus noHeaderData := normie[value]{1, 2, 3}
 sus noHeaderBytes, noHeaderErr := noHeaderWriter.Write(noHeaderData)
 assert_true(noHeaderErr != "")
 assert_eq_int(noHeaderBytes, 0)

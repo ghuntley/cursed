@@ -296,7 +296,7 @@ slay test_worker_pool() {
     }
     
     # Collect results
-    sus results []tea = []
+    sus results tea[value] = []
     bestie (i := 0; i < 5; i++) {
         sus result := pool.get_result()
         assert_eq(result.err, nil, "Job should complete without error")
@@ -335,7 +335,7 @@ slay test_pipeline() {
     }()
     
     # Collect results
-    sus results []drip = []
+    sus results drip[value] = []
     bestie (result := range output) {
         results = append(results, result)
     }
@@ -435,7 +435,7 @@ slay test_memory_usage() {
     test_group("Memory Usage")
     
     # Create many contexts and ensure they're properly cleaned up
-    sus contexts []Context = []
+    sus contexts Context[value] = []
     
     bestie (i := 0; i < 1000; i++) {
         sus ctx, _ := with_cancel(background())

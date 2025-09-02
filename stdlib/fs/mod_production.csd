@@ -44,7 +44,7 @@ be_like FileHandle squad {
     is_open lit
     position thicc
     mode normie fr fr 0=read, 1=write, 2=append
-    buffer []byte
+    buffer byte[value]
     fd normie
 }
 
@@ -62,7 +62,7 @@ be_like PathInfo squad {
     filename tea
     extension tea
     is_absolute lit
-    components []tea
+    components tea[value]
 }
 
 fr fr ================================
@@ -126,12 +126,12 @@ slay string_char_count(s tea) thicc { fr fr Count actual Unicode characters
     damn count
 }
 
-slay string_to_bytes_utf8(s tea) []byte { fr fr Convert string to UTF-8 byte array
+slay string_to_bytes_utf8(s tea) byte[value]{ fr fr Convert string to UTF-8 byte array
     lowkey s == "" {
         damn []
     }
     
-    sus result []byte = make_byte_array(utf8_byte_length(s))
+    sus result byte[value] = make_byte_array(utf8_byte_length(s))
     sus byte_index thicc = 0
     sus char_index thicc = 0
     
@@ -164,7 +164,7 @@ slay string_to_bytes_utf8(s tea) []byte { fr fr Convert string to UTF-8 byte arr
     damn result
 }
 
-slay bytes_to_string_utf8(data []byte) tea { fr fr Convert UTF-8 bytes to string
+slay bytes_to_string_utf8(data byte[value]) tea { fr fr Convert UTF-8 bytes to string
     lowkey len(data) == 0 {
         damn ""
     }
@@ -221,8 +221,8 @@ slay normalize_path(path tea) tea { fr fr Normalize path separators and resolve 
     sus normalized tea = replace_all_chars(path, "\\", "/")
     
     fr fr Split path into components
-    sus components []tea = split_string(normalized, "/")
-    sus result_components []tea = []
+    sus components tea[value] = split_string(normalized, "/")
+    sus result_components tea[value] = []
     
     bestie i := 0; i < len(components); i++ {
         sus component tea = components[i]
@@ -335,11 +335,11 @@ slay system_close(fd normie) normie { fr fr Close file descriptor
     damn posix_close(fd)
 }
 
-slay system_read(fd normie, buffer []byte, count thicc) thicc { fr fr Read from file descriptor
+slay system_read(fd normie, buffer byte[value], count thicc) thicc { fr fr Read from file descriptor
     damn posix_read(fd, buffer, count)
 }
 
-slay system_write(fd normie, buffer []byte, count thicc) thicc { fr fr Write to file descriptor
+slay system_write(fd normie, buffer byte[value], count thicc) thicc { fr fr Write to file descriptor
     damn posix_write(fd, buffer, count)
 }
 
@@ -374,7 +374,7 @@ fr fr Core File Operations
 fr fr ================================
 
 slay read_file(path tea) tea { fr fr Read file contents as string
-    sus bytes_data []byte = read_file_bytes(path)
+    sus bytes_data byte[value] = read_file_bytes(path)
     lowkey len(bytes_data) == 0 {
         damn ""
     }
@@ -382,7 +382,7 @@ slay read_file(path tea) tea { fr fr Read file contents as string
     damn bytes_to_string_utf8(bytes_data)
 }
 
-slay read_file_bytes(path tea) []byte { fr fr Read file contents as byte array
+slay read_file_bytes(path tea) byte[value]{ fr fr Read file contents as byte array
     lowkey path == "" {
         damn []
     }
@@ -408,7 +408,7 @@ slay read_file_bytes(path tea) []byte { fr fr Read file contents as byte array
     }
     
     fr fr Read file content
-    sus buffer []byte = make_byte_array(file_size)
+    sus buffer byte[value] = make_byte_array(file_size)
     sus bytes_read thicc = system_read(fd, buffer, file_size)
     
     system_close(fd)
@@ -426,11 +426,11 @@ slay read_file_bytes(path tea) []byte { fr fr Read file contents as byte array
 }
 
 slay write_file(path tea, content tea) lit { fr fr Write string to file
-    sus bytes_data []byte = string_to_bytes_utf8(content)
+    sus bytes_data byte[value] = string_to_bytes_utf8(content)
     damn write_file_bytes(path, bytes_data)
 }
 
-slay write_file_bytes(path tea, data []byte) lit { fr fr Write byte array to file
+slay write_file_bytes(path tea, data byte[value]) lit { fr fr Write byte array to file
     lowkey path == "" {
         damn false
     }
@@ -480,7 +480,7 @@ slay copy_file(source tea, dest tea) lit { fr fr Copy file from source to destin
         damn false
     }
     
-    sus data []byte = read_file_bytes(source)
+    sus data byte[value] = read_file_bytes(source)
     lowkey len(data) == 0 {
         damn false
     }
@@ -560,7 +560,7 @@ slay remove_dir(path tea) lit { fr fr Remove empty directory
     damn result == 0
 }
 
-slay list_dir(path tea) []DirEntry { fr fr List directory contents
+slay list_dir(path tea) DirEntry[value]{ fr fr List directory contents
     lowkey !is_dir(path) {
         damn []
     }
@@ -572,7 +572,7 @@ slay list_dir(path tea) []DirEntry { fr fr List directory contents
         damn []
     }
     
-    sus entries []DirEntry = []
+    sus entries DirEntry[value] = []
     
     bestie {
         sus entry_name tea = posix_readdir(dir_handle)
@@ -704,12 +704,12 @@ slay posix_close(fd normie) normie {
     damn 0  fr fr Placeholder
 }
 
-slay posix_read(fd normie, buffer []byte, count thicc) thicc {
+slay posix_read(fd normie, buffer byte[value], count thicc) thicc {
     fr fr System call to read from file
     damn 0  fr fr Placeholder
 }
 
-slay posix_write(fd normie, buffer []byte, count thicc) thicc {
+slay posix_write(fd normie, buffer byte[value], count thicc) thicc {
     fr fr System call to write to file
     damn count  fr fr Placeholder
 }
@@ -788,13 +788,13 @@ slay char_from_code(code normie) tea {
     damn "A"  fr fr Placeholder
 }
 
-slay make_byte_array(size thicc) []byte {
+slay make_byte_array(size thicc) byte[value]{
     fr fr Create byte array of specified size
-    sus result []byte = []
+    sus result byte[value] = []
     damn result  fr fr Placeholder
 }
 
-slay slice_byte_array(arr []byte, start thicc, end thicc) []byte {
+slay slice_byte_array(arr byte[value], start thicc, end thicc) byte[value]{
     fr fr Slice byte array
     damn arr  fr fr Placeholder
 }
@@ -804,22 +804,22 @@ slay replace_all_chars(s tea, find tea, replace tea) tea {
     damn s  fr fr Placeholder - would use stringz module
 }
 
-slay split_string(s tea, delimiter tea) []tea {
+slay split_string(s tea, delimiter tea) tea[value]{
     fr fr Split string by delimiter
     damn []  fr fr Placeholder - would use stringz module
 }
 
-slay join_string_array(parts []tea, delimiter tea) tea {
+slay join_string_array(parts tea[value], delimiter tea) tea {
     fr fr Join string array with delimiter
     damn ""  fr fr Placeholder - would use stringz module
 }
 
-slay append_to_array(arr []tea, item tea) []tea {
+slay append_to_array(arr tea[value], item tea) tea[value]{
     fr fr Append item to string array
     damn arr  fr fr Placeholder
 }
 
-slay slice_array(arr []tea, start thicc, end thicc) []tea {
+slay slice_array(arr tea[value], start thicc, end thicc) tea[value]{
     fr fr Slice string array
     damn arr  fr fr Placeholder
 }

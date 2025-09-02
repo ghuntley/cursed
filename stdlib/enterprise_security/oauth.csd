@@ -18,7 +18,7 @@ squad OAuthConfig {
     authorization_endpoint tea
     token_endpoint tea
     userinfo_endpoint tea = ""
-    scope []tea = ["openid", "profile", "email"]
+    scope tea[value] = ["openid", "profile", "email"]
     response_type tea = "code"  // code, token, id_token
     grant_type tea = "authorization_code"
     pkce_enabled lit = based
@@ -95,7 +95,7 @@ squad JWTHeader {
     alg tea = "RS256"
     typ tea = "JWT"
     kid tea = ""
-    x5c []tea = []
+    x5c tea[value] = []
 }
 
 squad JWTClaims {
@@ -208,12 +208,12 @@ squad OAuthClient {
     
     slay validate_id_token(id_token tea, nonce tea) yikes<JWTClaims> {
         // Parse JWT without verification first to get header
-        sus parts []tea = stringz.split(id_token, ".")
+        sus parts tea[value] = stringz.split(id_token, ".")
         ready (len(parts) != 3) {
             yikes "invalid JWT format"
         }
         
-        sus header_json []lit = base64_url_decode(parts[0]) fam {
+        sus header_json lit[value] = base64_url_decode(parts[0]) fam {
             when err -> yikes "failed to decode JWT header: " + err
         }
         
@@ -231,7 +231,7 @@ squad OAuthClient {
         }
         
         // Parse claims
-        sus claims_json []lit = base64_url_decode(parts[1]) fam {
+        sus claims_json lit[value] = base64_url_decode(parts[1]) fam {
             when err -> yikes "failed to decode JWT claims: " + err
         }
         
@@ -261,7 +261,7 @@ squad OAuthClient {
             form_data["token_type_hint"] = token_type_hint  // access_token, refresh_token
         }
         
-        sus body []lit = encode_form_data(form_data)
+        sus body lit[value] = encode_form_data(form_data)
         sus headers map<tea, tea> = {
             "content-type": "application/x-www-form-urlencoded",
         }
@@ -357,7 +357,7 @@ squad OAuthClient {
             form_data["client_secret"] = token_request.client_secret
         }
         
-        sus body []lit = encode_form_data(form_data)
+        sus body lit[value] = encode_form_data(form_data)
         
         sus response httpz.Response = self.http_client.post(self.config.token_endpoint, body, headers) fam {
             when err -> yikes "token request failed: " + err
@@ -413,18 +413,18 @@ squad OAuthClient {
     }
     
     slay verify_rsa_signature(jwt tea, header JWTHeader) yikes<lit> {
-        sus parts []tea = stringz.split(jwt, ".")
+        sus parts tea[value] = stringz.split(jwt, ".")
         ready len(parts) != 3 {
             yikes "Invalid JWT format"
         }
         
         sus message tea = parts[0] + "." + parts[1]
-        sus signature []lit = base64_url_decode(parts[2]) fam {
+        sus signature lit[value] = base64_url_decode(parts[2]) fam {
             when err -> yikes err
         }
         
         // Fetch public key for verification
-        sus public_key_data []lit = fetch_jwks_public_key(header.kid) fam {
+        sus public_key_data lit[value] = fetch_jwks_public_key(header.kid) fam {
             when err -> yikes "Failed to fetch public key: " + err
         }
         
@@ -434,7 +434,7 @@ squad OAuthClient {
         }
         
         // Create message hash for verification
-        sus message_hash []lit = cryptz.sha256(encode_string(message))
+        sus message_hash lit[value] = cryptz.sha256(encode_string(message))
         
         // Verify RSA signature with PKCS#1 v1.5 padding
         sus verified lit = cryptz.rsa_pss_verify(public_key, message_hash, signature) fam {
@@ -449,13 +449,13 @@ squad OAuthClient {
     }
     
     slay verify_hmac_signature(jwt tea, header JWTHeader) yikes<lit> {
-        sus parts []tea = stringz.split(jwt, ".")
+        sus parts tea[value] = stringz.split(jwt, ".")
         sus message tea = parts[0] + "." + parts[1]
-        sus signature []lit = base64_url_decode(parts[2]) fam {
+        sus signature lit[value] = base64_url_decode(parts[2]) fam {
             when err -> yikes err
         }
         
-        sus expected_signature []lit = cryptz.hmac_sha256(
+        sus expected_signature lit[value] = cryptz.hmac_sha256(
             encode_string(self.config.client_secret),
             encode_string(message)
         )
@@ -498,7 +498,7 @@ squad OAuthClient {
         }
     }
     
-    slay parse_error_response(body []lit) tea {
+    slay parse_error_response(body lit[value]) tea {
         sus error_response map<tea, drip> = jsonz.unmarshal<map<tea, drip>>(body) fam {
             when _ -> {
                 damn "unknown error: " + decode_string(body)
@@ -717,11 +717,11 @@ squad AuthorizationServer {
             .typ = "JWT",
         }
         
-        sus header_json []lit = jsonz.marshal(header) fam {
+        sus header_json lit[value] = jsonz.marshal(header) fam {
             when _ -> encode_string("{\"alg\":\"HS256\",\"typ\":\"JWT\"}")
         }
         
-        sus claims_json []lit = jsonz.marshal(claims) fam {
+        sus claims_json lit[value] = jsonz.marshal(claims) fam {
             when _ -> encode_string("{}")
         }
         
@@ -729,7 +729,7 @@ squad AuthorizationServer {
         sus claims_b64 tea = base64_url_encode(claims_json)
         sus message tea = header_b64 + "." + claims_b64
         
-        sus signature []lit = cryptz.hmac_sha256(
+        sus signature lit[value] = cryptz.hmac_sha256(
             encode_string(self.config.signing_key),
             encode_string(message)
         )
@@ -747,18 +747,18 @@ squad AuthServerConfig {
     token_endpoint tea
     userinfo_endpoint tea
     jwks_endpoint tea
-    supported_grant_types []tea = ["authorization_code", "refresh_token"]
-    supported_response_types []tea = ["code"]
-    supported_scopes []tea = ["openid", "profile", "email"]
+    supported_grant_types tea[value] = ["authorization_code", "refresh_token"]
+    supported_response_types tea[value] = ["code"]
+    supported_scopes tea[value] = ["openid", "profile", "email"]
 }
 
 squad Client {
     client_id tea
     client_secret tea
-    redirect_uris []tea
-    grant_types []tea
-    response_types []tea
-    scope []tea
+    redirect_uris tea[value]
+    grant_types tea[value]
+    response_types tea[value]
+    scope tea[value]
     require_pkce lit = false
 }
 
@@ -857,7 +857,7 @@ slay generate_nonce() tea {
     damn generate_random_string(32)
 }
 
-slay base64_url_encode(data []lit) tea {
+slay base64_url_encode(data lit[value]) tea {
     sus encoded tea = base64_encode(data)
     encoded = stringz.replace_all(encoded, "+", "-")
     encoded = stringz.replace_all(encoded, "/", "_")
@@ -865,7 +865,7 @@ slay base64_url_encode(data []lit) tea {
     damn encoded
 }
 
-slay base64_url_decode(encoded tea) yikes<[]lit> {
+slay base64_url_decode(encoded tea) yikes<lit[value]> {
     sus padded tea = encoded
     
     // Add padding if needed
@@ -886,7 +886,7 @@ slay base64_url_decode(encoded tea) yikes<[]lit> {
 }
 
 slay build_query_string(params map<tea, tea>) tea {
-    sus pairs []tea = []
+    sus pairs tea[value] = []
     
     bestie (key, value := range params) {
         sus encoded_key tea = url_encode(key)
@@ -897,7 +897,7 @@ slay build_query_string(params map<tea, tea>) tea {
     damn stringz.join(pairs, "&")
 }
 
-slay encode_form_data(data map<tea, tea>) []lit {
+slay encode_form_data(data map<tea, tea>) lit[value]{
     sus form_string tea = build_query_string(data)
     damn encode_string(form_string)
 }
@@ -953,8 +953,8 @@ fr fr ===== MISSING JWKS INTEGRATION =====
 
 // RSA Public Key structure for cryptographic operations
 squad RSAPublicKey {
-    n []lit    // Modulus
-    e []lit    // Public exponent
+    n lit[value]    // Modulus
+    e lit[value]    // Public exponent
     key_size drip
 }
 
@@ -966,19 +966,19 @@ squad JWKSKey {
     alg tea    // Algorithm
     n tea      // Modulus (Base64 URL encoded)
     e tea      // Exponent (Base64 URL encoded)
-    x5c []tea  // X.509 certificate chain
+    x5c tea[value]  // X.509 certificate chain
     x5t tea    // X.509 thumbprint
 }
 
 squad JWKSResponse {
-    keys []JWKSKey
+    keys JWKSKey[value]
 }
 
 // Cache for public keys
 sus jwks_cache map<tea, RSAPublicKey> = {}
 sus jwks_cache_expiry map<tea, drip> = {}
 
-slay fetch_jwks_public_key(kid tea) yikes<[]lit> {
+slay fetch_jwks_public_key(kid tea) yikes<lit[value]> {
     ready kid == "" {
         yikes "Missing key ID in JWT header"
     }
@@ -1024,11 +1024,11 @@ slay fetch_jwks_public_key(kid tea) yikes<[]lit> {
             }
             
             // Decode RSA parameters
-            sus n_bytes []lit = base64_url_decode(key.n) fam {
+            sus n_bytes lit[value] = base64_url_decode(key.n) fam {
                 when err -> yikes "Failed to decode key modulus: " + err
             }
             
-            sus e_bytes []lit = base64_url_decode(key.e) fam {
+            sus e_bytes lit[value] = base64_url_decode(key.e) fam {
                 when err -> yikes "Failed to decode key exponent: " + err
             }
             
@@ -1055,7 +1055,7 @@ slay fetch_jwks_public_key(kid tea) yikes<[]lit> {
     yikes "Public key not found for kid: " + kid
 }
 
-slay parse_rsa_public_key(data []lit) yikes<RSAPublicKey> {
+slay parse_rsa_public_key(data lit[value]) yikes<RSAPublicKey> {
     // Simple DER parser for RSA public key
     // In production, would use proper ASN.1/DER parsing
     ready (len(data) < 32) {
@@ -1066,17 +1066,17 @@ slay parse_rsa_public_key(data []lit) yikes<RSAPublicKey> {
     // Extract from DER structure or use direct parameters
     sus key RSAPublicKey = {
         .n = data[10:len(data)-10],  // Simplified extraction
-        .e = []lit{0x01, 0x00, 0x01}, // Common exponent 65537
+        .e = lit[value]{0x01, 0x00, 0x01}, // Common exponent 65537
         .key_size = (len(data) - 20) * 8,
     }
     
     damn key
 }
 
-slay encode_der_public_key(key RSAPublicKey) []lit {
+slay encode_der_public_key(key RSAPublicKey) lit[value]{
     // Simple DER encoding for testing
     // In production, would use proper ASN.1/DER encoding
-    sus result []lit = []
+    sus result lit[value] = []
     result = append(result, key.n...)
     result = append(result, key.e...)
     damn result

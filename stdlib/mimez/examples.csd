@@ -42,32 +42,32 @@ slay example_content_detection() {
     vibez.spill("=== Content-Based Detection Examples ===")
     
     fr fr JPEG image detection from magic bytes
-    sus jpeg_bytes []drip = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]
+    sus jpeg_bytes drip[value] = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10, 0x4A, 0x46]
     sus jpeg_mime tea = detect_mime_from_content(jpeg_bytes)
     vibez.spill("JPEG from content:", jpeg_mime)  fr fr "image/jpeg"
     
     fr fr PNG image detection
-    sus png_bytes []drip = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+    sus png_bytes drip[value] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
     sus png_mime tea = detect_mime_from_content(png_bytes)
     vibez.spill("PNG from content:", png_mime)  fr fr "image/png"
     
     fr fr GIF image detection  
-    sus gif_bytes []drip = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00]
+    sus gif_bytes drip[value] = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61, 0x01, 0x00]
     sus gif_mime tea = detect_mime_from_content(gif_bytes)
     vibez.spill("GIF from content:", gif_mime)  fr fr "image/gif"
     
     fr fr PDF document detection
-    sus pdf_bytes []drip = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
+    sus pdf_bytes drip[value] = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
     sus pdf_mime tea = detect_mime_from_content(pdf_bytes)
     vibez.spill("PDF from content:", pdf_mime)  fr fr "application/pdf"
     
     fr fr ZIP archive detection
-    sus zip_bytes []drip = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00]
+    sus zip_bytes drip[value] = [0x50, 0x4B, 0x03, 0x04, 0x14, 0x00, 0x06, 0x00]
     sus zip_mime tea = detect_mime_from_content(zip_bytes)
     vibez.spill("ZIP from content:", zip_mime)  fr fr "application/zip"
     
     fr fr Text content detection
-    sus text_bytes []drip = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21]
+    sus text_bytes drip[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64, 0x21]
     sus text_mime tea = detect_mime_from_content(text_bytes)  fr fr "Hello World!"
     vibez.spill("Text from content:", text_mime)  fr fr "text/plain"
     
@@ -80,22 +80,22 @@ slay example_comprehensive_detection() {
     vibez.spill("=== Comprehensive Detection Examples ===")
     
     fr fr Matching filename and content
-    sus jpeg_content []drip = [0xFF, 0xD8, 0xFF, 0xE0, 0x12, 0x34]
+    sus jpeg_content drip[value] = [0xFF, 0xD8, 0xFF, 0xE0, 0x12, 0x34]
     sus result1 tea = detect_mime_comprehensive("photo.jpg", jpeg_content)
     vibez.spill("JPEG file with JPEG content:", result1)  fr fr "image/jpeg"
     
     fr fr Mismatched extension but correct content
-    sus png_content []drip = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+    sus png_content drip[value] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
     sus result2 tea = detect_mime_comprehensive("wrong.txt", png_content)
     vibez.spill("TXT extension but PNG content:", result2)  fr fr "image/png" (content wins)
     
     fr fr Extension only (no content)
-    sus empty_content []drip = []
+    sus empty_content drip[value] = []
     sus result3 tea = detect_mime_comprehensive("document.pdf", empty_content)
     vibez.spill("PDF extension, no content:", result3)  fr fr "application/pdf"
     
     fr fr Unknown extension with recognizable content
-    sus gif_content []drip = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
+    sus gif_content drip[value] = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
     sus result4 tea = detect_mime_comprehensive("mystery.dat", gif_content)
     vibez.spill("Unknown extension, GIF content:", result4)  fr fr "image/gif"
     
@@ -193,7 +193,7 @@ slay example_utility_functions() {
     vibez.spill("CSD (uppercase) supported:", supported3)  fr fr true
     
     fr fr List all supported extensions
-    sus extensions []tea = list_supported_extensions()
+    sus extensions tea[value] = list_supported_extensions()
     vibez.spill("Total supported extensions:", array_len(extensions))
     
     vibez.spill("First 10 supported extensions:")
@@ -210,7 +210,7 @@ slay example_file_system_integration() {
     vibez.spill("=== File System Integration Example ===")
     
     fr fr Example: Process files in a directory with MIME detection
-    sus test_files []tea = [
+    sus test_files tea[value] = [
         "document.pdf",
         "photo.jpg", 
         "data.json",
@@ -246,7 +246,7 @@ slay example_web_server_integration() {
     vibez.spill("=== Web Server Integration Example ===")
     
     fr fr Simulated web server file serving with MIME detection
-    slay serve_file(filename tea, content []drip) {
+    slay serve_file(filename tea, content drip[value]) {
         sus mime_type tea = detect_mime_comprehensive(filename, content)
         sus content_type_header tea = get_content_type_for_file(filename)
         sus is_binary lit = is_binary_mime(mime_type)
@@ -268,16 +268,16 @@ slay example_web_server_integration() {
     }
     
     fr fr Example file serving scenarios
-    sus html_content []drip = [0x3C, 0x68, 0x74, 0x6D, 0x6C, 0x3E]  fr fr "<html>"
+    sus html_content drip[value] = [0x3C, 0x68, 0x74, 0x6D, 0x6C, 0x3E]  fr fr "<html>"
     serve_file("index.html", html_content)
     
-    sus json_content []drip = [0x7B, 0x22, 0x6B, 0x65, 0x79, 0x22, 0x3A]  fr fr "{\"key\":"
+    sus json_content drip[value] = [0x7B, 0x22, 0x6B, 0x65, 0x79, 0x22, 0x3A]  fr fr "{\"key\":"
     serve_file("api.json", json_content)
     
-    sus jpeg_content []drip = [0xFF, 0xD8, 0xFF, 0xE0]
+    sus jpeg_content drip[value] = [0xFF, 0xD8, 0xFF, 0xE0]
     serve_file("photo.jpg", jpeg_content)
     
-    sus css_content []drip = [0x62, 0x6F, 0x64, 0x79, 0x20, 0x7B]  fr fr "body {"
+    sus css_content drip[value] = [0x62, 0x6F, 0x64, 0x79, 0x20, 0x7B]  fr fr "body {"
     serve_file("style.css", css_content)
 }
 
@@ -325,7 +325,7 @@ slay example_performance_demo() {
     vibez.spill("Average per operation:", elapsed / 10000.0, "ms")
     
     fr fr Measure content analysis performance
-    sus large_content []drip = []
+    sus large_content drip[value] = []
     bestie (i drip = 0; i < 1024; i++) {
         large_content = array_push(large_content, i % 256)
     }

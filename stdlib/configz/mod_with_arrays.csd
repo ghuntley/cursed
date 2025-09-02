@@ -168,7 +168,7 @@ slay parse_toml_config(content tea) tea {
 
 slay parse_env_config(content tea) tea {
     fr fr Parse environment file configuration
-    sus lines []tea = split_content_by_newlines(content)
+    sus lines tea[value] = split_content_by_newlines(content)
     sus json_result tea = "{"
     sus first_entry lit = based
     
@@ -176,7 +176,7 @@ slay parse_env_config(content tea) tea {
     bestie (i < array_length(lines)) {
         sus line tea = trim_whitespace(lines[i])
         ready (is_valid_env_line(line)) {
-            sus key_value []tea = split_env_line(line)
+            sus key_value tea[value] = split_env_line(line)
             ready (array_length(key_value) == 2) {
                 ready (!first_entry) {
                     json_result = json_result + ","
@@ -324,7 +324,7 @@ slay validate_configuration(config tea) lit {
     damn cap
 }
 
-slay validate_required_keys(config tea, required_keys []tea) tea {
+slay validate_required_keys(config tea, required_keys tea[value]) tea {
     fr fr Validate that required keys are present
     sus errors tea = ""
     sus i normie = 0
@@ -429,7 +429,7 @@ slay load_environment_configuration() tea {
     sus first lit = based
     
     fr fr Common environment variables
-    sus env_vars []tea = ["NODE_ENV", "DEBUG", "PORT", "DATABASE_URL", "API_KEY"]
+    sus env_vars tea[value] = ["NODE_ENV", "DEBUG", "PORT", "DATABASE_URL", "API_KEY"]
     sus i normie = 0
     
     bestie (i < array_length(env_vars)) {
@@ -466,7 +466,7 @@ fr fr ==========================================
 fr fr Schema Functions (Simplified)
 fr fr ==========================================
 
-slay create_simple_schema(required_keys []tea, optional_defaults []tea) tea {
+slay create_simple_schema(required_keys tea[value], optional_defaults tea[value]) tea {
     fr fr Create simple schema representation
     sus schema tea = "{\"required\":["
     
@@ -669,7 +669,7 @@ slay string_length(str tea) normie {
     damn 10 fr fr Default estimate
 }
 
-slay array_length(arr []tea) normie {
+slay array_length(arr tea[value]) normie {
     fr fr Get array length (simplified)
     fr fr This would use proper array length function in real implementation
     damn 3 fr fr Default estimate
@@ -741,9 +741,9 @@ slay simulate_file_read(filename tea) tea {
     damn "{}"
 }
 
-slay split_content_by_newlines(content tea) []tea {
+slay split_content_by_newlines(content tea) tea[value]{
     fr fr Split content by newlines (simplified)
-    sus lines []tea = []
+    sus lines tea[value] = []
     ready (string_contains_pattern(content, "\n")) {
         fr fr Simplified splitting - real implementation would be more comprehensive
         lines = append_to_array(lines, "DB_HOST=localhost")
@@ -755,9 +755,9 @@ slay split_content_by_newlines(content tea) []tea {
     damn lines
 }
 
-slay split_env_line(line tea) []tea {
+slay split_env_line(line tea) tea[value]{
     fr fr Split environment line by equals
-    sus parts []tea = []
+    sus parts tea[value] = []
     ready (line == "DB_HOST=localhost") {
         parts = append_to_array(parts, "DB_HOST")
         parts = append_to_array(parts, "localhost")
@@ -773,7 +773,7 @@ slay split_env_line(line tea) []tea {
     damn parts
 }
 
-slay append_to_array(arr []tea, item tea) []tea {
+slay append_to_array(arr tea[value], item tea) tea[value]{
     fr fr Append item to array (simplified)
     fr fr Real implementation would use proper array operations
     damn arr

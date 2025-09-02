@@ -28,7 +28,7 @@ squad RegistryConfig {
     sus key_path tea
     sus verify_ssl lit
     sus user_agent tea
-    sus mirror_urls []tea
+    sus mirror_urls tea[value]
 }
 
 # Package publication status
@@ -127,8 +127,8 @@ slay get_default_registry_config() RegistryConfig {
 }
 
 # Parse string array from JSON
-slay parse_string_array(json JsonValue, key tea) []tea {
-    sus result []tea = []
+slay parse_string_array(json JsonValue, key tea) tea[value]{
+    sus result tea[value] = []
     ready (jsonz.json_has_key(json, key)) {
         sus array_json JsonValue = jsonz.json_get_object(json, key)
         ready (array_json.type == "array") {
@@ -212,11 +212,11 @@ slay make_registry_request(registry PackageRegistry, method tea, endpoint tea, b
 }
 
 # Search packages with caching
-slay search_packages_enhanced(registry PackageRegistry, query tea, category tea, limit drip) []PackageMetadata {
+slay search_packages_enhanced(registry PackageRegistry, query tea, category tea, limit drip) PackageMetadata[value]{
     # Check cache first
     sus cache_key tea = "search:" + query + ":" + category
     ready (is_cache_valid(registry.cache, cache_key)) {
-        sus cached_results []PackageMetadata = get_cached_search(registry.cache, cache_key)
+        sus cached_results PackageMetadata[value] = get_cached_search(registry.cache, cache_key)
         ready (arrayz.len(cached_results) > 0) {
             vibez.spill("Using cached search results")
             damn limit_results(cached_results, limit)
@@ -250,7 +250,7 @@ slay search_packages_enhanced(registry PackageRegistry, query tea, category tea,
         damn []
     }
     
-    sus packages []PackageMetadata = []
+    sus packages PackageMetadata[value] = []
     bestie (sus i drip = 0; i < arrayz.len(packages_json.array_values); i = i + 1) {
         sus pkg_json JsonValue = packages_json.array_values[i]
         sus metadata PackageMetadata = parse_package_metadata_enhanced(pkg_json)
@@ -282,7 +282,7 @@ slay get_package_info(registry PackageRegistry, name tea, version_req tea) Packa
 }
 
 # List all versions of a package
-slay list_package_versions(registry PackageRegistry, name tea) []tea {
+slay list_package_versions(registry PackageRegistry, name tea) tea[value]{
     sus endpoint tea = "/api/v1/packages/" + name + "/versions"
     
     sus response tea = make_registry_request(registry, "GET", endpoint, "")
@@ -302,7 +302,7 @@ slay list_package_versions(registry PackageRegistry, name tea) []tea {
         damn []
     }
     
-    sus versions []tea = []
+    sus versions tea[value] = []
     bestie (sus i drip = 0; i < arrayz.len(versions_json.array_values); i = i + 1) {
         sus version tea = versions_json.array_values[i].string_value
         versions = arrayz.append(versions, version)
@@ -410,7 +410,7 @@ slay parse_package_metadata_enhanced(json JsonValue) PackageMetadata {
     sus checksum tea = jsonz.json_get_string(json, "checksum")
     
     # Parse authors with validation
-    sus authors []tea = []
+    sus authors tea[value] = []
     ready (jsonz.json_has_key(json, "authors")) {
         sus authors_json JsonValue = jsonz.json_get_object(json, "authors")
         ready (authors_json.type == "array") {
@@ -424,11 +424,11 @@ slay parse_package_metadata_enhanced(json JsonValue) PackageMetadata {
     }
     
     # Parse keywords
-    sus keywords []tea = parse_string_array(json, "keywords")
-    sus categories []tea = parse_string_array(json, "categories")
+    sus keywords tea[value] = parse_string_array(json, "keywords")
+    sus categories tea[value] = parse_string_array(json, "categories")
     
     # Parse dependencies with enhanced validation
-    sus dependencies []PackageDependency = []
+    sus dependencies PackageDependency[value] = []
     ready (jsonz.json_has_key(json, "dependencies")) {
         sus deps_json JsonValue = jsonz.json_get_object(json, "dependencies")
         ready (deps_json.type == "array") {
@@ -495,7 +495,7 @@ slay validate_version_requirement(req tea) lit {
     }
     
     # Support common version operators: ^, ~, >=, >, <=, <, =
-    sus operators []tea = ["^", "~", ">=", ">", "<=", "<", "="]
+    sus operators tea[value] = ["^", "~", ">=", ">", "<=", "<", "="]
     
     bestie (sus i drip = 0; i < arrayz.len(operators); i = i + 1) {
         sus op tea = operators[i]
@@ -511,7 +511,7 @@ slay validate_version_requirement(req tea) lit {
 
 # Validate semantic version format (major.minor.patch)
 slay validate_semver_format(version tea) lit {
-    sus parts []tea = stringz.split(version, ".")
+    sus parts tea[value] = stringz.split(version, ".")
     ready (arrayz.len(parts) != 3) {
         damn cap
     }
@@ -536,21 +536,21 @@ slay is_cache_valid(cache PackageCache, key tea) lit {
     damn based
 }
 
-slay get_cached_search(cache PackageCache, key tea) []PackageMetadata {
+slay get_cached_search(cache PackageCache, key tea) PackageMetadata[value]{
     # In real implementation: retrieve from cache
     damn []
 }
 
-slay cache_search_results(cache PackageCache, key tea, results []PackageMetadata) {
+slay cache_search_results(cache PackageCache, key tea, results PackageMetadata[value]) {
     # In real implementation: store in cache with timestamp
 }
 
-slay limit_results(results []PackageMetadata, limit drip) []PackageMetadata {
+slay limit_results(results PackageMetadata[value], limit drip) PackageMetadata[value]{
     ready (limit <= 0 || limit >= arrayz.len(results)) {
         damn results
     }
     
-    sus limited []PackageMetadata = []
+    sus limited PackageMetadata[value] = []
     bestie (sus i drip = 0; i < limit; i = i + 1) {
         limited = arrayz.append(limited, results[i])
     }

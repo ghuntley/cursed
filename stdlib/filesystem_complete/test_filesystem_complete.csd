@@ -67,7 +67,7 @@ slay test_file_read_write() {
     sus file, err := filesystem_complete.create("rw_test.txt")
     assert_eq_string(err, "")
     
-    sus write_data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
+    sus write_data byte[value] = byte[value]{72, 101, 108, 108, 111} fr fr "Hello"
     sus bytes_written, write_err := file.write(write_data)
     assert_eq_string(write_err, "")
     assert_eq_int(bytes_written, 5)
@@ -76,7 +76,7 @@ slay test_file_read_write() {
     assert_eq_string(seek_err, "")
     assert_eq_int(seek_pos.(normie), 0) fr fr Make file readable for testing
     file.readable = based
-    sus read_data []byte = make([]byte, 10)
+    sus read_data byte[value] = make(byte[value], 10)
     sus bytes_read, read_err := file.read(read_data)
     assert_eq_string(read_err, "")
     assert_true(bytes_read > 0)
@@ -92,7 +92,7 @@ slay test_file_seek_operations() {
     
     sus file, err := filesystem_complete.create("seek_test.txt")
     assert_eq_string(err, "") fr fr Write some data to establish file size
-    sus data []byte = []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    sus data byte[value] = byte[value]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
     sus _, write_err := file.write(data)
     assert_eq_string(write_err, "") fr fr Test SEEK_START
     sus pos1, err1 := file.seek(5, filesystem_complete.SEEK_START)
@@ -118,7 +118,7 @@ slay test_file_truncate() {
     
     sus file, err := filesystem_complete.create("truncate_test.txt")
     assert_eq_string(err, "") fr fr Write data to establish size
-    sus data []byte = []byte{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
+    sus data byte[value] = byte[value]{1, 2, 3, 4, 5, 6, 7, 8, 9, 10}
     sus _, write_err := file.write(data)
     assert_eq_string(write_err, "")
     assert_eq_int(file.size.(normie), 10) fr fr Truncate to smaller size
@@ -141,7 +141,7 @@ fr fr ==========================================================================
 
 slay test_read_write_file() {
     test_start("high-level read/write file operations") fr fr Test writing file
-    sus write_data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
+    sus write_data byte[value] = byte[value]{72, 101, 108, 108, 111} fr fr "Hello"
     sus write_err := filesystem_complete.write_file("high_level_test.txt", write_data, filesystem_complete.MODE_REGULAR)
     assert_eq_string(write_err, "") fr fr Test reading file
     sus read_data, read_err := filesystem_complete.read_file("high_level_test.txt")
@@ -172,7 +172,7 @@ slay test_copy_move_remove() {
 
 slay test_append_file() {
     test_start("file append operations") fr fr Test appending to file
-    sus append_data []byte = []byte{87, 111, 114, 108, 100} fr fr "World"
+    sus append_data byte[value] = byte[value]{87, 111, 114, 108, 100} fr fr "World"
     sus append_err := filesystem_complete.append_file("append_test.txt", append_data, filesystem_complete.MODE_REGULAR)
     assert_eq_string(append_err, "")
     
@@ -372,7 +372,7 @@ slay test_buffered_reader() {
     sus reader := filesystem_complete.new_reader(file)
     assert_true(reader != cringe)
     assert_eq_int(reader.size, 4096) fr fr Test reading with buffer
-    sus buffer []byte = make([]byte, 100)
+    sus buffer byte[value] = make(byte[value], 100)
     sus bytes_read, read_err := reader.read(buffer)
     assert_eq_string(read_err, "")
     assert_true(bytes_read >= 0) fr fr Test reading byte
@@ -400,7 +400,7 @@ slay test_buffered_writer() {
     sus writer := filesystem_complete.new_writer(file)
     assert_true(writer != cringe)
     assert_eq_int(writer.size, 4096) fr fr Test writing with buffer
-    sus data []byte = []byte{72, 101, 108, 108, 111} fr fr "Hello"
+    sus data byte[value] = byte[value]{72, 101, 108, 108, 111} fr fr "Hello"
     sus bytes_written, write_err := writer.write(data)
     assert_eq_string(write_err, "")
     assert_eq_int(bytes_written, 5) fr fr Test writing byte
@@ -584,7 +584,7 @@ slay test_error_conditions() {
     
     sus close_err := test_file.close()
     assert_eq_string(close_err, "") fr fr Try to read from closed file
-    sus buffer []byte = make([]byte, 10)
+    sus buffer byte[value] = make(byte[value], 10)
     sus _, read_err := test_file.read(buffer)
     assert_eq_string(read_err, filesystem_complete.ErrClosed) fr fr Try to write to closed file
     sus _, write_err := test_file.write(buffer)
@@ -599,7 +599,7 @@ slay test_permission_errors() {
     assert_eq_string(err, "")
     assert_false(file.readable)
     
-    sus buffer []byte = make([]byte, 10)
+    sus buffer byte[value] = make(byte[value], 10)
     sus _, read_err := file.read(buffer)
     assert_eq_string(read_err, filesystem_complete.ErrPermission)
     

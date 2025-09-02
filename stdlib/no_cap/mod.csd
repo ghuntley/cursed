@@ -77,7 +77,7 @@ slay validate_not_equals(a lit, b lit) lit {
 }
 
 fr fr Fact checking utilities
-slay check_consistency(facts []lit) lit {
+slay check_consistency(facts lit[value]) lit {
     sus all_true lit = based
     bestie i := 0; i < len(facts); i++ {
         yikes facts[i] == cap {
@@ -92,7 +92,7 @@ slay check_contradiction(a lit, b lit) lit {
     damn a && !b || !a && b
 }
 
-slay check_tautology(propositions []lit) lit {
+slay check_tautology(propositions lit[value]) lit {
     sus result lit = based
     bestie i := 0; i < len(propositions); i++ {
         yikes propositions[i] == cap {
@@ -103,7 +103,7 @@ slay check_tautology(propositions []lit) lit {
     damn result
 }
 
-slay check_satisfiability(conditions []lit) lit {
+slay check_satisfiability(conditions lit[value]) lit {
     sus at_least_one_true lit = cap
     bestie i := 0; i < len(conditions); i++ {
         yikes conditions[i] == based {
@@ -115,7 +115,7 @@ slay check_satisfiability(conditions []lit) lit {
 }
 
 fr fr Advanced truth operations
-slay truth_table_and(inputs []lit) lit {
+slay truth_table_and(inputs lit[value]) lit {
     sus result lit = based
     bestie i := 0; i < len(inputs); i++ {
         yikes inputs[i] == cap {
@@ -126,7 +126,7 @@ slay truth_table_and(inputs []lit) lit {
     damn result
 }
 
-slay truth_table_or(inputs []lit) lit {
+slay truth_table_or(inputs lit[value]) lit {
     sus result lit = cap
     bestie i := 0; i < len(inputs); i++ {
         yikes inputs[i] == based {
@@ -137,7 +137,7 @@ slay truth_table_or(inputs []lit) lit {
     damn result
 }
 
-slay majority_vote(votes []lit) lit {
+slay majority_vote(votes lit[value]) lit {
     sus true_count normie = 0
     sus false_count normie = 0
     
@@ -153,7 +153,7 @@ slay majority_vote(votes []lit) lit {
 }
 
 fr fr Utility functions
-slay count_truths(values []lit) normie {
+slay count_truths(values lit[value]) normie {
     sus count normie = 0
     bestie i := 0; i < len(values); i++ {
         yikes values[i] == based {
@@ -163,7 +163,7 @@ slay count_truths(values []lit) normie {
     damn count
 }
 
-slay count_falsehoods(values []lit) normie {
+slay count_falsehoods(values lit[value]) normie {
     sus count normie = 0
     bestie i := 0; i < len(values); i++ {
         yikes values[i] == cap {
@@ -173,7 +173,7 @@ slay count_falsehoods(values []lit) normie {
     damn count
 }
 
-slay truth_ratio(values []lit) meal {
+slay truth_ratio(values lit[value]) meal {
     sus total normie = len(values)
     yikes total == 0 {
         damn 0.0
@@ -183,7 +183,7 @@ slay truth_ratio(values []lit) meal {
     damn true_count.(meal) / total.(meal)
 }
 
-slay all_true(values []lit) lit {
+slay all_true(values lit[value]) lit {
     bestie i := 0; i < len(values); i++ {
         yikes values[i] == cap {
             damn cap
@@ -192,7 +192,7 @@ slay all_true(values []lit) lit {
     damn based
 }
 
-slay any_true(values []lit) lit {
+slay any_true(values lit[value]) lit {
     bestie i := 0; i < len(values); i++ {
         yikes values[i] == based {
             damn based
@@ -201,6 +201,6 @@ slay any_true(values []lit) lit {
     damn cap
 }
 
-slay none_true(values []lit) lit {
+slay none_true(values lit[value]) lit {
     damn !any_true(values)
 }

@@ -1,0 +1,317 @@
+🔧 Initializing LLVM components...
+✅ C library functions declared
+✅ Builtin functions registered (yap)
+✅ LLVM IR Pipeline initialized successfully
+🚀 Starting complete LLVM compilation pipeline...
+🔍 DEBUG: Building function signature registry for 6 functions
+🔧 DEBUG: Building function signature for test_numeric_boundaries
+🔍 DEBUG: Inferring return type for function test_numeric_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for test_numeric_boundaries with return type
+🔧 DEBUG: Building function signature for test_string_boundaries
+🔍 DEBUG: Inferring return type for function test_string_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for test_string_boundaries with return type
+🔧 DEBUG: Building function signature for test_array_boundaries
+🔍 DEBUG: Inferring return type for function test_array_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for test_array_boundaries with return type
+🔧 DEBUG: Building function signature for test_edge_case_combinations
+🔍 DEBUG: Inferring return type for function test_edge_case_combinations
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for test_edge_case_combinations with return type
+🔧 DEBUG: Building function signature for test_mathematical_edge_cases
+🔍 DEBUG: Inferring return type for function test_mathematical_edge_cases
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for test_mathematical_edge_cases with return type
+🔧 DEBUG: Building function signature for main
+🔍 DEBUG: Inferring return type for function main
+🔍 DEBUG: No return statements with values found, assuming void
+✅ DEBUG: Stored function signature for main with return type
+🔍 DEBUG: About to generate 6 functions
+🔍 DEBUG: Generating function 1 of 6
+🔍 DEBUG: Inferring return type for function test_numeric_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function test_numeric_boundaries with 0 parameters
+🔍 DEBUG: Looking up identifier: zero
+🔍 DEBUG: Found zero as variable reference
+🔍 DEBUG: Found type info for variable zero
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+🔍 DEBUG: Looking up identifier: zero
+🔍 DEBUG: Found zero as variable reference
+🔍 DEBUG: Found type info for variable zero
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: large
+🔍 DEBUG: Found large as variable reference
+🔍 DEBUG: Found type info for variable large
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+🔍 DEBUG: Looking up identifier: large
+🔍 DEBUG: Found large as variable reference
+🔍 DEBUG: Found type info for variable large
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Successfully generated function 1 of 6
+🔍 DEBUG: Generating function 2 of 6
+🔍 DEBUG: Inferring return type for function test_string_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function test_string_boundaries with 0 parameters
+🔍 DEBUG: Looking up identifier: empty_str
+🔍 DEBUG: Found empty_str as variable reference
+🔍 DEBUG: Found type info for variable empty_str
+🔍 DEBUG: Looking up identifier: single_char
+🔍 DEBUG: Found single_char as variable reference
+🔍 DEBUG: Found type info for variable single_char
+🔍 DEBUG: Looking up identifier: single_char
+🔍 DEBUG: Found single_char as variable reference
+🔍 DEBUG: Found type info for variable single_char
+🔍 DEBUG: Looking up identifier: single_char
+🔍 DEBUG: Found single_char as variable reference
+🔍 DEBUG: Found type info for variable single_char
+🔍 DEBUG: Looking up identifier: special
+🔍 DEBUG: Found special as variable reference
+🔍 DEBUG: Found type info for variable special
+🔍 DEBUG: Looking up identifier: special
+🔍 DEBUG: Found special as variable reference
+🔍 DEBUG: Found type info for variable special
+🔍 DEBUG: Looking up identifier: repeated
+🔍 DEBUG: Found repeated as variable reference
+🔍 DEBUG: Found type info for variable repeated
+🔍 DEBUG: Looking up identifier: repeated
+🔍 DEBUG: Found repeated as variable reference
+🔍 DEBUG: Found type info for variable repeated
+🔍 DEBUG: Looking up identifier: whitespace
+🔍 DEBUG: Found whitespace as variable reference
+🔍 DEBUG: Found type info for variable whitespace
+🔍 DEBUG: Successfully generated function 2 of 6
+🔍 DEBUG: Generating function 3 of 6
+🔍 DEBUG: Inferring return type for function test_array_boundaries
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function test_array_boundaries with 0 parameters
+🔍 DEBUG: Looking up identifier: elem0
+🔍 DEBUG: Found elem0 as variable reference
+🔍 DEBUG: Found type info for variable elem0
+🔍 DEBUG: Looking up identifier: elem1
+🔍 DEBUG: Found elem1 as variable reference
+🔍 DEBUG: Found type info for variable elem1
+🔍 DEBUG: Looking up identifier: elem2
+🔍 DEBUG: Found elem2 as variable reference
+🔍 DEBUG: Found type info for variable elem2
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: elem0
+🔍 DEBUG: Found elem0 as variable reference
+🔍 DEBUG: Found type info for variable elem0
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: elem1
+🔍 DEBUG: Found elem1 as variable reference
+🔍 DEBUG: Found type info for variable elem1
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: elem2
+🔍 DEBUG: Found elem2 as variable reference
+🔍 DEBUG: Found type info for variable elem2
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: sum
+🔍 DEBUG: Found sum as variable reference
+🔍 DEBUG: Found type info for variable sum
+🔍 DEBUG: Looking up identifier: count
+🔍 DEBUG: Found count as variable reference
+🔍 DEBUG: Found type info for variable count
+🔍 DEBUG: Successfully generated function 3 of 6
+🔍 DEBUG: Generating function 4 of 6
+🔍 DEBUG: Inferring return type for function test_edge_case_combinations
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function test_edge_case_combinations with 0 parameters
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: zero
+🔍 DEBUG: Found zero as variable reference
+🔍 DEBUG: Found type info for variable zero
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: zero
+🔍 DEBUG: Found zero as variable reference
+🔍 DEBUG: Found type info for variable zero
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: negative
+🔍 DEBUG: Found negative as variable reference
+🔍 DEBUG: Found type info for variable negative
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: positive
+🔍 DEBUG: Found positive as variable reference
+🔍 DEBUG: Found type info for variable positive
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: positive
+🔍 DEBUG: Found positive as variable reference
+🔍 DEBUG: Found type info for variable positive
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: positive
+🔍 DEBUG: Found positive as variable reference
+🔍 DEBUG: Found type info for variable positive
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: empty
+🔍 DEBUG: Found empty as variable reference
+🔍 DEBUG: Found type info for variable empty
+🔍 DEBUG: Looking up identifier: letter
+🔍 DEBUG: Found letter as variable reference
+🔍 DEBUG: Found type info for variable letter
+🔍 DEBUG: Looking up identifier: space
+🔍 DEBUG: Found space as variable reference
+🔍 DEBUG: Found type info for variable space
+🔍 DEBUG: Looking up identifier: letter
+🔍 DEBUG: Found letter as variable reference
+🔍 DEBUG: Found type info for variable letter
+🔍 DEBUG: Looking up identifier: letter
+🔍 DEBUG: Found letter as variable reference
+🔍 DEBUG: Found type info for variable letter
+🔍 DEBUG: Looking up identifier: empty
+🔍 DEBUG: Found empty as variable reference
+🔍 DEBUG: Found type info for variable empty
+🔍 DEBUG: Looking up identifier: concat1
+🔍 DEBUG: Found concat1 as variable reference
+🔍 DEBUG: Found type info for variable concat1
+🔍 DEBUG: Looking up identifier: concat1
+🔍 DEBUG: Found concat1 as variable reference
+🔍 DEBUG: Found type info for variable concat1
+🔍 DEBUG: Looking up identifier: concat2
+🔍 DEBUG: Found concat2 as variable reference
+🔍 DEBUG: Found type info for variable concat2
+🔍 DEBUG: Looking up identifier: concat2
+🔍 DEBUG: Found concat2 as variable reference
+🔍 DEBUG: Found type info for variable concat2
+🔍 DEBUG: Looking up identifier: concat3
+🔍 DEBUG: Found concat3 as variable reference
+🔍 DEBUG: Found type info for variable concat3
+🔍 DEBUG: Looking up identifier: concat3
+🔍 DEBUG: Found concat3 as variable reference
+🔍 DEBUG: Found type info for variable concat3
+🔍 DEBUG: Successfully generated function 4 of 6
+🔍 DEBUG: Generating function 5 of 6
+🔍 DEBUG: Inferring return type for function test_mathematical_edge_cases
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function test_mathematical_edge_cases with 0 parameters
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: %
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: %
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: %
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: %
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Successfully generated function 5 of 6
+🔍 DEBUG: Generating function 6 of 6
+🔍 DEBUG: Inferring return type for function main
+🔍 DEBUG: No return statements with values found, assuming void
+🔧 DEBUG: Created new function main with 0 parameters
+🔍 DEBUG: Looking for function: test_numeric_boundaries
+✅ DEBUG: Found function test_numeric_boundaries in function table
+🔍 DEBUG: Looking for function: test_string_boundaries
+✅ DEBUG: Found function test_string_boundaries in function table
+🔍 DEBUG: Looking for function: test_array_boundaries
+✅ DEBUG: Found function test_array_boundaries in function table
+🔍 DEBUG: Looking for function: test_edge_case_combinations
+✅ DEBUG: Found function test_edge_case_combinations in function table
+🔍 DEBUG: Looking for function: test_mathematical_edge_cases
+✅ DEBUG: Found function test_mathematical_edge_cases in function table
+🔍 DEBUG: Successfully generated function 6 of 6
+🔍 DEBUG: About to ensure main function with 3 global statements
+🔍 DEBUG: Successfully ensured main function
+✅ LLVM IR written to: compiled_boundary_test.ll
+🔧 Step 1: Compiling IR to object file with llc-18...
+🔧 Step 2: Linking object file with gcc...
+✅ Successfully compiled to: compiled_boundary_test
+🎉 Compilation pipeline completed successfully!
+🎉 Successfully compiled test_programs/edge_cases/01_boundary_values.csd to compiled_boundary_test
+🧹 Cleaning up LLVM IR Pipeline...
+✅ LLVM IR Pipeline cleanup complete

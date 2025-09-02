@@ -169,7 +169,7 @@ slay demo_multiple_watchers() {
     vibez.spill("---------------------------------------")
     
     fr fr Start multiple watchers
-    sus watcher_ids []drip = []
+    sus watcher_ids drip[value] = []
     sus watcher_count drip = 0
     
     fr fr Watcher 1: File-specific
@@ -372,14 +372,14 @@ slay event_type_to_string(event_type drip) tea {
     damn "UNKNOWN"
 }
 
-slay create_txt_patterns() []tea {
-    sus patterns []tea = []
+slay create_txt_patterns() tea[value]{
+    sus patterns tea[value] = []
     patterns[0] = "*.txt"
     damn patterns
 }
 
-slay create_modify_events_only() []drip {
-    sus events []drip = []
+slay create_modify_events_only() drip[value]{
+    sus events drip[value] = []
     events[0] = EVENT_MODIFIED
     damn events
 }
@@ -393,7 +393,7 @@ slay sleep_ms(milliseconds drip) {
     }
 }
 
-slay array_to_string(ids []drip) tea {
+slay array_to_string(ids drip[value]) tea {
     ready (array_length(ids) == 0) {
         damn "[]"
     }

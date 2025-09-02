@@ -20,7 +20,7 @@ assert_eq_bool(Implements("drip", "drip"), based)
 assert_eq_bool(Implements("drip", "tea"), nocap)
 
 # Test call stack functionality
-sus stack []CallFrame = get_call_stack()
+sus stack CallFrame[value] = get_call_stack()
 assert_gt_int(len(stack), 0)
 
 sus caller CallFrame = get_caller_info()
@@ -38,12 +38,12 @@ sus coverage tea = get_coverage_info()
 assert_ne_string(coverage, "")
 
 # Test array reflection operations
-sus test_array []lit = [based, nocap, based]
+sus test_array lit[value] = [based, nocap, based]
 assert_eq_int(array_length(test_array), 3)
 assert_eq_bool(array_get(test_array, 0), based)
 assert_eq_bool(array_get(test_array, 1), nocap)
 
-sus extended_array []lit = array_append(test_array, based)
+sus extended_array lit[value] = array_append(test_array, based)
 assert_eq_int(array_length(extended_array), 4)
 
 # Test type information

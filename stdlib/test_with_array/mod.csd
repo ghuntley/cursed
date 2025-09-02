@@ -1,3 +1,3 @@
-slay test_array(nums []drip) drip {
+slay test_array(nums drip[value]) drip {
     damn 42
 }

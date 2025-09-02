@@ -7,7 +7,7 @@ slay test_byte_reader() {
     test_start("ByteReader functionality")
     
     sus reader *dropz.ByteReader = dropz.new_byte_reader("Hello, World!")
-    sus buffer [5]byte
+    sus buffer byte[5]
     
     sus (n, err) = reader.read(buffer[:])
     assert_eq_int(n, 5)
@@ -32,12 +32,12 @@ slay test_byte_writer() {
     
     sus writer *dropz.ByteWriter = dropz.new_byte_writer()
     
-    sus data1 []byte = []byte("Hello")
+    sus data1 byte[value] = byte[value]("Hello")
     sus (n1, err1) = writer.write(data1)
     assert_eq_int(n1, 5)
     assert_eq_string(err1, "")
     
-    sus data2 []byte = []byte(", World!")
+    sus data2 byte[value] = byte[value](", World!")
     sus (n2, err2) = writer.write(data2)
     assert_eq_int(n2, 8)
     assert_eq_string(err2, "")
@@ -46,7 +46,7 @@ slay test_byte_writer() {
     assert_eq_string(result, "Hello, World!") fr fr Test close
     sus closeErr tea = writer.close()
     assert_eq_string(closeErr, "") fr fr Test write after close
-    sus (n3, err3) = writer.write([]byte("test"))
+    sus (n3, err3) = writer.write(byte[value]("test"))
     assert_eq_int(n3, 0)
     assert_eq_string(err3, dropz.ErrClosed)
 }
@@ -55,16 +55,16 @@ slay test_buffer() {
     test_start("Buffer functionality")
     
     sus buffer *dropz.Buffer = dropz.new_buffer() fr fr Test write
-    sus writeData []byte = []byte("Buffer test data")
+    sus writeData byte[value] = byte[value]("Buffer test data")
     sus (written, writeErr) = buffer.write(writeData)
     assert_eq_int(written, len(writeData))
     assert_eq_string(writeErr, "") fr fr Test read
-    sus readBuf [6]byte
+    sus readBuf byte[6]
     sus (n, readErr) = buffer.read(readBuf[:])
     assert_eq_int(n, 6)
     assert_eq_string(readErr, "")
     assert_eq_string(string(readBuf[:n]), "Buffer") fr fr Test remaining read
-    sus readBuf2 [20]byte
+    sus readBuf2 byte[20]
     sus (n2, readErr2) = buffer.read(readBuf2[:])
     assert_eq_int(n2, 10)
     assert_eq_string(readErr2, "")
@@ -100,7 +100,7 @@ slay test_file_handles() {
     sus (file, createErr) = dropz.create("handle_test.csd")
     assert_eq_string(createErr, "")
     assert_true(file != cringe) fr fr Test write to file
-    sus writeData []byte = []byte("File handle test")
+    sus writeData byte[value] = byte[value]("File handle test")
     sus (written, writeErr) = file.write(writeData)
     assert_eq_int(written, len(writeData))
     assert_eq_string(writeErr, "") fr fr Test close
@@ -109,7 +109,7 @@ slay test_file_handles() {
     sus (readFile, openErr) = dropz.open("handle_test.csd")
     assert_eq_string(openErr, "")
     assert_true(readFile != cringe) fr fr Test read from file
-    sus readBuf [20]byte
+    sus readBuf byte[20]
     sus (n, readErr) = readFile.read(readBuf[:])
     assert_eq_int(n, 16)
     assert_eq_string(readErr, "")
@@ -117,7 +117,7 @@ slay test_file_handles() {
     sus (pos, seekErr) = readFile.seek(5, dropz.SEEK_START)
     assert_eq_int(normie(pos), 5)
     assert_eq_string(seekErr, "") fr fr Read after seek
-    sus readBuf2 [6]byte
+    sus readBuf2 byte[6]
     sus (n2, readErr2) = readFile.read(readBuf2[:])
     assert_eq_int(n2, 6)
     assert_eq_string(readErr2, "")
@@ -201,11 +201,11 @@ slay test_error_handling() {
     sus closeErr tea = testFile.close()
     assert_eq_string(closeErr, "")
     
-    sus writeData []byte = []byte("test")
+    sus writeData byte[value] = byte[value]("test")
     sus (written, writeErr) = testFile.write(writeData)
     assert_eq_int(written, 0)
     assert_eq_string(writeErr, dropz.ErrClosed) fr fr Test read from closed file
-    sus readBuf [10]byte
+    sus readBuf byte[10]
     sus (n, readErr) = testFile.read(readBuf[:])
     assert_eq_int(n, 0)
     assert_eq_string(readErr, dropz.ErrClosed)

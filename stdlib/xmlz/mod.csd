@@ -53,8 +53,8 @@ squad XmlNode {
     node_type XmlNodeType
     name tea
     value tea
-    attributes []XmlAttribute
-    children []XmlNode
+    attributes XmlAttribute[value]
+    children XmlNode[value]
     parent sus XmlNode
     namespace_uri tea
     namespace_prefix tea
@@ -77,7 +77,7 @@ squad XmlDocument {
     version tea
     standalone lit
     doctype sus XmlDocType
-    namespaces []XmlNamespace
+    namespaces XmlNamespace[value]
     parser_type XmlParserType
     validation_type XmlValidationType
 }
@@ -122,7 +122,7 @@ squad XmlParseError {
 collab SaxHandler {
     slay on_start_document()
     slay on_end_document()
-    slay on_start_element(name tea, attributes []XmlAttribute)
+    slay on_start_element(name tea, attributes XmlAttribute[value])
     slay on_end_element(name tea)
     slay on_characters(data tea)
     slay on_comment(data tea)
@@ -132,16 +132,16 @@ collab SaxHandler {
 
 # XPath Expression Result
 squad XPathResult {
-    nodes []XmlNode
-    values []tea
+    nodes XmlNode[value]
+    values tea[value]
     result_type tea  # "nodeset", "string", "number", "boolean"
 }
 
 # XML Schema Validation Result
 squad ValidationResult {
     valid lit
-    errors []tea
-    warnings []tea
+    errors tea[value]
+    warnings tea[value]
 }
 
 # ========================
@@ -406,7 +406,7 @@ slay xpath_query(doc XmlDocument, xpath tea) yikes<XPathResult> {
     }
     
     # Parse XPath expression
-    sus tokens []tea = tokenize_xpath(xpath)
+    sus tokens tea[value] = tokenize_xpath(xpath)
     sus parsed_expr XPathExpression = parse_xpath_expression(tokens) fam {
         when err -> yikes "Failed to parse XPath: " + err
     }
@@ -420,7 +420,7 @@ slay xpath_query(doc XmlDocument, xpath tea) yikes<XPathResult> {
 }
 
 # Find nodes by XPath
-slay find_nodes(doc XmlDocument, xpath tea) yikes<[]XmlNode> {
+slay find_nodes(doc XmlDocument, xpath tea) yikes<XmlNode[value]> {
     sus result XPathResult = xpath_query(doc, xpath) fam {
         when err -> yikes err
     }
@@ -429,7 +429,7 @@ slay find_nodes(doc XmlDocument, xpath tea) yikes<[]XmlNode> {
 
 # Find first node by XPath
 slay find_first_node(doc XmlDocument, xpath tea) yikes<XmlNode> {
-    sus nodes []XmlNode = find_nodes(doc, xpath) fam {
+    sus nodes XmlNode[value] = find_nodes(doc, xpath) fam {
         when err -> yikes err
     }
     
@@ -592,8 +592,8 @@ slay find_child_element(node XmlNode, name tea) sus XmlNode {
 }
 
 # Find all child elements by name
-slay find_child_elements(node XmlNode, name tea) []XmlNode {
-    sus results []XmlNode = []
+slay find_child_elements(node XmlNode, name tea) XmlNode[value]{
+    sus results XmlNode[value] = []
     bestie (sus child XmlNode in node.children) {
         ready (child.node_type == XmlNodeType.Element && child.name == name) {
             results = arrayz.append(results, child)
@@ -705,7 +705,7 @@ squad ParserState {
     column drip
     config XmlParserConfig
     current_char tea
-    namespaces []XmlNamespace
+    namespaces XmlNamespace[value]
 }
 
 # Initialize parser state

@@ -73,7 +73,7 @@ slay test_postgres_crud_operations() {
     
     vibez.spill("✅ PostgreSQL SELECT successful")
     vibez.spill("   Columns:", stringz.join(result.column_names, ", "))
-    bestie (sus row []tea : result.rows) {
+    bestie (sus row tea[value] : result.rows) {
         vibez.spill("   Row:", stringz.join(row, " | "))
     }
     
@@ -214,7 +214,7 @@ slay test_mysql_crud_operations() {
     
     vibez.spill("✅ MySQL SELECT successful")
     vibez.spill("   Columns:", stringz.join(result.column_names, ", "))
-    bestie (sus row []tea : result.rows) {
+    bestie (sus row tea[value] : result.rows) {
         vibez.spill("   Row:", stringz.join(row, " | "))
     }
     
@@ -355,7 +355,7 @@ slay test_sqlite_crud_operations() {
     
     vibez.spill("✅ SQLite SELECT successful")
     vibez.spill("   Columns:", stringz.join(result.column_names, ", "))
-    bestie (sus row []tea : result.rows) {
+    bestie (sus row tea[value] : result.rows) {
         vibez.spill("   Row:", stringz.join(row, " | "))
     }
     
@@ -392,7 +392,7 @@ slay test_connection_pooling() {
     vibez.spill("✅ MySQL connection pool: active =", mysql_active, "total =", mysql_total)
     
     fr fr Test multiple concurrent connections
-    sus results []QueryResult = []
+    sus results QueryResult[value] = []
     bestie (sus i drip = 0; i < 5; i++) {
         sus result QueryResult = postgres_real_query_simple(DEFAULT_POSTGRES_CONNECTION, "SELECT " + stringz.from_int(i) + " as test_value")
         results = results + [result]

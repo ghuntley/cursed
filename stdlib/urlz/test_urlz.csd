@@ -201,7 +201,7 @@ slay test_query_string_parsing() {
     testz.test_group("Query String Parsing")
     
     sus query tea = "name=John&age=30&city=NYC"
-    sus params []urlz.QueryParam = urlz.parse_query_string(query)
+    sus params urlz[value].QueryParam = urlz.parse_query_string(query)
     
     testz.assert_eq_str(params[0].key, "name")
     testz.assert_eq_str(params[0].value, "John")
@@ -210,7 +210,7 @@ slay test_query_string_parsing() {
 slay test_query_string_building() {
     testz.test_group("Query String Building")
     
-    sus params []urlz.QueryParam = [
+    sus params urlz[value].QueryParam = [
         urlz.QueryParam{key: "search", value: "cursed lang"},
         urlz.QueryParam{key: "page", value: "1"}
     ]
@@ -339,7 +339,7 @@ fr fr ===== SECURITY TESTS =====
 slay test_redirect_safety() {
     testz.test_group("Redirect Safety")
     
-    sus allowed_hosts []tea = ["example.com", "api.example.com", "secure.myapp.com"]
+    sus allowed_hosts tea[value] = ["example.com", "api.example.com", "secure.myapp.com"]
     
     fr fr Safe redirects
     testz.assert_lit(urlz.is_safe_redirect("https://example.com/login", allowed_hosts), based)
@@ -381,7 +381,7 @@ slay test_edge_cases() {
     testz.assert_lit(invalid_url.is_valid, cringe)
     
     fr fr Empty query string
-    sus empty_params []urlz.QueryParam = urlz.parse_query_string("")
+    sus empty_params urlz[value].QueryParam = urlz.parse_query_string("")
     testz.assert_eq_int(urlz.len(empty_params), 0)
     
     fr fr Missing query parameter
@@ -422,7 +422,7 @@ slay test_real_world_scenarios() {
     sus user_id tea = "123"
     sus user_endpoint tea = urlz.join_url_paths(base_api, "users/" + user_id)
     
-    sus query_params []urlz.QueryParam = [
+    sus query_params urlz[value].QueryParam = [
         urlz.QueryParam{key: "include", value: "profile,settings"},
         urlz.QueryParam{key: "format", value: "json"}
     ]
@@ -434,7 +434,7 @@ slay test_real_world_scenarios() {
     
     fr fr URL validation for redirect
     sus redirect_url tea = "https://trusted.myapp.com/dashboard"
-    sus allowed []tea = ["myapp.com", "trusted.myapp.com", "api.myapp.com"]
+    sus allowed tea[value] = ["myapp.com", "trusted.myapp.com", "api.myapp.com"]
     testz.assert_lit(urlz.is_safe_redirect(redirect_url, allowed), based)
 }
 

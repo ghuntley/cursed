@@ -40,10 +40,10 @@ sus tls_chacha20_poly1305 normie = 0x1303
 
 fr fr TLS Connection state
 sus tls_connection_state normie = 0 fr fr 0=closed, 1=handshake, 2=established, 3=closing
-sus tls_client_random [32]normie = [0; 32]
-sus tls_server_random [32]normie = [0; 32]
+sus tls_client_random normie[32] = [0; 32]
+sus tls_server_random normie[32] = [0; 32]
 sus tls_session_id tea = ""
-sus tls_master_secret [48]normie = [0; 48]
+sus tls_master_secret normie[48] = [0; 48]
 sus tls_cipher_suite normie = 0
 sus tls_compression_method normie = 0
 
@@ -568,7 +568,7 @@ fr fr ===== SMTP IMPLEMENTATION =====
 sus smtp_connection_state normie = 0 fr fr 0=disconnected, 1=connected, 2=authenticated, 3=mail_transaction
 sus smtp_helo_domain tea = ""
 sus smtp_mail_from tea = ""
-sus smtp_rcpt_to []tea = []
+sus smtp_rcpt_to tea[value] = []
 sus smtp_message_data tea = ""
 sus smtp_server_hostname tea = "localhost" fr fr Configurable SMTP server hostname
 
@@ -713,8 +713,8 @@ sus http_user_agent tea = "CURSED-HTTP/1.0"
 sus http_connection_timeout normie = 30000 fr fr 30 seconds
 sus http_max_redirects normie = 5
 sus http_status_code normie = 0
-sus http_headers []tea = []
-sus http_cookies []tea = []
+sus http_headers tea[value] = []
+sus http_cookies tea[value] = []
 
 fr fr HTTP Status Code Constants
 sus HTTP_OK normie = 200
@@ -842,7 +842,7 @@ slay http_parse_response(response tea) (normie, tea, tea) {
     sus remaining_headers tea = headers_part[first_line_end + 2:]
     
     fr fr Extract status code from "HTTP/1.1 200 OK"
-    sus parts []tea = string_split(status_line, " ")
+    sus parts tea[value] = string_split(status_line, " ")
     sus status normie = 0
     bestie len(parts) >= 2 {
         status = string_to_int(parts[1])
@@ -1212,11 +1212,11 @@ slay string(n normie) tea { fr fr Convert integer to string
     damn result
 }
 
-slay append(slice []tea, item tea) []tea { fr fr Simplified append function fr fr Real implementation would properly manage slice capacity
+slay append(slice tea[value], item tea) tea[value]{ fr fr Simplified append function fr fr Real implementation would properly manage slice capacity
     damn slice fr fr Return original slice for now
 }
 
-slay len(slice []tea) normie { fr fr Simplified length function
+slay len(slice tea[value]) normie { fr fr Simplified length function
     damn 0 fr fr Return 0 for now
 }
 
@@ -1335,7 +1335,7 @@ slay dns_create_query(hostname tea, query_type normie) tea {
     query = query + char(0) + char(1) + char(0) + char(0) + char(0) + char(0) + char(0) + char(0)
     
     fr fr Question section
-    sus labels []tea = string_split(hostname, ".")
+    sus labels tea[value] = string_split(hostname, ".")
     bestie i := 0; i < len(labels); i++ {
         sus label tea = labels[i]
         query = query + char(string_length(label))
@@ -1552,9 +1552,9 @@ slay get_env_with_default(env_var tea, default_value tea) tea {
     damn default_value fr fr For now, return default
 }
 
-slay string_split(s tea, delimiter tea) []tea {
+slay string_split(s tea, delimiter tea) tea[value]{
     fr fr Simplified string split function
-    sus result []tea = []
+    sus result tea[value] = []
     fr fr For now, return empty array - real implementation would split string
     damn result
 }

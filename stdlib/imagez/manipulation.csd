@@ -56,7 +56,7 @@ slay resize_nearest(src Image, dst *Image) yikes<lit> {
             src_x = max_drip(0, min_drip(src_x, src.width - 1))
             src_y = max_drip(0, min_drip(src_y, src.height - 1))
             
-            sus pixel []drip = get_pixel(src, src_x, src_y) fam {
+            sus pixel drip[value] = get_pixel(src, src_x, src_y) fam {
                 when _ -> yikes "failed to get source pixel"
             }
             
@@ -91,21 +91,21 @@ slay resize_bilinear(src Image, dst *Image) yikes<lit> {
             sus x2 drip = max_drip(0, min_drip(gxi + 1, src.width - 1))
             sus y2 drip = max_drip(0, min_drip(gyi + 1, src.height - 1))
             
-            sus p1 []drip = get_pixel(src, x1, y1) fam {
+            sus p1 drip[value] = get_pixel(src, x1, y1) fam {
                 when _ -> yikes "bilinear interpolation pixel access failed"
             }
-            sus p2 []drip = get_pixel(src, x2, y1) fam {
+            sus p2 drip[value] = get_pixel(src, x2, y1) fam {
                 when _ -> yikes "bilinear interpolation pixel access failed"
             }
-            sus p3 []drip = get_pixel(src, x1, y2) fam {
+            sus p3 drip[value] = get_pixel(src, x1, y2) fam {
                 when _ -> yikes "bilinear interpolation pixel access failed"
             }
-            sus p4 []drip = get_pixel(src, x2, y2) fam {
+            sus p4 drip[value] = get_pixel(src, x2, y2) fam {
                 when _ -> yikes "bilinear interpolation pixel access failed"
             }
             
             # Interpolate
-            sus result_pixel []drip = []
+            sus result_pixel drip[value] = []
             bestie (c drip = 0; c < src.channels; c = c + 1) {
                 sus a tea = p1[c] * (1.0 - dx) + p2[c] * dx
                 sus b tea = p3[c] * (1.0 - dx) + p4[c] * dx
@@ -139,7 +139,7 @@ slay resize_bicubic(src Image, dst *Image) yikes<lit> {
             sus dx tea = gx - gxi
             sus dy tea = gy - gyi
             
-            sus result_pixel []drip = []
+            sus result_pixel drip[value] = []
             
             bestie (c drip = 0; c < src.channels; c = c + 1) {
                 sus value tea = 0.0
@@ -150,7 +150,7 @@ slay resize_bicubic(src Image, dst *Image) yikes<lit> {
                         sus sample_x drip = clamp_drip(gxi + kx, 0, src.width - 1)
                         sus sample_y drip = clamp_drip(gyi + ky, 0, src.height - 1)
                         
-                        sus sample_pixel []drip = get_pixel(src, sample_x, sample_y) fam {
+                        sus sample_pixel drip[value] = get_pixel(src, sample_x, sample_y) fam {
                             when _ -> yikes "bicubic sample pixel access failed"
                         }
                         
@@ -209,7 +209,7 @@ slay crop_image(img Image, x drip, y drip, width drip, height drip) yikes<Image>
             sus src_x drip = x + col
             sus src_y drip = y + row
             
-            sus pixel []drip = get_pixel(img, src_x, src_y) fam {
+            sus pixel drip[value] = get_pixel(img, src_x, src_y) fam {
                 when _ -> yikes "crop pixel access failed"
             }
             
@@ -233,7 +233,7 @@ slay rotate_image(img Image, angle tea) yikes<Image> {
     sus sin_angle tea = sin(radians)
     
     # Calculate new image dimensions
-    sus corners [][]tea = [
+    sus corners tea[value][value] = [
         [0.0, 0.0],
         [img.width - 1, 0.0],
         [0.0, img.height - 1],
@@ -288,7 +288,7 @@ slay rotate_image(img Image, angle tea) yikes<Image> {
             sus src_y drip = drip(orig_y)
             
             ready (src_x >= 0 && src_x < img.width && src_y >= 0 && src_y < img.height) {
-                sus pixel []drip = get_pixel(img, src_x, src_y) fam {
+                sus pixel drip[value] = get_pixel(img, src_x, src_y) fam {
                     when _ -> continue  # Skip invalid pixels
                 }
                 
@@ -316,7 +316,7 @@ slay flip_horizontal(img Image) yikes<Image> {
         bestie (x drip = 0; x < img.width; x = x + 1) {
             sus src_x drip = img.width - 1 - x
             
-            sus pixel []drip = get_pixel(img, src_x, y) fam {
+            sus pixel drip[value] = get_pixel(img, src_x, y) fam {
                 when _ -> yikes "horizontal flip pixel access failed"
             }
             
@@ -343,7 +343,7 @@ slay flip_vertical(img Image) yikes<Image> {
         bestie (x drip = 0; x < img.width; x = x + 1) {
             sus src_y drip = img.height - 1 - y
             
-            sus pixel []drip = get_pixel(img, x, src_y) fam {
+            sus pixel drip[value] = get_pixel(img, x, src_y) fam {
                 when _ -> yikes "vertical flip pixel access failed"
             }
             
@@ -369,14 +369,14 @@ slay scale_image(img Image, scale_x tea, scale_y tea, interpolation tea) yikes<I
 }
 
 # Fill image with solid color
-slay fill_image(img *Image, color []drip) yikes<lit> {
+slay fill_image(img *Image, color drip[value]) yikes<lit> {
     ready (len(color) < img.channels) {
         yikes "color has insufficient channels"
     }
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = []
+            sus pixel drip[value] = []
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 pixel = append(pixel, color[c])
             }
@@ -406,7 +406,7 @@ slay extract_channel(img Image, channel drip) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "channel extraction pixel access failed"
             }
             

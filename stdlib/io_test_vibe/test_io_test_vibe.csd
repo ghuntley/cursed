@@ -8,7 +8,7 @@ slay test_one_byte_reader() {
     sus reader := io_test_vibe.NewOneByteReader(input)
     
     fr fr Test reading one byte at a time
-    sus buffer := make([]byte, 5)
+    sus buffer := make(byte[value], 5)
     sus n, err := reader.Read(buffer)
     
     assert_eq_int(n, 1)
@@ -16,7 +16,7 @@ slay test_one_byte_reader() {
     assert_eq_int(normie(buffer[0]), normie('h'))
     
     fr fr Test reading at EOF
-    sus longBuffer := make([]byte, 100)
+    sus longBuffer := make(byte[value], 100)
     sus totalRead := 0
     
     for totalRead < len(input) {
@@ -40,14 +40,14 @@ slay test_half_reader() {
     sus reader := io_test_vibe.NewHalfReader(input)
     
     fr fr Test reading half of requested bytes
-    sus buffer := make([]byte, 8)
+    sus buffer := make(byte[value], 8)
     sus n, err := reader.Read(buffer)
     
     assert_eq_string(err, "")
     assert_eq_int(n, 4) fr fr Half of 8
     
     fr fr Test with odd number
-    sus buffer2 := make([]byte, 5)
+    sus buffer2 := make(byte[value], 5)
     sus n2, err2 := reader.Read(buffer2)
     
     assert_eq_string(err2, "")
@@ -86,7 +86,7 @@ slay test_timeout_reader() {
     reader.SetTimeout(5, io_test_vibe.ErrTimeout)
     
     fr fr Read until timeout
-    sus buffer := make([]byte, 20)
+    sus buffer := make(byte[value], 20)
     sus n, err := reader.Read(buffer)
     
     assert_eq_string(err, "")
@@ -115,7 +115,7 @@ slay test_err_reader() {
     sus reader := io_test_vibe.NewErrReader(customErr)
     
     fr fr Test that it always returns error
-    sus buffer := make([]byte, 10)
+    sus buffer := make(byte[value], 10)
     sus n, err := reader.Read(buffer)
     
     assert_eq_int(n, 0)
@@ -136,14 +136,14 @@ slay test_truncate_writer() {
     sus writer := io_test_vibe.NewTruncateWriter(5, io_test_vibe.ErrShortWrite)
     
     fr fr Write within limit
-    sus data1 := []byte("hello")
+    sus data1 := byte[value]("hello")
     sus n1, err1 := writer.Write(data1)
     
     assert_eq_int(n1, 5)
     assert_eq_string(err1, io_test_vibe.ErrShortWrite)
     
     fr fr Try to write more - should error
-    sus data2 := []byte("world")
+    sus data2 := byte[value]("world")
     sus n2, err2 := writer.Write(data2)
     
     assert_eq_int(n2, 0)
@@ -162,7 +162,7 @@ slay test_network_condition() {
     sus reader := io_test_vibe.NewNetworkCondition(input, 0.1, 10)
     
     fr fr Test reading with network conditions
-    sus buffer := make([]byte, 5)
+    sus buffer := make(byte[value], 5)
     sus n, err := reader.Read(buffer)
     
     fr fr Should read some data (packet loss might occur)
@@ -179,7 +179,7 @@ slay test_random_fail_reader() {
     sus reader := io_test_vibe.NewRandomFailReader(input, 0.2, "random failure")
     
     fr fr Test reading with random failures
-    sus buffer := make([]byte, 5)
+    sus buffer := make(byte[value], 5)
     sus n, err := reader.Read(buffer)
     
     fr fr Should read some data or fail randomly
@@ -196,7 +196,7 @@ slay test_bandwidth_limited_reader() {
     sus reader := io_test_vibe.NewBandwidthLimitedReader(input, 10)
     
     fr fr Test bandwidth limited reading
-    sus buffer := make([]byte, 20)
+    sus buffer := make(byte[value], 20)
     sus n, err := reader.Read(buffer)
     
     assert_eq_string(err, "")
@@ -213,7 +213,7 @@ slay test_metered_reader() {
     sus reader := io_test_vibe.NewMeteredReader(input)
     
     fr fr Read data to generate statistics
-    sus buffer := make([]byte, 5)
+    sus buffer := make(byte[value], 5)
     sus n1, err1 := reader.Read(buffer)
     assert_eq_string(err1, "")
     
@@ -236,7 +236,7 @@ slay test_buffering_validator() {
     sus validator := io_test_vibe.NewBufferingValidator(input, 5)
     
     fr fr Read with expected buffer size
-    sus buffer := make([]byte, 5)
+    sus buffer := make(byte[value], 5)
     sus n, err := validator.Read(buffer)
     
     assert_eq_string(err, "")
@@ -275,7 +275,7 @@ slay test_test_reader() {
     test_start("TestReader")
     
     sus input := "hello world"
-    sus expected := []byte(input)
+    sus expected := byte[value](input)
     
     sus err := io_test_vibe.TestReader(input, expected)
     assert_eq_string(err, "")
@@ -286,7 +286,7 @@ slay test_test_reader() {
 slay test_test_writer() {
     test_start("TestWriter")
     
-    sus data := []byte("hello world")
+    sus data := byte[value]("hello world")
     sus err := io_test_vibe.TestWriter(data)
     
     assert_eq_string(err, "")
@@ -315,7 +315,7 @@ slay test_verify_read() {
     
     sus input := "hello world"
     sus reader := io_test_vibe.NewOneByteReader(input)
-    sus expected := []byte(input)
+    sus expected := byte[value](input)
     
     sus err := io_test_vibe.VerifyRead(reader, expected)
     assert_eq_string(err, "")
@@ -327,7 +327,7 @@ slay test_verify_write() {
     test_start("VerifyWrite")
     
     sus writer := io_test_vibe.NewTruncateWriter(20, "should not error")
-    sus data := []byte("hello world")
+    sus data := byte[value]("hello world")
     
     sus err := io_test_vibe.VerifyWrite(writer, data)
     assert_eq_string(err, "")

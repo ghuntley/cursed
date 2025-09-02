@@ -109,7 +109,7 @@ fr fr ===== HTTP REQUEST ADVANCED TESTS =====
 test_group("HTTP Advanced Request Handling")
 
 fr fr Test custom headers
-sus headers []tea = []
+sus headers tea[value] = []
 headers = arrayz.push(headers, "Authorization: Bearer test-token")
 headers = arrayz.push(headers, "X-Custom-Header: test-value")
 headers = arrayz.push(headers, "Accept: application/json")
@@ -202,7 +202,7 @@ sus pool_config HttpClientConfig = HttpClientConfig{
 }
 
 fr fr Multiple requests to same host should reuse connection
-sus pool_responses []HttpResponse = []
+sus pool_responses HttpResponse[value] = []
 sus i drip = 0
 bestie (i < 3) {
     sus pool_response HttpResponse = http_request_smart("GET", "https://httpbin.org/uuid", 
@@ -218,7 +218,7 @@ bestie (i < 3) {
 assert_eq_int(arrayz.len(pool_responses), 3, "Multiple requests completed")
 
 fr fr Test connection limits
-sus concurrent_responses []HttpResponse = []
+sus concurrent_responses HttpResponse[value] = []
 i = 0
 bestie (i < 10) {
     sus concurrent_response HttpResponse = http_get_smart("https://httpbin.org/delay/1") fam {
@@ -314,7 +314,7 @@ test_group("Performance and Stress Testing")
 
 fr fr Test rapid sequential requests
 sus sequential_start_time drip = current_timestamp()
-sus sequential_responses []HttpResponse = []
+sus sequential_responses HttpResponse[value] = []
 i = 0
 bestie (i < 5) {
     sus seq_response HttpResponse = http_get_smart("https://httpbin.org/uuid") fam {
@@ -373,7 +373,7 @@ sus ua_response HttpResponse = http_request_smart("GET", "https://httpbin.org/us
 }
 
 fr fr Test header injection prevention
-sus malicious_headers []tea = []
+sus malicious_headers tea[value] = []
 malicious_headers = arrayz.push(malicious_headers, "Host: evil.example.com")
 malicious_headers = arrayz.push(malicious_headers, "Content-Length: 999999")
 

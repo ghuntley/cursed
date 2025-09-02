@@ -21,7 +21,7 @@ sus POINTER normie = 13
 sus GOROUTINE normie = 14
 
 fr fr Type name mapping with full coverage
-sus type_names []tea = [
+sus type_names tea[value] = [
     "invalid",
     "lit",
     "normie", 
@@ -40,7 +40,7 @@ sus type_names []tea = [
 ]
 
 fr fr Real type size mapping based on actual memory layout
-sus type_sizes []normie = [
+sus type_sizes normie[value] = [
     0,  fr fr invalid
     1,  fr fr bool
     8,  fr fr int
@@ -80,7 +80,7 @@ slay typeof_string(value tea) normie {
     damn STRING
 }
 
-slay typeof_array(value []normie) normie {
+slay typeof_array(value normie[value]) normie {
     fr fr Return type kind for array values
     damn ARRAY
 }
@@ -154,7 +154,7 @@ slay DeepEqualStrings(x tea, y tea) lit {
     damn x == y
 }
 
-slay DeepEqualArrays(x []normie, y []normie) lit {
+slay DeepEqualArrays(x normie[value], y normie[value]) lit {
     fr fr Compare arrays element by element
     lowkey len(x) != len(y) {
         damn cringe
@@ -170,7 +170,7 @@ slay DeepEqualArrays(x []normie, y []normie) lit {
     damn based
 }
 
-slay DeepEqualFloatArrays(x []meal, y []meal) lit {
+slay DeepEqualFloatArrays(x meal[value], y meal[value]) lit {
     fr fr Compare float arrays with epsilon tolerance
     lowkey len(x) != len(y) {
         damn cringe
@@ -209,9 +209,9 @@ slay DeepCopyString(s tea) tea {
     damn s
 }
 
-slay DeepCopyArray(arr []normie) []normie {
+slay DeepCopyArray(arr normie[value]) normie[value]{
     fr fr Create new array with copied elements
-    sus result []normie = []
+    sus result normie[value] = []
     sus i normie = 0
     bestie (i < len(arr)) {
         result = append(result, DeepCopy(arr[i]))
@@ -220,9 +220,9 @@ slay DeepCopyArray(arr []normie) []normie {
     damn result
 }
 
-slay DeepCopyFloatArray(arr []meal) []meal {
+slay DeepCopyFloatArray(arr meal[value]) meal[value]{
     fr fr Create new float array with copied elements
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie (i < len(arr)) {
         result = append(result, DeepCopyFloat(arr[i]))
@@ -231,9 +231,9 @@ slay DeepCopyFloatArray(arr []meal) []meal {
     damn result
 }
 
-slay DeepCopyStringArray(arr []tea) []tea {
+slay DeepCopyStringArray(arr tea[value]) tea[value]{
     fr fr Create new string array with copied elements
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = 0
     bestie (i < len(arr)) {
         result = append(result, DeepCopyString(arr[i]))
@@ -432,7 +432,7 @@ slay get_type_info_string(value tea) TypeInfo {
     damn create_type_info("tea", STRING)
 }
 
-slay get_type_info_array(value []normie) TypeInfo {
+slay get_type_info_array(value normie[value]) TypeInfo {
     fr fr Get complete type info for array
     damn create_type_info("array", ARRAY)
 }
@@ -464,7 +464,7 @@ slay inspect_string_value(value tea) tea {
     damn result
 }
 
-slay inspect_array_value(value []normie) tea {
+slay inspect_array_value(value normie[value]) tea {
     sus type_info TypeInfo = get_type_info_array(value)
     sus result tea = "Array{length=" + stringify_int(len(value)) +
                      ", type=" + type_info.name +
@@ -520,12 +520,12 @@ slay stringify_bool(value lit) tea {
 
 fr fr Array utilities
 
-slay reflect_array_len(arr []normie) normie {
+slay reflect_array_len(arr normie[value]) normie {
     fr fr Get array length using reflection
     damn len(arr)  fr fr Use built-in len function
 }
 
-slay reflect_array_append(arr []normie, item normie) []normie {
+slay reflect_array_append(arr normie[value], item normie) normie[value]{
     fr fr Append item to array using reflection
     damn append(arr, item)  fr fr Use built-in append function
 }
@@ -614,10 +614,10 @@ slay get_method_signature(type_name tea, method_name tea) tea {
         }
         "array" => {
             ready (method_name) {
-                "len" => damn "slay len(arr []T) normie"
-                "append" => damn "slay append(arr []T, item T) []T"
-                "get" => damn "slay get(arr []T, index normie) T"
-                "set" => damn "slay set(arr []T, index normie, item T)"
+                "len" => damn "slay len(arr T[value]) normie"
+                "append" => damn "slay append(arr T[value], item T) T[value]"
+                "get" => damn "slay get(arr T[value], index normie) T"
+                "set" => damn "slay set(arr T[value], index normie, item T)"
                 _ => damn "unknown method"
             }
         }
@@ -625,7 +625,7 @@ slay get_method_signature(type_name tea, method_name tea) tea {
     }
 }
 
-slay list_methods(type_name tea) []tea {
+slay list_methods(type_name tea) tea[value]{
     fr fr List all available methods for a type with comprehensive coverage
     ready (type_name) {
         "tea" => damn ["len", "char_at", "contains", "to_upper", "to_lower"]
@@ -741,7 +741,7 @@ slay test_reflection_comprehensive() lit {
     }
     
     fr fr Test array reflection
-    sus test_array []normie = [1, 2, 3]
+    sus test_array normie[value] = [1, 2, 3]
     sus array_type TypeInfo = get_type_info_array(test_array)
     lowkey array_type.name != "array" || array_type.kind != ARRAY {
         damn cringe
@@ -786,7 +786,7 @@ slay test_reflection_comprehensive() lit {
     }
     
     fr fr Test method listing
-    sus tea_methods []tea = list_methods("tea")
+    sus tea_methods tea[value] = list_methods("tea")
     lowkey len(tea_methods) < 3 {  fr fr Should have at least len, char_at, contains
         damn cringe
     }

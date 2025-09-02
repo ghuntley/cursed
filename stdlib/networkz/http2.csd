@@ -25,8 +25,8 @@ squad Http2StreamState {
     sus state drip           // 0=idle, 1=open, 2=reserved_local, 3=reserved_remote, 4=half_closed_local, 5=half_closed_remote, 6=closed
     sus local_window drip    // Flow control window size for local
     sus remote_window drip   // Flow control window size for remote
-    sus headers []tea        // Stream headers
-    sus data_frames []tea    // Accumulated data frames
+    sus headers tea[value]        // Stream headers
+    sus data_frames tea[value]    // Accumulated data frames
     sus priority_weight drip // Stream priority weight (1-256)
     sus priority_dependency drip // Stream dependency (31-bit stream ID)
     sus priority_exclusive lit   // Exclusive priority flag
@@ -38,7 +38,7 @@ squad Http2Connection {
     sus connection_preface_received lit
     sus settings_sent lit
     sus settings_acked lit
-    sus streams [1000]Http2StreamState  // Active streams (max 1000 concurrent)
+    sus streams Http2StreamState[1000]  // Active streams (max 1000 concurrent)
     sus stream_count drip
     sus next_stream_id drip     // Next stream ID to use (client uses odd, server uses even)
     sus is_server lit           // Is this a server connection
@@ -117,14 +117,14 @@ squad HpackEntry {
 }
 
 squad HpackDynamicTable {
-    sus entries [4096]HpackEntry  // Dynamic table entries
+    sus entries HpackEntry[4096]  // Dynamic table entries
     sus size drip               // Current table size
     sus max_size drip           // Maximum table size (default 4096)
     sus insertion_count drip    // Number of insertions
 }
 
 // Static table (RFC 7541 Appendix B)
-sus hpack_static_table []HpackEntry = [
+sus hpack_static_table HpackEntry[value] = [
     HpackEntry{name: ":authority", value: "", size: 42},
     HpackEntry{name: ":method", value: "GET", size: 42},
     HpackEntry{name: ":method", value: "POST", size: 43},
@@ -271,7 +271,7 @@ slay receive_connection_preface(conn Http2Connection) yikes<lit> {
 
 slay create_frame_header(frame_type drip, flags drip, stream_id drip, payload_length drip) tea {
     // Frame header is 9 bytes: 3 bytes length + 1 byte type + 1 byte flags + 4 bytes stream ID
-    sus header []drip = [
+    sus header drip[value] = [
         (payload_length >> 16) & 0xFF,    // Length (24-bit, big-endian)
         (payload_length >> 8) & 0xFF,
         payload_length & 0xFF,
@@ -298,7 +298,7 @@ slay parse_frame_header(header_bytes tea) yikes<Http2Frame> {
         yikes create_network_error_advanced("http2_frame", "Invalid frame header length", HTTP2_FRAME_SIZE_ERROR, "")
     }
 
-    sus bytes []drip = stringz.to_bytes(header_bytes)
+    sus bytes drip[value] = stringz.to_bytes(header_bytes)
     
     sus payload_length drip = (bytes[0] << 16) | (bytes[1] << 8) | bytes[2]
     sus frame_type drip = bytes[3]
@@ -367,7 +367,7 @@ slay create_settings_frame(settings Http2Settings, ack lit) Http2Frame {
 
     ready (!ack) {
         // Each setting is 6 bytes: 2 bytes identifier + 4 bytes value
-        sus setting_pairs []drip = [
+        sus setting_pairs drip[value] = [
             1, settings.header_table_size,      // SETTINGS_HEADER_TABLE_SIZE
             2, settings.enable_push,            // SETTINGS_ENABLE_PUSH  
             3, settings.max_concurrent_streams, // SETTINGS_MAX_CONCURRENT_STREAMS
@@ -423,7 +423,7 @@ slay process_settings_frame(conn Http2Connection, frame Http2Frame) yikes<lit> {
         yikes create_network_error_advanced("http2_settings", "Invalid SETTINGS frame payload length", HTTP2_FRAME_SIZE_ERROR, "")
     }
 
-    sus payload_bytes []drip = stringz.to_bytes(frame.payload)
+    sus payload_bytes drip[value] = stringz.to_bytes(frame.payload)
     sus i drip = 0
     
     bestie (i < frame.payload_length) {
@@ -619,12 +619,12 @@ slay hpack_encode_integer(value drip, prefix_bits drip, first_byte drip) tea {
     damn result
 }
 
-slay hpack_decode_integer(data tea, offset drip, prefix_bits drip) yikes<[2]drip> {
+slay hpack_decode_integer(data tea, offset drip, prefix_bits drip) yikes<drip[2]> {
     ready (offset >= stringz.len(data)) {
         yikes create_network_error_advanced("hpack", "Insufficient data for integer", HTTP2_COMPRESSION_ERROR, "")
     }
 
-    sus bytes []drip = stringz.to_bytes(data)
+    sus bytes drip[value] = stringz.to_bytes(data)
     sus max_prefix drip = (1 << prefix_bits) - 1
     sus value drip = bytes[offset] & max_prefix
     sus consumed drip = 1
@@ -658,7 +658,7 @@ slay hpack_decode_integer(data tea, offset drip, prefix_bits drip) yikes<[2]drip
 
 slay hpack_encode_string(str tea, huffman lit) tea {
     sus result tea = ""
-    sus str_bytes []drip = stringz.to_bytes(str)
+    sus str_bytes drip[value] = stringz.to_bytes(str)
     sus length drip = stringz.len(str)
 
     // For simplicity, we'll skip Huffman encoding and use literal strings
@@ -669,15 +669,15 @@ slay hpack_encode_string(str tea, huffman lit) tea {
     damn result
 }
 
-slay hpack_decode_string(data tea, offset drip) yikes<[2]tea> {
+slay hpack_decode_string(data tea, offset drip) yikes<tea[2]> {
     ready (offset >= stringz.len(data)) {
         yikes create_network_error_advanced("hpack", "Insufficient data for string", HTTP2_COMPRESSION_ERROR, "")
     }
 
-    sus bytes []drip = stringz.to_bytes(data)
+    sus bytes drip[value] = stringz.to_bytes(data)
     sus huffman lit = (bytes[offset] & 0x80) != 0
     
-    sus length_result [2]drip = hpack_decode_integer(data, offset, 7) fam {
+    sus length_result drip[2] = hpack_decode_integer(data, offset, 7) fam {
         when err -> yikes err
     }
     sus length drip = length_result[0]
@@ -705,7 +705,7 @@ slay hpack_decode_string(data tea, offset drip) yikes<[2]tea> {
 
 slay huffman_decode(encoded_str tea) tea {
     // HPACK Huffman decoding implementation based on RFC 7541 Appendix B
-    sus huffman_decode_table [][]drip = [
+    sus huffman_decode_table drip[value][value] = [
         [0x1ff8, 13], [0x7fffd8, 23], [0xfffffe2, 28], [0xfffffe3, 28],  // 0-3
         [0xfffffe4, 28], [0xfffffe5, 28], [0xfffffe6, 28], [0xfffffe7, 28],  // 4-7
         [0xfffffe8, 28], [0xffffea, 24], [0x3ffffffc, 30], [0xfffffe9, 28],  // 8-11
@@ -718,7 +718,7 @@ slay huffman_decode(encoded_str tea) tea {
         // ... Additional Huffman table entries would continue here
     ]
     
-    sus decoded_chars []tea = []
+    sus decoded_chars tea[value] = []
     sus bit_buffer drip = 0
     sus bit_count drip = 0
     
@@ -736,7 +736,7 @@ slay huffman_decode(encoded_str tea) tea {
                 
                 // Search for matching Huffman code
                 bestie (table_idx < arrayz.len(huffman_decode_table)) {
-                    sus entry []drip = huffman_decode_table[table_idx]
+                    sus entry drip[value] = huffman_decode_table[table_idx]
                     ready (entry[0] == test_code && entry[1] == code_len) {
                         // Found matching code, decode to character
                         ready (table_idx <= 255) {
@@ -765,7 +765,7 @@ slay huffman_decode(encoded_str tea) tea {
 
 // ==== HEADERS FRAME IMPLEMENTATION ====
 
-slay create_headers_frame(stream_id drip, headers []tea, end_stream lit, end_headers lit) yikes<Http2Frame> {
+slay create_headers_frame(stream_id drip, headers tea[value], end_stream lit, end_headers lit) yikes<Http2Frame> {
     ready (stream_id == 0) {
         yikes create_network_error_advanced("http2_headers", "HEADERS frame with stream ID 0", HTTP2_PROTOCOL_ERROR, "")
     }
@@ -810,7 +810,7 @@ slay create_headers_frame(stream_id drip, headers []tea, end_stream lit, end_hea
     }
 }
 
-slay process_headers_frame(conn Http2Connection, frame Http2Frame) yikes<[]tea> {
+slay process_headers_frame(conn Http2Connection, frame Http2Frame) yikes<tea[value]> {
     ready (frame.stream_id == 0) {
         yikes create_network_error_advanced("http2_headers", "HEADERS frame with stream ID 0", HTTP2_PROTOCOL_ERROR, "")
     }
@@ -830,12 +830,12 @@ slay process_headers_frame(conn Http2Connection, frame Http2Frame) yikes<[]tea> 
     }
 
     // Decode HPACK-compressed headers
-    sus headers []tea = []
+    sus headers tea[value] = []
     sus offset drip = 0
     sus payload tea = frame.payload
 
     bestie (offset < stringz.len(payload)) {
-        sus bytes []drip = stringz.to_bytes(payload)
+        sus bytes drip[value] = stringz.to_bytes(payload)
         sus pattern drip = bytes[offset] & 0xF0
 
         sick pattern {
@@ -843,14 +843,14 @@ slay process_headers_frame(conn Http2Connection, frame Http2Frame) yikes<[]tea> 
                 offset = offset + 1  // Skip pattern byte
                 
                 // Decode name
-                sus name_result [2]tea = hpack_decode_string(payload, offset) fam {
+                sus name_result tea[2] = hpack_decode_string(payload, offset) fam {
                     when err -> yikes err
                 }
                 sus name tea = name_result[0]
                 offset = offset + mathz.parse_int(name_result[1])
 
                 // Decode value  
-                sus value_result [2]tea = hpack_decode_string(payload, offset) fam {
+                sus value_result tea[2] = hpack_decode_string(payload, offset) fam {
                     when err -> yikes err
                 }
                 sus value tea = value_result[0]
@@ -860,7 +860,7 @@ slay process_headers_frame(conn Http2Connection, frame Http2Frame) yikes<[]tea> 
                 headers = arrayz.push(headers, header)
             }
             when 0x80 -> {  // Indexed header field
-                sus index_result [2]drip = hpack_decode_integer(payload, offset, 7) fam {
+                sus index_result drip[2] = hpack_decode_integer(payload, offset, 7) fam {
                     when err -> yikes err
                 }
                 sus index drip = index_result[0]
@@ -981,7 +981,7 @@ slay process_window_update_frame(conn Http2Connection, frame Http2Frame) yikes<l
         yikes create_network_error_advanced("http2_window", "Invalid WINDOW_UPDATE frame size", HTTP2_FRAME_SIZE_ERROR, "")
     }
 
-    sus bytes []drip = stringz.to_bytes(frame.payload)
+    sus bytes drip[value] = stringz.to_bytes(frame.payload)
     sus increment drip = ((bytes[0] & 0x7F) << 24) | (bytes[1] << 16) | (bytes[2] << 8) | bytes[3]
 
     ready (increment == 0) {
@@ -1032,7 +1032,7 @@ slay http2_get(url tea) yikes<HttpResponse> {
     }
 
     // Create request headers
-    sus headers []tea = [
+    sus headers tea[value] = [
         ":method: GET",
         stringz.concat([":authority: ", url_parts.host]),
         stringz.concat([":path: ", url_parts.path]),
@@ -1059,7 +1059,7 @@ slay http2_get(url tea) yikes<HttpResponse> {
     }
 
     // Receive response frames
-    sus response_headers []tea = []
+    sus response_headers tea[value] = []
     sus response_body tea = ""
     sus response_complete lit = no_cap
 
@@ -1173,7 +1173,7 @@ slay http2_post(url tea, body tea, content_type tea) yikes<HttpResponse> {
     }
 
     // Create request headers
-    sus headers []tea = [
+    sus headers tea[value] = [
         ":method: POST",
         stringz.concat([":authority: ", url_parts.host]),
         stringz.concat([":path: ", url_parts.path]),
@@ -1219,7 +1219,7 @@ slay http2_post(url tea, body tea, content_type tea) yikes<HttpResponse> {
     }
 
     // Receive response (same as GET)
-    sus response_headers []tea = []
+    sus response_headers tea[value] = []
     sus response_body tea = ""
     sus response_complete lit = no_cap
 

@@ -23,8 +23,8 @@ squad WasmSecurityPolicy {
     max_memory_pages drip,
     max_stack_depth drip,
     max_execution_time drip,
-    allowed_imports []tea,
-    blocked_opcodes []drip,
+    allowed_imports tea[value],
+    blocked_opcodes drip[value],
     enable_bounds_checking lit,
     enable_stack_checking lit,
     enable_time_limits lit,
@@ -61,9 +61,9 @@ squad WasmSecurityContext {
     policy WasmSecurityPolicy,
     current_stack_depth drip,
     execution_start_time drip,
-    memory_access_log []drip,
+    memory_access_log drip[value],
     violation_count drip,
-    violations []drip,
+    violations drip[value],
 }
 
 fr fr Global security context
@@ -199,7 +199,7 @@ slay wasm_validate_memory_limits(module_id drip, max_pages drip) lit {
     damn based
 }
 
-slay wasm_validate_import_restrictions(module_id drip, allowed_imports []tea) lit {
+slay wasm_validate_import_restrictions(module_id drip, allowed_imports tea[value]) lit {
     sus module_imports = wasm_get_module_imports(module_id)
     
     bestie import_name in module_imports {
@@ -221,7 +221,7 @@ slay wasm_validate_import_restrictions(module_id drip, allowed_imports []tea) li
     damn based
 }
 
-slay wasm_validate_bytecode_safety(module_id drip, blocked_opcodes []drip) lit {
+slay wasm_validate_bytecode_safety(module_id drip, blocked_opcodes drip[value]) lit {
     sus module_bytecode = wasm_get_module_bytecode(module_id)
     
     bestie opcode in module_bytecode {
@@ -380,17 +380,17 @@ slay wasm_get_module_memory_pages(module_id drip) drip {
     damn 64 fr fr Simplified - return reasonable default
 }
 
-slay wasm_get_module_imports(module_id drip) []tea {
+slay wasm_get_module_imports(module_id drip) tea[value]{
     fr fr Get list of imports requested by module
     damn ["js.console_log"] fr fr Simplified
 }
 
-slay wasm_get_module_bytecode(module_id drip) []drip {
+slay wasm_get_module_bytecode(module_id drip) drip[value]{
     fr fr Get module bytecode for analysis
     damn [0x41, 0x2A, 0x0F] fr fr Simplified - i32.const 42, return
 }
 
-slay wasm_detect_infinite_loops(bytecode []drip) lit {
+slay wasm_detect_infinite_loops(bytecode drip[value]) lit {
     fr fr Analyze bytecode for potential infinite loops
     fr fr Look for loops without yield points or termination conditions
     
@@ -423,7 +423,7 @@ slay wasm_detect_infinite_loops(bytecode []drip) lit {
     damn loop_depth > 0 && !has_yield_point
 }
 
-slay wasm_detect_memory_bombs(bytecode []drip) lit {
+slay wasm_detect_memory_bombs(bytecode drip[value]) lit {
     fr fr Detect patterns that could lead to excessive memory allocation
     
     sus memory_alloc_count drip = 0
@@ -448,7 +448,7 @@ slay wasm_detect_memory_bombs(bytecode []drip) lit {
     damn memory_grow_count > 10 || memory_alloc_count > 50
 }
 
-slay wasm_detect_stack_overflow_attempts(bytecode []drip) lit {
+slay wasm_detect_stack_overflow_attempts(bytecode drip[value]) lit {
     fr fr Detect recursive calls without proper termination
     
     sus call_count drip = 0

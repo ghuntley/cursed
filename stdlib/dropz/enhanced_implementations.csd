@@ -56,8 +56,8 @@ slay string_contains_real(s tea, substr tea) lit {
 
 fr fr Enhanced file descriptor management with real state tracking
 sus global_fd_counter normie = 3 fr fr Start after stdin/stdout/stderr
-sus fd_map [100]lit fr fr Track open file descriptors
-sus fd_names [100]tea fr fr Track filenames for each fd
+sus fd_map lit[100] fr fr Track open file descriptors
+sus fd_names tea[100] fr fr Track filenames for each fd
 
 slay get_file_descriptor_real(filename tea, flags normie, mode normie) normie {
     check filename == "" {
@@ -98,30 +98,30 @@ slay close_file_descriptor(fd normie) tea {
 }
 
 fr fr Enhanced file operations with real data handling
-slay read_file_real(filename tea) ([]byte, tea) {
+slay read_file_real(filename tea) (byte[value], tea) {
     sus file, err := open_real(filename)
     check err != "" {
         damn [], err
     } fr fr Simulate reading based on filename patterns
-    sus data []byte
+    sus data byte[value]
     
     check string_contains_real(filename, ".txt") { fr fr Text file content
-        data = []byte{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
+        data = byte[value]{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100} fr fr "Hello World"
     } elseif string_contains_real(filename, ".csd") { fr fr CURSED source file
-        data = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41} fr fr vibez.spill("Hi")
+        data = byte[value]{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 105, 34, 41} fr fr vibez.spill("Hi")
     } elseif string_contains_real(filename, ".json") { fr fr JSON content
-        data = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
+        data = byte[value]{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
     } elseif string_contains_real(filename, "config") { fr fr Configuration content
-        data = []byte{110, 97, 109, 101, 61, 116, 101, 115, 116} fr fr name=test
+        data = byte[value]{110, 97, 109, 101, 61, 116, 101, 115, 116} fr fr name=test
     } else { fr fr Default content for unknown file types
-        data = []byte{100, 97, 116, 97} fr fr "data"
+        data = byte[value]{100, 97, 116, 97} fr fr "data"
     }
     
     file.close_real()
     damn data, ""
 }
 
-slay write_file_real(filename tea, data []byte, perm normie) tea {
+slay write_file_real(filename tea, data byte[value], perm normie) tea {
     sus file, err := create_real(filename)
     check err != "" {
         damn err
@@ -204,7 +204,7 @@ slay create_real(filename tea) (*FileReal, tea) {
 }
 
 fr fr Enhanced file methods with real behavior
-slay (f *FileReal) read_real(b []byte) (normie, tea) {
+slay (f *FileReal) read_real(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, "file not open"
     }
@@ -229,7 +229,7 @@ slay (f *FileReal) read_real(b []byte) (normie, tea) {
     damn to_read, ""
 }
 
-slay (f *FileReal) write_real(b []byte) (normie, tea) {
+slay (f *FileReal) write_real(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, "file not open"
     }
@@ -287,14 +287,14 @@ slay (f *FileReal) seek_real(offset thicc, whence normie) (thicc, tea) {
 }
 
 fr fr Enhanced directory operations
-slay read_dir_real(dirname tea) ([]DirEntry, tea) {
+slay read_dir_real(dirname tea) (DirEntry[value], tea) {
     check dirname == "" {
         damn [], "invalid directory name"
     }
     
-    sus entries []DirEntry fr fr Simulate directory contents based on path
+    sus entries DirEntry[value] fr fr Simulate directory contents based on path
     check dirname == "/" {
-        entries = []DirEntry{
+        entries = DirEntry[value]{
             DirEntry{
                 name: "home",
                 is_dir: based,
@@ -321,7 +321,7 @@ slay read_dir_real(dirname tea) ([]DirEntry, tea) {
             }
         }
     } elseif string_contains_real(dirname, "home") {
-        entries = []DirEntry{
+        entries = DirEntry[value]{
             DirEntry{
                 name: "user",
                 is_dir: based,
@@ -340,7 +340,7 @@ slay read_dir_real(dirname tea) ([]DirEntry, tea) {
             }
         }
     } elseif string_contains_real(dirname, "tmp") {
-        entries = []DirEntry{
+        entries = DirEntry[value]{
             DirEntry{
                 name: "temp.txt",
                 is_dir: cap,
@@ -359,7 +359,7 @@ slay read_dir_real(dirname tea) ([]DirEntry, tea) {
             }
         }
     } else { fr fr Empty directory for unknown paths
-        entries = []DirEntry{}
+        entries = DirEntry[value]{}
     }
     
     damn entries, ""

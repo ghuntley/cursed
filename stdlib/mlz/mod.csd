@@ -60,7 +60,7 @@ slay softmax_single(x meal, sum_exp meal) meal {
 
 fr fr === LOSS FUNCTIONS ===
 
-slay mse_loss(predictions []meal, targets []meal) meal {
+slay mse_loss(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -75,7 +75,7 @@ slay mse_loss(predictions []meal, targets []meal) meal {
     damn sum_squared_error / len(predictions)
 }
 
-slay mae_loss(predictions []meal, targets []meal) meal {
+slay mae_loss(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -90,7 +90,7 @@ slay mae_loss(predictions []meal, targets []meal) meal {
     damn sum_absolute_error / len(predictions)
 }
 
-slay binary_crossentropy_loss(predictions []meal, targets []meal) meal {
+slay binary_crossentropy_loss(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -108,8 +108,8 @@ slay binary_crossentropy_loss(predictions []meal, targets []meal) meal {
 
 fr fr === LINEAR REGRESSION ===
 
-slay linear_model_weights_init(num_features normie) []meal {
-    sus weights []meal = []
+slay linear_model_weights_init(num_features normie) meal[value]{
+    sus weights meal[value] = []
     sus i normie = 0
     bestie i < num_features {
         sus weight meal = random_gaussian() * 0.1
@@ -119,7 +119,7 @@ slay linear_model_weights_init(num_features normie) []meal {
     damn weights
 }
 
-slay linear_model_predict_single(features []meal, weights []meal, bias meal) meal {
+slay linear_model_predict_single(features meal[value], weights meal[value], bias meal) meal {
     lowkey len(features) != len(weights) {
         damn 0.0
     }
@@ -133,11 +133,11 @@ slay linear_model_predict_single(features []meal, weights []meal, bias meal) mea
     damn prediction
 }
 
-slay linear_model_predict_batch(feature_matrix []meal, num_samples normie, num_features normie, weights []meal, bias meal) []meal {
-    sus predictions []meal = []
+slay linear_model_predict_batch(feature_matrix meal[value], num_samples normie, num_features normie, weights meal[value], bias meal) meal[value]{
+    sus predictions meal[value] = []
     sus i normie = 0
     bestie i < num_samples {
-        sus features []meal = []
+        sus features meal[value] = []
         sus j normie = 0
         bestie j < num_features {
             sus feature_idx normie = i * num_features + j
@@ -151,13 +151,13 @@ slay linear_model_predict_batch(feature_matrix []meal, num_samples normie, num_f
     damn predictions
 }
 
-slay linear_model_train_step(feature_matrix []meal, targets []meal, weights []meal, bias meal, num_samples normie, num_features normie, learning_rate meal) ([]meal, meal) {
+slay linear_model_train_step(feature_matrix meal[value], targets meal[value], weights meal[value], bias meal, num_samples normie, num_features normie, learning_rate meal) (meal[value], meal) {
     fr fr Get current predictions
-    sus predictions []meal = linear_model_predict_batch(feature_matrix, num_samples, num_features, weights, bias)
+    sus predictions meal[value] = linear_model_predict_batch(feature_matrix, num_samples, num_features, weights, bias)
     
     fr fr Compute gradients
     sus bias_gradient meal = 0.0
-    sus weight_gradients []meal = tensor_zeros_1d(num_features)
+    sus weight_gradients meal[value] = tensor_zeros_1d(num_features)
     
     sus i normie = 0
     bestie i < num_samples {
@@ -183,7 +183,7 @@ slay linear_model_train_step(feature_matrix []meal, targets []meal, weights []me
     
     fr fr Update parameters
     sus new_bias meal = bias - learning_rate * bias_gradient
-    sus new_weights []meal = []
+    sus new_weights meal[value] = []
     j = 0
     bestie j < num_features {
         sus new_weight meal = weights[j] - learning_rate * weight_gradients[j]
@@ -196,11 +196,11 @@ slay linear_model_train_step(feature_matrix []meal, targets []meal, weights []me
 
 fr fr === NEURAL NETWORK LAYER ===
 
-slay layer_weights_init(input_size normie, output_size normie) []meal {
+slay layer_weights_init(input_size normie, output_size normie) meal[value]{
     fr fr Xavier initialization
     sus init_std meal = sqrt_meal(2.0 / (input_size + output_size))
     sus size normie = input_size * output_size
-    sus weights []meal = []
+    sus weights meal[value] = []
     sus i normie = 0
     bestie i < size {
         sus weight meal = random_gaussian() * init_std
@@ -210,12 +210,12 @@ slay layer_weights_init(input_size normie, output_size normie) []meal {
     damn weights
 }
 
-slay layer_biases_init(output_size normie) []meal {
+slay layer_biases_init(output_size normie) meal[value]{
     damn tensor_zeros_1d(output_size)
 }
 
-slay layer_forward_single(input []meal, weights []meal, biases []meal, input_size normie, output_size normie) []meal {
-    sus output []meal = []
+slay layer_forward_single(input meal[value], weights meal[value], biases meal[value], input_size normie, output_size normie) meal[value]{
+    sus output meal[value] = []
     sus j normie = 0
     bestie j < output_size {
         sus sum meal = biases[j]
@@ -231,12 +231,12 @@ slay layer_forward_single(input []meal, weights []meal, biases []meal, input_siz
     damn output
 }
 
-slay layer_forward_batch(input_matrix []meal, weights []meal, biases []meal, batch_size normie, input_size normie, output_size normie) []meal {
-    sus output_matrix []meal = []
+slay layer_forward_batch(input_matrix meal[value], weights meal[value], biases meal[value], batch_size normie, input_size normie, output_size normie) meal[value]{
+    sus output_matrix meal[value] = []
     sus i normie = 0
     bestie i < batch_size {
         fr fr Extract input for this sample
-        sus input []meal = []
+        sus input meal[value] = []
         sus k normie = 0
         bestie k < input_size {
             sus input_idx normie = i * input_size + k
@@ -245,7 +245,7 @@ slay layer_forward_batch(input_matrix []meal, weights []meal, biases []meal, bat
         }
         
         fr fr Forward pass for this sample
-        sus output []meal = layer_forward_single(input, weights, biases, input_size, output_size)
+        sus output meal[value] = layer_forward_single(input, weights, biases, input_size, output_size)
         
         fr fr Add to output matrix
         sus j normie = 0
@@ -260,8 +260,8 @@ slay layer_forward_batch(input_matrix []meal, weights []meal, biases []meal, bat
 
 fr fr === GRADIENT DESCENT OPTIMIZERS ===
 
-slay sgd_update_weights(weights []meal, gradients []meal, learning_rate meal) []meal {
-    sus new_weights []meal = []
+slay sgd_update_weights(weights meal[value], gradients meal[value], learning_rate meal) meal[value]{
+    sus new_weights meal[value] = []
     sus i normie = 0
     bestie i < len(weights) {
         sus new_weight meal = weights[i] - learning_rate * gradients[i]
@@ -271,9 +271,9 @@ slay sgd_update_weights(weights []meal, gradients []meal, learning_rate meal) []
     damn new_weights
 }
 
-slay momentum_update_weights(weights []meal, gradients []meal, momentum_weights []meal, learning_rate meal, momentum meal) ([]meal, []meal) {
-    sus new_weights []meal = []
-    sus new_momentum []meal = []
+slay momentum_update_weights(weights meal[value], gradients meal[value], momentum_weights meal[value], learning_rate meal, momentum meal) (meal[value], meal[value]) {
+    sus new_weights meal[value] = []
+    sus new_momentum meal[value] = []
     sus i normie = 0
     bestie i < len(weights) {
         sus momentum_val meal = momentum * momentum_weights[i] + learning_rate * gradients[i]
@@ -287,8 +287,8 @@ slay momentum_update_weights(weights []meal, gradients []meal, momentum_weights 
 
 fr fr === K-MEANS CLUSTERING ===
 
-slay kmeans_init_centroids(data []meal, num_samples normie, num_features normie, k normie) []meal {
-    sus centroids []meal = []
+slay kmeans_init_centroids(data meal[value], num_samples normie, num_features normie, k normie) meal[value]{
+    sus centroids meal[value] = []
     sus i normie = 0
     bestie i < k {
         sus random_sample normie = random_range(0, num_samples)
@@ -303,7 +303,7 @@ slay kmeans_init_centroids(data []meal, num_samples normie, num_features normie,
     damn centroids
 }
 
-slay kmeans_distance_squared(point1 []meal, point2 []meal) meal {
+slay kmeans_distance_squared(point1 meal[value], point2 meal[value]) meal {
     lowkey len(point1) != len(point2) {
         damn INFINITY
     }
@@ -318,15 +318,15 @@ slay kmeans_distance_squared(point1 []meal, point2 []meal) meal {
     damn distance
 }
 
-slay kmeans_assign_clusters(data []meal, centroids []meal, num_samples normie, num_features normie, k normie) []normie {
-    sus assignments []normie = []
+slay kmeans_assign_clusters(data meal[value], centroids meal[value], num_samples normie, num_features normie, k normie) normie[value]{
+    sus assignments normie[value] = []
     sus i normie = 0
     bestie i < num_samples {
         sus min_distance meal = INFINITY
         sus best_cluster normie = 0
         
         fr fr Extract current point
-        sus point []meal = []
+        sus point meal[value] = []
         sus l normie = 0
         bestie l < num_features {
             sus data_idx normie = i * num_features + l
@@ -338,7 +338,7 @@ slay kmeans_assign_clusters(data []meal, centroids []meal, num_samples normie, n
         sus j normie = 0
         bestie j < k {
             fr fr Extract centroid
-            sus centroid []meal = []
+            sus centroid meal[value] = []
             l = 0
             bestie l < num_features {
                 sus centroid_idx normie = j * num_features + l
@@ -361,9 +361,9 @@ slay kmeans_assign_clusters(data []meal, centroids []meal, num_samples normie, n
     damn assignments
 }
 
-slay kmeans_update_centroids(data []meal, assignments []normie, num_samples normie, num_features normie, k normie) []meal {
-    sus centroids []meal = tensor_zeros_1d(k * num_features)
-    sus cluster_counts []normie = tensor_fill(k, 0)
+slay kmeans_update_centroids(data meal[value], assignments normie[value], num_samples normie, num_features normie, k normie) meal[value]{
+    sus centroids meal[value] = tensor_zeros_1d(k * num_features)
+    sus cluster_counts normie[value] = tensor_fill(k, 0)
     
     fr fr Sum points in each cluster
     sus i normie = 0
@@ -398,13 +398,13 @@ slay kmeans_update_centroids(data []meal, assignments []normie, num_samples norm
     damn centroids
 }
 
-slay kmeans_cluster(data []meal, num_samples normie, num_features normie, k normie, max_iterations normie) ([]meal, []normie) {
-    sus centroids []meal = kmeans_init_centroids(data, num_samples, num_features, k)
-    sus assignments []normie = []
+slay kmeans_cluster(data meal[value], num_samples normie, num_features normie, k normie, max_iterations normie) (meal[value], normie[value]) {
+    sus centroids meal[value] = kmeans_init_centroids(data, num_samples, num_features, k)
+    sus assignments normie[value] = []
     
     sus iteration normie = 0
     bestie iteration < max_iterations {
-        sus new_assignments []normie = kmeans_assign_clusters(data, centroids, num_samples, num_features, k)
+        sus new_assignments normie[value] = kmeans_assign_clusters(data, centroids, num_samples, num_features, k)
         
         fr fr Check for convergence
         lowkey len(assignments) == len(new_assignments) {
@@ -434,7 +434,7 @@ slay kmeans_cluster(data []meal, num_samples normie, num_features normie, k norm
 
 fr fr === EVALUATION METRICS ===
 
-slay accuracy_score(predictions []meal, targets []meal, threshold meal) meal {
+slay accuracy_score(predictions meal[value], targets meal[value], threshold meal) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -459,7 +459,7 @@ slay accuracy_score(predictions []meal, targets []meal, threshold meal) meal {
     damn correct / len(predictions)
 }
 
-slay r2_score(predictions []meal, targets []meal) meal {
+slay r2_score(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -486,12 +486,12 @@ slay r2_score(predictions []meal, targets []meal) meal {
 
 fr fr === DATA PREPROCESSING ===
 
-slay train_test_split_indices(num_samples normie, test_ratio meal) ([]normie, []normie) {
+slay train_test_split_indices(num_samples normie, test_ratio meal) (normie[value], normie[value]) {
     sus test_size normie = num_samples * test_ratio
     sus train_size normie = num_samples - test_size
     
-    sus train_indices []normie = []
-    sus test_indices []normie = []
+    sus train_indices normie[value] = []
+    sus test_indices normie[value] = []
     
     sus i normie = 0
     bestie i < train_size {
@@ -507,8 +507,8 @@ slay train_test_split_indices(num_samples normie, test_ratio meal) ([]normie, []
     damn (train_indices, test_indices)
 }
 
-slay extract_samples_by_indices(data []meal, indices []normie, num_features normie) []meal {
-    sus result []meal = []
+slay extract_samples_by_indices(data meal[value], indices normie[value], num_features normie) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(indices) {
         sus sample_idx normie = indices[i]
@@ -523,8 +523,8 @@ slay extract_samples_by_indices(data []meal, indices []normie, num_features norm
     damn result
 }
 
-slay extract_labels_by_indices(labels []meal, indices []normie) []meal {
-    sus result []meal = []
+slay extract_labels_by_indices(labels meal[value], indices normie[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(indices) {
         result = append(result, labels[indices[i]])
@@ -533,15 +533,15 @@ slay extract_labels_by_indices(labels []meal, indices []normie) []meal {
     damn result
 }
 
-slay standardize_features_simple(features []meal, num_samples normie, num_features normie) ([]meal, []meal, []meal) {
+slay standardize_features_simple(features meal[value], num_samples normie, num_features normie) (meal[value], meal[value], meal[value]) {
     fr fr Compute means and stds for each feature
-    sus means []meal = []
-    sus stds []meal = []
+    sus means meal[value] = []
+    sus stds meal[value] = []
     
     sus j normie = 0
     bestie j < num_features {
         fr fr Extract feature column
-        sus feature_column []meal = []
+        sus feature_column meal[value] = []
         sus i normie = 0
         bestie i < num_samples {
             sus feature_idx normie = i * num_features + j
@@ -561,7 +561,7 @@ slay standardize_features_simple(features []meal, num_samples normie, num_featur
     }
     
     fr fr Standardize features
-    sus standardized []meal = []
+    sus standardized meal[value] = []
     sus i normie = 0
     bestie i < num_samples {
         j = 0
@@ -579,8 +579,8 @@ slay standardize_features_simple(features []meal, num_samples normie, num_featur
 
 fr fr === UTILITY FUNCTIONS ===
 
-slay shuffle_data_indices(num_samples normie) []normie {
-    sus indices []normie = []
+slay shuffle_data_indices(num_samples normie) normie[value]{
+    sus indices normie[value] = []
     sus i normie = 0
     bestie i < num_samples {
         indices = append(indices, i)
@@ -604,11 +604,11 @@ slay print_training_progress(epoch normie, loss meal, accuracy meal) cringe {
     vibez.spill("Epoch ", epoch, ": Loss = ", loss, ", Accuracy = ", accuracy * 100.0, "%")
 }
 
-slay create_batches(num_samples normie, batch_size normie) [][]normie {
-    sus batches [][]normie = []
+slay create_batches(num_samples normie, batch_size normie) normie[value][value] {
+    sus batches normie[value][value] = []
     sus i normie = 0
     bestie i < num_samples {
-        sus batch []normie = []
+        sus batch normie[value] = []
         sus end normie = i + batch_size
         lowkey end > num_samples {
             end = num_samples
@@ -630,24 +630,24 @@ slay create_batches(num_samples normie, batch_size normie) [][]normie {
 
 fr fr === DEMONSTRATION FUNCTIONS ===
 
-slay demo_linear_regression(features []meal, targets []meal, num_samples normie, num_features normie, epochs normie, learning_rate meal) cringe {
+slay demo_linear_regression(features meal[value], targets meal[value], num_samples normie, num_features normie, epochs normie, learning_rate meal) cringe {
     vibez.spill("=== Linear Regression Demo ===")
     
     fr fr Initialize model
-    sus weights []meal = linear_model_weights_init(num_features)
+    sus weights meal[value] = linear_model_weights_init(num_features)
     sus bias meal = 0.0
     
     fr fr Training loop
     sus epoch normie = 0
     bestie epoch < epochs {
-        sus updated_weights []meal
+        sus updated_weights meal[value]
         sus updated_bias meal
         (updated_weights, updated_bias) = linear_model_train_step(features, targets, weights, bias, num_samples, num_features, learning_rate)
         weights = updated_weights
         bias = updated_bias
         
         lowkey epoch % (epochs / 10) == 0 {
-            sus predictions []meal = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
+            sus predictions meal[value] = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
             sus loss meal = mse_loss(predictions, targets)
             sus r2 meal = r2_score(predictions, targets)
             print_training_progress(epoch, loss, r2)
@@ -656,7 +656,7 @@ slay demo_linear_regression(features []meal, targets []meal, num_samples normie,
     }
     
     fr fr Final evaluation
-    sus final_predictions []meal = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
+    sus final_predictions meal[value] = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
     sus final_loss meal = mse_loss(final_predictions, targets)
     sus final_r2 meal = r2_score(final_predictions, targets)
     
@@ -664,11 +664,11 @@ slay demo_linear_regression(features []meal, targets []meal, num_samples normie,
     vibez.spill("Final R²: ", final_r2)
 }
 
-slay demo_kmeans_clustering(data []meal, num_samples normie, num_features normie, k normie) cringe {
+slay demo_kmeans_clustering(data meal[value], num_samples normie, num_features normie, k normie) cringe {
     vibez.spill("=== K-Means Clustering Demo ===")
     
-    sus centroids []meal
-    sus assignments []normie
+    sus centroids meal[value]
+    sus assignments normie[value]
     (centroids, assignments) = kmeans_cluster(data, num_samples, num_features, k, 100)
     
     vibez.spill("Cluster assignments:")
@@ -681,7 +681,7 @@ slay demo_kmeans_clustering(data []meal, num_samples normie, num_features normie
 
 fr fr === SUPPORT VECTOR MACHINE (SVM) ===
 
-slay svm_kernel_linear(x1 []meal, x2 []meal) meal {
+slay svm_kernel_linear(x1 meal[value], x2 meal[value]) meal {
     sus dot_product meal = 0.0
     sus i normie = 0
     bestie i < len(x1) {
@@ -691,7 +691,7 @@ slay svm_kernel_linear(x1 []meal, x2 []meal) meal {
     damn dot_product
 }
 
-slay svm_kernel_rbf(x1 []meal, x2 []meal, gamma meal) meal {
+slay svm_kernel_rbf(x1 meal[value], x2 meal[value], gamma meal) meal {
     sus distance_sq meal = 0.0
     sus i normie = 0
     bestie i < len(x1) {
@@ -702,7 +702,7 @@ slay svm_kernel_rbf(x1 []meal, x2 []meal, gamma meal) meal {
     damn exp_meal(-gamma * distance_sq)
 }
 
-slay svm_kernel_polynomial(x1 []meal, x2 []meal, degree normie, coef0 meal) meal {
+slay svm_kernel_polynomial(x1 meal[value], x2 meal[value], degree normie, coef0 meal) meal {
     sus dot_product meal = svm_kernel_linear(x1, x2)
     sus result meal = dot_product + coef0
     sus power_result meal = power_float_approx(result, degree)
@@ -722,8 +722,8 @@ squad DecisionNode {
     impurity meal
 }
 
-slay decision_tree_gini_impurity(labels []meal, start_idx normie, end_idx normie, num_classes normie) meal {
-    sus class_counts []normie = tensor_fill(num_classes, 0)
+slay decision_tree_gini_impurity(labels meal[value], start_idx normie, end_idx normie, num_classes normie) meal {
+    sus class_counts normie[value] = tensor_fill(num_classes, 0)
     sus total_samples normie = end_idx - start_idx
     
     sus i normie = start_idx
@@ -746,7 +746,7 @@ slay decision_tree_gini_impurity(labels []meal, start_idx normie, end_idx normie
     damn gini
 }
 
-slay decision_tree_find_best_split(features []meal, labels []meal, start_idx normie, end_idx normie, num_features normie, num_classes normie) (normie, meal, meal) {
+slay decision_tree_find_best_split(features meal[value], labels meal[value], start_idx normie, end_idx normie, num_features normie, num_classes normie) (normie, meal, meal) {
     sus best_feature normie = 0
     sus best_threshold meal = 0.0
     sus best_gain meal = 0.0
@@ -756,7 +756,7 @@ slay decision_tree_find_best_split(features []meal, labels []meal, start_idx nor
     sus feature_idx normie = 0
     bestie feature_idx < num_features {
         fr fr Get unique values for this feature
-        sus feature_values []meal = []
+        sus feature_values meal[value] = []
         sus i normie = start_idx
         bestie i < end_idx {
             sus sample_idx normie = i * num_features + feature_idx
@@ -813,8 +813,8 @@ slay decision_tree_find_best_split(features []meal, labels []meal, start_idx nor
     damn (best_feature, best_threshold, best_gain)
 }
 
-slay decision_tree_majority_class(labels []meal, start_idx normie, end_idx normie, num_classes normie) meal {
-    sus class_counts []normie = tensor_fill(num_classes, 0)
+slay decision_tree_majority_class(labels meal[value], start_idx normie, end_idx normie, num_classes normie) meal {
+    sus class_counts normie[value] = tensor_fill(num_classes, 0)
     
     sus i normie = start_idx
     bestie i < end_idx {
@@ -842,22 +842,22 @@ slay decision_tree_majority_class(labels []meal, start_idx normie, end_idx normi
 fr fr === NAIVE BAYES ===
 
 squad NaiveBayesModel {
-    class_priors []meal
-    feature_means [][]meal
-    feature_stds [][]meal
+    class_priors meal[value]
+    feature_means meal[value][value]
+    feature_stds meal[value][value]
     num_classes normie
     num_features normie
 }
 
-slay naive_bayes_train(features []meal, labels []meal, num_samples normie, num_features normie, num_classes normie) NaiveBayesModel {
-    sus class_counts []normie = tensor_fill(num_classes, 0)
-    sus class_feature_sums [][]meal = []
-    sus class_feature_counts []normie = tensor_fill(num_classes, 0)
+slay naive_bayes_train(features meal[value], labels meal[value], num_samples normie, num_features normie, num_classes normie) NaiveBayesModel {
+    sus class_counts normie[value] = tensor_fill(num_classes, 0)
+    sus class_feature_sums meal[value][value] = []
+    sus class_feature_counts normie[value] = tensor_fill(num_classes, 0)
     
     fr fr Initialize class feature sums
     sus c normie = 0
     bestie c < num_classes {
-        sus feature_sums []meal = tensor_zeros_1d(num_features)
+        sus feature_sums meal[value] = tensor_zeros_1d(num_features)
         class_feature_sums = append(class_feature_sums, feature_sums)
         c = c + 1
     }
@@ -881,7 +881,7 @@ slay naive_bayes_train(features []meal, labels []meal, num_samples normie, num_f
     }
     
     fr fr Compute class priors
-    sus class_priors []meal = []
+    sus class_priors meal[value] = []
     c = 0
     bestie c < num_classes {
         sus prior meal = class_counts[c] / num_samples
@@ -890,10 +890,10 @@ slay naive_bayes_train(features []meal, labels []meal, num_samples normie, num_f
     }
     
     fr fr Compute feature means
-    sus feature_means [][]meal = []
+    sus feature_means meal[value][value] = []
     c = 0
     bestie c < num_classes {
-        sus means []meal = []
+        sus means meal[value] = []
         sus j normie = 0
         bestie j < num_features {
             sus mean meal = 0.0
@@ -908,10 +908,10 @@ slay naive_bayes_train(features []meal, labels []meal, num_samples normie, num_f
     }
     
     fr fr Compute feature standard deviations (simplified)
-    sus feature_stds [][]meal = []
+    sus feature_stds meal[value][value] = []
     c = 0
     bestie c < num_classes {
-        sus stds []meal = []
+        sus stds meal[value] = []
         sus j normie = 0
         bestie j < num_features {
             stds = append(stds, 1.0)  fr fr Default std dev
@@ -930,7 +930,7 @@ slay naive_bayes_train(features []meal, labels []meal, num_samples normie, num_f
     }
 }
 
-slay naive_bayes_predict(model NaiveBayesModel, features []meal) normie {
+slay naive_bayes_predict(model NaiveBayesModel, features meal[value]) normie {
     sus max_prob meal = -INFINITY
     sus predicted_class normie = 0
     
@@ -966,9 +966,9 @@ slay naive_bayes_predict(model NaiveBayesModel, features []meal) normie {
 
 fr fr === PRINCIPAL COMPONENT ANALYSIS (PCA) ===
 
-slay pca_center_data(data []meal, num_samples normie, num_features normie) ([]meal, []meal) {
+slay pca_center_data(data meal[value], num_samples normie, num_features normie) (meal[value], meal[value]) {
     fr fr Compute feature means
-    sus means []meal = []
+    sus means meal[value] = []
     sus j normie = 0
     bestie j < num_features {
         sus sum meal = 0.0
@@ -983,7 +983,7 @@ slay pca_center_data(data []meal, num_samples normie, num_features normie) ([]me
     }
     
     fr fr Center the data
-    sus centered_data []meal = []
+    sus centered_data meal[value] = []
     sus i normie = 0
     bestie i < num_samples {
         j = 0
@@ -999,8 +999,8 @@ slay pca_center_data(data []meal, num_samples normie, num_features normie) ([]me
     damn (centered_data, means)
 }
 
-slay pca_compute_covariance_matrix(centered_data []meal, num_samples normie, num_features normie) []meal {
-    sus cov_matrix []meal = tensor_zeros_1d(num_features * num_features)
+slay pca_compute_covariance_matrix(centered_data meal[value], num_samples normie, num_features normie) meal[value]{
+    sus cov_matrix meal[value] = tensor_zeros_1d(num_features * num_features)
     
     sus i normie = 0
     bestie i < num_features {
@@ -1025,9 +1025,9 @@ slay pca_compute_covariance_matrix(centered_data []meal, num_samples normie, num
     damn cov_matrix
 }
 
-slay pca_power_iteration_eigenvalue(matrix []meal, size normie, iterations normie) (meal, []meal) {
+slay pca_power_iteration_eigenvalue(matrix meal[value], size normie, iterations normie) (meal, meal[value]) {
     fr fr Power iteration for largest eigenvalue and eigenvector
-    sus eigenvector []meal = []
+    sus eigenvector meal[value] = []
     sus i normie = 0
     bestie i < size {
         eigenvector = append(eigenvector, random_gaussian())
@@ -1037,7 +1037,7 @@ slay pca_power_iteration_eigenvalue(matrix []meal, size normie, iterations normi
     sus iteration normie = 0
     bestie iteration < iterations {
         fr fr Matrix-vector multiplication
-        sus new_vector []meal = []
+        sus new_vector meal[value] = []
         i = 0
         bestie i < size {
             sus sum meal = 0.0
@@ -1090,20 +1090,20 @@ slay pca_power_iteration_eigenvalue(matrix []meal, size normie, iterations normi
 fr fr === RANDOM FOREST (Simplified) ===
 
 squad RandomForestModel {
-    trees []DecisionNode
+    trees DecisionNode[value]
     num_trees normie
     max_features normie
 }
 
-slay random_forest_train(features []meal, labels []meal, num_samples normie, num_features normie, num_classes normie, num_trees normie) RandomForestModel {
-    sus trees []DecisionNode = []
+slay random_forest_train(features meal[value], labels meal[value], num_samples normie, num_features normie, num_classes normie, num_trees normie) RandomForestModel {
+    sus trees DecisionNode[value] = []
     sus max_features normie = sqrt_integer(num_features)
     
     sus tree_idx normie = 0
     bestie tree_idx < num_trees {
         fr fr Bootstrap sampling (simplified - use all samples)
-        sus bootstrap_features []meal = features
-        sus bootstrap_labels []meal = labels
+        sus bootstrap_features meal[value] = features
+        sus bootstrap_labels meal[value] = labels
         
         fr fr Create decision tree (simplified - just create leaf node)
         sus majority_class meal = decision_tree_majority_class(bootstrap_labels, 0, num_samples, num_classes)
@@ -1130,8 +1130,8 @@ slay random_forest_train(features []meal, labels []meal, num_samples normie, num
     }
 }
 
-slay random_forest_predict(model RandomForestModel, features []meal, num_classes normie) normie {
-    sus class_votes []normie = tensor_fill(num_classes, 0)
+slay random_forest_predict(model RandomForestModel, features meal[value], num_classes normie) normie {
+    sus class_votes normie[value] = tensor_fill(num_classes, 0)
     
     sus tree_idx normie = 0
     bestie tree_idx < model.num_trees {
@@ -1163,7 +1163,7 @@ slay random_forest_predict(model RandomForestModel, features []meal, num_classes
 fr fr === REINFORCEMENT LEARNING (Q-Learning) ===
 
 squad QLearningAgent {
-    q_table [][]meal
+    q_table meal[value][value]
     num_states normie
     num_actions normie
     learning_rate meal
@@ -1172,10 +1172,10 @@ squad QLearningAgent {
 }
 
 slay q_learning_agent_create(num_states normie, num_actions normie, learning_rate meal, discount_factor meal, epsilon meal) QLearningAgent {
-    sus q_table [][]meal = []
+    sus q_table meal[value][value] = []
     sus i normie = 0
     bestie i < num_states {
-        sus action_values []meal = tensor_zeros_1d(num_actions)
+        sus action_values meal[value] = tensor_zeros_1d(num_actions)
         q_table = append(q_table, action_values)
         i = i + 1
     }
@@ -1238,8 +1238,8 @@ slay q_learning_update(agent QLearningAgent, state normie, action normie, reward
 
 fr fr === ADVANCED ENSEMBLE METHODS ===
 
-slay bootstrap_sample_indices(num_samples normie) []normie {
-    sus indices []normie = []
+slay bootstrap_sample_indices(num_samples normie) normie[value]{
+    sus indices normie[value] = []
     sus i normie = 0
     bestie i < num_samples {
         sus random_idx normie = random_range(0, num_samples)
@@ -1249,7 +1249,7 @@ slay bootstrap_sample_indices(num_samples normie) []normie {
     damn indices
 }
 
-slay bagging_predict(models []interface{}, features []meal) meal {
+slay bagging_predict(models interface[value]{}, features meal[value]) meal {
     fr fr Simplified bagging prediction (average predictions)
     sus sum_predictions meal = 0.0
     sus num_models normie = len(models)
@@ -1268,8 +1268,8 @@ slay bagging_predict(models []interface{}, features []meal) meal {
 
 fr fr === ANOMALY DETECTION ===
 
-slay isolation_forest_anomaly_score(data []meal, num_samples normie, num_features normie, num_trees normie) []meal {
-    sus anomaly_scores []meal = []
+slay isolation_forest_anomaly_score(data meal[value], num_samples normie, num_features normie, num_trees normie) meal[value]{
+    sus anomaly_scores meal[value] = []
     
     sus sample_idx normie = 0
     bestie sample_idx < num_samples {
@@ -1297,8 +1297,8 @@ slay isolation_forest_anomaly_score(data []meal, num_samples normie, num_feature
     damn anomaly_scores
 }
 
-slay one_class_svm_anomaly_detection(data []meal, num_samples normie, num_features normie, nu meal) []lit {
-    sus anomaly_flags []lit = []
+slay one_class_svm_anomaly_detection(data meal[value], num_samples normie, num_features normie, nu meal) lit[value]{
+    sus anomaly_flags lit[value] = []
     
     fr fr Simplified one-class SVM (threshold-based)
     sus threshold meal = 0.5  fr fr Placeholder threshold
@@ -1325,13 +1325,13 @@ slay one_class_svm_anomaly_detection(data []meal, num_samples normie, num_featur
 
 fr fr === FEATURE SELECTION ===
 
-slay feature_selection_mutual_information(features []meal, labels []meal, num_samples normie, num_features normie) []meal {
-    sus mutual_info_scores []meal = []
+slay feature_selection_mutual_information(features meal[value], labels meal[value], num_samples normie, num_features normie) meal[value]{
+    sus mutual_info_scores meal[value] = []
     
     sus feature_idx normie = 0
     bestie feature_idx < num_features {
         fr fr Simplified mutual information calculation
-        sus feature_values []meal = []
+        sus feature_values meal[value] = []
         sus i normie = 0
         bestie i < num_samples {
             sus data_idx normie = i * num_features + feature_idx
@@ -1350,8 +1350,8 @@ slay feature_selection_mutual_information(features []meal, labels []meal, num_sa
     damn mutual_info_scores
 }
 
-slay feature_selection_chi_squared(features []meal, labels []meal, num_samples normie, num_features normie) []meal {
-    sus chi2_scores []meal = []
+slay feature_selection_chi_squared(features meal[value], labels meal[value], num_samples normie, num_features normie) meal[value]{
+    sus chi2_scores meal[value] = []
     
     sus feature_idx normie = 0
     bestie feature_idx < num_features {
@@ -1364,8 +1364,8 @@ slay feature_selection_chi_squared(features []meal, labels []meal, num_samples n
     damn chi2_scores
 }
 
-slay feature_selection_select_k_best(scores []meal, k normie) []normie {
-    sus selected_features []normie = []
+slay feature_selection_select_k_best(scores meal[value], k normie) normie[value]{
+    sus selected_features normie[value] = []
     sus i normie = 0
     
     fr fr Simple selection of first k features (should be sorted by score)
@@ -1379,7 +1379,7 @@ slay feature_selection_select_k_best(scores []meal, k normie) []normie {
 
 fr fr === ADVANCED DEMONSTRATIONS ===
 
-slay demo_svm_classification(features []meal, labels []meal, num_samples normie, num_features normie, num_classes normie) cringe {
+slay demo_svm_classification(features meal[value], labels meal[value], num_samples normie, num_features normie, num_classes normie) cringe {
     vibez.spill("=== SVM Classification Demo ===")
     
     fr fr For demonstration, create simple predictions based on first feature
@@ -1404,7 +1404,7 @@ slay demo_svm_classification(features []meal, labels []meal, num_samples normie,
     vibez.spill("SVM Accuracy: ", accuracy * 100.0, "%")
 }
 
-slay demo_naive_bayes_classification(features []meal, labels []meal, num_samples normie, num_features normie, num_classes normie) cringe {
+slay demo_naive_bayes_classification(features meal[value], labels meal[value], num_samples normie, num_features normie, num_classes normie) cringe {
     vibez.spill("=== Naive Bayes Classification Demo ===")
     
     sus model NaiveBayesModel = naive_bayes_train(features, labels, num_samples, num_features, num_classes)
@@ -1412,7 +1412,7 @@ slay demo_naive_bayes_classification(features []meal, labels []meal, num_samples
     sus correct_predictions normie = 0
     sus i normie = 0
     bestie i < num_samples {
-        sus sample_features []meal = []
+        sus sample_features meal[value] = []
         sus j normie = 0
         bestie j < num_features {
             sus data_idx normie = i * num_features + j
@@ -1434,25 +1434,25 @@ slay demo_naive_bayes_classification(features []meal, labels []meal, num_samples
     vibez.spill("Naive Bayes Accuracy: ", accuracy * 100.0, "%")
 }
 
-slay demo_pca_dimensionality_reduction(data []meal, num_samples normie, num_features normie, target_dimensions normie) cringe {
+slay demo_pca_dimensionality_reduction(data meal[value], num_samples normie, num_features normie, target_dimensions normie) cringe {
     vibez.spill("=== PCA Dimensionality Reduction Demo ===")
     
-    sus centered_data []meal
-    sus means []meal
+    sus centered_data meal[value]
+    sus means meal[value]
     (centered_data, means) = pca_center_data(data, num_samples, num_features)
     
-    sus cov_matrix []meal = pca_compute_covariance_matrix(centered_data, num_samples, num_features)
+    sus cov_matrix meal[value] = pca_compute_covariance_matrix(centered_data, num_samples, num_features)
     
     fr fr Compute first principal component
     sus eigenvalue meal
-    sus eigenvector []meal
+    sus eigenvector meal[value]
     (eigenvalue, eigenvector) = pca_power_iteration_eigenvalue(cov_matrix, num_features, 100)
     
     vibez.spill("First Principal Component Eigenvalue: ", eigenvalue)
     vibez.spill("Explained Variance Ratio: ", eigenvalue / tensor_sum_1d(cov_matrix))
     
     fr fr Project data onto first principal component
-    sus projected_data []meal = []
+    sus projected_data meal[value] = []
     sus i normie = 0
     bestie i < num_samples {
         sus projection meal = 0.0
@@ -1469,7 +1469,7 @@ slay demo_pca_dimensionality_reduction(data []meal, num_samples normie, num_feat
     vibez.spill("PCA projection completed. Reduced from ", num_features, " to 1 dimension.")
 }
 
-slay demo_random_forest_classification(features []meal, labels []meal, num_samples normie, num_features normie, num_classes normie) cringe {
+slay demo_random_forest_classification(features meal[value], labels meal[value], num_samples normie, num_features normie, num_classes normie) cringe {
     vibez.spill("=== Random Forest Classification Demo ===")
     
     sus model RandomForestModel = random_forest_train(features, labels, num_samples, num_features, num_classes, 10)
@@ -1477,7 +1477,7 @@ slay demo_random_forest_classification(features []meal, labels []meal, num_sampl
     sus correct_predictions normie = 0
     sus i normie = 0
     bestie i < num_samples {
-        sus sample_features []meal = []
+        sus sample_features meal[value] = []
         sus j normie = 0
         bestie j < num_features {
             sus data_idx normie = i * num_features + j
@@ -1534,11 +1534,11 @@ slay demo_q_learning_agent(num_states normie, num_actions normie, num_episodes n
     vibez.spill("Q-Learning training completed!")
 }
 
-slay demo_anomaly_detection(data []meal, num_samples normie, num_features normie) cringe {
+slay demo_anomaly_detection(data meal[value], num_samples normie, num_features normie) cringe {
     vibez.spill("=== Anomaly Detection Demo ===")
     
     fr fr Isolation Forest
-    sus anomaly_scores []meal = isolation_forest_anomaly_score(data, num_samples, num_features, 100)
+    sus anomaly_scores meal[value] = isolation_forest_anomaly_score(data, num_samples, num_features, 100)
     
     fr fr Count anomalies (threshold = 0.6)
     sus anomaly_count normie = 0
@@ -1553,7 +1553,7 @@ slay demo_anomaly_detection(data []meal, num_samples normie, num_features normie
     vibez.spill("Isolation Forest detected ", anomaly_count, " anomalies out of ", num_samples, " samples")
     
     fr fr One-Class SVM
-    sus anomaly_flags []lit = one_class_svm_anomaly_detection(data, num_samples, num_features, 0.1)
+    sus anomaly_flags lit[value] = one_class_svm_anomaly_detection(data, num_samples, num_features, 0.1)
     
     sus svm_anomaly_count normie = 0
     i = 0
@@ -1567,15 +1567,15 @@ slay demo_anomaly_detection(data []meal, num_samples normie, num_features normie
     vibez.spill("One-Class SVM detected ", svm_anomaly_count, " anomalies out of ", num_samples, " samples")
 }
 
-slay demo_feature_selection(features []meal, labels []meal, num_samples normie, num_features normie) cringe {
+slay demo_feature_selection(features meal[value], labels meal[value], num_samples normie, num_features normie) cringe {
     vibez.spill("=== Feature Selection Demo ===")
     
-    sus mi_scores []meal = feature_selection_mutual_information(features, labels, num_samples, num_features)
-    sus chi2_scores []meal = feature_selection_chi_squared(features, labels, num_samples, num_features)
+    sus mi_scores meal[value] = feature_selection_mutual_information(features, labels, num_samples, num_features)
+    sus chi2_scores meal[value] = feature_selection_chi_squared(features, labels, num_samples, num_features)
     
     sus k_best normie = num_features / 2  fr fr Select top 50% features
-    sus selected_features_mi []normie = feature_selection_select_k_best(mi_scores, k_best)
-    sus selected_features_chi2 []normie = feature_selection_select_k_best(chi2_scores, k_best)
+    sus selected_features_mi normie[value] = feature_selection_select_k_best(mi_scores, k_best)
+    sus selected_features_chi2 normie[value] = feature_selection_select_k_best(chi2_scores, k_best)
     
     vibez.spill("Mutual Information selected ", len(selected_features_mi), " features")
     vibez.spill("Chi-squared selected ", len(selected_features_chi2), " features")

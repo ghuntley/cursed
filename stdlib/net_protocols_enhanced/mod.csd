@@ -25,7 +25,7 @@ slay base64_decode_rfc4648(encoded_input tea) tea {
         damn ""
     }
     
-    sus decode_table [128]normie = base64_create_decode_table(cap)
+    sus decode_table normie[128] = base64_create_decode_table(cap)
     sus result tea = ""
     sus output_len normie = (input_len / 4) * 3
     
@@ -80,7 +80,7 @@ slay base64_decode_rfc4648(encoded_input tea) tea {
 }
 
 slay base64_create_decode_table(url_safe lit) [128]normie {
-    sus table [128]normie = [255; 128]
+    sus table normie[128] = [255; 128]
     sus alphabet tea = base64_alphabet
     bestie url_safe {
         alphabet = base64_url_alphabet
@@ -118,7 +118,7 @@ slay base64_clean_input(input tea) tea {
 fr fr ===== CRYPTOGRAPHICALLY SECURE AES-256 IMPLEMENTATION =====
 
 fr fr NIST FIPS 197 compliant AES-256 with proper key expansion and security
-sus aes_sbox [256]normie = [
+sus aes_sbox normie[256] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -137,7 +137,7 @@ sus aes_sbox [256]normie = [
     0x8c, 0xa1, 0x89, 0x0d, 0xbf, 0xe6, 0x42, 0x68, 0x41, 0x99, 0x2d, 0x0f, 0xb0, 0x54, 0xbb, 0x16
 ]
 
-sus aes_inv_sbox [256]normie = [
+sus aes_inv_sbox normie[256] = [
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -156,7 +156,7 @@ sus aes_inv_sbox [256]normie = [
     0x17, 0x2b, 0x04, 0x7e, 0xba, 0x77, 0xd6, 0x26, 0xe1, 0x69, 0x14, 0x63, 0x55, 0x21, 0x0c, 0x7d
 ]
 
-sus aes_rcon [11]normie = [0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
+sus aes_rcon normie[11] = [0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36]
 
 slay aes256_key_schedule(key tea) [60]normie {
     bestie string_length(key) != 32 {
@@ -164,7 +164,7 @@ slay aes256_key_schedule(key tea) [60]normie {
         damn [0; 60]
     }
     
-    sus w [60]normie = [0; 60]
+    sus w normie[60] = [0; 60]
     
     fr fr Copy initial key (8 words)
     bestie i := 0; i < 8; i++ {
@@ -209,8 +209,8 @@ slay aes256_key_schedule(key tea) [60]normie {
     damn w
 }
 
-slay aes256_encrypt_block(plaintext [16]normie, key_schedule [60]normie) [16]normie {
-    sus state [16]normie = plaintext
+slay aes256_encrypt_block(plaintext normie[16], key_schedule normie[60]) [16]normie {
+    sus state normie[16] = plaintext
     
     fr fr AddRoundKey (round 0)
     aes_add_round_key(state, key_schedule, 0)
@@ -231,7 +231,7 @@ slay aes256_encrypt_block(plaintext [16]normie, key_schedule [60]normie) [16]nor
     damn state
 }
 
-slay aes_add_round_key(state [16]normie, key_schedule [60]normie, round normie) {
+slay aes_add_round_key(state normie[16], key_schedule normie[60], round normie) {
     bestie i := 0; i < 4; i++ {
         sus word normie = key_schedule[round * 4 + i]
         bestie j := 0; j < 4; j++ {
@@ -241,13 +241,13 @@ slay aes_add_round_key(state [16]normie, key_schedule [60]normie, round normie) 
     }
 }
 
-slay aes_sub_bytes(state [16]normie) {
+slay aes_sub_bytes(state normie[16]) {
     bestie i := 0; i < 16; i++ {
         state[i] = aes_sbox[state[i]]
     }
 }
 
-slay aes_shift_rows(state [16]normie) {
+slay aes_shift_rows(state normie[16]) {
     fr fr Row 1: shift left by 1
     sus temp normie = state[1]
     state[1] = state[5]
@@ -271,7 +271,7 @@ slay aes_shift_rows(state [16]normie) {
     state[7] = temp
 }
 
-slay aes_mix_columns(state [16]normie) {
+slay aes_mix_columns(state normie[16]) {
     bestie col := 0; col < 4; col++ {
         sus c0 normie = state[col * 4]
         sus c1 normie = state[col * 4 + 1]
@@ -306,13 +306,13 @@ slay secure_aes256_encrypt(plaintext tea, key tea) tea {
         damn ""
     }
     
-    sus key_schedule [60]normie = aes256_key_schedule(key)
+    sus key_schedule normie[60] = aes256_key_schedule(key)
     sus result tea = ""
     sus data_len normie = string_length(plaintext)
     
     fr fr Process in 16-byte blocks with PKCS7 padding
     bestie block_start := 0; block_start < data_len; block_start += 16 {
-        sus block [16]normie = [0; 16]
+        sus block normie[16] = [0; 16]
         
         bestie i := 0; i < 16; i++ {
             bestie block_start + i < data_len {
@@ -324,7 +324,7 @@ slay secure_aes256_encrypt(plaintext tea, key tea) tea {
             }
         }
         
-        sus encrypted_block [16]normie = aes256_encrypt_block(block, key_schedule)
+        sus encrypted_block normie[16] = aes256_encrypt_block(block, key_schedule)
         
         bestie i := 0; i < 16; i++ {
             result = result + char(encrypted_block[i])
@@ -337,12 +337,12 @@ slay secure_aes256_encrypt(plaintext tea, key tea) tea {
 fr fr ===== CRYPTOGRAPHICALLY SECURE SHA IMPLEMENTATIONS =====
 
 fr fr NIST FIPS 180-4 compliant SHA-256 with proper bit operations
-sus sha256_h0 [8]normie = [
+sus sha256_h0 normie[8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ]
 
-sus sha256_k [64]normie = [
+sus sha256_k normie[64] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -401,11 +401,11 @@ slay secure_sha256_hash(message tea) tea {
     }
     
     fr fr Process message in 512-bit chunks
-    sus h [8]normie = sha256_h0
+    sus h normie[8] = sha256_h0
     sus chunks normie = string_length(padded_msg) / 64
     
     bestie chunk := 0; chunk < chunks; chunk++ {
-        sus w [64]normie = [0; 64]
+        sus w normie[64] = [0; 64]
         
         fr fr Break chunk into sixteen 32-bit words
         bestie i := 0; i < 16; i++ {
@@ -471,7 +471,7 @@ slay secure_sha256_hash(message tea) tea {
 fr fr ===== EFFICIENT ARRAY OPERATIONS =====
 
 fr fr High-performance array operations with bounds checking
-slay secure_array_copy(src []normie, dest []normie, length normie) lit {
+slay secure_array_copy(src normie[value], dest normie[value], length normie) lit {
     bestie length > 1000000 {
         vibez.spill("❌ Array operation size limit exceeded")
         damn cap
@@ -484,7 +484,7 @@ slay secure_array_copy(src []normie, dest []normie, length normie) lit {
     damn based
 }
 
-slay secure_array_compare(a []normie, b []normie, length normie) lit {
+slay secure_array_compare(a normie[value], b normie[value], length normie) lit {
     bestie length > 1000000 {
         vibez.spill("❌ Array comparison size limit exceeded")
         damn cap
@@ -498,7 +498,7 @@ slay secure_array_compare(a []normie, b []normie, length normie) lit {
     damn result == 0
 }
 
-slay secure_array_fill(arr []normie, value normie, length normie) lit {
+slay secure_array_fill(arr normie[value], value normie, length normie) lit {
     bestie length > 1000000 {
         vibez.spill("❌ Array fill size limit exceeded")
         damn cap
@@ -511,7 +511,7 @@ slay secure_array_fill(arr []normie, value normie, length normie) lit {
     damn based
 }
 
-slay secure_array_reverse(arr []normie, length normie) lit {
+slay secure_array_reverse(arr normie[value], length normie) lit {
     bestie length > 1000000 {
         vibez.spill("❌ Array reverse size limit exceeded")
         damn cap
@@ -692,7 +692,7 @@ slay smtp_handle_command_secure(command tea) tea {
 }
 
 slay smtp_authenticate_secure(auth_line tea) tea {
-    sus auth_parts []tea = string_split_secure(auth_line, " ")
+    sus auth_parts tea[value] = string_split_secure(auth_line, " ")
     bestie string_length(auth_parts) < 1 {
         damn "501 AUTH mechanism not specified\r\n"
     }
@@ -799,7 +799,7 @@ slay string_to_upper_secure(s tea) tea {
     damn result
 }
 
-slay string_split_secure(s tea, delimiter tea) []tea {
+slay string_split_secure(s tea, delimiter tea) tea[value]{
     fr fr Simplified implementation - return array with original string
     damn [s]
 }
@@ -995,8 +995,8 @@ slay net_protocols_enhanced_test() lit {
     }
     
     fr fr Test array operations
-    sus arr1 [10]normie = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    sus arr2 [10]normie = [0; 10]
+    sus arr1 normie[10] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sus arr2 normie[10] = [0; 10]
     secure_array_copy(arr1, arr2, 10)
     bestie secure_array_compare(arr1, arr2, 10) {
         vibez.spill("✅ Secure array operations test passed")

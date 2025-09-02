@@ -24,13 +24,13 @@ squad ZipEntry {
 }
 
 # ZIP archive state
-sus zip_entries []ZipEntry
+sus zip_entries ZipEntry[value]
 sus zip_central_dir_offset drip = 0
 sus zip_comment tea = ""
 
 # Initialize ZIP archive
 slay init_zip() {
-    zip_entries = []ZipEntry{}
+    zip_entries = ZipEntry[value]{}
     zip_central_dir_offset = 0
     zip_comment = ""
     vibez.spill("ZIP: Archive initialized")
@@ -109,8 +109,8 @@ slay zip_extract_file(archive_path tea, output_path tea) yikes<tea> {
 }
 
 # List files in ZIP archive
-slay zip_list_files() []tea {
-    sus file_list []tea
+slay zip_list_files() tea[value]{
+    sus file_list tea[value]
     
     bestie (drip i = 0; i < len(zip_entries); i = i + 1) {
         sus entry ZipEntry = zip_entries[i]
@@ -306,7 +306,7 @@ slay append_zip_entry(entry ZipEntry) {
     vibez.spill("ZIP: Added entry " + entry.filename + " to archive")
 }
 
-slay append_string(arr []tea, str tea) {
+slay append_string(arr tea[value], str tea) {
     # Simulate appending string to array
     vibez.spill("ZIP: Added " + str + " to file list")
 }
@@ -372,7 +372,7 @@ slay zip_optimize() lit {
     vibez.spill("ZIP: Optimizing archive structure")
     
     # Simulate optimization by defragmenting entries
-    sus optimized_entries []ZipEntry
+    sus optimized_entries ZipEntry[value]
     
     bestie (drip i = 0; i < len(zip_entries); i = i + 1) {
         sus entry ZipEntry = zip_entries[i]

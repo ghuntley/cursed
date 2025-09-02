@@ -84,7 +84,7 @@ slay test_web_server_simulation() {
     test_start("Web Server Simulation")
     
     fr fr Simulate HTTP response with proper Content-Type headers
-    slay simulate_http_response(filename tea, content []drip) tea {
+    slay simulate_http_response(filename tea, content drip[value]) tea {
         sus mime_type tea = detect_mime_comprehensive(filename, content)
         sus content_type tea = get_content_type_for_file(filename)
         sus is_binary lit = is_binary_mime(mime_type)
@@ -103,17 +103,17 @@ slay test_web_server_simulation() {
     }
     
     fr fr Test various file types
-    sus html_content []drip = [0x3C, 0x68, 0x74, 0x6D, 0x6C, 0x3E]  fr fr "<html>"
+    sus html_content drip[value] = [0x3C, 0x68, 0x74, 0x6D, 0x6C, 0x3E]  fr fr "<html>"
     sus html_response tea = simulate_http_response("index.html", html_content)
     assert_eq_bool(string_contains(html_response, "text/html"), based)
     assert_eq_bool(string_contains(html_response, "charset=utf-8"), based)
     
-    sus jpeg_content []drip = [0xFF, 0xD8, 0xFF, 0xE0]
+    sus jpeg_content drip[value] = [0xFF, 0xD8, 0xFF, 0xE0]
     sus jpeg_response tea = simulate_http_response("photo.jpg", jpeg_content)
     assert_eq_bool(string_contains(jpeg_response, "image/jpeg"), based)
     assert_eq_bool(string_contains(jpeg_response, "binary"), based)
     
-    sus json_content []drip = [0x7B, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22]  fr fr "{\"test\""
+    sus json_content drip[value] = [0x7B, 0x22, 0x74, 0x65, 0x73, 0x74, 0x22]  fr fr "{\"test\""
     sus json_response tea = simulate_http_response("api.json", json_content)
     assert_eq_bool(string_contains(json_response, "application/json"), based)
     assert_eq_bool(string_contains(json_response, "charset=utf-8"), based)
@@ -127,8 +127,8 @@ slay test_file_processing_pipeline() {
     test_start("File Processing Pipeline")
     
     fr fr Simulate a file processing pipeline
-    slay process_file_batch(files []tea) {
-        sus results []FileProcessResult = []
+    slay process_file_batch(files tea[value]) {
+        sus results FileProcessResult[value] = []
         
         bestie (i drip = 0; i < array_len(files); i++) {
             sus filename tea = files[i]
@@ -150,7 +150,7 @@ slay test_file_processing_pipeline() {
         damn results
     }
     
-    sus test_files []tea = [
+    sus test_files tea[value] = [
         "document.pdf",
         "image.png", 
         "data.json",
@@ -162,7 +162,7 @@ slay test_file_processing_pipeline() {
         "source.csd"
     ]
     
-    sus processing_results []FileProcessResult = process_file_batch(test_files)
+    sus processing_results FileProcessResult[value] = process_file_batch(test_files)
     
     fr fr Verify all files were processed
     assert_eq_int(array_len(processing_results), array_len(test_files))

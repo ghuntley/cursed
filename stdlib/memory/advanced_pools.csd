@@ -26,7 +26,7 @@ creatorcurz NumaNode {
     node_id normie
     memory_size normie
     available_memory normie
-    cpu_cores [16]normie
+    cpu_cores normie[16]
     core_count normie
     distance_matrix [NUMA_NODE_COUNT]normie
     pool_count normie
@@ -150,8 +150,8 @@ creatorcurz NumaPoolManager {
     last_gc_cycle normie
     
     // Statistics
-    allocation_histogram [32]normie
-    size_distribution [16]normie
+    allocation_histogram normie[32]
+    size_distribution normie[16]
 }
 
 // Global advanced pool manager

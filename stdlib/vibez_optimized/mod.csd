@@ -2,7 +2,7 @@
 # High-performance I/O operations with string pooling and vectorization
 
 # Performance-optimized string concatenation using rope data structure
-slay string_concat_optimized(parts []tea) tea {
+slay string_concat_optimized(parts tea[value]) tea {
     ready (len(parts) == 0) {
         damn ""
     }
@@ -43,7 +43,7 @@ slay string_find_optimized(haystack tea, needle tea) drip {
     }
     
     # Build bad character table for Boyer-Moore
-    sus bad_char []drip = build_bad_char_table(needle)
+    sus bad_char drip[value] = build_bad_char_table(needle)
     
     sus i drip = 0
     bestie (i <= len(haystack) - len(needle)) {
@@ -67,8 +67,8 @@ slay string_find_optimized(haystack tea, needle tea) drip {
 }
 
 # Memory pool for frequent string allocations
-sus string_pool_blocks []tea = []
-sus string_pool_sizes []drip = []
+sus string_pool_blocks tea[value] = []
+sus string_pool_sizes drip[value] = []
 sus pool_initialized lit = cap
 
 slay initialize_string_pool() lit {
@@ -77,7 +77,7 @@ slay initialize_string_pool() lit {
     }
     
     # Pre-allocate common string sizes
-    sus common_sizes []drip = [16, 32, 64, 128, 256, 512, 1024, 2048]
+    sus common_sizes drip[value] = [16, 32, 64, 128, 256, 512, 1024, 2048]
     bestie (sus i drip = 0; i < len(common_sizes); i++) {
         sus block_size drip = common_sizes[i]
         sus block tea = allocate_raw_string(block_size)
@@ -106,8 +106,8 @@ slay get_pooled_string(size drip) tea {
 }
 
 # Optimized printf-style formatting with format string caching
-sus format_cache []tea = []
-sus format_patterns []tea = []
+sus format_cache tea[value] = []
+sus format_patterns tea[value] = []
 
 slay spillf_optimized(format tea, ...args) lit {
     # Check format cache first
@@ -128,7 +128,7 @@ slay spillf_optimized(format tea, ...args) lit {
 slay parse_format_string(format tea) tea {
     sus result tea = ""
     sus i drip = 0
-    sus placeholders []drip = []
+    sus placeholders drip[value] = []
     
     bestie (i < len(format)) {
         ready (char_at(format, i) == '{') {
@@ -143,7 +143,7 @@ slay parse_format_string(format tea) tea {
     damn result
 }
 
-slay execute_cached_format(cached_format tea, args []normie) lit {
+slay execute_cached_format(cached_format tea, args normie[value]) lit {
     sus output tea = cached_format
     
     bestie (sus i drip = 0; i < len(args); i++) {
@@ -164,7 +164,7 @@ slay string_replace_optimized(text tea, pattern tea, replacement tea) tea {
     
     sus result tea = ""
     sus last_pos drip = 0
-    sus kmp_table []drip = build_kmp_table(pattern)
+    sus kmp_table drip[value] = build_kmp_table(pattern)
     
     sus i drip = 0
     sus j drip = 0
@@ -193,8 +193,8 @@ slay string_replace_optimized(text tea, pattern tea, replacement tea) tea {
     damn result
 }
 
-slay build_kmp_table(pattern tea) []drip {
-    sus table []drip = create_array(len(pattern))
+slay build_kmp_table(pattern tea) drip[value]{
+    sus table drip[value] = create_array(len(pattern))
     set_array_element(table, 0, 0)
     
     sus j drip = 0
@@ -216,8 +216,8 @@ slay build_kmp_table(pattern tea) []drip {
     damn table
 }
 
-slay build_bad_char_table(pattern tea) []drip {
-    sus table []drip = create_array(256)  # ASCII character set
+slay build_bad_char_table(pattern tea) drip[value]{
+    sus table drip[value] = create_array(256)  # ASCII character set
     
     # Initialize all entries to -1
     bestie (sus i drip = 0; i < 256; i++) {
@@ -245,7 +245,7 @@ slay vectorized_string_copy(dest tea, pos drip, src tea) lit {
 }
 
 # Optimized number to string conversion with lookup tables
-sus digit_pairs []tea = [
+sus digit_pairs tea[value] = [
     "00", "01", "02", "03", "04", "05", "06", "07", "08", "09",
     "10", "11", "12", "13", "14", "15", "16", "17", "18", "19",
     "20", "21", "22", "23", "24", "25", "26", "27", "28", "29",

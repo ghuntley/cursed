@@ -11,7 +11,7 @@ slay test_endianness_detection() {
     sus is_big lit = is_big_endian() fr fr Exactly one should be true
     assert_true(is_little != is_big) fr fr Test with known values
     sus test_val normie = 0x12345678
-    sus bytes [4]byte = [4]byte{0x00, 0x00, 0x00, 0x00}
+    sus bytes byte[4] = [4]byte{0x00, 0x00, 0x00, 0x00}
     
     yo is_little { fr fr Little endian: least significant byte first
         write_u32_le(bytes, 0, test_val)
@@ -33,11 +33,11 @@ slay test_endianness_detection() {
 fr fr Test boundary conditions and edge cases
 slay test_boundary_conditions() {
     test_start("boundary_conditions") fr fr Test maximum values for each type
-    sus max_data [16]byte = [16]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} fr fr Test u8 boundaries
+    sus max_data byte[16] = [16]byte{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF} fr fr Test u8 boundaries
     sus max_u8 byte = read_u8(max_data, 0)
     assert_eq_int(max_u8, 255)
     
-    sus min_data [16]byte = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
+    sus min_data byte[16] = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00}
     sus min_u8 byte = read_u8(min_data, 0)
     assert_eq_int(min_u8, 0) fr fr Test u16 boundaries
     sus max_u16_le mid = read_u16_le(max_data, 0)
@@ -63,7 +63,7 @@ fr fr Test buffer overflow protection
 slay test_buffer_overflow_protection() {
     test_start("buffer_overflow_protection")
     
-    sus small_buffer [4]byte = [4]byte{0x01, 0x02, 0x03, 0x04} fr fr Test reading beyond buffer bounds
+    sus small_buffer byte[4] = [4]byte{0x01, 0x02, 0x03, 0x04} fr fr Test reading beyond buffer bounds
     sus out_of_bounds_8 byte = read_u8(small_buffer, 10)
     assert_eq_int(out_of_bounds_8, 0) fr fr Should return safe default
     
@@ -94,7 +94,7 @@ fr fr Test partial read/write operations
 slay test_partial_operations() {
     test_start("partial_operations")
     
-    sus buffer [8]byte = [8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test reading multi-byte values at buffer edge
+    sus buffer byte[8] = [8]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test reading multi-byte values at buffer edge
     sus edge_u16 mid = read_u16_le(buffer, 7) fr fr Only 1 byte available
     assert_eq_int(edge_u16, 0) fr fr Should handle gracefully
     
@@ -118,7 +118,7 @@ fr fr Test signed integer operations
 slay test_signed_integers() {
     test_start("signed_integers")
     
-    sus buffer [16]byte = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test negative i16 values
+    sus buffer byte[16] = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test negative i16 values
     sus negative_i16 smol = -32768 fr fr Minimum i16 value
     write_i16_le(buffer, 0, negative_i16)
     sus read_negative_i16 smol = read_i16_le(buffer, 0)
@@ -153,7 +153,7 @@ fr fr Test floating point operations
 slay test_floating_point() {
     test_start("floating_point")
     
-    sus buffer [16]byte = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test f32 operations
+    sus buffer byte[16] = [16]byte{0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00} fr fr Test f32 operations
     sus pi_f32 meal = 3.14159
     write_f32_le(buffer, 0, pi_f32)
     sus read_pi_f32 meal = read_f32_le(buffer, 0)
@@ -182,29 +182,29 @@ slay test_floating_point() {
 fr fr Test varint encoding/decoding edge cases
 slay test_varint_edge_cases() {
     test_start("varint_edge_cases") fr fr Test zero encoding/decoding
-    sus zero_encoded []byte = varint_encode(0)
+    sus zero_encoded byte[value] = varint_encode(0)
     assert_eq_int(len(zero_encoded), 1)
     assert_eq_int(zero_encoded[0], 0x00)
     sus zero_decoded thicc = varint_decode(zero_encoded)
     assert_eq_int(zero_decoded, 0) fr fr Test maximum single-byte value
-    sus max_single_encoded []byte = varint_encode(127)
+    sus max_single_encoded byte[value] = varint_encode(127)
     assert_eq_int(len(max_single_encoded), 1)
     assert_eq_int(max_single_encoded[0], 0x7F)
     sus max_single_decoded thicc = varint_decode(max_single_encoded)
     assert_eq_int(max_single_decoded, 127) fr fr Test minimum two-byte value
-    sus min_double_encoded []byte = varint_encode(128)
+    sus min_double_encoded byte[value] = varint_encode(128)
     assert_eq_int(len(min_double_encoded), 2)
     assert_eq_int(min_double_encoded[0], 0x80)
     assert_eq_int(min_double_encoded[1], 0x01)
     sus min_double_decoded thicc = varint_decode(min_double_encoded)
     assert_eq_int(min_double_decoded, 128) fr fr Test large values
     sus large_value thicc = 268435455 fr fr Maximum 4-byte varint
-    sus large_encoded []byte = varint_encode(large_value)
+    sus large_encoded byte[value] = varint_encode(large_value)
     assert_eq_int(len(large_encoded), 4)
     sus large_decoded thicc = varint_decode(large_encoded)
     assert_eq_int(large_decoded, large_value) fr fr Test maximum value
     sus max_value thicc = 18446744073709551615 fr fr Maximum u64
-    sus max_encoded []byte = varint_encode(max_value)
+    sus max_encoded byte[value] = varint_encode(max_value)
     assert_true(len(max_encoded) <= 10) fr fr Maximum varint length
     sus max_decoded thicc = varint_decode(max_encoded)
     assert_eq_int(max_decoded, max_value)
@@ -250,19 +250,19 @@ slay test_serialization_formats() {
     sus back_to_host normie = network_to_host_u32(network_value)
     assert_eq_int(back_to_host, host_value) fr fr Test protocol buffer encoding
     sus pb_value thicc = 300
-    sus pb_encoded []byte = protobuf_encode_varint(pb_value)
+    sus pb_encoded byte[value] = protobuf_encode_varint(pb_value)
     sus pb_decoded thicc = protobuf_decode_varint(pb_encoded)
     assert_eq_int(pb_decoded, pb_value) fr fr Test base64 encoding
-    sus original_data []byte = []byte{0x48, 0x65, 0x6C, 0x6C, 0x6F} fr fr "Hello"
+    sus original_data byte[value] = byte[value]{0x48, 0x65, 0x6C, 0x6C, 0x6F} fr fr "Hello"
     sus base64_encoded tea = base64_encode(original_data)
-    sus base64_decoded []byte = base64_decode(base64_encoded)
+    sus base64_decoded byte[value] = base64_decode(base64_encoded)
     assert_eq_int(len(base64_decoded), len(original_data))
     
     bestie i := 0; i < len(original_data); i++ {
         assert_eq_int(base64_decoded[i], original_data[i])
     } fr fr Test hexadecimal encoding
     sus hex_encoded tea = hex_encode(original_data)
-    sus hex_decoded []byte = hex_decode(hex_encoded)
+    sus hex_decoded byte[value] = hex_decode(hex_encoded)
     assert_eq_int(len(hex_decoded), len(original_data))
     
     bestie i := 0; i < len(original_data); i++ {
@@ -276,17 +276,17 @@ fr fr Test checksum and hash functions
 slay test_checksum_operations() {
     test_start("checksum_operations")
     
-    sus test_data []byte = []byte{0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64} fr fr "Hello World" fr fr Test CRC32 checksum
+    sus test_data byte[value] = byte[value]{0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64} fr fr "Hello World" fr fr Test CRC32 checksum
     sus crc32_value normie = calculate_crc32(test_data)
     assert_true(crc32_value != 0) fr fr Test that same data produces same checksum
     sus crc32_repeat normie = calculate_crc32(test_data)
     assert_eq_int(crc32_value, crc32_repeat) fr fr Test MD5 hash
-    sus md5_hash []byte = calculate_md5(test_data)
+    sus md5_hash byte[value] = calculate_md5(test_data)
     assert_eq_int(len(md5_hash), 16) fr fr MD5 is 128 bits = 16 bytes fr fr Test SHA256 hash
-    sus sha256_hash []byte = calculate_sha256(test_data)
+    sus sha256_hash byte[value] = calculate_sha256(test_data)
     assert_eq_int(len(sha256_hash), 32) fr fr SHA256 is 256 bits = 32 bytes fr fr Test that different data produces different hashes
-    sus different_data []byte = []byte{0x48, 0x65, 0x6C, 0x6C, 0x6F} fr fr "Hello"
-    sus different_md5 []byte = calculate_md5(different_data)
+    sus different_data byte[value] = byte[value]{0x48, 0x65, 0x6C, 0x6C, 0x6F} fr fr "Hello"
+    sus different_md5 byte[value] = calculate_md5(different_data)
     assert_false(bytes_equal(md5_hash, different_md5))
     
     vibez.spill("✅ Checksum operations test passed")
@@ -296,7 +296,7 @@ fr fr Stress test for binary operations
 slay test_binary_stress() {
     test_start("binary_stress")
     
-    sus large_buffer []byte = make([]byte, 1048576) fr fr 1MB buffer
+    sus large_buffer byte[value] = make(byte[value], 1048576) fr fr 1MB buffer
     sus iterations normie = 10000 fr fr Fill buffer with pseudo-random data
     bestie i := 0; i < len(large_buffer); i++ {
         large_buffer[i] = (i * 7 + 13) % 256
@@ -316,7 +316,7 @@ slay test_binary_stress() {
     }
     
     assert_true(read_count > 0) fr fr Should have read some non-zero values fr fr Perform many write operations
-    sus write_buffer []byte = make([]byte, 1024)
+    sus write_buffer byte[value] = make(byte[value], 1024)
     bestie i := 0; i < 100; i++ {
         sus offset normie = (i * 4) % (len(write_buffer) - 8)
         

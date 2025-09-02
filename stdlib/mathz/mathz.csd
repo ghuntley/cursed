@@ -367,7 +367,7 @@ slay lerp(a drip, b drip, t drip) drip {
 
 fr fr ===== STATISTICAL FUNCTIONS =====
 
-slay sum_array(arr []drip, size drip) drip {
+slay sum_array(arr drip[value], size drip) drip {
     sus total drip = 0
     sus i drip = 0
     bestie (i < size) {
@@ -377,7 +377,7 @@ slay sum_array(arr []drip, size drip) drip {
     damn total
 }
 
-slay average(arr []drip, size drip) drip {
+slay average(arr drip[value], size drip) drip {
     ready (size == 0) {
         damn 0
     }
@@ -385,7 +385,7 @@ slay average(arr []drip, size drip) drip {
     damn total / size
 }
 
-slay find_min(arr []drip, size drip) drip {
+slay find_min(arr drip[value], size drip) drip {
     ready (size == 0) {
         damn 0
     }
@@ -400,7 +400,7 @@ slay find_min(arr []drip, size drip) drip {
     damn min_val
 }
 
-slay find_max(arr []drip, size drip) drip {
+slay find_max(arr drip[value], size drip) drip {
     ready (size == 0) {
         damn 0
     }

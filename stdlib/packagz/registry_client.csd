@@ -96,7 +96,7 @@ slay configure_auth(client RegistryClient, credentials AuthCredentials) Registry
 }
 
 # Search packages in registry with advanced filtering
-slay search_packages_advanced(client RegistryClient, query tea, category tea, limit drip) ([]PackageMetadata, lit) {
+slay search_packages_advanced(client RegistryClient, query tea, category tea, limit drip) (PackageMetadata[value], lit) {
     vibez.spill("Searching registry for:", query, "category:", category)
     
     sus search_url tea = build_search_url(client.base_url, query, category, limit)
@@ -107,7 +107,7 @@ slay search_packages_advanced(client RegistryClient, query tea, category tea, li
         damn ([], cap)
     }
     
-    sus packages []PackageMetadata = parse_search_results(response.data)
+    sus packages PackageMetadata[value] = parse_search_results(response.data)
     
     # Cache search results for offline access
     cache_search_results(client, query, packages)
@@ -221,7 +221,7 @@ slay publish_package(client RegistryClient, request PublishRequest) lit {
 }
 
 # List user's published packages
-slay list_published_packages(client RegistryClient, username tea) ([]PackageMetadata, lit) {
+slay list_published_packages(client RegistryClient, username tea) (PackageMetadata[value], lit) {
     sus list_url tea = client.base_url + "/api/v1/users/" + username + "/packages"
     sus response RegistryResponse = make_authenticated_request(client, "GET", list_url, "")
     
@@ -229,7 +229,7 @@ slay list_published_packages(client RegistryClient, username tea) ([]PackageMeta
         damn ([], cap)
     }
     
-    sus packages []PackageMetadata = parse_package_list(response.data)
+    sus packages PackageMetadata[value] = parse_package_list(response.data)
     damn (packages, based)
 }
 
@@ -272,7 +272,7 @@ slay yank_package_version(client RegistryClient, name tea, version tea, reason t
 }
 
 # Get trending packages
-slay get_trending_packages(client RegistryClient, time_period tea, limit drip) ([]PackageMetadata, lit) {
+slay get_trending_packages(client RegistryClient, time_period tea, limit drip) (PackageMetadata[value], lit) {
     sus trending_url tea = client.base_url + "/api/v1/trending?period=" + time_period + "&limit=" + stringz.from_int(limit)
     sus response RegistryResponse = make_authenticated_request(client, "GET", trending_url, "")
     
@@ -280,7 +280,7 @@ slay get_trending_packages(client RegistryClient, time_period tea, limit drip) (
         damn ([], cap)
     }
     
-    sus packages []PackageMetadata = parse_package_list(response.data)
+    sus packages PackageMetadata[value] = parse_package_list(response.data)
     damn (packages, based)
 }
 
@@ -358,7 +358,7 @@ slay parse_registry_response(http_response tea) RegistryResponse {
 }
 
 # Cache management functions
-slay cache_search_results(client RegistryClient, query tea, packages []PackageMetadata) {
+slay cache_search_results(client RegistryClient, query tea, packages PackageMetadata[value]) {
     sus cache_key tea = "search_" + stringz.replace(query, " ", "_")
     sus cache_path tea = client.cache_dir + "/searches/" + cache_key + ".json"
     
@@ -449,7 +449,7 @@ slay is_valid_package_name(name tea) lit {
 
 slay is_valid_version(version tea) lit {
     # Simple semantic version validation
-    sus parts []tea = stringz.split(version, ".")
+    sus parts tea[value] = stringz.split(version, ".")
     ready (arrayz.len(parts) < 3) {
         damn cap
     }
@@ -481,12 +481,12 @@ slay serialize_package_metadata(metadata PackageMetadata) JsonValue {
     damn obj
 }
 
-slay parse_search_results(data JsonValue) []PackageMetadata {
+slay parse_search_results(data JsonValue) PackageMetadata[value]{
     # Simplified parsing
     damn []
 }
 
-slay parse_package_list(data JsonValue) []PackageMetadata {
+slay parse_package_list(data JsonValue) PackageMetadata[value]{
     # Simplified parsing
     damn []
 }

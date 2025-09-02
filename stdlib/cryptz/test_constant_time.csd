@@ -61,8 +61,8 @@ assert_eq_string(processed2, "this_is_a_much_longer_string")
 test_start("PBKDF2 Timing Analysis")
 
 fr fr Perform basic timing analysis to verify constant-time behavior
-sus passwords []tea = ["a", "abc", "password", "very_long_password_string"]
-sus timing_results []drip = [0, 0, 0, 0]
+sus passwords tea[value] = ["a", "abc", "password", "very_long_password_string"]
+sus timing_results drip[value] = [0, 0, 0, 0]
 
 bestie i := 0; i < len(passwords); i++ {
     sus start_time drip = benchmark_start()

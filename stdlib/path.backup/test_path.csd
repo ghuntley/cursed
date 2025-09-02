@@ -6,13 +6,13 @@ test_start("Path Module Tests")
 
 fr fr Test path joining
 test_start("Path Joining")
-joined := path.join([]tea{"home", "user", "documents"})
+joined := path.join(tea[value]{"home", "user", "documents"})
 assert_eq_string(joined, "home/user/documents")
 
-empty_join := path.join([]tea{})
+empty_join := path.join(tea[value]{})
 assert_eq_string(empty_join, "")
 
-single_join := path.join([]tea{"single"})
+single_join := path.join(tea[value]{"single"})
 assert_eq_string(single_join, "single")
 
 fr fr Test path splitting
@@ -134,8 +134,8 @@ assert_true(path.match("exact", "exact"))
 
 fr fr Test extension checking
 test_start("Extension Checking")
-assert_true(path.has_extension("file.txt", []tea{".txt", ".doc"}))
-assert_false(path.has_extension("file.jpg", []tea{".txt", ".doc"}))
+assert_true(path.has_extension("file.txt", tea[value]{".txt", ".doc"}))
+assert_false(path.has_extension("file.jpg", tea[value]{".txt", ".doc"}))
 
 fr fr Test directory management
 test_start("Directory Management")

@@ -78,7 +78,7 @@ assert_true(perf_duration > 0)
 assert_true(perf_duration < 500000000) // Less than 500ms for 100 calls
 
 // Test spill with array-like structures (if supported)
-sus test_values []drip = [1, 2, 3]
+sus test_values drip[value] = [1, 2, 3]
 vibez.spill("Array values:", test_values[0], test_values[1], test_values[2])
 
 // Test error handling with spill

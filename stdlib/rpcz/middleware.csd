@@ -64,7 +64,7 @@ squad MetricsMiddleware {
     successful_requests drip,
     failed_requests drip,
     method_counts map<tea, drip>,
-    response_times []drip,
+    response_times drip[value],
     start_times map<tea, drip>      # request_id -> start_time
 }
 
@@ -221,8 +221,8 @@ slay add_custom_validator(middleware &ValidationMiddleware, method tea, validato
 # Security Middleware - handles authentication, CORS, and security headers
 squad SecurityMiddleware {
     require_https lit,
-    allowed_origins []tea,
-    require_auth_for_methods []tea,
+    allowed_origins tea[value],
+    require_auth_for_methods tea[value],
     api_key_header tea,
     valid_api_keys map<tea, tea>,    # api_key -> user_info
     rate_limit_per_method map<tea, drip>
@@ -268,7 +268,7 @@ slay new_security_middleware() SecurityMiddleware {
 squad CachingMiddleware {
     cache map<tea, CacheEntry>,
     ttl_seconds drip,
-    cacheable_methods []tea,
+    cacheable_methods tea[value],
     max_cache_size drip
 }
 
@@ -393,7 +393,7 @@ slay add_cacheable_method(middleware &CachingMiddleware, method tea) {
 
 # Middleware Chain - combines multiple middleware
 squad MiddlewareChain {
-    middleware_list []RpcMiddleware
+    middleware_list RpcMiddleware[value]
 }
 
 slay chain_before_call(chain &MiddlewareChain, request RpcRequest) yikes<lit> {

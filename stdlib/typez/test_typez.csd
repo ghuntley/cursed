@@ -49,8 +49,8 @@ slay test_struct_type_registration() lit {
         tag: "json:\"age\""
     }
     
-    sus fields []typez.FieldInfo = [name_field, age_field]
-    sus methods []typez.MethodInfo = []
+    sus fields typez[value].FieldInfo = [name_field, age_field]
+    sus methods typez[value].MethodInfo = []
     
     fr fr Register struct type
     sus person_type_id normie = typez.register_struct_type("Person", fields, methods)
@@ -93,7 +93,7 @@ slay test_interface_type_registration() lit {
         is_public: based
     }
     
-    sus methods []typez.MethodInfo = [draw_method, move_method]
+    sus methods typez[value].MethodInfo = [draw_method, move_method]
     
     fr fr Register interface type
     sus drawable_type_id normie = typez.register_interface_type("Drawable", methods)
@@ -124,7 +124,7 @@ slay test_array_type_registration() lit {
     testz.assert_true(array_type_id > 0)
     
     sus array_type typez.TypeInfo = typez.get_type_by_id(array_type_id)
-    testz.assert_eq_string(array_type.name, "[]normie")
+    testz.assert_eq_string(array_type.name, "normie[value]")
     testz.assert_true(array_type.is_array)
     testz.assert_eq_int(array_type.size, 40)  fr fr 10 * 4 bytes
     testz.assert_eq_int(array_type.alignment, 4)
@@ -153,7 +153,7 @@ slay test_type_lookup_operations() lit {
     testz.assert_eq_int(unknown_type.type_id, 0)
     
     fr fr Test getting all types
-    sus all_types []typez.TypeInfo = typez.get_all_types()
+    sus all_types typez[value].TypeInfo = typez.get_all_types()
     testz.assert_true(all_types.len() >= 6)  fr fr At least the primitive types
     
     damn based
@@ -163,7 +163,7 @@ slay test_types_by_kind() lit {
     testz.test_start("Types by kind filtering")
     
     fr fr Get primitive types
-    sus primitive_types []typez.TypeInfo = typez.get_types_by_kind(typez.TYPE_KIND_PRIMITIVE)
+    sus primitive_types typez[value].TypeInfo = typez.get_types_by_kind(typez.TYPE_KIND_PRIMITIVE)
     testz.assert_true(primitive_types.len() >= 6)  fr fr tea, normie, thicc, meal, lit, smol
     
     fr fr Verify all returned types are primitive
@@ -173,7 +173,7 @@ slay test_types_by_kind() lit {
     }
     
     fr fr Get struct types (should include any we registered)
-    sus struct_types []typez.TypeInfo = typez.get_types_by_kind(typez.TYPE_KIND_STRUCT)
+    sus struct_types typez[value].TypeInfo = typez.get_types_by_kind(typez.TYPE_KIND_STRUCT)
     bestie struct_type in struct_types {
         testz.assert_true(struct_type.is_struct)
     }
@@ -295,7 +295,7 @@ slay test_struct_size_calculation() lit {
         tag: ""
     }
     
-    sus fields []typez.FieldInfo = [byte_field, int_field, string_field]
+    sus fields typez[value].FieldInfo = [byte_field, int_field, string_field]
     
     fr fr Test size calculation with padding
     sus total_size normie = typez.calculate_struct_size(fields)
@@ -346,7 +346,7 @@ slay test_field_operations() lit {
         tag: "json:\"score\""
     }
     
-    sus fields []typez.FieldInfo = [name_field, score_field]
+    sus fields typez[value].FieldInfo = [name_field, score_field]
     typez.register_struct_type("Player", fields, [])
     
     fr fr Test field info retrieval
@@ -404,7 +404,7 @@ slay test_type_printing() lit {
     typez.print_all_types()
     
     fr fr Test struct printing if we have structs registered
-    sus all_types []typez.TypeInfo = typez.get_all_types()
+    sus all_types typez[value].TypeInfo = typez.get_all_types()
     bestie type_info in all_types {
         lowkey type_info.is_struct {
             sus struct_info typez.StructInfo = typez.get_struct_info(type_info.name)
@@ -463,7 +463,7 @@ slay test_complex_type_system() lit {
         tag: "default:true"
     }
     
-    sus fields []typez.FieldInfo = [id_field, name_field, active_field]
+    sus fields typez[value].FieldInfo = [id_field, name_field, active_field]
     
     fr fr Register complex struct
     sus user_type_id normie = typez.register_struct_type("User", fields, [])

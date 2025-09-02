@@ -14,9 +14,9 @@ squad SNIConfig {
     sus enabled lit
     sus strict_sni_matching lit
     sus default_certificate X509Certificate
-    sus default_private_key []drip
+    sus default_private_key drip[value]
     sus certificate_map map<tea, SNICertificateEntry>
-    sus wildcard_certificates []SNIWildcardEntry
+    sus wildcard_certificates SNIWildcardEntry[value]
     sus sni_callback_func tea
     sus fallback_behavior tea  fr fr "default", "reject", "first_available"
     sus case_sensitive lit
@@ -25,8 +25,8 @@ squad SNIConfig {
 squad SNICertificateEntry {
     sus hostname tea
     sus certificate X509Certificate
-    sus private_key []drip
-    sus cert_chain []X509Certificate
+    sus private_key drip[value]
+    sus cert_chain X509Certificate[value]
     sus last_used drip
     sus usage_count drip
     sus is_wildcard lit
@@ -35,19 +35,19 @@ squad SNICertificateEntry {
 squad SNIWildcardEntry {
     sus pattern tea  fr fr e.g., "*.example.com"
     sus certificate X509Certificate
-    sus private_key []drip
-    sus cert_chain []X509Certificate
+    sus private_key drip[value]
+    sus cert_chain X509Certificate[value]
     sus priority drip  fr fr Higher numbers = higher priority
 }
 
 squad SNIHandshakeResult {
     sus hostname tea
     sus certificate_selected X509Certificate
-    sus certificate_chain []X509Certificate
-    sus private_key []drip
+    sus certificate_chain X509Certificate[value]
+    sus private_key drip[value]
     sus sni_matched lit
     sus match_type tea  fr fr "exact", "wildcard", "default", "fallback"
-    sus warnings []tea
+    sus warnings tea[value]
 }
 
 fr fr ===== SNI CONFIGURATION =====
@@ -80,8 +80,8 @@ slay add_sni_certificate(
     config SNIConfig,
     hostname tea,
     certificate X509Certificate,
-    private_key []drip,
-    cert_chain []X509Certificate
+    private_key drip[value],
+    cert_chain X509Certificate[value]
 ) yikes<SNIConfig> {
     fr fr Add certificate for specific hostname
     
@@ -140,7 +140,7 @@ slay remove_sni_certificate(config SNIConfig, hostname tea) SNIConfig {
     config.certificate_map = mapz.remove(config.certificate_map, normalized_hostname)
     
     fr fr Remove from wildcard matches
-    sus filtered_wildcards []SNIWildcardEntry = []
+    sus filtered_wildcards SNIWildcardEntry[value] = []
     sus i drip = 0
     bestie (i < arrayz.length(config.wildcard_certificates)) {
         sus entry SNIWildcardEntry = config.wildcard_certificates[i]
@@ -157,7 +157,7 @@ slay remove_sni_certificate(config SNIConfig, hostname tea) SNIConfig {
 slay set_default_sni_certificate(
     config SNIConfig,
     certificate X509Certificate,
-    private_key []drip
+    private_key drip[value]
 ) SNIConfig {
     fr fr Set default certificate for SNI fallback
     config.default_certificate = certificate
@@ -263,7 +263,7 @@ slay process_sni_handshake(
     damn result
 }
 
-slay find_best_wildcard_match(hostname tea, wildcard_certs []SNIWildcardEntry) yikes<SNIWildcardEntry> {
+slay find_best_wildcard_match(hostname tea, wildcard_certs SNIWildcardEntry[value]) yikes<SNIWildcardEntry> {
     fr fr Find best matching wildcard certificate
     
     sus best_match SNIWildcardEntry = SNIWildcardEntry{}
@@ -348,7 +348,7 @@ slay validate_certificate_for_hostname(cert X509Certificate, hostname tea) lit {
 slay certificate_subject_matches_hostname(subject tea, hostname tea) lit {
     fr fr Extract CN from subject and check match
     
-    sus subject_parts []tea = stringz.split(subject, ",")
+    sus subject_parts tea[value] = stringz.split(subject, ",")
     sus i drip = 0
     bestie (i < arrayz.length(subject_parts)) {
         sus part tea = stringz.trim(subject_parts[i])
@@ -378,7 +378,7 @@ slay calculate_wildcard_priority(pattern tea) drip {
 slay get_first_available_certificate(config SNIConfig) yikes<SNICertificateEntry> {
     fr fr Get first available certificate from the map
     
-    sus keys []tea = mapz.keys(config.certificate_map)
+    sus keys tea[value] = mapz.keys(config.certificate_map)
     ready (arrayz.length(keys) == 0) {
         yikes "NO_CERTIFICATES_AVAILABLE"
     }
@@ -553,7 +553,7 @@ slay mapz.remove(m map<tea, SNICertificateEntry>, key tea) map<tea, SNICertifica
     damn m  fr fr Mock map remove
 }
 
-slay mapz.keys(m map<tea, SNICertificateEntry>) []tea {
+slay mapz.keys(m map<tea, SNICertificateEntry>) tea[value]{
     damn ["example.com"]  fr fr Mock map keys
 }
 

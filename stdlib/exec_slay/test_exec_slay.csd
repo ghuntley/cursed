@@ -5,7 +5,7 @@ yeet "exec_slay"
 
 // Test basic process execution
 test_start("exec_command basic functionality")
-sus args []tea = []tea{"--version"}
+sus args tea[value] = tea[value]{"--version"}
 sus result ProcessResult = exec_slay.exec_command("llc", args)
 assert_true(result.success)
 assert_eq_int(result.exit_code, 0)
@@ -74,7 +74,7 @@ assert_eq_int(obj_result.exit_code, 0)
 
 // Test object linking
 test_start("link_objects executable creation")
-sus obj_files []tea = []tea{"test.o", "runtime.o"}
+sus obj_files tea[value] = tea[value]{"test.o", "runtime.o"}
 sus link_result ProcessResult = exec_slay.link_objects(obj_files, "test_exe")
 assert_true(link_result.success)
 assert_eq_int(link_result.exit_code, 0)
@@ -104,17 +104,17 @@ assert_true(stringz.contains(system_path, "/bin"))
 
 // Test timeout execution
 test_start("exec_with_timeout functionality")
-sus timeout_result ProcessResult = exec_slay.exec_with_timeout("echo", []tea{"timeout test"}, 5)
+sus timeout_result ProcessResult = exec_slay.exec_with_timeout("echo", tea[value]{"timeout test"}, 5)
 assert_true(timeout_result.success)
 
 // Test output capture to file
 test_start("exec_to_file output capture")
-sus file_result ProcessResult = exec_slay.exec_to_file("echo", []tea{"file output"}, "output.txt")
+sus file_result ProcessResult = exec_slay.exec_to_file("echo", tea[value]{"file output"}, "output.txt")
 assert_true(file_result.success)
 
 // Test error handling for invalid commands
 test_start("error handling for invalid commands")
-sus error_result ProcessResult = exec_slay.exec_command("invalid_command", []tea{})
+sus error_result ProcessResult = exec_slay.exec_command("invalid_command", tea[value]{})
 assert_false(error_result.success)
 assert_true(error_result.exit_code != 0)
 assert_true(stringz.contains(error_result.stderr, "Command not found"))
@@ -170,7 +170,7 @@ assert_true(self_compile_result.success)
 
 // Test batch object linking
 test_start("batch object linking")
-sus batch_objects []tea = []tea{
+sus batch_objects tea[value] = tea[value]{
     "main.o",
     "lexer.o", 
     "parser.o",

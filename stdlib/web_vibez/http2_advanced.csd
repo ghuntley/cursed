@@ -26,7 +26,7 @@ be_like HTTP2Frame = struct {
     frame_type HTTP2FrameType,
     flags drip,
     stream_id drip,
-    payload []drip
+    payload drip[value]
 }
 
 fr fr HTTP/2 Stream State Machine
@@ -44,16 +44,16 @@ be_like HTTP2Stream = struct {
     stream_id drip,
     state HTTP2StreamState,
     window_size drip,
-    headers []tea,
-    data []drip,
+    headers tea[value],
+    data drip[value],
     priority drip
 }
 
 fr fr HTTP/2 Connection Management
 be_like HTTP2Connection = struct {
     connection_id drip,
-    streams []HTTP2Stream,
-    settings []drip,
+    streams HTTP2Stream[value],
+    settings drip[value],
     window_size drip,
     max_frame_size drip,
     tls_enabled lit
@@ -88,7 +88,7 @@ slay http2_connection_preface() tea {
 }
 
 fr fr Create HTTP/2 Frame
-slay create_http2_frame(frame_type HTTP2FrameType, flags drip, stream_id drip, payload []drip) HTTP2Frame {
+slay create_http2_frame(frame_type HTTP2FrameType, flags drip, stream_id drip, payload drip[value]) HTTP2Frame {
     sus frame HTTP2Frame = HTTP2Frame{
         length: payload.len(),
         frame_type: frame_type,
@@ -100,8 +100,8 @@ slay create_http2_frame(frame_type HTTP2FrameType, flags drip, stream_id drip, p
 }
 
 fr fr Serialize HTTP/2 Frame to Binary
-slay serialize_http2_frame(frame HTTP2Frame) []drip {
-    sus result []drip = []
+slay serialize_http2_frame(frame HTTP2Frame) drip[value]{
+    sus result drip[value] = []
     
     fr fr Length (24 bits)
     result.append((frame.length >> 16) & 0xFF)
@@ -129,7 +129,7 @@ slay serialize_http2_frame(frame HTTP2Frame) []drip {
 }
 
 fr fr Parse HTTP/2 Frame from Binary
-slay parse_http2_frame(data []drip) HTTP2Frame {
+slay parse_http2_frame(data drip[value]) HTTP2Frame {
     lowkey data.len() < 9 {
         damn HTTP2Frame{length: 0, frame_type: 0, flags: 0, stream_id: 0, payload: []}
     }
@@ -141,7 +141,7 @@ slay parse_http2_frame(data []drip) HTTP2Frame {
     sus stream_id drip = ((data[5] & 0x7F) << 24) | (data[6] << 16) | (data[7] << 8) | data[8]
     
     fr fr Extract payload
-    sus payload []drip = []
+    sus payload drip[value] = []
     lowkey data.len() > 9 {
         bestie i := 9; i < data.len() && i < (9 + length); i++ {
             payload.append(data[i])
@@ -159,14 +159,14 @@ slay parse_http2_frame(data []drip) HTTP2Frame {
 
 fr fr HTTP/2 HPACK Header Compression (Simplified)
 be_like HPACKTable = struct {
-    static_table []tea,
-    dynamic_table []tea,
+    static_table tea[value],
+    dynamic_table tea[value],
     max_size drip
 }
 
 fr fr Initialize HPACK Static Table (Subset)
 slay init_hpack_table() HPACKTable {
-    sus static_headers []tea = [
+    sus static_headers tea[value] = [
         ":authority",
         ":method GET",
         ":method POST", 
@@ -207,7 +207,7 @@ slay init_hpack_table() HPACKTable {
 }
 
 fr fr HPACK Header Compression (Basic Implementation)
-slay hpack_encode_header(name tea, value tea, table HPACKTable) []drip {
+slay hpack_encode_header(name tea, value tea, table HPACKTable) drip[value]{
     fr fr Try to find in static table
     bestie i := 0; i < table.static_table.len(); i++ {
         lowkey table.static_table[i] == name || table.static_table[i] == (name + " " + value) {
@@ -221,7 +221,7 @@ slay hpack_encode_header(name tea, value tea, table HPACKTable) []drip {
     }
     
     fr fr Literal header field - new name
-    sus result []drip = [0x40] fr fr Literal with incremental indexing
+    sus result drip[value] = [0x40] fr fr Literal with incremental indexing
     result.append_all(encode_hpack_string(name))
     result.append_all(encode_hpack_string(value))
     
@@ -229,8 +229,8 @@ slay hpack_encode_header(name tea, value tea, table HPACKTable) []drip {
 }
 
 fr fr HPACK String Encoding (No Huffman for simplicity)
-slay encode_hpack_string(str tea) []drip {
-    sus result []drip = []
+slay encode_hpack_string(str tea) drip[value]{
+    sus result drip[value] = []
     
     fr fr Length encoding (no Huffman - bit 7 = 0)
     lowkey str.len() < 127 {
@@ -271,8 +271,8 @@ be_like WebSocketFrame = struct {
     opcode WebSocketOpcode,
     masked lit,
     payload_length drip,
-    masking_key []drip,
-    payload []drip
+    masking_key drip[value],
+    payload drip[value]
 }
 
 be_like WebSocketConnection = struct {
@@ -323,7 +323,7 @@ slay websocket_handshake_response(key tea, protocol tea) tea {
 }
 
 fr fr Create WebSocket Frame
-slay create_websocket_frame(opcode WebSocketOpcode, payload []drip, fin lit) WebSocketFrame {
+slay create_websocket_frame(opcode WebSocketOpcode, payload drip[value], fin lit) WebSocketFrame {
     damn WebSocketFrame{
         fin: fin,
         opcode: opcode,
@@ -335,8 +335,8 @@ slay create_websocket_frame(opcode WebSocketOpcode, payload []drip, fin lit) Web
 }
 
 fr fr Serialize WebSocket Frame
-slay serialize_websocket_frame(frame WebSocketFrame) []drip {
-    sus result []drip = []
+slay serialize_websocket_frame(frame WebSocketFrame) drip[value]{
+    sus result drip[value] = []
     
     fr fr First byte: FIN + opcode
     sus first_byte drip = frame.opcode
@@ -391,12 +391,12 @@ be_like TLSConnection = struct {
     version TLSVersion,
     cipher_suite TLSCipherSuite,
     server_name tea,
-    certificate_chain []tea,
+    certificate_chain tea[value],
     session_resumed lit
 }
 
 fr fr TLS Handshake (Simplified Mock)
-slay tls_handshake(server_name tea, alpn_protocols []tea) TLSConnection {
+slay tls_handshake(server_name tea, alpn_protocols tea[value]) TLSConnection {
     fr fr Mock successful TLS 1.3 handshake with HTTP/2
     damn TLSConnection{
         version: TLS_1_3,
@@ -408,7 +408,7 @@ slay tls_handshake(server_name tea, alpn_protocols []tea) TLSConnection {
 }
 
 fr fr ALPN Protocol Negotiation
-slay negotiate_alpn(protocols []tea) tea {
+slay negotiate_alpn(protocols tea[value]) tea {
     fr fr Prefer HTTP/2, fallback to HTTP/1.1
     bestie i := 0; i < protocols.len(); i++ {
         lowkey protocols[i] == "h2" {
@@ -428,13 +428,13 @@ slay negotiate_alpn(protocols []tea) tea {
 fr fr HTTP/2 Server Push
 be_like HTTP2PushPromise = struct {
     promised_stream_id drip,
-    request_headers []tea,
-    response_headers []tea,
-    response_body []drip
+    request_headers tea[value],
+    response_headers tea[value],
+    response_body drip[value]
 }
 
 fr fr Create Server Push Promise
-slay create_server_push(original_stream_id drip, push_url tea, push_headers []tea) HTTP2PushPromise {
+slay create_server_push(original_stream_id drip, push_url tea, push_headers tea[value]) HTTP2PushPromise {
     sus promised_id drip = generate_stream_id()
     
     damn HTTP2PushPromise{
@@ -475,7 +475,7 @@ slay update_flow_control_window(window FlowControlWindow, delta drip) FlowContro
 
 fr fr HTTP/2 Multiplexing Manager
 be_like MultiplexManager = struct {
-    active_streams []HTTP2Stream,
+    active_streams HTTP2Stream[value],
     max_concurrent_streams drip,
     next_stream_id drip
 }
@@ -501,7 +501,7 @@ slay add_stream_to_multiplexer(manager MultiplexManager, stream HTTP2Stream) (Mu
 
 fr fr Remove Stream from Multiplexer
 slay remove_stream_from_multiplexer(manager MultiplexManager, stream_id drip) MultiplexManager {
-    sus new_streams []HTTP2Stream = []
+    sus new_streams HTTP2Stream[value] = []
     
     bestie i := 0; i < manager.active_streams.len(); i++ {
         lowkey manager.active_streams[i].stream_id != stream_id {
@@ -519,7 +519,7 @@ slay http_method_connect(target tea, port drip) tea {
     damn response
 }
 
-slay http_method_options(allowed_methods []tea) tea {
+slay http_method_options(allowed_methods tea[value]) tea {
     sus methods_str tea = stringz.join(allowed_methods, ", ")
     
     sus response tea = "HTTP/1.1 200 OK\r\n"
@@ -659,12 +659,12 @@ be_like Backend = struct {
 
 be_like LoadBalancer = struct {
     algorithm LoadBalancerAlgorithm,
-    backends []Backend,
+    backends Backend[value],
     current_index drip
 }
 
 fr fr Create Load Balancer
-slay create_load_balancer(algorithm LoadBalancerAlgorithm, backends []Backend) LoadBalancer {
+slay create_load_balancer(algorithm LoadBalancerAlgorithm, backends Backend[value]) LoadBalancer {
     damn LoadBalancer{
         algorithm: algorithm,
         backends: backends,
@@ -768,7 +768,7 @@ slay start_http2_server(port drip, tls_enabled lit, certificate_path tea, key_pa
 }
 
 fr fr Production HTTP/2 Client Implementation  
-slay http2_client_request(url tea, method tea, headers []tea, body []drip) tea {
+slay http2_client_request(url tea, method tea, headers tea[value], body drip[value]) tea {
     vibez.spill("Making HTTP/2 " + method + " request to " + url)
     
     fr fr Parse URL and establish TLS connection
@@ -786,7 +786,7 @@ slay http2_client_request(url tea, method tea, headers []tea, body []drip) tea {
         
         fr fr Create HEADERS frame
         sus hpack_table HPACKTable = init_hpack_table()
-        sus compressed_headers []drip = []
+        sus compressed_headers drip[value] = []
         
         fr fr Add method
         compressed_headers.append_all(hpack_encode_header(":method", method, hpack_table))
@@ -802,14 +802,14 @@ slay http2_client_request(url tea, method tea, headers []tea, body []drip) tea {
         }
         
         sus headers_frame HTTP2Frame = create_http2_frame(HTTP2_HEADERS, 0x01, 1, compressed_headers) fr fr END_HEADERS flag
-        sus serialized_frame []drip = serialize_http2_frame(headers_frame)
+        sus serialized_frame drip[value] = serialize_http2_frame(headers_frame)
         
         vibez.spill("Sent HEADERS frame (" + serialized_frame.len().to_string() + " bytes)")
         
         fr fr Send DATA frame if body present
         lowkey body.len() > 0 {
             sus data_frame HTTP2Frame = create_http2_frame(HTTP2_DATA, 0x01, 1, body) fr fr END_STREAM flag
-            sus data_serialized []drip = serialize_http2_frame(data_frame)
+            sus data_serialized drip[value] = serialize_http2_frame(data_frame)
             vibez.spill("Sent DATA frame (" + data_serialized.len().to_string() + " bytes)")
         }
         
@@ -848,7 +848,7 @@ slay extract_path(url tea) tea {
 }
 
 fr fr WebSocket Client Implementation
-slay websocket_client_connect(url tea, protocols []tea) tea {
+slay websocket_client_connect(url tea, protocols tea[value]) tea {
     vibez.spill("Connecting to WebSocket: " + url)
     
     sus key tea = generate_websocket_key()
@@ -877,8 +877,8 @@ slay websocket_client_connect(url tea, protocols []tea) tea {
 }
 
 fr fr WebSocket Message Handling
-slay websocket_send_text(message tea) []drip {
-    sus payload []drip = []
+slay websocket_send_text(message tea) drip[value]{
+    sus payload drip[value] = []
     bestie i := 0; i < message.len(); i++ {
         payload.append(message.char_at(i).ascii_value())
     }
@@ -887,18 +887,18 @@ slay websocket_send_text(message tea) []drip {
     damn serialize_websocket_frame(frame)
 }
 
-slay websocket_send_binary(data []drip) []drip {
+slay websocket_send_binary(data drip[value]) drip[value]{
     sus frame WebSocketFrame = create_websocket_frame(WS_BINARY, data, based)
     damn serialize_websocket_frame(frame)
 }
 
-slay websocket_ping() []drip {
+slay websocket_ping() drip[value]{
     sus frame WebSocketFrame = create_websocket_frame(WS_PING, [], based)
     damn serialize_websocket_frame(frame)
 }
 
-slay websocket_close(code drip, reason tea) []drip {
-    sus payload []drip = []
+slay websocket_close(code drip, reason tea) drip[value]{
+    sus payload drip[value] = []
     payload.append((code >> 8) & 0xFF)
     payload.append(code & 0xFF)
     

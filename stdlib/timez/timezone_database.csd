@@ -33,8 +33,8 @@ squad TimezoneInfo {
     spill is_dst_active lit
     spill dst_start_timestamp drip
     spill dst_end_timestamp drip
-    spill transitions []TimezoneTransition
-    spill rules []TimezoneRule
+    spill transitions TimezoneTransition[value]
+    spill rules TimezoneRule[value]
 }
 
 squad DSTTransition {
@@ -74,7 +74,7 @@ facts AEDT_OFFSET drip = 39600        fr fr UTC+11 (AEST + DST)
 
 fr fr ===== TIMEZONE DATABASE LOADER =====
 
-sus timezone_database []TimezoneInfo = []
+sus timezone_database TimezoneInfo[value] = []
 sus database_loaded lit = cringe
 sus current_year drip = 2024
 
@@ -313,9 +313,9 @@ slay append_rule(info *TimezoneInfo, rule TimezoneRule) {
     }
 }
 
-slay append_timezone_to_array(arr []TimezoneInfo, item TimezoneInfo) []TimezoneInfo {
+slay append_timezone_to_array(arr TimezoneInfo[value], item TimezoneInfo) TimezoneInfo[value]{
     fr fr Manual array append for timezone
-    sus new_array []TimezoneInfo = make_timezone_array(len(arr) + 1)
+    sus new_array TimezoneInfo[value] = make_timezone_array(len(arr) + 1)
     sus i drip = 0
     bestie (i < len(arr)) {
         new_array[i] = arr[i]
@@ -325,9 +325,9 @@ slay append_timezone_to_array(arr []TimezoneInfo, item TimezoneInfo) []TimezoneI
     damn new_array
 }
 
-slay append_rule_to_array(arr []TimezoneRule, item TimezoneRule) []TimezoneRule {
+slay append_rule_to_array(arr TimezoneRule[value], item TimezoneRule) TimezoneRule[value]{
     fr fr Manual array append for rules
-    sus new_array []TimezoneRule = make_rule_array(len(arr) + 1)
+    sus new_array TimezoneRule[value] = make_rule_array(len(arr) + 1)
     sus i drip = 0
     bestie (i < len(arr)) {
         new_array[i] = arr[i]
@@ -337,12 +337,12 @@ slay append_rule_to_array(arr []TimezoneRule, item TimezoneRule) []TimezoneRule 
     damn new_array
 }
 
-slay make_timezone_array(size drip) []TimezoneInfo {
+slay make_timezone_array(size drip) TimezoneInfo[value]{
     fr fr Create array of TimezoneInfo
     damn []  fr fr Simplified - would be properly allocated in real implementation
 }
 
-slay make_rule_array(size drip) []TimezoneRule {
+slay make_rule_array(size drip) TimezoneRule[value]{
     fr fr Create array of TimezoneRule
     damn []  fr fr Simplified - would be properly allocated in real implementation
 }
@@ -543,9 +543,9 @@ slay add_transition(info *TimezoneInfo, transition TimezoneTransition) {
     }
 }
 
-slay append_transition_to_array(arr []TimezoneTransition, item TimezoneTransition) []TimezoneTransition {
+slay append_transition_to_array(arr TimezoneTransition[value], item TimezoneTransition) TimezoneTransition[value]{
     fr fr Manual array append for transitions
-    sus new_array []TimezoneTransition = make_transition_array(len(arr) + 1)
+    sus new_array TimezoneTransition[value] = make_transition_array(len(arr) + 1)
     sus i drip = 0
     bestie (i < len(arr)) {
         new_array[i] = arr[i]
@@ -555,7 +555,7 @@ slay append_transition_to_array(arr []TimezoneTransition, item TimezoneTransitio
     damn new_array
 }
 
-slay make_transition_array(size drip) []TimezoneTransition {
+slay make_transition_array(size drip) TimezoneTransition[value]{
     fr fr Create array of TimezoneTransition
     damn []  fr fr Simplified - would be properly allocated in real implementation
 }
@@ -669,11 +669,11 @@ slay get_timezone_abbreviation_at_time(zone_name tea, timestamp drip) tea {
     damn get_standard_time_rule(tz_info)
 }
 
-slay list_available_timezones() []tea {
+slay list_available_timezones() tea[value]{
     fr fr Get list of all available timezone names
     initialize_timezone_database()
     
-    sus names []tea = make_string_array(len(timezone_database))
+    sus names tea[value] = make_string_array(len(timezone_database))
     sus i drip = 0
     bestie (i < len(timezone_database)) {
         names[i] = timezone_database[i].zone_name
@@ -683,7 +683,7 @@ slay list_available_timezones() []tea {
     damn names
 }
 
-slay make_string_array(size drip) []tea {
+slay make_string_array(size drip) tea[value]{
     fr fr Create array of strings
     damn []  fr fr Simplified - would be properly allocated in real implementation
 }
@@ -758,11 +758,11 @@ slay calculate_time_until_dst_change(zone_name tea, current_timestamp drip) drip
     damn next_transition.timestamp - current_timestamp
 }
 
-slay get_timezone_by_offset(offset_seconds drip) []tea {
+slay get_timezone_by_offset(offset_seconds drip) tea[value]{
     fr fr Find timezones by UTC offset
     initialize_timezone_database()
     
-    sus matching_zones []tea = make_string_array(MAX_TIMEZONES)
+    sus matching_zones tea[value] = make_string_array(MAX_TIMEZONES)
     sus count drip = 0
     sus i drip = 0
     
@@ -777,7 +777,7 @@ slay get_timezone_by_offset(offset_seconds drip) []tea {
     }
     
     fr fr Return subset array
-    sus result []tea = make_string_array(count)
+    sus result tea[value] = make_string_array(count)
     sus j drip = 0
     bestie (j < count) {
         result[j] = matching_zones[j]

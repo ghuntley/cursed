@@ -134,7 +134,7 @@ slay x509_verify_cert(cert X509Cert, ca X509Cert) lit {
 }
 
 fr fr Verify X.509 certificate chain
-slay x509_verify_chain(certs []X509Cert) lit {
+slay x509_verify_chain(certs X509Cert[value]) lit {
     sus chain_length normie = len(certs)
     
     bestie i := 0; i < chain_length - 1; i++ {
@@ -184,7 +184,7 @@ slay x509_check_hostname(cert X509Cert, hostname tea) lit {
     mood string.equals(subject_cn, hostname) {
         damn based
     } fr fr Check Subject Alternative Names
-    sus hostnames []tea = string.split(san_list, ",")
+    sus hostnames tea[value] = string.split(san_list, ",")
     bestie i := 0; i < len(hostnames); i++ {
         sus san_hostname tea = string.trim(hostnames[i])
         mood string.equals(san_hostname, hostname) {
@@ -210,7 +210,7 @@ slay x509_check_email(cert X509Cert, email tea) lit {
     mood string.equals(subject_email, email) {
         damn based
     } fr fr Check Subject Alternative Names
-    sus emails []tea = string.split(san_list, ",")
+    sus emails tea[value] = string.split(san_list, ",")
     bestie i := 0; i < len(emails); i++ {
         sus san_email tea = string.trim(emails[i])
         mood string.equals(san_email, email) {
@@ -226,7 +226,7 @@ slay x509_check_ip(cert X509Cert, ip tea) lit {
     sus extensions tea = cert.extensions
     sus san_list tea = asn1_mood.get_san_ip(extensions)
     
-    sus ips []tea = string.split(san_list, ",")
+    sus ips tea[value] = string.split(san_list, ",")
     bestie i := 0; i < len(ips); i++ {
         sus san_ip tea = string.trim(ips[i])
         mood string.equals(san_ip, ip) {

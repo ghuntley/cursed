@@ -333,8 +333,8 @@ slay trim_chars(text tea, chars tea) tea {
 
 fr fr ===== STRING SPLITTING =====
 
-slay split(text tea, separator tea) []tea {
-    sus parts []tea = make([]tea, 0)
+slay split(text tea, separator tea) tea[value]{
+    sus parts tea[value] = make(tea[value], 0)
     ready (length(separator) == 0) {
         fr fr Split into individual characters
         sus i drip = 0
@@ -361,9 +361,9 @@ slay split(text tea, separator tea) []tea {
     damn parts
 }
 
-slay split_lines(text tea) []tea {
-    sus result []tea = split(text, "\n")
-    sus cleaned []tea = make([]tea, 0)
+slay split_lines(text tea) tea[value]{
+    sus result tea[value] = split(text, "\n")
+    sus cleaned tea[value] = make(tea[value], 0)
     
     fr fr Remove \r from Windows line endings
     sus i drip = 0
@@ -378,8 +378,8 @@ slay split_lines(text tea) []tea {
     damn cleaned
 }
 
-slay split_whitespace(text tea) []tea {
-    sus parts []tea = make([]tea, 0)
+slay split_whitespace(text tea) tea[value]{
+    sus parts tea[value] = make(tea[value], 0)
     sus current tea = ""
     sus i drip = 0
     
@@ -404,7 +404,7 @@ slay split_whitespace(text tea) []tea {
 
 fr fr ===== STRING JOINING =====
 
-slay join(parts []tea, separator tea) tea {
+slay join(parts tea[value], separator tea) tea {
     ready (len(parts) == 0) {
         damn ""
     } otherwise ready (len(parts) == 1) {
@@ -421,7 +421,7 @@ slay join(parts []tea, separator tea) tea {
     damn result
 }
 
-slay join_lines(lines []tea) tea {
+slay join_lines(lines tea[value]) tea {
     damn join(lines, "\n")
 }
 
@@ -690,9 +690,9 @@ slay ascii_to_char(ascii drip) tea {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay make(T, size drip) []T {
+slay make(T, size drip) T[value]{
     fr fr Bridge to native array creation with specified size
-    sus result []T = []
+    sus result T[value] = []
     sus i drip = 0
     fr fr Pre-allocate array with default values
     bestie i < size {
@@ -702,10 +702,10 @@ slay make(T, size drip) []T {
     damn result
 }
 
-slay append(arr []T, item T) []T {
+slay append(arr T[value], item T) T[value]{
     fr fr Bridge to native array append using array reconstruction
     sus old_len drip = array_length_generic(arr)
-    sus new_arr []T = make(T, old_len + 1)
+    sus new_arr T[value] = make(T, old_len + 1)
     sus i drip = 0
     
     fr fr Copy existing elements
@@ -728,14 +728,14 @@ slay min_int(a drip, b drip) drip {
 
 fr fr ===== GENERIC HELPER FUNCTIONS =====
 
-slay append_generic(arr []T, item T) []T {
+slay append_generic(arr T[value], item T) T[value]{
     fr fr Generic append helper - uses built-in array operations
-    sus result []T = arr
+    sus result T[value] = arr
     result[array_length_generic(arr)] = item
     damn result
 }
 
-slay array_length_generic(arr []T) drip {
+slay array_length_generic(arr T[value]) drip {
     fr fr Generic array length helper
     sus count drip = 0
     sus i drip = 0
@@ -751,7 +751,7 @@ slay array_length_generic(arr []T) drip {
     damn count
 }
 
-slay has_element_at_index(arr []T, index drip) lit {
+slay has_element_at_index(arr T[value], index drip) lit {
     fr fr Check if array has element at index (simplified check)
     fr fr This is a runtime bridge function
     ready index < 0 { damn cap }

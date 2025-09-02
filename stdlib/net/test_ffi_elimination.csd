@@ -7,7 +7,7 @@ yeet "testz"
 
 // Socket simulation data
 sus next_socket_id normie = 1000
-sus active_sockets [10]normie
+sus active_sockets normie[10]
 sus socket_count normie = 0
 
 // Connection simulation table

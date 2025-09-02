@@ -249,8 +249,8 @@ slay get_library_info() tea {
     damn "Simple Math Library v1.0.0 - A collection of basic mathematical functions for CURSED"
 }
 
-slay get_supported_operations() []tea {
-    sus operations []tea = []tea{}
+slay get_supported_operations() tea[value]{
+    sus operations tea[value] = tea[value]{}
     operations = append_array(operations, "add")
     operations = append_array(operations, "subtract")
     operations = append_array(operations, "multiply")
@@ -332,7 +332,7 @@ slay demo_library() {
 }
 
 // Mock array append function
-slay append_array(arr []tea, item tea) []tea {
+slay append_array(arr tea[value], item tea) tea[value]{
     // Mock implementation - would use proper array operations
     damn arr
 }

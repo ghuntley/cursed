@@ -4,7 +4,7 @@ fr fr Handles module path resolution and dependency management
 yeet "testz"
 
 squad ModuleConfig {
-    spill search_paths []tea
+    spill search_paths tea[value]
     spill stdlib_root tea
     spill cache_enabled lit
 }
@@ -12,7 +12,7 @@ squad ModuleConfig {
 squad ResolvedModule {
     spill module_name tea
     spill file_path tea
-    spill dependencies []tea
+    spill dependencies tea[value]
     spill loaded lit
 }
 
@@ -37,11 +37,11 @@ slay resolve_module_path(config ModuleConfig, module_name tea) tea {
     damn ""
 }
 
-slay resolve_all_stdlib_modules(config ModuleConfig) []tea {
-    sus resolved_paths []tea = []
+slay resolve_all_stdlib_modules(config ModuleConfig) tea[value]{
+    sus resolved_paths tea[value] = []
     
     fr fr Core stdlib modules
-    sus core_modules []tea = ["testz", "error_drip", "atomic_drip", "big_mood"]
+    sus core_modules tea[value] = ["testz", "error_drip", "atomic_drip", "big_mood"]
     
     bestie module_name in core_modules {
         sus path tea = resolve_module_path(config, module_name)

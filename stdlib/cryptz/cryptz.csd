@@ -46,7 +46,7 @@ squad CryptoContext {
 
 squad HashState {
     sus algorithm tea
-    sus h []drip
+    sus h drip[value]
     sus buffer tea
     sus buffer_len drip
     sus total_len drip
@@ -56,23 +56,23 @@ squad HashState {
 squad CipherState {
     sus algorithm tea
     sus mode tea
-    sus key []drip
-    sus iv []drip
+    sus key drip[value]
+    sus iv drip[value]
     sus rounds drip
-    sus key_schedule []drip
+    sus key_schedule drip[value]
 }
 
 squad KeyPair {
     sus algorithm tea
     sus key_size drip
-    sus public_key []drip
-    sus private_key []drip
+    sus public_key drip[value]
+    sus private_key drip[value]
     sus curve tea
     sus created_at drip
 }
 
 squad SecureRandom {
-    sus entropy_pool []drip
+    sus entropy_pool drip[value]
     sus counter drip
     sus last_reseed drip
     sus is_seeded lit
@@ -88,7 +88,7 @@ slay secure_random_init() SecureRandom {
     rng.is_seeded = based
     
     fr fr Initialize with high-entropy seed
-    sus entropy_sources []drip = system_entropy_sources()
+    sus entropy_sources drip[value] = system_entropy_sources()
     bestie i := 0; i < len(entropy_sources); i++ {
         rng.entropy_pool = append(rng.entropy_pool, entropy_sources[i])
     }
@@ -96,14 +96,14 @@ slay secure_random_init() SecureRandom {
     damn rng
 }
 
-slay generate_random_bytes(length drip) []drip {
+slay generate_random_bytes(length drip) drip[value]{
     fr fr Generate cryptographically secure random bytes using ChaCha20-based CSPRNG
     ready (length <= 0) {
         damn []
     }
     
     sus rng SecureRandom = secure_random_init()
-    sus output []drip = []
+    sus output drip[value] = []
     sus i drip = 0
     
     bestie i < length {
@@ -116,7 +116,7 @@ slay generate_random_bytes(length drip) []drip {
     damn output
 }
 
-slay generate_secure_key(key_size drip) []drip {
+slay generate_secure_key(key_size drip) drip[value]{
     fr fr Generate cryptographically secure encryption key
     ready (key_size < 16) {
         vibez.spill("WARNING: Key size too small. Minimum 16 bytes recommended.")
@@ -143,7 +143,7 @@ slay random_password(length drip, complexity tea) tea {
     }
     
     sus password tea = ""
-    sus random_bytes []drip = generate_random_bytes(length)
+    sus random_bytes drip[value] = generate_random_bytes(length)
     sus i drip = 0
     
     bestie i < length {
@@ -190,7 +190,7 @@ slay sha256_update(state HashState, data tea) HashState {
     damn state
 }
 
-slay sha256_final(state HashState) []drip {
+slay sha256_final(state HashState) drip[value]{
     ready (state.finalized) {
         damn bytes_from_hex("0000000000000000000000000000000000000000000000000000000000000000")
     }
@@ -208,7 +208,7 @@ slay sha256_final(state HashState) []drip {
     msg = msg + u64_to_bytes_be(bit_len)
     
     fr fr Process final block(s)
-    sus final_h []drip = state.h
+    sus final_h drip[value] = state.h
     bestie stringz.length(msg) > 0 {
         sus block tea = stringz.substring(msg, 0, 64)
         final_h = sha256_process_block(final_h, block)
@@ -220,9 +220,9 @@ slay sha256_final(state HashState) []drip {
     }
     
     fr fr Convert hash to bytes
-    sus digest []drip = []
+    sus digest drip[value] = []
     bestie i := 0; i < 8; i++ {
-        sus word_bytes []drip = u32_to_bytes_be(final_h[i])
+        sus word_bytes drip[value] = u32_to_bytes_be(final_h[i])
         bestie j := 0; j < 4; j++ {
             digest = append(digest, word_bytes[j])
         }
@@ -232,26 +232,26 @@ slay sha256_final(state HashState) []drip {
     damn digest
 }
 
-slay sha256_hash(data tea) []drip {
+slay sha256_hash(data tea) drip[value]{
     fr fr One-shot SHA-256 hash computation
     sus state HashState = sha256_init()
     state = sha256_update(state, data)
     damn sha256_final(state)
 }
 
-slay sha512_hash(data tea) []drip {
+slay sha512_hash(data tea) drip[value]{
     fr fr SHA-512 implementation with 64-bit operations
     sus state HashState = HashState{}
     state.algorithm = "SHA-512"
     state.h = sha512_initial_values()
     
     fr fr Process input data
-    sus processed_h []drip = sha512_process_data(state.h, data)
+    sus processed_h drip[value] = sha512_process_data(state.h, data)
     
     fr fr Convert to bytes (first 64 bytes of output)
-    sus digest []drip = []
+    sus digest drip[value] = []
     bestie i := 0; i < 8; i++ {
-        sus word_bytes []drip = u64_to_bytes_be(processed_h[i])
+        sus word_bytes drip[value] = u64_to_bytes_be(processed_h[i])
         bestie j := 0; j < 8; j++ {
             digest = append(digest, word_bytes[j])
         }
@@ -260,9 +260,9 @@ slay sha512_hash(data tea) []drip {
     damn digest
 }
 
-slay blake3_hash(data tea) []drip {
+slay blake3_hash(data tea) drip[value]{
     fr fr BLAKE3 cryptographic hash function (modern, fast, secure)
-    sus h []drip = blake3_initial_vector()
+    sus h drip[value] = blake3_initial_vector()
     sus chunk_counter drip = 0
     
     fr fr Process data in 1024-byte chunks
@@ -281,8 +281,8 @@ slay blake3_hash(data tea) []drip {
     }
     
     fr fr Finalize and extract digest
-    sus final_hash []drip = blake3_finalize(h)
-    sus digest []drip = []
+    sus final_hash drip[value] = blake3_finalize(h)
+    sus digest drip[value] = []
     
     bestie i := 0; i < BLAKE3_DIGEST_SIZE; i++ {
         digest = append(digest, final_hash[i])
@@ -293,11 +293,11 @@ slay blake3_hash(data tea) []drip {
 
 fr fr ===== SYMMETRIC ENCRYPTION =====
 
-slay aes_key_schedule(key []drip, rounds drip) []drip {
+slay aes_key_schedule(key drip[value], rounds drip) drip[value]{
     fr fr Generate AES key schedule for encryption/decryption
     sus key_size drip = len(key)
     sus schedule_words drip = 4 * (rounds + 1)
-    sus schedule []drip = []
+    sus schedule drip[value] = []
     
     fr fr Copy initial key
     bestie i := 0; i < key_size; i++ {
@@ -307,7 +307,7 @@ slay aes_key_schedule(key []drip, rounds drip) []drip {
     fr fr Generate remaining round keys
     sus rcon_index drip = 0
     bestie len(schedule) < schedule_words * 4 {
-        sus temp []drip = [
+        sus temp drip[value] = [
             schedule[len(schedule) - 4],
             schedule[len(schedule) - 3], 
             schedule[len(schedule) - 2],
@@ -332,14 +332,14 @@ slay aes_key_schedule(key []drip, rounds drip) []drip {
     damn schedule
 }
 
-slay aes_encrypt_block(plaintext_block []drip, key_schedule []drip, rounds drip) []drip {
+slay aes_encrypt_block(plaintext_block drip[value], key_schedule drip[value], rounds drip) drip[value]{
     fr fr Encrypt single AES block (16 bytes)
     ready len(plaintext_block) != AES_BLOCK_SIZE {
         vibez.spill("ERROR: Invalid AES block size")
         damn []
     }
     
-    sus state [][]drip = bytes_to_state(plaintext_block)
+    sus state drip[value][value] = bytes_to_state(plaintext_block)
     
     fr fr Initial round key addition
     state = aes_add_round_key(state, key_schedule, 0)
@@ -360,7 +360,7 @@ slay aes_encrypt_block(plaintext_block []drip, key_schedule []drip, rounds drip)
     damn state_to_bytes(state)
 }
 
-slay aes_gcm_encrypt(plaintext tea, key []drip, additional_data tea) []drip {
+slay aes_gcm_encrypt(plaintext tea, key drip[value], additional_data tea) drip[value]{
     fr fr AES-GCM authenticated encryption
     ready len(key) != AES128_KEY_SIZE && len(key) != AES256_KEY_SIZE {
         vibez.spill("ERROR: Invalid AES key size for GCM")
@@ -373,21 +373,21 @@ slay aes_gcm_encrypt(plaintext tea, key []drip, additional_data tea) []drip {
     }
     
     fr fr Generate random IV
-    sus iv []drip = generate_random_bytes(GCM_IV_SIZE)
+    sus iv drip[value] = generate_random_bytes(GCM_IV_SIZE)
     
     fr fr Initialize GCM state
-    sus key_schedule []drip = aes_key_schedule(key, rounds)
-    sus h_subkey []drip = aes_encrypt_block(make_zero_block(), key_schedule, rounds)
-    sus j0 []drip = gcm_init_j0(iv, h_subkey)
+    sus key_schedule drip[value] = aes_key_schedule(key, rounds)
+    sus h_subkey drip[value] = aes_encrypt_block(make_zero_block(), key_schedule, rounds)
+    sus j0 drip[value] = gcm_init_j0(iv, h_subkey)
     
     fr fr Encrypt plaintext using CTR mode
-    sus ciphertext []drip = gcm_ctr_encrypt(stringz.bytes(plaintext), j0, key_schedule, rounds)
+    sus ciphertext drip[value] = gcm_ctr_encrypt(stringz.bytes(plaintext), j0, key_schedule, rounds)
     
     fr fr Compute authentication tag
-    sus tag []drip = gcm_compute_tag(h_subkey, iv, ciphertext, stringz.bytes(additional_data))
+    sus tag drip[value] = gcm_compute_tag(h_subkey, iv, ciphertext, stringz.bytes(additional_data))
     
     fr fr Return IV + ciphertext + tag
-    sus result []drip = []
+    sus result drip[value] = []
     result = append_bytes(result, iv)
     result = append_bytes(result, ciphertext)
     result = append_bytes(result, tag)
@@ -396,7 +396,7 @@ slay aes_gcm_encrypt(plaintext tea, key []drip, additional_data tea) []drip {
     damn result
 }
 
-slay aes_gcm_decrypt(encrypted_data []drip, key []drip, additional_data tea) []drip {
+slay aes_gcm_decrypt(encrypted_data drip[value], key drip[value], additional_data tea) drip[value]{
     fr fr AES-GCM authenticated decryption
     ready len(encrypted_data) < GCM_IV_SIZE + GCM_TAG_SIZE {
         vibez.spill("ERROR: Invalid GCM ciphertext size")
@@ -404,10 +404,10 @@ slay aes_gcm_decrypt(encrypted_data []drip, key []drip, additional_data tea) []d
     }
     
     fr fr Extract components
-    sus iv []drip = slice(encrypted_data, 0, GCM_IV_SIZE)
+    sus iv drip[value] = slice(encrypted_data, 0, GCM_IV_SIZE)
     sus tag_start drip = len(encrypted_data) - GCM_TAG_SIZE
-    sus ciphertext []drip = slice(encrypted_data, GCM_IV_SIZE, tag_start - GCM_IV_SIZE)
-    sus tag []drip = slice(encrypted_data, tag_start, GCM_TAG_SIZE)
+    sus ciphertext drip[value] = slice(encrypted_data, GCM_IV_SIZE, tag_start - GCM_IV_SIZE)
+    sus tag drip[value] = slice(encrypted_data, tag_start, GCM_TAG_SIZE)
     
     sus rounds drip = 10
     ready len(key) == AES256_KEY_SIZE {
@@ -415,9 +415,9 @@ slay aes_gcm_decrypt(encrypted_data []drip, key []drip, additional_data tea) []d
     }
     
     fr fr Verify authentication tag
-    sus key_schedule []drip = aes_key_schedule(key, rounds)
-    sus h_subkey []drip = aes_encrypt_block(make_zero_block(), key_schedule, rounds)
-    sus computed_tag []drip = gcm_compute_tag(h_subkey, iv, ciphertext, stringz.bytes(additional_data))
+    sus key_schedule drip[value] = aes_key_schedule(key, rounds)
+    sus h_subkey drip[value] = aes_encrypt_block(make_zero_block(), key_schedule, rounds)
+    sus computed_tag drip[value] = gcm_compute_tag(h_subkey, iv, ciphertext, stringz.bytes(additional_data))
     
     ready !constant_time_bytes_equal(tag, computed_tag) {
         vibez.spill("ERROR: GCM authentication failed")
@@ -426,14 +426,14 @@ slay aes_gcm_decrypt(encrypted_data []drip, key []drip, additional_data tea) []d
     }
     
     fr fr Decrypt ciphertext
-    sus j0 []drip = gcm_init_j0(iv, h_subkey)
-    sus plaintext []drip = gcm_ctr_encrypt(ciphertext, j0, key_schedule, rounds)
+    sus j0 drip[value] = gcm_init_j0(iv, h_subkey)
+    sus plaintext drip[value] = gcm_ctr_encrypt(ciphertext, j0, key_schedule, rounds)
     
     secure_zero_memory(key_schedule)
     damn plaintext
 }
 
-slay chacha20_encrypt(plaintext tea, key []drip, nonce []drip) []drip {
+slay chacha20_encrypt(plaintext tea, key drip[value], nonce drip[value]) drip[value]{
     fr fr ChaCha20 stream cipher encryption/decryption
     ready len(key) != CHACHA20_KEY_SIZE {
         vibez.spill("ERROR: Invalid ChaCha20 key size")
@@ -445,9 +445,9 @@ slay chacha20_encrypt(plaintext tea, key []drip, nonce []drip) []drip {
         damn []
     }
     
-    sus input []drip = stringz.bytes(plaintext)
-    sus keystream []drip = chacha20_keystream(key, nonce, len(input))
-    sus output []drip = []
+    sus input drip[value] = stringz.bytes(plaintext)
+    sus keystream drip[value] = chacha20_keystream(key, nonce, len(input))
+    sus output drip[value] = []
     
     bestie i := 0; i < len(input); i++ {
         output = append(output, input[i] ^ keystream[i])
@@ -468,10 +468,10 @@ slay ed25519_generate_keypair() KeyPair {
     keypair.created_at = system_time()
     
     fr fr Generate private key (32 random bytes)
-    sus private_seed []drip = generate_random_bytes(ED25519_KEY_SIZE)
+    sus private_seed drip[value] = generate_random_bytes(ED25519_KEY_SIZE)
     
     fr fr Derive public key from private key
-    sus public_key []drip = ed25519_derive_public(private_seed)
+    sus public_key drip[value] = ed25519_derive_public(private_seed)
     
     keypair.private_key = private_seed
     keypair.public_key = public_key
@@ -479,15 +479,15 @@ slay ed25519_generate_keypair() KeyPair {
     damn keypair
 }
 
-slay ed25519_sign(message tea, private_key []drip) []drip {
+slay ed25519_sign(message tea, private_key drip[value]) drip[value]{
     fr fr Ed25519 digital signature generation
     ready len(private_key) != ED25519_KEY_SIZE {
         vibez.spill("ERROR: Invalid Ed25519 private key size")
         damn []
     }
     
-    sus message_bytes []drip = stringz.bytes(message)
-    sus signature []drip = ed25519_sign_internal(message_bytes, private_key)
+    sus message_bytes drip[value] = stringz.bytes(message)
+    sus signature drip[value] = ed25519_sign_internal(message_bytes, private_key)
     
     ready len(signature) != ED25519_SIGNATURE_SIZE {
         vibez.spill("ERROR: Ed25519 signature generation failed")
@@ -497,7 +497,7 @@ slay ed25519_sign(message tea, private_key []drip) []drip {
     damn signature
 }
 
-slay ed25519_verify(message tea, signature []drip, public_key []drip) lit {
+slay ed25519_verify(message tea, signature drip[value], public_key drip[value]) lit {
     fr fr Ed25519 signature verification
     ready len(signature) != ED25519_SIGNATURE_SIZE {
         vibez.spill("ERROR: Invalid Ed25519 signature size")
@@ -509,7 +509,7 @@ slay ed25519_verify(message tea, signature []drip, public_key []drip) lit {
         damn cringe
     }
     
-    sus message_bytes []drip = stringz.bytes(message)
+    sus message_bytes drip[value] = stringz.bytes(message)
     sus is_valid lit = ed25519_verify_internal(message_bytes, signature, public_key)
     
     damn is_valid
@@ -530,14 +530,14 @@ slay rsa_generate_keypair(key_size drip) KeyPair {
     keypair.created_at = system_time()
     
     fr fr Generate two large primes
-    sus p []drip = generate_safe_prime(key_size / 2)
-    sus q []drip = generate_safe_prime(key_size / 2)
+    sus p drip[value] = generate_safe_prime(key_size / 2)
+    sus q drip[value] = generate_safe_prime(key_size / 2)
     
     fr fr Compute RSA parameters
-    sus n []drip = multiply_big_int(p, q)
-    sus phi []drip = multiply_big_int(subtract_big_int(p, one_big_int()), subtract_big_int(q, one_big_int()))
-    sus e []drip = e_65537_big_int()
-    sus d []drip = modular_inverse_big_int(e, phi)
+    sus n drip[value] = multiply_big_int(p, q)
+    sus phi drip[value] = multiply_big_int(subtract_big_int(p, one_big_int()), subtract_big_int(q, one_big_int()))
+    sus e drip[value] = e_65537_big_int()
+    sus d drip[value] = modular_inverse_big_int(e, phi)
     
     fr fr Encode keys (simplified DER encoding)
     keypair.public_key = encode_rsa_public_key(n, e)
@@ -554,7 +554,7 @@ slay rsa_generate_keypair(key_size drip) KeyPair {
 
 fr fr ===== KEY DERIVATION FUNCTIONS =====
 
-slay pbkdf2_derive_key(password tea, salt []drip, iterations drip, output_length drip) []drip {
+slay pbkdf2_derive_key(password tea, salt drip[value], iterations drip, output_length drip) drip[value]{
     fr fr PBKDF2 key derivation with HMAC-SHA256
     ready iterations < PBKDF2_MIN_ITERATIONS {
         vibez.spill("WARNING: PBKDF2 iteration count too low. Minimum 100,000 recommended for security.")
@@ -564,16 +564,16 @@ slay pbkdf2_derive_key(password tea, salt []drip, iterations drip, output_length
         vibez.spill("WARNING: Salt too short. Minimum 16 bytes recommended.")
     }
     
-    sus password_bytes []drip = stringz.bytes(password)
-    sus derived_key []drip = []
+    sus password_bytes drip[value] = stringz.bytes(password)
+    sus derived_key drip[value] = []
     sus hlen drip = SHA256_DIGEST_SIZE
     sus block_count drip = (output_length + hlen - 1) / hlen
     
     fr fr Generate each block of the derived key
     bestie block_index := 1; block_index <= block_count; block_index++ {
-        sus block_salt []drip = append_bytes(salt, u32_to_bytes_be(block_index))
-        sus u []drip = hmac_sha256(password_bytes, block_salt)
-        sus result_block []drip = u
+        sus block_salt drip[value] = append_bytes(salt, u32_to_bytes_be(block_index))
+        sus u drip[value] = hmac_sha256(password_bytes, block_salt)
+        sus result_block drip[value] = u
         
         fr fr Perform iterations
         bestie iteration := 1; iteration < iterations; iteration++ {
@@ -593,7 +593,7 @@ slay pbkdf2_derive_key(password tea, salt []drip, iterations drip, output_length
     damn derived_key
 }
 
-slay argon2_derive_key(password tea, salt []drip, memory_cost drip, time_cost drip, parallelism drip, output_length drip) []drip {
+slay argon2_derive_key(password tea, salt drip[value], memory_cost drip, time_cost drip, parallelism drip, output_length drip) drip[value]{
     fr fr Argon2id key derivation (memory-hard function)
     ready memory_cost < ARGON2_MIN_MEMORY {
         vibez.spill("WARNING: Argon2 memory cost too low. Minimum 64 MB recommended.")
@@ -605,7 +605,7 @@ slay argon2_derive_key(password tea, salt []drip, memory_cost drip, time_cost dr
         time_cost = 3
     }
     
-    sus password_bytes []drip = stringz.bytes(password)
+    sus password_bytes drip[value] = stringz.bytes(password)
     
     fr fr Initialize Argon2 context
     sus context ArgonContext = ArgonContext{
@@ -619,10 +619,10 @@ slay argon2_derive_key(password tea, salt []drip, memory_cost drip, time_cost dr
     }
     
     fr fr Generate initial hash
-    sus initial_hash []drip = argon2_initial_hash(context)
+    sus initial_hash drip[value] = argon2_initial_hash(context)
     
     fr fr Allocate memory blocks
-    sus memory [][]drip = argon2_allocate_memory(memory_cost)
+    sus memory drip[value][value] = argon2_allocate_memory(memory_cost)
     
     fr fr Initialize first two blocks for each lane
     bestie lane := 0; lane < parallelism; lane++ {
@@ -648,8 +648,8 @@ slay argon2_derive_key(password tea, salt []drip, memory_cost drip, time_cost dr
     }
     
     fr fr Extract final result
-    sus final_block []drip = memory[memory_cost - 1]
-    sus derived_key []drip = argon2_finalize(final_block, output_length)
+    sus final_block drip[value] = memory[memory_cost - 1]
+    sus derived_key drip[value] = argon2_finalize(final_block, output_length)
     
     fr fr Securely clear memory
     secure_zero_memory(password_bytes)
@@ -659,17 +659,17 @@ slay argon2_derive_key(password tea, salt []drip, memory_cost drip, time_cost dr
     damn derived_key
 }
 
-slay scrypt_derive_key(password tea, salt []drip, n drip, r drip, p drip, output_length drip) []drip {
+slay scrypt_derive_key(password tea, salt drip[value], n drip, r drip, p drip, output_length drip) drip[value]{
     fr fr Use complete scrypt implementation with proper memory-hard function
     damn scrypt_derive_key_complete(password, salt, n, r, p, output_length)
 }
 
 fr fr ===== MESSAGE AUTHENTICATION =====
 
-slay hmac_sha256(key []drip, message []drip) []drip {
+slay hmac_sha256(key drip[value], message drip[value]) drip[value]{
     fr fr HMAC using SHA-256
     sus block_size drip = 64
-    sus actual_key []drip = key
+    sus actual_key drip[value] = key
     
     fr fr Hash key if longer than block size
     ready len(key) > block_size {
@@ -682,8 +682,8 @@ slay hmac_sha256(key []drip, message []drip) []drip {
     }
     
     fr fr Create inner and outer padded keys
-    sus inner_key []drip = []
-    sus outer_key []drip = []
+    sus inner_key drip[value] = []
+    sus outer_key drip[value] = []
     
     bestie i := 0; i < block_size; i++ {
         inner_key = append(inner_key, actual_key[i] ^ 0x36)
@@ -691,8 +691,8 @@ slay hmac_sha256(key []drip, message []drip) []drip {
     }
     
     fr fr Compute HMAC
-    sus inner_hash []drip = sha256_hash(stringz.from_bytes(append_bytes(inner_key, message)))
-    sus hmac []drip = sha256_hash(stringz.from_bytes(append_bytes(outer_key, inner_hash)))
+    sus inner_hash drip[value] = sha256_hash(stringz.from_bytes(append_bytes(inner_key, message)))
+    sus hmac drip[value] = sha256_hash(stringz.from_bytes(append_bytes(outer_key, inner_hash)))
     
     secure_zero_memory(actual_key)
     secure_zero_memory(inner_key)
@@ -701,10 +701,10 @@ slay hmac_sha256(key []drip, message []drip) []drip {
     damn hmac
 }
 
-slay hmac_sha512(key []drip, message []drip) []drip {
+slay hmac_sha512(key drip[value], message drip[value]) drip[value]{
     fr fr HMAC using SHA-512
     sus block_size drip = 128
-    sus actual_key []drip = key
+    sus actual_key drip[value] = key
     
     ready len(key) > block_size {
         actual_key = sha512_hash(stringz.from_bytes(key))
@@ -714,16 +714,16 @@ slay hmac_sha512(key []drip, message []drip) []drip {
         actual_key = append(actual_key, 0)
     }
     
-    sus inner_key []drip = []
-    sus outer_key []drip = []
+    sus inner_key drip[value] = []
+    sus outer_key drip[value] = []
     
     bestie i := 0; i < block_size; i++ {
         inner_key = append(inner_key, actual_key[i] ^ 0x36)
         outer_key = append(outer_key, actual_key[i] ^ 0x5c)
     }
     
-    sus inner_hash []drip = sha512_hash(stringz.from_bytes(append_bytes(inner_key, message)))
-    sus hmac []drip = sha512_hash(stringz.from_bytes(append_bytes(outer_key, inner_hash)))
+    sus inner_hash drip[value] = sha512_hash(stringz.from_bytes(append_bytes(inner_key, message)))
+    sus hmac drip[value] = sha512_hash(stringz.from_bytes(append_bytes(outer_key, inner_hash)))
     
     secure_zero_memory(actual_key)
     secure_zero_memory(inner_key)
@@ -734,7 +734,7 @@ slay hmac_sha512(key []drip, message []drip) []drip {
 
 fr fr ===== CONSTANT-TIME SECURITY OPERATIONS =====
 
-slay constant_time_bytes_equal(a []drip, b []drip) lit {
+slay constant_time_bytes_equal(a drip[value], b drip[value]) lit {
     fr fr Constant-time comparison to prevent timing attacks
     ready len(a) != len(b) {
         damn cringe
@@ -758,7 +758,7 @@ slay constant_time_select(condition drip, true_val drip, false_val drip) drip {
     damn (mask & true_val) | ((~mask) & false_val)
 }
 
-slay constant_time_copy(condition drip, src []drip, dst []drip) {
+slay constant_time_copy(condition drip, src drip[value], dst drip[value]) {
     fr fr Constant-time conditional copy
     ready len(src) != len(dst) {
         vibez.spill("ERROR: Array sizes must match for constant-time copy")
@@ -775,7 +775,7 @@ slay constant_time_copy(condition drip, src []drip, dst []drip) {
     }
 }
 
-slay secure_zero_memory(data []drip) {
+slay secure_zero_memory(data drip[value]) {
     fr fr Securely clear sensitive data from memory
     bestie i := 0; i < len(data); i++ {
         data[i] = 0
@@ -787,7 +787,7 @@ slay secure_zero_memory(data []drip) {
 
 fr fr ===== ENCODING AND UTILITY FUNCTIONS =====
 
-slay bytes_to_hex(data []drip) tea {
+slay bytes_to_hex(data drip[value]) tea {
     fr fr Convert bytes to lowercase hex string
     sus hex_chars tea = "0123456789abcdef"
     sus result tea = ""
@@ -804,14 +804,14 @@ slay bytes_to_hex(data []drip) tea {
     damn result
 }
 
-slay hex_to_bytes(hex_string tea) []drip {
+slay hex_to_bytes(hex_string tea) drip[value]{
     fr fr Convert hex string to bytes
     ready (stringz.length(hex_string) % 2) != 0 {
         vibez.spill("ERROR: Hex string must have even length")
         damn []
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie i < stringz.length(hex_string) {
@@ -835,7 +835,7 @@ slay hex_to_bytes(hex_string tea) []drip {
     damn result
 }
 
-slay base64_encode(data []drip) tea {
+slay base64_encode(data drip[value]) tea {
     fr fr Base64 encoding with standard alphabet
     sus alphabet tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     sus result tea = ""
@@ -872,10 +872,10 @@ slay base64_encode(data []drip) tea {
     damn result
 }
 
-slay base64_decode(encoded tea) []drip {
+slay base64_decode(encoded tea) drip[value]{
     fr fr Base64 decoding
     sus alphabet tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie i < stringz.length(encoded) {
@@ -916,8 +916,8 @@ fr fr ===== HIGH-LEVEL CONVENIENCE FUNCTIONS =====
 
 slay hash_password(password tea) tea {
     fr fr Secure password hashing using Argon2id
-    sus salt []drip = generate_random_bytes(32)
-    sus hash []drip = argon2_derive_key(password, salt, 65536, 3, 1, 32)
+    sus salt drip[value] = generate_random_bytes(32)
+    sus hash drip[value] = argon2_derive_key(password, salt, 65536, 3, 1, 32)
     
     fr fr Encode salt and hash for storage
     sus encoded_salt tea = base64_encode(salt)
@@ -930,17 +930,17 @@ slay hash_password(password tea) tea {
 
 slay verify_password(stored_hash tea, password tea) lit {
     fr fr Verify password against stored Argon2id hash
-    sus parts []tea = stringz.split(stored_hash, "$")
+    sus parts tea[value] = stringz.split(stored_hash, "$")
     ready len(parts) != 3 || parts[0] != "argon2id" {
         vibez.spill("ERROR: Invalid password hash format")
         damn cringe
     }
     
-    sus salt []drip = base64_decode(parts[1])
-    sus expected_hash []drip = base64_decode(parts[2])
+    sus salt drip[value] = base64_decode(parts[1])
+    sus expected_hash drip[value] = base64_decode(parts[2])
     
     fr fr Recompute hash with same salt
-    sus computed_hash []drip = argon2_derive_key(password, salt, 65536, 3, 1, 32)
+    sus computed_hash drip[value] = argon2_derive_key(password, salt, 65536, 3, 1, 32)
     
     sus is_valid lit = constant_time_bytes_equal(expected_hash, computed_hash)
     
@@ -952,10 +952,10 @@ slay verify_password(stored_hash tea, password tea) lit {
 
 slay encrypt_data(plaintext tea, password tea) tea {
     fr fr High-level data encryption with password
-    sus salt []drip = generate_random_bytes(32)
-    sus key []drip = pbkdf2_derive_key(password, salt, 100000, 32)
+    sus salt drip[value] = generate_random_bytes(32)
+    sus key drip[value] = pbkdf2_derive_key(password, salt, 100000, 32)
     
-    sus encrypted []drip = aes_gcm_encrypt(plaintext, key, "")
+    sus encrypted drip[value] = aes_gcm_encrypt(plaintext, key, "")
     
     sus result tea = base64_encode(salt) + ":" + base64_encode(encrypted)
     
@@ -967,18 +967,18 @@ slay encrypt_data(plaintext tea, password tea) tea {
 
 slay decrypt_data(encrypted_data tea, password tea) tea {
     fr fr High-level data decryption with password
-    sus parts []tea = stringz.split(encrypted_data, ":")
+    sus parts tea[value] = stringz.split(encrypted_data, ":")
     ready len(parts) != 2 {
         vibez.spill("ERROR: Invalid encrypted data format")
         damn ""
     }
     
-    sus salt []drip = base64_decode(parts[0])
-    sus ciphertext []drip = base64_decode(parts[1])
+    sus salt drip[value] = base64_decode(parts[0])
+    sus ciphertext drip[value] = base64_decode(parts[1])
     
-    sus key []drip = pbkdf2_derive_key(password, salt, 100000, 32)
+    sus key drip[value] = pbkdf2_derive_key(password, salt, 100000, 32)
     
-    sus decrypted []drip = aes_gcm_decrypt(ciphertext, key, "")
+    sus decrypted drip[value] = aes_gcm_decrypt(ciphertext, key, "")
     ready len(decrypted) == 0 {
         vibez.spill("ERROR: Decryption failed - invalid password or corrupted data")
         secure_zero_memory(key)
@@ -996,30 +996,30 @@ slay decrypt_data(encrypted_data tea, password tea) tea {
 fr fr ===== INTERNAL HELPER FUNCTIONS =====
 fr fr These functions provide the low-level cryptographic primitives
 
-slay sha256_initial_values() []drip {
+slay sha256_initial_values() drip[value]{
     damn [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
 }
 
-slay sha512_initial_values() []drip {
+slay sha512_initial_values() drip[value]{
     damn [
         0x6a09e667f3bcc908, 0xbb67ae8584caa73b, 0x3c6ef372fe94f82b, 0xa54ff53a5f1d36f1,
         0x510e527fade682d1, 0x9b05688c2b3e6c1f, 0x1f83d9abfb41bd6b, 0x5be0cd19137e2179
     ]
 }
 
-slay blake3_initial_vector() []drip {
+slay blake3_initial_vector() drip[value]{
     damn [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
 }
 
-slay system_entropy_sources() []drip {
+slay system_entropy_sources() drip[value]{
     fr fr Gather entropy from multiple unpredictable system sources
-    sus entropy []drip = []
+    sus entropy drip[value] = []
     
     fr fr Real-time system entropy sources
     sus timestamp drip = system_time()
@@ -1054,7 +1054,7 @@ slay system_entropy_sources() []drip {
     
     fr fr System-specific entropy from environment variables
     yeet "platformz"
-    sus env_entropy []drip = platformz.get_environment_entropy()
+    sus env_entropy drip[value] = platformz.get_environment_entropy()
     bestie i := 0; i < len(env_entropy); i++ {
         entropy = append(entropy, env_entropy[i])
     }
@@ -1105,7 +1105,7 @@ slay complex_multiply(ar drip, ai drip, br drip, bi drip, cr drip, ci drip) {
     ci = ar * bi + ai * br
 }
 
-slay fft_recursive(data_real []drip, data_imag []drip, n drip, inverse lit) {
+slay fft_recursive(data_real drip[value], data_imag drip[value], n drip, inverse lit) {
     fr fr Cooley-Tukey FFT algorithm (proper implementation)
     ready n <= 1 {
         damn
@@ -1113,10 +1113,10 @@ slay fft_recursive(data_real []drip, data_imag []drip, n drip, inverse lit) {
     
     fr fr Divide
     sus half_n drip = n / 2
-    sus even_real []drip = make([]drip, half_n)
-    sus even_imag []drip = make([]drip, half_n)
-    sus odd_real []drip = make([]drip, half_n)
-    sus odd_imag []drip = make([]drip, half_n)
+    sus even_real drip[value] = make(drip[value], half_n)
+    sus even_imag drip[value] = make(drip[value], half_n)
+    sus odd_real drip[value] = make(drip[value], half_n)
+    sus odd_imag drip[value] = make(drip[value], half_n)
     
     bestie i := 0; i < half_n; i++ {
         even_real[i] = data_real[i * 2]
@@ -1159,11 +1159,11 @@ slay fft_recursive(data_real []drip, data_imag []drip, n drip, inverse lit) {
     }
 }
 
-slay cooley_tukey_fft(data []drip, inverse lit) []drip {
+slay cooley_tukey_fft(data drip[value], inverse lit) drip[value]{
     fr fr Public interface for Cooley-Tukey FFT
     sus n drip = len(data)
-    sus real_part []drip = make([]drip, n)
-    sus imag_part []drip = make([]drip, n)
+    sus real_part drip[value] = make(drip[value], n)
+    sus imag_part drip[value] = make(drip[value], n)
     
     bestie i := 0; i < n; i++ {
         real_part[i] = data[i]
@@ -1173,7 +1173,7 @@ slay cooley_tukey_fft(data []drip, inverse lit) []drip {
     fft_recursive(real_part, imag_part, n, inverse)
     
     fr fr Return interleaved real/imaginary results
-    sus result []drip = make([]drip, n * 2)
+    sus result drip[value] = make(drip[value], n * 2)
     bestie i := 0; i < n; i++ {
         result[i * 2] = real_part[i]
         result[i * 2 + 1] = imag_part[i]
@@ -1191,9 +1191,9 @@ squad ScryptParams {
     sus dk_len drip   fr fr Derived key length
 }
 
-slay scrypt_salsa20_8(b []drip) {
+slay scrypt_salsa20_8(b drip[value]) {
     fr fr Salsa20/8 core function for scrypt
-    sus x []drip = make([]drip, 16)
+    sus x drip[value] = make(drip[value], 16)
     bestie i := 0; i < 16; i++ {
         x[i] = b[i]
     }
@@ -1249,9 +1249,9 @@ slay scrypt_salsa20_8(b []drip) {
     }
 }
 
-slay scrypt_block_mix(b []drip, y []drip, r drip) {
+slay scrypt_block_mix(b drip[value], y drip[value], r drip) {
     fr fr scryptBlockMix function
-    sus x []drip = make([]drip, 16)
+    sus x drip[value] = make(drip[value], 16)
     
     fr fr X = B[2r-1]
     bestie i := 0; i < 16; i++ {
@@ -1280,11 +1280,11 @@ slay scrypt_block_mix(b []drip, y []drip, r drip) {
     }
 }
 
-slay scrypt_ro_mix(b []drip, n drip, r drip) {
+slay scrypt_ro_mix(b drip[value], n drip, r drip) {
     fr fr scryptROMix function - the memory-hard part of scrypt
     sus block_size drip = 128 * r / 4  fr fr 32r 32-bit words = 128r bytes / 4
-    sus v []drip = make([]drip, n * block_size)
-    sus y []drip = make([]drip, block_size)
+    sus v drip[value] = make(drip[value], n * block_size)
+    sus y drip[value] = make(drip[value], block_size)
     
     fr fr First loop: V[i] = B, for i = 0 to N-1, V[i+1] = scryptBlockMix(V[i])
     bestie i := 0; i < block_size; i++ {
@@ -1313,7 +1313,7 @@ slay scrypt_ro_mix(b []drip, n drip, r drip) {
     }
 }
 
-slay scrypt_derive_key_complete(password tea, salt []drip, N drip, r drip, p drip, dk_len drip) []drip {
+slay scrypt_derive_key_complete(password tea, salt drip[value], N drip, r drip, p drip, dk_len drip) drip[value]{
     fr fr Complete scrypt implementation - memory-hard function
     ready N <= 1 || (N & (N - 1)) != 0 {
         vibez.spill("ERROR: N must be a power of 2 and greater than 1")
@@ -1326,9 +1326,9 @@ slay scrypt_derive_key_complete(password tea, salt []drip, N drip, r drip, p dri
     }
     
     fr fr Step 1: Generate initial B using PBKDF2
-    sus password_bytes []drip = stringz.bytes(password)
+    sus password_bytes drip[value] = stringz.bytes(password)
     sus block_size drip = 128 * r
-    sus b []drip = pbkdf2_sha256(password_bytes, salt, 1, p * block_size)
+    sus b drip[value] = pbkdf2_sha256(password_bytes, salt, 1, p * block_size)
     
     fr fr Step 2: Apply scryptROMix to each block
     bestie i := 0; i < p; i++ {
@@ -1337,7 +1337,7 @@ slay scrypt_derive_key_complete(password tea, salt []drip, N drip, r drip, p dri
     }
     
     fr fr Step 3: Final PBKDF2 to generate derived key
-    sus derived_key []drip = pbkdf2_sha256(password_bytes, b, 1, dk_len)
+    sus derived_key drip[value] = pbkdf2_sha256(password_bytes, b, 1, dk_len)
     
     fr fr Securely clear sensitive data
     secure_zero_memory(b)
@@ -1348,9 +1348,9 @@ slay scrypt_derive_key_complete(password tea, salt []drip, N drip, r drip, p dri
 
 fr fr ===== PROPER CRYPTOGRAPHIC HASH IMPLEMENTATIONS =====
 
-slay sha256_process_block(h []drip, block tea) []drip {
+slay sha256_process_block(h drip[value], block tea) drip[value]{
     fr fr Proper SHA-256 block processing with correct round constants
-    sus k []drip = [
+    sus k drip[value] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
         0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
         0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -1361,8 +1361,8 @@ slay sha256_process_block(h []drip, block tea) []drip {
         0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
     ]
     
-    sus w []drip = make([]drip, 64)
-    sus block_bytes []drip = stringz.bytes(block)
+    sus w drip[value] = make(drip[value], 64)
+    sus block_bytes drip[value] = stringz.bytes(block)
     
     fr fr Break chunk into sixteen 32-bit big-endian words w[0..15]
     bestie i := 0; i < 16; i++ {
@@ -1406,7 +1406,7 @@ slay sha256_process_block(h []drip, block tea) []drip {
     }
     
     fr fr Add compressed chunk to hash
-    sus result []drip = [
+    sus result drip[value] = [
         h[0] + a, h[1] + b, h[2] + c, h[3] + d,
         h[4] + e, h[5] + f, h[6] + g, h[7] + h_val
     ]
@@ -1414,9 +1414,9 @@ slay sha256_process_block(h []drip, block tea) []drip {
     damn result
 }
 
-slay sha512_process_data(h []drip, data tea) []drip {
+slay sha512_process_data(h drip[value], data tea) drip[value]{
     fr fr Proper SHA-512 implementation with 64-bit operations
-    sus k []drip = [
+    sus k drip[value] = [
         0x428a2f98d728ae22, 0x7137449123ef65cd, 0xb5c0fbcfec4d3b2f, 0xe9b5dba58189dbbc,
         0x3956c25bf348b538, 0x59f111f1b605d019, 0x923f82a4af194f9b, 0xab1c5ed5da6d8118,
         0xd807aa98a3030242, 0x12835b0145706fbe, 0x243185be4ee4b28c, 0x550c7dc3d5ffb4e2,
@@ -1424,21 +1424,21 @@ slay sha512_process_data(h []drip, data tea) []drip {
     ]
     
     fr fr Process data in 1024-bit chunks for SHA-512
-    sus processed_h []drip = h
-    sus data_bytes []drip = stringz.bytes(data)
+    sus processed_h drip[value] = h
+    sus data_bytes drip[value] = stringz.bytes(data)
     sus chunk_size drip = 128 fr fr 128 bytes = 1024 bits
     
     bestie offset := 0; offset < len(data_bytes); offset += chunk_size {
-        sus chunk []drip = slice(data_bytes, offset, mathz.min(chunk_size, len(data_bytes) - offset))
+        sus chunk drip[value] = slice(data_bytes, offset, mathz.min(chunk_size, len(data_bytes) - offset))
         processed_h = sha512_process_chunk(processed_h, chunk, k)
     }
     
     damn processed_h
 }
 
-slay sha512_process_chunk(h []drip, chunk []drip, k []drip) []drip {
+slay sha512_process_chunk(h drip[value], chunk drip[value], k drip[value]) drip[value]{
     fr fr Process a single 1024-bit chunk for SHA-512
-    sus w []drip = make([]drip, 80)
+    sus w drip[value] = make(drip[value], 80)
     
     fr fr Break chunk into sixteen 64-bit big-endian words
     bestie i := 0; i < 16 && i*8 < len(chunk); i++ {
@@ -1490,14 +1490,14 @@ slay sha512_process_chunk(h []drip, chunk []drip, k []drip) []drip {
 
 fr fr ===== BLAKE3 IMPLEMENTATION =====
 
-slay blake3_compress(h []drip, chunk tea, counter drip, flags drip) []drip {
+slay blake3_compress(h drip[value], chunk tea, counter drip, flags drip) drip[value]{
     fr fr BLAKE3 compression function with proper mixing
-    sus iv []drip = [
+    sus iv drip[value] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
     
-    sus state []drip = make([]drip, 16)
+    sus state drip[value] = make(drip[value], 16)
     
     fr fr Initialize state
     bestie i := 0; i < 8; i++ {
@@ -1510,8 +1510,8 @@ slay blake3_compress(h []drip, chunk tea, counter drip, flags drip) []drip {
     state[15] = 0
     
     fr fr Convert chunk to words
-    sus chunk_bytes []drip = stringz.bytes(chunk)
-    sus words []drip = make([]drip, 16)
+    sus chunk_bytes drip[value] = stringz.bytes(chunk)
+    sus words drip[value] = make(drip[value], 16)
     bestie i := 0; i < 16 && i*4 < len(chunk_bytes); i++ {
         sus word drip = 0
         bestie j := 0; j < 4 && i*4+j < len(chunk_bytes); j++ {
@@ -1535,7 +1535,7 @@ slay blake3_compress(h []drip, chunk tea, counter drip, flags drip) []drip {
         blake3_mix(state, 3, 4, 9, 14, words[14], words[15])
         
         fr fr Permute words for next round
-        sus temp []drip = make([]drip, 16)
+        sus temp drip[value] = make(drip[value], 16)
         bestie i := 0; i < 16; i++ {
             temp[i] = words[(i + 1) % 16]
         }
@@ -1543,7 +1543,7 @@ slay blake3_compress(h []drip, chunk tea, counter drip, flags drip) []drip {
     }
     
     fr fr Output
-    sus result []drip = make([]drip, 8)
+    sus result drip[value] = make(drip[value], 8)
     bestie i := 0; i < 8; i++ {
         result[i] = h[i] ^ state[i] ^ state[i + 8]
     }
@@ -1551,7 +1551,7 @@ slay blake3_compress(h []drip, chunk tea, counter drip, flags drip) []drip {
     damn result
 }
 
-slay blake3_mix(state []drip, a drip, b drip, c drip, d drip, x drip, y drip) {
+slay blake3_mix(state drip[value], a drip, b drip, c drip, d drip, x drip, y drip) {
     state[a] = state[a] + state[b] + x
     state[d] = rightrotate32(state[d] ^ state[a], 16)
     state[c] = state[c] + state[d]
@@ -1562,9 +1562,9 @@ slay blake3_mix(state []drip, a drip, b drip, c drip, d drip, x drip, y drip) {
     state[b] = rightrotate32(state[b] ^ state[c], 7)
 }
 
-slay blake3_finalize(h []drip) []drip {
+slay blake3_finalize(h drip[value]) drip[value]{
     fr fr Finalization for BLAKE3
-    sus result []drip = make([]drip, 32)
+    sus result drip[value] = make(drip[value], 32)
     bestie i := 0; i < 8; i++ {
         sus word drip = h[i]
         result[i*4] = word & 0xff
@@ -1577,10 +1577,10 @@ slay blake3_finalize(h []drip) []drip {
 
 fr fr ===== CHACHA20 IMPLEMENTATION =====
 
-slay chacha20_keystream(key []drip, nonce []drip, length drip) []drip {
+slay chacha20_keystream(key drip[value], nonce drip[value], length drip) drip[value]{
     fr fr Proper ChaCha20 keystream generation
-    sus keystream []drip = make([]drip, length)
-    sus state []drip = make([]drip, 16)
+    sus keystream drip[value] = make(drip[value], length)
+    sus state drip[value] = make(drip[value], 16)
     
     fr fr Initialize ChaCha20 state
     fr fr Constants "expand 32-byte k"
@@ -1610,7 +1610,7 @@ slay chacha20_keystream(key []drip, nonce []drip, length drip) []drip {
     
     sus blocks drip = (length + 63) / 64
     bestie block := 0; block < blocks; block++ {
-        sus working_state []drip = make([]drip, 16)
+        sus working_state drip[value] = make(drip[value], 16)
         bestie i := 0; i < 16; i++ {
             working_state[i] = state[i]
         }
@@ -1651,7 +1651,7 @@ slay chacha20_keystream(key []drip, nonce []drip, length drip) []drip {
     damn keystream
 }
 
-slay chacha20_quarter_round(state []drip, a drip, b drip, c drip, d drip) {
+slay chacha20_quarter_round(state drip[value], a drip, b drip, c drip, d drip) {
     state[a] = state[a] + state[b]
     state[d] = leftrotate32(state[d] ^ state[a], 16)
     state[c] = state[c] + state[d]
@@ -1664,10 +1664,10 @@ slay chacha20_quarter_round(state []drip, a drip, b drip, c drip, d drip) {
 
 slay chacha20_random_u8(rng SecureRandom) drip {
     fr fr Use ChaCha20 for secure random number generation
-    sus key []drip = slice(rng.entropy_pool, 0, mathz.min(32, len(rng.entropy_pool)))
-    sus nonce []drip = [rng.counter & 0xff, (rng.counter >> 8) & 0xff, (rng.counter >> 16) & 0xff]
+    sus key drip[value] = slice(rng.entropy_pool, 0, mathz.min(32, len(rng.entropy_pool)))
+    sus nonce drip[value] = [rng.counter & 0xff, (rng.counter >> 8) & 0xff, (rng.counter >> 16) & 0xff]
     
-    sus keystream []drip = chacha20_keystream(key, nonce, 1)
+    sus keystream drip[value] = chacha20_keystream(key, nonce, 1)
     
     rng.counter = rng.counter + 1
     
@@ -1679,26 +1679,26 @@ slay chacha20_random_u8(rng SecureRandom) drip {
 
 fr fr ===== ED25519 IMPLEMENTATION =====
 
-slay ed25519_derive_public(private_key []drip) []drip {
+slay ed25519_derive_public(private_key drip[value]) drip[value]{
     fr fr Derive Ed25519 public key from private key using curve arithmetic
     ready len(private_key) != 32 {
-        damn make([]drip, 32)
+        damn make(drip[value], 32)
     }
     
     fr fr Hash the private key
-    sus h []drip = sha512_hash(stringz.from_bytes(private_key))
+    sus h drip[value] = sha512_hash(stringz.from_bytes(private_key))
     
     fr fr Clamp the hash
     h[0] = h[0] & 248
     h[31] = (h[31] & 63) | 64
     
     fr fr Scalar multiplication with base point (simplified)
-    sus public_key []drip = ed25519_scalar_base_mult(slice(h, 0, 32))
+    sus public_key drip[value] = ed25519_scalar_base_mult(slice(h, 0, 32))
     
     damn public_key
 }
 
-slay ed25519_scalar_base_mult(scalar []drip) []drip {
+slay ed25519_scalar_base_mult(scalar drip[value]) drip[value]{
     fr fr SECURITY FIX: Ed25519 scalar multiplication with proper Edwards curve arithmetic
     fr fr RFC 8032 compliant implementation with constant-time operations
     
@@ -1707,13 +1707,13 @@ slay ed25519_scalar_base_mult(scalar []drip) []drip {
     sus curve_d drip = 0x52036cee2b6ffe738cc740797779e89800700a4d4141d8ab75eb4dca135978a3
     
     fr fr Base point G in Edwards form (x=15112221349535400772501151409588531511454012693041857206046113283949847762202, y=46316835694926478169428394003475163141307993866256225615783033603165251855960)
-    sus base_point_x []drip = [
+    sus base_point_x drip[value] = [
         0x1a, 0xd5, 0x25, 0x8f, 0x60, 0x2d, 0x56, 0xc9,
         0xb2, 0xa7, 0x25, 0x95, 0x60, 0xc7, 0x2c, 0x69,
         0x5c, 0xdc, 0xd6, 0xfd, 0x31, 0xe2, 0xa4, 0xc0,
         0xfe, 0x53, 0x6e, 0xcd, 0xd3, 0x36, 0x69, 0x21
     ]
-    sus base_point_y []drip = [
+    sus base_point_y drip[value] = [
         0x58, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
         0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66, 0x66,
@@ -1721,22 +1721,22 @@ slay ed25519_scalar_base_mult(scalar []drip) []drip {
     ]
     
     fr fr Convert scalar to constant-time representation
-    sus scalar_bits []lit = scalar_to_constant_time_bits(scalar)
+    sus scalar_bits lit[value] = scalar_to_constant_time_bits(scalar)
     
     fr fr Montgomery ladder for constant-time scalar multiplication
-    sus point_x []drip = make([]drip, 32)  # Start with identity point (0,1)
-    sus point_y []drip = make([]drip, 32)
+    sus point_x drip[value] = make(drip[value], 32)  # Start with identity point (0,1)
+    sus point_y drip[value] = make(drip[value], 32)
     point_y[0] = 1
     
     fr fr Process scalar bits from MSB to LSB (constant time)
     bestie bit_pos := 254; bit_pos >= 0; bit_pos-- {
         fr fr Point doubling (always performed)
-        sus doubled_point [][]drip = edwards_point_double(point_x, point_y, field_prime, curve_d)
+        sus doubled_point drip[value][value] = edwards_point_double(point_x, point_y, field_prime, curve_d)
         point_x = doubled_point[0]
         point_y = doubled_point[1]
         
         fr fr Conditional point addition (constant time)
-        sus added_point [][]drip = edwards_point_add_conditional(
+        sus added_point drip[value][value] = edwards_point_add_conditional(
             point_x, point_y, 
             base_point_x, base_point_y,
             scalar_bits[bit_pos],
@@ -1747,39 +1747,39 @@ slay ed25519_scalar_base_mult(scalar []drip) []drip {
     }
     
     fr fr Encode point in compressed Edwards form
-    sus result []drip = encode_edwards_point(point_x, point_y)
+    sus result drip[value] = encode_edwards_point(point_x, point_y)
     
     damn result
 }
 
-slay ed25519_sign_internal(message []drip, private_key []drip) []drip {
+slay ed25519_sign_internal(message drip[value], private_key drip[value]) drip[value]{
     fr fr Ed25519 signature generation
     ready len(private_key) != 32 {
-        damn make([]drip, 64)
+        damn make(drip[value], 64)
     }
     
     fr fr Derive public key
-    sus public_key []drip = ed25519_derive_public(private_key)
+    sus public_key drip[value] = ed25519_derive_public(private_key)
     
     fr fr Create deterministic nonce
-    sus nonce_input []drip = append_bytes(slice(sha512_hash(stringz.from_bytes(private_key)), 32, 32), message)
-    sus nonce_hash []drip = sha512_hash(stringz.from_bytes(nonce_input))
+    sus nonce_input drip[value] = append_bytes(slice(sha512_hash(stringz.from_bytes(private_key)), 32, 32), message)
+    sus nonce_hash drip[value] = sha512_hash(stringz.from_bytes(nonce_input))
     
     fr fr R = nonce * G (point multiplication)
-    sus r_point []drip = ed25519_scalar_base_mult(nonce_hash)
+    sus r_point drip[value] = ed25519_scalar_base_mult(nonce_hash)
     
     fr fr Create challenge hash: H(R || A || M)
-    sus challenge_input []drip = []
+    sus challenge_input drip[value] = []
     challenge_input = append_bytes(challenge_input, r_point)
     challenge_input = append_bytes(challenge_input, public_key)
     challenge_input = append_bytes(challenge_input, message)
-    sus challenge []drip = sha512_hash(stringz.from_bytes(challenge_input))
+    sus challenge drip[value] = sha512_hash(stringz.from_bytes(challenge_input))
     
     fr fr Compute S = (nonce + challenge * private_key) mod L
-    sus s_value []drip = ed25519_scalar_add_mul(nonce_hash, challenge, private_key)
+    sus s_value drip[value] = ed25519_scalar_add_mul(nonce_hash, challenge, private_key)
     
     fr fr Signature is R || S
-    sus signature []drip = make([]drip, 64)
+    sus signature drip[value] = make(drip[value], 64)
     bestie i := 0; i < 32; i++ {
         signature[i] = r_point[i]
         signature[i + 32] = s_value[i]
@@ -1788,9 +1788,9 @@ slay ed25519_sign_internal(message []drip, private_key []drip) []drip {
     damn signature
 }
 
-slay ed25519_scalar_add_mul(a []drip, b []drip, c []drip) []drip {
+slay ed25519_scalar_add_mul(a drip[value], b drip[value], c drip[value]) drip[value]{
     fr fr Simplified scalar arithmetic for Ed25519
-    sus result []drip = make([]drip, 32)
+    sus result drip[value] = make(drip[value], 32)
     
     bestie i := 0; i < 32; i++ {
         sus temp drip = (a[i] + (b[i] * c[i])) & 0xff
@@ -1800,41 +1800,41 @@ slay ed25519_scalar_add_mul(a []drip, b []drip, c []drip) []drip {
     damn result
 }
 
-slay ed25519_verify_internal(message []drip, signature []drip, public_key []drip) lit {
+slay ed25519_verify_internal(message drip[value], signature drip[value], public_key drip[value]) lit {
     fr fr Ed25519 signature verification
     ready len(signature) != 64 || len(public_key) != 32 {
         damn cringe
     }
     
-    sus r []drip = slice(signature, 0, 32)
-    sus s []drip = slice(signature, 32, 32)
+    sus r drip[value] = slice(signature, 0, 32)
+    sus s drip[value] = slice(signature, 32, 32)
     
     fr fr Recreate challenge hash
-    sus challenge_input []drip = []
+    sus challenge_input drip[value] = []
     challenge_input = append_bytes(challenge_input, r)
     challenge_input = append_bytes(challenge_input, public_key)
     challenge_input = append_bytes(challenge_input, message)
-    sus challenge []drip = sha512_hash(stringz.from_bytes(challenge_input))
+    sus challenge drip[value] = sha512_hash(stringz.from_bytes(challenge_input))
     
-    fr fr Verify: [8][s]B = [8]R + [8][h]A (simplified check)
-    sus left_side []drip = ed25519_scalar_base_mult(s)
-    sus right_side []drip = ed25519_point_add(r, ed25519_scalar_mult(challenge, public_key))
+    fr fr Verify: [8][s]B = R[8] + [8][h]A (simplified check)
+    sus left_side drip[value] = ed25519_scalar_base_mult(s)
+    sus right_side drip[value] = ed25519_point_add(r, ed25519_scalar_mult(challenge, public_key))
     
     damn constant_time_bytes_equal(left_side, right_side)
 }
 
-slay ed25519_point_add(a []drip, b []drip) []drip {
+slay ed25519_point_add(a drip[value], b drip[value]) drip[value]{
     fr fr Simplified point addition (production would use proper Edwards curve arithmetic)
-    sus result []drip = make([]drip, 32)
+    sus result drip[value] = make(drip[value], 32)
     bestie i := 0; i < 32; i++ {
         result[i] = (a[i] + b[i]) & 0xff
     }
     damn result
 }
 
-slay ed25519_scalar_mult(scalar []drip, point []drip) []drip {
+slay ed25519_scalar_mult(scalar drip[value], point drip[value]) drip[value]{
     fr fr Simplified scalar multiplication
-    sus result []drip = make([]drip, 32)
+    sus result drip[value] = make(drip[value], 32)
     bestie i := 0; i < 32; i++ {
         result[i] = (scalar[i] * point[i]) & 0xff
     }
@@ -1859,18 +1859,18 @@ slay rotl32(value drip, amount drip) drip {
     damn leftrotate32(value, amount)
 }
 
-slay make(type tea, size drip) []drip {
+slay make(type tea, size drip) drip[value]{
     fr fr Create array of specified size
-    sus result []drip = []
+    sus result drip[value] = []
     bestie i := 0; i < size; i++ {
         result = append(result, 0)
     }
     damn result
 }
 
-slay slice(arr []drip, start drip, length drip) []drip {
+slay slice(arr drip[value], start drip, length drip) drip[value]{
     fr fr Extract slice from array
-    sus result []drip = []
+    sus result drip[value] = []
     sus end drip = mathz.min(start + length, len(arr))
     bestie i := start; i < end; i++ {
         result = append(result, arr[i])
@@ -1878,19 +1878,19 @@ slay slice(arr []drip, start drip, length drip) []drip {
     damn result
 }
 
-slay pbkdf2_sha256(password []drip, salt []drip, iterations drip, key_length drip) []drip {
+slay pbkdf2_sha256(password drip[value], salt drip[value], iterations drip, key_length drip) drip[value]{
     fr fr PBKDF2 with SHA-256
-    sus derived_key []drip = make([]drip, key_length)
+    sus derived_key drip[value] = make(drip[value], key_length)
     sus hash_length drip = 32
     sus blocks drip = (key_length + hash_length - 1) / hash_length
     
     bestie block := 1; block <= blocks; block++ {
-        sus block_bytes []drip = [
+        sus block_bytes drip[value] = [
             (block >> 24) & 0xff, (block >> 16) & 0xff,
             (block >> 8) & 0xff, block & 0xff
         ]
-        sus u []drip = hmac_sha256(password, append_bytes(salt, block_bytes))
-        sus result_block []drip = u
+        sus u drip[value] = hmac_sha256(password, append_bytes(salt, block_bytes))
+        sus result_block drip[value] = u
         
         bestie iteration := 1; iteration < iterations; iteration++ {
             u = hmac_sha256(password, u)
@@ -1910,12 +1910,12 @@ slay pbkdf2_sha256(password []drip, salt []drip, iterations drip, key_length dri
 
 fr fr ===== RSA IMPLEMENTATION =====
 
-slay generate_safe_prime(bits drip) []drip {
+slay generate_safe_prime(bits drip) drip[value]{
     fr fr SECURITY FIX: Generate cryptographically secure prime using Miller-Rabin
     fr fr FIPS 186-4 compliant prime generation for RSA
     
     fr fr Generate random candidate of specified bit length
-    sus prime_candidate []drip = generate_cryptographically_secure_random(bits / 8)
+    sus prime_candidate drip[value] = generate_cryptographically_secure_random(bits / 8)
     
     fr fr Ensure candidate is odd and has correct bit length
     prime_candidate[0] = prime_candidate[0] | 1  # Make odd
@@ -1940,7 +1940,7 @@ slay generate_safe_prime(bits drip) []drip {
     damn create_probable_prime(bits / 8)
 }
 
-slay is_prime_simple(n []drip) lit {
+slay is_prime_simple(n drip[value]) lit {
     fr fr Simple primality test (production would use proper algorithms)
     ready len(n) == 0 {
         damn cringe
@@ -1951,7 +1951,7 @@ slay is_prime_simple(n []drip) lit {
     }
     
     fr fr Basic small prime checks
-    sus small_primes []drip = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
+    sus small_primes drip[value] = [3, 5, 7, 11, 13, 17, 19, 23, 29, 31]
     bestie i := 0; i < len(small_primes); i++ {
         ready big_int_mod_small(n, small_primes[i]) == 0 {
             damn cringe
@@ -1961,7 +1961,7 @@ slay is_prime_simple(n []drip) lit {
     damn based
 }
 
-slay big_int_mod_small(n []drip, divisor drip) drip {
+slay big_int_mod_small(n drip[value], divisor drip) drip {
     fr fr Modular arithmetic for big integers
     sus remainder drip = 0
     bestie i := len(n) - 1; i >= 0; i-- {
@@ -1970,9 +1970,9 @@ slay big_int_mod_small(n []drip, divisor drip) drip {
     damn remainder
 }
 
-slay increment_big_int(n []drip) []drip {
+slay increment_big_int(n drip[value]) drip[value]{
     fr fr Add 2 to big integer (to keep it odd)
-    sus result []drip = make([]drip, len(n))
+    sus result drip[value] = make(drip[value], len(n))
     sus carry drip = 2
     
     bestie i := 0; i < len(n); i++ {
@@ -1984,9 +1984,9 @@ slay increment_big_int(n []drip) []drip {
     damn result
 }
 
-slay create_probable_prime(byte_length drip) []drip {
+slay create_probable_prime(byte_length drip) drip[value]{
     fr fr Create a number that's likely to be prime
-    sus result []drip = make([]drip, byte_length)
+    sus result drip[value] = make(drip[value], byte_length)
     
     bestie i := 0; i < byte_length; i++ {
         result[i] = (i * 251 + 17) % 256
@@ -1999,10 +1999,10 @@ slay create_probable_prime(byte_length drip) []drip {
     damn result
 }
 
-slay multiply_big_int(a []drip, b []drip) []drip {
+slay multiply_big_int(a drip[value], b drip[value]) drip[value]{
     fr fr Big integer multiplication (simplified)
     sus result_size drip = len(a) + len(b)
-    sus result []drip = make([]drip, result_size)
+    sus result drip[value] = make(drip[value], result_size)
     
     bestie i := 0; i < len(a); i++ {
         sus carry drip = 0
@@ -2019,9 +2019,9 @@ slay multiply_big_int(a []drip, b []drip) []drip {
     damn trim_big_int(result)
 }
 
-slay subtract_big_int(a []drip, b []drip) []drip {
+slay subtract_big_int(a drip[value], b drip[value]) drip[value]{
     fr fr Big integer subtraction
-    sus result []drip = make([]drip, len(a))
+    sus result drip[value] = make(drip[value], len(a))
     sus borrow drip = 0
     
     bestie i := 0; i < len(a); i++ {
@@ -2043,14 +2043,14 @@ slay subtract_big_int(a []drip, b []drip) []drip {
     damn trim_big_int(result)
 }
 
-slay trim_big_int(n []drip) []drip {
+slay trim_big_int(n drip[value]) drip[value]{
     fr fr Remove leading zeros
     sus size drip = len(n)
     bestie size > 1 && n[size - 1] == 0 {
         size = size - 1
     }
     
-    sus result []drip = make([]drip, size)
+    sus result drip[value] = make(drip[value], size)
     bestie i := 0; i < size; i++ {
         result[i] = n[i]
     }
@@ -2058,10 +2058,10 @@ slay trim_big_int(n []drip) []drip {
     damn result
 }
 
-slay modular_exponentiation(base []drip, exponent []drip, modulus []drip) []drip {
+slay modular_exponentiation(base drip[value], exponent drip[value], modulus drip[value]) drip[value]{
     fr fr Modular exponentiation using binary method
-    sus result []drip = [1]
-    sus base_mod []drip = big_int_mod(base, modulus)
+    sus result drip[value] = [1]
+    sus base_mod drip[value] = big_int_mod(base, modulus)
     
     bestie i := 0; i < len(exponent); i++ {
         sus byte_val drip = exponent[i]
@@ -2076,14 +2076,14 @@ slay modular_exponentiation(base []drip, exponent []drip, modulus []drip) []drip
     damn result
 }
 
-slay big_int_mod(a []drip, m []drip) []drip {
+slay big_int_mod(a drip[value], m drip[value]) drip[value]{
     fr fr Big integer modulo (simplified division)
     ready compare_big_int(a, m) < 0 {
         damn a
     }
     
     fr fr Simplified: keep subtracting until less than modulus
-    sus result []drip = a
+    sus result drip[value] = a
     bestie compare_big_int(result, m) >= 0 {
         result = subtract_big_int(result, m)
     }
@@ -2091,7 +2091,7 @@ slay big_int_mod(a []drip, m []drip) []drip {
     damn result
 }
 
-slay compare_big_int(a []drip, b []drip) drip {
+slay compare_big_int(a drip[value], b drip[value]) drip {
     fr fr Compare big integers: -1 if a < b, 0 if equal, 1 if a > b
     ready len(a) < len(b) { damn -1 }
     ready len(a) > len(b) { damn 1 }
@@ -2117,22 +2117,22 @@ slay rsa_generate_keypair(key_size drip) KeyPair {
     keypair.created_at = system_time()
     
     sus prime_bits drip = key_size / 2
-    sus p []drip = generate_safe_prime(prime_bits)
-    sus q []drip = generate_safe_prime(prime_bits)
+    sus p drip[value] = generate_safe_prime(prime_bits)
+    sus q drip[value] = generate_safe_prime(prime_bits)
     
     fr fr n = p * q
-    sus n []drip = multiply_big_int(p, q)
+    sus n drip[value] = multiply_big_int(p, q)
     
     fr fr phi(n) = (p-1)(q-1)
-    sus p_minus_1 []drip = subtract_big_int(p, [1])
-    sus q_minus_1 []drip = subtract_big_int(q, [1])
-    sus phi_n []drip = multiply_big_int(p_minus_1, q_minus_1)
+    sus p_minus_1 drip[value] = subtract_big_int(p, [1])
+    sus q_minus_1 drip[value] = subtract_big_int(q, [1])
+    sus phi_n drip[value] = multiply_big_int(p_minus_1, q_minus_1)
     
     fr fr e = 65537 (common choice)
-    sus e []drip = [1, 0, 1] fr fr 65537 in little-endian
+    sus e drip[value] = [1, 0, 1] fr fr 65537 in little-endian
     
     fr fr d = e^(-1) mod phi(n)
-    sus d []drip = modular_inverse_secure_big_int(e, phi_n)
+    sus d drip[value] = modular_inverse_secure_big_int(e, phi_n)
     
     fr fr Encode keys
     keypair.public_key = encode_rsa_public_key(n, e)
@@ -2147,13 +2147,13 @@ slay rsa_generate_keypair(key_size drip) KeyPair {
     damn keypair
 }
 
-slay modular_inverse_secure_big_int(a []drip, m []drip) []drip {
+slay modular_inverse_secure_big_int(a drip[value], m drip[value]) drip[value]{
     fr fr Extended Euclidean algorithm for big integers (simplified)
-    sus original_m []drip = m
-    sus x0 []drip = [0]
-    sus x1 []drip = [1]
-    sus a_copy []drip = a
-    sus m_copy []drip = m
+    sus original_m drip[value] = m
+    sus x0 drip[value] = [0]
+    sus x1 drip[value] = [1]
+    sus a_copy drip[value] = a
+    sus m_copy drip[value] = m
     
     bestie compare_big_int(m_copy, [1]) > 0 {
         ready compare_big_int(a_copy, m_copy) >= 0 {
@@ -2164,7 +2164,7 @@ slay modular_inverse_secure_big_int(a []drip, m []drip) []drip {
         }
         
         fr fr Simplified step
-        sus temp []drip = x0
+        sus temp drip[value] = x0
         x0 = subtract_big_int(x1, multiply_big_int(big_int_divide(m, a_copy), x0))
         x1 = temp
         
@@ -2181,10 +2181,10 @@ slay modular_inverse_secure_big_int(a []drip, m []drip) []drip {
     damn x1
 }
 
-slay big_int_divide(a []drip, b []drip) []drip {
+slay big_int_divide(a drip[value], b drip[value]) drip[value]{
     fr fr Simple division (quotient only)
-    sus quotient []drip = [0]
-    sus remainder []drip = a
+    sus quotient drip[value] = [0]
+    sus remainder drip[value] = a
     
     bestie compare_big_int(remainder, b) >= 0 {
         remainder = subtract_big_int(remainder, b)
@@ -2194,10 +2194,10 @@ slay big_int_divide(a []drip, b []drip) []drip {
     damn quotient
 }
 
-slay add_big_int(a []drip, b []drip) []drip {
+slay add_big_int(a drip[value], b drip[value]) drip[value]{
     fr fr Big integer addition
     sus max_len drip = mathz.max(len(a), len(b))
-    sus result []drip = make([]drip, max_len + 1)
+    sus result drip[value] = make(drip[value], max_len + 1)
     sus carry drip = 0
     
     bestie i := 0; i < max_len; i++ {
@@ -2223,17 +2223,17 @@ slay add_big_int(a []drip, b []drip) []drip {
     damn trim_big_int(result)
 }
 
-slay one_big_int() []drip {
+slay one_big_int() drip[value]{
     damn [1]
 }
 
-slay e_65537_big_int() []drip {
+slay e_65537_big_int() drip[value]{
     damn [1, 0, 1] fr fr 65537 in little-endian bytes
 }
 
-slay encode_rsa_public_key(n []drip, e []drip) []drip {
+slay encode_rsa_public_key(n drip[value], e drip[value]) drip[value]{
     fr fr Simple ASN.1-like encoding for RSA public key
-    sus result []drip = []
+    sus result drip[value] = []
     
     fr fr Add length prefixes and data
     result = append(result, len(n) & 0xff)
@@ -2244,9 +2244,9 @@ slay encode_rsa_public_key(n []drip, e []drip) []drip {
     damn result
 }
 
-slay encode_rsa_private_key(n []drip, e []drip, d []drip, p []drip, q []drip) []drip {
+slay encode_rsa_private_key(n drip[value], e drip[value], d drip[value], p drip[value], q drip[value]) drip[value]{
     fr fr Simple encoding for RSA private key components
-    sus result []drip = []
+    sus result drip[value] = []
     
     result = append(result, len(n) & 0xff)
     result = append_bytes(result, n)
@@ -2264,7 +2264,7 @@ slay encode_rsa_private_key(n []drip, e []drip, d []drip, p []drip, q []drip) []
 
 fr fr ===== SECURE KEY COMBINATION METHODS =====
 
-slay combine_keys_secure(key1 []drip, key2 []drip, method tea) []drip {
+slay combine_keys_secure(key1 drip[value], key2 drip[value], method tea) drip[value]{
     fr fr Cryptographically secure key combination
     ready method == "xor" {
         damn combine_keys_xor_secure(key1, key2)
@@ -2278,7 +2278,7 @@ slay combine_keys_secure(key1 []drip, key2 []drip, method tea) []drip {
     }
 }
 
-slay combine_keys_xor_secure_deprecated_vulnerable(key1 []drip, key2 []drip) []drip {
+slay combine_keys_xor_secure_deprecated_vulnerable(key1 drip[value], key2 drip[value]) drip[value]{
     fr fr SECURITY VIOLATION: XOR key combination is cryptographically weak
     vibez.spill("CRITICAL SECURITY ERROR: XOR key combination is vulnerable")
     vibez.spill("XOR operations leak key entropy and enable correlation attacks")
@@ -2286,19 +2286,19 @@ slay combine_keys_xor_secure_deprecated_vulnerable(key1 []drip, key2 []drip) []d
     damn []
 }
 
-slay combine_keys_kdf_secure(key1 []drip, key2 []drip) []drip {
+slay combine_keys_kdf_secure(key1 drip[value], key2 drip[value]) drip[value]{
     fr fr Key combination using key derivation function
-    sus combined_input []drip = []
+    sus combined_input drip[value] = []
     combined_input = append_bytes(combined_input, key1)
     combined_input = append_bytes(combined_input, key2)
     
     fr fr Add separator to prevent length extension attacks
-    sus separator []drip = [0xff, 0xfe, 0xfd, 0xfc]
+    sus separator drip[value] = [0xff, 0xfe, 0xfd, 0xfc]
     combined_input = append_bytes(combined_input, separator)
     
     fr fr Derive key using PBKDF2
-    sus salt []drip = sha256_hash(stringz.from_bytes(combined_input))
-    sus derived_key []drip = pbkdf2_sha256(combined_input, salt, 100000, 32)
+    sus salt drip[value] = sha256_hash(stringz.from_bytes(combined_input))
+    sus derived_key drip[value] = pbkdf2_sha256(combined_input, salt, 100000, 32)
     
     secure_zero_memory(combined_input)
     secure_zero_memory(salt)
@@ -2306,23 +2306,23 @@ slay combine_keys_kdf_secure(key1 []drip, key2 []drip) []drip {
     damn derived_key
 }
 
-slay combine_keys_hmac_secure(key1 []drip, key2 []drip) []drip {
+slay combine_keys_hmac_secure(key1 drip[value], key2 drip[value]) drip[value]{
     fr fr HMAC-based key combination with domain separation
     fr fr Use each key to authenticate the other
-    sus hmac1 []drip = hmac_sha256(key1, key2)
-    sus hmac2 []drip = hmac_sha256(key2, key1)
+    sus hmac1 drip[value] = hmac_sha256(key1, key2)
+    sus hmac2 drip[value] = hmac_sha256(key2, key1)
     
     fr fr Combine the HMACs
-    sus combined []drip = []
+    sus combined drip[value] = []
     combined = append_bytes(combined, hmac1)
     combined = append_bytes(combined, hmac2)
     
     fr fr Final derivation with both keys as context
-    sus context []drip = []
+    sus context drip[value] = []
     context = append_bytes(context, key1)
     context = append_bytes(context, key2)
     
-    sus final_key []drip = hmac_sha256(combined, context)
+    sus final_key drip[value] = hmac_sha256(combined, context)
     
     secure_zero_memory(hmac1)
     secure_zero_memory(hmac2)
@@ -2376,17 +2376,17 @@ slay hex_char_to_value(c tea) drip {
 }
 
 fr fr AES implementation helpers - PRODUCTION READY
-slay aes_sub_word(word []drip) []drip { 
+slay aes_sub_word(word drip[value]) drip[value]{ 
     fr fr Apply SubBytes transformation to 4-byte word
-    sus sbox []drip = get_aes_sbox()
-    sus result []drip = make([]drip, 4)
+    sus sbox drip[value] = get_aes_sbox()
+    sus result drip[value] = make(drip[value], 4)
     bestie i := 0; i < 4; i++ {
         result[i] = sbox[word[i]]
     }
     damn result
 }
 
-slay aes_rot_word(word []drip) []drip { 
+slay aes_rot_word(word drip[value]) drip[value]{ 
     fr fr Rotate word left by one byte: [a0,a1,a2,a3] -> [a1,a2,a3,a0]
     ready len(word) < 4 { damn word }
     damn [word[1], word[2], word[3], word[0]]
@@ -2394,17 +2394,17 @@ slay aes_rot_word(word []drip) []drip {
 
 slay aes_rcon(index drip) drip { 
     fr fr AES round constant generation using Galois field arithmetic
-    sus rcon_values []drip = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
+    sus rcon_values drip[value] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
     ready index < len(rcon_values) { damn rcon_values[index] }
     damn 0x01
 }
 
-slay bytes_to_state(block []drip) [][]drip { 
+slay bytes_to_state(block drip[value]) drip[value][value] { 
     fr fr Convert 16-byte block to 4x4 state matrix
     ready len(block) != 16 { damn [] }
-    sus state [][]drip = make([][]drip, 4)
+    sus state drip[value][value] = make(drip[value][value], 4)
     bestie i := 0; i < 4; i++ {
-        state[i] = make([]drip, 4)
+        state[i] = make(drip[value], 4)
         bestie j := 0; j < 4; j++ {
             state[i][j] = block[i + j * 4]
         }
@@ -2412,10 +2412,10 @@ slay bytes_to_state(block []drip) [][]drip {
     damn state
 }
 
-slay state_to_bytes(state [][]drip) []drip { 
+slay state_to_bytes(state drip[value][value]) drip[value]{ 
     fr fr Convert 4x4 state matrix back to 16-byte block
     ready len(state) != 4 { damn [] }
-    sus block []drip = make([]drip, 16)
+    sus block drip[value] = make(drip[value], 16)
     bestie i := 0; i < 4; i++ {
         ready len(state[i]) != 4 { damn [] }
         bestie j := 0; j < 4; j++ {
@@ -2425,11 +2425,11 @@ slay state_to_bytes(state [][]drip) []drip {
     damn block
 }
 
-slay aes_add_round_key(state [][]drip, key_schedule []drip, round drip) [][]drip { 
+slay aes_add_round_key(state drip[value][value], key_schedule drip[value], round drip) drip[value][value] { 
     fr fr XOR state with round key
-    sus result [][]drip = make([][]drip, 4)
+    sus result drip[value][value] = make(drip[value][value], 4)
     bestie i := 0; i < 4; i++ {
-        result[i] = make([]drip, 4)
+        result[i] = make(drip[value], 4)
         bestie j := 0; j < 4; j++ {
             sus key_index drip = round * 16 + i + j * 4
             ready key_index < len(key_schedule) {
@@ -2442,12 +2442,12 @@ slay aes_add_round_key(state [][]drip, key_schedule []drip, round drip) [][]drip
     damn result
 }
 
-slay aes_sub_bytes(state [][]drip) [][]drip { 
+slay aes_sub_bytes(state drip[value][value]) drip[value][value] { 
     fr fr Apply SubBytes transformation using AES S-box
-    sus sbox []drip = get_aes_sbox()
-    sus result [][]drip = make([][]drip, 4)
+    sus sbox drip[value] = get_aes_sbox()
+    sus result drip[value][value] = make(drip[value][value], 4)
     bestie i := 0; i < 4; i++ {
-        result[i] = make([]drip, 4)
+        result[i] = make(drip[value], 4)
         bestie j := 0; j < 4; j++ {
             result[i][j] = sbox[state[i][j]]
         }
@@ -2455,11 +2455,11 @@ slay aes_sub_bytes(state [][]drip) [][]drip {
     damn result
 }
 
-slay aes_shift_rows(state [][]drip) [][]drip { 
+slay aes_shift_rows(state drip[value][value]) drip[value][value] { 
     fr fr Perform ShiftRows transformation
-    sus result [][]drip = make([][]drip, 4)
+    sus result drip[value][value] = make(drip[value][value], 4)
     bestie i := 0; i < 4; i++ {
-        result[i] = make([]drip, 4)
+        result[i] = make(drip[value], 4)
     }
     
     fr fr Row 0: no shift
@@ -2485,15 +2485,15 @@ slay aes_shift_rows(state [][]drip) [][]drip {
     damn result
 }
 
-slay aes_mix_columns(state [][]drip) [][]drip { 
+slay aes_mix_columns(state drip[value][value]) drip[value][value] { 
     fr fr MixColumns transformation using Galois field arithmetic
-    sus result [][]drip = make([][]drip, 4)
+    sus result drip[value][value] = make(drip[value][value], 4)
     bestie i := 0; i < 4; i++ {
-        result[i] = make([]drip, 4)
+        result[i] = make(drip[value], 4)
     }
     
     bestie j := 0; j < 4; j++ {
-        sus a []drip = [state[0][j], state[1][j], state[2][j], state[3][j]]
+        sus a drip[value] = [state[0][j], state[1][j], state[2][j], state[3][j]]
         
         fr fr Apply MixColumns matrix multiplication in GF(2^8)
         result[0][j] = gf_mul(0x02, a[0]) ^ gf_mul(0x03, a[1]) ^ a[2] ^ a[3]
@@ -2504,7 +2504,7 @@ slay aes_mix_columns(state [][]drip) [][]drip {
     
     damn result
 }
-slay get_aes_sbox() []drip {
+slay get_aes_sbox() drip[value]{
     fr fr Official AES S-box lookup table
     damn [
         0x63, 0x7C, 0x77, 0x7B, 0xF2, 0x6B, 0x6F, 0xC5, 0x30, 0x01, 0x67, 0x2B, 0xFE, 0xD7, 0xAB, 0x76,
@@ -2550,21 +2550,21 @@ slay gf_mul(a drip, b drip) drip {
     damn result
 }
 
-slay make_zero_block() []drip { damn make([]drip, 16) }
-slay gcm_init_j0(iv []drip, h_subkey []drip) []drip { damn iv }
-slay gcm_ctr_encrypt(data []drip, j0 []drip, key_schedule []drip, rounds drip) []drip { damn data }
-slay gcm_compute_tag(h_subkey []drip, iv []drip, ciphertext []drip, additional_data []drip) []drip { damn generate_random_bytes(16) }
-slay slice(data []drip, start drip, length drip) []drip { sus result []drip = []; damn result }
-slay append_bytes(a []drip, b []drip) []drip { sus result []drip = a; damn result }
-slay xor_bytes(a []drip, b []drip) []drip { sus result []drip = []; damn result }
-slay u32_to_bytes_be(val drip) []drip { damn [(val >> 24) & 0xff, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff] }
-slay u64_to_bytes_be(val drip) []drip { damn u32_to_bytes_be(val) }
-slay bytes_from_hex(hex tea) []drip { damn hex_to_bytes(hex) }
+slay make_zero_block() drip[value]{ damn make(drip[value], 16) }
+slay gcm_init_j0(iv drip[value], h_subkey drip[value]) drip[value]{ damn iv }
+slay gcm_ctr_encrypt(data drip[value], j0 drip[value], key_schedule drip[value], rounds drip) drip[value]{ damn data }
+slay gcm_compute_tag(h_subkey drip[value], iv drip[value], ciphertext drip[value], additional_data drip[value]) drip[value]{ damn generate_random_bytes(16) }
+slay slice(data drip[value], start drip, length drip) drip[value]{ sus result drip[value] = []; damn result }
+slay append_bytes(a drip[value], b drip[value]) drip[value]{ sus result drip[value] = a; damn result }
+slay xor_bytes(a drip[value], b drip[value]) drip[value]{ sus result drip[value] = []; damn result }
+slay u32_to_bytes_be(val drip) drip[value]{ damn [(val >> 24) & 0xff, (val >> 16) & 0xff, (val >> 8) & 0xff, val & 0xff] }
+slay u64_to_bytes_be(val drip) drip[value]{ damn u32_to_bytes_be(val) }
+slay bytes_from_hex(hex tea) drip[value]{ damn hex_to_bytes(hex) }
 
 fr fr Argon2 implementation helpers
 squad ArgonContext {
-    sus password []drip
-    sus salt []drip
+    sus password drip[value]
+    sus salt drip[value]
     sus memory_cost drip
     sus time_cost drip
     sus parallelism drip
@@ -2572,13 +2572,13 @@ squad ArgonContext {
     sus variant tea
 }
 
-slay argon2_initial_hash(context ArgonContext) []drip { damn generate_random_bytes(64) }
-slay argon2_allocate_memory(memory_cost drip) [][]drip { sus memory [][]drip = []; damn memory }
-slay argon2_compress(hash []drip, i drip, lane drip, pass drip) []drip { damn hash }
+slay argon2_initial_hash(context ArgonContext) drip[value]{ damn generate_random_bytes(64) }
+slay argon2_allocate_memory(memory_cost drip) drip[value][value] { sus memory drip[value][value] = []; damn memory }
+slay argon2_compress(hash drip[value], i drip, lane drip, pass drip) drip[value]{ damn hash }
 slay argon2_reference_block(pass drip, lane drip, block drip, memory_cost drip) drip { damn 0 }
-slay argon2_mix_blocks(block []drip, ref_block []drip) []drip { damn block }
-slay argon2_finalize(final_block []drip, output_length drip) []drip { damn slice(final_block, 0, output_length) }
-slay scrypt_mix(key []drip, n drip, r drip, p drip) []drip { damn key }
+slay argon2_mix_blocks(block drip[value], ref_block drip[value]) drip[value]{ damn block }
+slay argon2_finalize(final_block drip[value], output_length drip) drip[value]{ damn slice(final_block, 0, output_length) }
+slay scrypt_mix(key drip[value], n drip, r drip, p drip) drip[value]{ damn key }
 
 fr fr ===== MODULE INITIALIZATION =====
 

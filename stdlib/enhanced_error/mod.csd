@@ -10,7 +10,7 @@ collab Error {
     slay message() tea
     slay error_code() normie
     slay error_type() tea
-    slay stack_trace() []tea
+    slay stack_trace() tea[value]
     slay is_recoverable() lit
     slay unwrap() tea
 }
@@ -18,7 +18,7 @@ collab Error {
 squad RuntimeError {
     spill msg tea
     spill code normie
-    spill stack []tea
+    spill stack tea[value]
     spill recoverable lit
 }
 
@@ -26,7 +26,7 @@ flex RuntimeError => Error {
     slay message() tea { damn msg }
     slay error_code() normie { damn code }
     slay error_type() tea { damn "RuntimeError" }
-    slay stack_trace() []tea { damn stack }
+    slay stack_trace() tea[value]{ damn stack }
     slay is_recoverable() lit { damn recoverable }
     slay unwrap() tea { damn msg }
 }
@@ -41,7 +41,7 @@ flex ValidationError => Error {
     slay message() tea { damn msg + " (field: " + field + ", value: " + value + ")" }
     slay error_code() normie { damn 1001 }
     slay error_type() tea { damn "ValidationError" }
-    slay stack_trace() []tea { damn ["validation_failed"] }
+    slay stack_trace() tea[value]{ damn ["validation_failed"] }
     slay is_recoverable() lit { damn based }
     slay unwrap() tea { damn msg }
 }
@@ -56,7 +56,7 @@ flex NetworkError => Error {
     slay message() tea { damn msg + " (endpoint: " + endpoint + ", status: " + string_format_int(status_code) + ")" }
     slay error_code() normie { damn status_code }
     slay error_type() tea { damn "NetworkError" }
-    slay stack_trace() []tea { damn ["network_request_failed"] }
+    slay stack_trace() tea[value]{ damn ["network_request_failed"] }
     slay is_recoverable() lit { damn status_code >= 500 && status_code < 600 }
     slay unwrap() tea { damn msg }
 }
@@ -71,7 +71,7 @@ flex FileSystemError => Error {
     slay message() tea { damn msg + " (path: " + path + ", operation: " + operation + ")" }
     slay error_code() normie { damn 2001 }
     slay error_type() tea { damn "FileSystemError" }
-    slay stack_trace() []tea { damn ["filesystem_operation_failed"] }
+    slay stack_trace() tea[value]{ damn ["filesystem_operation_failed"] }
     slay is_recoverable() lit { damn operation == "read" || operation == "write" }
     slay unwrap() tea { damn msg }
 }
@@ -141,7 +141,7 @@ fr fr Error Creation Functions
 fr fr ================================
 
 slay create_runtime_error(message tea, code normie, recoverable lit) Error {
-    sus stack []tea = get_current_stack_trace()
+    sus stack tea[value] = get_current_stack_trace()
     damn RuntimeError{
         msg: message,
         code: code,
@@ -212,17 +212,17 @@ slay chain_results<T, U, E>(first Result<T, E>, second slay(T) Result<U, E>) Res
     damn second(first_value)
 }
 
-slay collect_results<T, E>(results []Result<T, E>) Result<[]T, E> {
-    sus collected_values []T = []
+slay collect_results<T, E>(results Result[value]<T, E>) Result<T[value], E> {
+    sus collected_values T[value] = []
     
     bestie i := 0; i < len(results); i++ {
         lowkey results[i].is_error() {
-            damn error<[]T, E>(results[i].unwrap_error())
+            damn error<T[value], E>(results[i].unwrap_error())
         }
         collected_values = append(collected_values, results[i].unwrap())
     }
     
-    damn ok<[]T, E>(collected_values)
+    damn ok<T[value], E>(collected_values)
 }
 
 fr fr ================================
@@ -314,7 +314,7 @@ slay format_error_log_entry(timestamp tea, err Error) tea {
     entry = entry + err.error_type() + " (" + string_format_int(err.error_code()) + "): "
     entry = entry + err.message()
     
-    sus stack []tea = err.stack_trace()
+    sus stack tea[value] = err.stack_trace()
     lowkey len(stack) > 0 {
         entry = entry + "\nStack trace:\n"
         bestie i := 0; i < len(stack); i++ {
@@ -330,7 +330,7 @@ fr fr Error Aggregation and Analysis
 fr fr ================================
 
 squad ErrorAggregator {
-    spill errors []Error
+    spill errors Error[value]
     spill error_counts map[tea]normie
     spill start_time tea
 }
@@ -394,7 +394,7 @@ fr fr ================================
 fr fr Utility Functions
 fr fr ================================
 
-slay get_current_stack_trace() []tea {
+slay get_current_stack_trace() tea[value]{
     fr fr Simplified stack trace - real implementation would use runtime introspection
     damn ["main", "function_call", "error_location"]
 }
@@ -512,7 +512,7 @@ flex ContextualError => Error {
     }
     slay error_code() normie { damn original_error.error_code() }
     slay error_type() tea { damn "ContextualError" }
-    slay stack_trace() []tea { damn original_error.stack_trace() }
+    slay stack_trace() tea[value]{ damn original_error.stack_trace() }
     slay is_recoverable() lit { damn original_error.is_recoverable() }
     slay unwrap() tea { damn original_error.unwrap() }
 }

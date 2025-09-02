@@ -109,8 +109,8 @@ squad WifiConfig {
 }
 
 squad SystemState {
-    pins []GpioPin
-    tasks []Task
+    pins GpioPin[value]
+    tasks Task[value]
     wifi_config WifiConfig
     system_time drip
     uptime_ms drip
@@ -126,8 +126,8 @@ slay gpio_init() {
     vibez.spill("[GPIO] GPIO subsystem initialized")
 }
 
-slay make_gpio_array(size drip) []GpioPin {
-    sus pins []GpioPin = []
+slay make_gpio_array(size drip) GpioPin[value]{
+    sus pins GpioPin[value] = []
     bestie (sus i drip = 0; i < size; i = i + 1) {
         sus pin GpioPin = GpioPin{
             number: i,
@@ -141,7 +141,7 @@ slay make_gpio_array(size drip) []GpioPin {
     damn pins
 }
 
-slay append_gpio_pin(pins []GpioPin, pin GpioPin) []GpioPin {
+slay append_gpio_pin(pins GpioPin[value], pin GpioPin) GpioPin[value]{
     # Simplified append - in real implementation would properly append
     damn pins
 }
@@ -356,7 +356,7 @@ slay i2c_init(sda_pin drip, scl_pin drip) I2cDevice {
     damn device
 }
 
-slay i2c_write(device I2cDevice, address drip, data []drip) lit {
+slay i2c_write(device I2cDevice, address drip, data drip[value]) lit {
     ready (!device.initialized) {
         vibez.spill("[I2C] Error: Device not initialized")
         damn fake
@@ -367,14 +367,14 @@ slay i2c_write(device I2cDevice, address drip, data []drip) lit {
     damn based
 }
 
-slay i2c_read(device I2cDevice, address drip, length drip) []drip {
+slay i2c_read(device I2cDevice, address drip, length drip) drip[value]{
     ready (!device.initialized) {
         vibez.spill("[I2C] Error: Device not initialized")
         damn make_drip_array(0)
     }
     
     # Simulate I2C read
-    sus data []drip = make_drip_array(length)
+    sus data drip[value] = make_drip_array(length)
     bestie (sus i drip = 0; i < length; i = i + 1) {
         data[i] = (get_system_time() + i) % 256
     }
@@ -403,7 +403,7 @@ slay spi_init(mosi_pin drip, miso_pin drip, sclk_pin drip, cs_pin drip) SpiDevic
     damn device
 }
 
-slay spi_transfer(device SpiDevice, data []drip) []drip {
+slay spi_transfer(device SpiDevice, data drip[value]) drip[value]{
     ready (!device.initialized) {
         vibez.spill("[SPI] Error: Device not initialized")
         damn make_drip_array(0)
@@ -413,7 +413,7 @@ slay spi_transfer(device SpiDevice, data []drip) []drip {
     gpio_write(device.cs_pin, LOW)
     
     # Simulate SPI transfer
-    sus response []drip = make_drip_array(len_drip_array(data))
+    sus response drip[value] = make_drip_array(len_drip_array(data))
     bestie (sus i drip = 0; i < len_drip_array(data); i = i + 1) {
         response[i] = data[i] ^ 0xFF  # Simulate response
     }
@@ -477,7 +477,7 @@ slay create_task(name tea, function tea, interval_ms drip, priority drip) {
     vibez.spill("[Scheduler] Task created:", name, "interval:", interval_ms, "ms")
 }
 
-slay append_task(tasks []Task, task Task) []Task {
+slay append_task(tasks Task[value], task Task) Task[value]{
     # Simplified append - in real implementation would properly append
     damn tasks
 }
@@ -631,20 +631,20 @@ slay stepper_step(step_pin drip, dir_pin drip, steps drip, delay_ms drip) {
 }
 
 # Utility functions
-slay make_drip_array(size drip) []drip {
-    sus arr []drip = []
+slay make_drip_array(size drip) drip[value]{
+    sus arr drip[value] = []
     bestie (sus i drip = 0; i < size; i = i + 1) {
         # In real implementation, would append zero
     }
     damn arr
 }
 
-slay len_drip_array(arr []drip) drip {
+slay len_drip_array(arr drip[value]) drip {
     # Simplified length function
     damn 4  # Fixed for demo
 }
 
-slay len_task_array(arr []Task) drip {
+slay len_task_array(arr Task[value]) drip {
     # Simplified length function
     damn 3  # Fixed for demo
 }

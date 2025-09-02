@@ -11,7 +11,7 @@ sus demo_int normie = 42
 sus demo_float meal = 3.14159
 sus demo_bool lit = based
 sus demo_string tea = "Hello, Reflection!"
-sus demo_array []normie = [1, 2, 3, 4, 5]
+sus demo_array normie[value] = [1, 2, 3, 4, 5]
 
 fr fr Get type information for each value
 sus int_type TypeInfo = get_type_info_int(demo_int)
@@ -70,7 +70,7 @@ fr fr Demonstrate method reflection
 vibez.spill("")
 vibez.spill("--- Method Reflection ---")
 
-sus tea_methods []tea = list_methods("tea")
+sus tea_methods tea[value] = list_methods("tea")
 vibez.spill("String (tea) methods: " + stringify_int(len(tea_methods)) + " total")
 sus i normie = 0
 bestie (i < len(tea_methods)) {
@@ -78,7 +78,7 @@ bestie (i < len(tea_methods)) {
     i = i + 1
 }
 
-sus int_methods []tea = list_methods("normie")
+sus int_methods tea[value] = list_methods("normie")
 vibez.spill("Integer (normie) methods: " + stringify_int(len(int_methods)) + " total")
 i = 0
 bestie (i < len(int_methods)) {
@@ -95,7 +95,7 @@ vibez.spill("Comprehensive reflection test: " + stringify_bool(test_result))
 fr fr Demonstrate string analysis
 vibez.spill("")
 vibez.spill("--- String Analysis ---")
-sus test_strings []tea = ["hello", "42", "3.14", ""]
+sus test_strings tea[value] = ["hello", "42", "3.14", ""]
 i = 0
 bestie (i < len(test_strings)) {
     sus s tea = test_strings[i]

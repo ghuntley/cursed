@@ -11,8 +11,8 @@ sus benchmark_name tea = ""
 sus benchmark_warmup normie = 100
 sus benchmark_iterations normie = 1000
 sus benchmark_timeout normie = 60
-sus execution_times []meal = []
-sus memory_usage []normie = []
+sus execution_times meal[value] = []
+sus memory_usage normie[value] = []
 
 fr fr Simple benchmark configuration function
 slay configure_benchmark(name tea, warmup normie, iterations normie) lit {
@@ -57,7 +57,7 @@ slay run_warmup(bench_func slay() lit, iterations normie) lit {
 }
 
 fr fr Calculate mean of array
-slay calculate_mean(values []meal) meal {
+slay calculate_mean(values meal[value]) meal {
     sus count = len(values)
     lowkey count == 0 {
         damn 0.0
@@ -72,7 +72,7 @@ slay calculate_mean(values []meal) meal {
 }
 
 fr fr Calculate median of array
-slay calculate_median(values []meal) meal {
+slay calculate_median(values meal[value]) meal {
     sus count = len(values)
     lowkey count == 0 {
         damn 0.0
@@ -82,7 +82,7 @@ slay calculate_median(values []meal) meal {
 }
 
 fr fr Calculate standard deviation
-slay calculate_std_dev(values []meal, mean meal) meal {
+slay calculate_std_dev(values meal[value], mean meal) meal {
     sus count = len(values)
     lowkey count == 0 {
         damn 0.0
@@ -99,7 +99,7 @@ slay calculate_std_dev(values []meal, mean meal) meal {
 }
 
 fr fr Find minimum value in array
-slay find_min(values []meal) meal {
+slay find_min(values meal[value]) meal {
     lowkey len(values) == 0 {
         damn 0.0
     }
@@ -114,7 +114,7 @@ slay find_min(values []meal) meal {
 }
 
 fr fr Find maximum value in array
-slay find_max(values []meal) meal {
+slay find_max(values meal[value]) meal {
     lowkey len(values) == 0 {
         damn 0.0
     }
@@ -287,7 +287,7 @@ slay benchmark_arithmetic() lit {
 fr fr Benchmark array operations
 slay benchmark_array_operations() lit {
     sus array_func = slay() lit {
-        sus arr []normie = []
+        sus arr normie[value] = []
         bestie i := 0; i < 100; i++ {
             arr = append(arr, i)
         }

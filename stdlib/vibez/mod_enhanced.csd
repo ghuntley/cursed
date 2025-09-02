@@ -207,9 +207,9 @@ slay append_file_safe(filename tea, content tea) (lit, tea) {
 fr fr ===== DIRECTORY OPERATIONS =====
 
 fr fr List directory with enhanced error handling
-slay list_directory_safe(path tea) ([]tea, tea) {
+slay list_directory_safe(path tea) (tea[value], tea) {
     check directory_exists_safe(path) {
-        sus files []tea = runtime_list_directory_files(path)
+        sus files tea[value] = runtime_list_directory_files(path)
         sus error tea = get_last_error()
         damn (files, error)
     }
@@ -617,7 +617,7 @@ slay runtime_directory_exists(path tea) lit {
     damn core.directory_exists(path)
 }
 
-slay runtime_list_directory_files(path tea) []tea {
+slay runtime_list_directory_files(path tea) tea[value]{
     fr fr Implemented in Zig runtime
     damn core.list_directory(path)
 }

@@ -163,8 +163,8 @@ squad Layer {
     layer_type drip
     input_size drip
     output_size drip
-    weights []meal
-    biases []meal
+    weights meal[value]
+    biases meal[value]
     activation_type drip
     dropout_rate meal
     
@@ -174,18 +174,18 @@ squad Layer {
     padding drip
     
     fr fr For batch normalization
-    gamma []meal
-    beta []meal
-    running_mean []meal
-    running_var []meal
+    gamma meal[value]
+    beta meal[value]
+    running_mean meal[value]
+    running_var meal[value]
     
     fr fr Training state
     training lit
 }
 
 slay layer_create_dense(input_size drip, output_size drip, activation_type drip) Layer {
-    sus weights []meal = layer_weights_init(input_size, output_size)
-    sus biases []meal = layer_biases_init(output_size)
+    sus weights meal[value] = layer_weights_init(input_size, output_size)
+    sus biases meal[value] = layer_biases_init(output_size)
     
     damn Layer{
         layer_type: LAYER_TYPE_DENSE(),
@@ -227,10 +227,10 @@ slay layer_create_dropout(dropout_rate meal) Layer {
 }
 
 slay layer_create_batch_norm(size drip) Layer {
-    sus gamma []meal = tensor_ones_1d(size)
-    sus beta []meal = tensor_zeros_1d(size)
-    sus running_mean []meal = tensor_zeros_1d(size)
-    sus running_var []meal = tensor_ones_1d(size)
+    sus gamma meal[value] = tensor_ones_1d(size)
+    sus beta meal[value] = tensor_zeros_1d(size)
+    sus running_mean meal[value] = tensor_zeros_1d(size)
+    sus running_var meal[value] = tensor_ones_1d(size)
     
     damn Layer{
         layer_type: LAYER_TYPE_BATCHNORM(),
@@ -254,7 +254,7 @@ slay layer_create_batch_norm(size drip) Layer {
 fr fr === NEURAL NETWORK STRUCTURE ===
 
 squad NeuralNetwork {
-    layers []Layer
+    layers Layer[value]
     learning_rate meal
     momentum meal
     beta1 meal
@@ -263,14 +263,14 @@ squad NeuralNetwork {
     optimizer_type drip
     
     fr fr Momentum variables
-    weight_momentums [][]meal
-    bias_momentums [][]meal
+    weight_momentums meal[value][value]
+    bias_momentums meal[value][value]
     
     fr fr Adam variables
-    weight_m [][]meal
-    weight_v [][]meal
-    bias_m [][]meal
-    bias_v [][]meal
+    weight_m meal[value][value]
+    weight_v meal[value][value]
+    bias_m meal[value][value]
+    bias_v meal[value][value]
     timestep drip
 }
 
@@ -331,11 +331,11 @@ slay neural_network_add_layer(network NeuralNetwork, layer Layer) NeuralNetwork 
 
 fr fr === FORWARD PROPAGATION ===
 
-slay layer_forward_dense(layer Layer, input []meal) []meal {
-    sus output []meal = layer_forward_single(input, layer.weights, layer.biases, layer.input_size, layer.output_size)
+slay layer_forward_dense(layer Layer, input meal[value]) meal[value]{
+    sus output meal[value] = layer_forward_single(input, layer.weights, layer.biases, layer.input_size, layer.output_size)
     
     fr fr Apply activation function
-    sus activated_output []meal = []
+    sus activated_output meal[value] = []
     sus i drip = 0
     bestie (i < len(output)) {
         sus activated meal = apply_activation(output[i], layer.activation_type)
@@ -346,12 +346,12 @@ slay layer_forward_dense(layer Layer, input []meal) []meal {
     damn activated_output
 }
 
-slay layer_forward_dropout(layer Layer, input []meal) []meal {
+slay layer_forward_dropout(layer Layer, input meal[value]) meal[value]{
     ready (!layer.training) {
         damn input  fr fr No dropout during inference
     }
     
-    sus output []meal = []
+    sus output meal[value] = []
     sus scale meal = 1.0 / (1.0 - layer.dropout_rate)
     sus i drip = 0
     bestie (i < len(input)) {
@@ -367,8 +367,8 @@ slay layer_forward_dropout(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay layer_forward_batch_norm(layer Layer, input []meal) []meal {
-    sus output []meal = []
+slay layer_forward_batch_norm(layer Layer, input meal[value]) meal[value]{
+    sus output meal[value] = []
     sus i drip = 0
     bestie (i < len(input)) {
         ready (layer.training) {
@@ -396,8 +396,8 @@ slay layer_forward_batch_norm(layer Layer, input []meal) []meal {
     damn output
 }
 
-slay neural_network_forward(network NeuralNetwork, input []meal) []meal {
-    sus current_input []meal = input
+slay neural_network_forward(network NeuralNetwork, input meal[value]) meal[value]{
+    sus current_input meal[value] = input
     sus layer_idx drip = 0
     
     bestie (layer_idx < len(network.layers)) {
@@ -421,11 +421,11 @@ slay neural_network_forward(network NeuralNetwork, input []meal) []meal {
 
 fr fr === BACKWARD PROPAGATION ===
 
-slay neural_network_backward_dense(layer Layer, input []meal, output_gradient []meal) ([]meal, []meal, []meal) {
+slay neural_network_backward_dense(layer Layer, input meal[value], output_gradient meal[value]) (meal[value], meal[value], meal[value]) {
     fr fr Compute gradients for weights, biases, and input
-    sus weight_gradients []meal = tensor_zeros_1d(len(layer.weights))
-    sus bias_gradients []meal = tensor_zeros_1d(len(layer.biases))
-    sus input_gradients []meal = tensor_zeros_1d(len(input))
+    sus weight_gradients meal[value] = tensor_zeros_1d(len(layer.weights))
+    sus bias_gradients meal[value] = tensor_zeros_1d(len(layer.biases))
+    sus input_gradients meal[value] = tensor_zeros_1d(len(input))
     
     fr fr Gradient w.r.t. biases
     sus j drip = 0
@@ -457,7 +457,7 @@ slay neural_network_backward_dense(layer Layer, input []meal, output_gradient []
 
 fr fr === LOSS FUNCTIONS ===
 
-slay categorical_crossentropy_loss(predictions []meal, targets []meal) meal {
+slay categorical_crossentropy_loss(predictions meal[value], targets meal[value]) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -473,12 +473,12 @@ slay categorical_crossentropy_loss(predictions []meal, targets []meal) meal {
     damn loss
 }
 
-slay sparse_categorical_crossentropy_loss(predictions []meal, target_class drip) meal {
+slay sparse_categorical_crossentropy_loss(predictions meal[value], target_class drip) meal {
     sus p meal = clamp_meal(predictions[target_class], EPSILON(), 1.0 - EPSILON())
     damn -ln_meal(p)
 }
 
-slay huber_loss(predictions []meal, targets []meal, delta meal) meal {
+slay huber_loss(predictions meal[value], targets meal[value], delta meal) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -500,18 +500,18 @@ slay huber_loss(predictions []meal, targets []meal, delta meal) meal {
 
 fr fr === OPTIMIZERS ===
 
-slay optimizer_sgd_update_weights(weights []meal, gradients []meal, learning_rate meal) []meal {
+slay optimizer_sgd_update_weights(weights meal[value], gradients meal[value], learning_rate meal) meal[value]{
     damn sgd_update_weights(weights, gradients, learning_rate)
 }
 
-slay optimizer_momentum_update_weights(weights []meal, gradients []meal, momentum_weights []meal, learning_rate meal, momentum meal) ([]meal, []meal) {
+slay optimizer_momentum_update_weights(weights meal[value], gradients meal[value], momentum_weights meal[value], learning_rate meal, momentum meal) (meal[value], meal[value]) {
     damn momentum_update_weights(weights, gradients, momentum_weights, learning_rate, momentum)
 }
 
-slay optimizer_adam_update_weights(weights []meal, gradients []meal, m []meal, v []meal, learning_rate meal, beta1 meal, beta2 meal, epsilon meal, timestep drip) ([]meal, []meal, []meal) {
-    sus new_weights []meal = []
-    sus new_m []meal = []
-    sus new_v []meal = []
+slay optimizer_adam_update_weights(weights meal[value], gradients meal[value], m meal[value], v meal[value], learning_rate meal, beta1 meal, beta2 meal, epsilon meal, timestep drip) (meal[value], meal[value], meal[value]) {
+    sus new_weights meal[value] = []
+    sus new_m meal[value] = []
+    sus new_v meal[value] = []
     
     sus i drip = 0
     bestie (i < len(weights)) {
@@ -541,9 +541,9 @@ slay optimizer_adam_update_weights(weights []meal, gradients []meal, m []meal, v
     damn (new_weights, new_m, new_v)
 }
 
-slay optimizer_rmsprop_update_weights(weights []meal, gradients []meal, v []meal, learning_rate meal, decay_rate meal, epsilon meal) ([]meal, []meal) {
-    sus new_weights []meal = []
-    sus new_v []meal = []
+slay optimizer_rmsprop_update_weights(weights meal[value], gradients meal[value], v meal[value], learning_rate meal, decay_rate meal, epsilon meal) (meal[value], meal[value]) {
+    sus new_weights meal[value] = []
+    sus new_v meal[value] = []
     
     sus i drip = 0
     bestie (i < len(weights)) {
@@ -565,7 +565,7 @@ slay optimizer_rmsprop_update_weights(weights []meal, gradients []meal, v []meal
 
 fr fr === REGULARIZATION ===
 
-slay l1_regularization_loss(weights []meal, lambda meal) meal {
+slay l1_regularization_loss(weights meal[value], lambda meal) meal {
     sus regularization_loss meal = 0.0
     sus i drip = 0
     bestie (i < len(weights)) {
@@ -575,7 +575,7 @@ slay l1_regularization_loss(weights []meal, lambda meal) meal {
     damn lambda * regularization_loss
 }
 
-slay l2_regularization_loss(weights []meal, lambda meal) meal {
+slay l2_regularization_loss(weights meal[value], lambda meal) meal {
     sus regularization_loss meal = 0.0
     sus i drip = 0
     bestie (i < len(weights)) {
@@ -585,7 +585,7 @@ slay l2_regularization_loss(weights []meal, lambda meal) meal {
     damn lambda * regularization_loss
 }
 
-slay elastic_net_regularization_loss(weights []meal, l1_ratio meal, l2_ratio meal) meal {
+slay elastic_net_regularization_loss(weights meal[value], l1_ratio meal, l2_ratio meal) meal {
     sus l1_loss meal = l1_regularization_loss(weights, l1_ratio)
     sus l2_loss meal = l2_regularization_loss(weights, l2_ratio)
     damn l1_loss + l2_loss
@@ -609,7 +609,7 @@ slay learning_rate_cosine_annealing(initial_lr meal, epoch drip, max_epochs drip
 
 fr fr === TRAINING UTILITIES ===
 
-slay neural_network_train_epoch(network NeuralNetwork, train_data []meal, train_labels []meal, num_samples drip, input_size drip, batch_size drip) meal {
+slay neural_network_train_epoch(network NeuralNetwork, train_data meal[value], train_labels meal[value], num_samples drip, input_size drip, batch_size drip) meal {
     sus total_loss meal = 0.0
     sus num_batches drip = (num_samples + batch_size - 1) / batch_size
     
@@ -624,7 +624,7 @@ slay neural_network_train_epoch(network NeuralNetwork, train_data []meal, train_
         sus sample_idx drip = start_idx
         bestie (sample_idx < end_idx) {
             fr fr Extract sample
-            sus input []meal = []
+            sus input meal[value] = []
             sus j drip = 0
             bestie (j < input_size) {
                 sus data_idx drip = sample_idx * input_size + j
@@ -633,10 +633,10 @@ slay neural_network_train_epoch(network NeuralNetwork, train_data []meal, train_
             }
             
             fr fr Forward pass
-            sus prediction []meal = neural_network_forward(network, input)
+            sus prediction meal[value] = neural_network_forward(network, input)
             
             fr fr Compute loss
-            sus target []meal = []
+            sus target meal[value] = []
             j = 0
             bestie (j < len(prediction)) {
                 sus label_idx drip = sample_idx * len(prediction) + j
@@ -663,13 +663,13 @@ slay neural_network_train_epoch(network NeuralNetwork, train_data []meal, train_
     damn total_loss / num_batches
 }
 
-slay neural_network_evaluate(network NeuralNetwork, test_data []meal, test_labels []meal, num_samples drip, input_size drip) meal {
+slay neural_network_evaluate(network NeuralNetwork, test_data meal[value], test_labels meal[value], num_samples drip, input_size drip) meal {
     sus correct_predictions drip = 0
     
     sus sample_idx drip = 0
     bestie (sample_idx < num_samples) {
         fr fr Extract sample
-        sus input []meal = []
+        sus input meal[value] = []
         sus j drip = 0
         bestie (j < input_size) {
             sus data_idx drip = sample_idx * input_size + j
@@ -678,7 +678,7 @@ slay neural_network_evaluate(network NeuralNetwork, test_data []meal, test_label
         }
         
         fr fr Forward pass
-        sus prediction []meal = neural_network_forward(network, input)
+        sus prediction meal[value] = neural_network_forward(network, input)
         
         fr fr Find predicted class
         sus predicted_class drip = 0
@@ -717,13 +717,13 @@ slay neural_network_evaluate(network NeuralNetwork, test_data []meal, test_label
 
 fr fr === CONVOLUTIONAL LAYERS (Basic Implementation) ===
 
-slay conv2d_forward(input []meal, weights []meal, biases []meal, input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) []meal {
+slay conv2d_forward(input meal[value], weights meal[value], biases meal[value], input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) meal[value]{
     fr fr Simplified 2D convolution
     sus output_height drip = (input_height + 2 * padding - kernel_size) / stride + 1
     sus output_width drip = (input_width + 2 * padding - kernel_size) / stride + 1
     sus output_size drip = output_height * output_width * output_channels
     
-    sus output []meal = tensor_zeros_1d(output_size)
+    sus output meal[value] = tensor_zeros_1d(output_size)
     
     fr fr For each output channel
     sus out_c drip = 0
@@ -769,12 +769,12 @@ slay conv2d_forward(input []meal, weights []meal, biases []meal, input_height dr
     damn output
 }
 
-slay maxpool2d_forward(input []meal, input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) []meal {
+slay maxpool2d_forward(input meal[value], input_height drip, input_width drip, input_channels drip, pool_size drip, stride drip) meal[value]{
     sus output_height drip = (input_height - pool_size) / stride + 1
     sus output_width drip = (input_width - pool_size) / stride + 1
     sus output_size drip = output_height * output_width * input_channels
     
-    sus output []meal = tensor_zeros_1d(output_size)
+    sus output meal[value] = tensor_zeros_1d(output_size)
     
     sus out_y drip = 0
     bestie (out_y < output_height) {
@@ -814,8 +814,8 @@ slay maxpool2d_forward(input []meal, input_height drip, input_width drip, input_
 
 fr fr === ENSEMBLE METHODS ===
 
-slay ensemble_predict_average(predictions [][]meal, num_models drip, output_size drip) []meal {
-    sus averaged_predictions []meal = tensor_zeros_1d(output_size)
+slay ensemble_predict_average(predictions meal[value][value], num_models drip, output_size drip) meal[value]{
+    sus averaged_predictions meal[value] = tensor_zeros_1d(output_size)
     
     sus i drip = 0
     bestie (i < output_size) {
@@ -832,8 +832,8 @@ slay ensemble_predict_average(predictions [][]meal, num_models drip, output_size
     damn averaged_predictions
 }
 
-slay ensemble_predict_weighted(predictions [][]meal, weights []meal, num_models drip, output_size drip) []meal {
-    sus weighted_predictions []meal = tensor_zeros_1d(output_size)
+slay ensemble_predict_weighted(predictions meal[value][value], weights meal[value], num_models drip, output_size drip) meal[value]{
+    sus weighted_predictions meal[value] = tensor_zeros_1d(output_size)
     
     sus i drip = 0
     bestie (i < output_size) {
@@ -852,7 +852,7 @@ slay ensemble_predict_weighted(predictions [][]meal, weights []meal, num_models 
 
 fr fr === ADVANCED TRAINING TECHNIQUES ===
 
-slay early_stopping_check(validation_losses []meal, patience drip, min_delta meal) lit {
+slay early_stopping_check(validation_losses meal[value], patience drip, min_delta meal) lit {
     ready (len(validation_losses) < patience + 1) {
         damn cringe
     }
@@ -863,7 +863,7 @@ slay early_stopping_check(validation_losses []meal, patience drip, min_delta mea
     damn (best_loss - current_loss) < min_delta
 }
 
-slay gradient_clipping(gradients []meal, max_norm meal) []meal {
+slay gradient_clipping(gradients meal[value], max_norm meal) meal[value]{
     sus norm meal = 0.0
     sus i drip = 0
     bestie (i < len(gradients)) {
@@ -873,7 +873,7 @@ slay gradient_clipping(gradients []meal, max_norm meal) []meal {
     norm = sqrt_meal(norm)
     
     ready (norm > max_norm) {
-        sus clipped_gradients []meal = []
+        sus clipped_gradients meal[value] = []
         i = 0
         bestie (i < len(gradients)) {
             clipped_gradients = append(clipped_gradients, gradients[i] * max_norm / norm)
@@ -887,7 +887,7 @@ slay gradient_clipping(gradients []meal, max_norm meal) []meal {
 
 fr fr === DEMONSTRATION FUNCTIONS ===
 
-slay demo_neural_network_classification(train_data []meal, train_labels []meal, test_data []meal, test_labels []meal, num_train drip, num_test drip, input_size drip, num_classes drip, epochs drip) cringe {
+slay demo_neural_network_classification(train_data meal[value], train_labels meal[value], test_data meal[value], test_labels meal[value], num_train drip, num_test drip, input_size drip, num_classes drip, epochs drip) cringe {
     vibez.spill("=== Neural Network Classification Demo ===")
     
     fr fr Create network
@@ -936,7 +936,7 @@ slay demo_neural_network_classification(train_data []meal, train_labels []meal, 
     vibez.spill("Training completed!")
 }
 
-slay demo_deep_autoencoder(data []meal, num_samples drip, input_size drip, encoding_dim drip, epochs drip) cringe {
+slay demo_deep_autoencoder(data meal[value], num_samples drip, input_size drip, encoding_dim drip, epochs drip) cringe {
     vibez.spill("=== Deep Autoencoder Demo ===")
     
     fr fr Create autoencoder network
@@ -974,7 +974,7 @@ slay demo_deep_autoencoder(data []meal, num_samples drip, input_size drip, encod
     vibez.spill("Autoencoder training completed!")
 }
 
-slay demo_transfer_learning(pretrained_weights [][]meal, new_data []meal, new_labels []meal, num_samples drip, input_size drip, num_classes drip) cringe {
+slay demo_transfer_learning(pretrained_weights meal[value][value], new_data meal[value], new_labels meal[value], num_samples drip, input_size drip, num_classes drip) cringe {
     vibez.spill("=== Transfer Learning Demo ===")
     
     fr fr Create network with pretrained weights
@@ -1041,12 +1041,12 @@ squad GPUBuffer {
 fr fr GPU tensor operations context
 squad GPUContext {
     primary_device GPUDevice
-    available_devices []GPUDevice
+    available_devices GPUDevice[value]
     current_device_id drip
     cuda_available lit
     opencl_available lit
     memory_pool_size drip
-    allocated_buffers []GPUBuffer
+    allocated_buffers GPUBuffer[value]
 }
 
 fr fr GPU device types
@@ -1100,7 +1100,7 @@ slay gpu_initialize() lit {
     gpu_context.current_device_id = -1
     
     fr fr Detect CUDA devices
-    sus cuda_devices []GPUDevice = gpu_detect_cuda_devices()
+    sus cuda_devices GPUDevice[value] = gpu_detect_cuda_devices()
     ready (len(cuda_devices) > 0) {
         gpu_context.cuda_available = based
         gpu_context.available_devices = append_devices(gpu_context.available_devices, cuda_devices)
@@ -1108,7 +1108,7 @@ slay gpu_initialize() lit {
     }
     
     fr fr Detect OpenCL devices
-    sus opencl_devices []GPUDevice = gpu_detect_opencl_devices()
+    sus opencl_devices GPUDevice[value] = gpu_detect_opencl_devices()
     ready (len(opencl_devices) > 0) {
         gpu_context.opencl_available = based
         gpu_context.available_devices = append_devices(gpu_context.available_devices, opencl_devices)
@@ -1132,10 +1132,10 @@ slay gpu_initialize() lit {
     damn cringe
 }
 
-slay gpu_detect_cuda_devices() []GPUDevice {
+slay gpu_detect_cuda_devices() GPUDevice[value]{
     fr fr Platform-specific CUDA device detection
     fr fr This would interface with CUDA runtime API
-    sus devices []GPUDevice = []
+    sus devices GPUDevice[value] = []
     
     fr fr Mock implementation - in real version would call cudaGetDeviceCount, cudaGetDeviceProperties
     fr fr Check for CUDA runtime availability
@@ -1158,9 +1158,9 @@ slay gpu_detect_cuda_devices() []GPUDevice {
     damn devices
 }
 
-slay gpu_detect_opencl_devices() []GPUDevice {
+slay gpu_detect_opencl_devices() GPUDevice[value]{
     fr fr Platform-specific OpenCL device detection
-    sus devices []GPUDevice = []
+    sus devices GPUDevice[value] = []
     
     fr fr Mock implementation - in real version would use OpenCL API
     ready (gpu_check_opencl_runtime()) {
@@ -1181,7 +1181,7 @@ slay gpu_detect_opencl_devices() []GPUDevice {
     damn devices
 }
 
-slay gpu_select_best_device(devices []GPUDevice) GPUDevice {
+slay gpu_select_best_device(devices GPUDevice[value]) GPUDevice {
     fr fr Select the best available GPU device
     sus best_device GPUDevice = devices[0]
     sus i drip = 1
@@ -1223,8 +1223,8 @@ slay gpu_check_opencl_runtime() lit {
     damn based  fr fr Assume OpenCL is available for demonstration
 }
 
-slay append_devices(existing []GPUDevice, new_devices []GPUDevice) []GPUDevice {
-    sus result []GPUDevice = existing
+slay append_devices(existing GPUDevice[value], new_devices GPUDevice[value]) GPUDevice[value]{
+    sus result GPUDevice[value] = existing
     sus i drip = 0
     bestie (i < len(new_devices)) {
         result = append(result, new_devices[i])
@@ -1279,7 +1279,7 @@ slay gpu_free_buffer(buffer GPUBuffer) cringe {
     }
     
     fr fr Remove from allocated buffers list
-    sus new_buffers []GPUBuffer = []
+    sus new_buffers GPUBuffer[value] = []
     sus i drip = 0
     bestie (i < len(gpu_context.allocated_buffers)) {
         ready (gpu_context.allocated_buffers[i].ptr != buffer.ptr) {
@@ -1294,7 +1294,7 @@ slay gpu_free_buffer(buffer GPUBuffer) cringe {
     vibez.spill("Freed GPU buffer: ", buffer.ptr)
 }
 
-slay gpu_copy_to_device(host_data []meal, buffer GPUBuffer) lit {
+slay gpu_copy_to_device(host_data meal[value], buffer GPUBuffer) lit {
     fr fr Copy data from host to GPU device
     ready (!buffer.is_allocated) {
         damn cringe
@@ -1310,7 +1310,7 @@ slay gpu_copy_to_device(host_data []meal, buffer GPUBuffer) lit {
     damn based
 }
 
-slay gpu_copy_from_device(buffer GPUBuffer, host_data []meal) lit {
+slay gpu_copy_from_device(buffer GPUBuffer, host_data meal[value]) lit {
     fr fr Copy data from GPU device to host
     ready (!buffer.is_allocated) {
         damn cringe
@@ -1333,13 +1333,13 @@ slay gpu_get_total_allocated_size() drip {
 
 fr fr === GPU TENSOR OPERATIONS ===
 
-slay gpu_matrix_multiply_optimized(a []meal, b []meal, c []meal, m drip, n drip, k drip) lit {
+slay gpu_matrix_multiply_optimized(a meal[value], b meal[value], c meal[value], m drip, n drip, k drip) lit {
     fr fr High-performance GPU matrix multiplication: C = A * B
     fr fr A is m×k, B is k×n, C is m×n
     
     ready (!gpu_context.primary_device.is_available) {
         fr fr Fallback to CPU implementation
-        sus result []meal = tensor_matrix_multiply_flat(a, b, m, n, k)
+        sus result meal[value] = tensor_matrix_multiply_flat(a, b, m, n, k)
         sus i drip = 0
         bestie (i < len(result) && i < len(c)) {
             c[i] = result[i]
@@ -1364,7 +1364,7 @@ slay gpu_matrix_multiply_optimized(a []meal, b []meal, c []meal, m drip, n drip,
         gpu_free_buffer(buffer_c)
         
         fr fr Fallback to CPU
-        sus result []meal = tensor_matrix_multiply_flat(a, b, m, n, k)
+        sus result meal[value] = tensor_matrix_multiply_flat(a, b, m, n, k)
         sus i drip = 0
         bestie (i < len(result) && i < len(c)) {
             c[i] = result[i]
@@ -1430,12 +1430,12 @@ slay gpu_launch_opencl_matmul_kernel(buffer_a GPUBuffer, buffer_b GPUBuffer, buf
 
 fr fr === GPU CONVOLUTION OPERATIONS ===
 
-slay gpu_conv2d_optimized(input []meal, weights []meal, biases []meal, output []meal, input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) lit {
+slay gpu_conv2d_optimized(input meal[value], weights meal[value], biases meal[value], output meal[value], input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) lit {
     fr fr High-performance GPU 2D convolution
     
     ready (!gpu_context.primary_device.is_available) {
         fr fr CPU fallback
-        sus result []meal = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
+        sus result meal[value] = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
         sus i drip = 0
         bestie (i < len(result) && i < len(output)) {
             output[i] = result[i]
@@ -1467,7 +1467,7 @@ slay gpu_conv2d_optimized(input []meal, weights []meal, biases []meal, output []
         gpu_free_buffer(buffer_output)
         
         fr fr CPU fallback
-        sus result []meal = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
+        sus result meal[value] = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
         sus i drip = 0
         bestie (i < len(result) && i < len(output)) {
             output[i] = result[i]
@@ -1531,14 +1531,14 @@ slay gpu_launch_opencl_conv2d_kernel(buffer_input GPUBuffer, buffer_weights GPUB
 
 fr fr === GPU BATCH OPERATIONS ===
 
-slay gpu_batch_matrix_multiply(batches [][]meal, weights []meal, outputs [][]meal, batch_size drip, input_size drip, output_size drip) lit {
+slay gpu_batch_matrix_multiply(batches meal[value][value], weights meal[value], outputs meal[value][value], batch_size drip, input_size drip, output_size drip) lit {
     fr fr Process multiple samples in parallel on GPU
     
     ready (!gpu_context.primary_device.is_available) {
         fr fr CPU fallback
         sus i drip = 0
         bestie (i < batch_size) {
-            sus result []meal = tensor_matrix_multiply_flat(batches[i], weights, 1, input_size, output_size)
+            sus result meal[value] = tensor_matrix_multiply_flat(batches[i], weights, 1, input_size, output_size)
             outputs[i] = result
             i = i + 1
         }
@@ -1562,7 +1562,7 @@ slay gpu_batch_matrix_multiply(batches [][]meal, weights []meal, outputs [][]mea
         fr fr CPU fallback
         sus i drip = 0
         bestie (i < batch_size) {
-            sus result []meal = tensor_matrix_multiply_flat(batches[i], weights, 1, input_size, output_size)
+            sus result meal[value] = tensor_matrix_multiply_flat(batches[i], weights, 1, input_size, output_size)
             outputs[i] = result
             i = i + 1
         }
@@ -1570,7 +1570,7 @@ slay gpu_batch_matrix_multiply(batches [][]meal, weights []meal, outputs [][]mea
     }
     
     fr fr Flatten batch data for GPU transfer
-    sus flattened_inputs []meal = []
+    sus flattened_inputs meal[value] = []
     sus i drip = 0
     bestie (i < batch_size) {
         sus j drip = 0
@@ -1592,7 +1592,7 @@ slay gpu_batch_matrix_multiply(batches [][]meal, weights []meal, outputs [][]mea
     }
     
     fr fr Copy results back and unflatten
-    sus flattened_outputs []meal = tensor_zeros_1d(batch_size * output_size)
+    sus flattened_outputs meal[value] = tensor_zeros_1d(batch_size * output_size)
     gpu_copy_from_device(buffer_outputs, flattened_outputs)
     
     i = 0
@@ -1637,9 +1637,9 @@ slay gpu_available() lit {
     damn gpu_context.primary_device.is_available
 }
 
-slay gpu_matrix_multiply(a []meal, b []meal, m drip, n drip, k drip) []meal {
+slay gpu_matrix_multiply(a meal[value], b meal[value], m drip, n drip, k drip) meal[value]{
     fr fr High-level GPU matrix multiplication with automatic memory management
-    sus result []meal = tensor_zeros_1d(m * n)
+    sus result meal[value] = tensor_zeros_1d(m * n)
     
     ready (gpu_matrix_multiply_optimized(a, b, result, m, n, k)) {
         damn result
@@ -1649,11 +1649,11 @@ slay gpu_matrix_multiply(a []meal, b []meal, m drip, n drip, k drip) []meal {
     damn tensor_matrix_multiply_flat(a, b, m, n, k)
 }
 
-slay gpu_conv2d_forward(input []meal, weights []meal, biases []meal, input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) []meal {
+slay gpu_conv2d_forward(input meal[value], weights meal[value], biases meal[value], input_height drip, input_width drip, input_channels drip, kernel_size drip, output_channels drip, stride drip, padding drip) meal[value]{
     fr fr High-level GPU convolution with automatic memory management
     sus output_height drip = (input_height + 2 * padding - kernel_size) / stride + 1
     sus output_width drip = (input_width + 2 * padding - kernel_size) / stride + 1
-    sus result []meal = tensor_zeros_1d(output_height * output_width * output_channels)
+    sus result meal[value] = tensor_zeros_1d(output_height * output_width * output_channels)
     
     ready (gpu_conv2d_optimized(input, weights, biases, result, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)) {
         damn result
@@ -1692,7 +1692,7 @@ slay gpu_cleanup() cringe {
 
 fr fr === GPU-ACCELERATED NEURAL NETWORK TRAINING ===
 
-slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data []meal, train_labels []meal, num_samples drip, input_size drip, batch_size drip) meal {
+slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data meal[value], train_labels meal[value], num_samples drip, input_size drip, batch_size drip) meal {
     fr fr GPU-accelerated training epoch with batched operations
     
     ready (!gpu_available()) {
@@ -1712,13 +1712,13 @@ slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data []meal, tr
         sus current_batch_size drip = end_idx - start_idx
         
         fr fr Prepare batch data for GPU processing
-        sus batch_inputs [][]meal = []
-        sus batch_targets [][]meal = []
+        sus batch_inputs meal[value][value] = []
+        sus batch_targets meal[value][value] = []
         
         sus sample_idx drip = start_idx
         bestie (sample_idx < end_idx) {
             fr fr Extract input sample
-            sus input []meal = []
+            sus input meal[value] = []
             sus j drip = 0
             bestie (j < input_size) {
                 sus data_idx drip = sample_idx * input_size + j
@@ -1728,7 +1728,7 @@ slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data []meal, tr
             batch_inputs = append(batch_inputs, input)
             
             fr fr Extract target sample
-            sus target []meal = []
+            sus target meal[value] = []
             j = 0
             bestie (j < network.layers[len(network.layers) - 1].output_size) {
                 sus label_idx drip = sample_idx * network.layers[len(network.layers) - 1].output_size + j
@@ -1745,7 +1745,7 @@ slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data []meal, tr
         }
         
         fr fr GPU batch forward pass
-        sus batch_predictions [][]meal = neural_network_forward_batch_gpu(network, batch_inputs)
+        sus batch_predictions meal[value][value] = neural_network_forward_batch_gpu(network, batch_inputs)
         
         fr fr Compute batch loss
         sus batch_loss meal = 0.0
@@ -1767,10 +1767,10 @@ slay neural_network_train_epoch_gpu(network NeuralNetwork, train_data []meal, tr
     damn total_loss / num_batches
 }
 
-slay neural_network_forward_batch_gpu(network NeuralNetwork, batch_inputs [][]meal) [][]meal {
+slay neural_network_forward_batch_gpu(network NeuralNetwork, batch_inputs meal[value][value]) meal[value][value] {
     fr fr GPU-accelerated batch forward pass
     sus batch_size drip = len(batch_inputs)
-    sus current_batch [][]meal = batch_inputs
+    sus current_batch meal[value][value] = batch_inputs
     
     fr fr Process each layer with GPU acceleration
     sus layer_idx drip = 0
@@ -1779,7 +1779,7 @@ slay neural_network_forward_batch_gpu(network NeuralNetwork, batch_inputs [][]me
         
         ready (layer.layer_type == LAYER_TYPE_DENSE()) {
             fr fr GPU batch matrix multiplication
-            sus outputs [][]meal = []
+            sus outputs meal[value][value] = []
             sus i drip = 0
             bestie (i < batch_size) {
                 outputs = append(outputs, tensor_zeros_1d(layer.output_size))
@@ -1809,7 +1809,7 @@ slay neural_network_forward_batch_gpu(network NeuralNetwork, batch_inputs [][]me
     damn current_batch
 }
 
-slay neural_network_backward_batch_gpu(network NeuralNetwork, batch_inputs [][]meal, batch_targets [][]meal, batch_predictions [][]meal) cringe {
+slay neural_network_backward_batch_gpu(network NeuralNetwork, batch_inputs meal[value][value], batch_targets meal[value][value], batch_predictions meal[value][value]) cringe {
     fr fr GPU-accelerated batch backward pass (simplified implementation)
     fr fr In full implementation, would compute gradients on GPU and update weights
     
@@ -1877,8 +1877,8 @@ slay min_int(a drip, b drip) drip {
 
 fr fr === MODEL SERIALIZATION (Basic) ===
 
-slay neural_network_save_weights(network NeuralNetwork) [][]meal {
-    sus all_weights [][]meal = []
+slay neural_network_save_weights(network NeuralNetwork) meal[value][value] {
+    sus all_weights meal[value][value] = []
     sus layer_idx drip = 0
     bestie (layer_idx < len(network.layers)) {
         sus layer Layer = network.layers[layer_idx]
@@ -1891,7 +1891,7 @@ slay neural_network_save_weights(network NeuralNetwork) [][]meal {
     damn all_weights
 }
 
-slay neural_network_load_weights(network NeuralNetwork, weights [][]meal) NeuralNetwork {
+slay neural_network_load_weights(network NeuralNetwork, weights meal[value][value]) NeuralNetwork {
     sus weight_idx drip = 0
     sus layer_idx drip = 0
     bestie (layer_idx < len(network.layers)) {
@@ -1909,14 +1909,14 @@ slay neural_network_load_weights(network NeuralNetwork, weights [][]meal) Neural
 
 fr fr === HYPERPARAMETER OPTIMIZATION ===
 
-slay grid_search_hyperparameters(train_data []meal, train_labels []meal, val_data []meal, val_labels []meal, num_train drip, num_val drip, input_size drip, num_classes drip) (meal, drip, drip) {
+slay grid_search_hyperparameters(train_data meal[value], train_labels meal[value], val_data meal[value], val_labels meal[value], num_train drip, num_val drip, input_size drip, num_classes drip) (meal, drip, drip) {
     sus best_accuracy meal = 0.0
     sus best_lr meal = LEARNING_RATE_DEFAULT()
     sus best_hidden_size drip = 64
     
     fr fr Grid search over learning rates and hidden sizes
-    sus lr_candidates []meal = [0.01, 0.001, 0.0001]
-    sus hidden_size_candidates []drip = [32, 64, 128]
+    sus lr_candidates meal[value] = [0.01, 0.001, 0.0001]
+    sus hidden_size_candidates drip[value] = [32, 64, 128]
     
     sus lr_idx drip = 0
     bestie (lr_idx < len(lr_candidates)) {

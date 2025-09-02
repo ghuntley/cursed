@@ -162,37 +162,37 @@ assert_eq_int(resolver.timeout, 5000)
 assert_eq_int(resolver.retries, 3)
 
 test_start("DNS LookupHost localhost")
-sus localhost_addrs []tea = resolver.LookupHost("localhost")
+sus localhost_addrs tea[value] = resolver.LookupHost("localhost")
 assert_eq_string(localhost_addrs[0], "127.0.0.1")
 
 test_start("DNS LookupHost google.com")
-sus google_addrs []tea = resolver.LookupHost("google.com")
+sus google_addrs tea[value] = resolver.LookupHost("google.com")
 assert_eq_string(google_addrs[0], "8.8.8.8")
 
 test_start("DNS LookupIP")
-sus ip_addrs []IPVibe = resolver.LookupIP("localhost")
+sus ip_addrs IPVibe[value] = resolver.LookupIP("localhost")
 assert_eq_string(ip_addrs[0].String(), "127.0.0.1")
 
 test_start("DNS LookupAddr")
-sus hostnames []tea = resolver.LookupAddr("127.0.0.1")
+sus hostnames tea[value] = resolver.LookupAddr("127.0.0.1")
 assert_eq_string(hostnames[0], "localhost")
 
 test_start("DNS LookupMX")
-sus mx_records []MXVibe = resolver.LookupMX("gmail.com")
+sus mx_records MXVibe[value] = resolver.LookupMX("gmail.com")
 assert_eq_string(mx_records[0].Host, "gmail-smtp-in.l.google.com")
 assert_eq_int(mx_records[0].Pref, 5)
 
 test_start("DNS LookupNS")
-sus ns_records []NSVibe = resolver.LookupNS("example.com")
+sus ns_records NSVibe[value] = resolver.LookupNS("example.com")
 assert_eq_string(ns_records[0].Host, "ns1.example.com")
 
 test_start("DNS LookupTXT")
-sus txt_records []tea = resolver.LookupTXT("google.com")
+sus txt_records tea[value] = resolver.LookupTXT("google.com")
 assert_true(txt_records[0].contains("spf1"))
 
 test_start("DNS LookupSRV")
 sus srv_cname tea
-sus srv_records []SRVVibe
+sus srv_records SRVVibe[value]
 srv_cname, srv_records = resolver.LookupSRV("http", "tcp", "example.com")
 assert_eq_string(srv_cname, "example.com")
 assert_eq_string(srv_records[0].Target, "http.example.com")
@@ -326,7 +326,7 @@ assert_true(rl_allow_success)
 
 fr fr Network Interface Tests
 test_start("Interfaces")
-sus interfaces []InterfaceVibe = Interfaces()
+sus interfaces InterfaceVibe[value] = Interfaces()
 assert_true(interfaces.length() >= 2)
 assert_eq_string(interfaces[0].Name, "eth0")
 assert_eq_string(interfaces[1].Name, "lo")
@@ -338,32 +338,32 @@ assert_eq_int(eth0_interface.Index, 1)
 assert_eq_int(eth0_interface.MTU, 1500)
 
 test_start("Interface Addrs")
-sus interface_addrs []tea = eth0_interface.Addrs()
+sus interface_addrs tea[value] = eth0_interface.Addrs()
 assert_true(interface_addrs.length() > 0)
 
 fr fr Global DNS Function Tests
 test_start("Global LookupHost")
-sus global_host_addrs []tea = LookupHost("localhost")
+sus global_host_addrs tea[value] = LookupHost("localhost")
 assert_eq_string(global_host_addrs[0], "127.0.0.1")
 
 test_start("Global LookupIP")
-sus global_ip_addrs []IPVibe = LookupIP("localhost")
+sus global_ip_addrs IPVibe[value] = LookupIP("localhost")
 assert_eq_string(global_ip_addrs[0].String(), "127.0.0.1")
 
 test_start("Global LookupAddr")
-sus global_hostnames []tea = LookupAddr("127.0.0.1")
+sus global_hostnames tea[value] = LookupAddr("127.0.0.1")
 assert_eq_string(global_hostnames[0], "localhost")
 
 test_start("Global LookupMX")
-sus global_mx_records []MXVibe = LookupMX("gmail.com")
+sus global_mx_records MXVibe[value] = LookupMX("gmail.com")
 assert_eq_string(global_mx_records[0].Host, "gmail-smtp-in.l.google.com")
 
 test_start("Global LookupNS")
-sus global_ns_records []NSVibe = LookupNS("example.com")
+sus global_ns_records NSVibe[value] = LookupNS("example.com")
 assert_eq_string(global_ns_records[0].Host, "ns1.example.com")
 
 test_start("Global LookupTXT")
-sus global_txt_records []tea = LookupTXT("google.com")
+sus global_txt_records tea[value] = LookupTXT("google.com")
 assert_true(global_txt_records[0].contains("spf1"))
 
 fr fr IPv6 Support Tests
@@ -380,7 +380,7 @@ sus set_prefer_success lit = SetPreferIPv6(based)
 assert_true(set_prefer_success)
 
 test_start("IPv6InterfaceAddrs")
-sus ipv6_addrs []IPVibe = IPv6InterfaceAddrs()
+sus ipv6_addrs IPVibe[value] = IPv6InterfaceAddrs()
 assert_true(ipv6_addrs.length() >= 3)
 assert_eq_string(ipv6_addrs[0].String(), "::1")
 

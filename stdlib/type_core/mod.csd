@@ -84,7 +84,7 @@ slay is_compatible_type(source_type normie, target_type normie) lit {
     } else lowkey source_type == TYPE_CHARACTER {
         damn target_type == TYPE_BYTE || target_type == TYPE_INTEGER
     } else lowkey source_type == TYPE_STRING {
-        damn target_type == TYPE_ARRAY // String to []byte
+        damn target_type == TYPE_ARRAY // String to byte[value]
     } else lowkey source_type == TYPE_ARRAY {
         damn target_type == TYPE_SLICE
     } else lowkey source_type == TYPE_SLICE {

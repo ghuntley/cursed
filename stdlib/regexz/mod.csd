@@ -48,16 +48,16 @@ slay regex_extract_first(pattern tea, text tea) yikes<tea> {
     damn result.full_match
 }
 
-slay regex_extract_all(pattern tea, text tea) yikes<[]tea> {
+slay regex_extract_all(pattern tea, text tea) yikes<tea[value]> {
     sus engine RegexEngine = regex_new(pattern) fam {
         when error -> yikes error
     }
     
-    sus matches []MatchResult = regex_find_all(&engine, text) fam {
+    sus matches MatchResult[value] = regex_find_all(&engine, text) fam {
         when error -> yikes error
     }
     
-    sus results []tea = create_array()
+    sus results tea[value] = create_array()
     bestie (match in matches) {
         results.push(match.full_match)
     }
@@ -73,7 +73,7 @@ slay regex_replace_simple(pattern tea, text tea, replacement tea) yikes<tea> {
     damn regex_replace(&engine, text, replacement)
 }
 
-slay regex_split_simple(pattern tea, text tea) yikes<[]tea> {
+slay regex_split_simple(pattern tea, text tea) yikes<tea[value]> {
     sus engine RegexEngine = regex_new(pattern) fam {
         when error -> yikes error
     }
@@ -199,30 +199,30 @@ slay regex_strip_html(html tea) yikes<tea> {
 # Extract hashtags from text
 sus HASHTAG_PATTERN tea = "#[a-zA-Z0-9_]+"
 
-slay regex_extract_hashtags(text tea) yikes<[]tea> {
+slay regex_extract_hashtags(text tea) yikes<tea[value]> {
     damn regex_extract_all(HASHTAG_PATTERN, text)
 }
 
 # Extract mentions from text
 sus MENTION_PATTERN tea = "@[a-zA-Z0-9_]+"
 
-slay regex_extract_mentions(text tea) yikes<[]tea> {
+slay regex_extract_mentions(text tea) yikes<tea[value]> {
     damn regex_extract_all(MENTION_PATTERN, text)
 }
 
 # Date extraction (YYYY-MM-DD format)
 sus DATE_PATTERN tea = "\\b(\\d{4})-(\\d{2})-(\\d{2})\\b"
 
-slay regex_extract_dates(text tea) yikes<[]DateMatch> {
+slay regex_extract_dates(text tea) yikes<DateMatch[value]> {
     sus engine RegexEngine = regex_new(DATE_PATTERN) fam {
         when error -> yikes error
     }
     
-    sus matches []MatchResult = regex_find_all(&engine, text) fam {
+    sus matches MatchResult[value] = regex_find_all(&engine, text) fam {
         when error -> yikes error
     }
     
-    sus dates []DateMatch = create_array()
+    sus dates DateMatch[value] = create_array()
     
     bestie (match in matches) {
         sus date DateMatch = {
@@ -316,5 +316,5 @@ squad RegexModuleInfo {
     sus author tea
     sus description tea
     sus unicode_version tea
-    sus features []tea
+    sus features tea[value]
 }

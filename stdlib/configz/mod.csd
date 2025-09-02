@@ -22,7 +22,7 @@ collab ConfigValue {
     slay to_int() drip
     slay to_float() meal
     slay to_bool() lit
-    slay to_array() []ConfigValue
+    slay to_array() ConfigValue[value]
     slay is_valid() lit
     slay get_source() tea
     slay validate(schema ConfigSchema) lit
@@ -47,12 +47,12 @@ squad NumberConfigValue {
 squad BooleanConfigValue {
     sus value lit
     sus source tea
-    sus true_values []tea
-    sus false_values []tea
+    sus true_values tea[value]
+    sus false_values tea[value]
 }
 
 squad ArrayConfigValue {
-    sus elements []ConfigValue
+    sus elements ConfigValue[value]
     sus source tea
     sus element_type tea
     sus max_length drip
@@ -62,7 +62,7 @@ squad ObjectConfigValue {
     sus fields map<tea, ConfigValue>
     sus source tea
     sus schema ConfigSchema
-    sus field_order []tea
+    sus field_order tea[value]
 }
 
 fr fr ===== CONFIGURATION SCHEMA SYSTEM =====
@@ -83,20 +83,20 @@ squad ConfigConstraints {
     sus min_value meal
     sus max_value meal
     sus pattern tea                 fr fr Regex pattern
-    sus enum_values []tea
+    sus enum_values tea[value]
     sus format tea                  fr fr "email", "url", "ipv4", "ipv6", "uuid", etc.
 }
 
 fr fr ===== CONFIGURATION MANAGER =====
 
 squad ConfigManager {
-    sus sources []ConfigSource
+    sus sources ConfigSource[value]
     sus values map<tea, ConfigValue>
     sus schemas map<tea, ConfigSchema>
-    sus watchers []ConfigWatcher
-    sus encrypted_keys []tea
-    sus reload_callbacks []ReloadCallback
-    sus validation_errors []ValidationError
+    sus watchers ConfigWatcher[value]
+    sus encrypted_keys tea[value]
+    sus reload_callbacks ReloadCallback[value]
+    sus validation_errors ValidationError[value]
     sus is_watching lit
     sus cache_enabled lit
     sus cache_ttl drip
@@ -111,7 +111,7 @@ squad ConfigSource {
     sus watch_enabled lit
     sus encoding tea                fr fr "utf-8", "utf-16", "ascii"
     sus credentials ConfigCredentials
-    sus transformation_rules []TransformationRule
+    sus transformation_rules TransformationRule[value]
 }
 
 squad ConfigCredentials {
@@ -150,7 +150,7 @@ squad ReloadCallback {
     sus name tea
     sus handler tea
     sus priority drip
-    sus conditions []tea
+    sus conditions tea[value]
 }
 
 fr fr ===== CORE CONFIGURATION MANAGEMENT =====
@@ -365,7 +365,7 @@ slay load_toml_source_complete(manager ConfigManager, source ConfigSource) Confi
 
 slay load_env_source_complete(manager ConfigManager, source ConfigSource) ConfigManager {
     fr fr Advanced environment variable processing with complete expansion
-    sus env_vars []EnvironmentVariable = get_all_environment_variables()
+    sus env_vars EnvironmentVariable[value] = get_all_environment_variables()
     sus var_count drip = array_length(env_vars)
     
     sus i drip = 0
@@ -416,15 +416,15 @@ squad YamlParser {
     sus line drip
     sus column drip
     sus current_char tea
-    sus indent_stack []drip
+    sus indent_stack drip[value]
     sus in_flow_context lit
 }
 
 squad YamlValue {
     sus type tea                    fr fr "scalar", "sequence", "mapping", "null"
     sus scalar_value tea
-    sus sequence_items []YamlValue
-    sus mapping_pairs []YamlKeyValue
+    sus sequence_items YamlValue[value]
+    sus mapping_pairs YamlKeyValue[value]
     sus tag tea
     sus anchor tea
 }
@@ -627,7 +627,7 @@ squad TomlValue {
     sus float_value meal
     sus boolean_value lit
     sus datetime_value tea
-    sus array_elements []TomlValue
+    sus array_elements TomlValue[value]
     sus table_fields map<tea, TomlValue>
 }
 
@@ -781,7 +781,7 @@ fr fr ===== VALIDATION SYSTEM =====
 
 slay validate_all_configurations(manager ConfigManager) ConfigManager {
     fr fr Validate all configuration values against their schemas
-    sus keys []tea = map_keys(manager.values)
+    sus keys tea[value] = map_keys(manager.values)
     sus key_count drip = array_length(keys)
     
     sus i drip = 0
@@ -804,7 +804,7 @@ slay validate_all_configurations(manager ConfigManager) ConfigManager {
     }
     
     fr fr Check for required keys that are missing
-    sus schema_keys []tea = map_keys_schema(manager.schemas)
+    sus schema_keys tea[value] = map_keys_schema(manager.schemas)
     sus schema_count drip = array_length(schema_keys)
     
     sus j drip = 0
@@ -924,7 +924,7 @@ slay validate_email_format(email tea) lit {
         damn cringe
     }
     
-    sus parts []tea = string_split(email, "@")
+    sus parts tea[value] = string_split(email, "@")
     ready (array_length(parts) != 2) {
         damn cringe
     }
@@ -959,7 +959,7 @@ slay validate_url_format(url tea) lit {
 
 slay validate_ipv4_format(ip tea) lit {
     fr fr Basic IPv4 validation
-    sus parts []tea = string_split(ip, ".")
+    sus parts tea[value] = string_split(ip, ".")
     ready (array_length(parts) != 4) {
         damn cringe
     }
@@ -1127,7 +1127,7 @@ slay config_get_bool(manager ConfigManager, key tea, default_value lit) lit {
     damn default_value
 }
 
-slay config_get_array(manager ConfigManager, key tea) []ConfigValue {
+slay config_get_array(manager ConfigManager, key tea) ConfigValue[value]{
     fr fr Get array value
     ready (map_has_key(manager.values, key)) {
         sus value ConfigValue = map_get(manager.values, key)
@@ -1141,7 +1141,7 @@ slay config_has_key(manager ConfigManager, key tea) lit {
     damn map_has_key(manager.values, key)
 }
 
-slay config_list_keys(manager ConfigManager) []tea {
+slay config_list_keys(manager ConfigManager) tea[value]{
     fr fr Get all configuration keys
     damn map_keys(manager.values)
 }
@@ -1154,7 +1154,7 @@ slay config_export_json(manager ConfigManager) tea {
         allow_duplicates: cringe
     }
     
-    sus keys []tea = map_keys(manager.values)
+    sus keys tea[value] = map_keys(manager.values)
     sus key_count drip = array_length(keys)
     
     sus i drip = 0
@@ -1203,7 +1203,7 @@ slay enhanced_json_to_config_recursive(manager ConfigManager, json_value JsonVal
         }
         map_set(manager.values, prefix, config_value)
     } otherwise ready (json_value.value_type == "array") {
-        sus array_elements []ConfigValue = []
+        sus array_elements ConfigValue[value] = []
         sus element_count drip = len(json_value.array_items)
         
         sus i drip = 0
@@ -1253,7 +1253,7 @@ slay enhanced_normalize_env_key(env_key tea) tea {
     damn normalized
 }
 
-slay apply_enhanced_key_transformations(key tea, rules []TransformationRule) tea {
+slay apply_enhanced_key_transformations(key tea, rules TransformationRule[value]) tea {
     fr fr Apply transformation rules using enhanced string operations
     sus transformed_key tea = key
     sus rule_count drip = len(rules)
@@ -1352,7 +1352,7 @@ slay create_enhanced_config_value_from_env(env_value tea, source_type tea) Confi
     ready (string_contains(trimmed_value, ",")) {
         sus split_result StringSplitResult = string_split_enhanced(trimmed_value, ",", 0)
         ready (split_result.success) {
-            sus elements []ConfigValue = []
+            sus elements ConfigValue[value] = []
             sus part_count drip = split_result.count
             
             sus i drip = 0
@@ -1392,7 +1392,7 @@ fr fr ==========================================
 fr fr ENHANCED UTILITY FUNCTIONS
 fr fr ==========================================
 
-slay array_contains_enhanced(arr []tea, target tea) lit {
+slay array_contains_enhanced(arr tea[value], target tea) lit {
     fr fr Enhanced array contains using optimized search
     sus search_result ArraySearchResult = array_linear_search_all(arr, target)
     damn search_result.found
@@ -1484,10 +1484,10 @@ slay combine_config_keys(prefix tea, key tea) tea {
     }
 }
 
-slay append_config_value_to_array(arr []ConfigValue, value ConfigValue) []ConfigValue {
+slay append_config_value_to_array(arr ConfigValue[value], value ConfigValue) ConfigValue[value]{
     fr fr Append configuration value to array
     sus length drip = len(arr)
-    sus new_arr []ConfigValue = []
+    sus new_arr ConfigValue[value] = []
     
     sus i drip = 0
     bestie (i < length) {

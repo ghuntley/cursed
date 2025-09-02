@@ -14,8 +14,8 @@ squad DependencyNode {
     sus version_constraint tea
     sus resolved_version tea
     sus metadata PackageMetadata
-    sus dependencies []DependencyEdge
-    sus dependents []tea  # Packages that depend on this
+    sus dependencies DependencyEdge[value]
+    sus dependents tea[value]  # Packages that depend on this
     sus resolution_state ResolutionState
     sus conflict_reason tea
     sus depth drip
@@ -41,9 +41,9 @@ enum ResolutionState {
 # Dependency resolver with advanced algorithms
 squad DependencyResolver {
     sus registry PackageRegistry
-    sus package_cache map<tea, []PackageMetadata>
-    sus resolution_graph []DependencyNode
-    sus conflict_log []ResolutionConflict
+    sus package_cache map<tea, PackageMetadata[value]>
+    sus resolution_graph DependencyNode[value]
+    sus conflict_log ResolutionConflict[value]
     sus resolver_stats ResolverStats
     sus max_recursion_depth drip
     sus enable_backtracking lit
@@ -61,11 +61,11 @@ squad ResolverStats {
 
 # SAT solver state for complex dependency resolution
 squad SATState {
-    sus variables []SATVariable
-    sus clauses []SATClause
-    sus assignments []lit
+    sus variables SATVariable[value]
+    sus clauses SATClause[value]
+    sus assignments lit[value]
     sus decision_level drip
-    sus conflict_analysis []drip
+    sus conflict_analysis drip[value]
 }
 
 squad SATVariable {
@@ -76,7 +76,7 @@ squad SATVariable {
 }
 
 squad SATClause {
-    sus literals []drip  # Variable indices, negative for NOT
+    sus literals drip[value]  # Variable indices, negative for NOT
     sus is_satisfied lit
     sus conflict_source tea
 }
@@ -102,7 +102,7 @@ slay init_dependency_resolver(registry PackageRegistry) DependencyResolver {
 }
 
 # Resolve dependencies with advanced conflict detection
-slay resolve_dependencies_advanced(resolver DependencyResolver, root_packages []tea) ResolutionResult {
+slay resolve_dependencies_advanced(resolver DependencyResolver, root_packages tea[value]) ResolutionResult {
     sus start_time drip = timez.current_time_ms()
     
     vibez.spill("Starting advanced dependency resolution for", arrayz.len(root_packages), "packages")
@@ -119,7 +119,7 @@ slay resolve_dependencies_advanced(resolver DependencyResolver, root_packages []
     }
     
     # Phase 2: Detect cycles and conflicts
-    sus cycles []tea = detect_dependency_cycles(resolver)
+    sus cycles tea[value] = detect_dependency_cycles(resolver)
     ready (arrayz.len(cycles) > 0) {
         vibez.spill("Detected dependency cycles:", stringz.join(cycles, ", "))
         ready (!resolve_dependency_cycles(resolver, cycles)) {
@@ -148,7 +148,7 @@ slay resolve_dependencies_advanced(resolver DependencyResolver, root_packages []
     vibez.spill("Detected", resolver.resolver_stats.conflicts_detected, "conflicts")
     
     # Extract resolved packages
-    sus resolved_packages []PackageMetadata = []
+    sus resolved_packages PackageMetadata[value] = []
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
         ready (node.resolution_state == ResolutionState.Resolved) {
@@ -166,7 +166,7 @@ slay resolve_dependencies_advanced(resolver DependencyResolver, root_packages []
 }
 
 # Build initial dependency graph by fetching metadata
-slay build_dependency_graph(resolver DependencyResolver, root_packages []tea) lit {
+slay build_dependency_graph(resolver DependencyResolver, root_packages tea[value]) lit {
     vibez.spill("Building dependency graph...")
     
     # Initialize with root packages
@@ -209,7 +209,7 @@ slay build_dependency_graph(resolver DependencyResolver, root_packages []tea) li
 # Create root dependency node
 slay create_root_node(resolver DependencyResolver, package_name tea) DependencyNode {
     # Try to get latest version info from registry
-    sus versions []tea = get_package_versions_cached(resolver, package_name)
+    sus versions tea[value] = get_package_versions_cached(resolver, package_name)
     ready (arrayz.len(versions) == 0) {
         vibez.spill("No versions found for package:", package_name)
         damn DependencyNode { package_name: "" }
@@ -307,7 +307,7 @@ slay find_or_create_dependency_node(resolver DependencyResolver, dep PackageDepe
     }
     
     # Create new node
-    sus versions []tea = get_package_versions_cached(resolver, dep.name)
+    sus versions tea[value] = get_package_versions_cached(resolver, dep.name)
     ready (arrayz.len(versions) == 0) {
         damn -1  # Package not found
     }
@@ -338,8 +338,8 @@ slay find_or_create_dependency_node(resolver DependencyResolver, dep PackageDepe
 }
 
 # Detect dependency cycles using DFS
-slay detect_dependency_cycles(resolver DependencyResolver) []tea {
-    sus cycles []tea = []
+slay detect_dependency_cycles(resolver DependencyResolver) tea[value]{
+    sus cycles tea[value] = []
     sus visited map<tea, lit> = {}
     sus recursion_stack map<tea, lit> = {}
     
@@ -413,14 +413,14 @@ slay resolve_versions_with_sat(resolver DependencyResolver) lit {
 
 # Build SAT problem from dependency constraints
 slay build_sat_problem(resolver DependencyResolver) SATState {
-    sus variables []SATVariable = []
-    sus clauses []SATClause = []
+    sus variables SATVariable[value] = []
+    sus clauses SATClause[value] = []
     sus var_index drip = 0
     
     # Create variables for each package version combination
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
-        sus versions []tea = get_package_versions_cached(resolver, node.package_name)
+        sus versions tea[value] = get_package_versions_cached(resolver, node.package_name)
         
         bestie (sus j drip = 0; j < arrayz.len(versions); j = j + 1) {
             sus version tea = versions[j]
@@ -439,7 +439,7 @@ slay build_sat_problem(resolver DependencyResolver) SATState {
     # 1. Each package must have exactly one version selected
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
-        sus package_vars []drip = get_package_variable_indices(variables, node.package_name)
+        sus package_vars drip[value] = get_package_variable_indices(variables, node.package_name)
         
         # At least one version must be selected
         sus at_least_one SATClause = SATClause {
@@ -468,7 +468,7 @@ slay build_sat_problem(resolver DependencyResolver) SATState {
         
         bestie (sus j drip = 0; j < arrayz.len(node.dependencies); j = j + 1) {
             sus edge DependencyEdge = node.dependencies[j]
-            sus constraint_clauses []SATClause = create_dependency_constraint_clauses(
+            sus constraint_clauses SATClause[value] = create_dependency_constraint_clauses(
                 variables, node.package_name, edge
             )
             clauses = arrayz.concat(clauses, constraint_clauses)
@@ -558,12 +558,12 @@ slay get_package_metadata_cached(resolver DependencyResolver, name tea, version 
 }
 
 # Get package versions with caching
-slay get_package_versions_cached(resolver DependencyResolver, package_name tea) []tea {
+slay get_package_versions_cached(resolver DependencyResolver, package_name tea) tea[value]{
     # Check cache
     # In real implementation: check cache map for versions
     
     # Fetch from registry
-    sus versions []tea = list_package_versions(resolver.registry, package_name)
+    sus versions tea[value] = list_package_versions(resolver.registry, package_name)
     
     # Cache the result
     # In real implementation: store in package_cache map
@@ -578,7 +578,7 @@ slay is_version_compatible(constraint1 tea, constraint2 tea) lit {
     damn constraint1 == constraint2
 }
 
-slay find_compatible_version(versions []tea, constraint tea) tea {
+slay find_compatible_version(versions tea[value], constraint tea) tea {
     # Simple implementation - find first matching version
     bestie (sus i drip = 0; i < arrayz.len(versions); i = i + 1) {
         sus version tea = versions[i]
@@ -589,7 +589,7 @@ slay find_compatible_version(versions []tea, constraint tea) tea {
     damn ""
 }
 
-slay find_latest_version(versions []tea) tea {
+slay find_latest_version(versions tea[value]) tea {
     ready (arrayz.len(versions) == 0) {
         damn ""
     }
@@ -615,8 +615,8 @@ slay satisfies_version_constraint(version tea, constraint tea) lit {
 }
 
 slay is_compatible_version(version tea, base_version tea) lit {
-    sus version_parts []tea = stringz.split(version, ".")
-    sus base_parts []tea = stringz.split(base_version, ".")
+    sus version_parts tea[value] = stringz.split(version, ".")
+    sus base_parts tea[value] = stringz.split(base_version, ".")
     
     ready (arrayz.len(version_parts) < 2 || arrayz.len(base_parts) < 2) {
         damn cap
@@ -629,7 +629,7 @@ slay is_compatible_version(version tea, base_version tea) lit {
 # Real implementation for optional dependency resolution
 slay try_resolve_optional_dependency(resolver DependencyResolver, dep PackageDependency, depth drip) lit {
     # Try to resolve optional dependency, but don't fail if it can't be resolved
-    sus versions []tea = get_package_versions_cached(resolver, dep.name)
+    sus versions tea[value] = get_package_versions_cached(resolver, dep.name)
     ready (arrayz.len(versions) == 0) {
         vibez.spill("Optional dependency", dep.name, "not available - skipping")
         damn cap
@@ -646,7 +646,7 @@ slay try_resolve_optional_dependency(resolver DependencyResolver, dep PackageDep
 }
 
 # Real cycle resolution using topological sorting
-slay resolve_dependency_cycles(resolver DependencyResolver, cycles []tea) lit {
+slay resolve_dependency_cycles(resolver DependencyResolver, cycles tea[value]) lit {
     vibez.spill("Resolving", arrayz.len(cycles), "dependency cycles...")
     
     # Strategy 1: Try to break cycles by making some dependencies optional
@@ -655,7 +655,7 @@ slay resolve_dependency_cycles(resolver DependencyResolver, cycles []tea) lit {
         vibez.spill("Attempting to break cycle:", cycle)
         
         # Parse cycle into package names
-        sus cycle_packages []tea = stringz.split(cycle, " -> ")
+        sus cycle_packages tea[value] = stringz.split(cycle, " -> ")
         ready (arrayz.len(cycle_packages) < 2) {
             continue
         }
@@ -682,7 +682,7 @@ slay resolve_dependency_cycles(resolver DependencyResolver, cycles []tea) lit {
 slay resolve_with_backtracking(resolver DependencyResolver) lit {
     vibez.spill("Starting backtracking resolution with conflict analysis...")
     
-    sus decision_stack []ResolutionDecision = []
+    sus decision_stack ResolutionDecision[value] = []
     sus conflict_level drip = 0
     
     # Main backtracking loop
@@ -694,7 +694,7 @@ slay resolve_with_backtracking(resolver DependencyResolver) lit {
         }
         
         # Check for conflicts
-        sus conflicts []ResolutionConflict = detect_version_conflicts(resolver)
+        sus conflicts ResolutionConflict[value] = detect_version_conflicts(resolver)
         ready (arrayz.len(conflicts) > 0) {
             # Analyze conflict and backtrack
             sus backtrack_level drip = analyze_conflicts(resolver, conflicts, decision_stack)
@@ -772,8 +772,8 @@ squad ResolutionDecision {
 }
 
 # Additional SAT helper functions with real implementations
-slay get_package_variable_indices(variables []SATVariable, package_name tea) []drip {
-    sus indices []drip = []
+slay get_package_variable_indices(variables SATVariable[value], package_name tea) drip[value]{
+    sus indices drip[value] = []
     bestie (sus i drip = 0; i < arrayz.len(variables); i = i + 1) {
         ready (variables[i].package_name == package_name) {
             indices = arrayz.append(indices, i)
@@ -783,7 +783,7 @@ slay get_package_variable_indices(variables []SATVariable, package_name tea) []d
 }
 
 # Real implementations for advanced backtracking
-slay try_break_cycle_edge(resolver DependencyResolver, cycle_packages []tea) lit {
+slay try_break_cycle_edge(resolver DependencyResolver, cycle_packages tea[value]) lit {
     # Try to identify and break the weakest dependency edge in the cycle
     bestie (sus i drip = 0; i < arrayz.len(cycle_packages) - 1; i = i + 1) {
         sus source tea = cycle_packages[i]
@@ -811,7 +811,7 @@ slay try_break_cycle_edge(resolver DependencyResolver, cycle_packages []tea) lit
     damn cap
 }
 
-slay try_adjust_version_constraints(resolver DependencyResolver, cycle_packages []tea) lit {
+slay try_adjust_version_constraints(resolver DependencyResolver, cycle_packages tea[value]) lit {
     # Try to adjust version constraints to break cycles
     bestie (sus i drip = 0; i < arrayz.len(cycle_packages); i = i + 1) {
         sus package_name tea = cycle_packages[i]
@@ -840,8 +840,8 @@ slay perform_unit_propagation(resolver DependencyResolver) lit {
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
         ready (node.resolution_state == ResolutionState.Unresolved) {
-            sus versions []tea = get_package_versions_cached(resolver, node.package_name)
-            sus compatible_versions []tea = []
+            sus versions tea[value] = get_package_versions_cached(resolver, node.package_name)
+            sus compatible_versions tea[value] = []
             
             # Filter versions based on all constraints
             bestie (sus j drip = 0; j < arrayz.len(versions); j = j + 1) {
@@ -864,8 +864,8 @@ slay perform_unit_propagation(resolver DependencyResolver) lit {
     damn propagated
 }
 
-slay detect_version_conflicts(resolver DependencyResolver) []ResolutionConflict {
-    sus conflicts []ResolutionConflict = []
+slay detect_version_conflicts(resolver DependencyResolver) ResolutionConflict[value]{
+    sus conflicts ResolutionConflict[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
@@ -897,7 +897,7 @@ slay detect_version_conflicts(resolver DependencyResolver) []ResolutionConflict 
     damn conflicts
 }
 
-slay analyze_conflicts(resolver DependencyResolver, conflicts []ResolutionConflict, decision_stack []ResolutionDecision) drip {
+slay analyze_conflicts(resolver DependencyResolver, conflicts ResolutionConflict[value], decision_stack ResolutionDecision[value]) drip {
     # Simple conflict analysis - backtrack to first conflicting decision
     ready (arrayz.len(decision_stack) == 0) {
         damn -1  # No decisions to backtrack to
@@ -922,7 +922,7 @@ slay analyze_conflicts(resolver DependencyResolver, conflicts []ResolutionConfli
     damn -1  # No relevant decisions found
 }
 
-slay backtrack_to_level(resolver DependencyResolver, decision_stack []ResolutionDecision, target_level drip) {
+slay backtrack_to_level(resolver DependencyResolver, decision_stack ResolutionDecision[value], target_level drip) {
     # Reset resolver state to target decision level
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
@@ -933,7 +933,7 @@ slay backtrack_to_level(resolver DependencyResolver, decision_stack []Resolution
     }
     
     # Truncate decision stack
-    sus new_stack []ResolutionDecision = []
+    sus new_stack ResolutionDecision[value] = []
     bestie (sus i drip = 0; i < arrayz.len(decision_stack); i = i + 1) {
         ready (decision_stack[i].decision_level <= target_level) {
             new_stack = arrayz.append(new_stack, decision_stack[i])
@@ -959,7 +959,7 @@ slay choose_decision_variable(resolver DependencyResolver) ResolutionDecision {
     bestie (sus i drip = 0; i < arrayz.len(resolver.resolution_graph); i = i + 1) {
         sus node DependencyNode = resolver.resolution_graph[i]
         ready (node.resolution_state == ResolutionState.Unresolved) {
-            sus versions []tea = get_package_versions_cached(resolver, node.package_name)
+            sus versions tea[value] = get_package_versions_cached(resolver, node.package_name)
             sus compatible_count drip = count_compatible_versions(resolver, node.package_name, versions)
             
             ready (compatible_count > 0 && compatible_count < min_choices) {
@@ -974,7 +974,7 @@ slay choose_decision_variable(resolver DependencyResolver) ResolutionDecision {
     }
     
     # Choose first compatible version for the selected package
-    sus versions []tea = get_package_versions_cached(resolver, best_package)
+    sus versions tea[value] = get_package_versions_cached(resolver, best_package)
     bestie (sus i drip = 0; i < arrayz.len(versions); i = i + 1) {
         sus version tea = versions[i]
         ready (satisfies_all_constraints(resolver, best_package, version)) {
@@ -998,7 +998,7 @@ slay make_resolution_decision(resolver DependencyResolver, decision ResolutionDe
     }
 }
 
-slay create_dependency_constraint_clauses(variables []SATVariable, source_package tea, edge DependencyEdge) []SATClause {
+slay create_dependency_constraint_clauses(variables SATVariable[value], source_package tea, edge DependencyEdge) SATClause[value]{
     # Simplified - real implementation would create proper constraint clauses
     damn []
 }
@@ -1104,7 +1104,7 @@ slay find_node_by_name_struct(resolver DependencyResolver, package_name tea) Dep
     damn DependencyNode { package_name: "" }  # Not found
 }
 
-slay count_compatible_versions(resolver DependencyResolver, package_name tea, versions []tea) drip {
+slay count_compatible_versions(resolver DependencyResolver, package_name tea, versions tea[value]) drip {
     sus count drip = 0
     bestie (sus i drip = 0; i < arrayz.len(versions); i = i + 1) {
         sus version tea = versions[i]

@@ -92,7 +92,7 @@ slay demo_connection_pooling() {
     
     // Get multiple connections from pool
     vibez.spill("Getting connections from pool...")
-    sus connections []Socket = []
+    sus connections Socket[value] = []
     
     sus i drip = 0
     bestie (i < 3) {
@@ -147,7 +147,7 @@ slay demo_dns_resolution() {
     vibez.spill("-" * 30)
     
     // Test various hostname resolutions
-    sus hostnames []tea = ["localhost", "google.com", "github.com", "stackoverflow.com", "nonexistent.example.invalid"]
+    sus hostnames tea[value] = ["localhost", "google.com", "github.com", "stackoverflow.com", "nonexistent.example.invalid"]
     
     sus i drip = 0
     bestie (i < arrayz.len(hostnames)) {
@@ -172,7 +172,7 @@ slay demo_dns_resolution() {
     vibez.spill("\nTesting DNS record types for gmail.com:")
     
     // A records
-    sus a_records []DNSRecord = dns_resolve_hostname_all_types("gmail.com", 1) fam {
+    sus a_records DNSRecord[value] = dns_resolve_hostname_all_types("gmail.com", 1) fam {
         when err -> {
             vibez.spill("❌ A record lookup failed: " + err.message)
         }
@@ -187,7 +187,7 @@ slay demo_dns_resolution() {
     }
     
     // MX records
-    sus mx_records []DNSRecord = dns_resolve_hostname_all_types("gmail.com", 15) fam {
+    sus mx_records DNSRecord[value] = dns_resolve_hostname_all_types("gmail.com", 15) fam {
         when err -> {
             vibez.spill("❌ MX record lookup failed: " + err.message)
         }
@@ -230,7 +230,7 @@ slay demo_advanced_http_client() {
     
     // Simple GET request
     vibez.spill("Performing HTTP GET request...")
-    sus get_headers []tea = [
+    sus get_headers tea[value] = [
         "Accept: application/json",
         "User-Agent: CURSED-NetworkZ-Demo/1.0",
         "X-Demo-Header: test-value"
@@ -253,7 +253,7 @@ slay demo_advanced_http_client() {
     // JSON POST request
     vibez.spill("\nPerforming HTTP POST with JSON...")
     sus json_payload tea = "{\"name\":\"CURSED Demo\",\"version\":\"2.0\",\"features\":[\"sockets\",\"pools\",\"dns\",\"http\"]}"
-    sus post_headers []tea = [
+    sus post_headers tea[value] = [
         "X-API-Key: demo-key-12345",
         "X-Request-ID: cursed-demo-" + stringz.from_int(timez.now())
     ]
@@ -291,7 +291,7 @@ slay demo_http_with_pooling() {
     vibez.spill("✅ HTTP connection pool created")
     
     // Make multiple requests using the pool
-    sus requests []HttpRequestAdvanced = [
+    sus requests HttpRequestAdvanced[value] = [
         HttpRequestAdvanced{
             method: "GET",
             url: "http://httpbin.org/get?param1=value1",

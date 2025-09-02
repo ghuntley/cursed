@@ -9,7 +9,7 @@ fr fr ================================
 
 fr fr Advanced hash map with better collision handling
 squad SymbolTable<T> {
-    spill buckets []SymbolBucket<T>
+    spill buckets SymbolBucket[value]<T>
     spill size normie
     spill capacity normie
     spill load_factor meal
@@ -48,8 +48,8 @@ slay SymbolTable_with_capacity<T>(capacity normie) SymbolTable<T> {
     }
 }
 
-slay make_symbol_buckets<T>(capacity normie) []SymbolBucket<T> {
-    sus buckets []SymbolBucket<T> = []SymbolBucket<T>{}
+slay make_symbol_buckets<T>(capacity normie) SymbolBucket[value]<T> {
+    sus buckets SymbolBucket[value]<T> = SymbolBucket[value]<T>{}
     bestie i := 0; i < capacity; i = i + 1 {
         sus bucket SymbolBucket<T> = SymbolBucket<T>{
             key: "",
@@ -62,7 +62,7 @@ slay make_symbol_buckets<T>(capacity normie) []SymbolBucket<T> {
     damn buckets
 }
 
-slay append_symbol_bucket<T>(buckets []SymbolBucket<T>, bucket SymbolBucket<T>) []SymbolBucket<T> {
+slay append_symbol_bucket<T>(buckets SymbolBucket[value]<T>, bucket SymbolBucket<T>) SymbolBucket[value]<T> {
     fr fr Runtime-provided dynamic append
     damn runtime_slice_append<SymbolBucket<T>>(buckets, bucket)
 }
@@ -198,7 +198,7 @@ slay SymbolTable_remove<T>(table SymbolTable<T>, key tea) SymbolTable<T> {
 }
 
 slay SymbolTable_resize<T>(table SymbolTable<T>) SymbolTable<T> {
-    sus old_buckets []SymbolBucket<T> = table.buckets
+    sus old_buckets SymbolBucket[value]<T> = table.buckets
     sus old_capacity normie = table.capacity
     
     fr fr Double the capacity
@@ -240,8 +240,8 @@ slay SymbolTable_clear<T>(table SymbolTable<T>) SymbolTable<T> {
 }
 
 fr fr Get all keys from the symbol table
-slay SymbolTable_keys<T>(table SymbolTable<T>) []tea {
-    sus keys []tea = []tea{}
+slay SymbolTable_keys<T>(table SymbolTable<T>) tea[value]{
+    sus keys tea[value] = tea[value]{}
     
     bestie i := 0; i < table.capacity; i = i + 1 {
         sus bucket SymbolBucket<T> = table.buckets[i]
@@ -254,8 +254,8 @@ slay SymbolTable_keys<T>(table SymbolTable<T>) []tea {
 }
 
 fr fr Get all values from the symbol table
-slay SymbolTable_values<T>(table SymbolTable<T>) []T {
-    sus values []T = []T{}
+slay SymbolTable_values<T>(table SymbolTable<T>) T[value]{
+    sus values T[value] = T[value]{}
     
     bestie i := 0; i < table.capacity; i = i + 1 {
         sus bucket SymbolBucket<T> = table.buckets[i]
@@ -332,8 +332,8 @@ squad FunctionTable {
 squad FunctionInfo {
     spill name tea
     spill return_type tea
-    spill parameter_types []tea
-    spill parameter_names []tea
+    spill parameter_types tea[value]
+    spill parameter_names tea[value]
     spill is_generic lit
     spill is_extern lit
     spill definition_line normie
@@ -367,8 +367,8 @@ squad TypeTable {
 squad TypeInfo {
     spill name tea
     spill kind tea fr fr "struct", "interface", "enum", "alias"
-    spill fields []FieldInfo
-    spill methods []MethodInfo
+    spill fields FieldInfo[value]
+    spill methods MethodInfo[value]
     spill is_generic lit
     spill definition_line normie
 }
@@ -382,7 +382,7 @@ squad FieldInfo {
 squad MethodInfo {
     spill name tea
     spill return_type tea
-    spill parameter_types []tea
+    spill parameter_types tea[value]
     spill is_public lit
 }
 
@@ -407,12 +407,12 @@ slay TypeTable_is_type_declared(table TypeTable, name tea) lit {
 }
 
 fr fr Utility functions
-slay append_string(arr []tea, str tea) []tea {
+slay append_string(arr tea[value], str tea) tea[value]{
     fr fr Runtime-provided dynamic append
     damn runtime_slice_append<tea>(arr, str)
 }
 
-slay append_value<T>(arr []T, val T) []T {
+slay append_value<T>(arr T[value], val T) T[value]{
     fr fr Runtime-provided dynamic append
     damn runtime_slice_append<T>(arr, val)
 }

@@ -1,13 +1,12 @@
-vibe main_character
+vibe main
 
 yeet "vibez"
-yeet "mathz"
 
 fr fr Comprehensive Control Flow Test
 fr fr Tests: All control flow structures work correctly
 fr fr Expected: Conditionals, loops, and returns function properly
 
-slay main_character() {
+slay main() {
     vibez.spill("=== Control Flow Test ===")
     
     fr fr Test basic conditional

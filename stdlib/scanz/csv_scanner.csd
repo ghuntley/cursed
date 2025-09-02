@@ -15,7 +15,7 @@ squad CSVOptions {
 
 # CSV record structure
 squad CSVRecord {
-    sus fields []tea           # Array of field values
+    sus fields tea[value]           # Array of field values
     sus line_number drip       # Line number where record starts
     sus field_count drip       # Number of fields in record
     sus has_quoted_fields lit  # Whether any fields were quoted
@@ -30,7 +30,7 @@ squad CSVScanner {
     sus current_record CSVRecord  # Current parsed record
     sus line_number drip      # Current line number
     sus has_more lit          # Whether more records are available
-    sus header []tea          # Header row if parsed
+    sus header tea[value]          # Header row if parsed
     sus error_message tea     # Last error message
 }
 
@@ -85,7 +85,7 @@ slay scan_csv_record(scanner *CSVScanner) lit {
         damn cap
     }
     
-    sus record_fields []tea = []
+    sus record_fields tea[value] = []
     sus record_line drip = scanner.line_number
     sus has_quoted lit = cap
     
@@ -334,7 +334,7 @@ slay has_more_records(scanner *CSVScanner) lit {
 }
 
 # Get header row
-slay get_header(scanner *CSVScanner) []tea {
+slay get_header(scanner *CSVScanner) tea[value]{
     damn scanner.header
 }
 
@@ -344,8 +344,8 @@ slay get_error(scanner *CSVScanner) tea {
 }
 
 # Parse entire CSV into array of records
-slay parse_all_records(scanner *CSVScanner) []CSVRecord {
-    sus records []CSVRecord = []
+slay parse_all_records(scanner *CSVScanner) CSVRecord[value]{
+    sus records CSVRecord[value] = []
     
     bestie (scan_csv_record(scanner)) {
         records = append(records, scanner.current_record)
@@ -355,12 +355,12 @@ slay parse_all_records(scanner *CSVScanner) []CSVRecord {
 }
 
 # Parse CSV with header into map-like structure
-slay parse_csv_with_header(scanner *CSVScanner) [][]tea {
+slay parse_csv_with_header(scanner *CSVScanner) tea[value][value] {
     ready (!parse_header(scanner)) {
         damn []
     }
     
-    sus records [][]tea = []
+    sus records tea[value][value] = []
     
     bestie (scan_csv_record(scanner)) {
         records = append(records, scanner.current_record.fields)
@@ -428,8 +428,8 @@ slay trim_whitespace(text tea) tea {
     damn substring(text, start, end - start)
 }
 
-slay make_copy(original []tea) []tea {
-    sus copy []tea = []
+slay make_copy(original tea[value]) tea[value]{
+    sus copy tea[value] = []
     bestie (sus i drip = 0; i < original.length; i += 1) {
         copy = append(copy, original[i])
     }
@@ -446,8 +446,8 @@ slay reset_csv_scanner(scanner *CSVScanner) {
 }
 
 # Convert CSV record to map with header
-slay record_to_map(record CSVRecord, header []tea) []tea {
-    sus result []tea = []
+slay record_to_map(record CSVRecord, header tea[value]) tea[value]{
+    sus result tea[value] = []
     
     bestie (sus i drip = 0; i < header.length; i += 1) {
         sus field_value tea = ""

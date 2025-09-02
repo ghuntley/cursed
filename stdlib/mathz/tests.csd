@@ -276,7 +276,7 @@ fr fr ===== STATISTICAL FUNCTIONS TESTS =====
 test_start("Statistical Functions")
 
 fr fr Note: Arrays need to be passed with actual values
-sus test_array []drip = [1, 2, 3, 4, 5]
+sus test_array drip[value] = [1, 2, 3, 4, 5]
 sus array_size drip = 5
 
 sus sum_result drip = sum_array(test_array, array_size)

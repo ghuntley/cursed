@@ -34,7 +34,7 @@ sus AST_COMMENT drip = 12
 squad ASTNode {
     spill type drip
     spill value tea
-    spill children []ASTNode
+    spill children ASTNode[value]
     spill line drip
     spill column drip
     spill formatted lit
@@ -198,8 +198,8 @@ squad TokenizerContext {
     spill position drip
     spill line drip
     spill column drip
-    spill tokens []Token
-    spill errors []tea
+    spill tokens Token[value]
+    spill errors tea[value]
     spill preserve_whitespace lit
 }
 
@@ -485,13 +485,13 @@ slay tokenize_advanced(source tea) TokenizerContext {
 fr fr ===== AST PARSER WITH ERROR RECOVERY =====
 
 squad ParserContext {
-    spill tokens []Token
+    spill tokens Token[value]
     spill position drip
-    spill errors []tea
+    spill errors tea[value]
     spill config FormatterConfig
 }
 
-slay create_parser_context(tokens []Token, config FormatterConfig) ParserContext {
+slay create_parser_context(tokens Token[value], config FormatterConfig) ParserContext {
     damn ParserContext{
         tokens: tokens,
         position: 0,
@@ -529,7 +529,7 @@ slay expect_token(ctx ParserContext, expected_type tea) Token {
     damn advance_token(ctx)
 }
 
-slay parse_ast(tokens []Token, config FormatterConfig) ASTNode {
+slay parse_ast(tokens Token[value], config FormatterConfig) ASTNode {
     sus ctx ParserContext = create_parser_context(tokens, config)
     sus root ASTNode = ASTNode{
         type: AST_PROGRAM,
@@ -907,7 +907,7 @@ squad FormatterContext {
     spill in_expression lit
     spill blank_lines_needed drip
     spill last_node_type drip
-    spill errors []tea
+    spill errors tea[value]
 }
 
 slay create_formatter_context(config FormatterConfig) FormatterContext {
@@ -1022,8 +1022,8 @@ slay format_program(node ASTNode, ctx FormatterContext) tea {
     fr fr Sort imports if configured
     ready (ctx.config.sort_imports) {
         fr fr Simplified import sorting - collect imports first
-        sus imports []ASTNode = []
-        sus other_nodes []ASTNode = []
+        sus imports ASTNode[value] = []
+        sus other_nodes ASTNode[value] = []
         
         sus j drip = 0
         bestie (j < len(node.children)) {
@@ -1325,7 +1325,7 @@ slay format_string_literal(token Token, ctx FormatterContext) tea {
     damn token.value
 }
 
-slay format_tokens_with_multiline_support(tokens []Token, config FormatterConfig) tea {
+slay format_tokens_with_multiline_support(tokens Token[value], config FormatterConfig) tea {
     sus ctx FormatterContext = create_formatter_context(config)
     sus output tea = ""
     sus i drip = 0
@@ -1436,10 +1436,10 @@ squad DiffLine {
     spill content tea
 }
 
-slay generate_diff(original tea, formatted tea) []DiffLine {
-    sus original_lines []tea = split_lines(original)
-    sus formatted_lines []tea = split_lines(formatted)
-    sus diff_lines []DiffLine = []
+slay generate_diff(original tea, formatted tea) DiffLine[value]{
+    sus original_lines tea[value] = split_lines(original)
+    sus formatted_lines tea[value] = split_lines(formatted)
+    sus diff_lines DiffLine[value] = []
     
     sus max_lines drip = find_max([len(original_lines), len(formatted_lines)])
     sus i drip = 0
@@ -1489,7 +1489,7 @@ slay generate_diff(original tea, formatted tea) []DiffLine {
     damn diff_lines
 }
 
-slay format_diff_output(diff_lines []DiffLine) tea {
+slay format_diff_output(diff_lines DiffLine[value]) tea {
     sus result tea = ""
     sus i drip = 0
     
@@ -1550,17 +1550,17 @@ slay format_cursed_code_with_config_ast(source tea, config FormatterConfig) tea 
 
 slay format_with_diff(source tea, config FormatterConfig) tea {
     sus formatted tea = format_cursed_code_with_config_ast(source, config)
-    sus diff_lines []DiffLine = generate_diff(source, formatted)
+    sus diff_lines DiffLine[value] = generate_diff(source, formatted)
     damn format_diff_output(diff_lines)
 }
 
-slay validate_syntax(source tea) []tea {
+slay validate_syntax(source tea) tea[value]{
     sus tokenizer_ctx TokenizerContext = tokenize_advanced(source)
     sus config FormatterConfig = default_formatter_config()
     sus parser_ctx ParserContext = create_parser_context(tokenizer_ctx.tokens, config)
     sus ast ASTNode = parse_ast(tokenizer_ctx.tokens, config)
     
-    sus all_errors []tea = []
+    sus all_errors tea[value] = []
     sus i drip = 0
     
     fr fr Combine tokenizer and parser errors
@@ -1647,7 +1647,7 @@ slay main() {
     vibez.spill(diff_output)
     
     vibez.spill("\n=== SYNTAX VALIDATION ===")
-    sus errors []tea = validate_syntax(sample_code)
+    sus errors tea[value] = validate_syntax(sample_code)
     ready (len(errors) == 0) {
         vibez.spill("✅ No syntax errors found")
     } otherwise {

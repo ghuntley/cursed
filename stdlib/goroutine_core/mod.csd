@@ -29,7 +29,7 @@ vibe Goroutine = smash {
 fr fr Work-stealing scheduler
 vibe Scheduler = smash {
     goroutines map[normie]Goroutine,
-    runnable_queue []normie,
+    runnable_queue normie[value],
     current_id normie,
     next_id normie,
     worker_count normie,
@@ -252,7 +252,7 @@ slay cleanup_goroutine(goroutine_id normie) lit {
     lowkey !goroutine_exists(goroutine_id) {
         damn cap
     } fr fr Remove from runnable queue if present
-    sus new_queue []normie = []
+    sus new_queue normie[value] = []
     bestie _, id := range global_scheduler.runnable_queue {
         lowkey id != goroutine_id {
             new_queue = append(new_queue, id)

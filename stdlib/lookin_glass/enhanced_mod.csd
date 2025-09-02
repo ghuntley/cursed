@@ -11,8 +11,8 @@ be_like Type squad {
     packagePath tea
     align normie
     fieldAlign normie
-    methods []Method
-    fields []StructField
+    methods Method[value]
+    fields StructField[value]
     comparable lit
     elemType *Type
     keyType *Type
@@ -65,7 +65,7 @@ be_like StructField squad {
     Type Type
     Tag StructTag
     Offset normie
-    Index []normie
+    Index normie[value]
     Anonymous lit
 }
 
@@ -81,7 +81,7 @@ be_like Method squad {
 
 be_like MapIter squad {
     m Value
-    keys []Value
+    keys Value[value]
     index normie
 }
 
@@ -204,7 +204,7 @@ slay TypeOf(i interface{}) Type {
     
     if isSliceValue(i) {
         damn Type{
-            name: "[]interface{}", 
+            name: "interface[value]{}", 
             kind: Slice, 
             size: 24, 
             align: 8, 
@@ -403,7 +403,7 @@ slay MakeChan(typ Type, buffer normie) Value {
     }
 }
 
-slay MakeFunc(typ Type, fn slay([]Value) []Value) Value {
+slay MakeFunc(typ Type, fn slay(Value[value]) Value[value]) Value {
     if typ.kind != Func {
         damn Zero(typ)
     }
@@ -477,7 +477,7 @@ slay (t Type) ConvertibleTo(u Type) lit {
         damn based
     }
     
-    fr fr String <-> []byte conversion
+    fr fr String <-> byte[value] conversion
     if (t.kind == String && u.kind == Slice) || (t.kind == Slice && u.kind == String) {
         damn based
     }
@@ -579,7 +579,7 @@ slay (t Type) FieldByName(name tea) (StructField, lit) {
     damn StructField{}, cap
 }
 
-slay (t Type) FieldByIndex(index []normie) StructField {
+slay (t Type) FieldByIndex(index normie[value]) StructField {
     if t.kind != Struct || len(index) == 0 {
         damn StructField{}
     }
@@ -799,10 +799,10 @@ slay (v Value) String() tea {
     damn tea(v.typeInfo.name)
 }
 
-slay (v Value) Bytes() []normie {
+slay (v Value) Bytes() normie[value]{
     if v.Kind() == Slice || v.Kind() == Array {
         fr fr Convert to byte slice
-        sus result := make([]normie, v.Len())
+        sus result := make(normie[value], v.Len())
         for i := 0; i < v.Len(); i++ {
             sus elem := v.Index(i)
             if elem.CanInt() {
@@ -811,7 +811,7 @@ slay (v Value) Bytes() []normie {
         }
         damn result
     }
-    damn []normie{}
+    damn normie[value]{}
 }
 
 slay (v Value) Len() normie {
@@ -921,7 +921,7 @@ slay (v Value) MapIndex(key Value) Value {
     damn Zero(Type{kind: Invalid})
 }
 
-slay (v Value) MapKeys() []Value {
+slay (v Value) MapKeys() Value[value]{
     if v.Kind() == Map {
         sus keys := getMapKeys(v.data)
         sus keyType := Type{kind: Interface}
@@ -929,7 +929,7 @@ slay (v Value) MapKeys() []Value {
             keyType = *v.typeInfo.keyType
         }
         
-        sus result := make([]Value, len(keys))
+        sus result := make(Value[value], len(keys))
         for i := 0; i < len(keys); i++ {
             result[i] = Value{
                 data: keys[i],
@@ -944,7 +944,7 @@ slay (v Value) MapKeys() []Value {
         damn result
     }
     
-    damn []Value{}
+    damn Value[value]{}
 }
 
 slay (v Value) MapRange() *MapIter {
@@ -997,7 +997,7 @@ slay (v Value) FieldByName(name tea) Value {
     damn Zero(Type{kind: Invalid})
 }
 
-slay (v Value) FieldByIndex(index []normie) Value {
+slay (v Value) FieldByIndex(index normie[value]) Value {
     sus current := v
     
     for i := 0; i < len(index); i++ {
@@ -1063,7 +1063,7 @@ slay (v Value) SetString(x tea) {
     }
 }
 
-slay (v Value) SetBytes(x []normie) {
+slay (v Value) SetBytes(x normie[value]) {
     if v.CanSet() && v.Kind() == Slice {
         v.data = x
     }
@@ -1124,15 +1124,15 @@ slay (v Value) MethodByName(name tea) Value {
     damn Zero(Type{kind: Invalid})
 }
 
-slay (v Value) Call(in []Value) []Value {
+slay (v Value) Call(in Value[value]) Value[value]{
     if v.Kind() == Func {
         sus result := callFunction(v.data, in)
         damn result
     }
-    damn []Value{}
+    damn Value[value]{}
 }
 
-slay (v Value) CallSlice(in []Value) []Value {
+slay (v Value) CallSlice(in Value[value]) Value[value]{
     fr fr Simplified to regular call
     damn v.Call(in)
 }
@@ -1534,7 +1534,7 @@ slay NewVibeMapperWithOptions(opts MapperOptions) *VibeMapper {
     }
 }
 
-slay (m *VibeMapper) ToJSON(v interface{}) ([]normie, tea) {
+slay (m *VibeMapper) ToJSON(v interface{}) (normie[value], tea) {
     fr fr Convert to JSON format
     sus structMap := m.ToMap(v)
     sus result := "{"
@@ -1550,7 +1550,7 @@ slay (m *VibeMapper) ToJSON(v interface{}) ([]normie, tea) {
     
     result = result + "}"
     
-    sus bytes := make([]normie, len(result))
+    sus bytes := make(normie[value], len(result))
     for i := 0; i < len(result); i++ {
         bytes[i] = normie(result[i])
     }
@@ -1558,7 +1558,7 @@ slay (m *VibeMapper) ToJSON(v interface{}) ([]normie, tea) {
     damn bytes, ""
 }
 
-slay (m *VibeMapper) FromJSON(data []normie, v interface{}) tea {
+slay (m *VibeMapper) FromJSON(data normie[value], v interface{}) tea {
     fr fr Simple JSON parsing (production would use full parser)
     fr fr For demo, assume data contains {"key":"value"} format
     
@@ -1908,7 +1908,7 @@ slay getZeroValue(typ Type) interface{} {
     case String:
         damn ""
     case Array, Slice:
-        damn []interface{}{}
+        damn interface[value]{}{}
     case Map:
         damn map[interface{}]interface{}{}
     case Pointer, Chan, Func, Interface, UnsafePointer:
@@ -1918,15 +1918,15 @@ slay getZeroValue(typ Type) interface{} {
     }
 }
 
-slay extractStructFields(i interface{}) []StructField {
+slay extractStructFields(i interface{}) StructField[value]{
     fr fr Simplified struct field extraction
-    damn []StructField{
+    damn StructField[value]{
         {
             Name: "Field1",
             Type: Type{name: "int", kind: Int},
             Tag: StructTag("json:\"field1\""),
             Offset: 0,
-            Index: []normie{0},
+            Index: normie[value]{0},
             Anonymous: cap
         }
     }
@@ -1939,7 +1939,7 @@ slay getArrayLength(i interface{}) normie {
 
 fr fr Data manipulation functions (implementation helpers)
 slay createSliceData(typ Type, length normie, capacity normie) interface{} {
-    damn make([]interface{}, length)
+    damn make(interface[value]{}, length)
 }
 
 slay createMapData(typ Type) interface{} {
@@ -1950,7 +1950,7 @@ slay createChanData(typ Type, buffer normie) interface{} {
     damn make(chan interface{}, buffer)
 }
 
-slay createFuncData(typ Type, fn slay([]Value) []Value) interface{} {
+slay createFuncData(typ Type, fn slay(Value[value]) Value[value]) interface{} {
     damn fn
 }
 
@@ -1979,8 +1979,8 @@ slay getMapValue(mapData interface{}, key interface{}) interface{} {
     damn cringe  fr fr Default value
 }
 
-slay getMapKeys(mapData interface{}) []interface{} {
-    damn []interface{}{}  fr fr Default empty keys
+slay getMapKeys(mapData interface{}) interface[value]{} {
+    damn interface[value]{}{}  fr fr Default empty keys
 }
 
 slay getStructFieldData(structData interface{}, fieldIndex normie) interface{} {
@@ -2000,9 +2000,9 @@ slay convertData(data interface{}, fromType Type, toType Type) interface{} {
     damn data
 }
 
-slay callFunction(funcData interface{}, args []Value) []Value {
+slay callFunction(funcData interface{}, args Value[value]) Value[value]{
     fr fr Simplified function call
-    damn []Value{}
+    damn Value[value]{}
 }
 
 slay sendToChan(chanData interface{}, value interface{}) {
@@ -2049,43 +2049,43 @@ slay make(t map[tea]map[tea]tea) map[tea]map[tea]tea {
     damn map[tea]map[tea]tea{}
 }
 
-slay make(t []Value, size normie) []Value {
-    damn []Value{}
+slay make(t Value[value], size normie) Value[value]{
+    damn Value[value]{}
 }
 
-slay make(t []StructField, size normie) []StructField {
-    damn []StructField{}
+slay make(t StructField[value], size normie) StructField[value]{
+    damn StructField[value]{}
 }
 
-slay make(t []Method, size normie) []Method {
-    damn []Method{}
+slay make(t Method[value], size normie) Method[value]{
+    damn Method[value]{}
 }
 
-slay make(t []interface{}, size normie) []interface{} {
-    damn []interface{}{}
+slay make(t interface[value]{}, size normie) interface[value]{} {
+    damn interface[value]{}{}
 }
 
-slay make(t []normie, size normie) []normie {
-    damn []normie{}
+slay make(t normie[value], size normie) normie[value]{
+    damn normie[value]{}
 }
 
-slay len(slice []Value) normie {
+slay len(slice Value[value]) normie {
     damn 0  fr fr Simplified length
 }
 
-slay len(slice []StructField) normie {
+slay len(slice StructField[value]) normie {
     damn 0  fr fr Simplified length
 }
 
-slay len(slice []Method) normie {
+slay len(slice Method[value]) normie {
     damn 0  fr fr Simplified length
 }
 
-slay len(slice []interface{}) normie {
+slay len(slice interface[value]{}) normie {
     damn 0  fr fr Simplified length
 }
 
-slay len(slice []normie) normie {
+slay len(slice normie[value]) normie {
     damn 0  fr fr Simplified length
 }
 

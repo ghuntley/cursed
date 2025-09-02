@@ -298,7 +298,7 @@ slay test_context_merging() {
     ctx1 := vibe_context.WithValue(base, "key1", "value1")
     ctx2 := vibe_context.WithValue(base, "key2", "value2")
     
-    contexts := []vibe_context.Context{ctx1, ctx2}
+    contexts := vibe_context[value].Context{ctx1, ctx2}
     merged := vibe_context.MergeContexts(contexts)
     
     fr fr Test merged context has values from both
@@ -341,7 +341,7 @@ slay test_multiple_vibes() {
     test_start("Multiple vibes")
     
     parent := vibe_context.Background()
-    vibes := []tea{"chill", "focused", "energetic"}
+    vibes := tea[value]{"chill", "focused", "energetic"}
     
     ctx := vibe_context.WithVibes(parent, vibes)
     

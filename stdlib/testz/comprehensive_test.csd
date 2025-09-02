@@ -52,7 +52,7 @@ assert_eq_int(counter, 5)
 
 fr fr Test array/collection basic functionality
 test_start("Basic Collection Testing")
-sus numbers []normie = [1, 2, 3, 4, 5]
+sus numbers normie[value] = [1, 2, 3, 4, 5]
 assert_eq_int(numbers.len(), 5)
 assert_eq_int(numbers[0], 1)
 assert_eq_int(numbers[4], 5)

@@ -31,7 +31,7 @@ slay main() void {
     vibez.spill("")
     vibez.spill("Test 2: Timezone Cache Creation")
     sus cache_size normie = 10
-    sus timezone_cache []CachedZone = make_timezone_cache(cache_size)
+    sus timezone_cache CachedZone[value] = make_timezone_cache(cache_size)
     
     testz.assert_eq_int(timezone_cache.len, cache_size)
     vibez.spill("✅ Timezone cache created with correct size:", cache_size)
@@ -46,7 +46,7 @@ slay main() void {
     fr fr Test 3: Historical timezone changes
     vibez.spill("")
     vibez.spill("Test 3: Historical Timezone Changes")
-    sus changes []HistoricalChange = load_historical_changes(0)
+    sus changes HistoricalChange[value] = load_historical_changes(0)
     
     testz.assert_greater_than_int(changes.len, 0)
     vibez.spill("✅ Historical changes loaded:", changes.len, "entries")
@@ -85,7 +85,7 @@ slay main() void {
     
     fr fr Test string splitting
     sus test_string tea = "a,b,c,d"
-    sus split_result []tea = split_string(test_string, ",")
+    sus split_result tea[value] = split_string(test_string, ",")
     testz.assert_eq_int(split_result.len, 4)
     testz.assert_eq_string(split_result[0], "a")
     testz.assert_eq_string(split_result[1], "b")
@@ -108,7 +108,7 @@ slay main() void {
     vibez.spill("Test 6: Leap Second Counting")
     
     fr fr Create test leap second array (with sentinel)
-    sus leap_seconds [5]LeapSecond = [
+    sus leap_seconds LeapSecond[5] = [
         LeapSecond{ year: 1972, month: 6, day: 30, tai_utc: 10 },
         LeapSecond{ year: 1973, month: 12, day: 31, tai_utc: 11 },
         LeapSecond{ year: 1974, month: 12, day: 31, tai_utc: 12 },
@@ -135,7 +135,7 @@ slay main() void {
     fr fr Test 8: Cache functionality demonstration
     vibez.spill("")
     vibez.spill("Test 8: Cache Functionality")
-    sus demo_cache []CachedZone = make_timezone_cache(3)
+    sus demo_cache CachedZone[value] = make_timezone_cache(3)
     
     fr fr Simulate cache usage
     demo_cache[0].zone_name = "America/New_York"

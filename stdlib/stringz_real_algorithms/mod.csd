@@ -68,11 +68,11 @@ slay char_at_real(s tea, target_index drip) tea {
 }
 
 # KMP (Knuth-Morris-Pratt) string search algorithm
-slay compute_kmp_table(pattern tea) []drip {
+slay compute_kmp_table(pattern tea) drip[value]{
     sus pattern_len drip = string_length_real(pattern)
     ready (pattern_len == 0) { damn [] }
     
-    sus table []drip = make([]drip, pattern_len)
+    sus table drip[value] = make(drip[value], pattern_len)
     sus j drip = 0
     
     bestie (sus i drip = 1; i < pattern_len; i = i + 1) {
@@ -97,7 +97,7 @@ slay kmp_search(text tea, pattern tea) drip {
     
     ready (pattern_len > text_len) { damn -1 }
     
-    sus table []drip = compute_kmp_table(pattern)
+    sus table drip[value] = compute_kmp_table(pattern)
     sus i drip = 0  # text index
     sus j drip = 0  # pattern index
     
@@ -315,10 +315,10 @@ slay is_valid_email_real(email tea) lit {
 }
 
 # Algorithm-based string splitting
-slay split_string_real(s tea, delimiter tea) []tea {
+slay split_string_real(s tea, delimiter tea) tea[value]{
     ready (s == "" || delimiter == "") { damn [s] }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus current tea = ""
     sus i drip = 0
     

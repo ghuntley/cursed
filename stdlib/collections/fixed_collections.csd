@@ -11,7 +11,7 @@ fr fr Dynamic Array (Vector) with proper memory management
 fr fr ================================
 
 be_like DynamicArray squad {
-    data []extra
+    data extra[value]
     length normie
     capacity normie
 }
@@ -164,12 +164,12 @@ slay Vec_clear(vec DynamicArray) DynamicArray {
     damn vec
 }
 
-slay Vec_to_array(vec DynamicArray) []extra {
+slay Vec_to_array(vec DynamicArray) extra[value]{
     lowkey vec.length == 0 {
         damn []
     }
     
-    sus result []extra = make([]extra, vec.length)
+    sus result extra[value] = make(extra[value], vec.length)
     sus i normie = 0
     bestie i < vec.length {
         result[i] = vec.data[i]
@@ -189,7 +189,7 @@ be_like SimpleHashMapEntry squad {
 }
 
 be_like SimpleHashMap squad {
-    entries []SimpleHashMapEntry
+    entries SimpleHashMapEntry[value]
     size normie
     max_size normie
 }
@@ -384,12 +384,12 @@ slay HashMap_clear(map FixedHashMap) FixedHashMap {
     damn map
 }
 
-slay HashMap_keys(map FixedHashMap) []tea {
+slay HashMap_keys(map FixedHashMap) tea[value]{
     lowkey map.size == 0 {
         damn []
     }
     
-    sus keys []tea = make([]tea, map.size)
+    sus keys tea[value] = make(tea[value], map.size)
     sus key_index normie = 0
     
     sus i normie = 0
@@ -404,12 +404,12 @@ slay HashMap_keys(map FixedHashMap) []tea {
     damn keys
 }
 
-slay HashMap_values(map FixedHashMap) []extra {
+slay HashMap_values(map FixedHashMap) extra[value]{
     lowkey map.size == 0 {
         damn []
     }
     
-    sus values []extra = make([]extra, map.size)
+    sus values extra[value] = make(extra[value], map.size)
     sus value_index normie = 0
     
     sus i normie = 0
@@ -428,29 +428,29 @@ fr fr ================================
 fr fr Enhanced Array Operations with bounds checking
 fr fr ================================
 
-slay Array_safe_get(arr []extra, index normie, default_value extra) extra {
+slay Array_safe_get(arr extra[value], index normie, default_value extra) extra {
     lowkey index >= 0 && index < len(arr) {
         damn arr[index]
     }
     damn default_value
 }
 
-slay Array_safe_set(arr []extra, index normie, value extra) []extra {
+slay Array_safe_set(arr extra[value], index normie, value extra) extra[value]{
     lowkey index >= 0 && index < len(arr) {
-        sus result []extra = Array_copy(arr)
+        sus result extra[value] = Array_copy(arr)
         result[index] = value
         damn result
     }
     damn arr  fr fr Return original array if index invalid
 }
 
-slay Array_copy(arr []extra) []extra {
+slay Array_copy(arr extra[value]) extra[value]{
     sus length normie = len(arr)
     lowkey length == 0 {
         damn []
     }
     
-    sus result []extra = make([]extra, length)
+    sus result extra[value] = make(extra[value], length)
     sus i normie = 0
     bestie i < length {
         result[i] = arr[i]
@@ -459,14 +459,14 @@ slay Array_copy(arr []extra) []extra {
     damn result
 }
 
-slay Array_insert_safe(arr []extra, index normie, value extra) []extra {
+slay Array_insert_safe(arr extra[value], index normie, value extra) extra[value]{
     sus length normie = len(arr)
     
     lowkey index < 0 || index > length {
         damn arr  fr fr Invalid index, return original
     }
     
-    sus result []extra = make([]extra, length + 1)
+    sus result extra[value] = make(extra[value], length + 1)
     
     fr fr Copy elements before insertion point
     sus i normie = 0
@@ -487,7 +487,7 @@ slay Array_insert_safe(arr []extra, index normie, value extra) []extra {
     damn result
 }
 
-slay Array_remove_safe(arr []extra, index normie) []extra {
+slay Array_remove_safe(arr extra[value], index normie) extra[value]{
     sus length normie = len(arr)
     
     lowkey index < 0 || index >= length {
@@ -498,7 +498,7 @@ slay Array_remove_safe(arr []extra, index normie) []extra {
         damn []  fr fr Removing only element
     }
     
-    sus result []extra = make([]extra, length - 1)
+    sus result extra[value] = make(extra[value], length - 1)
     sus result_index normie = 0
     
     sus i normie = 0
@@ -513,7 +513,7 @@ slay Array_remove_safe(arr []extra, index normie) []extra {
     damn result
 }
 
-slay Array_find_index(arr []extra, value extra) normie {
+slay Array_find_index(arr extra[value], value extra) normie {
     sus i normie = 0
     bestie i < len(arr) {
         lowkey arr[i] == value {
@@ -524,17 +524,17 @@ slay Array_find_index(arr []extra, value extra) normie {
     damn -1  fr fr Not found
 }
 
-slay Array_contains(arr []extra, value extra) lit {
+slay Array_contains(arr extra[value], value extra) lit {
     damn Array_find_index(arr, value) != -1
 }
 
-slay Array_reverse(arr []extra) []extra {
+slay Array_reverse(arr extra[value]) extra[value]{
     sus length normie = len(arr)
     lowkey length <= 1 {
         damn arr
     }
     
-    sus result []extra = make([]extra, length)
+    sus result extra[value] = make(extra[value], length)
     sus i normie = 0
     bestie i < length {
         result[i] = arr[length - 1 - i]
@@ -543,7 +543,7 @@ slay Array_reverse(arr []extra) []extra {
     damn result
 }
 
-slay Array_slice(arr []extra, start normie, end normie) []extra {
+slay Array_slice(arr extra[value], start normie, end normie) extra[value]{
     sus length normie = len(arr)
     
     fr fr Bounds checking
@@ -552,7 +552,7 @@ slay Array_slice(arr []extra, start normie, end normie) []extra {
     lowkey start >= end { damn [] }
     
     sus slice_length normie = end - start
-    sus result []extra = make([]extra, slice_length)
+    sus result extra[value] = make(extra[value], slice_length)
     
     sus i normie = 0
     bestie i < slice_length {
@@ -618,9 +618,9 @@ slay test_collections_fixed() {
     vibez.spill("Contains 'version': " + tea(HashMap_contains_key(map, "version")))
     
     fr fr Test Array operations
-    sus arr []normie = [1, 2, 3, 4, 5]
-    sus doubled []normie = Array_slice(arr, 1, 4)
-    sus reversed []normie = Array_reverse(arr)
+    sus arr normie[value] = [1, 2, 3, 4, 5]
+    sus doubled normie[value] = Array_slice(arr, 1, 4)
+    sus reversed normie[value] = Array_reverse(arr)
     
     vibez.spill("Original array length: " + tea(len(arr)))
     vibez.spill("Slice length: " + tea(len(doubled)))

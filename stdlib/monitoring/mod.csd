@@ -113,19 +113,19 @@ slay (g *Gauge) Value() drip {
 fr fr High-performance histogram with configurable buckets
 be_like Histogram squad {
     name tea
-    buckets []drip
-    bucket_counts []normie
+    buckets drip[value]
+    bucket_counts normie[value]
     sum drip
     count normie
     tags map[tea]tea
     mutex concurrenz.Mutex
 }
 
-slay NewHistogram(name tea, buckets []drip, tags map[tea]tea) *Histogram {
+slay NewHistogram(name tea, buckets drip[value], tags map[tea]tea) *Histogram {
     sus histogram := &Histogram{
         name: name,
-        buckets: make([]drip, len(buckets)),
-        bucket_counts: make([]normie, len(buckets)),
+        buckets: make(drip[value], len(buckets)),
+        bucket_counts: make(normie[value], len(buckets)),
         sum: 0.0,
         count: 0,
         tags: tags,
@@ -234,7 +234,7 @@ be_like Timer squad {
 
 slay NewTimer(name tea, tags map[tea]tea) *Timer {
     fr fr Default buckets for latency measurement (milliseconds)
-    sus default_buckets := []drip{
+    sus default_buckets := drip[value]{
         1, 2, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000
     }
     
@@ -397,7 +397,7 @@ slay (mr *MetricRegistry) NewGauge(name tea, tags map[tea]tea) *Gauge {
     damn gauge
 }
 
-slay (mr *MetricRegistry) NewHistogram(name tea, buckets []drip, tags map[tea]tea) *Histogram {
+slay (mr *MetricRegistry) NewHistogram(name tea, buckets drip[value], tags map[tea]tea) *Histogram {
     mr.mutex.Lock()
     defer mr.mutex.Unlock()
     
@@ -772,7 +772,7 @@ be_like Span squad {
     end_time normie
     duration normie
     tags map[tea]tea
-    logs []SpanLog
+    logs SpanLog[value]
     finished lit
 }
 
@@ -830,7 +830,7 @@ slay (apm *APMTracer) startSpanInternal(trace_id tea, parent_id tea, operation_n
         operation_name: operation_name,
         start_time: timez.Now(),
         tags: tags,
-        logs: []SpanLog{},
+        logs: SpanLog[value]{},
         finished: cap,
     }
     
@@ -1038,7 +1038,7 @@ slay Timer(name tea, tags map[tea]tea) *Timer {
     damn globalRegistry.NewTimer(name, tags)
 }
 
-slay Histogram(name tea, buckets []drip, tags map[tea]tea) *Histogram {
+slay Histogram(name tea, buckets drip[value], tags map[tea]tea) *Histogram {
     damn globalRegistry.NewHistogram(name, buckets, tags)
 }
 

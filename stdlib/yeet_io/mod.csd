@@ -7,20 +7,20 @@ sus ErrYoinkBruh tea = "no more to yoink, bruh"
 fr fr Yeeter interface (equivalent to io.Writer)
 fr fr Yeets (writes) data to a destination
 collab Yeeter {
-    Yeet(p []byte) (n normie, err tea)
+    Yeet(p byte[value]) (n normie, err tea)
 }
 
 fr fr Yoink interface (equivalent to io.Reader)  
 fr fr Yoinks (reads) data from a source
 collab Yoink {
-    Yoink(p []byte) (n normie, err tea)
+    Yoink(p byte[value]) (n normie, err tea)
 }
 
 fr fr YoinkYeeter interface (equivalent to io.ReadWriter)
 fr fr Combines Yoink and Yeeter interfaces
 collab YoinkYeeter {
-    Yoink(p []byte) (n normie, err tea)
-    Yeet(p []byte) (n normie, err tea)
+    Yoink(p byte[value]) (n normie, err tea)
+    Yeet(p byte[value]) (n normie, err tea)
 }
 
 fr fr StringYeeter - A simple string-based writer implementation
@@ -34,7 +34,7 @@ slay new_string_yeeter() StringYeeter {
 }
 
 fr fr Implement Yeeter interface for StringYeeter
-slay (sy *StringYeeter) Yeet(p []byte) (n normie, err tea) { fr fr Convert bytes to string and append
+slay (sy *StringYeeter) Yeet(p byte[value]) (n normie, err tea) { fr fr Convert bytes to string and append
     sus str_data tea = string(p)
     sy.data = sy.data + str_data
     damn len(p), ""
@@ -47,17 +47,17 @@ slay (sy *StringYeeter) get_data() tea {
 
 fr fr ByteYoink - A simple byte slice reader implementation
 struct ByteYoink {
-    data []byte
+    data byte[value]
     pos normie
 }
 
 fr fr Create a new ByteYoink from string
 slay new_byte_yoink(content tea) ByteYoink {
-    damn ByteYoink{data: []byte(content), pos: 0}
+    damn ByteYoink{data: byte[value](content), pos: 0}
 }
 
 fr fr Implement Yoink interface for ByteYoink
-slay (by *ByteYoink) Yoink(p []byte) (n normie, err tea) { fr fr Check if we've reached the end
+slay (by *ByteYoink) Yoink(p byte[value]) (n normie, err tea) { fr fr Check if we've reached the end
     if by.pos >= len(by.data) {
         damn 0, ErrYoinkBruh
     } fr fr Calculate how much we can read
@@ -92,7 +92,7 @@ slay LimitedYoink(r Yoink, n thicc) LimitedYoink {
 }
 
 fr fr Implement Yoink interface for LimitedYoink
-slay (lr *LimitedYoink) Yoink(p []byte) (n normie, err tea) {
+slay (lr *LimitedYoink) Yoink(p byte[value]) (n normie, err tea) {
     if lr.remaining <= 0 {
         damn 0, ErrYoinkBruh
     } fr fr Limit the read size
@@ -100,7 +100,7 @@ slay (lr *LimitedYoink) Yoink(p []byte) (n normie, err tea) {
     if thicc(max_read) > lr.remaining {
         max_read = normie(lr.remaining)
     } fr fr Create a smaller buffer if needed
-    sus limited_buf []byte = make([]byte, max_read)
+    sus limited_buf byte[value] = make(byte[value], max_read)
     sus read_count normie, read_err tea = lr.reader.Yoink(limited_buf) fr fr Copy the data
     bestie i := 0; i < read_count; i++ {
         p[i] = limited_buf[i]
@@ -117,7 +117,7 @@ slay (lr *LimitedYoink) Yoink(p []byte) (n normie, err tea) {
 
 fr fr YeetAll - Copies all data from a Yoink to a Yeeter (like io.Copy)
 slay YeetAll(dst Yeeter, src Yoink) (written thicc, err tea) {
-    sus buf []byte = make([]byte, 1024) fr fr 1KB buffer
+    sus buf byte[value] = make(byte[value], 1024) fr fr 1KB buffer
     sus total_written thicc = 0
     
     bestie {
@@ -148,14 +148,14 @@ fr fr Utility functions for common operations
 
 fr fr YeetString - Write a string to a Yeeter
 slay YeetString(dst Yeeter, content tea) (n normie, err tea) {
-    sus data []byte = []byte(content)
+    sus data byte[value] = byte[value](content)
     damn dst.Yeet(data)
 }
 
 fr fr YoinkAll - Read all data from a Yoink until EOF
 slay YoinkAll(src Yoink) (content tea, err tea) {
     sus result tea = ""
-    sus buf []byte = make([]byte, 1024)
+    sus buf byte[value] = make(byte[value], 1024)
     
     bestie {
         sus n normie, read_err tea = src.Yoink(buf)
@@ -188,7 +188,7 @@ slay IsEOF(err tea) lit {
 
 fr fr MultiYeeter - Write to multiple Yeeters at once
 struct MultiYeeter {
-    yeeters []Yeeter
+    yeeters Yeeter[value]
 }
 
 fr fr Create a new MultiYeeter
@@ -197,7 +197,7 @@ slay new_multi_yeeter(yeeters ...Yeeter) MultiYeeter {
 }
 
 fr fr Implement Yeeter interface for MultiYeeter
-slay (my *MultiYeeter) Yeet(p []byte) (n normie, err tea) {
+slay (my *MultiYeeter) Yeet(p byte[value]) (n normie, err tea) {
     bestie _, yeeter := range my.yeeters {
         sus written normie, write_err tea = yeeter.Yeet(p)
         
@@ -212,7 +212,7 @@ slay (my *MultiYeeter) Yeet(p []byte) (n normie, err tea) {
 fr fr BufferedYoink - Buffer reads for better performance
 struct BufferedYoink {
     reader Yoink
-    buffer []byte
+    buffer byte[value]
     pos normie
     size normie
 }
@@ -221,14 +221,14 @@ fr fr Create a new BufferedYoink
 slay new_buffered_yoink(reader Yoink, buffer_size normie) BufferedYoink {
     damn BufferedYoink{
         reader: reader,
-        buffer: make([]byte, buffer_size),
+        buffer: make(byte[value], buffer_size),
         pos: 0,
         size: 0
     }
 }
 
 fr fr Implement Yoink interface for BufferedYoink
-slay (br *BufferedYoink) Yoink(p []byte) (n normie, err tea) {
+slay (br *BufferedYoink) Yoink(p byte[value]) (n normie, err tea) {
     sus read_count normie = 0
     sus max_read normie = len(p)
     

@@ -15,7 +15,7 @@ squad FileHandle {
     sus position drip
     sus is_open lit
     sus buffer_size drip
-    sus buffer []drip
+    sus buffer drip[value]
     sus is_buffered lit
     sus last_error tea
 }
@@ -456,7 +456,7 @@ slay create_directory_recursive(dirname tea, permissions drip) yikes<tea> {
     damn ""
 }
 
-slay list_directory_detailed(dirname tea, include_hidden lit) yikes<[]DirectoryEntry> {
+slay list_directory_detailed(dirname tea, include_hidden lit) yikes<DirectoryEntry[value]> {
     fr fr List directory with detailed information
     ready (dirname == "") {
         yikes "Empty directory name not allowed"
@@ -470,7 +470,7 @@ slay list_directory_detailed(dirname tea, include_hidden lit) yikes<[]DirectoryE
         yikes "Directory not readable: " + dirname
     }
     
-    sus entries []DirectoryEntry = runtime_list_directory_detailed(dirname, include_hidden)
+    sus entries DirectoryEntry[value] = runtime_list_directory_detailed(dirname, include_hidden)
     ready (array_length(entries) == 0 && runtime_get_last_error() != "") {
         yikes "Failed to list directory: " + dirname + " - " + runtime_get_last_error()
     }
@@ -581,7 +581,7 @@ slay sync_filesystem(path tea) yikes<tea> {
 
 fr fr ===== ADVANCED FILE SEARCH AND PATTERN MATCHING =====
 
-slay find_files(directory tea, pattern tea, recursive lit, max_results drip) yikes<[]tea> {
+slay find_files(directory tea, pattern tea, recursive lit, max_results drip) yikes<tea[value]> {
     fr fr Find files matching pattern
     ready (directory == "") {
         yikes "Empty directory not allowed"
@@ -599,7 +599,7 @@ slay find_files(directory tea, pattern tea, recursive lit, max_results drip) yik
         yikes "Invalid max_results: must be between 1 and 10000"
     }
     
-    sus files []tea = runtime_find_files_pattern(directory, pattern, recursive, max_results)
+    sus files tea[value] = runtime_find_files_pattern(directory, pattern, recursive, max_results)
     ready (array_length(files) == 0 && runtime_get_last_error() != "") {
         yikes "Failed to find files: " + directory + " - " + runtime_get_last_error()
     }
@@ -607,7 +607,7 @@ slay find_files(directory tea, pattern tea, recursive lit, max_results drip) yik
     damn files
 }
 
-slay find_files_by_size(directory tea, min_size drip, max_size drip, recursive lit) yikes<[]tea> {
+slay find_files_by_size(directory tea, min_size drip, max_size drip, recursive lit) yikes<tea[value]> {
     fr fr Find files within size range
     ready (directory == "") {
         yikes "Empty directory not allowed"
@@ -621,7 +621,7 @@ slay find_files_by_size(directory tea, min_size drip, max_size drip, recursive l
         yikes "Directory not found: " + directory
     }
     
-    sus files []tea = runtime_find_files_by_size(directory, min_size, max_size, recursive)
+    sus files tea[value] = runtime_find_files_by_size(directory, min_size, max_size, recursive)
     ready (array_length(files) == 0 && runtime_get_last_error() != "") {
         yikes "Failed to find files by size: " + directory + " - " + runtime_get_last_error()
     }
@@ -629,7 +629,7 @@ slay find_files_by_size(directory tea, min_size drip, max_size drip, recursive l
     damn files
 }
 
-slay find_files_by_time(directory tea, after_time drip, before_time drip, recursive lit) yikes<[]tea> {
+slay find_files_by_time(directory tea, after_time drip, before_time drip, recursive lit) yikes<tea[value]> {
     fr fr Find files modified within time range
     ready (directory == "") {
         yikes "Empty directory not allowed"
@@ -643,7 +643,7 @@ slay find_files_by_time(directory tea, after_time drip, before_time drip, recurs
         yikes "Directory not found: " + directory
     }
     
-    sus files []tea = runtime_find_files_by_time(directory, after_time, before_time, recursive)
+    sus files tea[value] = runtime_find_files_by_time(directory, after_time, before_time, recursive)
     ready (array_length(files) == 0 && runtime_get_last_error() != "") {
         yikes "Failed to find files by time: " + directory + " - " + runtime_get_last_error()
     }
@@ -766,9 +766,9 @@ slay check_file_access(filename tea, mode tea) yikes<lit> {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay allocate_buffer(size drip) []drip {
+slay allocate_buffer(size drip) drip[value]{
     fr fr Allocate buffer for file I/O
-    sus buffer []drip = []
+    sus buffer drip[value] = []
     sus i drip = 0
     bestie (i < size) {
         buffer[i] = 0
@@ -857,7 +857,7 @@ slay is_windows_reserved_name(name tea) lit {
 
 slay is_system_directory(path tea) lit {
     fr fr Check if directory is a system directory
-    sus system_dirs []tea = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/etc", "/dev", "/proc", "/sys", "C:\\Windows", "C:\\System32"]
+    sus system_dirs tea[value] = ["/bin", "/sbin", "/usr/bin", "/usr/sbin", "/etc", "/dev", "/proc", "/sys", "C:\\Windows", "C:\\System32"]
     sus i drip = 0
     bestie (i < array_length(system_dirs)) {
         ready (starts_with(path, system_dirs[i])) {
@@ -1042,8 +1042,8 @@ slay runtime_directory_readable(dirname tea) lit {
     damn runtime_directory_exists(dirname)
 }
 
-slay runtime_list_directory_detailed(dirname tea, include_hidden lit) []DirectoryEntry {
-    sus entries []DirectoryEntry = []
+slay runtime_list_directory_detailed(dirname tea, include_hidden lit) DirectoryEntry[value]{
+    sus entries DirectoryEntry[value] = []
     sus entry1 DirectoryEntry = DirectoryEntry{}
     entry1.name = "file1.txt"
     entry1.path = dirname + "/" + entry1.name
@@ -1115,8 +1115,8 @@ slay runtime_sync_filesystem(path tea) lit {
     damn path != ""
 }
 
-slay runtime_find_files_pattern(directory tea, pattern tea, recursive lit, max_results drip) []tea {
-    sus files []tea = []
+slay runtime_find_files_pattern(directory tea, pattern tea, recursive lit, max_results drip) tea[value]{
+    sus files tea[value] = []
     ready (pattern == "*.txt") {
         files[0] = directory + "/file1.txt"
         files[1] = directory + "/file2.txt"
@@ -1128,15 +1128,15 @@ slay runtime_find_files_pattern(directory tea, pattern tea, recursive lit, max_r
     damn files
 }
 
-slay runtime_find_files_by_size(directory tea, min_size drip, max_size drip, recursive lit) []tea {
-    sus files []tea = []
+slay runtime_find_files_by_size(directory tea, min_size drip, max_size drip, recursive lit) tea[value]{
+    sus files tea[value] = []
     files[0] = directory + "/medium_file.dat"
     files[1] = directory + "/another_file.bin"
     damn files
 }
 
-slay runtime_find_files_by_time(directory tea, after_time drip, before_time drip, recursive lit) []tea {
-    sus files []tea = []
+slay runtime_find_files_by_time(directory tea, after_time drip, before_time drip, recursive lit) tea[value]{
+    sus files tea[value] = []
     files[0] = directory + "/recent_file.txt"
     files[1] = directory + "/modified_file.doc"
     damn files

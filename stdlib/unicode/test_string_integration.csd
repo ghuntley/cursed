@@ -64,14 +64,14 @@ slay test_utf8_operations() cringe {
     assert_eq_int(utf8_sequence_length(0xC2), 2) fr fr 2-byte
     assert_eq_int(utf8_sequence_length(0xE0), 3) fr fr 3-byte
     assert_eq_int(utf8_sequence_length(0xF0), 4) fr fr 4-byte fr fr Test ASCII encoding
-    sus ascii_encoded []normie = utf8_encode_codepoint(0x41) fr fr 'A'
+    sus ascii_encoded normie[value] = utf8_encode_codepoint(0x41) fr fr 'A'
     assert_eq_int(len(ascii_encoded), 1)
     assert_eq_int(ascii_encoded[0], 0x41) fr fr Test 2-byte encoding (Latin-1 supplement)
-    sus latin_encoded []normie = utf8_encode_codepoint(0xC0) fr fr À
+    sus latin_encoded normie[value] = utf8_encode_codepoint(0xC0) fr fr À
     assert_eq_int(len(latin_encoded), 2)
     assert_eq_int(latin_encoded[0], 0xC3)
     assert_eq_int(latin_encoded[1], 0x80) fr fr Test 3-byte encoding (Basic multilingual plane)
-    sus bmp_encoded []normie = utf8_encode_codepoint(0x20AC) fr fr € (Euro sign)
+    sus bmp_encoded normie[value] = utf8_encode_codepoint(0x20AC) fr fr € (Euro sign)
     assert_eq_int(len(bmp_encoded), 3)
     assert_eq_int(bmp_encoded[0], 0xE2)
     assert_eq_int(bmp_encoded[1], 0x82)
@@ -82,7 +82,7 @@ slay test_utf8_operations() cringe {
 
 slay test_string_operations() cringe {
     vibez.spill("  Testing string operations...") fr fr Test string creation from UTF-8 bytes
-    sus hello_bytes []normie = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
+    sus hello_bytes normie[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
     sus hello_str, err = unicode_string_create(hello_bytes)
     assert_true(err == cringe)
     assert_eq_int(unicode_string_length(hello_str), 5)
@@ -103,9 +103,9 @@ slay test_string_operations() cringe {
 slay test_string_comparison() cringe {
     vibez.spill("  Testing string comparison...")
     
-    sus str1_bytes []normie = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
-    sus str2_bytes []normie = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
-    sus str3_bytes []normie = [0x57, 0x6F, 0x72, 0x6C, 0x64] fr fr "World"
+    sus str1_bytes normie[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
+    sus str2_bytes normie[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
+    sus str3_bytes normie[value] = [0x57, 0x6F, 0x72, 0x6C, 0x64] fr fr "World"
     
     sus str1, err1 = unicode_string_create(str1_bytes)
     sus str2, err2 = unicode_string_create(str2_bytes)
@@ -123,7 +123,7 @@ slay test_string_comparison() cringe {
 
 slay test_string_manipulation() cringe {
     vibez.spill("  Testing string manipulation...") fr fr Test string with whitespace
-    sus whitespace_bytes []normie = [0x20, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20] fr fr " Hello "
+    sus whitespace_bytes normie[value] = [0x20, 0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20] fr fr " Hello "
     sus whitespace_str, ws_err = unicode_string_create(whitespace_bytes)
     assert_true(ws_err == cringe) fr fr Test trimming
     sus trimmed_str, trim_err = unicode_string_trim(whitespace_str)
@@ -135,22 +135,22 @@ slay test_string_manipulation() cringe {
     sus right_trimmed, right_err = unicode_string_trim_right(whitespace_str)
     assert_true(right_err == cringe)
     assert_eq_int(unicode_string_length(right_trimmed), 6) fr fr Should be " Hello" fr fr Test slicing
-    sus hello_bytes []normie = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
+    sus hello_bytes normie[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F] fr fr "Hello"
     sus hello_str, hello_err = unicode_string_create(hello_bytes)
     assert_true(hello_err == cringe)
     
     sus slice_str, slice_err = unicode_string_slice(hello_str, 1, 4)
     assert_true(slice_err == cringe)
     assert_eq_int(unicode_string_length(slice_str), 3) fr fr Should be "ell" fr fr Test starts_with and ends_with
-    sus he_bytes []normie = [0x48, 0x65] fr fr "He"
-    sus lo_bytes []normie = [0x6C, 0x6F] fr fr "lo"
+    sus he_bytes normie[value] = [0x48, 0x65] fr fr "He"
+    sus lo_bytes normie[value] = [0x6C, 0x6F] fr fr "lo"
     sus he_str, he_err = unicode_string_create(he_bytes)
     sus lo_str, lo_err = unicode_string_create(lo_bytes)
     
     assert_true(he_err == cringe && lo_err == cringe)
     assert_true(unicode_string_starts_with(hello_str, he_str))
     assert_true(unicode_string_ends_with(hello_str, lo_str)) fr fr Test contains and index_of
-    sus ell_bytes []normie = [0x65, 0x6C, 0x6C] fr fr "ell"
+    sus ell_bytes normie[value] = [0x65, 0x6C, 0x6C] fr fr "ell"
     sus ell_str, ell_err = unicode_string_create(ell_bytes)
     assert_true(ell_err == cringe)
     

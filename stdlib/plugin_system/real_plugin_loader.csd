@@ -266,7 +266,7 @@ slay call_plugin_function(plugin Plug, function_name tea, ...args) tea {
 
 fr fr Extension points with real callback system
 sus extension_counter normie = 0
-sus extension_registry [100]normie fr fr Extension ID -> Plugin count mapping
+sus extension_registry normie[100] fr fr Extension ID -> Plugin count mapping
 
 slay create_extension_point(name tea) normie {
     lowkey plugin_manager_handle == null {

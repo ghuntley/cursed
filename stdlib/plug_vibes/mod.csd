@@ -19,8 +19,8 @@ be_like LoadOptions squad {
     Isolation lit
     Sandbox lit
     Timeout normie
-    Dependencies []tea
-    AllowedImports []tea
+    Dependencies tea[value]
+    AllowedImports tea[value]
     LogLevel normie
 }
 
@@ -32,10 +32,10 @@ be_like PlugInfo squad {
     Author tea
     Description tea
     BuildTime normie
-    Dependencies []tea
-    Capabilities []tea
-    Imports []tea
-    Exports []tea
+    Dependencies tea[value]
+    Capabilities tea[value]
+    Imports tea[value]
+    Exports tea[value]
     Signature tea
     IsVerified lit
     IsCompatible lit
@@ -44,7 +44,7 @@ be_like PlugInfo squad {
 fr fr Plugin Registry
 be_like PlugRegistry squad {
     plugins map[tea]*Plug
-    loadOrder []tea
+    loadOrder tea[value]
 }
 
 fr fr Plugin Manager
@@ -75,26 +75,26 @@ be_like PlugManagerOptions squad {
 
 fr fr Plugin Development Types
 be_like PlugCapabilities squad {
-    capabilities []tea
+    capabilities tea[value]
 }
 
 be_like HostInfo squad {
     Version tea
     Platform tea
-    Features []tea
+    Features tea[value]
 }
 
 fr fr Hook system for extensibility
 be_like PlugHook squad {
     name tea
     plugins []*Plug
-    priorities []normie
+    priorities normie[value]
 }
 
 fr fr Extension points
 be_like ExtensionPointStruct squad {
     name tea
-    extensions []interface{}
+    extensions interface[value]{}
 }
 
 fr fr Sandboxing
@@ -104,8 +104,8 @@ be_like Sandbox squad {
     timeLimit normie
     fileAccess lit
     networkAccess lit
-    allowedPaths []tea
-    allowedHosts []tea
+    allowedPaths tea[value]
+    allowedHosts tea[value]
 }
 
 be_like SandboxOptions squad {
@@ -114,8 +114,8 @@ be_like SandboxOptions squad {
     TimeLimit normie
     FileAccess lit
     NetworkAccess lit
-    AllowedPaths []tea
-    AllowedHosts []tea
+    AllowedPaths tea[value]
+    AllowedHosts tea[value]
 }
 
 fr fr Versioning
@@ -130,7 +130,7 @@ fr fr Plugin Package
 be_like PluginPackage squad {
     name tea
     version Version
-    files map[tea][]normie
+    files map[tea]normie[value]
 }
 
 fr fr Authentication info
@@ -150,8 +150,8 @@ slay Load(path tea) (*Plug, tea) {
         Isolation: cap,
         Sandbox: cap,
         Timeout: 30,
-        Dependencies: make([]tea, 0),
-        AllowedImports: make([]tea, 0),
+        Dependencies: make(tea[value], 0),
+        AllowedImports: make(tea[value], 0),
         LogLevel: 1
     }
     damn LoadWithOptions(path, defaultOpts)
@@ -173,10 +173,10 @@ slay LoadWithOptions(path tea, opts LoadOptions) (*Plug, tea) {
             Author: "Unknown",
             Description: "A CURSED plugin",
             BuildTime: getCurrentTime(),
-            Dependencies: make([]tea, 0),
-            Capabilities: make([]tea, 0),
-            Imports: make([]tea, 0),
-            Exports: make([]tea, 0),
+            Dependencies: make(tea[value], 0),
+            Capabilities: make(tea[value], 0),
+            Imports: make(tea[value], 0),
+            Exports: make(tea[value], 0),
             Signature: "",
             IsVerified: !opts.VerifySignature,
             IsCompatible: based
@@ -270,8 +270,8 @@ slay (p *Plug) Path() tea {
     damn p.path
 }
 
-slay (p *Plug) Symbols() []tea {
-    sus result := make([]tea, 0)
+slay (p *Plug) Symbols() tea[value]{
+    sus result := make(tea[value], 0)
     for name := range p.symbols {
         result = append(result, name)
     }
@@ -286,7 +286,7 @@ fr fr Plugin Registry functions
 slay NewPlugRegistry() *PlugRegistry {
     damn &PlugRegistry{
         plugins: make(map[tea]*Plug),
-        loadOrder: make([]tea, 0)
+        loadOrder: make(tea[value], 0)
     }
 }
 
@@ -313,7 +313,7 @@ slay (r *PlugRegistry) Unregister(name tea) tea {
     delete(r.plugins, name)
     
     fr fr Remove from load order
-    sus newOrder := make([]tea, 0)
+    sus newOrder := make(tea[value], 0)
     for i := 0; i < len(r.loadOrder); i++ {
         if r.loadOrder[i] != name {
             newOrder = append(newOrder, r.loadOrder[i])
@@ -329,8 +329,8 @@ slay (r *PlugRegistry) Get(name tea) (*Plug, lit) {
     damn plug, exists
 }
 
-slay (r *PlugRegistry) List() []tea {
-    sus result := make([]tea, 0)
+slay (r *PlugRegistry) List() tea[value]{
+    sus result := make(tea[value], 0)
     for name := range r.plugins {
         result = append(result, name)
     }
@@ -357,7 +357,7 @@ slay (r *PlugRegistry) LoadAll(directory tea) (map[tea]*Plug, tea) {
     sus result := make(map[tea]*Plug)
     
     fr fr Demo: load a few plugins
-    sus pluginPaths := []tea{
+    sus pluginPaths := tea[value]{
         directory + "/plugin1.csd",
         directory + "/plugin2.csd",
         directory + "/math-tools.csd"
@@ -471,8 +471,8 @@ slay (m *PlugManager) GetPlugin(name tea) (*Plug, lit) {
     damn m.registry.Get(name)
 }
 
-slay (m *PlugManager) ListPlugins() []PlugInfo {
-    sus result := make([]PlugInfo, 0)
+slay (m *PlugManager) ListPlugins() PlugInfo[value]{
+    sus result := make(PlugInfo[value], 0)
     sus names := m.registry.List()
     
     for i := 0; i < len(names); i++ {
@@ -522,7 +522,7 @@ slay GetHostInfo() HostInfo {
     damn HostInfo{
         Version: "1.0.0",
         Platform: "CURSED",
-        Features: []tea{"reflection", "concurrency", "scripting"}
+        Features: tea[value]{"reflection", "concurrency", "scripting"}
     }
 }
 
@@ -547,7 +547,7 @@ slay NewPlugHook(name tea) *PlugHook {
     damn &PlugHook{
         name: name,
         plugins: make([]*Plug, 0),
-        priorities: make([]normie, 0)
+        priorities: make(normie[value], 0)
     }
 }
 
@@ -563,7 +563,7 @@ slay (h *PlugHook) Register(plug *Plug, priority normie) tea {
 
 slay (h *PlugHook) Unregister(plug *Plug) tea {
     sus newPlugins := make([]*Plug, 0)
-    sus newPriorities := make([]normie, 0)
+    sus newPriorities := make(normie[value], 0)
     
     for i := 0; i < len(h.plugins); i++ {
         if h.plugins[i] != plug {
@@ -577,8 +577,8 @@ slay (h *PlugHook) Unregister(plug *Plug) tea {
     damn ""
 }
 
-slay (h *PlugHook) Call(args interface{}) []interface{} {
-    sus result := make([]interface{}, 0)
+slay (h *PlugHook) Call(args interface{}) interface[value]{} {
+    sus result := make(interface[value]{}, 0)
     
     for i := 0; i < len(h.plugins); i++ {
         fr fr Call hook function if available
@@ -617,7 +617,7 @@ fr fr Extension Points
 slay NewExtensionPoint(name tea, extensionType interface{}) ExtensionPointStruct {
     damn ExtensionPointStruct{
         name: name,
-        extensions: make([]interface{}, 0)
+        extensions: make(interface[value]{}, 0)
     }
 }
 
@@ -634,7 +634,7 @@ slay (ep ExtensionPointStruct) Register(extension interface{}) tea {
 }
 
 slay (ep ExtensionPointStruct) Unregister(extension interface{}) tea {
-    sus newExtensions := make([]interface{}, 0)
+    sus newExtensions := make(interface[value]{}, 0)
     for i := 0; i < len(ep.extensions); i++ {
         if ep.extensions[i] != extension {
             newExtensions = append(newExtensions, ep.extensions[i])
@@ -644,7 +644,7 @@ slay (ep ExtensionPointStruct) Unregister(extension interface{}) tea {
     damn ""
 }
 
-slay (ep ExtensionPointStruct) GetExtensions() []interface{} {
+slay (ep ExtensionPointStruct) GetExtensions() interface[value]{} {
     damn ep.extensions
 }
 
@@ -763,9 +763,9 @@ slay VerifyPackage(pkgPath tea) (lit, tea) {
     damn based, ""
 }
 
-slay ListRemotePlugins(repoURL tea) ([]PlugInfo, tea) {
+slay ListRemotePlugins(repoURL tea) (PlugInfo[value], tea) {
     fr fr Simplified remote plugin listing
-    sus result := []PlugInfo{
+    sus result := PlugInfo[value]{
         {Name: "remote-plugin-1", Version: "1.0.0", Author: "Remote Dev"},
         {Name: "remote-plugin-2", Version: "2.1.0", Author: "Another Dev"}
     }

@@ -3,25 +3,25 @@ fr fr Replaces Zig FFI array functions with pure CURSED implementations
 
 fr fr ===== PURE CURSED ARRAY LENGTH (Replaces @memcpy and len() FFI) =====
 
-slay array_length_pure_int(arr []drip) drip {
+slay array_length_pure_int(arr drip[value]) drip {
     fr fr Pure CURSED array length calculation for integer arrays
     fr fr This replaces the Zig FFI len() function for integer arrays
     damn len(arr)  fr fr Use built-in len() which is implemented in pure CURSED
 }
 
-slay array_length_pure_string(arr []tea) drip {
+slay array_length_pure_string(arr tea[value]) drip {
     fr fr Pure CURSED array length calculation for string arrays
     damn len(arr)
 }
 
-slay array_length_pure_bool(arr []lit) drip {
+slay array_length_pure_bool(arr lit[value]) drip {
     fr fr Pure CURSED array length calculation for boolean arrays
     damn len(arr)
 }
 
 fr fr ===== PURE CURSED ARRAY MEMORY OPERATIONS =====
 
-slay array_copy_int_pure(source []drip) []drip {
+slay array_copy_int_pure(source drip[value]) drip[value]{
     fr fr Pure CURSED integer array copy (replaces @memcpy FFI)
     sus length drip = len(source)
     
@@ -62,7 +62,7 @@ slay array_copy_int_pure(source []drip) []drip {
     }
     
     fr fr For larger arrays, do incremental copying
-    sus result []drip = [source[0]]
+    sus result drip[value] = [source[0]]
     sus i drip = 1
     bestie (i < length && i < 50) {  fr fr Limit to prevent excessive compilation time
         result = append_to_int_array(result, source[i])
@@ -72,7 +72,7 @@ slay array_copy_int_pure(source []drip) []drip {
     damn result
 }
 
-slay array_copy_string_pure(source []tea) []tea {
+slay array_copy_string_pure(source tea[value]) tea[value]{
     fr fr Pure CURSED string array copy
     sus length drip = len(source)
     
@@ -112,7 +112,7 @@ slay array_copy_string_pure(source []tea) []tea {
     }
     
     fr fr For larger arrays, do incremental copying
-    sus result []tea = [source[0]]
+    sus result tea[value] = [source[0]]
     sus i drip = 1
     bestie (i < length && i < 50) {
         result = append_to_string_array(result, source[i])
@@ -124,7 +124,7 @@ slay array_copy_string_pure(source []tea) []tea {
 
 fr fr ===== PURE CURSED ARRAY INITIALIZATION (Replaces @memset FFI) =====
 
-slay array_fill_int(size drip, value drip) []drip {
+slay array_fill_int(size drip, value drip) drip[value]{
     fr fr Create array filled with specific integer value
     fr fr This replaces @memset FFI functionality
     
@@ -164,7 +164,7 @@ slay array_fill_int(size drip, value drip) []drip {
     }
     
     fr fr For larger arrays, build incrementally
-    sus result []drip = [value]
+    sus result drip[value] = [value]
     sus i drip = 1
     bestie (i < size && i < 100) {  fr fr Reasonable limit
         result = append_to_int_array(result, value)
@@ -174,7 +174,7 @@ slay array_fill_int(size drip, value drip) []drip {
     damn result
 }
 
-slay array_fill_string(size drip, value tea) []tea {
+slay array_fill_string(size drip, value tea) tea[value]{
     fr fr Create array filled with specific string value
     
     ready (size <= 0) {
@@ -213,7 +213,7 @@ slay array_fill_string(size drip, value tea) []tea {
     }
     
     fr fr For larger arrays, build incrementally
-    sus result []tea = [value]
+    sus result tea[value] = [value]
     sus i drip = 1
     bestie (i < size && i < 100) {
         result = append_to_string_array(result, value)
@@ -223,17 +223,17 @@ slay array_fill_string(size drip, value tea) []tea {
     damn result
 }
 
-slay array_zeros(size drip) []drip {
+slay array_zeros(size drip) drip[value]{
     fr fr Create array filled with zeros
     damn array_fill_int(size, 0)
 }
 
-slay array_ones(size drip) []drip {
+slay array_ones(size drip) drip[value]{
     fr fr Create array filled with ones
     damn array_fill_int(size, 1)
 }
 
-slay array_sequence(start drip, end drip) []drip {
+slay array_sequence(start drip, end drip) drip[value]{
     fr fr Create array with sequential values from start to end
     ready (start > end) {
         damn []
@@ -276,7 +276,7 @@ slay array_sequence(start drip, end drip) []drip {
     }
     
     fr fr For larger sequences, build incrementally
-    sus result []drip = [start]
+    sus result drip[value] = [start]
     sus current drip = start + 1
     bestie (current <= end && len(result) < 100) {
         result = append_to_int_array(result, current)
@@ -288,7 +288,7 @@ slay array_sequence(start drip, end drip) []drip {
 
 fr fr ===== ADVANCED ARRAY OPERATIONS (Pure CURSED) =====
 
-slay array_resize_int(arr []drip, new_size drip) []drip {
+slay array_resize_int(arr drip[value], new_size drip) drip[value]{
     fr fr Resize integer array to new size
     sus current_size drip = len(arr)
     
@@ -306,7 +306,7 @@ slay array_resize_int(arr []drip, new_size drip) []drip {
     }
     
     fr fr Extend array with zeros
-    sus extended []drip = array_copy_int_pure(arr)
+    sus extended drip[value] = array_copy_int_pure(arr)
     sus zeros_needed drip = new_size - current_size
     sus i drip = 0
     
@@ -318,7 +318,7 @@ slay array_resize_int(arr []drip, new_size drip) []drip {
     damn extended
 }
 
-slay array_resize_string(arr []tea, new_size drip, fill_value tea) []tea {
+slay array_resize_string(arr tea[value], new_size drip, fill_value tea) tea[value]{
     fr fr Resize string array to new size with fill value
     sus current_size drip = len(arr)
     
@@ -341,7 +341,7 @@ slay array_resize_string(arr []tea, new_size drip, fill_value tea) []tea {
     }
     
     fr fr Extend array with fill values
-    sus extended []tea = array_copy_string_pure(arr)
+    sus extended tea[value] = array_copy_string_pure(arr)
     sus values_needed drip = new_size - current_size
     sus i drip = 0
     
@@ -355,7 +355,7 @@ slay array_resize_string(arr []tea, new_size drip, fill_value tea) []tea {
 
 fr fr ===== ARRAY MANIPULATION ALGORITHMS =====
 
-slay array_rotate_left(arr []drip, positions drip) []drip {
+slay array_rotate_left(arr drip[value], positions drip) drip[value]{
     fr fr Rotate array elements to the left by specified positions
     sus length drip = len(arr)
     ready (length <= 1 || positions <= 0) {
@@ -418,7 +418,7 @@ slay array_rotate_left(arr []drip, positions drip) []drip {
     damn arr
 }
 
-slay array_rotate_right(arr []drip, positions drip) []drip {
+slay array_rotate_right(arr drip[value], positions drip) drip[value]{
     fr fr Rotate array elements to the right by specified positions
     sus length drip = len(arr)
     ready (length <= 1 || positions <= 0) {
@@ -430,7 +430,7 @@ slay array_rotate_right(arr []drip, positions drip) []drip {
     damn array_rotate_left(arr, left_positions)
 }
 
-slay array_shuffle_simple(arr []drip, seed drip) []drip {
+slay array_shuffle_simple(arr drip[value], seed drip) drip[value]{
     fr fr Simple array shuffle using deterministic swaps based on seed
     sus length drip = len(arr)
     ready (length <= 1) {
@@ -476,9 +476,9 @@ slay array_shuffle_simple(arr []drip, seed drip) []drip {
 
 fr fr ===== ARRAY SET OPERATIONS =====
 
-slay array_union_int(arr1 []drip, arr2 []drip) []drip {
+slay array_union_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Union of two integer arrays (removing duplicates)
-    sus result []drip = array_copy_int_pure(arr1)
+    sus result drip[value] = array_copy_int_pure(arr1)
     sus i drip = 0
     
     bestie (i < len(arr2)) {
@@ -491,9 +491,9 @@ slay array_union_int(arr1 []drip, arr2 []drip) []drip {
     damn result
 }
 
-slay array_intersection_int(arr1 []drip, arr2 []drip) []drip {
+slay array_intersection_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Intersection of two integer arrays
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < len(arr1)) {
@@ -506,9 +506,9 @@ slay array_intersection_int(arr1 []drip, arr2 []drip) []drip {
     damn result
 }
 
-slay array_difference_int(arr1 []drip, arr2 []drip) []drip {
+slay array_difference_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Difference of two integer arrays (elements in arr1 but not in arr2)
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < len(arr1)) {
@@ -521,16 +521,16 @@ slay array_difference_int(arr1 []drip, arr2 []drip) []drip {
     damn result
 }
 
-slay array_symmetric_difference_int(arr1 []drip, arr2 []drip) []drip {
+slay array_symmetric_difference_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Symmetric difference (elements in either array but not in both)
-    sus diff1 []drip = array_difference_int(arr1, arr2)
-    sus diff2 []drip = array_difference_int(arr2, arr1)
+    sus diff1 drip[value] = array_difference_int(arr1, arr2)
+    sus diff2 drip[value] = array_difference_int(arr2, arr1)
     damn array_union_int(diff1, diff2)
 }
 
 fr fr ===== ARRAY VALIDATION AND PROPERTIES =====
 
-slay array_is_subset_int(subset []drip, superset []drip) lit {
+slay array_is_subset_int(subset drip[value], superset drip[value]) lit {
     fr fr Check if subset is a subset of superset
     sus i drip = 0
     
@@ -544,7 +544,7 @@ slay array_is_subset_int(subset []drip, superset []drip) lit {
     damn based
 }
 
-slay array_is_permutation_int(arr1 []drip, arr2 []drip) lit {
+slay array_is_permutation_int(arr1 drip[value], arr2 drip[value]) lit {
     fr fr Check if arr1 is a permutation of arr2
     ready (len(arr1) != len(arr2)) {
         damn cringe
@@ -564,7 +564,7 @@ slay array_is_permutation_int(arr1 []drip, arr2 []drip) lit {
     damn based
 }
 
-slay array_is_palindrome_int(arr []drip) lit {
+slay array_is_palindrome_int(arr drip[value]) lit {
     fr fr Check if array reads the same forwards and backwards
     sus length drip = len(arr)
     ready (length <= 1) {
@@ -584,7 +584,7 @@ slay array_is_palindrome_int(arr []drip) lit {
 
 fr fr ===== ADVANCED ARRAY SEARCHING =====
 
-slay array_binary_search_int(arr []drip, target drip) drip {
+slay array_binary_search_int(arr drip[value], target drip) drip {
     fr fr Binary search on sorted integer array
     fr fr Returns index of target, or -1 if not found
     ready (len(arr) == 0) {
@@ -610,9 +610,9 @@ slay array_binary_search_int(arr []drip, target drip) drip {
     damn -1
 }
 
-slay array_find_all_indices_int(arr []drip, target drip) []drip {
+slay array_find_all_indices_int(arr drip[value], target drip) drip[value]{
     fr fr Find all indices where target appears
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < len(arr)) {
@@ -625,7 +625,7 @@ slay array_find_all_indices_int(arr []drip, target drip) []drip {
     damn result
 }
 
-slay array_find_closest_int(arr []drip, target drip) drip {
+slay array_find_closest_int(arr drip[value], target drip) drip {
     fr fr Find index of element closest to target
     ready (len(arr) == 0) {
         damn -1
@@ -649,13 +649,13 @@ slay array_find_closest_int(arr []drip, target drip) drip {
 
 fr fr ===== ARRAY AGGREGATION FUNCTIONS =====
 
-slay array_cumulative_sum_int(arr []drip) []drip {
+slay array_cumulative_sum_int(arr drip[value]) drip[value]{
     fr fr Calculate cumulative sum array
     ready (len(arr) == 0) {
         damn []
     }
     
-    sus result []drip = [arr[0]]
+    sus result drip[value] = [arr[0]]
     sus running_sum drip = arr[0]
     sus i drip = 1
     
@@ -668,7 +668,7 @@ slay array_cumulative_sum_int(arr []drip) []drip {
     damn result
 }
 
-slay array_moving_average_int(arr []drip, window_size drip) []drip {
+slay array_moving_average_int(arr drip[value], window_size drip) drip[value]{
     fr fr Calculate moving average with specified window size
     ready (len(arr) == 0 || window_size <= 0) {
         damn []
@@ -679,7 +679,7 @@ slay array_moving_average_int(arr []drip, window_size drip) []drip {
         damn [avg]
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i <= len(arr) - window_size) {
@@ -699,10 +699,10 @@ slay array_moving_average_int(arr []drip, window_size drip) []drip {
     damn result
 }
 
-slay array_pairwise_sum_int(arr1 []drip, arr2 []drip) []drip {
+slay array_pairwise_sum_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Element-wise addition of two arrays
     sus min_len drip = min_normie(len(arr1), len(arr2))
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < min_len) {
@@ -714,10 +714,10 @@ slay array_pairwise_sum_int(arr1 []drip, arr2 []drip) []drip {
     damn result
 }
 
-slay array_pairwise_multiply_int(arr1 []drip, arr2 []drip) []drip {
+slay array_pairwise_multiply_int(arr1 drip[value], arr2 drip[value]) drip[value]{
     fr fr Element-wise multiplication of two arrays
     sus min_len drip = min_normie(len(arr1), len(arr2))
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < min_len) {
@@ -731,12 +731,12 @@ slay array_pairwise_multiply_int(arr1 []drip, arr2 []drip) []drip {
 
 fr fr ===== ARRAY PARTITIONING =====
 
-slay array_partition_by_predicate_int(arr []drip, threshold drip) [][]drip {
+slay array_partition_by_predicate_int(arr drip[value], threshold drip) drip[value][value] {
     fr fr Partition array into two groups: elements <= threshold and > threshold
     fr fr Returns an array of two arrays [lesser_or_equal, greater]
     
-    sus lesser []drip = []
-    sus greater []drip = []
+    sus lesser drip[value] = []
+    sus greater drip[value] = []
     sus i drip = 0
     
     bestie (i < len(arr)) {
@@ -749,11 +749,11 @@ slay array_partition_by_predicate_int(arr []drip, threshold drip) [][]drip {
     }
     
     fr fr Return as nested array (simplified representation)
-    fr fr In a full implementation, this would return [][]drip properly
+    fr fr In a full implementation, this would return drip[value][value] properly
     damn lesser  fr fr For now, just return the first partition
 }
 
-slay array_chunk_int(arr []drip, chunk_size drip) []drip {
+slay array_chunk_int(arr drip[value], chunk_size drip) drip[value]{
     fr fr Split array into chunks of specified size (returns first chunk for simplicity)
     ready (chunk_size <= 0 || len(arr) == 0) {
         damn []

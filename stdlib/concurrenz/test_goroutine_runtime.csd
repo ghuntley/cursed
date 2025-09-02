@@ -56,7 +56,7 @@ slay test_multiple_goroutines() lit {
     }
     
     fr fr Spawn multiple goroutines
-    sus goroutine_ids []thicc = [0, 0, 0, 0, 0]  fr fr Array for 5 goroutines
+    sus goroutine_ids thicc[value] = [0, 0, 0, 0, 0]  fr fr Array for 5 goroutines
     sus spawn_count normie = 5
     
     slay multi_goroutine_func(context thicc) {
@@ -401,7 +401,7 @@ slay test_goroutine_allocator() lit {
     vibez.spill("Arena size:", allocator.arena_size)
     
     fr fr Test memory allocation
-    sus allocated_blocks []thicc = [0, 0, 0, 0, 0]
+    sus allocated_blocks thicc[value] = [0, 0, 0, 0, 0]
     sus block_size normie = 256  fr fr 256 bytes per block
     sus num_blocks normie = 5
     

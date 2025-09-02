@@ -87,7 +87,7 @@ flex JsonObject => JsonValue {
 }
 
 squad JsonArray {
-    spill elements []JsonValue
+    spill elements JsonValue[value]
 }
 
 flex JsonArray => JsonValue {

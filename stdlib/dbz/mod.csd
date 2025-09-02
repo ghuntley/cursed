@@ -33,8 +33,8 @@ squad DatabaseConnection {
 }
 
 squad QueryResult {
-    sus rows []tea
-    sus column_names []tea
+    sus rows tea[value]
+    sus column_names tea[value]
     sus rows_affected drip
     sus last_insert_id drip
     sus execution_time_ms drip
@@ -245,7 +245,7 @@ slay sqlite_query(connection DatabaseConnection, sql tea) QueryResult {
     result.column_names = real_result.column_names
     
     fr fr Convert rows data (flatten 2D array to 1D with comma separation for compatibility)
-    sus formatted_rows []tea = []
+    sus formatted_rows tea[value] = []
     sus i drip = 0
     bestie (i < array_length(real_result.rows)) {
         sus row_data tea = stringz.join(real_result.rows[i], ",")
@@ -332,7 +332,7 @@ slay db_prepare_statement(connection DatabaseConnection, sql tea) PreparedStatem
     damn statement
 }
 
-slay db_execute_prepared(connection DatabaseConnection, statement PreparedStatement, parameters []tea) QueryResult {
+slay db_execute_prepared(connection DatabaseConnection, statement PreparedStatement, parameters tea[value]) QueryResult {
     fr fr Execute prepared statement with parameters
     sus result QueryResult = QueryResult{}
     
@@ -354,7 +354,7 @@ fr fr ===== CONNECTION POOLING =====
 squad ConnectionPool {
     sus pool_size drip
     sus active_connections drip
-    sus available_connections []DatabaseConnection
+    sus available_connections DatabaseConnection[value]
     sus connection_string tea
     sus database_type tea
 }
@@ -423,13 +423,13 @@ slay db_query(connection DatabaseConnection, sql tea) QueryResult {
     }
 }
 
-slay db_insert(connection DatabaseConnection, table tea, columns []tea, values []tea) QueryResult {
+slay db_insert(connection DatabaseConnection, table tea, columns tea[value], values tea[value]) QueryResult {
     fr fr High-level insert operation
     sus sql tea = build_insert_sql(table, columns, values)
     damn db_query(connection, sql)
 }
 
-slay db_select(connection DatabaseConnection, table tea, columns []tea, where_clause tea) QueryResult {
+slay db_select(connection DatabaseConnection, table tea, columns tea[value], where_clause tea) QueryResult {
     fr fr High-level select operation
     sus sql tea = build_select_sql(table, columns, where_clause)
     damn db_query(connection, sql)
@@ -469,7 +469,7 @@ slay db_table_exists(connection DatabaseConnection, table_name tea) lit {
     damn cringe
 }
 
-slay db_get_table_schema(connection DatabaseConnection, table_name tea) []tea {
+slay db_get_table_schema(connection DatabaseConnection, table_name tea) tea[value]{
     fr fr Get table column information
     sus sql tea = ""
     
@@ -486,7 +486,7 @@ slay db_get_table_schema(connection DatabaseConnection, table_name tea) []tea {
         damn result.column_names
     }
     
-    sus empty_schema []tea = []
+    sus empty_schema tea[value] = []
     damn empty_schema
 }
 
@@ -507,7 +507,7 @@ slay db_close(connection DatabaseConnection) lit {
 
 fr fr ===== SQL BUILDING UTILITIES =====
 
-slay build_insert_sql(table tea, columns []tea, values []tea) tea {
+slay build_insert_sql(table tea, columns tea[value], values tea[value]) tea {
     sus sql tea = "INSERT INTO " + table + " ("
     
     fr fr Add column names
@@ -536,7 +536,7 @@ slay build_insert_sql(table tea, columns []tea, values []tea) tea {
     damn sql
 }
 
-slay build_select_sql(table tea, columns []tea, where_clause tea) tea {
+slay build_select_sql(table tea, columns tea[value], where_clause tea) tea {
     sus sql tea = "SELECT "
     
     ready (array_length(columns) == 0) {
@@ -778,7 +778,7 @@ slay count_sql_parameters(sql tea) drip {
     damn count
 }
 
-slay substitute_sql_parameters(sql tea, params []tea) tea { 
+slay substitute_sql_parameters(sql tea, params tea[value]) tea { 
     sus result tea = sql
     sus param_index drip = 0
     sus i drip = 0

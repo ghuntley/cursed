@@ -7,7 +7,7 @@ yeet "tabwriter"    # Table formatting and alignment
 yeet "csv_scanner"  # RFC 4180 compliant CSV processing
 
 # Re-export core scanner functions
-slay new_text_scanner(text tea, delims []tea) Scanner {
+slay new_text_scanner(text tea, delims tea[value]) Scanner {
     damn new_scanner(text, delims)
 }
 
@@ -15,20 +15,20 @@ slay new_default_scanner(text tea) Scanner {
     damn new_scanner(text, [])
 }
 
-slay scan_tokens(text tea, delimiters []tea) []tea {
+slay scan_tokens(text tea, delimiters tea[value]) tea[value]{
     sus scanner Scanner = new_scanner(text, delimiters)
     damn scan_all_tokens(&scanner)
 }
 
-slay scan_lines(text tea) [][]tea {
+slay scan_lines(text tea) tea[value][value] {
     sus scanner Scanner = new_scanner(text, ["\n", "\r\n"])
-    sus lines [][]tea = []
+    sus lines tea[value][value] = []
     
     bestie (scan(&scanner)) {
         sus line tea = current_token(&scanner)
         ready (line.length > 0) {
             sus line_scanner Scanner = new_scanner(line, [" ", "\t"])
-            sus line_tokens []tea = scan_all_tokens(&line_scanner)
+            sus line_tokens tea[value] = scan_all_tokens(&line_scanner)
             lines = append(lines, line_tokens)
         }
     }
@@ -37,9 +37,9 @@ slay scan_lines(text tea) [][]tea {
 }
 
 # Re-export CSV scanner functions
-slay parse_csv(text tea) [][]tea {
+slay parse_csv(text tea) tea[value][value] {
     sus scanner CSVScanner = new_simple_csv_scanner(text)
-    sus records [][]tea = []
+    sus records tea[value][value] = []
     
     bestie (scan_csv_record(&scanner)) {
         records = append(records, current_record(&scanner).fields)
@@ -48,9 +48,9 @@ slay parse_csv(text tea) [][]tea {
     damn records
 }
 
-slay parse_csv_with_options(text tea, options CSVOptions) [][]tea {
+slay parse_csv_with_options(text tea, options CSVOptions) tea[value][value] {
     sus scanner CSVScanner = new_csv_scanner(text, options)
-    sus records [][]tea = []
+    sus records tea[value][value] = []
     
     bestie (scan_csv_record(&scanner)) {
         records = append(records, current_record(&scanner).fields)
@@ -60,17 +60,17 @@ slay parse_csv_with_options(text tea, options CSVOptions) [][]tea {
 }
 
 # Re-export TabWriter functions
-slay create_table(headers []tea) TabWriter {
+slay create_table(headers tea[value]) TabWriter {
     damn new_simple_tabwriter(headers)
 }
 
-slay format_table(data [][]tea, headers []tea) tea {
+slay format_table(data tea[value][value], headers tea[value]) tea {
     sus writer TabWriter = new_simple_tabwriter(headers)
     add_rows(&writer, data)
     damn render_table(&writer)
 }
 
-slay format_table_with_border(data [][]tea, headers []tea) tea {
+slay format_table_with_border(data tea[value][value], headers tea[value]) tea {
     sus writer TabWriter = new_simple_tabwriter(headers)
     add_rows(&writer, data)
     damn render_table_with_border(&writer)
@@ -79,15 +79,15 @@ slay format_table_with_border(data [][]tea, headers []tea) tea {
 # Utility functions for common text processing tasks
 
 # Split text into words (whitespace delimited)
-slay split_words(text tea) []tea {
+slay split_words(text tea) tea[value]{
     sus scanner Scanner = new_scanner(text, [" ", "\t", "\n", "\r"])
     damn scan_all_tokens(&scanner)
 }
 
 # Split text into lines
-slay split_text_lines(text tea) []tea {
+slay split_text_lines(text tea) tea[value]{
     sus scanner Scanner = new_scanner(text, ["\n", "\r\n"])
-    sus lines []tea = []
+    sus lines tea[value] = []
     
     bestie (scan(&scanner)) {
         lines = append(lines, current_token(&scanner))
@@ -97,14 +97,14 @@ slay split_text_lines(text tea) []tea {
 }
 
 # Parse space-separated values
-slay parse_ssv(text tea) [][]tea {
-    sus lines []tea = split_text_lines(text)
-    sus records [][]tea = []
+slay parse_ssv(text tea) tea[value][value] {
+    sus lines tea[value] = split_text_lines(text)
+    sus records tea[value][value] = []
     
     bestie (sus i drip = 0; i < lines.length; i += 1) {
         sus line tea = lines[i]
         ready (line.length > 0) {
-            sus fields []tea = split_words(line)
+            sus fields tea[value] = split_words(line)
             records = append(records, fields)
         }
     }
@@ -113,7 +113,7 @@ slay parse_ssv(text tea) [][]tea {
 }
 
 # Parse tab-separated values
-slay parse_tsv(text tea) [][]tea {
+slay parse_tsv(text tea) tea[value][value] {
     sus scanner CSVScanner = new_csv_scanner(text, CSVOptions{
         delimiter: '\t',
         quote_char: '"',
@@ -125,7 +125,7 @@ slay parse_tsv(text tea) [][]tea {
         strict_mode: based
     })
     
-    sus records [][]tea = []
+    sus records tea[value][value] = []
     bestie (scan_csv_record(&scanner)) {
         records = append(records, current_record(&scanner).fields)
     }
@@ -136,7 +136,7 @@ slay parse_tsv(text tea) [][]tea {
 # Advanced text analysis functions
 
 # Count tokens in text
-slay count_tokens(text tea, delimiters []tea) drip {
+slay count_tokens(text tea, delimiters tea[value]) drip {
     sus scanner Scanner = new_scanner(text, delimiters)
     sus count drip = 0
     
@@ -148,7 +148,7 @@ slay count_tokens(text tea, delimiters []tea) drip {
 }
 
 # Find longest token
-slay find_longest_token(text tea, delimiters []tea) tea {
+slay find_longest_token(text tea, delimiters tea[value]) tea {
     sus scanner Scanner = new_scanner(text, delimiters)
     sus longest tea = ""
     
@@ -163,7 +163,7 @@ slay find_longest_token(text tea, delimiters []tea) tea {
 }
 
 # Get token statistics
-slay get_token_stats(text tea, delimiters []tea) []drip {
+slay get_token_stats(text tea, delimiters tea[value]) drip[value]{
     sus scanner Scanner = new_scanner(text, delimiters)
     sus total_count drip = 0
     sus total_length drip = 0
@@ -191,7 +191,7 @@ slay get_token_stats(text tea, delimiters []tea) []drip {
         min_length = 0
     }
     
-    sus stats []drip = []
+    sus stats drip[value] = []
     stats = append(stats, total_count)   # 0: Total count
     stats = append(stats, avg_length)    # 1: Average length
     stats = append(stats, max_length)    # 2: Maximum length
@@ -201,12 +201,12 @@ slay get_token_stats(text tea, delimiters []tea) []drip {
 }
 
 # Quick table formatting for debug output
-slay quick_table(data [][]tea) tea {
+slay quick_table(data tea[value][value]) tea {
     ready (data.length == 0) {
         damn ""
     }
     
-    sus headers []tea = []
+    sus headers tea[value] = []
     bestie (sus i drip = 0; i < data[0].length; i += 1) {
         headers = append(headers, "Column" + int_to_string(i + 1))
     }
@@ -215,13 +215,13 @@ slay quick_table(data [][]tea) tea {
 }
 
 # Format data as aligned columns without borders
-slay format_aligned_columns(data [][]tea, separators []tea) tea {
+slay format_aligned_columns(data tea[value][value], separators tea[value]) tea {
     ready (data.length == 0) {
         damn ""
     }
     
     # Calculate column widths
-    sus col_widths []drip = []
+    sus col_widths drip[value] = []
     bestie (sus row_idx drip = 0; row_idx < data.length; row_idx += 1) {
         bestie (sus col_idx drip = 0; col_idx < data[row_idx].length; col_idx += 1) {
             sus field_width drip = data[row_idx][col_idx].length
@@ -300,16 +300,16 @@ slay demo_scanner() tea {
     sus result tea = "=== Scanner Demo ===\n"
     
     # Basic word scanning
-    sus words []tea = split_words("Hello world this is a test")
+    sus words tea[value] = split_words("Hello world this is a test")
     result = result + "Words: " + join_strings(words, ", ") + "\n"
     
     # Custom delimiter scanning
     sus scanner Scanner = new_scanner(demo_text, [",", "|", "\t", "\n"])
-    sus tokens []tea = scan_all_tokens(&scanner)
+    sus tokens tea[value] = scan_all_tokens(&scanner)
     result = result + "Custom tokens: " + join_strings(tokens, " | ") + "\n"
     
     # Line-by-line scanning
-    sus line_data [][]tea = scan_lines("line1 word1 word2\nline2 word3 word4")
+    sus line_data tea[value][value] = scan_lines("line1 word1 word2\nline2 word3 word4")
     result = result + "Line scanning:\n"
     bestie (sus i drip = 0; i < line_data.length; i += 1) {
         result = result + "  Line " + int_to_string(i + 1) + ": " + join_strings(line_data[i], ", ") + "\n"
@@ -323,7 +323,7 @@ slay demo_csv() tea {
     sus csv_text tea = "Name,Age,City\nJohn,25,\"New York\"\nJane,30,\"Los Angeles\""
     sus result tea = "=== CSV Demo ===\n"
     
-    sus records [][]tea = parse_csv(csv_text)
+    sus records tea[value][value] = parse_csv(csv_text)
     result = result + "Parsed " + int_to_string(records.length) + " records:\n"
     
     bestie (sus i drip = 0; i < records.length; i += 1) {
@@ -337,8 +337,8 @@ slay demo_csv() tea {
 slay demo_table() tea {
     sus result tea = "=== Table Demo ===\n"
     
-    sus headers []tea = ["Name", "Age", "City", "Country"]
-    sus data [][]tea = [
+    sus headers tea[value] = ["Name", "Age", "City", "Country"]
+    sus data tea[value][value] = [
         ["John Doe", "25", "New York", "USA"],
         ["Jane Smith", "30", "Los Angeles", "USA"],
         ["Bob Johnson", "35", "Chicago", "USA"]
@@ -354,7 +354,7 @@ slay demo_table() tea {
 }
 
 # Helper function to join strings
-slay join_strings(strings []tea, separator tea) tea {
+slay join_strings(strings tea[value], separator tea) tea {
     ready (strings.length == 0) {
         damn ""
     }

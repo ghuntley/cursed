@@ -350,7 +350,7 @@ test_case("Bulk Insert Performance") {
 test_case("Connection Pool Stress Test") {
     db_pool_initialize(5)  fr fr Small pool for stress testing
     
-    sus acquired_connections [10]normie = [0; 10]
+    sus acquired_connections normie[10] = [0; 10]
     sus successful_acquisitions normie = 0
     
     fr fr Try to acquire more connections than pool size

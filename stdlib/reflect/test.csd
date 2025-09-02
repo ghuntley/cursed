@@ -116,7 +116,7 @@ slay test_complex_types() {
     test_group("Complex type construction")
     
     fr fr Test struct type creation
-    sus field_names []tea = ["name", "age"]
+    sus field_names tea[value] = ["name", "age"]
     sus person_type TypeInfo = type_info_struct_simple("Person", field_names)
     
     assert_eq_int(person_type.kind, TYPE_STRUCT)
@@ -223,7 +223,7 @@ slay test_field_operations() {
     test_group("Field operations")
     
     fr fr Create struct type with fields
-    sus field_names []tea = ["name", "age", "active"]
+    sus field_names tea[value] = ["name", "age", "active"]
     sus person_type TypeInfo = type_info_struct_simple("Person", field_names)
     
     fr fr Test field count
@@ -256,7 +256,7 @@ slay test_method_operations() {
     test_group("Method operations")
     
     fr fr Create interface type with methods
-    sus method_names []tea = ["draw", "move", "resize"]
+    sus method_names tea[value] = ["draw", "move", "resize"]
     sus drawable_type TypeInfo = type_info_interface_simple("Drawable", method_names)
     
     fr fr Test method count
@@ -314,11 +314,11 @@ slay test_type_registry() {
     assert_eq_string(custom_type.name, "CustomType")
     
     fr fr Test getting all registered types
-    sus all_types []TypeInfo = get_all_registered_types()
+    sus all_types TypeInfo[value] = get_all_registered_types()
     assert_true(len(all_types) > 0)
     
     fr fr Test getting registered type names
-    sus type_names []tea = get_registered_type_names()
+    sus type_names tea[value] = get_registered_type_names()
     assert_true(len(type_names) > 0)
     
     fr fr Test getting types as string
@@ -332,7 +332,7 @@ slay test_inheritance() {
     test_group("Type inheritance")
     
     sus base_type TypeInfo = type_info_int()
-    sus derived_type TypeInfo = type_info_generic("GenericInt", []GenericParam{}, base_type)
+    sus derived_type TypeInfo = type_info_generic("GenericInt", GenericParam[value]{}, base_type)
     
     fr fr Test base type access
     sus base_ptr *TypeInfo = get_base_type(derived_type)
@@ -344,7 +344,7 @@ slay test_inheritance() {
     assert_false(is_derived_from(base_type, derived_type))
     
     fr fr Test inheritance chain
-    sus chain []TypeInfo = get_inheritance_chain(derived_type)
+    sus chain TypeInfo[value] = get_inheritance_chain(derived_type)
     assert_eq_int(len(chain), 2)  fr fr derived + base
     
     pass("Type inheritance works correctly")
@@ -359,11 +359,11 @@ slay test_attributes() {
     assert_false(has_attribute(int_type, "readonly"))
     
     fr fr Test getting attributes
-    sus attrs []tea = get_attributes(int_type)
+    sus attrs tea[value] = get_attributes(int_type)
     assert_eq_int(len(attrs), 0)  fr fr Basic types have no attributes
     
     fr fr Test generic type attributes
-    sus generic_type TypeInfo = type_info_generic("GenericType", []GenericParam{}, int_type)
+    sus generic_type TypeInfo = type_info_generic("GenericType", GenericParam[value]{}, int_type)
     assert_true(has_attribute(generic_type, "generic"))
     
     pass("Attribute system works correctly")
@@ -373,7 +373,7 @@ fr fr Interface and generic tests
 slay test_interface_reflection() {
     test_group("Interface reflection")
     
-    sus method_names []tea = ["serialize", "deserialize"]
+    sus method_names tea[value] = ["serialize", "deserialize"]
     sus serializable TypeInfo = type_info_interface_simple("Serializable", method_names)
     
     assert_true(is_interface_type(serializable))
@@ -406,7 +406,7 @@ slay test_array_reflection() {
 slay test_function_reflection() {
     test_group("Function reflection")
     
-    sus param_types []tea = ["normie", "tea"]
+    sus param_types tea[value] = ["normie", "tea"]
     sus func_type TypeInfo = type_info_func("testFunc", param_types, "lit")
     
     assert_true(is_func_type(func_type))

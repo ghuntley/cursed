@@ -90,7 +90,7 @@ slay main_character() {
     vibez.spill(nested_string)
     
     fr fr Test complex array operations
-    sus test_array []normie = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sus test_array normie[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     sus processed_array normie = complex_array_processing(test_array, 3)
     
     vibez.spill("Processed array sample:")

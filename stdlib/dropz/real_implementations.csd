@@ -4,23 +4,23 @@ fr fr Focus on the most critical file operations needed for self-hosting
 yeet "vibez"
 
 fr fr Enhanced file reading with better simulation
-slay read_file_enhanced(filename tea) ([]byte, tea) { fr fr Enhanced implementation that simulates reading different file types
+slay read_file_enhanced(filename tea) (byte[value], tea) { fr fr Enhanced implementation that simulates reading different file types
     fr filename == "test.txt" {
-        sus data []byte = []byte{84, 101, 115, 116, 32, 99, 111, 110, 116, 101, 110, 116} fr fr "Test content"
+        sus data byte[value] = byte[value]{84, 101, 115, 116, 32, 99, 111, 110, 116, 101, 110, 116} fr fr "Test content"
         damn data, ""
     } else fr filename == "config.json" {
-        sus data []byte = []byte{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
+        sus data byte[value] = byte[value]{123, 34, 116, 101, 115, 116, 34, 58, 116, 114, 117, 101, 125} fr fr {"test":true}
         damn data, ""
     } else fr filename == "program.csd" {
-        sus data []byte = []byte{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 101, 108, 108, 111, 34, 41} fr fr vibez.spill("Hello")
+        sus data byte[value] = byte[value]{118, 105, 98, 101, 122, 46, 115, 112, 105, 108, 108, 40, 34, 72, 101, 108, 108, 111, 34, 41} fr fr vibez.spill("Hello")
         damn data, ""
     } else {
-        damn []byte{}, "file not found"
+        damn byte[value]{}, "file not found"
     }
 }
 
 fr fr Enhanced file writing with validation
-slay write_file_enhanced(filename tea, data []byte, perm normie) tea { fr fr Validate filename
+slay write_file_enhanced(filename tea, data byte[value], perm normie) tea { fr fr Validate filename
     fr filename == "" {
         damn "invalid filename"
     } fr fr Validate data
@@ -103,12 +103,12 @@ slay mkdir_enhanced(dirname tea, perm normie) tea {
 }
 
 fr fr Enhanced directory reading
-slay read_dir_enhanced(dirname tea) ([]DirEntry, tea) {
+slay read_dir_enhanced(dirname tea) (DirEntry[value], tea) {
     fr dirname == "" {
-        damn []DirEntry{}, "invalid directory"
+        damn DirEntry[value]{}, "invalid directory"
     } fr fr Simulate different directory contents
     fr dirname == "/tmp" {
-        sus entries []DirEntry = []DirEntry{
+        sus entries DirEntry[value] = DirEntry[value]{
             DirEntry{
                 name: "temp1.txt",
                 is_dir: cap,
@@ -128,7 +128,7 @@ slay read_dir_enhanced(dirname tea) ([]DirEntry, tea) {
         }
         damn entries, ""
     } else fr dirname == "/home" {
-        sus entries []DirEntry = []DirEntry{
+        sus entries DirEntry[value] = DirEntry[value]{
             DirEntry{
                 name: "user",
                 is_dir: based,
@@ -140,7 +140,7 @@ slay read_dir_enhanced(dirname tea) ([]DirEntry, tea) {
         }
         damn entries, ""
     } else {
-        damn []DirEntry{}, "" fr fr Empty directory
+        damn DirEntry[value]{}, "" fr fr Empty directory
     }
 }
 
@@ -169,7 +169,7 @@ slay test_enhanced_functions() lit {
     } else {
         vibez.spill("❌ Enhanced read_file failed: " + err)
     } fr fr Test file writing
-    sus write_err := write_file_enhanced("output.txt", []byte{72, 101, 108, 108, 111}, MODE_REGULAR)
+    sus write_err := write_file_enhanced("output.txt", byte[value]{72, 101, 108, 108, 111}, MODE_REGULAR)
     fr write_err == "" {
         vibez.spill("✅ Enhanced write_file works")
     } else {

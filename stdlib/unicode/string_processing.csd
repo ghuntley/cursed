@@ -37,7 +37,7 @@ facts UNICODE_CATEGORY_CO normie = 29 fr fr Private Use
 facts UNICODE_CATEGORY_CN normie = 30 fr fr Unassigned
 
 fr fr UTF-8 decoding and encoding functions
-slay utf8_decode_char(bytes []byte, offset normie) (normie, normie) {
+slay utf8_decode_char(bytes byte[value], offset normie) (normie, normie) {
     vibe_check offset >= len(bytes) {
         damn 0, 0
     }
@@ -92,8 +92,8 @@ slay utf8_decode_char(bytes []byte, offset normie) (normie, normie) {
     damn 0, 0
 }
 
-slay utf8_encode_char(codepoint normie) []byte {
-    sus result []byte = [] fr fr ASCII (0-127)
+slay utf8_encode_char(codepoint normie) byte[value]{
+    sus result byte[value] = [] fr fr ASCII (0-127)
     vibe_check codepoint <= 0x7F {
         result = append(result, byte(codepoint))
         damn result
@@ -120,8 +120,8 @@ slay utf8_encode_char(codepoint normie) []byte {
 }
 
 fr fr String to byte array conversion
-slay string_to_bytes(text tea) []byte {
-    sus result []byte = []
+slay string_to_bytes(text tea) byte[value]{
+    sus result byte[value] = []
     sus i normie = 0 fr fr Convert each character to bytes (simplified - assumes ASCII for now)
     bestie i < string_byte_length(text) {
         sus char_code normie = string_char_at(text, i)
@@ -134,7 +134,7 @@ slay string_to_bytes(text tea) []byte {
 
 fr fr Get actual Unicode character count
 slay unicode_string_length(text tea) normie {
-    sus bytes []byte = string_to_bytes(text)
+    sus bytes byte[value] = string_to_bytes(text)
     sus length normie = 0
     sus offset normie = 0
     
@@ -152,7 +152,7 @@ slay unicode_string_length(text tea) normie {
 
 fr fr Validate UTF-8 string
 slay is_valid_utf8_string(text tea) lit {
-    sus bytes []byte = string_to_bytes(text)
+    sus bytes byte[value] = string_to_bytes(text)
     sus offset normie = 0
     
     bestie offset < len(bytes) {
@@ -300,8 +300,8 @@ slay unicode_to_lower_codepoint(codepoint normie) normie { fr fr ASCII uppercase
 
 fr fr Convert entire string to uppercase
 slay unicode_to_upper(text tea) tea {
-    sus bytes []byte = string_to_bytes(text)
-    sus result []byte = []
+    sus bytes byte[value] = string_to_bytes(text)
+    sus result byte[value] = []
     sus offset normie = 0
     
     bestie offset < len(bytes) {
@@ -311,7 +311,7 @@ slay unicode_to_upper(text tea) tea {
         }
         
         sus upper_codepoint normie = unicode_to_upper_codepoint(codepoint)
-        sus upper_bytes []byte = utf8_encode_char(upper_codepoint)
+        sus upper_bytes byte[value] = utf8_encode_char(upper_codepoint)
         
         bestie i := 0; i < len(upper_bytes); i++ {
             result = append(result, upper_bytes[i])
@@ -325,8 +325,8 @@ slay unicode_to_upper(text tea) tea {
 
 fr fr Convert entire string to lowercase
 slay unicode_to_lower(text tea) tea {
-    sus bytes []byte = string_to_bytes(text)
-    sus result []byte = []
+    sus bytes byte[value] = string_to_bytes(text)
+    sus result byte[value] = []
     sus offset normie = 0
     
     bestie offset < len(bytes) {
@@ -336,7 +336,7 @@ slay unicode_to_lower(text tea) tea {
         }
         
         sus lower_codepoint normie = unicode_to_lower_codepoint(codepoint)
-        sus lower_bytes []byte = utf8_encode_char(lower_codepoint)
+        sus lower_bytes byte[value] = utf8_encode_char(lower_codepoint)
         
         bestie i := 0; i < len(lower_bytes); i++ {
             result = append(result, lower_bytes[i])
@@ -350,7 +350,7 @@ slay unicode_to_lower(text tea) tea {
 
 fr fr Get Unicode codepoint at position
 slay get_char_at_position(text tea, pos normie) normie {
-    sus bytes []byte = string_to_bytes(text)
+    sus bytes byte[value] = string_to_bytes(text)
     sus current_pos normie = 0
     sus offset normie = 0
     
@@ -406,7 +406,7 @@ slay grapheme_count(text tea) normie { fr fr Simplified - same as character coun
 }
 
 fr fr Helper function to convert bytes to string (would be built-in)
-slay bytes_to_string(bytes []byte) tea { fr fr Convert byte array to UTF-8 string
+slay bytes_to_string(bytes byte[value]) tea { fr fr Convert byte array to UTF-8 string
     sus result tea = ""
     bestie _, byte_val := iterate bytes { fr fr Simple ASCII conversion for now
         lowkey byte_val >= 32 && byte_val <= 126 {

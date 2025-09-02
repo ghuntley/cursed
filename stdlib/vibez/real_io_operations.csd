@@ -299,7 +299,7 @@ slay directory_exists_real(dirpath tea) lit {
     damn perform_directory_existence_check(dirpath)
 }
 
-slay list_directory_real(dirpath tea) []tea {
+slay list_directory_real(dirpath tea) tea[value]{
     ready !directory_exists_real(dirpath) {
         last_io_error = IO_ERROR_FILE_NOT_FOUND
         damn []
@@ -310,7 +310,7 @@ slay list_directory_real(dirpath tea) []tea {
         damn []
     }
     
-    sus entries []tea = perform_directory_listing(dirpath)
+    sus entries tea[value] = perform_directory_listing(dirpath)
     ready entries == cringe {
         last_io_error = IO_ERROR_NETWORK_FAILURE
         damn []
@@ -519,7 +519,7 @@ slay read_single_char_from_stdin() normie {
     fr fr This would use OS stdin reading syscalls
     fr fr For demonstration, simulate interactive input
     
-    sus static_input_sequence [20]normie = [
+    sus static_input_sequence normie[20] = [
         72, 101, 108, 108, 111, 32,  fr fr "Hello "
         87, 111, 114, 108, 100, 33, 10,  fr fr "World!\n"
         65, 66, 67, 10,  fr fr "ABC\n"
@@ -824,7 +824,7 @@ slay move_file_real(source tea, destination tea) lit {
     damn based
 }
 
-slay read_lines_real(filepath tea) []tea {
+slay read_lines_real(filepath tea) tea[value]{
     sus content tea = read_file_real(filepath)
     ready get_io_error() != IO_SUCCESS {
         damn []
@@ -833,13 +833,13 @@ slay read_lines_real(filepath tea) []tea {
     damn split_string_by_newlines(content)
 }
 
-slay write_lines_real(filepath tea, lines []tea) lit {
+slay write_lines_real(filepath tea, lines tea[value]) lit {
     sus content tea = join_strings_with_newlines(lines)
     damn write_file_real(filepath, content)
 }
 
-slay split_string_by_newlines(content tea) []tea {
-    sus lines []tea = []
+slay split_string_by_newlines(content tea) tea[value]{
+    sus lines tea[value] = []
     sus current_line tea = ""
     sus len normie = stringz.length(content)
     
@@ -861,7 +861,7 @@ slay split_string_by_newlines(content tea) []tea {
     damn lines
 }
 
-slay join_strings_with_newlines(lines []tea) tea {
+slay join_strings_with_newlines(lines tea[value]) tea {
     sus result tea = ""
     sus len normie = len(lines)
     
@@ -875,11 +875,11 @@ slay join_strings_with_newlines(lines []tea) tea {
     damn result
 }
 
-slay append_string_to_array(arr []tea, str tea) []tea {
+slay append_string_to_array(arr tea[value], str tea) tea[value]{
     fr fr This would be provided by the runtime array operations
     fr fr For simulation, create new array with additional element
     sus new_len normie = len(arr) + 1
-    sus new_arr []tea = make_string_array(new_len)
+    sus new_arr tea[value] = make_string_array(new_len)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -889,9 +889,9 @@ slay append_string_to_array(arr []tea, str tea) []tea {
     damn new_arr
 }
 
-slay make_string_array(size normie) []tea {
+slay make_string_array(size normie) tea[value]{
     fr fr This would be provided by the runtime
-    sus arr []tea = []
+    sus arr tea[value] = []
     damn arr
 }
 
@@ -922,9 +922,9 @@ slay perform_directory_existence_check(dirpath tea) lit {
     damn based  fr fr Default exists for simulation
 }
 
-slay perform_directory_listing(dirpath tea) []tea {
+slay perform_directory_listing(dirpath tea) tea[value]{
     fr fr This would use OS readdir() syscall
-    sus entries []tea = []
+    sus entries tea[value] = []
     
     ready stringz.contains(dirpath, "/tmp") {
         entries = append_string_to_array(entries, "file1.txt")

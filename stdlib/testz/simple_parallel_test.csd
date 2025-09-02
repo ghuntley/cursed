@@ -78,7 +78,7 @@ fr fr ================================
 fr fr Test Execution Simulation
 fr fr ================================
 
-slay execute_test_sequential(test_files []tea, config SimpleTestConfig) drip {
+slay execute_test_sequential(test_files tea[value], config SimpleTestConfig) drip {
     vibez.spill("🔄 Running tests sequentially...")
     
     sus test_count drip = 0
@@ -122,7 +122,7 @@ slay execute_test_sequential(test_files []tea, config SimpleTestConfig) drip {
     damn failed_count
 }
 
-slay execute_test_parallel(test_files []tea, config SimpleTestConfig) drip {
+slay execute_test_parallel(test_files tea[value], config SimpleTestConfig) drip {
     vibez.spill("🚀 Running tests in parallel with", config.worker_count, "workers...")
     
     sus test_count drip = 0
@@ -287,7 +287,7 @@ slay main() {
     monitor_resources(config)
     
     fr fr Sample test files
-    sus test_files []tea = ["test1.csd", "test2.csd", "test3.csd", "test4.csd"]
+    sus test_files tea[value] = ["test1.csd", "test2.csd", "test3.csd", "test4.csd"]
     
     fr fr Execute tests based on configuration
     sus failed_count drip = 0

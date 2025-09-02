@@ -7,30 +7,30 @@ fr fr Provides property-based testing, fixtures, benchmarks, mocks, and reportin
 
 fr fr Test Suite Management
 sus current_suite tea = ""
-sus test_fixtures [100]tea
+sus test_fixtures tea[100]
 sus fixture_count normie = 0
 sus setup_function tea = ""
 sus teardown_function tea = ""
 
 fr fr Property-Based Testing
 sus property_iterations normie = 100
-sus property_generators [50]tea
+sus property_generators tea[50]
 sus generator_count normie = 0
 
 fr fr Benchmark Testing
 sus benchmark_iterations normie = 1000
-sus benchmark_results [100]normie
+sus benchmark_results normie[100]
 sus benchmark_count normie = 0
 
 fr fr Mock/Stub System
-sus mock_functions [50]tea
+sus mock_functions tea[50]
 sus mock_count normie = 0
-sus stub_responses [50]tea
+sus stub_responses tea[50]
 sus stub_count normie = 0
 
 fr fr Test Reporting
 sus report_format tea = "text"
-sus test_results [1000]tea
+sus test_results tea[1000]
 sus result_count normie = 0
 
 fr fr Core Testing Functions
@@ -146,7 +146,7 @@ slay qt_run_teardown() lit {
 }
 
 fr fr Parameterized Testing
-slay qt_parameterized_test(test_name tea, params [10]tea, param_count normie, test_func tea) lit {
+slay qt_parameterized_test(test_name tea, params tea[10], param_count normie, test_func tea) lit {
     vibez.spill("📊 Parameterized test: " + test_name)
     
     bestie i := 0; i < param_count; i++ {

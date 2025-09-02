@@ -147,11 +147,11 @@ slay test_event_system() {
     assert_eq_str(deleted_str, "DELETED", "Event type string conversion")
     
     fr fr Test filter creation
-    sus txt_patterns []tea = create_txt_patterns()
+    sus txt_patterns tea[value] = create_txt_patterns()
     assert_eq_int(array_length(txt_patterns), 1, "Should create pattern array")
     assert_eq_str(txt_patterns[0], "*.txt", "Should have correct pattern")
     
-    sus all_events []drip = create_all_events_array()
+    sus all_events drip[value] = create_all_events_array()
     assert_eq_int(array_length(all_events), 5, "Should create all event types")
     
     vibez.spill("✅ Event system test completed")
@@ -218,13 +218,13 @@ slay cleanup_integration_test() {
     vibez.spill("✅ Integration cleanup completed")
 }
 
-slay create_empty_array_tea() []tea {
-    sus empty []tea = []
+slay create_empty_array_tea() tea[value]{
+    sus empty tea[value] = []
     damn empty
 }
 
-slay create_empty_array_drip() []drip {
-    sus empty []drip = []
+slay create_empty_array_drip() drip[value]{
+    sus empty drip[value] = []
     damn empty
 }
 
@@ -297,11 +297,11 @@ slay test_memory_safety_integration() {
     }
     
     fr fr Test pattern matching safety
-    sus patterns []tea = create_txt_patterns()
+    sus patterns tea[value] = create_txt_patterns()
     sus test_result lit = matches_filter_patterns("test.txt", patterns)
     assert_eq_bool(test_result, based, "Pattern matching should work safely")
     
-    sus empty_patterns []tea = []
+    sus empty_patterns tea[value] = []
     sus empty_result lit = matches_filter_patterns("test.txt", empty_patterns)
     assert_eq_bool(empty_result, based, "Empty patterns should match all")
     
@@ -319,7 +319,7 @@ slay test_performance_integration() {
     sus performance_callback slay(WatchEvent) lit = slay(event WatchEvent) lit { damn based }
     
     fr fr Create multiple watchers rapidly
-    sus watcher_ids []drip = []
+    sus watcher_ids drip[value] = []
     sus created_count drip = 0
     
     sus i drip = 0

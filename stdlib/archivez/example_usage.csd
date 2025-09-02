@@ -89,7 +89,7 @@ slay demo_archive_extraction() {
     }
     
     # List files in archive
-    sus files []tea = list_files() fam {
+    sus files tea[value] = list_files() fam {
         when err -> {
             vibez.spill("Could not list files: " + err)
             damn
@@ -261,7 +261,7 @@ slay demo_format_detection_and_errors() {
     vibez.spill("\n=== Format Detection and Error Handling Demo ===")
     
     # Test format detection
-    sus formats []tea = ["archive.zip", "backup.tar", "data.gz", "compressed.bz2", "unknown.xyz"]
+    sus formats tea[value] = ["archive.zip", "backup.tar", "data.gz", "compressed.bz2", "unknown.xyz"]
     
     vibez.spill("Testing format detection:")
     bestie (drip i = 0; i < len(formats); i = i + 1) {

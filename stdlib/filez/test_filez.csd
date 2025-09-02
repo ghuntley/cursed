@@ -64,7 +64,7 @@ assert_eq_string(lines_err, "")
 assert_true(len(lines) >= 3)
 
 fr fr Test write_file_lines function
-sus new_lines []tea = ["First line", "Second line", "Third line"]
+sus new_lines tea[value] = ["First line", "Second line", "Third line"]
 sus write_lines_result tea = write_file_lines("test_write_lines.txt", new_lines)
 assert_eq_string(write_lines_result, "")
 
@@ -121,7 +121,7 @@ assert_eq_string(sync_err, "")
 test_start("Binary File Operations")
 
 fr fr Test binary file operations
-sus binary_data []normie = [72, 101, 108, 108, 111] // "Hello" in ASCII
+sus binary_data normie[value] = [72, 101, 108, 108, 111] // "Hello" in ASCII
 sus binary_filename tea = "test_binary.bin"
 sus write_binary_err tea = write_file_bytes(binary_filename, binary_data)
 assert_eq_string(write_binary_err, "")

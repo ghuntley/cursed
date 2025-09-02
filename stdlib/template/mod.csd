@@ -10,8 +10,8 @@ fr fr Template engine types and structures
 be_like Template squad {
     name tea
     content tea
-    variables []tea
-    blocks []TemplateBlock
+    variables tea[value]
+    blocks TemplateBlock[value]
     compiled_functions map[tea]slay(data tea) tea
     is_compiled lit
 }
@@ -22,18 +22,18 @@ be_like TemplateBlock squad {
     content tea
     start_pos normie
     end_pos normie
-    children []TemplateBlock
+    children TemplateBlock[value]
 }
 
 be_like TemplateContext squad {
     data map[tea]tea
     partials map[tea]Template
-    helpers map[tea]slay(args []tea) tea
+    helpers map[tea]slay(args tea[value]) tea
     loops map[tea]LoopContext
 }
 
 be_like LoopContext squad {
-    items []tea
+    items tea[value]
     current_item tea
     index normie
     first lit
@@ -134,8 +134,8 @@ slay render_with_context(template Template, context TemplateContext) tea {
 
 fr fr ===== VARIABLE PROCESSING =====
 
-slay parse_variables(template_content tea) []tea {
-    sus variables []tea = []
+slay parse_variables(template_content tea) tea[value]{
+    sus variables tea[value] = []
     sus content tea = template_content
     sus start_pos normie = 0
     
@@ -197,7 +197,7 @@ slay render_variable(template_content tea, block TemplateBlock, context Template
     
     fr fr Apply formatting if specified
     vibe_if stringz.contains(var_name, "|") {
-        sus parts []tea = stringz.split(var_name, "|")
+        sus parts tea[value] = stringz.split(var_name, "|")
         vibe_if len(parts) >= 2 {
             var_name = stringz.trim(parts[0])
             var_value = context.data[var_name]
@@ -218,7 +218,7 @@ slay render_loop(template_content tea, block TemplateBlock, context TemplateCont
     sus loop_end tea = "{{/each}}"
     
     sus items_data tea = context.data[block.name]
-    sus items []tea = parse_json_array(items_data)
+    sus items tea[value] = parse_json_array(items_data)
     
     sus loop_content tea = block.content
     sus rendered_content tea = ""
@@ -317,8 +317,8 @@ slay register_partial_from_file(name tea, file_path tea) cringe {
 
 fr fr ===== BLOCK PARSING =====
 
-slay parse_blocks(template_content tea) []TemplateBlock {
-    sus blocks []TemplateBlock = []
+slay parse_blocks(template_content tea) TemplateBlock[value]{
+    sus blocks TemplateBlock[value] = []
     
     fr fr Find all template blocks
     blocks = append_blocks(blocks, find_variable_blocks(template_content))
@@ -329,8 +329,8 @@ slay parse_blocks(template_content tea) []TemplateBlock {
     damn sort_blocks_by_position(blocks)
 }
 
-slay find_variable_blocks(content tea) []TemplateBlock {
-    sus blocks []TemplateBlock = []
+slay find_variable_blocks(content tea) TemplateBlock[value]{
+    sus blocks TemplateBlock[value] = []
     sus start_pos normie = 0
     
     bestie based {
@@ -364,8 +364,8 @@ slay find_variable_blocks(content tea) []TemplateBlock {
     damn blocks
 }
 
-slay find_loop_blocks(content tea) []TemplateBlock {
-    sus blocks []TemplateBlock = []
+slay find_loop_blocks(content tea) TemplateBlock[value]{
+    sus blocks TemplateBlock[value] = []
     sus start_pos normie = 0
     
     bestie based {
@@ -404,8 +404,8 @@ slay find_loop_blocks(content tea) []TemplateBlock {
     damn blocks
 }
 
-slay find_condition_blocks(content tea) []TemplateBlock {
-    sus blocks []TemplateBlock = []
+slay find_condition_blocks(content tea) TemplateBlock[value]{
+    sus blocks TemplateBlock[value] = []
     sus start_pos normie = 0
     
     bestie based {
@@ -444,8 +444,8 @@ slay find_condition_blocks(content tea) []TemplateBlock {
     damn blocks
 }
 
-slay find_partial_blocks(content tea) []TemplateBlock {
-    sus blocks []TemplateBlock = []
+slay find_partial_blocks(content tea) TemplateBlock[value]{
+    sus blocks TemplateBlock[value] = []
     sus start_pos normie = 0
     
     bestie based {
@@ -478,7 +478,7 @@ slay find_partial_blocks(content tea) []TemplateBlock {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay register_helper(name tea, helper_func slay(args []tea) tea) cringe {
+slay register_helper(name tea, helper_func slay(args tea[value]) tea) cringe {
     global_context.helpers[name] = helper_func
     damn nil
 }
@@ -500,7 +500,7 @@ slay apply_formatter(value tea, formatter tea) tea {
 }
 
 slay get_nested_value(data map[tea]tea, key tea) tea {
-    sus parts []tea = stringz.split(key, ".")
+    sus parts tea[value] = stringz.split(key, ".")
     sus current_value tea = data[parts[0]]
     
     fr fr Simple nested access (would need full JSON path in real implementation)
@@ -548,13 +548,13 @@ slay parse_json_object(json_str tea) map[tea]tea {
     damn data
 }
 
-slay parse_json_array(json_str tea) []tea {
-    sus items []tea = []
+slay parse_json_array(json_str tea) tea[value]{
+    sus items tea[value] = []
     
     fr fr Simple array parsing (mock implementation)
     ready stringz.starts_with(json_str, "[") && stringz.ends_with(json_str, "]") {
         sus content tea = stringz.substring(json_str, 1, stringz.length(json_str) - 1)
-        sus parts []tea = stringz.split(content, ",")
+        sus parts tea[value] = stringz.split(content, ",")
         
         bestie i := 0; i < len(parts); i++ {
             sus item tea = stringz.trim(parts[i])
@@ -567,19 +567,19 @@ slay parse_json_array(json_str tea) []tea {
 }
 
 slay extract_filename(file_path tea) tea {
-    sus parts []tea = stringz.split(file_path, "/")
+    sus parts tea[value] = stringz.split(file_path, "/")
     vibe_if len(parts) > 0 {
         damn parts[len(parts) - 1]
     }
     damn file_path
 }
 
-slay sort_blocks_by_position(blocks []TemplateBlock) []TemplateBlock {
+slay sort_blocks_by_position(blocks TemplateBlock[value]) TemplateBlock[value]{
     fr fr Simple sort by start position (would use proper sorting in real implementation)
     damn blocks
 }
 
-slay append_blocks(target []TemplateBlock, source []TemplateBlock) []TemplateBlock {
+slay append_blocks(target TemplateBlock[value], source TemplateBlock[value]) TemplateBlock[value]{
     bestie i := 0; i < len(source); i++ {
         target = append(target, source[i])
     }
@@ -605,12 +605,12 @@ slay string_from_int(n normie) tea {
     nah { damn "0" }
 }
 
-slay append(slice []tea, element tea) []tea {
+slay append(slice tea[value], element tea) tea[value]{
     fr fr Mock append function
     damn slice
 }
 
-slay len(slice []tea) normie {
+slay len(slice tea[value]) normie {
     fr fr Mock length function
     damn 0
 }
@@ -624,7 +624,7 @@ slay init_default_helpers() {
     register_helper("default", default_helper)
 }
 
-slay date_helper(args []tea) tea {
+slay date_helper(args tea[value]) tea {
     fr fr Simple date formatting
     vibe_if len(args) > 0 {
         damn "2024-01-01"  fr fr Mock date
@@ -632,7 +632,7 @@ slay date_helper(args []tea) tea {
     damn ""
 }
 
-slay format_helper(args []tea) tea {
+slay format_helper(args tea[value]) tea {
     fr fr String formatting helper
     vibe_if len(args) > 1 {
         damn args[0]  fr fr Return first argument formatted
@@ -640,7 +640,7 @@ slay format_helper(args []tea) tea {
     damn ""
 }
 
-slay join_helper(args []tea) tea {
+slay join_helper(args tea[value]) tea {
     fr fr Join array elements
     vibe_if len(args) > 1 {
         damn stringz.join(args, args[len(args) - 1])
@@ -648,7 +648,7 @@ slay join_helper(args []tea) tea {
     damn ""
 }
 
-slay default_helper(args []tea) tea {
+slay default_helper(args tea[value]) tea {
     fr fr Provide default value if empty
     vibe_if len(args) > 1 {
         vibe_if args[0] == "" {

@@ -220,7 +220,7 @@ slay test_connection_lifetime() lit {
 
 // Resource cleanup validation
 slay test_resource_cleanup() lit {
-    sus pools []PoolHandle = []
+    sus pools PoolHandle[value] = []
     sus connection_count drip = 0
     
     // Create multiple pools

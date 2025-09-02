@@ -4,16 +4,16 @@
 // Validation result structure
 be_like ValidationResult squad {
     is_valid lit
-    errors []tea
-    warnings []tea
+    errors tea[value]
+    warnings tea[value]
 }
 
 // Create validation result
 slay create_validation_result() ValidationResult {
     sus result ValidationResult = ValidationResult{
         is_valid: based,
-        errors: []tea{},
-        warnings: []tea{}
+        errors: tea[value]{},
+        warnings: tea[value]{}
     }
     damn result
 }
@@ -38,7 +38,7 @@ slay add_info(result *ValidationResult, info tea) {
 // String helper functions
 slay get_char_at(str tea, index normie) sip {
     // Simple character access implementation
-    sus chars []sip = []sip(str)
+    sus chars sip[value] = sip[value](str)
     damn chars[index]
 }
 
@@ -309,7 +309,7 @@ slay validate_is_false(value lit) ValidationResult {
 }
 
 // Array validation functions
-slay validate_array_not_empty(arr []tea) ValidationResult {
+slay validate_array_not_empty(arr tea[value]) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     lowkey len(arr) == 0 {
@@ -319,7 +319,7 @@ slay validate_array_not_empty(arr []tea) ValidationResult {
     damn result
 }
 
-slay validate_array_length(arr []tea, expected_length normie) ValidationResult {
+slay validate_array_length(arr tea[value], expected_length normie) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     lowkey len(arr) != expected_length {
@@ -329,7 +329,7 @@ slay validate_array_length(arr []tea, expected_length normie) ValidationResult {
     damn result
 }
 
-slay validate_array_min_length(arr []tea, min_length normie) ValidationResult {
+slay validate_array_min_length(arr tea[value], min_length normie) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     lowkey len(arr) < min_length {
@@ -339,7 +339,7 @@ slay validate_array_min_length(arr []tea, min_length normie) ValidationResult {
     damn result
 }
 
-slay validate_array_max_length(arr []tea, max_length normie) ValidationResult {
+slay validate_array_max_length(arr tea[value], max_length normie) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     lowkey len(arr) > max_length {
@@ -929,7 +929,7 @@ slay validate_date_format(date tea, format tea) ValidationResult {
 }
 
 // Composite validation functions
-slay validate_all(validators []ValidationResult) ValidationResult {
+slay validate_all(validators ValidationResult[value]) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     bestie i := 0; i < len(validators); i++ {
@@ -953,7 +953,7 @@ slay validate_all(validators []ValidationResult) ValidationResult {
     damn result
 }
 
-slay validate_any(validators []ValidationResult) ValidationResult {
+slay validate_any(validators ValidationResult[value]) ValidationResult {
     sus result ValidationResult = create_validation_result()
     
     sus any_valid lit = cap
@@ -975,13 +975,13 @@ slay validate_any(validators []ValidationResult) ValidationResult {
 
 // Validation chain builder
 be_like ValidationChain squad {
-    validators []ValidationResult
+    validators ValidationResult[value]
     current_field tea
 }
 
 slay create_validation_chain() ValidationChain {
     sus chain ValidationChain = ValidationChain{
-        validators: []ValidationResult{},
+        validators: ValidationResult[value]{},
         current_field: ""
     }
     damn chain

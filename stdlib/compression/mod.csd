@@ -118,15 +118,15 @@ fr fr LZ4 Compression Algorithm
 fr fr ==========================================
 
 slay lz4_compress_data(input tea, level normie) tea { fr fr Real LZ4 compression implementation
-    sus input_bytes []normie = string_to_byte_array(input)
+    sus input_bytes normie[value] = string_to_byte_array(input)
     sus input_len normie = array_length(input_bytes)
     
     vibes input_len <= 4 {
         damn input fr fr No compression benefit for tiny data
     }
     
-    sus compressed []normie = make_array_normie(0)
-    sus hash_table [4096]normie = make_filled_array_normie(4096, -1)
+    sus compressed normie[value] = make_array_normie(0)
+    sus hash_table normie[4096] = make_filled_array_normie(4096, -1)
     
     sus pos normie = 0
     bestie (pos < input_len) {
@@ -194,14 +194,14 @@ slay deflate_compress_data(input tea, level normie) tea { fr fr Simplified DEFLA
 }
 
 slay deflate_decompress_data(compressed tea) tea { fr fr Real DEFLATE decompression implementation
-    sus comp_bytes []normie = string_to_byte_array(compressed)
+    sus comp_bytes normie[value] = string_to_byte_array(compressed)
     sus comp_len normie = array_length(comp_bytes)
     
     vibes comp_len <= 5 {
         damn compressed
     }
     
-    sus decompressed []normie = make_array_normie(0)
+    sus decompressed normie[value] = make_array_normie(0)
     sus pos normie = 0
     
     bestie (pos < comp_len) {
@@ -233,7 +233,7 @@ slay deflate_decompress_data(compressed tea) tea { fr fr Real DEFLATE decompress
 
 fr fr ===== COMPRESSION HELPER FUNCTIONS =====
 
-slay find_lz4_match(data []normie, pos normie, hash_table [4096]normie) normie {
+slay find_lz4_match(data normie[value], pos normie, hash_table normie[4096]) normie {
     vibes pos < 4 { damn -1 }
     
     sus hash normie = compute_lz4_hash(data, pos)
@@ -254,7 +254,7 @@ slay find_lz4_match(data []normie, pos normie, hash_table [4096]normie) normie {
     damn -1
 }
 
-slay compute_lz4_hash(data []normie, pos normie) normie {
+slay compute_lz4_hash(data normie[value], pos normie) normie {
     vibes pos + 3 >= array_length(data) { damn 0 }
     
     sus hash normie = data[pos]
@@ -265,7 +265,7 @@ slay compute_lz4_hash(data []normie, pos normie) normie {
     damn (hash * 2654435761) % 4294967296  fr fr LZ4 hash function
 }
 
-slay calculate_match_length(data []normie, pos1 normie, pos2 normie, max_len normie) normie {
+slay calculate_match_length(data normie[value], pos1 normie, pos2 normie, max_len normie) normie {
     sus length normie = 0
     bestie (pos1 + length < max_len && pos2 + length < max_len && 
             data[pos1 + length] == data[pos2 + length]) {
@@ -275,7 +275,7 @@ slay calculate_match_length(data []normie, pos1 normie, pos2 normie, max_len nor
     damn length
 }
 
-slay update_lz4_hash(hash_table [4096]normie, data []normie, pos normie) lit {
+slay update_lz4_hash(hash_table normie[4096], data normie[value], pos normie) lit {
     vibes pos + 3 < array_length(data) {
         sus hash normie = compute_lz4_hash(data, pos)
         hash_table[hash % 4096] = pos

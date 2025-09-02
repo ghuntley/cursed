@@ -24,7 +24,7 @@ slay execute(conn SqlConnection, query tea) QueryResult {
     damn sql_slay.execute(conn, query)
 }
 
-slay execute_prepared(conn SqlConnection, stmt PreparedStatement, params []tea) QueryResult {
+slay execute_prepared(conn SqlConnection, stmt PreparedStatement, params tea[value]) QueryResult {
     damn sql_slay.execute_prepared(conn, stmt, params)
 }
 
@@ -59,7 +59,7 @@ slay bind_param(stmt PreparedStatement, index normie, value tea) {
 }
 
 // Query building
-slay select_query(table tea, columns []tea) SelectBuilder {
+slay select_query(table tea, columns tea[value]) SelectBuilder {
     damn sql_slay.select_query(table, columns)
 }
 
@@ -76,7 +76,7 @@ slay delete_query(table tea) DeleteBuilder {
 }
 
 // ORM functions
-slay define_model(name tea, fields []FieldDefinition) Model {
+slay define_model(name tea, fields FieldDefinition[value]) Model {
     damn sql_slay.define_model(name, fields)
 }
 
@@ -88,7 +88,7 @@ slay find_by_id(conn SqlConnection, model Model, id tea) Model {
     damn sql_slay.find_by_id(conn, model, id)
 }
 
-slay find_all(conn SqlConnection, model Model) []Model {
+slay find_all(conn SqlConnection, model Model) Model[value]{
     damn sql_slay.find_all(conn, model)
 }
 
@@ -97,7 +97,7 @@ slay create_migration(name tea) Migration {
     damn sql_slay.create_migration(name)
 }
 
-slay run_migrations(conn SqlConnection, migrations []Migration) {
+slay run_migrations(conn SqlConnection, migrations Migration[value]) {
     sql_slay.run_migrations(conn, migrations)
 }
 
@@ -120,7 +120,7 @@ slay sanitize_query(query tea) tea {
 }
 
 // Database introspection
-slay list_tables(conn SqlConnection) []tea {
+slay list_tables(conn SqlConnection) tea[value]{
     damn sql_slay.list_tables(conn)
 }
 

@@ -46,9 +46,9 @@ fr fr ===== CERTIFICATE VERIFICATION API =====
 
 fr fr Standalone certificate chain verification
 slay tlsz_verify_certificate_chain(
-    cert_chain []X509Certificate,
+    cert_chain X509Certificate[value],
     hostname tea,
-    ca_certificates []X509Certificate
+    ca_certificates X509Certificate[value]
 ) yikes<VerificationResult> {
     
     sus context TLSHandshakeContext = TLSHandshakeContext{
@@ -99,7 +99,7 @@ fr fr ===== CONVENIENCE FUNCTIONS =====
 fr fr Quick HTTPS GET with secure verification
 slay tlsz_https_get(url tea) yikes<tea> {
     fr fr Parse URL components
-    sus url_parts []tea = parse_https_url(url)
+    sus url_parts tea[value] = parse_https_url(url)
     ready (arrayz.length(url_parts) < 3) {
         yikes "INVALID_URL: Unable to parse HTTPS URL"
     }
@@ -110,7 +110,7 @@ slay tlsz_https_get(url tea) yikes<tea> {
     
     fr fr Extract port if specified
     ready (stringz.contains(hostname, ":")) {
-        sus host_port []tea = stringz.split(hostname, ":")
+        sus host_port tea[value] = stringz.split(hostname, ":")
         hostname = host_port[0]
         port = stringz.to_int(host_port[1])
     }
@@ -137,7 +137,7 @@ slay tlsz_https_get(url tea) yikes<tea> {
 fr fr Quick HTTPS POST with secure verification
 slay tlsz_https_post(url tea, data tea, content_type tea) yikes<tea> {
     fr fr Parse URL components
-    sus url_parts []tea = parse_https_url(url)
+    sus url_parts tea[value] = parse_https_url(url)
     ready (arrayz.length(url_parts) < 3) {
         yikes "INVALID_URL: Unable to parse HTTPS URL"
     }
@@ -148,7 +148,7 @@ slay tlsz_https_post(url tea, data tea, content_type tea) yikes<tea> {
     
     fr fr Extract port if specified
     ready (stringz.contains(hostname, ":")) {
-        sus host_port []tea = stringz.split(hostname, ":")
+        sus host_port tea[value] = stringz.split(hostname, ":")
         hostname = host_port[0]
         port = stringz.to_int(host_port[1])
     }
@@ -193,14 +193,14 @@ slay tlsz_load_certificate_pem(file_path tea) yikes<X509Certificate> {
 }
 
 fr fr Load certificate chain from PEM file
-slay tlsz_load_certificate_chain_pem(file_path tea) yikes<[]X509Certificate> {
+slay tlsz_load_certificate_chain_pem(file_path tea) yikes<X509Certificate[value]> {
     fr fr Read certificate chain file
     sus pem_data tea = read_file(file_path) fam {
         when _ -> yikes "FILE_READ_FAILED: Unable to read certificate chain file " + file_path
     }
     
     fr fr Parse PEM certificate chain
-    sus cert_chain []X509Certificate = parse_pem_certificate_chain(pem_data) fam {
+    sus cert_chain X509Certificate[value] = parse_pem_certificate_chain(pem_data) fam {
         when _ -> yikes "CERTIFICATE_CHAIN_PARSE_FAILED: Unable to parse PEM certificate chain"
     }
     
@@ -208,9 +208,9 @@ slay tlsz_load_certificate_chain_pem(file_path tea) yikes<[]X509Certificate> {
 }
 
 fr fr Load CA certificates from system bundle
-slay tlsz_load_system_ca_certificates() []X509Certificate {
+slay tlsz_load_system_ca_certificates() X509Certificate[value]{
     fr fr Try common CA bundle locations
-    sus ca_bundle_paths []tea = [
+    sus ca_bundle_paths tea[value] = [
         "/etc/ssl/certs/ca-certificates.crt",
         "/etc/ssl/cert.pem",
         "/etc/ssl/ca-bundle.pem",
@@ -221,7 +221,7 @@ slay tlsz_load_system_ca_certificates() []X509Certificate {
     sus i drip = 0
     bestie (i < arrayz.length(ca_bundle_paths)) {
         sus ca_path tea = ca_bundle_paths[i]
-        sus ca_certs []X509Certificate = tlsz_load_certificate_chain_pem(ca_path) fam {
+        sus ca_certs X509Certificate[value] = tlsz_load_certificate_chain_pem(ca_path) fam {
             when _ -> continue  fr fr Try next path
         }
         
@@ -276,7 +276,7 @@ squad TLSSession {
     port drip
     tls_version tea
     cipher_suite tea
-    server_certificates []X509Certificate
+    server_certificates X509Certificate[value]
     session_ticket tea
     created_at drip
     last_used drip
@@ -367,7 +367,7 @@ slay tlsz_format_revocation_status(status RevocationStatus) tea {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay parse_https_url(url tea) []tea {
+slay parse_https_url(url tea) tea[value]{
     fr fr Simple HTTPS URL parser
     
     ready (!stringz.starts_with(url, "https://")) {
@@ -453,7 +453,7 @@ slay parse_pem_certificate(pem_data tea) yikes<X509Certificate> {
     }
 }
 
-slay parse_pem_certificate_chain(pem_data tea) yikes<[]X509Certificate> {
+slay parse_pem_certificate_chain(pem_data tea) yikes<X509Certificate[value]> {
     fr fr Mock PEM certificate chain parsing
     
     ready (!stringz.contains(pem_data, "-----BEGIN CERTIFICATE-----")) {
@@ -497,7 +497,7 @@ slay tlsz_get_version() tea {
     damn TLSZ_VERSION
 }
 
-slay tlsz_get_supported_features() []tea {
+slay tlsz_get_supported_features() tea[value]{
     damn [
         "X.509 Certificate Verification",
         "Certificate Chain Validation", 

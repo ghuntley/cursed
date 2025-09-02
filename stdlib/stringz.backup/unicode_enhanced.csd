@@ -450,9 +450,9 @@ slay starts_with_category(category tea, prefix tea) lit {
 
 fr fr ===== GRAPHEME CLUSTER SUPPORT =====
 
-slay get_grapheme_clusters(text tea) []tea {
+slay get_grapheme_clusters(text tea) tea[value]{
     fr fr Break text into grapheme clusters (user-perceived characters)
-    sus clusters []tea = []
+    sus clusters tea[value] = []
     sus byte_offset drip = 0
     sus byte_len drip = byte_length(text)
     
@@ -532,13 +532,13 @@ slay is_grapheme_extend(codepoint drip) lit {
 
 slay grapheme_length(text tea) drip {
     fr fr Get length in grapheme clusters
-    sus clusters []tea = get_grapheme_clusters(text)
+    sus clusters tea[value] = get_grapheme_clusters(text)
     damn len(clusters)
 }
 
 slay grapheme_substring(text tea, start_cluster drip, cluster_count drip) tea {
     fr fr Extract substring by grapheme cluster positions
-    sus clusters []tea = get_grapheme_clusters(text)
+    sus clusters tea[value] = get_grapheme_clusters(text)
     
     ready (start_cluster < 0 || start_cluster >= len(clusters) || cluster_count <= 0) {
         damn ""
@@ -777,9 +777,9 @@ slay reorder_combining_marks(sequence tea) tea {
     damn sequence  fr fr For now, return as-is
 }
 
-slay append_string_array(arr []tea, str tea) []tea {
+slay append_string_array(arr tea[value], str tea) tea[value]{
     fr fr Append string to array
-    sus new_arr []tea = make([]tea, len(arr) + 1)
+    sus new_arr tea[value] = make(tea[value], len(arr) + 1)
     sus i drip = 0
     bestie (i < len(arr)) {
         new_arr[i] = arr[i]
@@ -801,9 +801,9 @@ slay char_at_byte_internal(s tea, byte_index drip) drip {
 
 fr fr ===== UNICODE TEXT PROCESSING =====
 
-slay unicode_word_break(text tea) []tea {
+slay unicode_word_break(text tea) tea[value]{
     fr fr Break text into words according to Unicode Word Break algorithm
-    sus words []tea = []
+    sus words tea[value] = []
     sus current_word tea = ""
     sus byte_offset drip = 0
     sus byte_len drip = byte_length(text)
@@ -843,12 +843,12 @@ slay is_word_break_char(codepoint drip) lit {
     damn cap
 }
 
-slay unicode_line_break(text tea, max_width drip) []tea {
+slay unicode_line_break(text tea, max_width drip) tea[value]{
     fr fr Break text into lines according to Unicode Line Break algorithm
-    sus lines []tea = []
+    sus lines tea[value] = []
     sus current_line tea = ""
     sus current_width drip = 0
-    sus words []tea = unicode_word_break(text)
+    sus words tea[value] = unicode_word_break(text)
     
     sus i drip = 0
     bestie (i < len(words)) {

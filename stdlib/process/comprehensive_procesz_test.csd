@@ -492,7 +492,7 @@ slay test_process_tree() {
     child_process.parent_pid = parent_process.pid
     active_processes[child_process.pid] = child_process
     
-    sus tree []Process = get_process_tree(parent_process.pid)
+    sus tree Process[value] = get_process_tree(parent_process.pid)
     assert_int_gte(tree.length(), 1)
     
     vibez.spill("✅ Process tree test passed - Tree size: ", tree.length())

@@ -14,8 +14,8 @@ squad SaxParser {
     column drip
     handler SaxHandler
     config XmlParserConfig
-    namespace_stack []NamespaceContext
-    element_stack []tea
+    namespace_stack NamespaceContext[value]
+    element_stack tea[value]
     current_char tea
     buffer tea
     state SaxParserState
@@ -56,7 +56,7 @@ squad DefaultSaxHandler collab SaxHandler {
         vibez.spill("SAX: Document ended")
     }
     
-    slay on_start_element(name tea, attributes []XmlAttribute) {
+    slay on_start_element(name tea, attributes XmlAttribute[value]) {
         vibez.spill("SAX: Start element: " + name)
         bestie (sus attr XmlAttribute in attributes) {
             vibez.spill("  Attribute: " + attr.name + "=" + attr.value)
@@ -330,7 +330,7 @@ slay parse_sax_start_tag(parser sus SaxParser) yikes<tea> {
     }
     
     # Parse attributes
-    sus attributes []XmlAttribute = []
+    sus attributes XmlAttribute[value] = []
     sax_skip_whitespace(parser)
     
     bestie (parser.current_char != ">" && parser.current_char != "/" && !sax_is_at_end(parser)) {

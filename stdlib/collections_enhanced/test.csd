@@ -30,7 +30,7 @@ trie_insert(trie, "hello")
 trie_insert(trie, "help")
 trie_insert(trie, "world")
 assert_true(trie_contains(trie, "hello"))
-sus prefixes []tea = trie_find_prefixes(trie, "hel")
+sus prefixes tea[value] = trie_find_prefixes(trie, "hel")
 assert_eq_int(len(prefixes), 2)
 
 // Test priority queue with custom comparator
@@ -65,7 +65,7 @@ sus skip_list sus_skip_list<drip> = create_skip_list()
 skip_list_insert(skip_list, 1)
 skip_list_insert(skip_list, 3)
 skip_list_insert(skip_list, 2)
-sus ordered_values []drip = skip_list_to_array(skip_list)
+sus ordered_values drip[value] = skip_list_to_array(skip_list)
 assert_eq_int(ordered_values[0], 1)
 assert_eq_int(ordered_values[2], 3)
 
@@ -86,7 +86,7 @@ sus graph sus_graph = create_adjacency_list_graph(5)
 graph_add_edge(graph, 0, 1)
 graph_add_edge(graph, 1, 2)
 graph_add_edge(graph, 2, 3)
-sus path []drip = graph_shortest_path(graph, 0, 3)
+sus path drip[value] = graph_shortest_path(graph, 0, 3)
 assert_eq_int(len(path), 4)
 
 // Test circular buffer

@@ -66,7 +66,7 @@ slay test_archive_file_operations() {
     testz.assert_eq(dir_result, "code", "Directory addition to archive")
     
     # Test file listing
-    sus files []tea = list_files() fam {
+    sus files tea[value] = list_files() fam {
         when err -> {
             vibez.spill("ERROR: Failed to list files: " + err)
             damn
@@ -411,7 +411,7 @@ slay test_zip_specific_features() {
     vibez.spill("ZIP Stats:\n" + zip_stats)
     
     # Test ZIP file listing
-    sus zip_files []tea = zip_list_files()
+    sus zip_files tea[value] = zip_list_files()
     testz.assert_gt(len(zip_files), 0, "ZIP contains files")
     
     vibez.spill("✓ ZIP-specific features test completed")

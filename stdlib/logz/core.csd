@@ -177,13 +177,13 @@ give LevelFilter : LogFilter {
 
 # Module-based filter
 squad ModuleFilter {
-    sus allowed_modules []tea
-    sus blocked_modules []tea
+    sus allowed_modules tea[value]
+    sus blocked_modules tea[value]
     
     slay new() ModuleFilter {
         damn ModuleFilter{
-            allowed_modules: []tea{},
-            blocked_modules: []tea{}
+            allowed_modules: tea[value]{},
+            blocked_modules: tea[value]{}
         }
     }
     
@@ -225,9 +225,9 @@ give ModuleFilter : LogFilter {
 
 # Core logger implementation
 squad Logger {
-    sus backends []LogBackend
+    sus backends LogBackend[value]
     sus formatter LogFormatter
-    sus filters []LogFilter
+    sus filters LogFilter[value]
     sus min_level LogLevel
     sus async_enabled lit
     sus buffer_size drip
@@ -236,9 +236,9 @@ squad Logger {
     
     slay new(formatter LogFormatter) Logger {
         sus logger Logger = Logger{
-            backends: []LogBackend{},
+            backends: LogBackend[value]{},
             formatter: formatter,
-            filters: []LogFilter{},
+            filters: LogFilter[value]{},
             min_level: LogLevel.DEBUG(),
             async_enabled: nah,
             buffer_size: 1000,

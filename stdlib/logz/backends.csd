@@ -377,10 +377,10 @@ give SyslogBackend : LogBackend {
 
 # Multi-backend aggregator
 squad MultiBackend {
-    sus backends []LogBackend
+    sus backends LogBackend[value]
     
     slay new() MultiBackend {
-        damn MultiBackend{ backends: []LogBackend{} }
+        damn MultiBackend{ backends: LogBackend[value]{} }
     }
     
     slay add(mut self MultiBackend, backend LogBackend) MultiBackend {
@@ -391,7 +391,7 @@ squad MultiBackend {
 
 give MultiBackend : LogBackend {
     slay write(self MultiBackend, entry LogEntry) yikes<tea> {
-        sus errors []tea = []tea{}
+        sus errors tea[value] = tea[value]{}
         
         bestie (backend in self.backends) {
             backend.write(entry) fam {
@@ -428,7 +428,7 @@ give MultiBackend : LogBackend {
 # Buffered backend wrapper
 squad BufferedBackend {
     sus backend LogBackend
-    sus buffer []LogEntry
+    sus buffer LogEntry[value]
     sus buffer_size drip
     sus flush_interval drip
     sus last_flush drip
@@ -436,7 +436,7 @@ squad BufferedBackend {
     slay new(backend LogBackend, buffer_size drip, flush_interval drip) BufferedBackend {
         sus buffered BufferedBackend = BufferedBackend{
             backend: backend,
-            buffer: []LogEntry{},
+            buffer: LogEntry[value]{},
             buffer_size: buffer_size,
             flush_interval: flush_interval,
             last_flush: current_timestamp()
@@ -471,7 +471,7 @@ squad BufferedBackend {
                 }
             }
         }
-        self.buffer = []LogEntry{}
+        self.buffer = LogEntry[value]{}
         self.last_flush = current_timestamp()
         
         self.backend.flush() fam {

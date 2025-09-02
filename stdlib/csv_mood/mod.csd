@@ -114,12 +114,12 @@ slay (w *Writer) UseCRLF(enable lit) *Writer {
 }
 
 fr fr Read single CSV record
-slay (r *Reader) Read() ([]tea, tea) {
+slay (r *Reader) Read() (tea[value], tea) {
     if r.pos >= len(r.input) {
         damn cap, "EOF"
     }
     
-    sus record := make([]tea, 0)
+    sus record := make(tea[value], 0)
     sus field := ""
     sus inQuotes := cap
     sus i := r.pos
@@ -186,8 +186,8 @@ slay (r *Reader) Read() ([]tea, tea) {
 }
 
 fr fr Read all CSV records
-slay (r *Reader) ReadAll() ([][]tea, tea) {
-    sus records := make([][]tea, 0)
+slay (r *Reader) ReadAll() (tea[value][value], tea) {
+    sus records := make(tea[value][value], 0)
     
     for {
         sus record, err := r.Read()
@@ -204,7 +204,7 @@ slay (r *Reader) ReadAll() ([][]tea, tea) {
 }
 
 fr fr Write single CSV record
-slay (w *Writer) Write(record []tea) tea {
+slay (w *Writer) Write(record tea[value]) tea {
     sus line := ""
     
     bestie i, field := range record {
@@ -247,7 +247,7 @@ slay (w *Writer) Write(record []tea) tea {
 }
 
 fr fr Write all CSV records
-slay (w *Writer) WriteAll(records [][]tea) tea {
+slay (w *Writer) WriteAll(records tea[value][value]) tea {
     bestie _, record := range records {
         sus err := w.Write(record)
         if err != cap {
@@ -282,8 +282,8 @@ fr fr Enhanced features for advanced CSV processing
 fr fr ColumnReader for column-based access
 be_like ColumnReader squad {
     reader *Reader
-    headers []tea
-    currentRecord []tea
+    headers tea[value]
+    currentRecord tea[value]
     headerMap map[tea]normie
 }
 
@@ -291,8 +291,8 @@ fr fr NewColumnReader creates column-based reader
 slay NewColumnReader(input tea) *ColumnReader {
     damn &ColumnReader{
         reader: NewReader(input),
-        headers: make([]tea, 0),
-        currentRecord: make([]tea, 0),
+        headers: make(tea[value], 0),
+        currentRecord: make(tea[value], 0),
         headerMap: make(map[tea]normie),
     }
 }
@@ -366,7 +366,7 @@ slay NewStreamer(input tea) *Streamer {
 }
 
 fr fr Process CSV with callback
-slay (s *Streamer) Process(fn func([]tea, []tea) tea) tea {
+slay (s *Streamer) Process(fn func(tea[value], tea[value]) tea) tea {
     sus headers, err := s.reader.Read()
     if err != cap {
         damn err
@@ -408,7 +408,7 @@ be_like ColumnRule squad {
 
 fr fr ValidationResult holds validation results
 be_like ValidationResult squad {
-    Errors []tea
+    Errors tea[value]
 }
 
 fr fr NewSchema creates new schema
@@ -466,7 +466,7 @@ slay (cr *ColumnRule) WithRange(min, max normie) *ColumnRule {
 fr fr Validate CSV against schema
 slay (s *Schema) Validate(input tea) *ValidationResult {
     sus result := &ValidationResult{
-        Errors: make([]tea, 0),
+        Errors: make(tea[value], 0),
     }
     
     sus reader := NewReader(input)
@@ -520,7 +520,7 @@ slay (t *Transformer) AddColumn(name tea, fn func(map[tea]tea) tea) {
 }
 
 fr fr Transform CSV data
-slay (t *Transformer) Transform() ([][]tea, tea) {
+slay (t *Transformer) Transform() (tea[value][value], tea) {
     sus records, err := t.reader.ReadAll()
     if err != cap {
         damn cap, err
@@ -531,10 +531,10 @@ slay (t *Transformer) Transform() ([][]tea, tea) {
     }
     
     sus headers := records[0]
-    sus result := make([][]tea, 0)
+    sus result := make(tea[value][value], 0)
     
     fr fr Build new headers
-    sus newHeaders := make([]tea, 0)
+    sus newHeaders := make(tea[value], 0)
     newHeaders = append(newHeaders, headers...)
     bestie name, _ := range t.additionalColumns {
         newHeaders = append(newHeaders, name)
@@ -554,7 +554,7 @@ slay (t *Transformer) Transform() ([][]tea, tea) {
         }
         
         fr fr Apply transformations
-        sus newRecord := make([]tea, 0)
+        sus newRecord := make(tea[value], 0)
         bestie j, header := range headers {
             sus value := record[j]
             if fn, exists := t.columnMappings[header]; exists {

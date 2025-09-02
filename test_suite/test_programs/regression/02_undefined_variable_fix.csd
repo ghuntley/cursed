@@ -65,14 +65,14 @@ slay test_array_variable_patterns() {
     vibez.spill("=== Array Variable Pattern Tests ===")
     
     // Test proper array declarations
-    sus number_array []normie = []normie{}
+    sus number_array normie[value] = normie[value]{}
     vibez.spill("Empty array length:", len(number_array))
     
-    sus initialized_array []normie = []normie{1, 2, 3, 4, 5}
+    sus initialized_array normie[value] = normie[value]{1, 2, 3, 4, 5}
     vibez.spill("Initialized array length:", len(initialized_array))
     
     // Test array access patterns
-    finna i normie = 0; i < len(initialized_array); i++ {
+    bestie i := 0; i < len(initialized_array); i++ {
         sus array_element = initialized_array[i]
         vibez.spill("Element", i, ":", array_element)
     }
@@ -83,7 +83,7 @@ slay test_array_variable_patterns() {
     number_array = append(number_array, 30)
     
     vibez.spill("Modified array length:", len(number_array))
-    finna j normie = 0; j < len(number_array); j++ {
+    bestie j := 0; j < len(number_array); j++ {
         vibez.spill("Modified element", j, ":", number_array[j])
     }
 }
@@ -139,7 +139,7 @@ slay test_variable_scope_isolation() {
     vibez.spill("Back in outer scope, outer_var:", outer_var)
     
     // Test loop variable scoping
-    finna loop_var normie = 0; loop_var < 3; loop_var++ {
+    bestie loop_var := 0; loop_var < 3; loop_var++ {
         sus loop_local normie = loop_var * 10
         vibez.spill("Loop iteration", loop_var, "local value:", loop_local)
     }
@@ -153,7 +153,7 @@ slay test_variable_lifecycle_patterns() {
     // Test variable creation, use, and reassignment patterns
     sus lifecycle_var normie = 1
     
-    finna stage normie = 1; stage <= 5; stage++ {
+    bestie stage := 1; stage <= 5; stage++ {
         vibez.spill("Lifecycle stage", stage, "value:", lifecycle_var)
         
         ready (stage == 1) {

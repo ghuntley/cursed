@@ -7,7 +7,7 @@ yeet "testz"
 
 fr fr ===== TEST SETUP =====
 
-sus test_output_buffer []tea = []
+sus test_output_buffer tea[value] = []
 sus test_file_path tea = "/tmp/vibez_test.txt"
 sus tests_passed normie = 0
 sus tests_failed normie = 0
@@ -88,11 +88,11 @@ slay test_spillln() {
 slay test_spill_values() {
     vibez.spill("--- Testing spill_values() function ---")
     
-    sus values []tea = ["Value1", "Value2", "Value3"]
+    sus values tea[value] = ["Value1", "Value2", "Value3"]
     sus result1 lit = vibez.spill_values(values)
     assert_true(result1, "spill_values() prints multiple values")
     
-    sus single_value []tea = ["SingleValue"]
+    sus single_value tea[value] = ["SingleValue"]
     sus result2 lit = vibez.spill_values(single_value)
     assert_true(result2, "spill_values() handles single value")
     
@@ -103,7 +103,7 @@ slay test_spill_values() {
 slay test_spill_sep() {
     vibez.spill("--- Testing spill_sep() function ---")
     
-    sus values []tea = ["A", "B", "C"]
+    sus values tea[value] = ["A", "B", "C"]
     sus result1 lit = vibez.spill_sep(",", values)
     assert_true(result1, "spill_sep() with comma separator")
     
@@ -122,15 +122,15 @@ fr fr ===== FORMATTED OUTPUT TESTS =====
 slay test_spillf() {
     vibez.spill("--- Testing spillf() formatted output ---")
     
-    sus args1 []tea = ["World"]
+    sus args1 tea[value] = ["World"]
     sus result1 lit = vibez.spillf("Hello %s", args1)
     assert_true(result1, "spillf() basic string substitution")
     
-    sus args2 []tea = ["Alice", "25"] 
+    sus args2 tea[value] = ["Alice", "25"] 
     sus result2 lit = vibez.spillf("Name: %s, Age: %s", args2)
     assert_true(result2, "spillf() multiple substitutions")
     
-    sus args3 []tea = []
+    sus args3 tea[value] = []
     sus result3 lit = vibez.spillf("No substitutions", args3)
     assert_true(result3, "spillf() with no arguments")
     
@@ -141,15 +141,15 @@ slay test_spillf() {
 slay test_spillstr() {
     vibez.spill("--- Testing spillstr() string formatting ---")
     
-    sus args1 []tea = ["World"]
+    sus args1 tea[value] = ["World"]
     sus formatted1 tea = vibez.spillstr("Hello %s", args1)
     assert_equal(formatted1, "Hello World", "spillstr() basic formatting")
     
-    sus args2 []tea = ["Test", "String"]
+    sus args2 tea[value] = ["Test", "String"]
     sus formatted2 tea = vibez.spillstr("%s %s", args2)
     assert_equal(formatted2, "Test String", "spillstr() multiple arguments")
     
-    sus args3 []tea = []
+    sus args3 tea[value] = []
     sus formatted3 tea = vibez.spillstr("No placeholders", args3)
     assert_equal(formatted3, "No placeholders", "spillstr() no formatting")
     
@@ -275,12 +275,12 @@ slay test_edge_cases() {
     assert_true(long_result, "spill() handles long strings")
     
     fr fr Test empty array for spill_values
-    sus empty_values []tea = []
+    sus empty_values tea[value] = []
     sus empty_result lit = vibez.spill_values(empty_values)
     assert_true(empty_result == cap, "spill_values() fails on empty array")
     
     fr fr Test format string with no placeholders but with args
-    sus extra_args []tea = ["unused", "arguments"] 
+    sus extra_args tea[value] = ["unused", "arguments"] 
     sus extra_result lit = vibez.spillf("No placeholders here", extra_args)
     assert_true(extra_result, "spillf() handles extra arguments gracefully")
     
@@ -305,7 +305,7 @@ slay test_performance() {
     assert_true(rapid_success == 100, "Performance test: 100 rapid spill() calls")
     
     fr fr Test large batch output
-    sus batch_values []tea = []
+    sus batch_values tea[value] = []
     bestie i := 0; i < 50; i++ {
         sus value tea = "Item" + testz.int_to_string(i)
         batch_values = append(batch_values, value)
@@ -385,8 +385,8 @@ slay main() {
 fr fr ===== TEST UTILITIES =====
 
 fr fr Helper function to generate test data
-slay generate_test_data(count normie) []tea {
-    sus data []tea = []
+slay generate_test_data(count normie) tea[value]{
+    sus data tea[value] = []
     bestie i := 0; i < count; i++ {
         sus item tea = "TestItem" + testz.int_to_string(i)
         data = append(data, item)

@@ -5,21 +5,21 @@ slay test_constant_time_compare() {
     test_start("ConstantTimeCompare")
     
     fr fr Same slices
-    sus a := []byte{1, 2, 3, 4}
-    sus b := []byte{1, 2, 3, 4}
+    sus a := byte[value]{1, 2, 3, 4}
+    sus b := byte[value]{1, 2, 3, 4}
     assert_eq_int(crypto_subtle_drip.ConstantTimeCompare(a, b), 1)
     
     fr fr Different slices
-    sus c := []byte{1, 2, 3, 5}
+    sus c := byte[value]{1, 2, 3, 5}
     assert_eq_int(crypto_subtle_drip.ConstantTimeCompare(a, c), 0)
     
     fr fr Different lengths
-    sus d := []byte{1, 2, 3}
+    sus d := byte[value]{1, 2, 3}
     assert_eq_int(crypto_subtle_drip.ConstantTimeCompare(a, d), 0)
     
     fr fr Empty slices
-    sus e := []byte{}
-    sus f := []byte{}
+    sus e := byte[value]{}
+    sus f := byte[value]{}
     assert_eq_int(crypto_subtle_drip.ConstantTimeCompare(e, f), 1)
     
     print_test_summary()
@@ -100,8 +100,8 @@ slay test_constant_time_copy() {
     test_start("ConstantTimeCopy")
     
     fr fr Copy when condition is 1
-    sus dest := []byte{255, 255, 255, 255, 255}
-    sus src := []byte{1, 2, 3, 4, 5}
+    sus dest := byte[value]{255, 255, 255, 255, 255}
+    sus src := byte[value]{1, 2, 3, 4, 5}
     crypto_subtle_drip.ConstantTimeCopy(1, dest, src)
     
     bestie i := 0; i < len(dest); i++ {
@@ -109,7 +109,7 @@ slay test_constant_time_copy() {
     }
     
     fr fr Don't copy when condition is 0
-    dest = []byte{255, 255, 255, 255, 255}
+    dest = byte[value]{255, 255, 255, 255, 255}
     crypto_subtle_drip.ConstantTimeCopy(0, dest, src)
     
     bestie i := 0; i < len(dest); i++ {
@@ -142,19 +142,19 @@ slay test_secret_bytes() {
     
     fr fr Create secret
     sus password := "super-secret-password"
-    sus secret := crypto_subtle_drip.NewSecretBytes([]byte(password))
+    sus secret := crypto_subtle_drip.NewSecretBytes(byte[value](password))
     
     assert_eq_int(secret.Len(), len(password))
     
     fr fr Compare with correct password
-    assert_eq_int(secret.ConstantTimeCompare([]byte(password)), 1)
+    assert_eq_int(secret.ConstantTimeCompare(byte[value](password)), 1)
     
     fr fr Compare with wrong password
-    assert_eq_int(secret.ConstantTimeCompare([]byte("wrong-password")), 0)
+    assert_eq_int(secret.ConstantTimeCompare(byte[value]("wrong-password")), 0)
     
     fr fr Clear secret
     secret.Clear()
-    assert_eq_int(secret.ConstantTimeCompare([]byte(password)), 0)
+    assert_eq_int(secret.ConstantTimeCompare(byte[value](password)), 0)
     
     print_test_summary()
 }
@@ -162,7 +162,7 @@ slay test_secret_bytes() {
 slay test_blinded_access() {
     test_start("BlindedAccess")
     
-    sus array := []byte{10, 20, 30, 40, 50}
+    sus array := byte[value]{10, 20, 30, 40, 50}
     
     fr fr Valid access
     assert_eq_int(normie(crypto_subtle_drip.BlindedAccess(array, 0)), 10)
@@ -179,8 +179,8 @@ slay test_blinded_access() {
 slay test_constant_time_select_bytes() {
     test_start("ConstantTimeSelectBytes")
     
-    sus trueBytes := []byte{1, 2, 3, 4}
-    sus falseBytes := []byte{5, 6, 7, 8}
+    sus trueBytes := byte[value]{1, 2, 3, 4}
+    sus falseBytes := byte[value]{5, 6, 7, 8}
     
     fr fr Select true bytes
     sus result := crypto_subtle_drip.ConstantTimeSelectBytes(1, trueBytes, falseBytes)

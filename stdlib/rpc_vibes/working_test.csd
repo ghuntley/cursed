@@ -18,7 +18,7 @@ slay create_rpc_error(id tea, code normie, message tea) tea {
 
 fr fr Method registry variables
 sus method_count normie = 0
-sus registered_methods [3]tea
+sus registered_methods tea[3]
 
 fr fr Register a method
 slay register_method(method_name tea, handler tea) lit {

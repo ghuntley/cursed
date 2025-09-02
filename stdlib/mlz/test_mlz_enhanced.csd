@@ -9,8 +9,8 @@ yeet "vibez"
 
 fr fr === TEST UTILITY FUNCTIONS ===
 
-slay generate_test_data(num_samples normie, num_features normie) []meal {
-    sus data []meal = []
+slay generate_test_data(num_samples normie, num_features normie) meal[value]{
+    sus data meal[value] = []
     sus i normie = 0
     bestie i < num_samples * num_features {
         data = append(data, random_uniform())
@@ -19,8 +19,8 @@ slay generate_test_data(num_samples normie, num_features normie) []meal {
     damn data
 }
 
-slay generate_test_labels(num_samples normie, num_classes normie) []meal {
-    sus labels []meal = []
+slay generate_test_labels(num_samples normie, num_classes normie) meal[value]{
+    sus labels meal[value] = []
     sus i normie = 0
     bestie i < num_samples {
         sus label meal = random_range(0, num_classes)
@@ -86,8 +86,8 @@ slay test_ml_loss_functions() cringe {
     vibez.spill("=== Testing ML Loss Functions ===")
     
     fr fr Test MSE loss
-    sus predictions []meal = [1.0, 2.0, 3.0]
-    sus targets []meal = [1.1, 1.9, 3.2]
+    sus predictions meal[value] = [1.0, 2.0, 3.0]
+    sus targets meal[value] = [1.1, 1.9, 3.2]
     sus mse meal = mse_loss(predictions, targets)
     test_assert_ml(mse >= 0.0 && mse < 0.1, "MSE loss reasonable")
     
@@ -100,8 +100,8 @@ slay test_ml_loss_functions() cringe {
     test_assert_ml(mae >= 0.0 && mae < 0.3, "MAE loss reasonable")
     
     fr fr Test binary cross-entropy
-    sus bin_pred []meal = [0.9, 0.1, 0.8, 0.2]
-    sus bin_targets []meal = [1.0, 0.0, 1.0, 0.0]
+    sus bin_pred meal[value] = [0.9, 0.1, 0.8, 0.2]
+    sus bin_targets meal[value] = [1.0, 0.0, 1.0, 0.0]
     sus bce meal = binary_crossentropy_loss(bin_pred, bin_targets)
     test_assert_ml(bce >= 0.0, "Binary cross-entropy non-negative")
     
@@ -117,27 +117,27 @@ slay test_linear_regression() cringe {
     sus num_samples normie = 20
     
     fr fr Generate simple linear data
-    sus features []meal = generate_test_data(num_samples, num_features)
-    sus targets []meal = generate_test_labels(num_samples, 1)
+    sus features meal[value] = generate_test_data(num_samples, num_features)
+    sus targets meal[value] = generate_test_labels(num_samples, 1)
     
     fr fr Initialize weights and bias
-    sus weights []meal = linear_model_weights_init(num_features)
+    sus weights meal[value] = linear_model_weights_init(num_features)
     sus bias meal = 0.0
     
     test_assert_ml(len(weights) == num_features, "Linear model weights initialized correctly")
     
     fr fr Test single prediction
-    sus sample_features []meal = [1.0, 2.0, 3.0]
+    sus sample_features meal[value] = [1.0, 2.0, 3.0]
     sus prediction meal = linear_model_predict_single(sample_features, weights, bias)
     test_assert_ml(prediction != 0.0, "Linear model produces prediction")
     
     fr fr Test batch prediction
-    sus predictions []meal = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
+    sus predictions meal[value] = linear_model_predict_batch(features, num_samples, num_features, weights, bias)
     test_assert_ml(len(predictions) == num_samples, "Batch prediction size correct")
     
     fr fr Test training step
     sus learning_rate meal = 0.01
-    sus new_weights []meal
+    sus new_weights meal[value]
     sus new_bias meal
     (new_weights, new_bias) = linear_model_train_step(features, targets, weights, bias, num_samples, num_features, learning_rate)
     
@@ -156,22 +156,22 @@ slay test_nn_layers() cringe {
     sus output_size normie = 3
     
     fr fr Test weight initialization
-    sus weights []meal = layer_weights_init(input_size, output_size)
+    sus weights meal[value] = layer_weights_init(input_size, output_size)
     test_assert_ml(len(weights) == input_size * output_size, "Layer weights size correct")
     
     fr fr Test bias initialization
-    sus biases []meal = layer_biases_init(output_size)
+    sus biases meal[value] = layer_biases_init(output_size)
     test_assert_ml(len(biases) == output_size, "Layer biases size correct")
     
     fr fr Test forward pass
-    sus input []meal = [1.0, 2.0, 3.0, 4.0]
-    sus output []meal = layer_forward_single(input, weights, biases, input_size, output_size)
+    sus input meal[value] = [1.0, 2.0, 3.0, 4.0]
+    sus output meal[value] = layer_forward_single(input, weights, biases, input_size, output_size)
     test_assert_ml(len(output) == output_size, "Layer forward pass output size correct")
     
     fr fr Test batch forward pass
     sus batch_size normie = 5
-    sus input_matrix []meal = generate_test_data(batch_size, input_size)
-    sus output_matrix []meal = layer_forward_batch(input_matrix, weights, biases, batch_size, input_size, output_size)
+    sus input_matrix meal[value] = generate_test_data(batch_size, input_size)
+    sus output_matrix meal[value] = layer_forward_batch(input_matrix, weights, biases, batch_size, input_size, output_size)
     test_assert_ml(len(output_matrix) == batch_size * output_size, "Batch forward pass size correct")
     
     vibez.spill("Neural network layer tests completed!")
@@ -186,20 +186,20 @@ slay test_kmeans_clustering() cringe {
     sus num_features normie = 2
     sus k normie = 3
     
-    sus data []meal = generate_test_data(num_samples, num_features)
+    sus data meal[value] = generate_test_data(num_samples, num_features)
     
     fr fr Test centroid initialization
-    sus centroids []meal = kmeans_init_centroids(data, num_samples, num_features, k)
+    sus centroids meal[value] = kmeans_init_centroids(data, num_samples, num_features, k)
     test_assert_ml(len(centroids) == k * num_features, "Centroids initialized correctly")
     
     fr fr Test distance calculation
-    sus point1 []meal = [1.0, 2.0]
-    sus point2 []meal = [4.0, 6.0]
+    sus point1 meal[value] = [1.0, 2.0]
+    sus point2 meal[value] = [4.0, 6.0]
     sus distance meal = kmeans_distance_squared(point1, point2)
     test_assert_ml(distance == 25.0, "Distance calculation correct (3² + 4² = 25)")
     
     fr fr Test cluster assignment
-    sus assignments []normie = kmeans_assign_clusters(data, centroids, num_samples, num_features, k)
+    sus assignments normie[value] = kmeans_assign_clusters(data, centroids, num_samples, num_features, k)
     test_assert_ml(len(assignments) == num_samples, "Cluster assignments size correct")
     
     fr fr Verify assignments are valid
@@ -215,12 +215,12 @@ slay test_kmeans_clustering() cringe {
     test_assert_ml(valid_assignments, "All cluster assignments valid")
     
     fr fr Test centroid update
-    sus new_centroids []meal = kmeans_update_centroids(data, assignments, num_samples, num_features, k)
+    sus new_centroids meal[value] = kmeans_update_centroids(data, assignments, num_samples, num_features, k)
     test_assert_ml(len(new_centroids) == k * num_features, "Updated centroids size correct")
     
     fr fr Test full clustering
-    sus final_centroids []meal
-    sus final_assignments []normie
+    sus final_centroids meal[value]
+    sus final_assignments normie[value]
     (final_centroids, final_assignments) = kmeans_cluster(data, num_samples, num_features, k, 10)
     test_assert_ml(len(final_centroids) == k * num_features, "Final centroids size correct")
     test_assert_ml(len(final_assignments) == num_samples, "Final assignments size correct")
@@ -233,8 +233,8 @@ fr fr === SVM TESTS ===
 slay test_svm_kernels() cringe {
     vibez.spill("=== Testing SVM Kernels ===")
     
-    sus x1 []meal = [1.0, 2.0, 3.0]
-    sus x2 []meal = [2.0, 3.0, 4.0]
+    sus x1 meal[value] = [1.0, 2.0, 3.0]
+    sus x2 meal[value] = [2.0, 3.0, 4.0]
     
     fr fr Test linear kernel
     sus linear_result meal = svm_kernel_linear(x1, x2)
@@ -258,7 +258,7 @@ slay test_decision_trees() cringe {
     vibez.spill("=== Testing Decision Trees ===")
     
     sus num_classes normie = 3
-    sus labels []meal = [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
+    sus labels meal[value] = [0.0, 0.0, 1.0, 1.0, 2.0, 2.0]
     sus start_idx normie = 0
     sus end_idx normie = 6
     
@@ -272,7 +272,7 @@ slay test_decision_trees() cringe {
     
     fr fr Test best split finding
     sus num_features normie = 2
-    sus features []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+    sus features meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
     sus best_feature normie
     sus best_threshold meal
     sus best_gain meal
@@ -294,7 +294,7 @@ slay test_naive_bayes() cringe {
     sus num_classes normie = 2
     
     fr fr Create simple dataset
-    sus features []meal = [
+    sus features meal[value] = [
         1.0, 1.0,  fr fr Class 0
         1.5, 1.2,  fr fr Class 0
         1.1, 0.9,  fr fr Class 0
@@ -310,7 +310,7 @@ slay test_naive_bayes() cringe {
         5.1, 4.9   fr fr Class 1
     ]
     
-    sus labels []meal = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+    sus labels meal[value] = [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
     
     fr fr Train Naive Bayes model
     sus model NaiveBayesModel = naive_bayes_train(features, labels, num_samples, num_features, num_classes)
@@ -321,11 +321,11 @@ slay test_naive_bayes() cringe {
     test_assert_ml(len(model.feature_means) == num_classes, "Feature means size correct")
     
     fr fr Test prediction
-    sus test_sample []meal = [2.0, 2.0]  fr fr Should be closer to class 0
+    sus test_sample meal[value] = [2.0, 2.0]  fr fr Should be closer to class 0
     sus prediction normie = naive_bayes_predict(model, test_sample)
     test_assert_ml(prediction >= 0 && prediction < num_classes, "Prediction class valid")
     
-    sus test_sample2 []meal = [4.5, 4.5]  fr fr Should be closer to class 1
+    sus test_sample2 meal[value] = [4.5, 4.5]  fr fr Should be closer to class 1
     sus prediction2 normie = naive_bayes_predict(model, test_sample2)
     test_assert_ml(prediction2 >= 0 && prediction2 < num_classes, "Prediction2 class valid")
     
@@ -340,23 +340,23 @@ slay test_pca() cringe {
     sus num_samples normie = 10
     sus num_features normie = 3
     
-    sus data []meal = generate_test_data(num_samples, num_features)
+    sus data meal[value] = generate_test_data(num_samples, num_features)
     
     fr fr Test data centering
-    sus centered_data []meal
-    sus means []meal
+    sus centered_data meal[value]
+    sus means meal[value]
     (centered_data, means) = pca_center_data(data, num_samples, num_features)
     
     test_assert_ml(len(centered_data) == num_samples * num_features, "Centered data size correct")
     test_assert_ml(len(means) == num_features, "Means size correct")
     
     fr fr Test covariance matrix computation
-    sus cov_matrix []meal = pca_compute_covariance_matrix(centered_data, num_samples, num_features)
+    sus cov_matrix meal[value] = pca_compute_covariance_matrix(centered_data, num_samples, num_features)
     test_assert_ml(len(cov_matrix) == num_features * num_features, "Covariance matrix size correct")
     
     fr fr Test eigenvalue computation
     sus eigenvalue meal
-    sus eigenvector []meal
+    sus eigenvector meal[value]
     (eigenvalue, eigenvector) = pca_power_iteration_eigenvalue(cov_matrix, num_features, 50)
     
     test_assert_ml(len(eigenvector) == num_features, "Eigenvector size correct")
@@ -375,8 +375,8 @@ slay test_random_forest() cringe {
     sus num_classes normie = 2
     sus num_trees normie = 5
     
-    sus features []meal = generate_test_data(num_samples, num_features)
-    sus labels []meal = generate_test_labels(num_samples, num_classes)
+    sus features meal[value] = generate_test_data(num_samples, num_features)
+    sus labels meal[value] = generate_test_labels(num_samples, num_classes)
     
     fr fr Train random forest
     sus model RandomForestModel = random_forest_train(features, labels, num_samples, num_features, num_classes, num_trees)
@@ -386,7 +386,7 @@ slay test_random_forest() cringe {
     test_assert_ml(model.max_features > 0, "Max features positive")
     
     fr fr Test prediction
-    sus test_features []meal = [0.5, 0.6, 0.7]
+    sus test_features meal[value] = [0.5, 0.6, 0.7]
     sus prediction normie = random_forest_predict(model, test_features, num_classes)
     test_assert_ml(prediction >= 0 && prediction < num_classes, "Random forest prediction valid")
     
@@ -438,10 +438,10 @@ slay test_anomaly_detection() cringe {
     sus num_features normie = 2
     sus num_trees normie = 10
     
-    sus data []meal = generate_test_data(num_samples, num_features)
+    sus data meal[value] = generate_test_data(num_samples, num_features)
     
     fr fr Test isolation forest
-    sus anomaly_scores []meal = isolation_forest_anomaly_score(data, num_samples, num_features, num_trees)
+    sus anomaly_scores meal[value] = isolation_forest_anomaly_score(data, num_samples, num_features, num_trees)
     test_assert_ml(len(anomaly_scores) == num_samples, "Anomaly scores size correct")
     
     sus all_scores_valid lit = based
@@ -456,7 +456,7 @@ slay test_anomaly_detection() cringe {
     test_assert_ml(all_scores_valid, "All anomaly scores in valid range [0,1]")
     
     fr fr Test one-class SVM
-    sus anomaly_flags []lit = one_class_svm_anomaly_detection(data, num_samples, num_features, 0.1)
+    sus anomaly_flags lit[value] = one_class_svm_anomaly_detection(data, num_samples, num_features, 0.1)
     test_assert_ml(len(anomaly_flags) == num_samples, "Anomaly flags size correct")
     
     vibez.spill("Anomaly detection tests completed!")
@@ -470,11 +470,11 @@ slay test_feature_selection() cringe {
     sus num_samples normie = 25
     sus num_features normie = 6
     
-    sus features []meal = generate_test_data(num_samples, num_features)
-    sus labels []meal = generate_test_labels(num_samples, 2)
+    sus features meal[value] = generate_test_data(num_samples, num_features)
+    sus labels meal[value] = generate_test_labels(num_samples, 2)
     
     fr fr Test mutual information
-    sus mi_scores []meal = feature_selection_mutual_information(features, labels, num_samples, num_features)
+    sus mi_scores meal[value] = feature_selection_mutual_information(features, labels, num_samples, num_features)
     test_assert_ml(len(mi_scores) == num_features, "MI scores size correct")
     
     sus all_mi_valid lit = based
@@ -489,12 +489,12 @@ slay test_feature_selection() cringe {
     test_assert_ml(all_mi_valid, "All MI scores non-negative")
     
     fr fr Test chi-squared
-    sus chi2_scores []meal = feature_selection_chi_squared(features, labels, num_samples, num_features)
+    sus chi2_scores meal[value] = feature_selection_chi_squared(features, labels, num_samples, num_features)
     test_assert_ml(len(chi2_scores) == num_features, "Chi-squared scores size correct")
     
     fr fr Test feature selection
     sus k_best normie = 3
-    sus selected_features []normie = feature_selection_select_k_best(mi_scores, k_best)
+    sus selected_features normie[value] = feature_selection_select_k_best(mi_scores, k_best)
     test_assert_ml(len(selected_features) == k_best, "Selected features count correct")
     
     vibez.spill("Feature selection tests completed!")
@@ -506,8 +506,8 @@ slay test_evaluation_metrics() cringe {
     vibez.spill("=== Testing Evaluation Metrics ===")
     
     fr fr Test accuracy score
-    sus predictions []meal = [0.9, 0.1, 0.8, 0.2, 0.7]
-    sus targets []meal = [1.0, 0.0, 1.0, 0.0, 1.0]
+    sus predictions meal[value] = [0.9, 0.1, 0.8, 0.2, 0.7]
+    sus targets meal[value] = [1.0, 0.0, 1.0, 0.0, 1.0]
     sus threshold meal = 0.5
     
     sus accuracy meal = accuracy_score(predictions, targets, threshold)
@@ -515,8 +515,8 @@ slay test_evaluation_metrics() cringe {
     test_assert_ml(accuracy == 1.0, "Perfect accuracy for good predictions")
     
     fr fr Test R² score
-    sus reg_predictions []meal = [2.0, 3.0, 4.0, 5.0]
-    sus reg_targets []meal = [2.1, 2.9, 4.2, 4.8]
+    sus reg_predictions meal[value] = [2.0, 3.0, 4.0, 5.0]
+    sus reg_targets meal[value] = [2.1, 2.9, 4.2, 4.8]
     sus r2 meal = r2_score(reg_predictions, reg_targets)
     test_assert_ml(r2 <= 1.0, "R² score upper bounded")
     
@@ -532,8 +532,8 @@ slay test_data_preprocessing() cringe {
     sus test_ratio meal = 0.3
     
     fr fr Test train/test split
-    sus train_indices []normie
-    sus test_indices []normie
+    sus train_indices normie[value]
+    sus test_indices normie[value]
     (train_indices, test_indices) = train_test_split_indices(num_samples, test_ratio)
     
     sus total_samples normie = len(train_indices) + len(test_indices)
@@ -543,10 +543,10 @@ slay test_data_preprocessing() cringe {
     
     fr fr Test feature standardization
     sus num_features normie = 3
-    sus features []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
-    sus standardized []meal
-    sus means []meal
-    sus stds []meal
+    sus features meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0]
+    sus standardized meal[value]
+    sus means meal[value]
+    sus stds meal[value]
     (standardized, means, stds) = standardize_features_simple(features, 4, num_features)
     
     test_assert_ml(len(standardized) == len(features), "Standardized features size correct")
@@ -554,7 +554,7 @@ slay test_data_preprocessing() cringe {
     test_assert_ml(len(stds) == num_features, "Standard deviations size correct")
     
     fr fr Test data shuffling
-    sus shuffled_indices []normie = shuffle_data_indices(num_samples)
+    sus shuffled_indices normie[value] = shuffle_data_indices(num_samples)
     test_assert_ml(len(shuffled_indices) == num_samples, "Shuffled indices size correct")
     
     vibez.spill("Data preprocessing tests completed!")
@@ -570,24 +570,24 @@ slay test_comprehensive_ml_pipeline() cringe {
     sus num_classes normie = 3
     
     fr fr Generate dataset
-    sus features []meal = generate_test_data(num_samples, num_features)
-    sus labels []meal = generate_test_labels(num_samples, num_classes)
+    sus features meal[value] = generate_test_data(num_samples, num_features)
+    sus labels meal[value] = generate_test_labels(num_samples, num_classes)
     
     fr fr Data preprocessing
-    sus standardized []meal
-    sus means []meal
-    sus stds []meal
+    sus standardized meal[value]
+    sus means meal[value]
+    sus stds meal[value]
     (standardized, means, stds) = standardize_features_simple(features, num_samples, num_features)
     
     fr fr Train/test split
-    sus train_indices []normie
-    sus test_indices []normie
+    sus train_indices normie[value]
+    sus test_indices normie[value]
     (train_indices, test_indices) = train_test_split_indices(num_samples, 0.2)
     
-    sus train_features []meal = extract_samples_by_indices(standardized, train_indices, num_features)
-    sus train_labels []meal = extract_labels_by_indices(labels, train_indices)
-    sus test_features []meal = extract_samples_by_indices(standardized, test_indices, num_features)
-    sus test_labels []meal = extract_labels_by_indices(labels, test_indices)
+    sus train_features meal[value] = extract_samples_by_indices(standardized, train_indices, num_features)
+    sus train_labels meal[value] = extract_labels_by_indices(labels, train_indices)
+    sus test_features meal[value] = extract_samples_by_indices(standardized, test_indices, num_features)
+    sus test_labels meal[value] = extract_labels_by_indices(labels, test_indices)
     
     fr fr Test multiple algorithms
     vibez.spill("Testing Naive Bayes on preprocessed data...")
@@ -597,8 +597,8 @@ slay test_comprehensive_ml_pipeline() cringe {
     sus rf_model RandomForestModel = random_forest_train(train_features, train_labels, len(train_indices), num_features, num_classes, 5)
     
     vibez.spill("Testing K-means clustering...")
-    sus centroids []meal
-    sus assignments []normie
+    sus centroids meal[value]
+    sus assignments normie[value]
     (centroids, assignments) = kmeans_cluster(train_features, len(train_indices), num_features, num_classes, 20)
     
     test_assert_ml(len(train_features) > 0, "Train features extracted")
@@ -619,8 +619,8 @@ slay test_all_ml_demos() cringe {
     sus num_features normie = 4
     sus num_classes normie = 2
     
-    sus features []meal = generate_test_data(num_samples, num_features)
-    sus labels []meal = generate_test_labels(num_samples, num_classes)
+    sus features meal[value] = generate_test_data(num_samples, num_features)
+    sus labels meal[value] = generate_test_labels(num_samples, num_classes)
     
     fr fr Test linear regression demo
     demo_linear_regression(features, labels, num_samples, num_features, 20, 0.01)

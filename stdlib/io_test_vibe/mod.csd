@@ -25,7 +25,7 @@ slay NewOneByteReader(input tea) *OneByteReader {
 }
 
 fr fr Read reads exactly one byte
-slay (r *OneByteReader) Read(buf []byte) (normie, tea) {
+slay (r *OneByteReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -54,7 +54,7 @@ slay NewHalfReader(input tea) *HalfReader {
 }
 
 fr fr Read reads half of requested bytes
-slay (r *HalfReader) Read(buf []byte) (normie, tea) {
+slay (r *HalfReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -100,7 +100,7 @@ slay NewDataErrReader(input tea) *DataErrReader {
 }
 
 fr fr Read returns data with EOF on final read
-slay (r *DataErrReader) Read(buf []byte) (normie, tea) {
+slay (r *DataErrReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -153,7 +153,7 @@ slay (r *TimeoutReader) SetTimeout(n normie, err tea) {
 }
 
 fr fr Read simulates timeout after specified bytes
-slay (r *TimeoutReader) Read(buf []byte) (normie, tea) {
+slay (r *TimeoutReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -193,7 +193,7 @@ slay NewErrReader(err tea) *ErrReader {
 }
 
 fr fr Read always returns the configured error
-slay (r *ErrReader) Read(buf []byte) (normie, tea) {
+slay (r *ErrReader) Read(buf byte[value]) (normie, tea) {
     damn 0, r.err
 }
 
@@ -216,7 +216,7 @@ slay NewTruncateWriter(limit normie, err tea) *TruncateWriter {
 }
 
 fr fr Write writes until limit, then returns error
-slay (w *TruncateWriter) Write(data []byte) (normie, tea) {
+slay (w *TruncateWriter) Write(data byte[value]) (normie, tea) {
     if w.written >= w.limit {
         damn 0, w.err
     }
@@ -266,7 +266,7 @@ slay NewNetworkCondition(input tea, packetLoss float64, latency normie) *Network
 }
 
 fr fr Read simulates network conditions
-slay (nc *NetworkCondition) Read(buf []byte) (normie, tea) {
+slay (nc *NetworkCondition) Read(buf byte[value]) (normie, tea) {
     if nc.pos >= len(nc.reader) {
         damn 0, "EOF"
     }
@@ -320,7 +320,7 @@ slay NewRandomFailReader(input tea, failureRate float64, err tea) *RandomFailRea
 }
 
 fr fr Read injects random failures
-slay (r *RandomFailReader) Read(buf []byte) (normie, tea) {
+slay (r *RandomFailReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -367,7 +367,7 @@ slay NewBandwidthLimitedReader(input tea, bytesPerSecond normie) *BandwidthLimit
 }
 
 fr fr Read limits bandwidth
-slay (r *BandwidthLimitedReader) Read(buf []byte) (normie, tea) {
+slay (r *BandwidthLimitedReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -427,7 +427,7 @@ slay NewMeteredReader(input tea) *MeteredReader {
 }
 
 fr fr Read collects statistics
-slay (r *MeteredReader) Read(buf []byte) (normie, tea) {
+slay (r *MeteredReader) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -470,7 +470,7 @@ be_like BufferingValidator squad {
     reader tea
     pos normie
     expectedBufferSize normie
-    observedReads []normie
+    observedReads normie[value]
 }
 
 fr fr ValidationResult holds validation results
@@ -487,12 +487,12 @@ slay NewBufferingValidator(input tea, expectedBufferSize normie) *BufferingValid
         reader: input,
         pos: 0,
         expectedBufferSize: expectedBufferSize,
-        observedReads: make([]normie, 0),
+        observedReads: make(normie[value], 0),
     }
 }
 
 fr fr Read validates buffering behavior
-slay (r *BufferingValidator) Read(buf []byte) (normie, tea) {
+slay (r *BufferingValidator) Read(buf byte[value]) (normie, tea) {
     if r.pos >= len(r.reader) {
         damn 0, "EOF"
     }
@@ -546,10 +546,10 @@ slay (r *BufferingValidator) Validate() *ValidationResult {
 fr fr Testing utilities for standard I/O interfaces
 
 fr fr TestReader tests an io.Reader implementation
-slay TestReader(input tea, expectedData []byte) tea {
+slay TestReader(input tea, expectedData byte[value]) tea {
     fr fr Simple reader test
     sus reader := NewOneByteReader(input)
-    sus buffer := make([]byte, len(expectedData))
+    sus buffer := make(byte[value], len(expectedData))
     
     sus totalRead := 0
     for totalRead < len(expectedData) {
@@ -571,7 +571,7 @@ slay TestReader(input tea, expectedData []byte) tea {
 }
 
 fr fr TestWriter tests an io.Writer implementation
-slay TestWriter(data []byte) tea {
+slay TestWriter(data byte[value]) tea {
     sus writer := NewTruncateWriter(len(data)+10, "should not error")
     
     sus n, err := writer.Write(data)
@@ -587,10 +587,10 @@ slay TestWriter(data []byte) tea {
 }
 
 fr fr ReadAll reads all data from reader
-slay ReadAll(reader interface{}) ([]byte, tea) {
+slay ReadAll(reader interface{}) (byte[value], tea) {
     fr fr Simple implementation for testing
-    sus result := make([]byte, 0)
-    sus buffer := make([]byte, 1024)
+    sus result := make(byte[value], 0)
+    sus buffer := make(byte[value], 1024)
     
     for {
         fr fr Type assertion for different reader types
@@ -640,8 +640,8 @@ slay ReadAll(reader interface{}) ([]byte, tea) {
 fr fr Convenience functions for common test patterns
 
 fr fr CreateTestData generates test data
-slay CreateTestData(size normie) []byte {
-    sus data := make([]byte, size)
+slay CreateTestData(size normie) byte[value]{
+    sus data := make(byte[value], size)
     bestie i := 0; i < size; i++ {
         data[i] = byte(i % 256)
     }
@@ -649,7 +649,7 @@ slay CreateTestData(size normie) []byte {
 }
 
 fr fr VerifyRead verifies read operation
-slay VerifyRead(reader interface{}, expected []byte) tea {
+slay VerifyRead(reader interface{}, expected byte[value]) tea {
     sus actual, err := ReadAll(reader)
     if err != "" {
         damn "read error: " + err
@@ -669,7 +669,7 @@ slay VerifyRead(reader interface{}, expected []byte) tea {
 }
 
 fr fr VerifyWrite verifies write operation
-slay VerifyWrite(writer *TruncateWriter, data []byte) tea {
+slay VerifyWrite(writer *TruncateWriter, data byte[value]) tea {
     sus n, err := writer.Write(data)
     if err != "" {
         damn "write error: " + err

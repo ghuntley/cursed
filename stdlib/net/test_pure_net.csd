@@ -89,11 +89,11 @@ slay test_dns_resolution() {
     assert_eq_string(hostname, "localhost")
     
     // Test MX record lookup
-    sus mx_records []tea = lookup_mx_records("gmail.com")
+    sus mx_records tea[value] = lookup_mx_records("gmail.com")
     assert_true(len(mx_records) > 0)
     
     // Test TXT record lookup
-    sus txt_records []tea = lookup_txt_records("google.com")
+    sus txt_records tea[value] = lookup_txt_records("google.com")
     assert_true(len(txt_records) > 0)
 }
 
@@ -285,7 +285,7 @@ slay test_string_utilities() {
     assert_false(string_ends_with("hello world", "hello"))
     
     // Test string_split
-    sus parts []tea = string_split("a,b,c,d", ",")
+    sus parts tea[value] = string_split("a,b,c,d", ",")
     assert_eq_int(len(parts), 4)
     
     // Test string_join
@@ -351,7 +351,7 @@ slay test_concurrent_operations() {
     test_start("Concurrent Socket Operations")
     
     // Create multiple sockets
-    sus sockets [5]normie
+    sus sockets normie[5]
     bestie i := 0; i < 5; i++ {
         sockets[i] = tcp_socket_create()
         assert_true(sockets[i] != -1)

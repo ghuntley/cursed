@@ -8,29 +8,29 @@ fr fr Generic Array Operations Tests
 fr fr ================================
 
 test_start("array_map functionality")
-sus numbers []normie = [1, 2, 3, 4, 5]
+sus numbers normie[value] = [1, 2, 3, 4, 5]
 sus mapper slay(normie) normie = slay(x normie) normie { damn x * 2 }
-sus doubled []normie = array_map(numbers, mapper)
+sus doubled normie[value] = array_map(numbers, mapper)
 assert_eq_int(len(doubled), 5)
 assert_eq_int(doubled[0], 2)
 assert_eq_int(doubled[4], 10)
 
 test_start("array_filter functionality")
-sus test_numbers []normie = [1, 2, 3, 4, 5, 6]
+sus test_numbers normie[value] = [1, 2, 3, 4, 5, 6]
 sus is_even slay(normie) lit = slay(x normie) lit { damn x % 2 == 0 }
-sus evens []normie = array_filter(test_numbers, is_even)
+sus evens normie[value] = array_filter(test_numbers, is_even)
 assert_eq_int(len(evens), 3)
 assert_eq_int(evens[0], 2)
 assert_eq_int(evens[2], 6)
 
 test_start("array_reduce functionality")
-sus sum_numbers []normie = [1, 2, 3, 4, 5]
+sus sum_numbers normie[value] = [1, 2, 3, 4, 5]
 sus add slay(normie, normie) normie = slay(acc normie, x normie) normie { damn acc + x }
 sus total normie = array_reduce(sum_numbers, 0, add)
 assert_eq_int(total, 15)
 
 test_start("array_find functionality")
-sus find_array []normie = [10, 20, 30, 40]
+sus find_array normie[value] = [10, 20, 30, 40]
 sus find_30 slay(normie) lit = slay(x normie) lit { damn x == 30 }
 (found_value, found) := array_find(find_array, find_30)
 assert_true(found)
@@ -41,13 +41,13 @@ sus find_99 slay(normie) lit = slay(x normie) lit { damn x == 99 }
 assert_false(not_found)
 
 test_start("array_contains functionality")
-sus contain_test []normie = [1, 3, 5, 7, 9]
+sus contain_test normie[value] = [1, 3, 5, 7, 9]
 assert_true(array_contains(contain_test, 5))
 assert_false(array_contains(contain_test, 4))
 
 test_start("array_unique functionality")
-sus duplicates []normie = [1, 2, 2, 3, 3, 3, 4]
-sus unique_result []normie = array_unique(duplicates)
+sus duplicates normie[value] = [1, 2, 2, 3, 3, 3, 4]
+sus unique_result normie[value] = array_unique(duplicates)
 assert_eq_int(len(unique_result), 4)
 assert_true(array_contains(unique_result, 1))
 assert_true(array_contains(unique_result, 2))
@@ -55,15 +55,15 @@ assert_true(array_contains(unique_result, 3))
 assert_true(array_contains(unique_result, 4))
 
 test_start("array_reverse functionality")
-sus original []normie = [1, 2, 3, 4, 5]
-sus reversed []normie = array_reverse(original)
+sus original normie[value] = [1, 2, 3, 4, 5]
+sus reversed normie[value] = array_reverse(original)
 assert_eq_int(len(reversed), 5)
 assert_eq_int(reversed[0], 5)
 assert_eq_int(reversed[4], 1)
 
 test_start("array_sort_integers functionality")
-sus unsorted []normie = [5, 2, 8, 1, 9, 3]
-sus sorted []normie = array_sort_integers(unsorted)
+sus unsorted normie[value] = [5, 2, 8, 1, 9, 3]
+sus sorted normie[value] = array_sort_integers(unsorted)
 assert_eq_int(sorted[0], 1)
 assert_eq_int(sorted[1], 2)
 assert_eq_int(sorted[2], 3)
@@ -171,7 +171,7 @@ traversal_root = BinaryTree_insert(traversal_root, 6)
 traversal_root = BinaryTree_insert(traversal_root, 1)
 traversal_root = BinaryTree_insert(traversal_root, 3)
 
-sus visited_values []normie = []
+sus visited_values normie[value] = []
 sus visit_function slay(normie) = slay(value normie) {
     visited_values = append(visited_values, value)
 }
@@ -190,13 +190,13 @@ fr fr Error Handling Tests
 fr fr ================================
 
 test_start("array_safe_get with valid index")
-sus safe_test_array []normie = [10, 20, 30]
+sus safe_test_array normie[value] = [10, 20, 30]
 (safe_value, safe_error) := array_safe_get(safe_test_array, 1)
 assert_eq_int(safe_value, 20)
 assert_eq_string(safe_error.message, "")
 
 test_start("array_safe_get with invalid index")
-sus bounds_test_array []normie = [1, 2, 3]
+sus bounds_test_array normie[value] = [1, 2, 3]
 (invalid_value, bounds_error) := array_safe_get(bounds_test_array, 10)
 assert_eq_string(bounds_error.error_type, "IndexError")
 assert_true(len(bounds_error.message) > 0)
@@ -211,12 +211,12 @@ fr fr Performance and Edge Cases
 fr fr ================================
 
 test_start("Large array operations")
-sus large_array []normie = []
+sus large_array normie[value] = []
 bestie i := 0; i < 1000; i++ {
     large_array = append(large_array, i)
 }
 
-sus filtered_large []normie = array_filter(large_array, slay(x normie) lit { damn x % 10 == 0 })
+sus filtered_large normie[value] = array_filter(large_array, slay(x normie) lit { damn x % 10 == 0 })
 assert_eq_int(len(filtered_large), 100) fr fr 0, 10, 20, ..., 990
 
 test_start("HashMap resize behavior")
@@ -234,16 +234,16 @@ assert_true(resize_map.capacity > initial_capacity)
 assert_eq_int(resize_map.size, 20)
 
 test_start("Empty collection operations")
-sus empty_array []normie = []
-sus empty_unique []normie = array_unique(empty_array)
+sus empty_array normie[value] = []
+sus empty_unique normie[value] = array_unique(empty_array)
 assert_eq_int(len(empty_unique), 0)
 
-sus empty_reversed []normie = array_reverse(empty_array)
+sus empty_reversed normie[value] = array_reverse(empty_array)
 assert_eq_int(len(empty_reversed), 0)
 
 test_start("Single element collections")
-sus single_array []normie = [42]
-sus single_reversed []normie = array_reverse(single_array)
+sus single_array normie[value] = [42]
+sus single_reversed normie[value] = array_reverse(single_array)
 assert_eq_int(len(single_reversed), 1)
 assert_eq_int(single_reversed[0], 42)
 

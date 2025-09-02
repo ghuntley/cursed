@@ -91,7 +91,7 @@ slay test_flag_parsing() {
     sus count *normie = flagSet.Int("count", 1, "Number of items")
     
     fr fr Test parsing simple flags
-    sus args []tea = ["-verbose", "-count", "5"]
+    sus args tea[value] = ["-verbose", "-count", "5"]
     sus err tea = flagSet.Parse(args)
     assert_eq_string(err, "")  fr fr No error expected
     
@@ -222,7 +222,7 @@ slay test_short_flags() {
     sus count *normie = flagSet.Int("n", 0, "Count")
     
     fr fr Test short flags with separate values
-    sus args []tea = ["-v", "-n", "10"]
+    sus args tea[value] = ["-v", "-n", "10"]
     flagSet.Parse(args)
     
     assert_true(*verbose)
@@ -239,7 +239,7 @@ slay test_long_flags() {
     sus output *tea = flagSet.String("output", "", "Output file")
     
     fr fr Test long flags
-    sus args []tea = ["--debug", "--output", "result.txt"]
+    sus args tea[value] = ["--debug", "--output", "result.txt"]
     flagSet.Parse(args)
     
     assert_true(*debug)
@@ -257,7 +257,7 @@ slay test_flag_with_equals() {
     
     fr fr Test flags with equals sign (this functionality depends on implementation)
     fr fr For now, test basic parsing without equals
-    sus args []tea = ["--config", "app.conf", "--port", "3000"]
+    sus args tea[value] = ["--config", "app.conf", "--port", "3000"]
     sus err tea = flagSet.Parse(args)
     
     assert_eq_string(err, "")
@@ -275,14 +275,14 @@ slay test_mixed_flags_and_args() {
     sus input *tea = flagSet.String("input", "", "Input file")
     
     fr fr Test flags mixed with non-flag arguments
-    sus args []tea = ["-force", "file1.txt", "-input", "data.csv", "file2.txt"]
+    sus args tea[value] = ["-force", "file1.txt", "-input", "data.csv", "file2.txt"]
     flagSet.Parse(args)
     
     assert_true(*force)
     assert_eq_string(*input, "data.csv")
     
     fr fr Test non-flag arguments
-    sus remaining []tea = flagSet.Args()
+    sus remaining tea[value] = flagSet.Args()
     assert_eq_int(flagSet.NArg(), len(remaining))
     assert_true(len(remaining) >= 0)  fr fr Should have some remaining args
     
@@ -297,7 +297,7 @@ slay test_empty_parsing() {
     sus verbose *lit = flagSet.Bool("verbose", cap, "Verbose mode")
     
     fr fr Test parsing empty argument list
-    sus empty_args []tea = []tea{}
+    sus empty_args tea[value] = tea[value]{}
     sus err tea = flagSet.Parse(empty_args)
     
     assert_eq_string(err, "")
@@ -316,7 +316,7 @@ slay test_invalid_flags() {
     flagSet.Bool("valid", cap, "Valid flag")
     
     fr fr Test parsing with invalid flag
-    sus args []tea = ["-invalid", "-valid"]
+    sus args tea[value] = ["-invalid", "-valid"]
     sus err tea = flagSet.Parse(args)
     
     fr fr Should return error for invalid flag
@@ -333,7 +333,7 @@ slay test_duplicate_flags() {
     sus count *normie = flagSet.Int("count", 1, "Count value")
     
     fr fr Test setting same flag multiple times (last value should win)
-    sus args []tea = ["-count", "5", "-count", "10"]
+    sus args tea[value] = ["-count", "5", "-count", "10"]
     flagSet.Parse(args)
     
     fr fr Last value should be used
@@ -351,7 +351,7 @@ slay test_flag_ordering() {
     sus gamma *lit = flagSet.Bool("gamma", cap, "Gamma flag")
     
     fr fr Test different flag orderings
-    sus args1 []tea = ["-alpha", "test", "-beta", "42", "-gamma"]
+    sus args1 tea[value] = ["-alpha", "test", "-beta", "42", "-gamma"]
     flagSet.Parse(args1)
     
     assert_eq_string(*alpha, "test")
@@ -440,7 +440,7 @@ slay test_trending_flags() {
     flagSet.AddTrend("another-flag")
     
     fr fr Test getting trending flags
-    sus trending []tea = flagSet.Trending()
+    sus trending tea[value] = flagSet.Trending()
     assert_true(len(trending) >= 0)  fr fr Should have some trending flags
     
     pass("Trending flags feature works")
@@ -454,7 +454,7 @@ slay test_flag_statistics() {
     sus flag2 *normie = flagSet.Int("flag2", 0, "Second flag")
     
     fr fr Parse some flags
-    sus args []tea = ["-flag1", "-flag2", "42"]
+    sus args tea[value] = ["-flag1", "-flag2", "42"]
     flagSet.Parse(args)
     
     fr fr Test flag visit functionality

@@ -98,7 +98,7 @@ fr fr Test path manipulation utilities
 test_start("Path manipulation tests")
 
 fr fr Test path_join
-joined := path_join([]tea{"home", "user", "documents", "file.txt"})
+joined := path_join(tea[value]{"home", "user", "documents", "file.txt"})
 assert_eq_string(joined, "home/user/documents/file.txt")
 
 fr fr Test path_split
@@ -258,7 +258,7 @@ assert_eq_string(err, "")
 assert_eq_int(len(binary_data), 5)
 
 fr fr Test write_binary
-write_err := write_binary("output.bin", []byte{72, 101, 108, 108, 111})
+write_err := write_binary("output.bin", byte[value]{72, 101, 108, 108, 111})
 assert_eq_string(write_err, "")
 print_test_summary()
 
@@ -352,10 +352,10 @@ assert_eq_string(err, "")
 assert_eq_int(len(csv_rows), 3)
 
 fr fr Test write_csv
-csv_data := [][]tea{
-    []tea{"Name", "Age"},
-    []tea{"Alice", "30"},
-    []tea{"Bob", "25"}
+csv_data := tea[value][value]{
+    tea[value]{"Name", "Age"},
+    tea[value]{"Alice", "30"},
+    tea[value]{"Bob", "25"}
 }
 write_err := write_csv("output.csv", csv_data)
 assert_eq_string(write_err, "")

@@ -299,8 +299,8 @@ slay match_start(regex Regex, text tea) lit {
     damn (text == pattern)
 }
 
-slay find_matches(regex Regex, text tea) []Match {
-    sus matches []Match
+slay find_matches(regex Regex, text tea) Match[value]{
+    sus matches Match[value]
     
     vibes match_pattern(regex, text) {
         sus match Match
@@ -371,8 +371,8 @@ slay str_concat(a tea, b tea) tea {
     damn a + b
 }
 
-slay split_pattern(pattern tea, text tea) []tea {
-    sus parts []tea
+slay split_pattern(pattern tea, text tea) tea[value]{
+    sus parts tea[value]
     parts = append(parts, text)
     damn parts
 }

@@ -43,7 +43,7 @@ be_like managed_error squad {
     category error_category
     severity error_severity
     timestamp tea
-    stack_trace []tea
+    stack_trace tea[value]
     wrapped_error @managed_error
     context yikes.tea
 }
@@ -182,8 +182,8 @@ slay (err @managed_error) get_context(key tea) tea {
 }
 
 fr fr Capture stack trace (simplified implementation)
-slay capture_stack_trace() []tea { fr fr In a real implementation, this would capture actual stack frames
-    sus trace []tea = []tea{
+slay capture_stack_trace() tea[value]{ fr fr In a real implementation, this would capture actual stack frames
+    sus trace tea[value] = tea[value]{
         "error_management.capture_stack_trace()",
         "error_management.new_error()",
         "caller_function()"

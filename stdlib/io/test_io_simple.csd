@@ -124,14 +124,14 @@ sus files3, list_err3 = list_dir("nonexistent_dir")
 assert_not_null(list_err3)
 
 fr fr Path Manipulation Tests
-sus path_parts []tea = []tea{"home", "user", "documents", "file.txt"}
+sus path_parts tea[value] = tea[value]{"home", "user", "documents", "file.txt"}
 sus joined_path tea = path_join(path_parts)
 assert_eq_string(joined_path, "home/user/documents/file.txt")
 
-sus empty_path tea = path_join([]tea{})
+sus empty_path tea = path_join(tea[value]{})
 assert_eq_string(empty_path, "")
 
-sus single_path tea = path_join([]tea{"single"})
+sus single_path tea = path_join(tea[value]{"single"})
 assert_eq_string(single_path, "single")
 
 sus dir_name, file_name = path_split("/home/user/document.txt")
@@ -222,7 +222,7 @@ assert_eq_int(len(binary_data), 5)
 sus write_binary_err = write_binary("output.dat", binary_data)
 assert_eq_string(write_binary_err, "")
 
-sus write_empty_err = write_binary("empty.dat", []byte{})
+sus write_empty_err = write_binary("empty.dat", byte[value]{})
 assert_not_null(write_empty_err)
 
 fr fr Stream Operations Tests

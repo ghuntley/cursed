@@ -47,7 +47,7 @@ fr fr Test 6: Multiple allocations
 reset_memory_system()
 init_memory_system()
 
-sus obj_ids []normie = []
+sus obj_ids normie[value] = []
 sus i normie = 0
 bestie i < 5 {
     sus new_id normie = allocate_memory(512, ALLOC_HEAP)

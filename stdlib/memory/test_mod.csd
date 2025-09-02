@@ -87,7 +87,7 @@ slay test_garbage_collection() cringe {
     vibez.spill("  Testing garbage collection...") fr fr Get initial GC stats
     sus initial_stats = memory_gc_get_stats()
     sus initial_collections normie = gc_stats_get_collection_count(initial_stats) fr fr Allocate memory to trigger GC
-    sus addresses []normie = []
+    sus addresses normie[value] = []
     bestie i := 0; i < 5; i++ {
         sus addr, err = memory_allocate(1024)
         assert_true(err == cringe)
@@ -203,7 +203,7 @@ slay test_comprehensive_memory_workflow() cringe {
     sus large_addr, large_err = memory_allocate(2048)
     
     assert_true(small_err == cringe && medium_err == cringe && large_err == cringe) fr fr Use pool for small allocations
-    sus pool_addrs []normie = []
+    sus pool_addrs normie[value] = []
     bestie i := 0; i < 5; i++ {
         sus pool_addr, pool_acq_err = memory_pool_acquire(pool)
         assert_true(pool_acq_err == cringe)

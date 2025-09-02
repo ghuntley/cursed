@@ -15,8 +15,8 @@ sus duration drip = end_time - start_time
 assert_true(duration < 1000000) // Less than 1ms
 
 // Test vectorized string formatting
-sus values []drip = [1, 2, 3, 4, 5]
-sus formatted []tea = vectorized_format_ints(values)
+sus values drip[value] = [1, 2, 3, 4, 5]
+sus formatted tea[value] = vectorized_format_ints(values)
 assert_eq_int(len(formatted), 5)
 assert_eq_string(formatted[0], "1")
 
@@ -38,16 +38,16 @@ sus stream drip = create_buffered_stream(8192)
 sus write_count drip = stream_write_bulk(stream, ["data1", "data2", "data3"])
 assert_eq_int(write_count, 3)
 
-sus read_data []tea = stream_read_bulk(stream, 3)
+sus read_data tea[value] = stream_read_bulk(stream, 3)
 assert_eq_int(len(read_data), 3)
 
 // Test zero-copy I/O operations
-sus zero_copy_buffer []drip = create_zero_copy_buffer(4096)
+sus zero_copy_buffer drip[value] = create_zero_copy_buffer(4096)
 sus bytes_written drip = zero_copy_write(zero_copy_buffer, "zero copy test")
 assert_true(bytes_written > 0)
 
 // Test concurrent I/O performance
-sus concurrent_writes []tea = []
+sus concurrent_writes tea[value] = []
 bestie (sus i drip = 0; i < 10; i++) {
     concurrent_writes = append(concurrent_writes, "concurrent " + i)
 }
@@ -78,7 +78,7 @@ sus net_throughput drip = measure_network_throughput(net_buffer)
 assert_true(net_throughput > 0)
 
 // Performance validation
-sus perf_data []tea = generate_string_array(1000, 100) // 1000 strings of 100 chars
+sus perf_data tea[value] = generate_string_array(1000, 100) // 1000 strings of 100 chars
 sus perf_start drip = get_nanoseconds()
 batch_write_optimized("performance_test.tmp", perf_data)
 sus perf_end drip = get_nanoseconds()

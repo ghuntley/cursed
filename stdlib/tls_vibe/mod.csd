@@ -255,7 +255,7 @@ slay create_tls_error(error_code tea, message tea) tea {
 
 slay validate_tls_configuration(config tea) tea {
     fr fr Validate TLS configuration for security issues
-    sus warnings []tea = []
+    sus warnings tea[value] = []
     sus warning_count drip = 0
     
     fr fr Check minimum TLS version

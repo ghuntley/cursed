@@ -29,7 +29,7 @@ slay Clear(m map[tea]normie) {
 
 fr fr DeleteFunc deletes entries where f returns true
 slay DeleteFunc(m map[tea]normie, f slay(tea, normie) lit) {
-    sus toDelete := make([]tea, 0)
+    sus toDelete := make(tea[value], 0)
     for key, value := range m {
         if f(key, value) {
             toDelete = append(toDelete, key)
@@ -79,7 +79,7 @@ slay MoodSwitch(m map[tea]normie, f slay(tea, normie) lit) (map[tea]normie, map[
 }
 
 fr fr MoodyMerge merges maps with a function to resolve conflicts
-slay MoodyMerge(maps []map[tea]normie, resolver slay(tea, normie, normie) normie) map[tea]normie {
+slay MoodyMerge(maps map[value][tea]normie, resolver slay(tea, normie, normie) normie) map[tea]normie {
     sus result := make(map[tea]normie)
     
     for i := 0; i < len(maps); i++ {
@@ -120,8 +120,8 @@ slay FeelingSome(m map[tea]normie, f slay(tea, normie) lit) lit {
 fr fr Conversion Functions
 
 fr fr KeyVibes extracts a slice of keys from the map
-slay KeyVibes(m map[tea]normie) []tea {
-    sus result := make([]tea, 0)
+slay KeyVibes(m map[tea]normie) tea[value]{
+    sus result := make(tea[value], 0)
     for key := range m {
         result = append(result, key)
     }
@@ -129,8 +129,8 @@ slay KeyVibes(m map[tea]normie) []tea {
 }
 
 fr fr ValueVibes extracts a slice of values from the map
-slay ValueVibes(m map[tea]normie) []normie {
-    sus result := make([]normie, 0)
+slay ValueVibes(m map[tea]normie) normie[value]{
+    sus result := make(normie[value], 0)
     for _, value := range m {
         result = append(result, value)
     }
@@ -144,8 +144,8 @@ be_like MapEntry squad {
 }
 
 fr fr EntryVibes returns key-value pairs as a slice of entries
-slay EntryVibes(m map[tea]normie) []MapEntry {
-    sus result := make([]MapEntry, 0)
+slay EntryVibes(m map[tea]normie) MapEntry[value]{
+    sus result := make(MapEntry[value], 0)
     for key, value := range m {
         result = append(result, MapEntry{Key: key, Value: value})
     }
@@ -153,7 +153,7 @@ slay EntryVibes(m map[tea]normie) []MapEntry {
 }
 
 fr fr MapFromPairs creates a map from key-value pairs
-slay MapFromPairs(pairs []MapEntry) map[tea]normie {
+slay MapFromPairs(pairs MapEntry[value]) map[tea]normie {
     sus result := make(map[tea]normie)
     for i := 0; i < len(pairs); i++ {
         result[pairs[i].Key] = pairs[i].Value
@@ -162,7 +162,7 @@ slay MapFromPairs(pairs []MapEntry) map[tea]normie {
 }
 
 fr fr MapFromKeys creates a map using a function to generate values from keys
-slay MapFromKeys(keys []tea, valueFunc slay(tea) normie) map[tea]normie {
+slay MapFromKeys(keys tea[value], valueFunc slay(tea) normie) map[tea]normie {
     sus result := make(map[tea]normie)
     for i := 0; i < len(keys); i++ {
         result[keys[i]] = valueFunc(keys[i])
@@ -171,7 +171,7 @@ slay MapFromKeys(keys []tea, valueFunc slay(tea) normie) map[tea]normie {
 }
 
 fr fr MapFromValues creates a map using a function to generate keys from values
-slay MapFromValues(values []normie, keyFunc slay(normie) tea) map[tea]normie {
+slay MapFromValues(values normie[value], keyFunc slay(normie) tea) map[tea]normie {
     sus result := make(map[tea]normie)
     for i := 0; i < len(values); i++ {
         sus key := keyFunc(values[i])
@@ -302,7 +302,7 @@ slay NestedMap() NestedMapStruct {
     }
 }
 
-slay (n NestedMapStruct) Set(keys []tea, value normie) {
+slay (n NestedMapStruct) Set(keys tea[value], value normie) {
     if len(keys) == 0 {
         return
     }
@@ -330,7 +330,7 @@ slay (n NestedMapStruct) Set(keys []tea, value normie) {
     current[keys[len(keys)-1]] = value
 }
 
-slay (n NestedMapStruct) Get(keys []tea) (normie, lit) {
+slay (n NestedMapStruct) Get(keys tea[value]) (normie, lit) {
     if len(keys) == 0 {
         damn 0, cap
     }
@@ -367,7 +367,7 @@ slay (n NestedMapStruct) Get(keys []tea) (normie, lit) {
     damn 0, cap
 }
 
-slay (n NestedMapStruct) Delete(keys []tea) {
+slay (n NestedMapStruct) Delete(keys tea[value]) {
     if len(keys) == 0 {
         return
     }
@@ -392,7 +392,7 @@ slay (n NestedMapStruct) Delete(keys []tea) {
     delete(current, keys[len(keys)-1])
 }
 
-slay (n NestedMapStruct) HasKey(keys []tea) lit {
+slay (n NestedMapStruct) HasKey(keys tea[value]) lit {
     sus _, exists := n.Get(keys)
     damn exists
 }

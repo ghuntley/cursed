@@ -405,8 +405,8 @@ assert_false(is_false_result2.is_valid)
 test_start("Array validation tests")
 
 // Array not empty
-sus empty_array []tea = []
-sus non_empty_array []tea = ["test"]
+sus empty_array tea[value] = []
+sus non_empty_array tea[value] = ["test"]
 
 sus array_not_empty_result ValidationResult = validate_array_not_empty(non_empty_array)
 assert_true(array_not_empty_result.is_valid)

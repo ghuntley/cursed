@@ -90,7 +90,7 @@ slay hsv_to_rgb_precise(hsv HSV) RGB {
 # RGB to LAB conversion (CIE L*a*b*)
 slay rgb_to_lab(rgb RGB) LAB {
     # First convert RGB to XYZ
-    sus xyz []tea = rgb_to_xyz(rgb)
+    sus xyz tea[value] = rgb_to_xyz(rgb)
     
     # Then convert XYZ to LAB
     damn xyz_to_lab(xyz)
@@ -99,14 +99,14 @@ slay rgb_to_lab(rgb RGB) LAB {
 # LAB to RGB conversion
 slay lab_to_rgb(lab LAB) RGB {
     # First convert LAB to XYZ
-    sus xyz []tea = lab_to_xyz(lab)
+    sus xyz tea[value] = lab_to_xyz(lab)
     
     # Then convert XYZ to RGB
     damn xyz_to_rgb(xyz)
 }
 
 # RGB to XYZ color space
-slay rgb_to_xyz(rgb RGB) []tea {
+slay rgb_to_xyz(rgb RGB) tea[value]{
     sus r tea = rgb.r / 255.0
     sus g tea = rgb.g / 255.0
     sus b tea = rgb.b / 255.0
@@ -144,7 +144,7 @@ slay rgb_to_xyz(rgb RGB) []tea {
 }
 
 # XYZ to RGB color space
-slay xyz_to_rgb(xyz []tea) RGB {
+slay xyz_to_rgb(xyz tea[value]) RGB {
     sus x tea = xyz[0] / 100.0
     sus y tea = xyz[1] / 100.0
     sus z tea = xyz[2] / 100.0
@@ -181,7 +181,7 @@ slay xyz_to_rgb(xyz []tea) RGB {
 }
 
 # XYZ to LAB color space
-slay xyz_to_lab(xyz []tea) LAB {
+slay xyz_to_lab(xyz tea[value]) LAB {
     # D65 illuminant (daylight)
     sus xn tea = 95.047
     sus yn tea = 100.000
@@ -204,7 +204,7 @@ slay xyz_to_lab(xyz []tea) LAB {
 }
 
 # LAB to XYZ color space
-slay lab_to_xyz(lab LAB) []tea {
+slay lab_to_xyz(lab LAB) tea[value]{
     # D65 illuminant (daylight)
     sus xn tea = 95.047
     sus yn tea = 100.000
@@ -240,7 +240,7 @@ slay lab_f_inverse(t tea) tea {
 }
 
 # RGB to CMYK conversion
-slay rgb_to_cmyk(rgb RGB) []tea {
+slay rgb_to_cmyk(rgb RGB) tea[value]{
     sus r tea = rgb.r / 255.0
     sus g tea = rgb.g / 255.0
     sus b tea = rgb.b / 255.0
@@ -259,7 +259,7 @@ slay rgb_to_cmyk(rgb RGB) []tea {
 }
 
 # CMYK to RGB conversion
-slay cmyk_to_rgb(cmyk []tea) RGB {
+slay cmyk_to_rgb(cmyk tea[value]) RGB {
     ready (len(cmyk) < 4) {
         damn RGB{r: 0, g: 0, b: 0}
     }
@@ -315,11 +315,11 @@ slay convert_to_rgb(img Image) yikes<Image> {
         
         bestie (y drip = 0; y < img.height; y = y + 1) {
             bestie (x drip = 0; x < img.width; x = x + 1) {
-                sus pixel []drip = get_pixel(img, x, y) fam {
+                sus pixel drip[value] = get_pixel(img, x, y) fam {
                     when _ -> yikes "RGB conversion pixel access failed"
                 }
                 
-                sus rgb_pixel []drip = [pixel[0], pixel[1], pixel[2]]
+                sus rgb_pixel drip[value] = [pixel[0], pixel[1], pixel[2]]
                 
                 set_pixel(&result, x, y, rgb_pixel) fam {
                     when _ -> yikes "RGB conversion pixel set failed"
@@ -338,12 +338,12 @@ slay convert_to_rgb(img Image) yikes<Image> {
         
         bestie (y drip = 0; y < img.height; y = y + 1) {
             bestie (x drip = 0; x < img.width; x = x + 1) {
-                sus pixel []drip = get_pixel(img, x, y) fam {
+                sus pixel drip[value] = get_pixel(img, x, y) fam {
                     when _ -> yikes "grayscale to RGB pixel access failed"
                 }
                 
                 sus gray_value drip = pixel[0]
-                sus rgb_pixel []drip = [gray_value, gray_value, gray_value]
+                sus rgb_pixel drip[value] = [gray_value, gray_value, gray_value]
                 
                 set_pixel(&result, x, y, rgb_pixel) fam {
                     when _ -> yikes "grayscale to RGB pixel set failed"
@@ -371,11 +371,11 @@ slay convert_to_rgba(img Image) yikes<Image> {
         
         bestie (y drip = 0; y < img.height; y = y + 1) {
             bestie (x drip = 0; x < img.width; x = x + 1) {
-                sus pixel []drip = get_pixel(img, x, y) fam {
+                sus pixel drip[value] = get_pixel(img, x, y) fam {
                     when _ -> yikes "RGBA conversion pixel access failed"
                 }
                 
-                sus rgba_pixel []drip = [pixel[0], pixel[1], pixel[2], 255]
+                sus rgba_pixel drip[value] = [pixel[0], pixel[1], pixel[2], 255]
                 
                 set_pixel(&result, x, y, rgba_pixel) fam {
                     when _ -> yikes "RGBA conversion pixel set failed"
@@ -401,7 +401,7 @@ slay convert_to_hsv(img Image) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "HSV conversion pixel access failed"
             }
             
@@ -413,7 +413,7 @@ slay convert_to_hsv(img Image) yikes<Image> {
             sus s_scaled drip = drip(hsv.s * 255.0)
             sus v_scaled drip = drip(hsv.v * 255.0)
             
-            sus hsv_pixel []drip = [
+            sus hsv_pixel drip[value] = [
                 clamp_pixel_value(h_scaled),
                 clamp_pixel_value(s_scaled),
                 clamp_pixel_value(v_scaled)
@@ -440,7 +440,7 @@ slay convert_to_lab_image(img Image) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "LAB conversion pixel access failed"
             }
             
@@ -453,7 +453,7 @@ slay convert_to_lab_image(img Image) yikes<Image> {
             sus a_scaled drip = clamp_pixel_value(drip((lab.a + 128.0) * 255.0 / 255.0))
             sus b_scaled drip = clamp_pixel_value(drip((lab.b + 128.0) * 255.0 / 255.0))
             
-            sus lab_pixel []drip = [l_scaled, a_scaled, b_scaled]
+            sus lab_pixel drip[value] = [l_scaled, a_scaled, b_scaled]
             
             set_pixel(&result, x, y, lab_pixel) fam {
                 when _ -> yikes "LAB conversion pixel set failed"
@@ -476,15 +476,15 @@ slay convert_to_cmyk(img Image) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "CMYK conversion pixel access failed"
             }
             
             sus rgb RGB = RGB{r: pixel[0], g: pixel[1], b: pixel[2]}
-            sus cmyk []tea = rgb_to_cmyk(rgb)
+            sus cmyk tea[value] = rgb_to_cmyk(rgb)
             
             # Scale CMYK values to 0-255 range
-            sus cmyk_pixel []drip = [
+            sus cmyk_pixel drip[value] = [
                 clamp_pixel_value(drip(cmyk[0] * 255.0)),
                 clamp_pixel_value(drip(cmyk[1] * 255.0)),
                 clamp_pixel_value(drip(cmyk[2] * 255.0)),
@@ -527,11 +527,11 @@ slay adjust_color_temperature(img Image, temperature drip) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "temperature adjustment pixel access failed"
             }
             
-            sus adjusted_pixel []drip = []
+            sus adjusted_pixel drip[value] = []
             
             # Adjust red channel
             sus new_red drip = clamp_pixel_value(drip(pixel[0] * red_factor))
@@ -576,11 +576,11 @@ slay white_balance(img Image, red_gain tea, green_gain tea, blue_gain tea) yikes
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "white balance pixel access failed"
             }
             
-            sus balanced_pixel []drip = [
+            sus balanced_pixel drip[value] = [
                 clamp_pixel_value(drip(pixel[0] * red_gain)),
                 clamp_pixel_value(drip(pixel[1] * green_gain)),
                 clamp_pixel_value(drip(pixel[2] * blue_gain))

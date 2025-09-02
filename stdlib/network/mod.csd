@@ -15,7 +15,7 @@ be_like SocketHandle squad {
 }
 
 be_like NetworkManager squad {
-    sockets []SocketHandle
+    sockets SocketHandle[value]
     next_id normie
     local_ip tea
 }
@@ -25,7 +25,7 @@ sus global_network_manager NetworkManager
 
 // Initialize network manager
 slay init_network() {
-    global_network_manager.sockets = []SocketHandle{}
+    global_network_manager.sockets = SocketHandle[value]{}
     global_network_manager.next_id = 1000
     global_network_manager.local_ip = "127.0.0.1"
 }
@@ -632,12 +632,12 @@ slay char_from_int(value normie) tea {
     damn tea(result)
 }
 
-slay len(slice []SocketHandle) normie {
+slay len(slice SocketHandle[value]) normie {
     // This would need to be implemented by the runtime
     damn 0
 }
 
-slay append(slice []SocketHandle, element SocketHandle) []SocketHandle {
+slay append(slice SocketHandle[value], element SocketHandle) SocketHandle[value]{
     // This would need to be implemented by the runtime
     damn slice
 }

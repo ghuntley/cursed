@@ -31,7 +31,7 @@ vibe MemoryObject = smash {
 fr fr Heap management
 vibe Heap = smash {
     objects map[normie]MemoryObject,
-    free_list []normie,
+    free_list normie[value],
     total_allocated normie,
     total_freed normie,
     next_id normie,
@@ -266,7 +266,7 @@ slay mark_reachable_objects() normie {
 fr fr Sweep unmarked objects
 slay sweep_unreachable_objects() normie {
     sus collected_count normie = 0
-    sus objects_to_delete []normie = [] fr fr Find unmarked objects
+    sus objects_to_delete normie[value] = [] fr fr Find unmarked objects
     bestie object_id, memory_obj := range global_heap.objects {
         lowkey !memory_obj.is_marked {
             objects_to_delete = append(objects_to_delete, object_id)

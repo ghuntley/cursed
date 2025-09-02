@@ -53,9 +53,9 @@ test_case("Hex Upper Case Encoding") {
 }
 
 test_case("Hex Binary Data") {
-    sus binary_data []drip = [0, 255, 128, 64]
+    sus binary_data drip[value] = [0, 255, 128, 64]
     sus encoded tea = hex_encode(binary_data)
-    sus decoded []drip = hex_decode(encoded)
+    sus decoded drip[value] = hex_decode(encoded)
     
     assert_eq_int(decoded.len(), 4)
     assert_eq_int(decoded[0], 0)

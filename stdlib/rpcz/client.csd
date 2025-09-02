@@ -247,7 +247,7 @@ slay parse_rpc_response(json_data tea) yikes<RpcResponse> {
 }
 
 # Make batch RPC call
-slay call_batch(client &RpcClient, requests []RpcRequest) yikes<[]RpcResponse> {
+slay call_batch(client &RpcClient, requests RpcRequest[value]) yikes<RpcResponse[value]> {
     # Validate batch requests
     ready (len(requests) == 0) {
         yikes "Batch cannot be empty"
@@ -287,7 +287,7 @@ slay call_batch(client &RpcClient, requests []RpcRequest) yikes<[]RpcResponse> {
     }
     
     # Parse batch response
-    sus responses []RpcResponse = parse_batch_response(http_response.body) fam {
+    sus responses RpcResponse[value] = parse_batch_response(http_response.body) fam {
         when _ -> yikes "Failed to parse batch response"
     }
     
@@ -295,11 +295,11 @@ slay call_batch(client &RpcClient, requests []RpcRequest) yikes<[]RpcResponse> {
 }
 
 # Parse batch RPC response
-slay parse_batch_response(json_data tea) yikes<[]RpcResponse> {
-    sus responses []RpcResponse = []
+slay parse_batch_response(json_data tea) yikes<RpcResponse[value]> {
+    sus responses RpcResponse[value] = []
     
     # Parse JSON array
-    sus json_array []map<tea, tea> = jsonz.parse_array(json_data) fam {
+    sus json_array map[value]<tea, tea> = jsonz.parse_array(json_data) fam {
         when _ -> yikes "Invalid batch response format"
     }
     

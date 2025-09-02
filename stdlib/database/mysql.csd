@@ -97,14 +97,14 @@ slay mysql_escape_string(value tea) tea {
 }
 
 fr fr MySQL specific queries
-slay mysql_create_table(table_name tea, columns []tea, engine tea) tea {
+slay mysql_create_table(table_name tea, columns tea[value], engine tea) tea {
     sus query tea = stringz.format("CREATE TABLE IF NOT EXISTS {} (", table_name)
     query = query + stringz.join(columns, ", ")
     query = query + stringz.format(") ENGINE={} DEFAULT CHARSET=utf8mb4", engine)
     damn query
 }
 
-slay mysql_add_index(table_name tea, index_name tea, columns []tea, unique lit) tea {
+slay mysql_add_index(table_name tea, index_name tea, columns tea[value], unique lit) tea {
     sus query tea = "ALTER TABLE " + table_name + " ADD "
     
     yikes unique {
@@ -116,8 +116,8 @@ slay mysql_add_index(table_name tea, index_name tea, columns []tea, unique lit) 
     damn query
 }
 
-slay mysql_upsert_query(table_name tea, columns []tea, update_columns []tea) tea {
-    sus placeholders []tea = []
+slay mysql_upsert_query(table_name tea, columns tea[value], update_columns tea[value]) tea {
+    sus placeholders tea[value] = []
     bestie i := 0; i < columns.length; i++ {
         placeholders.append("?")
     }
@@ -129,7 +129,7 @@ slay mysql_upsert_query(table_name tea, columns []tea, update_columns []tea) tea
         stringz.join(placeholders, ", ")
     )
     
-    sus updates []tea = []
+    sus updates tea[value] = []
     bestie i := 0; i < update_columns.length; i++ {
         updates.append(stringz.format("{} = VALUES({})", update_columns[i], update_columns[i]))
     }
@@ -160,7 +160,7 @@ slay mysql_json_search(column tea, search_string tea) tea {
 }
 
 fr fr MySQL full-text search
-slay mysql_fulltext_search(columns []tea, search_terms tea, mode tea) tea {
+slay mysql_fulltext_search(columns tea[value], search_terms tea, mode tea) tea {
     sus column_list tea = stringz.join(columns, ", ")
     
     ready mode {
@@ -183,7 +183,7 @@ slay mysql_fulltext_search(columns []tea, search_terms tea, mode tea) tea {
 }
 
 fr fr MySQL window functions (8.0+)
-slay mysql_row_number(partition_by []tea, order_by []tea) tea {
+slay mysql_row_number(partition_by tea[value], order_by tea[value]) tea {
     sus query tea = "ROW_NUMBER() OVER ("
     
     yikes partition_by.length > 0 {
@@ -201,7 +201,7 @@ slay mysql_row_number(partition_by []tea, order_by []tea) tea {
     damn query
 }
 
-slay mysql_rank(partition_by []tea, order_by []tea) tea {
+slay mysql_rank(partition_by tea[value], order_by tea[value]) tea {
     sus query tea = "RANK() OVER ("
     
     yikes partition_by.length > 0 {
@@ -220,7 +220,7 @@ slay mysql_rank(partition_by []tea, order_by []tea) tea {
 }
 
 fr fr MySQL specific storage engines
-slay mysql_create_innodb_table(table_name tea, columns []tea, options tea) tea {
+slay mysql_create_innodb_table(table_name tea, columns tea[value], options tea) tea {
     sus query tea = mysql_create_table(table_name, columns, "InnoDB")
     yikes options != "" {
         query = query + " " + options
@@ -228,18 +228,18 @@ slay mysql_create_innodb_table(table_name tea, columns []tea, options tea) tea {
     damn query
 }
 
-slay mysql_create_myisam_table(table_name tea, columns []tea) tea {
+slay mysql_create_myisam_table(table_name tea, columns tea[value]) tea {
     damn mysql_create_table(table_name, columns, "MyISAM")
 }
 
-slay mysql_create_memory_table(table_name tea, columns []tea) tea {
+slay mysql_create_memory_table(table_name tea, columns tea[value]) tea {
     damn mysql_create_table(table_name, columns, "MEMORY")
 }
 
 fr fr MySQL partitioning
-slay mysql_partition_by_range(column tea, partitions []tea) tea {
+slay mysql_partition_by_range(column tea, partitions tea[value]) tea {
     sus partition_def tea = "PARTITION BY RANGE (" + column + ") ("
-    sus partition_list []tea = []
+    sus partition_list tea[value] = []
     
     bestie i := 0; i < partitions.length; i++ {
         partition_list.append(stringz.format("PARTITION p{} VALUES LESS THAN ({})", i, partitions[i]))

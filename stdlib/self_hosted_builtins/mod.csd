@@ -92,17 +92,17 @@ slay math_power_pure(base drip, exponent drip) drip {
 
 fr fr ===== ARRAY OPERATIONS (Pure CURSED) =====
 
-slay array_length_pure(arr []drip) drip {
+slay array_length_pure(arr drip[value]) drip {
     fr fr Pure CURSED array length
     damn len(arr)
 }
 
-slay array_length_string_pure(arr []tea) drip {
+slay array_length_string_pure(arr tea[value]) drip {
     fr fr Pure CURSED string array length
     damn len(arr)
 }
 
-slay array_get_pure(arr []drip, index drip) drip {
+slay array_get_pure(arr drip[value], index drip) drip {
     fr fr Pure CURSED array element access with bounds checking
     ready (index < 0 || index >= len(arr)) {
         damn 0  fr fr Return default value for out of bounds
@@ -110,7 +110,7 @@ slay array_get_pure(arr []drip, index drip) drip {
     damn arr[index]
 }
 
-slay array_set_pure(arr []drip, index drip, value drip) []drip {
+slay array_set_pure(arr drip[value], index drip, value drip) drip[value]{
     fr fr Pure CURSED array element update (returns new array)
     ready (index < 0 || index >= len(arr)) {
         damn arr  fr fr Return original array if out of bounds
@@ -217,7 +217,7 @@ slay string_to_bool_pure(s tea) lit {
 
 fr fr ===== MEMORY OPERATIONS (Pure CURSED) =====
 
-slay create_array_pure(size drip, default_value drip) []drip {
+slay create_array_pure(size drip, default_value drip) drip[value]{
     fr fr Pure CURSED array creation with default values
     ready (size <= 0) {
         damn []
@@ -242,7 +242,7 @@ slay create_array_pure(size drip, default_value drip) []drip {
     damn [default_value, default_value, default_value, default_value, default_value]
 }
 
-slay copy_array_pure(source []drip) []drip {
+slay copy_array_pure(source drip[value]) drip[value]{
     fr fr Pure CURSED array copying
     sus length drip = len(source)
     ready (length == 0) {
@@ -332,7 +332,7 @@ slay test_math_operations() lit {
 
 slay test_array_operations() lit {
     fr fr Test pure CURSED array implementations
-    sus test_arr []drip = [1, 2, 3, 4, 5]
+    sus test_arr drip[value] = [1, 2, 3, 4, 5]
     
     sus len_result drip = array_length_pure(test_arr)
     ready (len_result != 5) {
@@ -346,7 +346,7 @@ slay test_array_operations() lit {
         damn cringe
     }
     
-    sus new_arr []drip = create_array_pure(3, 42)
+    sus new_arr drip[value] = create_array_pure(3, 42)
     sus new_len drip = array_length_pure(new_arr)
     ready (new_len != 3) {
         vibez.spill("FAIL: create_array_pure")

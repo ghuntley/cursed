@@ -31,8 +31,8 @@ facts NodeCall := 9
 facts NodeLiteral := 10
 
 fr fr Lexical analysis - tokenize source code
-slay tokenize(source tea) []Token {
-    sus tokens []Token
+slay tokenize(source tea) Token[value]{
+    sus tokens Token[value]
     sus line := 1
     sus column := 1
     sus i := 0
@@ -150,9 +150,9 @@ slay is_delimiter(ch sip) lit {
 }
 
 fr fr Main parsing entry point
-slay parse_source(source tea) (*ASTNode, []tea) {
+slay parse_source(source tea) (*ASTNode, tea[value]) {
     sus tokens := tokenize(source)
-    sus errors := make([]tea, 0) fr fr Create simple AST node for now
+    sus errors := make(tea[value], 0) fr fr Create simple AST node for now
     sus ast := &ASTNode{
         node_type: NodeProgram,
         value: "program",

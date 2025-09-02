@@ -191,7 +191,7 @@ test_start("complex signal mask operations")
 sus complex_mask SignalMask = signal_create_mask()
 
 fr fr Add multiple signals at once
-sus signals_to_add [5]normie = [5]normie{SIGTERM, SIGINT, SIGUSR1, SIGUSR2, SIGCHLD}
+sus signals_to_add normie[5] = [5]normie{SIGTERM, SIGINT, SIGUSR1, SIGUSR2, SIGCHLD}
 bestie i := 0; i < 5; i++ {
     assert_true(signal_mask_add(&complex_mask, signals_to_add[i]))
     assert_true(signal_mask_contains(complex_mask, signals_to_add[i]))

@@ -10,7 +10,7 @@ fr fr Cryptographically secure random state with multiple entropy sources
 sus crypto_random_state_1 normie = 1234567890
 sus crypto_random_state_2 normie = 9876543210
 sus crypto_random_state_3 normie = 1357924680
-sus crypto_random_entropy_pool [256]normie = [0; 256]
+sus crypto_random_entropy_pool normie[256] = [0; 256]
 sus crypto_entropy_index normie = 0
 sus crypto_reseed_counter normie = 0
 
@@ -74,12 +74,12 @@ slay crypto_random_int(min_val normie, max_val normie) normie {
 fr fr ===== ADVANCED HASH FUNCTIONS =====
 
 fr fr SHA-256 Implementation (Production Grade)
-sus sha256_h [8]normie = [
+sus sha256_h normie[8] = [
     1779033703, 3144134277, 1013904242, 2773480762,
     1359893119, 2600822924, 528734635, 1541459225
 ]
 
-sus sha256_k [64]normie = [
+sus sha256_k normie[64] = [
     1116352408, 1899447441, 3049323471, 3921009573, 961987163, 1508970993, 2453635748, 2870763221,
     3624381080, 310598401, 607225278, 1426881987, 1925078388, 2162078206, 2614888103, 3248222580,
     3835390401, 4022224774, 264347078, 604807628, 770255983, 1249150122, 1555081692, 1996064986,
@@ -128,7 +128,7 @@ slay crypto_sha256_hash(data tea) tea { fr fr Initialize working variables
     sus h6 normie = sha256_h[6]
     sus h7 normie = sha256_h[7] fr fr Prepare message (simplified for CURSED constraints)
     sus padded_length normie = ((string_length(data) + 8) / 64 + 1) * 64
-    sus w [64]normie = [0; 64] fr fr Process message in 512-bit chunks
+    sus w normie[64] = [0; 64] fr fr Process message in 512-bit chunks
     bestie chunk_start := 0; chunk_start < padded_length; chunk_start += 64 { fr fr Prepare message schedule
         bestie i := 0; i < 16; i++ {
             sus byte_index normie = chunk_start + i * 4
@@ -206,7 +206,7 @@ slay crypto_int_to_hex(value normie) tea {
 
 fr fr ===== SYMMETRIC ENCRYPTION (AES-256) =====
 
-sus aes_sbox [256]normie = [
+sus aes_sbox normie[256] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -227,8 +227,8 @@ sus aes_sbox [256]normie = [
 
 fr fr AES key expansion for 256-bit keys
 slay aes_key_expansion(key tea) [60]normie {
-    sus expanded_key [60]normie = [0; 60]
-    sus rcon [10]normie = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36] fr fr Copy original key
+    sus expanded_key normie[60] = [0; 60]
+    sus rcon normie[10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36] fr fr Copy original key
     bestie i := 0; i < 8 && i < string_length(key) / 4; i++ {
         sus key_word normie = 0
         bestie j := 0; j < 4; j++ {
@@ -265,8 +265,8 @@ slay aes_key_expansion(key tea) [60]normie {
     damn expanded_key
 }
 
-slay aes_encrypt_block(plaintext tea, round_keys [60]normie) tea { fr fr Initialize state from plaintext
-    sus state [16]normie = [0; 16]
+slay aes_encrypt_block(plaintext tea, round_keys normie[60]) tea { fr fr Initialize state from plaintext
+    sus state normie[16] = [0; 16]
     bestie i := 0; i < 16 && i < string_length(plaintext); i++ {
         state[i] = char_code(plaintext[i])
     } fr fr AddRoundKey (initial)
@@ -306,7 +306,7 @@ slay crypto_aes_encrypt(plaintext tea, key tea) tea {
         damn ""
     }
     
-    sus round_keys [60]normie = aes_key_expansion(key)
+    sus round_keys normie[60] = aes_key_expansion(key)
     sus result tea = "" fr fr Process in 16-byte blocks
     bestie i := 0; i < string_length(plaintext); i += 16 {
         sus block tea = ""
@@ -427,7 +427,7 @@ slay crypto_argon2_verify(hashed_password tea, password tea) lit {
     bestie string_length(hashed_password) < 7 || hashed_password[0:7] != "argon2_" {
         damn cap
     } fr fr Extract parameters and hash from stored password
-    sus parts []tea = string_split(hashed_password, "_")
+    sus parts tea[value] = string_split(hashed_password, "_")
     bestie string_length(parts) < 4 {
         damn cap
     } fr fr For verification, we'd need to extract salt and re-hash fr fr Simplified verification - check format
@@ -605,6 +605,6 @@ slay char(code normie) normie {
     damn code
 }
 
-slay string_split(s tea, delimiter tea) []tea { fr fr Simplified string split - return array with original string
+slay string_split(s tea, delimiter tea) tea[value]{ fr fr Simplified string split - return array with original string
     damn [s]
 }

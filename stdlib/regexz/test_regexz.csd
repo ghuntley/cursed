@@ -62,16 +62,16 @@ assert_eq_int(regex_find("anything", ".*"), 0)
 
 test_start("Text Extraction")
 
-sus emails []tea = regex_extract_emails("Contact us at info@company.com or support@help.org")
+sus emails tea[value] = regex_extract_emails("Contact us at info@company.com or support@help.org")
 assert_eq_int(len(emails), 2)
 
-sus urls []tea = regex_extract_urls("Visit http://example.com or https://secure.site.com")
+sus urls tea[value] = regex_extract_urls("Visit http://example.com or https://secure.site.com")
 assert_eq_int(len(urls), 2)
 
-sus numbers []tea = regex_extract_numbers("The year 2024 has 365 days")
+sus numbers tea[value] = regex_extract_numbers("The year 2024 has 365 days")
 assert_eq_int(len(numbers), 2)
 
-sus words []tea = regex_extract_words("Hello 123 World!")
+sus words tea[value] = regex_extract_words("Hello 123 World!")
 assert_eq_int(len(words), 2)
 
 test_start("Character Type Detection")
@@ -114,10 +114,10 @@ assert_eq_int(regex_count_matches("test", "missing"), 0)
 
 test_start("Text Splitting")
 
-sus parts []tea = regex_split("a,b,c", ",")
+sus parts tea[value] = regex_split("a,b,c", ",")
 assert_eq_int(len(parts), 3)
 
-sus words_split []tea = regex_split("one two three", " ")
+sus words_split tea[value] = regex_split("one two three", " ")
 assert_eq_int(len(words_split), 3)
 
 test_start("Regex Escaping")

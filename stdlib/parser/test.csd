@@ -32,7 +32,7 @@ test_case("AST Node Type Constants") {
 fr fr === Tokenization Tests ===
 test_case("Tokenize Simple Identifier") {
     sus source tea = "variable_name"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     assert_eq_int(tokens.len(), 2)  fr fr identifier + EOF
     assert_eq_int(tokens[0].type, TokenIdentifier)
@@ -42,7 +42,7 @@ test_case("Tokenize Simple Identifier") {
 
 test_case("Tokenize Number") {
     sus source tea = "12345"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     assert_eq_int(tokens.len(), 2)  fr fr number + EOF
     assert_eq_int(tokens[0].type, TokenNumber)
@@ -51,7 +51,7 @@ test_case("Tokenize Number") {
 
 test_case("Tokenize Floating Point Number") {
     sus source tea = "123.45"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     assert_eq_int(tokens.len(), 2)
     assert_eq_int(tokens[0].type, TokenNumber)
@@ -60,7 +60,7 @@ test_case("Tokenize Floating Point Number") {
 
 test_case("Tokenize String Literal") {
     sus source tea = "\"Hello, World!\""
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     assert_eq_int(tokens.len(), 2)
     assert_eq_int(tokens[0].type, TokenString)
@@ -68,10 +68,10 @@ test_case("Tokenize String Literal") {
 }
 
 test_case("Tokenize Keywords") {
-    sus keywords []tea = ["sus", "slay", "ready", "otherwise", "bestie", "vibes", "damn"]
+    sus keywords tea[value] = ["sus", "slay", "ready", "otherwise", "bestie", "vibes", "damn"]
     
     bestie (sus i normie = 0; i < keywords.len(); i++) {
-        sus tokens []Token = tokenize(keywords[i])
+        sus tokens Token[value] = tokenize(keywords[i])
         assert_eq_int(tokens.len(), 2)
         assert_eq_int(tokens[0].type, TokenKeyword)
         assert_eq_string(tokens[0].value, keywords[i])
@@ -79,10 +79,10 @@ test_case("Tokenize Keywords") {
 }
 
 test_case("Tokenize Operators") {
-    sus operators []tea = ["+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">="]
+    sus operators tea[value] = ["+", "-", "*", "/", "=", "==", "!=", "<", ">", "<=", ">="]
     
     bestie (sus i normie = 0; i < operators.len(); i++) {
-        sus tokens []Token = tokenize(operators[i])
+        sus tokens Token[value] = tokenize(operators[i])
         assert_greater_than_or_equal(tokens.len(), 2)
         assert_eq_int(tokens[0].type, TokenOperator)
         assert_eq_string(tokens[0].value, operators[i])
@@ -90,10 +90,10 @@ test_case("Tokenize Operators") {
 }
 
 test_case("Tokenize Delimiters") {
-    sus delimiters []tea = ["(", ")", "{", "}", "[", "]", ";", ",", "."]
+    sus delimiters tea[value] = ["(", ")", "{", "}", "[", "]", ";", ",", "."]
     
     bestie (sus i normie = 0; i < delimiters.len(); i++) {
-        sus tokens []Token = tokenize(delimiters[i])
+        sus tokens Token[value] = tokenize(delimiters[i])
         assert_greater_than_or_equal(tokens.len(), 2)
         assert_eq_int(tokens[0].type, TokenDelimiter)
         assert_eq_string(tokens[0].value, delimiters[i])
@@ -102,7 +102,7 @@ test_case("Tokenize Delimiters") {
 
 test_case("Tokenize Comments") {
     sus source tea = "fr fr This is a comment"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     fr fr Comment may be tokenized or skipped depending on implementation
     assert_greater_than_or_equal(tokens.len(), 1)  fr fr At least EOF
@@ -110,7 +110,7 @@ test_case("Tokenize Comments") {
 
 test_case("Tokenize Complex Expression") {
     sus source tea = "sus x normie = 42 + y * 3"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     assert_greater_than(tokens.len(), 8)  fr fr Multiple tokens expected
     
@@ -128,7 +128,7 @@ test_case("Tokenize Complex Expression") {
 fr fr === Parser Tests ===
 test_case("Parse Simple Variable Declaration") {
     sus source tea = "sus x normie = 42"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse(tokens)
     
     assert_not_null(ast)
@@ -138,7 +138,7 @@ test_case("Parse Simple Variable Declaration") {
 
 test_case("Parse Function Declaration") {
     sus source tea = "slay add(a normie, b normie) normie { damn a + b }"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse(tokens)
     
     assert_not_null(ast)
@@ -152,7 +152,7 @@ test_case("Parse Function Declaration") {
 
 test_case("Parse Binary Expression") {
     sus source tea = "x + y * z"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -165,7 +165,7 @@ test_case("Parse Binary Expression") {
 
 test_case("Parse Function Call") {
     sus source tea = "add(1, 2, 3)"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -176,7 +176,7 @@ test_case("Parse Function Call") {
 
 test_case("Parse Nested Expressions") {
     sus source tea = "(x + y) * (z - w)"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -191,7 +191,7 @@ test_case("Parse Nested Expressions") {
 
 test_case("Parse Control Flow") {
     sus source tea = "ready x > 0 { spill(\"positive\") } otherwise { spill(\"non-positive\") }"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse(tokens)
     
     assert_not_null(ast)
@@ -201,10 +201,10 @@ test_case("Parse Control Flow") {
 
 fr fr === Expression Parsing Tests ===
 test_case("Parse Literal Values") {
-    sus test_cases []tea = ["42", "3.14", "\"hello\"", "based", "cap"]
+    sus test_cases tea[value] = ["42", "3.14", "\"hello\"", "based", "cap"]
     
     bestie (sus i normie = 0; i < test_cases.len(); i++) {
-        sus tokens []Token = tokenize(test_cases[i])
+        sus tokens Token[value] = tokenize(test_cases[i])
         sus ast ASTNode = parse_expression(tokens)
         
         assert_not_null(ast)
@@ -213,10 +213,10 @@ test_case("Parse Literal Values") {
 }
 
 test_case("Parse Unary Expressions") {
-    sus test_cases []tea = ["-x", "+y", "!condition"]
+    sus test_cases tea[value] = ["-x", "+y", "!condition"]
     
     bestie (sus i normie = 0; i < test_cases.len(); i++) {
-        sus tokens []Token = tokenize(test_cases[i])
+        sus tokens Token[value] = tokenize(test_cases[i])
         sus ast ASTNode = parse_expression(tokens)
         
         assert_not_null(ast)
@@ -227,7 +227,7 @@ test_case("Parse Unary Expressions") {
 
 test_case("Operator Precedence") {
     sus source tea = "1 + 2 * 3"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     fr fr Should parse as 1 + (2 * 3), not (1 + 2) * 3
@@ -241,7 +241,7 @@ test_case("Operator Precedence") {
 
 test_case("Associativity") {
     sus source tea = "a - b - c"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     fr fr Should parse as (a - b) - c (left associative)
@@ -258,7 +258,7 @@ test_case("Invalid Token Handling") {
     sus source tea = "sus x @#$%"  fr fr Invalid characters
     
     fam {
-        sus tokens []Token = tokenize(source)
+        sus tokens Token[value] = tokenize(source)
         fr fr May produce error tokens or throw exception
         sus has_error lit = cap
         bestie (sus i normie = 0; i < tokens.len(); i++) {
@@ -279,7 +279,7 @@ test_case("Unterminated String") {
     sus source tea = "\"unterminated string"
     
     fam {
-        sus tokens []Token = tokenize(source)
+        sus tokens Token[value] = tokenize(source)
         fail("Should have thrown error for unterminated string")
     } shook (err tea) {
         assert_contains(err, "unterminated", "string", "quote")
@@ -290,7 +290,7 @@ test_case("Invalid Syntax Parsing") {
     sus source tea = "sus sus sus"  fr fr Invalid syntax
     
     fam {
-        sus tokens []Token = tokenize(source)
+        sus tokens Token[value] = tokenize(source)
         sus ast ASTNode = parse(tokens)
         fail("Should have thrown parse error")
     } shook (err tea) {
@@ -302,7 +302,7 @@ test_case("Mismatched Parentheses") {
     sus source tea = "((x + y)"
     
     fam {
-        sus tokens []Token = tokenize(source)
+        sus tokens Token[value] = tokenize(source)
         sus ast ASTNode = parse_expression(tokens)
         fail("Should have thrown error for mismatched parentheses")
     } shook (err tea) {
@@ -313,7 +313,7 @@ test_case("Mismatched Parentheses") {
 fr fr === AST Utility Tests ===
 test_case("Find Node by Type") {
     sus source tea = "slay test() { sus x normie = 42; damn x }"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse(tokens)
     
     sus func_node ASTNode = find_node_by_type(ast, NodeFunction)
@@ -326,7 +326,7 @@ test_case("Find Node by Type") {
 
 test_case("Visit All Nodes") {
     sus source tea = "x + y * z"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     sus node_count normie = 0
@@ -339,7 +339,7 @@ test_case("Visit All Nodes") {
 
 test_case("AST to String") {
     sus source tea = "42"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     sus ast_string tea = ast_to_string(ast)
@@ -350,7 +350,7 @@ test_case("AST to String") {
 fr fr === Advanced Parsing Tests ===
 test_case("Parse Array Access") {
     sus source tea = "arr[0][1]"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -359,7 +359,7 @@ test_case("Parse Array Access") {
 
 test_case("Parse Method Calls") {
     sus source tea = "obj.method(arg1, arg2)"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -368,7 +368,7 @@ test_case("Parse Method Calls") {
 
 test_case("Parse Lambda Expression") {
     sus source tea = "slay(x normie) normie { damn x * 2 }"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)
@@ -378,7 +378,7 @@ test_case("Parse Lambda Expression") {
 fr fr === Token Position Tests ===
 test_case("Token Line Numbers") {
     sus source tea = "line1\nline2\nline3"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     fr fr Should track line numbers correctly
     sus found_line2 lit = cap
@@ -399,7 +399,7 @@ test_case("Token Line Numbers") {
 
 test_case("Token Column Numbers") {
     sus source tea = "  token"
-    sus tokens []Token = tokenize(source)
+    sus tokens Token[value] = tokenize(source)
     
     fr fr Token should start at column 3 (after 2 spaces)
     assert_eq_int(tokens[0].column, 3)
@@ -413,7 +413,7 @@ test_case("Large Source Parsing") {
         large_source = large_source + "sus var" + string(i) + " normie = " + string(i) + ";\n"
     }
     
-    sus tokens []Token = tokenize(large_source)
+    sus tokens Token[value] = tokenize(large_source)
     assert_greater_than(tokens.len(), 4000)  fr fr Should have many tokens
     
     sus ast ASTNode = parse(tokens)
@@ -422,7 +422,7 @@ test_case("Large Source Parsing") {
 
 test_case("Deep Nesting Parsing") {
     sus deep_expr tea = "((((((1 + 2) * 3) - 4) / 5) + 6) * 7)"
-    sus tokens []Token = tokenize(deep_expr)
+    sus tokens Token[value] = tokenize(deep_expr)
     sus ast ASTNode = parse_expression(tokens)
     
     assert_not_null(ast)

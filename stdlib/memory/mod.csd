@@ -19,7 +19,7 @@ struct MemoryBlock {
 }
 
 struct MemoryPool {
-    spill blocks []MemoryBlock
+    spill blocks MemoryBlock[value]
     spill free_count *atomic_drip.AtomicI32
     spill total_allocated *atomic_drip.AtomicI64
     spill peak_usage *atomic_drip.AtomicI64
@@ -445,7 +445,7 @@ slay memory_arena_free(arena *MemoryArena) lit {
 fr fr Memory pool for fixed-size allocations
 struct FixedPool {
     spill block_size normie
-    spill blocks []MemoryBlock
+    spill blocks MemoryBlock[value]
     spill free_list *atomic_drip.AtomicPtr
     spill total_blocks *atomic_drip.AtomicI32
     spill free_blocks *atomic_drip.AtomicI32

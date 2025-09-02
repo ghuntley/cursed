@@ -121,14 +121,14 @@ slay test_csv_writer_basic() {
     sus writer := csv_mood.NewWriter()
     
     fr fr Write header
-    sus headerErr := writer.Write([]tea{"name", "age", "city"})
+    sus headerErr := writer.Write(tea[value]{"name", "age", "city"})
     assert_eq_string(headerErr, "")
     
     fr fr Write data records
-    sus err1 := writer.Write([]tea{"Alice", "30", "New York"})
+    sus err1 := writer.Write(tea[value]{"Alice", "30", "New York"})
     assert_eq_string(err1, "")
     
-    sus err2 := writer.Write([]tea{"Bob", "25", "Los Angeles"})
+    sus err2 := writer.Write(tea[value]{"Bob", "25", "Los Angeles"})
     assert_eq_string(err2, "")
     
     fr fr Check output
@@ -146,7 +146,7 @@ slay test_csv_writer_quoted_fields() {
     sus writer := csv_mood.NewWriter()
     
     fr fr Write record with field containing comma
-    sus err := writer.Write([]tea{"Smith, John", "Senior Developer"})
+    sus err := writer.Write(tea[value]{"Smith, John", "Senior Developer"})
     assert_eq_string(err, "")
     
     sus output := writer.String()
@@ -162,7 +162,7 @@ slay test_csv_writer_custom_delimiter() {
     sus writer := csv_mood.NewWriter()
     writer.Comma('|')
     
-    sus err := writer.Write([]tea{"name", "age", "city"})
+    sus err := writer.Write(tea[value]{"name", "age", "city"})
     assert_eq_string(err, "")
     
     sus output := writer.String()
@@ -175,7 +175,7 @@ slay test_csv_writer_write_all() {
     test_start("CSV Writer WriteAll")
     
     sus writer := csv_mood.NewWriter()
-    sus records := [][]tea{
+    sus records := tea[value][value]{
         {"name", "age"},
         {"Alice", "30"},
         {"Bob", "25"},
@@ -235,7 +235,7 @@ slay test_csv_streamer() {
     sus streamer := csv_mood.NewStreamer(csvData)
     
     sus processedCount := 0
-    sus err := streamer.Process(func(record []tea, header []tea) tea {
+    sus err := streamer.Process(func(record tea[value], header tea[value]) tea {
         if len(record) > 0 {
             processedCount++
         }

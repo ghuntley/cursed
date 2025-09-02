@@ -42,7 +42,7 @@ squad Socket {
 
 // Connection pool for efficient connection management
 squad ConnectionPool {
-    sus connections []Socket
+    sus connections Socket[value]
     sus max_connections drip
     sus active_connections drip
     sus host tea
@@ -69,7 +69,7 @@ squad ConnectionPoolStats {
 squad HttpRequestAdvanced {
     sus method tea
     sus url tea
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus timeout drip
     sus retry_count drip
@@ -77,21 +77,21 @@ squad HttpRequestAdvanced {
     sus user_agent tea
     sus content_type tea
     sus authorization tea
-    sus cookies []tea
+    sus cookies tea[value]
     sus compression tea        // gzip, deflate, br
 }
 
 squad HttpResponseAdvanced {
     sus status_code drip
     sus status_message tea
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus content_length drip
     sus content_type tea
     sus response_time_ms drip
     sus redirect_count drip
     sus compression tea
-    sus cookies []tea
+    sus cookies tea[value]
     sus cache_control tea
 }
 
@@ -105,17 +105,17 @@ squad DNSRecord {
 }
 
 squad DNSResolver {
-    sus servers []tea          // DNS server addresses
+    sus servers tea[value]          // DNS server addresses
     sus timeout drip
     sus max_retries drip
     sus cache_enabled lit
-    sus cache []DNSCacheEntry
+    sus cache DNSCacheEntry[value]
     sus cache_size drip
 }
 
 squad DNSCacheEntry {
     sus domain tea
-    sus records []DNSRecord
+    sus records DNSRecord[value]
     sus cached_at drip
     sus expires_at drip
 }
@@ -127,7 +127,7 @@ squad TLSConfig {
     sus ca_file tea
     sus verify_peer lit
     sus min_version tea        // TLS 1.2, TLS 1.3
-    sus cipher_suites []tea
+    sus cipher_suites tea[value]
     sus server_name tea        // SNI
 }
 
@@ -143,10 +143,10 @@ squad WebSocketFrame {
 
 // ==== GLOBAL STATE MANAGEMENT ====
 
-sus global_socket_pool [1000]Socket
+sus global_socket_pool Socket[1000]
 sus socket_count drip = 0
 sus next_socket_handle drip = 1000
-sus global_connection_pools [100]ConnectionPool
+sus global_connection_pools ConnectionPool[100]
 sus pool_count drip = 0
 
 // DNS cache and resolver
@@ -574,13 +574,13 @@ slay dns_resolve_hostname(hostname tea) yikes<tea> {
     damn resolved_ip
 }
 
-slay dns_resolve_hostname_all_types(hostname tea, record_type drip) yikes<[]DNSRecord> {
+slay dns_resolve_hostname_all_types(hostname tea, record_type drip) yikes<DNSRecord[value]> {
     ready (!dns_initialized) {
         dns_resolver_init() fam { when _ -> {} }
     }
 
     // Simulate DNS record lookup
-    sus records []DNSRecord = []
+    sus records DNSRecord[value] = []
 
     sick (record_type) {
         when 1 -> {  // A record
@@ -774,14 +774,14 @@ slay parse_advanced_http_response(raw_response tea) yikes<HttpResponseAdvanced> 
         yikes create_network_error_advanced("http_parse", "Empty response", 400, "")
     }
 
-    sus lines []tea = stringz.split(raw_response, "\r\n")
+    sus lines tea[value] = stringz.split(raw_response, "\r\n")
     ready (arrayz.len(lines) == 0) {
         yikes create_network_error_advanced("http_parse", "Invalid response format", 400, "")
     }
 
     // Parse status line
     sus status_line tea = lines[0]
-    sus status_parts []tea = stringz.split(status_line, " ")
+    sus status_parts tea[value] = stringz.split(status_line, " ")
     ready (arrayz.len(status_parts) < 3) {
         yikes create_network_error_advanced("http_parse", "Invalid status line", 400, "")
     }
@@ -795,14 +795,14 @@ slay parse_advanced_http_response(raw_response tea) yikes<HttpResponseAdvanced> 
     sus status_message tea = stringz.join(arrayz.slice(status_parts, 2, arrayz.len(status_parts)), " ")
 
     // Parse headers
-    sus headers []tea = []
+    sus headers tea[value] = []
     sus body_start drip = -1
     sus i drip = 1
 
     sus content_type tea = ""
     sus content_length drip = 0
     sus compression tea = ""
-    sus cookies []tea = []
+    sus cookies tea[value] = []
     sus cache_control tea = ""
 
     bestie (i < arrayz.len(lines)) {
@@ -836,7 +836,7 @@ slay parse_advanced_http_response(raw_response tea) yikes<HttpResponseAdvanced> 
     // Extract body
     sus body tea = ""
     ready (body_start != -1 && body_start < arrayz.len(lines)) {
-        sus body_lines []tea = []
+        sus body_lines tea[value] = []
         sus j drip = body_start
         bestie (j < arrayz.len(lines)) {
             body_lines = arrayz.push(body_lines, lines[j])
@@ -866,7 +866,7 @@ slay parse_advanced_http_response(raw_response tea) yikes<HttpResponseAdvanced> 
 
 slay is_valid_ip_address(address tea) lit {
     // IPv4 validation
-    sus parts []tea = stringz.split(address, ".")
+    sus parts tea[value] = stringz.split(address, ".")
     ready (arrayz.len(parts) == 4) {
         sus i drip = 0
         bestie (i < 4) {
@@ -1008,8 +1008,8 @@ slay dns_query_servers(hostname tea) yikes<tea> {
     }
 }
 
-slay dns_simulate_mx_records(domain tea) []DNSRecord {
-    sus records []DNSRecord = []
+slay dns_simulate_mx_records(domain tea) DNSRecord[value]{
+    sus records DNSRecord[value] = []
 
     sick (domain) {
         when "gmail.com" -> {
@@ -1027,8 +1027,8 @@ slay dns_simulate_mx_records(domain tea) []DNSRecord {
     damn records
 }
 
-slay dns_simulate_txt_records(domain tea) []DNSRecord {
-    sus records []DNSRecord = []
+slay dns_simulate_txt_records(domain tea) DNSRecord[value]{
+    sus records DNSRecord[value] = []
 
     sick (domain) {
         when "google.com" -> {
@@ -1077,7 +1077,7 @@ slay reset_network_statistics() yikes<lit> {
 
 // ==== HIGH-LEVEL CONVENIENCE FUNCTIONS ====
 
-slay http_get_advanced(url tea, headers []tea, timeout drip) yikes<HttpResponseAdvanced> {
+slay http_get_advanced(url tea, headers tea[value], timeout drip) yikes<HttpResponseAdvanced> {
     sus request HttpRequestAdvanced = HttpRequestAdvanced{
         method: "GET",
         url: url,
@@ -1105,8 +1105,8 @@ slay http_get_advanced(url tea, headers []tea, timeout drip) yikes<HttpResponseA
     damn http_request_with_pool(request, pool)
 }
 
-slay http_post_json_advanced(url tea, json_body tea, headers []tea, timeout drip) yikes<HttpResponseAdvanced> {
-    sus enhanced_headers []tea = ["Content-Type: application/json", "Accept: application/json"]
+slay http_post_json_advanced(url tea, json_body tea, headers tea[value], timeout drip) yikes<HttpResponseAdvanced> {
+    sus enhanced_headers tea[value] = ["Content-Type: application/json", "Accept: application/json"]
     enhanced_headers = arrayz.concat(enhanced_headers, headers)
 
     sus request HttpRequestAdvanced = HttpRequestAdvanced{

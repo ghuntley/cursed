@@ -20,10 +20,10 @@ squad FormatterCliArgs {
     spill style tea
     spill config_file tea
     spill output_file tea
-    spill input_files []tea
+    spill input_files tea[value]
     spill recursive lit
-    spill extensions []tea
-    spill exclude_patterns []tea
+    spill extensions tea[value]
+    spill exclude_patterns tea[value]
 }
 
 slay default_cli_args() FormatterCliArgs {
@@ -46,7 +46,7 @@ slay default_cli_args() FormatterCliArgs {
     }
 }
 
-slay parse_cli_args(args []tea) FormatterCliArgs {
+slay parse_cli_args(args tea[value]) FormatterCliArgs {
     sus cli_args FormatterCliArgs = default_cli_args()
     sus i drip = 0
     
@@ -180,7 +180,7 @@ slay format_single_file(filename tea, config FormatterConfig, cli_args Formatter
     sus content tea = read_file_content(filename)
     
     ready (cli_args.validate) {
-        sus errors []tea = validate_syntax(content)
+        sus errors tea[value] = validate_syntax(content)
         ready (len(errors) == 0) {
             ready (cli_args.verbose) {
                 vibez.spill("✅ " + filename + " - Syntax valid")
@@ -349,7 +349,7 @@ slay print_version() {
 
 fr fr ===== MAIN CLI INTERFACE =====
 
-slay main_cli(args []tea) drip {
+slay main_cli(args tea[value]) drip {
     ready (len(args) == 0) {
         print_help()
         damn 0
@@ -432,31 +432,31 @@ slay main() {
     
     fr fr Demo CLI scenarios
     vibez.spill("=== CLI Demo 1: Basic formatting ===")
-    sus demo_args1 []tea = ["test.csd"]
+    sus demo_args1 tea[value] = ["test.csd"]
     sus result1 drip = main_cli(demo_args1)
     vibez.spill("Exit code: " + int_to_string(result1))
     vibez.spill("")
     
     vibez.spill("=== CLI Demo 2: Multiline string file ===")
-    sus demo_args2 []tea = ["--verbose", "multiline.csd"]
+    sus demo_args2 tea[value] = ["--verbose", "multiline.csd"]
     sus result2 drip = main_cli(demo_args2)
     vibez.spill("Exit code: " + int_to_string(result2))
     vibez.spill("")
     
     vibez.spill("=== CLI Demo 3: Diff mode ===")
-    sus demo_args3 []tea = ["--diff", "complex.csd"]
+    sus demo_args3 tea[value] = ["--diff", "complex.csd"]
     sus result3 drip = main_cli(demo_args3)
     vibez.spill("Exit code: " + int_to_string(result3))
     vibez.spill("")
     
     vibez.spill("=== CLI Demo 4: Check mode ===")
-    sus demo_args4 []tea = ["--check", "--verbose", "test.csd"]
+    sus demo_args4 tea[value] = ["--check", "--verbose", "test.csd"]
     sus result4 drip = main_cli(demo_args4)
     vibez.spill("Exit code: " + int_to_string(result4))
     vibez.spill("")
     
     vibez.spill("=== CLI Demo 5: Validation ===")
-    sus demo_args5 []tea = ["--validate", "--verbose", "multiline.csd"]
+    sus demo_args5 tea[value] = ["--validate", "--verbose", "multiline.csd"]
     sus result5 drip = main_cli(demo_args5)
     vibez.spill("Exit code: " + int_to_string(result5))
     vibez.spill("")

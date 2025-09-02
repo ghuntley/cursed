@@ -27,7 +27,7 @@ slay sqlite_create_config(database_path tea) SQLiteConfig {
 slay sqlite_connection_string(config SQLiteConfig) tea {
     sus conn_string tea = "file:" + config.database_path
     
-    sus params []tea = []
+    sus params tea[value] = []
     
     yikes config.cache_size != 2000 {
         params.append(stringz.format("cache=shared&cache_size={}", config.cache_size))
@@ -105,7 +105,7 @@ slay sqlite_escape_string(value tea) tea { fr fr SQLite uses '' to escape single
 }
 
 fr fr SQLite specific queries
-slay sqlite_create_table(table_name tea, columns []tea, without_rowid lit) tea {
+slay sqlite_create_table(table_name tea, columns tea[value], without_rowid lit) tea {
     sus query tea = stringz.format("CREATE TABLE IF NOT EXISTS {} (", table_name)
     query = query + stringz.join(columns, ", ")
     query = query + ")"
@@ -121,7 +121,7 @@ slay sqlite_add_column(table_name tea, column_definition tea) tea {
     damn stringz.format("ALTER TABLE {} ADD COLUMN {}", table_name, column_definition)
 }
 
-slay sqlite_create_index(index_name tea, table_name tea, columns []tea, unique lit, where_clause tea) tea {
+slay sqlite_create_index(index_name tea, table_name tea, columns tea[value], unique lit, where_clause tea) tea {
     sus query tea = "CREATE "
     
     yikes unique {
@@ -139,8 +139,8 @@ slay sqlite_create_index(index_name tea, table_name tea, columns []tea, unique l
 }
 
 fr fr SQLite UPSERT (INSERT OR REPLACE)
-slay sqlite_upsert_query(table_name tea, columns []tea, conflict_resolution tea) tea {
-    sus placeholders []tea = []
+slay sqlite_upsert_query(table_name tea, columns tea[value], conflict_resolution tea) tea {
+    sus placeholders tea[value] = []
     bestie i := 0; i < columns.length; i++ {
         placeholders.append("?")
     }
@@ -151,11 +151,11 @@ slay sqlite_upsert_query(table_name tea, columns []tea, conflict_resolution tea)
     damn query
 }
 
-slay sqlite_insert_or_ignore(table_name tea, columns []tea) tea {
+slay sqlite_insert_or_ignore(table_name tea, columns tea[value]) tea {
     damn sqlite_upsert_query(table_name, columns, "IGNORE")
 }
 
-slay sqlite_insert_or_replace(table_name tea, columns []tea) tea {
+slay sqlite_insert_or_replace(table_name tea, columns tea[value]) tea {
     damn sqlite_upsert_query(table_name, columns, "REPLACE")
 }
 
@@ -185,7 +185,7 @@ slay sqlite_json_type(column tea, path tea) tea {
 }
 
 fr fr SQLite full-text search (FTS5)
-slay sqlite_create_fts_table(table_name tea, columns []tea, content_table tea) tea {
+slay sqlite_create_fts_table(table_name tea, columns tea[value], content_table tea) tea {
     sus query tea = stringz.format("CREATE VIRTUAL TABLE {} USING fts5(", table_name)
     query = query + stringz.join(columns, ", ")
     
@@ -215,7 +215,7 @@ slay sqlite_row_number() tea {
     damn "ROW_NUMBER() OVER ()"
 }
 
-slay sqlite_row_number_partitioned(partition_by []tea, order_by []tea) tea {
+slay sqlite_row_number_partitioned(partition_by tea[value], order_by tea[value]) tea {
     sus query tea = "ROW_NUMBER() OVER ("
     
     yikes partition_by.length > 0 {
@@ -353,7 +353,7 @@ slay sqlite_optimize_query(query tea) tea { fr fr Add query optimization hints
     damn query
 }
 
-slay sqlite_memory_optimization() []tea {
+slay sqlite_memory_optimization() tea[value]{
     damn [
         "PRAGMA temp_store = memory",
         "PRAGMA mmap_size = 268435456", fr fr 256MB

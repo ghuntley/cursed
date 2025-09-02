@@ -103,12 +103,12 @@ test_start("test_read_record")
 # Test read_record function - parses CSV record from data
 sus csv_data tea = "John,25,\"New York\"\nJane,30,\"Los Angeles\""
 sus reader CsvReader = new_reader(csv_data)
-sus record1 []tea = read_record(&reader)
+sus record1 tea[value] = read_record(&reader)
 assert_eq_int(len(record1), 3)
 assert_eq_string(record1[0], "John")
 assert_eq_string(record1[1], "25")
 assert_eq_string(record1[2], "New York")
-sus record2 []tea = read_record(&reader)
+sus record2 tea[value] = read_record(&reader)
 assert_eq_string(record2[0], "Jane")
 print_test_summary()
 

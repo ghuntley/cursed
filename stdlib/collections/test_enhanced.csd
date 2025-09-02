@@ -12,7 +12,7 @@ assert_true(found)
 sus contains lit = hashmap_contains_key(map, "key2")
 assert_true(contains)
 
-sus keys []tea = hashmap_keys(map)
+sus keys tea[value] = hashmap_keys(map)
 assert_true(len(keys) >= 0)
 
 test_start("Enhanced LinkedList operations")
@@ -24,7 +24,7 @@ list = linkedlist_push_back(list, 30)
 sus front_val, front_ok = linkedlist_get(list, 0)
 assert_true(front_ok)
 
-sus arr []normie = linkedlist_to_array(list)
+sus arr normie[value] = linkedlist_to_array(list)
 assert_true(len(arr) >= 0)
 
 sus index normie = linkedlist_find(list, 20)
@@ -42,7 +42,7 @@ assert_true(size >= 0)
 sus contains_apple lit = set_contains(set, "apple")
 assert_true(contains_apple)
 
-sus set_arr []tea = set_to_array(set)
+sus set_arr tea[value] = set_to_array(set)
 assert_true(len(set_arr) >= 0)
 
 test_start("Set operations")

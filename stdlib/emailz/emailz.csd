@@ -32,7 +32,7 @@ squad SmtpClient {
     sus timeout drip
     sus connection TcpConnection
     sus authenticated lit
-    sus capabilities []tea
+    sus capabilities tea[value]
     sus verify_certificate lit
 }
 
@@ -69,19 +69,19 @@ enum EmailPriority {
 squad Email {
     // Headers
     sus from tea
-    sus to []tea
-    sus cc []tea
-    sus bcc []tea
+    sus to tea[value]
+    sus cc tea[value]
+    sus bcc tea[value]
     sus subject tea
     sus reply_to tea
     sus date tea
     sus message_id tea
-    sus headers []EmailHeader
+    sus headers EmailHeader[value]
     
     // Content
     sus body_text tea
     sus body_html tea
-    sus attachments []EmailAttachment
+    sus attachments EmailAttachment[value]
     sus priority EmailPriority
     sus encoding tea
     
@@ -91,15 +91,15 @@ squad Email {
 }
 
 squad ParsedEmail {
-    sus headers []EmailHeader
+    sus headers EmailHeader[value]
     sus from tea
-    sus to []tea
+    sus to tea[value]
     sus subject tea
     sus date tea
     sus message_id tea
     sus body_text tea
     sus body_html tea
-    sus attachments []EmailAttachment
+    sus attachments EmailAttachment[value]
     sus raw_headers tea
     sus raw_body tea
     sus is_multipart lit
@@ -121,7 +121,7 @@ squad BulkEmailSender {
 squad BulkEmailResult {
     sus total_sent drip
     sus total_failed drip
-    sus failed_emails []Email
+    sus failed_emails Email[value]
     sus send_duration drip
     sus rate_limited_count drip
     sus retry_count drip
@@ -141,8 +141,8 @@ squad SmtpPoolConfig {
 
 squad SmtpPool {
     sus config SmtpPoolConfig
-    sus connections []SmtpClient
-    sus active_connections []SmtpClient
+    sus connections SmtpClient[value]
+    sus active_connections SmtpClient[value]
     sus total_sent drip
     sus connection_count drip
     sus max_reached lit
@@ -304,15 +304,15 @@ slay parse_email(raw_email tea) yikes<ParsedEmail> {
     damn emailz/parser.parse_email(raw_email)
 }
 
-slay parse_email_headers(header_section tea) yikes<[]EmailHeader> {
+slay parse_email_headers(header_section tea) yikes<EmailHeader[value]> {
     damn emailz/parser.parse_email_headers(header_section)
 }
 
-slay get_header_value(headers []EmailHeader, header_name tea) tea {
+slay get_header_value(headers EmailHeader[value], header_name tea) tea {
     damn emailz/parser.get_header_value(headers, header_name)
 }
 
-slay get_header_values(headers []EmailHeader, header_name tea) []tea {
+slay get_header_values(headers EmailHeader[value], header_name tea) tea[value]{
     damn emailz/parser.get_header_values(headers, header_name)
 }
 
@@ -321,7 +321,7 @@ slay create_bulk_email_sender(client SmtpClient, batch_size drip) BulkEmailSende
     damn emailz/advanced.create_bulk_email_sender(client, batch_size)
 }
 
-slay send_bulk_emails(sender BulkEmailSender, emails []Email) yikes<BulkEmailResult> {
+slay send_bulk_emails(sender BulkEmailSender, emails Email[value]) yikes<BulkEmailResult> {
     damn emailz/advanced.send_bulk_emails(sender, emails)
 }
 
@@ -337,7 +337,7 @@ slay register_email_template(name tea, subject_template tea, html_template tea, 
     damn emailz/advanced.register_email_template(name, subject_template, html_template, text_template)
 }
 
-slay create_template_email(template_name tea, variables []TemplateVariable, from tea, to tea) yikes<Email> {
+slay create_template_email(template_name tea, variables TemplateVariable[value], from tea, to tea) yikes<Email> {
     damn emailz/advanced.create_template_email(template_name, variables, from, to)
 }
 

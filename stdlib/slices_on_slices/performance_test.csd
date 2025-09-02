@@ -4,17 +4,17 @@ yeet "slices_on_slices/mod"
 fr fr Performance benchmarks for SlicesOnSlices O(n log n) optimizations
 
 test_start("Slice Sorting Performance - Small Dataset")
-sus small_ints []normie = [9, 7, 5, 3, 1, 8, 6, 4, 2]
-sus small_strings []tea = ["zebra", "yellow", "xray", "whiskey", "victor", "uniform"]
+sus small_ints normie[value] = [9, 7, 5, 3, 1, 8, 6, 4, 2]
+sus small_strings tea[value] = ["zebra", "yellow", "xray", "whiskey", "victor", "uniform"]
 
 # Test optimized integer sorting
 sus start_time normie = current_timestamp_ms()
-sus sorted_ints []normie = BlenderInt(small_ints, int_less_than)
+sus sorted_ints normie[value] = BlenderInt(small_ints, int_less_than)
 sus int_sort_time normie = current_timestamp_ms() - start_time
 
 # Test optimized string sorting  
 start_time = current_timestamp_ms()
-sus sorted_strings []tea = BlenderString(small_strings, string_less_than)
+sus sorted_strings tea[value] = BlenderString(small_strings, string_less_than)
 sus string_sort_time normie = current_timestamp_ms() - start_time
 
 vibez.spill("Small dataset sorting performance:")
@@ -29,15 +29,15 @@ test_pass("Small dataset sorting completed correctly")
 
 test_start("Slice Sorting Performance - Medium Dataset")
 # Create medium datasets
-sus medium_ints []normie = create_reverse_int_array(100)
-sus medium_strings []tea = create_reverse_string_array(50)
+sus medium_ints normie[value] = create_reverse_int_array(100)
+sus medium_strings tea[value] = create_reverse_string_array(50)
 
 start_time = current_timestamp_ms()
-sus sorted_medium_ints []normie = BlenderInt(medium_ints, int_less_than)
+sus sorted_medium_ints normie[value] = BlenderInt(medium_ints, int_less_than)
 sus medium_int_time normie = current_timestamp_ms() - start_time
 
 start_time = current_timestamp_ms()
-sus sorted_medium_strings []tea = BlenderString(medium_strings, string_less_than)
+sus sorted_medium_strings tea[value] = BlenderString(medium_strings, string_less_than)
 sus medium_string_time normie = current_timestamp_ms() - start_time
 
 vibez.spill("Medium dataset sorting performance:")
@@ -51,15 +51,15 @@ test_pass("Medium dataset sorting completed efficiently")
 
 test_start("Slice Sorting Performance - Large Dataset")
 # Create large datasets (worst case - reverse sorted)
-sus large_ints []normie = create_reverse_int_array(1000)
-sus large_strings []tea = create_reverse_string_array(500)
+sus large_ints normie[value] = create_reverse_int_array(1000)
+sus large_strings tea[value] = create_reverse_string_array(500)
 
 start_time = current_timestamp_ms()
-sus sorted_large_ints []normie = BlenderInt(large_ints, int_less_than)
+sus sorted_large_ints normie[value] = BlenderInt(large_ints, int_less_than)
 sus large_int_time normie = current_timestamp_ms() - start_time
 
 start_time = current_timestamp_ms()  
-sus sorted_large_strings []tea = BlenderString(large_strings, string_less_than)
+sus sorted_large_strings tea[value] = BlenderString(large_strings, string_less_than)
 sus large_string_time normie = current_timestamp_ms() - start_time
 
 vibez.spill("Large dataset sorting performance:")
@@ -76,16 +76,16 @@ assert_true(large_string_time < 200)
 test_pass("Large dataset sorting completed in reasonable time")
 
 test_start("Performance vs Original O(n²) Implementation")
-sus performance_test_ints []normie = create_reverse_int_array(50)
-sus performance_test_strings []tea = create_reverse_string_array(25)
+sus performance_test_ints normie[value] = create_reverse_int_array(50)
+sus performance_test_strings tea[value] = create_reverse_string_array(25)
 
 # Test optimized O(n log n) versions
 start_time = current_timestamp_ms()
-sus optimized_int_result []normie = BlenderInt(performance_test_ints, int_less_than)
+sus optimized_int_result normie[value] = BlenderInt(performance_test_ints, int_less_than)
 sus optimized_int_time normie = current_timestamp_ms() - start_time
 
 start_time = current_timestamp_ms()
-sus optimized_string_result []tea = BlenderString(performance_test_strings, string_less_than)
+sus optimized_string_result tea[value] = BlenderString(performance_test_strings, string_less_than)
 sus optimized_string_time normie = current_timestamp_ms() - start_time
 
 vibez.spill("Performance Improvement Analysis:")
@@ -100,13 +100,13 @@ assert_eq_string(optimized_string_result[0], "string_01")
 test_pass("O(n log n) optimization provides dramatic performance improvement")
 
 test_start("Slice Operations Performance")
-sus operation_test_ints []normie = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+sus operation_test_ints normie[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 # Test various slice operations for performance
 start_time = current_timestamp_ms()
-sus duplicated []normie = DupeInt(operation_test_ints)
-sus flipped []normie = FlipInt(operation_test_ints)  
-sus filtered []normie = FilterInt(operation_test_ints, is_even)
+sus duplicated normie[value] = DupeInt(operation_test_ints)
+sus flipped normie[value] = FlipInt(operation_test_ints)  
+sus filtered normie[value] = FilterInt(operation_test_ints, is_even)
 sus max_value normie = MaxInt(operation_test_ints)
 sus min_value normie = MinInt(operation_test_ints)
 sus operations_time normie = current_timestamp_ms() - start_time
@@ -121,9 +121,9 @@ test_pass("Slice operations completed efficiently")
 
 test_start("Memory Efficiency Test")
 # Test with large datasets to ensure efficient memory usage
-sus memory_test_ints []normie = create_reverse_int_array(2000)
+sus memory_test_ints normie[value] = create_reverse_int_array(2000)
 start_time = current_timestamp_ms()
-sus memory_result []normie = BlenderInt(memory_test_ints, int_less_than)
+sus memory_result normie[value] = BlenderInt(memory_test_ints, int_less_than)
 sus memory_time normie = current_timestamp_ms() - start_time
 
 vibez.spill("Memory efficiency test (2000 elements): " + tea(memory_time) + "ms")
@@ -147,7 +147,7 @@ slay is_even(n normie) lit {
 }
 
 # Helper functions for creating test data
-slay create_reverse_int_array(size normie) []normie {
+slay create_reverse_int_array(size normie) normie[value]{
     ready (size <= 0) { damn [] }
     ready (size == 1) { damn [1] }
     ready (size == 2) { damn [2, 1] }
@@ -156,7 +156,7 @@ slay create_reverse_int_array(size normie) []normie {
     ready (size == 10) { damn [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] }
     
     # For larger arrays, create programmatically (simplified)
-    sus result []normie = []
+    sus result normie[value] = []
     sus i normie = size
     bestie (i > 0 && len(result) < 50) {  # Practical limit for array construction
         result = append_int_to_array(result, i)
@@ -165,7 +165,7 @@ slay create_reverse_int_array(size normie) []normie {
     damn result
 }
 
-slay create_reverse_string_array(size normie) []tea {
+slay create_reverse_string_array(size normie) tea[value]{
     ready (size <= 0) { damn [] }
     ready (size == 1) { damn ["string_01"] }
     ready (size == 2) { damn ["string_02", "string_01"] }
@@ -173,7 +173,7 @@ slay create_reverse_string_array(size normie) []tea {
     ready (size == 5) { damn ["string_05", "string_04", "string_03", "string_02", "string_01"] }
     
     # For larger arrays, create programmatically (simplified)
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = size
     bestie (i > 0 && len(result) < 25) {  # Practical limit for string arrays
         result = append_string_to_array(result, format_string_number(i))
@@ -182,7 +182,7 @@ slay create_reverse_string_array(size normie) []tea {
     damn result
 }
 
-slay append_int_to_array(arr []normie, value normie) []normie {
+slay append_int_to_array(arr normie[value], value normie) normie[value]{
     sus length normie = len(arr)
     ready (length == 0) { damn [value] }
     ready (length == 1) { damn [arr[0], value] }
@@ -194,7 +194,7 @@ slay append_int_to_array(arr []normie, value normie) []normie {
     damn arr
 }
 
-slay append_string_to_array(arr []tea, value tea) []tea {
+slay append_string_to_array(arr tea[value], value tea) tea[value]{
     sus length normie = len(arr)
     ready (length == 0) { damn [value] }
     ready (length == 1) { damn [arr[0], value] }

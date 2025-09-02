@@ -9,13 +9,13 @@ yeet "package_manager"
 squad TestPackage {
     spill name tea
     spill version tea
-    spill dependencies []tea
+    spill dependencies tea[value]
     
     slay new(name tea, version tea) TestPackage {
         damn TestPackage{
             name: name,
             version: version,
-            dependencies: []tea{}
+            dependencies: tea[value]{}
         }
     }
     
@@ -228,7 +228,7 @@ slay test_complex_dependency_resolution() {
     manifest.addDependency(dep2)
     
     // Test resolution
-    sus assignments []PackageAssignment = resolver.resolve(manifest)
+    sus assignments PackageAssignment[value] = resolver.resolve(manifest)
     
     // Verify that resolution found compatible versions
     assert_true(len(assignments) >= 2)  // At least root + dependencies
@@ -259,7 +259,7 @@ slay test_circular_dependency_detection() {
     manifest.addDependency(dep)
     
     // Resolution should handle circular dependency gracefully
-    sus assignments []PackageAssignment = resolver.resolve(manifest)
+    sus assignments PackageAssignment[value] = resolver.resolve(manifest)
     
     // Should either resolve with conflict resolution or return empty result
     vibez.spill("Circular dependency test completed with {} assignments", len(assignments))
@@ -371,7 +371,7 @@ slay test_registry_client() {
     )
     
     // Test search functionality (with mock data)
-    sus search_results []PackageSearchResult = client.searchPackages("json", 10)
+    sus search_results PackageSearchResult[value] = client.searchPackages("json", 10)
     
     // Mock implementation should return some results
     vibez.spill("Search returned {} results", len(search_results))
@@ -381,7 +381,7 @@ slay test_registry_client() {
     vibez.spill("Retrieved package info for: {}", package_info.name)
     
     // Test version listing
-    sus versions []PackageVersion = client.getPackageVersions("json")
+    sus versions PackageVersion[value] = client.getPackageVersions("json")
     vibez.spill("Found {} versions", len(versions))
     
     vibez.spill("✓ Registry client tests passed")
@@ -429,10 +429,10 @@ slay test_performance_optimization() {
     manifest.addDependency(dep)
     
     // First resolution (should cache result)
-    sus assignments1 []PackageAssignment = optimized_resolver.resolve(manifest)
+    sus assignments1 PackageAssignment[value] = optimized_resolver.resolve(manifest)
     
     // Second resolution (should use cache)
-    sus assignments2 []PackageAssignment = optimized_resolver.resolve(manifest)
+    sus assignments2 PackageAssignment[value] = optimized_resolver.resolve(manifest)
     
     // Results should be consistent
     assert_eq_int(len(assignments1), len(assignments2))

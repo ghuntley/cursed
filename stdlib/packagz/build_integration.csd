@@ -10,9 +10,9 @@ yeet "jsonz"
 squad BuildConfig {
     sus project_name tea
     sus project_version tea
-    sus source_dirs []tea
+    sus source_dirs tea[value]
     sus output_dir tea
-    sus dependencies []BuildDependency
+    sus dependencies BuildDependency[value]
     sus build_type tea           # "executable", "library", "test"
     sus optimization_level tea   # "debug", "release", "release_fast"
     sus target_arch tea         # "native", "x86_64", "arm64", "wasm32"
@@ -23,18 +23,18 @@ squad BuildDependency {
     sus name tea
     sus version tea
     sus install_path tea
-    sus include_paths []tea
-    sus library_paths []tea
-    sus link_libraries []tea
-    sus features []tea
+    sus include_paths tea[value]
+    sus library_paths tea[value]
+    sus link_libraries tea[value]
+    sus features tea[value]
 }
 
 # Build manifest for generated files
 squad BuildManifest {
-    sus dependencies []BuildDependency
-    sus generated_files []tea
-    sus build_flags []tea
-    sus environment_vars []EnvVar
+    sus dependencies BuildDependency[value]
+    sus generated_files tea[value]
+    sus build_flags tea[value]
+    sus environment_vars EnvVar[value]
 }
 
 # Environment variable for build
@@ -82,7 +82,7 @@ slay generate_build_config(project_dir tea) (BuildConfig, lit) {
 # Parse package.toml into build configuration
 slay parse_package_toml(toml_content tea) BuildConfig {
     # Simplified TOML parsing - in real implementation would use proper TOML parser
-    sus lines []tea = stringz.split(toml_content, "\n")
+    sus lines tea[value] = stringz.split(toml_content, "\n")
     sus config BuildConfig = BuildConfig{}
     sus current_section tea = ""
     
@@ -100,7 +100,7 @@ slay parse_package_toml(toml_content tea) BuildConfig {
         }
         
         ready (stringz.contains(line, " = ")) {
-            sus parts []tea = stringz.split(line, " = ")
+            sus parts tea[value] = stringz.split(line, " = ")
             ready (arrayz.len(parts) >= 2) {
                 sus key tea = stringz.trim(parts[0])
                 sus value tea = stringz.trim(parts[1])
@@ -120,7 +120,7 @@ slay parse_package_toml(toml_content tea) BuildConfig {
 }
 
 # Generate build.zig file with dependency integration
-slay generate_build_file(config BuildConfig, dependencies []BuildDependency, output_path tea) lit {
+slay generate_build_file(config BuildConfig, dependencies BuildDependency[value], output_path tea) lit {
     vibez.spill("Generating build.zig with", arrayz.len(dependencies), "dependencies")
     
     sus build_content tea = generate_build_zig_header(config)
@@ -144,7 +144,7 @@ slay generate_build_zig_header(config BuildConfig) tea {
 }
 
 # Generate dependency configuration section
-slay generate_dependency_section(dependencies []BuildDependency) tea {
+slay generate_dependency_section(dependencies BuildDependency[value]) tea {
     ready (arrayz.len(dependencies) == 0) {
         damn "    // No dependencies\n\n"
     }
@@ -224,8 +224,8 @@ slay generate_build_zig_footer() tea {
 }
 
 # Convert installed packages to build dependencies
-slay convert_to_build_dependencies(installed_packages []InstalledPackage, cache_dir tea) []BuildDependency {
-    sus build_deps []BuildDependency = []
+slay convert_to_build_dependencies(installed_packages InstalledPackage[value], cache_dir tea) BuildDependency[value]{
+    sus build_deps BuildDependency[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(installed_packages); i = i + 1) {
         sus pkg InstalledPackage = installed_packages[i]
@@ -238,9 +238,9 @@ slay convert_to_build_dependencies(installed_packages []InstalledPackage, cache_
 
 # Create build dependency from installed package
 slay create_build_dependency(pkg InstalledPackage, cache_dir tea) BuildDependency {
-    sus include_paths []tea = []
-    sus library_paths []tea = []
-    sus link_libraries []tea = []
+    sus include_paths tea[value] = []
+    sus library_paths tea[value] = []
+    sus link_libraries tea[value] = []
     
     # Standard CURSED package structure
     sus include_path tea = pkg.install_path + "/include"
@@ -254,7 +254,7 @@ slay create_build_dependency(pkg InstalledPackage, cache_dir tea) BuildDependenc
         library_paths = arrayz.append(library_paths, lib_path)
         
         # Look for library files
-        sus lib_files []tea = filez.list_files(lib_path)
+        sus lib_files tea[value] = filez.list_files(lib_path)
         bestie (sus j drip = 0; j < arrayz.len(lib_files); j = j + 1) {
             sus lib_file tea = lib_files[j]
             ready (stringz.ends_with(lib_file, ".a") || stringz.ends_with(lib_file, ".so")) {
@@ -276,8 +276,8 @@ slay create_build_dependency(pkg InstalledPackage, cache_dir tea) BuildDependenc
 }
 
 # Generate import paths for CURSED modules
-slay generate_import_paths(dependencies []BuildDependency) []tea {
-    sus import_paths []tea = []
+slay generate_import_paths(dependencies BuildDependency[value]) tea[value]{
+    sus import_paths tea[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(dependencies); i = i + 1) {
         sus dep BuildDependency = dependencies[i]
@@ -298,9 +298,9 @@ slay generate_import_paths(dependencies []BuildDependency) []tea {
 }
 
 # Create build manifest for dependency tracking
-slay create_build_manifest(dependencies []BuildDependency, generated_files []tea) BuildManifest {
-    sus build_flags []tea = []
-    sus env_vars []EnvVar = []
+slay create_build_manifest(dependencies BuildDependency[value], generated_files tea[value]) BuildManifest {
+    sus build_flags tea[value] = []
+    sus env_vars EnvVar[value] = []
     
     # Add dependency-specific build flags
     bestie (sus i drip = 0; i < arrayz.len(dependencies); i = i + 1) {
@@ -397,7 +397,7 @@ slay get_main_source_file(config BuildConfig) tea {
         sus src_dir tea = config.source_dirs[0]
         
         # Try common main file names
-        sus candidates []tea = ["main.csd", "mod.csd", "lib.csd"]
+        sus candidates tea[value] = ["main.csd", "mod.csd", "lib.csd"]
         bestie (sus i drip = 0; i < arrayz.len(candidates); i = i + 1) {
             sus candidate tea = src_dir + "/" + candidates[i]
             ready (filez.file_exists(candidate)) {
@@ -427,8 +427,8 @@ slay get_library_name(lib_file tea) tea {
     damn filename
 }
 
-slay generate_package_path(dependencies []BuildDependency) tea {
-    sus paths []tea = []
+slay generate_package_path(dependencies BuildDependency[value]) tea {
+    sus paths tea[value] = []
     bestie (sus i drip = 0; i < arrayz.len(dependencies); i = i + 1) {
         paths = arrayz.append(paths, dependencies[i].install_path)
     }
@@ -451,7 +451,7 @@ slay generate_compiler_config(config BuildConfig, manifest BuildManifest) tea {
     damn jsonz.json_stringify_pretty(json_config)
 }
 
-slay set_build_environment(env_vars []EnvVar) {
+slay set_build_environment(env_vars EnvVar[value]) {
     # In real implementation, would set actual environment variables
     bestie (sus i drip = 0; i < arrayz.len(env_vars); i = i + 1) {
         sus env EnvVar = env_vars[i]

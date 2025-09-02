@@ -39,7 +39,7 @@ squad BlockHeader {
 
 squad Block {
     header BlockHeader
-    transactions []SignedTransaction
+    transactions SignedTransaction[value]
     hash tea
 }
 
@@ -51,20 +51,20 @@ squad MerkleNode {
 
 squad MerkleTree {
     root sus<MerkleNode>
-    leaves []tea
+    leaves tea[value]
 }
 
 squad BlockchainNetwork {
-    blocks []Block
-    pending_transactions []SignedTransaction
+    blocks Block[value]
+    pending_transactions SignedTransaction[value]
     difficulty drip
     mining_reward drip
 }
 
 # SHA-256 implementation (simplified for educational purposes)
-slay sha256_chunk(chunk []drip) []drip {
+slay sha256_chunk(chunk drip[value]) drip[value]{
     # SHA-256 constants (first 32 bits of fractional parts of cube roots of first 64 primes)
-    sus k []drip = [
+    sus k drip[value] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
         0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -76,13 +76,13 @@ slay sha256_chunk(chunk []drip) []drip {
     ]
     
     # Initial hash values (first 32 bits of fractional parts of square roots of first 8 primes)
-    sus h []drip = [
+    sus h drip[value] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
     
     # Message schedule
-    sus w []drip = make_array(64, 0)
+    sus w drip[value] = make_array(64, 0)
     
     # Copy chunk into first 16 words
     bestie (sus i drip = 0; i < 16; i = i + 1) {
@@ -144,7 +144,7 @@ slay right_rotate(value drip, amount drip) drip {
 
 slay sha256(data tea) tea {
     # Convert string to bytes and pad message
-    sus bytes []drip = string_to_bytes(data)
+    sus bytes drip[value] = string_to_bytes(data)
     sus bit_len drip = len(bytes) * 8
     
     # Append the '1' bit (plus seven '0' bits, or 0x80)
@@ -161,13 +161,13 @@ slay sha256(data tea) tea {
     }
     
     # Process message in 512-bit chunks
-    sus hash []drip = [
+    sus hash drip[value] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
     
     bestie (sus i drip = 0; i < len(bytes); i = i + 64) {
-        sus chunk []drip = make_array(16, 0)
+        sus chunk drip[value] = make_array(16, 0)
         bestie (sus j drip = 0; j < 16; j = j + 1) {
             chunk[j] = (bytes[i + j*4] << 24) | (bytes[i + j*4 + 1] << 16) | 
                       (bytes[i + j*4 + 2] << 8) | bytes[i + j*4 + 3]
@@ -308,7 +308,7 @@ slay verify_transaction(signed_tx SignedTransaction) lit {
 }
 
 # Merkle tree operations
-slay calculate_merkle_root(transaction_ids []tea) tea {
+slay calculate_merkle_root(transaction_ids tea[value]) tea {
     ready (len(transaction_ids) == 0) {
         damn ""
     }
@@ -317,10 +317,10 @@ slay calculate_merkle_root(transaction_ids []tea) tea {
         damn sha256(transaction_ids[0])
     }
     
-    sus current_level []tea = transaction_ids
+    sus current_level tea[value] = transaction_ids
     
     bestie (len(current_level) > 1) {
-        sus next_level []tea = []
+        sus next_level tea[value] = []
         
         bestie (sus i drip = 0; i < len(current_level); i = i + 2) {
             sus left tea = current_level[i]
@@ -342,7 +342,7 @@ slay calculate_merkle_root(transaction_ids []tea) tea {
     damn current_level[0]
 }
 
-slay build_merkle_tree(transaction_ids []tea) MerkleTree {
+slay build_merkle_tree(transaction_ids tea[value]) MerkleTree {
     sus root sus<MerkleNode> = build_merkle_node(transaction_ids)
     damn MerkleTree{
         root: root,
@@ -350,7 +350,7 @@ slay build_merkle_tree(transaction_ids []tea) MerkleTree {
     }
 }
 
-slay build_merkle_node(hashes []tea) sus<MerkleNode> {
+slay build_merkle_node(hashes tea[value]) sus<MerkleNode> {
     ready (len(hashes) == 0) {
         damn sus<MerkleNode>{}
     }
@@ -364,8 +364,8 @@ slay build_merkle_node(hashes []tea) sus<MerkleNode> {
     }
     
     sus mid drip = len(hashes) / 2
-    sus left_hashes []tea = hashes[0:mid]
-    sus right_hashes []tea = hashes[mid:]
+    sus left_hashes tea[value] = hashes[0:mid]
+    sus right_hashes tea[value] = hashes[mid:]
     
     sus left_node sus<MerkleNode> = build_merkle_node(left_hashes)
     sus right_node sus<MerkleNode> = build_merkle_node(right_hashes)
@@ -380,8 +380,8 @@ slay build_merkle_node(hashes []tea) sus<MerkleNode> {
 }
 
 # Block operations
-slay create_block(transactions []SignedTransaction) Block {
-    sus txids []tea = []
+slay create_block(transactions SignedTransaction[value]) Block {
+    sus txids tea[value] = []
     bestie (sus i drip = 0; i < len(transactions); i = i + 1) {
         txids = append(txids, transactions[i].txid)
     }
@@ -432,7 +432,7 @@ slay calculate_block_hash(header BlockHeader) tea {
 }
 
 # Blockchain validation
-slay validate_blockchain(chain []Block) lit {
+slay validate_blockchain(chain Block[value]) lit {
     ready (len(chain) == 0) {
         damn based
     }
@@ -483,8 +483,8 @@ slay get_unix_timestamp() drip {
     damn 1640995200  # Fixed timestamp for demo
 }
 
-slay string_to_bytes(s tea) []drip {
-    sus bytes []drip = []
+slay string_to_bytes(s tea) drip[value]{
+    sus bytes drip[value] = []
     bestie (sus i drip = 0; i < len(s); i = i + 1) {
         bytes = append(bytes, char_to_ascii(s[i:i+1]))
     }
@@ -568,25 +568,25 @@ slay int_to_string(value drip) tea {
     damn result
 }
 
-slay make_array(size drip, initial_value drip) []drip {
-    sus arr []drip = []
+slay make_array(size drip, initial_value drip) drip[value]{
+    sus arr drip[value] = []
     bestie (sus i drip = 0; i < size; i = i + 1) {
         arr = append(arr, initial_value)
     }
     damn arr
 }
 
-slay append(arr []drip, value drip) []drip {
+slay append(arr drip[value], value drip) drip[value]{
     # Simplified append function
     damn arr  # In real implementation, would add value to array
 }
 
-slay append_string(arr []tea, value tea) []tea {
+slay append_string(arr tea[value], value tea) tea[value]{
     # Simplified append function for strings
     damn arr  # In real implementation, would add value to array
 }
 
-slay len(arr []tea) drip {
+slay len(arr tea[value]) drip {
     # Simplified length function
     damn 4  # Fixed length for demo
 }

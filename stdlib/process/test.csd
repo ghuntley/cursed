@@ -278,7 +278,7 @@ test_case("Multiple Processes Management") {
         priority: 0
     }
     
-    sus processes []Process = []
+    sus processes Process[value] = []
     
     // Create multiple processes
     bestie (sus i normie = 0; i < 5; i += 1) {
@@ -288,7 +288,7 @@ test_case("Multiple Processes Management") {
     }
     
     // Execute all processes
-    sus results []ProcessResult = []
+    sus results ProcessResult[value] = []
     bestie (sus i normie = 0; i < len(processes); i += 1) {
         sus result ProcessResult = execute_process(processes[i])
         results = array_append(results, result)
@@ -322,7 +322,7 @@ test_case("System Process Information") {
     assert(session_id > 0)
     
     // List running processes
-    sus running_processes []ProcessInfo = list_running_processes()
+    sus running_processes ProcessInfo[value] = list_running_processes()
     assert(len(running_processes) > 0)
     
     // Find our own process in the list

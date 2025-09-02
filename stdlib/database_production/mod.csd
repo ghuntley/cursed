@@ -9,10 +9,10 @@ fr fr ===== DATABASE CONNECTION POOL =====
 
 fr fr Connection pool configuration
 sus db_pool_max_connections normie = 20
-sus db_pool_connections [20]lit = [cap; 20]
-sus db_pool_connection_strings [20]tea = [""; 20]
+sus db_pool_connections lit[20] = [cap; 20]
+sus db_pool_connection_strings tea[20] = [""; 20]
 sus db_pool_active_count normie = 0
-sus db_pool_waiting_queue [50]normie = [0; 50]
+sus db_pool_waiting_queue normie[50] = [0; 50]
 sus db_pool_queue_head normie = 0
 sus db_pool_queue_tail normie = 0
 
@@ -661,11 +661,11 @@ slay orm_connect(driver tea, connection_string tea) normie {
     
     match driver {
         "postgresql" -> { fr fr Parse PostgreSQL connection string
-            sus params []tea = orm_parse_connection_string(connection_string)
+            sus params tea[value] = orm_parse_connection_string(connection_string)
             orm_current_connection = postgresql_connect(params[0], 5432, params[1], params[2], params[3])
         }
         "mysql" -> { fr fr Parse MySQL connection string
-            sus params []tea = orm_parse_connection_string(connection_string)
+            sus params tea[value] = orm_parse_connection_string(connection_string)
             orm_current_connection = mysql_connect(params[0], 3306, params[1], params[2], params[3])
         }
         "sqlite" -> { fr fr SQLite only needs database file
@@ -684,8 +684,8 @@ slay orm_connect(driver tea, connection_string tea) normie {
     damn orm_current_connection
 }
 
-slay orm_parse_connection_string(conn_str tea) []tea { fr fr Simplified connection string parsing fr fr Format: host/database/username/password
-    sus parts []tea = ["localhost", "testdb", "user", "password"]
+slay orm_parse_connection_string(conn_str tea) tea[value]{ fr fr Simplified connection string parsing fr fr Format: host/database/username/password
+    sus parts tea[value] = ["localhost", "testdb", "user", "password"]
     damn parts
 }
 

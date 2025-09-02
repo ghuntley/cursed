@@ -35,7 +35,7 @@ test_case("Advanced String Operations") {
     sus text tea = "CURSED programming language"
     
     // Test string splitting
-    sus words []tea = string_split_advanced(text, " ")
+    sus words tea[value] = string_split_advanced(text, " ")
     assert_eq_int(len(words), 3)
     assert_eq_string(words[0], "CURSED")
     assert_eq_string(words[1], "programming")
@@ -64,7 +64,7 @@ test_case("String Pattern Matching") {
     sus pattern tea = "CURSED"
     
     // Find all occurrences
-    sus matches []normie = string_find_all_advanced(text, pattern)
+    sus matches normie[value] = string_find_all_advanced(text, pattern)
     assert_eq_int(len(matches), 2)
     assert_eq_int(matches[0], 4)   // First occurrence
     assert_eq_int(matches[1], 35)  // Second occurrence
@@ -74,7 +74,7 @@ test_case("String Pattern Matching") {
     assert_eq_string(replaced, "The BLESSED language is awesome and BLESSED rocks!")
     
     // Test case-insensitive search
-    sus case_matches []normie = string_find_all_case_insensitive(text, "cursed")
+    sus case_matches normie[value] = string_find_all_case_insensitive(text, "cursed")
     assert_eq_int(len(case_matches), 2)
     
     // Test pattern validation

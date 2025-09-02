@@ -83,7 +83,7 @@ slay main_character() {
     vibez.spill(fib_result)
     
     fr fr Test array operations
-    sus test_array [5]normie = [1, 2, 3, 4, 5]
+    sus test_array normie[5] = [1, 2, 3, 4, 5]
     sus array_sum normie = process_array(test_array)
     vibez.spill("Array sum:")
     vibez.spill(array_sum)

@@ -32,10 +32,10 @@ squad TypeInfo {
     kind normie
     name tea
     size normie
-    fields []FieldInfo
-    methods []MethodInfo
-    generics []GenericParam
-    attributes []tea
+    fields FieldInfo[value]
+    methods MethodInfo[value]
+    generics GenericParam[value]
+    attributes tea[value]
     base_type *TypeInfo
 }
 
@@ -45,13 +45,13 @@ squad FieldInfo {
     offset normie
     size normie
     is_public lit
-    attributes []tea
+    attributes tea[value]
     type_info *TypeInfo
 }
 
 squad MethodInfo {
     name tea
-    params []tea
+    params tea[value]
     return_type tea
     is_public lit
     is_static lit
@@ -61,7 +61,7 @@ squad MethodInfo {
 
 squad GenericParam {
     name tea
-    constraints []tea
+    constraints tea[value]
     default_type tea
     bounds TypeInfo
 }
@@ -80,10 +80,10 @@ slay type_info_int() TypeInfo {
         kind: TYPE_INT,
         name: "normie",
         size: 4,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -93,11 +93,11 @@ slay type_info_string() TypeInfo {
         kind: TYPE_STRING,
         name: "tea",
         size: 8,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{
             MethodInfo{
                 name: "len",
-                params: []tea{},
+                params: tea[value]{},
                 return_type: "normie",
                 is_public: based,
                 is_static: cap,
@@ -106,7 +106,7 @@ slay type_info_string() TypeInfo {
             },
             MethodInfo{
                 name: "substr",
-                params: []tea{"normie", "normie"},
+                params: tea[value]{"normie", "normie"},
                 return_type: "tea",
                 is_public: based,
                 is_static: cap,
@@ -114,8 +114,8 @@ slay type_info_string() TypeInfo {
                 type_info: nil
             }
         },
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -125,10 +125,10 @@ slay type_info_bool() TypeInfo {
         kind: TYPE_BOOL,
         name: "lit",
         size: 1,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -138,10 +138,10 @@ slay type_info_float() TypeInfo {
         kind: TYPE_FLOAT,
         name: "snack",
         size: 4,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -151,10 +151,10 @@ slay type_info_float64() TypeInfo {
         kind: TYPE_FLOAT,
         name: "meal",
         size: 8,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -164,24 +164,24 @@ slay type_info_char() TypeInfo {
         kind: TYPE_INT,
         name: "sip",
         size: 1,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
 
 fr fr Complex type constructors
-slay type_info_struct(name tea, fields []FieldInfo, methods []MethodInfo) TypeInfo {
+slay type_info_struct(name tea, fields FieldInfo[value], methods MethodInfo[value]) TypeInfo {
     damn TypeInfo{
         kind: TYPE_STRUCT,
         name: name,
         size: calculate_struct_size(fields),
         fields: fields,
         methods: methods,
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -191,21 +191,21 @@ slay type_info_array(element_type TypeInfo, size normie) TypeInfo {
         kind: TYPE_ARRAY,
         name: "[" + fmt.format_int(size) + "]" + element_type.name,
         size: size * element_type.size,
-        fields: []FieldInfo{
+        fields: FieldInfo[value]{
             FieldInfo{
                 name: "length",
                 type_name: "normie",
                 offset: 0,
                 size: 4,
                 is_public: based,
-                attributes: []tea{"readonly"},
+                attributes: tea[value]{"readonly"},
                 type_info: &type_info_int()
             }
         },
-        methods: []MethodInfo{
+        methods: MethodInfo[value]{
             MethodInfo{
                 name: "len",
-                params: []tea{},
+                params: tea[value]{},
                 return_type: "normie",
                 is_public: based,
                 is_static: cap,
@@ -213,18 +213,18 @@ slay type_info_array(element_type TypeInfo, size normie) TypeInfo {
                 type_info: nil
             }
         },
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: &element_type
     }
 }
 
-slay type_info_func(name tea, params []tea, return_type tea) TypeInfo {
-    sus method_infos := []MethodInfo{}
+slay type_info_func(name tea, params tea[value], return_type tea) TypeInfo {
+    sus method_infos := MethodInfo[value]{}
     bestie i := 0; i < len(params); i++ {
         method_infos = append(method_infos, MethodInfo{
             name: "param_" + fmt.format_int(i),
-            params: []tea{},
+            params: tea[value]{},
             return_type: params[i],
             is_public: based,
             is_static: based,
@@ -237,28 +237,28 @@ slay type_info_func(name tea, params []tea, return_type tea) TypeInfo {
         kind: TYPE_FUNC,
         name: name + "(" + stringz.join(params, ",") + ")" + return_type,
         size: 8,
-        fields: []FieldInfo{},
+        fields: FieldInfo[value]{},
         methods: method_infos,
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
 
-slay type_info_interface(name tea, methods []MethodInfo) TypeInfo {
+slay type_info_interface(name tea, methods MethodInfo[value]) TypeInfo {
     damn TypeInfo{
         kind: TYPE_INTERFACE,
         name: name,
         size: 16, fr fr Interface contains vtable + data pointer
-        fields: []FieldInfo{},
+        fields: FieldInfo[value]{},
         methods: methods,
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
 
-slay type_info_generic(name tea, params []GenericParam, base_type TypeInfo) TypeInfo {
+slay type_info_generic(name tea, params GenericParam[value], base_type TypeInfo) TypeInfo {
     damn TypeInfo{
         kind: TYPE_GENERIC,
         name: name,
@@ -266,7 +266,7 @@ slay type_info_generic(name tea, params []GenericParam, base_type TypeInfo) Type
         fields: base_type.fields,
         methods: base_type.methods,
         generics: params,
-        attributes: []tea{"generic"},
+        attributes: tea[value]{"generic"},
         base_type: &base_type
     }
 }
@@ -276,11 +276,11 @@ slay type_info_ptr(target_type TypeInfo) TypeInfo {
         kind: TYPE_PTR,
         name: "*" + target_type.name,
         size: 8,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{
             MethodInfo{
                 name: "deref",
-                params: []tea{},
+                params: tea[value]{},
                 return_type: target_type.name,
                 is_public: based,
                 is_static: cap,
@@ -288,14 +288,14 @@ slay type_info_ptr(target_type TypeInfo) TypeInfo {
                 type_info: nil
             }
         },
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: &target_type
     }
 }
 
 fr fr Helper functions
-slay calculate_struct_size(fields []FieldInfo) normie {
+slay calculate_struct_size(fields FieldInfo[value]) normie {
     sus total_size := 0
     bestie i := 0; i < len(fields); i++ {
         total_size = total_size + fields[i].size
@@ -467,7 +467,7 @@ slay has_method(type_info TypeInfo, method_name tea) lit {
     damn get_method_by_name(type_info, method_name) != nil
 }
 
-slay call_method(value Value, method_name tea, args []Value) Value {
+slay call_method(value Value, method_name tea, args Value[value]) Value {
     bestie !value.is_valid {
         damn invalid_value()
     }
@@ -512,11 +512,11 @@ slay get_method_signature(type_info TypeInfo, method_name tea) tea {
 }
 
 fr fr Advanced introspection
-slay get_all_methods(type_info TypeInfo) []MethodInfo {
+slay get_all_methods(type_info TypeInfo) MethodInfo[value]{
     damn type_info.methods
 }
 
-slay get_all_fields(type_info TypeInfo) []FieldInfo {
+slay get_all_fields(type_info TypeInfo) FieldInfo[value]{
     damn type_info.fields
 }
 
@@ -528,8 +528,8 @@ slay get_field_count(type_info TypeInfo) normie {
     damn len(type_info.fields)
 }
 
-slay get_public_methods(type_info TypeInfo) []MethodInfo {
-    sus public_methods := []MethodInfo{}
+slay get_public_methods(type_info TypeInfo) MethodInfo[value]{
+    sus public_methods := MethodInfo[value]{}
     bestie i := 0; i < len(type_info.methods); i++ {
         bestie type_info.methods[i].is_public {
             public_methods = append(public_methods, type_info.methods[i])
@@ -538,8 +538,8 @@ slay get_public_methods(type_info TypeInfo) []MethodInfo {
     damn public_methods
 }
 
-slay get_public_fields(type_info TypeInfo) []FieldInfo {
-    sus public_fields := []FieldInfo{}
+slay get_public_fields(type_info TypeInfo) FieldInfo[value]{
+    sus public_fields := FieldInfo[value]{}
     bestie i := 0; i < len(type_info.fields); i++ {
         bestie type_info.fields[i].is_public {
             public_fields = append(public_fields, type_info.fields[i])
@@ -553,11 +553,11 @@ slay is_generic_instance(type_info TypeInfo) lit {
     damn len(type_info.generics) > 0
 }
 
-slay get_generic_parameters(type_info TypeInfo) []GenericParam {
+slay get_generic_parameters(type_info TypeInfo) GenericParam[value]{
     damn type_info.generics
 }
 
-slay instantiate_generic_type(generic_type TypeInfo, type_args []TypeInfo) TypeInfo {
+slay instantiate_generic_type(generic_type TypeInfo, type_args TypeInfo[value]) TypeInfo {
     bestie len(type_args) != len(generic_type.generics) {
         damn invalid_type()
     }
@@ -581,10 +581,10 @@ slay invalid_type() TypeInfo {
         kind: -1,
         name: "invalid",
         size: 0,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -697,7 +697,7 @@ slay has_attribute(type_info TypeInfo, attr_name tea) lit {
     damn cap
 }
 
-slay get_attributes(type_info TypeInfo) []tea {
+slay get_attributes(type_info TypeInfo) tea[value]{
     damn type_info.attributes
 }
 
@@ -726,8 +726,8 @@ slay is_derived_from(derived TypeInfo, base TypeInfo) lit {
     damn cap
 }
 
-slay get_inheritance_chain(type_info TypeInfo) []TypeInfo {
-    sus chain := []TypeInfo{}
+slay get_inheritance_chain(type_info TypeInfo) TypeInfo[value]{
+    sus chain := TypeInfo[value]{}
     sus current := &type_info
 
     bestie current != nil {
@@ -799,7 +799,7 @@ slay value_to_string(value Value) tea {
 }
 
 fr fr Runtime type registry
-sus registered_types := []TypeInfo{}
+sus registered_types := TypeInfo[value]{}
 
 slay register_type(type_info TypeInfo) {
     registered_types = append(registered_types, type_info)
@@ -818,12 +818,12 @@ slay is_type_registered(type_name tea) lit {
     damn find_type_by_name(type_name) != nil
 }
 
-slay get_all_registered_types() []TypeInfo {
+slay get_all_registered_types() TypeInfo[value]{
     damn registered_types
 }
 
-slay get_registered_type_names() []tea {
-    sus names := []tea{}
+slay get_registered_type_names() tea[value]{
+    sus names := tea[value]{}
     bestie i := 0; i < len(registered_types); i++ {
         names = append(names, registered_types[i].name)
     }
@@ -904,17 +904,17 @@ slay type_info_array_simple(element_type tea, array_size normie) TypeInfo {
         kind: TYPE_ARRAY,
         name: "[" + fmt.format_int(array_size) + "]" + element_type,
         size: array_size * 4, fr fr Assume 4-byte elements for simplicity
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
 
 slay get_array_element_type(type_info TypeInfo) tea {
     bestie is_array_type(type_info) {
-        fr fr Extract element type from array name like "[5]normie"
+        fr fr Extract element type from array name like "normie[5]"
         sus name := type_info.name
         sus bracket_pos := stringz.find(name, "]")
         bestie bracket_pos > 0 && bracket_pos < stringz.len(name) - 1 {
@@ -926,7 +926,7 @@ slay get_array_element_type(type_info TypeInfo) tea {
 
 slay get_array_size(type_info TypeInfo) normie {
     bestie is_array_type(type_info) {
-        fr fr Extract size from array name like "[5]normie"
+        fr fr Extract size from array name like "normie[5]"
         sus name := type_info.name
         sus start := stringz.find(name, "[")
         sus end := stringz.find(name, "]")
@@ -973,8 +973,8 @@ slay has_interface_method(type_info TypeInfo, method_name tea) lit {
 }
 
 fr fr Simplified type constructors for testing
-slay type_info_struct_simple(name tea, field_names []tea) TypeInfo {
-    sus fields := []FieldInfo{}
+slay type_info_struct_simple(name tea, field_names tea[value]) TypeInfo {
+    sus fields := FieldInfo[value]{}
     sus offset := 0
     bestie i := 0; i < len(field_names); i++ {
         fields = append(fields, FieldInfo{
@@ -983,7 +983,7 @@ slay type_info_struct_simple(name tea, field_names []tea) TypeInfo {
             offset: offset,
             size: 8,
             is_public: based,
-            attributes: []tea{},
+            attributes: tea[value]{},
             type_info: &type_info_string()
         })
         offset = offset + 8
@@ -994,19 +994,19 @@ slay type_info_struct_simple(name tea, field_names []tea) TypeInfo {
         name: name,
         size: offset,
         fields: fields,
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
 
-slay type_info_interface_simple(name tea, method_names []tea) TypeInfo {
-    sus methods := []MethodInfo{}
+slay type_info_interface_simple(name tea, method_names tea[value]) TypeInfo {
+    sus methods := MethodInfo[value]{}
     bestie i := 0; i < len(method_names); i++ {
         methods = append(methods, MethodInfo{
             name: method_names[i],
-            params: []tea{},
+            params: tea[value]{},
             return_type: "vibes",
             is_public: based,
             is_static: cap,
@@ -1019,10 +1019,10 @@ slay type_info_interface_simple(name tea, method_names []tea) TypeInfo {
         kind: TYPE_INTERFACE,
         name: name,
         size: 16,
-        fields: []FieldInfo{},
+        fields: FieldInfo[value]{},
         methods: methods,
-        generics: []GenericParam{},
-        attributes: []tea{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
 }
@@ -1034,10 +1034,10 @@ slay register_type_by_name(type_name tea) {
         kind: TYPE_STRUCT,
         name: type_name,
         size: 8,
-        fields: []FieldInfo{},
-        methods: []MethodInfo{},
-        generics: []GenericParam{},
-        attributes: []tea{},
+        fields: FieldInfo[value]{},
+        methods: MethodInfo[value]{},
+        generics: GenericParam[value]{},
+        attributes: tea[value]{},
         base_type: nil
     }
     register_type(simple_type)
@@ -1109,14 +1109,14 @@ slay init_reflection() {
     register_type(type_info_char())
 
     fr fr Register some example struct types
-    sus person_fields := []FieldInfo{
+    sus person_fields := FieldInfo[value]{
         FieldInfo{
             name: "name",
             type_name: "tea",
             offset: 0,
             size: 8,
             is_public: based,
-            attributes: []tea{},
+            attributes: tea[value]{},
             type_info: &type_info_string()
         },
         FieldInfo{
@@ -1125,15 +1125,15 @@ slay init_reflection() {
             offset: 8,
             size: 4,
             is_public: based,
-            attributes: []tea{},
+            attributes: tea[value]{},
             type_info: &type_info_int()
         }
     }
 
-    sus person_methods := []MethodInfo{
+    sus person_methods := MethodInfo[value]{
         MethodInfo{
             name: "get_name",
-            params: []tea{},
+            params: tea[value]{},
             return_type: "tea",
             is_public: based,
             is_static: cap,
@@ -1142,7 +1142,7 @@ slay init_reflection() {
         },
         MethodInfo{
             name: "set_age",
-            params: []tea{"normie"},
+            params: tea[value]{"normie"},
             return_type: "void",
             is_public: based,
             is_static: cap,

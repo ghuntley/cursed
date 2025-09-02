@@ -50,7 +50,7 @@ sus gc_config GCConfig = GCConfig{
     generational: cap
 }
 
-sus allocated_blocks []MemoryBlock = []
+sus allocated_blocks MemoryBlock[value] = []
 sus gc_running lit = cap
 
 fr fr ===== CORE ALLOCATION FUNCTIONS =====
@@ -342,13 +342,13 @@ slay format_bytes(bytes normie) tea {
     }
 }
 
-slay get_allocated_blocks() []MemoryBlock {
+slay get_allocated_blocks() MemoryBlock[value]{
     damn allocated_blocks
 }
 
-slay find_memory_leaks() []MemoryBlock {
+slay find_memory_leaks() MemoryBlock[value]{
     fr fr Find blocks that might be leaked
-    sus leaks []MemoryBlock = []
+    sus leaks MemoryBlock[value] = []
     sus current_time normie = get_timestamp_nanos()
     sus leak_threshold normie = 30 * 1000 * 1000 * 1000  fr fr 30 seconds in nanoseconds
     
@@ -504,7 +504,7 @@ fr fr ===== MEMORY POOL FUNCTIONS =====
 squad MemoryPool {
     spill block_size normie
     spill block_count normie
-    spill free_blocks []normie
+    spill free_blocks normie[value]
     spill pool_ptr normie
     spill initialized lit
 }

@@ -46,7 +46,7 @@ be_like Span squad {
     start_time normie
     duration normie
     tags map[tea]tea
-    logs []LogEntry
+    logs LogEntry[value]
     baggage map[tea]tea
     ended lit
 }
@@ -67,10 +67,10 @@ be_like TraceContext squad {
 }
 
 be_like Filter squad {
-    include_goroutines []tea
-    exclude_goroutines []tea
-    include_events []tea
-    exclude_events []tea
+    include_goroutines tea[value]
+    exclude_goroutines tea[value]
+    include_events tea[value]
+    exclude_events tea[value]
 }
 
 be_like RealTimeAnalyzer squad {
@@ -92,11 +92,11 @@ be_like Tracer squad {
 }
 
 be_like Visualizer squad {
-    trace_data []byte
+    trace_data byte[value]
 }
 
 be_like Timeline squad {
-    events []TimelineEvent
+    events TimelineEvent[value]
     duration normie
 }
 
@@ -109,8 +109,8 @@ be_like TimelineEvent squad {
 }
 
 be_like Metrics squad {
-    latencies map[tea][]normie
-    concurrency_levels []normie
+    latencies map[tea]normie[value]
+    concurrency_levels normie[value]
     event_counts map[tea]normie
 }
 
@@ -277,7 +277,7 @@ slay StartSpan(ctx vibe_context.Context, operation_name tea) *Span {
         operation_name: operation_name,
         start_time: timez.Now().UnixNano(),
         tags: make(map[tea]tea),
-        logs: make([]LogEntry, 0),
+        logs: make(LogEntry[value], 0),
         baggage: make(map[tea]tea),
         ended: cap
     }
@@ -384,10 +384,10 @@ fr fr Advanced Features
 
 slay NewFilter() *Filter {
     damn &Filter{
-        include_goroutines: make([]tea, 0),
-        exclude_goroutines: make([]tea, 0),
-        include_events: make([]tea, 0),
-        exclude_events: make([]tea, 0)
+        include_goroutines: make(tea[value], 0),
+        exclude_goroutines: make(tea[value], 0),
+        include_events: make(tea[value], 0),
+        exclude_events: make(tea[value], 0)
     }
 }
 
@@ -520,7 +520,7 @@ slay ShouldSample() lit {
 
 fr fr Visualization and Metrics
 
-slay NewVisualizer(trace_data []byte) *Visualizer {
+slay NewVisualizer(trace_data byte[value]) *Visualizer {
     damn &Visualizer{
         trace_data: trace_data
     }
@@ -528,16 +528,16 @@ slay NewVisualizer(trace_data []byte) *Visualizer {
 
 slay (v *Visualizer) GenerateTimeline() *Timeline {
     timeline := &Timeline{
-        events: make([]TimelineEvent, 0)
+        events: make(TimelineEvent[value], 0)
     } fr fr Parse trace data and create timeline events fr fr This would involve parsing the trace format and extracting events
     
     damn timeline
 }
 
-slay ExtractMetrics(trace_data []byte) *Metrics {
+slay ExtractMetrics(trace_data byte[value]) *Metrics {
     metrics := &Metrics{
-        latencies: make(map[tea][]normie),
-        concurrency_levels: make([]normie, 0),
+        latencies: make(map[tea]normie[value]),
+        concurrency_levels: make(normie[value], 0),
         event_counts: make(map[tea]normie)
     } fr fr Parse trace data and extract performance metrics
     
@@ -570,15 +570,15 @@ slay (m *Metrics) MaxConcurrency() normie {
 
 fr fr Integration with External Systems
 
-slay ExportToJaeger(trace_data []byte, jaeger_endpoint tea) tea { fr fr Convert trace data to Jaeger format and send to endpoint fr fr This would involve formatting the data according to Jaeger's thrift protocol
+slay ExportToJaeger(trace_data byte[value], jaeger_endpoint tea) tea { fr fr Convert trace data to Jaeger format and send to endpoint fr fr This would involve formatting the data according to Jaeger's thrift protocol
     damn ""
 }
 
-slay ExportToZipkin(trace_data []byte, zipkin_endpoint tea) tea { fr fr Convert trace data to Zipkin format and send to endpoint fr fr This would involve formatting the data according to Zipkin's JSON format
+slay ExportToZipkin(trace_data byte[value], zipkin_endpoint tea) tea { fr fr Convert trace data to Zipkin format and send to endpoint fr fr This would involve formatting the data according to Zipkin's JSON format
     damn ""
 }
 
-slay ExportToOpenTelemetry(trace_data []byte, otel_endpoint tea) tea { fr fr Convert trace data to OpenTelemetry format and send to endpoint
+slay ExportToOpenTelemetry(trace_data byte[value], otel_endpoint tea) tea { fr fr Convert trace data to OpenTelemetry format and send to endpoint
     damn ""
 }
 

@@ -44,8 +44,8 @@ squad RangeEncoder {
 }
 
 squad MatchFinder {
-    sus hash_table []drip
-    sus son []drip
+    sus hash_table drip[value]
+    sus son drip[value]
     sus buffer tea
     sus pos drip
     sus pos_limit drip
@@ -58,22 +58,22 @@ squad MatchFinder {
     sus historySize drip
     sus fixedHashSize drip
     sus hashSizeSum drip
-    sus son_refs []drip
+    sus son_refs drip[value]
 }
 
 squad LzmaEncoder {
     sus match_finder MatchFinder
     sus range_encoder RangeEncoder
     sus state LzmaState
-    sus literal_probs []drip
-    sus rep_probs []drip
-    sus match_probs []drip
-    sus pos_slot_probs []drip
-    sus align_probs []drip
-    sus pos_encoders []drip
+    sus literal_probs drip[value]
+    sus rep_probs drip[value]
+    sus match_probs drip[value]
+    sus pos_slot_probs drip[value]
+    sus align_probs drip[value]
+    sus pos_encoders drip[value]
     sus len_encoder tea         fr fr LenEncoder structure
     sus rep_len_encoder tea     fr fr RepLenEncoder structure
-    sus optimal []tea           fr fr Optimal parsing array
+    sus optimal tea[value]           fr fr Optimal parsing array
     sus fast_mode lit
     sus dictionary_size drip
     sus lc drip                 fr fr literal context bits
@@ -174,7 +174,7 @@ slay match_finder_set_stream(finder MatchFinder, stream tea) MatchFinder {
     damn finder
 }
 
-slay match_finder_get_matches(finder MatchFinder, distances []drip) MatchFinder {
+slay match_finder_get_matches(finder MatchFinder, distances drip[value]) MatchFinder {
     sus pos drip = finder.pos
     sus len_limit drip = mathz.min(finder.match_max_len, finder.pos_limit - pos)
     sus offset drip = 1
@@ -289,11 +289,11 @@ squad Optimal {
     sus price drip
     sus pos_prev drip
     sus back_cur drip
-    sus backs []drip
+    sus backs drip[value]
 }
 
-slay get_optimal_sequence(encoder LzmaEncoder, data tea, pos drip, len drip) []Optimal {
-    sus optimal_array []Optimal = allocate_optimal_array(4096)
+slay get_optimal_sequence(encoder LzmaEncoder, data tea, pos drip, len drip) Optimal[value]{
+    sus optimal_array Optimal[value] = allocate_optimal_array(4096)
     sus len_end drip = mathz.min(len, 4095)
     
     fr fr Initialize first optimal
@@ -330,7 +330,7 @@ slay get_optimal_sequence(encoder LzmaEncoder, data tea, pos drip, len drip) []O
         }
         
         fr fr Try matches
-        sus distances []drip = allocate_int_array(256)
+        sus distances drip[value] = allocate_int_array(256)
         encoder.match_finder = match_finder_get_matches(encoder.match_finder, distances)
         
         sus num_pairs drip = distances[0]
@@ -468,7 +468,7 @@ slay get_bit_price(prob drip, symbol drip) drip {
     }
 }
 
-slay get_bits_price(probs []drip, symbol drip, bit_count drip) drip {
+slay get_bits_price(probs drip[value], symbol drip, bit_count drip) drip {
     sus price drip = 0
     sus bit drip = bit_count - 1
     
@@ -601,7 +601,7 @@ slay lzma_compress_advanced(data tea, dict_size drip, lc drip, lp drip, pb drip)
         sus len drip = mathz.min(remaining, 4096)
         
         fr fr Get optimal sequence for current window
-        sus optimal_sequence []Optimal = get_optimal_sequence(encoder, data, pos, len)
+        sus optimal_sequence Optimal[value] = get_optimal_sequence(encoder, data, pos, len)
         
         fr fr Encode optimal sequence
         sus opt_pos drip = len
@@ -675,7 +675,7 @@ slay create_lzma_encoder(dict_size drip, lc drip, lp drip, pb drip) LzmaEncoder 
     damn encoder
 }
 
-slay init_bit_models(probs []drip, count drip) {
+slay init_bit_models(probs drip[value], count drip) {
     sus i drip = 0
     bestie (i < count) {
         probs[i] = RC_BIT_MODEL_TOTAL / 2  fr fr Middle probability
@@ -703,8 +703,8 @@ slay create_lzma_header(dict_size drip, lc drip, lp drip, pb drip, uncompressed_
     damn header
 }
 
-slay allocate_int_array(size drip) []drip {
-    sus array []drip = []
+slay allocate_int_array(size drip) drip[value]{
+    sus array drip[value] = []
     sus i drip = 0
     bestie (i < size) {
         array = array + [0]
@@ -713,8 +713,8 @@ slay allocate_int_array(size drip) []drip {
     damn array
 }
 
-slay allocate_optimal_array(size drip) []Optimal {
-    sus array []Optimal = []
+slay allocate_optimal_array(size drip) Optimal[value]{
+    sus array Optimal[value] = []
     sus i drip = 0
     bestie (i < size) {
         sus opt Optimal
@@ -778,7 +778,7 @@ slay encode_pos_slot(encoder LzmaEncoder, pos_slot drip) LzmaEncoder {
     damn encoder
 }
 
-slay encode_tree_bits(encoder LzmaEncoder, probs []drip, symbol drip, bit_count drip) LzmaEncoder {
+slay encode_tree_bits(encoder LzmaEncoder, probs drip[value], symbol drip, bit_count drip) LzmaEncoder {
     sus model_index drip = 1
     sus bit drip = bit_count - 1
     
@@ -793,7 +793,7 @@ slay encode_tree_bits(encoder LzmaEncoder, probs []drip, symbol drip, bit_count 
     damn encoder
 }
 
-slay encode_reverse_bits(encoder LzmaEncoder, probs []drip, symbol drip, bit_count drip) LzmaEncoder {
+slay encode_reverse_bits(encoder LzmaEncoder, probs drip[value], symbol drip, bit_count drip) LzmaEncoder {
     sus model_index drip = 1
     sus i drip = 0
     
@@ -824,7 +824,7 @@ slay encode_direct_bits(encoder LzmaEncoder, value drip, bit_count drip) LzmaEnc
     damn encoder
 }
 
-slay get_reverse_bits_price(probs []drip, symbol drip, bit_count drip) drip {
+slay get_reverse_bits_price(probs drip[value], symbol drip, bit_count drip) drip {
     sus price drip = 0
     sus model_index drip = 1
     sus i drip = 0

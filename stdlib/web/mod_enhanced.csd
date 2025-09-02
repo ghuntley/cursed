@@ -1102,7 +1102,7 @@ slay base64_decode(encoded tea) tea {
 
 slay string_to_bytes(s tea) [drip] {
     sus length normie = stringz.length(s)
-    sus bytes [drip] = make([]drip, length)
+    sus bytes [drip] = make(drip[value], length)
     
     bestie i := 0; i < length; i++ {
         bytes[i] = stringz.char_code_at(s, i)

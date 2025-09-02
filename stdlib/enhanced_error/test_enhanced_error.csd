@@ -148,25 +148,25 @@ assert_true(chained_err_result.is_error())
 assert_eq_string(chained_err_result.unwrap_error(), "First failed")
 
 test_start("collect_results with all successes")
-sus results []Result<normie, tea> = [
+sus results Result[value]<normie, tea> = [
     ok<normie, tea>(1),
     ok<normie, tea>(2),
     ok<normie, tea>(3)
 ]
-sus collected Result<[]normie, tea> = collect_results(results)
+sus collected Result<normie[value], tea> = collect_results(results)
 assert_true(collected.is_ok())
-sus values []normie = collected.unwrap()
+sus values normie[value] = collected.unwrap()
 assert_eq_int(len(values), 3)
 assert_eq_int(values[0], 1)
 assert_eq_int(values[2], 3)
 
 test_start("collect_results with one failure")
-sus mixed_results []Result<normie, tea> = [
+sus mixed_results Result[value]<normie, tea> = [
     ok<normie, tea>(1),
     error<normie, tea>("Failed"),
     ok<normie, tea>(3)
 ]
-sus collected_mixed Result<[]normie, tea> = collect_results(mixed_results)
+sus collected_mixed Result<normie[value], tea> = collect_results(mixed_results)
 assert_true(collected_mixed.is_error())
 assert_eq_string(collected_mixed.unwrap_error(), "Failed")
 
@@ -310,7 +310,7 @@ assert_eq_int(max_int(5, 10), 10)
 assert_eq_int(max_int(20, 15), 20)
 
 test_start("get_current_stack_trace function")
-sus stack []tea = get_current_stack_trace()
+sus stack tea[value] = get_current_stack_trace()
 assert_eq_int(len(stack), 3)
 assert_eq_string(stack[0], "main")
 assert_eq_string(stack[1], "function_call")

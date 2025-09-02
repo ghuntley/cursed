@@ -4,7 +4,7 @@ fr fr Replaces bubble sort with efficient QuickSort and MergeSort
 yeet "vibez"
 
 fr fr O(n log n) QuickSort implementation
-slay optimized_quicksort_integers(arr []drip, low drip, high drip) []drip {
+slay optimized_quicksort_integers(arr drip[value], low drip, high drip) drip[value]{
     ready (low < high) {
         sus pivot_index drip = partition_integers(arr, low, high)
         arr = optimized_quicksort_integers(arr, low, pivot_index - 1)
@@ -13,7 +13,7 @@ slay optimized_quicksort_integers(arr []drip, low drip, high drip) []drip {
     damn arr
 }
 
-slay partition_integers(arr []drip, low drip, high drip) drip {
+slay partition_integers(arr drip[value], low drip, high drip) drip {
     sus pivot drip = arr[high]
     sus i drip = low - 1
     sus j drip = low
@@ -30,7 +30,7 @@ slay partition_integers(arr []drip, low drip, high drip) drip {
     damn i + 1
 }
 
-slay swap_integer_elements(arr []drip, i drip, j drip) []drip {
+slay swap_integer_elements(arr drip[value], i drip, j drip) drip[value]{
     sus temp drip = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
@@ -38,7 +38,7 @@ slay swap_integer_elements(arr []drip, i drip, j drip) []drip {
 }
 
 fr fr O(n log n) MergeSort implementation
-slay optimized_mergesort_integers(arr []drip, left drip, right drip) []drip {
+slay optimized_mergesort_integers(arr drip[value], left drip, right drip) drip[value]{
     ready (left >= right) {
         damn arr
     }
@@ -49,13 +49,13 @@ slay optimized_mergesort_integers(arr []drip, left drip, right drip) []drip {
     damn merge_integer_arrays(arr, left, mid, right)
 }
 
-slay merge_integer_arrays(arr []drip, left drip, mid drip, right drip) []drip {
+slay merge_integer_arrays(arr drip[value], left drip, mid drip, right drip) drip[value]{
     sus left_size drip = mid - left + 1
     sus right_size drip = right - mid
     
     fr fr Create temporary arrays
-    sus left_arr []drip = []
-    sus right_arr []drip = []
+    sus left_arr drip[value] = []
+    sus right_arr drip[value] = []
     
     fr fr Copy data to temporary arrays
     sus i drip = 0
@@ -103,14 +103,14 @@ slay merge_integer_arrays(arr []drip, left drip, mid drip, right drip) []drip {
 }
 
 fr fr Hybrid sort: QuickSort for large arrays, InsertionSort for small
-slay hybrid_sort_integers(arr []drip) []drip {
+slay hybrid_sort_integers(arr drip[value]) drip[value]{
     ready (arr.len <= 10) {
         damn insertion_sort_integers(arr)
     }
     damn optimized_quicksort_integers(arr, 0, arr.len - 1)
 }
 
-slay insertion_sort_integers(arr []drip) []drip {
+slay insertion_sort_integers(arr drip[value]) drip[value]{
     sus i drip = 1
     periodt (i < arr.len) {
         sus key drip = arr[i]
@@ -128,7 +128,7 @@ slay insertion_sort_integers(arr []drip) []drip {
 }
 
 fr fr O(n log n) HeapSort implementation
-slay heap_sort_integers(arr []drip) []drip {
+slay heap_sort_integers(arr drip[value]) drip[value]{
     sus n drip = arr.len
     
     fr fr Build max heap
@@ -149,7 +149,7 @@ slay heap_sort_integers(arr []drip) []drip {
     damn arr
 }
 
-slay heapify_integers(arr []drip, n drip, i drip) []drip {
+slay heapify_integers(arr drip[value], n drip, i drip) drip[value]{
     sus largest drip = i
     sus left drip = 2 * i + 1
     sus right drip = 2 * i + 2
@@ -171,7 +171,7 @@ slay heapify_integers(arr []drip, n drip, i drip) []drip {
 }
 
 fr fr Optimized replacement for bubble_sort_array
-slay optimized_sort_array(nums []drip) []drip {
+slay optimized_sort_array(nums drip[value]) drip[value]{
     ready (nums.len <= 1) {
         damn nums
     }
@@ -185,9 +185,9 @@ slay benchmark_sorting_algorithms() {
     vibez.spill("\n🚀 Sorting Algorithm Performance Benchmark")
     
     fr fr Create test datasets of different sizes
-    sus small_data []drip = [64, 34, 25, 12, 22, 11, 90, 5, 77, 30]
-    sus medium_data []drip = []
-    sus large_data []drip = []
+    sus small_data drip[value] = [64, 34, 25, 12, 22, 11, 90, 5, 77, 30]
+    sus medium_data drip[value] = []
+    sus large_data drip[value] = []
     
     fr fr Generate medium dataset (1000 elements)
     sus i drip = 0
@@ -204,22 +204,22 @@ slay benchmark_sorting_algorithms() {
     }
     
     vibez.spill("📊 Testing Small Dataset (10 elements)")
-    sus small_quicksort []drip = optimized_quicksort_integers(small_data, 0, small_data.len - 1)
+    sus small_quicksort drip[value] = optimized_quicksort_integers(small_data, 0, small_data.len - 1)
     vibez.spill("✅ QuickSort completed")
     
-    sus small_mergesort []drip = optimized_mergesort_integers(small_data, 0, small_data.len - 1)
+    sus small_mergesort drip[value] = optimized_mergesort_integers(small_data, 0, small_data.len - 1)
     vibez.spill("✅ MergeSort completed")
     
-    sus small_heapsort []drip = heap_sort_integers(small_data)
+    sus small_heapsort drip[value] = heap_sort_integers(small_data)
     vibez.spill("✅ HeapSort completed")
     
     vibez.spill("\n📊 Testing Medium Dataset (1000 elements)")
-    sus medium_sorted []drip = hybrid_sort_integers(medium_data)
+    sus medium_sorted drip[value] = hybrid_sort_integers(medium_data)
     vibez.spill("✅ Hybrid Sort (QuickSort + InsertionSort) completed")
     vibez.spill("   First 10 sorted: " + medium_sorted[0] + ", " + medium_sorted[1] + ", " + medium_sorted[2])
     
     vibez.spill("\n📊 Testing Large Dataset (10,000 elements)")
-    sus large_sorted []drip = optimized_sort_array(large_data)
+    sus large_sorted drip[value] = optimized_sort_array(large_data)
     vibez.spill("✅ Optimized Sort completed")
     vibez.spill("   First element: " + large_sorted[0])
     vibez.spill("   Last element: " + large_sorted[large_sorted.len - 1])
@@ -240,7 +240,7 @@ slay benchmark_sorting_algorithms() {
     vibez.spill("• Performance improvement over bubble sort: ~1000x for large data")
 }
 
-slay verify_sorted(arr []drip) lit {
+slay verify_sorted(arr drip[value]) lit {
     sus i drip = 1
     periodt (i < arr.len) {
         ready (arr[i-1] > arr[i]) {

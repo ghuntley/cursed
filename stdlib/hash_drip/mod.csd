@@ -69,8 +69,8 @@ slay sha256_gamma1(x normie) normie {
 }
 
 squad sha256_context {
-    sus state []normie
-    sus buffer []normie
+    sus state normie[value]
+    sus buffer normie[value]
     sus buffer_size normie
     sus total_len normie
 }
@@ -85,7 +85,7 @@ slay sha256_new() sha256_context {
 }
 
 slay sha256_process_block(ctx sha256_context) {
-    sus w []normie = [0] * 64
+    sus w normie[value] = [0] * 64
     
     fr fr Initialize message schedule
     sus i normie = 0
@@ -233,9 +233,9 @@ sus sha512_h7_high normie = 0x5be0cd19
 sus sha512_h7_low normie = 0x137e2179
 
 squad sha512_context {
-    sus state_high []normie
-    sus state_low []normie
-    sus buffer []normie
+    sus state_high normie[value]
+    sus state_low normie[value]
+    sus buffer normie[value]
     sus buffer_size normie
     sus total_len normie
 }
@@ -264,7 +264,7 @@ fr fr BLAKE2b Implementation
 fr fr RFC 7693 compliant
 fr fr ================================
 
-sus blake2b_iv []normie = [
+sus blake2b_iv normie[value] = [
     0x6a09e667, 0xf3bcc908, 0xbb67ae85, 0x84caa73b,
     0x3c6ef372, 0xfe94f82b, 0xa54ff53a, 0x5f1d36f1,
     0x510e527f, 0xade682d1, 0x9b05688c, 0x2b3e6c1f,
@@ -272,8 +272,8 @@ sus blake2b_iv []normie = [
 ]
 
 squad blake2b_context {
-    sus state []normie
-    sus buffer []normie
+    sus state normie[value]
+    sus buffer normie[value]
     sus buffer_size normie
     sus outlen normie
     sus total_len normie

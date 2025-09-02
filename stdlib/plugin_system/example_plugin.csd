@@ -9,9 +9,9 @@ fam LoggerPluginMetadata {
     version tea
     description tea
     author tea
-    hooks [10]tea
+    hooks tea[10]
     hook_count normie
-    config_keys [20]tea
+    config_keys tea[20]
     config_count normie
     is_initialized lit
 }

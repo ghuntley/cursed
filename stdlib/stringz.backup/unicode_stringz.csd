@@ -274,7 +274,7 @@ fr fr ===== UNICODE STRING OPERATIONS =====
 
 slay unicode_reverse(s tea) tea {
     fr fr Reverse string preserving Unicode character boundaries
-    sus chars []tea = []
+    sus chars tea[value] = []
     sus byte_offset drip = 0
     sus byte_len drip = byte_length(s)
     
@@ -551,14 +551,14 @@ slay substring_bytes(s tea, start_byte drip, byte_count drip) tea {
     damn result
 }
 
-slay append(arr []tea, item tea) []tea {
+slay append(arr tea[value], item tea) tea[value]{
     fr fr Append item to array - proper implementation
     fr fr Create new array with increased capacity
     sus old_length drip = length(arr)
     sus new_length drip = old_length + 1
     
     fr fr Create new array by reconstruction
-    sus result []tea = []
+    sus result tea[value] = []
     sus i drip = 0
     
     fr fr Copy existing elements

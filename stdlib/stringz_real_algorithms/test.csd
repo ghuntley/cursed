@@ -68,7 +68,7 @@ assert_eq_bool(is_valid_email_real("@example.com"), nocap)
 assert_eq_bool(is_valid_email_real("test@"), nocap)
 
 # Test string splitting
-sus split_result []tea = split_string_real("a,b,c", ",")
+sus split_result tea[value] = split_string_real("a,b,c", ",")
 assert_eq_int(len(split_result), 3)
 assert_eq_string(split_result[0], "a")
 assert_eq_string(split_result[1], "b")

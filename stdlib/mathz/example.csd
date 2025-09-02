@@ -55,7 +55,7 @@ vibez.spill("triangular_number(10) =", triangular_number(10))
 
 fr fr ===== STATISTICAL FUNCTIONS =====
 vibez.spill("\n📈 Statistical Functions:")
-sus data []drip = [10, 20, 30, 40, 50]
+sus data drip[value] = [10, 20, 30, 40, 50]
 sus data_size drip = 5
 vibez.spill("Data: [10, 20, 30, 40, 50]")
 vibez.spill("Sum =", sum_array(data, data_size))
@@ -173,7 +173,7 @@ fr fr ===== PRACTICAL EXAMPLE: STATISTICS ON DATASET =====
 vibez.spill("\n📊 Practical Example: Dataset Analysis")
 vibez.spill("======================================")
 
-sus dataset []drip = [85, 92, 78, 96, 88, 91, 79, 94, 87, 90]
+sus dataset drip[value] = [85, 92, 78, 96, 88, 91, 79, 94, 87, 90]
 sus dataset_size drip = 10
 
 sus total drip = sum_array(dataset, dataset_size)

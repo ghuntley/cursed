@@ -1484,15 +1484,15 @@ slay hmac_sha256_complete(message tea, key tea) tea {
     fr fr Block size for SHA-256 is 64 bytes
     sus block_size drip = 64
     
-    sus key_bytes []normie = string_to_bytes(key)
+    sus key_bytes normie[value] = string_to_bytes(key)
     sus key_len drip = array_length(key_bytes)
     
     fr fr Key preprocessing
-    sus processed_key [64]normie
+    sus processed_key normie[64]
     ready key_len > block_size {
         fr fr Hash key if longer than block size
         sus hashed_key tea = cryptz.sha256(key)
-        sus hashed_bytes []normie = string_to_bytes(hashed_key)
+        sus hashed_bytes normie[value] = string_to_bytes(hashed_key)
         bestie i := 0; i < 32; i++ {  fr fr SHA-256 produces 32 bytes
             processed_key[i] = hashed_bytes[i]
         }
@@ -1515,8 +1515,8 @@ slay hmac_sha256_complete(message tea, key tea) tea {
     }
     
     fr fr Create inner and outer key pads
-    sus inner_pad [64]normie
-    sus outer_pad [64]normie
+    sus inner_pad normie[64]
+    sus outer_pad normie[64]
     bestie i := 0; i < block_size; i++ {
         inner_pad[i] = processed_key[i] ^ 0x36  fr fr ipad
         outer_pad[i] = processed_key[i] ^ 0x5c  fr fr opad

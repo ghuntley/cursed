@@ -29,8 +29,8 @@ squad TableColumn {
 
 # TabWriter structure for table formatting
 squad TabWriter {
-    sus columns []TableColumn    # Column configurations
-    sus rows [][]TableCell      # Table rows
+    sus columns TableColumn[value]    # Column configurations
+    sus rows TableCell[value][value]      # Table rows
     sus separator tea           # Column separator (default: " | ")
     sus border_chars tea        # Border characters
     sus header_separator tea    # Header separator line
@@ -39,7 +39,7 @@ squad TabWriter {
 }
 
 # Create new TabWriter with column configurations
-slay new_tabwriter(columns []TableColumn) TabWriter {
+slay new_tabwriter(columns TableColumn[value]) TabWriter {
     damn TabWriter{
         columns: columns,
         rows: [],
@@ -52,8 +52,8 @@ slay new_tabwriter(columns []TableColumn) TabWriter {
 }
 
 # Create simple TabWriter with headers only
-slay new_simple_tabwriter(headers []tea) TabWriter {
-    sus columns []TableColumn = []
+slay new_simple_tabwriter(headers tea[value]) TabWriter {
+    sus columns TableColumn[value] = []
     
     bestie (sus i drip = 0; i < headers.length; i += 1) {
         sus col TableColumn = TableColumn{
@@ -80,8 +80,8 @@ slay new_simple_tabwriter(headers []tea) TabWriter {
 }
 
 # Add row to table
-slay add_row(writer *TabWriter, row_data []tea) {
-    sus cells []TableCell = []
+slay add_row(writer *TabWriter, row_data tea[value]) {
+    sus cells TableCell[value] = []
     
     bestie (sus i drip = 0; i < row_data.length; i += 1) {
         sus content tea = ""
@@ -118,7 +118,7 @@ slay add_row(writer *TabWriter, row_data []tea) {
 }
 
 # Add multiple rows at once
-slay add_rows(writer *TabWriter, rows [][]tea) {
+slay add_rows(writer *TabWriter, rows tea[value][value]) {
     bestie (sus i drip = 0; i < rows.length; i += 1) {
         add_row(writer, rows[i])
     }
@@ -229,7 +229,7 @@ slay render_header(writer *TabWriter) tea {
 }
 
 # Render table row
-slay render_row(writer *TabWriter, row []TableCell) tea {
+slay render_row(writer *TabWriter, row TableCell[value]) tea {
     sus row_line tea = ""
     
     bestie (sus i drip = 0; i < writer.columns.length; i += 1) {
@@ -328,7 +328,7 @@ slay render_table_with_border(writer *TabWriter) tea {
     
     # Header with vertical borders
     sus header_content tea = render_header(writer)
-    sus header_lines []tea = split_lines(header_content)
+    sus header_lines tea[value] = split_lines(header_content)
     bestie (sus i drip = 0; i < header_lines.length; i += 1) {
         ready (header_lines[i].length > 0) {
             result = result + vertical_char + header_lines[i] + vertical_char + "\n"
@@ -378,7 +378,7 @@ slay render_csv(writer *TabWriter, include_header lit) tea {
     
     # Render data rows
     bestie (sus row_idx drip = 0; row_idx < writer.rows.length; row_idx += 1) {
-        sus row []TableCell = writer.rows[row_idx]
+        sus row TableCell[value] = writer.rows[row_idx]
         bestie (sus col_idx drip = 0; col_idx < writer.columns.length; col_idx += 1) {
             sus content tea = ""
             ready (col_idx < row.length) {
@@ -430,8 +430,8 @@ slay replace_all(text tea, old tea, new tea) tea {
     damn result  # Placeholder - would need more sophisticated implementation
 }
 
-slay split_lines(text tea) []tea {
-    sus lines []tea = []
+slay split_lines(text tea) tea[value]{
+    sus lines tea[value] = []
     sus current_line tea = ""
     
     bestie (sus i drip = 0; i < text.length; i += 1) {
@@ -463,8 +463,8 @@ slay clear_rows(writer *TabWriter) {
 }
 
 # Get table statistics
-slay get_table_stats(writer *TabWriter) []drip {
-    sus stats []drip = []
+slay get_table_stats(writer *TabWriter) drip[value]{
+    sus stats drip[value] = []
     stats = append(stats, writer.columns.length)  # Column count
     stats = append(stats, writer.rows.length)     # Row count
     

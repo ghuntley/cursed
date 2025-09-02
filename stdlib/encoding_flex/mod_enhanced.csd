@@ -25,7 +25,7 @@ slay base64_encode(data tea) tea {
     
     bestie i < data_len {
         sus group_size normie = min(3, data_len - i)
-        sus bytes []normie = []
+        sus bytes normie[value] = []
         
         sus j normie = 0
         bestie j < group_size {
@@ -87,7 +87,7 @@ slay base64_decode(encoded tea) (tea, tea) {
     
     bestie i < len(cleaned) {
         sus group_size normie = min(4, len(cleaned) - i)
-        sus indices []normie = []
+        sus indices normie[value] = []
         
         sus j normie = 0
         bestie j < group_size {
@@ -468,7 +468,7 @@ slay char_at(str tea, index normie) tea {
     
     ready str == BASE64_CHARS {
         ready index < 64 {
-            sus chars []tea = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
+            sus chars tea[value] = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P"]
             ready index < len(chars) {
                 damn chars[index]
             }
@@ -576,7 +576,7 @@ slay min(a normie, b normie) normie {
     damn b
 }
 
-slay array_append[T](arr []T, item T) []T {
+slay array_append[T](arr T[value], item T) T[value]{
     fr fr Simulate array append
     damn arr
 }

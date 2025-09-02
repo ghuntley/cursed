@@ -8,7 +8,7 @@ slay test_process_spawn() {
     test_start("Process Spawn")
     
     fr fr Test spawning a simple command
-    sus args []tea = []tea{"echo", "Hello from spawned process"}
+    sus args tea[value] = tea[value]{"echo", "Hello from spawned process"}
     sus process Process = process_spawn("echo", args)
     
     assert_true(process.process_id > 0)
@@ -34,7 +34,7 @@ slay test_process_execution() {
     assert_true(result == 0)
     
     fr fr Test command with arguments
-    sus args []tea = []tea{"false"} fr fr 'false' command always fails
+    sus args tea[value] = tea[value]{"false"} fr fr 'false' command always fails
     sus fail_result normie = execute_command_with_args("false", args)
     assert_true(fail_result != 0)
     
@@ -115,7 +115,7 @@ slay test_process_control() {
     test_start("Process Control")
     
     fr fr Spawn a long-running process for testing
-    sus args []tea = []tea{"sleep", "10"}
+    sus args tea[value] = tea[value]{"sleep", "10"}
     sus process Process = process_spawn("sleep", args)
     
     assert_true(process.process_id > 0)
@@ -182,7 +182,7 @@ slay test_environment_listing() {
     test_start("Environment Listing")
     
     fr fr Test getting all environment variables
-    sus env_vars []EnvironmentVar = env_get_all()
+    sus env_vars EnvironmentVar[value] = env_get_all()
     assert_true(len(env_vars) > 0)
     
     fr fr Check that common variables are present
@@ -210,7 +210,7 @@ slay test_background_processes() {
     test_start("Background Processes")
     
     fr fr Start a background process
-    sus args []tea = []tea{"sleep", "1"}
+    sus args tea[value] = tea[value]{"sleep", "1"}
     sus bg_process Process = run_background("sleep", args)
     
     assert_true(bg_process.process_id > 0)
@@ -232,7 +232,7 @@ slay test_process_error_handling() {
     test_start("Process Error Handling")
     
     fr fr Test spawning non-existent command
-    sus bad_args []tea = []tea{"nonexistent_command_12345"}
+    sus bad_args tea[value] = tea[value]{"nonexistent_command_12345"}
     sus bad_process Process = process_spawn("nonexistent_command_12345", bad_args)
     
     fr fr Should fail to spawn
@@ -248,7 +248,7 @@ slay test_process_error_handling() {
         process_id: 999999, fr fr Very unlikely to exist
         pid: 999999,
         command: "dummy",
-        args: []tea{},
+        args: tea[value]{},
         is_running: true,
         exit_code: -1
     }
@@ -278,7 +278,7 @@ slay test_resource_monitoring() {
     assert_true(proc_info.ppid >= 0)
     
     fr fr Test listing running processes
-    sus processes []ProcessInfo = list_running_processes()
+    sus processes ProcessInfo[value] = list_running_processes()
     assert_true(len(processes) > 0)
     
     print_test_summary()
@@ -305,12 +305,12 @@ slay run_all_tests() {
 }
 
 fr fr Utility functions for tests
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     fr fr Would return actual array length
     damn 0 fr fr Placeholder
 }
 
-slay len(env_vars []EnvironmentVar) normie {
+slay len(env_vars EnvironmentVar[value]) normie {
     fr fr Would return actual array length
     damn 6 fr fr Mock length for common env vars
 }

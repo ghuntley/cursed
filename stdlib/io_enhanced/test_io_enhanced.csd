@@ -69,7 +69,7 @@ print_test_summary()
 
 test_start("test_file_lines_operations")
 fr fr Test file line operations
-sus lines := []tea{"Line 1", "Line 2", "Line 3"}
+sus lines := tea[value]{"Line 1", "Line 2", "Line 3"}
 sus writeErr := write_file_lines("lines.txt", lines)
 assert_eq_string(writeErr, cringe)
 
@@ -216,7 +216,7 @@ print_test_summary()
 
 test_start("test_batch_operations")
 fr fr Test batch operations
-sus paths := []tea{"file1.txt", "file2.txt", "file3.txt"}
+sus paths := tea[value]{"file1.txt", "file2.txt", "file3.txt"}
 sus errors := batch_file_operation(paths, slay(path tea) yikes {
     damn delete_file(path)
 })
@@ -255,7 +255,7 @@ assert_eq_string(dir, "/tmp")
 sus lines := split_lines("line1\nline2\nline3")
 assert_eq_int(len(lines), 1)
 
-sus joined := join_lines([]tea{"line1", "line2", "line3"})
+sus joined := join_lines(tea[value]{"line1", "line2", "line3"})
 assert_eq_string(joined, "line1\nline2\nline3")
 
 sus chunk := simulate_read_chunk("test.txt", 0, 100)
@@ -297,7 +297,7 @@ fr fr Performance benchmarks
 test_start("performance_benchmarks")
 fr fr Test performance of file operations
 bestie i := 0; i < 100; i++ {
-    sus filename := "perf_" + tea([]byte{byte(48 + i % 10)}) + ".txt"
+    sus filename := "perf_" + tea(byte[value]{byte(48 + i % 10)}) + ".txt"
     sus file, err := open_file(filename, "w")
     if err == cringe {
         write_file(file, "Performance test content")
@@ -307,9 +307,9 @@ bestie i := 0; i < 100; i++ {
 }
 
 fr fr Test batch operations performance
-sus paths := []tea{}
+sus paths := tea[value]{}
 bestie i := 0; i < 50; i++ {
-    sus filename := "batch_" + tea([]byte{byte(48 + i % 10)}) + ".txt"
+    sus filename := "batch_" + tea(byte[value]{byte(48 + i % 10)}) + ".txt"
     paths = append(paths, filename)
 }
 

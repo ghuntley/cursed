@@ -14,17 +14,17 @@ print_test_summary()
 
 test_start("test_get_pooled_array")
 # Test pooled array allocation
-sus small_array []drip = get_pooled_array(32)
+sus small_array drip[value] = get_pooled_array(32)
 assert_true(len(small_array) >= 0)
 
-sus medium_array []drip = get_pooled_array(512)
+sus medium_array drip[value] = get_pooled_array(512)
 assert_true(len(medium_array) >= 0)
 vibez.spill("Pooled array allocation works")
 print_test_summary()
 
 test_start("test_return_to_pool")
 # Test returning array to pool
-sus test_array []drip = get_pooled_array(64)
+sus test_array drip[value] = get_pooled_array(64)
 sus return_result lit = return_to_pool(test_array)
 assert_true(return_result)
 vibez.spill("Array returned to pool successfully")
@@ -32,14 +32,14 @@ print_test_summary()
 
 test_start("test_quicksort_optimized")
 # Test quicksort_optimized function - sorts array efficiently
-sus unsorted []drip = [5, 2, 8, 1, 9, 3]
-sus sorted_arr []drip = quicksort_optimized(unsorted, 0, len(unsorted) - 1)
+sus unsorted drip[value] = [5, 2, 8, 1, 9, 3]
+sus sorted_arr drip[value] = quicksort_optimized(unsorted, 0, len(unsorted) - 1)
 assert_eq_int(get_array_element(sorted_arr, 0), 1)
 assert_eq_int(get_array_element(sorted_arr, 1), 2)
 assert_eq_int(get_array_element(sorted_arr, 2), 3)
 # Test edge case: already sorted
-sus already_sorted []drip = [1, 2, 3, 4, 5]
-sus result2 []drip = quicksort_optimized(already_sorted, 0, len(already_sorted) - 1)
+sus already_sorted drip[value] = [1, 2, 3, 4, 5]
+sus result2 drip[value] = quicksort_optimized(already_sorted, 0, len(already_sorted) - 1)
 assert_eq_int(get_array_element(result2, 0), 1)
 print_test_summary()
 
@@ -66,7 +66,7 @@ print_test_summary()
 
 test_start("test_binary_search_optimized")
 # Test binary_search_optimized function - efficient search in sorted arrays
-sus sorted_arr []drip = [1, 3, 5, 7, 9, 11, 13, 15]
+sus sorted_arr drip[value] = [1, 3, 5, 7, 9, 11, 13, 15]
 sus index1 drip = binary_search_optimized(sorted_arr, 7)
 assert_eq_int(index1, 3)
 sus index2 drip = binary_search_optimized(sorted_arr, 1)
@@ -170,19 +170,19 @@ print_test_summary()
 
 test_start("test_remove_last_element")
 # Test removing last element from 2D array
-sus test_2d [][]drip = [[1], [2], [3]]
-sus without_last [][]drip = remove_last_element(test_2d)
+sus test_2d drip[value][value] = [[1], [2], [3]]
+sus without_last drip[value][value] = remove_last_element(test_2d)
 assert_true(len(without_last) < len(test_2d))
 vibez.spill("Remove last element works")
 print_test_summary()
 
 test_start("test_resize_array")
 # Test array resizing operations
-sus original []drip = [1, 2, 3]
-sus smaller []drip = resize_array(original, 2)
+sus original drip[value] = [1, 2, 3]
+sus smaller drip[value] = resize_array(original, 2)
 assert_eq_int(len(smaller), 2)
 
-sus larger []drip = resize_array(original, 5)
+sus larger drip[value] = resize_array(original, 5)
 assert_eq_int(len(larger), 5)
 assert_eq_int(larger[3], 0)  # Padded with zeros
 vibez.spill("Array resizing works correctly")

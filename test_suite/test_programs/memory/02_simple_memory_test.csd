@@ -23,7 +23,7 @@ slay main() {
     vibez.spill("Strings:", text1, text2, text3)
     
     vibez.spill("Testing computational memory usage...")
-    finna i normie = 0; i < 10; i++ {
+    bestie i := 0; i < 10; i++ {
         sus temp = i * i
         vibez.spill("Iteration", i, "result:", temp)
     }

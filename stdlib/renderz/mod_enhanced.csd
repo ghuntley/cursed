@@ -76,7 +76,7 @@ be_like Vec4 = struct {
 }
 
 be_like Mat4 = struct {
-    m [16]drip fr fr 4x4 matrix in column-major order
+    m drip[16] fr fr 4x4 matrix in column-major order
 }
 
 be_like Vertex = struct {
@@ -111,11 +111,11 @@ be_like Shader = struct {
     fragment_source tea,
     geometry_source tea,
     compute_source tea,
-    uniforms [64]tea,
+    uniforms tea[64],
     uniform_count normie,
     compiled lit,
     compilation_log tea,
-    uniform_locations [64]normie
+    uniform_locations normie[64]
 }
 
 be_like Texture = struct {
@@ -146,7 +146,7 @@ be_like Buffer = struct {
 
 be_like Material = struct {
     shader Shader,
-    textures [8]Texture,
+    textures Texture[8],
     texture_count normie,
     ambient_color Vec4,
     diffuse_color Vec4,
@@ -168,7 +168,7 @@ be_like Camera = struct {
     view_matrix Mat4,
     projection_matrix Mat4,
     view_projection_matrix Mat4,
-    frustum_planes [6]Vec4
+    frustum_planes Vec4[6]
 }
 
 be_like Light = struct {
@@ -197,7 +197,7 @@ be_like RenderTarget = struct {
 
 be_like FontAtlas = struct {
     texture Texture,
-    glyph_info [256]GlyphInfo,
+    glyph_info GlyphInfo[256],
     glyph_count normie,
     font_size drip,
     line_height drip,
@@ -399,7 +399,7 @@ slay renderz_create_texture(image_data imagez.ImageData) Texture {
     damn texture
 }
 
-slay renderz_create_cubemap_texture(faces [6]imagez.ImageData) Texture {
+slay renderz_create_cubemap_texture(faces imagez[6].ImageData) Texture {
     sus texture Texture
     texture.id = renderz_generate_texture_id()
     texture.width = faces[0].width
@@ -437,7 +437,7 @@ slay renderz_create_font_atlas(font_path tea, font_size drip) FontAtlas {
     fr fr Generate texture atlas from font
     sus atlas_width normie = 512
     sus atlas_height normie = 512
-    sus atlas_pixels [262144]normie fr fr 512*512
+    sus atlas_pixels normie[262144] fr fr 512*512
     
     atlas.font_size = font_size
     atlas.line_height = font_size * 1.2
@@ -451,7 +451,7 @@ slay renderz_create_font_atlas(font_path tea, font_size drip) FontAtlas {
     
     sus char normie = 32
     bestie (char <= 127) {
-        sus glyph_bitmap [1024]normie fr fr 32x32 max glyph
+        sus glyph_bitmap normie[1024] fr fr 32x32 max glyph
         sus glyph_info GlyphInfo = renderz_render_glyph_to_bitmap(font_data, char, font_size, glyph_bitmap)
         
         ready (current_x + glyph_info.width > atlas_width) {
@@ -549,8 +549,8 @@ slay renderz_draw_text_enhanced(text tea, x drip, y drip, atlas FontAtlas, color
 fr fr ===== ENHANCED GEOMETRY GENERATION =====
 
 slay renderz_generate_sphere_mesh(radius drip, segments normie, rings normie) Buffer {
-    sus vertices [10000]Vertex
-    sus indices [30000]normie
+    sus vertices Vertex[10000]
+    sus indices normie[30000]
     
     sus vertex_count normie = 0
     sus index_count normie = 0
@@ -618,8 +618,8 @@ slay renderz_generate_sphere_mesh(radius drip, segments normie, rings normie) Bu
 }
 
 slay renderz_generate_torus_mesh(major_radius drip, minor_radius drip, major_segments normie, minor_segments normie) Buffer {
-    sus vertices [10000]Vertex
-    sus indices [30000]normie
+    sus vertices Vertex[10000]
+    sus indices normie[30000]
     
     sus vertex_count normie = 0
     sus index_count normie = 0
@@ -693,7 +693,7 @@ slay renderz_rasterize_triangle(v1 Vertex, v2 Vertex, v3 Vertex, render_target R
     fr fr Enhanced triangle rasterization with proper barycentric interpolation
     
     fr fr Sort vertices by Y coordinate (top to bottom)
-    sus vertices [3]Vertex = [v1, v2, v3]
+    sus vertices Vertex[3] = [v1, v2, v3]
     ready (vertices[0].position.y > vertices[1].position.y) {
         sus temp Vertex = vertices[0]
         vertices[0] = vertices[1]
@@ -723,7 +723,7 @@ slay renderz_rasterize_triangle(v1 Vertex, v2 Vertex, v3 Vertex, render_target R
     fr fr Rasterize scanlines
     sus y normie = y_min
     bestie (y <= y_max) {
-        sus intersections [2]drip
+        sus intersections drip[2]
         sus intersection_count normie = 0
         
         fr fr Find edge intersections
@@ -764,7 +764,7 @@ slay renderz_rasterize_triangle(v1 Vertex, v2 Vertex, v3 Vertex, render_target R
 
 fr fr ===== ENHANCED LIGHTING SYSTEM =====
 
-slay renderz_calculate_lighting(position Vec3, normal Vec3, view_dir Vec3, lights [32]Light, light_count normie, material Material) Vec4 {
+slay renderz_calculate_lighting(position Vec3, normal Vec3, view_dir Vec3, lights Light[32], light_count normie, material Material) Vec4 {
     sus final_color Vec4 = material.ambient_color
     
     sus i normie = 0
@@ -1016,7 +1016,7 @@ slay renderz_upload_texture_data_enhanced(id normie, width normie, height normie
     damn true
 }
 
-slay renderz_render_glyph_to_bitmap(font_data tea, character normie, font_size drip, bitmap [1024]normie) GlyphInfo {
+slay renderz_render_glyph_to_bitmap(font_data tea, character normie, font_size drip, bitmap normie[1024]) GlyphInfo {
     fr fr Actual font rasterization (simplified truetype-like approach)
     sus glyph GlyphInfo
     
@@ -1036,7 +1036,7 @@ slay renderz_render_glyph_to_bitmap(font_data tea, character normie, font_size d
     damn glyph
 }
 
-slay renderz_generate_character_bitmap(character normie, font_size drip, bitmap [1024]normie, width normie, height normie) lit {
+slay renderz_generate_character_bitmap(character normie, font_size drip, bitmap normie[1024], width normie, height normie) lit {
     fr fr Simple character bitmap generation
     fr fr In a real implementation, this would rasterize vector font data
     
@@ -1079,7 +1079,7 @@ slay renderz_barycentric_coordinates(p Vec3, a Vec3, b Vec3, c Vec3) Vec3 {
     damn renderz_vec3(w, v, u)  fr fr (alpha, beta, gamma)
 }
 
-slay renderz_interpolate_color(vertices [3]Vertex, bary Vec3) Vec4 {
+slay renderz_interpolate_color(vertices Vertex[3], bary Vec3) Vec4 {
     sus color Vec4
     color.x = vertices[0].color.x * bary.x + vertices[1].color.x * bary.y + vertices[2].color.x * bary.z
     color.y = vertices[0].color.y * bary.x + vertices[1].color.y * bary.y + vertices[2].color.y * bary.z
@@ -1109,6 +1109,6 @@ slay renderz_cleanup_default_resources() lit { damn true }
 slay renderz_generate_shader_id() normie { damn 1 }
 slay renderz_generate_texture_id() normie { damn 1 }
 slay renderz_generate_buffer_id() normie { damn 1 }
-slay renderz_discover_uniforms_enhanced(id normie, uniforms [64]tea, locations [64]normie) normie { damn 0 }
+slay renderz_discover_uniforms_enhanced(id normie, uniforms tea[64], locations normie[64]) normie { damn 0 }
 
 facts RENDERZ_ENHANCED_LOADED lit = true

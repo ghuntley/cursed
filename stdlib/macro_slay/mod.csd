@@ -33,9 +33,9 @@ sus GLOBAL_MACRO_COUNT normie = 0
 sus BUILTIN_MACRO_COUNT normie = 8
 
 fr fr Simplified storage arrays
-sus MACRO_STORAGE [1000]normie
-sus MACRO_NAMES [1000]tea
-sus MACRO_BODIES [1000]tea
+sus MACRO_STORAGE normie[1000]
+sus MACRO_NAMES tea[1000]
+sus MACRO_BODIES tea[1000]
 
 fr fr Calculate simple hash for macro names
 slay hash_macro_name(name tea) normie {

@@ -368,7 +368,7 @@ slay random_range(min_val normie, max_val normie) normie {
 }
 
 fr fr Statistics Functions
-slay mean_array(values []meal, count normie) meal {
+slay mean_array(values meal[value], count normie) meal {
     lowkey count == 0 {
         damn 0.0
     }
@@ -381,7 +381,7 @@ slay mean_array(values []meal, count normie) meal {
     damn sum / count
 }
 
-slay sum_array(values []meal, count normie) meal {
+slay sum_array(values meal[value], count normie) meal {
     sus sum meal = 0.0
     bestie i := 0; i < count; i++ {
         sum = sum + values[i]
@@ -389,7 +389,7 @@ slay sum_array(values []meal, count normie) meal {
     damn sum
 }
 
-slay max_array(values []meal, count normie) meal {
+slay max_array(values meal[value], count normie) meal {
     lowkey count == 0 {
         damn 0.0
     }
@@ -403,7 +403,7 @@ slay max_array(values []meal, count normie) meal {
     damn max_val
 }
 
-slay min_array(values []meal, count normie) meal {
+slay min_array(values meal[value], count normie) meal {
     lowkey count == 0 {
         damn 0.0
     }

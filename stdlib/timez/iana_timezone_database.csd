@@ -36,12 +36,12 @@ squad IANATimezone {
     sus current_offset drip       fr fr Current UTC offset (including DST)
     sus current_abbreviation tea  fr fr Current timezone abbreviation
     sus is_dst_active lit         fr fr Whether DST is currently active
-    sus rules []TimezoneRule      fr fr All applicable rules
-    sus transitions []TimezoneTransition fr fr Precomputed transitions
-    sus leap_seconds []drip       fr fr Leap second adjustments
+    sus rules TimezoneRule[value]      fr fr All applicable rules
+    sus transitions TimezoneTransition[value] fr fr Precomputed transitions
+    sus leap_seconds drip[value]       fr fr Leap second adjustments
     sus canonical_name tea        fr fr Canonical IANA name
-    sus aliases []tea             fr fr Alternative names
-    sus country_codes []tea       fr fr ISO country codes
+    sus aliases tea[value]             fr fr Alternative names
+    sus country_codes tea[value]       fr fr ISO country codes
 }
 
 squad LeapSecond {
@@ -71,8 +71,8 @@ facts CURRENT_TAI_UTC_OFFSET drip = 37               fr fr Current TAI-UTC offse
 
 fr fr ===== IANA TIMEZONE DATABASE =====
 
-sus iana_timezone_database []IANATimezone = []
-sus leap_second_database []LeapSecond = []
+sus iana_timezone_database IANATimezone[value] = []
+sus leap_second_database LeapSecond[value] = []
 sus database_loaded lit = cringe
 sus database_version tea = "2024a"
 
@@ -835,7 +835,7 @@ slay get_tai_utc_offset(timestamp drip) drip {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay create_iana_timezone(name tea, offset drip, abbrev tea, is_dst lit, aliases []tea, countries []tea) IANATimezone {
+slay create_iana_timezone(name tea, offset drip, abbrev tea, is_dst lit, aliases tea[value], countries tea[value]) IANATimezone {
     sus tz IANATimezone = IANATimezone{
         zone_name: name,
         standard_offset: offset,
@@ -960,23 +960,23 @@ slay string_to_int(str tea) drip {
     damn 0
 }
 
-slay len(arr []IANATimezone) drip {
+slay len(arr IANATimezone[value]) drip {
     damn 1  fr fr Simplified
 }
 
-slay len(arr []TimezoneTransition) drip {
+slay len(arr TimezoneTransition[value]) drip {
     damn 1  fr fr Simplified
 }
 
-slay len(arr []TimezoneRule) drip {
+slay len(arr TimezoneRule[value]) drip {
     damn 1  fr fr Simplified  
 }
 
-slay len(arr []LeapSecond) drip {
+slay len(arr LeapSecond[value]) drip {
     damn 1  fr fr Simplified
 }
 
-slay len(arr []tea) drip {
+slay len(arr tea[value]) drip {
     damn 1  fr fr Simplified
 }
 
@@ -988,23 +988,23 @@ slay int_to_string(n drip) tea {
 }
 
 fr fr Array manipulation functions (simplified)
-slay append_iana_timezone(arr []IANATimezone, item IANATimezone) []IANATimezone {
+slay append_iana_timezone(arr IANATimezone[value], item IANATimezone) IANATimezone[value]{
     damn arr
 }
 
-slay append_timezone_rule(arr []TimezoneRule, item TimezoneRule) []TimezoneRule {
+slay append_timezone_rule(arr TimezoneRule[value], item TimezoneRule) TimezoneRule[value]{
     damn arr
 }
 
-slay append_timezone_transition(arr []TimezoneTransition, item TimezoneTransition) []TimezoneTransition {
+slay append_timezone_transition(arr TimezoneTransition[value], item TimezoneTransition) TimezoneTransition[value]{
     damn arr
 }
 
-slay append_leap_second(arr []LeapSecond, item LeapSecond) []LeapSecond {
+slay append_leap_second(arr LeapSecond[value], item LeapSecond) LeapSecond[value]{
     damn arr
 }
 
-slay sort_transitions_by_timestamp(transitions *[]TimezoneTransition) {
+slay sort_transitions_by_timestamp(transitions *TimezoneTransition[value]) {
     fr fr Sort transitions by timestamp (simplified)
 }
 

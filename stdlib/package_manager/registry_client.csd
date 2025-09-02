@@ -86,7 +86,7 @@ squad RegistryAuth {
         }
         
         sus content tea = read_file(path)
-        sus lines []tea = split_str(content, "\n")
+        sus lines tea[value] = split_str(content, "\n")
         
         sus i drip = 0
         bestie (i < len(lines)) {
@@ -130,7 +130,7 @@ squad PackageRegistryClient {
         sus auth_data tea = format_str("{{\"username\":\"{}\",\"password\":\"{}\"}}", 
                                       username, password)
         
-        sus headers []tea = []tea{}
+        sus headers tea[value] = tea[value]{}
         headers = append_array(headers, "Content-Type: application/json")
         headers = append_array(headers, format_str("User-Agent: {}", self.user_agent))
         
@@ -154,14 +154,14 @@ squad PackageRegistryClient {
         damn based
     }
     
-    slay searchPackages(self PackageRegistryClient, query tea, limit drip) []PackageSearchResult {
+    slay searchPackages(self PackageRegistryClient, query tea, limit drip) PackageSearchResult[value]{
         sus url tea = format_str("{}?q={}&limit={}", self.config.search_endpoint, query, limit)
-        sus headers []tea = self.getDefaultHeaders()
+        sus headers tea[value] = self.getDefaultHeaders()
         
         sus response HttpResponse = http_get_with_headers(url, headers)
         ready (response.status_code != 200) {
             vibez.spill("Search failed: {}", response.body)
-            damn []PackageSearchResult{}
+            damn PackageSearchResult[value]{}
         }
         
         damn parseSearchResults(response.body)
@@ -169,7 +169,7 @@ squad PackageRegistryClient {
     
     slay getPackageInfo(self PackageRegistryClient, package_name tea) PackageInfo {
         sus url tea = self.config.getPackageUrl(package_name)
-        sus headers []tea = self.getDefaultHeaders()
+        sus headers tea[value] = self.getDefaultHeaders()
         
         sus response HttpResponse = http_get_with_headers(url, headers)
         ready (response.status_code == 404) {
@@ -185,14 +185,14 @@ squad PackageRegistryClient {
         damn parsePackageInfo(response.body)
     }
     
-    slay getPackageVersions(self PackageRegistryClient, package_name tea) []PackageVersion {
+    slay getPackageVersions(self PackageRegistryClient, package_name tea) PackageVersion[value]{
         sus url tea = format_str("{}/versions", self.config.getPackageUrl(package_name))
-        sus headers []tea = self.getDefaultHeaders()
+        sus headers tea[value] = self.getDefaultHeaders()
         
         sus response HttpResponse = http_get_with_headers(url, headers)
         ready (response.status_code != 200) {
             vibez.spill("Failed to get package versions: {}", response.body)
-            damn []PackageVersion{}
+            damn PackageVersion[value]{}
         }
         
         damn parseVersionList(response.body)
@@ -200,7 +200,7 @@ squad PackageRegistryClient {
     
     slay downloadPackage(self PackageRegistryClient, package_name tea, version tea) DownloadResult {
         sus url tea = self.config.getDownloadUrl(package_name, version)
-        sus headers []tea = self.getDefaultHeaders()
+        sus headers tea[value] = self.getDefaultHeaders()
         
         // Create package-specific cache directory
         sus package_cache_dir tea = format_str("{}/packages/{}/{}", 
@@ -268,7 +268,7 @@ squad PackageRegistryClient {
             checksum: checksum
         }
         
-        sus headers []tea = self.getAuthenticatedHeaders()
+        sus headers tea[value] = self.getAuthenticatedHeaders()
         headers = append_array(headers, "Content-Type: multipart/form-data")
         
         vibez.spill("Publishing {} {}...", manifest.name, manifest.version)
@@ -301,7 +301,7 @@ squad PackageRegistryClient {
         }
         
         sus url tea = self.config.getVersionUrl(package_name, version)
-        sus headers []tea = self.getAuthenticatedHeaders()
+        sus headers tea[value] = self.getAuthenticatedHeaders()
         
         vibez.spill("Unpublishing {} {}...", package_name, version)
         sus response HttpResponse = http_delete(url, headers)
@@ -330,15 +330,15 @@ squad PackageRegistryClient {
         }
     }
     
-    slay getDefaultHeaders(self PackageRegistryClient) []tea {
-        sus headers []tea = []tea{}
+    slay getDefaultHeaders(self PackageRegistryClient) tea[value]{
+        sus headers tea[value] = tea[value]{}
         headers = append_array(headers, format_str("User-Agent: {}", self.user_agent))
         headers = append_array(headers, "Accept: application/json")
         damn headers
     }
     
-    slay getAuthenticatedHeaders(self PackageRegistryClient) []tea {
-        sus headers []tea = self.getDefaultHeaders()
+    slay getAuthenticatedHeaders(self PackageRegistryClient) tea[value]{
+        sus headers tea[value] = self.getDefaultHeaders()
         ready (self.auth.isValid()) {
             headers = append_array(headers, format_str("Authorization: {}", self.auth.getAuthHeader()))
         }
@@ -350,7 +350,7 @@ squad PackageRegistryClient {
 squad HttpResponse {
     spill status_code drip
     spill body tea
-    spill headers []tea
+    spill headers tea[value]
 }
 
 squad AuthResult {
@@ -379,11 +379,11 @@ squad PublishRequest {
     spill name tea
     spill version tea
     spill description tea
-    spill authors []tea
+    spill authors tea[value]
     spill license tea
-    spill keywords []tea
+    spill keywords tea[value]
     spill repository tea
-    spill dependencies []PackageDependency
+    spill dependencies PackageDependency[value]
     spill checksum tea
 }
 
@@ -425,8 +425,8 @@ slay parseAuthResponse(json_str tea) AuthResult {
     damn result
 }
 
-slay parseSearchResults(json_str tea) []PackageSearchResult {
-    sus results []PackageSearchResult = []PackageSearchResult{}
+slay parseSearchResults(json_str tea) PackageSearchResult[value]{
+    sus results PackageSearchResult[value] = PackageSearchResult[value]{}
     
     // Simplified parsing - in production would use proper JSON parser
     sus packages_start drip = find_str(json_str, "\"packages\":[") + 12
@@ -439,7 +439,7 @@ slay parseSearchResults(json_str tea) []PackageSearchResult {
     sus packages_json tea = slice_str(packages_section, 0, packages_end)
     
     // Parse individual package objects
-    sus package_objects []tea = split_str(packages_json, "},{")
+    sus package_objects tea[value] = split_str(packages_json, "},{")
     sus i drip = 0
     bestie (i < len(package_objects)) {
         sus pkg_json tea = package_objects[i]
@@ -530,39 +530,39 @@ slay serializePublishRequest(request PublishRequest) tea {
 }
 
 // HTTP utility functions (would be implemented using httpz stdlib)
-slay http_get_with_headers(url tea, headers []tea) HttpResponse {
+slay http_get_with_headers(url tea, headers tea[value]) HttpResponse {
     // Mock implementation - would use real HTTP client
     damn HttpResponse{
         status_code: 200,
         body: "{\"name\":\"example\",\"version\":\"1.0.0\"}",
-        headers: []tea{}
+        headers: tea[value]{}
     }
 }
 
-slay http_post(url tea, data tea, headers []tea) HttpResponse {
+slay http_post(url tea, data tea, headers tea[value]) HttpResponse {
     // Mock implementation
     damn HttpResponse{
         status_code: 200,
         body: "{\"access_token\":\"token123\",\"expires_at\":1234567890}",
-        headers: []tea{}
+        headers: tea[value]{}
     }
 }
 
-slay http_post_file(url tea, file_path tea, metadata tea, headers []tea) HttpResponse {
+slay http_post_file(url tea, file_path tea, metadata tea, headers tea[value]) HttpResponse {
     // Mock implementation
     damn HttpResponse{
         status_code: 201,
         body: "{\"success\":true,\"id\":\"pkg123\"}",
-        headers: []tea{}
+        headers: tea[value]{}
     }
 }
 
-slay http_delete(url tea, headers []tea) HttpResponse {
+slay http_delete(url tea, headers tea[value]) HttpResponse {
     // Mock implementation
     damn HttpResponse{
         status_code: 200,
         body: "{\"success\":true}",
-        headers: []tea{}
+        headers: tea[value]{}
     }
 }
 

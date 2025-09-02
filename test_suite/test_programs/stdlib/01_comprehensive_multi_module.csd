@@ -8,10 +8,10 @@ yeet "collections"
 slay process_numeric_data() {
     vibez.spill("=== Numeric Processing with Mathz ===")
     
-    sus numbers []normie = []normie{-42, 17, 0, -3, 99, -156}
-    sus processed_numbers []normie = []normie{}
+    sus numbers normie[value] = normie[value]{-42, 17, 0, -3, 99, -156}
+    sus processed_numbers normie[value] = normie[value]{}
     
-    finna i normie = 0; i < len(numbers); i++ {
+    bestie i := 0; i < len(numbers); i++ {
         sus num = numbers[i]
         sus abs_val = mathz.abs(num)
         sus squared = mathz.pow(abs_val, 2)
@@ -24,7 +24,7 @@ slay process_numeric_data() {
     sus min_val = processed_numbers[0]
     sus max_val = processed_numbers[0]
     
-    finna i normie = 1; i < len(processed_numbers); i++ {
+    bestie i := 1; i < len(processed_numbers); i++ {
         min_val = mathz.min(min_val, processed_numbers[i])
         max_val = mathz.max(max_val, processed_numbers[i])
     }
@@ -36,10 +36,10 @@ slay process_numeric_data() {
 slay process_string_data() {
     vibez.spill("=== String Processing with Stringz ===")
     
-    sus texts []tea = []tea{"Hello", "World", "CURSED", "Programming", "Language"}
+    sus texts tea[value] = tea[value]{"Hello", "World", "CURSED", "Programming", "Language"}
     sus combined_text tea = ""
     
-    finna i normie = 0; i < len(texts); i++ {
+    bestie i := 0; i < len(texts); i++ {
         sus text = texts[i]
         sus lower_text = stringz.to_lower(text)
         sus upper_text = stringz.to_upper(text) 
@@ -60,7 +60,7 @@ slay process_string_data() {
 slay process_collections_data() {
     vibez.spill("=== Collections Processing ===")
     
-    sus data []normie = []normie{5, 2, 8, 1, 9, 3, 7, 4, 6}
+    sus data normie[value] = normie[value]{5, 2, 8, 1, 9, 3, 7, 4, 6}
     vibez.spill("Original data:", data)
     
     // Use collections operations (if available)
@@ -68,8 +68,8 @@ slay process_collections_data() {
     
     // Manual sorting demonstration
     sus sorted_data = data
-    finna i normie = 0; i < len(sorted_data); i++ {
-        finna j normie = i + 1; j < len(sorted_data); j++ {
+    bestie i := 0; i < len(sorted_data); i++ {
+        bestie j := i + 1; j < len(sorted_data); j++ {
             ready (sorted_data[i] > sorted_data[j]) {
                 sus temp = sorted_data[i]
                 sorted_data[i] = sorted_data[j] 
@@ -85,21 +85,21 @@ slay integrated_processing_pipeline() {
     vibez.spill("=== Integrated Processing Pipeline ===")
     
     // Create test data
-    sus numbers []normie = []normie{-15, 23, -8, 42, -99, 17}
-    sus names []tea = []tea{"alice", "BOB", "Charlie", "DIANA"}
+    sus numbers normie[value] = normie[value]{-15, 23, -8, 42, -99, 17}
+    sus names tea[value] = tea[value]{"alice", "BOB", "Charlie", "DIANA"}
     
     vibez.spill("Processing", len(numbers), "numbers and", len(names), "names")
     
     // Process numbers with mathz
     sus sum normie = 0
-    finna i normie = 0; i < len(numbers); i++ {
+    bestie i := 0; i < len(numbers); i++ {
         sus abs_num = mathz.abs(numbers[i])
         sum = sum + abs_num
     }
     
     // Process strings with stringz  
-    sus processed_names []tea = []tea{}
-    finna i normie = 0; i < len(names); i++ {
+    sus processed_names tea[value] = tea[value]{}
+    bestie i := 0; i < len(names); i++ {
         sus name = names[i]
         sus normalized = stringz.to_lower(name)
         sus capitalized = stringz.to_upper(stringz.substring(normalized, 0, 1))
@@ -113,7 +113,7 @@ slay integrated_processing_pipeline() {
     vibez.spill("Processed names:", processed_names)
     
     // Combine results
-    finna i normie = 0; i < len(processed_names); i++ {
+    bestie i := 0; i < len(processed_names); i++ {
         sus name = processed_names[i]
         sus number_index = i % len(numbers)
         sus associated_number = mathz.abs(numbers[number_index])

@@ -44,15 +44,15 @@ fr fr 29: BACKREF - Backreference \1, \2, etc.
 fr fr 30: CONDITIONAL - Conditional expression (?(condition)...)
 
 squad CompleteRegexVM {
-    sus bytecode []drip
+    sus bytecode drip[value]
     sus pc drip                     fr fr Program counter
     sus text tea
     sus text_pos drip
     sus text_length drip
-    sus stack []drip                fr fr Execution stack
-    sus capture_stack []drip        fr fr Capture group stack  
-    sus captures []tea              fr fr Captured groups
-    sus backtrack_stack []BacktrackFrame
+    sus stack drip[value]                fr fr Execution stack
+    sus capture_stack drip[value]        fr fr Capture group stack  
+    sus captures tea[value]              fr fr Captured groups
+    sus backtrack_stack BacktrackFrame[value]
     sus unicode_mode lit            fr fr Unicode support enabled
     sus multiline_mode lit          fr fr Multiline mode
     sus case_insensitive lit        fr fr Case-insensitive matching
@@ -62,14 +62,14 @@ squad CompleteRegexVM {
 squad BacktrackFrame {
     sus pc drip
     sus text_pos drip
-    sus capture_state []tea
-    sus stack_state []drip
+    sus capture_state tea[value]
+    sus stack_state drip[value]
 }
 
 squad RegexCompilerState {
     sus pattern tea
     sus position drip
-    sus bytecode []drip
+    sus bytecode drip[value]
     sus capture_count drip
     sus flags tea                   fr fr Regex flags (i, m, s, x, etc.)
 }
@@ -893,9 +893,9 @@ slay string_equals_ignore_case(str1 tea, str2 tea) lit {
     damn based
 }
 
-slay copy_array(arr []tea) []tea {
+slay copy_array(arr tea[value]) tea[value]{
     fr fr Deep copy array for backtracking
-    sus copied []tea = []
+    sus copied tea[value] = []
     sus i drip = 0
     
     bestie (i < array_length(arr)) {
@@ -1182,7 +1182,7 @@ slay compile_character_class(compiler RegexCompilerState) {
     compiler.position = compiler.position + 1  fr fr Skip '['
     
     sus is_negated lit = no_cap
-    sus char_set []drip = []
+    sus char_set drip[value] = []
     
     fr fr Check for negation
     ready (compiler.position < string_length(compiler.pattern) && 
@@ -1377,7 +1377,7 @@ slay execute_positive_lookahead(vm CompleteRegexVM, lookahead_length drip) lit {
     fr fr Execute positive lookahead (?=pattern)
     sus saved_pos drip = vm.text_pos
     sus saved_pc drip = vm.pc
-    sus saved_captures []tea = copy_array(vm.captures)
+    sus saved_captures tea[value] = copy_array(vm.captures)
     
     fr fr Execute lookahead pattern without consuming input
     sus lookahead_end drip = vm.pc + lookahead_length
@@ -1418,7 +1418,7 @@ slay execute_positive_lookbehind(vm CompleteRegexVM, lookbehind_length drip) lit
     
     sus saved_pos drip = vm.text_pos
     sus saved_pc drip = vm.pc
-    sus saved_captures []tea = copy_array(vm.captures)
+    sus saved_captures tea[value] = copy_array(vm.captures)
     
     fr fr Move back and try to match pattern
     vm.text_pos = vm.text_pos - lookbehind_length
@@ -1455,7 +1455,7 @@ slay execute_negative_lookbehind(vm CompleteRegexVM, lookbehind_length drip) lit
 
 slay execute_atomic_group(vm CompleteRegexVM) lit {
     fr fr Execute atomic group (?>pattern) - no backtracking within group
-    sus saved_backtrack_stack []BacktrackFrame = vm.backtrack_stack
+    sus saved_backtrack_stack BacktrackFrame[value] = vm.backtrack_stack
     vm.backtrack_stack = []  fr fr Clear backtrack stack for atomic execution
     
     fr fr Execute group pattern
@@ -1697,7 +1697,7 @@ slay test_rest_of_pattern(vm CompleteRegexVM, start_pc drip) lit {
     fr fr Test if the rest of the pattern matches from current position
     sus saved_pc drip = vm.pc
     sus saved_pos drip = vm.text_pos
-    sus saved_captures []tea = copy_array(vm.captures)
+    sus saved_captures tea[value] = copy_array(vm.captures)
     
     vm.pc = start_pc
     sus result lit = execute_pattern_segment(vm, array_length(vm.bytecode) - start_pc)
@@ -1712,7 +1712,7 @@ slay test_rest_of_pattern(vm CompleteRegexVM, start_pc drip) lit {
     damn result
 }
 
-slay find_matching_group_end(bytecode []drip, start_pc drip) drip {
+slay find_matching_group_end(bytecode drip[value], start_pc drip) drip {
     fr fr Find the end PC of a group starting at start_pc
     sus depth drip = 1
     sus pc drip = start_pc
@@ -1734,7 +1734,7 @@ slay find_matching_group_end(bytecode []drip, start_pc drip) drip {
 
 slay insert_bytecode_at(compiler RegexCompilerState, position drip, value drip) {
     fr fr Insert bytecode value at specific position
-    sus new_bytecode []drip = []
+    sus new_bytecode drip[value] = []
     sus i drip = 0
     
     fr fr Copy elements before insertion point
@@ -1777,7 +1777,7 @@ slay find_alternative_start(compiler RegexCompilerState) drip {
     damn 0  fr fr Default to start
 }
 
-slay emit_char_set_to_bytecode(compiler RegexCompilerState, char_set []drip) {
+slay emit_char_set_to_bytecode(compiler RegexCompilerState, char_set drip[value]) {
     fr fr Emit character set data to bytecode
     sus i drip = 0
     bestie (i < array_length(char_set)) {
@@ -1795,7 +1795,7 @@ slay emit_range_to_bytecode(compiler RegexCompilerState, start_code drip, end_co
     }
 }
 
-slay compile_character_class_escape(compiler RegexCompilerState, char_set []drip) {
+slay compile_character_class_escape(compiler RegexCompilerState, char_set drip[value]) {
     fr fr Handle escape sequences within character classes
     ready (compiler.position >= string_length(compiler.pattern)) {
         damn
@@ -1825,7 +1825,7 @@ slay compile_character_class_escape(compiler RegexCompilerState, char_set []drip
     }
 }
 
-slay add_word_chars_to_set(char_set []drip) {
+slay add_word_chars_to_set(char_set drip[value]) {
     fr fr Add word characters to character set
     fr fr Add a-z
     sus i drip = 97  fr fr 'a'
@@ -1911,7 +1911,7 @@ slay json_number_to_string(num drip) tea {
     
     sus result tea = ""
     sus temp drip = num
-    sus digits []tea = []
+    sus digits tea[value] = []
     
     ready (temp < 0) {
         result = "-"
@@ -1951,7 +1951,7 @@ slay number_to_char(code drip) tea {
     damn "?"
 }
 
-slay array_pop(arr []tea) tea {
+slay array_pop(arr tea[value]) tea {
     fr fr Remove and return last element from array
     ready (array_length(arr) == 0) {
         damn ""
@@ -1963,7 +1963,7 @@ slay array_pop(arr []tea) tea {
     damn last_elem
 }
 
-slay array_pop_drip(arr []drip) drip {
+slay array_pop_drip(arr drip[value]) drip {
     fr fr Remove and return last element from drip array
     ready (array_length(arr) == 0) {
         damn 0
@@ -1975,7 +1975,7 @@ slay array_pop_drip(arr []drip) drip {
     damn last_elem
 }
 
-slay array_pop_backtrack(arr []BacktrackFrame) BacktrackFrame {
+slay array_pop_backtrack(arr BacktrackFrame[value]) BacktrackFrame {
     fr fr Remove and return last BacktrackFrame from array
     ready (array_length(arr) == 0) {
         sus empty_frame BacktrackFrame = BacktrackFrame{}
@@ -2082,7 +2082,7 @@ slay is_noncharacter(ch drip) lit {
 
 fr fr ===== RANGE PROCESSING UTILITIES =====
 
-slay sort_ranges(ranges *[]drip) {
+slay sort_ranges(ranges *drip[value]) {
     fr fr Sort ranges in place (simplified bubble sort for demo)
     sus len drip = array_length(*ranges)
     sus i drip = 0
@@ -2105,13 +2105,13 @@ slay sort_ranges(ranges *[]drip) {
     }
 }
 
-slay merge_ranges(ranges []drip) []drip {
+slay merge_ranges(ranges drip[value]) drip[value]{
     fr fr Merge overlapping ranges
     ready (array_length(ranges) <= 2) {
         damn ranges
     }
     
-    sus merged []drip = []
+    sus merged drip[value] = []
     sus i drip = 0
     
     bestie (i < array_length(ranges)) {
@@ -2134,7 +2134,7 @@ slay merge_ranges(ranges []drip) []drip {
     damn merged
 }
 
-slay load_unicode_property(property tea) []drip {
+slay load_unicode_property(property tea) drip[value]{
     fr fr Load Unicode property ranges (demo implementation)
     ready (property == "L") {
         damn [65, 90, 97, 122, 192, 214, 216, 246, 248, 255]
@@ -2164,7 +2164,7 @@ squad RegexMatch {
     sus start_position drip
     sus length drip
     sus text tea
-    sus groups []tea
+    sus groups tea[value]
 }
 
 fr fr Example usage and test cases

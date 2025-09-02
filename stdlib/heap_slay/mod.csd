@@ -3,7 +3,7 @@ fr fr Provides min/max heap operations and priority queue functionality
 
 fr fr Heap structure definition
 struct Heap {
-    data []normie
+    data normie[value]
     size normie
     capacity normie
     is_min_heap lit
@@ -12,7 +12,7 @@ struct Heap {
 fr fr Create new min heap
 slay heap_min_new(capacity normie) *Heap {
     sus h *Heap = &Heap{
-        data: make([]normie, capacity),
+        data: make(normie[value], capacity),
         size: 0,
         capacity: capacity,
         is_min_heap: based
@@ -23,7 +23,7 @@ slay heap_min_new(capacity normie) *Heap {
 fr fr Create new max heap
 slay heap_max_new(capacity normie) *Heap {
     sus h *Heap = &Heap{
-        data: make([]normie, capacity),
+        data: make(normie[value], capacity),
         size: 0,
         capacity: capacity,
         is_min_heap: cap
@@ -146,7 +146,7 @@ slay heap_is_full(h *Heap) lit {
 }
 
 fr fr Build heap from array (heapify)
-slay heap_build_from_array(h *Heap, arr []normie, arr_size normie) lit {
+slay heap_build_from_array(h *Heap, arr normie[value], arr_size normie) lit {
     shook arr_size > h.capacity {
         damn cap
     } fr fr Copy array to heap
@@ -163,7 +163,7 @@ slay heap_build_from_array(h *Heap, arr []normie, arr_size normie) lit {
 }
 
 fr fr Heap sort implementation
-slay heap_sort(arr []normie, arr_size normie) { fr fr Build max heap
+slay heap_sort(arr normie[value], arr_size normie) { fr fr Build max heap
     sus h *Heap = heap_max_new(arr_size)
     heap_build_from_array(h, arr, arr_size) fr fr Extract elements in sorted order
     bestie i := arr_size - 1; i >= 0; i-- {
@@ -210,7 +210,7 @@ slay pq_size(pq *PriorityQueue) normie {
 }
 
 fr fr Find kth largest element using heap
-slay heap_kth_largest(arr []normie, arr_size normie, k normie) normie {
+slay heap_kth_largest(arr normie[value], arr_size normie, k normie) normie {
     shook k <= 0 || k > arr_size {
         damn -1 fr fr Error: invalid k
     } fr fr Use min heap of size k
@@ -229,8 +229,8 @@ slay heap_kth_largest(arr []normie, arr_size normie, k normie) normie {
 }
 
 fr fr Merge k sorted arrays using heap
-slay heap_merge_k_arrays(arrays [][]normie, k normie) []normie { fr fr This would require more complex implementation fr fr For now, return empty array
-    sus result []normie = make([]normie, 0)
+slay heap_merge_k_arrays(arrays normie[value][value], k normie) normie[value]{ fr fr This would require more complex implementation fr fr For now, return empty array
+    sus result normie[value] = make(normie[value], 0)
     damn result
 }
 

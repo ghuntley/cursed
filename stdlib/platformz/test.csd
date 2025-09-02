@@ -73,7 +73,7 @@ sus has_write lit = can_write_to_directory("/tmp")
 assert_true(has_write)
 
 // Test network interfaces
-sus interfaces []tea = get_network_interfaces()
+sus interfaces tea[value] = get_network_interfaces()
 assert_true(len(interfaces) > 0)
 
 // Test system locale

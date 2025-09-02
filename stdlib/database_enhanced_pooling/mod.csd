@@ -38,7 +38,7 @@ squad DatabaseConnection {
     sus last_used_at drip
     sus usage_count drip
     sus transaction_active lit
-    sus prepared_statements []tea
+    sus prepared_statements tea[value]
     sus connection_metadata tea
     sus error_count drip
     sus last_error tea
@@ -47,9 +47,9 @@ squad DatabaseConnection {
 squad ConnectionPool {
     sus pool_id tea
     sus config ConnectionPoolConfig
-    sus active_connections []DatabaseConnection
-    sus idle_connections []DatabaseConnection
-    sus waiting_requests []tea
+    sus active_connections DatabaseConnection[value]
+    sus idle_connections DatabaseConnection[value]
+    sus waiting_requests tea[value]
     sus pool_stats PoolStatistics
     sus health_monitor HealthMonitor
     sus is_running lit
@@ -74,7 +74,7 @@ squad HealthMonitor {
     sus healthy_connections drip
     sus unhealthy_connections drip
     sus failed_health_checks drip
-    sus health_check_failures []tea
+    sus health_check_failures tea[value]
     sus is_monitoring lit
 }
 
@@ -687,7 +687,7 @@ slay prepare_statement(pool ConnectionPool, connection_id tea, sql tea) tea {
     damn statement_id
 }
 
-slay execute_prepared_statement(pool ConnectionPool, connection_id tea, statement_id tea, parameters []tea) lit {
+slay execute_prepared_statement(pool ConnectionPool, connection_id tea, statement_id tea, parameters tea[value]) lit {
     sus connection DatabaseConnection = find_connection_by_id(pool, connection_id)
     ready (!connection.is_connected) {
         vibez.spill("❌ Cannot execute statement: connection not found")
@@ -827,7 +827,7 @@ slay find_connection_by_id(pool ConnectionPool, connection_id tea) DatabaseConne
 }
 
 slay remove_from_active_pool(pool ConnectionPool, connection_id tea) lit {
-    sus new_active []DatabaseConnection = []
+    sus new_active DatabaseConnection[value] = []
     sus i drip = 0
     bestie (i < array_length(pool.active_connections)) {
         ready (pool.active_connections[i].connection_id != connection_id) {
@@ -841,7 +841,7 @@ slay remove_from_active_pool(pool ConnectionPool, connection_id tea) lit {
 }
 
 slay remove_from_idle_pool(pool ConnectionPool, connection_id tea) lit {
-    sus new_idle []DatabaseConnection = []
+    sus new_idle DatabaseConnection[value] = []
     sus i drip = 0
     bestie (i < array_length(pool.idle_connections)) {
         ready (pool.idle_connections[i].connection_id != connection_id) {
@@ -854,7 +854,7 @@ slay remove_from_idle_pool(pool ConnectionPool, connection_id tea) lit {
 }
 
 slay remove_from_waiting_queue(pool ConnectionPool, request_id tea) lit {
-    sus new_waiting []tea = []
+    sus new_waiting tea[value] = []
     sus i drip = 0
     bestie (i < array_length(pool.waiting_requests)) {
         ready (pool.waiting_requests[i] != request_id) {
@@ -1017,7 +1017,7 @@ slay json_bool_to_string(value lit) tea {
     damn "false"
 }
 
-slay json_array_to_string(arr []tea) tea {
+slay json_array_to_string(arr tea[value]) tea {
     ready (array_length(arr) == 0) { damn "[]" }
     sus result tea = "["
     sus i drip = 0
@@ -1030,7 +1030,7 @@ slay json_array_to_string(arr []tea) tea {
     damn result
 }
 
-slay array_length(arr []tea) drip {
+slay array_length(arr tea[value]) drip {
     fr fr Real array length implementation
     sus count drip = 0
     sus i drip = 0
@@ -1042,7 +1042,7 @@ slay array_length(arr []tea) drip {
     damn count
 }
 
-slay array_length_connections(arr []DatabaseConnection) drip {
+slay array_length_connections(arr DatabaseConnection[value]) drip {
     fr fr Real DatabaseConnection array length implementation
     sus count drip = 0
     sus i drip = 0

@@ -81,8 +81,8 @@ sus SignalError tea = ready {
 squad SignalManager {
     sus platform tea
     sus handlers {}drip tea  // Map signal -> handler
-    sus blocked_signals []drip
-    sus pending_signals []SignalInfo
+    sus blocked_signals drip[value]
+    sus pending_signals SignalInfo[value]
     sus signal_channel chan<SignalInfo>
 }
 
@@ -317,7 +317,7 @@ export slay cursed_console_control_handler(ctrl_type drip) drip {
 }
 
 // Signal mask manipulation
-slay signal_block_signals(signals []tea) yikes<tea> {
+slay signal_block_signals(signals tea[value]) yikes<tea> {
     sus platform tea = get_signal_platform()
     ready (platform == "unix") {
         sus mask drip = 0
@@ -342,7 +342,7 @@ slay signal_block_signals(signals []tea) yikes<tea> {
     }
 }
 
-slay signal_unblock_signals(signals []tea) yikes<tea> {
+slay signal_unblock_signals(signals tea[value]) yikes<tea> {
     sus platform tea = get_signal_platform()
     ready (platform == "unix") {
         sus mask drip = 0
@@ -367,7 +367,7 @@ slay install_shutdown_handlers(cleanup_func tea) yikes<tea> {
     sus manager SignalManager = get_global_signal_manager()
     
     // Install handlers for common termination signals
-    sus termination_signals []tea = ["SIGTERM", "SIGINT", "SIGQUIT"]
+    sus termination_signals tea[value] = ["SIGTERM", "SIGINT", "SIGQUIT"]
     ready (manager.platform == "windows") {
         termination_signals = ["CTRL_C_EVENT", "CTRL_BREAK_EVENT", "CTRL_CLOSE_EVENT"]
     }
@@ -452,7 +452,7 @@ slay get_function_address(function_name tea) drip {
 // High-level convenience functions
 slay setup_crash_handler(handler_func tea) yikes<tea> {
     sus manager SignalManager = get_global_signal_manager()
-    sus crash_signals []tea = ["SIGSEGV", "SIGABRT", "SIGFPE", "SIGILL"]
+    sus crash_signals tea[value] = ["SIGSEGV", "SIGABRT", "SIGFPE", "SIGILL"]
     
     sus i drip = 0
     bestie (i < arrayz.len(crash_signals)) {

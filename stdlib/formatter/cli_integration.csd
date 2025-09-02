@@ -37,7 +37,7 @@ slay default_format_command() FormatCommand {
 
 fr fr ===== CLI ARGUMENT PARSING =====
 
-slay parse_format_args(args []tea) FormatCommand {
+slay parse_format_args(args tea[value]) FormatCommand {
     sus cmd FormatCommand = default_format_command()
     sus i drip = 0
     
@@ -215,7 +215,7 @@ slay process_format_command(cmd FormatCommand) drip {
     
     fr fr Handle validation only mode
     ready (cmd.validate_only) {
-        sus errors []tea = validate_syntax(source_code)
+        sus errors tea[value] = validate_syntax(source_code)
         ready (len(errors) == 0) {
             ready (cmd.verbose) {
                 vibez.spill("✅ Syntax validation passed")
@@ -306,7 +306,7 @@ slay process_format_command(cmd FormatCommand) drip {
 
 fr fr ===== BATCH PROCESSING =====
 
-slay format_multiple_files(files []tea, cmd FormatCommand) drip {
+slay format_multiple_files(files tea[value], cmd FormatCommand) drip {
     sus total_files drip = len(files)
     sus success_count drip = 0
     sus error_count drip = 0
@@ -399,7 +399,7 @@ slay run_interactive_formatter() {
             vibez.spill("Enter code to validate:")
             vibez.spill("> ")
             sus code tea = read_user_input()
-            sus errors []tea = validate_syntax(code)
+            sus errors tea[value] = validate_syntax(code)
             
             ready (len(errors) == 0) {
                 vibez.spill("✅ Valid syntax")
@@ -452,7 +452,7 @@ slay load_style_config(style tea) FormatterConfig {
 
 fr fr ===== MAIN CLI ENTRY POINT =====
 
-slay cli_format_main(args []tea) drip {
+slay cli_format_main(args tea[value]) drip {
     ready (len(args) == 0) {
         vibez.spill("CURSED Code Formatter")
         vibez.spill("Use --help for usage information")
@@ -487,37 +487,37 @@ slay main() {
     
     fr fr Demo different CLI scenarios
     vibez.spill("=== Demo 1: Basic formatting ===")
-    sus demo_args1 []tea = ["test.csd"]
+    sus demo_args1 tea[value] = ["test.csd"]
     sus result1 drip = cli_format_main(demo_args1)
     vibez.spill("Exit code: " + int_to_string(result1))
     vibez.spill("")
     
     vibez.spill("=== Demo 2: Check mode ===")
-    sus demo_args2 []tea = ["--check", "test.csd"]
+    sus demo_args2 tea[value] = ["--check", "test.csd"]
     sus result2 drip = cli_format_main(demo_args2)
     vibez.spill("Exit code: " + int_to_string(result2))
     vibez.spill("")
     
     vibez.spill("=== Demo 3: Diff mode ===")
-    sus demo_args3 []tea = ["--diff", "test.csd"]
+    sus demo_args3 tea[value] = ["--diff", "test.csd"]
     sus result3 drip = cli_format_main(demo_args3)
     vibez.spill("Exit code: " + int_to_string(result3))
     vibez.spill("")
     
     vibez.spill("=== Demo 4: Compact style ===")
-    sus demo_args4 []tea = ["--style", "compact", "test.csd"]
+    sus demo_args4 tea[value] = ["--style", "compact", "test.csd"]
     sus result4 drip = cli_format_main(demo_args4)
     vibez.spill("Exit code: " + int_to_string(result4))
     vibez.spill("")
     
     vibez.spill("=== Demo 5: Validation only ===")
-    sus demo_args5 []tea = ["--validate", "test.csd"]
+    sus demo_args5 tea[value] = ["--validate", "test.csd"]
     sus result5 drip = cli_format_main(demo_args5)
     vibez.spill("Exit code: " + int_to_string(result5))
     vibez.spill("")
     
     vibez.spill("=== Demo 6: Help output ===")
-    sus demo_args6 []tea = ["--help"]
+    sus demo_args6 tea[value] = ["--help"]
     sus result6 drip = cli_format_main(demo_args6)
     vibez.spill("")
     

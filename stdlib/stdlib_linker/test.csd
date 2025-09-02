@@ -110,7 +110,7 @@ test_case("Module Dependency Resolution") {
     sus linker StdlibLinker = init_stdlib_linker()
     
     // Define module dependencies
-    sus dependencies map[tea][]tea = {
+    sus dependencies map[tea]tea[value] = {
         "stringz": ["mathz", "arrayz"],
         "filez": ["stringz", "error_drip"],
         "networkz": ["stringz", "filez", "concurrenz"],
@@ -118,7 +118,7 @@ test_case("Module Dependency Resolution") {
     }
     
     // Resolve dependencies for networkz
-    sus resolved_deps []tea = resolve_dependencies(linker, "networkz", dependencies)
+    sus resolved_deps tea[value] = resolve_dependencies(linker, "networkz", dependencies)
     
     // Should include direct and indirect dependencies in correct order
     assert(array_contains(resolved_deps, "mathz"))
@@ -142,7 +142,7 @@ test_case("Circular Dependency Detection") {
     sus linker StdlibLinker = init_stdlib_linker()
     
     // Define circular dependencies
-    sus circular_deps map[tea][]tea = {
+    sus circular_deps map[tea]tea[value] = {
         "module_a": ["module_b"],
         "module_b": ["module_c"],
         "module_c": ["module_a"]  // Creates cycle
@@ -153,7 +153,7 @@ test_case("Circular Dependency Detection") {
     assert(has_cycle)
     
     // Test with non-circular dependencies
-    sus clean_deps map[tea][]tea = {
+    sus clean_deps map[tea]tea[value] = {
         "module_a": ["module_b"],
         "module_b": ["module_c"],
         "module_c": []

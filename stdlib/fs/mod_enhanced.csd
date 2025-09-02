@@ -355,7 +355,7 @@ slay read_file(path tea) tea {
     damn content
 }
 
-slay read_file_bytes(path tea) []byte {
+slay read_file_bytes(path tea) byte[value]{
     sus content tea = read_file(path)
     damn string_to_bytes_real(content)
 }
@@ -389,7 +389,7 @@ slay write_file(path tea, content tea) lit {
     damn success
 }
 
-slay write_file_bytes(path tea, data []byte) lit {
+slay write_file_bytes(path tea, data byte[value]) lit {
     sus content tea = bytes_to_string_real(data)
     damn write_file(path, content)
 }
@@ -585,7 +585,7 @@ slay remove_dir_recursive(path tea) lit {
         damn false
     }
     
-    sus entries []DirEntry = list_directory_real(path)
+    sus entries DirEntry[value] = list_directory_real(path)
     bestie _, entry in entries {
         sus full_path tea = join_path_real(path, entry.name)
         
@@ -603,23 +603,23 @@ slay remove_dir_recursive(path tea) lit {
     damn remove_dir(path)
 }
 
-slay list_dir(path tea) []DirEntry {
+slay list_dir(path tea) DirEntry[value]{
     init_filesystem()
     
     lowkey !is_directory_real(path) {
-        damn []DirEntry{}
+        damn DirEntry[value]{}
     }
     
     lowkey !check_read_permission(path) {
-        damn []DirEntry{}
+        damn DirEntry[value]{}
     }
     
     damn list_directory_real(path)
 }
 
-slay list_directory_real(path tea) []DirEntry {
+slay list_directory_real(path tea) DirEntry[value]{
     fr fr Real directory listing using system calls
-    sus entries []DirEntry = []DirEntry{}
+    sus entries DirEntry[value] = DirEntry[value]{}
     
     fr fr Platform-specific directory reading
     lowkey current_filesystem.platform == "linux" {
@@ -885,7 +885,7 @@ slay expand_dollar_variables(path tea) tea {
     sus result tea = path
     
     fr fr Common environment variables to expand
-    sus env_vars []tea = []tea{
+    sus env_vars tea[value] = tea[value]{
         "HOME", "USER", "PATH", "PWD", "TMPDIR", "TMP", "TEMP",
         "APPDATA", "LOCALAPPDATA", "USERPROFILE", "PROGRAMFILES"
     }
@@ -1056,7 +1056,7 @@ slay validate_path(path tea) lit {
     }
     
     fr fr Check for invalid characters
-    sus invalid_chars []tea = []tea{"\x00", "\x01", "\x02", "\x03", "\x04", "\x05", "\x06", "\x07"}
+    sus invalid_chars tea[value] = tea[value]{"\x00", "\x01", "\x02", "\x03", "\x04", "\x05", "\x06", "\x07"}
     bestie _, char in invalid_chars {
         lowkey stringz.contains(path, char) {
             damn false
@@ -1073,7 +1073,7 @@ slay validate_path(path tea) lit {
 
 slay validate_windows_path(path tea) lit {
     fr fr Windows-specific path validation
-    sus invalid_chars []tea = []tea{"<", ">", ":", "\"", "|", "?", "*"}
+    sus invalid_chars tea[value] = tea[value]{"<", ">", ":", "\"", "|", "?", "*"}
     bestie _, char in invalid_chars {
         lowkey stringz.contains(path, char) {
             damn false
@@ -1082,7 +1082,7 @@ slay validate_windows_path(path tea) lit {
     
     fr fr Check for reserved names
     sus basename tea = get_basename_real(path)
-    sus reserved_names []tea = []tea{
+    sus reserved_names tea[value] = tea[value]{
         "CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4",
         "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", 
         "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"
@@ -1272,13 +1272,13 @@ slay get_blocks_real(path tea) thicc {
 
 fr fr More mock implementations for completeness
 
-slay string_to_bytes_real(s tea) []byte {
+slay string_to_bytes_real(s tea) byte[value]{
     fr fr In production, would properly convert string to bytes
-    sus bytes []byte = []byte{}
+    sus bytes byte[value] = byte[value]{}
     damn bytes
 }
 
-slay bytes_to_string_real(bytes []byte) tea {
+slay bytes_to_string_real(bytes byte[value]) tea {
     fr fr In production, would properly convert bytes to string
     damn "converted_string"
 }
@@ -1320,15 +1320,15 @@ slay rmdir_real(path tea) lit {
 }
 
 slay is_directory_empty_real(path tea) lit {
-    sus entries []DirEntry = list_directory_real(path)
+    sus entries DirEntry[value] = list_directory_real(path)
     damn len(entries) == 0
 }
 
 fr fr Platform-specific directory reading functions
 
-slay linux_readdir(path tea) []DirEntry {
+slay linux_readdir(path tea) DirEntry[value]{
     fr fr Linux opendir/readdir implementation
-    sus entries []DirEntry = []DirEntry{}
+    sus entries DirEntry[value] = DirEntry[value]{}
     fr fr Mock: add some common entries
     entries = append(entries, DirEntry{
         name: "example.txt",
@@ -1342,12 +1342,12 @@ slay linux_readdir(path tea) []DirEntry {
     damn entries
 }
 
-slay windows_find_files(path tea) []DirEntry {
+slay windows_find_files(path tea) DirEntry[value]{
     fr fr Windows FindFirstFile/FindNextFile implementation
     damn linux_readdir(path)  fr fr Use same mock for now
 }
 
-slay generic_readdir(path tea) []DirEntry {
+slay generic_readdir(path tea) DirEntry[value]{
     fr fr Fallback directory reading
     damn linux_readdir(path)  fr fr Use same mock for now
 }

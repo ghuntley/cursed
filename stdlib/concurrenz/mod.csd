@@ -50,7 +50,7 @@ struct WaitGroup {
 
 fr fr Channel structure for buffered communication
 struct Channel {
-    spill buffer []normie       fr fr Message buffer array
+    spill buffer normie[value]       fr fr Message buffer array
     spill capacity normie       fr fr Maximum buffer size
     spill size normie           fr fr Current buffer size (atomic)
     spill send_pos normie       fr fr Send position in buffer (atomic)
@@ -62,8 +62,8 @@ struct Channel {
 
 fr fr Thread pool structure for concurrent execution
 struct ThreadPool {
-    spill workers []normie      fr fr Worker thread IDs
-    spill task_queue []normie   fr fr Queue of pending tasks
+    spill workers normie[value]      fr fr Worker thread IDs
+    spill task_queue normie[value]   fr fr Queue of pending tasks
     spill queue_size normie     fr fr Current queue size (atomic)
     spill queue_head normie     fr fr Queue head position (atomic)
     spill queue_tail normie     fr fr Queue tail position (atomic)
@@ -76,14 +76,14 @@ struct Barrier {
     spill count normie          fr fr Total number of participants
     spill arrived normie        fr fr Number of participants arrived (atomic)
     spill generation normie     fr fr Generation counter for reuse (atomic)
-    spill waiting_list []normie fr fr List of waiting goroutines
+    spill waiting_list normie[value] fr fr List of waiting goroutines
 }
 
 fr fr Semaphore structure for resource counting
 struct Semaphore {
     spill permits normie        fr fr Available permits (atomic)
     spill max_permits normie    fr fr Maximum permits allowed
-    spill waiters []normie      fr fr Queue of waiting goroutines
+    spill waiters normie[value]      fr fr Queue of waiting goroutines
     spill waiter_count normie   fr fr Number of waiting goroutines (atomic)
 }
 
@@ -92,13 +92,13 @@ struct RWMutex {
     spill readers normie        fr fr Number of active readers (atomic)
     spill writer normie         fr fr Writer flag (atomic, 0=no writer, 1=writer active)
     spill pending_writers normie fr fr Number of pending writers (atomic)
-    spill reader_waiters []normie fr fr Queue of waiting readers
-    spill writer_waiters []normie fr fr Queue of waiting writers
+    spill reader_waiters normie[value] fr fr Queue of waiting readers
+    spill writer_waiters normie[value] fr fr Queue of waiting writers
 }
 
 fr fr Condition Variable structure
 struct CondVar {
-    spill waiters []normie      fr fr Queue of waiting goroutines
+    spill waiters normie[value]      fr fr Queue of waiting goroutines
     spill waiter_count normie   fr fr Number of waiting goroutines (atomic)
     spill signal_count normie   fr fr Number of signals sent (atomic)
     spill broadcast_flag normie fr fr Broadcast flag (atomic)

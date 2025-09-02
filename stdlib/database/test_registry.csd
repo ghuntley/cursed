@@ -9,7 +9,7 @@ sus init_success lit = init_database_registry()
 assert_true(init_success)
 
 fr fr Verify drivers are registered
-sus drivers []DatabaseDriver = list_registered_drivers()
+sus drivers DatabaseDriver[value] = list_registered_drivers()
 assert_true(drivers.length >= 5) fr fr Should have at least PostgreSQL, MySQL, SQLite, MongoDB, Redis
 
 fr fr Test specific driver registration

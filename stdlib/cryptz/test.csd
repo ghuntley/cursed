@@ -275,7 +275,7 @@ bestie (i < 10) {
 }
 
 fr fr Test concurrent safety simulation
-sus concurrent_results []tea = []
+sus concurrent_results tea[value] = []
 i = 0
 bestie (i < 5) {
     sus concurrent_hash tea = sha256_hash("concurrent_" + json_number_to_string(i))

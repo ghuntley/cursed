@@ -82,7 +82,7 @@ slay test_enhanced_json_parsing() lit {
         damn cringe
     }
     
-    sus array_items []JsonValue = array_pair.value.array_items
+    sus array_items JsonValue[value] = array_pair.value.array_items
     ready (len(array_items) != 5) {
         vibez.spill("✗ Array should have 5 elements, got: " + drip_to_string(len(array_items)))
         damn cringe
@@ -174,7 +174,7 @@ slay test_enhanced_array_operations() lit {
     vibez.spill("=== Testing Enhanced Array Operations ===")
     
     fr fr Test array search operations
-    sus test_strings []tea = ["apple", "banana", "cherry", "date", "elderberry", "apple"]
+    sus test_strings tea[value] = ["apple", "banana", "cherry", "date", "elderberry", "apple"]
     sus search_result ArraySearchResult = array_linear_search_all(test_strings, "apple")
     
     ready (!search_result.found || search_result.count != 2) {
@@ -195,7 +195,7 @@ slay test_enhanced_array_operations() lit {
     }
     
     fr fr Test sorting
-    sus unsorted_numbers []drip = [64, 34, 25, 12, 22, 11, 90]
+    sus unsorted_numbers drip[value] = [64, 34, 25, 12, 22, 11, 90]
     sus sort_result ArraySortResult<drip> = array_merge_sort_numbers(unsorted_numbers)
     
     ready (len(sort_result.sorted_array) != 7) {
@@ -211,7 +211,7 @@ slay test_enhanced_array_operations() lit {
     }
     
     fr fr Test array filtering
-    sus mixed_strings []tea = ["test123", "hello", "world456", "cursed", "123abc"]
+    sus mixed_strings tea[value] = ["test123", "hello", "world456", "cursed", "123abc"]
     sus filter_result ArrayResult<tea> = array_filter_by_predicate(mixed_strings, "has_digits")
     
     ready (!filter_result.success || filter_result.length != 3) {
@@ -220,8 +220,8 @@ slay test_enhanced_array_operations() lit {
     }
     
     fr fr Test set operations
-    sus array1 []tea = ["a", "b", "c", "d"]
-    sus array2 []tea = ["c", "d", "e", "f"]
+    sus array1 tea[value] = ["a", "b", "c", "d"]
+    sus array2 tea[value] = ["c", "d", "e", "f"]
     sus union_result ArrayResult<tea> = array_union_strings(array1, array2)
     sus intersection_result ArrayResult<tea> = array_intersection_strings(array1, array2)
     
@@ -236,7 +236,7 @@ slay test_enhanced_array_operations() lit {
     }
     
     fr fr Test array statistics
-    sus numbers []drip = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sus numbers drip[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     sus stats ArrayStats = array_calculate_statistics(numbers)
     
     ready (stats.min_value != 1 || stats.max_value != 10 || stats.sum != 55) {
@@ -265,7 +265,7 @@ slay test_enhanced_configuration_integration() lit {
     
     fr fr Test enhanced environment variable processing
     fr fr Simulate environment variables
-    sus env_vars []EnvironmentVariable = [
+    sus env_vars EnvironmentVariable[value] = [
         EnvironmentVariable{name: "CURSED_DB_HOST", value: "localhost"},
         EnvironmentVariable{name: "CURSED_DB_PORT", value: "5432"},
         EnvironmentVariable{name: "CURSED_DEBUG", value: "true"},
@@ -407,7 +407,7 @@ slay test_enhanced_performance() lit {
     }
     
     fr fr Test string operations performance
-    sus large_strings []tea = generate_large_string_array(1000)
+    sus large_strings tea[value] = generate_large_string_array(1000)
     start_time = get_current_timestamp()
     
     sus sort_result ArraySortResult<tea> = array_quick_sort_strings(large_strings)
@@ -538,7 +538,7 @@ fr fr ==========================================
 fr fr HELPER FUNCTIONS
 fr fr ==========================================
 
-slay find_json_key_value(pairs []JsonKeyValue, key tea) JsonKeyValue {
+slay find_json_key_value(pairs JsonKeyValue[value], key tea) JsonKeyValue {
     fr fr Find key-value pair in JSON object
     sus pair_count drip = len(pairs)
     sus i drip = 0
@@ -579,9 +579,9 @@ slay generate_large_json_config(size drip) tea {
     damn json
 }
 
-slay generate_large_string_array(size drip) []tea {
+slay generate_large_string_array(size drip) tea[value]{
     fr fr Generate large string array for performance testing
-    sus strings []tea = []
+    sus strings tea[value] = []
     
     sus i drip = 0
     bestie (i < size) {
@@ -593,10 +593,10 @@ slay generate_large_string_array(size drip) []tea {
     damn strings
 }
 
-slay append_test_string(arr []tea, str tea) []tea {
+slay append_test_string(arr tea[value], str tea) tea[value]{
     fr fr Append string to test array
     sus length drip = len(arr)
-    sus new_arr []tea = []
+    sus new_arr tea[value] = []
     
     sus i drip = 0
     bestie (i < length) {

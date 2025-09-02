@@ -4,7 +4,7 @@ fr fr Links CURSED stdlib modules into compiled programs
 yeet "testz"
 
 squad StdlibLinker {
-    spill linked_modules []tea
+    spill linked_modules tea[value]
     spill function_table map[tea]tea
     spill initialized lit
 }
@@ -45,7 +45,7 @@ slay link_core_stdlib_modules(linker StdlibLinker) {
 slay validate_stdlib_linking(linker StdlibLinker) lit {
     fr fr Validate that all required modules are linked
     
-    sus required_modules []tea = ["testz", "error_drip", "atomic_drip", "big_mood"]
+    sus required_modules tea[value] = ["testz", "error_drip", "atomic_drip", "big_mood"]
     
     bestie required in required_modules {
         sus found lit = cringe

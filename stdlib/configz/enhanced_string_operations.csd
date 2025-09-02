@@ -10,7 +10,7 @@ fr fr Enhanced String Splitting Implementation
 fr fr ==========================================
 
 squad StringSplitResult {
-    sus parts []tea
+    sus parts tea[value]
     sus count drip
     sus success lit
     sus error_message tea
@@ -37,7 +37,7 @@ slay string_split_enhanced(input tea, delimiter tea, max_splits drip) StringSpli
         damn result
     }
     
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus part_count drip = 0
     sus current_part tea = ""
     sus input_length drip = string_length(input)
@@ -93,7 +93,7 @@ slay string_split_with_quotes(input tea, delimiter tea, quote_char tea) StringSp
         error_message: ""
     }
     
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus part_count drip = 0
     sus current_part tea = ""
     sus input_length drip = string_length(input)
@@ -146,7 +146,7 @@ fr fr ==========================================
 
 squad EnvExpansionResult {
     sus expanded_text tea
-    sus variables_found []tea
+    sus variables_found tea[value]
     sus success lit
     sus error_message tea
 }
@@ -161,7 +161,7 @@ slay expand_environment_variables(input tea) EnvExpansionResult {
     }
     
     sus expanded tea = ""
-    sus variables []tea = []
+    sus variables tea[value] = []
     sus var_count drip = 0
     sus input_length drip = string_length(input)
     sus position drip = 0
@@ -342,7 +342,7 @@ fr fr ==========================================
 fr fr Efficient Array Operations
 fr fr ==========================================
 
-slay array_join_strings(strings []tea, separator tea) tea {
+slay array_join_strings(strings tea[value], separator tea) tea {
     fr fr Efficiently join array of strings with separator
     sus count drip = len(strings)
     ready (count == 0) {
@@ -379,9 +379,9 @@ slay array_join_strings(strings []tea, separator tea) tea {
     damn result
 }
 
-slay array_filter_strings(strings []tea, predicate tea) []tea {
+slay array_filter_strings(strings tea[value], predicate tea) tea[value]{
     fr fr Filter string array based on predicate function
-    sus filtered []tea = []
+    sus filtered tea[value] = []
     sus filtered_count drip = 0
     sus count drip = len(strings)
     
@@ -401,9 +401,9 @@ slay array_filter_strings(strings []tea, predicate tea) []tea {
     damn filtered
 }
 
-slay array_map_strings(strings []tea, transform tea) []tea {
+slay array_map_strings(strings tea[value], transform tea) tea[value]{
     fr fr Transform each string in array using transformation function
-    sus mapped []tea = []
+    sus mapped tea[value] = []
     sus count drip = len(strings)
     
     sus i drip = 0
@@ -417,9 +417,9 @@ slay array_map_strings(strings []tea, transform tea) []tea {
     damn mapped
 }
 
-slay array_unique_strings(strings []tea) []tea {
+slay array_unique_strings(strings tea[value]) tea[value]{
     fr fr Remove duplicate strings from array while preserving order
-    sus unique []tea = []
+    sus unique tea[value] = []
     sus unique_count drip = 0
     sus count drip = len(strings)
     
@@ -442,7 +442,7 @@ fr fr ==========================================
 
 squad PatternMatchResult {
     sus matches lit
-    sus captured_groups []tea
+    sus captured_groups tea[value]
     sus match_position drip
     sus match_length drip
 }
@@ -840,10 +840,10 @@ slay ascii_to_char(ascii drip) tea {
     damn " "  fr fr Default to space
 }
 
-slay append_string_to_split_array(arr []tea, item tea) []tea {
+slay append_string_to_split_array(arr tea[value], item tea) tea[value]{
     fr fr Efficiently append string to array
     sus length drip = len(arr)
-    sus new_arr []tea = []
+    sus new_arr tea[value] = []
     
     sus i drip = 0
     bestie (i < length) {
@@ -855,7 +855,7 @@ slay append_string_to_split_array(arr []tea, item tea) []tea {
     damn new_arr
 }
 
-slay array_contains_string_enhanced(arr []tea, target tea) lit {
+slay array_contains_string_enhanced(arr tea[value], target tea) lit {
     fr fr Enhanced string array contains check
     sus length drip = len(arr)
     sus i drip = 0

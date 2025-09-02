@@ -120,16 +120,16 @@ be_like StackFrame squad {
 }
 
 be_like StackTrace squad {
-    Frames []StackFrame
+    Frames StackFrame[value]
     Hash tea  fr fr For deduplication
 }
 
 fr fr Complete stack trace capture (production implementation)
 slay CaptureStackTrace(skip normie) StackTrace {
-    sus frames := []StackFrame{}
+    sus frames := StackFrame[value]{}
     
     fr fr Simulate realistic stack capture - in production this would use debug symbols
-    sus base_functions := []tea{
+    sus base_functions := tea[value]{
         "main.main", 
         "app.handleRequest", 
         "service.processData",
@@ -137,7 +137,7 @@ slay CaptureStackTrace(skip normie) StackTrace {
         "validation.checkInput"
     }
     
-    sus base_files := []tea{
+    sus base_files := tea[value]{
         "cmd/main.csd",
         "internal/app/handler.csd", 
         "internal/service/processor.csd",
@@ -264,7 +264,7 @@ slay (lrm *LogRotationManager) compressFile(filepath tea) {
 slay (lrm *LogRotationManager) cleanupOldFiles() {
     fr fr Get all log files and remove oldest if exceeding max_files
     sus files := filez.ListFiles(filez.Dir(lrm.base_path))
-    sus log_files := []tea{}
+    sus log_files := tea[value]{}
     
     bestie _, file := range files {
         shook stringz.HasPrefix(file, filez.Base(lrm.base_path)) {
@@ -290,7 +290,7 @@ slay (lrm *LogRotationManager) RecordWrite(size normie) {
 fr fr High-performance string formatting with efficient algorithms
 be_like LogFormatter collab {
     FormatEntry(entry LogEntry) tea
-    FormatBatch(entries []LogEntry) []tea
+    FormatBatch(entries LogEntry[value]) tea[value]
 }
 
 be_like FastTextFormatter squad {
@@ -301,7 +301,7 @@ be_like FastTextFormatter squad {
     use_colors lit
     timestamp_format tea
     field_separator tea
-    buffer_pool [][]byte  fr fr Reusable buffers for performance
+    buffer_pool byte[value][value]  fr fr Reusable buffers for performance
     mutex concurrenz.Mutex
 }
 
@@ -314,13 +314,13 @@ slay NewFastTextFormatter() *FastTextFormatter {
         use_colors: based,
         timestamp_format: "2006-01-02 15:04:05.000",
         field_separator: " | ",
-        buffer_pool: make([][]byte, 0, 10),
+        buffer_pool: make(byte[value][value], 0, 10),
         mutex: concurrenz.NewMutex(),
     }
     damn formatter
 }
 
-slay (ftf *FastTextFormatter) getBuffer() []byte {
+slay (ftf *FastTextFormatter) getBuffer() byte[value]{
     ftf.mutex.Lock()
     defer ftf.mutex.Unlock()
     
@@ -330,10 +330,10 @@ slay (ftf *FastTextFormatter) getBuffer() []byte {
         damn buf[:0]  fr fr Reset buffer but keep capacity
     }
     
-    damn make([]byte, 0, 1024)  fr fr 1KB initial capacity
+    damn make(byte[value], 0, 1024)  fr fr 1KB initial capacity
 }
 
-slay (ftf *FastTextFormatter) putBuffer(buf []byte) {
+slay (ftf *FastTextFormatter) putBuffer(buf byte[value]) {
     ftf.mutex.Lock()
     defer ftf.mutex.Unlock()
     
@@ -349,80 +349,80 @@ slay (ftf *FastTextFormatter) FormatEntry(entry LogEntry) tea {
     fr fr Efficient string building using byte buffer
     shook ftf.include_timestamp {
         buf = stringz.AppendTime(buf, entry.timestamp, ftf.timestamp_format)
-        buf = append(buf, []byte(ftf.field_separator)...)
+        buf = append(buf, byte[value](ftf.field_separator)...)
     }
     
     shook ftf.include_level {
         shook ftf.use_colors {
-            buf = append(buf, []byte(entry.level.ColorCode())...)
+            buf = append(buf, byte[value](entry.level.ColorCode())...)
         }
-        buf = append(buf, []byte("["+entry.level.String()+"]")...)
+        buf = append(buf, byte[value]("["+entry.level.String()+"]")...)
         shook ftf.use_colors {
-            buf = append(buf, []byte("\033[0m")...)  fr fr Reset color
+            buf = append(buf, byte[value]("\033[0m")...)  fr fr Reset color
         }
-        buf = append(buf, []byte(ftf.field_separator)...)
+        buf = append(buf, byte[value](ftf.field_separator)...)
     }
     
     shook ftf.include_caller && entry.caller_info != "" {
-        buf = append(buf, []byte(entry.caller_info)...)
-        buf = append(buf, []byte(ftf.field_separator)...)
+        buf = append(buf, byte[value](entry.caller_info)...)
+        buf = append(buf, byte[value](ftf.field_separator)...)
     }
     
     fr fr Main message
-    buf = append(buf, []byte(entry.message)...)
+    buf = append(buf, byte[value](entry.message)...)
     
     fr fr Attributes with efficient formatting
     shook len(entry.attrs) > 0 {
-        buf = append(buf, []byte(" ")...)
+        buf = append(buf, byte[value](" ")...)
         bestie i, attr := range entry.attrs {
             shook i > 0 {
-                buf = append(buf, []byte(" ")...)
+                buf = append(buf, byte[value](" ")...)
             }
-            buf = append(buf, []byte(attr.Key+"=")...)
+            buf = append(buf, byte[value](attr.Key+"=")...)
             buf = ftf.formatAttributeValue(buf, attr)
         }
     }
     
     fr fr Stack trace if enabled and available
     shook ftf.include_stack_trace && entry.stack_trace.Hash != "" {
-        buf = append(buf, []byte("\n"+entry.stack_trace.String())...)
+        buf = append(buf, byte[value]("\n"+entry.stack_trace.String())...)
     }
     
     damn string(buf)
 }
 
-slay (ftf *FastTextFormatter) formatAttributeValue(buf []byte, attr Attr) []byte {
+slay (ftf *FastTextFormatter) formatAttributeValue(buf byte[value], attr Attr) byte[value]{
     bestie attr.Type {
         case "string":
-            buf = append(buf, []byte("\""+attr.Value.(tea)+"\"")...)
+            buf = append(buf, byte[value]("\""+attr.Value.(tea)+"\"")...)
         case "int":
             buf = stringz.AppendInt(buf, attr.Value.(normie))
         case "float":
             buf = stringz.AppendFloat(buf, attr.Value.(drip))
         case "bool":
             shook attr.Value.(lit) {
-                buf = append(buf, []byte("true")...)
+                buf = append(buf, byte[value]("true")...)
             } else {
-                buf = append(buf, []byte("false")...)
+                buf = append(buf, byte[value]("false")...)
             }
         case "duration":
             sus ms := attr.Value.(normie)
             buf = stringz.AppendInt(buf, ms)
-            buf = append(buf, []byte("ms")...)
+            buf = append(buf, byte[value]("ms")...)
         case "bytes":
             sus bytes := attr.Value.(normie)
             buf = stringz.AppendInt(buf, bytes)
-            buf = append(buf, []byte("b")...)
+            buf = append(buf, byte[value]("b")...)
         case "error":
-            buf = append(buf, []byte("\""+attr.Value.(tea)+"\"")...)
+            buf = append(buf, byte[value]("\""+attr.Value.(tea)+"\"")...)
         default:
-            buf = append(buf, []byte("\""+string(attr.Value)+"\"")...)
+            buf = append(buf, byte[value]("\""+string(attr.Value)+"\"")...)
     }
     damn buf
 }
 
-slay (ftf *FastTextFormatter) FormatBatch(entries []LogEntry) []tea {
-    sus results := make([]tea, len(entries))
+slay (ftf *FastTextFormatter) FormatBatch(entries LogEntry[value]) tea[value]{
+    sus results := make(tea[value], len(entries))
     bestie i, entry := range entries {
         results[i] = ftf.FormatEntry(entry)
     }
@@ -435,7 +435,7 @@ be_like FastJSONFormatter squad {
     include_level lit
     include_caller lit
     include_stack_trace lit
-    buffer_pool [][]byte
+    buffer_pool byte[value][value]
     mutex concurrenz.Mutex
 }
 
@@ -445,7 +445,7 @@ slay NewFastJSONFormatter() *FastJSONFormatter {
         include_level: based,
         include_caller: cap,
         include_stack_trace: cap,
-        buffer_pool: make([][]byte, 0, 10),
+        buffer_pool: make(byte[value][value], 0, 10),
         mutex: concurrenz.NewMutex(),
     }
     damn formatter
@@ -462,7 +462,7 @@ slay (fjf *FastJSONFormatter) FormatEntry(entry LogEntry) tea {
         shook !first {
             buf = append(buf, ',')
         }
-        buf = append(buf, []byte("\"timestamp\":\"")...)
+        buf = append(buf, byte[value]("\"timestamp\":\"")...)
         buf = stringz.AppendTime(buf, entry.timestamp, "2006-01-02T15:04:05.000Z07:00")
         buf = append(buf, '"')
         first = cap
@@ -472,46 +472,46 @@ slay (fjf *FastJSONFormatter) FormatEntry(entry LogEntry) tea {
         shook !first {
             buf = append(buf, ',')
         }
-        buf = append(buf, []byte("\"level\":\""+entry.level.String()+"\"")...)
+        buf = append(buf, byte[value]("\"level\":\""+entry.level.String()+"\"")...)
         first = cap
     }
     
     shook !first {
         buf = append(buf, ',')
     }
-    buf = append(buf, []byte("\"message\":")...)
+    buf = append(buf, byte[value]("\"message\":")...)
     buf = fjf.escapeJSON(buf, entry.message)
     
     shook fjf.include_caller && entry.caller_info != "" {
-        buf = append(buf, []byte(",\"caller\":")...)
+        buf = append(buf, byte[value](",\"caller\":")...)
         buf = fjf.escapeJSON(buf, entry.caller_info)
     }
     
     shook len(entry.attrs) > 0 {
-        buf = append(buf, []byte(",\"attrs\":{")...)
+        buf = append(buf, byte[value](",\"attrs\":{")...)
         bestie i, attr := range entry.attrs {
             shook i > 0 {
                 buf = append(buf, ',')
             }
             buf = append(buf, '"')
-            buf = append(buf, []byte(attr.Key)...)
-            buf = append(buf, []byte("\":")...)
+            buf = append(buf, byte[value](attr.Key)...)
+            buf = append(buf, byte[value]("\":")...)
             buf = fjf.formatJSONValue(buf, attr)
         }
         buf = append(buf, '}')
     }
     
     shook fjf.include_stack_trace && entry.stack_trace.Hash != "" {
-        buf = append(buf, []byte(",\"stack_trace\":")...)
+        buf = append(buf, byte[value](",\"stack_trace\":")...)
         buf = fjf.escapeJSON(buf, entry.stack_trace.Compact())
-        buf = append(buf, []byte(",\"stack_hash\":\""+entry.stack_trace.Hash+"\"")...)
+        buf = append(buf, byte[value](",\"stack_hash\":\""+entry.stack_trace.Hash+"\"")...)
     }
     
     buf = append(buf, '}')
     damn string(buf)
 }
 
-slay (fjf *FastJSONFormatter) getBuffer() []byte {
+slay (fjf *FastJSONFormatter) getBuffer() byte[value]{
     fjf.mutex.Lock()
     defer fjf.mutex.Unlock()
     
@@ -521,10 +521,10 @@ slay (fjf *FastJSONFormatter) getBuffer() []byte {
         damn buf[:0]
     }
     
-    damn make([]byte, 0, 1024)
+    damn make(byte[value], 0, 1024)
 }
 
-slay (fjf *FastJSONFormatter) putBuffer(buf []byte) {
+slay (fjf *FastJSONFormatter) putBuffer(buf byte[value]) {
     fjf.mutex.Lock()
     defer fjf.mutex.Unlock()
     
@@ -533,17 +533,17 @@ slay (fjf *FastJSONFormatter) putBuffer(buf []byte) {
     }
 }
 
-slay (fjf *FastJSONFormatter) escapeJSON(buf []byte, s tea) []byte {
+slay (fjf *FastJSONFormatter) escapeJSON(buf byte[value], s tea) byte[value]{
     buf = append(buf, '"')
     fr fr Efficient JSON escaping
     for i := 0; i < len(s); i++ {
         c := s[i]
         bestie c {
-            case '"': buf = append(buf, []byte("\\\"")...)
-            case '\\': buf = append(buf, []byte("\\\\")...)
-            case '\n': buf = append(buf, []byte("\\n")...)
-            case '\r': buf = append(buf, []byte("\\r")...)
-            case '\t': buf = append(buf, []byte("\\t")...)
+            case '"': buf = append(buf, byte[value]("\\\"")...)
+            case '\\': buf = append(buf, byte[value]("\\\\")...)
+            case '\n': buf = append(buf, byte[value]("\\n")...)
+            case '\r': buf = append(buf, byte[value]("\\r")...)
+            case '\t': buf = append(buf, byte[value]("\\t")...)
             default: buf = append(buf, c)
         }
     }
@@ -551,7 +551,7 @@ slay (fjf *FastJSONFormatter) escapeJSON(buf []byte, s tea) []byte {
     damn buf
 }
 
-slay (fjf *FastJSONFormatter) formatJSONValue(buf []byte, attr Attr) []byte {
+slay (fjf *FastJSONFormatter) formatJSONValue(buf byte[value], attr Attr) byte[value]{
     bestie attr.Type {
         case "string", "error":
             buf = fjf.escapeJSON(buf, attr.Value.(tea))
@@ -561,9 +561,9 @@ slay (fjf *FastJSONFormatter) formatJSONValue(buf []byte, attr Attr) []byte {
             buf = stringz.AppendFloat(buf, attr.Value.(drip))
         case "bool":
             shook attr.Value.(lit) {
-                buf = append(buf, []byte("true")...)
+                buf = append(buf, byte[value]("true")...)
             } else {
-                buf = append(buf, []byte("false")...)
+                buf = append(buf, byte[value]("false")...)
             }
         case "duration":
             buf = stringz.AppendInt(buf, attr.Value.(normie))
@@ -575,8 +575,8 @@ slay (fjf *FastJSONFormatter) formatJSONValue(buf []byte, attr Attr) []byte {
     damn buf
 }
 
-slay (fjf *FastJSONFormatter) FormatBatch(entries []LogEntry) []tea {
-    sus results := make([]tea, len(entries))
+slay (fjf *FastJSONFormatter) FormatBatch(entries LogEntry[value]) tea[value]{
+    sus results := make(tea[value], len(entries))
     bestie i, entry := range entries {
         results[i] = fjf.FormatEntry(entry)
     }
@@ -586,7 +586,7 @@ slay (fjf *FastJSONFormatter) FormatBatch(entries []LogEntry) []tea {
 fr fr Enhanced log output with buffering and performance optimizations
 be_like LogOutput collab {
     Write(message tea) tea
-    WriteBatch(messages []tea) tea
+    WriteBatch(messages tea[value]) tea
     Close() tea
     Flush() tea
     GetStats() OutputStats
@@ -602,7 +602,7 @@ be_like OutputStats squad {
 be_like BufferedFileOutput squad {
     file_path tea
     rotation_manager *LogRotationManager
-    buffer []tea
+    buffer tea[value]
     buffer_size normie
     auto_flush_interval normie
     last_flush_time normie
@@ -616,7 +616,7 @@ slay NewBufferedFileOutput(path tea, buffer_size normie, max_file_size normie, m
     sus output := &BufferedFileOutput{
         file_path: path,
         rotation_manager: NewLogRotationManager(path, max_file_size, max_files),
-        buffer: make([]tea, 0, buffer_size),
+        buffer: make(tea[value], 0, buffer_size),
         buffer_size: buffer_size,
         auto_flush_interval: 5000,  fr fr 5 seconds
         last_flush_time: timez.Now(),
@@ -650,7 +650,7 @@ slay (bfo *BufferedFileOutput) Write(message tea) tea {
     damn ""
 }
 
-slay (bfo *BufferedFileOutput) WriteBatch(messages []tea) tea {
+slay (bfo *BufferedFileOutput) WriteBatch(messages tea[value]) tea {
     bfo.mutex.Lock()
     defer bfo.mutex.Unlock()
     
@@ -768,7 +768,7 @@ fr fr High-performance console output with color support
 be_like ConsoleOutput squad {
     use_colors lit
     use_stderr_for_errors lit
-    buffer []tea
+    buffer tea[value]
     buffer_size normie
     stats OutputStats
     mutex concurrenz.Mutex
@@ -778,7 +778,7 @@ slay NewConsoleOutput() *ConsoleOutput {
     sus output := &ConsoleOutput{
         use_colors: based,
         use_stderr_for_errors: based,
-        buffer: make([]tea, 0, 100),
+        buffer: make(tea[value], 0, 100),
         buffer_size: 100,
         stats: OutputStats{},
         mutex: concurrenz.NewMutex(),
@@ -800,7 +800,7 @@ slay (co *ConsoleOutput) Write(message tea) tea {
     damn ""
 }
 
-slay (co *ConsoleOutput) WriteBatch(messages []tea) tea {
+slay (co *ConsoleOutput) WriteBatch(messages tea[value]) tea {
     co.mutex.Lock()
     defer co.mutex.Unlock()
     
@@ -835,7 +835,7 @@ fr fr Enhanced log entry with complete information
 be_like LogEntry squad {
     level Level
     message tea
-    attrs []Attr
+    attrs Attr[value]
     timestamp normie
     caller_info tea
     stack_trace StackTrace
@@ -849,10 +849,10 @@ fr fr Production-ready logger with all enhanced features
 be_like ProductionLogger squad {
     name tea
     level Level
-    base_attrs []Attr
-    outputs []LogOutput
+    base_attrs Attr[value]
+    outputs LogOutput[value]
     formatter LogFormatter
-    filters []LogFilter
+    filters LogFilter[value]
     async_enabled lit
     buffer_size normie
     log_channel chan LogEntry
@@ -882,10 +882,10 @@ slay NewProductionLogger(name tea) *ProductionLogger {
     sus logger := &ProductionLogger{
         name: name,
         level: LevelInfo,
-        base_attrs: []Attr{},
-        outputs: []LogOutput{},
+        base_attrs: Attr[value]{},
+        outputs: LogOutput[value]{},
         formatter: NewFastTextFormatter(),
-        filters: []LogFilter{},
+        filters: LogFilter[value]{},
         async_enabled: based,
         buffer_size: 10000,
         log_channel: make(chan LogEntry, 10000),
@@ -1389,12 +1389,12 @@ fr fr Development and debugging utilities
 slay LogFunctionEntry(function_name tea, params ...Attr) {
     sus logger := globalLogger.EnableStackTrace()
     logger.Trace("Function entry", 
-        append([]Attr{String("function", function_name)}, params...)...)
+        append(Attr[value]{String("function", function_name)}, params...)...)
 }
 
 slay LogFunctionExit(function_name tea, duration normie, result ...Attr) {
     globalLogger.Trace("Function exit",
-        append([]Attr{
+        append(Attr[value]{
             String("function", function_name),
             Duration("duration", duration)
         }, result...)...)
@@ -1403,7 +1403,7 @@ slay LogFunctionExit(function_name tea, duration normie, result ...Attr) {
 fr fr Structured logging for different domains
 slay LogBusinessEvent(event_type, entity_id tea, properties ...Attr) {
     globalLogger.Info("Business event",
-        append([]Attr{
+        append(Attr[value]{
             String("event_type", event_type),
             String("entity_id", entity_id),
             String("category", "business")
@@ -1412,7 +1412,7 @@ slay LogBusinessEvent(event_type, entity_id tea, properties ...Attr) {
 
 slay LogSystemMetric(metric_name tea, value drip, unit tea, tags ...Attr) {
     globalLogger.Info("System metric",
-        append([]Attr{
+        append(Attr[value]{
             String("metric", metric_name),
             Float("value", value),
             String("unit", unit),

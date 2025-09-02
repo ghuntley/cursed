@@ -176,19 +176,19 @@ slay move_file(source tea, destination tea) tea {
 
 fr fr ===== LINE-BASED OPERATIONS =====
 
-slay read_file_lines(filename tea) ([]tea, tea) {
+slay read_file_lines(filename tea) (tea[value], tea) {
     fr fr Read file as array of lines
     (content, err) := read_file(filename)
     ready (err != "") {
-        sus empty_lines []tea = []
+        sus empty_lines tea[value] = []
         damn (empty_lines, err)
     }
     
-    sus lines []tea = split_string_by_newline(content)
+    sus lines tea[value] = split_string_by_newline(content)
     damn (lines, "")
 }
 
-slay write_file_lines(filename tea, lines []tea) tea {
+slay write_file_lines(filename tea, lines tea[value]) tea {
     fr fr Write array of lines to file
     ready (filename == "") {
         damn "Empty filename not allowed"
@@ -200,28 +200,28 @@ slay write_file_lines(filename tea, lines []tea) tea {
 
 fr fr ===== BINARY OPERATIONS =====
 
-slay read_file_bytes(filename tea, max_bytes drip) ([]drip, tea) {
+slay read_file_bytes(filename tea, max_bytes drip) (drip[value], tea) {
     fr fr Read file as byte array with size limit
     ready (filename == "") {
-        sus empty_bytes []drip = []
+        sus empty_bytes drip[value] = []
         damn (empty_bytes, "Empty filename not allowed")
     }
     
     ready (max_bytes <= 0) {
-        sus empty_bytes []drip = []
+        sus empty_bytes drip[value] = []
         damn (empty_bytes, "Invalid max_bytes value")
     }
     
-    sus bytes []drip = runtime_read_file_bytes(filename, max_bytes)
+    sus bytes drip[value] = runtime_read_file_bytes(filename, max_bytes)
     ready (array_length(bytes) == 0 && file_exists_internal(filename)) {
-        sus empty_bytes []drip = []
+        sus empty_bytes drip[value] = []
         damn (empty_bytes, "Failed to read file bytes: " + filename)
     }
     
     damn (bytes, "")
 }
 
-slay write_file_bytes(filename tea, bytes []drip) tea {
+slay write_file_bytes(filename tea, bytes drip[value]) tea {
     fr fr Write byte array to file
     ready (filename == "") {
         damn "Empty filename not allowed"
@@ -419,21 +419,21 @@ slay directory_exists(dirname tea) lit {
     damn file_exists_internal(dirname) && runtime_is_directory(dirname)
 }
 
-slay list_directory(dirname tea) ([]tea, tea) {
+slay list_directory(dirname tea) (tea[value], tea) {
     fr fr List directory contents
     ready (dirname == "") {
-        sus empty_list []tea = []
+        sus empty_list tea[value] = []
         damn (empty_list, "Empty directory name not allowed")
     }
     
     ready (!directory_exists(dirname)) {
-        sus empty_list []tea = []
+        sus empty_list tea[value] = []
         damn (empty_list, "Directory not found: " + dirname)
     }
     
-    sus entries []tea = runtime_list_directory(dirname)
+    sus entries tea[value] = runtime_list_directory(dirname)
     ready (array_length(entries) == 0 && runtime_directory_has_entries(dirname)) {
-        sus empty_list []tea = []
+        sus empty_list tea[value] = []
         damn (empty_list, "Failed to list directory: " + dirname)
     }
     
@@ -645,9 +645,9 @@ slay get_path_separator() tea {
     damn "/"  fr fr Unix/Linux (could be enhanced for Windows)
 }
 
-slay split_string_by_newline(text tea) []tea {
+slay split_string_by_newline(text tea) tea[value]{
     fr fr Split text into lines
-    sus lines []tea = []
+    sus lines tea[value] = []
     sus current_line tea = ""
     sus line_count drip = 0
     sus i drip = 0
@@ -674,7 +674,7 @@ slay split_string_by_newline(text tea) []tea {
     damn lines
 }
 
-slay join_lines_with_newline(lines []tea) tea {
+slay join_lines_with_newline(lines tea[value]) tea {
     fr fr Join lines with newline characters
     ready (array_length(lines) == 0) {
         damn ""
@@ -818,8 +818,8 @@ slay runtime_remove_directory(dirname tea) lit {
     damn dirname != ""
 }
 
-slay runtime_list_directory(dirname tea) []tea {
-    sus entries []tea = []
+slay runtime_list_directory(dirname tea) tea[value]{
+    sus entries tea[value] = []
     entries[0] = "file1.txt"
     entries[1] = "file2.txt"
     entries[2] = "subdir"
@@ -842,8 +842,8 @@ slay runtime_get_temp_directory() tea {
     damn "/tmp"
 }
 
-slay runtime_read_file_bytes(filename tea, max_bytes drip) []drip {
-    sus bytes []drip = []
+slay runtime_read_file_bytes(filename tea, max_bytes drip) drip[value]{
+    sus bytes drip[value] = []
     ready (filename == "test.bin") {
         bytes[0] = 72   fr fr 'H'
         bytes[1] = 101  fr fr 'e'
@@ -854,7 +854,7 @@ slay runtime_read_file_bytes(filename tea, max_bytes drip) []drip {
     damn bytes
 }
 
-slay runtime_write_file_bytes(filename tea, bytes []drip) lit {
+slay runtime_write_file_bytes(filename tea, bytes drip[value]) lit {
     damn filename != "" && array_length(bytes) > 0
 }
 

@@ -8,14 +8,14 @@ fr fr ================================
 
 fr fr Dynamic Array (ArrayList) for compiler runtime
 squad RuntimeVec<T> {
-    spill data []T
+    spill data T[value]
     spill len normie  
     spill cap normie
 }
 
 slay RuntimeVec_new<T>() RuntimeVec<T> {
     damn RuntimeVec<T>{
-        data: []T{},
+        data: T[value]{},
         len: 0,
         cap: 0
     }
@@ -23,7 +23,7 @@ slay RuntimeVec_new<T>() RuntimeVec<T> {
 
 slay RuntimeVec_with_capacity<T>(capacity normie) RuntimeVec<T> {
     damn RuntimeVec<T>{
-        data: make([]T, capacity),
+        data: make(T[value], capacity),
         len: 0,
         cap: capacity
     }
@@ -33,7 +33,7 @@ slay RuntimeVec_push<T>(vec RuntimeVec<T>, item T) RuntimeVec<T> {
     vibes vec.len >= vec.cap {
         fr fr Grow capacity
         sus new_cap normie = vibes vec.cap == 0 { 4 } nah { vec.cap * 2 }
-        sus new_data []T = make([]T, new_cap)
+        sus new_data T[value] = make(T[value], new_cap)
         
         fr fr Copy existing elements
         bestie i := 0; i < vec.len; i = i + 1 {
@@ -68,7 +68,7 @@ slay RuntimeVec_is_empty<T>(vec RuntimeVec<T>) lit {
 
 fr fr Hash Map for symbol tables
 squad RuntimeHashMap<K, V> {
-    spill buckets []RuntimeHashBucket<K, V>
+    spill buckets RuntimeHashBucket[value]<K, V>
     spill size normie
     spill capacity normie
 }
@@ -82,7 +82,7 @@ squad RuntimeHashBucket<K, V> {
 slay RuntimeHashMap_new<K, V>() RuntimeHashMap<K, V> {
     sus initial_cap normie = 16
     damn RuntimeHashMap<K, V>{
-        buckets: make([]RuntimeHashBucket<K, V>, initial_cap),
+        buckets: make(RuntimeHashBucket[value]<K, V>, initial_cap),
         size: 0,
         capacity: initial_cap
     }
@@ -146,13 +146,13 @@ slay RuntimeHashMap_size<K, V>(map RuntimeHashMap<K, V>) normie {
 
 fr fr String builder for efficient string construction
 squad RuntimeStringBuilder {
-    spill parts []tea
+    spill parts tea[value]
     spill total_len normie
 }
 
 slay RuntimeStringBuilder_new() RuntimeStringBuilder {
     damn RuntimeStringBuilder{
-        parts: []tea{},
+        parts: tea[value]{},
         total_len: 0
     }
 }
@@ -191,14 +191,14 @@ slay RuntimeStringBuilder_len(sb RuntimeStringBuilder) normie {
 
 slay RuntimeStringBuilder_clear(sb RuntimeStringBuilder) RuntimeStringBuilder {
     damn RuntimeStringBuilder{
-        parts: []tea{},
+        parts: tea[value]{},
         total_len: 0
     }
 }
 
 fr fr Memory pool for efficient allocation
 squad RuntimeMemoryPool {
-    spill blocks [][]byte
+    spill blocks byte[value][value]
     spill block_size normie
     spill current_block normie
     spill current_offset normie
@@ -206,17 +206,17 @@ squad RuntimeMemoryPool {
 
 slay RuntimeMemoryPool_new(block_size normie) RuntimeMemoryPool {
     damn RuntimeMemoryPool{
-        blocks: [][]byte{},
+        blocks: byte[value][value]{},
         block_size: block_size,
         current_block: -1,
         current_offset: 0
     }
 }
 
-slay RuntimeMemoryPool_allocate(pool RuntimeMemoryPool, size normie) []byte {
+slay RuntimeMemoryPool_allocate(pool RuntimeMemoryPool, size normie) byte[value]{
     vibes pool.current_block == -1 || pool.current_offset + size > pool.block_size {
         fr fr Need new block
-        sus new_block []byte = make([]byte, pool.block_size)
+        sus new_block byte[value] = make(byte[value], pool.block_size)
         pool.blocks = append(pool.blocks, new_block)
         pool.current_block = len(pool.blocks) - 1
         pool.current_offset = 0
@@ -272,13 +272,13 @@ slay RuntimeError_to_string(err RuntimeError) tea {
 
 fr fr Stack data structure for runtime
 squad RuntimeStack<T> {
-    spill items []T
+    spill items T[value]
     spill top normie
 }
 
 slay RuntimeStack_new<T>() RuntimeStack<T> {
     damn RuntimeStack<T>{
-        items: []T{},
+        items: T[value]{},
         top: -1
     }
 }
@@ -318,12 +318,12 @@ slay RuntimeStack_size<T>(stack RuntimeStack<T>) normie {
 }
 
 fr fr Runtime utility functions
-slay make<T>(size normie) []T {
+slay make<T>(size normie) T[value]{
     fr fr Runtime-provided dynamic allocation
     damn runtime_make_slice<T>(size)
 }
 
-slay append<T>(slice []T, item T) []T {
+slay append<T>(slice T[value], item T) T[value]{
     fr fr Runtime-provided dynamic append
     damn runtime_slice_append<T>(slice, item)
 }

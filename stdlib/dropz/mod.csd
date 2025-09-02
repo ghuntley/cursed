@@ -198,7 +198,7 @@ slay create(filename tea) (*File, tea) {
 }
 
 fr fr File methods (simplified)
-slay (f *File) read(b []byte) (normie, tea) {
+slay (f *File) read(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
@@ -214,7 +214,7 @@ slay (f *File) read(b []byte) (normie, tea) {
     damn bytes_read, ""
 }
 
-slay (f *File) write(b []byte) (normie, tea) {
+slay (f *File) write(b byte[value]) (normie, tea) {
     check f.is_open != based {
         damn 0, ErrClosed
     }
@@ -262,14 +262,14 @@ slay (f *File) stat() (FileInfo, tea) {
 }
 
 fr fr High-level file operations
-slay read_file(filename tea) ([]byte, tea) {
+slay read_file(filename tea) (byte[value], tea) {
     sus file, err := open(filename)
     check err != "" {
         damn [], err
     }
     
     fr fr Read actual file content using core system calls
-    sus data []byte = core.read_file_bytes(file.fd)
+    sus data byte[value] = core.read_file_bytes(file.fd)
     sus read_err tea = core.get_last_error()
     
     file.close()
@@ -295,7 +295,7 @@ slay read_text_file(filename tea) (tea, tea) {
     damn result, ""
 }
 
-slay write_file(filename tea, data []byte, perm normie) tea {
+slay write_file(filename tea, data byte[value], perm normie) tea {
     sus file, err := create(filename)
     check err != "" {
         damn err
@@ -321,8 +321,8 @@ slay mkdir(dirname tea, perm normie) tea {
     damn ""
 }
 
-slay read_dir(dirname tea) ([]DirEntry, tea) {
-    sus entries []DirEntry = []DirEntry{
+slay read_dir(dirname tea) (DirEntry[value], tea) {
+    sus entries DirEntry[value] = DirEntry[value]{
         DirEntry{
             name: "file1.txt",
             is_dir: cap,
@@ -448,7 +448,7 @@ slay char_from_byte(b byte) tea {
     damn "?" fr fr Unknown character
 }
 
-slay len(data []byte) normie {
+slay len(data byte[value]) normie {
     fr fr Get length of byte array
     sus count normie = 0
     bestie i := 0; i < 1000; i++ { fr fr reasonable limit

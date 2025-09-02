@@ -95,9 +95,9 @@ slay test_statistics_performance() {
     vibez.spill("-------------------------------------------")
     
     fr fr Generate test data
-    sus small_data []meal = []
-    sus medium_data []meal = []
-    sus large_data []meal = []
+    sus small_data meal[value] = []
+    sus medium_data meal[value] = []
+    sus large_data meal[value] = []
     
     sus i drip = 0
     periodt (i < SMALL_SIZE) {
@@ -143,9 +143,9 @@ slay test_sorting_performance() {
     vibez.spill("----------------------------------------")
     
     fr fr Generate unsorted test data
-    sus small_unsorted []drip = []
-    sus medium_unsorted []drip = []
-    sus large_unsorted []drip = []
+    sus small_unsorted drip[value] = []
+    sus medium_unsorted drip[value] = []
+    sus large_unsorted drip[value] = []
     
     sus i drip = 0
     periodt (i < SMALL_SIZE) {
@@ -166,13 +166,13 @@ slay test_sorting_performance() {
     }
     
     fr fr Test different sorting algorithms
-    sus small_quicksorted []drip = optimized_quicksort_integers(small_unsorted, 0, small_unsorted.len - 1)
+    sus small_quicksorted drip[value] = optimized_quicksort_integers(small_unsorted, 0, small_unsorted.len - 1)
     vibez.spill("✓ Small dataset QuickSort completed (" + small_unsorted.len + " elements)")
     
-    sus medium_hybrid []drip = hybrid_sort_integers(medium_unsorted)
+    sus medium_hybrid drip[value] = hybrid_sort_integers(medium_unsorted)
     vibez.spill("✓ Medium dataset Hybrid Sort completed (" + medium_unsorted.len + " elements)")
     
-    sus large_optimized []drip = optimized_sort_array(large_unsorted)
+    sus large_optimized drip[value] = optimized_sort_array(large_unsorted)
     vibez.spill("✓ Large dataset Optimized Sort completed (" + large_unsorted.len + " elements)")
     
     fr fr Verify sorting correctness
@@ -194,12 +194,12 @@ slay test_scalability() {
     vibez.spill("---------------------------------------------")
     
     fr fr Test with progressively larger datasets
-    sus sizes []drip = [1000, 5000, 10000]
+    sus sizes drip[value] = [1000, 5000, 10000]
     sus i drip = 0
     
     periodt (i < 3) {
         sus size drip = sizes[i]
-        sus test_data []drip = []
+        sus test_data drip[value] = []
         
         sus j drip = 0
         periodt (j < size) {
@@ -207,7 +207,7 @@ slay test_scalability() {
             j = j + 1
         }
         
-        sus sorted_data []drip = optimized_sort_array(test_data)
+        sus sorted_data drip[value] = optimized_sort_array(test_data)
         sus is_sorted lit = verify_sorted(sorted_data)
         
         ready (is_sorted) {
@@ -244,7 +244,7 @@ slay test_memory_efficiency() {
     vibez.spill("✓ HashMap: O(n) space with ~75% load factor")
     
     fr fr Simulate memory-efficient operations
-    sus memory_test_data []drip = []
+    sus memory_test_data drip[value] = []
     sus i drip = 0
     periodt (i < 1000) {
         memory_test_data[i] = i * 3 + 7
@@ -252,7 +252,7 @@ slay test_memory_efficiency() {
     }
     
     fr fr Test in-place operations
-    sus heap_sorted []drip = heap_sort_integers(memory_test_data)
+    sus heap_sorted drip[value] = heap_sort_integers(memory_test_data)
     vibez.spill("✓ In-place HeapSort completed with minimal extra memory")
     
     fr fr Test HashMap memory efficiency

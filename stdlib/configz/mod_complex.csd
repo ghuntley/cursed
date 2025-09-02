@@ -18,11 +18,11 @@ fr fr These would be implemented when struct syntax is fully supported
 
 fr fr squad ConfigSchema {
 fr fr     spill name tea
-fr fr     spill required_keys []tea
-fr fr     spill optional_keys []tea
-fr fr     spill default_values []tea
-fr fr     spill validators []tea
-fr fr     spill nested_schemas []tea
+fr fr     spill required_keys tea[value]
+fr fr     spill optional_keys tea[value]
+fr fr     spill default_values tea[value]
+fr fr     spill validators tea[value]
+fr fr     spill nested_schemas tea[value]
 fr fr }
 
 fr fr squad ConfigValue {
@@ -34,12 +34,12 @@ fr fr     spill source tea
 fr fr }
 
 fr fr squad ConfigContext {
-fr fr     spill values []ConfigValue
+fr fr     spill values ConfigValue[value]
 fr fr     spill schema ConfigSchema
 fr fr     spill format tea
 fr fr     spill source_file tea
 fr fr     spill environment tea
-fr fr     spill validation_errors []tea
+fr fr     spill validation_errors tea[value]
 fr fr }
 
 fr fr ==========================================
@@ -71,7 +71,7 @@ slay parse_json_advanced(content tea) ConfigContext {
     
     sus trimmed tea = trim_whitespace(content)
     ready (is_valid_json(trimmed)) {
-        sus parsed_values []ConfigValue = extract_json_values(trimmed)
+        sus parsed_values ConfigValue[value] = extract_json_values(trimmed)
         ctx.values = parsed_values
         ctx = apply_environment_substitution(ctx)
         ctx = validate_configuration(ctx)
@@ -95,7 +95,7 @@ slay parse_yaml_advanced(content tea) ConfigContext {
     
     sus trimmed tea = trim_whitespace(content)
     ready (is_valid_yaml(trimmed)) {
-        sus parsed_values []ConfigValue = extract_yaml_values(trimmed)
+        sus parsed_values ConfigValue[value] = extract_yaml_values(trimmed)
         ctx.values = parsed_values
         ctx = apply_environment_substitution(ctx)
         ctx = validate_configuration(ctx)
@@ -119,7 +119,7 @@ slay parse_toml_advanced(content tea) ConfigContext {
     
     sus trimmed tea = trim_whitespace(content)
     ready (is_valid_toml(trimmed)) {
-        sus parsed_values []ConfigValue = extract_toml_values(trimmed)
+        sus parsed_values ConfigValue[value] = extract_toml_values(trimmed)
         ctx.values = parsed_values
         ctx = apply_environment_substitution(ctx)
         ctx = validate_configuration(ctx)
@@ -141,7 +141,7 @@ slay parse_env_advanced(content tea) ConfigContext {
         validation_errors: []
     }
     
-    sus lines []tea = split_by_newline(content)
+    sus lines tea[value] = split_by_newline(content)
     sus i normie = 0
     bestie (i < len(lines)) {
         sus line tea = trim_whitespace(lines[i])
@@ -214,7 +214,7 @@ slay validate_against_schema(ctx ConfigContext, schema ConfigSchema) ConfigConte
     sus j normie = 0
     bestie (j < len(schema.default_values)) {
         sus default_pair tea = schema.default_values[j]
-        sus parts []tea = split_by_colon(default_pair)
+        sus parts tea[value] = split_by_colon(default_pair)
         ready (len(parts) == 2) {
             sus key tea = parts[0]
             sus default_value tea = parts[1]
@@ -258,7 +258,7 @@ slay apply_environment_substitution(ctx ConfigContext) ConfigContext {
 slay expand_environment_variables(input tea) tea {
     fr fr Expand ${VAR} and $VAR patterns
     sus result tea = input
-    sus env_patterns []tea = extract_env_patterns(input)
+    sus env_patterns tea[value] = extract_env_patterns(input)
     
     sus i normie = 0
     bestie (i < len(env_patterns)) {
@@ -284,7 +284,7 @@ slay load_environment_config() ConfigContext {
     }
     
     fr fr Load common environment variables
-    sus common_env_vars []tea = [
+    sus common_env_vars tea[value] = [
         "HOME", "PATH", "USER", "SHELL", "EDITOR", "LANG", "TZ",
         "NODE_ENV", "ENVIRONMENT", "DEBUG", "PORT", "HOST",
         "DATABASE_URL", "API_KEY", "SECRET_KEY", "JWT_SECRET"
@@ -336,7 +336,7 @@ slay merge_configurations(base_ctx ConfigContext, override_ctx ConfigContext) Co
     damn merged_ctx
 }
 
-slay create_configuration_layers(file_configs []ConfigContext, env_config ConfigContext) ConfigContext {
+slay create_configuration_layers(file_configs ConfigContext[value], env_config ConfigContext) ConfigContext {
     fr fr Create layered configuration with precedence: files < environment < command line
     sus result_ctx ConfigContext = ConfigContext{
         values: [],
@@ -385,7 +385,7 @@ slay apply_validation_rules(ctx ConfigContext, schema ConfigSchema) ConfigContex
     sus i normie = 0
     bestie (i < len(schema.validators)) {
         sus validator tea = schema.validators[i]
-        sus parts []tea = split_by_colon(validator)
+        sus parts tea[value] = split_by_colon(validator)
         ready (len(parts) == 2) {
             sus key tea = parts[0]
             sus rule tea = parts[1]
@@ -575,9 +575,9 @@ fr fr ==========================================
 fr fr High-Level Configuration API
 fr fr ==========================================
 
-slay load_config_with_defaults(config_files []tea, default_schema ConfigSchema) ConfigContext {
+slay load_config_with_defaults(config_files tea[value], default_schema ConfigSchema) ConfigContext {
     fr fr Load configuration with multiple files and defaults
-    sus file_contexts []ConfigContext = []
+    sus file_contexts ConfigContext[value] = []
     
     fr fr Load all configuration files
     sus i normie = 0
@@ -630,7 +630,7 @@ slay get_config_bool(ctx ConfigContext, key tea, default_value lit) lit {
     damn convert_to_boolean(value)
 }
 
-slay get_config_array(ctx ConfigContext, key tea) []tea {
+slay get_config_array(ctx ConfigContext, key tea) tea[value]{
     fr fr Get array configuration value
     sus value tea = get_configuration_value(ctx, key)
     ready (is_array_value(value)) {
@@ -644,7 +644,7 @@ slay is_configuration_valid(ctx ConfigContext) lit {
     damn len(ctx.validation_errors) == 0
 }
 
-slay get_validation_errors(ctx ConfigContext) []tea {
+slay get_validation_errors(ctx ConfigContext) tea[value]{
     fr fr Get all validation errors
     damn ctx.validation_errors
 }
@@ -665,10 +665,10 @@ slay trim_whitespace(str tea) tea {
     damn str
 }
 
-slay split_by_newline(content tea) []tea {
+slay split_by_newline(content tea) tea[value]{
     fr fr Split content by newlines
     fr fr Simplified implementation - would use proper string splitting in real implementation
-    sus lines []tea = []
+    sus lines tea[value] = []
     ready (string_contains(content, "\n")) {
         lines = append_string(lines, "line1")
         lines = append_string(lines, "line2")
@@ -678,9 +678,9 @@ slay split_by_newline(content tea) []tea {
     damn lines
 }
 
-slay split_by_colon(str tea) []tea {
+slay split_by_colon(str tea) tea[value]{
     fr fr Split string by colon
-    sus parts []tea = []
+    sus parts tea[value] = []
     ready (string_contains(str, ":")) {
         sus before tea = string_before(str, ":")
         sus after tea = string_after(str, ":")
@@ -843,25 +843,25 @@ fr fr ==========================================
 fr fr Array Helper Functions
 fr fr ==========================================
 
-slay append_string(arr []tea, item tea) []tea {
+slay append_string(arr tea[value], item tea) tea[value]{
     fr fr Append string to array (simplified)
     fr fr In real implementation, would use proper array operations
     damn arr
 }
 
-slay append_config_value(arr []ConfigValue, item ConfigValue) []ConfigValue {
+slay append_config_value(arr ConfigValue[value], item ConfigValue) ConfigValue[value]{
     fr fr Append ConfigValue to array (simplified)
     fr fr In real implementation, would use proper array operations
     damn arr
 }
 
-slay append_config_context(arr []ConfigContext, item ConfigContext) []ConfigContext {
+slay append_config_context(arr ConfigContext[value], item ConfigContext) ConfigContext[value]{
     fr fr Append ConfigContext to array (simplified)
     fr fr In real implementation, would use proper array operations
     damn arr
 }
 
-slay add_error(errors []tea, error_msg tea) []tea {
+slay add_error(errors tea[value], error_msg tea) tea[value]{
     fr fr Add error message to array
     fr fr In real implementation, would use proper array operations
     damn errors
@@ -938,30 +938,30 @@ slay is_valid_env_line(line tea) lit {
     damn (string_contains(line, "=") && !string_starts_with(line, "#"))
 }
 
-slay extract_json_values(content tea) []ConfigValue {
+slay extract_json_values(content tea) ConfigValue[value]{
     fr fr Extract values from JSON content (simplified)
-    sus values []ConfigValue = []
+    sus values ConfigValue[value] = []
     fr fr Simplified parsing - real implementation would be more comprehensive
     damn values
 }
 
-slay extract_yaml_values(content tea) []ConfigValue {
+slay extract_yaml_values(content tea) ConfigValue[value]{
     fr fr Extract values from YAML content (simplified)
-    sus values []ConfigValue = []
+    sus values ConfigValue[value] = []
     fr fr Simplified parsing - real implementation would be more comprehensive
     damn values
 }
 
-slay extract_toml_values(content tea) []ConfigValue {
+slay extract_toml_values(content tea) ConfigValue[value]{
     fr fr Extract values from TOML content (simplified)
-    sus values []ConfigValue = []
+    sus values ConfigValue[value] = []
     fr fr Simplified parsing - real implementation would be more comprehensive
     damn values
 }
 
 slay parse_env_line(line tea) ConfigValue {
     fr fr Parse environment variable line
-    sus parts []tea = split_by_equals(line)
+    sus parts tea[value] = split_by_equals(line)
     ready (len(parts) == 2) {
         damn ConfigValue{
             key: parts[0],
@@ -974,9 +974,9 @@ slay parse_env_line(line tea) ConfigValue {
     damn ConfigValue{key: "", value: "", value_type: "string", is_valid: cap, source: ""}
 }
 
-slay split_by_equals(str tea) []tea {
+slay split_by_equals(str tea) tea[value]{
     fr fr Split string by equals sign
-    sus parts []tea = []
+    sus parts tea[value] = []
     ready (string_contains(str, "=")) {
         sus before tea = string_before(str, "=")
         sus after tea = string_after(str, "=")
@@ -988,9 +988,9 @@ slay split_by_equals(str tea) []tea {
     damn parts
 }
 
-slay parse_array_value(value tea) []tea {
+slay parse_array_value(value tea) tea[value]{
     fr fr Parse array value from string
-    sus result []tea = []
+    sus result tea[value] = []
     fr fr Simplified array parsing
     ready (value == "[1,2,3]") {
         result = append_string(result, "1")
@@ -1004,9 +1004,9 @@ fr fr ==========================================
 fr fr Additional Utility Functions
 fr fr ==========================================
 
-slay extract_env_patterns(input tea) []tea {
+slay extract_env_patterns(input tea) tea[value]{
     fr fr Extract ${VAR} and $VAR patterns from input
-    sus patterns []tea = []
+    sus patterns tea[value] = []
     ready (string_contains(input, "${")) {
         patterns = append_string(patterns, "${DB_HOST}")
     }

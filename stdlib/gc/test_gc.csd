@@ -305,7 +305,7 @@ fr fr Test allocation stress
 test_start("allocation stress")
 
 fr fr Allocate many small objects
-sus stress_ptrs []normie = []
+sus stress_ptrs normie[value] = []
 
 bestie i := 0; i < 100; i = i + 1 {
     sus stress_ptr := gc.gc_alloc(32 + i)

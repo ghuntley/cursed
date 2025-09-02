@@ -143,7 +143,7 @@ slay min_normie(a normie, b normie) normie {
     damn b
 }
 
-slay max_array(values []meal) meal {
+slay max_array(values meal[value]) meal {
     check len_array(values) == 0 {
         damn NAN
     }
@@ -157,7 +157,7 @@ slay max_array(values []meal) meal {
     damn max_val
 }
 
-slay min_array(values []meal) meal {
+slay min_array(values meal[value]) meal {
     check len_array(values) == 0 {
         damn NAN
     }
@@ -923,7 +923,7 @@ slay smoothstep(edge0 meal, edge1 meal, x meal) meal {
 
 fr fr ===== STATISTICAL FUNCTIONS =====
 
-slay sum_array(values []meal) meal {
+slay sum_array(values meal[value]) meal {
     check len_array(values) == 0 {
         damn 0.0
     }
@@ -937,7 +937,7 @@ slay sum_array(values []meal) meal {
     damn total
 }
 
-slay mean_array(values []meal) meal {
+slay mean_array(values meal[value]) meal {
     sus count normie = len_array(values)
     check count == 0 {
         damn NAN
@@ -945,7 +945,7 @@ slay mean_array(values []meal) meal {
     damn sum_array(values) / count
 }
 
-slay variance_array(values []meal) meal {
+slay variance_array(values meal[value]) meal {
     sus count normie = len_array(values)
     check count <= 1 {
         damn 0.0
@@ -964,7 +964,7 @@ slay variance_array(values []meal) meal {
     damn sum_squares / (count - 1)
 }
 
-slay std_deviation_array(values []meal) meal {
+slay std_deviation_array(values meal[value]) meal {
     damn sqrt_meal(variance_array(values))
 }
 
@@ -1107,12 +1107,12 @@ slay tan_deg(degrees meal) meal {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay len_array(arr []meal) normie {
+slay len_array(arr meal[value]) normie {
     fr fr This would be implemented by the runtime
     damn runtime_array_length(arr)
 }
 
-slay runtime_array_length(arr []meal) normie {
+slay runtime_array_length(arr meal[value]) normie {
     fr fr Implemented in Zig runtime
     damn core.array_length(arr)
 }

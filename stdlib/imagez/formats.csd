@@ -46,7 +46,7 @@ squad BMPHeader {
 }
 
 # PNG signature and chunk types
-sus PNG_SIGNATURE []drip = [137, 80, 78, 71, 13, 10, 26, 10]
+sus PNG_SIGNATURE drip[value] = [137, 80, 78, 71, 13, 10, 26, 10]
 sus PNG_IHDR tea = "IHDR"
 sus PNG_IDAT tea = "IDAT"
 sus PNG_IEND tea = "IEND"
@@ -68,7 +68,7 @@ sus BMP_SIGNATURE tea = "BM"
 
 # Load image from file with production decoders
 slay load_image(filename tea) yikes<Image> {
-    sus data []drip = read_file_bytes(filename) fam {
+    sus data drip[value] = read_file_bytes(filename) fam {
         when _ -> yikes "failed to read file: " + filename
     }
     
@@ -95,7 +95,7 @@ slay save_image(img Image, filename tea) yikes<lit> {
         when _ -> yikes "cannot determine format from filename"
     }
     
-    sus data []drip = sick (format) {
+    sus data drip[value] = sick (format) {
         when "PNG" -> damn encode_png_production(img, 6) fam {
             when err -> yikes "PNG encode failed: " + err
         }
@@ -115,7 +115,7 @@ slay save_image(img Image, filename tea) yikes<lit> {
 }
 
 # Detect image format from file data
-slay detect_format(data []drip) yikes<tea> {
+slay detect_format(data drip[value]) yikes<tea> {
     ready (len(data) < 8) {
         yikes "insufficient data for format detection"
     }
@@ -168,7 +168,7 @@ slay detect_format_from_extension(filename tea) yikes<tea> {
 }
 
 # PNG Implementation
-slay load_png(data []drip) yikes<Image> {
+slay load_png(data drip[value]) yikes<Image> {
     # Verify PNG signature
     bestie (i drip = 0; i < 8; i = i + 1) {
         ready (data[i] != PNG_SIGNATURE[i]) {
@@ -178,7 +178,7 @@ slay load_png(data []drip) yikes<Image> {
     
     sus offset drip = 8
     sus header PNGHeader = PNGHeader{}
-    sus image_data []drip = []
+    sus image_data drip[value] = []
     
     # Parse chunks
     bestie (offset < len(data)) {
@@ -199,7 +199,7 @@ slay load_png(data []drip) yikes<Image> {
                 header.interlace = data[offset + 12]
             }
             when PNG_IDAT -> {
-                sus chunk_data []drip = slice(data, offset, offset + chunk_length)
+                sus chunk_data drip[value] = slice(data, offset, offset + chunk_length)
                 image_data = append_array(image_data, chunk_data)
             }
             when PNG_IEND -> {
@@ -211,12 +211,12 @@ slay load_png(data []drip) yikes<Image> {
     }
     
     # Decompress and decode image data
-    sus decompressed []drip = inflate_zlib(image_data) fam {
+    sus decompressed drip[value] = inflate_zlib(image_data) fam {
         when _ -> yikes "PNG decompression failed"
     }
     
     sus channels drip = get_png_channels(header.color_type)
-    sus decoded []drip = decode_png_data(decompressed, header, channels) fam {
+    sus decoded drip[value] = decode_png_data(decompressed, header, channels) fam {
         when _ -> yikes "PNG decode failed"
     }
     
@@ -230,18 +230,18 @@ slay load_png(data []drip) yikes<Image> {
     }
 }
 
-slay save_png(img Image) yikes<[]drip> {
+slay save_png(img Image) yikes<drip[value]> {
     validate_image(img) fam {
         when e -> yikes e
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     
     # PNG signature
     result = append_array(result, PNG_SIGNATURE)
     
     # IHDR chunk
-    sus ihdr_data []drip = []
+    sus ihdr_data drip[value] = []
     ihdr_data = append_array(ihdr_data, uint32_to_bytes_be(img.width))
     ihdr_data = append_array(ihdr_data, uint32_to_bytes_be(img.height))
     ihdr_data = append(ihdr_data, 8)  # bit depth
@@ -253,11 +253,11 @@ slay save_png(img Image) yikes<[]drip> {
     result = append_png_chunk(result, PNG_IHDR, ihdr_data)
     
     # IDAT chunk
-    sus filtered []drip = apply_png_filter(img) fam {
+    sus filtered drip[value] = apply_png_filter(img) fam {
         when _ -> yikes "PNG filter failed"
     }
     
-    sus compressed []drip = deflate_zlib(filtered) fam {
+    sus compressed drip[value] = deflate_zlib(filtered) fam {
         when _ -> yikes "PNG compression failed"
     }
     
@@ -270,7 +270,7 @@ slay save_png(img Image) yikes<[]drip> {
 }
 
 # JPEG Implementation (simplified)
-slay load_jpeg(data []drip) yikes<Image> {
+slay load_jpeg(data drip[value]) yikes<Image> {
     ready (len(data) < 4 || data[0] != 255 || data[1] != 216) {
         yikes "invalid JPEG signature"
     }
@@ -329,12 +329,12 @@ slay load_jpeg(data []drip) yikes<Image> {
     damn img
 }
 
-slay save_jpeg(img Image, quality drip) yikes<[]drip> {
+slay save_jpeg(img Image, quality drip) yikes<drip[value]> {
     validate_image(img) fam {
         when e -> yikes e
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     
     # JPEG signature (SOI)
     result = append(result, 255)
@@ -362,8 +362,8 @@ slay get_png_channels(color_type drip) drip {
     }
 }
 
-slay apply_png_filter(img Image) yikes<[]drip> {
-    sus result []drip = []
+slay apply_png_filter(img Image) yikes<drip[value]> {
+    sus result drip[value] = []
     sus bytes_per_pixel drip = img.channels
     sus scanline_length drip = img.width * bytes_per_pixel
     
@@ -373,7 +373,7 @@ slay apply_png_filter(img Image) yikes<[]drip> {
         
         sus row_start drip = y * scanline_length
         sus row_end drip = row_start + scanline_length
-        sus row_data []drip = slice(img.data, row_start, row_end)
+        sus row_data drip[value] = slice(img.data, row_start, row_end)
         
         result = append_array(result, row_data)
     }
@@ -381,8 +381,8 @@ slay apply_png_filter(img Image) yikes<[]drip> {
     damn result
 }
 
-slay decode_png_data(data []drip, header PNGHeader, channels drip) yikes<[]drip> {
-    sus result []drip = []
+slay decode_png_data(data drip[value], header PNGHeader, channels drip) yikes<drip[value]> {
+    sus result drip[value] = []
     sus bytes_per_pixel drip = channels
     sus scanline_length drip = header.width * bytes_per_pixel
     sus offset drip = 0
@@ -395,7 +395,7 @@ slay decode_png_data(data []drip, header PNGHeader, channels drip) yikes<[]drip>
         sus filter_type drip = data[offset]
         offset = offset + 1
         
-        sus scanline []drip = slice(data, offset, offset + scanline_length)
+        sus scanline drip[value] = slice(data, offset, offset + scanline_length)
         offset = offset + scanline_length
         
         # Apply reverse filter based on filter_type
@@ -412,26 +412,26 @@ slay decode_png_data(data []drip, header PNGHeader, channels drip) yikes<[]drip>
 }
 
 # Utility functions for byte manipulation
-slay read_uint32_be(data []drip, offset drip) drip {
+slay read_uint32_be(data drip[value], offset drip) drip {
     damn (data[offset] << 24) | (data[offset + 1] << 16) | 
          (data[offset + 2] << 8) | data[offset + 3]
 }
 
-slay read_uint16_be(data []drip, offset drip) drip {
+slay read_uint16_be(data drip[value], offset drip) drip {
     damn (data[offset] << 8) | data[offset + 1]
 }
 
-slay uint32_to_bytes_be(value drip) []drip {
+slay uint32_to_bytes_be(value drip) drip[value]{
     damn [(value >> 24) & 255, (value >> 16) & 255, 
           (value >> 8) & 255, value & 255]
 }
 
-slay uint16_to_bytes_be(value drip) []drip {
+slay uint16_to_bytes_be(value drip) drip[value]{
     damn [(value >> 8) & 255, value & 255]
 }
 
-slay append_png_chunk(data []drip, chunk_type tea, chunk_data []drip) []drip {
-    sus result []drip = data
+slay append_png_chunk(data drip[value], chunk_type tea, chunk_data drip[value]) drip[value]{
+    sus result drip[value] = data
     
     # Length
     result = append_array(result, uint32_to_bytes_be(len(chunk_data)))
@@ -449,12 +449,12 @@ slay append_png_chunk(data []drip, chunk_type tea, chunk_data []drip) []drip {
 }
 
 # Placeholder compression functions (would need full implementation)
-slay inflate_zlib(data []drip) yikes<[]drip> {
+slay inflate_zlib(data drip[value]) yikes<drip[value]> {
     # Placeholder - would implement proper zlib inflation
     damn data
 }
 
-slay deflate_zlib(data []drip) yikes<[]drip> {
+slay deflate_zlib(data drip[value]) yikes<drip[value]> {
     # Placeholder - would implement proper zlib deflation
     damn data
 }

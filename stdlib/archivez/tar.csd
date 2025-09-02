@@ -51,12 +51,12 @@ squad TarEntry {
 }
 
 # TAR archive state
-sus tar_entries []TarEntry
+sus tar_entries TarEntry[value]
 sus tar_current_offset drip = 0
 
 # Initialize TAR archive
 slay init_tar() {
-    tar_entries = []TarEntry{}
+    tar_entries = TarEntry[value]{}
     tar_current_offset = 0
     vibez.spill("TAR: Archive initialized")
 }
@@ -147,8 +147,8 @@ slay tar_extract_file(archive_path tea, output_path tea) yikes<tea> {
 }
 
 # List files in TAR archive
-slay tar_list_files() []tea {
-    sus file_list []tea
+slay tar_list_files() tea[value]{
+    sus file_list tea[value]
     
     bestie (drip i = 0; i < len(tar_entries); i = i + 1) {
         sus entry TarEntry = tar_entries[i]
@@ -499,7 +499,7 @@ slay tar_set_ownership(archive_path tea, uid tea, gid tea, uname tea, gname tea)
 slay tar_repair() lit {
     vibez.spill("TAR: Attempting to repair corrupted archive")
     
-    sus repaired_entries []TarEntry
+    sus repaired_entries TarEntry[value]
     sus repair_count drip = 0
     
     # Validate and repair each entry

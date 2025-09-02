@@ -6,7 +6,7 @@ test_start("Process Real Module Tests")
 fr fr === Process Creation Tests ===
 test_case("Basic Process Creation") {
     sus command tea = "echo"
-    sus args []tea = ["Hello, CURSED!"]
+    sus args tea[value] = ["Hello, CURSED!"]
     
     sus proc Process = process_spawn(command, args)
     assert_not_equal(proc.process_id, 0)
@@ -17,7 +17,7 @@ test_case("Basic Process Creation") {
 
 test_case("Process Creation with Multiple Args") {
     sus command tea = "ls"
-    sus args []tea = ["-la", "/tmp"]
+    sus args tea[value] = ["-la", "/tmp"]
     
     sus proc Process = process_spawn(command, args)
     assert_not_equal(proc.process_id, 0)
@@ -28,7 +28,7 @@ test_case("Process Creation with Multiple Args") {
 
 test_case("Process Creation No Args") {
     sus command tea = "date"
-    sus args []tea = []
+    sus args tea[value] = []
     
     sus proc Process = process_spawn(command, args)
     assert_not_equal(proc.process_id, 0)
@@ -37,7 +37,7 @@ test_case("Process Creation No Args") {
 
 test_case("Invalid Command Handling") {
     sus invalid_command tea = "nonexistent_command_12345"
-    sus args []tea = []
+    sus args tea[value] = []
     
     fam {
         sus proc Process = process_spawn(invalid_command, args)
@@ -50,7 +50,7 @@ test_case("Invalid Command Handling") {
 fr fr === Process Wait and Status Tests ===
 test_case("Process Wait for Completion") {
     sus command tea = "sleep"
-    sus args []tea = ["0.1"]  fr fr Short sleep
+    sus args tea[value] = ["0.1"]  fr fr Short sleep
     
     sus proc Process = process_spawn(command, args)
     assert_eq_bool(proc.is_running, based)
@@ -63,7 +63,7 @@ test_case("Process Wait for Completion") {
 
 test_case("Process Status Check") {
     sus command tea = "sleep"
-    sus args []tea = ["1.0"]  fr fr Longer sleep
+    sus args tea[value] = ["1.0"]  fr fr Longer sleep
     
     sus proc Process = process_spawn(command, args)
     
@@ -81,7 +81,7 @@ test_case("Process Status Check") {
 
 test_case("Process Non-blocking Wait") {
     sus command tea = "sleep"
-    sus args []tea = ["0.5"]
+    sus args tea[value] = ["0.5"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -100,7 +100,7 @@ test_case("Process Non-blocking Wait") {
 fr fr === Process Termination Tests ===
 test_case("Process Kill with SIGTERM") {
     sus command tea = "sleep"
-    sus args []tea = ["10"]  fr fr Long sleep
+    sus args tea[value] = ["10"]  fr fr Long sleep
     
     sus proc Process = process_spawn(command, args)
     assert_eq_bool(proc.is_running, based)
@@ -116,7 +116,7 @@ test_case("Process Kill with SIGTERM") {
 
 test_case("Process Kill with SIGKILL") {
     sus command tea = "sleep"
-    sus args []tea = ["10"]
+    sus args tea[value] = ["10"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -131,7 +131,7 @@ test_case("Process Kill with SIGKILL") {
 
 test_case("Process Terminate Gracefully") {
     sus command tea = "sleep"
-    sus args []tea = ["5"]
+    sus args tea[value] = ["5"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -146,7 +146,7 @@ test_case("Process Terminate Gracefully") {
 fr fr === Process Information Tests ===
 test_case("Get Process Info") {
     sus command tea = "sleep"
-    sus args []tea = ["1"]
+    sus args tea[value] = ["1"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -209,7 +209,7 @@ test_case("Unset Environment Variable") {
 }
 
 test_case("Get All Environment Variables") {
-    sus env_vars []EnvironmentVar = process_get_all_env()
+    sus env_vars EnvironmentVar[value] = process_get_all_env()
     
     assert_greater_than(env_vars.len(), 0)
     
@@ -228,8 +228,8 @@ test_case("Get All Environment Variables") {
 fr fr === Process Spawning with Environment Tests ===
 test_case("Spawn Process with Custom Environment") {
     sus command tea = "env"
-    sus args []tea = []
-    sus custom_env []EnvironmentVar = [
+    sus args tea[value] = []
+    sus custom_env EnvironmentVar[value] = [
         EnvironmentVar{name: "CUSTOM_VAR1", value: "value1"},
         EnvironmentVar{name: "CUSTOM_VAR2", value: "value2"}
     ]
@@ -244,7 +244,7 @@ test_case("Spawn Process with Custom Environment") {
 
 test_case("Spawn Process with Working Directory") {
     sus command tea = "pwd"
-    sus args []tea = []
+    sus args tea[value] = []
     sus working_dir tea = "/tmp"
     
     sus proc Process = process_spawn_with_cwd(command, args, working_dir)
@@ -256,7 +256,7 @@ test_case("Spawn Process with Working Directory") {
 fr fr === Process I/O Tests ===
 test_case("Process Output Capture") {
     sus command tea = "echo"
-    sus args []tea = ["CURSED output test"]
+    sus args tea[value] = ["CURSED output test"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -266,7 +266,7 @@ test_case("Process Output Capture") {
 
 test_case("Process Error Output Capture") {
     sus command tea = "sh"
-    sus args []tea = ["-c", "echo 'error message' >&2"]
+    sus args tea[value] = ["-c", "echo 'error message' >&2"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -276,7 +276,7 @@ test_case("Process Error Output Capture") {
 
 test_case("Process Input Feeding") {
     sus command tea = "cat"
-    sus args []tea = []
+    sus args tea[value] = []
     
     sus proc Process = process_spawn(command, args)
     
@@ -292,7 +292,7 @@ test_case("Process Input Feeding") {
 
 fr fr === Process List and Management Tests ===
 test_case("List Running Processes") {
-    sus processes []ProcessInfo = process_list_all()
+    sus processes ProcessInfo[value] = process_list_all()
     
     assert_greater_than(processes.len(), 0)
     
@@ -312,10 +312,10 @@ test_case("List Running Processes") {
 test_case("Find Processes by Name") {
     fr fr Spawn a sleep process to find
     sus command tea = "sleep"
-    sus args []tea = ["2"]
+    sus args tea[value] = ["2"]
     sus proc Process = process_spawn(command, args)
     
-    sus sleep_processes []ProcessInfo = process_find_by_name("sleep")
+    sus sleep_processes ProcessInfo[value] = process_find_by_name("sleep")
     
     sus found_our_process lit = cap
     bestie (sus i normie = 0; i < sleep_processes.len(); i++) {
@@ -332,7 +332,7 @@ test_case("Find Processes by Name") {
 fr fr === Signal Handling Tests ===
 test_case("Send Custom Signal") {
     sus command tea = "sleep"
-    sus args []tea = ["5"]
+    sus args tea[value] = ["5"]
     
     sus proc Process = process_spawn(command, args)
     
@@ -357,7 +357,7 @@ test_case("Process Signal Handler") {
 fr fr === Resource Usage Tests ===
 test_case("Process Resource Usage") {
     sus command tea = "yes"  fr fr CPU-intensive command
-    sus args []tea = []
+    sus args tea[value] = []
     
     sus proc Process = process_spawn(command, args)
     
@@ -374,7 +374,7 @@ test_case("Process Resource Usage") {
 fr fr === Process Group Tests ===
 test_case("Process Group Management") {
     sus command tea = "sleep"
-    sus args []tea = ["2"]
+    sus args tea[value] = ["2"]
     
     sus proc Process = process_spawn(command, args)
     

@@ -9,7 +9,7 @@ slay demo_basic_statistics() {
     vibez.spill("\n=== Basic Statistical Analysis ===")
     
     # Sample dataset: exam scores
-    sus exam_scores []drip = [78, 85, 92, 67, 88, 91, 76, 82, 95, 89, 84, 77, 90, 86, 93]
+    sus exam_scores drip[value] = [78, 85, 92, 67, 88, 91, 76, 82, 95, 89, 84, 77, 90, 86, 93]
     
     vibez.spill("Exam scores dataset:")
     vibez.spill("Data:", array_to_string(exam_scores))
@@ -44,8 +44,8 @@ slay demo_correlation_regression() {
     vibez.spill("\n=== Correlation and Regression Analysis ===")
     
     # Study hours vs exam scores
-    sus study_hours []drip = [2, 4, 6, 8, 10, 12, 3, 5, 7, 9, 11, 13, 1, 15, 14]
-    sus exam_scores []drip = [65, 70, 75, 80, 85, 90, 68, 73, 78, 83, 88, 92, 60, 95, 93]
+    sus study_hours drip[value] = [2, 4, 6, 8, 10, 12, 3, 5, 7, 9, 11, 13, 1, 15, 14]
+    sus exam_scores drip[value] = [65, 70, 75, 80, 85, 90, 68, 73, 78, 83, 88, 92, 60, 95, 93]
     
     vibez.spill("Study Hours vs Exam Scores Analysis:")
     vibez.spill("Study hours:", array_to_string(study_hours))
@@ -83,7 +83,7 @@ slay demo_correlation_regression() {
     
     # Predictions
     vibez.spill("\nPredictions:")
-    sus prediction_hours []drip = [5, 10, 15]
+    sus prediction_hours drip[value] = [5, 10, 15]
     bestie (sus i drip = 0; i < 3; i = i + 1) {
         sus hours drip = prediction_hours[i]
         sus predicted_score drip = regression.slope * hours + regression.intercept
@@ -107,7 +107,7 @@ slay demo_probability_distributions() {
     vibez.spill("Variance:", format_number(normal.variance))
     
     # Calculate probabilities for different values
-    sus test_values []drip = [85, 100, 115, 130]
+    sus test_values drip[value] = [85, 100, 115, 130]
     vibez.spill("\nProbability Density Function (PDF) values:")
     bestie (sus i drip = 0; i < 4; i = i + 1) {
         sus x drip = test_values[i]
@@ -129,7 +129,7 @@ slay demo_hypothesis_testing() {
     vibez.spill("\n=== Hypothesis Testing ===")
     
     # One-sample t-test example
-    sus sample_data []drip = [102, 98, 105, 97, 101, 99, 103, 96, 104, 100, 98, 102, 101, 99, 97]
+    sus sample_data drip[value] = [102, 98, 105, 97, 101, 99, 103, 96, 104, 100, 98, 102, 101, 99, 97]
     sus population_mean drip = 100
     
     vibez.spill("One-Sample t-Test:")
@@ -161,7 +161,7 @@ slay demo_matrix_operations() {
     vibez.spill("\n=== Advanced Matrix Operations and Linear Algebra ===")
     
     # Test with larger matrices (now supports arbitrary sizes)
-    sus matrix_3x3_data []drip = [4, 2, 1, 2, 5, 3, 1, 3, 6]  # 3x3 matrix
+    sus matrix_3x3_data drip[value] = [4, 2, 1, 2, 5, 3, 1, 3, 6]  # 3x3 matrix
     sus matrix_a Matrix = create_matrix(3, 3, matrix_3x3_data)
     
     vibez.spill("Matrix A (3x3) - Now supporting large matrices:")
@@ -189,7 +189,7 @@ slay demo_matrix_operations() {
     
     # Advanced eigenvalue computation using Jacobi method
     vibez.spill("\n--- Advanced Eigenvalues (Jacobi Method) ---")
-    sus eigenvals []drip = eigenvalues(matrix_a)
+    sus eigenvals drip[value] = eigenvalues(matrix_a)
     ready (len_array(eigenvals) > 2) {
         vibez.spill("Eigenvalues of Matrix A (all eigenvalues computed):")
         bestie (sus i drip = 0; i < len_array(eigenvals); i = i + 1) {
@@ -255,10 +255,10 @@ slay demo_data_visualization() {
     vibez.spill("\n=== Data Visualization ===")
     
     # Generate sample data for plotting
-    sus x_data []drip = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    sus linear_data []drip = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
-    sus quadratic_data []drip = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
-    sus random_data []drip = [15, 23, 18, 31, 29, 26, 34, 21, 28, 37]
+    sus x_data drip[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sus linear_data drip[value] = [2, 4, 6, 8, 10, 12, 14, 16, 18, 20]
+    sus quadratic_data drip[value] = [1, 4, 9, 16, 25, 36, 49, 64, 81, 100]
+    sus random_data drip[value] = [15, 23, 18, 31, 29, 26, 34, 21, 28, 37]
     
     # Create different types of plots
     vibez.spill("Creating data visualizations...")
@@ -297,8 +297,8 @@ slay demo_time_series_analysis() {
     vibez.spill("\n=== Time Series Analysis ===")
     
     # Simulated monthly sales data (12 months)
-    sus monthly_sales []drip = [120, 135, 118, 142, 156, 171, 185, 178, 162, 149, 133, 127]
-    sus months []drip = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
+    sus monthly_sales drip[value] = [120, 135, 118, 142, 156, 171, 185, 178, 162, 149, 133, 127]
+    sus months drip[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12]
     
     vibez.spill("Monthly Sales Data Analysis:")
     vibez.spill("Sales data:", array_to_string(monthly_sales))
@@ -343,7 +343,7 @@ slay demo_quality_control() {
     vibez.spill("\n=== Quality Control Analysis ===")
     
     # Manufacturing process measurements (widget weights in grams)
-    sus measurements []drip = [50.2, 49.8, 50.1, 50.3, 49.9, 50.0, 50.2, 49.7, 50.4, 50.1,
+    sus measurements drip[value] = [50.2, 49.8, 50.1, 50.3, 49.9, 50.0, 50.2, 49.7, 50.4, 50.1,
                               49.8, 50.2, 50.0, 49.9, 50.3, 50.1, 49.8, 50.2, 50.0, 49.9]
     
     sus target_weight drip = 50.0
@@ -415,9 +415,9 @@ slay demo_experimental_design() {
     vibez.spill("\n=== Experimental Design and ANOVA ===")
     
     # Three-group experiment: different fertilizer types on plant growth
-    sus control_group []drip = [15, 18, 16, 17, 19, 14, 16, 18]        # No fertilizer
-    sus fertilizer_a []drip = [22, 25, 23, 26, 24, 21, 25, 23]         # Fertilizer A
-    sus fertilizer_b []drip = [28, 31, 29, 30, 32, 27, 30, 29]         # Fertilizer B
+    sus control_group drip[value] = [15, 18, 16, 17, 19, 14, 16, 18]        # No fertilizer
+    sus fertilizer_a drip[value] = [22, 25, 23, 26, 24, 21, 25, 23]         # Fertilizer A
+    sus fertilizer_b drip[value] = [28, 31, 29, 30, 32, 27, 30, 29]         # Fertilizer B
     
     vibez.spill("Plant Growth Experiment:")
     vibez.spill("Control group (no fertilizer):", array_to_string(control_group))
@@ -457,7 +457,7 @@ slay demo_experimental_design() {
 }
 
 # Utility functions for examples
-slay array_to_string(arr []drip) tea {
+slay array_to_string(arr drip[value]) tea {
     sus result tea = "["
     sus n drip = min_value(len_array(arr), 10)  # Limit to first 10 elements
     

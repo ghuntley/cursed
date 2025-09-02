@@ -17,13 +17,13 @@ be_like User squad {
     Name tea
     HomeDir tea
     Shell tea
-    Groups []tea
+    Groups tea[value]
     LastLogin drip
     AccountLocked lit
     PasswordExpired lit
     AccountExpires drip
     SecurityLevel tea  // "basic", "elevated", "admin", "root"
-    AuthMethods []tea  // ["password", "key", "2fa", "biometric"]
+    AuthMethods tea[value]  // ["password", "key", "2fa", "biometric"]
     LoginAttempts drip
     LastFailedLogin drip
 }
@@ -33,9 +33,9 @@ be_like Group squad {
     Gid tea
     Name tea
     Description tea
-    Members []tea
-    AdminUsers []tea
-    Permissions []tea
+    Members tea[value]
+    AdminUsers tea[value]
+    Permissions tea[value]
     SystemGroup lit
     SecurityLevel tea
 }
@@ -59,7 +59,7 @@ be_like AuthResult squad {
     success lit
     user *User
     errorMessage tea
-    securityWarnings []tea
+    securityWarnings tea[value]
     authMethod tea
     sessionToken tea
     tokenExpiry drip
@@ -83,7 +83,7 @@ be_like SecurityAuditEntry squad {
 
 // Global security state
 sus globalCache *UserCache = initializeSecureCache()
-sus auditLog []SecurityAuditEntry = []SecurityAuditEntry{}
+sus auditLog SecurityAuditEntry[value] = SecurityAuditEntry[value]{}
 sus securityConfig SecurityConfig = initializeSecurityConfig()
 
 // Security configuration
@@ -194,7 +194,7 @@ slay checkUIDCollision(uid tea) yikes<lit> {
     }
     
     // Check system passwd database
-    sus system_users []tea = readSystemUserUIDs() fam {
+    sus system_users tea[value] = readSystemUserUIDs() fam {
         when err -> yikes "Failed to read system UIDs: " + err
     }
     
@@ -214,7 +214,7 @@ slay checkGIDCollision(gid tea) yikes<lit> {
     }
     
     // Check system group database
-    sus system_groups []tea = readSystemGroupGIDs() fam {
+    sus system_groups tea[value] = readSystemGroupGIDs() fam {
         when err -> yikes "Failed to read system GIDs: " + err
     }
     
@@ -231,12 +231,12 @@ slay checkGIDCollision(gid tea) yikes<lit> {
 
 slay verifyUIDNotInSystem(uid tea) yikes<lit> {
     // Use system calls to verify UID doesn't exist
-    sus passwd_entries []tea = readPasswdDatabase() fam {
+    sus passwd_entries tea[value] = readPasswdDatabase() fam {
         when err -> yikes "Cannot access passwd database: " + err
     }
     
     bestie (entry := range passwd_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 3 && fields[2] == uid {
             damn cap // UID exists in system
         }
@@ -247,12 +247,12 @@ slay verifyUIDNotInSystem(uid tea) yikes<lit> {
 
 slay verifyGIDNotInSystem(gid tea) yikes<lit> {
     // Use system calls to verify GID doesn't exist
-    sus group_entries []tea = readGroupDatabase() fam {
+    sus group_entries tea[value] = readGroupDatabase() fam {
         when err -> yikes "Cannot access group database: " + err
     }
     
     bestie (entry := range group_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 3 && fields[2] == gid {
             damn cap // GID exists in system  
         }
@@ -261,14 +261,14 @@ slay verifyGIDNotInSystem(gid tea) yikes<lit> {
     damn based // GID is available
 }
 
-slay readPasswdDatabase() yikes<[]tea> {
+slay readPasswdDatabase() yikes<tea[value]> {
     // Real implementation reading /etc/passwd through system APIs
     sus passwd_data tea = filez.read_file("/etc/passwd") fam {
         when err -> yikes "Cannot read /etc/passwd: " + err
     }
     
-    sus entries []tea = stringz.split(passwd_data, "\n")
-    sus valid_entries []tea = []
+    sus entries tea[value] = stringz.split(passwd_data, "\n")
+    sus valid_entries tea[value] = []
     
     bestie (entry := range entries) {
         sus trimmed tea = stringz.trim(entry)
@@ -280,14 +280,14 @@ slay readPasswdDatabase() yikes<[]tea> {
     damn valid_entries
 }
 
-slay readGroupDatabase() yikes<[]tea> {
+slay readGroupDatabase() yikes<tea[value]> {
     // Real implementation reading /etc/group through system APIs
     sus group_data tea = filez.read_file("/etc/group") fam {
         when err -> yikes "Cannot read /etc/group: " + err
     }
     
-    sus entries []tea = stringz.split(group_data, "\n")
-    sus valid_entries []tea = []
+    sus entries tea[value] = stringz.split(group_data, "\n")
+    sus valid_entries tea[value] = []
     
     bestie (entry := range entries) {
         sus trimmed tea = stringz.trim(entry)
@@ -299,14 +299,14 @@ slay readGroupDatabase() yikes<[]tea> {
     damn valid_entries
 }
 
-slay readSystemUserUIDs() yikes<[]tea> {
-    sus passwd_entries []tea = readPasswdDatabase() fam {
+slay readSystemUserUIDs() yikes<tea[value]> {
+    sus passwd_entries tea[value] = readPasswdDatabase() fam {
         when err -> yikes err
     }
     
-    sus uids []tea = []
+    sus uids tea[value] = []
     bestie (entry := range passwd_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 3 {
             uids = append(uids, fields[2])
         }
@@ -315,14 +315,14 @@ slay readSystemUserUIDs() yikes<[]tea> {
     damn uids
 }
 
-slay readSystemGroupGIDs() yikes<[]tea> {
-    sus group_entries []tea = readGroupDatabase() fam {
+slay readSystemGroupGIDs() yikes<tea[value]> {
+    sus group_entries tea[value] = readGroupDatabase() fam {
         when err -> yikes err
     }
     
-    sus gids []tea = []
+    sus gids tea[value] = []
     bestie (entry := range group_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 3 {
             gids = append(gids, fields[2])
         }
@@ -353,7 +353,7 @@ slay lookupUserFromSystem(username tea) yikes<*User> {
     }
     
     // Read from system passwd database
-    sus passwd_entries []tea = readPasswdDatabase() fam {
+    sus passwd_entries tea[value] = readPasswdDatabase() fam {
         when err -> {
             logSecurityEvent(username, "PASSWD_DATABASE_ERROR", "FAILED", "", map[tea]tea{
                 "error": err,
@@ -363,7 +363,7 @@ slay lookupUserFromSystem(username tea) yikes<*User> {
     }
     
     bestie (entry := range passwd_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 7 && fields[0] == username {
             // Parse passwd entry: username:x:uid:gid:gecos:homedir:shell
             sus user *User = &User{
@@ -373,12 +373,12 @@ slay lookupUserFromSystem(username tea) yikes<*User> {
                 Name: parseGecosField(fields[4]),
                 HomeDir: fields[5],
                 Shell: fields[6],
-                Groups: getUserGroups(fields[0], fields[3]) fam { when _ -> []tea{fields[3]} },
+                Groups: getUserGroups(fields[0], fields[3]) fam { when _ -> tea[value]{fields[3]} },
                 LastLogin: 0,
                 AccountLocked: cap,
                 PasswordExpired: cap,
                 SecurityLevel: determineSecurityLevel(fields[2]),
-                AuthMethods: []tea{"password"},
+                AuthMethods: tea[value]{"password"},
                 LoginAttempts: 0,
             }
             
@@ -408,15 +408,15 @@ slay lookupGroupFromSystem(groupname tea) yikes<*Group> {
     }
     
     // Read from system group database  
-    sus group_entries []tea = readGroupDatabase() fam {
+    sus group_entries tea[value] = readGroupDatabase() fam {
         when err -> yikes "Cannot access group database: " + err
     }
     
     bestie (entry := range group_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 4 && fields[0] == groupname {
             // Parse group entry: groupname:x:gid:members
-            sus members []tea = []
+            sus members tea[value] = []
             ready len(fields[3]) > 0 {
                 members = stringz.split(fields[3], ",")
             }
@@ -450,7 +450,7 @@ slay authenticateUserSecure(username tea, password tea, clientInfo map[tea]tea) 
     sus auth_result AuthResult = AuthResult{
         success: cap,
         errorMessage: "",
-        securityWarnings: []tea{},
+        securityWarnings: tea[value]{},
         authMethod: "password",
         loginAttempts: 0,
         clientInfo: clientInfo,
@@ -652,8 +652,8 @@ slay verifyPasswordSecure(password tea, stored_hash tea, hash_type tea) yikes<li
 
 slay verifyArgon2Password(password tea, hash tea) yikes<lit> {
     // Use crypto library's Argon2 verification with constant-time comparison
-    sus password_bytes []lit = stringz.to_bytes(password)
-    sus hash_bytes []lit = stringz.to_bytes(hash)
+    sus password_bytes lit[value] = stringz.to_bytes(password)
+    sus hash_bytes lit[value] = stringz.to_bytes(hash)
     
     sus result lit = cryptz.argon2_verify(password_bytes, hash_bytes) fam {
         when err -> yikes err
@@ -664,8 +664,8 @@ slay verifyArgon2Password(password tea, hash tea) yikes<lit> {
 
 slay verifyBcryptPassword(password tea, hash tea) yikes<lit> {
     // Use crypto library's bcrypt verification
-    sus password_bytes []lit = stringz.to_bytes(password)
-    sus hash_bytes []lit = stringz.to_bytes(hash)
+    sus password_bytes lit[value] = stringz.to_bytes(password)
+    sus hash_bytes lit[value] = stringz.to_bytes(hash)
     
     sus result lit = cryptz.bcrypt_verify(password_bytes, hash_bytes) fam {
         when err -> yikes err
@@ -676,7 +676,7 @@ slay verifyBcryptPassword(password tea, hash tea) yikes<lit> {
 
 slay verifyPBKDF2Password(password tea, hash tea) yikes<lit> {
     // Parse PBKDF2 hash format: $pbkdf2-sha512$rounds$salt$hash
-    sus hash_parts []tea = stringz.split(hash, "$")
+    sus hash_parts tea[value] = stringz.split(hash, "$")
     ready len(hash_parts) < 5 {
         yikes "Invalid PBKDF2 hash format"
     }
@@ -699,7 +699,7 @@ slay verifyPBKDF2Password(password tea, hash tea) yikes<lit> {
 
 slay verifySHA512CryptPassword(password tea, hash tea) yikes<lit> {
     // Parse SHA512-crypt hash format: $6$rounds=N$salt$hash
-    sus hash_parts []tea = stringz.split(hash, "$")
+    sus hash_parts tea[value] = stringz.split(hash, "$")
     ready len(hash_parts) < 4 {
         yikes "Invalid SHA512-crypt hash format"
     }
@@ -734,7 +734,7 @@ slay verifySHA512CryptPassword(password tea, hash tea) yikes<lit> {
 
 slay verifyScryptPassword(password tea, hash tea) yikes<lit> {
     // Parse scrypt hash format: $scrypt$N$r$p$salt$hash
-    sus hash_parts []tea = stringz.split(hash, "$")
+    sus hash_parts tea[value] = stringz.split(hash, "$")
     ready len(hash_parts) < 7 {
         yikes "Invalid scrypt hash format"
     }
@@ -805,12 +805,12 @@ slay hashPasswordSecure(password tea, algorithm tea) yikes<tea> {
 
 slay hashPasswordArgon2(password tea) yikes<tea> {
     // Generate random salt
-    sus salt []lit = cryptz.random_bytes(32) fam {
+    sus salt lit[value] = cryptz.random_bytes(32) fam {
         when err -> yikes "Failed to generate salt: " + err
     }
     
     // Argon2id with secure parameters
-    sus hash []lit = cryptz.argon2id(
+    sus hash lit[value] = cryptz.argon2id(
         stringz.to_bytes(password),
         salt,
         3,     // time parameter (iterations)
@@ -832,7 +832,7 @@ slay hashPasswordBcrypt(password tea) yikes<tea> {
     // Use high cost factor for security
     sus cost drip = 12
     
-    sus hash []lit = cryptz.bcrypt(stringz.to_bytes(password), cost) fam {
+    sus hash lit[value] = cryptz.bcrypt(stringz.to_bytes(password), cost) fam {
         when err -> yikes "Bcrypt hashing failed: " + err
     }
     
@@ -841,14 +841,14 @@ slay hashPasswordBcrypt(password tea) yikes<tea> {
 
 slay hashPasswordPBKDF2(password tea) yikes<tea> {
     // Generate random salt
-    sus salt []lit = cryptz.random_bytes(32) fam {
+    sus salt lit[value] = cryptz.random_bytes(32) fam {
         when err -> yikes "Failed to generate salt: " + err
     }
     
     // High iteration count for security
     sus iterations drip = 100000
     
-    sus hash []lit = cryptz.pbkdf2_sha512(
+    sus hash lit[value] = cryptz.pbkdf2_sha512(
         stringz.to_bytes(password),
         salt,
         iterations,
@@ -865,7 +865,7 @@ slay hashPasswordPBKDF2(password tea) yikes<tea> {
 
 slay hashPasswordScrypt(password tea) yikes<tea> {
     // Generate random salt
-    sus salt []lit = cryptz.random_bytes(32) fam {
+    sus salt lit[value] = cryptz.random_bytes(32) fam {
         when err -> yikes "Failed to generate salt: " + err
     }
     
@@ -874,7 +874,7 @@ slay hashPasswordScrypt(password tea) yikes<tea> {
     sus r drip = 8      // Block size
     sus p drip = 1      // Parallelization  
     
-    sus hash []lit = cryptz.scrypt(
+    sus hash lit[value] = cryptz.scrypt(
         stringz.to_bytes(password),
         salt,
         N, r, p,
@@ -897,12 +897,12 @@ slay readShadowEntry(username tea) yikes<map[tea]tea> {
         when err -> yikes "Cannot read shadow database (requires root): " + err
     }
     
-    sus entries []tea = stringz.split(shadow_data, "\n")
+    sus entries tea[value] = stringz.split(shadow_data, "\n")
     
     bestie (entry := range entries) {
         sus trimmed tea = stringz.trim(entry)
         ready len(trimmed) > 0 && !stringz.starts_with(trimmed, "#") {
-            sus fields []tea = stringz.split(trimmed, ":")
+            sus fields tea[value] = stringz.split(trimmed, ":")
             ready len(fields) >= 9 && fields[0] == username {
                 // Shadow entry format: username:password:last_changed:min_age:max_age:warn_period:inactive:expire:reserved
                 sus password_hash tea = fields[1]
@@ -980,7 +980,7 @@ slay isValidUsernameSecure(username tea) lit {
     }
     
     // Check against reserved usernames
-    sus reserved_usernames []tea = [
+    sus reserved_usernames tea[value] = [
         "root", "admin", "administrator", "system", "daemon", "bin", "sys",
         "service", "operator", "wheel", "nobody", "nogroup", "mail", "www",
         "ftp", "ssh", "sshd", "mysql", "postgres", "apache", "nginx",
@@ -1068,7 +1068,7 @@ slay constantTimeStringCompare(a tea, b tea) lit {
 
 slay generateSecureSessionToken() yikes<tea> {
     // Generate 256-bit random token
-    sus token_bytes []lit = cryptz.random_bytes(32) fam {
+    sus token_bytes lit[value] = cryptz.random_bytes(32) fam {
         when err -> yikes "Failed to generate session token: " + err
     }
     
@@ -1104,29 +1104,29 @@ slay validateSessionToken(token tea) yikes<*User> {
 
 slay parseGecosField(gecos tea) tea {
     // Parse GECOS field (full name is usually first part before comma)
-    sus parts []tea = stringz.split(gecos, ",")
+    sus parts tea[value] = stringz.split(gecos, ",")
     ready len(parts) > 0 {
         damn parts[0]
     }
     damn gecos
 }
 
-slay getUserGroups(username tea, primary_gid tea) yikes<[]tea> {
-    sus groups []tea = []tea{primary_gid}
+slay getUserGroups(username tea, primary_gid tea) yikes<tea[value]> {
+    sus groups tea[value] = tea[value]{primary_gid}
     
     // Read group database to find additional groups
-    sus group_entries []tea = readGroupDatabase() fam {
+    sus group_entries tea[value] = readGroupDatabase() fam {
         when err -> yikes err
     }
     
     bestie (entry := range group_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 4 {
             sus group_gid tea = fields[2]
             sus members_str tea = fields[3]
             
             ready len(members_str) > 0 {
-                sus members []tea = stringz.split(members_str, ",")
+                sus members tea[value] = stringz.split(members_str, ",")
                 bestie (member := range members) {
                     ready stringz.trim(member) == username {
                         groups = append(groups, group_gid)
@@ -1318,12 +1318,12 @@ slay CreateUserSecure(username tea, password tea, full_name tea, home_dir tea, s
         Name: full_name,
         HomeDir: home_dir,
         Shell: shell,
-        Groups: []tea{gid},
+        Groups: tea[value]{gid},
         LastLogin: 0,
         AccountLocked: cap,
         PasswordExpired: cap,
         SecurityLevel: "user",
-        AuthMethods: []tea{"password"},
+        AuthMethods: tea[value]{"password"},
         LoginAttempts: 0,
     }
     
@@ -1352,12 +1352,12 @@ slay getCurrentUserSecure() yikes<*User> {
     }
     
     // Lookup from system
-    sus passwd_entries []tea = readPasswdDatabase() fam {
+    sus passwd_entries tea[value] = readPasswdDatabase() fam {
         when err -> yikes "Cannot access user database: " + err
     }
     
     bestie (entry := range passwd_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 7 && fields[2] == current_uid {
             damn lookupUserFromSystem(fields[0]) fam {
                 when err -> yikes err
@@ -1369,7 +1369,7 @@ slay getCurrentUserSecure() yikes<*User> {
 }
 
 // Audit and reporting functions
-slay getSecurityAuditLog() []SecurityAuditEntry {
+slay getSecurityAuditLog() SecurityAuditEntry[value]{
     damn auditLog
 }
 

@@ -79,7 +79,7 @@ slay demo_query_processing() {
     
     fr fr Parse existing query string
     sus query tea = "search=cursed+lang&page=1&limit=20&sort=relevance"
-    sus params []urlz.QueryParam = urlz.parse_query_string(query)
+    sus params urlz[value].QueryParam = urlz.parse_query_string(query)
     
     vibez.spill("Original query:", query)
     vibez.spill("Parsed parameters:")
@@ -112,7 +112,7 @@ fr fr ===== URL VALIDATION EXAMPLE =====
 slay demo_url_validation() {
     vibez.spill("=== URL Validation ===")
     
-    sus test_urls []tea = [
+    sus test_urls tea[value] = [
         "https://example.com/valid",
         "http://localhost:3000/dev",
         "ftp://files.example.com/data",
@@ -192,9 +192,9 @@ slay demo_security_features() {
     vibez.spill("=== URL Security Features ===")
     
     fr fr Safe redirect validation
-    sus allowed_hosts []tea = ["example.com", "api.example.com", "secure.myapp.com"]
+    sus allowed_hosts tea[value] = ["example.com", "api.example.com", "secure.myapp.com"]
     
-    sus redirect_urls []tea = [
+    sus redirect_urls tea[value] = [
         "https://example.com/login",
         "https://api.example.com/callback",
         "https://malicious.com/phish",
@@ -215,7 +215,7 @@ slay demo_security_features() {
     
     fr fr URL sanitization
     vibez.spill("\n--- URL Sanitization ---")
-    sus dangerous_urls []tea = [
+    sus dangerous_urls tea[value] = [
         "https://user:pass@example.com/api",
         "javascript:alert('xss')",
         "data:text/html,<script>alert('xss')</script>",
@@ -243,7 +243,7 @@ slay demo_api_scenario() {
     sus endpoint tea = "products/search"
     
     fr fr Create search parameters
-    sus search_params []urlz.QueryParam = [
+    sus search_params urlz[value].QueryParam = [
         urlz.QueryParam{key: "q", value: "wireless headphones"},
         urlz.QueryParam{key: "category", value: "electronics"},
         urlz.QueryParam{key: "min_price", value: "50"},
@@ -302,7 +302,7 @@ slay demo_batch_processing() {
     vibez.spill("=== Batch URL Processing ===")
     
     fr fr Process a list of URLs
-    sus urls []tea = [
+    sus urls tea[value] = [
         "https://api.service1.com/v1/data",
         "http://legacy.service2.com:8080/api",
         "https://cdn.assets.com/images/logo.png",

@@ -24,7 +24,7 @@ slay main() {
     vibez.spill("Back in outer scope:", outer_var)
     
     vibez.spill("Testing loop scope...")
-    finna i normie = 0; i < 3; i++ {
+    bestie i := 0; i < 3; i++ {
         sus loop_var = i * 10
         vibez.spill("Loop iteration", i, "var:", loop_var)
     }

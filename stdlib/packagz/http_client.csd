@@ -156,13 +156,13 @@ slay execute_http_request(request HttpRequest) HttpResponse {
 # Parse raw HTTP response into structured format
 slay parse_http_response(raw_response tea, response_time drip) HttpResponse {
     # Extract status line
-    sus lines []tea = stringz.split(raw_response, "\n")
+    sus lines tea[value] = stringz.split(raw_response, "\n")
     ready (arrayz.len(lines) < 1) {
         damn create_error_response(0, "Empty response")
     }
     
     sus status_line tea = lines[0]
-    sus status_parts []tea = stringz.split(status_line, " ")
+    sus status_parts tea[value] = stringz.split(status_line, " ")
     ready (arrayz.len(status_parts) < 3) {
         damn create_error_response(0, "Invalid status line")
     }
@@ -179,7 +179,7 @@ slay parse_http_response(raw_response tea, response_time drip) HttpResponse {
             break  # End of headers
         }
         
-        sus header_parts []tea = stringz.split_n(line, ":", 2)
+        sus header_parts tea[value] = stringz.split_n(line, ":", 2)
         ready (arrayz.len(header_parts) == 2) {
             sus name tea = stringz.trim(stringz.to_lowercase(header_parts[0]))
             sus value tea = stringz.trim(header_parts[1])
@@ -192,7 +192,7 @@ slay parse_http_response(raw_response tea, response_time drip) HttpResponse {
     # Extract body
     sus body tea = ""
     ready (header_end_index + 1 < arrayz.len(lines)) {
-        sus body_lines []tea = arrayz.slice(lines, header_end_index + 1, arrayz.len(lines))
+        sus body_lines tea[value] = arrayz.slice(lines, header_end_index + 1, arrayz.len(lines))
         body = stringz.join(body_lines, "\n")
     }
     
@@ -320,7 +320,7 @@ slay is_valid_url(url tea) lit {
 
 # HTTP method validation
 slay is_valid_method(method tea) lit {
-    sus valid_methods []tea = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
+    sus valid_methods tea[value] = ["GET", "POST", "PUT", "DELETE", "PATCH", "HEAD", "OPTIONS"]
     
     bestie (sus i drip = 0; i < arrayz.len(valid_methods); i = i + 1) {
         ready (method == valid_methods[i]) {
@@ -353,10 +353,10 @@ slay url_encode(input tea) tea {
 
 # Build query string from parameters
 slay build_query_string(params map<tea, tea>) tea {
-    sus parts []tea = []
+    sus parts tea[value] = []
     
     # Iterate over map entries (simplified - real implementation would use proper iteration)
-    sus keys []tea = map_keys(params)  # Assume this function exists
+    sus keys tea[value] = map_keys(params)  # Assume this function exists
     bestie (sus i drip = 0; i < arrayz.len(keys); i = i + 1) {
         sus key tea = keys[i]
         sus value tea = params[key]
@@ -372,7 +372,7 @@ slay build_query_string(params map<tea, tea>) tea {
 }
 
 # Helper function to get map keys (placeholder for real implementation)
-slay map_keys(m map<tea, tea>) []tea {
+slay map_keys(m map<tea, tea>) tea[value]{
     # In real implementation, this would iterate over the map
     # For now, return empty array
     damn []

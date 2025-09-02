@@ -100,10 +100,10 @@ slay gcd_euclidean(a drip, b drip) drip {
     damn a
 }
 
-slay gcd_extended_euclidean(a drip, b drip) []drip {
+slay gcd_extended_euclidean(a drip, b drip) drip[value]{
     fr fr Extended Euclidean Algorithm
     fr fr Returns [gcd, x, y] such that ax + by = gcd(a, b)
-    sus result []drip = [0, 0, 0]
+    sus result drip[value] = [0, 0, 0]
     
     ready (b == 0) {
         result[0] = a
@@ -157,7 +157,7 @@ fr fr ==========================================
 fr fr PROPER SORTING-BASED STATISTICAL FUNCTIONS
 fr fr ==========================================
 
-slay quicksort_partition(arr []meal, low drip, high drip) drip {
+slay quicksort_partition(arr meal[value], low drip, high drip) drip {
     fr fr Partition function for quicksort
     sus pivot meal = arr[high]
     sus i drip = low - 1
@@ -180,7 +180,7 @@ slay quicksort_partition(arr []meal, low drip, high drip) drip {
     damn i + 1
 }
 
-slay quicksort_array(arr []meal, low drip, high drip) lit {
+slay quicksort_array(arr meal[value], low drip, high drip) lit {
     fr fr Quicksort implementation for proper median calculation
     ready (low < high) {
         sus pi drip = quicksort_partition(arr, low, high)
@@ -191,7 +191,7 @@ slay quicksort_array(arr []meal, low drip, high drip) lit {
     damn based
 }
 
-slay median_proper_sorting(values []meal, count drip) meal {
+slay median_proper_sorting(values meal[value], count drip) meal {
     fr fr Proper median calculation using sorting
     fr fr Mathematically correct median definition
     ready (count <= 0) {
@@ -202,7 +202,7 @@ slay median_proper_sorting(values []meal, count drip) meal {
     }
     
     fr fr Create a copy for sorting (non-destructive)
-    sus sorted_values []meal = make_array_copy(values, count)
+    sus sorted_values meal[value] = make_array_copy(values, count)
     
     fr fr Sort using quicksort
     quicksort_array(sorted_values, 0, count - 1)
@@ -218,9 +218,9 @@ slay median_proper_sorting(values []meal, count drip) meal {
     damn (sorted_values[mid1] + sorted_values[mid2]) / 2.0
 }
 
-slay make_array_copy(original []meal, count drip) []meal {
+slay make_array_copy(original meal[value], count drip) meal[value]{
     fr fr Helper function to create array copy
-    sus copy []meal = [0.0; count]  fr fr Initialize with zeros
+    sus copy meal[value] = [0.0; count]  fr fr Initialize with zeros
     sus i drip = 0
     bestie (i < count) {
         copy[i] = original[i]
@@ -229,14 +229,14 @@ slay make_array_copy(original []meal, count drip) []meal {
     damn copy
 }
 
-slay percentile_proper(values []meal, count drip, percentile meal) meal {
+slay percentile_proper(values meal[value], count drip, percentile meal) meal {
     fr fr Calculate percentile using proper sorting
     fr fr percentile should be between 0.0 and 100.0
     ready (count <= 0 || percentile < 0.0 || percentile > 100.0) {
         damn 0.0
     }
     
-    sus sorted_values []meal = make_array_copy(values, count)
+    sus sorted_values meal[value] = make_array_copy(values, count)
     quicksort_array(sorted_values, 0, count - 1)
     
     sus index meal = (percentile / 100.0) * (count - 1).(meal)
@@ -251,9 +251,9 @@ slay percentile_proper(values []meal, count drip, percentile meal) meal {
     damn sorted_values[lower_index] * (1.0 - weight) + sorted_values[upper_index] * weight
 }
 
-slay quartiles(values []meal, count drip) []meal {
+slay quartiles(values meal[value], count drip) meal[value]{
     fr fr Calculate Q1, Q2 (median), Q3 using proper sorting
-    sus result []meal = [0.0, 0.0, 0.0]
+    sus result meal[value] = [0.0, 0.0, 0.0]
     ready (count <= 0) {
         damn result
     }
@@ -269,7 +269,7 @@ fr fr ==========================================
 fr fr ROBUST STATISTICAL FUNCTIONS
 fr fr ==========================================
 
-slay mean_robust(values []meal, count drip) meal {
+slay mean_robust(values meal[value], count drip) meal {
     fr fr Arithmetic mean with overflow protection
     ready (count <= 0) {
         damn 0.0
@@ -297,7 +297,7 @@ slay mean_robust(values []meal, count drip) meal {
     damn sum / count.(meal)
 }
 
-slay variance_robust(values []meal, count drip) meal {
+slay variance_robust(values meal[value], count drip) meal {
     fr fr Sample variance using Welford's online algorithm
     fr fr Numerically stable and mathematically correct
     ready (count <= 1) {
@@ -327,7 +327,7 @@ slay variance_robust(values []meal, count drip) meal {
     damn m2 / (valid_count - 1).(meal)
 }
 
-slay standard_deviation_robust(values []meal, count drip) meal {
+slay standard_deviation_robust(values meal[value], count drip) meal {
     sus variance_val meal = variance_robust(values, count)
     ready (variance_val <= 0.0) {
         damn 0.0
@@ -335,7 +335,7 @@ slay standard_deviation_robust(values []meal, count drip) meal {
     damn sqrt_newton_raphson(variance_val)
 }
 
-slay skewness(values []meal, count drip) meal {
+slay skewness(values meal[value], count drip) meal {
     fr fr Sample skewness using the standard formula
     ready (count <= 2) {
         damn 0.0
@@ -368,7 +368,7 @@ slay skewness(values []meal, count drip) meal {
     damn third_moment / valid_count.(meal)
 }
 
-slay kurtosis(values []meal, count drip) meal {
+slay kurtosis(values meal[value], count drip) meal {
     fr fr Sample kurtosis using the standard formula
     ready (count <= 3) {
         damn 0.0
@@ -476,7 +476,7 @@ fr fr ==========================================
 fr fr ADVANCED STATISTICAL MEASURES
 fr fr ==========================================
 
-slay coefficient_of_variation(values []meal, count drip) meal {
+slay coefficient_of_variation(values meal[value], count drip) meal {
     fr fr Coefficient of Variation (CV) = std_dev / mean
     ready (count <= 1) {
         damn 0.0
@@ -491,20 +491,20 @@ slay coefficient_of_variation(values []meal, count drip) meal {
     damn abs_float(std_dev / mean_val)
 }
 
-slay interquartile_range(values []meal, count drip) meal {
+slay interquartile_range(values meal[value], count drip) meal {
     fr fr IQR = Q3 - Q1
-    sus quartile_values []meal = quartiles(values, count)
+    sus quartile_values meal[value] = quartiles(values, count)
     damn quartile_values[2] - quartile_values[0]
 }
 
-slay mad_median_absolute_deviation(values []meal, count drip) meal {
+slay mad_median_absolute_deviation(values meal[value], count drip) meal {
     fr fr Median Absolute Deviation - robust measure of variability
     ready (count <= 0) {
         damn 0.0
     }
     
     sus median_val meal = median_proper_sorting(values, count)
-    sus deviations []meal = [0.0; count]
+    sus deviations meal[value] = [0.0; count]
     
     sus i drip = 0
     bestie (i < count) {
@@ -519,7 +519,7 @@ fr fr ==========================================
 fr fr CORRELATION AND COVARIANCE
 fr fr ==========================================
 
-slay covariance(x_values []meal, y_values []meal, count drip) meal {
+slay covariance(x_values meal[value], y_values meal[value], count drip) meal {
     fr fr Sample covariance using Welford's method for numerical stability
     ready (count <= 1) {
         damn 0.0
@@ -547,7 +547,7 @@ slay covariance(x_values []meal, y_values []meal, count drip) meal {
     damn covariance_sum / (valid_count - 1).(meal)
 }
 
-slay correlation_pearson(x_values []meal, y_values []meal, count drip) meal {
+slay correlation_pearson(x_values meal[value], y_values meal[value], count drip) meal {
     fr fr Pearson correlation coefficient
     ready (count <= 1) {
         damn 0.0
@@ -568,7 +568,7 @@ fr fr ==========================================
 fr fr HYPOTHESIS TESTING SUPPORT
 fr fr ==========================================
 
-slay t_statistic_one_sample(values []meal, count drip, population_mean meal) meal {
+slay t_statistic_one_sample(values meal[value], count drip, population_mean meal) meal {
     fr fr One-sample t-statistic
     ready (count <= 1) {
         damn 0.0
@@ -584,7 +584,7 @@ slay t_statistic_one_sample(values []meal, count drip, population_mean meal) mea
     damn (sample_mean - population_mean) / (sample_std / sqrt_newton_raphson(count.(meal)))
 }
 
-slay chi_square_goodness_of_fit(observed []drip, expected []drip, count drip) meal {
+slay chi_square_goodness_of_fit(observed drip[value], expected drip[value], count drip) meal {
     fr fr Chi-square goodness of fit test statistic
     ready (count <= 0) {
         damn 0.0
@@ -625,7 +625,7 @@ slay test_enhanced_mathematical_operations() lit {
     }
     
     fr fr Test robust statistical functions
-    sus test_data []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+    sus test_data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
     sus median_result meal = median_proper_sorting(test_data, 5)
     ready (abs_float(median_result - 3.0) > 1e-10) {
         spill_facts("ERROR: Proper median calculation failed, expected 3.0, got", median_result)

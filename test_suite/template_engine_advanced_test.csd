@@ -532,7 +532,7 @@ slay test_concurrent_processing() {
     sus template tea = "Template {{$id}} with {{$content}}"
     
 fr fr Simulate concurrent processing
-    sus results []drip = []
+    sus results drip[value] = []
     
     bestie i := 0; i < 10; i++ {
         engine = set_variable_scoped(engine, "id", string(i))

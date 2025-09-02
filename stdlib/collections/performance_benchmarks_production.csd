@@ -22,7 +22,7 @@ be_like BenchmarkResult squad {
     complexity tea
 }
 
-sus benchmark_results []BenchmarkResult = []
+sus benchmark_results BenchmarkResult[value] = []
 
 slay record_benchmark(operation tea, algorithm tea, size normie, iterations normie, time_ms drip, complexity tea) {
     sus result BenchmarkResult
@@ -57,15 +57,15 @@ slay benchmark_sorting_algorithms() {
     vibez.spill("\n🚀 Benchmarking Sorting Algorithms...")
     
     fr fr Test data generation
-    sus small_random []normie = generate_random_array(SMALL_DATASET_SIZE)
-    sus medium_random []normie = generate_random_array(MEDIUM_DATASET_SIZE)
-    sus large_random []normie = generate_random_array(LARGE_DATASET_SIZE)
+    sus small_random normie[value] = generate_random_array(SMALL_DATASET_SIZE)
+    sus medium_random normie[value] = generate_random_array(MEDIUM_DATASET_SIZE)
+    sus large_random normie[value] = generate_random_array(LARGE_DATASET_SIZE)
     
-    sus small_sorted []normie = generate_sorted_array(SMALL_DATASET_SIZE)
-    sus medium_sorted []normie = generate_sorted_array(MEDIUM_DATASET_SIZE)
+    sus small_sorted normie[value] = generate_sorted_array(SMALL_DATASET_SIZE)
+    sus medium_sorted normie[value] = generate_sorted_array(MEDIUM_DATASET_SIZE)
     
-    sus small_reverse []normie = generate_reverse_array(SMALL_DATASET_SIZE)
-    sus medium_reverse []normie = generate_reverse_array(MEDIUM_DATASET_SIZE)
+    sus small_reverse normie[value] = generate_reverse_array(SMALL_DATASET_SIZE)
+    sus medium_reverse normie[value] = generate_reverse_array(MEDIUM_DATASET_SIZE)
     
     fr fr Benchmark MergeSort
     vibez.spill("Benchmarking MergeSort...")
@@ -501,7 +501,7 @@ fr fr Utility Functions
 fr fr ================================
 
 slay generate_random_array(size normie) [normie] {
-    sus arr []normie = []
+    sus arr normie[value] = []
     sus i normie = 0
     bestie i < size {
         sus random_val normie = (i * 17 + 42) mod 1000
@@ -512,7 +512,7 @@ slay generate_random_array(size normie) [normie] {
 }
 
 slay generate_sorted_array(size normie) [normie] {
-    sus arr []normie = []
+    sus arr normie[value] = []
     sus i normie = 0
     bestie i < size {
         arr.push(i)
@@ -522,7 +522,7 @@ slay generate_sorted_array(size normie) [normie] {
 }
 
 slay generate_reverse_array(size normie) [normie] {
-    sus arr []normie = []
+    sus arr normie[value] = []
     sus i normie = size - 1
     bestie i >= 0 {
         arr.push(i)

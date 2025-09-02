@@ -30,7 +30,7 @@ be_like HashEntry squad {
 }
 
 be_like RobinHoodHashTable squad {
-    entries []HashEntry
+    entries HashEntry[value]
     capacity normie
     size normie
     load_factor drip
@@ -71,7 +71,7 @@ slay HashMap_needs_resize(table RobinHoodHashTable) lit {
 }
 
 slay HashMap_resize(table RobinHoodHashTable) RobinHoodHashTable {
-    sus old_entries []HashEntry = table.entries
+    sus old_entries HashEntry[value] = table.entries
     sus old_capacity normie = table.capacity
     
     fr fr Double the capacity
@@ -212,8 +212,8 @@ slay MergeSort_merge(arr [normie], left normie, mid normie, right normie) [normi
     sus right_size normie = right - mid
     
     fr fr Create temporary arrays
-    sus left_arr []normie = []
-    sus right_arr []normie = []
+    sus left_arr normie[value] = []
+    sus right_arr normie[value] = []
     
     fr fr Copy data to temporary arrays
     sus i normie = 0
@@ -352,7 +352,7 @@ slay HeapSort_sort(arr [normie]) [normie] {
 
 slay HeapSort_sort_range(arr [normie], start normie, end normie) [normie] {
     fr fr Extract and sort specific range
-    sus sub_array []normie = []
+    sus sub_array normie[value] = []
     sus i normie = start
     bestie i <= end {
         sub_array.push(arr[i])
@@ -461,7 +461,7 @@ slay Statistics_median(arr [normie]) drip {
 }
 
 slay Statistics_quartiles(arr [normie]) [drip] {
-    sus result []drip = []
+    sus result drip[value] = []
     result.push(Statistics_percentile(arr, 25.0))  fr fr Q1
     result.push(Statistics_percentile(arr, 50.0))  fr fr Q2 (median)
     result.push(Statistics_percentile(arr, 75.0))  fr fr Q3
@@ -672,7 +672,7 @@ be_like PriorityItem squad {
 }
 
 be_like PriorityQueue squad {
-    items []PriorityItem
+    items PriorityItem[value]
     size normie
     capacity normie
 }

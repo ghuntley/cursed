@@ -26,8 +26,8 @@ fr fr RPC Method Registry
 fr fr ================================
 
 sus method_registry_count normie = 0
-sus method_registry_names [5]tea
-sus method_registry_handlers [5]tea
+sus method_registry_names tea[5]
+sus method_registry_handlers tea[5]
 
 fr fr Register a method with the RPC server
 slay register_method(method_name tea, handler tea) lit {

@@ -18,7 +18,7 @@ squad TomlValue {
     sus integer_value drip
     sus float_value sus            fr fr Using sus for float type
     sus boolean_value lit
-    sus array_values []TomlValue
+    sus array_values TomlValue[value]
     sus table_values TomlTable
     sus line_number drip
     sus column_number drip
@@ -27,20 +27,20 @@ squad TomlValue {
 squad TomlKeyValue {
     sus key tea
     sus value TomlValue
-    sus dotted_keys []tea          fr fr For nested keys like database.host
+    sus dotted_keys tea[value]          fr fr For nested keys like database.host
 }
 
 squad TomlTable {
     sus name tea
-    sus entries []TomlKeyValue
+    sus entries TomlKeyValue[value]
     sus is_array_table lit
     sus line_number drip
 }
 
 squad TomlDocument {
-    sus tables []TomlTable
-    sus root_entries []TomlKeyValue    fr fr Top-level key-value pairs
-    sus parsing_errors []tea
+    sus tables TomlTable[value]
+    sus root_entries TomlKeyValue[value]    fr fr Top-level key-value pairs
+    sus parsing_errors tea[value]
 }
 
 squad TomlParser {
@@ -49,7 +49,7 @@ squad TomlParser {
     sus line_number drip
     sus column_number drip
     sus current_char tea
-    sus errors []tea
+    sus errors tea[value]
 }
 
 fr fr ==========================================
@@ -202,7 +202,7 @@ slay parse_table_name(parser TomlParser) ParserResult<tea> {
         error_message: ""
     }
     
-    sus name_parts []tea = []
+    sus name_parts tea[value] = []
     parser = skip_whitespace(parser)
     
     bestie (!parser_at_end(parser) && parser.current_char != "]") {
@@ -311,7 +311,7 @@ slay parse_key(parser TomlParser) ParserResult<tea> {
         error_message: ""
     }
     
-    sus key_parts []tea = []
+    sus key_parts tea[value] = []
     
     bestie (!parser_at_end(parser) && parser.current_char != "=" && parser.current_char != " " && parser.current_char != "\t") {
         ready (is_identifier_start(parser.current_char)) {
@@ -663,7 +663,7 @@ slay parse_array(parser TomlParser) ParserResult<TomlValue> {
     parser = advance_parser(parser)  fr fr Skip opening bracket
     parser = skip_whitespace_and_comments(parser)
     
-    sus array_values []TomlValue = []
+    sus array_values TomlValue[value] = []
     
     fr fr Handle empty array
     ready (parser.current_char == "]") {
@@ -966,9 +966,9 @@ fr fr ==========================================
 fr fr Array and String Utilities
 fr fr ==========================================
 
-slay append_toml_table(tables []TomlTable, table TomlTable) []TomlTable {
+slay append_toml_table(tables TomlTable[value], table TomlTable) TomlTable[value]{
     fr fr Append table to tables array
-    sus new_tables []TomlTable = []
+    sus new_tables TomlTable[value] = []
     sus i drip = 0
     bestie (i < len(tables)) {
         new_tables = append_table_entry(new_tables, tables[i])
@@ -978,9 +978,9 @@ slay append_toml_table(tables []TomlTable, table TomlTable) []TomlTable {
     damn new_tables
 }
 
-slay append_key_value(entries []TomlKeyValue, kv TomlKeyValue) []TomlKeyValue {
+slay append_key_value(entries TomlKeyValue[value], kv TomlKeyValue) TomlKeyValue[value]{
     fr fr Append key-value to entries array
-    sus new_entries []TomlKeyValue = []
+    sus new_entries TomlKeyValue[value] = []
     sus i drip = 0
     bestie (i < len(entries)) {
         new_entries = append_kv_entry(new_entries, entries[i])
@@ -990,9 +990,9 @@ slay append_key_value(entries []TomlKeyValue, kv TomlKeyValue) []TomlKeyValue {
     damn new_entries
 }
 
-slay append_toml_value(values []TomlValue, value TomlValue) []TomlValue {
+slay append_toml_value(values TomlValue[value], value TomlValue) TomlValue[value]{
     fr fr Append value to values array
-    sus new_values []TomlValue = []
+    sus new_values TomlValue[value] = []
     sus i drip = 0
     bestie (i < len(values)) {
         new_values = append_value_entry(new_values, values[i])
@@ -1002,9 +1002,9 @@ slay append_toml_value(values []TomlValue, value TomlValue) []TomlValue {
     damn new_values
 }
 
-slay append_error(errors []tea, error tea) []tea {
+slay append_error(errors tea[value], error tea) tea[value]{
     fr fr Append error to errors array
-    sus new_errors []tea = []
+    sus new_errors tea[value] = []
     sus i drip = 0
     bestie (i < len(errors)) {
         new_errors = append_string(new_errors, errors[i])
@@ -1014,9 +1014,9 @@ slay append_error(errors []tea, error tea) []tea {
     damn new_errors
 }
 
-slay split_dotted_key(key tea) []tea {
+slay split_dotted_key(key tea) tea[value]{
     fr fr Split "database.host" into ["database", "host"]
-    sus parts []tea = []
+    sus parts tea[value] = []
     ready (string_contains(key, ".")) {
         fr fr Simple implementation for common cases
         ready (key == "database.host") {
@@ -1037,7 +1037,7 @@ slay split_dotted_key(key tea) []tea {
     damn parts
 }
 
-slay join_strings_with_dot(parts []tea) tea {
+slay join_strings_with_dot(parts tea[value]) tea {
     fr fr Join ["database", "host"] into "database.host"
     ready (len(parts) == 0) { damn "" }
     ready (len(parts) == 1) { damn parts[0] }
@@ -1085,7 +1085,7 @@ slay toml_document_has_errors(document TomlDocument) lit {
     damn len(document.parsing_errors) > 0
 }
 
-slay toml_document_get_errors(document TomlDocument) []tea {
+slay toml_document_get_errors(document TomlDocument) tea[value]{
     fr fr Get all parsing errors
     damn document.parsing_errors
 }
@@ -1324,7 +1324,7 @@ slay integer_to_string(value drip) tea {
     }
     
     fr fr Build digits in reverse order
-    sus digits []tea = []
+    sus digits tea[value] = []
     sus digit_count drip = 0
     
     ready (abs_value == 0) {
@@ -1408,34 +1408,34 @@ fr fr ==========================================
 fr fr Array Manipulation Functions - Real Implementation
 fr fr ==========================================
 
-slay append_table_entry(tables []TomlTable, table TomlTable) []TomlTable {
+slay append_table_entry(tables TomlTable[value], table TomlTable) TomlTable[value]{
     fr fr Append table to tables array - dynamic array growth
     sus current_size drip = array_size(tables)
-    sus new_tables []TomlTable = array_resize(tables, current_size + 1)
+    sus new_tables TomlTable[value] = array_resize(tables, current_size + 1)
     new_tables[current_size] = table
     damn new_tables
 }
 
-slay append_kv_entry(entries []TomlKeyValue, kv TomlKeyValue) []TomlKeyValue {
+slay append_kv_entry(entries TomlKeyValue[value], kv TomlKeyValue) TomlKeyValue[value]{
     fr fr Append key-value to entries array - dynamic array growth
     sus current_size drip = array_size(entries)
-    sus new_entries []TomlKeyValue = array_resize(entries, current_size + 1)
+    sus new_entries TomlKeyValue[value] = array_resize(entries, current_size + 1)
     new_entries[current_size] = kv
     damn new_entries
 }
 
-slay append_value_entry(values []TomlValue, value TomlValue) []TomlValue {
+slay append_value_entry(values TomlValue[value], value TomlValue) TomlValue[value]{
     fr fr Append value to values array - dynamic array growth
     sus current_size drip = array_size(values)
-    sus new_values []TomlValue = array_resize(values, current_size + 1)
+    sus new_values TomlValue[value] = array_resize(values, current_size + 1)
     new_values[current_size] = value
     damn new_values
 }
 
-slay append_string(strings []tea, str tea) []tea {
+slay append_string(strings tea[value], str tea) tea[value]{
     fr fr Append string to strings array - dynamic array growth
     sus current_size drip = array_size(strings)
-    sus new_strings []tea = array_resize(strings, current_size + 1)
+    sus new_strings tea[value] = array_resize(strings, current_size + 1)
     new_strings[current_size] = str
     damn new_strings
 }
@@ -1799,11 +1799,11 @@ slay advance_to_next_line(parser TomlParser) TomlParser {
     damn parser
 }
 
-slay merge_error_arrays(arr1 []tea, arr2 []tea) []tea {
+slay merge_error_arrays(arr1 tea[value], arr2 tea[value]) tea[value]{
     fr fr Merge two error arrays
     sus arr1_size drip = array_size(arr1)
     sus arr2_size drip = array_size(arr2)
-    sus merged []tea = array_resize(arr1, arr1_size + arr2_size)
+    sus merged tea[value] = array_resize(arr1, arr1_size + arr2_size)
     
     sus i drip = 0
     bestie (i < arr2_size) {
@@ -1951,7 +1951,7 @@ slay parse_array(parser TomlParser) ParserResult<TomlValue> {
     parser = advance_parser(parser)  fr fr Skip opening bracket
     parser = skip_whitespace_and_comments(parser)
     
-    sus array_values []TomlValue = []
+    sus array_values TomlValue[value] = []
     
     fr fr Handle empty array
     ready (parser.current_char == "]") {
@@ -2229,14 +2229,14 @@ slay trim_multiline_string(str tea) tea {
     ready (end == length) { damn str } otherwise { damn substring(str, 0, end) }
 }
 
-slay array_size(arr []T) drip {
+slay array_size(arr T[value]) drip {
     fr fr Get dynamic array size
     damn len(arr)
 }
 
-slay array_resize(arr []T, new_size drip) []T {
+slay array_resize(arr T[value], new_size drip) T[value]{
     fr fr Resize dynamic array
-    sus new_arr []T = []
+    sus new_arr T[value] = []
     sus old_size drip = len(arr)
     sus copy_size drip = min(old_size, new_size)
     

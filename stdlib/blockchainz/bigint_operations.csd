@@ -9,7 +9,7 @@ yeet "vibez"
 # Big integers stored as arrays of 32-bit words in little-endian format
 # This provides sufficient precision for cryptographic operations
 
-slay hex_to_bigint(hex_string tea) []drip {
+slay hex_to_bigint(hex_string tea) drip[value]{
     fr fr Convert hex string to big integer
     sus cleaned_hex tea = stringz.to_lower(stringz.replace(hex_string, " ", ""))
     
@@ -22,7 +22,7 @@ slay hex_to_bigint(hex_string tea) []drip {
         cleaned_hex = "0" + cleaned_hex
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus hex_len drip = stringz.length(cleaned_hex)
     
     # Process 8 hex chars (32 bits) at a time from right to left
@@ -36,9 +36,9 @@ slay hex_to_bigint(hex_string tea) []drip {
     damn normalize_bigint(result)
 }
 
-slay bigint_to_hex(bigint []drip) tea {
+slay bigint_to_hex(bigint drip[value]) tea {
     fr fr Convert big integer to hex string
-    sus normalized []drip = normalize_bigint(bigint)
+    sus normalized drip[value] = normalize_bigint(bigint)
     
     ready len(normalized) == 0 {
         damn "0"
@@ -73,13 +73,13 @@ slay bigint_to_hex(bigint []drip) tea {
     damn result
 }
 
-slay bytes_to_bigint(bytes []drip) []drip {
+slay bytes_to_bigint(bytes drip[value]) drip[value]{
     fr fr Convert byte array to big integer (big-endian)
     ready len(bytes) == 0 {
         damn []
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus current_word drip = 0
     sus bit_count drip = 0
     
@@ -102,10 +102,10 @@ slay bytes_to_bigint(bytes []drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay bigint_to_bytes_32(bigint []drip) []drip {
+slay bigint_to_bytes_32(bigint drip[value]) drip[value]{
     fr fr Convert big integer to 32-byte array (big-endian)
-    sus normalized []drip = normalize_bigint(bigint)
-    sus result []drip = make_array(32, 0)
+    sus normalized drip[value] = normalize_bigint(bigint)
+    sus result drip[value] = make_array(32, 0)
     
     sus byte_index drip = 31  # Start from rightmost byte
     
@@ -125,10 +125,10 @@ slay bigint_to_bytes_32(bigint []drip) []drip {
 
 # ===== BASIC ARITHMETIC OPERATIONS =====
 
-slay add_bigint(a []drip, b []drip) []drip {
+slay add_bigint(a drip[value], b drip[value]) drip[value]{
     fr fr Add two big integers
     sus max_len drip = mathz.max(len(a), len(b)) + 1
-    sus result []drip = make_array(max_len, 0)
+    sus result drip[value] = make_array(max_len, 0)
     sus carry drip = 0
     
     bestie i := 0; i < max_len; i++ {
@@ -150,14 +150,14 @@ slay add_bigint(a []drip, b []drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay subtract_bigint(a []drip, b []drip) []drip {
+slay subtract_bigint(a drip[value], b drip[value]) drip[value]{
     fr fr Subtract b from a (assumes a >= b)
     ready compare_bigint(a, b) < 0 {
         vibez.spill("ERROR: Cannot subtract larger number from smaller")
         damn []
     }
     
-    sus result []drip = make_array(len(a), 0)
+    sus result drip[value] = make_array(len(a), 0)
     sus borrow drip = 0
     
     bestie i := 0; i < len(a); i++ {
@@ -183,13 +183,13 @@ slay subtract_bigint(a []drip, b []drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay multiply_bigint(a []drip, b []drip) []drip {
+slay multiply_bigint(a drip[value], b drip[value]) drip[value]{
     fr fr Multiply two big integers
     ready len(a) == 0 || len(b) == 0 {
         damn []
     }
     
-    sus result []drip = make_array(len(a) + len(b), 0)
+    sus result drip[value] = make_array(len(a) + len(b), 0)
     
     bestie i := 0; i < len(a); i++ {
         sus carry drip = 0
@@ -208,7 +208,7 @@ slay multiply_bigint(a []drip, b []drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay divide_bigint(dividend []drip, divisor []drip) []drip {
+slay divide_bigint(dividend drip[value], divisor drip[value]) drip[value]{
     fr fr Divide two big integers (returns quotient)
     ready len(divisor) == 0 || is_zero(divisor) {
         vibez.spill("ERROR: Division by zero")
@@ -224,8 +224,8 @@ slay divide_bigint(dividend []drip, divisor []drip) []drip {
     }
     
     # Long division algorithm
-    sus remainder []drip = copy_bigint(dividend)
-    sus quotient []drip = []
+    sus remainder drip[value] = copy_bigint(dividend)
+    sus quotient drip[value] = []
     
     # Find the bit length difference
     sus dividend_bits drip = bit_length(dividend)
@@ -233,7 +233,7 @@ slay divide_bigint(dividend []drip, divisor []drip) []drip {
     sus bit_diff drip = dividend_bits - divisor_bits
     
     bestie bit_diff >= 0 {
-        sus shifted_divisor []drip = left_shift_bigint(divisor, bit_diff)
+        sus shifted_divisor drip[value] = left_shift_bigint(divisor, bit_diff)
         
         ready compare_bigint(remainder, shifted_divisor) >= 0 {
             remainder = subtract_bigint(remainder, shifted_divisor)
@@ -248,7 +248,7 @@ slay divide_bigint(dividend []drip, divisor []drip) []drip {
 
 # ===== MODULAR ARITHMETIC =====
 
-slay mod_bigint(a []drip, m []drip) []drip {
+slay mod_bigint(a drip[value], m drip[value]) drip[value]{
     fr fr Compute a mod m
     ready len(m) == 0 || is_zero(m) {
         vibez.spill("ERROR: Modulus cannot be zero")
@@ -260,28 +260,28 @@ slay mod_bigint(a []drip, m []drip) []drip {
     }
     
     # Use division to find remainder
-    sus quotient []drip = divide_bigint(a, m)
-    sus product []drip = multiply_bigint(quotient, m)
-    sus remainder []drip = subtract_bigint(a, product)
+    sus quotient drip[value] = divide_bigint(a, m)
+    sus product drip[value] = multiply_bigint(quotient, m)
+    sus remainder drip[value] = subtract_bigint(a, product)
     
     damn normalize_bigint(remainder)
 }
 
-slay mod_add(a []drip, b []drip, m []drip) []drip {
+slay mod_add(a drip[value], b drip[value], m drip[value]) drip[value]{
     fr fr Compute (a + b) mod m
-    sus sum []drip = add_bigint(a, b)
+    sus sum drip[value] = add_bigint(a, b)
     damn mod_bigint(sum, m)
 }
 
-slay mod_sub(a []drip, b []drip, m []drip) []drip {
+slay mod_sub(a drip[value], b drip[value], m drip[value]) drip[value]{
     fr fr Compute (a - b) mod m
     ready compare_bigint(a, b) >= 0 {
-        sus diff []drip = subtract_bigint(a, b)
+        sus diff drip[value] = subtract_bigint(a, b)
         damn mod_bigint(diff, m)
     } otherwise {
         # a < b, so (a - b) mod m = m - ((b - a) mod m)
-        sus diff []drip = subtract_bigint(b, a)
-        sus mod_diff []drip = mod_bigint(diff, m)
+        sus diff drip[value] = subtract_bigint(b, a)
+        sus mod_diff drip[value] = mod_bigint(diff, m)
         ready is_zero(mod_diff) {
             damn []
         }
@@ -289,21 +289,21 @@ slay mod_sub(a []drip, b []drip, m []drip) []drip {
     }
 }
 
-slay mod_mult(a []drip, b []drip, m []drip) []drip {
+slay mod_mult(a drip[value], b drip[value], m drip[value]) drip[value]{
     fr fr Compute (a * b) mod m
-    sus product []drip = multiply_bigint(a, b)
+    sus product drip[value] = multiply_bigint(a, b)
     damn mod_bigint(product, m)
 }
 
-slay mod_exp(base []drip, exponent []drip, modulus []drip) []drip {
+slay mod_exp(base drip[value], exponent drip[value], modulus drip[value]) drip[value]{
     fr fr Modular exponentiation using binary method
     ready is_zero(exponent) {
         damn [1]
     }
     
-    sus result []drip = [1]
-    sus base_mod []drip = mod_bigint(base, modulus)
-    sus exp_copy []drip = copy_bigint(exponent)
+    sus result drip[value] = [1]
+    sus base_mod drip[value] = mod_bigint(base, modulus)
+    sus exp_copy drip[value] = copy_bigint(exponent)
     
     bestie !is_zero(exp_copy) {
         ready is_odd(exp_copy) {
@@ -317,40 +317,40 @@ slay mod_exp(base []drip, exponent []drip, modulus []drip) []drip {
     damn result
 }
 
-slay mod_inverse(a []drip, m []drip) []drip {
+slay mod_inverse(a drip[value], m drip[value]) drip[value]{
     fr fr Compute modular inverse using extended Euclidean algorithm
-    sus original_a []drip = normalize_bigint(a)
-    sus original_m []drip = normalize_bigint(m)
+    sus original_a drip[value] = normalize_bigint(a)
+    sus original_m drip[value] = normalize_bigint(m)
     
     ready is_zero(original_a) {
         vibez.spill("ERROR: Cannot find inverse of zero")
         damn []
     }
     
-    sus old_r []drip = copy_bigint(original_m)
-    sus r []drip = copy_bigint(original_a)
-    sus old_s []drip = []  # 0
-    sus s []drip = [1]
+    sus old_r drip[value] = copy_bigint(original_m)
+    sus r drip[value] = copy_bigint(original_a)
+    sus old_s drip[value] = []  # 0
+    sus s drip[value] = [1]
     
     bestie !is_zero(r) {
-        sus quotient []drip = divide_bigint(old_r, r)
+        sus quotient drip[value] = divide_bigint(old_r, r)
         
         # Update remainders
-        sus temp_r []drip = copy_bigint(r)
-        sus qr_product []drip = multiply_bigint(quotient, r)
+        sus temp_r drip[value] = copy_bigint(r)
+        sus qr_product drip[value] = multiply_bigint(quotient, r)
         r = subtract_bigint(old_r, qr_product)
         old_r = temp_r
         
         # Update coefficients
-        sus temp_s []drip = copy_bigint(s)
-        sus qs_product []drip = multiply_bigint(quotient, s)
+        sus temp_s drip[value] = copy_bigint(s)
+        sus qs_product drip[value] = multiply_bigint(quotient, s)
         
         ready len(old_s) == 0 {  # old_s is 0
             s = negate_bigint(qs_product, original_m)
         } otherwise ready compare_bigint(old_s, qs_product) >= 0 {
             s = subtract_bigint(old_s, qs_product)
         } otherwise {
-            sus diff []drip = subtract_bigint(qs_product, old_s)
+            sus diff drip[value] = subtract_bigint(qs_product, old_s)
             s = subtract_bigint(original_m, mod_bigint(diff, original_m))
         }
         
@@ -372,7 +372,7 @@ slay mod_inverse(a []drip, m []drip) []drip {
 
 # ===== BIT OPERATIONS =====
 
-slay left_shift_bigint(a []drip, shift drip) []drip {
+slay left_shift_bigint(a drip[value], shift drip) drip[value]{
     fr fr Left shift big integer by shift bits
     ready shift == 0 {
         damn normalize_bigint(a)
@@ -381,7 +381,7 @@ slay left_shift_bigint(a []drip, shift drip) []drip {
     sus word_shift drip = shift / 32
     sus bit_shift drip = shift % 32
     
-    sus result []drip = make_array(len(a) + word_shift + 1, 0)
+    sus result drip[value] = make_array(len(a) + word_shift + 1, 0)
     
     ready bit_shift == 0 {
         # Simple word shift
@@ -405,7 +405,7 @@ slay left_shift_bigint(a []drip, shift drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay right_shift_bigint(a []drip, shift drip) []drip {
+slay right_shift_bigint(a drip[value], shift drip) drip[value]{
     fr fr Right shift big integer by shift bits
     ready shift == 0 {
         damn normalize_bigint(a)
@@ -418,7 +418,7 @@ slay right_shift_bigint(a []drip, shift drip) []drip {
         damn []  # Result is 0
     }
     
-    sus result []drip = make_array(len(a) - word_shift, 0)
+    sus result drip[value] = make_array(len(a) - word_shift, 0)
     
     ready bit_shift == 0 {
         # Simple word shift
@@ -441,16 +441,16 @@ slay right_shift_bigint(a []drip, shift drip) []drip {
     damn normalize_bigint(result)
 }
 
-slay set_bit_bigint(a []drip, bit_index drip) []drip {
+slay set_bit_bigint(a drip[value], bit_index drip) drip[value]{
     fr fr Set bit at given index in big integer
     sus word_index drip = bit_index / 32
     sus bit_in_word drip = bit_index % 32
     
-    sus result []drip = copy_bigint(a)
+    sus result drip[value] = copy_bigint(a)
     
     # Extend array if necessary
     bestie word_index >= len(result) {
-        sus new_array []drip = make_array(word_index + 1, 0)
+        sus new_array drip[value] = make_array(word_index + 1, 0)
         bestie i := 0; i < len(result); i++ {
             new_array[i] = result[i]
         }
@@ -464,12 +464,12 @@ slay set_bit_bigint(a []drip, bit_index drip) []drip {
 
 # ===== COMPARISON OPERATIONS =====
 
-slay compare_bigint(a []drip, b []drip) drip {
+slay compare_bigint(a drip[value], b drip[value]) drip {
     fr fr Compare two big integers
     fr fr Returns: -1 if a < b, 0 if a == b, 1 if a > b
     
-    sus norm_a []drip = normalize_bigint(a)
-    sus norm_b []drip = normalize_bigint(b)
+    sus norm_a drip[value] = normalize_bigint(a)
+    sus norm_b drip[value] = normalize_bigint(b)
     
     ready len(norm_a) < len(norm_b) {
         damn -1
@@ -491,24 +491,24 @@ slay compare_bigint(a []drip, b []drip) drip {
     damn 0  # Equal
 }
 
-slay is_zero(a []drip) lit {
-    sus normalized []drip = normalize_bigint(a)
+slay is_zero(a drip[value]) lit {
+    sus normalized drip[value] = normalize_bigint(a)
     damn len(normalized) == 0
 }
 
-slay is_one(a []drip) lit {
-    sus normalized []drip = normalize_bigint(a)
+slay is_one(a drip[value]) lit {
+    sus normalized drip[value] = normalize_bigint(a)
     damn len(normalized) == 1 && normalized[0] == 1
 }
 
-slay is_odd(a []drip) lit {
+slay is_odd(a drip[value]) lit {
     ready len(a) == 0 {
         damn cringe
     }
     damn (a[0] & 1) == 1
 }
 
-slay bytes_equal(a []drip, b []drip) lit {
+slay bytes_equal(a drip[value], b drip[value]) lit {
     ready len(a) != len(b) {
         damn cringe
     }
@@ -524,7 +524,7 @@ slay bytes_equal(a []drip, b []drip) lit {
 
 # ===== UTILITY FUNCTIONS =====
 
-slay normalize_bigint(a []drip) []drip {
+slay normalize_bigint(a drip[value]) drip[value]{
     fr fr Remove leading zero words
     ready len(a) == 0 {
         damn []
@@ -542,7 +542,7 @@ slay normalize_bigint(a []drip) []drip {
         damn []  # All zeros
     }
     
-    sus result []drip = make_array(last_nonzero + 1, 0)
+    sus result drip[value] = make_array(last_nonzero + 1, 0)
     bestie i := 0; i <= last_nonzero; i++ {
         result[i] = a[i]
     }
@@ -550,15 +550,15 @@ slay normalize_bigint(a []drip) []drip {
     damn result
 }
 
-slay copy_bigint(a []drip) []drip {
-    sus result []drip = make_array(len(a), 0)
+slay copy_bigint(a drip[value]) drip[value]{
+    sus result drip[value] = make_array(len(a), 0)
     bestie i := 0; i < len(a); i++ {
         result[i] = a[i]
     }
     damn result
 }
 
-slay negate_bigint(a []drip, modulus []drip) []drip {
+slay negate_bigint(a drip[value], modulus drip[value]) drip[value]{
     fr fr Compute modulus - a
     ready is_zero(a) {
         damn []
@@ -566,9 +566,9 @@ slay negate_bigint(a []drip, modulus []drip) []drip {
     damn subtract_bigint(modulus, a)
 }
 
-slay bit_length(a []drip) drip {
+slay bit_length(a drip[value]) drip {
     fr fr Return bit length of big integer
-    sus normalized []drip = normalize_bigint(a)
+    sus normalized drip[value] = normalize_bigint(a)
     
     ready len(normalized) == 0 {
         damn 0
@@ -586,15 +586,15 @@ slay bit_length(a []drip) drip {
     damn (len(normalized) - 1) * 32 + word_bits
 }
 
-slay int_to_bigint(value drip) []drip {
+slay int_to_bigint(value drip) drip[value]{
     ready value == 0 {
         damn []
     }
     damn [value]
 }
 
-slay bigint_to_int(a []drip) drip {
-    sus normalized []drip = normalize_bigint(a)
+slay bigint_to_int(a drip[value]) drip {
+    sus normalized drip[value] = normalize_bigint(a)
     ready len(normalized) == 0 {
         damn 0
     }
@@ -651,9 +651,9 @@ slay int_to_hex_padded(value drip, width drip) tea {
     damn result
 }
 
-slay make_array(size drip, value drip) []drip {
+slay make_array(size drip, value drip) drip[value]{
     fr fr Create array of given size filled with value
-    sus result []drip = []
+    sus result drip[value] = []
     bestie i := 0; i < size; i++ {
         result = append(result, value)
     }

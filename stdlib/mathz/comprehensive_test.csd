@@ -347,23 +347,23 @@ slay test_vector_operations() lit {
     test_group("Vector Operations")
     
     fr fr Test dot product
-    sus vec_a []tea = ["1.0", "2.0", "3.0"]
-    sus vec_b []tea = ["4.0", "5.0", "6.0"]
+    sus vec_a tea[value] = ["1.0", "2.0", "3.0"]
+    sus vec_b tea[value] = ["4.0", "5.0", "6.0"]
     sus dot_result tea = vector_dot_product(vec_a, vec_b, 3)
     assert_close_float(dot_result, "32.0", "1e-15")
     
     fr fr Test vector magnitude
-    sus vec_unit []tea = ["1.0", "0.0", "0.0"]
+    sus vec_unit tea[value] = ["1.0", "0.0", "0.0"]
     sus mag_unit tea = vector_magnitude(vec_unit, 3)
     assert_close_float(mag_unit, "1.0", "1e-15")
     
-    sus vec_345 []tea = ["3.0", "4.0", "0.0"]
+    sus vec_345 tea[value] = ["3.0", "4.0", "0.0"]
     sus mag_345 tea = vector_magnitude(vec_345, 3)
     assert_close_float(mag_345, "5.0", "1e-15")
     
     fr fr Test vector normalization
-    sus vec_to_normalize []tea = ["3.0", "4.0", "0.0"]
-    sus normalized []tea = ["0.0", "0.0", "0.0"]
+    sus vec_to_normalize tea[value] = ["3.0", "4.0", "0.0"]
+    sus normalized tea[value] = ["0.0", "0.0", "0.0"]
     sus success lit = vector_normalize(vec_to_normalize, normalized, 3)
     assert_true(success)
     
@@ -380,14 +380,14 @@ slay test_matrix_operations() lit {
     test_group("Matrix Operations")
     
     fr fr Test 2x2 matrix determinant
-    sus matrix_2x2 []tea = ["1.0", "2.0", "3.0", "4.0"]
+    sus matrix_2x2 tea[value] = ["1.0", "2.0", "3.0", "4.0"]
     sus det tea = matrix_determinant_2x2(matrix_2x2)
     assert_close_float(det, "-2.0", "1e-15")
     
     fr fr Test 2x2 matrix multiplication
-    sus a []tea = ["1.0", "2.0", "3.0", "4.0"]
-    sus b []tea = ["5.0", "6.0", "7.0", "8.0"]
-    sus result []tea = ["0.0", "0.0", "0.0", "0.0"]
+    sus a tea[value] = ["1.0", "2.0", "3.0", "4.0"]
+    sus b tea[value] = ["5.0", "6.0", "7.0", "8.0"]
+    sus result tea[value] = ["0.0", "0.0", "0.0", "0.0"]
     sus mult_success lit = matrix_multiply_2x2(a, b, result)
     assert_true(mult_success)
     
@@ -398,13 +398,13 @@ slay test_matrix_operations() lit {
     assert_close_float(result[3], "50.0", "1e-15")
     
     fr fr Test matrix inverse
-    sus inv_matrix []tea = ["4.0", "7.0", "2.0", "6.0"]
-    sus inverse []tea = ["0.0", "0.0", "0.0", "0.0"]
+    sus inv_matrix tea[value] = ["4.0", "7.0", "2.0", "6.0"]
+    sus inverse tea[value] = ["0.0", "0.0", "0.0", "0.0"]
     sus inv_success lit = matrix_inverse_2x2(inv_matrix, inverse)
     assert_true(inv_success)
     
     fr fr Verify A * A^(-1) = I
-    sus identity []tea = ["0.0", "0.0", "0.0", "0.0"]
+    sus identity tea[value] = ["0.0", "0.0", "0.0", "0.0"]
     matrix_multiply_2x2(inv_matrix, inverse, identity)
     assert_close_float(identity[0], "1.0", "1e-12")
     assert_close_float(identity[1], "0.0", "1e-12")
@@ -421,7 +421,7 @@ slay test_eigenvalue_computation() lit {
     test_group("Eigenvalue Computation")
     
     fr fr Test eigenvalues of diagonal matrix
-    sus diag_matrix []tea = ["5.0", "0.0", "0.0", "3.0"]
+    sus diag_matrix tea[value] = ["5.0", "0.0", "0.0", "3.0"]
     sus lambda1 tea = "0.0"
     sus lambda2 tea = "0.0"
     sus eigen_success lit = matrix_eigenvalues_2x2(diag_matrix, lambda1, lambda2)
@@ -477,7 +477,7 @@ slay test_optimization_algorithms() lit {
     assert_close_float(ternary_min, "0.0", "1e-8")
     
     fr fr Test 2D gradient descent
-    sus x_start []tea = ["10.0", "-5.0"]
+    sus x_start tea[value] = ["10.0", "-5.0"]
     sus gd_success lit = gradient_descent_2d(x_start, "0.1", "1e-10", 1000)
     assert_true(gd_success)
     assert_close_float(x_start[0], "0.0", "1e-8")
@@ -494,7 +494,7 @@ slay test_numerical_differentiation() lit {
     
     fr fr Test derivatives of x² at x = 2 (should be 4)
     fr fr Function values: f(1.9) = 3.61, f(2.0) = 4.0, f(2.1) = 4.41
-    sus func_vals []tea = ["3.61", "4.0", "4.41"]
+    sus func_vals tea[value] = ["3.61", "4.0", "4.41"]
     sus h tea = "0.1"
     
     sus forward_deriv tea = forward_difference(func_vals, h, 0)
@@ -517,7 +517,7 @@ slay test_numerical_integration() lit {
     
     fr fr Test integration of x² from 0 to 2 (should be 8/3)
     fr fr Using function values at x = 0, 0.5, 1.0, 1.5, 2.0
-    sus func_vals []tea = ["0.0", "0.25", "1.0", "2.25", "4.0"]
+    sus func_vals tea[value] = ["0.0", "0.25", "1.0", "2.25", "4.0"]
     sus h tea = "0.5"
     sus n drip = 4
     
@@ -537,8 +537,8 @@ slay test_curve_fitting() lit {
     test_group("Curve Fitting")
     
     fr fr Test linear regression on y = 2x + 1
-    sus x_data []tea = ["1.0", "2.0", "3.0", "4.0", "5.0"]
-    sus y_data []tea = ["3.0", "5.0", "7.0", "9.0", "11.0"]
+    sus x_data tea[value] = ["1.0", "2.0", "3.0", "4.0", "5.0"]
+    sus y_data tea[value] = ["3.0", "5.0", "7.0", "9.0", "11.0"]
     sus slope tea = "0.0"
     sus intercept tea = "0.0"
     
@@ -548,9 +548,9 @@ slay test_curve_fitting() lit {
     assert_close_float(intercept, "1.0", "1e-10")
     
     fr fr Test quadratic fitting on y = x²
-    sus x_quad []tea = ["0.0", "1.0", "2.0", "3.0", "4.0"]
-    sus y_quad []tea = ["0.0", "1.0", "4.0", "9.0", "16.0"]
-    sus coeffs []tea = ["0.0", "0.0", "0.0"]
+    sus x_quad tea[value] = ["0.0", "1.0", "2.0", "3.0", "4.0"]
+    sus y_quad tea[value] = ["0.0", "1.0", "4.0", "9.0", "16.0"]
+    sus coeffs tea[value] = ["0.0", "0.0", "0.0"]
     
     sus quad_success lit = polynomial_fit_quadratic(x_quad, y_quad, 5, coeffs)
     assert_true(quad_success)

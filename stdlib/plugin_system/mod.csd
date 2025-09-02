@@ -16,13 +16,13 @@ facts PLUG_STATUS_SANDBOXED normie = 3
 
 fr fr Plugin Registry Structure (simulated with maps)
 sus plugin_registry_counter normie = 0
-sus plugin_name_map [100]tea fr fr Plugin ID -> Name mapping
-sus plugin_path_map [100]tea fr fr Plugin ID -> Path mapping
-sus plugin_status_map [100]normie fr fr Plugin ID -> Status mapping
-sus plugin_capability_map [100]tea fr fr Plugin ID -> Capabilities (comma-separated)
-sus plugin_version_map [100]tea fr fr Plugin ID -> Version mapping
-sus plugin_author_map [100]tea fr fr Plugin ID -> Author mapping
-sus plugin_description_map [100]tea fr fr Plugin ID -> Description mapping
+sus plugin_name_map tea[100] fr fr Plugin ID -> Name mapping
+sus plugin_path_map tea[100] fr fr Plugin ID -> Path mapping
+sus plugin_status_map normie[100] fr fr Plugin ID -> Status mapping
+sus plugin_capability_map tea[100] fr fr Plugin ID -> Capabilities (comma-separated)
+sus plugin_version_map tea[100] fr fr Plugin ID -> Version mapping
+sus plugin_author_map tea[100] fr fr Plugin ID -> Author mapping
+sus plugin_description_map tea[100] fr fr Plugin ID -> Description mapping
 
 fr fr Plugin Discovery
 slay discover_plugins(directory tea) normie { fr fr Simulate discovering plugins in directory fr fr Returns number of plugins found
@@ -250,8 +250,8 @@ slay is_plugin_compatible(plugin Plug, api_version tea) lit { fr fr Check if plu
 
 fr fr Plugin Extension Points
 sus extension_point_counter normie = 0
-sus extension_point_names [50]tea
-sus extension_point_plugin_counts [50]normie
+sus extension_point_names tea[50]
+sus extension_point_plugin_counts normie[50]
 
 slay create_extension_point(name tea) normie {
     extension_point_counter = extension_point_counter + 1
