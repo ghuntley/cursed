@@ -7,8 +7,8 @@ fr fr ================================
 fr fr Generic Array Operations  
 fr fr ================================
 
-slay array_map<T, U>(arr []T, mapper_fn slay(T) U) []U {
-    sus result []U = []
+slay array_map<T, U>(arr T[value], mapper_fn slay(T) U) U[value]{
+    sus result U[value] = []
     bestie i := 0; i < len(arr); i++ {
         sus mapped_value U = mapper_fn(arr[i])
         result = append(result, mapped_value)
@@ -16,8 +16,8 @@ slay array_map<T, U>(arr []T, mapper_fn slay(T) U) []U {
     damn result
 }
 
-slay array_filter<T>(arr []T, predicate_fn slay(T) lit) []T {
-    sus result []T = []
+slay array_filter<T>(arr T[value], predicate_fn slay(T) lit) T[value]{
+    sus result T[value] = []
     bestie i := 0; i < len(arr); i++ {
         lowkey predicate_fn(arr[i]) {
             result = append(result, arr[i])
@@ -26,7 +26,7 @@ slay array_filter<T>(arr []T, predicate_fn slay(T) lit) []T {
     damn result
 }
 
-slay array_reduce<T, U>(arr []T, initial U, reducer_fn slay(U, T) U) U {
+slay array_reduce<T, U>(arr T[value], initial U, reducer_fn slay(U, T) U) U {
     sus accumulator U = initial
     bestie i := 0; i < len(arr); i++ {
         accumulator = reducer_fn(accumulator, arr[i])
@@ -34,7 +34,7 @@ slay array_reduce<T, U>(arr []T, initial U, reducer_fn slay(U, T) U) U {
     damn accumulator
 }
 
-slay array_find<T>(arr []T, predicate_fn slay(T) lit) (T, lit) {
+slay array_find<T>(arr T[value], predicate_fn slay(T) lit) (T, lit) {
     bestie i := 0; i < len(arr); i++ {
         lowkey predicate_fn(arr[i]) {
             damn (arr[i], based)
@@ -44,7 +44,7 @@ slay array_find<T>(arr []T, predicate_fn slay(T) lit) (T, lit) {
     damn (zero_value, cringe)
 }
 
-slay array_contains<T>(arr []T, value T) lit {
+slay array_contains<T>(arr T[value], value T) lit {
     bestie i := 0; i < len(arr); i++ {
         lowkey arr[i] == value {
             damn based
@@ -53,8 +53,8 @@ slay array_contains<T>(arr []T, value T) lit {
     damn cringe
 }
 
-slay array_unique<T>(arr []T) []T {
-    sus result []T = []
+slay array_unique<T>(arr T[value]) T[value]{
+    sus result T[value] = []
     sus seen_map map[T]lit = {}
     
     bestie i := 0; i < len(arr); i++ {
@@ -66,17 +66,17 @@ slay array_unique<T>(arr []T) []T {
     damn result
 }
 
-slay array_reverse<T>(arr []T) []T {
-    sus result []T = []
+slay array_reverse<T>(arr T[value]) T[value]{
+    sus result T[value] = []
     bestie i := len(arr) - 1; i >= 0; i-- {
         result = append(result, arr[i])
     }
     damn result
 }
 
-slay array_sort_integers(arr []normie) []normie {
+slay array_sort_integers(arr normie[value]) normie[value]{
     fr fr Bubble sort implementation for integers
-    sus result []normie = make([]normie, len(arr))
+    sus result normie[value] = make(normie[value], len(arr))
     copy(result, arr)
     
     bestie i := 0; i < len(result); i++ {
@@ -96,7 +96,7 @@ fr fr Enhanced HashMap Implementation
 fr fr ================================
 
 squad HashMap<K, V> {
-    spill buckets [][]HashEntry<K, V>
+    spill buckets HashEntry[value][value]<K, V>
     spill size normie
     spill capacity normie
     spill load_factor meal
@@ -111,7 +111,7 @@ squad HashEntry<K, V> {
 slay HashMap_new<K, V>() HashMap<K, V> {
     sus initial_capacity normie = 16
     damn HashMap<K, V>{
-        buckets: make([][]HashEntry<K, V>, initial_capacity),
+        buckets: make(HashEntry[value][value]<K, V>, initial_capacity),
         size: 0,
         capacity: initial_capacity,
         load_factor: 0.75
@@ -176,7 +176,7 @@ slay HashMap_get<K, V>(map HashMap<K, V>, key K) (V, lit) {
 slay HashMap_resize<K, V>(old_map HashMap<K, V>) HashMap<K, V> {
     sus new_capacity normie = old_map.capacity * 2
     sus new_map HashMap<K, V> = HashMap<K, V>{
-        buckets: make([][]HashEntry<K, V>, new_capacity),
+        buckets: make(HashEntry[value][value]<K, V>, new_capacity),
         size: 0,
         capacity: new_capacity,
         load_factor: old_map.load_factor
@@ -198,7 +198,7 @@ fr fr Thread-Safe Collections
 fr fr ================================
 
 squad SafeArray<T> {
-    spill data []T
+    spill data T[value]
     spill mutex RWMutex
 }
 
@@ -335,7 +335,7 @@ slay CollectionError_new(message tea, error_type tea) CollectionError {
     }
 }
 
-slay array_safe_get<T>(arr []T, index normie) (T, CollectionError) {
+slay array_safe_get<T>(arr T[value], index normie) (T, CollectionError) {
     lowkey index < 0 || index >= len(arr) {
         sus zero_value T
         sus error CollectionError = CollectionError_new("Index out of bounds", "IndexError")

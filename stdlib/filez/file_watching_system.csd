@@ -17,9 +17,9 @@ squad WatchEvent {
 }
 
 squad WatchFilter {
-    sus patterns []tea          fr fr Glob patterns to match
+    sus patterns tea[value]          fr fr Glob patterns to match
     sus include_subdirs lit     fr fr Recursive watching
-    sus event_types []drip      fr fr Which event types to report
+    sus event_types drip[value]      fr fr Which event types to report
     sus max_events drip         fr fr Event buffer size
 }
 
@@ -30,7 +30,7 @@ squad FileWatcher {
     sus callback slay(WatchEvent) lit
     sus is_active lit
     sus native_handle drip      fr fr Platform-specific handle
-    sus event_buffer []WatchEvent
+    sus event_buffer WatchEvent[value]
 }
 
 fr fr ===== EVENT TYPE CONSTANTS =====
@@ -161,12 +161,12 @@ slay get_watcher_status(watch_id drip) (lit, tea) {
     damn (watcher_opt.is_active, "")
 }
 
-slay list_active_watchers() ([]drip, tea) {
+slay list_active_watchers() (drip[value], tea) {
     fr fr Get list of all active watcher IDs
-    sus active_ids []drip = []
+    sus active_ids drip[value] = []
     sus count drip = 0
     
-    sus all_watchers []FileWatcher = get_all_watchers()
+    sus all_watchers FileWatcher[value] = get_all_watchers()
     sus i drip = 0
     bestie (i < array_length(all_watchers)) {
         ready (all_watchers[i].is_active) {
@@ -273,7 +273,7 @@ slay linux_process_inotify_events(watch_id drip, inotify_fd drip, watch_descript
     fr fr Process inotify events in background thread
     vibez.spill("[Linux] Starting event processing loop for watcher: " + int_to_string(watch_id))
     
-    sus buffer []drip = create_byte_buffer(4096)
+    sus buffer drip[value] = create_byte_buffer(4096)
     
     bestie (is_watcher_active(watch_id)) {
         sus bytes_read drip = runtime_read_fd(inotify_fd, buffer, 4096)
@@ -283,7 +283,7 @@ slay linux_process_inotify_events(watch_id drip, inotify_fd drip, watch_descript
         }
         
         fr fr Parse inotify events from buffer
-        sus events []WatchEvent = parse_inotify_buffer(buffer, bytes_read, watch_id)
+        sus events WatchEvent[value] = parse_inotify_buffer(buffer, bytes_read, watch_id)
         
         fr fr Deliver events to callbacks
         sus i drip = 0
@@ -382,7 +382,7 @@ slay macos_process_kevent_events(watch_id drip, kqueue_fd drip, file_fd drip) {
     vibez.spill("[macOS] Starting kevent processing loop for watcher: " + int_to_string(watch_id))
     
     bestie (is_watcher_active(watch_id)) {
-        sus event_data []drip = create_byte_buffer(1024)
+        sus event_data drip[value] = create_byte_buffer(1024)
         sus events_count drip = runtime_kevent_wait(kqueue_fd, event_data, 1024, 1000)
         
         ready (events_count < 0) {
@@ -392,7 +392,7 @@ slay macos_process_kevent_events(watch_id drip, kqueue_fd drip, file_fd drip) {
         
         ready (events_count > 0) {
             fr fr Parse kevent events
-            sus events []WatchEvent = parse_kevent_buffer(event_data, events_count, watch_id)
+            sus events WatchEvent[value] = parse_kevent_buffer(event_data, events_count, watch_id)
             
             fr fr Deliver events
             sus i drip = 0
@@ -472,8 +472,8 @@ slay windows_process_directory_changes(watch_id drip, dir_handle drip, notify_fi
     fr fr Process Windows directory change events
     vibez.spill("[Windows] Starting directory change processing for watcher: " + int_to_string(watch_id))
     
-    sus buffer []drip = create_byte_buffer(8192)
-    sus overlap_buffer []drip = create_byte_buffer(32)  fr fr OVERLAPPED structure
+    sus buffer drip[value] = create_byte_buffer(8192)
+    sus overlap_buffer drip[value] = create_byte_buffer(32)  fr fr OVERLAPPED structure
     
     bestie (is_watcher_active(watch_id)) {
         sus bytes_returned drip = runtime_read_directory_changes(dir_handle, buffer, 8192, recursive, notify_filter, overlap_buffer)
@@ -485,7 +485,7 @@ slay windows_process_directory_changes(watch_id drip, dir_handle drip, notify_fi
         
         ready (bytes_returned > 0) {
             fr fr Parse FILE_NOTIFY_INFORMATION structures
-            sus events []WatchEvent = parse_windows_notify_buffer(buffer, bytes_returned, watch_id)
+            sus events WatchEvent[value] = parse_windows_notify_buffer(buffer, bytes_returned, watch_id)
             
             fr fr Deliver events
             sus i drip = 0
@@ -548,7 +548,7 @@ slay deliver_event_to_watcher(watch_id drip, event WatchEvent) {
     add_event_to_buffer(watcher_opt, event)
 }
 
-slay matches_filter_patterns(path tea, patterns []tea) lit {
+slay matches_filter_patterns(path tea, patterns tea[value]) lit {
     fr fr Check if path matches any of the glob patterns
     ready (array_length(patterns) == 0) {
         damn based  fr fr No patterns = match everything
@@ -585,9 +585,9 @@ slay glob_match(pattern tea, path tea) lit {
 
 fr fr ===== EVENT BUFFER MANAGEMENT =====
 
-slay poll_events(watch_id drip, max_events drip) ([]WatchEvent, tea) {
+slay poll_events(watch_id drip, max_events drip) (WatchEvent[value], tea) {
     fr fr Poll for events without blocking (non-callback mode)
-    sus empty_events []WatchEvent = []
+    sus empty_events WatchEvent[value] = []
     
     ready (watch_id <= 0) {
         damn (empty_events, "Invalid watch ID")
@@ -599,7 +599,7 @@ slay poll_events(watch_id drip, max_events drip) ([]WatchEvent, tea) {
     }
     
     fr fr Get events from buffer
-    sus events []WatchEvent = get_buffered_events(watcher_opt, max_events)
+    sus events WatchEvent[value] = get_buffered_events(watcher_opt, max_events)
     damn (events, "")
 }
 
@@ -616,7 +616,7 @@ slay add_event_to_buffer(watcher FileWatcher, event WatchEvent) {
 
 fr fr ===== WATCHER REGISTRY =====
 
-sus global_watchers []FileWatcher = []
+sus global_watchers FileWatcher[value] = []
 sus global_watcher_count drip = 0
 sus next_watch_id drip = 1
 
@@ -673,7 +673,7 @@ slay get_watcher_by_id(watch_id drip) FileWatcher {
     }
 }
 
-slay get_all_watchers() []FileWatcher {
+slay get_all_watchers() FileWatcher[value]{
     damn global_watchers
 }
 
@@ -709,14 +709,14 @@ slay path_exists_internal(path tea) lit {
     damn file_exists_internal(path) || directory_exists(path)
 }
 
-slay create_pattern_array(pattern tea) []tea {
-    sus patterns []tea = []
+slay create_pattern_array(pattern tea) tea[value]{
+    sus patterns tea[value] = []
     patterns[0] = pattern
     damn patterns
 }
 
-slay create_all_events_array() []drip {
-    sus events []drip = []
+slay create_all_events_array() drip[value]{
+    sus events drip[value] = []
     events[0] = EVENT_CREATED
     events[1] = EVENT_MODIFIED
     events[2] = EVENT_DELETED
@@ -725,7 +725,7 @@ slay create_all_events_array() []drip {
     damn events
 }
 
-slay contains_event_type(event_types []drip, event_type drip) lit {
+slay contains_event_type(event_types drip[value], event_type drip) lit {
     sus i drip = 0
     bestie (i < array_length(event_types)) {
         ready (event_types[i] == event_type) {
@@ -736,14 +736,14 @@ slay contains_event_type(event_types []drip, event_type drip) lit {
     damn cringe
 }
 
-slay create_event_buffer(size drip) []WatchEvent {
-    sus buffer []WatchEvent = []
+slay create_event_buffer(size drip) WatchEvent[value]{
+    sus buffer WatchEvent[value] = []
     fr fr Initialize empty buffer
     damn buffer
 }
 
-slay create_byte_buffer(size drip) []drip {
-    sus buffer []drip = []
+slay create_byte_buffer(size drip) drip[value]{
+    sus buffer drip[value] = []
     fr fr Initialize buffer with zeros
     sus i drip = 0
     bestie (i < size) {
@@ -776,7 +776,7 @@ slay runtime_inotify_add_watch(fd drip, path tea, mask drip) drip {
     damn 1  fr fr Mock watch descriptor
 }
 
-slay runtime_read_fd(fd drip, buffer []drip, size drip) drip {
+slay runtime_read_fd(fd drip, buffer drip[value], size drip) drip {
     fr fr Mock read system call
     damn 0  fr fr No bytes read (would block in real implementation)
 }
@@ -801,7 +801,7 @@ slay runtime_kevent_add(kq drip, fd drip, filter drip) drip {
     damn 0
 }
 
-slay runtime_kevent_wait(kq drip, buffer []drip, size drip, timeout drip) drip {
+slay runtime_kevent_wait(kq drip, buffer drip[value], size drip, timeout drip) drip {
     fr fr Mock kevent wait
     damn 0  fr fr No events
 }
@@ -811,7 +811,7 @@ slay runtime_open_directory(path tea) drip {
     damn 100  fr fr Mock directory handle
 }
 
-slay runtime_read_directory_changes(handle drip, buffer []drip, size drip, recursive lit, filter drip, overlap []drip) drip {
+slay runtime_read_directory_changes(handle drip, buffer drip[value], size drip, recursive lit, filter drip, overlap drip[value]) drip {
     fr fr Mock ReadDirectoryChangesW
     damn 0  fr fr No changes
 }
@@ -823,23 +823,23 @@ slay runtime_close_handle(handle drip) {
 fr fr ===== EVENT PARSING FUNCTIONS =====
 fr fr These would parse platform-specific event structures
 
-slay parse_inotify_buffer(buffer []drip, size drip, watch_id drip) []WatchEvent {
+slay parse_inotify_buffer(buffer drip[value], size drip, watch_id drip) WatchEvent[value]{
     fr fr Parse inotify_event structures from buffer
-    sus events []WatchEvent = []
+    sus events WatchEvent[value] = []
     fr fr Would parse real inotify events here
     damn events
 }
 
-slay parse_kevent_buffer(buffer []drip, count drip, watch_id drip) []WatchEvent {
+slay parse_kevent_buffer(buffer drip[value], count drip, watch_id drip) WatchEvent[value]{
     fr fr Parse kevent structures from buffer
-    sus events []WatchEvent = []
+    sus events WatchEvent[value] = []
     fr fr Would parse real kevent events here
     damn events
 }
 
-slay parse_windows_notify_buffer(buffer []drip, size drip, watch_id drip) []WatchEvent {
+slay parse_windows_notify_buffer(buffer drip[value], size drip, watch_id drip) WatchEvent[value]{
     fr fr Parse FILE_NOTIFY_INFORMATION structures
-    sus events []WatchEvent = []
+    sus events WatchEvent[value] = []
     fr fr Would parse real Windows notify events here
     damn events
 }
@@ -847,8 +847,8 @@ slay parse_windows_notify_buffer(buffer []drip, size drip, watch_id drip) []Watc
 fr fr Additional helper functions for buffer management and pattern matching
 slay get_next_buffer_index(watch_id drip) drip { damn 0 }
 slay increment_buffer_index(watch_id drip) { }
-slay get_buffered_events(watcher FileWatcher, max_events drip) []WatchEvent {
-    sus events []WatchEvent = []
+slay get_buffered_events(watcher FileWatcher, max_events drip) WatchEvent[value]{
+    sus events WatchEvent[value] = []
     damn events
 }
 slay int_to_string(value drip) tea { damn "0" }

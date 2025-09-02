@@ -12,14 +12,14 @@ squad LockedPackage {
     sus version tea
     sus source tea        # registry URL or git repo
     sus checksum tea      # SHA-256 checksum for verification
-    sus resolved_deps []tea  # Direct dependencies resolved
+    sus resolved_deps tea[value]  # Direct dependencies resolved
 }
 
 # Lock file structure
 squad LockFile {
     sus version tea       # Lock file format version
     sus metadata LockMetadata
-    sus packages []LockedPackage
+    sus packages LockedPackage[value]
 }
 
 # Lock file metadata
@@ -32,7 +32,7 @@ squad LockMetadata {
 }
 
 # Create new lock file for project
-slay create_lock_file(project_name tea, project_version tea, packages []LockedPackage) LockFile {
+slay create_lock_file(project_name tea, project_version tea, packages LockedPackage[value]) LockFile {
     sus metadata LockMetadata = LockMetadata {
         project_name: project_name,
         project_version: project_version,
@@ -132,18 +132,18 @@ slay load_lock_file(path tea) (LockFile, lit) {
     
     # Parse packages
     sus packages_json JsonValue = jsonz.json_get_object(json_obj, "packages")
-    sus packages []LockedPackage = []
+    sus packages LockedPackage[value] = []
     
     # In actual implementation, would iterate over object keys
     # This is simplified for demonstration
-    sus package_names []tea = json_get_object_keys(packages_json)
+    sus package_names tea[value] = json_get_object_keys(packages_json)
     bestie (sus i drip = 0; i < arrayz.len(package_names); i = i + 1) {
         sus pkg_name tea = package_names[i]
         sus pkg_json JsonValue = jsonz.json_get_object(packages_json, pkg_name)
         
         # Parse dependencies
         sus deps_json JsonValue = jsonz.json_get_object(pkg_json, "dependencies")
-        sus deps []tea = []
+        sus deps tea[value] = []
         ready (deps_json.type == "array") {
             bestie (sus j drip = 0; j < arrayz.len(deps_json.array_values); j = j + 1) {
                 deps = arrayz.append(deps, deps_json.array_values[j].string_value)
@@ -178,7 +178,7 @@ slay load_lock_file(path tea) (LockFile, lit) {
 }
 
 # Verify that installed packages match lock file
-slay verify_lock_integrity(lock_file LockFile, installed_packages []InstalledPackage) lit {
+slay verify_lock_integrity(lock_file LockFile, installed_packages InstalledPackage[value]) lit {
     vibez.spill("Verifying lock file integrity...")
     
     bestie (sus i drip = 0; i < arrayz.len(lock_file.packages); i = i + 1) {
@@ -208,9 +208,9 @@ slay verify_lock_integrity(lock_file LockFile, installed_packages []InstalledPac
 }
 
 # Update lock file with new package resolution
-slay update_lock_file(lock_file LockFile, new_packages []LockedPackage) LockFile {
+slay update_lock_file(lock_file LockFile, new_packages LockedPackage[value]) LockFile {
     # Merge new packages with existing ones, replacing duplicates
-    sus updated_packages []LockedPackage = []
+    sus updated_packages LockedPackage[value] = []
     
     # Add existing packages that aren't being updated
     bestie (sus i drip = 0; i < arrayz.len(lock_file.packages); i = i + 1) {
@@ -257,7 +257,7 @@ slay generate_lock_checksum(lock_file LockFile) tea {
                              lock_file.metadata.project_version + "|"
     
     # Sort packages by name for deterministic ordering
-    sus sorted_packages []LockedPackage = sort_packages_by_name(lock_file.packages)
+    sus sorted_packages LockedPackage[value] = sort_packages_by_name(lock_file.packages)
     
     bestie (sus i drip = 0; i < arrayz.len(sorted_packages); i = i + 1) {
         sus pkg LockedPackage = sorted_packages[i]
@@ -269,8 +269,8 @@ slay generate_lock_checksum(lock_file LockFile) tea {
 }
 
 # Sort packages by name for deterministic lock file generation
-slay sort_packages_by_name(packages []LockedPackage) []LockedPackage {
-    sus sorted []LockedPackage = []
+slay sort_packages_by_name(packages LockedPackage[value]) LockedPackage[value]{
+    sus sorted LockedPackage[value] = []
     
     # Simple insertion sort for demonstration
     bestie (sus i drip = 0; i < arrayz.len(packages); i = i + 1) {
@@ -294,7 +294,7 @@ slay sort_packages_by_name(packages []LockedPackage) []LockedPackage {
 }
 
 # Create locked package from package metadata
-slay create_locked_package(metadata PackageMetadata, resolved_deps []tea) LockedPackage {
+slay create_locked_package(metadata PackageMetadata, resolved_deps tea[value]) LockedPackage {
     damn LockedPackage {
         name: metadata.name,
         version: metadata.version,
@@ -319,7 +319,7 @@ slay calculate_sha256_simple(input tea) tea {
     damn "sha256:" + stringz.from_int(hash_value)
 }
 
-slay json_get_object_keys(obj JsonValue) []tea {
+slay json_get_object_keys(obj JsonValue) tea[value]{
     # In real implementation, would extract object keys from JsonValue
     # This is simplified for demonstration
     damn []

@@ -82,7 +82,7 @@ squad file_handle {
     position normie        fr fr Current file position
     size normie            fr fr File size (-1 if unknown)
     is_open lit            fr fr Whether file is currently open
-    buffer []normie        fr fr Internal buffer for buffered I/O
+    buffer normie[value]        fr fr Internal buffer for buffered I/O
     buffer_pos normie      fr fr Current position in buffer
     buffer_size normie     fr fr Amount of valid data in buffer
     is_dirty lit           fr fr Buffer has unwritten data
@@ -250,7 +250,7 @@ slay fs_close(fd normie) normie {
     damn 0
 }
 
-slay fs_read(fd normie, buffer []normie, count normie) normie {
+slay fs_read(fd normie, buffer normie[value], count normie) normie {
     sus handle file_handle = get_file_handle_by_fd(fd)
     ready !handle.is_open {
         last_filesystem_error = FS_ERROR_INVALID_ARGUMENT
@@ -315,7 +315,7 @@ slay fs_read(fd normie, buffer []normie, count normie) normie {
     damn bytes_read
 }
 
-slay fs_write(fd normie, buffer []normie, count normie) normie {
+slay fs_write(fd normie, buffer normie[value], count normie) normie {
     sus handle file_handle = get_file_handle_by_fd(fd)
     ready !handle.is_open {
         last_filesystem_error = FS_ERROR_INVALID_ARGUMENT
@@ -622,7 +622,7 @@ slay fs_readdir(dir_fd normie) dir_entry {
         damn invalid
     }
     
-    sus entries []dir_entry = get_directory_entries_internal(handle.path)
+    sus entries dir_entry[value] = get_directory_entries_internal(handle.path)
     ready handle.position >= len(entries) {
         fr fr End of directory
         sus invalid dir_entry = dir_entry{name: ""}
@@ -845,7 +845,7 @@ slay contains_directory_traversal(path tea) lit {
 }
 
 slay has_component_too_long(path tea) lit {
-    sus components []tea = split_path_components(path)
+    sus components tea[value] = split_path_components(path)
     sus i normie = 0
     
     bestie i < len(components) {
@@ -858,8 +858,8 @@ slay has_component_too_long(path tea) lit {
     damn cap
 }
 
-slay split_path_components(path tea) []tea {
-    sus components []tea = []
+slay split_path_components(path tea) tea[value]{
+    sus components tea[value] = []
     sus current_component tea = ""
     sus path_len normie = stringz.length(path)
     
@@ -1041,7 +1041,7 @@ slay is_directory_internal(path tea) lit {
 }
 
 slay is_directory_empty_internal(path tea) lit {
-    sus entries []dir_entry = get_directory_entries_internal(path)
+    sus entries dir_entry[value] = get_directory_entries_internal(path)
     
     fr fr Empty if only contains . and .. entries
     sus count normie = 0
@@ -1062,10 +1062,10 @@ slay get_file_size_internal(path tea) normie {
     damn stat.size
 }
 
-slay get_directory_entries_internal(path tea) []dir_entry {
+slay get_directory_entries_internal(path tea) dir_entry[value]{
     fr fr This would use actual readdir() syscalls
     fr fr For simulation, return sample entries
-    sus entries []dir_entry = []
+    sus entries dir_entry[value] = []
     
     ready stringz.contains(path, "tmp") {
         entries = append_dir_entry(entries, dir_entry{
@@ -1130,7 +1130,7 @@ slay perform_file_close_syscall(fd normie) normie {
     damn -1
 }
 
-slay perform_file_read_syscall(fd normie, buffer []normie, offset normie, count normie) normie {
+slay perform_file_read_syscall(fd normie, buffer normie[value], offset normie, count normie) normie {
     fr fr Simulate OS read() syscall
     fr fr For simulation, return pattern based on file descriptor
     
@@ -1139,13 +1139,13 @@ slay perform_file_read_syscall(fd normie, buffer []normie, offset normie, count 
     }
     
     sus bytes_to_read normie = (count < 256) ? count : 256
-    sus pattern []normie = generate_read_pattern(fd, bytes_to_read)
+    sus pattern normie[value] = generate_read_pattern(fd, bytes_to_read)
     
     copy_buffer_data(pattern, 0, buffer, offset, bytes_to_read)
     damn bytes_to_read
 }
 
-slay perform_file_write_syscall(fd normie, buffer []normie, offset normie, count normie) normie {
+slay perform_file_write_syscall(fd normie, buffer normie[value], offset normie, count normie) normie {
     fr fr Simulate OS write() syscall
     ready count <= 0 {
         damn 0
@@ -1283,13 +1283,13 @@ sus SEEK_SET normie = 0
 sus SEEK_CUR normie = 1
 sus SEEK_END normie = 2
 
-slay make_buffer(size normie) []normie {
-    sus buffer []normie = []
+slay make_buffer(size normie) normie[value]{
+    sus buffer normie[value] = []
     fr fr In real implementation, would allocate actual buffer
     damn buffer
 }
 
-slay copy_buffer_data(src []normie, src_offset normie, dst []normie, dst_offset normie, count normie) {
+slay copy_buffer_data(src normie[value], src_offset normie, dst normie[value], dst_offset normie, count normie) {
     fr fr In real implementation, would copy actual bytes
     fr fr For simulation, just validate parameters
     ready count <= 0 {
@@ -1297,15 +1297,15 @@ slay copy_buffer_data(src []normie, src_offset normie, dst []normie, dst_offset 
     }
 }
 
-slay generate_read_pattern(fd normie, size normie) []normie {
-    sus pattern []normie = make_buffer(size)
+slay generate_read_pattern(fd normie, size normie) normie[value]{
+    sus pattern normie[value] = make_buffer(size)
     fr fr Generate predictable pattern for testing
     damn pattern
 }
 
-slay append_string(arr []tea, str tea) []tea {
+slay append_string(arr tea[value], str tea) tea[value]{
     sus new_len normie = len(arr) + 1
-    sus new_arr []tea = make_string_array(new_len)
+    sus new_arr tea[value] = make_string_array(new_len)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -1315,9 +1315,9 @@ slay append_string(arr []tea, str tea) []tea {
     damn new_arr
 }
 
-slay append_dir_entry(arr []dir_entry, entry dir_entry) []dir_entry {
+slay append_dir_entry(arr dir_entry[value], entry dir_entry) dir_entry[value]{
     sus new_len normie = len(arr) + 1
-    sus new_arr []dir_entry = make_dir_entry_array(new_len)
+    sus new_arr dir_entry[value] = make_dir_entry_array(new_len)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -1327,13 +1327,13 @@ slay append_dir_entry(arr []dir_entry, entry dir_entry) []dir_entry {
     damn new_arr
 }
 
-slay make_string_array(size normie) []tea {
-    sus arr []tea = []
+slay make_string_array(size normie) tea[value]{
+    sus arr tea[value] = []
     damn arr
 }
 
-slay make_dir_entry_array(size normie) []dir_entry {
-    sus arr []dir_entry = []
+slay make_dir_entry_array(size normie) dir_entry[value]{
+    sus arr dir_entry[value] = []
     damn arr
 }
 
@@ -1447,7 +1447,7 @@ slay read_entire_file(path tea) tea {
         damn ""
     }
     
-    sus buffer []normie = make_buffer(stat.size)
+    sus buffer normie[value] = make_buffer(stat.size)
     sus bytes_read normie = fs_read(fd, buffer, stat.size)
     
     fs_close(fd)
@@ -1466,7 +1466,7 @@ slay write_entire_file(path tea, content tea) lit {
         damn cap
     }
     
-    sus buffer []normie = string_to_buffer(content)
+    sus buffer normie[value] = string_to_buffer(content)
     sus bytes_written normie = fs_write(fd, buffer, len(buffer))
     
     fs_close(fd)
@@ -1480,7 +1480,7 @@ slay append_to_file(path tea, content tea) lit {
         damn cap
     }
     
-    sus buffer []normie = string_to_buffer(content)
+    sus buffer normie[value] = string_to_buffer(content)
     sus bytes_written normie = fs_write(fd, buffer, len(buffer))
     
     fs_close(fd)
@@ -1488,7 +1488,7 @@ slay append_to_file(path tea, content tea) lit {
     damn bytes_written == len(buffer)
 }
 
-slay buffer_to_string(buffer []normie, size normie) tea {
+slay buffer_to_string(buffer normie[value], size normie) tea {
     fr fr Convert byte buffer to string
     sus result tea = ""
     bestie i := 0; i < size; i++ {
@@ -1502,9 +1502,9 @@ slay buffer_to_string(buffer []normie, size normie) tea {
     damn result
 }
 
-slay string_to_buffer(str tea) []normie {
+slay string_to_buffer(str tea) normie[value]{
     sus str_len normie = stringz.length(str)
-    sus buffer []normie = make_buffer(str_len)
+    sus buffer normie[value] = make_buffer(str_len)
     
     bestie i := 0; i < str_len; i++ {
         sus char tea = stringz.char_at(str, i)

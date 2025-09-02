@@ -4,8 +4,8 @@ yeet "image_processing/algorithms"
 test_start("Image Processing Algorithms Test Suite")
 
 fr fr Helper function to create test image data
-slay create_test_image(width normie, height normie, channels normie) []byte {
-    sus pixels []byte = []
+slay create_test_image(width normie, height normie, channels normie) byte[value]{
+    sus pixels byte[value] = []
     sus pixel_count normie = width * height
     
     bestie i := 0; i < pixel_count; i++ { fr fr Create a simple gradient pattern
@@ -28,29 +28,29 @@ slay create_test_image(width normie, height normie, channels normie) []byte {
 test_start("Image Format Detection")
 
 fr fr Test PNG format detection
-sus png_header []byte = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+sus png_header byte[value] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
 sus png_format tea = detect_image_format_from_header(png_header)
 assert_eq_string(png_format, "PNG")
 
 fr fr Test JPEG format detection
-sus jpeg_header []byte = [0xFF, 0xD8, 0xFF, 0xE0]
+sus jpeg_header byte[value] = [0xFF, 0xD8, 0xFF, 0xE0]
 sus jpeg_format tea = detect_image_format_from_header(jpeg_header)
 assert_eq_string(jpeg_format, "JPEG")
 
 fr fr Test GIF format detection
-sus gif_header []byte = [0x47, 0x49, 0x46, 0x38]
+sus gif_header byte[value] = [0x47, 0x49, 0x46, 0x38]
 sus gif_format tea = detect_image_format_from_header(gif_header)
 assert_eq_string(gif_format, "GIF")
 
 fr fr Test BMP format detection
-sus bmp_header []byte = [0x42, 0x4D, 0x36, 0x84]
+sus bmp_header byte[value] = [0x42, 0x4D, 0x36, 0x84]
 sus bmp_format tea = detect_image_format_from_header(bmp_header)
 assert_eq_string(bmp_format, "BMP")
 
 test_start("Safe Pixel Access")
 
 fr fr Create test image 4x4 RGB
-sus test_pixels []byte = create_test_image(4, 4, 3)
+sus test_pixels byte[value] = create_test_image(4, 4, 3)
 
 fr fr Test valid pixel access
 sus pixel_value byte = get_pixel_safe(test_pixels, 2, 2, 0, 4, 4, 3)
@@ -67,76 +67,76 @@ assert_eq_int(normie(neg_pixel), 0)
 test_start("Image Resizing")
 
 fr fr Test bilinear interpolation
-sus original_pixels []byte = create_test_image(4, 4, 3)
-sus resized_pixels []byte = bilinear_interpolate(original_pixels, 4, 4, 8, 8, 3)
+sus original_pixels byte[value] = create_test_image(4, 4, 3)
+sus resized_pixels byte[value] = bilinear_interpolate(original_pixels, 4, 4, 8, 8, 3)
 
 fr fr Check that resized image has correct size
 sus expected_size normie = 8 * 8 * 3
 assert_eq_int(len(resized_pixels), expected_size)
 
 fr fr Test downsizing
-sus downsized_pixels []byte = bilinear_interpolate(original_pixels, 4, 4, 2, 2, 3)
+sus downsized_pixels byte[value] = bilinear_interpolate(original_pixels, 4, 4, 2, 2, 3)
 sus downsize_expected normie = 2 * 2 * 3
 assert_eq_int(len(downsized_pixels), downsize_expected)
 
 test_start("Color Space Conversion")
 
 fr fr Test grayscale conversion
-sus rgb_pixels []byte = create_test_image(3, 3, 3)
-sus gray_pixels []byte = convert_to_grayscale(rgb_pixels, 3, 3, 3)
+sus rgb_pixels byte[value] = create_test_image(3, 3, 3)
+sus gray_pixels byte[value] = convert_to_grayscale(rgb_pixels, 3, 3, 3)
 
 fr fr Should have same number of pixels
 assert_eq_int(len(gray_pixels), len(rgb_pixels))
 
 fr fr Test RGBA to grayscale
-sus rgba_pixels []byte = create_test_image(2, 2, 4)
-sus gray_rgba_pixels []byte = convert_to_grayscale(rgba_pixels, 2, 2, 4)
+sus rgba_pixels byte[value] = create_test_image(2, 2, 4)
+sus gray_rgba_pixels byte[value] = convert_to_grayscale(rgba_pixels, 2, 2, 4)
 assert_eq_int(len(gray_rgba_pixels), len(rgba_pixels))
 
 test_start("Image Effects")
 
 fr fr Test sepia tone effect
-sus sepia_pixels []byte = apply_sepia_tone(rgb_pixels, 3, 3, 3)
+sus sepia_pixels byte[value] = apply_sepia_tone(rgb_pixels, 3, 3, 3)
 assert_eq_int(len(sepia_pixels), len(rgb_pixels))
 
 fr fr Test brightness adjustment
-sus bright_pixels []byte = adjust_brightness(rgb_pixels, 3, 3, 3, 50.0)
+sus bright_pixels byte[value] = adjust_brightness(rgb_pixels, 3, 3, 3, 50.0)
 assert_eq_int(len(bright_pixels), len(rgb_pixels))
 
 fr fr Test contrast adjustment
-sus contrast_pixels []byte = adjust_contrast(rgb_pixels, 3, 3, 3, 1.5)
+sus contrast_pixels byte[value] = adjust_contrast(rgb_pixels, 3, 3, 3, 1.5)
 assert_eq_int(len(contrast_pixels), len(rgb_pixels))
 
 test_start("Image Flipping")
 
 fr fr Test horizontal flip
-sus flipped_h []byte = flip_horizontal(rgb_pixels, 3, 3, 3)
+sus flipped_h byte[value] = flip_horizontal(rgb_pixels, 3, 3, 3)
 assert_eq_int(len(flipped_h), len(rgb_pixels))
 
 fr fr Test vertical flip
-sus flipped_v []byte = flip_vertical(rgb_pixels, 3, 3, 3)
+sus flipped_v byte[value] = flip_vertical(rgb_pixels, 3, 3, 3)
 assert_eq_int(len(flipped_v), len(rgb_pixels))
 
 fr fr Verify that double flip returns to original (simplified test)
-sus double_flip []byte = flip_horizontal(flipped_h, 3, 3, 3)
+sus double_flip byte[value] = flip_horizontal(flipped_h, 3, 3, 3)
 fr fr Note: Exact pixel comparison would require more sophisticated testing
 
 test_start("Image Cropping")
 
 fr fr Test basic cropping
-sus cropped_pixels []byte = crop_image(rgb_pixels, 3, 3, 3, 1, 1, 2, 2)
+sus cropped_pixels byte[value] = crop_image(rgb_pixels, 3, 3, 3, 1, 1, 2, 2)
 sus expected_crop_size normie = 2 * 2 * 3
 assert_eq_int(len(cropped_pixels), expected_crop_size)
 
 fr fr Test cropping with out-of-bounds region
-sus oob_cropped []byte = crop_image(rgb_pixels, 3, 3, 3, 2, 2, 3, 3)
+sus oob_cropped byte[value] = crop_image(rgb_pixels, 3, 3, 3, 2, 2, 3, 3)
 sus oob_expected_size normie = 3 * 3 * 3
 assert_eq_int(len(oob_cropped), oob_expected_size)
 
 test_start("Edge Detection")
 
 fr fr Test Sobel edge detection
-sus edge_pixels []byte = apply_sobel_edge_detection(rgb_pixels, 3, 3, 3)
+sus edge_pixels byte[value] = apply_sobel_edge_detection(rgb_pixels, 3, 3, 3)
 fr fr Edge detection returns smaller image (excludes border)
 sus edge_expected_size normie = 1 * 1 * 3 fr fr (3-2) x (3-2) x 3
 assert_eq_int(len(edge_pixels), edge_expected_size)
@@ -144,7 +144,7 @@ assert_eq_int(len(edge_pixels), edge_expected_size)
 test_start("Gaussian Kernel Creation")
 
 fr fr Test creating Gaussian kernel
-sus kernel []meal = create_gaussian_kernel(5, 1.0)
+sus kernel meal[value] = create_gaussian_kernel(5, 1.0)
 assert_eq_int(len(kernel), 5)
 
 fr fr Kernel should sum to approximately 1.0
@@ -168,7 +168,7 @@ assert_true(math_exp(1.0) > 2.5 && math_exp(1.0) < 3.0)
 test_start("Image Decoder Tests")
 
 fr fr Test PNG decoding with minimal data
-sus png_test_data []byte = [
+sus png_test_data byte[value] = [
     0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A, fr fr PNG signature
     0x00, 0x00, 0x00, 0x0D, 0x49, 0x48, 0x44, 0x52, fr fr IHDR chunk
     0x00, 0x00, 0x00, 0x10, fr fr Width: 16
@@ -182,7 +182,7 @@ assert_eq_int(png_height, 16)
 assert_true(len(png_pixels) > 0)
 
 fr fr Test JPEG decoding
-sus jpeg_test_data []byte = [
+sus jpeg_test_data byte[value] = [
     0xFF, 0xD8, 0xFF, 0xE0, fr fr JPEG signature
     0x00, 0x10, 0x4A, 0x46, 0x49, 0x46, 0x00, 0x01,
     0xFF, 0xC0, fr fr SOF0 marker
@@ -199,8 +199,8 @@ assert_true(len(jpeg_pixels) > 0)
 test_start("Blur Filter")
 
 fr fr Test Gaussian blur (simplified test)
-sus blur_test_pixels []byte = create_test_image(5, 5, 3)
-sus blurred_pixels []byte = apply_gaussian_blur(blur_test_pixels, 5, 5, 3, 1)
+sus blur_test_pixels byte[value] = create_test_image(5, 5, 3)
+sus blurred_pixels byte[value] = apply_gaussian_blur(blur_test_pixels, 5, 5, 3, 1)
 assert_eq_int(len(blurred_pixels), len(blur_test_pixels))
 
 print_test_summary()

@@ -214,7 +214,7 @@ slay test_map_operations() lit {
 fr fr Test slice operations
 slay test_slice_operations() lit {
     fr fr Test MakeSlice
-    sus sliceType := lookin_glass.TypeOf([]interface{}{})
+    sus sliceType := lookin_glass.TypeOf(interface[value]{}{})
     sus newSlice := lookin_glass.MakeSlice(sliceType, 5, 10)
     
     assert_true(newSlice.IsValid())
@@ -241,8 +241,8 @@ fr fr Test function operations
 slay test_function_operations() lit {
     fr fr Test MakeFunc
     sus funcType := lookin_glass.TypeOf(slay() {})
-    sus fn := slay(args []lookin_glass.Value) []lookin_glass.Value {
-        damn []lookin_glass.Value{}
+    sus fn := slay(args lookin_glass[value].Value) lookin_glass[value].Value {
+        damn lookin_glass[value].Value{}
     }
     
     sus newFunc := lookin_glass.MakeFunc(funcType, fn)

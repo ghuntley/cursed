@@ -42,7 +42,7 @@ sus mem_info tea = get_memory_info()
 assert_ne_string(mem_info, "")
 
 # Test process management
-sus processes []ProcessInfo = get_process_list()
+sus processes ProcessInfo[value] = get_process_list()
 assert_gt_int(len(processes), 0)
 assert_gt_int(processes[0].pid, 0)
 assert_ne_string(processes[0].name, "")
@@ -109,7 +109,7 @@ assert_ne_string(system_info, "")
 sus uptime drip = get_uptime_seconds()
 assert_gt_int(uptime, 0)
 
-sus load_avg []drip = get_load_average()
+sus load_avg drip[value] = get_load_average()
 assert_eq_int(len(load_avg), 3)
 assert_gt_float(load_avg[0], 0.0)
 

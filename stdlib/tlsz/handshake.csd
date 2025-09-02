@@ -10,7 +10,7 @@ yeet "networkz"
 fr fr ===== CERTIFICATE VERIFICATION CALLBACK SYSTEM =====
 
 squad CertificateVerificationCallback {
-    verify_chain slay(chain []X509Certificate, hostname tea, context tea) VerificationResult
+    verify_chain slay(chain X509Certificate[value], hostname tea, context tea) VerificationResult
     check_revocation slay(cert X509Certificate) RevocationStatus
     validate_hostname slay(cert X509Certificate, hostname tea) lit
     validate_signature slay(cert X509Certificate, issuer_cert X509Certificate) lit
@@ -20,7 +20,7 @@ squad VerificationResult {
     is_valid lit
     error_code tea
     error_message tea
-    warnings []tea
+    warnings tea[value]
     trust_level drip
 }
 
@@ -38,16 +38,16 @@ squad X509Certificate {
     serial_number tea
     not_before drip
     not_after drip
-    subject_alt_names []tea
+    subject_alt_names tea[value]
     public_key tea
     signature_algorithm tea
     key_usage drip
-    extended_key_usage []tea
+    extended_key_usage tea[value]
     is_ca lit
-    ocsp_urls []tea
-    crl_urls []tea
-    authority_info_access []tea
-    cert_data []drip     fr fr Raw certificate bytes
+    ocsp_urls tea[value]
+    crl_urls tea[value]
+    authority_info_access tea[value]
+    cert_data drip[value]     fr fr Raw certificate bytes
 }
 
 squad TLSHandshakeContext {
@@ -56,9 +56,9 @@ squad TLSHandshakeContext {
     port drip
     tls_version tea
     cipher_suite tea
-    client_certificates []X509Certificate
-    server_certificates []X509Certificate
-    ca_certificates []X509Certificate
+    client_certificates X509Certificate[value]
+    server_certificates X509Certificate[value]
+    ca_certificates X509Certificate[value]
     verification_callback CertificateVerificationCallback
     security_policy SecurityPolicy
     session_resumption lit
@@ -72,9 +72,9 @@ squad SecurityPolicy {
     allow_self_signed lit
     max_cert_chain_depth drip
     minimum_key_size drip
-    allowed_signature_algorithms []tea
-    blocked_certificate_serials []tea
-    trusted_ca_thumbprints []tea
+    allowed_signature_algorithms tea[value]
+    blocked_certificate_serials tea[value]
+    trusted_ca_thumbprints tea[value]
 }
 
 fr fr ===== CRITICAL P1 FIX: CERTIFICATE VERIFICATION CALLBACK =====
@@ -128,7 +128,7 @@ slay tlsz_secure_handshake_with_verification(
         when _ -> yikes "HANDSHAKE_FAILED: Unable to receive server certificates"
     }
     
-    sus cert_chain []X509Certificate = parse_certificate_chain(certificate_message) fam {
+    sus cert_chain X509Certificate[value] = parse_certificate_chain(certificate_message) fam {
         when _ -> yikes "CERTIFICATE_PARSE_FAILED: Unable to parse certificate chain"
     }
     
@@ -177,7 +177,7 @@ slay tlsz_secure_handshake_with_verification(
 fr fr ===== COMPREHENSIVE CERTIFICATE VERIFICATION =====
 
 slay perform_comprehensive_certificate_verification(
-    cert_chain []X509Certificate,
+    cert_chain X509Certificate[value],
     hostname tea,
     context TLSHandshakeContext
 ) yikes<VerificationResult> {
@@ -342,7 +342,7 @@ slay validate_hostname_rfc6125(cert X509Certificate, hostname tea) VerificationR
 
 fr fr ===== CERTIFICATE CHAIN VALIDATION =====
 
-slay validate_certificate_chain_signatures(cert_chain []X509Certificate, context TLSHandshakeContext) VerificationResult {
+slay validate_certificate_chain_signatures(cert_chain X509Certificate[value], context TLSHandshakeContext) VerificationResult {
     sus result VerificationResult = VerificationResult{
         is_valid: based,
         error_code: "",
@@ -531,7 +531,7 @@ slay check_crl_status(cert X509Certificate, context TLSHandshakeContext) Revocat
 
 fr fr ===== SECURITY POLICY ENFORCEMENT =====
 
-slay enforce_security_policy(cert_chain []X509Certificate, policy SecurityPolicy) VerificationResult {
+slay enforce_security_policy(cert_chain X509Certificate[value], policy SecurityPolicy) VerificationResult {
     sus result VerificationResult = VerificationResult{
         is_valid: based,
         error_code: "",
@@ -592,15 +592,15 @@ slay generate_connection_id() tea {
     damn cryptz.random_hex(16)
 }
 
-slay load_system_ca_certificates() []X509Certificate {
+slay load_system_ca_certificates() X509Certificate[value]{
     fr fr Load from system CA bundle
-    sus ca_certs []X509Certificate = []
+    sus ca_certs X509Certificate[value] = []
     fr fr Implementation would load from /etc/ssl/certs/ca-certificates.crt
     damn ca_certs
 }
 
 slay is_weak_signature_algorithm(algorithm tea) lit {
-    sus weak_algorithms []tea = ["md5WithRSAEncryption", "sha1WithRSAEncryption", "md2WithRSAEncryption", "md4WithRSAEncryption"]
+    sus weak_algorithms tea[value] = ["md5WithRSAEncryption", "sha1WithRSAEncryption", "md2WithRSAEncryption", "md4WithRSAEncryption"]
     sus i drip = 0
     bestie (i < arrayz.length(weak_algorithms)) {
         ready (algorithm == weak_algorithms[i]) {
@@ -617,7 +617,7 @@ slay verify_certificate_signature(cert X509Certificate, issuer_cert X509Certific
     damn based  fr fr Simplified for now
 }
 
-slay is_trusted_ca(cert X509Certificate, ca_certs []X509Certificate) lit {
+slay is_trusted_ca(cert X509Certificate, ca_certs X509Certificate[value]) lit {
     sus i drip = 0
     bestie (i < arrayz.length(ca_certs)) {
         ready (cert.subject == ca_certs[i].subject) {
@@ -643,7 +643,7 @@ fr fr ===== DEFAULT SECURE VERIFICATION CALLBACK =====
 
 slay create_default_verification_callback() CertificateVerificationCallback {
     damn CertificateVerificationCallback{
-        verify_chain: slay(chain []X509Certificate, hostname tea, context tea) VerificationResult {
+        verify_chain: slay(chain X509Certificate[value], hostname tea, context tea) VerificationResult {
             fr fr Default comprehensive verification
             sus result VerificationResult = VerificationResult{
                 is_valid: based,
@@ -679,7 +679,7 @@ slay create_default_verification_callback() CertificateVerificationCallback {
 
 slay create_strict_verification_callback() CertificateVerificationCallback {
     damn CertificateVerificationCallback{
-        verify_chain: slay(chain []X509Certificate, hostname tea, context tea) VerificationResult {
+        verify_chain: slay(chain X509Certificate[value], hostname tea, context tea) VerificationResult {
             fr fr Strict verification with enhanced checks
             sus result VerificationResult = VerificationResult{
                 is_valid: based,

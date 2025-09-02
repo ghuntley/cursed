@@ -93,7 +93,7 @@ slay test_collection_properties(collection_name tea, create_fn slay() tea,
 }
 
 fr fr Math Function Testing Template
-slay test_math_function(func_name tea, func slay(meal) meal, test_cases [][]meal) lit {
+slay test_math_function(func_name tea, func slay(meal) meal, test_cases meal[value][value]) lit {
     test_group_start(func_name + " Math Function Tests")
     
     bestie test_case in test_cases {
@@ -264,6 +264,6 @@ slay generate_test_file_for_module(module_path tea) lit {
 
 slay extract_module_name(module_path tea) tea {
     fr fr Extract module name from path like "stdlib/collections" -> "collections"
-    sus parts []tea = module_path.split("/")
+    sus parts tea[value] = module_path.split("/")
     damn parts[parts.len() - 1]
 }

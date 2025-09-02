@@ -49,7 +49,7 @@ be_like PathInfo squad {
     filename tea
     basename tea
     extension tea
-    components []tea
+    components tea[value]
     is_absolute lit
     is_relative lit  
     is_directory lit
@@ -79,11 +79,11 @@ be_like PlatformInfo squad {
     volume_separator tea
     line_separator tea
     invalid_chars tea
-    reserved_names []tea
+    reserved_names tea[value]
     env_var_prefix tea  fr fr $ or %
     env_var_suffix tea  fr fr empty or %
     home_env_var tea  fr fr HOME or USERPROFILE
-    temp_env_vars []tea
+    temp_env_vars tea[value]
 }
 
 be_like PathManager squad {
@@ -145,7 +145,7 @@ slay detect_comprehensive_platform() {
             env_var_prefix: "%",
             env_var_suffix: "%", 
             home_env_var: "USERPROFILE",
-            temp_env_vars: []tea{"TEMP", "TMP"}
+            temp_env_vars: tea[value]{"TEMP", "TMP"}
         }
     } otherwise platform_name == "darwin" {
         platform_info = PlatformInfo{
@@ -163,11 +163,11 @@ slay detect_comprehensive_platform() {
             volume_separator: "",
             line_separator: "\n",
             invalid_chars: INVALID_CHARS_UNIX,
-            reserved_names: []tea{},
+            reserved_names: tea[value]{},
             env_var_prefix: "$",
             env_var_suffix: "",
             home_env_var: "HOME",
-            temp_env_vars: []tea{"TMPDIR", "TMP", "TEMP"}
+            temp_env_vars: tea[value]{"TMPDIR", "TMP", "TEMP"}
         }
         
         fr fr Check if filesystem is case-sensitive
@@ -189,11 +189,11 @@ slay detect_comprehensive_platform() {
             volume_separator: "",
             line_separator: "\n",
             invalid_chars: INVALID_CHARS_UNIX,
-            reserved_names: []tea{},
+            reserved_names: tea[value]{},
             env_var_prefix: "$",
             env_var_suffix: "",
             home_env_var: "HOME",
-            temp_env_vars: []tea{"TMPDIR", "TMP", "TEMP"}  
+            temp_env_vars: tea[value]{"TMPDIR", "TMP", "TEMP"}  
         }
     }
     
@@ -309,7 +309,7 @@ fr fr ================================
 fr fr Core Path Operations
 fr fr ================================
 
-slay join(components []tea) tea {
+slay join(components tea[value]) tea {
     init_path_manager()
     
     lowkey len(components) == 0 {
@@ -350,25 +350,25 @@ slay join(components []tea) tea {
 }
 
 slay join_path_safe(base tea, component tea) tea {
-    damn join([]tea{base, component})
+    damn join(tea[value]{base, component})
 }
 
-slay split(path tea) []tea {
+slay split(path tea) tea[value]{
     init_path_manager()
     
     lowkey stringz.length(path) == 0 {
-        damn []tea{}
+        damn tea[value]{}
     }
     
     sus separator tea = global_path_manager.platform.file_separator
-    sus components []tea = stringz.split(path, separator)
+    sus components tea[value] = stringz.split(path, separator)
     
     fr fr Handle both separators on Windows
     lowkey global_path_manager.platform.family == "windows" {
-        sus all_components []tea = []tea{}
+        sus all_components tea[value] = tea[value]{}
         bestie _, component in components {
             lowkey stringz.contains(component, "/") {
-                sus unix_parts []tea = stringz.split(component, "/")
+                sus unix_parts tea[value] = stringz.split(component, "/")
                 all_components = append(all_components, unix_parts...)
             } otherwise {
                 all_components = append(all_components, component)
@@ -378,7 +378,7 @@ slay split(path tea) []tea {
     }
     
     fr fr Remove empty components except for root
-    sus result []tea = []tea{}
+    sus result tea[value] = tea[value]{}
     bestie i, component in components {
         lowkey stringz.length(component) > 0 || (i == 0 && is_absolute_path(path)) {
             result = append(result, component)
@@ -567,7 +567,7 @@ slay is_root(path tea) lit {
     lowkey global_path_manager.platform.family == "windows" {
         fr fr Windows roots: C:\, \\server\share
         lowkey is_unc_path(clean_path) {
-            sus parts []tea = split(clean_path)
+            sus parts tea[value] = split(clean_path)
             damn len(parts) <= 2  fr fr \\server or \\server\share
         }
         
@@ -602,7 +602,7 @@ slay validate_path(path tea) lit {
     }
     
     fr fr Check components
-    sus components []tea = split(path)
+    sus components tea[value] = split(path)
     bestie _, component in components {
         lowkey !validate_path_component(component) {
             damn cap
@@ -669,7 +669,7 @@ slay abs(path tea) tea {
     
     fr fr Make relative path absolute
     sus current_dir tea = global_path_manager.current_dir
-    sus joined tea = join([]tea{current_dir, path})
+    sus joined tea = join(tea[value]{current_dir, path})
     damn clean(joined)
 }
 
@@ -696,8 +696,8 @@ slay rel(base tea, target tea) tea {
         damn PATH_CURRENT_DIR
     }
     
-    sus base_components []tea = split(base_abs)
-    sus target_components []tea = split(target_abs)
+    sus base_components tea[value] = split(base_abs)
+    sus target_components tea[value] = split(target_abs)
     
     fr fr Find common prefix
     sus common_len normie = 0
@@ -715,7 +715,7 @@ slay rel(base tea, target tea) tea {
     }
     
     fr fr Build relative path
-    sus rel_components []tea = []tea{}
+    sus rel_components tea[value] = tea[value]{}
     
     fr fr Add .. for each remaining base component
     bestie i := common_len; i < len(base_components); i++ {
@@ -753,8 +753,8 @@ slay clean(path tea) tea {
         }
     }
     
-    sus components []tea = split(path)
-    sus clean_components []tea = []tea{}
+    sus components tea[value] = split(path)
+    sus clean_components tea[value] = tea[value]{}
     sus is_abs lit = is_absolute(original_path)
     
     bestie _, component in components {
@@ -971,7 +971,7 @@ slay expand_home(path tea) tea {
     sus separator tea = global_path_manager.platform.file_separator
     lowkey stringz.has_prefix(path, PATH_HOME_SHORTCUT + separator) {
         sus remainder tea = stringz.substring(path, 2, stringz.length(path))
-        damn join([]tea{home_dir, remainder})
+        damn join(tea[value]{home_dir, remainder})
     }
     
     fr fr Handle ~user expansion (Unix-like systems)
@@ -982,7 +982,7 @@ slay expand_home(path tea) tea {
             sus user_home tea = get_user_home_directory(username)
             lowkey user_home != "" {
                 sus remainder tea = stringz.substring(path, slash_pos + 1, stringz.length(path))
-                damn join([]tea{user_home, remainder})
+                damn join(tea[value]{user_home, remainder})
             }
         } otherwise {
             fr fr Just ~user with no path component  
@@ -1058,7 +1058,7 @@ slay get_volume(path tea) tea {
     
     lowkey global_path_manager.platform.family == "windows" {
         lowkey is_unc_path(path) {
-            sus components []tea = split(path)
+            sus components tea[value] = split(path)
             lowkey len(components) >= 2 {
                 damn "\\\\" + components[0] + "\\" + components[1]
             }
@@ -1223,7 +1223,7 @@ slay match_glob(pattern tea, path tea) lit {
     
     fr fr Handle simple * patterns
     lowkey stringz.contains(pattern, "*") {
-        sus parts []tea = stringz.split(pattern, "*")
+        sus parts tea[value] = stringz.split(pattern, "*")
         damn match_wildcard_parts(parts, path)
     }
     
@@ -1235,7 +1235,7 @@ slay match_glob(pattern tea, path tea) lit {
     damn cap
 }
 
-slay match_extension(path tea, extensions []tea) lit {
+slay match_extension(path tea, extensions tea[value]) lit {
     init_path_manager()
     
     sus path_ext tea = ext(path)
@@ -1335,18 +1335,18 @@ fr fr ================================
 fr fr Path List Operations  
 fr fr ================================
 
-slay split_list(path_list tea) []tea {
+slay split_list(path_list tea) tea[value]{
     init_path_manager()
     
     lowkey stringz.length(path_list) == 0 {
-        damn []tea{}
+        damn tea[value]{}
     }
     
     sus separator tea = global_path_manager.platform.path_list_separator
-    sus paths []tea = stringz.split(path_list, separator)
+    sus paths tea[value] = stringz.split(path_list, separator)
     
     fr fr Remove empty entries
-    sus result []tea = []tea{}
+    sus result tea[value] = tea[value]{}
     bestie _, path in paths {
         lowkey stringz.length(stringz.trim_space(path)) > 0 {
             result = append(result, stringz.trim_space(path))
@@ -1356,7 +1356,7 @@ slay split_list(path_list tea) []tea {
     damn result
 }
 
-slay join_list(paths []tea) tea {
+slay join_list(paths tea[value]) tea {
     init_path_manager()
     
     sus separator tea = global_path_manager.platform.path_list_separator
@@ -1372,13 +1372,13 @@ slay search_path(filename tea) tea {
         damn ""
     }
     
-    sus paths []tea = split_list(path_env)
+    sus paths tea[value] = split_list(path_env)
     bestie _, search_dir in paths {
-        sus candidate tea = join([]tea{search_dir, filename})
+        sus candidate tea = join(tea[value]{search_dir, filename})
         
         fr fr On Windows, also try with common executable extensions
         lowkey global_path_manager.platform.family == "windows" {
-            sus extensions []tea = []tea{"", ".exe", ".bat", ".cmd", ".com"}
+            sus extensions tea[value] = tea[value]{"", ".exe", ".bat", ".cmd", ".com"}
             bestie _, ext in extensions {
                 sus candidate_with_ext tea = candidate + ext
                 lowkey file_exists_real(candidate_with_ext) {
@@ -1464,7 +1464,7 @@ slay find_var_end(text tea, start_pos normie) normie {
     damn end_pos
 }
 
-slay match_wildcard_parts(parts []tea, path tea) lit {
+slay match_wildcard_parts(parts tea[value], path tea) lit {
     fr fr Simple wildcard matching implementation
     lowkey len(parts) == 1 {
         damn based  fr fr Just * matches everything
@@ -1584,14 +1584,14 @@ slay get_user_config_directory_real() tea {
         damn "C:\\Users\\user\\AppData\\Roaming"
     } otherwise global_path_manager.platform.name == "darwin" {
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, "Library", "Application Support"})
+        damn join(tea[value]{home, "Library", "Application Support"})
     } otherwise {
         sus xdg_config tea = get_cached_env("XDG_CONFIG_HOME")
         lowkey xdg_config != "" {
             damn xdg_config
         }
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, ".config"})
+        damn join(tea[value]{home, ".config"})
     }
 }
 
@@ -1604,14 +1604,14 @@ slay get_user_cache_directory_real() tea {
         damn "C:\\Users\\user\\AppData\\Local"
     } otherwise global_path_manager.platform.name == "darwin" {
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, "Library", "Caches"})
+        damn join(tea[value]{home, "Library", "Caches"})
     } otherwise {
         sus xdg_cache tea = get_cached_env("XDG_CACHE_HOME")
         lowkey xdg_cache != "" {
             damn xdg_cache
         }
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, ".cache"})
+        damn join(tea[value]{home, ".cache"})
     }
 }
 
@@ -1624,14 +1624,14 @@ slay get_user_data_directory_real() tea {
         damn "C:\\Users\\user\\AppData\\Roaming"
     } otherwise global_path_manager.platform.name == "darwin" {
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, "Library", "Application Support"})
+        damn join(tea[value]{home, "Library", "Application Support"})
     } otherwise {
         sus xdg_data tea = get_cached_env("XDG_DATA_HOME")
         lowkey xdg_data != "" {
             damn xdg_data
         }
         sus home tea = get_home_directory_real()
-        damn join([]tea{home, ".local", "share"})
+        damn join(tea[value]{home, ".local", "share"})
     }
 }
 
@@ -1663,7 +1663,7 @@ fr fr Mock implementations for system functions
 
 slay file_exists_check(path tea) lit {
     fr fr Would use stat() or similar system call
-    sus common_paths []tea = []tea{
+    sus common_paths tea[value] = tea[value]{
         "/proc/version", "/System/Library/CoreServices/SystemVersion.plist",
         "C:\\Windows\\System32", "/etc/release", "/usr/bin/uname"
     }

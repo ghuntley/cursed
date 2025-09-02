@@ -12,14 +12,14 @@ struct NUMANode {
     spill cpu_mask thicc
     spill memory_size thicc
     spill free_memory thicc
-    spill distances []normie  fr fr Distance to other nodes
-    spill local_cpus []normie
+    spill distances normie[value]  fr fr Distance to other nodes
+    spill local_cpus normie[value]
     spill online lit
 }
 
 fr fr NUMA topology system information
 struct NUMATopology {
-    spill nodes []NUMANode
+    spill nodes NUMANode[value]
     spill num_nodes normie
     spill current_node normie
     spill interleave_policy lit
@@ -203,12 +203,12 @@ fr fr Parse Linux node range string
 slay parse_linux_node_range(range_str tea) normie {
     fr fr Handle ranges like "0-3" or lists like "0,2,4"
     sus max_node normie = 0
-    sus parts []tea = range_str.split(",")
+    sus parts tea[value] = range_str.split(",")
     
     bestie i := 0; i < parts.len(); i = i + 1 {
         sus part tea = parts[i].trim()
         yo part.contains("-") {
-            sus range_parts []tea = part.split("-")
+            sus range_parts tea[value] = part.split("-")
             yo range_parts.len() == 2 {
                 sus end_node normie = parse_int(range_parts[1].trim())
                 yo end_node > max_node {
@@ -274,14 +274,14 @@ slay discover_linux_numa_node(node_id normie) NUMANode {
 }
 
 fr fr Parse CPU list string (e.g., "0-3,8,12-15")
-slay parse_cpu_list(cpulist_str tea) []normie {
-    sus cpus []normie = []
-    sus parts []tea = cpulist_str.split(",")
+slay parse_cpu_list(cpulist_str tea) normie[value]{
+    sus cpus normie[value] = []
+    sus parts tea[value] = cpulist_str.split(",")
     
     bestie i := 0; i < parts.len(); i = i + 1 {
         sus part tea = parts[i].trim()
         yo part.contains("-") {
-            sus range_parts []tea = part.split("-")
+            sus range_parts tea[value] = part.split("-")
             yo range_parts.len() == 2 {
                 sus start_cpu normie = parse_int(range_parts[0].trim())
                 sus end_cpu normie = parse_int(range_parts[1].trim())
@@ -299,7 +299,7 @@ slay parse_cpu_list(cpulist_str tea) []normie {
 }
 
 fr fr Convert CPU list to bitmask
-slay cpu_list_to_mask(cpus []normie) thicc {
+slay cpu_list_to_mask(cpus normie[value]) thicc {
     sus mask thicc = 0
     bestie i := 0; i < cpus.len(); i = i + 1 {
         mask = mask | (1 << cpus[i])
@@ -309,7 +309,7 @@ slay cpu_list_to_mask(cpus []normie) thicc {
 
 fr fr Parse node memory info
 slay parse_node_meminfo(meminfo_content tea) (thicc, thicc) {
-    sus lines []tea = meminfo_content.split("\n")
+    sus lines tea[value] = meminfo_content.split("\n")
     sus total_memory thicc = 0
     sus free_memory thicc = 0
     
@@ -328,7 +328,7 @@ slay parse_node_meminfo(meminfo_content tea) (thicc, thicc) {
 fr fr Parse memory size from meminfo line
 slay parse_memory_size(line tea) thicc {
     fr fr Parse line like "Node 0 MemTotal:    8192000 kB"
-    sus parts []tea = line.split_whitespace()
+    sus parts tea[value] = line.split_whitespace()
     yo parts.len() >= 3 {
         sus size_str tea = parts[parts.len() - 2]
         sus size_kb thicc = parse_int64(size_str)
@@ -342,7 +342,7 @@ slay build_linux_numa_distance_matrix(topology *NUMATopology) lit {
     vibez.spill("NUMA: Building distance matrix...")
     
     bestie i := 0; i < topology.nodes.len(); i = i + 1 {
-        sus distances []normie = []
+        sus distances normie[value] = []
         
         bestie j := 0; j < topology.nodes.len(); j = j + 1 {
             yo i == j {
@@ -365,7 +365,7 @@ slay read_linux_numa_distance(from_node normie, to_node normie) normie {
     sus distance_content tea = real_read_file_content(distance_path)
     
     yo distance_content != "" {
-        sus distances []tea = distance_content.split_whitespace()
+        sus distances tea[value] = distance_content.split_whitespace()
         yo to_node < distances.len() {
             sus parsed_distance normie = parse_int(distances[to_node])
             fr fr Validate distance values (10-255 range)
@@ -471,7 +471,7 @@ slay get_windows_node_free_memory(node_id normie) thicc {
 slay build_windows_numa_distance_matrix(topology *NUMATopology) lit {
     fr fr Use GetNumaNodeProcessorMask to build distances
     bestie i := 0; i < topology.nodes.len(); i = i + 1 {
-        sus distances []normie = []
+        sus distances normie[value] = []
         
         bestie j := 0; j < topology.nodes.len(); j = j + 1 {
             yo i == j {
@@ -508,9 +508,9 @@ slay get_darwin_free_memory() thicc {
     damn total * 80 / 100  fr fr Assume 80% free
 }
 
-slay get_darwin_cpu_list() []normie {
+slay get_darwin_cpu_list() normie[value]{
     sus cpu_count normie = get_darwin_cpu_count()
-    sus cpus []normie = []
+    sus cpus normie[value] = []
     
     bestie i := 0; i < cpu_count; i = i + 1 {
         cpus.push(i)
@@ -559,9 +559,9 @@ slay get_system_free_memory() thicc {
     damn total * 75 / 100  fr fr Assume 75% free
 }
 
-slay get_system_cpu_list() []normie {
+slay get_system_cpu_list() normie[value]{
     sus cpu_count normie = get_system_cpu_count()
-    sus cpus []normie = []
+    sus cpus normie[value] = []
     
     bestie i := 0; i < cpu_count; i = i + 1 {
         cpus.push(i)
@@ -580,8 +580,8 @@ slay get_current_cpu_id() normie {
     damn 0  fr fr Default to CPU 0
 }
 
-slay processor_mask_to_cpu_list(mask thicc) []normie {
-    sus cpus []normie = []
+slay processor_mask_to_cpu_list(mask thicc) normie[value]{
+    sus cpus normie[value] = []
     sus cpu_id normie = 0
     
     bestie mask > 0 {
@@ -662,9 +662,9 @@ slay count_real_numa_nodes() normie {
     damn node_count
 }
 
-slay detect_node_cpus_fallback(node_id normie) []normie {
+slay detect_node_cpus_fallback(node_id normie) normie[value]{
     fr fr Fallback CPU detection using /sys/devices/system/cpu/
-    sus cpus []normie = []
+    sus cpus normie[value] = []
     bestie cpu_id := 0; cpu_id < 256; cpu_id = cpu_id + 1 {
         sus cpu_node_path tea = "/sys/devices/system/cpu/cpu" + tea(cpu_id) + "/node" + tea(node_id)
         yo real_file_exists(cpu_node_path) {
@@ -696,18 +696,18 @@ slay estimate_node_memory(node_id normie) (thicc, thicc) {
 
 slay parse_current_node_from_maps(numa_maps tea) normie {
     fr fr Parse /proc/self/numa_maps to find current process node affinity
-    sus lines []tea = numa_maps.split("\n")
+    sus lines tea[value] = numa_maps.split("\n")
     sus max_node normie = -1
-    sus node_counts []normie = [0, 0, 0, 0, 0, 0, 0, 0]  fr fr Support up to 8 nodes
+    sus node_counts normie[value] = [0, 0, 0, 0, 0, 0, 0, 0]  fr fr Support up to 8 nodes
     
     bestie i := 0; i < lines.len(); i = i + 1 {
         sus line tea = lines[i].trim()
         yo line.contains("N") {
             fr fr Look for patterns like "N0=4096" indicating pages on node 0
-            sus parts []tea = line.split(" ")
+            sus parts tea[value] = line.split(" ")
             bestie j := 0; j < parts.len(); j = j + 1 {
                 yo parts[j].starts_with("N") && parts[j].contains("=") {
-                    sus node_info []tea = parts[j].split("=")
+                    sus node_info tea[value] = parts[j].split("=")
                     yo node_info.len() == 2 {
                         sus node_id normie = parse_int(node_info[0].substring(1))  fr fr Remove 'N' prefix
                         sus page_count normie = parse_int(node_info[1])
@@ -741,7 +741,7 @@ slay get_current_cpu_id_real() normie {
     fr fr Read /proc/self/stat for current CPU
     sus stat_content tea = real_read_file_content("/proc/self/stat")
     yo stat_content != "" {
-        sus fields []tea = stat_content.split(" ")
+        sus fields tea[value] = stat_content.split(" ")
         yo fields.len() > 38 {
             fr fr Field 39 is the CPU number (0-indexed from field 1)
             damn parse_int(fields[38])
@@ -1095,7 +1095,7 @@ slay numa_print_topology() {
     }
 }
 
-slay format_distance_array(distances []normie) tea {
+slay format_distance_array(distances normie[value]) tea {
     sus result tea = ""
     bestie i := 0; i < distances.len(); i = i + 1 {
         yo i > 0 {

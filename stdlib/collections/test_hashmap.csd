@@ -216,7 +216,7 @@ slay test_hashmap_keys() {
     map = hashmap_insert(map, "key2", "value2")
     map = hashmap_insert(map, "key3", "value3")
     
-    sus keys []tea = hashmap_keys(map)
+    sus keys tea[value] = hashmap_keys(map)
     
     fr fr Should have 3 keys
     assert_eq_int(hashmap_len(map), 3)
@@ -254,7 +254,7 @@ slay test_hashmap_values() {
     map = hashmap_insert(map, "key2", "value2")
     map = hashmap_insert(map, "key3", "value3")
     
-    sus values []tea = hashmap_values(map)
+    sus values tea[value] = hashmap_values(map)
     
     fr fr Should have 3 values
     assert_eq_int(hashmap_len(map), 3)

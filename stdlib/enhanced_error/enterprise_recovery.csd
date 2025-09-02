@@ -259,7 +259,7 @@ be_like enhanced_error squad {
     error_category tea
     retry_policy retry_policy
     escalation_config escalation_config
-    recovery_actions []recovery_action
+    recovery_actions recovery_action[value]
     metadata map[tea]any
     
     fr fr Error classification
@@ -269,9 +269,9 @@ be_like enhanced_error squad {
     is_business_logic lit
     
     fr fr Propagation tracking
-    propagation_chain []tea
+    propagation_chain tea[value]
     origin_service tea
-    affected_services []tea
+    affected_services tea[value]
 }
 
 be_like retry_policy squad {
@@ -280,13 +280,13 @@ be_like retry_policy squad {
     max_delay_ms normie
     backoff_multiplier meal
     jitter_enabled lit
-    retry_conditions []tea
+    retry_conditions tea[value]
 }
 
 be_like escalation_config squad {
     escalation_threshold normie
     escalation_timeout_ms normie
-    notification_channels []tea
+    notification_channels tea[value]
     severity_level tea
     runbook_url tea
 }
@@ -352,9 +352,9 @@ fr fr Error Aggregation and Batch Processing
 fr fr ================================
 
 be_like error_aggregator squad {
-    errors []enhanced_error
-    correlation_groups map[tea][]enhanced_error
-    service_errors map[tea][]enhanced_error
+    errors enhanced_error[value]
+    correlation_groups map[tea]enhanced_error[value]
+    service_errors map[tea]enhanced_error[value]
     category_counts map[tea]normie
     severity_counts map[tea]normie
     aggregation_start_time normie
@@ -483,7 +483,7 @@ slay process_error_batch(aggregator error_aggregator) batch_processing_result {
     damn result
 }
 
-slay process_correlation_group(trace_id tea, errors []enhanced_error, result @batch_processing_result) {
+slay process_correlation_group(trace_id tea, errors enhanced_error[value], result @batch_processing_result) {
     lowkey len(errors) > 1 {
         fr fr Multiple errors in same trace - potential cascade failure
         trigger_cascade_recovery(trace_id, errors, result)
@@ -511,7 +511,7 @@ be_like trace_span squad {
     end_time normie
     duration_ms normie
     tags map[tea]tea
-    logs []trace_log
+    logs trace_log[value]
     error enhanced_error
     status tea
 }
@@ -528,7 +528,7 @@ sus global_tracer distributed_tracer
 be_like distributed_tracer squad {
     service_name tea
     active_spans map[tea]trace_span
-    span_buffer []trace_span
+    span_buffer trace_span[value]
     export_batch_size normie
     export_interval_ms normie
     last_export_time normie
@@ -630,9 +630,9 @@ fr fr ================================
 fr fr Recovery and Escalation Actions
 fr fr ================================
 
-slay trigger_cascade_recovery(trace_id tea, errors []enhanced_error, result @batch_processing_result) {
+slay trigger_cascade_recovery(trace_id tea, errors enhanced_error[value], result @batch_processing_result) {
     fr fr Implement cascade failure recovery
-    sus recovery_actions []recovery_action = []
+    sus recovery_actions recovery_action[value] = []
     
     bestie _, err := range errors {
         bestie _, action := range err.recovery_actions {
@@ -818,7 +818,7 @@ slay default_escalation_config() escalation_config {
     }
 }
 
-slay append_unique(slice []tea, item tea) []tea {
+slay append_unique(slice tea[value], item tea) tea[value]{
     bestie _, existing := range slice {
         lowkey existing == item {
             damn slice
@@ -872,7 +872,7 @@ slay create_incident(err enhanced_error, escalation escalation_config) {
     vibez.spill("Creating incident for error: " + err.base_error.message())
 }
 
-slay process_service_errors(service tea, errors []enhanced_error, result @batch_processing_result) {
+slay process_service_errors(service tea, errors enhanced_error[value], result @batch_processing_result) {
     vibez.spill("Processing " + string(len(errors)) + " errors for service: " + service)
 }
 

@@ -442,7 +442,7 @@ slay detect_mysql_parameter_types(query: tea) [tea] { fr fr Simplified type dete
 
 fr fr Create empty parameter array for MySQL
 slay make_mysql_empty_parameters(count: normie) [tea] {
-    params := []tea{}
+    params := tea[value]{}
     bestie i := 0; i < count; i++ {
         params = append(params, "")
     }
@@ -454,7 +454,7 @@ slay detect_mysql_result_columns(query: tea) [tea] {
     if mysql_starts_with(query, "SELECT") {
         damn ["id", "name", "email", "created_at"]
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
 fr fr Detect MySQL column types
@@ -462,7 +462,7 @@ slay detect_mysql_column_types(query: tea) [tea] {
     if mysql_starts_with(query, "SELECT") {
         damn ["int", "varchar(255)", "varchar(255)", "datetime"]
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
 fr fr Bind parameter to MySQL prepared statement
@@ -643,8 +643,8 @@ fr fr Create MySQL connection pool
 slay create_mysql_pool(config: MySQLConfig, max_connections: normie) MySQLPool {
     pool := MySQLPool{
         config: config,
-        connections: []MySQLConnection{},
-        available_connections: []normie{},
+        connections: MySQLConnection[value]{},
+        available_connections: normie[value]{},
         max_connections: max_connections,
         current_connections: 0,
         total_queries: 0,

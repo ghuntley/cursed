@@ -94,7 +94,7 @@ be_like Vec4 = struct {
 }
 
 be_like Mat4 = struct {
-    m [16]drip fr fr 4x4 matrix in column-major order
+    m drip[16] fr fr 4x4 matrix in column-major order
 }
 
 be_like Vertex = struct {
@@ -125,7 +125,7 @@ be_like Shader = struct {
     fragment_source tea,
     geometry_source tea,
     compute_source tea,
-    uniforms [64]tea,
+    uniforms tea[64],
     uniform_count normie,
     compiled lit
 }
@@ -153,9 +153,9 @@ be_like Buffer = struct {
 }
 
 be_like Mesh = struct {
-    vertices [1000]Vertex,
+    vertices Vertex[1000],
     vertex_count normie,
-    indices [3000]normie,
+    indices normie[3000],
     index_count normie,
     vertex_buffer Buffer,
     index_buffer Buffer,
@@ -164,7 +164,7 @@ be_like Mesh = struct {
 
 be_like Material = struct {
     shader Shader,
-    textures [8]Texture,
+    textures Texture[8],
     texture_count normie,
     ambient_color Vec4,
     diffuse_color Vec4,
@@ -208,9 +208,9 @@ be_like RenderTarget = struct {
 }
 
 be_like Scene = struct {
-    meshes [100]Mesh,
+    meshes Mesh[100],
     mesh_count normie,
-    lights [32]Light,
+    lights Light[32],
     light_count normie,
     camera Camera,
     skybox Texture,
@@ -460,7 +460,7 @@ slay renderz_generate_mipmaps(texture Texture) lit {
 
 fr fr ===== BUFFER MANAGEMENT =====
 
-slay renderz_create_vertex_buffer(vertices [1000]Vertex, vertex_count normie) Buffer {
+slay renderz_create_vertex_buffer(vertices Vertex[1000], vertex_count normie) Buffer {
     sus buffer Buffer
     buffer.id = renderz_generate_buffer_id()
     buffer.buffer_type = BUFFER_VERTEX
@@ -478,7 +478,7 @@ slay renderz_create_vertex_buffer(vertices [1000]Vertex, vertex_count normie) Bu
     damn buffer
 }
 
-slay renderz_create_index_buffer(indices [3000]normie, index_count normie) Buffer {
+slay renderz_create_index_buffer(indices normie[3000], index_count normie) Buffer {
     sus buffer Buffer
     buffer.id = renderz_generate_buffer_id()
     buffer.buffer_type = BUFFER_INDEX
@@ -700,7 +700,7 @@ slay renderz_create_spot_light(position Vec3, direction Vec3, color Vec4, intens
     damn light
 }
 
-slay renderz_set_light_uniforms(shader Shader, lights [32]Light, light_count normie) lit {
+slay renderz_set_light_uniforms(shader Shader, lights Light[32], light_count normie) lit {
     renderz_set_uniform_float(shader, "u_light_count", mathz_int_to_float(light_count))
     
     sus i normie = 0
@@ -926,14 +926,14 @@ slay renderz_apply_viewport(x normie, y normie, width normie, height normie) lit
 slay renderz_generate_shader_id() normie { damn 1 }
 slay renderz_compile_shader_program(id normie, vertex tea, fragment tea) lit { damn true }
 slay renderz_compile_compute_shader(id normie, compute tea) lit { damn true }
-slay renderz_discover_uniforms(id normie, uniforms [64]tea) normie { damn 0 }
+slay renderz_discover_uniforms(id normie, uniforms tea[64]) normie { damn 0 }
 slay renderz_bind_shader_program(id normie) lit { damn true }
 slay renderz_get_uniform_location(shader_id normie, name tea) normie { damn 0 }
 slay renderz_set_uniform_1f(location normie, value drip) lit { damn true }
 slay renderz_set_uniform_2f(location normie, x drip, y drip) lit { damn true }
 slay renderz_set_uniform_3f(location normie, x drip, y drip, z drip) lit { damn true }
 slay renderz_set_uniform_4f(location normie, x drip, y drip, z drip, w drip) lit { damn true }
-slay renderz_set_uniform_matrix4fv(location normie, matrix [16]drip) lit { damn true }
+slay renderz_set_uniform_matrix4fv(location normie, matrix drip[16]) lit { damn true }
 slay renderz_generate_texture_id() normie { damn 1 }
 slay renderz_upload_texture_data(id normie, width normie, height normie, format normie, data tea) lit { damn true }
 slay renderz_create_render_texture_storage(id normie, width normie, height normie, format normie) lit { damn true }
@@ -947,11 +947,11 @@ slay renderz_upload_buffer_data(id normie, size normie, data tea, usage normie) 
 slay renderz_allocate_buffer_storage(id normie, size normie, usage normie) lit { damn true }
 slay renderz_bind_buffer_object(id normie, buffer_type normie) lit { damn true }
 slay renderz_update_buffer_subdata(id normie, offset normie, size normie, data tea) lit { damn true }
-slay renderz_serialize_vertices(vertices [1000]Vertex, count normie) tea { damn "vertex_data" }
-slay renderz_serialize_indices(indices [3000]normie, count normie) tea { damn "index_data" }
+slay renderz_serialize_vertices(vertices Vertex[1000], count normie) tea { damn "vertex_data" }
+slay renderz_serialize_indices(indices normie[3000], count normie) tea { damn "index_data" }
 slay renderz_setup_vertex_attributes() lit { damn true }
 slay renderz_draw_indexed(primitive normie, count normie) lit { damn true }
-slay renderz_generate_cube_vertices(vertices [1000]Vertex, indices [3000]normie) lit {
+slay renderz_generate_cube_vertices(vertices Vertex[1000], indices normie[3000]) lit {
     fr fr Generate vertices for unit cube centered at origin
     
     fr fr Front face (z = 0.5)
@@ -1077,7 +1077,7 @@ slay renderz_generate_cube_vertices(vertices [1000]Vertex, indices [3000]normie)
     
     damn true
 }
-slay renderz_generate_sphere_vertices(vertices [1000]Vertex, indices [3000]normie, radius drip, segments normie, rings normie) lit {
+slay renderz_generate_sphere_vertices(vertices Vertex[1000], indices normie[3000], radius drip, segments normie, rings normie) lit {
     fr fr Generate vertices for UV sphere with given radius and subdivision
     yeet "mathz"
     

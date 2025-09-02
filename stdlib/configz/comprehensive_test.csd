@@ -45,7 +45,7 @@ ip = "192.168.1.11"
     
     ready (toml_document_has_errors(document)) {
         vibez.spill("✗ TOML parsing failed:")
-        sus errors []tea = toml_document_get_errors(document)
+        sus errors tea[value] = toml_document_get_errors(document)
         sus error_count drip = len(errors)
         sus i drip = 0
         bestie (i < error_count) {

@@ -144,7 +144,7 @@ slay receive_with_context<T>(ctx Context, ch chan<T>) (T, lit) {
 }
 
 # Context-aware select operations
-slay select_with_context(ctx Context, cases []SelectCase) (drip, tea, lit) {
+slay select_with_context(ctx Context, cases SelectCase[value]) (drip, tea, lit) {
     # Add context cancellation case
     sus context_case := SelectCase{
         dir: SelectRecv,
@@ -200,8 +200,8 @@ slay pipeline<T, U>(ctx Context, input chan<T>, stage PipelineStage<T, U>) chan<
 }
 
 # Fan-out pattern with context
-slay fan_out<T>(ctx Context, input chan<T, workers drip) []chan<T> {
-    sus outputs []chan<T> = make([]chan<T>, workers)
+slay fan_out<T>(ctx Context, input chan<T, workers drip) chan[value]<T> {
+    sus outputs chan[value]<T> = make(chan[value]<T>, workers)
     
     # Create output channels
     bestie (i := 0; i < workers; i++) {
@@ -237,7 +237,7 @@ slay fan_out<T>(ctx Context, input chan<T, workers drip) []chan<T> {
 }
 
 # Fan-in pattern with context
-slay fan_in<T>(ctx Context, inputs []chan<T>) chan<T> {
+slay fan_in<T>(ctx Context, inputs chan[value]<T>) chan<T> {
     sus output := make_channel<T>()
     
     # Start goroutine for each input

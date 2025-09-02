@@ -285,7 +285,7 @@ slay test_valid_syntax_validation() {
     test_start("Valid Syntax Validation")
     
     sus valid_code tea = "sus x drip = 42; slay test() { damn x; }"
-    sus errors []tea = validate_syntax(valid_code)
+    sus errors tea[value] = validate_syntax(valid_code)
     
     assert_eq_int(len(errors), 0)
 }
@@ -294,7 +294,7 @@ slay test_invalid_syntax_validation() {
     test_start("Invalid Syntax Validation")
     
     sus invalid_code tea = "sus x drip = ; slay ( { damn ;"
-    sus errors []tea = validate_syntax(invalid_code)
+    sus errors tea[value] = validate_syntax(invalid_code)
     
     assert_true(len(errors) > 0)
 }

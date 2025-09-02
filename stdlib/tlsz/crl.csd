@@ -21,14 +21,14 @@ squad TBSCertList {
     issuer tea
     this_update drip
     next_update drip
-    revoked_certificates []RevokedCertificate
-    crl_extensions []CRLExtension
+    revoked_certificates RevokedCertificate[value]
+    crl_extensions CRLExtension[value]
 }
 
 squad RevokedCertificate {
     user_certificate tea        fr fr Serial number
     revocation_date drip
-    crl_entry_extensions []CRLExtension
+    crl_entry_extensions CRLExtension[value]
 }
 
 squad CRLExtension {
@@ -109,7 +109,7 @@ slay parse_crl_data(crl_data tea) yikes<CertificateRevocationList> {
     }
     
     fr fr Extract CRL components
-    sus crl_parts []tea = stringz.split(decoded_data, "_")
+    sus crl_parts tea[value] = stringz.split(decoded_data, "_")
     ready (arrayz.length(crl_parts) < 6) {
         yikes "MALFORMED_CRL: CRL structure is incomplete"
     }
@@ -121,7 +121,7 @@ slay parse_crl_data(crl_data tea) yikes<CertificateRevocationList> {
     sus revoked_count drip = stringz.to_int(crl_parts[5])
     
     fr fr Parse revoked certificates
-    sus revoked_certs []RevokedCertificate = []
+    sus revoked_certs RevokedCertificate[value] = []
     sus i drip = 0
     bestie (i < revoked_count && i + 6 < arrayz.length(crl_parts)) {
         sus serial_number tea = crl_parts[6 + i * 2]
@@ -193,7 +193,7 @@ slay validate_crl(crl CertificateRevocationList, ca_cert X509Certificate) yikes<
 
 slay is_weak_signature_algorithm(algorithm tea) lit {
     fr fr Check if signature algorithm is weak
-    sus weak_algorithms []tea = ["md5WithRSAEncryption", "sha1WithRSAEncryption", "md2WithRSAEncryption", "md4WithRSAEncryption"]
+    sus weak_algorithms tea[value] = ["md5WithRSAEncryption", "sha1WithRSAEncryption", "md2WithRSAEncryption", "md4WithRSAEncryption"]
     
     sus i drip = 0
     bestie (i < arrayz.length(weak_algorithms)) {
@@ -402,7 +402,7 @@ slay merge_delta_crl(base_crl CertificateRevocationList, delta_crl CertificateRe
 fr fr ===== CRL CACHE MANAGEMENT =====
 
 squad CRLCache {
-    cached_crls []CachedCRL
+    cached_crls CachedCRL[value]
     max_cache_size drip
     cache_ttl drip
 }

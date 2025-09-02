@@ -46,8 +46,8 @@ squad YamlNode {
     tag YamlTag
     anchor tea
     alias tea
-    children []YamlNode
-    mappings []YamlMapping
+    children YamlNode[value]
+    mappings YamlMapping[value]
     line_number drip
     column_number drip
     style tea  # Block, flow, literal, folded
@@ -70,12 +70,12 @@ squad YamlMapping {
 # YAML Document Structure
 squad YamlDocument {
     version tea
-    directives []YamlDirective
+    directives YamlDirective[value]
     root YamlNode
     implicit_document lit
     document_start lit
     document_end lit
-    tags []YamlTagDirective
+    tags YamlTagDirective[value]
 }
 
 # YAML Directive Structure
@@ -92,9 +92,9 @@ squad YamlTagDirective {
 
 # YAML Stream Structure
 squad YamlStream {
-    documents []YamlDocument
+    documents YamlDocument[value]
     version tea
-    tags []YamlTagDirective
+    tags YamlTagDirective[value]
 }
 
 # YAML Parser Configuration
@@ -121,8 +121,8 @@ squad YamlParseError {
 # YAML Schema Validation Result
 squad YamlValidationResult {
     valid lit
-    errors []tea
-    warnings []tea
+    errors tea[value]
+    warnings tea[value]
 }
 
 # ========================
@@ -385,7 +385,7 @@ slay yaml_node_to_value(node YamlNode) tea {
             damn cap
         }
     } otherwise ready (node.node_type == YamlNodeType.Sequence) {
-        sus array []tea = []
+        sus array tea[value] = []
         bestie (sus child YamlNode in node.children) {
             array = arrayz.append(array, yaml_node_to_value(child))
         }
@@ -450,16 +450,16 @@ slay validate_yaml_syntax(yaml_content tea) YamlValidationResult {
 # ========================
 
 # Query YAML document using JSONPath-like syntax
-slay yaml_query(doc YamlDocument, path tea) yikes<[]YamlNode> {
-    sus path_parts []tea = stringz.split(path, ".")
-    sus current_nodes []YamlNode = [doc.root]
+slay yaml_query(doc YamlDocument, path tea) yikes<YamlNode[value]> {
+    sus path_parts tea[value] = stringz.split(path, ".")
+    sus current_nodes YamlNode[value] = [doc.root]
     
     bestie (sus part tea in path_parts) {
         ready (part == "") {
             continue
         }
         
-        sus next_nodes []YamlNode = []
+        sus next_nodes YamlNode[value] = []
         
         bestie (sus node YamlNode in current_nodes) {
             ready (node.node_type == YamlNodeType.Mapping) {
@@ -488,7 +488,7 @@ slay yaml_query(doc YamlDocument, path tea) yikes<[]YamlNode> {
 
 # Get first value from YAML query
 slay yaml_query_first(doc YamlDocument, path tea) yikes<tea> {
-    sus nodes []YamlNode = yaml_query(doc, path) fam {
+    sus nodes YamlNode[value] = yaml_query(doc, path) fam {
         when err -> yikes err
     }
     
@@ -554,7 +554,7 @@ slay generate_yaml_indent(depth drip) tea {
 
 # Indent YAML lines
 slay indent_yaml_lines(content tea, depth drip) tea {
-    sus lines []tea = stringz.split(content, "\n")
+    sus lines tea[value] = stringz.split(content, "\n")
     sus indent tea = generate_yaml_indent(depth)
     sus result tea = ""
     
@@ -637,9 +637,9 @@ squad YamlParserState {
     column drip
     config YamlParserConfig
     anchors map[tea]YamlNode
-    directives []YamlDirective
-    tag_directives []YamlTagDirective
-    indentation_stack []drip
+    directives YamlDirective[value]
+    tag_directives YamlTagDirective[value]
+    indentation_stack drip[value]
 }
 
 squad YamlParserResult {

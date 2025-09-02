@@ -6,7 +6,7 @@ squad Scanner {
     sus text tea             # Source text to scan
     sus position drip        # Current position in text
     sus length drip          # Length of text
-    sus delimiters []tea     # Array of delimiter strings
+    sus delimiters tea[value]     # Array of delimiter strings
     sus skip_whitespace lit  # Whether to skip whitespace tokens
     sus current_token tea    # Current scanned token
     sus line_number drip     # Current line number (1-based)
@@ -15,7 +15,7 @@ squad Scanner {
 }
 
 # Create new scanner with text and optional delimiters
-slay new_scanner(text tea, delims []tea) Scanner {
+slay new_scanner(text tea, delims tea[value]) Scanner {
     ready (delims.length == 0) {
         delims = [" ", "\t", "\n", "\r"]  # Default whitespace delimiters
     }
@@ -34,7 +34,7 @@ slay new_scanner(text tea, delims []tea) Scanner {
 }
 
 # Create scanner with custom delimiter set
-slay new_scanner_with_delimiters(text tea, delims []tea, skip_ws lit) Scanner {
+slay new_scanner_with_delimiters(text tea, delims tea[value], skip_ws lit) Scanner {
     damn Scanner{
         text: text,
         position: 0,
@@ -242,8 +242,8 @@ slay peek_token(scanner *Scanner) tea {
 }
 
 # Scan all tokens into an array
-slay scan_all_tokens(scanner *Scanner) []tea {
-    sus tokens []tea = []
+slay scan_all_tokens(scanner *Scanner) tea[value]{
+    sus tokens tea[value] = []
     
     bestie (scan(scanner)) {
         tokens = append(tokens, scanner.current_token)
@@ -253,8 +253,8 @@ slay scan_all_tokens(scanner *Scanner) []tea {
 }
 
 # Scan a single line of tokens
-slay scan_line(scanner *Scanner) []tea {
-    sus tokens []tea = []
+slay scan_line(scanner *Scanner) tea[value]{
+    sus tokens tea[value] = []
     sus saved_line drip = scanner.line_number
     
     bestie (scan(scanner) && scanner.line_number == saved_line) {
@@ -333,8 +333,8 @@ slay skip_to_next_line(scanner *Scanner) {
 }
 
 # Advanced token filtering
-slay scan_matching(scanner *Scanner, filter slay(tea) lit) []tea {
-    sus tokens []tea = []
+slay scan_matching(scanner *Scanner, filter slay(tea) lit) tea[value]{
+    sus tokens tea[value] = []
     
     bestie (scan(scanner)) {
         ready (filter(scanner.current_token)) {

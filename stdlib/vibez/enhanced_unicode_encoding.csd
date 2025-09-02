@@ -105,13 +105,13 @@ slay is_printable_unicode(codepoint normie) lit {
 
 fr fr ===== UTF-8 ENCODING/DECODING =====
 
-slay utf8_encode_codepoint(codepoint normie) []normie {
+slay utf8_encode_codepoint(codepoint normie) normie[value]{
     ready !is_valid_unicode_codepoint(codepoint) {
         last_encoding_error = ENCODING_ERROR_INVALID_CODEPOINT
         damn [UNICODE_REPLACEMENT_CHAR]
     }
     
-    sus bytes []normie = []
+    sus bytes normie[value] = []
     
     ready codepoint <= 0x7F {  fr fr 1-byte sequence
         bytes = append_byte(bytes, codepoint)
@@ -136,7 +136,7 @@ slay utf8_encode_codepoint(codepoint normie) []normie {
     damn bytes
 }
 
-slay utf8_decode_codepoint(utf8_bytes []normie, start_pos normie) normie {
+slay utf8_decode_codepoint(utf8_bytes normie[value], start_pos normie) normie {
     ready start_pos >= len(utf8_bytes) {
         last_encoding_error = ENCODING_ERROR_INVALID_SEQUENCE
         damn UNICODE_REPLACEMENT_CHAR
@@ -217,13 +217,13 @@ slay is_utf8_continuation_byte(byte normie) lit {
 
 fr fr ===== UTF-16 ENCODING/DECODING =====
 
-slay utf16_encode_codepoint(codepoint normie) []normie {
+slay utf16_encode_codepoint(codepoint normie) normie[value]{
     ready !is_valid_unicode_codepoint(codepoint) {
         last_encoding_error = ENCODING_ERROR_INVALID_CODEPOINT
         damn [UNICODE_REPLACEMENT_CHAR]
     }
     
-    sus words []normie = []
+    sus words normie[value] = []
     
     ready codepoint <= 0xFFFF {
         ready codepoint >= UNICODE_HIGH_SURROGATE_MIN && codepoint <= UNICODE_LOW_SURROGATE_MAX {
@@ -248,7 +248,7 @@ slay utf16_encode_codepoint(codepoint normie) []normie {
     damn words
 }
 
-slay utf16_decode_codepoint(utf16_words []normie, start_pos normie) normie {
+slay utf16_decode_codepoint(utf16_words normie[value], start_pos normie) normie {
     ready start_pos >= len(utf16_words) {
         last_encoding_error = ENCODING_ERROR_INVALID_SEQUENCE
         damn UNICODE_REPLACEMENT_CHAR
@@ -293,18 +293,18 @@ slay utf16_decode_codepoint(utf16_words []normie, start_pos normie) normie {
 
 fr fr ===== STRING CONVERSION FUNCTIONS =====
 
-slay string_to_utf8_bytes(str tea) []normie {
+slay string_to_utf8_bytes(str tea) normie[value]{
     ready str == cringe {
         damn []
     }
     
-    sus result []normie = []
+    sus result normie[value] = []
     sus str_len normie = stringz.length(str)
     sus i normie = 0
     
     bestie i < str_len {
         sus char_code normie = get_char_codepoint_at(str, i)
-        sus utf8_bytes []normie = utf8_encode_codepoint(char_code)
+        sus utf8_bytes normie[value] = utf8_encode_codepoint(char_code)
         
         sus j normie = 0
         bestie j < len(utf8_bytes) {
@@ -318,7 +318,7 @@ slay string_to_utf8_bytes(str tea) []normie {
     damn result
 }
 
-slay utf8_bytes_to_string(bytes []normie) tea {
+slay utf8_bytes_to_string(bytes normie[value]) tea {
     ready len(bytes) == 0 {
         damn ""
     }
@@ -343,18 +343,18 @@ slay utf8_bytes_to_string(bytes []normie) tea {
     damn result
 }
 
-slay string_to_utf16_words(str tea) []normie {
+slay string_to_utf16_words(str tea) normie[value]{
     ready str == cringe {
         damn []
     }
     
-    sus result []normie = []
+    sus result normie[value] = []
     sus str_len normie = stringz.length(str)
     sus i normie = 0
     
     bestie i < str_len {
         sus char_code normie = get_char_codepoint_at(str, i)
-        sus utf16_words []normie = utf16_encode_codepoint(char_code)
+        sus utf16_words normie[value] = utf16_encode_codepoint(char_code)
         
         sus j normie = 0
         bestie j < len(utf16_words) {
@@ -368,7 +368,7 @@ slay string_to_utf16_words(str tea) []normie {
     damn result
 }
 
-slay utf16_words_to_string(words []normie) tea {
+slay utf16_words_to_string(words normie[value]) tea {
     ready len(words) == 0 {
         damn ""
     }
@@ -710,9 +710,9 @@ slay hex_digit_to_string(digit normie) tea {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay append_byte(arr []normie, byte normie) []normie {
+slay append_byte(arr normie[value], byte normie) normie[value]{
     sus new_len normie = len(arr) + 1
-    sus new_arr []normie = make_byte_array(new_len)
+    sus new_arr normie[value] = make_byte_array(new_len)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -722,9 +722,9 @@ slay append_byte(arr []normie, byte normie) []normie {
     damn new_arr
 }
 
-slay append_word(arr []normie, word normie) []normie {
+slay append_word(arr normie[value], word normie) normie[value]{
     sus new_len normie = len(arr) + 1
-    sus new_arr []normie = make_word_array(new_len)
+    sus new_arr normie[value] = make_word_array(new_len)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -734,13 +734,13 @@ slay append_word(arr []normie, word normie) []normie {
     damn new_arr
 }
 
-slay make_byte_array(size normie) []normie {
-    sus arr []normie = []
+slay make_byte_array(size normie) normie[value]{
+    sus arr normie[value] = []
     damn arr
 }
 
-slay make_word_array(size normie) []normie {
-    sus arr []normie = []
+slay make_word_array(size normie) normie[value]{
+    sus arr normie[value] = []
     damn arr
 }
 
@@ -809,44 +809,44 @@ slay test_unicode_encoding() lit {
     sus test_passed lit = based
     
     fr fr Test ASCII characters
-    sus ascii_bytes []normie = utf8_encode_codepoint(65)  fr fr 'A'
+    sus ascii_bytes normie[value] = utf8_encode_codepoint(65)  fr fr 'A'
     ready len(ascii_bytes) != 1 || ascii_bytes[0] != 65 {
         test_passed = cap
     }
     
     fr fr Test 2-byte UTF-8
-    sus two_byte []normie = utf8_encode_codepoint(233)  fr fr 'é'
+    sus two_byte normie[value] = utf8_encode_codepoint(233)  fr fr 'é'
     ready len(two_byte) != 2 {
         test_passed = cap
     }
     
     fr fr Test 3-byte UTF-8
-    sus three_byte []normie = utf8_encode_codepoint(0x2603)  fr fr Snowman
+    sus three_byte normie[value] = utf8_encode_codepoint(0x2603)  fr fr Snowman
     ready len(three_byte) != 3 {
         test_passed = cap
     }
     
     fr fr Test 4-byte UTF-8
-    sus four_byte []normie = utf8_encode_codepoint(0x1F600)  fr fr Grinning face emoji
+    sus four_byte normie[value] = utf8_encode_codepoint(0x1F600)  fr fr Grinning face emoji
     ready len(four_byte) != 4 {
         test_passed = cap
     }
     
     fr fr Test UTF-16 encoding
-    sus utf16_basic []normie = utf16_encode_codepoint(65)  fr fr 'A'
+    sus utf16_basic normie[value] = utf16_encode_codepoint(65)  fr fr 'A'
     ready len(utf16_basic) != 1 || utf16_basic[0] != 65 {
         test_passed = cap
     }
     
     fr fr Test UTF-16 surrogate pairs
-    sus utf16_surrogate []normie = utf16_encode_codepoint(0x1F600)  fr fr Emoji
+    sus utf16_surrogate normie[value] = utf16_encode_codepoint(0x1F600)  fr fr Emoji
     ready len(utf16_surrogate) != 2 {
         test_passed = cap
     }
     
     fr fr Test round-trip conversion
     sus original_codepoint normie = 0x1F600
-    sus utf8_encoded []normie = utf8_encode_codepoint(original_codepoint)
+    sus utf8_encoded normie[value] = utf8_encode_codepoint(original_codepoint)
     sus decoded_codepoint normie = utf8_decode_codepoint(utf8_encoded, 0)
     ready decoded_codepoint != original_codepoint {
         test_passed = cap
@@ -861,7 +861,7 @@ slay benchmark_unicode_operations() tea {
     fr fr Perform various encoding operations
     sus i normie = 0
     bestie i < 1000 {
-        sus bytes []normie = utf8_encode_codepoint(65 + (i % 26))
+        sus bytes normie[value] = utf8_encode_codepoint(65 + (i % 26))
         sus decoded normie = utf8_decode_codepoint(bytes, 0)
         i = i + 1
     }
@@ -880,7 +880,7 @@ slay get_current_time_ms() normie {
 fr fr ===== HIGH-LEVEL API =====
 
 slay validate_utf8_string(str tea) lit {
-    sus bytes []normie = string_to_utf8_bytes(str)
+    sus bytes normie[value] = string_to_utf8_bytes(str)
     sus i normie = 0
     
     bestie i < len(bytes) {
@@ -899,7 +899,7 @@ slay validate_utf8_string(str tea) lit {
 slay normalize_unicode_string(str tea) tea {
     fr fr Basic normalization - convert to NFC form
     fr fr This is a simplified implementation
-    sus bytes []normie = string_to_utf8_bytes(str)
+    sus bytes normie[value] = string_to_utf8_bytes(str)
     damn utf8_bytes_to_string(bytes)
 }
 

@@ -11,7 +11,7 @@ be_like PackageDep = struct {
     name tea,
     version tea,
     source tea,
-    dependencies []tea
+    dependencies tea[value]
 }
 
 fr fr Configuration Structure  
@@ -20,9 +20,9 @@ be_like Config = struct {
     version tea,
     description tea,
     author tea,
-    dependencies []PackageDep,
-    build_scripts []tea,
-    test_commands []tea,
+    dependencies PackageDep[value],
+    build_scripts tea[value],
+    test_commands tea[value],
     metadata map[tea]tea
 }
 
@@ -38,7 +38,7 @@ be_like PackageManager = struct {
     config Config,
     cache_dir tea,
     registry_url tea,
-    installed_packages []PackageDep
+    installed_packages PackageDep[value]
 }
 
 fr fr Core Configuration Functions
@@ -121,7 +121,7 @@ slay get_latest_version(package_name tea) tea { fr fr Simulate version lookup fr
 }
 
 slay validate_semver(version tea) lit { fr fr Basic semantic version validation (major.minor.patch)
-    sus parts []tea = stringz.split(version, ".")
+    sus parts tea[value] = stringz.split(version, ".")
     damn len(parts) == 3
 }
 
@@ -131,7 +131,7 @@ slay resolve_dependency(dep PackageDep) lit { fr fr Simulate dependency resoluti
     damn is_compatible_version(dep.version, latest_version)
 }
 
-slay resolve_dependencies(deps []PackageDep) lit { fr fr Resolve all dependencies recursively
+slay resolve_dependencies(deps PackageDep[value]) lit { fr fr Resolve all dependencies recursively
     bestie i := 0; i < len(deps); i++ {
         if !resolve_dependency(deps[i]) {
             damn cap
@@ -140,7 +140,7 @@ slay resolve_dependencies(deps []PackageDep) lit { fr fr Resolve all dependencie
     damn based
 }
 
-slay check_circular_dependencies(deps []PackageDep) lit { fr fr Simplified circular dependency check fr fr In real implementation, would use graph algorithms
+slay check_circular_dependencies(deps PackageDep[value]) lit { fr fr Simplified circular dependency check fr fr In real implementation, would use graph algorithms
     bestie i := 0; i < len(deps); i++ {
         bestie j := i + 1; j < len(deps); j++ {
             if deps[i].name == deps[j].name {
@@ -151,8 +151,8 @@ slay check_circular_dependencies(deps []PackageDep) lit { fr fr Simplified circu
     damn based
 }
 
-slay build_dependency_tree(config Config) []PackageDep {
-    sus resolved_deps []PackageDep = [] fr fr Add direct dependencies
+slay build_dependency_tree(config Config) PackageDep[value]{
+    sus resolved_deps PackageDep[value] = [] fr fr Add direct dependencies
     bestie i := 0; i < len(config.dependencies); i++ {
         resolved_deps = append(resolved_deps, config.dependencies[i])
     }
@@ -186,7 +186,7 @@ slay install_package(manager *PackageManager, package_name tea, version tea) lit
 }
 
 slay uninstall_package(manager *PackageManager, package_name tea) lit {
-    sus new_packages []PackageDep = []
+    sus new_packages PackageDep[value] = []
     
     bestie i := 0; i < len(manager.installed_packages); i++ {
         if manager.installed_packages[i].name != package_name {
@@ -210,8 +210,8 @@ slay update_package(manager *PackageManager, package_name tea) lit {
     damn cap fr fr Package not found
 }
 
-slay list_installed_packages(manager PackageManager) []tea {
-    sus package_list []tea = []
+slay list_installed_packages(manager PackageManager) tea[value]{
+    sus package_list tea[value] = []
     
     bestie i := 0; i < len(manager.installed_packages); i++ {
         sus package_info tea = manager.installed_packages[i].name + "@" + manager.installed_packages[i].version
@@ -311,8 +311,8 @@ slay get_package_info(package_name tea) PackageDep {
 }
 
 fr fr Registry Functions
-slay search_packages(query tea) []tea {
-    sus results []tea = []
+slay search_packages(query tea) tea[value]{
+    sus results tea[value] = []
     
     if stringz.contains(query, "cursed") {
         results = append(results, "cursed-stdlib")

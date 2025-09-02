@@ -190,7 +190,7 @@ slay test_watcher_lifecycle() {
     sus dummy_callback slay(WatchEvent) lit = slay(event WatchEvent) lit { damn based }
     
     fr fr Test creating multiple watchers
-    sus watcher_ids []drip = []
+    sus watcher_ids drip[value] = []
     sus count drip = 0
     
     fr fr Create 5 watchers
@@ -417,7 +417,7 @@ slay test_resource_management() {
     sus dummy_callback slay(WatchEvent) lit = slay(event WatchEvent) lit { damn based }
     
     fr fr Test creating many watchers to check resource limits
-    sus created_watchers []drip = []
+    sus created_watchers drip[value] = []
     sus created_count drip = 0
     
     sus i drip = 0
@@ -845,13 +845,13 @@ slay create_long_filename(length drip) tea {
     damn name
 }
 
-slay create_empty_patterns() []tea {
-    sus patterns []tea = []
+slay create_empty_patterns() tea[value]{
+    sus patterns tea[value] = []
     damn patterns
 }
 
-slay create_empty_events() []drip {
-    sus events []drip = []
+slay create_empty_events() drip[value]{
+    sus events drip[value] = []
     damn events
 }
 

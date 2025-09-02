@@ -772,7 +772,7 @@ slay rate_limit_refill(tokens normie) {
 }
 
 fr fr Load Balancer (Round Robin)
-sus load_balancer_servers []tea = ["server1.com", "server2.com", "server3.com"]
+sus load_balancer_servers tea[value] = ["server1.com", "server2.com", "server3.com"]
 sus load_balancer_index normie = 0
 
 slay load_balancer_get_server() tea {

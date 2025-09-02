@@ -92,7 +92,7 @@ assert_true(empty_extract == -1) fr fr Error return for empty heap
 
 fr fr Test heap build from array
 test_start("heap_build_from_array")
-sus arr []normie = [5, 3, 8, 1, 9, 2, 7]
+sus arr normie[value] = [5, 3, 8, 1, 9, 2, 7]
 sus build_h *Heap = heap_min_new(10)
 assert_true(heap_build_from_array(build_h, arr, 7))
 assert_true(heap_size(build_h) == 7)
@@ -135,7 +135,7 @@ assert_true(pq_next_peek == 2) fr fr Next highest priority
 
 fr fr Test kth largest element
 test_start("heap_kth_largest")
-sus kth_arr []normie = [3, 1, 4, 1, 5, 9, 2, 6, 5]
+sus kth_arr normie[value] = [3, 1, 4, 1, 5, 9, 2, 6, 5]
 sus kth_3 normie = heap_kth_largest(kth_arr, 9, 3)
 assert_true(kth_3 == 5) fr fr 3rd largest should be 5 (9, 6, 5)
 sus kth_1 normie = heap_kth_largest(kth_arr, 9, 1)

@@ -15,7 +15,7 @@ squad TypeInfo {
     spill is_struct lit
     spill is_interface lit
     spill is_function lit
-    spill methods []MethodInfo
+    spill methods MethodInfo[value]
 }
 
 squad FieldInfo {
@@ -28,21 +28,21 @@ squad FieldInfo {
 squad MethodInfo {
     spill name tea
     spill receiver_type TypeInfo
-    spill param_types []TypeInfo
+    spill param_types TypeInfo[value]
     spill return_type TypeInfo
     spill is_public lit
 }
 
 squad InterfaceInfo {
     spill name tea
-    spill methods []MethodInfo
-    spill implementers []TypeInfo
+    spill methods MethodInfo[value]
+    spill implementers TypeInfo[value]
 }
 
 squad StructInfo {
     spill name tea
-    spill fields []FieldInfo
-    spill methods []MethodInfo
+    spill fields FieldInfo[value]
+    spill methods MethodInfo[value]
     spill size normie
     spill alignment normie
 }
@@ -63,9 +63,9 @@ squad TypeKind {
 }
 
 fr fr Global type registry
-sus registered_types []TypeInfo = []
-sus struct_infos []StructInfo = []
-sus interface_infos []InterfaceInfo = []
+sus registered_types TypeInfo[value] = []
+sus struct_infos StructInfo[value] = []
+sus interface_infos InterfaceInfo[value] = []
 sus type_id_counter normie = 1000
 
 fr fr ===== PRIMITIVE TYPE DEFINITIONS =====
@@ -125,7 +125,7 @@ slay register_type(type_info TypeInfo) normie {
     damn type_info.type_id
 }
 
-slay register_struct_type(name tea, fields []FieldInfo, methods []MethodInfo) normie {
+slay register_struct_type(name tea, fields FieldInfo[value], methods MethodInfo[value]) normie {
     fr fr Register a struct type
     sus total_size normie = calculate_struct_size(fields)
     sus alignment normie = calculate_struct_alignment(fields)
@@ -159,7 +159,7 @@ slay register_struct_type(name tea, fields []FieldInfo, methods []MethodInfo) no
     damn register_type(type_info)
 }
 
-slay register_interface_type(name tea, methods []MethodInfo) normie {
+slay register_interface_type(name tea, methods MethodInfo[value]) normie {
     fr fr Register an interface type
     sus interface_info InterfaceInfo = InterfaceInfo{
         name: name,
@@ -266,14 +266,14 @@ slay get_interface_info(name tea) InterfaceInfo {
     damn InterfaceInfo{name: "unknown", methods: [], implementers: []}
 }
 
-slay get_all_types() []TypeInfo {
+slay get_all_types() TypeInfo[value]{
     fr fr Get all registered types
     damn registered_types
 }
 
-slay get_types_by_kind(kind_id normie) []TypeInfo {
+slay get_types_by_kind(kind_id normie) TypeInfo[value]{
     fr fr Get all types of a specific kind
-    sus result []TypeInfo = []
+    sus result TypeInfo[value] = []
     
     bestie type_info in registered_types {
         lowkey type_info.kind.id == kind_id {
@@ -312,7 +312,7 @@ slay is_assignable(from_type TypeInfo, to_type TypeInfo) lit {
 
 slay is_numeric_convertible(from_type TypeInfo, to_type TypeInfo) lit {
     fr fr Check if numeric types can be converted
-    sus numeric_types []tea = ["normie", "thicc", "meal", "smol"]
+    sus numeric_types tea[value] = ["normie", "thicc", "meal", "smol"]
     
     sus from_numeric lit = cap
     sus to_numeric lit = cap
@@ -485,7 +485,7 @@ slay get_field_info(type_info TypeInfo, field_name tea) FieldInfo {
     damn FieldInfo{name: "unknown", type_info: get_type_by_id(0), offset: 0, tag: ""}
 }
 
-slay call_method(object_ptr normie, object_type TypeInfo, method_name tea, args []normie) normie {
+slay call_method(object_ptr normie, object_type TypeInfo, method_name tea, args normie[value]) normie {
     fr fr Call method on object (simplified)
     lowkey !object_type.is_struct {
         damn 0
@@ -504,7 +504,7 @@ slay call_method(object_ptr normie, object_type TypeInfo, method_name tea, args 
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay calculate_struct_size(fields []FieldInfo) normie {
+slay calculate_struct_size(fields FieldInfo[value]) normie {
     fr fr Calculate total size of struct with padding
     sus total_size normie = 0
     sus max_alignment normie = 1
@@ -524,7 +524,7 @@ slay calculate_struct_size(fields []FieldInfo) normie {
     damn align_to_boundary(total_size, max_alignment)
 }
 
-slay calculate_struct_alignment(fields []FieldInfo) normie {
+slay calculate_struct_alignment(fields FieldInfo[value]) normie {
     fr fr Calculate required alignment for struct
     sus max_alignment normie = 1
     
@@ -641,7 +641,7 @@ slay write_memory_at_offset(base_ptr normie, offset normie, value normie, size n
     damn based
 }
 
-slay invoke_method(object_ptr normie, method MethodInfo, args []normie) normie {
+slay invoke_method(object_ptr normie, method MethodInfo, args normie[value]) normie {
     fr fr Invoke method using dynamic dispatch (simplified)
     fr fr Real implementation would use vtables or function pointers
     damn core.dynamic_invoke(object_ptr, method.name, args)

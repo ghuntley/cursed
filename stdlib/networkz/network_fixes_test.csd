@@ -57,12 +57,12 @@ vibez.spill("✅ HTTP response parsing works correctly")
 
 // Test 4: URL parameter encoding/decoding
 vibez.spill("4. Testing URL parameter handling...")
-sus params []tea = ["name=John Doe", "city=New York", "hobby=coding&gaming"]
+sus params tea[value] = ["name=John Doe", "city=New York", "hobby=coding&gaming"]
 sus encoded tea = encode_url_params(params)
 assert_true(stringz.contains(encoded, "%20"))  // Space encoding
 assert_true(stringz.contains(encoded, "%26"))  // Ampersand encoding
 
-sus decoded []tea = decode_url_params(encoded)
+sus decoded tea[value] = decode_url_params(encoded)
 assert_eq_int(arrayz.len(decoded), 3)
 vibez.spill("✅ URL parameter encoding/decoding works correctly")
 

@@ -18,7 +18,7 @@ be_like TimeZone squad {
 
 fr fr TZSet struct represents a collection of time zones
 be_like TZSet squad {
-    zones []tea
+    zones tea[value]
 }
 
 fr fr IsTimeZoneAvailable checks if a time zone is available
@@ -248,7 +248,7 @@ slay GetTimeZonesByRegionCount(region tea) normie {
 }
 
 fr fr GetTimeZoneRegions returns a list of regions
-slay GetTimeZoneRegions() []tea {
+slay GetTimeZoneRegions() tea[value]{
     fr fr Return a simple array representation
     damn []
 }

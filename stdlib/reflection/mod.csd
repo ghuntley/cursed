@@ -650,14 +650,14 @@ fr fr TYPE REGISTRY
 fr fr ===============================
 
 fr fr Simulate a simple type registry with arrays
-sus registered_type_names []tea
+sus registered_type_names tea[value]
 sus registered_type_count normie = 0
 
 fr fr Initialize reflection system
 slay initialize_reflection_system() lit {
     fr fr Reset and register basic types
     registered_type_count = 0
-    registered_type_names = []tea{}
+    registered_type_names = tea[value]{}
     
     fr fr Register basic types
     register_type_in_registry("normie")

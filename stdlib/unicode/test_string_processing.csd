@@ -7,20 +7,20 @@ fr fr Test UTF-8 encoding/decoding
 test_start("UTF-8 Encoding/Decoding")
 
 fr fr Test ASCII character
-sus ascii_bytes []byte = utf8_encode_char(65) fr fr 'A'
+sus ascii_bytes byte[value] = utf8_encode_char(65) fr fr 'A'
 assert_eq_int(len(ascii_bytes), 1)
 assert_eq_int(normie(ascii_bytes[0]), 65)
 
 fr fr Test 2-byte character
-sus two_byte_bytes []byte = utf8_encode_char(0x00E9) fr fr 'é'
+sus two_byte_bytes byte[value] = utf8_encode_char(0x00E9) fr fr 'é'
 assert_eq_int(len(two_byte_bytes), 2)
 
 fr fr Test 3-byte character  
-sus three_byte_bytes []byte = utf8_encode_char(0x20AC) fr fr '€'
+sus three_byte_bytes byte[value] = utf8_encode_char(0x20AC) fr fr '€'
 assert_eq_int(len(three_byte_bytes), 3)
 
 fr fr Test 4-byte character
-sus four_byte_bytes []byte = utf8_encode_char(0x1F600) fr fr Emoji
+sus four_byte_bytes byte[value] = utf8_encode_char(0x1F600) fr fr Emoji
 assert_eq_int(len(four_byte_bytes), 4)
 
 fr fr Test decoding

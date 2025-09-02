@@ -9,8 +9,8 @@ fr fr Test Discovery Results
 squad TestDiscoveryResult {
     spill total_modules normie
     spill modules_with_tests normie
-    spill missing_tests []tea
-    spill test_files []tea
+    spill missing_tests tea[value]
+    spill test_files tea[value]
     spill coverage_percentage meal
 }
 
@@ -28,9 +28,9 @@ fr fr Comprehensive Test Discovery
 slay discover_all_stdlib_tests() TestDiscoveryResult {
     vibez.spill("🔍 Discovering all stdlib tests...")
     
-    sus stdlib_modules []tea = get_stdlib_modules()
-    sus test_files []tea = []
-    sus missing_tests []tea = []
+    sus stdlib_modules tea[value] = get_stdlib_modules()
+    sus test_files tea[value] = []
+    sus missing_tests tea[value] = []
     sus total_modules normie = stdlib_modules.len()
     sus modules_with_tests normie = 0
     
@@ -45,7 +45,7 @@ slay discover_all_stdlib_tests() TestDiscoveryResult {
         }
         
         fr fr Also check for alternative test file names
-        sus alt_test_files []tea = find_alternative_test_files(module)
+        sus alt_test_files tea[value] = find_alternative_test_files(module)
         bestie alt_file in alt_test_files {
             test_files.push(alt_file)
         }
@@ -63,9 +63,9 @@ slay discover_all_stdlib_tests() TestDiscoveryResult {
 }
 
 fr fr Get all stdlib modules
-slay get_stdlib_modules() []tea {
+slay get_stdlib_modules() tea[value]{
     fr fr This would scan the filesystem in a real implementation
-    sus modules []tea = [
+    sus modules tea[value] = [
         "testz", "collections", "string_simple", "mathz", "error_drip",
         "atomic_drip", "concurrenz", "io", "fs", "path", "time", "crypto",
         "json", "regex", "network", "database", "web_vibez", "fmt",
@@ -98,12 +98,12 @@ slay get_stdlib_modules() []tea {
 }
 
 fr fr Find alternative test file patterns
-slay find_alternative_test_files(module tea) []tea {
-    sus alt_files []tea = []
+slay find_alternative_test_files(module tea) tea[value]{
+    sus alt_files tea[value] = []
     sus module_dir tea = "stdlib/" + module + "/"
     
     fr fr Common test file patterns
-    sus patterns []tea = [
+    sus patterns tea[value] = [
         module_dir + "test_" + module + ".csd",
         module_dir + module + "_test.csd", 
         module_dir + "tests.csd",
@@ -129,9 +129,9 @@ slay file_exists(file_path tea) lit {
 }
 
 fr fr Execute all discovered tests
-slay execute_all_stdlib_tests() []TestExecutionResult {
+slay execute_all_stdlib_tests() TestExecutionResult[value]{
     sus discovery_result TestDiscoveryResult = discover_all_stdlib_tests()
-    sus execution_results []TestExecutionResult = []
+    sus execution_results TestExecutionResult[value] = []
     
     vibez.spill("🧪 Executing all stdlib tests...")
     vibez.spillf("Found {} test files for {} modules", 
@@ -179,7 +179,7 @@ slay execute_single_test(test_file tea) TestExecutionResult {
 
 fr fr Extract module name from test file path
 slay extract_module_name_from_test_file(test_file tea) tea {
-    sus parts []tea = test_file.split("/")
+    sus parts tea[value] = test_file.split("/")
     sus filename tea = parts[parts.len() - 1]
     
     fr fr Remove "test_" prefix and ".csd" suffix
@@ -270,7 +270,7 @@ slay enhance_collection_test_template(base_template tea, module_name tea) tea {
         "    generator: slay() tea { damn \"item_\" + (clock_bait.now_ns() % 100).string() },\n" +
         "    property: slay(item tea) lit {\n" +
         "        fr fr Test that adding item increases size by 1\n" +
-        "        sus collection []tea = []\n" +
+        "        sus collection tea[value] = []\n" +
         "        sus initial_size normie = collection.len()\n" +
         "        collection = collection + [item]\n" +
         "        sus final_size normie = collection.len()\n" +
@@ -280,11 +280,11 @@ slay enhance_collection_test_template(base_template tea, module_name tea) tea {
         "})\n\n" +
         "fr fr Test empty collection properties\n" +
         "test_start(\"empty_collection_size\")\n" +
-        "sus empty_collection []tea = []\n" +
+        "sus empty_collection tea[value] = []\n" +
         "assert_eq_int(empty_collection.len(), 0)\n\n" +
         "fr fr Test add/remove consistency\n" +
         "test_start(\"add_remove_consistency\")\n" +
-        "sus test_collection []tea = [\"a\", \"b\", \"c\"]\n" +
+        "sus test_collection tea[value] = [\"a\", \"b\", \"c\"]\n" +
         "sus original_size normie = test_collection.len()\n" +
         "test_collection = test_collection + [\"d\"]\n" +
         "test_collection = test_collection.slice(0, original_size)\n" +
@@ -387,7 +387,7 @@ slay enhance_io_test_template(base_template tea, module_name tea) tea {
 fr fr Generate comprehensive test report
 slay generate_test_coverage_report() lit {
     sus discovery_result TestDiscoveryResult = discover_all_stdlib_tests()
-    sus execution_results []TestExecutionResult = execute_all_stdlib_tests()
+    sus execution_results TestExecutionResult[value] = execute_all_stdlib_tests()
     
     vibez.spill("📊 CURSED Stdlib Test Coverage Report")
     vibez.spill("=" * 50)

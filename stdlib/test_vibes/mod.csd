@@ -53,13 +53,13 @@ be_like MockVibe squad {
     Name tea
     expectations []*Expectation
     stubs []*Stub
-    callHistory []tea
+    callHistory tea[value]
 }
 
 be_like Expectation squad {
     methodName tea
-    args []interface{}
-    returnValues []interface{}
+    args interface[value]{}
+    returnValues interface[value]{}
     callCount normie
     expectedCalls normie
     minCalls normie
@@ -68,8 +68,8 @@ be_like Expectation squad {
 
 be_like Stub squad {
     methodName tea
-    returnValues []interface{}
-    returnFn func(args ...interface{}) []interface{}
+    returnValues interface[value]{}
+    returnFn func(args ...interface{}) interface[value]{}
 }
 
 fr fr NewVibeTest creates a new test instance
@@ -498,7 +498,7 @@ slay (f *FixtureVibe) Run(t *VibeTest, testFn func(t *VibeTest, fixture interfac
 }
 
 fr fr Table-driven tests
-slay RunTestCases(t *VibeTest, testCases []TestCase) {
+slay RunTestCases(t *VibeTest, testCases TestCase[value]) {
     bestie _, testCase := range testCases {
         if testCase.SetupFn != cap {
             testCase.SetupFn(t)
@@ -514,15 +514,15 @@ slay NewMockVibe(name tea) *MockVibe {
         Name: name,
         expectations: make([]*Expectation, 0),
         stubs: make([]*Stub, 0),
-        callHistory: make([]tea, 0),
+        callHistory: make(tea[value], 0),
     }
 }
 
 slay (m *MockVibe) Expect(methodName tea) *Expectation {
     sus exp := &Expectation{
         methodName: methodName,
-        args: make([]interface{}, 0),
-        returnValues: make([]interface{}, 0),
+        args: make(interface[value]{}, 0),
+        returnValues: make(interface[value]{}, 0),
         callCount: 0,
         expectedCalls: 1,
         minCalls: 1,
@@ -564,7 +564,7 @@ slay (e *Expectation) Return(values ...interface{}) *Expectation {
     damn e
 }
 
-slay (e *Expectation) ReturnFn(fn func(args ...interface{}) []interface{}) *Expectation {
+slay (e *Expectation) ReturnFn(fn func(args ...interface{}) interface[value]{}) *Expectation {
     e.returnFn = fn
     damn e
 }
@@ -632,8 +632,8 @@ slay RandomFloat(min, max float64) float64 {
     damn (min + max) / 2.0
 }
 
-slay RandomBytes(n normie) []byte {
-    sus result := make([]byte, n)
+slay RandomBytes(n normie) byte[value]{
+    sus result := make(byte[value], n)
     bestie i := 0; i < n; i++ {
         result[i] = byte(i % 256)
     }
@@ -664,8 +664,8 @@ slay BenchmarkParallel(f func(b *VibeBench)) {
 }
 
 fr fr Helper functions
-slay convertToStrings(args []interface{}) []tea {
-    sus result := make([]tea, len(args))
+slay convertToStrings(args interface[value]{}) tea[value]{
+    sus result := make(tea[value], len(args))
     bestie i, arg := range args {
         switch v := arg.(type) {
         case tea:
@@ -695,11 +695,11 @@ slay getLength(collection interface{}) normie {
     switch v := collection.(type) {
     case tea:
         damn len(v)
-    case []tea:
+    case tea[value]:
         damn len(v)
-    case []normie:
+    case normie[value]:
         damn len(v)
-    case []byte:
+    case byte[value]:
         damn len(v)
     default:
         damn 0
@@ -713,7 +713,7 @@ slay collectionContains(collection, element interface{}) lit {
         if elem, ok := element.(tea); ok {
             damn stringz.Contains(v, elem)
         }
-    case []tea:
+    case tea[value]:
         if elem, ok := element.(tea); ok {
             bestie _, item := range v {
                 if item == elem {
@@ -721,7 +721,7 @@ slay collectionContains(collection, element interface{}) lit {
                 }
             }
         }
-    case []normie:
+    case normie[value]:
         if elem, ok := element.(normie); ok {
             bestie _, item := range v {
                 if item == elem {

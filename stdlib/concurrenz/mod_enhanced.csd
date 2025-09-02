@@ -23,7 +23,7 @@ struct WaitGroup {
 
 fr fr Channel structure for communication
 struct Channel {
-    spill buffer []normie                    fr fr Message buffer
+    spill buffer normie[value]                    fr fr Message buffer
     spill capacity normie                    fr fr Maximum buffer size
     spill size *atomic_drip.AtomicI32        fr fr Current buffer size
     spill send_pos *atomic_drip.AtomicI32    fr fr Send position in buffer

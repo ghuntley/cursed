@@ -227,7 +227,7 @@ slay test_json_formatter() {
     sus formatter := sus_log.NewJSONFormatter()
     
     fr fr Test format
-    sus attrs := []sus_log.Attr{sus_log.String("key", "value")}
+    sus attrs := sus_log[value].Attr{sus_log.String("key", "value")}
     sus result := formatter.Format(sus_log.LevelInfo, "Test message", attrs, 1234567890)
     
     fr fr Should contain JSON structure
@@ -242,7 +242,7 @@ slay test_text_formatter() {
     sus formatter := sus_log.NewTextFormatter()
     
     fr fr Test format
-    sus attrs := []sus_log.Attr{sus_log.String("key", "value")}
+    sus attrs := sus_log[value].Attr{sus_log.String("key", "value")}
     sus result := formatter.Format(sus_log.LevelInfo, "Test message", attrs, 1234567890)
     
     fr fr Should contain formatted text
@@ -257,24 +257,24 @@ slay test_level_filter() {
     sus filter := sus_log.NewLevelFilter(sus_log.LevelWarn)
     
     fr fr Test should log higher levels
-    assert_true(filter.ShouldLog(sus_log.LevelError, "Error message", []sus_log.Attr{}))
-    assert_true(filter.ShouldLog(sus_log.LevelWarn, "Warning message", []sus_log.Attr{}))
+    assert_true(filter.ShouldLog(sus_log.LevelError, "Error message", sus_log[value].Attr{}))
+    assert_true(filter.ShouldLog(sus_log.LevelWarn, "Warning message", sus_log[value].Attr{}))
     
     fr fr Test should not log lower levels
-    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "Info message", []sus_log.Attr{}))
-    assert_true(!filter.ShouldLog(sus_log.LevelDebug, "Debug message", []sus_log.Attr{}))
+    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "Info message", sus_log[value].Attr{}))
+    assert_true(!filter.ShouldLog(sus_log.LevelDebug, "Debug message", sus_log[value].Attr{}))
     
     vibez.spill("✅ Level filter tests passed")
 }
 
 fr fr Test keyword filter
 slay test_keyword_filter() {
-    sus keywords := []tea{"sensitive", "password"}
+    sus keywords := tea[value]{"sensitive", "password"}
     sus filter := sus_log.NewKeywordFilter(keywords, based)
     
     fr fr Test should block sensitive keywords
-    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "This contains sensitive data", []sus_log.Attr{}))
-    assert_true(filter.ShouldLog(sus_log.LevelInfo, "This is safe", []sus_log.Attr{}))
+    assert_true(!filter.ShouldLog(sus_log.LevelInfo, "This contains sensitive data", sus_log[value].Attr{}))
+    assert_true(filter.ShouldLog(sus_log.LevelInfo, "This is safe", sus_log[value].Attr{}))
     
     vibez.spill("✅ Keyword filter tests passed")
 }
@@ -408,7 +408,7 @@ slay test_formatter_output_integration() {
     
     fr fr Test adding filters
     logger.AddFilter(sus_log.NewLevelFilter(sus_log.LevelWarn))
-    logger.AddFilter(sus_log.NewKeywordFilter([]tea{"test"}, cap))
+    logger.AddFilter(sus_log.NewKeywordFilter(tea[value]{"test"}, cap))
     
     fr fr Test logging with all components
     logger.Info("Integration test message", sus_log.String("component", "integration"))

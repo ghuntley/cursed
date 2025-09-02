@@ -11,7 +11,7 @@ vibez.spill("\n📝 STRING MANIPULATION:")
 
 fr fr Split and rejoin CSV data
 sus csv_data tea = "Alice,25,Engineer"
-sus fields []tea = split(csv_data, ",")
+sus fields tea[value] = split(csv_data, ",")
 vibez.spill("Original CSV:", csv_data)
 vibez.spill("Split into", len(fields), "fields:", fields[0], fields[1], fields[2])
 
@@ -81,7 +81,7 @@ fr fr ===== STRING VALIDATION EXAMPLES =====
 vibez.spill("\n✅ STRING VALIDATION:")
 
 fr fr Test different string types
-sus test_strings []tea = ["123", "abc", "abc123", "", "hello world"]
+sus test_strings tea[value] = ["123", "abc", "abc123", "", "hello world"]
 
 sus i drip = 0
 bestie (i < len(test_strings)) {
@@ -124,11 +124,11 @@ sus lowercase tea = to_lowercase(cleaned)
 vibez.spill("3. Lowercase:", lowercase)
 
 fr fr Step 3: Split into words
-sus words []tea = split(lowercase, " ")
+sus words tea[value] = split(lowercase, " ")
 vibez.spill("4. Split into", len(words), "words")
 
 fr fr Step 4: Filter out punctuation (simplified)
-sus clean_words []tea = []
+sus clean_words tea[value] = []
 sus j drip = 0
 bestie (j < len(words)) {
     sus word tea = words[j]

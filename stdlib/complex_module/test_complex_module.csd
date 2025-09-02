@@ -26,7 +26,7 @@ assert_eq_string(data.metadata["type"], "test_data")
 assert_eq_string(data.metadata["version"], "1.0")
 
 test_start("Hash Computation Test")
-sus values []normie = []normie{1, 2, 3, 4, 5}
+sus values normie[value] = normie[value]{1, 2, 3, 4, 5}
 sus hash_result normie = compute_hash(values)
 assert_true(hash_result != 0)
 assert_true(hash_result != 5381) fr fr Should be different from initial value
@@ -36,7 +36,7 @@ sus hash_result2 normie = compute_hash(values)
 assert_eq_int(hash_result, hash_result2)
 
 fr fr Test different input produces different hash
-sus different_values []normie = []normie{5, 4, 3, 2, 1}
+sus different_values normie[value] = normie[value]{5, 4, 3, 2, 1}
 sus different_hash normie = compute_hash(different_values)
 assert_true(different_hash != hash_result)
 
@@ -78,8 +78,8 @@ sus empty_search lit = complex_search(empty_data, 42)
 assert_false(empty_search)
 
 test_start("Complex Transform Test")
-sus input []normie = []normie{1, 2, 3, 4}
-sus output []normie = complex_transform(input)
+sus input normie[value] = normie[value]{1, 2, 3, 4}
+sus output normie[value] = complex_transform(input)
 
 assert_true(len(output) == len(input))
 
@@ -101,13 +101,13 @@ bestie i := 0; i < len(input) && i < len(output); i = i + 1 {
 assert_false(same_as_input) fr fr Output should be different from input
 
 test_start("Complex Transform Test - Empty Input")
-sus empty_input []normie = []normie{}
-sus empty_output []normie = complex_transform(empty_input)
+sus empty_input normie[value] = normie[value]{}
+sus empty_output normie[value] = complex_transform(empty_input)
 assert_true(len(empty_output) == 0)
 
 test_start("Complex Transform Test - Single Element")
-sus single_input []normie = []normie{5}
-sus single_output []normie = complex_transform(single_input)
+sus single_input normie[value] = normie[value]{5}
+sus single_output normie[value] = complex_transform(single_input)
 assert_true(len(single_output) == 1)
 fr fr For input 5: 5*5 + 5 = 30
 
@@ -149,8 +149,8 @@ assert_true(complex_search(data, 45))
 assert_false(complex_search(data, 55))
 
 fr fr Test transformation
-sus transform_input []normie = []normie{2, 4}
-sus transform_output []normie = complex_transform(transform_input)
+sus transform_input normie[value] = normie[value]{2, 4}
+sus transform_output normie[value] = complex_transform(transform_input)
 assert_true(len(transform_output) == 2)
 
 fr fr Test string processing
@@ -198,12 +198,12 @@ assert_true(complex_search(large_data, 200)) fr fr Should find 20*10
 assert_false(complex_search(large_data, 150)) fr fr Should not find 150
 
 test_start("Complex Transform Large Dataset Test")
-sus large_input []normie = []normie{}
+sus large_input normie[value] = normie[value]{}
 bestie i := 1; i <= 10; i = i + 1 {
     large_input = append(large_input, i)
 }
 
-sus large_output []normie = complex_transform(large_input)
+sus large_output normie[value] = complex_transform(large_input)
 assert_true(len(large_output) == len(large_input))
 
 test_start("Complex Module Performance Test")

@@ -10,8 +10,8 @@ yeet "vibez"
 
 fr fr === TEST UTILITY FUNCTIONS ===
 
-slay generate_random_data(num_samples drip, num_features drip) []meal {
-    sus data []meal = []
+slay generate_random_data(num_samples drip, num_features drip) meal[value]{
+    sus data meal[value] = []
     sus i drip = 0
     bestie (i < num_samples * num_features) {
         data = append(data, random_uniform())
@@ -20,8 +20,8 @@ slay generate_random_data(num_samples drip, num_features drip) []meal {
     damn data
 }
 
-slay generate_random_labels(num_samples drip, num_classes drip) []meal {
-    sus labels []meal = []
+slay generate_random_labels(num_samples drip, num_classes drip) meal[value]{
+    sus labels meal[value] = []
     sus i drip = 0
     bestie (i < num_samples) {
         sus label meal = random_range(0, num_classes)
@@ -31,9 +31,9 @@ slay generate_random_labels(num_samples drip, num_classes drip) []meal {
     damn labels
 }
 
-slay generate_classification_data(num_samples drip, num_features drip, num_classes drip) ([]meal, []meal) {
-    sus features []meal = generate_random_data(num_samples, num_features)
-    sus labels []meal = generate_random_labels(num_samples, num_classes)
+slay generate_classification_data(num_samples drip, num_features drip, num_classes drip) (meal[value], meal[value]) {
+    sus features meal[value] = generate_random_data(num_samples, num_features)
+    sus labels meal[value] = generate_random_labels(num_samples, num_classes)
     damn (features, labels)
 }
 
@@ -121,8 +121,8 @@ slay test_layer_forward() cringe {
     
     fr fr Test dense layer forward pass
     sus dense_layer Layer = layer_create_dense(3, 2, ACTIVATION_RELU())
-    sus input []meal = [1.0, 2.0, 3.0]
-    sus output []meal = layer_forward_dense(dense_layer, input)
+    sus input meal[value] = [1.0, 2.0, 3.0]
+    sus output meal[value] = layer_forward_dense(dense_layer, input)
     
     test_assert(len(output) == 2, "Dense layer output size correct")
     test_assert(output[0] >= 0.0, "ReLU activation applied (output[0] >= 0)")
@@ -131,14 +131,14 @@ slay test_layer_forward() cringe {
     fr fr Test dropout layer forward pass (training mode)
     sus dropout_layer Layer = layer_create_dropout(0.5)
     dropout_layer.training = based
-    sus dropout_input []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
-    sus dropout_output []meal = layer_forward_dropout(dropout_layer, dropout_input)
+    sus dropout_input meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
+    sus dropout_output meal[value] = layer_forward_dropout(dropout_layer, dropout_input)
     
     test_assert(len(dropout_output) == 5, "Dropout output size correct")
     
     fr fr Test dropout layer forward pass (inference mode)
     dropout_layer.training = cringe
-    sus dropout_inference []meal = layer_forward_dropout(dropout_layer, dropout_input)
+    sus dropout_inference meal[value] = layer_forward_dropout(dropout_layer, dropout_input)
     test_assert(len(dropout_inference) == 5, "Dropout inference output size correct")
     
     vibez.spill("Layer forward pass tests completed!")
@@ -180,8 +180,8 @@ slay test_neural_network_forward() cringe {
     network = neural_network_add_layer(network, layer2)
     
     fr fr Test forward pass
-    sus input []meal = [1.0, 2.0, 3.0, 4.0]
-    sus output []meal = neural_network_forward(network, input)
+    sus input meal[value] = [1.0, 2.0, 3.0, 4.0]
+    sus output meal[value] = neural_network_forward(network, input)
     
     test_assert(len(output) == 2, "Network output size correct")
     test_assert(output[0] >= 0.0 && output[0] <= 1.0, "Sigmoid output in range [0,1]")
@@ -196,8 +196,8 @@ slay test_loss_functions() cringe {
     vibez.spill("=== Testing Loss Functions ===")
     
     fr fr Test MSE loss
-    sus predictions_mse []meal = [1.0, 2.0, 3.0]
-    sus targets_mse []meal = [1.1, 1.9, 3.2]
+    sus predictions_mse meal[value] = [1.0, 2.0, 3.0]
+    sus targets_mse meal[value] = [1.1, 1.9, 3.2]
     sus mse_result meal = mse_loss(predictions_mse, targets_mse)
     test_assert(mse_result >= 0.0 && mse_result < 0.1, "MSE loss reasonable")
     
@@ -206,14 +206,14 @@ slay test_loss_functions() cringe {
     test_assert(mae_result >= 0.0 && mae_result < 0.3, "MAE loss reasonable")
     
     fr fr Test binary cross-entropy
-    sus predictions_bce []meal = [0.9, 0.1, 0.8, 0.2]
-    sus targets_bce []meal = [1.0, 0.0, 1.0, 0.0]
+    sus predictions_bce meal[value] = [0.9, 0.1, 0.8, 0.2]
+    sus targets_bce meal[value] = [1.0, 0.0, 1.0, 0.0]
     sus bce_result meal = binary_crossentropy_loss(predictions_bce, targets_bce)
     test_assert(bce_result >= 0.0, "Binary cross-entropy loss non-negative")
     
     fr fr Test categorical cross-entropy
-    sus predictions_ce []meal = [0.8, 0.1, 0.1]
-    sus targets_ce []meal = [1.0, 0.0, 0.0]
+    sus predictions_ce meal[value] = [0.8, 0.1, 0.1]
+    sus targets_ce meal[value] = [1.0, 0.0, 0.0]
     sus ce_result meal = categorical_crossentropy_loss(predictions_ce, targets_ce)
     test_assert(ce_result >= 0.0, "Categorical cross-entropy loss non-negative")
     
@@ -229,29 +229,29 @@ fr fr === OPTIMIZER TESTS ===
 slay test_optimizers() cringe {
     vibez.spill("=== Testing Optimizers ===")
     
-    sus weights []meal = [1.0, 2.0, 3.0]
-    sus gradients []meal = [0.1, 0.2, 0.3]
+    sus weights meal[value] = [1.0, 2.0, 3.0]
+    sus gradients meal[value] = [0.1, 0.2, 0.3]
     sus learning_rate meal = 0.01
     
     fr fr Test SGD optimizer
-    sus sgd_weights []meal = optimizer_sgd_update_weights(weights, gradients, learning_rate)
+    sus sgd_weights meal[value] = optimizer_sgd_update_weights(weights, gradients, learning_rate)
     test_assert(len(sgd_weights) == 3, "SGD updated weights size correct")
     test_assert(sgd_weights[0] < weights[0], "SGD weight decreased (gradient positive)")
     
     fr fr Test momentum optimizer
-    sus momentum_weights []meal = [0.0, 0.0, 0.0]
-    sus updated_weights []meal
-    sus updated_momentum []meal
+    sus momentum_weights meal[value] = [0.0, 0.0, 0.0]
+    sus updated_weights meal[value]
+    sus updated_momentum meal[value]
     (updated_weights, updated_momentum) = optimizer_momentum_update_weights(weights, gradients, momentum_weights, learning_rate, 0.9)
     test_assert(len(updated_weights) == 3, "Momentum updated weights size correct")
     test_assert(len(updated_momentum) == 3, "Momentum variables size correct")
     
     fr fr Test Adam optimizer
-    sus m []meal = [0.0, 0.0, 0.0]
-    sus v []meal = [0.0, 0.0, 0.0]
-    sus adam_weights []meal
-    sus adam_m []meal
-    sus adam_v []meal
+    sus m meal[value] = [0.0, 0.0, 0.0]
+    sus v meal[value] = [0.0, 0.0, 0.0]
+    sus adam_weights meal[value]
+    sus adam_m meal[value]
+    sus adam_v meal[value]
     (adam_weights, adam_m, adam_v) = optimizer_adam_update_weights(weights, gradients, m, v, learning_rate, 0.9, 0.999, 1e-8, 1)
     test_assert(len(adam_weights) == 3, "Adam updated weights size correct")
     test_assert(len(adam_m) == 3, "Adam m variables size correct")
@@ -265,7 +265,7 @@ fr fr === REGULARIZATION TESTS ===
 slay test_regularization() cringe {
     vibez.spill("=== Testing Regularization ===")
     
-    sus weights []meal = [1.0, -2.0, 3.0, -4.0]
+    sus weights meal[value] = [1.0, -2.0, 3.0, -4.0]
     sus lambda meal = 0.01
     
     fr fr Test L1 regularization
@@ -283,15 +283,15 @@ slay test_regularization() cringe {
     test_assert(elastic_loss > 0.0, "Elastic net regularization loss positive")
     
     fr fr Test gradient clipping
-    sus large_gradients []meal = [10.0, -20.0, 15.0]
-    sus clipped_gradients []meal = gradient_clipping(large_gradients, 5.0)
+    sus large_gradients meal[value] = [10.0, -20.0, 15.0]
+    sus clipped_gradients meal[value] = gradient_clipping(large_gradients, 5.0)
     sus clipped_norm meal = sqrt_meal(clipped_gradients[0] * clipped_gradients[0] + 
                                      clipped_gradients[1] * clipped_gradients[1] + 
                                      clipped_gradients[2] * clipped_gradients[2])
     test_assert(clipped_norm <= 5.1, "Gradient clipping applied correctly")
     
     fr fr Test early stopping
-    sus validation_losses []meal = [1.0, 0.9, 0.8, 0.85, 0.87, 0.88, 0.89]
+    sus validation_losses meal[value] = [1.0, 0.9, 0.8, 0.85, 0.87, 0.88, 0.89]
     sus should_stop lit = early_stopping_check(validation_losses, 3, 0.01)
     test_assert(should_stop, "Early stopping triggered correctly")
     
@@ -339,13 +339,13 @@ slay test_convolutional_layers() cringe {
     sus padding drip = 0
     
     sus input_size drip = input_height * input_width * input_channels
-    sus input []meal = generate_random_data(1, input_size)
+    sus input meal[value] = generate_random_data(1, input_size)
     
     sus weight_size drip = kernel_size * kernel_size * input_channels * output_channels
-    sus weights []meal = generate_random_data(1, weight_size)
-    sus biases []meal = [0.0]
+    sus weights meal[value] = generate_random_data(1, weight_size)
+    sus biases meal[value] = [0.0]
     
-    sus conv_output []meal = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
+    sus conv_output meal[value] = conv2d_forward(input, weights, biases, input_height, input_width, input_channels, kernel_size, output_channels, stride, padding)
     
     sus expected_output_height drip = (input_height - kernel_size) / stride + 1
     sus expected_output_width drip = (input_width - kernel_size) / stride + 1
@@ -355,7 +355,7 @@ slay test_convolutional_layers() cringe {
     
     fr fr Test max pooling
     sus pool_size drip = 2
-    sus pool_output []meal = maxpool2d_forward(input, input_height, input_width, input_channels, pool_size, stride)
+    sus pool_output meal[value] = maxpool2d_forward(input, input_height, input_width, input_channels, pool_size, stride)
     
     sus expected_pool_height drip = (input_height - pool_size) / stride + 1
     sus expected_pool_width drip = (input_width - pool_size) / stride + 1
@@ -374,19 +374,19 @@ slay test_ensemble_methods() cringe {
     fr fr Test ensemble averaging
     sus num_models drip = 3
     sus output_size drip = 2
-    sus predictions [][]meal = [
+    sus predictions meal[value][value] = [
         [0.8, 0.2],
         [0.6, 0.4],
         [0.7, 0.3]
     ]
     
-    sus averaged_pred []meal = ensemble_predict_average(predictions, num_models, output_size)
+    sus averaged_pred meal[value] = ensemble_predict_average(predictions, num_models, output_size)
     test_assert(len(averaged_pred) == output_size, "Ensemble average output size correct")
     test_assert(averaged_pred[0] > 0.6 && averaged_pred[0] < 0.8, "Ensemble average calculation correct")
     
     fr fr Test weighted ensemble
-    sus weights []meal = [0.5, 0.3, 0.2]
-    sus weighted_pred []meal = ensemble_predict_weighted(predictions, weights, num_models, output_size)
+    sus weights meal[value] = [0.5, 0.3, 0.2]
+    sus weighted_pred meal[value] = ensemble_predict_weighted(predictions, weights, num_models, output_size)
     test_assert(len(weighted_pred) == output_size, "Ensemble weighted output size correct")
     
     vibez.spill("Ensemble method tests completed!")
@@ -406,7 +406,7 @@ slay test_model_serialization() cringe {
     network = neural_network_add_layer(network, layer2)
     
     fr fr Save weights
-    sus saved_weights [][]meal = neural_network_save_weights(network)
+    sus saved_weights meal[value][value] = neural_network_save_weights(network)
     test_assert(len(saved_weights) == 4, "Saved weights include all layers (weights + biases)")
     
     fr fr Modify network weights
@@ -431,8 +431,8 @@ slay test_simple_classification() cringe {
     sus num_features drip = 4
     sus num_classes drip = 2
     
-    sus features []meal
-    sus labels []meal
+    sus features meal[value]
+    sus labels meal[value]
     (features, labels) = generate_classification_data(num_samples, num_features, num_classes)
     
     fr fr Create and train network
@@ -466,7 +466,7 @@ slay test_autoencoder() cringe {
     sus input_size drip = 8
     sus encoding_dim drip = 3
     
-    sus data []meal = generate_random_data(num_samples, input_size)
+    sus data meal[value] = generate_random_data(num_samples, input_size)
     
     fr fr Create autoencoder network
     sus autoencoder NeuralNetwork = neural_network_create(0.01, OPTIMIZER_ADAM())
@@ -500,12 +500,12 @@ slay test_hyperparameter_optimization() cringe {
     sus input_size drip = 5
     sus num_classes drip = 2
     
-    sus train_data []meal
-    sus train_labels []meal
+    sus train_data meal[value]
+    sus train_labels meal[value]
     (train_data, train_labels) = generate_classification_data(num_train, input_size, num_classes)
     
-    sus val_data []meal
-    sus val_labels []meal
+    sus val_data meal[value]
+    sus val_labels meal[value]
     (val_data, val_labels) = generate_classification_data(num_val, input_size, num_classes)
     
     fr fr Run grid search
@@ -531,12 +531,12 @@ slay test_all_demos() cringe {
     sus num_features drip = 6
     sus num_classes drip = 3
     
-    sus train_data []meal
-    sus train_labels []meal
+    sus train_data meal[value]
+    sus train_labels meal[value]
     (train_data, train_labels) = generate_classification_data(num_samples, num_features, num_classes)
     
-    sus test_data []meal
-    sus test_labels []meal
+    sus test_data meal[value]
+    sus test_labels meal[value]
     (test_data, test_labels) = generate_classification_data(20, num_features, num_classes)
     
     fr fr Test neural network classification demo
@@ -546,9 +546,9 @@ slay test_all_demos() cringe {
     demo_deep_autoencoder(train_data, num_samples, num_features, 3, 15)
     
     fr fr Test transfer learning demo (with dummy pretrained weights)
-    sus pretrained_weights [][]meal = []
-    sus dummy_weights1 []meal = generate_random_data(1, num_features * 8)
-    sus dummy_weights2 []meal = generate_random_data(1, 8 * 4)
+    sus pretrained_weights meal[value][value] = []
+    sus dummy_weights1 meal[value] = generate_random_data(1, num_features * 8)
+    sus dummy_weights2 meal[value] = generate_random_data(1, 8 * 4)
     pretrained_weights = append(pretrained_weights, dummy_weights1)
     pretrained_weights = append(pretrained_weights, dummy_weights2)
     

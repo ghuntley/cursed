@@ -20,7 +20,7 @@ squad DurationUnit {
 
 fr fr ===== DURATION UNIT DATABASE =====
 
-sus duration_units []DurationUnit = [
+sus duration_units DurationUnit[value] = [
     DurationUnit{name: "nanosecond", abbreviation: "ns", nanoseconds_per_unit: 1, plural_name: "nanoseconds"},
     DurationUnit{name: "microsecond", abbreviation: "us", nanoseconds_per_unit: 1000, plural_name: "microseconds"}, 
     DurationUnit{name: "millisecond", abbreviation: "ms", nanoseconds_per_unit: 1000000, plural_name: "milliseconds"},

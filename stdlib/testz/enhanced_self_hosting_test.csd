@@ -101,7 +101,7 @@ fr fr Test Module Dependency Validation
 fr fr ===============================
 
 test_start("Module import validation")
-sus expected_imports []tea = ["testz"]
+sus expected_imports tea[value] = ["testz"]
 sus import_result lit = validate_module_imports("test_module", expected_imports)
 assert_true(import_result)
 test_end()
@@ -129,7 +129,7 @@ test_end()
 
 test_start("Self-hosting stdlib integration test")
 fr fr Test that stdlib modules work in both interpretation and compilation
-sus stdlib_tests []tea = ["mathz", "stringz", "timez", "dropz"]
+sus stdlib_tests tea[value] = ["mathz", "stringz", "timez", "dropz"]
 bestie i := 0; i < 4; i++ {
     vibez.spill("Testing stdlib module: " + stdlib_tests[i]) fr fr Would test each stdlib module in both modes
     assert_true(based) fr fr Placeholder for actual stdlib tests

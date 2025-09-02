@@ -8,18 +8,18 @@ yeet "memoryz"
 yeet "./core"
 
 # Magic byte signatures for format detection
-facts PNG_SIGNATURE []drip = [137, 80, 78, 71, 13, 10, 26, 10]
-facts JPEG_SIGNATURE []drip = [255, 216, 255]
-facts GIF87A_SIGNATURE []drip = [71, 73, 70, 56, 55, 97]
-facts GIF89A_SIGNATURE []drip = [71, 73, 70, 56, 57, 97]
-facts BMP_SIGNATURE []drip = [66, 77]
-facts WEBP_SIGNATURE []drip = [82, 73, 70, 70]
-facts WEBP_FORMAT []drip = [87, 69, 66, 80]
-facts TIFF_LE_SIGNATURE []drip = [73, 73, 42, 0]
-facts TIFF_BE_SIGNATURE []drip = [77, 77, 0, 42]
+facts PNG_SIGNATURE drip[value] = [137, 80, 78, 71, 13, 10, 26, 10]
+facts JPEG_SIGNATURE drip[value] = [255, 216, 255]
+facts GIF87A_SIGNATURE drip[value] = [71, 73, 70, 56, 55, 97]
+facts GIF89A_SIGNATURE drip[value] = [71, 73, 70, 56, 57, 97]
+facts BMP_SIGNATURE drip[value] = [66, 77]
+facts WEBP_SIGNATURE drip[value] = [82, 73, 70, 70]
+facts WEBP_FORMAT drip[value] = [87, 69, 66, 80]
+facts TIFF_LE_SIGNATURE drip[value] = [73, 73, 42, 0]
+facts TIFF_BE_SIGNATURE drip[value] = [77, 77, 0, 42]
 
 # Complete format detection with magic byte analysis
-slay detect_format_from_data(data []drip) tea {
+slay detect_format_from_data(data drip[value]) tea {
     ready (len(data) < 12) {
         damn "UNKNOWN"
     }
@@ -68,7 +68,7 @@ slay detect_format_from_data(data []drip) tea {
     damn "UNKNOWN"
 }
 
-slay check_signature(data []drip, signature []drip, offset drip) lit {
+slay check_signature(data drip[value], signature drip[value], offset drip) lit {
     ready (offset + len(signature) > len(data)) {
         damn false
     }
@@ -83,7 +83,7 @@ slay check_signature(data []drip, signature []drip, offset drip) lit {
 }
 
 # Production PNG decoder
-slay decode_png_production(data []drip) yikes<Image> {
+slay decode_png_production(data drip[value]) yikes<Image> {
     ready (!check_signature(data, PNG_SIGNATURE, 0)) {
         yikes "invalid PNG signature"
     }
@@ -96,13 +96,13 @@ slay decode_png_production(data []drip) yikes<Image> {
     sus compression drip = 0
     sus filter_method drip = 0
     sus interlace drip = 0
-    sus image_data []drip = []
+    sus image_data drip[value] = []
     
     # Parse PNG chunks
     bestie (offset < len(data) - 12) {
         sus chunk_length drip = read_uint32_be(data, offset)
         sus chunk_type tea = string_from_bytes(data[offset + 4:offset + 8])
-        sus chunk_data []drip = data[offset + 8:offset + 8 + chunk_length]
+        sus chunk_data drip[value] = data[offset + 8:offset + 8 + chunk_length]
         sus crc drip = read_uint32_be(data, offset + 8 + chunk_length)
         
         # Validate CRC
@@ -152,12 +152,12 @@ slay decode_png_production(data []drip) yikes<Image> {
     }
     
     # Decompress image data using zlib/deflate
-    sus decompressed_data []drip = decompress_zlib(image_data) fam {
+    sus decompressed_data drip[value] = decompress_zlib(image_data) fam {
         when _ -> yikes "PNG decompression failed"
     }
     
     # Apply PNG filters and convert to RGB
-    sus rgb_data []drip = apply_png_filters(decompressed_data, width, height, color_type, bit_depth) fam {
+    sus rgb_data drip[value] = apply_png_filters(decompressed_data, width, height, color_type, bit_depth) fam {
         when _ -> yikes "PNG filter application failed"
     }
     
@@ -174,13 +174,13 @@ slay decode_png_production(data []drip) yikes<Image> {
 }
 
 # Production PNG encoder
-slay encode_png_production(img Image, compression_level drip) yikes<[]drip> {
+slay encode_png_production(img Image, compression_level drip) yikes<drip[value]> {
     # Validate input image
     validate_image(img) fam {
         when err -> yikes "invalid input image: " + err
     }
     
-    sus png_data []drip = []
+    sus png_data drip[value] = []
     
     # Write PNG signature
     bestie (i drip = 0; i < len(PNG_SIGNATURE); i = i + 1) {
@@ -198,7 +198,7 @@ slay encode_png_production(img Image, compression_level drip) yikes<[]drip> {
         yikes "unsupported channel count for PNG encoding"
     }
     
-    sus ihdr_data []drip = []
+    sus ihdr_data drip[value] = []
     ihdr_data = append_uint32_be(ihdr_data, img.width)
     ihdr_data = append_uint32_be(ihdr_data, img.height)
     ihdr_data = append(ihdr_data, 8)  # bit depth
@@ -210,10 +210,10 @@ slay encode_png_production(img Image, compression_level drip) yikes<[]drip> {
     png_data = append_png_chunk(png_data, "IHDR", ihdr_data)
     
     # Apply PNG filters to image data
-    sus filtered_data []drip = apply_png_filters_encode(img.data, img.width, img.height, img.channels)
+    sus filtered_data drip[value] = apply_png_filters_encode(img.data, img.width, img.height, img.channels)
     
     # Compress filtered data using zlib/deflate
-    sus compressed_data []drip = compress_zlib(filtered_data, compression_level) fam {
+    sus compressed_data drip[value] = compress_zlib(filtered_data, compression_level) fam {
         when _ -> yikes "PNG compression failed"
     }
     
@@ -227,7 +227,7 @@ slay encode_png_production(img Image, compression_level drip) yikes<[]drip> {
 }
 
 # Production JPEG decoder
-slay decode_jpeg_production(data []drip) yikes<Image> {
+slay decode_jpeg_production(data drip[value]) yikes<Image> {
     ready (!check_signature(data, JPEG_SIGNATURE, 0)) {
         yikes "invalid JPEG signature"
     }
@@ -236,11 +236,11 @@ slay decode_jpeg_production(data []drip) yikes<Image> {
     sus width drip = 0
     sus height drip = 0
     sus components drip = 0
-    sus component_info [4][4]drip  # component_id, h_sampling, v_sampling, quant_table
-    sus quantization_tables [4][64]drip
-    sus huffman_dc_tables [4]HuffmanTable
-    sus huffman_ac_tables [4]HuffmanTable
-    sus mcu_data []drip = []
+    sus component_info drip[4][4]  # component_id, h_sampling, v_sampling, quant_table
+    sus quantization_tables drip[4][64]
+    sus huffman_dc_tables HuffmanTable[4]
+    sus huffman_ac_tables HuffmanTable[4]
+    sus mcu_data drip[value] = []
     
     # Parse JPEG segments
     bestie (offset < len(data) - 2) {
@@ -350,7 +350,7 @@ slay decode_jpeg_production(data []drip) yikes<Image> {
     }
     
     # Convert MCU data to RGB
-    sus rgb_data []drip = convert_jpeg_to_rgb(mcu_data, width, height, components, component_info)
+    sus rgb_data drip[value] = convert_jpeg_to_rgb(mcu_data, width, height, components, component_info)
     
     damn Image{
         width: width,
@@ -364,22 +364,22 @@ slay decode_jpeg_production(data []drip) yikes<Image> {
 
 # JPEG helper structures
 squad HuffmanTable {
-    sus code_lengths [16]drip
-    sus code_values []drip
-    sus lookup_table [256]drip
+    sus code_lengths drip[16]
+    sus code_values drip[value]
+    sus lookup_table drip[256]
 }
 
 # Utility functions for format processing
-slay read_uint32_be(data []drip, offset drip) drip {
+slay read_uint32_be(data drip[value], offset drip) drip {
     damn (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]
 }
 
-slay read_uint16_be(data []drip, offset drip) drip {
+slay read_uint16_be(data drip[value], offset drip) drip {
     damn (data[offset] << 8) | data[offset + 1]
 }
 
-slay append_uint32_be(arr []drip, value drip) []drip {
-    sus result []drip = arr
+slay append_uint32_be(arr drip[value], value drip) drip[value]{
+    sus result drip[value] = arr
     result = append(result, (value >> 24) & 0xFF)
     result = append(result, (value >> 16) & 0xFF)
     result = append(result, (value >> 8) & 0xFF)
@@ -387,12 +387,12 @@ slay append_uint32_be(arr []drip, value drip) []drip {
     damn result
 }
 
-slay string_from_bytes(bytes []drip) tea {
+slay string_from_bytes(bytes drip[value]) tea {
     # Convert byte array to string
     damn "chunk"  # Placeholder
 }
 
-slay validate_png_crc(chunk_type tea, chunk_data []drip, expected_crc drip) lit {
+slay validate_png_crc(chunk_type tea, chunk_data drip[value], expected_crc drip) lit {
     # CRC validation for PNG chunks
     damn based  # Placeholder
 }
@@ -406,48 +406,48 @@ slay calculate_png_channels(color_type drip) drip {
     damn 3  # Default RGB
 }
 
-slay decompress_zlib(compressed_data []drip) yikes<[]drip> {
+slay decompress_zlib(compressed_data drip[value]) yikes<drip[value]> {
     # Zlib/Deflate decompression
     damn []  # Placeholder
 }
 
-slay compress_zlib(data []drip, level drip) yikes<[]drip> {
+slay compress_zlib(data drip[value], level drip) yikes<drip[value]> {
     # Zlib/Deflate compression
     damn []  # Placeholder
 }
 
-slay apply_png_filters(data []drip, width drip, height drip, color_type drip, bit_depth drip) yikes<[]drip> {
+slay apply_png_filters(data drip[value], width drip, height drip, color_type drip, bit_depth drip) yikes<drip[value]> {
     # Apply PNG filter algorithms (None, Sub, Up, Average, Paeth)
     damn []  # Placeholder
 }
 
-slay apply_png_filters_encode(data []drip, width drip, height drip, channels drip) []drip {
+slay apply_png_filters_encode(data drip[value], width drip, height drip, channels drip) drip[value]{
     # Apply PNG filters for encoding
     damn []  # Placeholder
 }
 
-slay append_png_chunk(png_data []drip, chunk_type tea, chunk_data []drip) []drip {
+slay append_png_chunk(png_data drip[value], chunk_type tea, chunk_data drip[value]) drip[value]{
     # Append PNG chunk with CRC
     damn png_data  # Placeholder
 }
 
-slay parse_huffman_table(data []drip, offset drip) HuffmanTable {
+slay parse_huffman_table(data drip[value], offset drip) HuffmanTable {
     # Parse JPEG Huffman table
     damn HuffmanTable{code_lengths: [], code_values: [], lookup_table: []}
 }
 
-slay get_huffman_table_size(data []drip, offset drip) drip {
+slay get_huffman_table_size(data drip[value], offset drip) drip {
     # Calculate Huffman table size
     damn 17  # Minimum size
 }
 
-slay decode_jpeg_scan(data []drip, offset drip, width drip, height drip, components drip, 
-                     quant_tables [4][64]drip, dc_tables [4]HuffmanTable, ac_tables [4]HuffmanTable) []drip {
+slay decode_jpeg_scan(data drip[value], offset drip, width drip, height drip, components drip, 
+                     quant_tables drip[4][64], dc_tables HuffmanTable[4], ac_tables HuffmanTable[4]) drip[value]{
     # Decode JPEG scan data using Huffman decoding and IDCT
     damn []  # Placeholder
 }
 
-slay convert_jpeg_to_rgb(mcu_data []drip, width drip, height drip, components drip, component_info [4][4]drip) []drip {
+slay convert_jpeg_to_rgb(mcu_data drip[value], width drip, height drip, components drip, component_info drip[4][4]) drip[value]{
     # Convert JPEG YCbCr to RGB
     damn []  # Placeholder
 }

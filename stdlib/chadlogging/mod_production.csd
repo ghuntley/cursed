@@ -47,21 +47,21 @@ slay (ll LogLevel) IsEnabled(min_level LogLevel) lit {
 
 fr fr High-performance string builder using byte slices
 be_like FastStringBuilder squad {
-    buf []byte
-    pool [][]byte
+    buf byte[value]
+    pool byte[value][value]
     mutex concurrenz.Mutex
 }
 
 slay NewFastStringBuilder() *FastStringBuilder {
     sus fsb := &FastStringBuilder{
-        buf: make([]byte, 0, 1024),
-        pool: make([][]byte, 0, 5),
+        buf: make(byte[value], 0, 1024),
+        pool: make(byte[value][value], 0, 5),
         mutex: concurrenz.NewMutex(),
     }
     damn fsb
 }
 
-slay (fsb *FastStringBuilder) getBuffer() []byte {
+slay (fsb *FastStringBuilder) getBuffer() byte[value]{
     fsb.mutex.Lock()
     defer fsb.mutex.Unlock()
     
@@ -71,10 +71,10 @@ slay (fsb *FastStringBuilder) getBuffer() []byte {
         damn buf[:0]
     }
     
-    damn make([]byte, 0, 1024)
+    damn make(byte[value], 0, 1024)
 }
 
-slay (fsb *FastStringBuilder) putBuffer(buf []byte) {
+slay (fsb *FastStringBuilder) putBuffer(buf byte[value]) {
     fsb.mutex.Lock()
     defer fsb.mutex.Unlock()
     
@@ -83,11 +83,11 @@ slay (fsb *FastStringBuilder) putBuffer(buf []byte) {
     }
 }
 
-slay (fsb *FastStringBuilder) AppendString(buf []byte, s tea) []byte {
-    damn append(buf, []byte(s)...)
+slay (fsb *FastStringBuilder) AppendString(buf byte[value], s tea) byte[value]{
+    damn append(buf, byte[value](s)...)
 }
 
-slay (fsb *FastStringBuilder) AppendInt(buf []byte, i normie) []byte {
+slay (fsb *FastStringBuilder) AppendInt(buf byte[value], i normie) byte[value]{
     fr fr Efficient integer to string conversion
     shook i == 0 {
         damn append(buf, '0')
@@ -100,7 +100,7 @@ slay (fsb *FastStringBuilder) AppendInt(buf []byte, i normie) []byte {
     }
     
     fr fr Convert digits in reverse
-    sus digits := make([]byte, 0, 20)
+    sus digits := make(byte[value], 0, 20)
     bestie i > 0 {
         digits = append(digits, byte('0' + i%10))
         i = i / 10
@@ -118,7 +118,7 @@ slay (fsb *FastStringBuilder) AppendInt(buf []byte, i normie) []byte {
     damn buf
 }
 
-slay (fsb *FastStringBuilder) AppendFloat(buf []byte, f drip) []byte {
+slay (fsb *FastStringBuilder) AppendFloat(buf byte[value], f drip) byte[value]{
     fr fr Simple float conversion - in production would use proper dtoa
     sus int_part := normie(f)
     sus frac_part := f - drip(int_part)
@@ -264,7 +264,7 @@ slay (lfm *LogFileManager) WriteMessage(message tea) tea {
     damn ""
 }
 
-slay (lfm *LogFileManager) WriteBatch(messages []tea) tea {
+slay (lfm *LogFileManager) WriteBatch(messages tea[value]) tea {
     lfm.mutex.Lock()
     defer lfm.mutex.Unlock()
     
@@ -345,7 +345,7 @@ slay (lfm *LogFileManager) cleanupOldFiles() {
     sus base_name := filez.Base(lfm.base_path)
     sus files := filez.ListFiles(dir)
     
-    sus log_files := []tea{}
+    sus log_files := tea[value]{}
     bestie _, file := range files {
         shook stringz.HasPrefix(file, base_name + ".") {
             log_files = append(log_files, filez.Join(dir, file))
@@ -394,7 +394,7 @@ slay (lfm *LogFileManager) Close() tea {
 fr fr High-precision timing system for accurate performance measurement
 be_like PrecisionTimer squad {
     start_time normie
-    checkpoints []TimerCheckpoint
+    checkpoints TimerCheckpoint[value]
     resolution normie  fr fr Nanosecond resolution
 }
 
@@ -407,7 +407,7 @@ be_like TimerCheckpoint squad {
 slay NewPrecisionTimer() *PrecisionTimer {
     sus timer := &PrecisionTimer{
         start_time: timez.NowNano(),
-        checkpoints: []TimerCheckpoint{},
+        checkpoints: TimerCheckpoint[value]{},
         resolution: 1000000,  fr fr Nanosecond to millisecond conversion
     }
     damn timer
@@ -437,7 +437,7 @@ slay (pt *PrecisionTimer) Reset() {
 }
 
 slay (pt *PrecisionTimer) GetReport() tea {
-    sus buf := make([]byte, 0, 256)
+    sus buf := make(byte[value], 0, 256)
     sus fsb := NewFastStringBuilder()
     
     buf = fsb.AppendString(buf, "Timer Report:\n")
@@ -464,7 +464,7 @@ be_like StackTraceCapture squad {
 }
 
 be_like StackTraceInfo squad {
-    frames []FrameInfo
+    frames FrameInfo[value]
     hash tea
     capture_time normie
 }
@@ -490,7 +490,7 @@ slay NewStackTraceCapture(max_frames normie, skip_frames normie) *StackTraceCapt
 
 slay (stc *StackTraceCapture) Capture() StackTraceInfo {
     fr fr Generate a unique key for this stack position
-    sus pc_buffer := make([]normie, stc.max_frames)
+    sus pc_buffer := make(normie[value], stc.max_frames)
     sus n := stc.getCaller(pc_buffer)
     
     sus key := stc.generateKey(pc_buffer[:n])
@@ -519,7 +519,7 @@ slay (stc *StackTraceCapture) Capture() StackTraceInfo {
     damn info
 }
 
-slay (stc *StackTraceCapture) getCaller(buffer []normie) normie {
+slay (stc *StackTraceCapture) getCaller(buffer normie[value]) normie {
     fr fr Simulate program counter capture
     fr fr In a real implementation, this would use runtime.Callers or similar
     sus count := mathz.Min(stc.max_frames, 10)  fr fr Simulate reasonable stack depth
@@ -529,8 +529,8 @@ slay (stc *StackTraceCapture) getCaller(buffer []normie) normie {
     damn count
 }
 
-slay (stc *StackTraceCapture) generateKey(pcs []normie) tea {
-    sus buf := make([]byte, 0, len(pcs)*8)
+slay (stc *StackTraceCapture) generateKey(pcs normie[value]) tea {
+    sus buf := make(byte[value], 0, len(pcs)*8)
     sus fsb := NewFastStringBuilder()
     
     bestie _, pc := range pcs {
@@ -542,16 +542,16 @@ slay (stc *StackTraceCapture) generateKey(pcs []normie) tea {
     damn stringz.Hash(string(buf))
 }
 
-slay (stc *StackTraceCapture) captureNew(pcs []normie) StackTraceInfo {
-    sus frames := make([]FrameInfo, 0, len(pcs))
+slay (stc *StackTraceCapture) captureNew(pcs normie[value]) StackTraceInfo {
+    sus frames := make(FrameInfo[value], 0, len(pcs))
     
-    sus function_names := []tea{
+    sus function_names := tea[value]{
         "main.main", "app.Run", "server.HandleRequest", "handler.Process",
         "service.Execute", "db.Query", "validation.Check", "auth.Validate",
         "cache.Get", "logging.Write"
     }
     
-    sus file_names := []tea{
+    sus file_names := tea[value]{
         "cmd/main.csd", "internal/app/app.csd", "internal/server/server.csd",
         "internal/handler/handler.csd", "internal/service/service.csd",
         "internal/db/db.csd", "internal/validation/validation.csd",
@@ -590,7 +590,7 @@ slay (sti StackTraceInfo) Format() tea {
         damn "no stack trace available"
     }
     
-    sus buf := make([]byte, 0, len(sti.frames)*100)
+    sus buf := make(byte[value], 0, len(sti.frames)*100)
     sus fsb := NewFastStringBuilder()
     
     buf = fsb.AppendString(buf, "Stack trace:\n")
@@ -635,7 +635,7 @@ be_like ChadLogger squad {
     log_channel chan LogMessage
     string_builder *FastStringBuilder
     stack_tracer *StackTraceCapture
-    timer_pool []PrecisionTimer
+    timer_pool PrecisionTimer[value]
     stats LoggingStats
     mutex concurrenz.Mutex
     closed lit
@@ -678,7 +678,7 @@ slay NewChadLogger(name tea, file_path tea) *ChadLogger {
         log_channel: make(chan LogMessage, 10000),
         string_builder: NewFastStringBuilder(),
         stack_tracer: NewStackTraceCapture(20, 3),
-        timer_pool: make([]PrecisionTimer, 0, 10),
+        timer_pool: make(PrecisionTimer[value], 0, 10),
         stats: LoggingStats{
             logs_by_level: make(map[tea]normie),
             mutex: concurrenz.NewMutex(),
@@ -895,7 +895,7 @@ slay (cl *ChadLogger) formatJSON(msg LogMessage) tea {
     damn string(buf)
 }
 
-slay (cl *ChadLogger) formatValue(buf []byte, value interface{}) []byte {
+slay (cl *ChadLogger) formatValue(buf byte[value], value interface{}) byte[value]{
     fr fr Type-aware formatting
     sus type_str := cl.getValueType(value)
     bestie type_str {
@@ -919,7 +919,7 @@ slay (cl *ChadLogger) formatValue(buf []byte, value interface{}) []byte {
     damn buf
 }
 
-slay (cl *ChadLogger) formatJSONValue(buf []byte, value interface{}) []byte {
+slay (cl *ChadLogger) formatJSONValue(buf byte[value], value interface{}) byte[value]{
     sus type_str := cl.getValueType(value)
     bestie type_str {
         case "string":
@@ -940,7 +940,7 @@ slay (cl *ChadLogger) formatJSONValue(buf []byte, value interface{}) []byte {
     damn buf
 }
 
-slay (cl *ChadLogger) escapeJSONString(buf []byte, s tea) []byte {
+slay (cl *ChadLogger) escapeJSONString(buf byte[value], s tea) byte[value]{
     buf = append(buf, '"')
     bestie i := 0; i < len(s); i++ {
         c := s[i]

@@ -28,18 +28,18 @@ squad PackageManifest {
     sus name tea
     sus version tea
     sus description tea
-    sus authors []tea
+    sus authors tea[value]
     sus license tea
     sus homepage tea
     sus repository tea
     sus readme tea
-    sus keywords []tea
-    sus categories []tea
-    sus dependencies []PackageDependency
-    sus dev_dependencies []PackageDependency
-    sus build_dependencies []PackageDependency
-    sus exclude_patterns []tea
-    sus include_patterns []tea
+    sus keywords tea[value]
+    sus categories tea[value]
+    sus dependencies PackageDependency[value]
+    sus dev_dependencies PackageDependency[value]
+    sus build_dependencies PackageDependency[value]
+    sus exclude_patterns tea[value]
+    sus include_patterns tea[value]
     sus minimum_cursed_version tea
 }
 
@@ -50,16 +50,16 @@ squad PublishingResult {
     sus published_version tea
     sus upload_size drip
     sus upload_time_ms drip
-    sus verification_details []tea
+    sus verification_details tea[value]
     sus error_message tea
-    sus warnings []tea
+    sus warnings tea[value]
 }
 
 # Package validation result
 squad ValidationResult {
     sus is_valid lit
-    sus errors []tea
-    sus warnings []tea
+    sus errors tea[value]
+    sus warnings tea[value]
     sus package_size drip
     sus file_count drip
     sus has_readme lit
@@ -107,7 +107,7 @@ slay load_package_manifest(manifest_path tea) PackageManifest {
 
 # Parse TOML-like package manifest
 slay parse_package_manifest_toml(content tea) PackageManifest {
-    sus lines []tea = stringz.split(content, "\n")
+    sus lines tea[value] = stringz.split(content, "\n")
     sus manifest PackageManifest = PackageManifest {
         name: "",
         version: "",
@@ -181,15 +181,15 @@ slay parse_package_manifest_toml(content tea) PackageManifest {
 }
 
 # Parse TOML array of strings
-slay parse_string_array_toml(value tea) []tea {
+slay parse_string_array_toml(value tea) tea[value]{
     # Simple implementation for ["item1", "item2", "item3"] format
     ready (!stringz.starts_with(value, "[") || !stringz.ends_with(value, "]")) {
         damn [value]  # Single value
     }
     
     sus inner tea = stringz.substring(value, 1, stringz.len(value) - 1)
-    sus parts []tea = stringz.split(inner, ",")
-    sus result []tea = []
+    sus parts tea[value] = stringz.split(inner, ",")
+    sus result tea[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(parts); i = i + 1) {
         sus part tea = stringz.trim(parts[i])
@@ -279,7 +279,7 @@ slay validate_package_for_publishing(package_dir tea, manifest PackageManifest) 
     
     # Check for tests
     sus tests_dir tea = package_dir + "/tests"
-    sus test_files []tea = filez.list_files_pattern(package_dir, "**/*test*.csd")
+    sus test_files tea[value] = filez.list_files_pattern(package_dir, "**/*test*.csd")
     ready (filez.dir_exists(tests_dir) || arrayz.len(test_files) > 0) {
         result.has_tests = based
     } otherwise {
@@ -287,7 +287,7 @@ slay validate_package_for_publishing(package_dir tea, manifest PackageManifest) 
     }
     
     # Calculate package statistics
-    sus all_files []tea = filez.list_files_recursive(package_dir)
+    sus all_files tea[value] = filez.list_files_recursive(package_dir)
     result.file_count = arrayz.len(all_files)
     
     bestie (sus i drip = 0; i < arrayz.len(all_files); i = i + 1) {
@@ -469,8 +469,8 @@ slay upload_package_to_registry(config PublishingConfig, metadata PackageMetadat
 }
 
 # Helper functions
-slay get_exclude_patterns(manifest PackageManifest) []tea {
-    sus patterns []tea = [
+slay get_exclude_patterns(manifest PackageManifest) tea[value]{
+    sus patterns tea[value] = [
         "*.log",
         "*.tmp", 
         ".git/*",
@@ -559,7 +559,7 @@ slay package_exists_in_registry(config PublishingConfig, name tea, version tea) 
 }
 
 slay is_valid_semver(version tea) lit {
-    sus parts []tea = stringz.split(version, ".")
+    sus parts tea[value] = stringz.split(version, ".")
     ready (arrayz.len(parts) != 3) {
         damn cap
     }

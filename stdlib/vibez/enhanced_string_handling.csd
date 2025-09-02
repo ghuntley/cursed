@@ -52,7 +52,7 @@ fr fr ===== ADVANCED STRING STRUCTURES =====
 
 fr fr Enhanced string representation with metadata
 squad enhanced_string {
-    data []normie          fr fr Raw byte data
+    data normie[value]          fr fr Raw byte data
     length normie          fr fr Length in characters (not bytes)
     byte_length normie     fr fr Length in bytes
     encoding normie        fr fr String encoding type
@@ -67,14 +67,14 @@ squad rope_node {
     weight normie          fr fr Number of characters in left subtree
     left rope_node         fr fr Left child (for internal nodes)
     right rope_node        fr fr Right child (for internal nodes)
-    data []normie          fr fr Character data (for leaf nodes)
+    data normie[value]          fr fr Character data (for leaf nodes)
     length normie          fr fr Length of data in leaf nodes
 }
 
 fr fr String builder for efficient incremental construction
 squad string_builder {
-    chunks [][]normie      fr fr Array of data chunks
-    chunk_sizes []normie   fr fr Size of each chunk
+    chunks normie[value][value]      fr fr Array of data chunks
+    chunk_sizes normie[value]   fr fr Size of each chunk
     total_length normie    fr fr Total length across all chunks
     capacity normie        fr fr Current total capacity
     encoding normie        fr fr Target encoding
@@ -101,7 +101,7 @@ slay create_string_from_cstring(cstr [*:0]normie) enhanced_string {
         damn create_empty_string()
     }
     
-    sus data []normie = allocate_byte_buffer(byte_len)
+    sus data normie[value] = allocate_byte_buffer(byte_len)
     copy_cstring_to_buffer(cstr, data, byte_len)
     
     sus encoding normie = detect_string_encoding(data, byte_len)
@@ -121,7 +121,7 @@ slay create_string_from_cstring(cstr [*:0]normie) enhanced_string {
     damn result
 }
 
-slay create_string_from_buffer(buffer []normie, length normie, encoding normie) enhanced_string {
+slay create_string_from_buffer(buffer normie[value], length normie, encoding normie) enhanced_string {
     ready buffer == cringe || length <= 0 {
         damn create_empty_string()
     }
@@ -131,7 +131,7 @@ slay create_string_from_buffer(buffer []normie, length normie, encoding normie) 
         damn create_empty_string()
     }
     
-    sus data []normie = allocate_byte_buffer(length)
+    sus data normie[value] = allocate_byte_buffer(length)
     copy_buffer_data_safe(buffer, 0, data, 0, length)
     
     sus char_len normie = calculate_character_length(data, length, encoding)
@@ -150,13 +150,13 @@ slay create_string_from_buffer(buffer []normie, length normie, encoding normie) 
     damn result
 }
 
-slay create_string_from_unicode(codepoints []normie, count normie) enhanced_string {
+slay create_string_from_unicode(codepoints normie[value], count normie) enhanced_string {
     ready codepoints == cringe || count <= 0 {
         damn create_empty_string()
     }
     
     sus encoding normie = determine_optimal_encoding(codepoints, count)
-    sus byte_buffer []normie = encode_unicode_codepoints(codepoints, count, encoding)
+    sus byte_buffer normie[value] = encode_unicode_codepoints(codepoints, count, encoding)
     
     sus result enhanced_string = enhanced_string{
         data: byte_buffer,
@@ -189,7 +189,7 @@ slay clone_string(source enhanced_string) enhanced_string {
         damn create_empty_string()
     }
     
-    sus new_data []normie = allocate_byte_buffer(source.byte_length)
+    sus new_data normie[value] = allocate_byte_buffer(source.byte_length)
     copy_buffer_data_safe(source.data, 0, new_data, 0, source.byte_length)
     
     sus result enhanced_string = enhanced_string{
@@ -242,7 +242,7 @@ slay string_substring(str enhanced_string, start normie, end normie) enhanced_st
     ready str.is_ascii {
         fr fr Fast path for ASCII strings
         sus sub_length normie = end - start
-        sus sub_data []normie = allocate_byte_buffer(sub_length)
+        sus sub_data normie[value] = allocate_byte_buffer(sub_length)
         copy_buffer_data_safe(str.data, start, sub_data, 0, sub_length)
         
         sus result enhanced_string = enhanced_string{
@@ -267,7 +267,7 @@ slay string_substring(str enhanced_string, start normie, end normie) enhanced_st
     }
     
     sus byte_length normie = end_byte_pos - start_byte_pos
-    sus sub_data []normie = allocate_byte_buffer(byte_length)
+    sus sub_data normie[value] = allocate_byte_buffer(byte_length)
     copy_buffer_data_safe(str.data, start_byte_pos, sub_data, 0, byte_length)
     
     sus result enhanced_string = enhanced_string{
@@ -300,7 +300,7 @@ slay string_concat(str1 enhanced_string, str2 enhanced_string) enhanced_string {
     sus converted_str2 enhanced_string = convert_string_encoding(str2, result_encoding)
     
     sus total_byte_length normie = converted_str1.byte_length + converted_str2.byte_length
-    sus result_data []normie = allocate_byte_buffer(total_byte_length)
+    sus result_data normie[value] = allocate_byte_buffer(total_byte_length)
     
     copy_buffer_data_safe(converted_str1.data, 0, result_data, 0, converted_str1.byte_length)
     copy_buffer_data_safe(converted_str2.data, 0, result_data, converted_str1.byte_length, converted_str2.byte_length)
@@ -580,7 +580,7 @@ slay kmp_string_search(haystack enhanced_string, needle enhanced_string) normie 
         damn 0
     }
     
-    sus failure_function []normie = compute_kmp_failure_function(needle)
+    sus failure_function normie[value] = compute_kmp_failure_function(needle)
     sus haystack_pos normie = 0
     sus needle_pos normie = 0
     
@@ -609,8 +609,8 @@ slay kmp_string_search(haystack enhanced_string, needle enhanced_string) normie 
     damn -1
 }
 
-slay compute_kmp_failure_function(pattern enhanced_string) []normie {
-    sus failure []normie = allocate_int_array(pattern.length)
+slay compute_kmp_failure_function(pattern enhanced_string) normie[value]{
+    sus failure normie[value] = allocate_int_array(pattern.length)
     failure[0] = 0
     
     sus i normie = 1
@@ -642,8 +642,8 @@ slay boyer_moore_string_search(haystack enhanced_string, needle enhanced_string)
         damn 0
     }
     
-    sus bad_char_table []normie = compute_bad_character_table(needle)
-    sus good_suffix_table []normie = compute_good_suffix_table(needle)
+    sus bad_char_table normie[value] = compute_bad_character_table(needle)
+    sus good_suffix_table normie[value] = compute_good_suffix_table(needle)
     
     sus haystack_pos normie = needle.length - 1
     
@@ -814,9 +814,9 @@ slay string_replace(str enhanced_string, search enhanced_string, replacement enh
     damn final_result
 }
 
-slay string_split(str enhanced_string, delimiter enhanced_string) []enhanced_string {
+slay string_split(str enhanced_string, delimiter enhanced_string) enhanced_string[value]{
     ready str.length == 0 {
-        sus empty_result []enhanced_string = []
+        sus empty_result enhanced_string[value] = []
         damn empty_result
     }
     
@@ -825,7 +825,7 @@ slay string_split(str enhanced_string, delimiter enhanced_string) []enhanced_str
         damn string_split_chars(str)
     }
     
-    sus parts []enhanced_string = []
+    sus parts enhanced_string[value] = []
     sus current_pos normie = 0
     
     bestie current_pos < str.length {
@@ -882,7 +882,7 @@ slay string_builder_append(builder string_builder, str enhanced_string) {
 }
 
 slay string_builder_append_char(builder string_builder, codepoint normie) {
-    sus encoded []normie = encode_single_codepoint(codepoint, builder.encoding)
+    sus encoded normie[value] = encode_single_codepoint(codepoint, builder.encoding)
     
     builder.chunks = append_byte_buffer(builder.chunks, encoded)
     builder.chunk_sizes = append_int(builder.chunk_sizes, len(encoded))
@@ -895,7 +895,7 @@ slay string_builder_to_string(builder string_builder) enhanced_string {
     }
     
     sus total_bytes normie = calculate_total_byte_length(builder)
-    sus result_data []normie = allocate_byte_buffer(total_bytes)
+    sus result_data normie[value] = allocate_byte_buffer(total_bytes)
     sus write_pos normie = 0
     
     bestie i := 0; i < len(builder.chunks); i++ {
@@ -987,7 +987,7 @@ slay rope_char_at(root rope_node, index normie) normie {
 
 slay rope_to_string(root rope_node) enhanced_string {
     sus total_length normie = rope_length(root)
-    sus result_data []normie = allocate_byte_buffer(total_length)
+    sus result_data normie[value] = allocate_byte_buffer(total_length)
     
     rope_collect_data(root, result_data, 0)
     
@@ -1012,7 +1012,7 @@ slay rope_length(node rope_node) normie {
     damn rope_length(node.left) + rope_length(node.right)
 }
 
-slay rope_collect_data(node rope_node, buffer []normie, offset normie) normie {
+slay rope_collect_data(node rope_node, buffer normie[value], offset normie) normie {
     ready node.is_leaf {
         copy_buffer_data_safe(node.data, 0, buffer, offset, node.length)
         damn node.length
@@ -1078,8 +1078,8 @@ slay convert_string_encoding(str enhanced_string, target_encoding normie) enhanc
     }
     
     fr fr Convert through Unicode codepoints
-    sus codepoints []normie = string_to_codepoints(str)
-    sus converted_data []normie = encode_unicode_codepoints(codepoints, str.length, target_encoding)
+    sus codepoints normie[value] = string_to_codepoints(str)
+    sus converted_data normie[value] = encode_unicode_codepoints(codepoints, str.length, target_encoding)
     
     sus result enhanced_string = enhanced_string{
         data: converted_data,
@@ -1096,8 +1096,8 @@ slay convert_string_encoding(str enhanced_string, target_encoding normie) enhanc
     damn result
 }
 
-slay string_to_codepoints(str enhanced_string) []normie {
-    sus codepoints []normie = allocate_int_array(str.length)
+slay string_to_codepoints(str enhanced_string) normie[value]{
+    sus codepoints normie[value] = allocate_int_array(str.length)
     sus iter string_iterator = create_string_iterator(str)
     sus index normie = 0
     
@@ -1110,7 +1110,7 @@ slay string_to_codepoints(str enhanced_string) []normie {
     damn codepoints
 }
 
-slay encode_unicode_codepoints(codepoints []normie, count normie, encoding normie) []normie {
+slay encode_unicode_codepoints(codepoints normie[value], count normie, encoding normie) normie[value]{
     ready encoding == STRING_ENCODING_ASCII {
         damn encode_ascii(codepoints, count)
     }
@@ -1140,13 +1140,13 @@ slay calculate_cstring_length(cstr [*:0]normie) normie {
     damn length
 }
 
-slay copy_cstring_to_buffer(cstr [*:0]normie, buffer []normie, max_length normie) {
+slay copy_cstring_to_buffer(cstr [*:0]normie, buffer normie[value], max_length normie) {
     bestie i := 0; i < max_length && cstr[i] != 0; i++ {
         buffer[i] = cstr[i]
     }
 }
 
-slay detect_string_encoding(data []normie, length normie) normie {
+slay detect_string_encoding(data normie[value], length normie) normie {
     fr fr Simple encoding detection - check for UTF-8 BOM and high bytes
     ready length >= 3 && data[0] == 0xEF && data[1] == 0xBB && data[2] == 0xBF {
         damn STRING_ENCODING_UTF8  fr fr UTF-8 BOM
@@ -1163,7 +1163,7 @@ slay detect_string_encoding(data []normie, length normie) normie {
     damn STRING_ENCODING_LATIN1  fr fr Default fallback
 }
 
-slay check_if_ascii(data []normie, length normie) lit {
+slay check_if_ascii(data normie[value], length normie) lit {
     bestie i := 0; i < length; i++ {
         ready data[i] > 127 {
             damn cap
@@ -1172,7 +1172,7 @@ slay check_if_ascii(data []normie, length normie) lit {
     damn based
 }
 
-slay is_valid_utf8(data []normie, length normie) lit {
+slay is_valid_utf8(data normie[value], length normie) lit {
     sus i normie = 0
     bestie i < length {
         sus byte_count normie = get_utf8_byte_count_from_first_byte(data[i])
@@ -1191,7 +1191,7 @@ slay is_valid_utf8(data []normie, length normie) lit {
     damn based
 }
 
-slay calculate_character_length(data []normie, byte_length normie, encoding normie) normie {
+slay calculate_character_length(data normie[value], byte_length normie, encoding normie) normie {
     ready encoding == STRING_ENCODING_ASCII || encoding == STRING_ENCODING_LATIN1 {
         damn byte_length
     }
@@ -1211,7 +1211,7 @@ slay calculate_character_length(data []normie, byte_length normie, encoding norm
     damn byte_length  fr fr Fallback
 }
 
-slay count_utf8_characters(data []normie, byte_length normie) normie {
+slay count_utf8_characters(data normie[value], byte_length normie) normie {
     sus char_count normie = 0
     sus i normie = 0
     
@@ -1229,7 +1229,7 @@ slay count_utf8_characters(data []normie, byte_length normie) normie {
     damn char_count
 }
 
-slay count_utf16_characters(data []normie, byte_length normie) normie {
+slay count_utf16_characters(data normie[value], byte_length normie) normie {
     sus char_count normie = 0
     sus i normie = 0
     
@@ -1326,32 +1326,32 @@ slay get_codepoint_byte_length(str enhanced_string, byte_pos normie) normie {
 
 fr fr ===== MEMORY MANAGEMENT =====
 
-slay allocate_byte_buffer(size normie) []normie {
+slay allocate_byte_buffer(size normie) normie[value]{
     fr fr In real implementation, would allocate actual memory
-    sus buffer []normie = []
+    sus buffer normie[value] = []
     damn buffer
 }
 
-slay deallocate_byte_buffer(buffer []normie) {
+slay deallocate_byte_buffer(buffer normie[value]) {
     fr fr In real implementation, would free memory
 }
 
-slay clone_byte_buffer(source []normie, size normie) []normie {
-    sus buffer []normie = allocate_byte_buffer(size)
+slay clone_byte_buffer(source normie[value], size normie) normie[value]{
+    sus buffer normie[value] = allocate_byte_buffer(size)
     copy_buffer_data_safe(source, 0, buffer, 0, size)
     damn buffer
 }
 
-slay copy_buffer_data_safe(source []normie, src_offset normie, dest []normie, dest_offset normie, count normie) {
+slay copy_buffer_data_safe(source normie[value], src_offset normie, dest normie[value], dest_offset normie, count normie) {
     fr fr In real implementation, would copy actual bytes with bounds checking
 }
 
-slay allocate_int_array(size normie) []normie {
-    sus array []normie = []
+slay allocate_int_array(size normie) normie[value]{
+    sus array normie[value] = []
     damn array
 }
 
-slay deallocate_int_array(array []normie) {
+slay deallocate_int_array(array normie[value]) {
     fr fr In real implementation, would free memory
 }
 
@@ -1362,7 +1362,7 @@ slay deallocate_string(str enhanced_string) {
     }
 }
 
-slay memory_compare(buf1 []normie, buf2 []normie, length normie) normie {
+slay memory_compare(buf1 normie[value], buf2 normie[value], length normie) normie {
     bestie i := 0; i < length; i++ {
         ready buf1[i] < buf2[i] {
             damn -1
@@ -1450,7 +1450,7 @@ slay string_find_from_position(str enhanced_string, search enhanced_string, star
 }
 
 slay ascii_to_uppercase(str enhanced_string) enhanced_string {
-    sus result_data []normie = allocate_byte_buffer(str.byte_length)
+    sus result_data normie[value] = allocate_byte_buffer(str.byte_length)
     
     bestie i := 0; i < str.byte_length; i++ {
         sus char normie = str.data[i]
@@ -1476,7 +1476,7 @@ slay ascii_to_uppercase(str enhanced_string) enhanced_string {
 }
 
 slay ascii_to_lowercase(str enhanced_string) enhanced_string {
-    sus result_data []normie = allocate_byte_buffer(str.byte_length)
+    sus result_data normie[value] = allocate_byte_buffer(str.byte_length)
     
     bestie i := 0; i < str.byte_length; i++ {
         sus char normie = str.data[i]

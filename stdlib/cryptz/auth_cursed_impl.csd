@@ -48,14 +48,14 @@ squad CryptoAuth {
 // Bcrypt implementation using CURSED cryptz
 slay bcrypt_hash(password tea, config BcryptConfig) tea yikes<tea> {
     // Generate secure random salt
-    sus salt []drip = cryptz.secure_random_bytes(16)
+    sus salt drip[value] = cryptz.secure_random_bytes(16)
     
     // Convert cost to work factor
     sus work_factor drip = mathz.pow(2, config.cost)
     
     // Generate bcrypt hash using cryptz blake3-based implementation
     sus hash_input tea = password + arrayz.to_string(salt)
-    sus intermediate_hash []drip = cryptz.blake3(hash_input)
+    sus intermediate_hash drip[value] = cryptz.blake3(hash_input)
     
     // Apply bcrypt-style key stretching
     bestie (work_factor > 0) {
@@ -78,7 +78,7 @@ slay bcrypt_hash(password tea, config BcryptConfig) tea yikes<tea> {
 
 slay bcrypt_verify(password tea, hash tea) lit yikes<tea> {
     // Parse bcrypt hash format: $2b$cost$salt_and_hash
-    sus parts []tea = stringz.split(hash, "$")
+    sus parts tea[value] = stringz.split(hash, "$")
     ready (arrayz.len(parts) != 4) {
         yikes "Invalid bcrypt hash format"
     }
@@ -101,14 +101,14 @@ slay bcrypt_verify(password tea, hash tea) lit yikes<tea> {
     
     // Recreate hash with same parameters
     sus config BcryptConfig = {cost: cost, salt_rounds: 16}
-    sus salt []drip = cryptz.base64_decode(salt_b64) fam {
+    sus salt drip[value] = cryptz.base64_decode(salt_b64) fam {
         when _ -> yikes "Invalid salt encoding"
     }
     
     // Generate hash with provided salt
     sus work_factor drip = mathz.pow(2, cost)
     sus hash_input tea = password + arrayz.to_string(salt)
-    sus computed_hash []drip = cryptz.blake3(hash_input)
+    sus computed_hash drip[value] = cryptz.blake3(hash_input)
     
     bestie (work_factor > 0) {
         computed_hash = cryptz.sha512(arrayz.to_string(computed_hash))
@@ -125,20 +125,20 @@ slay bcrypt_verify(password tea, hash tea) lit yikes<tea> {
 // Argon2 implementation using CURSED cryptz
 slay argon2_hash(password tea, config Argon2Config) tea yikes<tea> {
     // Generate secure random salt
-    sus salt []drip = cryptz.secure_random_bytes(16)
+    sus salt drip[value] = cryptz.secure_random_bytes(16)
     
     // Argon2 implementation using CURSED cryptz primitives
-    sus password_bytes []drip = stringz.to_bytes(password)
+    sus password_bytes drip[value] = stringz.to_bytes(password)
     
     // Initialize memory blocks
     sus memory_blocks drip = config.memory_kb * 1024 / 1024  // Convert to 1KB blocks
-    sus block_data [][]drip = arrayz.create_2d(memory_blocks, 1024)
+    sus block_data drip[value][value] = arrayz.create_2d(memory_blocks, 1024)
     
     // Initial hash: blake3(password + salt + parameters)
     sus param_string tea = stringz.format("{},{},{},{}", 
         config.memory_kb, config.iterations, config.parallelism, config.hash_length)
     sus initial_input tea = password + arrayz.to_string(salt) + param_string
-    sus h0 []drip = cryptz.blake3(initial_input)
+    sus h0 drip[value] = cryptz.blake3(initial_input)
     
     // Fill memory blocks with pseudo-random data
     bestie (memory_blocks > 0) {
@@ -176,8 +176,8 @@ slay argon2_hash(password tea, config Argon2Config) tea yikes<tea> {
         block_index = block_index + 1
     }
     
-    sus final_hash []drip = cryptz.blake3(final_input)
-    sus truncated_hash []drip = arrayz.slice(final_hash, 0, config.hash_length)
+    sus final_hash drip[value] = cryptz.blake3(final_input)
+    sus truncated_hash drip[value] = arrayz.slice(final_hash, 0, config.hash_length)
     
     // Encode in Argon2 format: $argon2id$v=19$m=65536,t=3,p=1$salt$hash
     sus salt_b64 tea = cryptz.base64_encode(arrayz.to_string(salt))
@@ -192,7 +192,7 @@ slay argon2_hash(password tea, config Argon2Config) tea yikes<tea> {
 
 slay argon2_verify(password tea, hash tea) lit yikes<tea> {
     // Parse Argon2 hash format: $argon2id$v=19$m=65536,t=3,p=1$salt$hash
-    sus parts []tea = stringz.split(hash, "$")
+    sus parts tea[value] = stringz.split(hash, "$")
     ready (arrayz.len(parts) != 6) {
         yikes "Invalid Argon2 hash format"
     }
@@ -204,12 +204,12 @@ slay argon2_verify(password tea, hash tea) lit yikes<tea> {
     sus expected_hash tea = parts[5]
     
     // Parse parameters
-    sus param_pairs []tea = stringz.split(params, ",")
+    sus param_pairs tea[value] = stringz.split(params, ",")
     sus config Argon2Config = {variant: variant}
     
     sus param_index drip = 0
     bestie (param_index < arrayz.len(param_pairs)) {
-        sus pair []tea = stringz.split(param_pairs[param_index], "=")
+        sus pair tea[value] = stringz.split(param_pairs[param_index], "=")
         ready (arrayz.len(pair) == 2) {
             ready (pair[0] == "m") {
                 config.memory_kb = stringz.to_int(pair[1]) fam { when _ -> config.memory_kb }
@@ -223,20 +223,20 @@ slay argon2_verify(password tea, hash tea) lit yikes<tea> {
     }
     
     // Recreate hash with same parameters and salt
-    sus salt []drip = cryptz.base64_decode(salt_b64) fam {
+    sus salt drip[value] = cryptz.base64_decode(salt_b64) fam {
         when _ -> yikes "Invalid salt encoding"
     }
     
-    sus password_bytes []drip = stringz.to_bytes(password)
+    sus password_bytes drip[value] = stringz.to_bytes(password)
     
     // Simplified Argon2 recreation (same logic as above but with provided salt)
     sus memory_blocks drip = config.memory_kb * 1024 / 1024
-    sus block_data [][]drip = arrayz.create_2d(memory_blocks, 1024)
+    sus block_data drip[value][value] = arrayz.create_2d(memory_blocks, 1024)
     
     sus param_string tea = stringz.format("{},{},{},{}", 
         config.memory_kb, config.iterations, config.parallelism, config.hash_length)
     sus initial_input tea = password + arrayz.to_string(salt) + param_string
-    sus h0 []drip = cryptz.blake3(initial_input)
+    sus h0 drip[value] = cryptz.blake3(initial_input)
     
     // Same memory-hard computation as in argon2_hash
     bestie (memory_blocks > 0) {
@@ -271,8 +271,8 @@ slay argon2_verify(password tea, hash tea) lit yikes<tea> {
         block_index = block_index + 1
     }
     
-    sus final_hash []drip = cryptz.blake3(final_input)
-    sus truncated_hash []drip = arrayz.slice(final_hash, 0, config.hash_length)
+    sus final_hash drip[value] = cryptz.blake3(final_input)
+    sus truncated_hash drip[value] = arrayz.slice(final_hash, 0, config.hash_length)
     sus computed_b64 tea = cryptz.base64_encode(arrayz.to_string(truncated_hash))
     
     // Constant-time comparison
@@ -282,17 +282,17 @@ slay argon2_verify(password tea, hash tea) lit yikes<tea> {
 // Scrypt implementation using CURSED cryptz
 slay scrypt_hash(password tea, config ScryptConfig) tea yikes<tea> {
     // Generate secure random salt
-    sus salt []drip = cryptz.secure_random_bytes(16)
+    sus salt drip[value] = cryptz.secure_random_bytes(16)
     
     // Scrypt implementation using CURSED cryptz primitives
-    sus password_bytes []drip = stringz.to_bytes(password)
+    sus password_bytes drip[value] = stringz.to_bytes(password)
     
     // Initial PBKDF2-like derivation
-    sus initial_key []drip = cryptz.pbkdf2(password, arrayz.to_string(salt), 1, 32)
+    sus initial_key drip[value] = cryptz.pbkdf2(password, arrayz.to_string(salt), 1, 32)
     
     // ROMix operation - memory-hard sequential memory access
-    sus v_array [][]drip = arrayz.create_2d(config.n, 32)
-    sus x []drip = initial_key
+    sus v_array drip[value][value] = arrayz.create_2d(config.n, 32)
+    sus x drip[value] = initial_key
     
     // First loop: fill array with hash chain
     sus i drip = 0
@@ -313,7 +313,7 @@ slay scrypt_hash(password tea, config ScryptConfig) tea yikes<tea> {
     }
     
     // Final PBKDF2 step
-    sus final_key []drip = cryptz.pbkdf2(password, arrayz.to_string(x), 1, config.dklen)
+    sus final_key drip[value] = cryptz.pbkdf2(password, arrayz.to_string(x), 1, config.dklen)
     
     // Encode in scrypt format: $scrypt$n=32768,r=8,p=1$salt$hash
     sus salt_b64 tea = cryptz.base64_encode(arrayz.to_string(salt))
@@ -327,7 +327,7 @@ slay scrypt_hash(password tea, config ScryptConfig) tea yikes<tea> {
 
 slay scrypt_verify(password tea, hash tea) lit yikes<tea> {
     // Parse scrypt hash format: $scrypt$n=32768,r=8,p=1$salt$hash
-    sus parts []tea = stringz.split(hash, "$")
+    sus parts tea[value] = stringz.split(hash, "$")
     ready (arrayz.len(parts) != 5) {
         yikes "Invalid scrypt hash format"
     }
@@ -342,12 +342,12 @@ slay scrypt_verify(password tea, hash tea) lit yikes<tea> {
     }
     
     // Parse parameters
-    sus param_pairs []tea = stringz.split(params, ",")
+    sus param_pairs tea[value] = stringz.split(params, ",")
     sus config ScryptConfig = {}
     
     sus param_index drip = 0
     bestie (param_index < arrayz.len(param_pairs)) {
-        sus pair []tea = stringz.split(param_pairs[param_index], "=")
+        sus pair tea[value] = stringz.split(param_pairs[param_index], "=")
         ready (arrayz.len(pair) == 2) {
             ready (pair[0] == "n") {
                 config.n = stringz.to_int(pair[1]) fam { when _ -> config.n }
@@ -361,16 +361,16 @@ slay scrypt_verify(password tea, hash tea) lit yikes<tea> {
     }
     
     // Recreate hash with same parameters
-    sus salt []drip = cryptz.base64_decode(salt_b64) fam {
+    sus salt drip[value] = cryptz.base64_decode(salt_b64) fam {
         when _ -> yikes "Invalid salt encoding"
     }
     
     // Same scrypt computation as above but with provided salt
-    sus password_bytes []drip = stringz.to_bytes(password)
-    sus initial_key []drip = cryptz.pbkdf2(password, arrayz.to_string(salt), 1, 32)
+    sus password_bytes drip[value] = stringz.to_bytes(password)
+    sus initial_key drip[value] = cryptz.pbkdf2(password, arrayz.to_string(salt), 1, 32)
     
-    sus v_array [][]drip = arrayz.create_2d(config.n, 32)
-    sus x []drip = initial_key
+    sus v_array drip[value][value] = arrayz.create_2d(config.n, 32)
+    sus x drip[value] = initial_key
     
     sus i drip = 0
     bestie (i < config.n) {
@@ -388,7 +388,7 @@ slay scrypt_verify(password tea, hash tea) lit yikes<tea> {
         i = i + 1
     }
     
-    sus final_key []drip = cryptz.pbkdf2(password, arrayz.to_string(x), 1, config.dklen)
+    sus final_key drip[value] = cryptz.pbkdf2(password, arrayz.to_string(x), 1, config.dklen)
     sus computed_b64 tea = cryptz.base64_encode(arrayz.to_string(final_key))
     
     // Constant-time comparison

@@ -8,14 +8,14 @@ yeet "math"
 
 fr fr Complex data structure
 squad ComplexData {
-    spill values []normie
+    spill values normie[value]
     spill metadata map[tea]tea
     spill computed_hash normie
 }
 
 slay complex_data_new() ComplexData {
     damn ComplexData{
-        values: []normie{},
+        values: normie[value]{},
         metadata: map[tea]tea{},
         computed_hash: 0
     }
@@ -33,7 +33,7 @@ slay complex_data_set_metadata(data ComplexData, key tea, value tea) ComplexData
 }
 
 fr fr Complex computation
-slay compute_hash(values []normie) normie {
+slay compute_hash(values normie[value]) normie {
     sus hash normie = 5381
     bestie i := 0; i < len(values); i = i + 1 {
         hash = ((hash << 5) + hash) + values[i]
@@ -63,8 +63,8 @@ slay complex_search(data ComplexData, target normie) lit {
 }
 
 fr fr Multi-level processing
-slay complex_transform(input []normie) []normie {
-    sus result []normie = []normie{}
+slay complex_transform(input normie[value]) normie[value]{
+    sus result normie[value] = normie[value]{}
     
     bestie i := 0; i < len(input); i = i + 1 {
         sus transformed normie = input[i] * input[i] + input[i]
@@ -102,8 +102,8 @@ slay complex_module_validate() lit {
     assert_false(not_found)
     
     fr fr Test transformation
-    sus input []normie = []normie{1, 2, 3}
-    sus output []normie = complex_transform(input)
+    sus input normie[value] = normie[value]{1, 2, 3}
+    sus output normie[value] = complex_transform(input)
     assert_true(len(output) == 3)
     
     fr fr Test string processing

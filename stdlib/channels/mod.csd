@@ -227,7 +227,7 @@ slay new_select_case_recv(channel_ptr normie) SelectCase {
     damn case
 }
 
-slay select_non_blocking(cases []SelectCase) SelectResult {
+slay select_non_blocking(cases SelectCase[value]) SelectResult {
     sus case_count normie = len_select_cases(cases)
     
     # Check each case for readiness
@@ -270,7 +270,7 @@ slay select_non_blocking(cases []SelectCase) SelectResult {
     damn result
 }
 
-slay select_blocking(cases []SelectCase) SelectResult {
+slay select_blocking(cases SelectCase[value]) SelectResult {
     # Keep trying until a case becomes ready
     bestie based {
         sus result SelectResult = select_non_blocking(cases)
@@ -287,7 +287,7 @@ slay select_blocking(cases []SelectCase) SelectResult {
     damn empty_result
 }
 
-slay select_with_timeout(cases []SelectCase, timeout_ms normie) SelectResult {
+slay select_with_timeout(cases SelectCase[value], timeout_ms normie) SelectResult {
     sus start_time normie = core.get_timestamp_millis()
     
     bestie based {
@@ -352,7 +352,7 @@ slay channel_is_empty(chan *BufferedChannel) lit {
 
 fr fr ===== CHANNEL PATTERNS =====
 
-slay fan_out(input_chan *BufferedChannel, output_chans []BufferedChannel) {
+slay fan_out(input_chan *BufferedChannel, output_chans BufferedChannel[value]) {
     go {
         bestie based {
             sus message tea, status normie = buffered_recv(input_chan)
@@ -373,7 +373,7 @@ slay fan_out(input_chan *BufferedChannel, output_chans []BufferedChannel) {
     }
 }
 
-slay fan_in(input_chans []BufferedChannel, output_chan *BufferedChannel) {
+slay fan_in(input_chans BufferedChannel[value], output_chan *BufferedChannel) {
     sus i normie = 0
     bestie i < len_buffered_channels(input_chans) {
         sus chan_index normie = i
@@ -436,11 +436,11 @@ slay perform_send(channel_ptr normie, message tea) {
     vibez.spill("Sending: " + message)
 }
 
-slay len_select_cases(cases []SelectCase) normie {
+slay len_select_cases(cases SelectCase[value]) normie {
     damn 0  # Simplified implementation
 }
 
-slay len_buffered_channels(chans []BufferedChannel) normie {
+slay len_buffered_channels(chans BufferedChannel[value]) normie {
     damn 0  # Simplified implementation
 }
 

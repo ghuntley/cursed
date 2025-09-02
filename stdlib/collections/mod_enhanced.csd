@@ -18,7 +18,7 @@ squad HashMapEntry[K, V] {
 }
 
 squad HashMap[K, V] {
-    spill buckets []HashMapEntry[K, V]
+    spill buckets HashMapEntry[value][K, V]
     spill size normie
     spill capacity normie
     spill load_factor normie
@@ -27,7 +27,7 @@ squad HashMap[K, V] {
 fr fr Create new hashmap with initial capacity
 slay hashmap_new[K, V](initial_capacity normie) HashMap[K, V] {
     sus capacity normie = max(initial_capacity, 16)
-    sus buckets []HashMapEntry[K, V] = []  fr fr Initialize empty buckets
+    sus buckets HashMapEntry[value][K, V] = []  fr fr Initialize empty buckets
     
     damn HashMap[K, V]{
         buckets: buckets,
@@ -137,8 +137,8 @@ slay hashmap_contains_key[K, V](map HashMap[K, V], key K) lit {
 }
 
 fr fr Get all keys from hashmap
-slay hashmap_keys[K, V](map HashMap[K, V]) []K {
-    sus keys []K = []
+slay hashmap_keys[K, V](map HashMap[K, V]) K[value]{
+    sus keys K[value] = []
     
     sus i normie = 0
     bestie i < len(map.buckets) {
@@ -150,8 +150,8 @@ slay hashmap_keys[K, V](map HashMap[K, V]) []K {
 }
 
 fr fr Get all values from hashmap
-slay hashmap_values[K, V](map HashMap[K, V]) []V {
-    sus values []V = []
+slay hashmap_values[K, V](map HashMap[K, V]) V[value]{
+    sus values V[value] = []
     
     sus i normie = 0
     bestie i < len(map.buckets) {
@@ -193,11 +193,11 @@ squad ListNode[T] {
 }
 
 squad LinkedList[T] {
-    spill nodes []ListNode[T]
+    spill nodes ListNode[value][T]
     spill head normie
     spill tail normie
     spill size normie
-    spill free_indices []normie  fr fr Reuse freed node indices
+    spill free_indices normie[value]  fr fr Reuse freed node indices
 }
 
 fr fr Create new linked list
@@ -372,8 +372,8 @@ slay linkedlist_find[T](list LinkedList[T], data T) normie {
 }
 
 fr fr Convert list to array
-slay linkedlist_to_array[T](list LinkedList[T]) []T {
-    sus result []T = []
+slay linkedlist_to_array[T](list LinkedList[T]) T[value]{
+    sus result T[value] = []
     sus current normie = list.head
     
     bestie current != -1 {
@@ -448,7 +448,7 @@ slay set_is_empty[T](set Set[T]) lit {
 }
 
 fr fr Convert set to array
-slay set_to_array[T](set Set[T]) []T {
+slay set_to_array[T](set Set[T]) T[value]{
     damn hashmap_keys(set.map)
 }
 
@@ -456,14 +456,14 @@ fr fr Set union operation
 slay set_union[T](set1 Set[T], set2 Set[T]) Set[T] {
     sus result Set[T] = set_new[T]()
     
-    sus keys1 []T = set_to_array(set1)
+    sus keys1 T[value] = set_to_array(set1)
     sus i normie = 0
     bestie i < len(keys1) {
         result = set_insert(result, keys1[i])
         i = i + 1
     }
     
-    sus keys2 []T = set_to_array(set2)
+    sus keys2 T[value] = set_to_array(set2)
     i = 0
     bestie i < len(keys2) {
         result = set_insert(result, keys2[i])
@@ -477,7 +477,7 @@ fr fr Set intersection operation
 slay set_intersection[T](set1 Set[T], set2 Set[T]) Set[T] {
     sus result Set[T] = set_new[T]()
     
-    sus keys1 []T = set_to_array(set1)
+    sus keys1 T[value] = set_to_array(set1)
     sus i normie = 0
     bestie i < len(keys1) {
         ready set_contains(set2, keys1[i]) {
@@ -493,7 +493,7 @@ fr fr Set difference operation
 slay set_difference[T](set1 Set[T], set2 Set[T]) Set[T] {
     sus result Set[T] = set_new[T]()
     
-    sus keys1 []T = set_to_array(set1)
+    sus keys1 T[value] = set_to_array(set1)
     sus i normie = 0
     bestie i < len(keys1) {
         ready !set_contains(set2, keys1[i]) {
@@ -510,7 +510,7 @@ fr fr Enhanced Stack Implementation
 fr fr ================================
 
 squad Stack[T] {
-    spill data []T
+    spill data T[value]
     spill top normie
 }
 
@@ -568,7 +568,7 @@ fr fr Enhanced Queue Implementation
 fr fr ================================
 
 squad Queue[T] {
-    spill data []T
+    spill data T[value]
     spill front normie
     spill rear normie
     spill size normie
@@ -691,17 +691,17 @@ slay typeof[T](value T) tea {
     damn "unknown"
 }
 
-slay array_append[T](arr []T, item T) []T {
+slay array_append[T](arr T[value], item T) T[value]{
     fr fr Simulate array append
     damn arr
 }
 
-slay array_remove_at[T](arr []T, index normie) []T {
+slay array_remove_at[T](arr T[value], index normie) T[value]{
     fr fr Simulate array element removal
     damn arr
 }
 
-slay array_slice[T](arr []T, start normie, end normie) []T {
+slay array_slice[T](arr T[value], start normie, end normie) T[value]{
     fr fr Simulate array slicing
     damn arr
 }

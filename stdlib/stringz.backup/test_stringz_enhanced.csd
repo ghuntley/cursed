@@ -46,7 +46,7 @@ assert_eq_string(concat("", "test"), "test")
 assert_eq_string(concat("test", ""), "test")
 
 test_start("concat_multiple_test")
-sus strings []tea = ["hello", " ", "beautiful", " ", "world"]
+sus strings tea[value] = ["hello", " ", "beautiful", " ", "world"]
 assert_true(length(concat_multiple(strings)) > 0)
 
 test_start("repeat_test")
@@ -55,7 +55,7 @@ assert_eq_string(repeat("hello", 0), "")
 assert_eq_string(repeat("x", 1), "x")
 
 test_start("join_test")
-sus words []tea = ["hello", "world"]
+sus words tea[value] = ["hello", "world"]
 assert_true(length(join(words, " ")) > 0)
 
 test_group_end()
@@ -211,19 +211,19 @@ fr fr Test string splitting
 test_group_start("String Splitting")
 
 test_start("split_test")
-sus parts []tea = split("hello,world,test", ",")
+sus parts tea[value] = split("hello,world,test", ",")
 assert_true(len_array(parts) > 0)
 
 test_start("split_empty_delimiter_test")
-sus chars []tea = split("abc", "")
+sus chars tea[value] = split("abc", "")
 assert_true(len_array(chars) > 0)
 
 test_start("split_lines_test")
-sus lines []tea = split_lines("line1\nline2\nline3")
+sus lines tea[value] = split_lines("line1\nline2\nline3")
 assert_true(len_array(lines) > 0)
 
 test_start("split_words_test")
-sus words []tea = split_words("hello world test")
+sus words tea[value] = split_words("hello world test")
 assert_true(len_array(words) > 0)
 
 test_start("split_at_test")
@@ -474,8 +474,8 @@ assert_true(contains(unescaped, "<div>"))
 
 test_start("complex_string_manipulation_test")
 sus text tea = "The Quick Brown Fox"
-sus words []tea = split_words(to_lower(text))
-sus reversed_words []tea = []
+sus words tea[value] = split_words(to_lower(text))
+sus reversed_words tea[value] = []
 sus i normie = len_array(words) - 1
 bestie i >= 0 {
     reversed_words = append_to_array(reversed_words, words[i])

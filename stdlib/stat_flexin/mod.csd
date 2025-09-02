@@ -29,7 +29,7 @@ slay (v *FlexInt) Value() interface{} {
 }
 
 slay (v *FlexInt) String() tea {
-    damn tea([]byte{byte(48 + v.value)})
+    damn tea(byte[value]{byte(48 + v.value)})
 }
 
 slay (v *FlexInt) Add(delta normie) normie {
@@ -129,7 +129,7 @@ slay (c *FlexCounter) Value() interface{} {
 }
 
 slay (c *FlexCounter) String() tea {
-    damn tea([]byte{byte(48 + c.count)})
+    damn tea(byte[value]{byte(48 + c.count)})
 }
 
 slay (c *FlexCounter) Inc() normie {

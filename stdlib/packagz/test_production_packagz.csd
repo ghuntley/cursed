@@ -152,7 +152,7 @@ slay test_advanced_dependency_resolution(config TestConfig) lit {
     sus resolver DependencyResolver = init_dependency_resolver(registry)
     
     # Test complex dependency scenario
-    sus root_packages []tea = ["web-framework", "database-orm", "auth-system"]
+    sus root_packages tea[value] = ["web-framework", "database-orm", "auth-system"]
     sus result ResolutionResult = resolve_dependencies_advanced(resolver, root_packages)
     
     # Verify resolution succeeded
@@ -459,7 +459,7 @@ slay test_production_checksum_algorithms(config TestConfig) lit {
     sus test_data tea = "This is test data for checksum verification. It contains various characters: !@#$%^&*()[]{}|\\:;\"'<>,.?/"
     
     # Test all supported algorithms
-    sus algorithms []ChecksumAlgorithm = [
+    sus algorithms ChecksumAlgorithm[value] = [
         ChecksumAlgorithm.CRC32,
         ChecksumAlgorithm.CRC32C,
         ChecksumAlgorithm.MD5,
@@ -470,7 +470,7 @@ slay test_production_checksum_algorithms(config TestConfig) lit {
         ChecksumAlgorithm.BLAKE2s
     ]
     
-    sus results []ChecksumResult = []
+    sus results ChecksumResult[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(algorithms); i = i + 1) {
         sus algorithm ChecksumAlgorithm = algorithms[i]
@@ -504,7 +504,7 @@ slay test_production_checksum_algorithms(config TestConfig) lit {
     }
     
     # Test checksum normalization
-    sus test_checksums []tea = [
+    sus test_checksums tea[value] = [
         "abcdef1234567890",
         "ABCDEF1234567890",
         "sha256:abcdef1234567890",
@@ -626,7 +626,7 @@ slay test_complete_package_operations(config TestConfig) lit {
     
     # Test package search
     vibez.spill("  Testing package search...")
-    sus search_results []PackageMetadata = search_packages(pkg_manager, "test")
+    sus search_results PackageMetadata[value] = search_packages(pkg_manager, "test")
     
     # Note: This will likely fail in isolated test but demonstrates the API
     ready (arrayz.len(search_results) == 0) {
@@ -680,7 +680,7 @@ slay test_complete_package_operations(config TestConfig) lit {
     }
     
     # Test dependency name extraction
-    sus test_deps []PackageDependency = [
+    sus test_deps PackageDependency[value] = [
         PackageDependency {
             name: "dep1",
             version_req: "^1.0.0",
@@ -695,7 +695,7 @@ slay test_complete_package_operations(config TestConfig) lit {
         }
     ]
     
-    sus dep_names []tea = get_dependency_names(test_deps)
+    sus dep_names tea[value] = get_dependency_names(test_deps)
     ready (arrayz.len(dep_names) != 2) {
         vibez.spill("Error: Dependency name extraction failed")
         damn cap

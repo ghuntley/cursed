@@ -95,14 +95,14 @@ slay hashmap_resize<K, V>(map *HashMap<K, V>) {
 
 fr fr ArrayList implementation with dynamic resizing
 be_like ArrayList<T> = vibe {
-    data []T
+    data T[value]
     size normie
     capacity normie
 }
 
 slay new_arraylist<T>(initial_capacity normie) *ArrayList<T> {
     damn &ArrayList<T>{
-        data: make([]T, initial_capacity),
+        data: make(T[value], initial_capacity),
         size: 0,
         capacity: initial_capacity,
     }
@@ -126,7 +126,7 @@ slay arraylist_get<T>(list *ArrayList<T>, index normie) (T, lit) {
 
 slay arraylist_resize<T>(list *ArrayList<T>) {
     sus new_capacity := list.capacity * 2
-    sus new_data := make([]T, new_capacity)
+    sus new_data := make(T[value], new_capacity)
     
     bestie i := 0; i < list.size; i++ {
         new_data[i] = list.data[i]
@@ -445,13 +445,13 @@ slay avl_insert_node<T>(node *TreeNode<T>, data T) *TreeNode<T> { fr fr Standard
 
 fr fr Priority Queue implementation using heap
 be_like PriorityQueue<T> = vibe {
-    heap []T
+    heap T[value]
     size normie
 }
 
 slay new_priority_queue<T>() *PriorityQueue<T> {
     damn &PriorityQueue<T>{
-        heap: make([]T, 1),
+        heap: make(T[value], 1),
         size: 0,
     }
 }
@@ -471,7 +471,7 @@ slay pq_right_child(index normie) normie {
 slay pq_insert<T>(pq *PriorityQueue<T>, item T) {
     pq.size++
     ayo (pq.size >= len(pq.heap)) { fr fr Resize heap
-        sus new_heap := make([]T, len(pq.heap) * 2)
+        sus new_heap := make(T[value], len(pq.heap) * 2)
         bestie i := 0; i < len(pq.heap); i++ {
             new_heap[i] = pq.heap[i]
         }

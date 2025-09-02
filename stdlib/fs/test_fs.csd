@@ -132,7 +132,7 @@ assert_true(write_file(file2, "Content 2"))
 assert_true(create_dir(subdir))
 
 fr fr Test directory listing
-sus entries []DirEntry = list_dir(list_dir)
+sus entries DirEntry[value] = list_dir(list_dir)
 assert_true(len(entries) >= 3)
 
 fr fr Clean up

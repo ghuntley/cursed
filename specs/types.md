@@ -40,8 +40,8 @@ CURSED provides several ways to construct types from existing types:
 
 | Type Category | Syntax | Description |
 |---------------|--------|-------------|
-| Array       | `[n]T`   | Array of n elements of type T |
-| Slice       | `[]T`    | Dynamic array of elements of type T |
+| Array       | `T[n]`   | Array of n elements of type T |
+| Slice       | `T[value]` | Dynamic array of elements of type T with indexable values |
 | Map         | `map[K]V` | Map from keys of type K to values of type V |
 | Struct      | `squad`  | Collection of fields |
 | Interface   | `collab` | Set of method signatures |
@@ -91,7 +91,7 @@ Types are declared using the `be_like` keyword:
 be_like Person squad {
     name tea
     age normie
-    vibes []tea
+    vibes tea[value]
 }
 
 be_like Greeter collab {
@@ -163,7 +163,7 @@ CURSED supports generic types using square brackets:
 
 ```
 be_like Stack[T] squad {
-    items []T
+    items T[value]
     size normie
 }
 

@@ -167,7 +167,7 @@ sus round_result3 meal = round_float(-2.6)
 assert_true(round_result3 == -3.0)
 
 fr fr Statistical Function Tests
-sus values []meal = []meal{1.0, 2.0, 3.0, 4.0, 5.0}
+sus values meal[value] = meal[value]{1.0, 2.0, 3.0, 4.0, 5.0}
 sus mean_result meal = mean(values, 5)
 assert_true(mean_result > 2.9 && mean_result < 3.1)
 
@@ -181,7 +181,7 @@ sus median_result meal = median(values, 5)
 assert_true(median_result > 2.9 && median_result < 3.1)
 
 fr fr Numerical Analysis Tests
-sus f_vals []meal = []meal{1.0, 4.0, 9.0, 16.0, 25.0}
+sus f_vals meal[value] = meal[value]{1.0, 4.0, 9.0, 16.0, 25.0}
 sus integration_result meal = integrate_simpson(f_vals, 5, 1.0)
 assert_true(integration_result > 0.0)
 

@@ -9,7 +9,7 @@ fr fr Tests handling of large datasets, extensive loops, and memory management
 fr fr Expected: Successful processing of large amounts of data
 
 slay generate_large_array(size normie) {
-    sus result []normie = []
+    sus result normie[value] = []
     sus i normie = 0
     
     periodt i < size {

@@ -283,9 +283,9 @@ fr fr Parse time from string
 slay parse(layout tea, value tea) Time {
     fr fr Simplified parsing for common formats
     bestie layout == "2006-01-02 15:04:05" && value.length() == 19 {
-        sus parts []tea = value.split(" ")
-        sus date_parts []tea = parts[0].split("-")
-        sus time_parts []tea = parts[1].split(":")
+        sus parts tea[value] = value.split(" ")
+        sus date_parts tea[value] = parts[0].split("-")
+        sus time_parts tea[value] = parts[1].split(":")
         
         sus year normie = date_parts[0].(normie)
         sus month normie = date_parts[1].(normie)

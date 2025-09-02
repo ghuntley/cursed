@@ -24,7 +24,7 @@ test_case("Secure Random Number Generation") {
     crypto_secure_seed(0x11111111, 0x22222222, 0x33333333)
     
     fr fr Generate multiple random values
-    sus values [10]normie = [0; 10]
+    sus values normie[10] = [0; 10]
     bestie (sus i normie = 0; i < 10; i++) {
         values[i] = crypto_secure_random_u32()
     }
@@ -38,7 +38,7 @@ test_case("Secure Random Number Generation") {
 }
 
 test_case("Secure Random Bytes Generation") {
-    sus buffer [32]drip = [0; 32]
+    sus buffer drip[32] = [0; 32]
     
     crypto_secure_random_bytes(buffer.ptr(), 32)
     
@@ -65,14 +65,14 @@ test_case("Secure Random Range") {
 
 fr fr === ChaCha20 Encryption Tests ===
 test_case("ChaCha20 Basic Encryption") {
-    sus key [32]drip = [
+    sus key drip[32] = [
         0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
         0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
         0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
         0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f
     ]
     
-    sus nonce [12]drip = [
+    sus nonce drip[12] = [
         0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x4a,
         0x00, 0x00, 0x00, 0x00
     ]
@@ -89,8 +89,8 @@ test_case("ChaCha20 Basic Encryption") {
 }
 
 test_case("ChaCha20 Empty Data") {
-    sus key [32]drip = [0x42; 32]
-    sus nonce [12]drip = [0x00; 12]
+    sus key drip[32] = [0x42; 32]
+    sus nonce drip[12] = [0x00; 12]
     sus empty_data tea = ""
     
     sus encrypted tea = chacha20_encrypt(empty_data, key, nonce)
@@ -101,8 +101,8 @@ test_case("ChaCha20 Empty Data") {
 }
 
 test_case("ChaCha20 Large Data") {
-    sus key [32]drip = [0x55; 32]
-    sus nonce [12]drip = [0xaa; 12]
+    sus key drip[32] = [0x55; 32]
+    sus nonce drip[12] = [0xaa; 12]
     
     fr fr Create large plaintext
     sus large_text tea = ""
@@ -119,7 +119,7 @@ test_case("ChaCha20 Large Data") {
 
 fr fr === Poly1305 MAC Tests ===
 test_case("Poly1305 MAC Generation") {
-    sus key [32]drip = [
+    sus key drip[32] = [
         0x85, 0xd6, 0xbe, 0x78, 0x57, 0x55, 0x6d, 0x33,
         0x7f, 0x44, 0x52, 0xfe, 0x42, 0xd5, 0x06, 0xa8,
         0x01, 0x03, 0x80, 0x8a, 0xfb, 0x0d, 0xb2, 0xfd,
@@ -127,7 +127,7 @@ test_case("Poly1305 MAC Generation") {
     ]
     
     sus message tea = "Cryptographic Message Authentication"
-    sus mac [16]drip = poly1305_generate_mac(message, key)
+    sus mac drip[16] = poly1305_generate_mac(message, key)
     
     fr fr MAC should not be all zeros
     sus non_zero_bytes normie = 0
@@ -140,10 +140,10 @@ test_case("Poly1305 MAC Generation") {
 }
 
 test_case("Poly1305 MAC Verification") {
-    sus key [32]drip = [0x77; 32]
+    sus key drip[32] = [0x77; 32]
     sus message tea = "Test message for MAC verification"
     
-    sus mac [16]drip = poly1305_generate_mac(message, key)
+    sus mac drip[16] = poly1305_generate_mac(message, key)
     
     fr fr Verify correct MAC
     sus is_valid lit = poly1305_verify_mac(message, key, mac)
@@ -156,12 +156,12 @@ test_case("Poly1305 MAC Verification") {
 }
 
 test_case("Poly1305 Different Keys Different MACs") {
-    sus key1 [32]drip = [0x11; 32]
-    sus key2 [32]drip = [0x22; 32]
+    sus key1 drip[32] = [0x11; 32]
+    sus key2 drip[32] = [0x22; 32]
     sus message tea = "Same message, different keys"
     
-    sus mac1 [16]drip = poly1305_generate_mac(message, key1)
-    sus mac2 [16]drip = poly1305_generate_mac(message, key2)
+    sus mac1 drip[16] = poly1305_generate_mac(message, key1)
+    sus mac2 drip[16] = poly1305_generate_mac(message, key2)
     
     fr fr MACs should be different with different keys
     sus are_different lit = cap
@@ -177,7 +177,7 @@ test_case("Poly1305 Different Keys Different MACs") {
 fr fr === SHA-512 Hash Tests ===
 test_case("SHA-512 Basic Hashing") {
     sus input tea = "The quick brown fox jumps over the lazy dog"
-    sus hash [64]drip = sha512_hash(input)
+    sus hash drip[64] = sha512_hash(input)
     
     fr fr Check hash is not all zeros
     sus non_zero_bytes normie = 0
@@ -192,8 +192,8 @@ test_case("SHA-512 Basic Hashing") {
 test_case("SHA-512 Deterministic") {
     sus input tea = "Deterministic test input"
     
-    sus hash1 [64]drip = sha512_hash(input)
-    sus hash2 [64]drip = sha512_hash(input)
+    sus hash1 drip[64] = sha512_hash(input)
+    sus hash2 drip[64] = sha512_hash(input)
     
     fr fr Should be identical
     bestie (sus i normie = 0; i < 64; i++) {
@@ -205,8 +205,8 @@ test_case("SHA-512 Different Inputs") {
     sus input1 tea = "Input 1"
     sus input2 tea = "Input 2"
     
-    sus hash1 [64]drip = sha512_hash(input1)
-    sus hash2 [64]drip = sha512_hash(input2)
+    sus hash1 drip[64] = sha512_hash(input1)
+    sus hash2 drip[64] = sha512_hash(input2)
     
     fr fr Hashes should be different
     sus are_different lit = cap
@@ -221,7 +221,7 @@ test_case("SHA-512 Different Inputs") {
 
 test_case("SHA-512 Empty Input") {
     sus empty_input tea = ""
-    sus hash [64]drip = sha512_hash(empty_input)
+    sus hash drip[64] = sha512_hash(empty_input)
     
     fr fr Should produce a valid hash even for empty input
     sus is_all_zeros lit = based
@@ -237,7 +237,7 @@ test_case("SHA-512 Empty Input") {
 fr fr === BLAKE2b Hash Tests ===
 test_case("BLAKE2b Basic Hashing") {
     sus input tea = "BLAKE2b test input"
-    sus hash [64]drip = blake2b_hash(input)
+    sus hash drip[64] = blake2b_hash(input)
     
     fr fr Verify non-trivial hash
     sus non_zero_count normie = 0
@@ -250,11 +250,11 @@ test_case("BLAKE2b Basic Hashing") {
 }
 
 test_case("BLAKE2b Keyed Hash") {
-    sus key [32]drip = [0xab; 32]
+    sus key drip[32] = [0xab; 32]
     sus input tea = "Keyed BLAKE2b test"
     
-    sus hash1 [64]drip = blake2b_hash_keyed(input, key)
-    sus hash2 [64]drip = blake2b_hash(input)
+    sus hash1 drip[64] = blake2b_hash_keyed(input, key)
+    sus hash2 drip[64] = blake2b_hash(input)
     
     fr fr Keyed and unkeyed hashes should be different
     sus are_different lit = cap
@@ -269,8 +269,8 @@ test_case("BLAKE2b Keyed Hash") {
 
 fr fr === X25519 Key Exchange Tests ===
 test_case("X25519 Key Generation") {
-    sus private_key [32]drip = [0; 32]
-    sus public_key [32]drip = [0; 32]
+    sus private_key drip[32] = [0; 32]
+    sus public_key drip[32] = [0; 32]
     
     x25519_generate_keypair(private_key, public_key)
     
@@ -292,16 +292,16 @@ test_case("X25519 Key Generation") {
 }
 
 test_case("X25519 Key Exchange") {
-    sus alice_private [32]drip = [0; 32]
-    sus alice_public [32]drip = [0; 32]
-    sus bob_private [32]drip = [0; 32]
-    sus bob_public [32]drip = [0; 32]
+    sus alice_private drip[32] = [0; 32]
+    sus alice_public drip[32] = [0; 32]
+    sus bob_private drip[32] = [0; 32]
+    sus bob_public drip[32] = [0; 32]
     
     x25519_generate_keypair(alice_private, alice_public)
     x25519_generate_keypair(bob_private, bob_public)
     
-    sus shared_secret1 [32]drip = [0; 32]
-    sus shared_secret2 [32]drip = [0; 32]
+    sus shared_secret1 drip[32] = [0; 32]
+    sus shared_secret2 drip[32] = [0; 32]
     
     x25519_compute_shared_secret(alice_private, bob_public, shared_secret1)
     x25519_compute_shared_secret(bob_private, alice_public, shared_secret2)
@@ -314,13 +314,13 @@ test_case("X25519 Key Exchange") {
 
 fr fr === Ed25519 Signature Tests ===
 test_case("Ed25519 Signature Generation") {
-    sus private_key [32]drip = [0; 32]
-    sus public_key [32]drip = [0; 32]
+    sus private_key drip[32] = [0; 32]
+    sus public_key drip[32] = [0; 32]
     
     ed25519_generate_keypair(private_key, public_key)
     
     sus message tea = "Message to be signed"
-    sus signature [64]drip = ed25519_sign(message, private_key)
+    sus signature drip[64] = ed25519_sign(message, private_key)
     
     fr fr Signature should not be all zeros
     sus non_zero_bytes normie = 0
@@ -333,13 +333,13 @@ test_case("Ed25519 Signature Generation") {
 }
 
 test_case("Ed25519 Signature Verification") {
-    sus private_key [32]drip = [0; 32]
-    sus public_key [32]drip = [0; 32]
+    sus private_key drip[32] = [0; 32]
+    sus public_key drip[32] = [0; 32]
     
     ed25519_generate_keypair(private_key, public_key)
     
     sus message tea = "Authentic message"
-    sus signature [64]drip = ed25519_sign(message, private_key)
+    sus signature drip[64] = ed25519_sign(message, private_key)
     
     fr fr Valid signature should verify
     sus is_valid lit = ed25519_verify(message, signature, public_key)
@@ -354,10 +354,10 @@ test_case("Ed25519 Signature Verification") {
 fr fr === PBKDF2 Key Derivation Tests ===
 test_case("PBKDF2 Key Derivation") {
     sus password tea = "secure_password_123"
-    sus salt [16]drip = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
+    sus salt drip[16] = [0x01, 0x23, 0x45, 0x67, 0x89, 0xab, 0xcd, 0xef,
                         0xfe, 0xdc, 0xba, 0x98, 0x76, 0x54, 0x32, 0x10]
     sus iterations normie = 10000
-    sus derived_key [32]drip = [0; 32]
+    sus derived_key drip[32] = [0; 32]
     
     pbkdf2_derive_key(password, salt, iterations, derived_key)
     
@@ -374,11 +374,11 @@ test_case("PBKDF2 Key Derivation") {
 test_case("PBKDF2 Different Passwords") {
     sus password1 tea = "password1"
     sus password2 tea = "password2"
-    sus salt [8]drip = [0x12; 8]
+    sus salt drip[8] = [0x12; 8]
     sus iterations normie = 1000
     
-    sus key1 [32]drip = [0; 32]
-    sus key2 [32]drip = [0; 32]
+    sus key1 drip[32] = [0; 32]
+    sus key2 drip[32] = [0; 32]
     
     pbkdf2_derive_key(password1, salt, iterations, key1)
     pbkdf2_derive_key(password2, salt, iterations, key2)
@@ -396,9 +396,9 @@ test_case("PBKDF2 Different Passwords") {
 
 fr fr === Constant Time Operations Tests ===
 test_case("Constant Time Comparison") {
-    sus data1 [16]drip = [0x42; 16]
-    sus data2 [16]drip = [0x42; 16]
-    sus data3 [16]drip = [0x43; 16]
+    sus data1 drip[16] = [0x42; 16]
+    sus data2 drip[16] = [0x42; 16]
+    sus data3 drip[16] = [0x43; 16]
     
     fr fr Equal arrays should return true
     sus equal lit = crypto_constant_time_equal(data1, data2, 16)
@@ -410,7 +410,7 @@ test_case("Constant Time Comparison") {
 }
 
 test_case("Constant Time Memory Clear") {
-    sus sensitive_data [32]drip = [0xff; 32]
+    sus sensitive_data drip[32] = [0xff; 32]
     
     crypto_secure_zero_memory(sensitive_data, 32)
     
@@ -422,11 +422,11 @@ test_case("Constant Time Memory Clear") {
 
 fr fr === Security Validation Tests ===
 test_case("Entropy Quality Check") {
-    sus buffer [256]drip = [0; 256]
+    sus buffer drip[256] = [0; 256]
     crypto_secure_random_bytes(buffer.ptr(), 256)
     
     fr fr Count unique bytes
-    sus byte_counts [256]normie = [0; 256]
+    sus byte_counts normie[256] = [0; 256]
     bestie (sus i normie = 0; i < 256; i++) {
         byte_counts[buffer[i]] = byte_counts[buffer[i]] + 1
     }
@@ -444,9 +444,9 @@ test_case("Entropy Quality Check") {
 
 test_case("Timing Attack Resistance") {
     fr fr This test ensures constant-time operations don't leak timing info
-    sus correct_mac [16]drip = [0x11; 16]
-    sus wrong_mac1 [16]drip = [0x22; 16] 
-    sus wrong_mac2 [16]drip = [0x11; 15] + [0x33]  fr fr Differs in last byte
+    sus correct_mac drip[16] = [0x11; 16]
+    sus wrong_mac1 drip[16] = [0x22; 16] 
+    sus wrong_mac2 drip[16] = [0x11; 15] + [0x33]  fr fr Differs in last byte
     
     fr fr Both comparisons should take similar time (we can't measure here,
     fr fr but the implementation should use constant-time comparison)

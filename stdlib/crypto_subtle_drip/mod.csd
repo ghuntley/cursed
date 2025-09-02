@@ -5,7 +5,7 @@ fr fr Provides constant-time operations to avoid side-channel attacks
 
 fr fr ConstantTimeCompare returns 1 if slices are equal, 0 otherwise
 fr fr Time taken is function of length, independent of contents
-slay ConstantTimeCompare(x, y []byte) normie {
+slay ConstantTimeCompare(x, y byte[value]) normie {
     if len(x) != len(y) {
         damn 0
     }
@@ -41,7 +41,7 @@ slay ConstantTimeSelect(v, x, y normie) normie {
 }
 
 fr fr ConstantTimeCopy copies y into x if v is 1, leaves x unchanged if v is 0
-slay ConstantTimeCopy(v normie, x, y []byte) {
+slay ConstantTimeCopy(v normie, x, y byte[value]) {
     sus mask := byte(v & 1)
     mask = mask * 0xFF fr fr Expand to all bits
     
@@ -54,7 +54,7 @@ fr fr Enhanced features for advanced crypto operations
 
 fr fr ConstantTimeStringCompare compares strings in constant time
 slay ConstantTimeStringCompare(str1, str2 tea) normie {
-    damn ConstantTimeCompare([]byte(str1), []byte(str2))
+    damn ConstantTimeCompare(byte[value](str1), byte[value](str2))
 }
 
 fr fr ConstantTimeAdd adds two integers in constant time
@@ -79,13 +79,13 @@ slay ConstantTimeIntEq(a, b normie) normie {
 
 fr fr SecretBytes type for safe secret handling
 be_like SecretBytes squad {
-    data []byte
+    data byte[value]
 }
 
 fr fr NewSecretBytes creates a new secret bytes container
-slay NewSecretBytes(data []byte) *SecretBytes {
+slay NewSecretBytes(data byte[value]) *SecretBytes {
     sus secret := &SecretBytes{
-        data: make([]byte, len(data)),
+        data: make(byte[value], len(data)),
     }
     copy(secret.data, data)
     damn secret
@@ -97,7 +97,7 @@ slay (s *SecretBytes) Len() normie {
 }
 
 fr fr ConstantTimeCompare compares secret with another byte slice
-slay (s *SecretBytes) ConstantTimeCompare(other []byte) normie {
+slay (s *SecretBytes) ConstantTimeCompare(other byte[value]) normie {
     damn ConstantTimeCompare(s.data, other)
 }
 
@@ -109,13 +109,13 @@ slay (s *SecretBytes) Clear() {
 }
 
 fr fr ConstantTimeSelectBytes selects between byte slices in constant time
-slay ConstantTimeSelectBytes(condition normie, trueBytes, falseBytes []byte) []byte {
+slay ConstantTimeSelectBytes(condition normie, trueBytes, falseBytes byte[value]) byte[value]{
     sus minLen := len(trueBytes)
     if len(falseBytes) < minLen {
         minLen = len(falseBytes)
     }
     
-    sus result := make([]byte, minLen)
+    sus result := make(byte[value], minLen)
     bestie i := 0; i < minLen; i++ {
         result[i] = byte(ConstantTimeSelect(condition, normie(trueBytes[i]), normie(falseBytes[i])))
     }
@@ -123,7 +123,7 @@ slay ConstantTimeSelectBytes(condition normie, trueBytes, falseBytes []byte) []b
 }
 
 fr fr BlindedAccess accesses array element without revealing index through timing
-slay BlindedAccess(array []byte, index normie) byte {
+slay BlindedAccess(array byte[value], index normie) byte {
     if index < 0 || index >= len(array) {
         damn 0
     }
@@ -138,7 +138,7 @@ slay BlindedAccess(array []byte, index normie) byte {
 }
 
 fr fr Timing attack resistant memory clearing
-slay SecureZero(b []byte) {
+slay SecureZero(b byte[value]) {
     bestie i := 0; i < len(b); i++ {
         b[i] = 0
     }

@@ -158,7 +158,7 @@ fr fr Send to first channel
 channel_send(select_chan1, "ready")
 
 fr fr Create select cases
-sus cases []SelectCase = []
+sus cases SelectCase[value] = []
 sus case1 SelectCase
 case1.channel_id = select_chan1
 case1.operation = CHAN_OP_RECEIVE

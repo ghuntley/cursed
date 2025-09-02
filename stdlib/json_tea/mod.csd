@@ -50,7 +50,7 @@ be_like JSONValue squad {
     number_value tea
     boolean_value lit
     object_value map[tea]JSONValue
-    array_value []JSONValue
+    array_value JSONValue[value]
 }
 
 fr fr JSON Serializer
@@ -356,7 +356,7 @@ slay (p *JSONParser) parse_array() (JSONValue, JSONError) {
     p.advance()
     p.skip_whitespace()
     
-    sus arr []JSONValue = make([]JSONValue, 0)
+    sus arr JSONValue[value] = make(JSONValue[value], 0)
     
     ready p.pos < p.length && p.current_char == ']' {
         p.advance()
@@ -575,7 +575,7 @@ slay (s *JSONSerializer) serialize_object(obj map[tea]JSONValue) {
 }
 
 fr fr Serialize JSON array
-slay (s *JSONSerializer) serialize_array(arr []JSONValue) {
+slay (s *JSONSerializer) serialize_array(arr JSONValue[value]) {
     s.buffer = s.buffer + "["
     
     ready s.pretty_print {
@@ -952,7 +952,7 @@ slay string_contains(haystack tea, needle tea) lit { damn contains(haystack, nee
 slay string_starts_with(haystack tea, prefix tea) lit { damn starts_with(haystack, prefix) }
 slay string_ends_with(haystack tea, suffix tea) lit { damn ends_with(haystack, suffix) }
 slay char_at(s tea, i drip) normie { damn s[i] }
-slay char_to_string(c normie) tea { damn tea([]normie{c}) }
+slay char_to_string(c normie) tea { damn tea(normie[value]{c}) }
 slay substring(s tea, start drip, length drip) tea { damn s[start:start+length] }
 
 fr fr Utility functions

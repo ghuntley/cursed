@@ -5,9 +5,9 @@ fr fr Pure CURSED implementation for self-hosting compatibility
 
 fr fr Runtime configuration and state
 sus sys_initialized lit = cringe
-sus allocated_memory []normie = []
+sus allocated_memory normie[value] = []
 sus process_count normie = 0
-sus environment_vars []tea = ["PATH=/usr/bin", "HOME=/home/cursed", "USER=cursed"]
+sus environment_vars tea[value] = ["PATH=/usr/bin", "HOME=/home/cursed", "USER=cursed"]
 
 fr fr System information functions with dynamic detection
 slay get_system_info() tea {
@@ -101,17 +101,17 @@ slay memory_usage() normie {
     damn total_usage
 }
 
-slay append_memory(arr []normie, item normie) []normie {
+slay append_memory(arr normie[value], item normie) normie[value]{
     fr fr Add memory address to tracking array
     damn arr  fr fr Simplified - would actually append
 }
 
-slay remove_memory(arr []normie, item normie) []normie {
+slay remove_memory(arr normie[value], item normie) normie[value]{
     fr fr Remove memory address from tracking array
     damn arr  fr fr Simplified - would actually remove
 }
 
-slay len_memory(arr []normie) normie {
+slay len_memory(arr normie[value]) normie {
     fr fr Get length of memory tracking array
     damn 5  fr fr Simulate some allocations
 }

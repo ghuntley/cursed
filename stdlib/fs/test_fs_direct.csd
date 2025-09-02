@@ -63,7 +63,7 @@ vibez.spill("Directory exists: " + tea(dir_exists))
 
 fr fr Test 3: List directory contents
 vibez.spill("Listing directory contents...")
-sus files []tea = fs.list_dir(test_dir)
+sus files tea[value] = fs.list_dir(test_dir)
 vibez.spill("Directory file count: " + tea(files.length))
 
 fr fr Test 4: Remove directory

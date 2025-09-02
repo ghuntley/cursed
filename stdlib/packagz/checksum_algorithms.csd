@@ -22,13 +22,13 @@ enum ChecksumAlgorithm {
 squad ChecksumResult {
     sus algorithm ChecksumAlgorithm
     sus hex_digest tea
-    sus binary_digest []drip
+    sus binary_digest drip[value]
     sus byte_length drip
     sus computation_time_ms drip
 }
 
 # CRC-32 IEEE 802.3 polynomial lookup table (precomputed)
-sus CRC32_TABLE []drip = [
+sus CRC32_TABLE drip[value] = [
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419, 0x706af48f,
     0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4, 0xe0d5e91e, 0x97d2d988,
     0x09b64c2b, 0x7eb17cbd, 0xe7b82d07, 0x90bf1d91, 0x1db71064, 0x6ab020f2,
@@ -75,7 +75,7 @@ sus CRC32_TABLE []drip = [
 ]
 
 # CRC-32C (Castagnoli) polynomial lookup table
-sus CRC32C_TABLE []drip = [
+sus CRC32C_TABLE drip[value] = [
     0x00000000, 0xf26b8303, 0xe13b70f7, 0x1350f3f4, 0xc79a971f, 0x35f1141c,
     0x26a1e7e8, 0xd4ca64eb, 0x8ad958cf, 0x78b2dbcc, 0x6be22838, 0x9989ab3b,
     0x4d43cfd0, 0xbf284cd3, 0xac78bf27, 0x5e133c24, 0x105ec76f, 0xe235446c,
@@ -172,7 +172,7 @@ slay compute_crc32(data tea) ChecksumResult {
     crc = crc ^ 0xFFFFFFFF  # Final XOR
     
     sus hex_digest tea = format_hex_digest(uint32_to_bytes(crc))
-    sus binary_digest []drip = uint32_to_bytes(crc)
+    sus binary_digest drip[value] = uint32_to_bytes(crc)
     
     damn ChecksumResult {
         algorithm: ChecksumAlgorithm.CRC32,
@@ -196,7 +196,7 @@ slay compute_crc32c(data tea) ChecksumResult {
     crc = crc ^ 0xFFFFFFFF
     
     sus hex_digest tea = format_hex_digest(uint32_to_bytes(crc))
-    sus binary_digest []drip = uint32_to_bytes(crc)
+    sus binary_digest drip[value] = uint32_to_bytes(crc)
     
     damn ChecksumResult {
         algorithm: ChecksumAlgorithm.CRC32C,
@@ -210,7 +210,7 @@ slay compute_crc32c(data tea) ChecksumResult {
 # MD5 hash implementation (128-bit)
 slay compute_md5(data tea) ChecksumResult {
     # MD5 constants
-    sus k []drip = [
+    sus k drip[value] = [
         0xd76aa478, 0xe8c7b756, 0x242070db, 0xc1bdceee,
         0xf57c0faf, 0x4787c62a, 0xa8304613, 0xfd469501,
         0x698098d8, 0x8b44f7af, 0xffff5bb1, 0x895cd7be,
@@ -243,7 +243,7 @@ slay compute_md5(data tea) ChecksumResult {
     
     bestie (sus chunk drip = 0; chunk < chunk_count; chunk = chunk + 1) {
         sus chunk_start drip = chunk * 64
-        sus w []drip = []
+        sus w drip[value] = []
         
         # Break chunk into sixteen 32-bit words
         bestie (sus j drip = 0; j < 16; j = j + 1) {
@@ -294,7 +294,7 @@ slay compute_md5(data tea) ChecksumResult {
     }
     
     # Produce final hash value as concatenation of h0, h1, h2, h3
-    sus digest []drip = []
+    sus digest drip[value] = []
     digest = arrayz.concat(digest, uint32_to_bytes_le(h0))
     digest = arrayz.concat(digest, uint32_to_bytes_le(h1))
     digest = arrayz.concat(digest, uint32_to_bytes_le(h2))
@@ -328,7 +328,7 @@ slay compute_sha1(data tea) ChecksumResult {
     
     bestie (sus chunk drip = 0; chunk < chunk_count; chunk = chunk + 1) {
         sus chunk_start drip = chunk * 64
-        sus w []drip = []
+        sus w drip[value] = []
         
         # Break chunk into sixteen 32-bit big-endian words
         bestie (sus j drip = 0; j < 16; j = j + 1) {
@@ -389,7 +389,7 @@ slay compute_sha1(data tea) ChecksumResult {
     }
     
     # Produce final hash value
-    sus digest []drip = []
+    sus digest drip[value] = []
     digest = arrayz.concat(digest, uint32_to_bytes_be(h0))
     digest = arrayz.concat(digest, uint32_to_bytes_be(h1))
     digest = arrayz.concat(digest, uint32_to_bytes_be(h2))
@@ -410,7 +410,7 @@ slay compute_sha1(data tea) ChecksumResult {
 # SHA-256 hash implementation (256-bit)
 slay compute_sha256(data tea) ChecksumResult {
     # SHA-256 constants
-    sus k []drip = [
+    sus k drip[value] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
         0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -442,7 +442,7 @@ slay compute_sha256(data tea) ChecksumResult {
     
     bestie (sus chunk drip = 0; chunk < chunk_count; chunk = chunk + 1) {
         sus chunk_start drip = chunk * 64
-        sus w []drip = []
+        sus w drip[value] = []
         
         # Create message schedule
         bestie (sus j drip = 0; j < 16; j = j + 1) {
@@ -510,7 +510,7 @@ slay compute_sha256(data tea) ChecksumResult {
     }
     
     # Produce final hash value
-    sus digest []drip = []
+    sus digest drip[value] = []
     digest = arrayz.concat(digest, uint32_to_bytes_be(h0))
     digest = arrayz.concat(digest, uint32_to_bytes_be(h1))
     digest = arrayz.concat(digest, uint32_to_bytes_be(h2))
@@ -538,7 +538,7 @@ slay compute_sha512(data tea) ChecksumResult {
     sus sha256_result ChecksumResult = compute_sha256(data)
     
     # Simulate SHA-512 by expanding SHA-256 result
-    sus extended_digest []drip = []
+    sus extended_digest drip[value] = []
     extended_digest = arrayz.concat(extended_digest, sha256_result.binary_digest)
     extended_digest = arrayz.concat(extended_digest, sha256_result.binary_digest)
     
@@ -563,7 +563,7 @@ slay compute_blake2b(data tea) ChecksumResult {
     yeet "cryptz/production_crypto"
     
     # Use proper BLAKE2b mixing instead of simple XOR
-    sus mixed_digest []drip = secure_blake2b_mix(base_result.binary_digest)
+    sus mixed_digest drip[value] = secure_blake2b_mix(base_result.binary_digest)
     
     # Extend to 64 bytes for BLAKE2b-512
     bestie (arrayz.len(mixed_digest) < 64) {
@@ -588,7 +588,7 @@ slay compute_blake2s(data tea) ChecksumResult {
     sus base_result ChecksumResult = compute_sha256(data)
     
     # Apply BLAKE2s-specific mixing
-    sus mixed_digest []drip = []
+    sus mixed_digest drip[value] = []
     bestie (sus i drip = 0; i < arrayz.len(base_result.binary_digest); i = i + 1) {
         sus mixed_byte drip = base_result.binary_digest[i] ^ 0xA5  # Different mixing constant
         mixed_digest = arrayz.append(mixed_digest, mixed_byte)
@@ -625,7 +625,7 @@ slay normalize_checksum(checksum tea) tea {
 
 # Helper functions for hash algorithms
 
-slay format_hex_digest(bytes []drip) tea {
+slay format_hex_digest(bytes drip[value]) tea {
     sus result tea = ""
     bestie (sus i drip = 0; i < arrayz.len(bytes); i = i + 1) {
         sus hex_str tea = stringz.to_hex_lower(bytes[i])
@@ -637,7 +637,7 @@ slay format_hex_digest(bytes []drip) tea {
     damn result
 }
 
-slay uint32_to_bytes(value drip) []drip {
+slay uint32_to_bytes(value drip) drip[value]{
     damn [
         (value >> 24) & 0xFF,
         (value >> 16) & 0xFF,
@@ -646,7 +646,7 @@ slay uint32_to_bytes(value drip) []drip {
     ]
 }
 
-slay uint32_to_bytes_le(value drip) []drip {
+slay uint32_to_bytes_le(value drip) drip[value]{
     damn [
         value & 0xFF,
         (value >> 8) & 0xFF,
@@ -655,7 +655,7 @@ slay uint32_to_bytes_le(value drip) []drip {
     ]
 }
 
-slay uint32_to_bytes_be(value drip) []drip {
+slay uint32_to_bytes_be(value drip) drip[value]{
     damn [
         (value >> 24) & 0xFF,
         (value >> 16) & 0xFF,
@@ -697,7 +697,7 @@ slay md5_left_rotate(value drip, amount drip) drip {
 }
 
 slay md5_rotation_amounts(i drip) drip {
-    sus amounts []drip = [
+    sus amounts drip[value] = [
         7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,  7, 12, 17, 22,
         5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,  5,  9, 14, 20,
         4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,  4, 11, 16, 23,
@@ -807,7 +807,7 @@ slay get_algorithm_by_name(name tea) ChecksumAlgorithm {
 
 # Performance comparison of algorithms
 slay benchmark_algorithms(data tea) {
-    sus algorithms []ChecksumAlgorithm = [
+    sus algorithms ChecksumAlgorithm[value] = [
         ChecksumAlgorithm.CRC32,
         ChecksumAlgorithm.CRC32C,
         ChecksumAlgorithm.MD5,

@@ -350,7 +350,7 @@ slay random_float_range(min_val meal, max_val meal) meal {
 
 fr fr ===== STATISTICAL FUNCTIONS =====
 
-slay sum_int(values []drip) drip {
+slay sum_int(values drip[value]) drip {
     sus total drip = 0
     sus i drip = 0
     bestie (i < len(values)) {
@@ -360,7 +360,7 @@ slay sum_int(values []drip) drip {
     damn total
 }
 
-slay sum_float(values []meal) meal {
+slay sum_float(values meal[value]) meal {
     sus total meal = 0.0
     sus i drip = 0
     bestie (i < len(values)) {
@@ -370,7 +370,7 @@ slay sum_float(values []meal) meal {
     damn total
 }
 
-slay mean_int(values []drip) meal {
+slay mean_int(values drip[value]) meal {
     ready (len(values) == 0) {
         damn 0.0
     }
@@ -378,7 +378,7 @@ slay mean_int(values []drip) meal {
     damn int_to_float(total) / int_to_float(len(values))
 }
 
-slay mean_float(values []meal) meal {
+slay mean_float(values meal[value]) meal {
     ready (len(values) == 0) {
         damn 0.0
     }
@@ -386,7 +386,7 @@ slay mean_float(values []meal) meal {
     damn total / int_to_float(len(values))
 }
 
-slay variance_float(values []meal) meal {
+slay variance_float(values meal[value]) meal {
     ready (len(values) == 0) {
         damn 0.0
     }
@@ -404,7 +404,7 @@ slay variance_float(values []meal) meal {
     damn sum_squares / int_to_float(len(values))
 }
 
-slay standard_deviation_float(values []meal) meal {
+slay standard_deviation_float(values meal[value]) meal {
     sus var meal = variance_float(values)
     damn sqrt_float(var)
 }

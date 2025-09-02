@@ -11,9 +11,9 @@ fr fr ===== MUTUAL TLS DATA STRUCTURES =====
 
 squad MutualTLSConfig {
     sus client_cert X509Certificate
-    sus client_private_key []drip
-    sus client_cert_chain []X509Certificate
-    sus trusted_client_cas []X509Certificate
+    sus client_private_key drip[value]
+    sus client_cert_chain X509Certificate[value]
+    sus trusted_client_cas X509Certificate[value]
     sus require_client_cert lit
     sus verify_client_cert lit
     sus client_cert_verification_callback ClientCertVerificationCallback
@@ -35,17 +35,17 @@ squad ClientAuthResult {
     sus certificate_serial tea
     sus certificate_fingerprint tea
     sus trust_level drip
-    sus validation_errors []tea
-    sus validation_warnings []tea
+    sus validation_errors tea[value]
+    sus validation_warnings tea[value]
 }
 
 fr fr ===== MUTUAL TLS CONFIGURATION =====
 
 slay create_mutual_tls_config(
     client_cert X509Certificate,
-    client_private_key []drip,
-    client_cert_chain []X509Certificate,
-    trusted_client_cas []X509Certificate
+    client_private_key drip[value],
+    client_cert_chain X509Certificate[value],
+    trusted_client_cas X509Certificate[value]
 ) MutualTLSConfig {
     damn MutualTLSConfig{
         client_cert: client_cert,
@@ -71,8 +71,8 @@ slay create_default_client_cert_callback() ClientCertVerificationCallback {
 
 slay create_lenient_mutual_tls_config(
     client_cert X509Certificate,
-    client_private_key []drip,
-    trusted_client_cas []X509Certificate
+    client_private_key drip[value],
+    trusted_client_cas X509Certificate[value]
 ) MutualTLSConfig {
     sus config MutualTLSConfig = create_mutual_tls_config(client_cert, client_private_key, [client_cert], trusted_client_cas)
     config.require_client_cert = cringe
@@ -141,8 +141,8 @@ slay perform_mutual_tls_handshake(
 slay send_client_certificate(
     context TLSHandshakeContext,
     client_cert X509Certificate,
-    client_private_key []drip,
-    cert_chain []X509Certificate
+    client_private_key drip[value],
+    cert_chain X509Certificate[value]
 ) yikes<ClientAuthResult> {
     fr fr Validate client certificate before sending
     sus cert_valid lit = validate_client_certificate(client_cert, client_private_key)
@@ -155,7 +155,7 @@ slay send_client_certificate(
     
     fr fr Sign handshake data with client private key
     sus handshake_data tea = get_handshake_data_for_signing(context)
-    sus signature []drip = sign_handshake_data(handshake_data, client_private_key) fam {
+    sus signature drip[value] = sign_handshake_data(handshake_data, client_private_key) fam {
         when _ -> yikes "SIGNATURE_FAILED: Unable to sign handshake data with client certificate"
     }
     
@@ -182,7 +182,7 @@ slay send_client_certificate(
 
 slay verify_client_certificate_server_side(
     client_cert X509Certificate,
-    client_cert_chain []X509Certificate,
+    client_cert_chain X509Certificate[value],
     mtls_config MutualTLSConfig
 ) yikes<ClientAuthResult> {
     fr fr Server-side client certificate verification
@@ -250,7 +250,7 @@ slay extract_client_identity(client_cert X509Certificate) tea {
     fr fr Extract identity from certificate subject or SAN
     
     fr fr Try to extract from subject CN
-    sus subject_parts []tea = stringz.split(client_cert.subject, ",")
+    sus subject_parts tea[value] = stringz.split(client_cert.subject, ",")
     sus i drip = 0
     bestie (i < arrayz.length(subject_parts)) {
         sus part tea = stringz.trim(subject_parts[i])
@@ -269,7 +269,7 @@ slay extract_client_identity(client_cert X509Certificate) tea {
     damn "cert:" + client_cert.serial_number
 }
 
-slay calculate_client_trust_level(client_cert X509Certificate, cert_chain []X509Certificate) drip {
+slay calculate_client_trust_level(client_cert X509Certificate, cert_chain X509Certificate[value]) drip {
     fr fr Calculate trust level based on certificate properties
     sus trust_level drip = 50  fr fr Base trust level
     
@@ -301,7 +301,7 @@ slay calculate_client_trust_level(client_cert X509Certificate, cert_chain []X509
 slay authorize_client_access(
     client_identity tea,
     requested_resource tea,
-    access_control_list []tea
+    access_control_list tea[value]
 ) lit {
     fr fr Simple ACL-based authorization
     
@@ -333,7 +333,7 @@ slay authorize_client_access(
 
 fr fr ===== CERTIFICATE VALIDATION HELPERS =====
 
-slay validate_client_certificate(client_cert X509Certificate, private_key []drip) lit {
+slay validate_client_certificate(client_cert X509Certificate, private_key drip[value]) lit {
     fr fr Basic client certificate validation
     
     fr fr Check if certificate and private key match
@@ -355,7 +355,7 @@ slay validate_client_certificate(client_cert X509Certificate, private_key []drip
     damn based
 }
 
-slay validate_client_certificate_chain(cert_chain []X509Certificate, trusted_cas []X509Certificate) lit {
+slay validate_client_certificate_chain(cert_chain X509Certificate[value], trusted_cas X509Certificate[value]) lit {
     fr fr Validate client certificate chain against trusted CAs
     
     ready (arrayz.length(cert_chain) == 0) {
@@ -422,19 +422,19 @@ slay has_client_auth_key_usage(cert X509Certificate) lit {
 
 fr fr ===== CRYPTOGRAPHIC OPERATIONS =====
 
-slay verify_certificate_key_pair(cert X509Certificate, private_key []drip) lit {
+slay verify_certificate_key_pair(cert X509Certificate, private_key drip[value]) lit {
     fr fr Verify that certificate and private key match
     
     fr fr Create test data to sign
     sus test_data tea = "mutual_tls_key_verification_test"
     
     fr fr Sign with private key
-    sus signature []drip = cryptz.ed25519_sign(test_data, private_key) fam {
+    sus signature drip[value] = cryptz.ed25519_sign(test_data, private_key) fam {
         when _ -> damn cringe
     }
     
     fr fr Verify with certificate public key
-    sus public_key []drip = extract_public_key_from_cert(cert)
+    sus public_key drip[value] = extract_public_key_from_cert(cert)
     sus verification_result lit = cryptz.ed25519_verify(test_data, signature, public_key)
     
     damn verification_result
@@ -444,11 +444,11 @@ slay verify_certificate_signature(cert X509Certificate, issuer_cert X509Certific
     fr fr Verify certificate signature against issuer
     
     fr fr Extract signature data from certificate
-    sus cert_signature []drip = extract_certificate_signature(cert)
+    sus cert_signature drip[value] = extract_certificate_signature(cert)
     sus cert_tbs_data tea = extract_tbs_certificate_data(cert)
     
     fr fr Extract public key from issuer certificate
-    sus issuer_public_key []drip = extract_public_key_from_cert(issuer_cert)
+    sus issuer_public_key drip[value] = extract_public_key_from_cert(issuer_cert)
     
     fr fr Verify signature
     sus verification_result lit = verify_signature_with_key(cert_tbs_data, cert_signature, issuer_public_key)
@@ -456,7 +456,7 @@ slay verify_certificate_signature(cert X509Certificate, issuer_cert X509Certific
     damn verification_result
 }
 
-slay sign_handshake_data(handshake_data tea, private_key []drip) yikes<[]drip> {
+slay sign_handshake_data(handshake_data tea, private_key drip[value]) yikes<drip[value]> {
     fr fr Sign handshake data for client certificate authentication
     
     ready (arrayz.length(private_key) == 0) {
@@ -464,10 +464,10 @@ slay sign_handshake_data(handshake_data tea, private_key []drip) yikes<[]drip> {
     }
     
     fr fr Hash the handshake data
-    sus handshake_hash []drip = cryptz.sha256_hash(handshake_data)
+    sus handshake_hash drip[value] = cryptz.sha256_hash(handshake_data)
     
     fr fr Sign the hash
-    sus signature []drip = cryptz.ed25519_sign(stringz.from_bytes(handshake_hash), private_key) fam {
+    sus signature drip[value] = cryptz.ed25519_sign(stringz.from_bytes(handshake_hash), private_key) fam {
         when _ -> yikes "SIGNATURE_FAILED: Unable to sign handshake data"
     }
     
@@ -476,14 +476,14 @@ slay sign_handshake_data(handshake_data tea, private_key []drip) yikes<[]drip> {
 
 slay calculate_certificate_fingerprint(cert X509Certificate) tea {
     fr fr Calculate SHA-256 fingerprint of certificate
-    sus cert_der_data []drip = cert.cert_data  fr fr Assume DER encoded
-    sus fingerprint_hash []drip = cryptz.sha256_hash(stringz.from_bytes(cert_der_data))
+    sus cert_der_data drip[value] = cert.cert_data  fr fr Assume DER encoded
+    sus fingerprint_hash drip[value] = cryptz.sha256_hash(stringz.from_bytes(cert_der_data))
     damn cryptz.bytes_to_hex(fingerprint_hash)
 }
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay create_client_certificate_message(cert_chain []X509Certificate) tea {
+slay create_client_certificate_message(cert_chain X509Certificate[value]) tea {
     fr fr Create TLS client certificate message
     sus message tea = "CLIENT_CERTIFICATE_MESSAGE:"
     
@@ -512,7 +512,7 @@ slay send_tls_message(connection_id tea, message tea) yikes<lit> {
     damn based
 }
 
-slay send_tls_signature(connection_id tea, signature []drip) yikes<lit> {
+slay send_tls_signature(connection_id tea, signature drip[value]) yikes<lit> {
     fr fr Send TLS signature message (mock implementation)
     ready (arrayz.length(signature) == 0) {
         yikes "EMPTY_SIGNATURE: Cannot send empty signature"
@@ -546,11 +546,11 @@ slay create_default_handshake_context() TLSHandshakeContext {
 }
 
 fr fr Mock implementations for certificate operations
-slay extract_public_key_from_cert(cert X509Certificate) []drip {
+slay extract_public_key_from_cert(cert X509Certificate) drip[value]{
     damn cryptz.generate_random_bytes(32)  fr fr Mock public key
 }
 
-slay extract_certificate_signature(cert X509Certificate) []drip {
+slay extract_certificate_signature(cert X509Certificate) drip[value]{
     damn cryptz.generate_random_bytes(64)  fr fr Mock signature
 }
 
@@ -558,7 +558,7 @@ slay extract_tbs_certificate_data(cert X509Certificate) tea {
     damn "tbs_cert_data:" + cert.subject + ":" + cert.serial_number
 }
 
-slay verify_signature_with_key(data tea, signature []drip, public_key []drip) lit {
+slay verify_signature_with_key(data tea, signature drip[value], public_key drip[value]) lit {
     damn based  fr fr Mock verification - always succeeds
 }
 

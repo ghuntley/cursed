@@ -23,7 +23,7 @@ slay test_secp256k1_key_generation() {
     sus private_key_hex tea = "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
     sus expected_public_key tea = "0250863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B2352"
     
-    sus private_key []drip = hex_to_bytes(private_key_hex)
+    sus private_key drip[value] = hex_to_bytes(private_key_hex)
     sus keypair KeyPair = secp256k1_generate_keypair_from_private(private_key)
     sus public_key_hex tea = bytes_to_hex(keypair.public_key)
     
@@ -42,8 +42,8 @@ slay test_ecdsa_signing() {
     sus expected_r tea = "EFD48B2AACB6A8FD1140DD9CD45E81D69D2C877B56AAF991C34D0EA84EAF3716"
     sus expected_s tea = "F7CB1C942D657C41D436C7A1B6E29F65F3E900DBB9AFF4064DC4AB2F843ACDA8"
     
-    sus private_key []drip = hex_to_bytes(private_key_hex)
-    sus message_hash []drip = hex_to_bytes(message_hash_hex)
+    sus private_key drip[value] = hex_to_bytes(private_key_hex)
+    sus message_hash drip[value] = hex_to_bytes(message_hash_hex)
     
     sus signature ECDSASignature = ecdsa_sign_production(message_hash, private_key)
     sus r_hex tea = bytes_to_hex(bigint_to_bytes_32(signature.r))
@@ -62,7 +62,7 @@ slay test_bitcoin_address_generation() {
     sus public_key_hex tea = "0250863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B2352"
     sus expected_address tea = "1PMycacnJaSqwwJqjawXBEHNA3pwA5fAa3"
     
-    sus public_key []drip = hex_to_bytes(public_key_hex)
+    sus public_key drip[value] = hex_to_bytes(public_key_hex)
     sus address tea = bitcoin_address_from_public_key(public_key, "mainnet")
     
     testz.assert_eq_string(address, expected_address)
@@ -77,7 +77,7 @@ slay test_ethereum_address_generation() {
     sus public_key_hex tea = "3A443D8381A6798A70C6FF9304BFCC5E4CDFF8DE5C5ADE2C3AAC7A1D64EFBCB8B82A76D6C5B9E2F2FE6F1B0E4A3D8E5A6F1E4C2B9D8F6E4A3C1B9F8E6D4A2C8"
     sus expected_address tea = "0x5aaeb6053f3e94c9b9a09f33669435e7ef1beaed"
     
-    sus public_key []drip = hex_to_bytes(public_key_hex)
+    sus public_key drip[value] = hex_to_bytes(public_key_hex)
     sus address tea = ethereum_address_from_public_key(public_key)
     
     testz.assert_eq_string(stringz.to_lower(address), expected_address)
@@ -91,7 +91,7 @@ slay test_sha256_vectors() {
     testz.test_start("SHA-256 test vectors")
     
     # NIST test vectors
-    sus vectors []TestVector = [
+    sus vectors TestVector[value] = [
         TestVector{
             name: "empty_string",
             input: "",
@@ -114,7 +114,7 @@ slay test_sha256_vectors() {
     
     bestie i := 0; i < len(vectors); i++ {
         sus vector TestVector = vectors[i]
-        sus hash []drip = sha256_hash(vector.input)
+        sus hash drip[value] = sha256_hash(vector.input)
         sus hash_hex tea = stringz.to_upper(bytes_to_hex(hash))
         
         testz.assert_eq_string(hash_hex, vector.expected)
@@ -128,7 +128,7 @@ slay test_ripemd160_vectors() {
     testz.test_start("RIPEMD-160 test vectors")
     
     # Standard test vectors
-    sus vectors []TestVector = [
+    sus vectors TestVector[value] = [
         TestVector{
             name: "empty",
             input: "",
@@ -145,7 +145,7 @@ slay test_ripemd160_vectors() {
     
     bestie i := 0; i < len(vectors); i++ {
         sus vector TestVector = vectors[i]
-        sus hash []drip = ripemd160_hash_production(stringz.bytes(vector.input))
+        sus hash drip[value] = ripemd160_hash_production(stringz.bytes(vector.input))
         sus hash_hex tea = stringz.to_upper(bytes_to_hex(hash))
         
         testz.assert_eq_string(hash_hex, vector.expected)
@@ -159,7 +159,7 @@ slay test_keccak256_vectors() {
     testz.test_start("Keccak-256 test vectors")
     
     # Ethereum standard test vectors
-    sus vectors []TestVector = [
+    sus vectors TestVector[value] = [
         TestVector{
             name: "empty",
             input: "",
@@ -176,7 +176,7 @@ slay test_keccak256_vectors() {
     
     bestie i := 0; i < len(vectors); i++ {
         sus vector TestVector = vectors[i]
-        sus hash []drip = keccak256_hash(stringz.bytes(vector.input))
+        sus hash drip[value] = keccak256_hash(stringz.bytes(vector.input))
         sus hash_hex tea = stringz.to_upper(bytes_to_hex(hash))
         
         testz.assert_eq_string(hash_hex, vector.expected)
@@ -197,9 +197,9 @@ slay test_merkle_tree_bitcoin() {
     
     sus expected_root tea = "7DDB9A4E38E2AD4D5F3E8DDA7E6A2B8E9F3C1A5D7E0B4C8F2A6B9E3D1C8F5A2B"
     
-    sus tx1_bytes []drip = hex_to_bytes(tx1_hex)
-    sus tx2_bytes []drip = hex_to_bytes(tx2_hex)
-    sus transactions [][]drip = [tx1_bytes, tx2_bytes]
+    sus tx1_bytes drip[value] = hex_to_bytes(tx1_hex)
+    sus tx2_bytes drip[value] = hex_to_bytes(tx2_hex)
+    sus transactions drip[value][value] = [tx1_bytes, tx2_bytes]
     
     sus merkle_tree ProductionMerkleTree = build_production_merkle_tree(transactions)
     sus root_hex tea = stringz.to_upper(bytes_to_hex(merkle_tree.root))
@@ -215,7 +215,7 @@ slay test_merkle_proof_verification() {
     testz.test_start("Merkle proof verification")
     
     # Create test transactions
-    sus transactions [][]drip = [
+    sus transactions drip[value][value] = [
         hex_to_bytes("A1B2C3D4E5F6"),
         hex_to_bytes("B2C3D4E5F6A1"),
         hex_to_bytes("C3D4E5F6A1B2"),
@@ -226,8 +226,8 @@ slay test_merkle_proof_verification() {
     
     # Test proof for each transaction
     bestie i := 0; i < len(transactions); i++ {
-        sus leaf_hash []drip = sha256_hash(stringz.from_bytes(sha256_hash(stringz.from_bytes(transactions[i]))))
-        sus proof [][]drip = generate_merkle_proof(merkle_tree, i)
+        sus leaf_hash drip[value] = sha256_hash(stringz.from_bytes(sha256_hash(stringz.from_bytes(transactions[i]))))
+        sus proof drip[value][value] = generate_merkle_proof(merkle_tree, i)
         sus is_valid lit = verify_merkle_proof(leaf_hash, proof, merkle_tree.root, i)
         
         testz.assert_eq_bool(is_valid, based)
@@ -272,7 +272,7 @@ slay test_hd_wallet_derivation() {
 slay test_base58_encoding() {
     testz.test_start("Base58 encoding")
     
-    sus vectors []TestVector = [
+    sus vectors TestVector[value] = [
         TestVector{
             name: "hello_world",
             input: "48656C6C6F20576F726C64",  # "Hello World" in hex
@@ -289,7 +289,7 @@ slay test_base58_encoding() {
     
     bestie i := 0; i < len(vectors); i++ {
         sus vector TestVector = vectors[i]
-        sus input_bytes []drip = hex_to_bytes(vector.input)
+        sus input_bytes drip[value] = hex_to_bytes(vector.input)
         sus encoded tea = base58_encode_bitcoin(input_bytes)
         
         testz.assert_eq_string(encoded, vector.expected)
@@ -306,17 +306,17 @@ slay test_bigint_operations() {
     
     # Test hex conversion
     sus hex_input tea = "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEFFFFFC2F"
-    sus bigint []drip = hex_to_bigint(hex_input)
+    sus bigint drip[value] = hex_to_bigint(hex_input)
     sus hex_output tea = stringz.to_upper(bigint_to_hex(bigint))
     
     testz.assert_eq_string(hex_output, hex_input)
     vibez.spill("✓ Hex to bigint conversion")
     
     # Test arithmetic operations
-    sus a []drip = hex_to_bigint("123456789ABCDEF")
-    sus b []drip = hex_to_bigint("FEDCBA987654321")
+    sus a drip[value] = hex_to_bigint("123456789ABCDEF")
+    sus b drip[value] = hex_to_bigint("FEDCBA987654321")
     
-    sus sum []drip = add_bigint(a, b)
+    sus sum drip[value] = add_bigint(a, b)
     sus expected_sum tea = "111111111111111110"
     sus sum_hex tea = stringz.to_upper(bigint_to_hex(sum))
     
@@ -324,7 +324,7 @@ slay test_bigint_operations() {
     vibez.spill("✓ Big integer addition")
     
     # Test modular arithmetic
-    sus mod_result []drip = mod_bigint(a, [1000])
+    sus mod_result drip[value] = mod_bigint(a, [1000])
     sus expected_mod drip = bigint_to_int(a) % 1000
     
     testz.assert_eq_int(bigint_to_int(mod_result), expected_mod)
@@ -342,8 +342,8 @@ slay test_transaction_signing() {
     sus private_key_hex tea = "18E14A7B6A307F426A94F8114701E7C8E774E7F9A47E2C2035DB29A206321725"
     sus tx_hash_hex tea = "0100000001ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890ABCDEF1234567890"
     
-    sus private_key []drip = hex_to_bytes(private_key_hex)
-    sus tx_hash []drip = hex_to_bytes(tx_hash_hex)
+    sus private_key drip[value] = hex_to_bytes(private_key_hex)
+    sus tx_hash drip[value] = hex_to_bytes(tx_hash_hex)
     
     sus signature ECDSASignature = ecdsa_sign_production(tx_hash, private_key)
     
@@ -362,7 +362,7 @@ slay test_difficulty_calculation() {
     testz.test_start("Difficulty target calculation")
     
     sus difficulty drip = 1000
-    sus target []drip = calculate_difficulty_target(difficulty)
+    sus target drip[value] = calculate_difficulty_target(difficulty)
     
     # Verify target is reasonable
     sus target_bits drip = bit_length(target)
@@ -411,8 +411,8 @@ slay benchmark_crypto_operations() {
     sus start_time drip = system_time()
     
     # Benchmark ECDSA signing
-    sus private_key []drip = generate_private_key()
-    sus message_hash []drip = generate_random_bytes(32)
+    sus private_key drip[value] = generate_private_key()
+    sus message_hash drip[value] = generate_random_bytes(32)
     
     bestie i := 0; i < iterations; i++ {
         sus signature ECDSASignature = ecdsa_sign_production(message_hash, private_key)
@@ -428,7 +428,7 @@ slay benchmark_crypto_operations() {
     sus test_data tea = "The quick brown fox jumps over the lazy dog"
     
     bestie i := 0; i < iterations; i++ {
-        sus hash []drip = sha256_hash(test_data)
+        sus hash drip[value] = sha256_hash(test_data)
     }
     
     sus hash_time drip = system_time() - start_time
@@ -440,9 +440,9 @@ slay benchmark_crypto_operations() {
 }
 
 # Helper functions for generating test data
-slay secp256k1_generate_keypair_from_private(private_key []drip) KeyPair {
+slay secp256k1_generate_keypair_from_private(private_key drip[value]) KeyPair {
     sus public_point EllipticPoint = scalar_mult(private_key, secp256k1_generator())
-    sus public_key []drip = point_to_compressed_bytes(public_point)
+    sus public_key drip[value] = point_to_compressed_bytes(public_point)
     
     damn KeyPair{
         algorithm: "secp256k1",

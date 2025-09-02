@@ -18,7 +18,7 @@ assert_bool(stringz.contains(cert_pem, "-----END CERTIFICATE-----"))
 vibez.spill("✓ Certificate PEM has correct header/footer")
 
 fr fr Test 2: Certificate contains base64 encoded data
-sus lines []tea = stringz.split(cert_pem, "\n")
+sus lines tea[value] = stringz.split(cert_pem, "\n")
 sus has_base64_data lit = nocap
 
 bestie i := 0; i < len(lines); i++ {
@@ -81,10 +81,10 @@ sus parsed_cert X509Certificate = parse_pem_certificate(valid_cert_pem) fam {
 fr fr ===== TLS Handshake Security Tests =====
 
 fr fr Test 6: TLS handshake uses secure cipher suites only
-sus secure_ciphers []tea = get_supported_cipher_suites()
+sus secure_ciphers tea[value] = get_supported_cipher_suites()
 
 fr fr Check that weak ciphers are not included
-sus weak_ciphers []tea = ["RC4", "DES", "NULL", "MD5", "SHA1-only"]
+sus weak_ciphers tea[value] = ["RC4", "DES", "NULL", "MD5", "SHA1-only"]
 sus has_weak_cipher lit = nocap
 
 bestie i := 0; i < len(secure_ciphers); i++ {
@@ -104,7 +104,7 @@ assert_eq_bool(has_weak_cipher, nocap)
 vibez.spill("✓ No weak cipher suites in supported list")
 
 fr fr Test 7: Certificate chain validation
-sus cert_chain []tea = [cert_pem, cert_pem2]
+sus cert_chain tea[value] = [cert_pem, cert_pem2]
 sus chain_valid lit = validate_certificate_chain(cert_chain)
 
 ready chain_valid {
@@ -116,7 +116,7 @@ ready chain_valid {
 fr fr ===== Security Protocol Tests =====
 
 fr fr Test 8: TLS version restrictions (only TLS 1.2+ allowed)
-sus supported_versions []tea = get_supported_tls_versions()
+sus supported_versions tea[value] = get_supported_tls_versions()
 sus has_weak_version lit = nocap
 
 bestie i := 0; i < len(supported_versions); i++ {

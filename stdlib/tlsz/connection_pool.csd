@@ -31,9 +31,9 @@ squad TLSConnectionPool {
 squad HostConnectionPool {
     sus hostname tea
     sus port drip
-    sus active_connections []PooledTLSConnection
-    sus idle_connections []PooledTLSConnection
-    sus pending_requests []ConnectionRequest
+    sus active_connections PooledTLSConnection[value]
+    sus idle_connections PooledTLSConnection[value]
+    sus pending_requests ConnectionRequest[value]
     sus max_connections drip
     sus current_connection_count drip
     sus host_stats HostStatistics
@@ -400,14 +400,14 @@ slay cleanup_expired_connections(pool TLSConnectionPool) TLSConnectionPool {
     sus current_time drip = timez.current_timestamp()
     sus cleanup_count drip = 0
     
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]
         sus host_pool HostConnectionPool = mapz.get(pool.pools, pool_key)
         
         fr fr Clean up idle connections
-        sus cleaned_idle []PooledTLSConnection = []
+        sus cleaned_idle PooledTLSConnection[value] = []
         sus j drip = 0
         bestie (j < arrayz.length(host_pool.idle_connections)) {
             sus connection PooledTLSConnection = host_pool.idle_connections[j]
@@ -426,7 +426,7 @@ slay cleanup_expired_connections(pool TLSConnectionPool) TLSConnectionPool {
         host_pool.idle_connections = cleaned_idle
         
         fr fr Clean up unhealthy active connections
-        sus cleaned_active []PooledTLSConnection = []
+        sus cleaned_active PooledTLSConnection[value] = []
         sus k drip = 0
         bestie (k < arrayz.length(host_pool.active_connections)) {
             sus connection PooledTLSConnection = host_pool.active_connections[k]
@@ -465,7 +465,7 @@ slay perform_health_checks(pool TLSConnectionPool) TLSConnectionPool {
     
     sus current_time drip = timez.current_timestamp()
     
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]
@@ -528,7 +528,7 @@ slay evict_least_recently_used(pool TLSConnectionPool) lit {
     sus target_pool_key tea = ""
     sus found_target lit = cringe
     
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]
@@ -566,7 +566,7 @@ slay evict_least_used_connection(pool TLSConnectionPool) lit {
     sus target_pool_key tea = ""
     sus found_target lit = cringe
     
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]
@@ -746,10 +746,10 @@ slay try_get_idle_connection(host_pool HostConnectionPool) yikes<PooledTLSConnec
     damn best_connection
 }
 
-slay remove_connection_from_list(connections []PooledTLSConnection, connection_id tea) []PooledTLSConnection {
+slay remove_connection_from_list(connections PooledTLSConnection[value], connection_id tea) PooledTLSConnection[value]{
     fr fr Remove connection from list by ID
     
-    sus filtered []PooledTLSConnection = []
+    sus filtered PooledTLSConnection[value] = []
     sus i drip = 0
     bestie (i < arrayz.length(connections)) {
         ready (connections[i].connection_id != connection_id) {
@@ -778,7 +778,7 @@ slay extract_connection_metadata(tls_context TLSHandshakeContext) ConnectionMeta
 slay calculate_cert_fingerprint(cert X509Certificate) tea {
     fr fr Calculate SHA-256 fingerprint of certificate
     sus cert_data tea = cert.subject + cert.serial_number
-    sus hash []drip = cryptz.sha256_hash(cert_data)
+    sus hash drip[value] = cryptz.sha256_hash(cert_data)
     damn cryptz.bytes_to_hex(hash)
 }
 
@@ -845,7 +845,7 @@ slay get_pool_statistics(pool TLSConnectionPool) PoolStatistics {
     sus connection_count drip = 0
     sus current_time drip = timez.current_timestamp()
     
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]
@@ -894,7 +894,7 @@ slay generate_pool_report(pool TLSConnectionPool) tea {
     
     fr fr Add per-host statistics
     report = report + "\n=== Per-Host Statistics ===\n"
-    sus pool_keys []tea = mapz.keys(pool.pools)
+    sus pool_keys tea[value] = mapz.keys(pool.pools)
     sus i drip = 0
     bestie (i < arrayz.length(pool_keys)) {
         sus pool_key tea = pool_keys[i]

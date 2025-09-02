@@ -21,7 +21,7 @@ squad StackFrame {
     spill file_name tea
     spill line_number normie
     spill instruction_pointer normie
-    spill local_variables []VariableInfo
+    spill local_variables VariableInfo[value]
 }
 
 squad VariableInfo {
@@ -69,11 +69,11 @@ sus debug_config DebugConfig = DebugConfig{
     verbose_logging: cap
 }
 
-sus call_stack []StackFrame = []
-sus profiler_data []ProfilerResult = []
-sus active_breakpoints []Breakpoint = []
+sus call_stack StackFrame[value] = []
+sus profiler_data ProfilerResult[value] = []
+sus active_breakpoints Breakpoint[value] = []
 sus breakpoint_id_counter normie = 1
-sus debug_log_buffer []tea = []
+sus debug_log_buffer tea[value] = []
 
 fr fr ===== CORE DEBUG FUNCTIONS =====
 
@@ -207,7 +207,7 @@ slay pop_stack_frame() lit {
     damn based
 }
 
-slay get_stack_trace() []StackFrame {
+slay get_stack_trace() StackFrame[value]{
     damn call_stack
 }
 
@@ -372,7 +372,7 @@ slay end_profiling(function_name tea, execution_time_ns normie) lit {
     damn cap
 }
 
-slay get_profiler_results() []ProfilerResult {
+slay get_profiler_results() ProfilerResult[value]{
     damn profiler_data
 }
 
@@ -655,7 +655,7 @@ slay format_hex(value normie) tea {
     damn vibez.spillstr("%X", value)
 }
 
-slay get_debug_log() []tea {
+slay get_debug_log() tea[value]{
     damn debug_log_buffer
 }
 

@@ -123,7 +123,7 @@ slay directory_exists(path tea) lit {
     damn runtime_directory_exists_safe(path)
 }
 
-slay list_directory(path tea) []tea {
+slay list_directory(path tea) tea[value]{
     lowkey path == cringe {
         damn []
     }
@@ -240,7 +240,7 @@ slay runtime_directory_exists_safe(path tea) lit {
     }
 }
 
-slay runtime_list_directory_safe(path tea) []tea {
+slay runtime_list_directory_safe(path tea) tea[value]{
     yikes result := runtime_list_directory(path) 
     damn result fam {
         when _ -> damn []
@@ -286,7 +286,7 @@ outer slay runtime_file_exists(filename tea) yikes<lit>
 outer slay runtime_file_size(filename tea) yikes<normie>
 outer slay runtime_create_directory(path tea) yikes<lit>
 outer slay runtime_directory_exists(path tea) yikes<lit>
-outer slay runtime_list_directory(path tea) yikes<[]tea>
+outer slay runtime_list_directory(path tea) yikes<tea[value]>
 outer slay runtime_read_line() yikes<tea>
 outer slay runtime_int_to_string(value normie) yikes<tea>
 outer slay runtime_float_to_string(value drip) yikes<tea>

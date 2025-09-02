@@ -250,8 +250,8 @@ slay ip_to_string(ip IPAddr) tea {
 }
 
 fr fr DNS resolution
-slay resolve_hostname(hostname tea) []tea {
-    sus addresses []tea
+slay resolve_hostname(hostname tea) tea[value]{
+    sus addresses tea[value]
     sus result tea = net_resolve_hostname(hostname)
     
     if result != "" {
@@ -265,8 +265,8 @@ slay resolve_ip_to_hostname(ip tea) tea {
     damn net_resolve_ip(ip)
 }
 
-slay lookup_mx(domain tea) []tea {
-    sus mx_records []tea
+slay lookup_mx(domain tea) tea[value]{
+    sus mx_records tea[value]
     sus result tea = net_lookup_mx(domain)
     
     if result != "" {
@@ -276,8 +276,8 @@ slay lookup_mx(domain tea) []tea {
     damn mx_records
 }
 
-slay lookup_txt(domain tea) []tea {
-    sus txt_records []tea
+slay lookup_txt(domain tea) tea[value]{
+    sus txt_records tea[value]
     sus result tea = net_lookup_txt(domain)
     
     if result != "" {
@@ -347,10 +347,10 @@ slay http_post_json(url tea, json_body tea) HTTPResponse {
 fr fr HTTP response parsing
 slay parse_http_response(response_text tea) HTTPResponse {
     sus response HTTPResponse
-    sus lines []tea = string_split(response_text, "\r\n")
+    sus lines tea[value] = string_split(response_text, "\r\n")
     
     if len(lines) > 0 { fr fr Parse status line
-        sus status_line []tea = string_split(lines[0], " ")
+        sus status_line tea[value] = string_split(lines[0], " ")
         if len(status_line) > 1 {
             response.status_code = string_to_int(status_line[1])
         } fr fr Find headers/body separator
@@ -363,13 +363,13 @@ slay parse_http_response(response_text tea) HTTPResponse {
         }
         
         if header_end != -1 { fr fr Extract headers
-            sus header_lines []tea
+            sus header_lines tea[value]
             bestie i := 1; i < header_end; i++ {
                 header_lines = append(header_lines, lines[i])
             }
             response.headers = string_join(header_lines, "\r\n") fr fr Extract body
             if header_end + 1 < len(lines) {
-                sus body_lines []tea
+                sus body_lines tea[value]
                 bestie i := header_end + 1; i < len(lines); i++ {
                     body_lines = append(body_lines, lines[i])
                 }
@@ -523,20 +523,20 @@ slay parse_websocket_frame(frame tea) tea {
 
 fr fr URL parsing utilities
 slay extract_host_from_url(url tea) tea {
-    sus parts []tea = string_split(url, "/")
+    sus parts tea[value] = string_split(url, "/")
     if len(parts) > 2 {
         sus host_port tea = parts[2]
-        sus host_parts []tea = string_split(host_port, ":")
+        sus host_parts tea[value] = string_split(host_port, ":")
         damn host_parts[0]
     }
     damn "localhost"
 }
 
 slay extract_port_from_url(url tea) normie {
-    sus parts []tea = string_split(url, "/")
+    sus parts tea[value] = string_split(url, "/")
     if len(parts) > 2 {
         sus host_port tea = parts[2]
-        sus host_parts []tea = string_split(host_port, ":")
+        sus host_parts tea[value] = string_split(host_port, ":")
         if len(host_parts) > 1 {
             damn string_to_int(host_parts[1])
         }
@@ -589,8 +589,8 @@ slay ping(hostname tea) lit {
     damn net_ping(hostname)
 }
 
-slay network_scan(start_ip tea, end_ip tea, port normie) []tea {
-    sus active_hosts []tea
+slay network_scan(start_ip tea, end_ip tea, port normie) tea[value]{
+    sus active_hosts tea[value]
     sus result tea = net_network_scan(start_ip, end_ip, port)
     
     if result != "" {
@@ -606,7 +606,7 @@ slay get_remote_addr(socket_handle normie) TCPAddr {
     sus address_string tea = net_get_remote_addr(socket_handle)
     
     if address_string != "" {
-        sus parts []tea = string_split(address_string, ":")
+        sus parts tea[value] = string_split(address_string, ":")
         if len(parts) == 2 {
             addr.ip = parse_ip(parts[0])
             addr.port = string_to_int(parts[1])
@@ -625,8 +625,8 @@ slay string_starts_with(text tea, prefix tea) lit {
     damn string_index_of(text, prefix) == 0
 }
 
-slay string_split(text tea, delimiter tea) []tea {
-    sus parts []tea
+slay string_split(text tea, delimiter tea) tea[value]{
+    sus parts tea[value]
     sus current tea = ""
     sus delim_len normie = string_length(delimiter)
     
@@ -649,7 +649,7 @@ slay string_split(text tea, delimiter tea) []tea {
     damn parts
 }
 
-slay string_join(parts []tea, delimiter tea) tea {
+slay string_join(parts tea[value], delimiter tea) tea {
     sus result tea = ""
     
     bestie i := 0; i < len(parts); i++ {
@@ -746,11 +746,11 @@ slay string_length(text tea) normie {
     damn len(text)
 }
 
-slay append(slice []tea, element tea) []tea { fr fr This would need to be implemented by the runtime
+slay append(slice tea[value], element tea) tea[value]{ fr fr This would need to be implemented by the runtime
     damn slice
 }
 
-slay len(slice []tea) normie { fr fr This would need to be implemented by the runtime
+slay len(slice tea[value]) normie { fr fr This would need to be implemented by the runtime
     damn 0
 }
 

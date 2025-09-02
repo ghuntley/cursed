@@ -11,28 +11,28 @@ fr fr ==========================================
 fr fr TEST DATA PREPARATION
 fr fr ==========================================
 
-slay create_test_dataset_small() []meal {
-    sus data []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+slay create_test_dataset_small() meal[value]{
+    sus data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
     damn data
 }
 
-slay create_test_dataset_medium() []meal {
-    sus data []meal = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+slay create_test_dataset_medium() meal[value]{
+    sus data meal[value] = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
     damn data
 }
 
-slay create_test_dataset_large() []meal {
-    sus data []meal = [1.0, 1.2, 1.8, 2.1, 2.5, 3.0, 3.4, 3.9, 4.2, 4.8, 5.1, 5.7, 6.0, 6.3, 6.9, 7.2, 7.8, 8.1, 8.5, 9.0]
+slay create_test_dataset_large() meal[value]{
+    sus data meal[value] = [1.0, 1.2, 1.8, 2.1, 2.5, 3.0, 3.4, 3.9, 4.2, 4.8, 5.1, 5.7, 6.0, 6.3, 6.9, 7.2, 7.8, 8.1, 8.5, 9.0]
     damn data
 }
 
-slay create_test_dataset_with_outliers() []meal {
-    sus data []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 100.0]  fr fr One extreme outlier
+slay create_test_dataset_with_outliers() meal[value]{
+    sus data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 100.0]  fr fr One extreme outlier
     damn data
 }
 
-slay create_test_dataset_negative() []meal {
-    sus data []meal = [-5.0, -3.0, -1.0, 0.0, 1.0, 3.0, 5.0]
+slay create_test_dataset_negative() meal[value]{
+    sus data meal[value] = [-5.0, -3.0, -1.0, 0.0, 1.0, 3.0, 5.0]
     damn data
 }
 
@@ -97,7 +97,7 @@ slay test_infinity_detection_comprehensive() lit {
 slay test_finite_detection_comprehensive() lit {
     spill_facts("Testing IEEE 754 finite detection...")
     
-    sus normal_numbers []meal = [0.0, 1.0, -1.0, 3.14159, -2.71828, 1e-10, 1e10]
+    sus normal_numbers meal[value] = [0.0, 1.0, -1.0, 3.14159, -2.71828, 1e-10, 1e10]
     sus nan_val meal = 0.0 / 0.0
     sus inf_val meal = 1.0 / 0.0
     
@@ -132,9 +132,9 @@ slay test_euclidean_gcd_comprehensive() lit {
     spill_facts("Testing enhanced Euclidean GCD algorithm...")
     
     fr fr Test basic GCD cases
-    sus test_cases_a []drip = [48, 18, 54, 24, 17, 13, 1071, 462]
-    sus test_cases_b []drip = [18, 48, 24, 54, 13, 17, 462, 1071]
-    sus expected_gcd []drip = [6, 6, 6, 6, 1, 1, 21, 21]
+    sus test_cases_a drip[value] = [48, 18, 54, 24, 17, 13, 1071, 462]
+    sus test_cases_b drip[value] = [18, 48, 24, 54, 13, 17, 462, 1071]
+    sus expected_gcd drip[value] = [6, 6, 6, 6, 1, 1, 21, 21]
     
     sus i drip = 0
     bestie (i < 8) {
@@ -204,7 +204,7 @@ slay test_median_sorting_based_comprehensive() lit {
     spill_facts("Testing proper sorting-based median calculation...")
     
     fr fr Test odd number of elements
-    sus data_odd []meal = create_test_dataset_small()
+    sus data_odd meal[value] = create_test_dataset_small()
     sus median_odd meal = median_sorting_based(data_odd, 5)
     ready (abs_float_stable(median_odd - 3.0) > 1e-10) {
         spill_facts("ERROR: Median of [1,2,3,4,5] should be 3.0, got:", median_odd)
@@ -212,7 +212,7 @@ slay test_median_sorting_based_comprehensive() lit {
     }
     
     fr fr Test even number of elements
-    sus data_even []meal = [1.0, 2.0, 3.0, 4.0]
+    sus data_even meal[value] = [1.0, 2.0, 3.0, 4.0]
     sus median_even meal = median_sorting_based(data_even, 4)
     ready (abs_float_stable(median_even - 2.5) > 1e-10) {
         spill_facts("ERROR: Median of [1,2,3,4] should be 2.5, got:", median_even)
@@ -220,7 +220,7 @@ slay test_median_sorting_based_comprehensive() lit {
     }
     
     fr fr Test unsorted data
-    sus data_unsorted []meal = [5.0, 1.0, 4.0, 2.0, 3.0]
+    sus data_unsorted meal[value] = [5.0, 1.0, 4.0, 2.0, 3.0]
     sus median_unsorted meal = median_sorting_based(data_unsorted, 5)
     ready (abs_float_stable(median_unsorted - 3.0) > 1e-10) {
         spill_facts("ERROR: Median of unsorted [5,1,4,2,3] should be 3.0, got:", median_unsorted)
@@ -228,7 +228,7 @@ slay test_median_sorting_based_comprehensive() lit {
     }
     
     fr fr Test single element
-    sus data_single []meal = [42.0]
+    sus data_single meal[value] = [42.0]
     sus median_single meal = median_sorting_based(data_single, 1)
     ready (abs_float_stable(median_single - 42.0) > 1e-10) {
         spill_facts("ERROR: Median of single element should be that element, got:", median_single)
@@ -243,7 +243,7 @@ slay test_welford_variance_comprehensive() lit {
     spill_facts("Testing Welford's numerically stable variance...")
     
     fr fr Test known variance case
-    sus data []meal = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
+    sus data meal[value] = [2.0, 4.0, 4.0, 4.0, 5.0, 5.0, 7.0, 9.0]
     sus variance_result meal = variance_welford(data, 8)
     
     fr fr Expected sample variance is approximately 4.571
@@ -253,7 +253,7 @@ slay test_welford_variance_comprehensive() lit {
     }
     
     fr fr Test single element (should return 0)
-    sus data_single []meal = [5.0]
+    sus data_single meal[value] = [5.0]
     sus var_single meal = variance_welford(data_single, 1)
     ready (var_single != 0.0) {
         spill_facts("ERROR: Variance of single element should be 0, got:", var_single)
@@ -261,7 +261,7 @@ slay test_welford_variance_comprehensive() lit {
     }
     
     fr fr Test identical elements
-    sus data_identical []meal = [3.0, 3.0, 3.0, 3.0]
+    sus data_identical meal[value] = [3.0, 3.0, 3.0, 3.0]
     sus var_identical meal = variance_welford(data_identical, 4)
     ready (abs_float_stable(var_identical) > 1e-10) {
         spill_facts("ERROR: Variance of identical elements should be 0, got:", var_identical)
@@ -276,7 +276,7 @@ slay test_robust_mean_comprehensive() lit {
     spill_facts("Testing numerically stable mean (Kahan summation)...")
     
     fr fr Test basic mean
-    sus data_basic []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+    sus data_basic meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
     sus mean_basic meal = mean_arithmetic_stable(data_basic, 5)
     ready (abs_float_stable(mean_basic - 3.0) > 1e-10) {
         spill_facts("ERROR: Mean of [1,2,3,4,5] should be 3.0, got:", mean_basic)
@@ -284,7 +284,7 @@ slay test_robust_mean_comprehensive() lit {
     }
     
     fr fr Test with negative numbers
-    sus data_negative []meal = create_test_dataset_negative()
+    sus data_negative meal[value] = create_test_dataset_negative()
     sus mean_negative meal = mean_arithmetic_stable(data_negative, 7)
     ready (abs_float_stable(mean_negative - 0.0) > 1e-10) {
         spill_facts("ERROR: Mean of symmetric dataset should be ~0.0, got:", mean_negative)
@@ -292,7 +292,7 @@ slay test_robust_mean_comprehensive() lit {
     }
     
     fr fr Test numerical stability with small differences
-    sus data_stable []meal = [1000000.0, 1000001.0, 1000002.0]
+    sus data_stable meal[value] = [1000000.0, 1000001.0, 1000002.0]
     sus mean_stable meal = mean_arithmetic_stable(data_stable, 3)
     ready (abs_float_stable(mean_stable - 1000001.0) > 1e-6) {
         spill_facts("ERROR: Numerically stable mean failed, got:", mean_stable)
@@ -310,8 +310,8 @@ fr fr ==========================================
 slay test_quartiles_comprehensive() lit {
     spill_facts("Testing proper quartile calculations...")
     
-    sus data []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
-    sus quartile_results []meal = quartiles_proper(data, 9)
+    sus data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0]
+    sus quartile_results meal[value] = quartiles_proper(data, 9)
     
     fr fr For this dataset: Q1=3, Q2=5, Q3=7 (approximately)
     ready (abs_float_stable(quartile_results[0] - 3.0) > 0.5) {
@@ -336,7 +336,7 @@ slay test_quartiles_comprehensive() lit {
 slay test_percentiles_comprehensive() lit {
     spill_facts("Testing percentile calculations...")
     
-    sus data []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    sus data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
     
     fr fr Test 50th percentile (median)
     sus p50 meal = percentile(data, 10, 50.0)
@@ -370,7 +370,7 @@ fr fr ==========================================
 slay test_mad_comprehensive() lit {
     spill_facts("Testing Median Absolute Deviation (MAD)...")
     
-    sus data []meal = [1.0, 1.0, 2.0, 2.0, 4.0, 6.0, 9.0]
+    sus data meal[value] = [1.0, 1.0, 2.0, 2.0, 4.0, 6.0, 9.0]
     sus mad_result meal = median_absolute_deviation(data, 7)
     
     fr fr MAD should be robust to outliers
@@ -386,7 +386,7 @@ slay test_mad_comprehensive() lit {
 slay test_trimmed_mean_comprehensive() lit {
     spill_facts("Testing trimmed mean (outlier resistant)...")
     
-    sus data_with_outlier []meal = create_test_dataset_with_outliers()
+    sus data_with_outlier meal[value] = create_test_dataset_with_outliers()
     sus trimmed_mean_result meal = trimmed_mean(data_with_outlier, 6, 0.2)  fr fr Trim 20% from each end
     
     fr fr Trimmed mean should be less affected by the outlier (100.0)
@@ -407,7 +407,7 @@ slay test_skewness_kurtosis_comprehensive() lit {
     spill_facts("Testing skewness and kurtosis calculations...")
     
     fr fr Test symmetric data (should have near-zero skewness)
-    sus symmetric_data []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0]
+    sus symmetric_data meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 4.0, 3.0, 2.0, 1.0]
     sus skewness_result meal = skewness_proper(symmetric_data, 9)
     
     ready (abs_float_stable(skewness_result) > 1.0) {
@@ -430,8 +430,8 @@ slay test_sqrt_newton_raphson_comprehensive() lit {
     spill_facts("Testing Newton-Raphson square root...")
     
     fr fr Test perfect squares
-    sus sqrt_results []meal = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 100.0]
-    sus expected_sqrt []meal = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0]
+    sus sqrt_results meal[value] = [0.0, 1.0, 4.0, 9.0, 16.0, 25.0, 100.0]
+    sus expected_sqrt meal[value] = [0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 10.0]
     
     sus i drip = 0
     bestie (i < 7) {

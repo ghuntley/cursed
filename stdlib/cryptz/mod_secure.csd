@@ -12,7 +12,7 @@ fr fr AES-256 IMPLEMENTATION - NIST FIPS 197 COMPLIANT
 fr fr ==================================================================
 
 fr fr AES S-box for SubBytes transformation (FIPS 197 Table 4)
-sus AES_SBOX [256]normie = [
+sus AES_SBOX normie[256] = [
     0x63, 0x7c, 0x77, 0x7b, 0xf2, 0x6b, 0x6f, 0xc5, 0x30, 0x01, 0x67, 0x2b, 0xfe, 0xd7, 0xab, 0x76,
     0xca, 0x82, 0xc9, 0x7d, 0xfa, 0x59, 0x47, 0xf0, 0xad, 0xd4, 0xa2, 0xaf, 0x9c, 0xa4, 0x72, 0xc0,
     0xb7, 0xfd, 0x93, 0x26, 0x36, 0x3f, 0xf7, 0xcc, 0x34, 0xa5, 0xe5, 0xf1, 0x71, 0xd8, 0x31, 0x15,
@@ -32,7 +32,7 @@ sus AES_SBOX [256]normie = [
 ]
 
 fr fr AES Inverse S-box for InvSubBytes
-sus AES_INV_SBOX [256]normie = [
+sus AES_INV_SBOX normie[256] = [
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -52,10 +52,10 @@ sus AES_INV_SBOX [256]normie = [
 ]
 
 fr fr Round constants for key expansion
-sus RCON [10]normie = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
+sus RCON normie[10] = [0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1B, 0x36]
 
 fr fr AES-256 Key Expansion - FIPS 197 Section 5.2
-slay aes_key_expansion(key []normie, expanded_key []normie) lit {
+slay aes_key_expansion(key normie[value], expanded_key normie[value]) lit {
     sus nk normie = 8  fr fr Number of 32-bit words in key (256 bits)
     sus nb normie = 4  fr fr Number of columns in state
     sus nr normie = 14 fr fr Number of rounds for AES-256
@@ -67,7 +67,7 @@ slay aes_key_expansion(key []normie, expanded_key []normie) lit {
     
     fr fr Generate remaining words
     bestie i := nk; i < nb * (nr + 1); i++ {
-        sus temp [4]normie
+        sus temp normie[4]
         bestie j := 0; j < 4; j++ {
             temp[j] = expanded_key[(i - 1) * 4 + j]
         }
@@ -115,14 +115,14 @@ slay gf_mult(a normie, b normie) normie {
 }
 
 fr fr SubBytes transformation - FIPS 197 Section 5.1.1
-slay aes_sub_bytes(state []normie) {
+slay aes_sub_bytes(state normie[value]) {
     bestie i := 0; i < 16; i++ {
         state[i] = AES_SBOX[state[i]]
     }
 }
 
 fr fr ShiftRows transformation - FIPS 197 Section 5.1.2  
-slay aes_shift_rows(state []normie) {
+slay aes_shift_rows(state normie[value]) {
     fr fr Row 1: shift left by 1
     sus temp normie = state[1]
     state[1] = state[5]
@@ -147,7 +147,7 @@ slay aes_shift_rows(state []normie) {
 }
 
 fr fr MixColumns transformation - FIPS 197 Section 5.1.3
-slay aes_mix_columns(state []normie) {
+slay aes_mix_columns(state normie[value]) {
     bestie col := 0; col < 4; col++ {
         sus s0 normie = state[col * 4]
         sus s1 normie = state[col * 4 + 1] 
@@ -162,16 +162,16 @@ slay aes_mix_columns(state []normie) {
 }
 
 fr fr AddRoundKey transformation - FIPS 197 Section 5.1.4
-slay aes_add_round_key(state []normie, round_key []normie) {
+slay aes_add_round_key(state normie[value], round_key normie[value]) {
     bestie i := 0; i < 16; i++ {
         state[i] = state[i] ^ round_key[i]
     }
 }
 
 fr fr AES-256 Encryption (single block) - FIPS 197 compliant
-slay aes_encrypt_block(plaintext []normie, key []normie, ciphertext []normie) lit {
-    sus expanded_key [240]normie  fr fr 15 round keys * 16 bytes each
-    sus state [16]normie
+slay aes_encrypt_block(plaintext normie[value], key normie[value], ciphertext normie[value]) lit {
+    sus expanded_key normie[240]  fr fr 15 round keys * 16 bytes each
+    sus state normie[16]
     
     fr fr Initialize state with plaintext
     bestie i := 0; i < 16; i++ {
@@ -210,7 +210,7 @@ fr fr SHA-256 IMPLEMENTATION - FIPS 180-4 COMPLIANT
 fr fr ==================================================================
 
 fr fr SHA-256 constants - FIPS 180-4 Section 4.2.2
-sus SHA256_K [64]normie = [
+sus SHA256_K normie[64] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -254,7 +254,7 @@ slay sha256_gamma1(x normie) normie {
 fr fr SHA-256 message processing - FIPS 180-4 Section 6.2
 slay sha256_hash(message tea) tea {
     fr fr Initial hash values - FIPS 180-4 Section 5.3.3
-    sus h [8]normie = [
+    sus h normie[8] = [
         0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
         0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
     ]
@@ -264,7 +264,7 @@ slay sha256_hash(message tea) tea {
     
     fr fr Pre-processing: padding message - FIPS 180-4 Section 5.1
     sus padded_len normie = ((msg_len + 8) / 64 + 1) * 64
-    sus padded []normie
+    sus padded normie[value]
     array_new(padded, padded_len, 0)
     
     fr fr Copy original message
@@ -282,7 +282,7 @@ slay sha256_hash(message tea) tea {
     
     fr fr Process message in 512-bit chunks
     bestie chunk := 0; chunk < padded_len / 64; chunk++ {
-        sus w [64]normie
+        sus w normie[64]
         
         fr fr Copy chunk into first 16 words of w
         bestie i := 0; i < 16; i++ {
@@ -349,7 +349,7 @@ fr fr ==================================================================
 
 fr fr HMAC-SHA256 for OAuth signature verification
 slay hmac_sha256(key tea, message tea) tea {
-    sus key_bytes []normie
+    sus key_bytes normie[value]
     sus key_len normie = string_length(key)
     
     fr fr Keys longer than block size are shortened
@@ -368,8 +368,8 @@ slay hmac_sha256(key tea, message tea) tea {
     }
     
     fr fr Create inner and outer padded keys
-    sus inner_key [64]normie
-    sus outer_key [64]normie
+    sus inner_key normie[64]
+    sus outer_key normie[64]
     
     bestie i := 0; i < 64; i++ {
         inner_key[i] = key_bytes[i] ^ 0x36
@@ -403,8 +403,8 @@ fr fr SECURE RANDOM NUMBER GENERATOR - USING SYSTEM ENTROPY
 fr fr ==================================================================
 
 fr fr Cryptographically secure random bytes (no hardcoded constants)
-slay secure_random_bytes(count normie) []normie {
-    sus bytes []normie
+slay secure_random_bytes(count normie) normie[value]{
+    sus bytes normie[value]
     array_new(bytes, count, 0)
     
     fr fr Read from /dev/urandom on Unix systems
@@ -475,8 +475,8 @@ slay aes_encrypt_cbc(plaintext tea, key tea, iv tea) tea {
         damn ""  fr fr Invalid IV size  
     }
     
-    sus key_bytes [32]normie
-    sus iv_bytes [16]normie
+    sus key_bytes normie[32]
+    sus iv_bytes normie[16]
     
     bestie i := 0; i < 32; i++ {
         key_bytes[i] = char_code(string_char_at(key, i))
@@ -490,7 +490,7 @@ slay aes_encrypt_cbc(plaintext tea, key tea, iv tea) tea {
     sus pad_len normie = 16 - (plain_len % 16)
     sus padded_len normie = plain_len + pad_len
     
-    sus padded_bytes []normie
+    sus padded_bytes normie[value]
     array_new(padded_bytes, padded_len, 0)
     
     bestie i := 0; i < plain_len; i++ {
@@ -502,11 +502,11 @@ slay aes_encrypt_cbc(plaintext tea, key tea, iv tea) tea {
     
     fr fr Encrypt blocks with CBC mode
     sus result tea = ""
-    sus prev_block [16]normie = iv_bytes
+    sus prev_block normie[16] = iv_bytes
     
     bestie block := 0; block < padded_len / 16; block++ {
-        sus plain_block [16]normie
-        sus cipher_block [16]normie
+        sus plain_block normie[16]
+        sus cipher_block normie[16]
         
         fr fr Copy plaintext block and XOR with previous ciphertext
         bestie i := 0; i < 16; i++ {
@@ -553,7 +553,7 @@ fr fr ==================================================================
 
 fr fr Export secure AES-256-CBC encryption
 slay encrypt_aes256(data tea, key tea) tea {
-    sus iv_bytes []normie = secure_random_bytes(16)
+    sus iv_bytes normie[value] = secure_random_bytes(16)
     sus iv tea = ""
     bestie i := 0; i < 16; i++ {
         iv = iv + char_from_code(iv_bytes[i])

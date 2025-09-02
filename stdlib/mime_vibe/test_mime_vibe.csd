@@ -138,36 +138,36 @@ test_start("mime_vibe content detection")
 
 fr fr Test content-based detection with magic bytes
 fr fr PNG signature: 137, 80, 78, 71
-sus pngData := []normie{137, 80, 78, 71, 13, 10, 26, 10}
+sus pngData := normie[value]{137, 80, 78, 71, 13, 10, 26, 10}
 sus detectedPNG := mime_vibe.TypeByContent(pngData)
 assert_eq_string(detectedPNG.Type, "image")
 assert_eq_string(detectedPNG.Subtype, "png")
 
 fr fr JPEG signature: 255, 216, 255
-sus jpegData := []normie{255, 216, 255, 224}
+sus jpegData := normie[value]{255, 216, 255, 224}
 sus detectedJPEG := mime_vibe.TypeByContent(jpegData)
 assert_eq_string(detectedJPEG.Type, "image")
 assert_eq_string(detectedJPEG.Subtype, "jpeg")
 
 fr fr Text content
-sus textData := []normie{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}  fr fr "Hello World"
+sus textData := normie[value]{72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100}  fr fr "Hello World"
 sus detectedText := mime_vibe.TypeByContent(textData)
 assert_eq_string(detectedText.Type, "text")
 
 fr fr Empty data
-sus emptyData := []normie{}
+sus emptyData := normie[value]{}
 sus detectedEmpty := mime_vibe.TypeByContent(emptyData)
 assert_eq_string(detectedEmpty.Type, "application")
 
 test_start("mime_vibe enhanced detection")
 
 fr fr Test combined detection
-sus combinedType1 := mime_vibe.DetectVibeType("test.png", []normie{137, 80, 78, 71})
+sus combinedType1 := mime_vibe.DetectVibeType("test.png", normie[value]{137, 80, 78, 71})
 assert_eq_string(combinedType1.Type, "image")
 assert_eq_string(combinedType1.Subtype, "png")
 
 fr fr Fallback to filename when content is unknown
-sus unknownContent := []normie{1, 2, 3, 4}
+sus unknownContent := normie[value]{1, 2, 3, 4}
 sus combinedType2 := mime_vibe.DetectVibeType("document.pdf", unknownContent)
 assert_eq_string(combinedType2.Type, "application")
 assert_eq_string(combinedType2.Subtype, "pdf")
@@ -175,7 +175,7 @@ assert_eq_string(combinedType2.Subtype, "pdf")
 test_start("mime_vibe content encoding")
 
 fr fr Test content encoding
-sus originalData := []normie{72, 101, 108, 108, 111}  fr fr "Hello"
+sus originalData := normie[value]{72, 101, 108, 108, 111}  fr fr "Hello"
 sus encoded, encErr := mime_vibe.EncodeContent(originalData, mime_vibe.EncodingBase64)
 assert_eq_string(encErr, "")
 assert_true(len(encoded) > 0)
@@ -205,7 +205,7 @@ assert_eq_string(textPart.ContentType.Type, "text")
 assert_eq_int(textPart.Size, 13)
 
 fr fr Test adding binary part
-sus binaryData := []normie{1, 2, 3, 4, 5}
+sus binaryData := normie[value]{1, 2, 3, 4, 5}
 sus binaryPart := msg.AddBinaryPart(binaryData, mime_vibe.TypeApplicationOctetStream, "data.bin")
 assert_true(binaryPart != cringe)
 assert_eq_string(binaryPart.Filename, "data.bin")
@@ -221,12 +221,12 @@ assert_true(len(msgStr) > 100)  fr fr Should be a substantial message
 test_start("mime_vibe GenZ features")
 
 fr fr Test VibeCheck
-sus vibeData := []normie{137, 80, 78, 71}
+sus vibeData := normie[value]{137, 80, 78, 71}
 sus vibeResult := mime_vibe.VibeCheck(vibeData)
 assert_eq_string(vibeResult.Type, "image")
 
 fr fr Test NoCapDetect
-sus noCapResult := mime_vibe.NoCapDetect("test.jpg", []normie{255, 216, 255})
+sus noCapResult := mime_vibe.NoCapDetect("test.jpg", normie[value]{255, 216, 255})
 assert_eq_string(noCapResult.Type, "image")
 
 fr fr Test EmojiType

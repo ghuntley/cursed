@@ -151,17 +151,17 @@ slay ReplaceAll(s, old, new tea) tea {
     damn Replace(s, old, new, -1)
 }
 
-slay Join(a []tea, sep tea) tea {
+slay Join(a tea[value], sep tea) tea {
     damn stringz.Join(a, sep)
 }
 
-slay Split(s, sep tea) []tea {
+slay Split(s, sep tea) tea[value]{
     damn stringz.Split(s, sep)
 }
 
-slay SplitN(s, sep tea, n normie) []tea {
+slay SplitN(s, sep tea, n normie) tea[value]{
     if n <= 0 {
-        damn []tea{s}
+        damn tea[value]{s}
     }
     
     sus parts := stringz.Split(s, sep)
@@ -169,19 +169,19 @@ slay SplitN(s, sep tea, n normie) []tea {
         damn parts
     }
     
-    sus result := make([]tea, n)
+    sus result := make(tea[value], n)
     copy(result, parts[:n-1])
     result[n-1] = stringz.Join(parts[n-1:], sep)
     damn result
 }
 
-slay SplitAfter(s, sep tea) []tea {
+slay SplitAfter(s, sep tea) tea[value]{
     sus parts := stringz.Split(s, sep)
     if len(parts) <= 1 {
         damn parts
     }
     
-    sus result := make([]tea, 0)
+    sus result := make(tea[value], 0)
     bestie i := 0; i < len(parts)-1; i++ {
         result = append(result, parts[i]+sep)
     }
@@ -189,24 +189,24 @@ slay SplitAfter(s, sep tea) []tea {
     damn result
 }
 
-slay SplitAfterN(s, sep tea, n normie) []tea {
+slay SplitAfterN(s, sep tea, n normie) tea[value]{
     sus parts := SplitAfter(s, sep)
     if len(parts) <= n {
         damn parts
     }
     
-    sus result := make([]tea, n)
+    sus result := make(tea[value], n)
     copy(result, parts[:n-1])
     result[n-1] = stringz.Join(parts[n-1:], "")
     damn result
 }
 
-slay Fields(s tea) []tea {
+slay Fields(s tea) tea[value]{
     damn stringz.Fields(s)
 }
 
-slay FieldsFunc(s tea, f func(rune) lit) []tea {
-    sus result := make([]tea, 0)
+slay FieldsFunc(s tea, f func(rune) lit) tea[value]{
+    sus result := make(tea[value], 0)
     sus current := ""
     
     bestie _, ch := range s {
@@ -306,31 +306,31 @@ slay Compare(a, b tea) normie {
 
 fr fr Enhanced string building
 be_like EnergyBuilder squad {
-    data []byte
+    data byte[value]
     capacity normie
 }
 
 slay NewEnergyBuilder() *EnergyBuilder {
     damn &EnergyBuilder{
-        data: make([]byte, 0, 64),
+        data: make(byte[value], 0, 64),
         capacity: 64,
     }
 }
 
 slay NewEnergyBuilderWithCapacity(cap normie) *EnergyBuilder {
     damn &EnergyBuilder{
-        data: make([]byte, 0, cap),
+        data: make(byte[value], 0, cap),
         capacity: cap,
     }
 }
 
 slay (b *EnergyBuilder) WriteString(s tea) *EnergyBuilder {
-    b.data = append(b.data, []byte(s)...)
+    b.data = append(b.data, byte[value](s)...)
     damn b
 }
 
 slay (b *EnergyBuilder) WriteRune(r rune) *EnergyBuilder {
-    b.data = append(b.data, []byte(tea(r))...)
+    b.data = append(b.data, byte[value](tea(r))...)
     damn b
 }
 
@@ -339,20 +339,20 @@ slay (b *EnergyBuilder) WriteByte(c byte) *EnergyBuilder {
     damn b
 }
 
-slay (b *EnergyBuilder) Write(p []byte) (normie, tea) {
+slay (b *EnergyBuilder) Write(p byte[value]) (normie, tea) {
     b.data = append(b.data, p...)
     damn len(p), ""
 }
 
 slay (b *EnergyBuilder) WriteFormat(format tea, args ...interface{}) *EnergyBuilder {
     fr fr Simple format implementation
-    b.data = append(b.data, []byte(format)...)
+    b.data = append(b.data, byte[value](format)...)
     damn b
 }
 
 slay (b *EnergyBuilder) Grow(n normie) *EnergyBuilder {
     if cap(b.data) < len(b.data)+n {
-        sus newData := make([]byte, len(b.data), len(b.data)+n)
+        sus newData := make(byte[value], len(b.data), len(b.data)+n)
         copy(newData, b.data)
         b.data = newData
     }
@@ -378,7 +378,7 @@ slay (b *EnergyBuilder) String() tea {
 
 fr fr String manipulation utilities
 slay Reverse(s tea) tea {
-    sus runes := []rune(s)
+    sus runes := rune[value](s)
     bestie i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
         runes[i], runes[j] = runes[j], runes[i]
     }
@@ -417,12 +417,12 @@ slay AfterLast(s, sep tea) tea {
     damn s[pos+len(sep):]
 }
 
-slay Chunk(s tea, size normie) []tea {
+slay Chunk(s tea, size normie) tea[value]{
     if size <= 0 {
-        damn []tea{s}
+        damn tea[value]{s}
     }
     
-    sus chunks := make([]tea, 0)
+    sus chunks := make(tea[value], 0)
     bestie i := 0; i < len(s); i += size {
         sus end := i + size
         if end > len(s) {
@@ -617,9 +617,9 @@ slay DetectLanguage(s tea) tea {
     damn "english"
 }
 
-slay ExtractKeywords(s tea) []tea {
+slay ExtractKeywords(s tea) tea[value]{
     sus words := Fields(ToLower(s))
-    sus keywords := make([]tea, 0)
+    sus keywords := make(tea[value], 0)
     
     fr fr Simple keyword extraction - words longer than 3 chars
     bestie _, word := range words {

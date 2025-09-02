@@ -217,19 +217,19 @@ slay remove_dir_all(dirname tea) tea {
     damn "Directory not found"
 }
 
-slay list_dir(dirname tea) ([]tea, tea) {
+slay list_dir(dirname tea) (tea[value], tea) {
     lowkey dir_exists(dirname) {
         lowkey dirname == "empty_dir" {
-            damn ([]tea{}, "")
+            damn (tea[value]{}, "")
         }
-        sus files []tea = []tea{"file1.txt", "file2.csd", "subdir"}
+        sus files tea[value] = tea[value]{"file1.txt", "file2.csd", "subdir"}
         damn (files, "")
     }
-    damn ([]tea{}, "Directory not found")
+    damn (tea[value]{}, "Directory not found")
 }
 
 fr fr Path manipulation utilities  
-slay path_join(parts []tea) tea {
+slay path_join(parts tea[value]) tea {
     lowkey len(parts) == 0 {
         damn ""
     }
@@ -415,15 +415,15 @@ slay read_password() (tea, tea) { fr fr Simulated password input (hidden)
 }
 
 fr fr Binary I/O
-slay read_binary(filename tea) ([]byte, tea) {
+slay read_binary(filename tea) (byte[value], tea) {
     lowkey file_exists(filename) {
-        sus data []byte = []byte{72, 101, 108, 108, 111}
+        sus data byte[value] = byte[value]{72, 101, 108, 108, 111}
         damn (data, "")
     }
-    damn ([]byte{}, "File not found")
+    damn (byte[value]{}, "File not found")
 }
 
-slay write_binary(filename tea, data []byte) tea {
+slay write_binary(filename tea, data byte[value]) tea {
     lowkey len(data) > 0 {
         damn ""
     }
@@ -579,21 +579,21 @@ slay write_json(filename tea, json_content tea) tea {
 }
 
 fr fr CSV operations
-slay read_csv(filename tea) ([][]tea, tea) {
+slay read_csv(filename tea) (tea[value][value], tea) {
     (content, err) := read_file(filename)
     lowkey err != "" {
-        damn ([][]tea{}, err)
+        damn (tea[value][value]{}, err)
     }
     
-    sus rows [][]tea = [][]tea{
-        []tea{"Name", "Age", "City"},
-        []tea{"Alice", "30", "New York"},
-        []tea{"Bob", "25", "Los Angeles"}
+    sus rows tea[value][value] = tea[value][value]{
+        tea[value]{"Name", "Age", "City"},
+        tea[value]{"Alice", "30", "New York"},
+        tea[value]{"Bob", "25", "Los Angeles"}
     }
     damn (rows, "")
 }
 
-slay write_csv(filename tea, rows [][]tea) tea {
+slay write_csv(filename tea, rows tea[value][value]) tea {
     lowkey len(rows) == 0 {
         damn "No data to write"
     }
@@ -659,7 +659,7 @@ slay backup_file(filename tea, backup_dir tea) tea {
         }
     }
     
-    backup_filename := path_join([]tea{backup_dir, path_basename(filename) + ".backup"})
+    backup_filename := path_join(tea[value]{backup_dir, path_basename(filename) + ".backup"})
     copy_err := copy_file(filename, backup_filename)
     damn copy_err
 }

@@ -159,7 +159,7 @@ fr fr Test concurrent memory operations simulation
 test_start("concurrent memory simulation")
 
 fr fr Simulate multiple allocations and deallocations
-sus ptrs []normie = []
+sus ptrs normie[value] = []
 
 bestie i := 0; i < 50; i = i + 1 {
     sus ptr := memory.memory_alloc(64 + i * 8)

@@ -3,7 +3,7 @@
 
 // Async Channel for communication between tasks
 struct AsyncChannel {
-    buffer []extra
+    buffer extra[value]
     capacity normie
     size normie
     head normie

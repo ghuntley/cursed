@@ -95,7 +95,7 @@ slay test_websocket_handshake() {
     assert_true(stringz.length(accept_key) > 0)
     
     fr fr Test handshake request creation
-    sus protocols [3]tea
+    sus protocols tea[3]
     protocols[0] = "chat"
     protocols[1] = "echo"
     sus request tea = ws_create_handshake_request("/websocket", protocols, 2)
@@ -313,7 +313,7 @@ slay test_websocket_client() {
     test_start("WebSocket Client")
     
     fr fr Test client connection
-    sus protocols [3]tea
+    sus protocols tea[3]
     protocols[0] = "chat"
     protocols[1] = "echo"
     
@@ -446,7 +446,7 @@ slay test_websocket_security() {
     test_start("WebSocket Security")
     
     fr fr Test origin validation
-    sus allowed_origins [3]tea
+    sus allowed_origins tea[3]
     allowed_origins[0] = "https://example.com"
     allowed_origins[1] = "https://app.example.com"
     allowed_origins[2] = "*"
@@ -464,7 +464,7 @@ slay test_websocket_security() {
     assert_true(ws_rate_limit_check(1002, 30))  fr fr Should allow (simulated)
     
     fr fr Test content filtering
-    sus blocked_words [3]tea
+    sus blocked_words tea[3]
     blocked_words[0] = "spam"
     blocked_words[1] = "malicious"
     blocked_words[2] = "forbidden"
@@ -480,7 +480,7 @@ slay test_websocket_integration() {
     
     fr fr Create server and client
     sus server WebSocketConnection = ws_server_create(8080, "/chat")
-    sus protocols [2]tea
+    sus protocols tea[2]
     protocols[0] = "chat"
     protocols[1] = "echo"
     sus client WebSocketConnection = ws_client_connect("ws://localhost:8080/chat", protocols, 2)

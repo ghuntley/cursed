@@ -4,43 +4,43 @@
 // Core sorting functions
 
 // Sort integers in ascending order
-slay SortInts(arr []normie) []normie {
+slay SortInts(arr normie[value]) normie[value]{
     sus len normie = array_length(arr)
     if len <= 1 {
         damn copy_int_array(arr)
     }
     
-    sus result []normie = copy_int_array(arr)
+    sus result normie[value] = copy_int_array(arr)
     quicksort_ints(result, 0, len - 1)
     damn result
 }
 
 // Sort strings in ascending order  
-slay SortStrings(arr []tea) []tea {
+slay SortStrings(arr tea[value]) tea[value]{
     sus len normie = array_length_str(arr)
     if len <= 1 {
         damn copy_string_array(arr)
     }
     
-    sus result []tea = copy_string_array(arr)
+    sus result tea[value] = copy_string_array(arr)
     quicksort_strings(result, 0, len - 1)
     damn result
 }
 
 // Sort floats in ascending order
-slay SortFloat64s(arr []meal) []meal {
+slay SortFloat64s(arr meal[value]) meal[value]{
     sus len normie = array_length_float(arr)
     if len <= 1 {
         damn copy_float_array(arr)
     }
     
-    sus result []meal = copy_float_array(arr)
+    sus result meal[value] = copy_float_array(arr)
     quicksort_floats(result, 0, len - 1)
     damn result
 }
 
 // Check if integer array is sorted
-slay IntsAreSorted(arr []normie) lit {
+slay IntsAreSorted(arr normie[value]) lit {
     sus len normie = array_length(arr)
     if len <= 1 {
         damn based
@@ -55,7 +55,7 @@ slay IntsAreSorted(arr []normie) lit {
 }
 
 // Check if string array is sorted
-slay StringsAreSorted(arr []tea) lit {
+slay StringsAreSorted(arr tea[value]) lit {
     sus len normie = array_length_str(arr)
     if len <= 1 {
         damn based
@@ -70,7 +70,7 @@ slay StringsAreSorted(arr []tea) lit {
 }
 
 // Check if float array is sorted
-slay Float64sAreSorted(arr []meal) lit {
+slay Float64sAreSorted(arr meal[value]) lit {
     sus len normie = array_length_float(arr)
     if len <= 1 {
         damn based
@@ -85,7 +85,7 @@ slay Float64sAreSorted(arr []meal) lit {
 }
 
 // Binary search in sorted integer array
-slay SearchInts(arr []normie, target normie) normie {
+slay SearchInts(arr normie[value], target normie) normie {
     sus left normie = 0
     sus right normie = array_length(arr) - 1
     
@@ -105,7 +105,7 @@ slay SearchInts(arr []normie, target normie) normie {
 }
 
 // Binary search in sorted string array
-slay SearchStrings(arr []tea, target tea) normie {
+slay SearchStrings(arr tea[value], target tea) normie {
     sus left normie = 0
     sus right normie = array_length_str(arr) - 1
     
@@ -126,7 +126,7 @@ slay SearchStrings(arr []tea, target tea) normie {
 }
 
 // Binary search in sorted float array
-slay SearchFloat64s(arr []meal, target meal) normie {
+slay SearchFloat64s(arr meal[value], target meal) normie {
     sus left normie = 0
     sus right normie = array_length_float(arr) - 1
     
@@ -146,22 +146,22 @@ slay SearchFloat64s(arr []meal, target meal) normie {
 }
 
 // Stable sort for integers
-slay StableSort(arr []normie) []normie {
+slay StableSort(arr normie[value]) normie[value]{
     sus len normie = array_length(arr)
     if len <= 1 {
         damn copy_int_array(arr)
     }
     
-    sus result []normie = copy_int_array(arr)
+    sus result normie[value] = copy_int_array(arr)
     merge_sort_ints(result, 0, len - 1)
     damn result
 }
 
 // Reverse sort for integers
-slay ReverseSort(arr []normie) []normie {
-    sus sorted []normie = SortInts(arr)
+slay ReverseSort(arr normie[value]) normie[value]{
+    sus sorted normie[value] = SortInts(arr)
     sus len normie = array_length(sorted)
-    sus result []normie = make_int_array(len)
+    sus result normie[value] = make_int_array(len)
     
     bestie i := 0; i < len; i++ {
         result[i] = sorted[len - 1 - i]
@@ -170,9 +170,9 @@ slay ReverseSort(arr []normie) []normie {
 }
 
 // Shuffle array randomly
-slay Shuffle(arr []normie) []normie {
+slay Shuffle(arr normie[value]) normie[value]{
     sus len normie = array_length(arr)
-    sus result []normie = copy_int_array(arr)
+    sus result normie[value] = copy_int_array(arr)
     
     bestie i := len - 1; i > 0; i-- {
         sus j normie = random_int(i + 1)
@@ -182,14 +182,14 @@ slay Shuffle(arr []normie) []normie {
 }
 
 // Top-K largest elements
-slay TopK(arr []normie, k normie) []normie {
+slay TopK(arr normie[value], k normie) normie[value]{
     sus len normie = array_length(arr)
     if k <= 0 || k > len {
         damn make_int_array(0)
     }
     
-    sus sorted []normie = SortInts(arr)
-    sus result []normie = make_int_array(k)
+    sus sorted normie[value] = SortInts(arr)
+    sus result normie[value] = make_int_array(k)
     
     bestie i := 0; i < k; i++ {
         result[i] = sorted[len - 1 - i]
@@ -198,14 +198,14 @@ slay TopK(arr []normie, k normie) []normie {
 }
 
 // Bottom-K smallest elements
-slay BottomK(arr []normie, k normie) []normie {
+slay BottomK(arr normie[value], k normie) normie[value]{
     sus len normie = array_length(arr)
     if k <= 0 || k > len {
         damn make_int_array(0)
     }
     
-    sus sorted []normie = SortInts(arr)
-    sus result []normie = make_int_array(k)
+    sus sorted normie[value] = SortInts(arr)
+    sus result normie[value] = make_int_array(k)
     
     bestie i := 0; i < k; i++ {
         result[i] = sorted[i]
@@ -214,24 +214,24 @@ slay BottomK(arr []normie, k normie) []normie {
 }
 
 // Find median element
-slay Median(arr []normie) normie {
+slay Median(arr normie[value]) normie {
     sus len normie = array_length(arr)
     if len == 0 {
         damn 0
     }
     
-    sus sorted []normie = SortInts(arr)
+    sus sorted normie[value] = SortInts(arr)
     damn sorted[len / 2]
 }
 
 // Quick select k-th smallest element
-slay QuickSelect(arr []normie, k normie) normie {
+slay QuickSelect(arr normie[value], k normie) normie {
     sus len normie = array_length(arr)
     if k < 0 || k >= len {
         damn -1
     }
     
-    sus temp []normie = copy_int_array(arr)
+    sus temp normie[value] = copy_int_array(arr)
     damn quickselect_impl(temp, 0, len - 1, k)
 }
 
@@ -252,7 +252,7 @@ slay NewSortCache(size normie) SortCache {
 }
 
 // Cached sort - checks cache first, then sorts if needed
-slay CachedSort(cache SortCache, arr []normie) []normie {
+slay CachedSort(cache SortCache, arr normie[value]) normie[value]{
     // Check if array is in cache
     bestie i := 0; i < cache.current_size; i++ {
         if arrays_equal(cache.cached_arrays[i], arr) {
@@ -261,13 +261,13 @@ slay CachedSort(cache SortCache, arr []normie) []normie {
     }
     
     // Not in cache, sort and cache result
-    sus result []normie = SortInts(arr)
+    sus result normie[value] = SortInts(arr)
     add_to_cache(cache, arr, result)
     damn result
 }
 
 // Add array and result to cache
-slay add_to_cache(cache SortCache, arr []normie, result []normie) {
+slay add_to_cache(cache SortCache, arr normie[value], result normie[value]) {
     if cache.current_size < cache.cache_size {
         cache.cached_arrays[cache.current_size] = copy_int_array(arr)
         cache.cached_results[cache.current_size] = copy_int_array(result)
@@ -296,10 +296,10 @@ slay GetCacheStats(cache SortCache) (normie, normie) {
 // Gen Z sorting features
 
 // Vibe Sort - sorts by custom vibe score
-slay VibeSort(arr []normie) []normie {
+slay VibeSort(arr normie[value]) normie[value]{
     // Simple implementation: sort by value with "vibe" bias
     sus len normie = array_length(arr)
-    sus result []normie = copy_int_array(arr)
+    sus result normie[value] = copy_int_array(arr)
     
     bestie i := 0; i < len - 1; i++ {
         bestie j := i + 1; j < len; j++ {
@@ -315,16 +315,16 @@ slay VibeSort(arr []normie) []normie {
 }
 
 // No Cap Sort - absolute factual ordering
-slay NoCapSort(arr []normie) []normie {
+slay NoCapSort(arr normie[value]) normie[value]{
     // Just regular sort with attitude
     damn SortInts(arr)
 }
 
 // Bussin Sort - highlights excellent items first
-slay BussinSort(arr []normie) []normie {
+slay BussinSort(arr normie[value]) normie[value]{
     // Sort by "bussin" score (higher values first)
     sus len normie = array_length(arr)
-    sus result []normie = copy_int_array(arr)
+    sus result normie[value] = copy_int_array(arr)
     
     bestie i := 0; i < len - 1; i++ {
         bestie j := i + 1; j < len; j++ {
@@ -340,15 +340,15 @@ slay BussinSort(arr []normie) []normie {
 }
 
 // Slay Sort - high-performance sort
-slay SlaySort(arr []normie) []normie {
+slay SlaySort(arr normie[value]) normie[value]{
     // Just optimized quicksort
     damn SortInts(arr)
 }
 
 // Yeet Sort - filter and sort
-slay YeetSort(arr []normie, min_value normie) []normie {
+slay YeetSort(arr normie[value], min_value normie) normie[value]{
     sus len normie = array_length(arr)
-    sus filtered []normie = make_int_array(len)
+    sus filtered normie[value] = make_int_array(len)
     sus filtered_count normie = 0
     
     // Filter elements >= min_value
@@ -360,7 +360,7 @@ slay YeetSort(arr []normie, min_value normie) []normie {
     }
     
     // Create result array with only filtered elements
-    sus result []normie = make_int_array(filtered_count)
+    sus result normie[value] = make_int_array(filtered_count)
     bestie i := 0; i < filtered_count; i++ {
         result[i] = filtered[i]
     }
@@ -371,7 +371,7 @@ slay YeetSort(arr []normie, min_value normie) []normie {
 // Helper functions
 
 // Quicksort implementation for integers
-slay quicksort_ints(arr []normie, low normie, high normie) {
+slay quicksort_ints(arr normie[value], low normie, high normie) {
     if low < high {
         sus pivot normie = partition_ints(arr, low, high)
         quicksort_ints(arr, low, pivot - 1)
@@ -380,7 +380,7 @@ slay quicksort_ints(arr []normie, low normie, high normie) {
 }
 
 // Partition function for integers
-slay partition_ints(arr []normie, low normie, high normie) normie {
+slay partition_ints(arr normie[value], low normie, high normie) normie {
     sus pivot normie = arr[high]
     sus i normie = low - 1
     
@@ -395,14 +395,14 @@ slay partition_ints(arr []normie, low normie, high normie) normie {
 }
 
 // Swap function for integers
-slay swap_ints(arr []normie, i normie, j normie) {
+slay swap_ints(arr normie[value], i normie, j normie) {
     sus temp normie = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
 }
 
 // Quicksort implementation for strings
-slay quicksort_strings(arr []tea, low normie, high normie) {
+slay quicksort_strings(arr tea[value], low normie, high normie) {
     if low < high {
         sus pivot normie = partition_strings(arr, low, high)
         quicksort_strings(arr, low, pivot - 1)
@@ -411,7 +411,7 @@ slay quicksort_strings(arr []tea, low normie, high normie) {
 }
 
 // Partition function for strings
-slay partition_strings(arr []tea, low normie, high normie) normie {
+slay partition_strings(arr tea[value], low normie, high normie) normie {
     sus pivot tea = arr[high]
     sus i normie = low - 1
     
@@ -426,14 +426,14 @@ slay partition_strings(arr []tea, low normie, high normie) normie {
 }
 
 // Swap function for strings
-slay swap_strings(arr []tea, i normie, j normie) {
+slay swap_strings(arr tea[value], i normie, j normie) {
     sus temp tea = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
 }
 
 // Quicksort implementation for floats
-slay quicksort_floats(arr []meal, low normie, high normie) {
+slay quicksort_floats(arr meal[value], low normie, high normie) {
     if low < high {
         sus pivot normie = partition_floats(arr, low, high)
         quicksort_floats(arr, low, pivot - 1)
@@ -442,7 +442,7 @@ slay quicksort_floats(arr []meal, low normie, high normie) {
 }
 
 // Partition function for floats
-slay partition_floats(arr []meal, low normie, high normie) normie {
+slay partition_floats(arr meal[value], low normie, high normie) normie {
     sus pivot meal = arr[high]
     sus i normie = low - 1
     
@@ -457,14 +457,14 @@ slay partition_floats(arr []meal, low normie, high normie) normie {
 }
 
 // Swap function for floats
-slay swap_floats(arr []meal, i normie, j normie) {
+slay swap_floats(arr meal[value], i normie, j normie) {
     sus temp meal = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
 }
 
 // Merge sort for stable sorting
-slay merge_sort_ints(arr []normie, left normie, right normie) {
+slay merge_sort_ints(arr normie[value], left normie, right normie) {
     if left < right {
         sus mid normie = left + (right - left) / 2
         merge_sort_ints(arr, left, mid)
@@ -474,12 +474,12 @@ slay merge_sort_ints(arr []normie, left normie, right normie) {
 }
 
 // Merge function for merge sort
-slay merge_arrays(arr []normie, left normie, mid normie, right normie) {
+slay merge_arrays(arr normie[value], left normie, mid normie, right normie) {
     sus left_size normie = mid - left + 1
     sus right_size normie = right - mid
     
-    sus left_arr []normie = make_int_array(left_size)
-    sus right_arr []normie = make_int_array(right_size)
+    sus left_arr normie[value] = make_int_array(left_size)
+    sus right_arr normie[value] = make_int_array(right_size)
     
     bestie i := 0; i < left_size; i++ {
         left_arr[i] = arr[left + i]
@@ -518,7 +518,7 @@ slay merge_arrays(arr []normie, left normie, mid normie, right normie) {
 }
 
 // Quick select implementation
-slay quickselect_impl(arr []normie, low normie, high normie, k normie) normie {
+slay quickselect_impl(arr normie[value], low normie, high normie, k normie) normie {
     if low == high {
         damn arr[low]
     }
@@ -548,9 +548,9 @@ slay string_compare(a tea, b tea) normie {
 }
 
 // Array copy functions
-slay copy_int_array(arr []normie) []normie {
+slay copy_int_array(arr normie[value]) normie[value]{
     sus len normie = array_length(arr)
-    sus result []normie = make_int_array(len)
+    sus result normie[value] = make_int_array(len)
     
     bestie i := 0; i < len; i++ {
         result[i] = arr[i]
@@ -558,9 +558,9 @@ slay copy_int_array(arr []normie) []normie {
     damn result
 }
 
-slay copy_string_array(arr []tea) []tea {
+slay copy_string_array(arr tea[value]) tea[value]{
     sus len normie = array_length_str(arr)
-    sus result []tea = make_string_array(len)
+    sus result tea[value] = make_string_array(len)
     
     bestie i := 0; i < len; i++ {
         result[i] = arr[i]
@@ -568,9 +568,9 @@ slay copy_string_array(arr []tea) []tea {
     damn result
 }
 
-slay copy_float_array(arr []meal) []meal {
+slay copy_float_array(arr meal[value]) meal[value]{
     sus len normie = array_length_float(arr)
-    sus result []meal = make_float_array(len)
+    sus result meal[value] = make_float_array(len)
     
     bestie i := 0; i < len; i++ {
         result[i] = arr[i]
@@ -579,7 +579,7 @@ slay copy_float_array(arr []meal) []meal {
 }
 
 // Array comparison
-slay arrays_equal(arr1 []normie, arr2 []normie) lit {
+slay arrays_equal(arr1 normie[value], arr2 normie[value]) lit {
     sus len1 normie = array_length(arr1)
     sus len2 normie = array_length(arr2)
     
@@ -615,30 +615,30 @@ slay random_int(max normie) normie {
 }
 
 // Runtime-provided functions (these would be implemented by the runtime)
-slay array_length(arr []normie) normie {
+slay array_length(arr normie[value]) normie {
     damn 0  // Implementation provided by runtime
 }
 
-slay array_length_str(arr []tea) normie {
+slay array_length_str(arr tea[value]) normie {
     damn 0  // Implementation provided by runtime
 }
 
-slay array_length_float(arr []meal) normie {
+slay array_length_float(arr meal[value]) normie {
     damn 0  // Implementation provided by runtime
 }
 
-slay make_int_array(size normie) []normie {
-    damn []normie{}  // Implementation provided by runtime
+slay make_int_array(size normie) normie[value]{
+    damn normie[value]{}  // Implementation provided by runtime
 }
 
-slay make_string_array(size normie) []tea {
-    damn []tea{}  // Implementation provided by runtime
+slay make_string_array(size normie) tea[value]{
+    damn tea[value]{}  // Implementation provided by runtime
 }
 
-slay make_float_array(size normie) []meal {
-    damn []meal{}  // Implementation provided by runtime
+slay make_float_array(size normie) meal[value]{
+    damn meal[value]{}  // Implementation provided by runtime
 }
 
-slay make_array_of_arrays(size normie) [][]normie {
-    damn [][]normie{}  // Implementation provided by runtime
+slay make_array_of_arrays(size normie) normie[value][value] {
+    damn normie[value][value]{}  // Implementation provided by runtime
 }

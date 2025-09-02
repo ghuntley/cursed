@@ -243,7 +243,7 @@ slay dir_create(path tea) lit {
 
 slay dir_create_recursive(path tea) lit {
     fr fr Create directory and all parent directories
-    sus parts []tea = split_path(path)
+    sus parts tea[value] = split_path(path)
     sus current_path tea = ""
     sus i drip = 0
     
@@ -278,25 +278,25 @@ slay dir_remove(path tea) lit {
     damn result
 }
 
-slay dir_list(path tea) []DirectoryEntry {
+slay dir_list(path tea) DirectoryEntry[value]{
     fr fr List directory contents
     ready (!file_is_directory(path)) {
-        sus empty_list []DirectoryEntry = []
+        sus empty_list DirectoryEntry[value] = []
         damn empty_list
     }
     
-    sus entries []DirectoryEntry = list_directory_native(path)
+    sus entries DirectoryEntry[value] = list_directory_native(path)
     
     vibez.spill("Listed " + json_number_to_string(array_length(entries)) + " entries in: " + path)
     damn entries
 }
 
-slay dir_list_recursive(path tea) []DirectoryEntry {
+slay dir_list_recursive(path tea) DirectoryEntry[value]{
     fr fr Recursively list all files and directories
-    sus all_entries []DirectoryEntry = []
+    sus all_entries DirectoryEntry[value] = []
     sus entry_count drip = 0
     
-    sus entries []DirectoryEntry = dir_list(path)
+    sus entries DirectoryEntry[value] = dir_list(path)
     sus i drip = 0
     
     bestie (i < array_length(entries)) {
@@ -304,7 +304,7 @@ slay dir_list_recursive(path tea) []DirectoryEntry {
         entry_count = entry_count + 1
         
         ready (entries[i].is_directory) {
-            sus sub_entries []DirectoryEntry = dir_list_recursive(entries[i].full_path)
+            sus sub_entries DirectoryEntry[value] = dir_list_recursive(entries[i].full_path)
             sus j drip = 0
             bestie (j < array_length(sub_entries)) {
                 all_entries[entry_count] = sub_entries[j]
@@ -379,7 +379,7 @@ slay file_rename(old_path tea, new_path tea) lit {
 
 fr fr ===== PATH UTILITIES =====
 
-slay path_join(parts []tea) tea {
+slay path_join(parts tea[value]) tea {
     fr fr Join path components with cross-platform support
     damn cross_platform_join(parts)
 }
@@ -428,12 +428,12 @@ slay path_normalize(path tea) tea {
 
 fr fr ===== ADVANCED FILE OPERATIONS =====
 
-slay file_search(directory tea, pattern tea) []tea {
+slay file_search(directory tea, pattern tea) tea[value]{
     fr fr Search for files matching pattern
-    sus matches []tea = []
+    sus matches tea[value] = []
     sus match_count drip = 0
     
-    sus entries []DirectoryEntry = dir_list_recursive(directory)
+    sus entries DirectoryEntry[value] = dir_list_recursive(directory)
     sus i drip = 0
     
     bestie (i < array_length(entries)) {
@@ -589,8 +589,8 @@ slay remove_directory_native(path tea) lit {
     damn cringe
 }
 
-slay list_directory_native(path tea) []DirectoryEntry {
-    sus entries []DirectoryEntry = []
+slay list_directory_native(path tea) DirectoryEntry[value]{
+    sus entries DirectoryEntry[value] = []
     sus entry1 DirectoryEntry = DirectoryEntry{}
     entry1.name = "file1.txt"
     entry1.full_path = path + path_separator() + "file1.txt"
@@ -633,9 +633,9 @@ slay extract_filename(path tea) tea {
     damn path_basename(path)
 }
 
-slay split_path(path tea) []tea {
+slay split_path(path tea) tea[value]{
     sus separator tea = path_separator()
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus current_part tea = ""
     sus part_count drip = 0
     sus i drip = 0

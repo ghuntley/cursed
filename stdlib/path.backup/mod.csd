@@ -29,7 +29,7 @@ be_like PathInfo = struct {
     filename tea
     basename tea
     extension tea
-    components []tea
+    components tea[value]
     is_absolute lit
     is_directory lit
     exists lit
@@ -79,7 +79,7 @@ slay detect_platform() { fr fr Simple platform detection based on environment fr
 }
 
 fr fr Core Path Functions
-slay join(components []tea) tea {
+slay join(components tea[value]) tea {
     init_path_manager()
     
     lowkey len(components) == 0 {
@@ -110,14 +110,14 @@ slay join(components []tea) tea {
     damn result
 }
 
-slay split(path tea) []tea {
+slay split(path tea) tea[value]{
     init_path_manager()
     
     lowkey stringz.length(path) == 0 {
-        damn []tea{}
+        damn tea[value]{}
     } fr fr Split by separator
     components := stringz.split(path, global_path_manager.separator) fr fr Remove empty components except for root
-    result := []tea{}
+    result := tea[value]{}
     bestie i, component := range components {
         lowkey stringz.length(component) > 0 || i == 0 {
             result = append(result, component)
@@ -243,7 +243,7 @@ slay abs(path tea) tea {
     lowkey is_absolute(path) {
         damn clean(path)
     } fr fr Make absolute by joining with current directory
-    damn clean(join([]tea{global_path_manager.current_dir, path}))
+    damn clean(join(tea[value]{global_path_manager.current_dir, path}))
 }
 
 slay rel(base tea, target tea) tea {
@@ -267,7 +267,7 @@ slay rel(base tea, target tea) tea {
             ghosted
         }
     } fr fr Build relative path
-    rel_components := []tea{} fr fr Add .. for each remaining base component
+    rel_components := tea[value]{} fr fr Add .. for each remaining base component
     bestie i := common_len; i < len(base_components); i++ {
         rel_components = append(rel_components, PATH_PARENT_DIR)
     } fr fr Add remaining target components
@@ -290,7 +290,7 @@ slay clean(path tea) tea {
     }
     
     components := split(path)
-    clean_components := []tea{}
+    clean_components := tea[value]{}
     
     bestie _, component := range components {
         lowkey component == PATH_CURRENT_DIR { fr fr Skip current directory references
@@ -331,7 +331,7 @@ slay expand_home(path tea) tea {
         
         lowkey stringz.has_prefix(path, PATH_HOME_SHORTCUT + global_path_manager.separator) {
             remainder := stringz.substring(path, 2, stringz.length(path))
-            damn join([]tea{global_path_manager.home_dir, remainder})
+            damn join(tea[value]{global_path_manager.home_dir, remainder})
         }
     }
     
@@ -377,7 +377,7 @@ slay validate(path tea) lit {
     lowkey stringz.length(path) > PATH_MAX_LENGTH {
         damn cap
     } fr fr Check for invalid characters
-    invalid_chars := []tea{"\\000", "\\001", "\\002", "\\003", "\\004", "\\005", "\\006", "\\007"}
+    invalid_chars := tea[value]{"\\000", "\\001", "\\002", "\\003", "\\004", "\\005", "\\006", "\\007"}
     bestie _, invalid_char := range invalid_chars {
         lowkey stringz.contains(path, invalid_char) {
             damn cap
@@ -403,13 +403,13 @@ slay is_valid_filename(filename tea) lit {
     lowkey stringz.length(filename) > PATH_COMPONENT_MAX {
         damn cap
     } fr fr Check for invalid filename characters
-    invalid_chars := []tea{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
+    invalid_chars := tea[value]{"/", "\\", ":", "*", "?", "\"", "<", ">", "|"}
     bestie _, invalid_char := range invalid_chars {
         lowkey stringz.contains(filename, invalid_char) {
             damn cap
         }
     } fr fr Check for reserved names (Windows)
-    reserved_names := []tea{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
+    reserved_names := tea[value]{"CON", "PRN", "AUX", "NUL", "COM1", "COM2", "COM3", "COM4", "COM5", "COM6", "COM7", "COM8", "COM9", "LPT1", "LPT2", "LPT3", "LPT4", "LPT5", "LPT6", "LPT7", "LPT8", "LPT9"}
     upper_filename := stringz.to_upper(filename)
     bestie _, reserved := range reserved_names {
         lowkey upper_filename == reserved {
@@ -437,7 +437,7 @@ slay match(pattern tea, path tea) lit {
     damn pattern == path
 }
 
-slay has_extension(path tea, extensions []tea) lit {
+slay has_extension(path tea, extensions tea[value]) lit {
     init_path_manager()
     
     path_ext := ext(path)
@@ -491,7 +491,7 @@ slay is_likely_directory(path tea) lit {
 
 slay path_exists(path tea) lit {
     init_path_manager() fr fr Simulate path existence check fr fr In real implementation, would check filesystem
-    common_paths := []tea{
+    common_paths := tea[value]{
         "/home/user",
         "/tmp",
         "/usr/bin",
@@ -605,17 +605,17 @@ slay to_native(path tea) tea {
 }
 
 fr fr Path List Functions
-slay split_list(path_list tea) []tea {
+slay split_list(path_list tea) tea[value]{
     init_path_manager()
     
     lowkey stringz.length(path_list) == 0 {
-        damn []tea{}
+        damn tea[value]{}
     }
     
     damn stringz.split(path_list, global_path_manager.list_separator)
 }
 
-slay join_list(paths []tea) tea {
+slay join_list(paths tea[value]) tea {
     init_path_manager()
     
     damn stringz.join(paths, global_path_manager.list_separator)

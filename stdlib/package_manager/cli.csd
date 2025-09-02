@@ -12,16 +12,16 @@ squad CliCommand {
     spill name tea
     spill description tea
     spill usage tea
-    spill examples []tea
-    spill flags []CliFlag
+    spill examples tea[value]
+    spill flags CliFlag[value]
     
     slay new(name tea, description tea, usage tea) CliCommand {
         damn CliCommand{
             name: name,
             description: description,
             usage: usage,
-            examples: []tea{},
-            flags: []CliFlag{}
+            examples: tea[value]{},
+            flags: CliFlag[value]{}
         }
     }
     
@@ -115,17 +115,17 @@ squad CliFlag {
 squad ParsedArgs {
     spill command tea
     spill subcommand tea
-    spill packages []tea
-    spill flags []ParsedFlag
-    spill positional []tea
+    spill packages tea[value]
+    spill flags ParsedFlag[value]
+    spill positional tea[value]
     
     slay new() ParsedArgs {
         damn ParsedArgs{
             command: "",
             subcommand: "",
-            packages: []tea{},
-            flags: []ParsedFlag{},
-            positional: []tea{}
+            packages: tea[value]{},
+            flags: ParsedFlag[value]{},
+            positional: tea[value]{}
         }
     }
     
@@ -173,15 +173,15 @@ squad ParsedFlag {
 
 // Main CLI application
 squad PackageManagerCLI {
-    spill commands []CliCommand
+    spill commands CliCommand[value]
     spill current_directory tea
-    spill global_flags []CliFlag
+    spill global_flags CliFlag[value]
     
     slay new() PackageManagerCLI {
         sus cli PackageManagerCLI = PackageManagerCLI{
-            commands: []CliCommand{},
+            commands: CliCommand[value]{},
             current_directory: get_current_dir(),
-            global_flags: []CliFlag{}
+            global_flags: CliFlag[value]{}
         }
         
         cli.setupCommands()
@@ -361,7 +361,7 @@ squad PackageManagerCLI {
             CliFlag.withValue("", "config", "Use custom configuration file"))
     }
     
-    slay parseArgs(self PackageManagerCLI, args []tea) ParsedArgs {
+    slay parseArgs(self PackageManagerCLI, args tea[value]) ParsedArgs {
         sus parsed ParsedArgs = ParsedArgs.new()
         
         ready (len(args) == 0) {
@@ -425,7 +425,7 @@ squad PackageManagerCLI {
         damn parsed
     }
     
-    slay run(self PackageManagerCLI, args []tea) drip {
+    slay run(self PackageManagerCLI, args tea[value]) drip {
         sus parsed ParsedArgs = self.parseArgs(args)
         
         // Handle global flags first
@@ -830,7 +830,7 @@ slay get_current_dir() tea {
 
 slay get_current_dir_name() tea {
     sus full_path tea = get_current_dir()
-    sus parts []tea = split_str(full_path, "/")
+    sus parts tea[value] = split_str(full_path, "/")
     ready (len(parts) > 0) {
         damn parts[len(parts) - 1]
     }
@@ -852,7 +852,7 @@ slay main() drip {
     sus cli PackageManagerCLI = PackageManagerCLI.new()
     
     // Get command line arguments (mock for now)
-    sus args []tea = []tea{}
+    sus args tea[value] = tea[value]{}
     args = append_array(args, "add")
     args = append_array(args, "json")
     args = append_array(args, "--verbose")

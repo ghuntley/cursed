@@ -26,7 +26,7 @@ squad VerificationResult {
     sus certificate_valid lit
     sus trust_level tea  # "trusted", "untrusted", "unknown"
     sus error_message tea
-    sus verification_details []tea
+    sus verification_details tea[value]
 }
 
 # Security policy configuration
@@ -34,10 +34,10 @@ squad SecurityPolicy {
     sus require_signatures lit
     sus require_checksums lit
     sus allow_self_signed lit
-    sus trusted_publishers []tea
-    sus blocked_packages []tea
+    sus trusted_publishers tea[value]
+    sus blocked_packages tea[value]
     sus minimum_key_size drip
-    sus allowed_algorithms []tea
+    sus allowed_algorithms tea[value]
 }
 
 # Package integrity metadata
@@ -412,7 +412,7 @@ slay parse_signature_file(signature_data tea) PackageSignature {
     }
     
     # Fall back to simple format parsing
-    sus lines []tea = stringz.split(signature_data, "\n")
+    sus lines tea[value] = stringz.split(signature_data, "\n")
     ready (arrayz.len(lines) >= 3) {
         damn PackageSignature {
             signature_data: lines[0],
@@ -427,7 +427,7 @@ slay parse_signature_file(signature_data tea) PackageSignature {
     damn PackageSignature { signature_data: "" }
 }
 
-slay is_algorithm_allowed(algorithm tea, allowed_algorithms []tea) lit {
+slay is_algorithm_allowed(algorithm tea, allowed_algorithms tea[value]) lit {
     bestie (sus i drip = 0; i < arrayz.len(allowed_algorithms); i = i + 1) {
         ready (algorithm == allowed_algorithms[i]) {
             damn based
@@ -459,7 +459,7 @@ slay get_public_key_for_signature(signature PackageSignature, result Verificatio
     }
     
     # Strategy 3: Fetch from well-known keyservers
-    sus keyservers []tea = [
+    sus keyservers tea[value] = [
         "https://keys.cursedlang.org",
         "https://keyserver.ubuntu.com",
         "https://keys.openpgp.org"
@@ -561,7 +561,7 @@ slay lookup_local_keyring(key_id tea) tea {
     }
     
     # Try different key file formats
-    sus key_files []tea = [
+    sus key_files tea[value] = [
         keyring_dir + "/" + key_id + ".pem",
         keyring_dir + "/" + key_id + ".pub",
         keyring_dir + "/" + stringz.substring(key_id, 0, 8) + ".pem"  # Short key ID
@@ -694,8 +694,8 @@ slay get_builtin_publisher_key(key_id tea) tea {
     damn ""
 }
 
-slay validate_security_policy(policy SecurityPolicy) []tea {
-    sus warnings []tea = []
+slay validate_security_policy(policy SecurityPolicy) tea[value]{
+    sus warnings tea[value] = []
     
     ready (!policy.require_signatures && !policy.require_checksums) {
         warnings = arrayz.append(warnings, 

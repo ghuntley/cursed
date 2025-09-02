@@ -160,7 +160,7 @@ slay demo_batch_processing() lit {
     vibez.print_header("Batch Processing Demo")
     
     // Process multiple images with the same pipeline
-    sus input_files [5]tea
+    sus input_files tea[5]
     input_files[0] = "batch1.jpg"
     input_files[1] = "batch2.jpg"
     input_files[2] = "batch3.jpg"

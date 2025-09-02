@@ -180,7 +180,7 @@ slay discover_tests_in_directory(directory tea, pattern tea) {
 
 slay run_discovered_tests() {
     vibez.spill("🚀 Running discovered tests...") fr fr Simulate running discovered tests
-    sus test_names [4]tea = ["test_basic", "test_advanced", "test_performance", "test_integration"]
+    sus test_names tea[4] = ["test_basic", "test_advanced", "test_performance", "test_integration"]
     
     bestie i := 0; i < 4; i++ {
         test_execution_index = i + 1

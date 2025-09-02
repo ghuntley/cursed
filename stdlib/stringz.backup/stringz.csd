@@ -9,7 +9,7 @@ yeet "vibez"
 
 fr fr ===== STRING MANIPULATION =====
 
-slay split(s tea, delimiter tea) []tea {
+slay split(s tea, delimiter tea) tea[value]{
     fr fr Split string on delimiter - improved implementation
     ready delimiter == "" {
         damn [s]  fr fr Can't split on empty delimiter
@@ -18,7 +18,7 @@ slay split(s tea, delimiter tea) []tea {
         damn []  fr fr Empty string returns empty array
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus current tea = ""
     sus i drip = 0
     sus len_s drip = string_length(s)
@@ -53,7 +53,7 @@ slay split(s tea, delimiter tea) []tea {
     damn result
 }
 
-slay join(parts []tea, delimiter tea) tea {
+slay join(parts tea[value], delimiter tea) tea {
     ready (len(parts) == 0) {
         damn ""
     }
@@ -145,7 +145,7 @@ slay reverse(s tea) tea {
     fr fr Reverse the string with Unicode support
     ready s == "" { damn "" }
     
-    sus characters []tea = []
+    sus characters tea[value] = []
     sus byte_offset drip = 0
     sus byte_len drip = byte_length(s)
     
@@ -186,7 +186,7 @@ slay substring(s tea, start drip, length drip) tea {
 
 fr fr ===== STRING FORMATTING =====
 
-slay format_template(template tea, replacements []tea) tea {
+slay format_template(template tea, replacements tea[value]) tea {
     fr fr Simple template formatting with {} placeholders
     ready (template == "Hello {}" && len(replacements) == 1) {
         damn "Hello " + replacements[0]
@@ -652,8 +652,8 @@ slay has_suffix(s tea, suffix tea) lit {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay append_string_to_array(arr []tea, str tea) []tea {
-    sus new_arr []tea = make([]tea, len(arr) + 1)
+slay append_string_to_array(arr tea[value], str tea) tea[value]{
+    sus new_arr tea[value] = make(tea[value], len(arr) + 1)
     sus i drip = 0
     bestie i < len(arr) {
         new_arr[i] = arr[i]
@@ -671,11 +671,11 @@ slay char_at(s tea, index drip) normie {
 }
 
 slay char_to_string(c normie) tea {
-    sus result [2]normie = [c, 0]
+    sus result normie[2] = [c, 0]
     damn string_from_bytes(result)
 }
 
-slay string_from_bytes(bytes []normie) tea {
+slay string_from_bytes(bytes normie[value]) tea {
     sus result tea = ""
     sus i drip = 0
     bestie i < len(bytes) && bytes[i] != 0 {
@@ -976,13 +976,13 @@ slay find_next_occurrence(text tea, pattern tea, start_pos drip) drip {
     damn -1
 }
 
-slay string_array_append(arr []tea, str tea) []tea {
+slay string_array_append(arr tea[value], str tea) tea[value]{
     fr fr Append string to array - proper implementation
     sus old_len drip = string_array_length(arr)
     sus new_len drip = old_len + 1
     
     fr fr Create new array with increased capacity
-    sus result []tea = make_string_array(new_len)
+    sus result tea[value] = make_string_array(new_len)
     sus i drip = 0
     
     fr fr Copy existing elements
@@ -996,7 +996,7 @@ slay string_array_append(arr []tea, str tea) []tea {
     damn result
 }
 
-slay string_array_length(arr []tea) drip {
+slay string_array_length(arr tea[value]) drip {
     fr fr Get length of string array - proper implementation
     fr fr Use built-in length function for arrays
     damn length(arr)
@@ -1025,9 +1025,9 @@ slay digit_to_char_string(digit drip) tea {
 
 fr fr ===== HELPER FUNCTIONS FOR ARRAY AND CHARACTER OPERATIONS =====
 
-slay make_string_array(capacity drip) []tea {
+slay make_string_array(capacity drip) tea[value]{
     fr fr Create new string array with specified capacity
-    sus result []tea = []
+    sus result tea[value] = []
     sus i drip = 0
     bestie i < capacity {
         result = string_array_append_internal(result, "")
@@ -1036,10 +1036,10 @@ slay make_string_array(capacity drip) []tea {
     damn result
 }
 
-slay string_array_append_internal(arr []tea, str tea) []tea {
+slay string_array_append_internal(arr tea[value], str tea) tea[value]{
     fr fr Internal array append function
     fr fr This uses language built-in array operations
-    sus new_arr []tea = arr
+    sus new_arr tea[value] = arr
     new_arr[length(arr)] = str  fr fr Append to end
     damn new_arr
 }

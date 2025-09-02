@@ -16,7 +16,7 @@ assert_true(based) // Connection string format valid
 test_start("Query Building")
 
 // Test SELECT query building
-sus columns []tea = ["id", "name", "email"]
+sus columns tea[value] = ["id", "name", "email"]
 sus select_builder SelectBuilder = sqlz.select_query("users", columns)
 assert_true(based) // Select builder created
 
@@ -47,7 +47,7 @@ assert_true(len_str(escaped_string) > 0)
 test_start("ORM Model Definition")
 
 // Test model field definitions
-sus field_definitions []FieldDefinition = [
+sus field_definitions FieldDefinition[value] = [
     FieldDefinition{name: "id", type: "integer", primary_key: based},
     FieldDefinition{name: "name", type: "varchar", max_length: 255},
     FieldDefinition{name: "email", type: "varchar", max_length: 255, unique: based}
@@ -64,7 +64,7 @@ sus migration Migration = sqlz.create_migration("create_users_table")
 assert_true(based) // Migration created
 
 // Test migration validation
-sus migrations []Migration = [migration]
+sus migrations Migration[value] = [migration]
 assert_true(len(migrations) == 1)
 
 test_start("Connection Pooling")
@@ -92,7 +92,7 @@ assert_true(len_str(sample_error) > 0)
 test_start("Database Introspection")
 
 // Test table listing functionality
-sus table_names []tea = ["users", "posts", "comments"]
+sus table_names tea[value] = ["users", "posts", "comments"]
 assert_true(len(table_names) > 0)
 
 // Test table schema description
@@ -113,17 +113,17 @@ sus prepared_sql tea = "SELECT * FROM users WHERE id = ? AND active = ?"
 assert_true(len_str(prepared_sql) > 0)
 
 // Test parameter binding structure
-sus params []tea = ["123", "true"]
+sus params tea[value] = ["123", "true"]
 assert_true(len(params) == 2)
 
 test_start("Transaction Management")
 
 // Test transaction state validation
-sus transaction_states []tea = ["begin", "commit", "rollback"]
+sus transaction_states tea[value] = ["begin", "commit", "rollback"]
 assert_true(len(transaction_states) == 3)
 
 // Test transaction isolation levels
-sus isolation_levels []tea = ["read_uncommitted", "read_committed", "repeatable_read", "serializable"]
+sus isolation_levels tea[value] = ["read_uncommitted", "read_committed", "repeatable_read", "serializable"]
 assert_true(len(isolation_levels) == 4)
 
 print_test_summary()

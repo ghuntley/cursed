@@ -95,7 +95,7 @@ assert_true(len_str(editor) > 0 || editor_err != "")
 test_start("PATH Environment Variable")
 
 // Test PATH operations
-sus path_dirs []tea = envz.get_path_env()
+sus path_dirs tea[value] = envz.get_path_env()
 assert_true(len(path_dirs) >= 0) // PATH might be empty in some test environments
 
 test_start("Temporary Directory")
@@ -123,7 +123,7 @@ assert_eq_string(list_err, "")
 assert_true(len(env_list) > 0) // Should have at least some environment variables
 
 // Test process environment preparation
-sus process_env []tea = envz.copy_env_to_new_process()
+sus process_env tea[value] = envz.copy_env_to_new_process()
 assert_true(len(process_env) >= 0) // Should return array (may be empty)
 
 test_start("Error Handling")

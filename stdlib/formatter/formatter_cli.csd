@@ -39,7 +39,7 @@ slay default_cli_args() FormatCliArgs {
 
 fr fr ===== ARGUMENT PARSING =====
 
-slay parse_cli_arguments(args []tea) FormatCliArgs {
+slay parse_cli_arguments(args tea[value]) FormatCliArgs {
     sus cli_args FormatCliArgs = default_cli_args()
     sus i drip = 0
     
@@ -255,7 +255,7 @@ slay process_cli_request(cli_args FormatCliArgs) drip {
     
     fr fr Handle validation only mode
     ready (cli_args.validate) {
-        sus errors []tea = validate_basic_syntax(source_code)
+        sus errors tea[value] = validate_basic_syntax(source_code)
         ready (len(errors) == 0) {
             ready (cli_args.verbose) {
                 vibez.spill("✅ Syntax validation passed")
@@ -349,7 +349,7 @@ slay process_cli_request(cli_args FormatCliArgs) drip {
 
 fr fr ===== BATCH PROCESSING =====
 
-slay process_multiple_files(files []tea, cli_args FormatCliArgs) drip {
+slay process_multiple_files(files tea[value], cli_args FormatCliArgs) drip {
     sus total_files drip = len(files)
     sus success_count drip = 0
     sus error_count drip = 0
@@ -428,7 +428,7 @@ slay run_interactive_mode() {
             vibez.spill("✅ Style changed to: " + style)
         } otherwise ready (starts_with(input, "validate ")) {
             sus code tea = slice_tea(input, 9, string_length(input))
-            sus errors []tea = validate_basic_syntax(code)
+            sus errors tea[value] = validate_basic_syntax(code)
             ready (len(errors) == 0) {
                 vibez.spill("✅ Valid syntax")
             } otherwise {
@@ -463,7 +463,7 @@ slay print_interactive_help() {
 
 fr fr ===== MAIN CLI ENTRY POINT =====
 
-slay cli_main(args []tea) drip {
+slay cli_main(args tea[value]) drip {
     ready (len(args) == 0) {
         vibez.spill("CURSED Code Formatter")
         vibez.spill("Use --help for usage information or try 'interactive' mode")
@@ -492,37 +492,37 @@ slay main() {
     
     fr fr Demo different CLI scenarios
     vibez.spill("=== Demo 1: Basic formatting ===")
-    sus demo_args1 []tea = ["test.csd"]
+    sus demo_args1 tea[value] = ["test.csd"]
     sus result1 drip = cli_main(demo_args1)
     vibez.spill("Exit code: " + int_to_string(result1))
     vibez.spill("")
     
     vibez.spill("=== Demo 2: Check mode ===")
-    sus demo_args2 []tea = ["--check", "--verbose", "test.csd"]
+    sus demo_args2 tea[value] = ["--check", "--verbose", "test.csd"]
     sus result2 drip = cli_main(demo_args2)
     vibez.spill("Exit code: " + int_to_string(result2))
     vibez.spill("")
     
     vibez.spill("=== Demo 3: Diff mode ===")
-    sus demo_args3 []tea = ["--diff", "complex.csd"]
+    sus demo_args3 tea[value] = ["--diff", "complex.csd"]
     sus result3 drip = cli_main(demo_args3)
     vibez.spill("Exit code: " + int_to_string(result3))
     vibez.spill("")
     
     vibez.spill("=== Demo 4: Compact style ===")
-    sus demo_args4 []tea = ["--style", "compact", "--verbose", "struct.csd"]
+    sus demo_args4 tea[value] = ["--style", "compact", "--verbose", "struct.csd"]
     sus result4 drip = cli_main(demo_args4)
     vibez.spill("Exit code: " + int_to_string(result4))
     vibez.spill("")
     
     vibez.spill("=== Demo 5: Validation only ===")
-    sus demo_args5 []tea = ["--validate", "--verbose", "test.csd"]
+    sus demo_args5 tea[value] = ["--validate", "--verbose", "test.csd"]
     sus result5 drip = cli_main(demo_args5)
     vibez.spill("Exit code: " + int_to_string(result5))
     vibez.spill("")
     
     vibez.spill("=== Demo 6: In-place with backup ===")
-    sus demo_args6 []tea = ["--in-place", "--backup", "--verbose", "test.csd"]
+    sus demo_args6 tea[value] = ["--in-place", "--backup", "--verbose", "test.csd"]
     sus result6 drip = cli_main(demo_args6)
     vibez.spill("Exit code: " + int_to_string(result6))
     vibez.spill("")
@@ -532,7 +532,7 @@ slay main() {
     vibez.spill("")
     
     vibez.spill("=== Demo 8: Help output ===")
-    sus demo_args8 []tea = ["--help"]
+    sus demo_args8 tea[value] = ["--help"]
     sus result8 drip = cli_main(demo_args8)
     vibez.spill("")
     

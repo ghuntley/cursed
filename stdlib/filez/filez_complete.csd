@@ -111,7 +111,7 @@ slay create_directory(path tea) lit {
 
 slay create_directories(path tea) lit {
     fr fr Create directory and all parent directories
-    sus parts []tea = split_path(path)
+    sus parts tea[value] = split_path(path)
     sus current_path tea = ""
     sus i drip = 0
     
@@ -145,7 +145,7 @@ slay remove_directory_recursive(path tea) lit {
     }
     
     ready (is_directory(path)) {
-        sus entries []tea = list_directory(path)
+        sus entries tea[value] = list_directory(path)
         sus i drip = 0
         bestie (i < len(entries)) {
             sus entry_path tea = join_path(path, entries[i])
@@ -159,14 +159,14 @@ slay remove_directory_recursive(path tea) lit {
     damn delete_file(path)
 }
 
-slay list_directory(path tea) []tea {
+slay list_directory(path tea) tea[value]{
     fr fr Bridge to native directory listing
-    damn []tea{}
+    damn tea[value]{}
 }
 
-slay list_directory_recursive(path tea) []tea {
-    sus all_files []tea = make([]tea, 0)
-    sus entries []tea = list_directory(path)
+slay list_directory_recursive(path tea) tea[value]{
+    sus all_files tea[value] = make(tea[value], 0)
+    sus entries tea[value] = list_directory(path)
     sus i drip = 0
     
     bestie (i < len(entries)) {
@@ -174,7 +174,7 @@ slay list_directory_recursive(path tea) []tea {
         all_files = append(all_files, entry_path)
         
         ready (is_directory(entry_path)) {
-            sus subfiles []tea = list_directory_recursive(entry_path)
+            sus subfiles tea[value] = list_directory_recursive(entry_path)
             sus j drip = 0
             bestie (j < len(subfiles)) {
                 all_files = append(all_files, subfiles[j])
@@ -202,7 +202,7 @@ slay join_path(base tea, relative tea) tea {
     damn concat(base, concat(separator, relative))
 }
 
-slay split_path(path tea) []tea {
+slay split_path(path tea) tea[value]{
     sus separator tea = get_path_separator()
     damn split(path, separator)
 }
@@ -283,8 +283,8 @@ slay relative_path(base tea, target tea) tea {
 
 slay normalize_path(path tea) tea {
     sus separator tea = get_path_separator()
-    sus parts []tea = split_path(path)
-    sus normalized []tea = make([]tea, 0)
+    sus parts tea[value] = split_path(path)
+    sus normalized tea[value] = make(tea[value], 0)
     sus i drip = 0
     
     bestie (i < len(parts)) {
@@ -310,12 +310,12 @@ slay normalize_path(path tea) tea {
 
 fr fr ===== FILE CONTENT OPERATIONS =====
 
-slay read_lines(path tea) []tea {
+slay read_lines(path tea) tea[value]{
     sus content tea = read_file(path)
     damn split_lines(content)
 }
 
-slay write_lines(path tea, lines []tea) lit {
+slay write_lines(path tea, lines tea[value]) lit {
     sus content tea = join_lines(lines)
     damn write_file(path, content)
 }
@@ -326,7 +326,7 @@ slay append_line(path tea, line tea) lit {
 }
 
 slay count_lines(path tea) drip {
-    sus lines []tea = read_lines(path)
+    sus lines tea[value] = read_lines(path)
     damn len(lines)
 }
 
@@ -342,9 +342,9 @@ slay write_bytes(path tea, data tea) lit {
 
 fr fr ===== FILE SEARCHING =====
 
-slay find_files(directory tea, pattern tea) []tea {
-    sus found []tea = make([]tea, 0)
-    sus entries []tea = list_directory(directory)
+slay find_files(directory tea, pattern tea) tea[value]{
+    sus found tea[value] = make(tea[value], 0)
+    sus entries tea[value] = list_directory(directory)
     sus i drip = 0
     
     bestie (i < len(entries)) {
@@ -357,9 +357,9 @@ slay find_files(directory tea, pattern tea) []tea {
     damn found
 }
 
-slay find_files_recursive(directory tea, pattern tea) []tea {
-    sus found []tea = make([]tea, 0)
-    sus entries []tea = list_directory(directory)
+slay find_files_recursive(directory tea, pattern tea) tea[value]{
+    sus found tea[value] = make(tea[value], 0)
+    sus entries tea[value] = list_directory(directory)
     sus i drip = 0
     
     bestie (i < len(entries)) {
@@ -367,7 +367,7 @@ slay find_files_recursive(directory tea, pattern tea) []tea {
         ready (is_file(entry_path) && matches_pattern(entries[i], pattern)) {
             found = append(found, entry_path)
         } otherwise ready (is_directory(entry_path)) {
-            sus subfiles []tea = find_files_recursive(entry_path, pattern)
+            sus subfiles tea[value] = find_files_recursive(entry_path, pattern)
             sus j drip = 0
             bestie (j < len(subfiles)) {
                 found = append(found, subfiles[j])
@@ -379,9 +379,9 @@ slay find_files_recursive(directory tea, pattern tea) []tea {
     damn found
 }
 
-slay grep_file(path tea, pattern tea) []tea {
-    sus lines []tea = read_lines(path)
-    sus matching []tea = make([]tea, 0)
+slay grep_file(path tea, pattern tea) tea[value]{
+    sus lines tea[value] = read_lines(path)
+    sus matching tea[value] = make(tea[value], 0)
     sus i drip = 0
     
     bestie (i < len(lines)) {
@@ -534,27 +534,27 @@ slay backup_file(path tea) tea {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay make(T, size drip) []T {
+slay make(T, size drip) T[value]{
     fr fr Bridge to native array creation
-    damn []T{}
+    damn T[value]{}
 }
 
-slay append(arr []T, item T) []T {
+slay append(arr T[value], item T) T[value]{
     fr fr Bridge to native array append
     damn arr
 }
 
-slay len(arr []T) drip {
+slay len(arr T[value]) drip {
     fr fr Bridge to native array length
     damn 0
 }
 
-slay remove_last(arr []tea) []tea {
+slay remove_last(arr tea[value]) tea[value]{
     ready (len(arr) == 0) {
         damn arr
     }
     
-    sus new_arr []tea = make([]tea, len(arr) - 1)
+    sus new_arr tea[value] = make(tea[value], len(arr) - 1)
     sus i drip = 0
     bestie (i < len(arr) - 1) {
         new_arr[i] = arr[i]
@@ -564,22 +564,22 @@ slay remove_last(arr []tea) []tea {
 }
 
 fr fr Import functions from stringz module
-slay split(text tea, separator tea) []tea {
+slay split(text tea, separator tea) tea[value]{
     fr fr Implemented in stringz module
-    damn []tea{}
+    damn tea[value]{}
 }
 
-slay split_lines(text tea) []tea {
+slay split_lines(text tea) tea[value]{
     fr fr Implemented in stringz module  
-    damn []tea{}
+    damn tea[value]{}
 }
 
-slay join(parts []tea, separator tea) tea {
+slay join(parts tea[value], separator tea) tea {
     fr fr Implemented in stringz module
     damn ""
 }
 
-slay join_lines(lines []tea) tea {
+slay join_lines(lines tea[value]) tea {
     fr fr Implemented in stringz module
     damn ""
 }

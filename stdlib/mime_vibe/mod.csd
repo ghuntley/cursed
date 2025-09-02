@@ -66,8 +66,8 @@ sus EncodingBrotli VibeEncoding = "br"
 
 fr fr Message types
 be_like VibePart squad {
-    Header map[tea][]tea
-    Body []normie
+    Header map[tea]tea[value]
+    Body normie[value]
     Filename tea
     Name tea
     ContentType VibeType
@@ -77,14 +77,14 @@ be_like VibePart squad {
 }
 
 be_like VibeMessage squad {
-    Header map[tea][]tea
+    Header map[tea]tea[value]
     Parts []*VibePart
     ContentType VibeType
     Boundary tea
 }
 
 be_like VibeForm squad {
-    Values map[tea][]tea
+    Values map[tea]tea[value]
     Files map[tea][]*VibeFile
 }
 
@@ -92,7 +92,7 @@ be_like VibeFile squad {
     Filename tea
     ContentType VibeType
     Size normie
-    Data []normie
+    Data normie[value]
 }
 
 fr fr Constructor functions
@@ -268,7 +268,7 @@ slay TypeByFilename(filename tea) VibeType {
     damn TypeByExtension(ext)
 }
 
-slay TypeByContent(data []normie) VibeType {
+slay TypeByContent(data normie[value]) VibeType {
     fr fr Simplified content sniffing
     if len(data) == 0 {
         damn TypeApplicationOctetStream
@@ -302,7 +302,7 @@ slay TypeByContent(data []normie) VibeType {
     damn TypeApplicationOctetStream
 }
 
-slay DetectVibeType(filename tea, data []normie) VibeType {
+slay DetectVibeType(filename tea, data normie[value]) VibeType {
     fr fr Try content detection first
     sus contentType := TypeByContent(data)
     if contentType.FullType() != TypeApplicationOctetStream.FullType() {
@@ -314,8 +314,8 @@ slay DetectVibeType(filename tea, data []normie) VibeType {
 }
 
 fr fr Utility functions
-slay splitString(s tea, delimiter tea) []tea {
-    sus result := make([]tea, 0)
+slay splitString(s tea, delimiter tea) tea[value]{
+    sus result := make(tea[value], 0)
     sus current := ""
     
     for i := 0; i < len(s); i++ {
@@ -345,7 +345,7 @@ slay getFileExtension(filename tea) tea {
     damn ""
 }
 
-slay isTextContent(data []normie) lit {
+slay isTextContent(data normie[value]) lit {
     fr fr Simple heuristic: check if most bytes are printable ASCII
     if len(data) == 0 {
         damn cap
@@ -368,12 +368,12 @@ slay isTextContent(data []normie) lit {
 }
 
 fr fr Content encoding/decoding
-slay EncodeContent(data []normie, encoding VibeEncoding) ([]normie, tea) {
+slay EncodeContent(data normie[value], encoding VibeEncoding) (normie[value], tea) {
     switch encoding {
     case EncodingBase64:
         fr fr Simplified base64 encoding
         sus encoded := simpleBase64Encode(data)
-        sus result := make([]normie, len(encoded))
+        sus result := make(normie[value], len(encoded))
         for i := 0; i < len(encoded); i++ {
             result[i] = normie(encoded[i])
         }
@@ -385,7 +385,7 @@ slay EncodeContent(data []normie, encoding VibeEncoding) ([]normie, tea) {
     }
 }
 
-slay DecodeContent(data []normie, encoding VibeEncoding) ([]normie, tea) {
+slay DecodeContent(data normie[value], encoding VibeEncoding) (normie[value], tea) {
     switch encoding {
     case EncodingBase64:
         fr fr Simplified base64 decoding
@@ -402,7 +402,7 @@ slay DecodeContent(data []normie, encoding VibeEncoding) ([]normie, tea) {
     }
 }
 
-slay simpleBase64Encode(data []normie) tea {
+slay simpleBase64Encode(data normie[value]) tea {
     fr fr Very simplified base64 (for demo)
     sus chars := "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
     sus result := ""
@@ -431,9 +431,9 @@ slay simpleBase64Encode(data []normie) tea {
     damn result
 }
 
-slay simpleBase64Decode(encoded tea) []normie {
+slay simpleBase64Decode(encoded tea) normie[value]{
     fr fr Very simplified base64 decoding (for demo)
-    sus result := make([]normie, 0)
+    sus result := make(normie[value], 0)
     
     fr fr For demo, just return the input as bytes
     for i := 0; i < len(encoded); i++ {
@@ -448,7 +448,7 @@ slay simpleBase64Decode(encoded tea) []normie {
 fr fr Message handling
 slay NewVibeMessage() *VibeMessage {
     damn &VibeMessage{
-        Header: make(map[tea][]tea),
+        Header: make(map[tea]tea[value]),
         Parts: make([]*VibePart, 0),
         ContentType: TypeMultipartMixed,
         Boundary: generateBoundary()
@@ -462,8 +462,8 @@ slay generateBoundary() tea {
 
 slay (m *VibeMessage) AddTextPart(content tea, contentType VibeType) *VibePart {
     sus part := &VibePart{
-        Header: make(map[tea][]tea),
-        Body: make([]normie, len(content)),
+        Header: make(map[tea]tea[value]),
+        Body: make(normie[value], len(content)),
         ContentType: contentType,
         Encoding: Encoding8Bit,
         Size: len(content)
@@ -477,9 +477,9 @@ slay (m *VibeMessage) AddTextPart(content tea, contentType VibeType) *VibePart {
     damn part
 }
 
-slay (m *VibeMessage) AddBinaryPart(data []normie, contentType VibeType, filename tea) *VibePart {
+slay (m *VibeMessage) AddBinaryPart(data normie[value], contentType VibeType, filename tea) *VibePart {
     sus part := &VibePart{
-        Header: make(map[tea][]tea),
+        Header: make(map[tea]tea[value]),
         Body: data,
         Filename: filename,
         ContentType: contentType,
@@ -514,11 +514,11 @@ slay (m *VibeMessage) String() tea {
 }
 
 fr fr GenZ-themed features
-slay VibeCheck(data []normie) VibeType {
+slay VibeCheck(data normie[value]) VibeType {
     damn DetectVibeType("", data)
 }
 
-slay NoCapDetect(filename tea, data []normie) VibeType {
+slay NoCapDetect(filename tea, data normie[value]) VibeType {
     fr fr "No cap" means no lies - always accurate detection
     damn DetectVibeType(filename, data)
 }

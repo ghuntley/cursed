@@ -44,8 +44,8 @@ print_test_summary()
 
 test_start("test_tlsz_verify_certificate_chain")
 # Test certificate chain verification
-sus cert_chain []X509Certificate = []
-sus trusted_roots []X509Certificate = []
+sus cert_chain X509Certificate[value] = []
+sus trusted_roots X509Certificate[value] = []
 
 sus result lit = tlsz_verify_certificate_chain(cert_chain, "test.example.com", trusted_roots) fam {
     when _ -> damn cap  # Expected to fail with empty chain
@@ -54,7 +54,7 @@ assert_true(!result)  # Empty chain should fail verification
 
 # Test with mock certificate data
 sus mock_cert X509Certificate = create_mock_certificate("test.example.com")
-sus mock_chain []X509Certificate = [mock_cert]
+sus mock_chain X509Certificate[value] = [mock_cert]
 sus chain_result lit = tlsz_verify_certificate_chain(mock_chain, "test.example.com", trusted_roots) fam {
     when _ -> damn cap
 }
@@ -96,7 +96,7 @@ sus response tea = tlsz_https_get("https://httpbin.org/get") fam {
 assert_true(len(response) >= 0)  # Either valid response or empty on error
 
 # Test with custom headers
-sus headers []tea = ["User-Agent: CURSED-TLS-Client", "Accept: application/json"]
+sus headers tea[value] = ["User-Agent: CURSED-TLS-Client", "Accept: application/json"]
 sus custom_response tea = tlsz_https_get_with_headers("https://httpbin.org/get", headers) fam {
     when _ -> damn ""
 }
@@ -112,7 +112,7 @@ sus post_response tea = tlsz_https_post("https://httpbin.org/post", post_data) f
 assert_true(len(post_response) >= 0)
 
 # Test POST with custom headers
-sus post_headers []tea = ["Content-Type: application/json"]
+sus post_headers tea[value] = ["Content-Type: application/json"]
 sus custom_post tea = tlsz_https_post_with_headers("https://httpbin.org/post", post_data, post_headers) fam {
     when _ -> damn ""
 }
@@ -138,7 +138,7 @@ print_test_summary()
 test_start("test_tlsz_load_certificate_chain_pem")
 # Test loading certificate chain from PEM
 sus chain_pem tea = "-----BEGIN CERTIFICATE-----\nMIIBkTCB+w...\n-----END CERTIFICATE-----\n"
-sus cert_chain []X509Certificate = tlsz_load_certificate_chain_pem(chain_pem) fam {
+sus cert_chain X509Certificate[value] = tlsz_load_certificate_chain_pem(chain_pem) fam {
     when _ -> damn []
 }
 assert_true(len(cert_chain) >= 0)
@@ -146,7 +146,7 @@ print_test_summary()
 
 test_start("test_tlsz_load_system_ca_certificates")
 # Test loading system CA certificates
-sus ca_certs []X509Certificate = tlsz_load_system_ca_certificates() fam {
+sus ca_certs X509Certificate[value] = tlsz_load_system_ca_certificates() fam {
     when _ -> damn []  # Return empty on error
 }
 assert_true(len(ca_certs) >= 0)  # Should load some CAs or handle gracefully
@@ -225,13 +225,13 @@ print_test_summary()
 # Security validation tests
 test_start("security_tls_protocol_validation")
 # Test TLS protocol security
-sus weak_protocols []tea = ["SSLv2", "SSLv3", "TLSv1.0"]
+sus weak_protocols tea[value] = ["SSLv2", "SSLv3", "TLSv1.0"]
 bestie protocol := range weak_protocols {
     sus is_secure lit = tlsz_is_protocol_secure(protocol)
     assert_true(!is_secure)  # Weak protocols should be rejected
 }
 
-sus secure_protocols []tea = ["TLSv1.2", "TLSv1.3"]
+sus secure_protocols tea[value] = ["TLSv1.2", "TLSv1.3"]
 bestie protocol := range secure_protocols {
     sus is_secure lit = tlsz_is_protocol_secure(protocol)
     assert_true(is_secure)  # Modern protocols should be accepted
@@ -240,13 +240,13 @@ print_test_summary()
 
 test_start("security_cipher_suite_validation")
 # Test cipher suite security
-sus weak_ciphers []tea = ["NULL-SHA", "RC4-MD5", "DES-CBC-SHA"]
+sus weak_ciphers tea[value] = ["NULL-SHA", "RC4-MD5", "DES-CBC-SHA"]
 bestie cipher := range weak_ciphers {
     sus is_secure lit = tlsz_is_cipher_secure(cipher)
     assert_true(!is_secure)  # Weak ciphers should be rejected
 }
 
-sus secure_ciphers []tea = ["TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"]
+sus secure_ciphers tea[value] = ["TLS_AES_256_GCM_SHA384", "TLS_CHACHA20_POLY1305_SHA256"]
 bestie cipher := range secure_ciphers {
     sus is_secure lit = tlsz_is_cipher_secure(cipher)
     assert_true(is_secure)  # Strong ciphers should be accepted
@@ -267,7 +267,7 @@ print_test_summary()
 # Edge case testing
 test_start("edge_cases_tlsz")
 # Test with malformed hostnames
-sus malformed_hostnames []tea = ["", "...", "very-long-hostname-that-exceeds-normal-limits-and-should-be-handled-gracefully.example.com"]
+sus malformed_hostnames tea[value] = ["", "...", "very-long-hostname-that-exceeds-normal-limits-and-should-be-handled-gracefully.example.com"]
 bestie hostname := range malformed_hostnames {
     sus result TLSHandshakeContext = tlsz_secure_connect(hostname, 443) fam {
         when _ -> damn TLSHandshakeContext{}
@@ -276,7 +276,7 @@ bestie hostname := range malformed_hostnames {
 }
 
 # Test with invalid ports
-sus invalid_ports []drip = [0, -1, 70000]
+sus invalid_ports drip[value] = [0, -1, 70000]
 bestie port := range invalid_ports {
     sus result TLSHandshakeContext = tlsz_secure_connect("example.com", port) fam {
         when _ -> damn TLSHandshakeContext{}

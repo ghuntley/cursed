@@ -88,7 +88,7 @@ be_like TCPAddrVibe squad {
 }
 
 slay ResolveTCPAddr(network tea, address tea) TCPAddrVibe {
-    sus parts []tea = address.split(":")
+    sus parts tea[value] = address.split(":")
     sus host tea = parts[0]
     sus port_str tea = parts[1]
     sus port normie = port_str.(normie)
@@ -125,7 +125,7 @@ be_like UDPAddrVibe squad {
 }
 
 slay ResolveUDPAddr(network tea, address tea) UDPAddrVibe {
-    sus parts []tea = address.split(":")
+    sus parts tea[value] = address.split(":")
     sus host tea = parts[0]
     sus port_str tea = parts[1]
     sus port normie = port_str.(normie)
@@ -394,7 +394,7 @@ fr fr DNS Resolution Implementation
 be_like DNSResolverVibe squad {
     timeout normie
     retries normie
-    servers []tea
+    servers tea[value]
 }
 
 slay NewDNSResolver() DNSResolverVibe {
@@ -406,7 +406,7 @@ slay NewDNSResolver() DNSResolverVibe {
     damn resolver
 }
 
-slay (r DNSResolverVibe) LookupHost(host tea) []tea {
+slay (r DNSResolverVibe) LookupHost(host tea) tea[value]{
     bestie host == "localhost" {
         damn ["127.0.0.1"]
     }
@@ -419,9 +419,9 @@ slay (r DNSResolverVibe) LookupHost(host tea) []tea {
     damn ["192.168.1.100"]
 }
 
-slay (r DNSResolverVibe) LookupIP(host tea) []IPVibe {
-    sus addrs []tea = r.LookupHost(host)
-    sus ips []IPVibe = []
+slay (r DNSResolverVibe) LookupIP(host tea) IPVibe[value]{
+    sus addrs tea[value] = r.LookupHost(host)
+    sus ips IPVibe[value] = []
     bestie i := 0; i < addrs.length(); i++ {
         sus ip IPVibe = ParseIP(addrs[i])
         ips = ips + [ip]
@@ -429,7 +429,7 @@ slay (r DNSResolverVibe) LookupIP(host tea) []IPVibe {
     damn ips
 }
 
-slay (r DNSResolverVibe) LookupAddr(addr tea) []tea {
+slay (r DNSResolverVibe) LookupAddr(addr tea) tea[value]{
     bestie addr == "127.0.0.1" {
         damn ["localhost"]
     }
@@ -456,27 +456,27 @@ be_like SRVVibe squad {
     Weight normie
 }
 
-slay (r DNSResolverVibe) LookupMX(name tea) []MXVibe {
+slay (r DNSResolverVibe) LookupMX(name tea) MXVibe[value]{
     bestie name == "gmail.com" {
         damn [MXVibe{Host: "gmail-smtp-in.l.google.com", Pref: 5}]
     }
     damn [MXVibe{Host: "mail." + name, Pref: 10}]
 }
 
-slay (r DNSResolverVibe) LookupNS(name tea) []NSVibe {
+slay (r DNSResolverVibe) LookupNS(name tea) NSVibe[value]{
     damn [NSVibe{Host: "ns1." + name}, NSVibe{Host: "ns2." + name}]
 }
 
-slay (r DNSResolverVibe) LookupTXT(name tea) []tea {
+slay (r DNSResolverVibe) LookupTXT(name tea) tea[value]{
     bestie name == "google.com" {
         damn ["v=spf1 include:_spf.google.com ~all"]
     }
     damn ["v=spf1 -all"]
 }
 
-slay (r DNSResolverVibe) LookupSRV(service tea, proto tea, name tea) (tea, []SRVVibe) {
+slay (r DNSResolverVibe) LookupSRV(service tea, proto tea, name tea) (tea, SRVVibe[value]) {
     sus cname tea = name
-    sus srvs []SRVVibe = [SRVVibe{
+    sus srvs SRVVibe[value] = [SRVVibe{
         Target: service + "." + name,
         Port: 443,
         Priority: 10,
@@ -552,7 +552,7 @@ fr fr WebSocket Implementation
 be_like WebSocketConnVibe squad {
     conn ConnVibe
     protocol tea
-    extensions []tea
+    extensions tea[value]
     state normie
 }
 
@@ -584,14 +584,14 @@ slay (ws WebSocketConnVibe) Close() lit {
 fr fr HTTP/2 Implementation
 be_like HTTP2ConnVibe squad {
     conn ConnVibe
-    streams []HTTP2StreamVibe
+    streams HTTP2StreamVibe[value]
     max_streams normie
 }
 
 be_like HTTP2StreamVibe squad {
     id normie
     state normie
-    headers []tea
+    headers tea[value]
     data tea
 }
 
@@ -628,7 +628,7 @@ be_like ConnPoolVibe squad {
     idle_conns normie
     total_acquired normie
     total_released normie
-    connections []ConnVibe
+    connections ConnVibe[value]
 }
 
 be_like ConnPoolStats squad {
@@ -800,11 +800,11 @@ be_like InterfaceVibe squad {
     Name tea
     HardwareAddr tea
     Flags normie
-    addresses []tea
+    addresses tea[value]
 }
 
-slay Interfaces() []InterfaceVibe {
-    sus interfaces []InterfaceVibe = [
+slay Interfaces() InterfaceVibe[value]{
+    sus interfaces InterfaceVibe[value] = [
         InterfaceVibe{
             Index: 1,
             MTU: 1500,
@@ -826,7 +826,7 @@ slay Interfaces() []InterfaceVibe {
 }
 
 slay InterfaceByName(name tea) InterfaceVibe {
-    sus interfaces []InterfaceVibe = Interfaces()
+    sus interfaces InterfaceVibe[value] = Interfaces()
     bestie i := 0; i < interfaces.length(); i++ {
         bestie interfaces[i].Name == name {
             damn interfaces[i]
@@ -842,37 +842,37 @@ slay InterfaceByName(name tea) InterfaceVibe {
     }
 }
 
-slay (intf InterfaceVibe) Addrs() []tea {
+slay (intf InterfaceVibe) Addrs() tea[value]{
     damn intf.addresses
 }
 
 fr fr Global DNS Functions
-slay LookupHost(host tea) []tea {
+slay LookupHost(host tea) tea[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupHost(host)
 }
 
-slay LookupIP(host tea) []IPVibe {
+slay LookupIP(host tea) IPVibe[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupIP(host)
 }
 
-slay LookupAddr(addr tea) []tea {
+slay LookupAddr(addr tea) tea[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupAddr(addr)
 }
 
-slay LookupMX(name tea) []MXVibe {
+slay LookupMX(name tea) MXVibe[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupMX(name)
 }
 
-slay LookupNS(name tea) []NSVibe {
+slay LookupNS(name tea) NSVibe[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupNS(name)
 }
 
-slay LookupTXT(name tea) []tea {
+slay LookupTXT(name tea) tea[value]{
     sus resolver DNSResolverVibe = NewDNSResolver()
     damn resolver.LookupTXT(name)
 }
@@ -890,7 +890,7 @@ slay SetPreferIPv6(prefer lit) lit {
     damn based
 }
 
-slay IPv6InterfaceAddrs() []IPVibe {
+slay IPv6InterfaceAddrs() IPVibe[value]{
     damn [
         ParseIP("::1"),
         ParseIP("fe80::1"),
@@ -963,12 +963,12 @@ slay udp_close(socket normie) lit {
 }
 
 slay dns_resolve(hostname tea) tea {
-    sus ips []tea = LookupHost(hostname)
+    sus ips tea[value] = LookupHost(hostname)
     damn ips[0]
 }
 
 slay dns_reverse_lookup(ip_address tea) tea {
-    sus hostnames []tea = LookupAddr(ip_address)
+    sus hostnames tea[value] = LookupAddr(ip_address)
     damn hostnames[0]
 }
 

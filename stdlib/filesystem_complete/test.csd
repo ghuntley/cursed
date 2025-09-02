@@ -44,7 +44,7 @@ test_case("Directory Creation and Listing") {
     fs_write_file(test_file, "test content")
     
     // List directory contents
-    sus entries []tea = fs_list_dir(test_dir)
+    sus entries tea[value] = fs_list_dir(test_dir)
     assert_eq_int(len(entries), 1)
     assert_eq_string(entries[0], "test_file.txt")
     
@@ -102,7 +102,7 @@ test_case("File Handle Operations") {
     assert(read_handle.is_open)
     
     // Read using handle
-    sus buffer []byte = fs_allocate_buffer(256)
+    sus buffer byte[value] = fs_allocate_buffer(256)
     sus bytes_read normie = fs_read_handle(read_handle, buffer)
     assert_eq_int(bytes_read, len(content))
     
@@ -185,7 +185,7 @@ test_case("Directory Iteration") {
     
     // Iterate directory (non-recursive)
     sus iterator DirIterator = fs_iter_dir(test_dir, false)
-    sus entries []tea = []
+    sus entries tea[value] = []
     
     bestie (fs_iter_has_next(iterator)) {
         sus entry tea = fs_iter_next(iterator)
@@ -198,7 +198,7 @@ test_case("Directory Iteration") {
     
     // Recursive iteration
     sus recursive_iterator DirIterator = fs_iter_dir(test_dir, true)
-    sus recursive_entries []tea = []
+    sus recursive_entries tea[value] = []
     
     bestie (fs_iter_has_next(recursive_iterator)) {
         sus entry tea = fs_iter_next(recursive_iterator)
@@ -233,7 +233,7 @@ test_case("File System Watching") {
     fs_write_file(test_file, "watched content")
     
     // Check for events (with timeout)
-    sus events []FileEvent = fs_watch_get_events(watcher, 1000)
+    sus events FileEvent[value] = fs_watch_get_events(watcher, 1000)
     assert(len(events) > 0)
     
     sus found_create lit = false

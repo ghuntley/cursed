@@ -70,7 +70,7 @@ fr fr ===== HISTOGRAM METRIC TESTS =====
 slay test_histogram_metrics() {
     vibez.spill("Testing Histogram metrics...")
     
-    sus buckets []drip = [1.0, 5.0, 10.0, 25.0, 50.0, 100.0]
+    sus buckets drip[value] = [1.0, 5.0, 10.0, 25.0, 50.0, 100.0]
     sus tags map[tea]tea = make(map[tea]tea)
     tags["operation"] = "request"
     
@@ -190,7 +190,7 @@ slay test_metric_registry() {
     assert_not_null_pointer(retrieved_gauge, "Gauge retrieved from registry")
     
     fr fr Test histogram registration
-    sus buckets []drip = [1.0, 10.0, 100.0]
+    sus buckets drip[value] = [1.0, 10.0, 100.0]
     sus histogram *Histogram = registry.NewHistogram("registry_histogram", buckets, tags)
     assert_not_null_pointer(histogram, "Registry histogram created")
     
@@ -458,7 +458,7 @@ slay test_monitoring_edge_cases() {
     assert_not_null_pointer(empty_counter, "Counter with empty name created")
     
     fr fr Test histogram with empty buckets
-    sus empty_buckets []drip = []
+    sus empty_buckets drip[value] = []
     sus empty_histogram *Histogram = NewHistogram("empty_buckets", empty_buckets, nil)
     assert_not_null_pointer(empty_histogram, "Histogram with empty buckets created")
     

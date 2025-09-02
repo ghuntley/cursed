@@ -203,7 +203,7 @@ ring.Value = "first"
 ring.Next.Value = "second"
 ring.Next.Next.Value = "third"
 
-sus values := []tea{}
+sus values := tea[value]{}
 ring.Do(slay(value interface{}) {
     values = append(values, value.(tea))
 })
@@ -225,7 +225,7 @@ print_test_summary()
 test_start("test_heap_interface_operations")
 fr fr Test heap interface operations
 sus testHeap := &TestHeap{
-    data: []normie{},
+    data: normie[value]{},
 }
 
 Init(testHeap)
@@ -429,7 +429,7 @@ print_test_summary()
 
 fr fr Helper struct for testing heap interface
 be_like TestHeap squad {
-    data []normie
+    data normie[value]
 }
 
 slay (h *TestHeap) Len() normie {

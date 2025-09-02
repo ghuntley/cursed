@@ -49,7 +49,7 @@ assert_true(StringScanner_char_matches_predicate('_', "ident"))
 assert_true(StringScanner_char_matches_predicate('a', "alnum"))
 
 test_start("Function Signature Formatting Test")
-sus params []tea = ["x normie", "y tea"]
+sus params tea[value] = ["x normie", "y tea"]
 sus signature tea = format_function_signature("test_func", params, "lit")
 sus expected tea = "slay test_func(x normie, y tea) lit"
 assert_eq_string(signature, expected)
@@ -64,7 +64,7 @@ sus array_type tea = format_array_type("normie")
 assert_eq_string(array_type, "[normie]")
 
 test_start("Function Call Formatting Test")
-sus args []tea = ["42", "\"hello\""]
+sus args tea[value] = ["42", "\"hello\""]
 sus call tea = format_function_call("test", args)
 sus expected_call tea = "test(42, \"hello\")"
 assert_eq_string(call, expected_call)

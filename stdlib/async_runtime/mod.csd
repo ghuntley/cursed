@@ -24,7 +24,7 @@ sus is_running lit
 
 fr fr Task queue infrastructure
 sus pending_tasks_queue dm<tea>
-sus task_completion_channels [100]dm<normie>  fr fr Max 100 concurrent async tasks
+sus task_completion_channels dm[100]<normie>  fr fr Max 100 concurrent async tasks
 sus task_queue_size normie = 0
 sus max_workers normie = 4
 

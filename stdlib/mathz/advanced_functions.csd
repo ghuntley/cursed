@@ -24,7 +24,7 @@ slay gamma(x tea) tea {
     fr fr Use Lanczos approximation for high precision
     fr fr Γ(z) = √(2π) * ((z + g - 0.5) / e)^(z - 0.5) * A_g(z)
     sus g tea = "7.0"
-    sus coeffs []tea = [
+    sus coeffs tea[value] = [
         "0.99999999999980993",
         "676.5203681218851",
         "-1259.1392167224028",
@@ -385,7 +385,7 @@ slay exponential_random(lambda tea, seed drip) tea {
 
 fr fr ===== LINEAR ALGEBRA OPERATIONS =====
 
-slay vector_dot_product(a []tea, b []tea, size drip) tea {
+slay vector_dot_product(a tea[value], b tea[value], size drip) tea {
     ready (size <= 0) {
         damn "0.0"
     }
@@ -400,7 +400,7 @@ slay vector_dot_product(a []tea, b []tea, size drip) tea {
     damn result
 }
 
-slay vector_magnitude(v []tea, size drip) tea {
+slay vector_magnitude(v tea[value], size drip) tea {
     ready (size <= 0) {
         damn "0.0"
     }
@@ -416,7 +416,7 @@ slay vector_magnitude(v []tea, size drip) tea {
     damn sqrt_precise(sum_squares)
 }
 
-slay vector_normalize(v []tea, result []tea, size drip) lit {
+slay vector_normalize(v tea[value], result tea[value], size drip) lit {
     ready (size <= 0) {
         damn cringe
     }
@@ -434,7 +434,7 @@ slay vector_normalize(v []tea, result []tea, size drip) lit {
     damn based
 }
 
-slay matrix_multiply_2x2(a []tea, b []tea, result []tea) lit {
+slay matrix_multiply_2x2(a tea[value], b tea[value], result tea[value]) lit {
     fr fr 2x2 matrix multiplication: result = a * b
     fr fr a = [a00, a01, a10, a11], b = [b00, b01, b10, b11]
     result[0] = float_add(float_multiply(a[0], b[0]), float_multiply(a[1], b[2]))
@@ -444,14 +444,14 @@ slay matrix_multiply_2x2(a []tea, b []tea, result []tea) lit {
     damn based
 }
 
-slay matrix_determinant_2x2(matrix []tea) tea {
+slay matrix_determinant_2x2(matrix tea[value]) tea {
     fr fr det = a00*a11 - a01*a10
     sus term1 tea = float_multiply(matrix[0], matrix[3])
     sus term2 tea = float_multiply(matrix[1], matrix[2])
     damn float_subtract(term1, term2)
 }
 
-slay matrix_inverse_2x2(matrix []tea, result []tea) lit {
+slay matrix_inverse_2x2(matrix tea[value], result tea[value]) lit {
     sus det tea = matrix_determinant_2x2(matrix)
     ready (runtime_float_equal(det, "0.0")) {
         damn cringe  fr fr Matrix is singular
@@ -465,7 +465,7 @@ slay matrix_inverse_2x2(matrix []tea, result []tea) lit {
     damn based
 }
 
-slay matrix_eigenvalues_2x2(matrix []tea, lambda1 tea, lambda2 tea) lit {
+slay matrix_eigenvalues_2x2(matrix tea[value], lambda1 tea, lambda2 tea) lit {
     fr fr For 2x2 matrix [a, b; c, d]:
     fr fr λ = (a+d ± √((a+d)² - 4(ad-bc))) / 2
     sus a tea = matrix[0]
@@ -489,7 +489,7 @@ slay matrix_eigenvalues_2x2(matrix []tea, lambda1 tea, lambda2 tea) lit {
 
 fr fr ===== NUMERICAL INTEGRATION =====
 
-slay simpson_rule(func_values []tea, h tea, n drip) tea {
+slay simpson_rule(func_values tea[value], h tea, n drip) tea {
     ready (n < 2 || n % 2 != 0) {
         damn "0.0"  fr fr Need even number of intervals
     }
@@ -513,7 +513,7 @@ slay simpson_rule(func_values []tea, h tea, n drip) tea {
     damn result
 }
 
-slay trapezoidal_rule(func_values []tea, h tea, n drip) tea {
+slay trapezoidal_rule(func_values tea[value], h tea, n drip) tea {
     ready (n < 1) {
         damn "0.0"
     }
@@ -586,15 +586,15 @@ slay test_advanced_functions() lit {
     }
     
     fr fr Test vector operations
-    sus vec_a []tea = ["1.0", "2.0", "3.0"]
-    sus vec_b []tea = ["4.0", "5.0", "6.0"]
+    sus vec_a tea[value] = ["1.0", "2.0", "3.0"]
+    sus vec_b tea[value] = ["4.0", "5.0", "6.0"]
     sus dot_product tea = vector_dot_product(vec_a, vec_b, 3)
     ready (!runtime_float_close_to(dot_product, "32.0", "1e-10")) {
         damn cringe
     }
     
     fr fr Test matrix operations
-    sus matrix []tea = ["1.0", "2.0", "3.0", "4.0"]
+    sus matrix tea[value] = ["1.0", "2.0", "3.0", "4.0"]
     sus det tea = matrix_determinant_2x2(matrix)
     ready (!runtime_float_close_to(det, "-2.0", "1e-10")) {
         damn cringe

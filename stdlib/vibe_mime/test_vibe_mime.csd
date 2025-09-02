@@ -117,47 +117,47 @@ slay test_content_type_detection() {
     test_start("Content type detection")
     
     fr fr Test PNG detection
-    pngData := []byte{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
+    pngData := byte[value]{0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A}
     contentType := vibe_mime.DetectContentType(pngData)
     assert_eq_string(contentType, vibe_mime.TypeImagePNG)
     
     fr fr Test JPEG detection
-    jpegData := []byte{0xFF, 0xD8, 0xFF, 0xE0}
+    jpegData := byte[value]{0xFF, 0xD8, 0xFF, 0xE0}
     contentType = vibe_mime.DetectContentType(jpegData)
     assert_eq_string(contentType, vibe_mime.TypeImageJPEG)
     
     fr fr Test GIF detection
-    gifData := []byte{0x47, 0x49, 0x46, 0x38}
+    gifData := byte[value]{0x47, 0x49, 0x46, 0x38}
     contentType = vibe_mime.DetectContentType(gifData)
     assert_eq_string(contentType, vibe_mime.TypeImageGIF)
     
     fr fr Test PDF detection
-    pdfData := []byte{0x25, 0x50, 0x44, 0x46}
+    pdfData := byte[value]{0x25, 0x50, 0x44, 0x46}
     contentType = vibe_mime.DetectContentType(pdfData)
     assert_eq_string(contentType, vibe_mime.TypeApplicationPDF)
     
     fr fr Test HTML detection
-    htmlData := []byte("<!DOCTYPE html><html><body>Hello</body></html>")
+    htmlData := byte[value]("<!DOCTYPE html><html><body>Hello</body></html>")
     contentType = vibe_mime.DetectContentType(htmlData)
     assert_eq_string(contentType, vibe_mime.TypeTextHTML)
     
     fr fr Test JSON detection
-    jsonData := []byte("{\"key\": \"value\"}")
+    jsonData := byte[value]("{\"key\": \"value\"}")
     contentType = vibe_mime.DetectContentType(jsonData)
     assert_eq_string(contentType, vibe_mime.TypeApplicationJSON)
     
     fr fr Test XML detection
-    xmlData := []byte("<?xml version=\"1.0\"?><root></root>")
+    xmlData := byte[value]("<?xml version=\"1.0\"?><root></root>")
     contentType = vibe_mime.DetectContentType(xmlData)
     assert_eq_string(contentType, vibe_mime.TypeApplicationXML)
     
     fr fr Test plain text detection
-    textData := []byte("This is plain text content")
+    textData := byte[value]("This is plain text content")
     contentType = vibe_mime.DetectContentType(textData)
     assert_eq_string(contentType, vibe_mime.TypeTextPlain)
     
     fr fr Test binary data detection
-    binaryData := []byte{0x00, 0x01, 0x02, 0x03}
+    binaryData := byte[value]{0x00, 0x01, 0x02, 0x03}
     contentType = vibe_mime.DetectContentType(binaryData)
     assert_eq_string(contentType, vibe_mime.TypeApplicationOctetStream)
 }
@@ -204,7 +204,7 @@ slay test_multipart_writer() {
     test_start("Multipart writer")
     
     fr fr Create buffer writer
-    writer := &mockBufferWriter{data: make([]byte, 0)}
+    writer := &mockBufferWriter{data: make(byte[value], 0)}
     
     fr fr Create multipart writer
     multiWriter := vibe_mime.NewMultipartWriter(writer)
@@ -221,7 +221,7 @@ slay test_multipart_writer() {
     assert_true(fileWriter != cap)
     
     fr fr Write file content
-    fileData := []byte("file content here")
+    fileData := byte[value]("file content here")
     _, err = fileWriter.Write(fileData)
     assert_eq_string(err, "")
     
@@ -265,8 +265,8 @@ slay test_part_functionality() {
     
     fr fr Create part
     part := &vibe_mime.Part{
-        Header: make(map[tea][]tea),
-        Body: []byte("test content")
+        Header: make(map[tea]tea[value]),
+        Body: byte[value]("test content")
     }
     
     fr fr Set headers
@@ -294,19 +294,19 @@ slay test_custom_detector() {
     detector := vibe_mime.NewDetector()
     
     fr fr Add custom signatures
-    detector.AddSignature("CUSTOM", []byte{0xCA, 0xFE, 0xBA, 0xBE})
-    detector.AddSignature("OTHER", []byte{0xDE, 0xAD, 0xBE, 0xEF})
+    detector.AddSignature("CUSTOM", byte[value]{0xCA, 0xFE, 0xBA, 0xBE})
+    detector.AddSignature("OTHER", byte[value]{0xDE, 0xAD, 0xBE, 0xEF})
     
     fr fr Test detection
-    customData := []byte{0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x01}
+    customData := byte[value]{0xCA, 0xFE, 0xBA, 0xBE, 0x00, 0x01}
     detected := detector.Detect(customData)
     assert_eq_string(detected, "CUSTOM")
     
-    otherData := []byte{0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34}
+    otherData := byte[value]{0xDE, 0xAD, 0xBE, 0xEF, 0x12, 0x34}
     detected = detector.Detect(otherData)
     assert_eq_string(detected, "OTHER")
     
-    unknownData := []byte{0x12, 0x34, 0x56, 0x78}
+    unknownData := byte[value]{0x12, 0x34, 0x56, 0x78}
     detected = detector.Detect(unknownData)
     assert_eq_string(detected, "unknown")
 }
@@ -350,7 +350,7 @@ fr fr Test stream processor
 slay test_stream_processor() {
     test_start("Stream processor")
     
-    data := []byte("multipart stream data")
+    data := byte[value]("multipart stream data")
     reader := &byteReader{data: data, pos: 0}
     
     fr fr Create stream processor
@@ -385,7 +385,7 @@ fr fr Test MIME tree
 slay test_mime_tree() {
     test_start("MIME tree")
     
-    data := []byte("multipart email data")
+    data := byte[value]("multipart email data")
     
     fr fr Parse tree
     tree := vibe_mime.ParseTree(data)
@@ -424,10 +424,10 @@ slay test_constants() {
 fr fr Helper mock implementations
 
 be_like mockBufferWriter squad {
-    data []byte
+    data byte[value]
 }
 
-slay (w *mockBufferWriter) Write(p []byte) (normie, tea) {
+slay (w *mockBufferWriter) Write(p byte[value]) (normie, tea) {
     w.data = append(w.data, p...)
     damn len(p), ""
 }
@@ -437,23 +437,23 @@ be_like stringReader squad {
     pos normie
 }
 
-slay (r *stringReader) Read(p []byte) (normie, tea) {
+slay (r *stringReader) Read(p byte[value]) (normie, tea) {
     if r.pos >= len(r.content) {
         damn 0, "EOF"
     }
     
     remaining := r.content[r.pos:]
-    n := copy(p, []byte(remaining))
+    n := copy(p, byte[value](remaining))
     r.pos += n
     damn n, ""
 }
 
 be_like byteReader squad {
-    data []byte
+    data byte[value]
     pos normie
 }
 
-slay (r *byteReader) Read(p []byte) (normie, tea) {
+slay (r *byteReader) Read(p byte[value]) (normie, tea) {
     if r.pos >= len(r.data) {
         damn 0, "EOF"
     }

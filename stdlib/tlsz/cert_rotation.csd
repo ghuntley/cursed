@@ -18,7 +18,7 @@ squad CertificateRotationManager {
     sus rotation_threshold_days drip  fr fr Days before expiry to trigger rotation
     sus active_certificates map<tea, ActiveCertificate>
     sus staged_certificates map<tea, StagedCertificate>
-    sus rotation_queue []CertificateRotationTask
+    sus rotation_queue CertificateRotationTask[value]
     sus rotation_callback_func tea
     sus notification_callback_func tea
     sus backup_enabled lit
@@ -29,8 +29,8 @@ squad CertificateRotationManager {
 squad ActiveCertificate {
     sus hostname tea
     sus certificate X509Certificate
-    sus private_key []drip
-    sus cert_chain []X509Certificate
+    sus private_key drip[value]
+    sus cert_chain X509Certificate[value]
     sus installation_time drip
     sus expiry_time drip
     sus rotation_scheduled lit
@@ -42,8 +42,8 @@ squad ActiveCertificate {
 squad StagedCertificate {
     sus hostname tea
     sus certificate X509Certificate
-    sus private_key []drip
-    sus cert_chain []X509Certificate
+    sus private_key drip[value]
+    sus cert_chain X509Certificate[value]
     sus staged_time drip
     sus validation_result CertificateValidationResult
     sus ready_for_rotation lit
@@ -74,8 +74,8 @@ squad CertificateUsageStats {
 
 squad CertificateValidationResult {
     sus is_valid lit
-    sus validation_errors []tea
-    sus validation_warnings []tea
+    sus validation_errors tea[value]
+    sus validation_warnings tea[value]
     sus trust_score drip
     sus compatibility_score drip
     sus security_score drip
@@ -114,8 +114,8 @@ slay install_certificate(
     manager CertificateRotationManager,
     hostname tea,
     certificate X509Certificate,
-    private_key []drip,
-    cert_chain []X509Certificate
+    private_key drip[value],
+    cert_chain X509Certificate[value]
 ) yikes<CertificateRotationManager> {
     fr fr Install new certificate for hostname
     
@@ -181,8 +181,8 @@ slay stage_certificate_for_rotation(
     manager CertificateRotationManager,
     hostname tea,
     new_certificate X509Certificate,
-    new_private_key []drip,
-    new_cert_chain []X509Certificate
+    new_private_key drip[value],
+    new_cert_chain X509Certificate[value]
 ) yikes<CertificateRotationManager> {
     fr fr Stage new certificate for future rotation
     
@@ -316,10 +316,10 @@ slay process_automatic_rotations(manager CertificateRotationManager) yikes<Certi
     }
     
     sus current_time drip = timez.current_timestamp()
-    sus processed_rotations []tea = []
+    sus processed_rotations tea[value] = []
     
     fr fr Check active certificates for rotation needs
-    sus hostnames []tea = map_keys_active(manager.active_certificates)
+    sus hostnames tea[value] = map_keys_active(manager.active_certificates)
     sus i drip = 0
     bestie (i < arrayz.length(hostnames)) {
         sus hostname tea = hostnames[i]
@@ -347,7 +347,7 @@ slay process_automatic_rotations(manager CertificateRotationManager) yikes<Certi
     }
     
     fr fr Process rotation queue
-    sus updated_queue []CertificateRotationTask = []
+    sus updated_queue CertificateRotationTask[value] = []
     sus j drip = 0
     bestie (j < arrayz.length(manager.rotation_queue)) {
         sus task CertificateRotationTask = manager.rotation_queue[j]
@@ -425,7 +425,7 @@ slay check_certificate_health(manager CertificateRotationManager) yikes<Certific
     }
     
     sus current_time drip = timez.current_timestamp()
-    sus hostnames []tea = map_keys_active(manager.active_certificates)
+    sus hostnames tea[value] = map_keys_active(manager.active_certificates)
     
     sus i drip = 0
     bestie (i < arrayz.length(hostnames)) {
@@ -467,7 +467,7 @@ slay check_certificate_health(manager CertificateRotationManager) yikes<Certific
     }
     
     fr fr Check staged certificates
-    sus staged_hostnames []tea = map_keys_staged(manager.staged_certificates)
+    sus staged_hostnames tea[value] = map_keys_staged(manager.staged_certificates)
     report.staged_certificates = arrayz.length(staged_hostnames)
     
     fr fr Check pending rotations
@@ -492,9 +492,9 @@ squad CertificateHealthReport {
     sus certificates_needing_rotation drip
     sus staged_certificates drip
     sus pending_rotations drip
-    sus certificate_details []CertificateDetail
-    sus warnings []tea
-    sus critical_issues []tea
+    sus certificate_details CertificateDetail[value]
+    sus warnings tea[value]
+    sus critical_issues tea[value]
 }
 
 squad CertificateDetail {
@@ -569,7 +569,7 @@ slay restore_certificate_from_backup(
         when _ -> yikes "KEY_BACKUP_READ_FAILED: Cannot read private key backup"
     }
     
-    sus private_key []drip = decrypt_private_key(encrypted_key_data, key_password) fam {
+    sus private_key drip[value] = decrypt_private_key(encrypted_key_data, key_password) fam {
         when _ -> yikes "KEY_DECRYPT_FAILED: Cannot decrypt private key backup"
     }
     
@@ -588,8 +588,8 @@ fr fr ===== VALIDATION AND UTILITY FUNCTIONS =====
 
 slay validate_certificate_for_installation(
     certificate X509Certificate,
-    private_key []drip,
-    cert_chain []X509Certificate,
+    private_key drip[value],
+    cert_chain X509Certificate[value],
     hostname tea
 ) yikes<CertificateValidationResult> {
     fr fr Comprehensive certificate validation for installation
@@ -747,11 +747,11 @@ slay certificate_to_pem(cert X509Certificate) tea {
     damn "-----BEGIN CERTIFICATE-----\nMOCK_CERT_DATA\n-----END CERTIFICATE-----\n"
 }
 
-slay encrypt_private_key(key []drip, password tea) tea {
+slay encrypt_private_key(key drip[value], password tea) tea {
     damn "-----BEGIN ENCRYPTED PRIVATE KEY-----\nMOCK_ENCRYPTED_KEY\n-----END ENCRYPTED PRIVATE KEY-----\n"
 }
 
-slay decrypt_private_key(encrypted_data tea, password tea) yikes<[]drip> {
+slay decrypt_private_key(encrypted_data tea, password tea) yikes<drip[value]> {
     damn cryptz.generate_random_bytes(32)  fr fr Mock decrypted key
 }
 
@@ -769,7 +769,7 @@ slay evaluate_key_strength(cert X509Certificate) drip {
     damn 50  fr fr Weak key
 }
 
-slay validate_certificate_chain_internal(cert_chain []X509Certificate) lit {
+slay validate_certificate_chain_internal(cert_chain X509Certificate[value]) lit {
     damn based  fr fr Mock chain validation
 }
 
@@ -823,7 +823,7 @@ slay map_set_active_cert(m map<tea, ActiveCertificate>, key tea, value ActiveCer
     damn m  fr fr Mock implementation
 }
 
-slay map_keys_active(m map<tea, ActiveCertificate>) []tea {
+slay map_keys_active(m map<tea, ActiveCertificate>) tea[value]{
     damn ["example.com"]  fr fr Mock implementation
 }
 
@@ -843,7 +843,7 @@ slay map_remove_staged_cert(m map<tea, StagedCertificate>, key tea) map<tea, Sta
     damn m  fr fr Mock implementation
 }
 
-slay map_keys_staged(m map<tea, StagedCertificate>) []tea {
+slay map_keys_staged(m map<tea, StagedCertificate>) tea[value]{
     damn []  fr fr Mock implementation
 }
 

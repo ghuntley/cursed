@@ -93,7 +93,7 @@ sus resolve_result lit = resolve_dependency(test_dep)
 assert_true(resolve_result)
 
 test_start("Multiple Dependencies Resolution - Success")
-sus deps []PackageDep = []
+sus deps PackageDep[value] = []
 sus dep1 PackageDep
 dep1.name = "cursed"
 dep1.version = "27.0.0"
@@ -116,7 +116,7 @@ sus no_circular lit = check_circular_dependencies(deps)
 assert_true(no_circular)
 
 test_start("Circular Dependency Check - With Circular")
-sus circular_deps []PackageDep = []
+sus circular_deps PackageDep[value] = []
 sus circ_dep1 PackageDep
 circ_dep1.name = "package_a"
 circ_dep1.version = "1.0.0"
@@ -133,7 +133,7 @@ assert_false(has_circular)
 test_start("Dependency Tree Building")
 sus config_for_tree Config
 config_for_tree.dependencies = deps
-sus dep_tree []PackageDep = build_dependency_tree(config_for_tree)
+sus dep_tree PackageDep[value] = build_dependency_tree(config_for_tree)
 assert_true(len(dep_tree) == 2)
 
 fr fr Test Package Manager Functions
@@ -170,13 +170,13 @@ sus uninstall_missing lit = uninstall_package(&manager, "missing_package")
 assert_true(uninstall_missing) fr fr Should succeed (no-op)
 
 test_start("List Installed Packages - Empty")
-sus empty_list []tea = list_installed_packages(manager)
+sus empty_list tea[value] = list_installed_packages(manager)
 assert_true(len(empty_list) == 0)
 
 test_start("List Installed Packages - With Packages")
 install_package(&manager, "package1", "1.0.0")
 install_package(&manager, "package2", "2.0.0")
-sus package_list []tea = list_installed_packages(manager)
+sus package_list tea[value] = list_installed_packages(manager)
 assert_true(len(package_list) == 2)
 
 fr fr Test Build Automation
@@ -253,15 +253,15 @@ assert_eq_string(package_info.source, "registry")
 
 fr fr Test Registry Functions
 test_start("Package Search - cursed")
-sus cursed_search []tea = search_packages("cursed")
+sus cursed_search tea[value] = search_packages("cursed")
 assert_true(len(cursed_search) == 2)
 
 test_start("Package Search - web")
-sus web_search []tea = search_packages("web")
+sus web_search tea[value] = search_packages("web")
 assert_true(len(web_search) == 2)
 
 test_start("Package Search - no results")
-sus empty_search []tea = search_packages("nonexistent")
+sus empty_search tea[value] = search_packages("nonexistent")
 assert_true(len(empty_search) == 0)
 
 test_start("Package Publishing")
@@ -278,7 +278,7 @@ assert_true(install_package(&workflow_manager, "dependency1", "1.0.0"))
 assert_true(install_package(&workflow_manager, "dependency2", "2.0.0"))
 
 fr fr Validate installation
-sus installed_list []tea = list_installed_packages(workflow_manager)
+sus installed_list tea[value] = list_installed_packages(workflow_manager)
 assert_true(len(installed_list) == 2)
 
 fr fr Update packages

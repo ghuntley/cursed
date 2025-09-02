@@ -73,7 +73,7 @@ region = "us-west-1"
     fr fr Check for parsing errors
     ready (toml_document_has_errors(document)) {
         vibez.spill("❌ TOML parsing errors detected:")
-        sus errors []tea = toml_document_get_errors(document)
+        sus errors tea[value] = toml_document_get_errors(document)
         sus error_count drip = len(errors)
         sus i drip = 0
         bestie (i < error_count) {
@@ -147,7 +147,7 @@ slay demo_string_processing() {
     vibez.spill("Contains star emoji: " + (contains_emoji ? "yes" : "no"))
     
     fr fr Test number conversions
-    sus test_integers []drip = [0, 42, -17, 1000, 999999]
+    sus test_integers drip[value] = [0, 42, -17, 1000, 999999]
     sus int_count drip = len(test_integers)
     
     vibez.spill("\n--- Integer to String Conversion ---")
@@ -159,7 +159,7 @@ slay demo_string_processing() {
     }
     
     fr fr Test float conversions
-    sus test_floats []sus = [0.0, 3.14159, -2.5, 1000.001, 0.000001]
+    sus test_floats sus[value] = [0.0, 3.14159, -2.5, 1000.001, 0.000001]
     sus float_count drip = len(test_floats)
     
     vibez.spill("\n--- Float to String Conversion ---")
@@ -179,7 +179,7 @@ slay demo_validation_system() {
     vibez.spill("\n=== Configuration Validation Demo ===")
     
     fr fr Test URL validation
-    sus test_urls []tea = [
+    sus test_urls tea[value] = [
         "https://example.com",
         "http://localhost:8080",
         "ftp://files.example.org/path",
@@ -200,7 +200,7 @@ slay demo_validation_system() {
     }
     
     fr fr Test email validation
-    sus test_emails []tea = [
+    sus test_emails tea[value] = [
         "user@example.com",
         "test.user+tag@domain.co.uk",
         "invalid-email",

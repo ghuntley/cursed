@@ -13,7 +13,7 @@ be_like Process squad {
     process_id normie
     pid normie        fr fr Actual system process ID
     command tea
-    args []tea
+    args tea[value]
     is_running lit
     exit_code normie
 }
@@ -53,10 +53,10 @@ yeet "memory/bootstrap"
 
 fr fr Process registry for tracking active processes
 be_like ProcessRegistry squad {
-    processes [256]Process
+    processes Process[256]
     next_process_id normie
     active_count normie
-    environment_vars [100]EnvironmentVar
+    environment_vars EnvironmentVar[100]
     env_count normie
 }
 
@@ -102,7 +102,7 @@ slay cursed_process_spawn(command_ptr [*:0]normie, args_ptr [*][*:0]normie, args
         process_id: process_id,
         pid: process_id,
         command: cstring_to_string(command_ptr),
-        args: []tea{},
+        args: tea[value]{},
         is_running: true,
         exit_code: -1
     }
@@ -132,7 +132,7 @@ slay cursed_process_wait(process_id normie) normie {
     }
     
     fr fr Use real waitpid() syscall  
-    sus status [1]normie = [1]normie{0}
+    sus status normie[1] = [1]normie{0}
     sus result normie = cursed_waitpid(process_id, status.ptr, 0)
     
     lowkey result <= 0 {
@@ -374,7 +374,7 @@ fr fr ================================
 fr fr Process Management
 fr fr ================================
 
-slay process_spawn(command tea, args []tea) Process {
+slay process_spawn(command tea, args tea[value]) Process {
     sus empty_process Process = {
         process_id: 0,
         pid: 0,
@@ -504,10 +504,10 @@ slay env_exists(name tea) lit {
     damn value != ""
 }
 
-slay env_get_all() []EnvironmentVar {
+slay env_get_all() EnvironmentVar[value]{
     fr fr This would require iterating through environ array
     fr fr For now, return common environment variables
-    sus env_vars []EnvironmentVar = []EnvironmentVar{
+    sus env_vars EnvironmentVar[value] = EnvironmentVar[value]{
         {name: "PATH", value: env_get("PATH")},
         {name: "HOME", value: env_get("HOME")},
         {name: "USER", value: env_get("USER")},
@@ -589,7 +589,7 @@ fr fr Process Execution Utilities
 fr fr ================================
 
 slay execute_command(command tea) normie {
-    sus args []tea = []tea{command}
+    sus args tea[value] = tea[value]{command}
     sus process Process = process_spawn(command, args)
     lowkey process.process_id <= 0 {
         damn -1
@@ -598,7 +598,7 @@ slay execute_command(command tea) normie {
     damn process_wait(&process)
 }
 
-slay execute_command_with_args(command tea, args []tea) normie {
+slay execute_command_with_args(command tea, args tea[value]) normie {
     sus process Process = process_spawn(command, args)
     lowkey process.process_id <= 0 {
         damn -1
@@ -609,11 +609,11 @@ slay execute_command_with_args(command tea, args []tea) normie {
 
 slay execute_shell_command(command tea) normie {
     sus shell tea = get_shell()
-    sus args []tea = []tea{shell, "-c", command}
+    sus args tea[value] = tea[value]{shell, "-c", command}
     damn execute_command_with_args(shell, args)
 }
 
-slay run_background(command tea, args []tea) Process {
+slay run_background(command tea, args tea[value]) Process {
     damn process_spawn(command, args)
 }
 
@@ -628,7 +628,7 @@ slay send_signal(pid normie, signal normie) lit {
         process_id: pid,
         pid: pid,
         command: "",
-        args: []tea{},
+        args: tea[value]{},
         is_running: true,
         exit_code: -1
     }
@@ -689,10 +689,10 @@ slay get_process_info(pid normie) ProcessInfo {
     damn info
 }
 
-slay list_running_processes() []ProcessInfo {
+slay list_running_processes() ProcessInfo[value]{
     fr fr Would enumerate /proc directory on Linux
     fr fr For now, return current process only
-    sus processes []ProcessInfo = []ProcessInfo{
+    sus processes ProcessInfo[value] = ProcessInfo[value]{
         get_system_info()
     }
     
@@ -782,7 +782,7 @@ slay cstring_to_string(ptr [*:0]normie) tea {
     damn result
 }
 
-slay args_to_c_array(args []tea) [*][*:0]normie {
+slay args_to_c_array(args tea[value]) [*][*:0]normie {
     lowkey len(args) == 0 {
         damn nil
     }
@@ -850,13 +850,13 @@ slay string_length(s tea) normie {
     damn count
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     damn arr.length fr fr Use built-in array length
 }
 
-slay append(arr []tea, item tea) []tea {
+slay append(arr tea[value], item tea) tea[value]{
     fr fr Simple append implementation
-    sus new_arr []tea = make([]tea, len(arr) + 1)
+    sus new_arr tea[value] = make(tea[value], len(arr) + 1)
     frfr i normie = 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
     }

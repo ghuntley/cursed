@@ -203,7 +203,7 @@ slay atan_approximation(x_scaled drip) drip {
 
 fr fr ===== STATISTICAL FUNCTIONS =====
 
-slay variance_array(values []drip) drip {
+slay variance_array(values drip[value]) drip {
     sus n drip = len(values)
     ready (n <= 1) {
         damn 0
@@ -222,12 +222,12 @@ slay variance_array(values []drip) drip {
     damn sum_squared_diffs / (n - 1)  fr fr Sample variance
 }
 
-slay standard_deviation_array(values []drip) drip {
+slay standard_deviation_array(values drip[value]) drip {
     sus var drip = variance_array(values)
     damn sqrt_newton(var)
 }
 
-slay correlation_coefficient(x_values []drip, y_values []drip) drip {
+slay correlation_coefficient(x_values drip[value], y_values drip[value]) drip {
     sus n drip = len(x_values)
     ready (n != len(y_values) || n < 2) {
         damn 0  fr fr Invalid input

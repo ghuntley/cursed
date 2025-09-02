@@ -102,7 +102,7 @@ slay add_watch_path(watcher *FileWatcher, path tea) vibes {
 }
 
 slay monitor_events(watcher *FileWatcher) vibes {
-    sus buffer [4096]lit  // Event buffer
+    sus buffer lit[4096]  // Event buffer
     
     bestie (watcher.running) {
         // Read events from file descriptor
@@ -181,7 +181,7 @@ slay destroy_file_watcher(watcher *FileWatcher) vibes {
 }
 
 slay get_current_time() thicc {
-    sus timespec [2]thicc = [0, 0]
+    sus timespec thicc[2] = [0, 0]
     cursed_runtime_syscall(
         228,  // clock_gettime  
         0,    // CLOCK_REALTIME
@@ -192,7 +192,7 @@ slay get_current_time() thicc {
 }
 
 // Helper for sleep operations
-sus sleep_timespec [2]thicc = [0, 10000000]  // 10ms sleep
+sus sleep_timespec thicc[2] = [0, 10000000]  // 10ms sleep
 
 // Export functions for compatibility with existing API
 slay cursed_file_watcher_create() *FileWatcher {

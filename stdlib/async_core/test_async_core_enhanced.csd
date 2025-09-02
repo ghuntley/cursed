@@ -107,7 +107,7 @@ slay test_concurrent_execution() {
             damn i
         })
     } fr fr Wait for all tasks to complete
-    sus results []normie = make([]normie, 10)
+    sus results normie[value] = make(normie[value], 10)
     bestie i := 0; i < 10; i++ {
         results[i] = async_await(tasks[i])
         assert_eq_int(results[i], i)
@@ -298,7 +298,7 @@ slay test_async_task_groups() {
     }
     
     assert_eq_int(async_task_group_size(group), 3) fr fr Wait for all tasks in group
-    sus results []normie = async_task_group_wait_all(group)
+    sus results normie[value] = async_task_group_wait_all(group)
     assert_eq_int(len(results), 3)
     assert_eq_int(results[0], 0)
     assert_eq_int(results[1], 10)

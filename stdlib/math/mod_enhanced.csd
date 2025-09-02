@@ -552,7 +552,7 @@ fr fr ================================
 fr fr Statistical Functions
 fr fr ================================
 
-slay math_sum(values []meal) meal {
+slay math_sum(values meal[value]) meal {
     sus total meal = 0.0
     bestie i := 0; i < len(values); i++ {
         total = total + values[i]
@@ -560,7 +560,7 @@ slay math_sum(values []meal) meal {
     damn total
 }
 
-slay math_mean(values []meal) meal {
+slay math_mean(values meal[value]) meal {
     lowkey len(values) == 0 {
         damn 0.0
     }
@@ -568,7 +568,7 @@ slay math_mean(values []meal) meal {
     damn math_sum(values) / meal(len(values))
 }
 
-slay math_variance(values []meal) meal {
+slay math_variance(values meal[value]) meal {
     lowkey len(values) <= 1 {
         damn 0.0
     }
@@ -584,11 +584,11 @@ slay math_variance(values []meal) meal {
     damn sum_sq_diff / meal(len(values) - 1)
 }
 
-slay math_stddev(values []meal) meal {
+slay math_stddev(values meal[value]) meal {
     damn math_sqrt(math_variance(values))
 }
 
-slay math_median(values []meal) meal {
+slay math_median(values meal[value]) meal {
     lowkey len(values) == 0 {
         damn 0.0
     } fr fr Simple median (would need sorting in real implementation)
@@ -684,8 +684,8 @@ slay math_next_prime(n normie) normie {
     damn candidate
 }
 
-slay math_prime_factors(n normie) []normie {
-    sus factors []normie = []
+slay math_prime_factors(n normie) normie[value]{
+    sus factors normie[value] = []
     sus num normie = n fr fr Check for factor 2
     bestie (num % 2) == 0 {
         factors = append(factors, 2)

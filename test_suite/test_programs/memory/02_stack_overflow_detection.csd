@@ -8,7 +8,7 @@ slay recursive_function(depth normie) normie {
     }
     
     // Create some local variables to consume stack space
-    sus local_array []normie = []normie{1, 2, 3, 4, 5}
+    sus local_array normie[value] = normie[value]{1, 2, 3, 4, 5}
     sus result normie = depth * recursive_function(depth - 1)
     
     damn result
@@ -55,7 +55,7 @@ slay main() {
     
     // Test 4: Deep stack usage with arrays
     vibez.spill("Testing deep stack with local allocations...")
-    finna i normie = 0; i < 10; i++ {
+    bestie i := 0; i < 10; i++ {
         sus temp_result = recursive_function(10 + i)
         vibez.spill("Deep stack test", i, "completed")
     }

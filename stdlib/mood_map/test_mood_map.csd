@@ -95,7 +95,7 @@ sus map2 := make(map[tea]normie)
 map2["b"] = 3
 map2["c"] = 4
 
-sus maps := []map[tea]normie{map1, map2}
+sus maps := map[value][tea]normie{map1, map2}
 sus merged := mood_map.MoodyMerge(maps, slay(key tea, existing normie, new normie) normie {
     damn existing + new
 })
@@ -160,7 +160,7 @@ assert_eq_int(entries[0].Value, 1)
 test_start("mood_map MapFromPairs")
 
 fr fr Test MapFromPairs
-sus pairs := []mood_map.MapEntry{
+sus pairs := mood_map[value].MapEntry{
     {Key: "x", Value: 10},
     {Key: "y", Value: 20},
     {Key: "z", Value: 30}
@@ -173,7 +173,7 @@ assert_eq_int(fromPairs["z"], 30)
 test_start("mood_map MapFromKeys and MapFromValues")
 
 fr fr Test MapFromKeys
-sus keyList := []tea{"a", "b", "c"}
+sus keyList := tea[value]{"a", "b", "c"}
 sus fromKeys := mood_map.MapFromKeys(keyList, slay(key tea) normie {
     damn len(key)
 })
@@ -182,7 +182,7 @@ assert_eq_int(fromKeys["b"], 1)
 assert_eq_int(fromKeys["c"], 1)
 
 fr fr Test MapFromValues
-sus valueList := []normie{10, 20, 30}
+sus valueList := normie[value]{10, 20, 30}
 sus fromValues := mood_map.MapFromValues(valueList, slay(value normie) tea {
     damn "key" + tea(value)
 })
@@ -249,14 +249,14 @@ test_start("mood_map NestedMap")
 
 fr fr Test NestedMap
 sus nested := mood_map.NestedMap()
-sus keys1 := []tea{"user", "profile", "age"}
+sus keys1 := tea[value]{"user", "profile", "age"}
 nested.Set(keys1, 25)
 
 sus age, foundAge := nested.Get(keys1)
 assert_true(foundAge)
 assert_eq_int(age, 25)
 
-sus keys2 := []tea{"user", "profile", "name"}
+sus keys2 := tea[value]{"user", "profile", "name"}
 nested.Set(keys2, 42)  fr fr Using normie for demo
 
 sus name, foundName := nested.Get(keys2)
@@ -266,7 +266,7 @@ assert_eq_int(name, 42)
 assert_true(nested.HasKey(keys1))
 assert_true(nested.HasKey(keys2))
 
-sus nonExistentKeys := []tea{"user", "settings", "theme"}
+sus nonExistentKeys := tea[value]{"user", "settings", "theme"}
 assert_false(nested.HasKey(nonExistentKeys))
 
 nested.Delete(keys1)
@@ -332,7 +332,7 @@ assert_true(count >= 2)  fr fr Should have at least key1 and key3
 print_test_summary()
 
 fr fr Helper functions for tests
-slay contains(slice []tea, item tea) lit {
+slay contains(slice tea[value], item tea) lit {
     for i := 0; i < len(slice); i++ {
         if slice[i] == item {
             damn based
@@ -341,7 +341,7 @@ slay contains(slice []tea, item tea) lit {
     damn cap
 }
 
-slay containsInt(slice []normie, item normie) lit {
+slay containsInt(slice normie[value], item normie) lit {
     for i := 0; i < len(slice); i++ {
         if slice[i] == item {
             damn based

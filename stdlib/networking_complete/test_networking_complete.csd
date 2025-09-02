@@ -366,7 +366,7 @@ fr fr ==========================================================================
 
 slay test_networking_performance() {
     test_start("Networking Performance Tests") fr fr Test multiple concurrent connections
-    sus connections [10]Socket
+    sus connections Socket[10]
     sus connection_addr NetworkAddress
     connection_addr.ip = "127.0.0.1"
     connection_addr.port = 8000
@@ -383,7 +383,7 @@ slay test_networking_performance() {
     bestie i := 0; i < 10; i++ {
         assert_eq_lit(tcp_socket_close(&connections[i]), based)
     } fr fr Test DNS resolution performance
-    sus dns_domains [5]tea
+    sus dns_domains tea[5]
     dns_domains[0] = "example.com"
     dns_domains[1] = "localhost"
     dns_domains[2] = "google.com"

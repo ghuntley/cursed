@@ -109,11 +109,11 @@ assert_eq_int(min_normie(10, 5), 5)
 assert_eq_int(min_normie(-3, -7), -7)
 
 test_start("max_array_test")
-sus values []meal = [1.0, 5.0, 3.0, 2.0]
+sus values meal[value] = [1.0, 5.0, 3.0, 2.0]
 assert_near(max_array(values), 5.0, 0.001)
 
 test_start("min_array_test")
-sus values2 []meal = [4.0, 1.0, 3.0, 2.0]
+sus values2 meal[value] = [4.0, 1.0, 3.0, 2.0]
 assert_near(min_array(values2), 1.0, 0.001)
 
 test_group_end()
@@ -383,20 +383,20 @@ fr fr Test statistical functions
 test_group_start("Statistical Functions")
 
 test_start("sum_array_test")
-sus values []meal = [1.0, 2.0, 3.0, 4.0]
+sus values meal[value] = [1.0, 2.0, 3.0, 4.0]
 assert_near(sum_array(values), 10.0, 0.001)
 
 test_start("mean_array_test")
-sus values2 []meal = [2.0, 4.0, 6.0]
+sus values2 meal[value] = [2.0, 4.0, 6.0]
 assert_near(mean_array(values2), 4.0, 0.001)
 
 test_start("variance_array_test")
-sus values3 []meal = [1.0, 2.0, 3.0]
+sus values3 meal[value] = [1.0, 2.0, 3.0]
 sus variance meal = variance_array(values3)
 assert_true(variance > 0.0)
 
 test_start("std_deviation_test")
-sus values4 []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+sus values4 meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
 sus std_dev meal = std_deviation_array(values4)
 assert_true(std_dev > 0.0)
 

@@ -17,13 +17,13 @@ squad OCSPRequest {
 squad OCSPTBSRequest {
     version drip
     requestor_name tea
-    request_list []OCSPSingleRequest
-    request_extensions []OCSPExtension
+    request_list OCSPSingleRequest[value]
+    request_extensions OCSPExtension[value]
 }
 
 squad OCSPSingleRequest {
     req_cert OCSPCertID
-    single_request_extensions []OCSPExtension
+    single_request_extensions OCSPExtension[value]
 }
 
 squad OCSPCertID {
@@ -47,15 +47,15 @@ squad OCSPBasicResponse {
     tbs_response_data OCSPResponseData
     signature_algorithm tea
     signature tea
-    certs []X509Certificate
+    certs X509Certificate[value]
 }
 
 squad OCSPResponseData {
     version drip
     responder_id tea
     produced_at drip
-    responses []OCSPSingleResponse
-    response_extensions []OCSPExtension
+    responses OCSPSingleResponse[value]
+    response_extensions OCSPExtension[value]
 }
 
 squad OCSPSingleResponse {
@@ -63,7 +63,7 @@ squad OCSPSingleResponse {
     cert_status OCSPCertStatus
     this_update drip
     next_update drip
-    single_extensions []OCSPExtension
+    single_extensions OCSPExtension[value]
 }
 
 squad OCSPCertStatus {
@@ -81,7 +81,7 @@ squad OCSPExtension {
 squad OCSPSignature {
     signature_algorithm tea
     signature tea
-    certs []X509Certificate
+    certs X509Certificate[value]
 }
 
 fr fr ===== OCSP REQUEST CREATION =====
@@ -168,7 +168,7 @@ slay parse_ocsp_response(response_data tea) yikes<OCSPBasicResponse> {
     }
     
     fr fr Extract response components
-    sus response_parts []tea = stringz.split(decoded_data, "_")
+    sus response_parts tea[value] = stringz.split(decoded_data, "_")
     ready (arrayz.length(response_parts) < 4) {
         yikes "MALFORMED_RESPONSE: OCSP response is malformed"
     }

@@ -6,22 +6,22 @@ yeet "vibez_optimized"
 
 test_start("test_string_concat_optimized")
 # Test optimized string concatenation with multiple strings
-sus parts []tea = ["Hello", " ", "World", "!"]
+sus parts tea[value] = ["Hello", " ", "World", "!"]
 sus result tea = string_concat_optimized(parts)
 assert_eq_tea(result, "Hello World!")
 
 # Test with empty array
-sus empty_parts []tea = []
+sus empty_parts tea[value] = []
 sus empty_result tea = string_concat_optimized(empty_parts)
 assert_eq_tea(empty_result, "")
 
 # Test with single string
-sus single_parts []tea = ["OnlyString"]
+sus single_parts tea[value] = ["OnlyString"]
 sus single_result tea = string_concat_optimized(single_parts)
 assert_eq_tea(single_result, "OnlyString")
 
 # Test with empty strings
-sus with_empty []tea = ["Start", "", "End"]
+sus with_empty tea[value] = ["Start", "", "End"]
 sus with_empty_result tea = string_concat_optimized(with_empty)
 assert_eq_tea(with_empty_result, "StartEnd")
 print_test_summary()
@@ -135,24 +135,24 @@ print_test_summary()
 test_start("test_build_kmp_table")
 # Test building KMP failure table
 sus pattern tea = "ABABCABAB"
-sus kmp_table []drip = build_kmp_table(pattern)
+sus kmp_table drip[value] = build_kmp_table(pattern)
 assert_true(len(kmp_table) == len(pattern))
 
 # Test with simple pattern
 sus simple_pattern tea = "AAA"
-sus simple_table []drip = build_kmp_table(simple_pattern)
+sus simple_table drip[value] = build_kmp_table(simple_pattern)
 assert_true(len(simple_table) == 3)
 print_test_summary()
 
 test_start("test_build_bad_char_table")
 # Test building Boyer-Moore bad character table
 sus pattern tea = "EXAMPLE"
-sus bad_char_table []drip = build_bad_char_table(pattern)
+sus bad_char_table drip[value] = build_bad_char_table(pattern)
 assert_true(len(bad_char_table) > 0)
 
 # Test with repeating characters
 sus repeat_pattern tea = "AAA"
-sus repeat_table []drip = build_bad_char_table(repeat_pattern)
+sus repeat_table drip[value] = build_bad_char_table(repeat_pattern)
 assert_true(len(repeat_table) > 0)
 print_test_summary()
 
@@ -235,7 +235,7 @@ initialize_string_pool()
 
 # Test rapid string concatenation
 bestie i := 0; i < 100; i++ {
-    sus parts []tea = ["Part", string(i), "End"]
+    sus parts tea[value] = ["Part", string(i), "End"]
     sus result tea = string_concat_optimized(parts)
     assert_true(len(result) > 0)
 }
@@ -255,7 +255,7 @@ sus long_string tea = ""
 bestie i := 0; i < 1000; i++ {
     long_string = long_string + "x"
 }
-sus long_parts []tea = [long_string, "end"]
+sus long_parts tea[value] = [long_string, "end"]
 sus long_result tea = string_concat_optimized(long_parts)
 assert_true(len(long_result) > 1000)
 
@@ -279,7 +279,7 @@ initialize_string_pool()
 
 # Complex workflow test
 sus base_text tea = get_pooled_string(256)
-sus parts []tea = ["Processing", " item ", "42", " of ", "100"]
+sus parts tea[value] = ["Processing", " item ", "42", " of ", "100"]
 sus combined tea = string_concat_optimized(parts)
 
 sus position drip = string_find_optimized(combined, "item")

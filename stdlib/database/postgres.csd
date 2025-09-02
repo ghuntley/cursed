@@ -53,7 +53,7 @@ squad PostgresConnection {
     spill last_error tea
     spill prepared_statements map[tea]PostgresPreparedStatement
     spill connection_parameters map[tea]tea
-    spill async_notifications []PostgresNotification
+    spill async_notifications PostgresNotification[value]
     spill copy_in_progress lit
     spill copy_format normie
 }
@@ -63,9 +63,9 @@ squad PostgresPreparedStatement {
     spill statement_name tea
     spill sql_query tea
     spill parameter_count normie
-    spill parameter_oids []normie
+    spill parameter_oids normie[value]
     spill result_column_count normie
-    spill result_column_oids []normie
+    spill result_column_oids normie[value]
     spill created_at normie
     spill execution_count normie
     spill total_execution_time normie
@@ -83,14 +83,14 @@ squad PostgresNotification {
 fr fr PostgreSQL result set with metadata
 squad PostgresResult {
     spill command_tag tea
-    spill rows []map[tea]tea
-    spill columns []PostgresColumnInfo
+    spill rows map[value][tea]tea
+    spill columns PostgresColumnInfo[value]
     spill affected_rows normie
     spill status_code normie
     spill status_message tea
     spill execution_time normie
-    spill notices []tea
-    spill warnings []tea
+    spill notices tea[value]
+    spill warnings tea[value]
     spill success lit
     spill has_more_results lit
 }
@@ -203,7 +203,7 @@ slay postgres_create_config_advanced(
 
 fr fr Connection string builder with parameter validation
 slay postgres_connection_string(config PostgresConfig) tea {
-    sus params []tea = []
+    sus params tea[value] = []
     
     fr fr Validate required parameters
     ready (stringz.is_empty(config.host)) {
@@ -893,7 +893,7 @@ fr fr Execute prepared statement with parameters
 slay postgres_execute_prepared(
     connection PostgresConnection, 
     statement_name tea, 
-    parameters []tea
+    parameters tea[value]
 ) yikes<PostgresResult> {
     ready (!connection.is_connected) {
         yikes "PostgreSQL connection is not active"
@@ -955,7 +955,7 @@ fr fr Send bind message for prepared statement execution
 slay postgres_send_bind_message(
     connection PostgresConnection, 
     statement_name tea, 
-    parameters []tea
+    parameters tea[value]
 ) lit {
     fr fr In real implementation, send 'B' message with parameters
     vibez.spill(stringz.format("Binding prepared statement: {} with {} parameters", 
@@ -1413,7 +1413,7 @@ slay postgres_driver_disconnect(connection_id tea) lit {
 }
 
 fr fr Driver registry interface - execute function
-slay postgres_driver_execute(connection_id tea, sql tea, parameters []tea) QueryResult {
+slay postgres_driver_execute(connection_id tea, sql tea, parameters tea[value]) QueryResult {
     fr fr In real implementation, would look up connection and execute query
     sus result QueryResult = {
         rows: [],

@@ -420,7 +420,7 @@ slay test_network_performance() {
     sus start_time drip = get_mock_timestamp()
     
     fr fr Test rapid URL parsing
-    sus urls []tea = [
+    sus urls tea[value] = [
         "http://example.com/",
         "https://secure.example.com:8443/api",
         "http://localhost:3000/path?query=value",
@@ -435,7 +435,7 @@ slay test_network_performance() {
     }
     
     fr fr Test rapid hostname resolution
-    sus hostnames []tea = [
+    sus hostnames tea[value] = [
         "localhost",
         "127.0.0.1",
         "httpbin.org",
@@ -474,7 +474,7 @@ slay get_mock_timestamp() drip {
     damn 1000000  fr fr Mock timestamp for performance testing
 }
 
-slay array_length(arr []tea) drip {
+slay array_length(arr tea[value]) drip {
     sus count drip = 0
     sus i drip = 0
     bestie (i < 100) {  fr fr Reasonable upper bound
@@ -532,8 +532,8 @@ squad QueryResult {
     sus execution_time_ms drip
     sus rows_affected drip
     sus last_insert_id drip
-    sus column_names []tea
-    sus rows []tea
+    sus column_names tea[value]
+    sus rows tea[value]
 }
 
 fr fr ===== MAIN TEST EXECUTION =====

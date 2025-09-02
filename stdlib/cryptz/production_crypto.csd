@@ -38,8 +38,8 @@ slay md5_rotleft(value drip, shift drip) drip {
 }
 
 fr fr Convert bytes to 32-bit words (little endian)
-slay bytes_to_words(data []drip) []drip {
-    sus words []drip = []
+slay bytes_to_words(data drip[value]) drip[value]{
+    sus words drip[value] = []
     sus i drip = 0
     
     bestie i + 3 < len(data) {
@@ -52,9 +52,9 @@ slay bytes_to_words(data []drip) []drip {
 }
 
 fr fr MD5 compression function
-slay md5_compress(h []drip, block []drip) []drip {
+slay md5_compress(h drip[value], block drip[value]) drip[value]{
     fr fr MD5 round constants
-    sus k []drip = [
+    sus k drip[value] = [
         0xD76AA478, 0xE8C7B756, 0x242070DB, 0xC1BDCEEE,
         0xF57C0FAF, 0x4787C62A, 0xA8304613, 0xFD469501,
         0x698098D8, 0x8B44F7AF, 0xFFFF5BB1, 0x895CD7BE,
@@ -74,7 +74,7 @@ slay md5_compress(h []drip, block []drip) []drip {
     ]
     
     fr fr Shift amounts for each round
-    sus s []drip = [
+    sus s drip[value] = [
         7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
         5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20, 5,  9, 14, 20,
         4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
@@ -86,7 +86,7 @@ slay md5_compress(h []drip, block []drip) []drip {
     sus c drip = h[2]
     sus d drip = h[3]
     
-    sus words []drip = bytes_to_words(block)
+    sus words drip[value] = bytes_to_words(block)
     
     fr fr 64 operations in 4 rounds
     sus i drip = 0
@@ -136,7 +136,7 @@ slay compute_production_md5_deprecated_insecure(message tea) tea {
 fr fr ===== HMAC-SHA256 IMPLEMENTATION (RFC 2104) =====
 
 fr fr SHA-256 constants
-sus SHA256_K []drip = [
+sus SHA256_K drip[value] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
     0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -156,7 +156,7 @@ sus SHA256_K []drip = [
 ]
 
 fr fr SHA-256 initial hash values
-sus SHA256_H []drip = [
+sus SHA256_H drip[value] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ]
@@ -186,7 +186,7 @@ slay sha256_sigma1(x drip) drip {
 fr fr Production SHA-256 implementation
 slay compute_sha256(message tea) tea {
     fr fr Convert to bytes and pad
-    sus msg_bytes []drip = []
+    sus msg_bytes drip[value] = []
     sus i drip = 0
     bestie i < stringz.len(message) {
         msg_bytes = append(msg_bytes, char_to_byte(stringz.char_at(message, i)))
@@ -212,13 +212,13 @@ slay compute_sha256(message tea) tea {
     }
     
     fr fr Initialize hash
-    sus h []drip = SHA256_H
+    sus h drip[value] = SHA256_H
     
     fr fr Process blocks
     sus block_start drip = 0
     bestie block_start < len(msg_bytes) {
         fr fr Prepare message schedule
-        sus w []drip = []
+        sus w drip[value] = []
         sus t drip = 0
         bestie t < 16 {
             sus word drip = (msg_bytes[block_start + t*4] << 24) |
@@ -306,7 +306,7 @@ slay compute_sha256(message tea) tea {
 fr fr Production HMAC-SHA256 (RFC 2104 compliant)
 slay compute_hmac_sha256(key tea, message tea) tea {
     sus block_size drip = 64
-    sus key_bytes []drip = []
+    sus key_bytes drip[value] = []
     
     fr fr Convert key to bytes
     sus i drip = 0
@@ -336,8 +336,8 @@ slay compute_hmac_sha256(key tea, message tea) tea {
     }
     
     fr fr Create inner and outer padding
-    sus inner_pad []drip = []
-    sus outer_pad []drip = []
+    sus inner_pad drip[value] = []
+    sus outer_pad drip[value] = []
     
     i = 0
     bestie i < block_size {
@@ -361,7 +361,7 @@ slay compute_hmac_sha256(key tea, message tea) tea {
 fr fr ===== SECURE HASH FUNCTIONS FOR COLLECTIONS =====
 
 fr fr SipHash implementation for secure hashing (constant-time)
-slay siphash_2_4(key []drip, data tea) drip {
+slay siphash_2_4(key drip[value], data tea) drip {
     fr fr SipHash constants
     sus c0 drip = 0x736f6d6570736575
     sus c1 drip = 0x646f72616e646f6d
@@ -375,7 +375,7 @@ slay siphash_2_4(key []drip, data tea) drip {
     sus v3 drip = c3 ^ key[1]
     
     fr fr Process data in 8-byte chunks
-    sus data_bytes []drip = []
+    sus data_bytes drip[value] = []
     sus i drip = 0
     bestie i < stringz.len(data) {
         data_bytes = append(data_bytes, char_to_byte(stringz.char_at(data, i)))
@@ -446,7 +446,7 @@ slay siphash_2_4(key []drip, data tea) drip {
 fr fr Secure hash for collections (uses SipHash with random key)
 slay secure_collection_hash(data tea, table_size drip) drip {
     fr fr Use a cryptographically secure pseudo-random key
-    sus secure_key []drip = [0x0706050403020100, 0x0F0E0D0C0B0A0908]
+    sus secure_key drip[value] = [0x0706050403020100, 0x0F0E0D0C0B0A0908]
     sus hash_val drip = siphash_2_4(secure_key, data)
     damn hash_val % table_size
 }
@@ -480,7 +480,7 @@ slay char_hex_value(c tea) drip {
     damn 0
 }
 
-slay bytes_to_string(bytes []drip) tea {
+slay bytes_to_string(bytes drip[value]) tea {
     sus result tea = ""
     sus i drip = 0
     bestie i < len(bytes) {

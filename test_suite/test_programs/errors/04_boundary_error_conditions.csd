@@ -3,7 +3,7 @@ yeet "vibez"
 yeet "stringz"
 
 // Test boundary and error conditions
-slay safe_array_access(arr []normie, index normie) normie {
+slay safe_array_access(arr normie[value], index normie) normie {
     ready (len(arr) == 0) {
         vibez.spill("Error: Cannot access empty array")
         damn -1
@@ -46,7 +46,7 @@ slay safe_string_access(str tea, pos normie) tea {
 slay test_array_boundary_errors() {
     vibez.spill("=== Array Boundary Error Tests ===")
     
-    sus test_array []normie = []normie{10, 20, 30, 40, 50}
+    sus test_array normie[value] = normie[value]{10, 20, 30, 40, 50}
     vibez.spill("Test array:", test_array, "length:", len(test_array))
     
     // Valid access tests
@@ -70,7 +70,7 @@ slay test_array_boundary_errors() {
     vibez.spill("arr[100] result:", err3)
     
     // Empty array test
-    sus empty []normie = []normie{}
+    sus empty normie[value] = normie[value]{}
     sus err4 = safe_array_access(empty, 0)
     vibez.spill("empty[0] result:", err4)
 }
@@ -146,9 +146,9 @@ slay test_mathematical_error_conditions() {
 slay test_nested_error_conditions() {
     vibez.spill("=== Nested Error Condition Tests ===")
     
-    sus test_array []normie = []normie{1, 2, 0, 4, 5}
+    sus test_array normie[value] = normie[value]{1, 2, 0, 4, 5}
     
-    finna i normie = 0; i < len(test_array); i++ {
+    bestie i := 0; i < len(test_array); i++ {
         sus current_val = safe_array_access(test_array, i)
         
         ready (current_val == -1) {

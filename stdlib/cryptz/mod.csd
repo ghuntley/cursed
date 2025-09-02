@@ -9,7 +9,7 @@ fr fr ===== CRYPTOGRAPHIC STRUCTURES =====
 
 squad HashContext {
     sus algorithm tea
-    sus state []drip
+    sus state drip[value]
     sus message_length drip
     sus buffer tea
 }
@@ -39,7 +39,7 @@ fr fr ===== SECURE HASHING ALGORITHMS =====
 
 slay sha256_hash(data tea) tea {
     fr fr SHA-256 hash implementation using runtime bridge
-    sus output [32]normie = [0]
+    sus output normie[32] = [0]
     
     fr fr Call the runtime bridge function for real SHA-256
     runtime_sha256_hash(data, string_length(data), &output[0])
@@ -55,8 +55,8 @@ slay sha512_hash(data tea) tea {
     context.message_length = string_length(data)
     
     fr fr Similar to SHA-256 but with 64-bit words and different constants
-    sus h []drip = sha512_initial_hash_values()
-    sus k []drip = sha512_round_constants()
+    sus h drip[value] = sha512_initial_hash_values()
+    sus k drip[value] = sha512_round_constants()
     
     sus padded_message tea = sha512_pad_message(data)
     sus block_count drip = string_length(padded_message) / 128
@@ -86,7 +86,7 @@ slay blake2b_hash(data tea, output_size drip) tea {
     context.algorithm = "BLAKE2b"
     
     fr fr BLAKE2b initialization
-    sus h []drip = blake2b_initial_values()
+    sus h drip[value] = blake2b_initial_values()
     sus output_bytes drip = mathz.clamp(output_size, 1, 64)
     
     fr fr Process input data
@@ -453,7 +453,7 @@ slay generate_random_bytes(length drip) tea {
     fr fr Cryptographically secure random bytes using runtime bridge
     ready length <= 0 { damn "" }
     
-    sus buffer []normie = make([]normie, length)
+    sus buffer normie[value] = make(normie[value], length)
     runtime_secure_random_bytes(&buffer[0], length)
     
     damn bytes_to_string(buffer)
@@ -588,17 +588,17 @@ slay base64_decode(encoded tea) tea {
 fr fr ===== FIPS 140-2 COMPLIANT CRYPTOGRAPHIC IMPLEMENTATIONS =====
 fr fr Production-grade cryptographic implementations following NIST standards
 
-slay sha256_initial_hash_values() []drip {
+slay sha256_initial_hash_values() drip[value]{
     fr fr NIST FIPS 180-4 SHA-256 initial hash values (constant-time safe)
-    sus values []drip = []
+    sus values drip[value] = []
     values[0] = 0x6a09e667; values[1] = 0xbb67ae85; values[2] = 0x3c6ef372; values[3] = 0xa54ff53a
     values[4] = 0x510e527f; values[5] = 0x9b05688c; values[6] = 0x1f83d9ab; values[7] = 0x5be0cd19
     damn values
 }
 
-slay sha256_round_constants() []drip {
+slay sha256_round_constants() drip[value]{
     fr fr NIST FIPS 180-4 SHA-256 K constants (all 64 round constants)
-    sus k []drip = []
+    sus k drip[value] = []
     k[0] = 0x428a2f98; k[1] = 0x71374491; k[2] = 0xb5c0fbcf; k[3] = 0xe9b5dba5
     k[4] = 0x3956c25b; k[5] = 0x59f111f1; k[6] = 0x923f82a4; k[7] = 0xab1c5ed5
     k[8] = 0xd807aa98; k[9] = 0x12835b01; k[10] = 0x243185be; k[11] = 0x550c7dc3
@@ -645,11 +645,11 @@ slay sha256_pad_message(message tea) tea {
     damn padded
 }
 
-slay sha256_process_block(h []drip, k []drip, block tea) []drip { 
+slay sha256_process_block(h drip[value], k drip[value], block tea) drip[value]{ 
     fr fr NIST FIPS 180-4 compliant SHA-256 compression function
     fr fr Constant-time implementation resistant to side-channel attacks
     
-    sus w [64]drip = [0]  fr fr Message schedule
+    sus w drip[64] = [0]  fr fr Message schedule
     sus a drip = h[0]; sus b drip = h[1]; sus c drip = h[2]; sus d drip = h[3]
     sus e drip = h[4]; sus f drip = h[5]; sus g drip = h[6]; sus h_val drip = h[7]
     
@@ -683,7 +683,7 @@ slay sha256_process_block(h []drip, k []drip, block tea) []drip {
     }
     
     fr fr Add this chunk's hash to result so far
-    sus result []drip = []
+    sus result drip[value] = []
     result = append_int(result, safe_add32(h[0], a))
     result = append_int(result, safe_add32(h[1], b))
     result = append_int(result, safe_add32(h[2], c))
@@ -696,7 +696,7 @@ slay sha256_process_block(h []drip, k []drip, block tea) []drip {
     damn result
 }
 
-slay sha256_finalize_hash(h []drip) tea { 
+slay sha256_finalize_hash(h drip[value]) tea { 
     fr fr Convert to lowercase hex string (NIST format)
     sus result tea = ""
     sus i drip = 0
@@ -708,8 +708,8 @@ slay sha256_finalize_hash(h []drip) tea {
 }
 
 fr fr NIST SHA-512 implementation (FIPS 180-4 compliant)
-slay sha512_initial_hash_values() []drip {
-    sus h []drip = []
+slay sha512_initial_hash_values() drip[value]{
+    sus h drip[value] = []
     h[0] = 0x6a09e667f3bcc908; h[1] = 0xbb67ae8584caa73b
     h[2] = 0x3c6ef372fe94f82b; h[3] = 0xa54ff53a5f1d36f1
     h[4] = 0x510e527fade682d1; h[5] = 0x9b05688c2b3e6c1f
@@ -717,18 +717,18 @@ slay sha512_initial_hash_values() []drip {
     damn h
 }
 
-slay sha512_round_constants() []drip {
+slay sha512_round_constants() drip[value]{
     fr fr NIST FIPS 180-4 SHA-512 K constants (all 80 round constants)
-    sus k []drip = []
+    sus k drip[value] = []
     k[0] = 0x428a2f98d728ae22; k[1] = 0x7137449123ef65cd; k[2] = 0xb5c0fbcfec4d3b2f; k[3] = 0xe9b5dba58189dbbc
     fr fr ... (all 80 constants for production)
     damn k
 }
 
 fr fr BLAKE2b implementation (RFC 7693 compliant)
-slay blake2b_initial_values() []drip {
+slay blake2b_initial_values() drip[value]{
     fr fr RFC 7693 BLAKE2b initialization vector
-    sus iv []drip = []
+    sus iv drip[value] = []
     iv[0] = 0x6a09e667f3bcc908; iv[1] = 0xbb67ae8584caa73b
     iv[2] = 0x3c6ef372fe94f82b; iv[3] = 0xa54ff53a5f1d36f1
     iv[4] = 0x510e527fade682d1; iv[5] = 0x9b05688c2b3e6c1f
@@ -736,7 +736,7 @@ slay blake2b_initial_values() []drip {
     damn iv
 }
 
-slay blake2b_process_data(data tea, h []drip, size drip) tea {
+slay blake2b_process_data(data tea, h drip[value], size drip) tea {
     fr fr RFC 7693 compliant BLAKE2b with security hardening
     fr fr Constant-time implementation resistant to timing attacks
     yeet "secure_memory"
@@ -786,7 +786,7 @@ slay verify_oauth_signature(message tea, signature tea, secret tea) lit {
 ]
 
 fr fr Inverse S-box for InvSubBytes
-sus AES_INV_SBOX [256]normie = [
+sus AES_INV_SBOX normie[256] = [
     0x52, 0x09, 0x6a, 0xd5, 0x30, 0x36, 0xa5, 0x38, 0xbf, 0x40, 0xa3, 0x9e, 0x81, 0xf3, 0xd7, 0xfb,
     0x7c, 0xe3, 0x39, 0x82, 0x9b, 0x2f, 0xff, 0x87, 0x34, 0x8e, 0x43, 0x44, 0xc4, 0xde, 0xe9, 0xcb,
     0x54, 0x7b, 0x94, 0x32, 0xa6, 0xc2, 0x23, 0x3d, 0xee, 0x4c, 0x95, 0x0b, 0x42, 0xfa, 0xc3, 0x4e,
@@ -806,11 +806,11 @@ sus AES_INV_SBOX [256]normie = [
 ]
 
 fr fr Round constants for key expansion
-sus AES_RCON [11]normie = [
+sus AES_RCON normie[11] = [
     0x00, 0x01, 0x02, 0x04, 0x08, 0x10, 0x20, 0x40, 0x80, 0x1b, 0x36
 ]
 
-slay aes_key_expansion(key []normie, key_length drip, expanded_key []normie) drip {
+slay aes_key_expansion(key normie[value], key_length drip, expanded_key normie[value]) drip {
     sus rounds drip = ready key_length == 16 { damn 10 } otherwise key_length == 24 { damn 12 } otherwise { damn 14 }
     sus key_words drip = key_length / 4
     sus total_words drip = 4 * (rounds + 1)
@@ -821,7 +821,7 @@ slay aes_key_expansion(key []normie, key_length drip, expanded_key []normie) dri
     }
     
     fr fr Generate additional round keys
-    sus word [4]normie
+    sus word normie[4]
     bestie i := key_words; i < total_words; i++ {
         fr fr Get previous word
         bestie j := 0; j < 4; j++ {
@@ -854,13 +854,13 @@ slay aes_key_expansion(key []normie, key_length drip, expanded_key []normie) dri
     damn rounds
 }
 
-slay aes_sub_bytes(state []normie) {
+slay aes_sub_bytes(state normie[value]) {
     bestie i := 0; i < 16; i++ {
         state[i] = AES_SBOX[state[i]]
     }
 }
 
-slay aes_shift_rows(state []normie) {
+slay aes_shift_rows(state normie[value]) {
     fr fr Shift row 1 by 1 position
     sus temp normie = state[1]
     state[1] = state[5]
@@ -884,8 +884,8 @@ slay aes_shift_rows(state []normie) {
     state[7] = temp
 }
 
-slay aes_mix_columns(state []normie) {
-    sus temp [16]normie
+slay aes_mix_columns(state normie[value]) {
+    sus temp normie[16]
     bestie c := 0; c < 4; c++ {
         temp[c] = aes_gmul(state[c], 2) ^ aes_gmul(state[c + 4], 3) ^ state[c + 8] ^ state[c + 12]
         temp[c + 4] = state[c] ^ aes_gmul(state[c + 4], 2) ^ aes_gmul(state[c + 8], 3) ^ state[c + 12]
@@ -919,22 +919,22 @@ slay aes_gmul(a normie, b normie) normie {
     damn result
 }
 
-slay aes_add_round_key(state []normie, round_key []normie) {
+slay aes_add_round_key(state normie[value], round_key normie[value]) {
     bestie i := 0; i < 16; i++ {
         state[i] = state[i] ^ round_key[i]
     }
 }
 
-slay aes_encrypt_block(plaintext []normie, key []normie, key_length drip, ciphertext []normie) yikes<tea> {
+slay aes_encrypt_block(plaintext normie[value], key normie[value], key_length drip, ciphertext normie[value]) yikes<tea> {
     ready key_length != 16 && key_length != 24 && key_length != 32 {
         yikes "Invalid key length: must be 16, 24, or 32 bytes"
     }
     
-    sus expanded_key [240]normie  fr fr Max key schedule size
+    sus expanded_key normie[240]  fr fr Max key schedule size
     sus rounds drip = aes_key_expansion(key, key_length, expanded_key)
     
     fr fr Initialize state with plaintext
-    sus state [16]normie
+    sus state normie[16]
     bestie i := 0; i < 16; i++ {
         state[i] = plaintext[i]
     }
@@ -964,20 +964,20 @@ slay aes_encrypt_block(plaintext []normie, key []normie, key_length drip, cipher
 }
 
 slay aes_ecb_encrypt(plaintext tea, key tea) tea {
-    sus key_bytes []normie = string_to_bytes(key)
+    sus key_bytes normie[value] = string_to_bytes(key)
     sus key_length drip = array_length(key_bytes)
     
     ready key_length != 16 && key_length != 24 && key_length != 32 {
         damn "ERROR: AES key must be 16, 24, or 32 bytes"
     }
     
-    sus plain_bytes []normie = string_to_bytes(plaintext)
+    sus plain_bytes normie[value] = string_to_bytes(plaintext)
     sus plain_length drip = array_length(plain_bytes)
     
     fr fr Pad plaintext to multiple of 16 bytes (PKCS7)
     sus padding_length drip = 16 - (plain_length % 16)
     sus padded_length drip = plain_length + padding_length
-    sus padded_plaintext [1024]normie  fr fr Max supported size
+    sus padded_plaintext normie[1024]  fr fr Max supported size
     
     bestie i := 0; i < plain_length; i++ {
         padded_plaintext[i] = plain_bytes[i]
@@ -988,8 +988,8 @@ slay aes_ecb_encrypt(plaintext tea, key tea) tea {
     }
     
     sus result tea = ""
-    sus block_plaintext [16]normie
-    sus block_ciphertext [16]normie
+    sus block_plaintext normie[16]
+    sus block_ciphertext normie[16]
     
     fr fr Process each 16-byte block
     bestie block := 0; block < padded_length / 16; block++ {
@@ -1095,16 +1095,16 @@ slay aes_cbc_decrypt(ciphertext tea, key tea, iv tea) tea {
 }
 slay aes_gcm_encrypt(plaintext tea, key tea, iv tea) tea { 
     sus output_len drip = string_length(plaintext) + 16  fr fr Add space for tag
-    sus output []normie = make([]normie, output_len)
+    sus output normie[value] = make(normie[value], output_len)
     runtime_aes_gcm_encrypt(plaintext, key, iv, &output[0])
     damn bytes_to_hex_string(output)
 }
 
 slay aes_gcm_decrypt(ciphertext tea, key tea, iv tea) tea { 
-    sus cipher_bytes []normie = hex_string_to_bytes(ciphertext)
+    sus cipher_bytes normie[value] = hex_string_to_bytes(ciphertext)
     sus output_len drip = len(cipher_bytes) - 16  fr fr Remove tag space
     ready output_len <= 0 { damn "" }
-    sus output []normie = make([]normie, output_len)
+    sus output normie[value] = make(normie[value], output_len)
     runtime_aes_gcm_decrypt(ciphertext, key, iv, &output[0])
     damn bytes_to_string(output)
 }
@@ -1152,7 +1152,7 @@ fr fr ================================
 
 sus chacha20_constants [normie] = [0x61707865, 0x3320646e, 0x79622d32, 0x6b206574]
 
-slay chacha20_quarter_round(a normie, b normie, c normie, d normie) []normie {
+slay chacha20_quarter_round(a normie, b normie, c normie, d normie) normie[value]{
     a = a + b; d = d ^ a; d = (d << 16) | (d >> 16)
     c = c + d; b = b ^ c; b = (b << 12) | (b >> 20)
     a = a + b; d = d ^ a; d = (d << 8) | (d >> 24)
@@ -1173,7 +1173,7 @@ slay chacha20_generate_keystream(key tea, nonce tea, length drip) tea {
     
     bestie string_length(result) < length {
         fr fr Initialize state
-        sus state []normie = []
+        sus state normie[value] = []
         
         fr fr Constants
         sus i drip = 0
@@ -1215,7 +1215,7 @@ slay chacha20_generate_keystream(key tea, nonce tea, length drip) tea {
         sus round drip = 0
         bestie round < 10 {  fr fr 20 rounds = 10 double rounds
             fr fr Column rounds
-            sus qr_result []normie = chacha20_quarter_round(state[0], state[4], state[8], state[12])
+            sus qr_result normie[value] = chacha20_quarter_round(state[0], state[4], state[8], state[12])
             state[0] = qr_result[0]; state[4] = qr_result[1]; state[8] = qr_result[2]; state[12] = qr_result[3]
             
             qr_result = chacha20_quarter_round(state[1], state[5], state[9], state[13])
@@ -1458,7 +1458,7 @@ slay encode_ecdsa_signature(r drip, s drip) tea {
 
 slay hmac_sha256(key tea, message tea) tea { 
     fr fr Use runtime bridge for real HMAC
-    sus output [32]normie = [0]
+    sus output normie[32] = [0]
     runtime_hmac_sha256(key, message, &output[0])
     damn bytes_to_hex_string(output)
 }
@@ -1495,7 +1495,7 @@ outer slay runtime_aes_gcm_decrypt(ciphertext [*:0]normie, key [*:0]normie, nonc
 outer slay runtime_hmac_sha256(key [*:0]normie, message [*:0]normie, output [*]normie) lit
 
 slay secure_random_byte() drip { 
-    sus buffer [1]normie = [0]
+    sus buffer normie[1] = [0]
     runtime_secure_random_bytes(&buffer[0], 1)
     damn buffer[0]
 }
@@ -1534,7 +1534,7 @@ slay find_character_index(text tea, char tea) drip {
 
 fr fr ===== UTILITY FUNCTIONS FOR CRYPTO =====
 
-slay bytes_to_int(buffer []normie) drip {
+slay bytes_to_int(buffer normie[value]) drip {
     ready len(buffer) < 4 { damn 0 }
     damn (buffer[0] << 24) | (buffer[1] << 16) | (buffer[2] << 8) | buffer[3]
 }
@@ -1566,8 +1566,8 @@ slay int_to_hex_8(value drip) tea {
     damn result
 }
 
-slay append_int(arr []drip, value drip) []drip {
-    sus new_arr []drip = make([]drip, len(arr) + 1)
+slay append_int(arr drip[value], value drip) drip[value]{
+    sus new_arr drip[value] = make(drip[value], len(arr) + 1)
     sus i drip = 0
     bestie i < len(arr) {
         new_arr[i] = arr[i]
@@ -1592,7 +1592,7 @@ slay string_length(text tea) drip {
     damn len
 }
 
-slay bytes_to_hex_string(bytes []normie) tea {
+slay bytes_to_hex_string(bytes normie[value]) tea {
     sus hex_chars tea = "0123456789abcdef"
     sus result tea = ""
     sus i drip = 0
@@ -1606,9 +1606,9 @@ slay bytes_to_hex_string(bytes []normie) tea {
     damn result
 }
 
-slay hex_string_to_bytes(hex tea) []normie {
+slay hex_string_to_bytes(hex tea) normie[value]{
     sus len drip = string_length(hex) / 2
-    sus result []normie = make([]normie, len)
+    sus result normie[value] = make(normie[value], len)
     sus i drip = 0
     bestie i < len {
         sus high drip = hex_char_to_value(char_at(hex, i * 2))
@@ -1626,7 +1626,7 @@ slay hex_char_to_value(c normie) drip {
     damn 0
 }
 
-slay bytes_to_string(bytes []normie) tea {
+slay bytes_to_string(bytes normie[value]) tea {
     sus result tea = ""
     sus i drip = 0
     bestie i < len(bytes) {

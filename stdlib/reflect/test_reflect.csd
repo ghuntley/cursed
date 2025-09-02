@@ -80,7 +80,7 @@ assert_eq_string(reflect.value_type_name(converted_float), "snack")
 assert_eq_string(reflect.get_value_data(converted_float), "42.0")
 
 fr fr Test struct type
-sus struct_fields := []tea{"name", "age", "active"}
+sus struct_fields := tea[value]{"name", "age", "active"}
 sus struct_type := reflect.type_info_struct_simple("Person", struct_fields)
 assert_true(reflect.is_struct_type(struct_type))
 assert_eq_string(reflect.get_type_name(struct_type), "Person")
@@ -96,12 +96,12 @@ assert_false(reflect.has_struct_field(struct_type, "unknown"))
 fr fr Test array type
 sus array_type := reflect.type_info_array_simple("normie", 5)
 assert_true(reflect.is_array_type(array_type))
-assert_eq_string(reflect.get_type_name(array_type), "[5]normie")
+assert_eq_string(reflect.get_type_name(array_type), "normie[5]")
 assert_eq_string(reflect.get_array_element_type(array_type), "normie")
 assert_eq_int(reflect.get_array_size(array_type), 5)
 
 fr fr Test function type
-sus func_params := []tea{"normie", "tea"}
+sus func_params := tea[value]{"normie", "tea"}
 sus func_type := reflect.type_info_func("test_func", func_params, "lit")
 assert_true(reflect.is_func_type(func_type))
 assert_eq_int(reflect.get_func_param_count(func_type), 2)
@@ -109,7 +109,7 @@ assert_eq_string(reflect.get_func_param_type(func_type, 0), "normie")
 assert_eq_string(reflect.get_func_param_type(func_type, 1), "tea")
 
 fr fr Test interface type
-sus interface_methods := []tea{"method1", "method2"}
+sus interface_methods := tea[value]{"method1", "method2"}
 sus interface_type := reflect.type_info_interface_simple("TestInterface", interface_methods)
 assert_true(reflect.is_interface_type(interface_type))
 assert_eq_int(reflect.get_interface_method_count(interface_type), 2)

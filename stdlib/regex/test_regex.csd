@@ -71,7 +71,7 @@ test_start("Find All Matches Tests")
 fr fr Test finding all digit sequences
 sus all_digits Pattern = compile("\\d+")
 sus text_with_numbers tea = "abc123def456ghi789"
-sus all_matches []Match = all_digits.find_all(text_with_numbers)
+sus all_matches Match[value] = all_digits.find_all(text_with_numbers)
 assert_eq_int(all_matches.length(), 3)
 assert_eq_string(all_matches[0].text, "123")
 assert_eq_string(all_matches[1].text, "456")
@@ -93,7 +93,7 @@ test_start("Split Tests")
 fr fr Test split by pattern
 sus split_pattern Pattern = compile("\\s+")
 sus split_text tea = "hello    world    test"
-sus parts []tea = split_pattern.split(split_text)
+sus parts tea[value] = split_pattern.split(split_text)
 assert_eq_int(parts.length(), 3)
 assert_eq_string(parts[0], "hello")
 assert_eq_string(parts[1], "world")
@@ -118,14 +118,14 @@ test_start("Extract Functions Tests")
 
 fr fr Test number extraction
 sus text_with_nums tea = "I have 5 apples and 10 oranges"
-sus extracted_numbers []tea = extract_numbers(text_with_nums)
+sus extracted_numbers tea[value] = extract_numbers(text_with_nums)
 assert_eq_int(extracted_numbers.length(), 2)
 assert_eq_string(extracted_numbers[0], "5")
 assert_eq_string(extracted_numbers[1], "10")
 
 fr fr Test word extraction
 sus text_with_words tea = "hello, world! test123"
-sus extracted_words []tea = extract_words(text_with_words)
+sus extracted_words tea[value] = extract_words(text_with_words)
 assert_eq_int(extracted_words.length(), 3)
 assert_eq_string(extracted_words[0], "hello")
 assert_eq_string(extracted_words[1], "world")
@@ -160,7 +160,7 @@ sus quoted tea = quote("hello.world*")
 assert_eq_string(quoted, "hello\\.world\\*")
 
 fr fr Test alternation building
-sus words []tea = ["cat", "dog", "bird"]
+sus words tea[value] = ["cat", "dog", "bird"]
 sus alternation tea = build_alternation(words)
 sus alt_pattern Pattern = compile(alternation)
 assert_true(alt_pattern.test("I have a cat"))

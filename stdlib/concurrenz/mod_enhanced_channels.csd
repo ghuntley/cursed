@@ -16,7 +16,7 @@ sus SEQCST normie = 4
 
 fr fr Enhanced Channel structure with deadlock prevention
 struct EnhancedChannel {
-    spill buffer []normie       fr fr Message buffer
+    spill buffer normie[value]       fr fr Message buffer
     spill capacity normie       fr fr Buffer capacity (0 = unbuffered)
     spill size normie           fr fr Current buffer size (atomic)
     spill send_pos normie       fr fr Send position (atomic)
@@ -37,8 +37,8 @@ fr fr Select operation context for multi-channel operations
 struct SelectContext {
     spill channels []*EnhancedChannel  fr fr Array of channels to select on
     spill channel_count normie         fr fr Number of channels
-    spill operations []normie          fr fr Operation types (0=recv, 1=send)
-    spill send_data []normie           fr fr Data for send operations
+    spill operations normie[value]          fr fr Operation types (0=recv, 1=send)
+    spill send_data normie[value]           fr fr Data for send operations
     spill timeout_ms normie            fr fr Timeout in milliseconds
     spill ready_channel normie         fr fr Index of ready channel (-1 = none)
     spill result_data normie           fr fr Data from successful operation

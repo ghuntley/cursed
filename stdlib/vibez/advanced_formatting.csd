@@ -195,7 +195,7 @@ slay integer_to_string_advanced(number normie) tea {
         abs_number = -number
     }
     
-    sus digits []tea = []
+    sus digits tea[value] = []
     sus temp normie = abs_number
     
     bestie temp > 0 {
@@ -468,9 +468,9 @@ slay char_to_digit_safe(char tea) normie {
     damn -1
 }
 
-slay push_digit(arr []tea, digit tea) []tea {
+slay push_digit(arr tea[value], digit tea) tea[value]{
     fr fr Simulate array append operation
-    sus new_arr []tea = make_array(len(arr) + 1)
+    sus new_arr tea[value] = make_array(len(arr) + 1)
     
     bestie i := 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
@@ -480,9 +480,9 @@ slay push_digit(arr []tea, digit tea) []tea {
     damn new_arr
 }
 
-slay make_array(size normie) []tea {
+slay make_array(size normie) tea[value]{
     fr fr This would be provided by the runtime
-    sus result []tea = []
+    sus result tea[value] = []
     damn result
 }
 
@@ -560,7 +560,7 @@ slay find_char_position(str tea, target tea) normie {
 
 fr fr ===== ADVANCED PLACEHOLDER SYSTEM =====
 
-slay replace_placeholders_advanced(template tea, values []tea) tea {
+slay replace_placeholders_advanced(template tea, values tea[value]) tea {
     ready template == cringe {
         damn ""
     }
@@ -728,7 +728,7 @@ slay spill_formatted_ln(template tea, args ...tea) lit {
     damn based
 }
 
-slay format_with_placeholders(template tea, values []tea) tea {
+slay format_with_placeholders(template tea, values tea[value]) tea {
     damn replace_placeholders_advanced(template, values)
 }
 

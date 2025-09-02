@@ -54,7 +54,7 @@ slay test_sql_injection_protection() {
     testz.test_group("SQL Injection Protection")
     
     # Test malicious SQL inputs
-    sus malicious_inputs []tea = [
+    sus malicious_inputs tea[value] = [
         "'; DROP TABLE users; --",
         "' OR '1'='1",
         "' UNION SELECT password FROM users",
@@ -89,7 +89,7 @@ slay test_xss_protection() {
     testz.test_group("XSS Protection")
     
     # Test malicious XSS inputs
-    sus xss_inputs []tea = [
+    sus xss_inputs tea[value] = [
         "<script>alert('xss')</script>",
         "javascript:alert('xss')",
         "<img src=x onerror=alert('xss')>",
@@ -148,7 +148,7 @@ slay test_path_traversal_protection() {
     testz.test_group("Path Traversal Protection")
     
     # Test malicious path inputs
-    sus malicious_paths []tea = [
+    sus malicious_paths tea[value] = [
         "../../etc/passwd",
         "..\\..\\Windows\\System32\\config\\SAM",
         "/etc/shadow",
@@ -234,7 +234,7 @@ slay test_array_helpers() {
     testz.test_group("Array Helper Functions")
     
     # Test error array length counting
-    sus empty_errors []ValidationError = []
+    sus empty_errors ValidationError[value] = []
     testz.assert_eq_int(validationz.len_errors(empty_errors), 0)
     
     # Test error appending (conceptually)
@@ -245,7 +245,7 @@ slay test_array_helpers() {
         value: "bad"
     }
     
-    sus errors_with_one []ValidationError = validationz.append_error(empty_errors, error1)
+    sus errors_with_one ValidationError[value] = validationz.append_error(empty_errors, error1)
     # In real implementation, this would return 1
     # For now, just test that function doesn't crash
     sus count normie = validationz.len_errors(errors_with_one)

@@ -226,18 +226,19 @@ module.exports = grammar({
       $.tuple_type
     ),
     
-    // Specific type definitions
+    // Specific type definitions  
     array_type: $ => seq(
+      field('element', $.type),
       '[',
       field('length', $.expression),
-      ']',
-      field('element', $.type)
+      ']'
     ),
     
     slice_type: $ => seq(
+      field('element', $.type),
       '[',
-      ']',
-      field('element', $.type)
+      field('index', $.expression),
+      ']'
     ),
     
     pointer_type: $ => seq(

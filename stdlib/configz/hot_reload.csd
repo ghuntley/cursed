@@ -31,9 +31,9 @@ squad ChangeEvent {
 }
 
 squad HotReloadManager {
-    sus watchers []FileWatcher
-    sus change_queue []ChangeEvent
-    sus reload_callbacks []ReloadCallback
+    sus watchers FileWatcher[value]
+    sus change_queue ChangeEvent[value]
+    sus reload_callbacks ReloadCallback[value]
     sus debounce_delay drip
     sus max_reload_attempts drip
     sus is_monitoring lit
@@ -80,7 +80,7 @@ slay hot_reload_add_file(manager HotReloadManager, file_path tea, callback_name 
 slay hot_reload_remove_file(manager HotReloadManager, file_path tea) HotReloadManager {
     fr fr Remove file from hot reload monitoring
     sus watcher_count drip = array_length(manager.watchers)
-    sus new_watchers []FileWatcher = []
+    sus new_watchers FileWatcher[value] = []
     sus new_count drip = 0
     
     sus i drip = 0
@@ -224,7 +224,7 @@ slay process_change_queue(manager HotReloadManager) HotReloadManager {
     vibez.spill("Processing " + number_to_string(normie(queue_count)) + " change events")
     
     fr fr Group changes by file and debounce
-    sus processed_files []tea = []
+    sus processed_files tea[value] = []
     sus processed_count drip = 0
     
     sus i drip = 0
@@ -434,7 +434,7 @@ slay config_reload_all_sources(config ConfigManager) ConfigManager {
     config.values = create_string_map()
     
     fr fr Load defaults first
-    sus default_keys []tea = map_keys_string(config.defaults)
+    sus default_keys tea[value] = map_keys_string(config.defaults)
     sus default_count drip = array_length(default_keys)
     
     sus i drip = 0
@@ -481,7 +481,7 @@ slay hot_reload_add_directory(manager HotReloadManager, dir_path tea, pattern te
     vibez.spill("Adding directory to hot reload: " + dir_path + " (pattern: " + pattern + ")")
     
     fr fr In real implementation, this would scan the directory
-    sus sample_files []tea = [
+    sus sample_files tea[value] = [
         dir_path + "/config.json",
         dir_path + "/database.toml",
         dir_path + "/server.yaml"

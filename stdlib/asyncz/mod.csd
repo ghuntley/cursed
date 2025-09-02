@@ -22,7 +22,7 @@ squad Future {
     spill cancel_channel dm<lit>
     spill started_time normie
     spill completed_time normie
-    spill callback_chain []slay(normie)
+    spill callback_chain slay[value](normie)
     spill error_callback slay(*ErrorInstance)
 }
 
@@ -284,7 +284,7 @@ slay executor_submit(executor *AsyncExecutor, task slay() normie) *Future {
 }
 
 fr fr Submit multiple tasks and wait for all to complete
-slay executor_submit_all(executor *AsyncExecutor, tasks []slay() normie, task_count normie) []*Future {
+slay executor_submit_all(executor *AsyncExecutor, tasks slay[value]() normie, task_count normie) []*Future {
     sus futures []*Future = memory.allocate_array(*Future, task_count)
     
     sus i normie = 0
@@ -297,8 +297,8 @@ slay executor_submit_all(executor *AsyncExecutor, tasks []slay() normie, task_co
 }
 
 fr fr Wait for all submitted futures to complete
-slay await_all_futures(futures []*Future, count normie) []normie {
-    sus results []normie = memory.allocate_array(normie, count)
+slay await_all_futures(futures []*Future, count normie) normie[value]{
+    sus results normie[value] = memory.allocate_array(normie, count)
     
     sus i normie = 0
     bestie i < count {
@@ -707,11 +707,11 @@ fr fr ASYNC COMPOSITION PATTERNS - Common async patterns
 fr fr =============================================================================
 
 fr fr Parallel execution of multiple async tasks
-slay async_parallel(tasks []slay() normie, task_count normie) *Future {
+slay async_parallel(tasks slay[value]() normie, task_count normie) *Future {
     sus future *Future = create_future()
     
     stan {
-        sus results []normie = memory.allocate_array(normie, task_count)
+        sus results normie[value] = memory.allocate_array(normie, task_count)
         sus completed_count normie = 0
         sus completion_channel dm<normie> = create_channel(task_count)
         
@@ -741,7 +741,7 @@ slay async_parallel(tasks []slay() normie, task_count normie) *Future {
 }
 
 fr fr Sequential execution with dependency chain
-slay async_sequence(tasks []slay(normie) normie, initial_value normie, task_count normie) *Future {
+slay async_sequence(tasks slay[value](normie) normie, initial_value normie, task_count normie) *Future {
     sus future *Future = create_future()
     
     stan {

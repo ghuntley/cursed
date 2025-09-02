@@ -51,12 +51,12 @@ enum XPathNodeTest {
 squad XPathExpression {
     expr_type XPathExprType
     value tea
-    children []XPathExpression
+    children XPathExpression[value]
     axis XPathAxis
     node_test XPathNodeTest
-    predicates []XPathExpression
+    predicates XPathExpression[value]
     function_name tea
-    arguments []XPathExpression
+    arguments XPathExpression[value]
 }
 
 # XPath Context for evaluation
@@ -75,7 +75,7 @@ squad XPathFunction {
     min_args drip
     max_args drip
     return_type tea
-    evaluator slay(args []XPathExpression, context XPathContext) yikes<tea>
+    evaluator slay(args XPathExpression[value], context XPathContext) yikes<tea>
 }
 
 # ========================
@@ -83,8 +83,8 @@ squad XPathFunction {
 # ========================
 
 # Tokenize XPath expression
-slay tokenize_xpath(xpath tea) []tea {
-    sus tokens []tea = []
+slay tokenize_xpath(xpath tea) tea[value]{
+    sus tokens tea[value] = []
     sus current_token tea = ""
     sus in_string lit = nah
     sus string_delim tea = ""
@@ -141,7 +141,7 @@ slay tokenize_xpath(xpath tea) []tea {
 }
 
 # Parse XPath expression from tokens
-slay parse_xpath_expression(tokens []tea) yikes<XPathExpression> {
+slay parse_xpath_expression(tokens tea[value]) yikes<XPathExpression> {
     ready (tokens.len() == 0) {
         yikes "Empty XPath expression"
     }
@@ -157,7 +157,7 @@ slay parse_xpath_expression(tokens []tea) yikes<XPathExpression> {
 
 # XPath Parser State
 squad XPathParser {
-    tokens []tea
+    tokens tea[value]
     position drip
     current_token tea
 }
@@ -419,8 +419,8 @@ slay evaluate_xpath_with_context(expr XPathExpression, context XPathContext) yik
 
 # Evaluate location path
 slay evaluate_location_path(expr XPathExpression, context XPathContext) yikes<XPathResult> {
-    sus current_nodes []XmlNode = [context.context_node]
-    sus result_nodes []XmlNode = []
+    sus current_nodes XmlNode[value] = [context.context_node]
+    sus result_nodes XmlNode[value] = []
     
     # Handle absolute path
     ready (expr.value.starts_with("/")) {
@@ -434,7 +434,7 @@ slay evaluate_location_path(expr XPathExpression, context XPathContext) yikes<XP
     
     # Handle descendant-or-self
     ready (expr.axis == XPathAxis.DescendantOrSelf) {
-        sus descendants []XmlNode = []
+        sus descendants XmlNode[value] = []
         bestie (sus node XmlNode in current_nodes) {
             descendants = arrayz.append_all(descendants, get_descendant_or_self_nodes(node))
         }
@@ -625,7 +625,7 @@ slay create_default_function_library() map[tea]XPathFunction {
 }
 
 # XPath string() function
-slay xpath_string_function(args []XPathExpression, context XPathContext) yikes<tea> {
+slay xpath_string_function(args XPathExpression[value], context XPathContext) yikes<tea> {
     ready (args.len() == 0) {
         damn get_node_text_content(context.context_node)
     }
@@ -658,7 +658,7 @@ slay xpath_string_function(args []XPathExpression, context XPathContext) yikes<t
 }
 
 # XPath count() function
-slay xpath_count_function(args []XPathExpression, context XPathContext) yikes<tea> {
+slay xpath_count_function(args XPathExpression[value], context XPathContext) yikes<tea> {
     ready (args.len() != 1) {
         yikes "count() function requires exactly one argument"
     }
@@ -706,11 +706,11 @@ slay matches_node_test(node XmlNode, node_test XPathNodeTest, test_value tea) li
 }
 
 # Get descendant-or-self nodes
-slay get_descendant_or_self_nodes(node XmlNode) []XmlNode {
-    sus result []XmlNode = [node]
+slay get_descendant_or_self_nodes(node XmlNode) XmlNode[value]{
+    sus result XmlNode[value] = [node]
     
     bestie (sus child XmlNode in node.children) {
-        sus descendants []XmlNode = get_descendant_or_self_nodes(child)
+        sus descendants XmlNode[value] = get_descendant_or_self_nodes(child)
         result = arrayz.append_all(result, descendants)
     }
     
@@ -750,7 +750,7 @@ slay is_xpath_true(result XPathResult) lit {
 
 # Check if character/string is XPath operator
 slay is_xpath_operator(char tea) lit {
-    sus operators []tea = ["/", "//", "[", "]", "(", ")", "@", "|", "+", "-", "*", "=", "!", "<", ">", "."]
+    sus operators tea[value] = ["/", "//", "[", "]", "(", ")", "@", "|", "+", "-", "*", "=", "!", "<", ">", "."]
     bestie (sus op tea in operators) {
         ready (char == op) {
             damn based
@@ -790,7 +790,7 @@ slay is_at_end(parser XPathParser) lit {
 
 # Check if token is operator
 slay is_operator(token tea) lit {
-    sus operators []tea = ["or", "and", "=", "!=", "<", "<=", ">", ">=", "|", "+", "-", "*", "div", "mod"]
+    sus operators tea[value] = ["or", "and", "=", "!=", "<", "<=", ">", ">=", "|", "+", "-", "*", "div", "mod"]
     bestie (sus op tea in operators) {
         ready (token == op) {
             damn based

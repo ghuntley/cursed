@@ -3,23 +3,23 @@ yeet "vibez"
 yeet "collections"
 
 // Test various memory allocation patterns
-slay create_large_array() []normie {
-    sus large_array []normie = []normie{}
+slay create_large_array() normie[value] {
+    sus large_array normie[value] = normie[value]{}
     
     // Allocate progressively larger chunks
-    finna i normie = 0; i < 1000; i++ {
+    bestie i := 0; i < 1000; i++ {
         large_array = append(large_array, i * i)
     }
     
     damn large_array
 }
 
-slay create_nested_structures() [][]normie {
-    sus nested [][]normie = [][]normie{}
+slay create_nested_structures() normie[value][value] {
+    sus nested normie[value][value] = normie[value][value]{}
     
-    finna i normie = 0; i < 10; i++ {
-        sus inner_array []normie = []normie{}
-        finna j normie = 0; j < 100; j++ {
+    bestie i := 0; i < 10; i++ {
+        sus inner_array normie[value] = normie[value]{}
+        bestie j := 0; j < 100; j++ {
             inner_array = append(inner_array, i * j)
         }
         nested = append(nested, inner_array)
@@ -41,7 +41,7 @@ slay memory_intensive_operations() {
     vibez.spill("Nested structure created, outer length:", len(nested))
     
     // Force some garbage collection pressure
-    finna i normie = 0; i < 50; i++ {
+    bestie i := 0; i < 50; i++ {
         sus temp = create_large_array()
         // temp goes out of scope, should be collected
     }
@@ -55,7 +55,7 @@ slay main() {
     memory_intensive_operations()
     
     // Test repeated allocations
-    finna cycle normie = 0; cycle < 5; cycle++ {
+    bestie cycle := 0; cycle < 5; cycle++ {
         vibez.spill("Allocation cycle:", cycle)
         sus data = create_large_array()
         vibez.spill("Cycle", cycle, "allocation size:", len(data))

@@ -57,12 +57,12 @@ assert_eq_string(resolved_hostname, "localhost")
 vibez.spill("✅ Reverse DNS lookup")
 
 fr fr Test MX record lookup
-sus mx_records []tea = lookup_mx("gmail.com")
+sus mx_records tea[value] = lookup_mx("gmail.com")
 assert_true(len(mx_records) > 0)
 vibez.spill("✅ MX record lookup")
 
 fr fr Test TXT record lookup
-sus txt_records []tea = lookup_txt("google.com")
+sus txt_records tea[value] = lookup_txt("google.com")
 assert_true(len(txt_records) > 0)
 vibez.spill("✅ TXT record lookup")
 
@@ -136,7 +136,7 @@ assert_true(available_port)
 vibez.spill("✅ Port availability check")
 
 fr fr Test network scanning
-sus active_hosts []tea = network_scan("192.168.1.1", "192.168.1.255", 80)
+sus active_hosts tea[value] = network_scan("192.168.1.1", "192.168.1.255", 80)
 assert_true(len(active_hosts) > 0)
 vibez.spill("✅ Network scan")
 

@@ -6,7 +6,7 @@ squad Image {
     sus width drip
     sus height drip
     sus channels drip
-    sus data []drip
+    sus data drip[value]
     sus format tea
     sus color_space tea
 }
@@ -84,7 +84,7 @@ squad ImageMetadata {
 
 # Create new image with specified dimensions
 slay create_image(width drip, height drip, channels drip) Image {
-    sus data []drip = make_array_with_size(width * height * channels, 0)
+    sus data drip[value] = make_array_with_size(width * height * channels, 0)
     
     damn Image{
         width: width,
@@ -98,7 +98,7 @@ slay create_image(width drip, height drip, channels drip) Image {
 
 # Clone an image
 slay clone_image(img Image) Image {
-    sus new_data []drip = []
+    sus new_data drip[value] = []
     bestie (i drip = 0; i < len(img.data); i = i + 1) {
         new_data = append(new_data, img.data[i])
     }
@@ -114,13 +114,13 @@ slay clone_image(img Image) Image {
 }
 
 # Get pixel at coordinates (with bounds checking)
-slay get_pixel(img Image, x drip, y drip) yikes<[]drip> {
+slay get_pixel(img Image, x drip, y drip) yikes<drip[value]> {
     ready (x < 0 || x >= img.width || y < 0 || y >= img.height) {
         yikes "pixel coordinates out of bounds"
     }
     
     sus index drip = (y * img.width + x) * img.channels
-    sus pixel []drip = []
+    sus pixel drip[value] = []
     
     bestie (c drip = 0; c < img.channels; c = c + 1) {
         pixel = append(pixel, img.data[index + c])
@@ -130,7 +130,7 @@ slay get_pixel(img Image, x drip, y drip) yikes<[]drip> {
 }
 
 # Set pixel at coordinates (with bounds checking)
-slay set_pixel(img *Image, x drip, y drip, pixel []drip) yikes<lit> {
+slay set_pixel(img *Image, x drip, y drip, pixel drip[value]) yikes<lit> {
     ready (x < 0 || x >= img.width || y < 0 || y >= img.height) {
         yikes "pixel coordinates out of bounds"
     }

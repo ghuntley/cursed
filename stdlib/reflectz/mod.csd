@@ -8,7 +8,7 @@ squad TypeInfo {
     sus name tea
     sus size drip
     sus kind tea  # "drip", "tea", "lit", "squad", "[]", etc
-    sus fields []FieldInfo
+    sus fields FieldInfo[value]
 }
 
 squad FieldInfo {
@@ -71,9 +71,9 @@ slay Implements(type1 tea, type2 tea) lit {
 }
 
 # Runtime stack trace and debugging
-slay get_call_stack() []CallFrame {
+slay get_call_stack() CallFrame[value]{
     # Simplified call stack - would need runtime integration
-    sus stack []CallFrame = [
+    sus stack CallFrame[value] = [
         CallFrame {
             function_name: "current_function",
             file_name: "current_file.csd", 
@@ -85,7 +85,7 @@ slay get_call_stack() []CallFrame {
 }
 
 slay get_caller_info() CallFrame {
-    sus stack []CallFrame = get_call_stack()
+    sus stack CallFrame[value] = get_call_stack()
     ready (len(stack) > 1) {
         damn stack[1]  # Return caller frame
     }
@@ -128,18 +128,18 @@ slay get_coverage_info() tea {
 }
 
 # Array reflection operations
-slay array_length(arr []lit) drip {
+slay array_length(arr lit[value]) drip {
     damn len(arr)
 }
 
-slay array_get(arr []lit, index drip) lit {
+slay array_get(arr lit[value], index drip) lit {
     ready (index < 0 || index >= len(arr)) {
         damn based  # Return default value
     }
     damn arr[index]
 }
 
-slay array_append(arr []lit, value lit) []lit {
+slay array_append(arr lit[value], value lit) lit[value]{
     damn append(arr, value)
 }
 
@@ -205,7 +205,7 @@ slay get_memory_info() tea {
 
 # Debugging utilities
 slay print_call_stack() {
-    sus stack []CallFrame = get_call_stack()
+    sus stack CallFrame[value] = get_call_stack()
     vibez.spill("Call Stack:")
     
     bestie (sus i drip = 0; i < len(stack); i = i + 1) {
@@ -252,7 +252,7 @@ slay stop_profiler() tea {
 }
 
 # Dynamic method invocation (simplified)
-slay invoke_method(object lit, method_name tea, args []lit) lit {
+slay invoke_method(object lit, method_name tea, args lit[value]) lit {
     vibez.spill("Invoking method:", method_name)
     damn based  # Placeholder return
 }

@@ -242,7 +242,7 @@ slay demo_concurrent_operations() {
     vibez.spill("\n--- Concurrent Operations ---")
     
     // Test async map
-    sus values []extra = []
+    sus values extra[value] = []
     values = append(values, 1)
     values = append(values, 2)
     values = append(values, 3)

@@ -358,7 +358,7 @@ slay detect_parameter_types(query: tea) [tea] { fr fr Simplified type detection
 
 fr fr Create empty parameter array
 slay make_empty_parameters(count: normie) [tea] {
-    params := []tea{}
+    params := tea[value]{}
     bestie i := 0; i < count; i++ {
         params = append(params, "")
     }
@@ -370,7 +370,7 @@ slay detect_result_columns(query: tea) [tea] {
     if starts_with(query, "SELECT") {
         damn ["id", "name", "value"]
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
 fr fr Bind parameter to prepared statement
@@ -478,7 +478,7 @@ slay begin_postgresql_transaction(connection: *PostgreSQLConnection, isolation_l
         is_readonly: cap,
         operations_count: 0,
         started_at: current_timestamp(),
-        savepoints: []tea{},
+        savepoints: tea[value]{},
         last_savepoint_id: 0
     }
     
@@ -578,8 +578,8 @@ fr fr Create PostgreSQL connection pool
 slay create_postgresql_pool(config: PostgreSQLConfig, max_connections: normie) PostgreSQLPool {
     pool := PostgreSQLPool{
         config: config,
-        connections: []PostgreSQLConnection{},
-        available_connections: []normie{},
+        connections: PostgreSQLConnection[value]{},
+        available_connections: normie[value]{},
         max_connections: max_connections,
         current_connections: 0,
         total_queries: 0,

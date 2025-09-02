@@ -29,7 +29,7 @@ slay main() {
     
     fr fr Phase 2: Categorize missing modules
     vibez.spill("📂 Phase 2: Categorizing missing modules...")
-    sus module_categories map[tea][]tea = categorize_missing_modules(discovery.missing_tests)
+    sus module_categories map[tea]tea[value] = categorize_missing_modules(discovery.missing_tests)
     print_module_categories(module_categories)
     vibez.spill("")
     
@@ -52,8 +52,8 @@ slay main() {
 }
 
 fr fr Categorize missing modules by type
-slay categorize_missing_modules(missing_modules []tea) map[tea][]tea {
-    sus categories map[tea][]tea = {}
+slay categorize_missing_modules(missing_modules tea[value]) map[tea]tea[value]{
+    sus categories map[tea]tea[value] = {}
     
     bestie module in missing_modules {
         sus category tea = detect_module_type(module)
@@ -68,11 +68,11 @@ slay categorize_missing_modules(missing_modules []tea) map[tea][]tea {
 }
 
 fr fr Print module categories
-slay print_module_categories(categories map[tea][]tea) lit {
+slay print_module_categories(categories map[tea]tea[value]) lit {
     vibez.spill("📂 Missing Modules by Category:")
     vibez.spill("-" * 35)
     
-    sus category_order []tea = ["core", "collections", "math", "string", "io", 
+    sus category_order tea[value] = ["core", "collections", "math", "string", "io", 
                                 "crypto", "concurrency", "error", "networking", 
                                 "database", "testing", "experimental", "general"]
     
@@ -89,7 +89,7 @@ slay print_module_categories(categories map[tea][]tea) lit {
 }
 
 fr fr Generate test files organized by category
-slay generate_test_files_by_category(categories map[tea][]tea) lit {
+slay generate_test_files_by_category(categories map[tea]tea[value]) lit {
     sus total_generated normie = 0
     
     bestie category, modules in categories {
@@ -362,7 +362,7 @@ slay count_occurrences(text tea, substring tea) normie {
 }
 
 fr fr Verify generated test files
-slay verify_generated_tests(missing_modules []tea) lit {
+slay verify_generated_tests(missing_modules tea[value]) lit {
     sus verified_count normie = 0
     sus failed_count normie = 0
     
@@ -397,7 +397,7 @@ fr fr Generate usage examples
 slay generate_usage_examples() lit {
     vibez.spill("📖 Generating usage examples...")
     
-    sus examples []tea = [
+    sus examples tea[value] = [
         "Basic test template usage",
         "Property-based testing example", 
         "Benchmarking example",

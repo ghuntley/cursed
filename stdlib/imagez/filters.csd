@@ -9,7 +9,7 @@ yeet "../mathz"
 # Filter kernel structure
 squad FilterKernel {
     sus size drip
-    sus data []tea
+    sus data tea[value]
     sus divisor tea
     sus offset drip
 }
@@ -97,7 +97,7 @@ slay apply_filter(img Image, kernel FilterKernel) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus new_pixel []drip = []
+            sus new_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 sus sum tea = 0.0
@@ -111,7 +111,7 @@ slay apply_filter(img Image, kernel FilterKernel) yikes<Image> {
                         pixel_x = clamp_drip(pixel_x, 0, img.width - 1)
                         pixel_y = clamp_drip(pixel_y, 0, img.height - 1)
                         
-                        sus pixel []drip = get_pixel(img, pixel_x, pixel_y) fam {
+                        sus pixel drip[value] = get_pixel(img, pixel_x, pixel_y) fam {
                             when _ -> yikes "filter convolution pixel access failed"
                         }
                         
@@ -162,7 +162,7 @@ slay create_gaussian_kernel(radius tea) yikes<FilterKernel> {
     sus two_sigma_squared tea = 2.0 * sigma * sigma
     sus sum tea = 0.0
     
-    sus data []tea = []
+    sus data tea[value] = []
     
     bestie (y drip = -half_size; y <= half_size; y = y + 1) {
         bestie (x drip = -half_size; x <= half_size; x = x + 1) {
@@ -198,7 +198,7 @@ slay box_blur(img Image, radius drip) yikes<Image> {
     
     sus size drip = radius * 2 + 1
     sus kernel_value tea = 1.0 / (size * size)
-    sus data []tea = []
+    sus data tea[value] = []
     
     bestie (i drip = 0; i < size * size; i = i + 1) {
         data = append(data, kernel_value)
@@ -232,7 +232,7 @@ slay motion_blur(img Image, angle tea, distance drip) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus sum_pixel []tea = []
+            sus sum_pixel tea[value] = []
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 sum_pixel = append(sum_pixel, 0.0)
             }
@@ -245,7 +245,7 @@ slay motion_blur(img Image, angle tea, distance drip) yikes<Image> {
                 
                 ready (sample_x >= 0 && sample_x < img.width && 
                        sample_y >= 0 && sample_y < img.height) {
-                    sus pixel []drip = get_pixel(img, sample_x, sample_y) fam {
+                    sus pixel drip[value] = get_pixel(img, sample_x, sample_y) fam {
                         when _ -> continue
                     }
                     
@@ -258,7 +258,7 @@ slay motion_blur(img Image, angle tea, distance drip) yikes<Image> {
             }
             
             ready (samples > 0) {
-                sus avg_pixel []drip = []
+                sus avg_pixel drip[value] = []
                 bestie (c drip = 0; c < img.channels; c = c + 1) {
                     avg_pixel = append(avg_pixel, drip(sum_pixel[c] / samples))
                 }
@@ -324,11 +324,11 @@ slay sobel_edge_detection(img Image) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus px []drip = get_pixel(edges_x, x, y) fam {
+            sus px drip[value] = get_pixel(edges_x, x, y) fam {
                 when _ -> yikes "sobel edge x pixel access failed"
             }
             
-            sus py []drip = get_pixel(edges_y, x, y) fam {
+            sus py drip[value] = get_pixel(edges_y, x, y) fam {
                 when _ -> yikes "sobel edge y pixel access failed"
             }
             
@@ -363,15 +363,15 @@ slay unsharp_mask(img Image, radius tea, amount tea, threshold drip) yikes<Image
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus original []drip = get_pixel(img, x, y) fam {
+            sus original drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "unsharp mask original pixel access failed"
             }
             
-            sus blur_pixel []drip = get_pixel(blurred, x, y) fam {
+            sus blur_pixel drip[value] = get_pixel(blurred, x, y) fam {
                 when _ -> yikes "unsharp mask blur pixel access failed"
             }
             
-            sus sharp_pixel []drip = []
+            sus sharp_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 sus diff drip = original[c] - blur_pixel[c]
@@ -403,11 +403,11 @@ slay adjust_brightness(img Image, brightness drip) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "brightness adjustment pixel access failed"
             }
             
-            sus adjusted_pixel []drip = []
+            sus adjusted_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 # Skip alpha channel in RGBA images
@@ -439,11 +439,11 @@ slay adjust_contrast(img Image, contrast tea) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "contrast adjustment pixel access failed"
             }
             
-            sus adjusted_pixel []drip = []
+            sus adjusted_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 # Skip alpha channel in RGBA images
@@ -479,11 +479,11 @@ slay adjust_gamma(img Image, gamma tea) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "gamma adjustment pixel access failed"
             }
             
-            sus adjusted_pixel []drip = []
+            sus adjusted_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 # Skip alpha channel in RGBA images
@@ -523,7 +523,7 @@ slay convert_to_grayscale(img Image) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus pixel []drip = get_pixel(img, x, y) fam {
+            sus pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> yikes "grayscale conversion pixel access failed"
             }
             
@@ -558,17 +558,17 @@ slay median_filter(img Image, radius drip) yikes<Image> {
     
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus median_pixel []drip = []
+            sus median_pixel drip[value] = []
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
-                sus values []drip = []
+                sus values drip[value] = []
                 
                 bestie (wy drip = -radius; wy <= radius; wy = wy + 1) {
                     bestie (wx drip = -radius; wx <= radius; wx = wx + 1) {
                         sus sample_x drip = clamp_drip(x + wx, 0, img.width - 1)
                         sus sample_y drip = clamp_drip(y + wy, 0, img.height - 1)
                         
-                        sus sample_pixel []drip = get_pixel(img, sample_x, sample_y) fam {
+                        sus sample_pixel drip[value] = get_pixel(img, sample_x, sample_y) fam {
                             when _ -> continue
                         }
                         
@@ -591,7 +591,7 @@ slay median_filter(img Image, radius drip) yikes<Image> {
 }
 
 # Simple bubble sort for median filter
-slay sort_array(arr *[]drip) lit {
+slay sort_array(arr *drip[value]) lit {
     sus n drip = len(*arr)
     
     bestie (i drip = 0; i < n - 1; i = i + 1) {

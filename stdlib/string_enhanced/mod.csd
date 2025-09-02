@@ -159,7 +159,7 @@ slay StringScanner_remaining(scanner StringScanner) tea {
 }
 
 fr fr String formatting for code generation
-slay format_function_signature(name tea, params []tea, return_type tea) tea {
+slay format_function_signature(name tea, params tea[value], return_type tea) tea {
     sus sb RuntimeStringBuilder = RuntimeStringBuilder_new()
     sb = RuntimeStringBuilder_append(sb, "slay ")
     sb = RuntimeStringBuilder_append(sb, name)
@@ -200,7 +200,7 @@ slay format_array_type(element_type tea) tea {
     damn "[" + element_type + "]"
 }
 
-slay format_function_call(name tea, args []tea) tea {
+slay format_function_call(name tea, args tea[value]) tea {
     sus sb RuntimeStringBuilder = RuntimeStringBuilder_new()
     sb = RuntimeStringBuilder_append(sb, name)
     sb = RuntimeStringBuilder_append_char(sb, '(')
@@ -430,7 +430,7 @@ slay char_to_int(ch sip) normie {
     damn runtime_char_to_ascii(ch)
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     fr fr Runtime-provided array length
     damn runtime_slice_length(arr)
 }

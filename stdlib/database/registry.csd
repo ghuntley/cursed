@@ -45,8 +45,8 @@ be_like DatabaseDriverConfig = {
     max_lifetime normie
     retry_attempts normie
     retry_delay normie
-    backup_hosts []tea
-    read_replicas []tea
+    backup_hosts tea[value]
+    read_replicas tea[value]
     options map[tea]tea
 }
 
@@ -54,8 +54,8 @@ fr fr Connection pool with advanced features
 be_like ConnectionPool = {
     driver_config DatabaseDriverConfig
     active_connections map[tea]Connection
-    available_connections []tea
-    waiting_connections []tea
+    available_connections tea[value]
+    waiting_connections tea[value]
     connection_count normie
     max_connections normie
     min_connections normie
@@ -107,7 +107,7 @@ be_like Transaction = {
     is_read_only lit
     isolation_level tea
     started_at normie
-    savepoints []Savepoint
+    savepoints Savepoint[value]
     current_savepoint tea
     statements_executed normie
     affected_rows normie
@@ -124,13 +124,13 @@ be_like Savepoint = {
 
 fr fr Enhanced query result with metadata
 be_like QueryResult = {
-    rows []map[tea]tea
-    columns []ColumnInfo
+    rows map[value][tea]tea
+    columns ColumnInfo[value]
     affected_rows normie
     last_insert_id tea
     execution_time normie
     query_plan tea
-    warnings []tea
+    warnings tea[value]
     error_code normie
     error_message tea
     success lit
@@ -158,7 +158,7 @@ be_like PreparedStatement = {
     statement_id tea
     sql_query tea
     parameter_count normie
-    parameter_types []tea
+    parameter_types tea[value]
     connection_id tea
     driver_type DatabaseDriverType
     created_at normie
@@ -181,7 +181,7 @@ be_like DatabaseDriver = {
     supports_read_replicas lit
     connect_function slay(DatabaseDriverConfig) tea
     disconnect_function slay(tea) lit
-    execute_function slay(tea, tea, []tea) QueryResult
+    execute_function slay(tea, tea, tea[value]) QueryResult
     begin_transaction_function slay(tea) Transaction
     health_check_function slay(tea) lit
     format_value_function slay(tea, tea) tea
@@ -470,7 +470,7 @@ fr fr Enhanced query execution with caching and monitoring
 slay execute_enhanced_query(
     connection_id tea,
     query tea,
-    params []tea,
+    params tea[value],
     cache_enabled lit
 ) QueryResult {
     sus start_time normie = timez.now()
@@ -528,7 +528,7 @@ fr fr Enhanced prepared statement with parameter validation
 slay create_enhanced_prepared_statement(
     connection_id tea,
     sql_query tea,
-    parameter_types []tea
+    parameter_types tea[value]
 ) PreparedStatement {
     sus statement_id tea = stringz.format("stmt_{}_{}", 
         connection_id, timez.now())
@@ -772,8 +772,8 @@ slay should_cleanup_connection(connection Connection, current_time normie) lit {
 
 fr fr Registry query and monitoring functions
 
-slay list_registered_drivers() []DatabaseDriver {
-    sus drivers []DatabaseDriver = []
+slay list_registered_drivers() DatabaseDriver[value]{
+    sus drivers DatabaseDriver[value] = []
     
     bestie _, driver := range global_registry.registered_drivers {
         drivers.append(driver)
@@ -866,7 +866,7 @@ slay postgres_disconnect(connection_id tea) lit {
     damn based
 }
 
-slay postgres_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay postgres_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     fr fr Simulate PostgreSQL query execution
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
@@ -924,7 +924,7 @@ slay mysql_disconnect(connection_id tea) lit {
     damn based
 }
 
-slay mysql_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay mysql_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
         columns: [
@@ -978,7 +978,7 @@ slay sqlite_disconnect(connection_id tea) lit {
     damn based
 }
 
-slay sqlite_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay sqlite_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
         columns: [
@@ -1032,7 +1032,7 @@ slay mongodb_disconnect(connection_id tea) lit {
     damn based
 }
 
-slay mongodb_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay mongodb_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"_id": "ObjectId1", "name": "John"}, {"_id": "ObjectId2", "name": "Jane"}],
         columns: [
@@ -1083,7 +1083,7 @@ slay redis_disconnect(connection_id tea) lit {
     damn based
 }
 
-slay redis_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay redis_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"key": "user:1", "value": "John"}, {"key": "user:2", "value": "Jane"}],
         columns: [

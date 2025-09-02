@@ -8,11 +8,11 @@ yeet "unicode_stringz"
 
 fr fr ===== STRING MANIPULATION (Unicode-Fixed) =====
 
-slay split(s tea, delimiter tea) []tea {
+slay split(s tea, delimiter tea) tea[value]{
     fr fr Unicode-aware string splitting
     ready delimiter == "" {
         fr fr Split into individual Unicode characters
-        sus chars []tea = []
+        sus chars tea[value] = []
         sus byte_offset drip = 0
         sus byte_len drip = byte_length(s)
         
@@ -29,7 +29,7 @@ slay split(s tea, delimiter tea) []tea {
         damn []  fr fr Empty string returns empty array
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus current tea = ""
     sus char_index drip = 0
     sus s_len drip = unicode_length(s)
@@ -56,7 +56,7 @@ slay split(s tea, delimiter tea) []tea {
     damn result
 }
 
-slay join(parts []tea, delimiter tea) tea {
+slay join(parts tea[value], delimiter tea) tea {
     ready (len(parts) == 0) {
         damn ""
     }
@@ -124,7 +124,7 @@ slay substring(s tea, start drip, length drip) tea {
 
 fr fr ===== STRING FORMATTING (Unicode-Fixed) =====
 
-slay format_template(template tea, replacements []tea) tea {
+slay format_template(template tea, replacements tea[value]) tea {
     fr fr Unicode-aware template formatting with {} placeholders
     sus result tea = template
     sus placeholder tea = "{}"
@@ -445,7 +445,7 @@ slay contains_space(s tea) lit {
 
 fr fr ===== WRAPPER FUNCTIONS FOR COMPATIBILITY =====
 
-slay append_string_to_array(arr []tea, str tea) []tea {
+slay append_string_to_array(arr tea[value], str tea) tea[value]{
     damn append(arr, str)
 }
 

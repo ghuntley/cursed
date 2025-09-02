@@ -217,7 +217,7 @@ slay get_root_path(path tea) tea {
 
 fr fr ===== ADVANCED PATH OPERATIONS =====
 
-slay cross_platform_join(parts []tea) tea {
+slay cross_platform_join(parts tea[value]) tea {
     fr fr Join path components with proper cross-platform handling
     ready (array_length(parts) == 0) {
         damn ""
@@ -254,9 +254,9 @@ slay cross_platform_join(parts []tea) tea {
     damn normalize_path_separators(result)
 }
 
-slay cross_platform_split(path tea) []tea {
+slay cross_platform_split(path tea) tea[value]{
     fr fr Split path into components, handling all separators
-    sus parts []tea = []
+    sus parts tea[value] = []
     sus current_part tea = ""
     sus part_count drip = 0
     sus i drip = 0
@@ -321,8 +321,8 @@ slay cross_platform_normalize(path tea) tea {
     sus normalized tea = normalize_path_separators(path)
     
     fr fr Split into components
-    sus parts []tea = cross_platform_split(normalized)
-    sus normalized_parts []tea = []
+    sus parts tea[value] = cross_platform_split(normalized)
+    sus normalized_parts tea[value] = []
     sus part_count drip = 0
     sus i drip = 0
     
@@ -412,8 +412,8 @@ slay calculate_relative_path(from_path tea, to_path tea) tea {
     abs_to = cross_platform_normalize(abs_to)
     
     fr fr Split paths
-    sus from_parts []tea = cross_platform_split(abs_from)
-    sus to_parts []tea = cross_platform_split(abs_to)
+    sus from_parts tea[value] = cross_platform_split(abs_from)
+    sus to_parts tea[value] = cross_platform_split(abs_to)
     
     fr fr Find common prefix
     sus common_length drip = 0
@@ -433,7 +433,7 @@ slay calculate_relative_path(from_path tea, to_path tea) tea {
     }
     
     fr fr Build relative path
-    sus relative_parts []tea = []
+    sus relative_parts tea[value] = []
     sus rel_count drip = 0
     
     fr fr Add ".." for each remaining from part
@@ -519,7 +519,7 @@ slay validate_path_length(path tea) lit {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay get_path_components(path tea) []tea {
+slay get_path_components(path tea) tea[value]{
     fr fr Get all path components as array
     damn cross_platform_split(cross_platform_normalize(path))
 }
@@ -527,7 +527,7 @@ slay get_path_components(path tea) []tea {
 slay get_parent_directory(path tea) tea {
     fr fr Get parent directory of given path
     sus normalized tea = cross_platform_normalize(path)
-    sus parts []tea = cross_platform_split(normalized)
+    sus parts tea[value] = cross_platform_split(normalized)
     
     ready (array_length(parts) <= 1) {
         ready (is_absolute_path(normalized)) {
@@ -538,7 +538,7 @@ slay get_parent_directory(path tea) tea {
     }
     
     fr fr Remove last component
-    sus parent_parts []tea = []
+    sus parent_parts tea[value] = []
     sus i drip = 0
     bestie (i < array_length(parts) - 1) {
         parent_parts[i] = parts[i]
@@ -562,7 +562,7 @@ slay get_filename_without_extension(path tea) tea {
 
 slay get_filename_component(path tea) tea {
     fr fr Get just the filename component
-    sus parts []tea = cross_platform_split(path)
+    sus parts tea[value] = cross_platform_split(path)
     ready (array_length(parts) > 0) {
         damn parts[array_length(parts) - 1]
     } otherwise {
@@ -656,7 +656,7 @@ slay test_cross_platform_paths() {
     
     fr fr Test path joining
     vibez.spill("\n--- Path Joining Tests ---")
-    sus parts []tea = ["home", "user", "documents", "file.txt"]
+    sus parts tea[value] = ["home", "user", "documents", "file.txt"]
     sus joined tea = cross_platform_join(parts)
     vibez.spill("Joined path: " + joined)
     

@@ -54,7 +54,7 @@ be_like WebSocketFrame squad {
     spill opcode smol                fr fr Frame opcode (4 bits)
     spill masked lit                 fr fr Mask flag
     spill payload_length normie      fr fr Payload length
-    spill mask_key [4]smol          fr fr 4-byte mask key
+    spill mask_key smol[4]          fr fr 4-byte mask key
     spill payload tea                fr fr Frame payload data
 }
 
@@ -69,7 +69,7 @@ be_like WebSocketConnection squad {
     spill max_frame_size normie      fr fr Maximum frame size
     spill ping_interval normie       fr fr Ping interval in seconds
     spill last_ping_time normie      fr fr Last ping timestamp
-    spill message_queue [100]tea     fr fr Incoming message queue
+    spill message_queue tea[100]     fr fr Incoming message queue
     spill queue_size normie          fr fr Current queue size
 }
 
@@ -78,9 +78,9 @@ be_like WebSocketHandshake squad {
     spill key tea                    fr fr Sec-WebSocket-Key
     spill accept tea                 fr fr Sec-WebSocket-Accept
     spill version normie             fr fr WebSocket version (usually 13)
-    spill protocols [10]tea          fr fr Requested subprotocols
+    spill protocols tea[10]          fr fr Requested subprotocols
     spill protocol_count normie
-    spill extensions [10]tea         fr fr Requested extensions
+    spill extensions tea[10]         fr fr Requested extensions
     spill extension_count normie
     spill origin tea                 fr fr Origin header
 }
@@ -97,7 +97,7 @@ fr fr WebSocket Room (for broadcasting)
 be_like WebSocketRoom squad {
     spill room_id tea
     spill name tea
-    spill connections [50]normie     fr fr Connection IDs in this room
+    spill connections normie[50]     fr fr Connection IDs in this room
     spill connection_count normie
     spill max_connections normie
     spill created_time normie
@@ -200,7 +200,7 @@ slay ws_frame_parse(data tea) WebSocketFrame {
     damn frame
 }
 
-slay ws_frame_mask_payload(payload tea, mask_key [4]smol) tea {
+slay ws_frame_mask_payload(payload tea, mask_key smol[4]) tea {
     fr fr Apply XOR masking to payload (simplified simulation)
     sus masked tea = ""
     bestie i normie = 0; i < stringz.length(payload); i++ {
@@ -210,7 +210,7 @@ slay ws_frame_mask_payload(payload tea, mask_key [4]smol) tea {
     damn masked
 }
 
-slay ws_frame_unmask_payload(payload tea, mask_key [4]smol) tea {
+slay ws_frame_unmask_payload(payload tea, mask_key smol[4]) tea {
     fr fr Remove XOR masking from payload (same as masking - XOR is symmetric)
     damn ws_frame_mask_payload(payload, mask_key)
 }
@@ -243,7 +243,7 @@ slay ws_validate_key(key tea) lit {
     damn stringz.length(key) >= 20 && stringz.length(key) <= 30
 }
 
-slay ws_create_handshake_request(url tea, protocols [10]tea, protocol_count normie) tea {
+slay ws_create_handshake_request(url tea, protocols tea[10], protocol_count normie) tea {
     fr fr Create WebSocket handshake request
     sus key tea = ws_generate_key()
     sus request tea = "GET " + url + " HTTP/1.1\r\n"
@@ -564,7 +564,7 @@ fr fr ==========================================================================
 fr fr WEBSOCKET CLIENT INTERFACE
 fr fr =============================================================================
 
-slay ws_client_connect(url tea, protocols [10]tea, protocol_count normie) WebSocketConnection {
+slay ws_client_connect(url tea, protocols tea[10], protocol_count normie) WebSocketConnection {
     fr fr Create client connection
     sus conn WebSocketConnection = ws_connection_create(url, cap)
     
@@ -782,7 +782,7 @@ fr fr ==========================================================================
 fr fr WEBSOCKET SECURITY FEATURES
 fr fr =============================================================================
 
-slay ws_validate_origin(origin tea, allowed_origins [10]tea, origin_count normie) lit {
+slay ws_validate_origin(origin tea, allowed_origins tea[10], origin_count normie) lit {
     fr fr Validate Origin header against allowed origins
     lowkey stringz.length(origin) == 0 {
         damn cap  fr fr No origin provided
@@ -808,7 +808,7 @@ slay ws_rate_limit_check(connection_id normie, max_messages_per_minute normie) l
     damn based
 }
 
-slay ws_content_filter(message tea, blocked_words [20]tea, word_count normie) lit {
+slay ws_content_filter(message tea, blocked_words tea[20], word_count normie) lit {
     fr fr Content filtering for messages
     bestie i normie = 0; i < word_count; i++ {
         lowkey stringz.contains(message, blocked_words[i]) {
@@ -828,7 +828,7 @@ slay ws_demo_client() {
     
     fr fr Demo client connection
     vibez.spill("📱 Connecting to WebSocket server...")
-    sus protocols [5]tea
+    sus protocols tea[5]
     protocols[0] = "chat"
     protocols[1] = "echo"
     sus client WebSocketConnection = ws_client_connect("ws://localhost:8080/websocket", protocols, 2)
@@ -954,7 +954,7 @@ slay ws_demo_features() {
     
     fr fr Demo security features
     vibez.spill("🔒 Security features...")
-    sus allowed_origins [5]tea
+    sus allowed_origins tea[5]
     allowed_origins[0] = "https://example.com"
     allowed_origins[1] = "https://app.example.com"
     sus origin_check1 lit = ws_validate_origin("https://example.com", allowed_origins, 2)
@@ -1009,7 +1009,7 @@ slay ws_demo_advanced() {
     
     fr fr Demo error handling
     vibez.spill("⚠️ Error handling...")
-    sus error_codes [5]normie
+    sus error_codes normie[5]
     error_codes[0] = WS_CLOSE_PROTOCOL_ERROR
     error_codes[1] = WS_CLOSE_INVALID_DATA
     error_codes[2] = WS_CLOSE_MESSAGE_TOO_BIG

@@ -61,31 +61,31 @@ test_invariant("String Operations Invariant", "test_string_operations", 15)
 test_start("Random Data Generation")
 
 # Test random list generation
-sus rand_list_int []drip = random_list_int(5, 1, 50)
+sus rand_list_int drip[value] = random_list_int(5, 1, 50)
 assert_eq_int(len(rand_list_int), 5)
 
-sus rand_list_string []tea = random_list_string(3, 10)
+sus rand_list_string tea[value] = random_list_string(3, 10)
 assert_eq_int(len(rand_list_string), 3)
 
 test_start("Shrinking Functions")
 
 # Test integer shrinking
-sus shrunk_ints []drip = shrink_int(42)
+sus shrunk_ints drip[value] = shrink_int(42)
 assert_true(len(shrunk_ints) > 0)
 
 # Test string shrinking
-sus shrunk_strings []tea = shrink_string("hello")
+sus shrunk_strings tea[value] = shrink_string("hello")
 assert_true(len(shrunk_strings) > 0)
 
 test_start("List Operations")
 
 # Test list append
-sus test_list []drip = [1, 2, 3]
-sus appended []drip = append_to_list_int(test_list, 4)
+sus test_list drip[value] = [1, 2, 3]
+sus appended drip[value] = append_to_list_int(test_list, 4)
 assert_eq_int(len(appended), 4)
 
 # Test list reverse
-sus reversed []drip = reverse_list_int(test_list)
+sus reversed drip[value] = reverse_list_int(test_list)
 assert_eq_int(len(reversed), 3)
 
 # Test list equality

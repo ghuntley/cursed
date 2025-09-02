@@ -59,6 +59,8 @@ pub const ParserError = error{
     InvalidGeneric,
     SyntaxError,
     AlignmentError,
+    InfiniteLoop,
+    ParseTimeout,
 };
 
 pub const ErrorRecoveryStats = struct {
@@ -102,6 +104,11 @@ pub const Parser = struct {
     error_recovery_stats: ErrorRecoveryStats,
     macro_system: ?*hygienic_macro_system.HygienicMacroSystem,
     use_pratt: bool = true,
+    // Infinite loop detection
+    loop_position_counter: std.AutoHashMap(usize, usize),
+    parse_start_time: i64,
+    const MAX_LOOP_ATTEMPTS: usize = 10;
+    const PARSE_TIMEOUT_MS: i64 = 30000; // 30 seconds
 
     pub fn init(allocator: Allocator, tokens: []const Token) Parser {
         var arena = std.heap.ArenaAllocator.init(allocator);
@@ -120,6 +127,8 @@ pub const Parser = struct {
             .error_recovery_stats = ErrorRecoveryStats.init(),
             .macro_system = null,
             .use_pratt = true,
+            .loop_position_counter = std.AutoHashMap(usize, usize).init(allocator),
+            .parse_start_time = std.time.milliTimestamp(),
         };
     }
 
@@ -128,9 +137,46 @@ pub const Parser = struct {
         // The arena automatically cleans up all its allocations
         self.arena.deinit();
         
+        // Clean up loop detection hashmap
+        self.loop_position_counter.deinit();
+        
         // Report final error recovery stats if there were issues
         if (self.error_recovery_stats.total_errors > 0) {
             self.error_recovery_stats.reportStats();
+        }
+    }
+
+    /// Check for infinite loops and timeouts
+    fn checkInfiniteLoop(self: *Parser) ParserError!void {
+        // Check for timeout
+        const current_time = std.time.milliTimestamp();
+        if (current_time - self.parse_start_time > Parser.PARSE_TIMEOUT_MS) {
+            std.debug.print("ERROR: Parser timeout after {} ms\n", .{current_time - self.parse_start_time});
+            return ParserError.ParseTimeout;
+        }
+        
+        // Check for infinite loop at current position
+        const result = self.loop_position_counter.getOrPut(self.current) catch {
+            return ParserError.OutOfMemory;
+        };
+        
+        if (result.found_existing) {
+            result.value_ptr.* += 1;
+            if (result.value_ptr.* > Parser.MAX_LOOP_ATTEMPTS) {
+                std.debug.print("ERROR: Infinite loop detected at position {} (attempted {} times)\n", .{ self.current, result.value_ptr.* });
+                std.debug.print("Current token: {any}\n", .{if (self.current < self.tokens.len) self.tokens[self.current].kind else .Eof});
+                return ParserError.InfiniteLoop;
+            }
+        } else {
+            result.value_ptr.* = 1;
+        }
+    }
+    
+    /// Reset infinite loop counter when parser position advances
+    fn resetLoopCounter(self: *Parser) void {
+        // Clear old position counters periodically to avoid memory issues
+        if (self.loop_position_counter.count() > 100) {
+            self.loop_position_counter.clearAndFree();
         }
     }
 
@@ -169,6 +215,8 @@ pub const Parser = struct {
             .error_recovery_stats = ErrorRecoveryStats.init(),
             .macro_system = null,
             .use_pratt = true,
+            .loop_position_counter = std.AutoHashMap(usize, usize).init(allocator),
+            .parse_start_time = std.time.milliTimestamp(),
         };
     }
     
@@ -189,6 +237,8 @@ pub const Parser = struct {
             .error_recovery_stats = ErrorRecoveryStats.init(),
             .macro_system = null,
             .use_pratt = true,
+            .loop_position_counter = std.AutoHashMap(usize, usize).init(allocator),
+            .parse_start_time = std.time.milliTimestamp(),
         };
     }
 
@@ -299,6 +349,7 @@ pub const Parser = struct {
             .LeftBrace => parsePrattMapOrComposite,
             .Bang, .Minus, .Star, .Amp => parsePrattUnary,
             .PlusPlus, .MinusMinus => parsePrattPrefixIncrement,
+            .Normie, .Tea, .Txt, .Sip, .Smol, .Mid, .Thicc, .Snack, .Meal, .Byte, .Rune, .Extra, .Lit, .Cap, .Yikes => parsePrattTypeForComposite,
             else => null,
         };
     }
@@ -324,7 +375,80 @@ pub const Parser = struct {
 
     fn parsePrattIdentifier(self: *Parser) ParserError!Expression {
         const name = self.advance().lexeme;
+        
+        // CRITICAL: Check for composite literal syntax: Type[expr]{...}
+        // Only check for specific types that can be composite literals
+        if (self.isBasicTypeName(name) and self.check(.LeftBracket)) {
+            // Look ahead to see if this is Type[expr]{...} pattern
+            const saved_current = self.current;
+            
+            // Parse the bracket part temporarily to check for { afterwards
+            if (self.match(.LeftBracket)) {
+                // Skip the bracket expression
+                var bracket_depth: usize = 1;
+                while (bracket_depth > 0 and !self.isAtEnd()) {
+                    if (self.check(.LeftBracket)) {
+                        bracket_depth += 1;
+                    } else if (self.check(.RightBracket)) {
+                        bracket_depth -= 1;
+                    }
+                    self.current += 1;
+                }
+                
+                // Check if followed by {
+                if (self.check(.LeftBrace)) {
+                    // This is a composite literal! Parse it properly
+                    self.current = saved_current; // Reset to before the bracket
+                    return self.parseCompositeLiteralFromType(name) catch |err| {
+                        std.debug.print("DEBUG: Failed to parse composite literal for type '{s}': {any}\n", .{ name, err });
+                        return err;
+                    };
+                }
+                
+                // Not a composite literal, reset and continue as identifier
+                self.current = saved_current;
+            }
+        }
+        
         return Expression{ .Identifier = name };
+    }
+
+    fn parsePrattTypeForComposite(self: *Parser) ParserError!Expression {
+        const type_token = self.advance();
+        const type_name = type_token.lexeme;
+        
+        // Check for composite literal syntax: Type[expr]{...}
+        if (self.check(.LeftBracket)) {
+            // Look ahead to see if this is Type[expr]{...} pattern
+            const saved_current = self.current;
+            
+            // Parse the bracket part temporarily to check for { afterwards
+            if (self.match(.LeftBracket)) {
+                // Skip the bracket expression
+                var bracket_depth: usize = 1;
+                while (bracket_depth > 0 and !self.isAtEnd()) {
+                    if (self.check(.LeftBracket)) {
+                        bracket_depth += 1;
+                    } else if (self.check(.RightBracket)) {
+                        bracket_depth -= 1;
+                    }
+                    self.current += 1;
+                }
+                
+                // Check if followed by {
+                if (self.check(.LeftBrace)) {
+                    // This is a composite literal! Parse it properly
+                    self.current = saved_current; // Reset to before the bracket
+                    return self.parseCompositeLiteralFromType(type_name);
+                }
+                
+                // Not a composite literal, reset and continue as identifier
+                self.current = saved_current;
+            }
+        }
+        
+        // If not a composite literal, treat as a regular identifier for now
+        return Expression{ .Identifier = type_name };
     }
 
     fn parsePrattNumber(self: *Parser) ParserError!Expression {
@@ -385,82 +509,21 @@ pub const Parser = struct {
             return ParserError.UnexpectedEof;
         }
         
-        // Check if this is an array literal [1, 2, 3] or composite literal []Type{}
+        // NEW SYNTAX: Only parse array literals [1, 2, 3] here
+        // Composite literals now use syntax: Type[value]{...} (parsed elsewhere)
+        
+        // Check if this is an empty array []
         if (self.check(.RightBracket)) {
-            // Could be empty array [] or slice type []Type
             _ = self.advance(); // consume ']'
             
-            // CRITICAL: Check bounds before looking ahead
-            if (self.isAtEnd()) {
-                // Just empty array []
-                return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
-                    .elements = .{},
-                })};
-            }
-            
-            // Look for type followed by brace for composite literal []Type{}
-            if (self.checkBasicType() or self.check(.Identifier)) {
-                return self.parseCompositeLiteral() catch |err| {
-                    // CRITICAL: Fallback to empty array if composite parsing fails
-                    if (err == ParserError.UnexpectedToken or err == ParserError.MissingToken) {
-                        return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
-                            .elements = .{},
-                        })};
-                    }
-                    return err;
-                };
-            }
-            
-            // Empty array []
             return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
                 .elements = .{},
             })};
         }
         
-        // Parse what's inside the brackets - could be array elements or type
-        if (self.checkBasicType() or self.check(.Identifier)) {
-            // Might be slice type []Type - save position to backtrack
-            const saved_pos = self.current;
-            
-            // Try parsing as type with error recovery
-            const element_type = self.parseType() catch {
-                // Not a valid type, backtrack and parse as array literal
-                self.current = saved_pos;
-                return self.parseArrayLiteralElements() catch |elem_err| {
-                    // CRITICAL: If both fail, return a more specific error
-                    return if (elem_err == ParserError.UnexpectedEof) 
-                        ParserError.UnexpectedEof 
-                    else 
-                        ParserError.InvalidExpression;
-                };
-            };
-            
-            // Check if followed by ] and then {
-            if (self.match(.RightBracket) and self.check(.LeftBrace)) {
-                // This is a composite literal []Type{}
-                return self.parseCompositeLiteralWithType(element_type) catch |comp_err| {
-                    // CRITICAL: Fallback on error
-                    return if (comp_err == ParserError.UnexpectedEof) 
-                        ParserError.UnexpectedEof 
-                    else 
-                        ParserError.InvalidExpression;
-                };
-            }
-            
-            // Not a composite literal, backtrack and parse as array
-            self.current = saved_pos;
-            return self.parseArrayLiteralElements() catch |elem_err| {
-                // CRITICAL: If array parsing fails, return proper error
-                return if (elem_err == ParserError.UnexpectedEof) 
-                    ParserError.UnexpectedEof 
-                else 
-                    ParserError.InvalidExpression;
-            };
-        }
-        
-        // Parse as regular array literal
+        // Parse as array literal [expr1, expr2, ...]
         return self.parseArrayLiteralElements() catch |elem_err| {
-            // CRITICAL: Final fallback with proper error
+            // CRITICAL: Proper error handling
             return if (elem_err == ParserError.UnexpectedEof) 
                 ParserError.UnexpectedEof 
             else 
@@ -1178,6 +1241,9 @@ pub const Parser = struct {
     }
 
     fn parseStatement(self: *Parser) ParserError!Statement {
+        // Check for infinite loop
+        try self.checkInfiniteLoop();
+        
         // Skip comments at statement level
         while (self.check(.LineComment) or self.check(.BlockComment) or self.check(.Comment)) {
             _ = self.advance();
@@ -1188,6 +1254,7 @@ pub const Parser = struct {
         // Handle empty statements (standalone semicolons)
         if (self.check(.Semicolon)) {
             _ = self.advance();
+            self.resetLoopCounter(); // Reset after advancing
             return Statement{ .Expression = self.createEmptyExpression() };
         }
         
@@ -1516,7 +1583,7 @@ pub const Parser = struct {
         
         // Parse optional type annotation after identifier
         var var_type: ?Type = null;
-        if (self.checkBasicType() or self.check(.LeftBracket)) {
+        if (self.checkBasicType() or self.check(.Identifier) or self.check(.Slay)) {
             var_type = try self.parseType();
         }
         
@@ -1597,338 +1664,299 @@ pub const Parser = struct {
         return param;
     }
 
+    fn isBasicTypeName(self: *Parser, name: []const u8) bool {
+        _ = self; // unused parameter
+        return std.mem.eql(u8, name, "normie") or
+               std.mem.eql(u8, name, "tea") or
+               std.mem.eql(u8, name, "txt") or
+               std.mem.eql(u8, name, "sip") or
+               std.mem.eql(u8, name, "smol") or
+               std.mem.eql(u8, name, "mid") or
+               std.mem.eql(u8, name, "thicc") or
+               std.mem.eql(u8, name, "snack") or
+               std.mem.eql(u8, name, "meal") or
+               std.mem.eql(u8, name, "byte") or
+               std.mem.eql(u8, name, "rune") or
+               std.mem.eql(u8, name, "extra") or
+               std.mem.eql(u8, name, "lit") or
+               std.mem.eql(u8, name, "cap") or
+               std.mem.eql(u8, name, "yikes");
+    }
+
     fn parseType(self: *Parser) ParserError!ast.Type {
-        // Check for array types first []element_type or [size]element_type or [element_type]
-        if (self.match(.LeftBracket)) {
-            // Check for size or empty for slice or element type (non-standard syntax)
-            var size: ?usize = null;
-            var element_type_ptr: ?*ast.Type = null;
-            
-            if (!self.check(.RightBracket)) {
-                if (self.check(.Number) or self.check(.Integer)) {
-                    // [size]element_type syntax
-                    const size_token = self.advance();
-                    size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
-                } else if (self.checkBasicType()) {
-                    // Handle [element_type] syntax (non-standard but used in stdlib)
-                    element_type_ptr = try self.arena_allocator.create(ast.Type);
+        // CRITICAL SYNTAX CHANGE: NEW POSTFIX ARRAY SYNTAX
+        // Parse base type first, then handle postfix array/slice syntax: type[expr]
         
-                    element_type_ptr.?.* = try self.parseBasicType();
-                }
-            }
-            
-            _ = try self.consume(.RightBracket, "Expected ']'");
-            
-            if (element_type_ptr == null) {
-                // Standard []element_type syntax
-                element_type_ptr = try self.arena_allocator.create(ast.Type);
-    
-                element_type_ptr.?.* = try self.parseType();
-            }
-            
-            return ast.Type{ .Array = ast.ArrayType{
-                .ref_counted = ast.RefCounted.init(self.allocator),
-                .element_type = ast.RefPtr(ast.Type).init(element_type_ptr.?),
-                .size = size,
-            }};
-        }
-        
-        // Check for basic types (drip, tea, lit, etc.)
-        if (self.checkBasicType()) {
-            const base_type = try self.parseBasicType();
-            
-            // Check for generic syntax < > (e.g., yikes<drip>)
-            if (self.check(.Less) or self.check(.LeftAngle)) {
-                // For basic types that support generics (like yikes), handle as special case
-                switch (base_type) {
-                    .Basic => |basic| {
-                        switch (basic) {
-                            .Yikes => {
-                                // Simple parsing for yikes<T> - just consume tokens until >
-                                _ = self.advance(); // consume < or LeftAngle
-                                
-                                // Parse the type argument (should be drip in most cases)
-                                const inner_type = try self.parseType();
-                                
-                                // Consume the closing >
-                                if (!self.match(.Greater) and !self.match(.RightAngle)) {
-                                    return ParserError.InvalidType;
-                                }
-                                
-                                // For now, just return a generic type with yikes as base
-                                // In the future, this could be expanded to proper generic support
-                                return ast.Type{ .Generic = ast.GenericType{
-                                    .name = "yikes",
-                                    .type_arguments = blk: {
-                                        var args = std.ArrayList(ast.Type){};
-                                        try args.append(self.allocator, inner_type);
-                                        break :blk args;
-                                    },
-                                    .constraints = std.ArrayList(ast.TypeConstraint){},
-                                }};
-                            },
-                            else => {
-                                // Other basic types don't support generics, continue normal parsing
-                            }
-                        }
-                    },
-                    else => {}
-                }
-            }
-            
-            // Check for array suffix []
-            if (self.match(.LeftBracket)) {
-                // Check for size or empty for slice
-                var size: ?usize = null;
-                if (!self.check(.RightBracket)) {
-                    if (self.check(.Number) or self.check(.Integer)) {
-                        const size_token = self.advance();
-                        size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
-                    }
+        // Start by parsing the base type (normie, tea, identifier, etc.)
+        const base_type = if (self.checkBasicType()) 
+            try self.parseBasicType()
+        else if (self.check(.Identifier))
+            blk: {
+                const type_name = self.advance().lexeme;
+                
+                // Check for generic arguments
+                if (self.check(.Less) or self.check(.LeftAngle)) {
+                    break :blk try self.parseGenericType(type_name);
                 }
                 
-        _ = try self.consume(.RightBracket, "Expected ']'");
-                
-                const element_type_ptr = try self.arena_allocator.create(ast.Type);
-        
-                element_type_ptr.* = base_type;
-                
-                return ast.Type{ .Array = ast.ArrayType{
-                    .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
-                    .size = size,
-                    .ref_counted = ast.RefCounted.init(self.allocator),
-                }};
-            }
-            
-            return base_type;
-        }
-
-        // This block becomes redundant since we moved it to the top
-        if (false and self.match(.LeftBracket)) {
-            // Check for size or empty for slice
-            var size: ?usize = null;
-            if (!self.check(.RightBracket)) {
-                if (self.check(.Number) or self.check(.Integer)) {
-                    const size_token = self.advance();
-                    size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
-                }
-            }
-            
-        _ = try self.consume(.RightBracket, "Expected ']'");
-            
-            const element_type_ptr = try self.arena_allocator.create(ast.Type);
-    
-            element_type_ptr.* = try self.parseType();
-            
-            return ast.Type{ .Array = ast.ArrayType{
-                .element_type = element_type_ptr,
-                .size = size,
-            }};
-        }
-
-        // Map types map[key_type]value_type
-        if (self.matchIdentifier("map")) {
-        _ = try self.consume(.LeftBracket, "Expected '[' after 'map'");
-            
-            const key_type_ptr = try self.arena_allocator.create(ast.Type);
-
-            key_type_ptr.* = try self.parseType();
-            
-        _ = try self.consume(.RightBracket, "Expected ']'");
-            
-            const value_type_ptr = try self.arena_allocator.create(ast.Type);
-
-            value_type_ptr.* = try self.parseType();
-            
-            return ast.Type{ .Map = ast.MapType{
-                .ref_counted = ast.RefCounted.init(self.allocator),
-                .key_type = ast.RefPtr(ast.Type).init(key_type_ptr),
-                .value_type = ast.RefPtr(ast.Type).init(value_type_ptr),
-            }};
-        }
-
-        // Channel types dm<element_type> or dm[element_type]
-        if (self.check(.Dm) or self.matchIdentifier("dm")) {
-            _ = self.advance();
-            if (self.match(.Less) or self.match(.LeftAngle) or self.match(.LeftBracket)) {
-                const element_type_ptr = try self.arena_allocator.create(ast.Type);
-        
-                element_type_ptr.* = try self.parseType();
-                
-                // Match the corresponding closing bracket
-                if (self.check(.Greater) or self.check(.RightAngle)) {
-                    _ = try self.consume(.Greater, "Expected '>' after channel element type");
-                } else if (self.check(.RightBracket)) {
-                    _ = try self.consume(.RightBracket, "Expected ']' after channel element type");
+                // Check if it's a known basic type name
+                if (std.mem.eql(u8, type_name, "normie")) {
+                    break :blk ast.Type{ .Basic = .Normie };
+                } else if (std.mem.eql(u8, type_name, "tea")) {
+                    break :blk ast.Type{ .Basic = .Tea };
+                } else if (std.mem.eql(u8, type_name, "txt")) {
+                    break :blk ast.Type{ .Basic = .Txt };
+                } else if (std.mem.eql(u8, type_name, "sip")) {
+                    break :blk ast.Type{ .Basic = .Sip };
+                } else if (std.mem.eql(u8, type_name, "smol")) {
+                    break :blk ast.Type{ .Basic = .Smol };
+                } else if (std.mem.eql(u8, type_name, "mid")) {
+                    break :blk ast.Type{ .Basic = .Mid };
+                } else if (std.mem.eql(u8, type_name, "thicc")) {
+                    break :blk ast.Type{ .Basic = .Thicc };
+                } else if (std.mem.eql(u8, type_name, "snack")) {
+                    break :blk ast.Type{ .Basic = .Snack };
+                } else if (std.mem.eql(u8, type_name, "meal")) {
+                    break :blk ast.Type{ .Basic = .Meal };
+                } else if (std.mem.eql(u8, type_name, "byte")) {
+                    break :blk ast.Type{ .Basic = .Byte };
+                } else if (std.mem.eql(u8, type_name, "rune")) {
+                    break :blk ast.Type{ .Basic = .Rune };
+                } else if (std.mem.eql(u8, type_name, "extra")) {
+                    break :blk ast.Type{ .Basic = .Extra };
+                } else if (std.mem.eql(u8, type_name, "lit")) {
+                    break :blk ast.Type{ .Basic = .Lit };
+                } else if (std.mem.eql(u8, type_name, "cap")) {
+                    break :blk ast.Type{ .Basic = .Cap };
+                } else if (std.mem.eql(u8, type_name, "yikes")) {
+                    break :blk ast.Type{ .Basic = .Yikes };
                 } else {
-                    return ParserError.UnexpectedToken;
+                    // Custom struct or interface type
+                    break :blk ast.Type{ .Struct = ast.StructType{
+                        .name = type_name,
+                        .fields = .empty,
+                    }};
                 }
-                
-                return ast.Type{ .Channel = ast.ChannelType{
-                    .element_type = element_type_ptr,
-                    .is_send_only = false,
-                    .is_receive_only = false,
-                }};
             }
-        }
-
-        // Function types (param_types) -> return_type
-        if (self.check(.LeftParen)) {
-            // Look ahead to see if this is a function type
-            if (self.isFunctionType()) {
-                _ = self.advance(); // consume '('
+        else if (self.check(.Slay))
+            // Function type: slay(params) return_type
+            try self.parseFunctionType()
+        else if (self.check(.LeftBracket))
+            // ERROR: Old syntax []type is no longer supported
+            return self.reportOldArraySyntaxError()
+        else
+            return ParserError.InvalidType;
+        
+        // Now handle postfix array/slice syntax: type[expr][expr]...
+        var result_type = base_type;
+        while (self.match(.LeftBracket)) {
+            if (self.check(.RightBracket)) {
+                // Empty brackets type[] means slice (no size)
+                _ = self.advance(); // consume ']'
                 
-                var param_types = ArrayList(ast.Type){};
-                defer param_types.deinit(self.allocator);
+                const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                element_type_ptr.* = result_type;
                 
-                if (!self.check(.RightParen)) {
-                    while (true) {
-                        const param_type = try self.parseType();
-                        try param_types.append(self.allocator, param_type);
-                        
-                        if (!self.match(.Comma)) break;
-                    }
-                }
-                
-        _ = try self.consume(.RightParen, "Expected ')'");
-                
-                var return_type: ?*ast.Type = null;
-                if (self.match(.Arrow)) {
-                    return_type = try self.arena_allocator.create(ast.Type);
-            
-                    return_type.?.* = try self.parseType();
-                }
-                
-                return ast.Type{ .Function = ast.FunctionType{
+                result_type = ast.Type{ .Array = ast.ArrayType{
                     .ref_counted = ast.RefCounted.init(self.allocator),
-                    .parameters = param_types,
-                    .return_type = if (return_type) |rt| ast.RefPtr(ast.Type).init(rt) else null,
+                    .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                    .size = null, // slice - no fixed size
                 }};
-            }
-        }
-
-        // Tuple types (type1, type2, ...)
-        if (self.check(.LeftParen)) {
-            _ = self.advance();
-            
-            var elements = std.ArrayList(ast.Type){};
-            defer elements.deinit(self.allocator);
-            
-            if (!self.check(.RightParen)) {
-                while (true) {
-                    const elem_type = try self.parseType();
-                    try elements.append(self.allocator, elem_type);
+            } else {
+                // Parse the size/value expression
+                if (self.check(.Number) or self.check(.Integer)) {
+                    // Numeric size: type[5]
+                    const size_token = self.advance();
+                    const size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch {
+                        return ParserError.InvalidSyntax;
+                    };
                     
-                    if (!self.match(.Comma)) break;
+                    _ = try self.consume(.RightBracket, "Expected ']' after array size");
+                    
+                    const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                    element_type_ptr.* = result_type;
+                    
+                    result_type = ast.Type{ .Array = ast.ArrayType{
+                        .ref_counted = ast.RefCounted.init(self.allocator),
+                        .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                        .size = size,
+                    }};
+                } else if (self.check(.Identifier) and std.mem.eql(u8, self.peek().lexeme, "value")) {
+                    // Special case: type[value] means slice
+                    _ = self.advance(); // consume 'value'
+                    _ = try self.consume(.RightBracket, "Expected ']' after 'value'");
+                    
+                    const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                    element_type_ptr.* = result_type;
+                    
+                    result_type = ast.Type{ .Array = ast.ArrayType{
+                        .ref_counted = ast.RefCounted.init(self.allocator),
+                        .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                        .size = null, // slice - no fixed size
+                    }};
+                } else {
+                    // Complex expression - for now just treat as slice
+                    // In full implementation, we'd parse and evaluate the expression
+                    _ = try self.parseExpression(); // consume the expression
+                    _ = try self.consume(.RightBracket, "Expected ']' after array expression");
+                    
+                    const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                    element_type_ptr.* = result_type;
+                    
+                    result_type = ast.Type{ .Array = ast.ArrayType{
+                        .ref_counted = ast.RefCounted.init(self.allocator),
+                        .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                        .size = null, // treat as slice for now
+                    }};
                 }
             }
-            
-        _ = try self.consume(.RightParen, "Expected ')'");
-            
-            // Single element in parens is just grouped, not a tuple
-            if (elements.items.len == 1) {
-                const single_type = elements.items[0];
-                return single_type;
-            }
-            
-            // Clone elements before return since defer will clean up the list
-            var elements_copy = std.ArrayList(ast.Type){};
-            for (elements.items) |elem| {
-                try elements_copy.append(self.allocator, elem);
-            }
-            
-            return ast.Type{ .Tuple = ast.TupleType{ .elements = elements_copy }};
         }
-
-        // Generic types with parameters Name<T, U>
-        if (self.check(.Identifier)) {
-            const type_name = self.advance().lexeme;
-            
-            if (self.match(.Less) or self.match(.LeftAngle)) {
-                // Use the dedicated parseGenericType function that handles >> ambiguity
-                return try self.parseGenericType(type_name);
-            }
-            
-            // Check if it's a basic type name like normie, tea, etc.
-            if (std.mem.eql(u8, type_name, "normie")) return ast.Type{ .Basic = .Normie };
-            if (std.mem.eql(u8, type_name, "tea")) return ast.Type{ .Basic = .Tea };
-            if (std.mem.eql(u8, type_name, "txt")) return ast.Type{ .Basic = .Txt };
-            if (std.mem.eql(u8, type_name, "sip")) return ast.Type{ .Basic = .Sip };
-            if (std.mem.eql(u8, type_name, "smol")) return ast.Type{ .Basic = .Smol };
-            if (std.mem.eql(u8, type_name, "mid")) return ast.Type{ .Basic = .Mid };
-            if (std.mem.eql(u8, type_name, "thicc")) return ast.Type{ .Basic = .Thicc };
-            if (std.mem.eql(u8, type_name, "snack")) return ast.Type{ .Basic = .Snack };
-            if (std.mem.eql(u8, type_name, "meal")) return ast.Type{ .Basic = .Meal };
-            if (std.mem.eql(u8, type_name, "byte")) return ast.Type{ .Basic = .Byte };
-            if (std.mem.eql(u8, type_name, "rune")) return ast.Type{ .Basic = .Rune };
-            if (std.mem.eql(u8, type_name, "extra")) return ast.Type{ .Basic = .Extra };
-            if (std.mem.eql(u8, type_name, "lit")) return ast.Type{ .Basic = .Lit };
-            if (std.mem.eql(u8, type_name, "cap")) return ast.Type{ .Basic = .Cap };
-            if (std.mem.eql(u8, type_name, "yikes")) return ast.Type{ .Basic = .Yikes };
-            
-            // Custom struct or interface type
-            return ast.Type{ .Struct = ast.StructType{
-                .name = type_name,
-                .fields = .empty,
-            }};
-        }
-
-        // Function types with slay keyword
-        if (self.match(.Slay)) {
-            // Parse function type: slay() return_type or slay(param_types) return_type
-            _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
-            
-            var param_types = ArrayList(ast.Type){};
-            
-            // Parse parameter types
-            while (!self.check(.RightParen) and !self.isAtEnd()) {
-                const param_type = try self.parseType();
-                try param_types.append(self.allocator, param_type);
-                
-                if (!self.match(.Comma)) break;
-            }
-            
-            _ = try self.consume(.RightParen, "Expected ')' after function parameters");
-            
-            // Parse return type (optional)
-            var return_type: ?*ast.Type = null;
-            if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd()) {
-                return_type = try self.arena_allocator.create(ast.Type);
         
-                return_type.?.* = try self.parseType();
+        // Handle generics for certain types after array processing
+        if (self.check(.Less) or self.check(.LeftAngle)) {
+            switch (result_type) {
+                .Basic => |basic| {
+                    switch (basic) {
+                        .Yikes => {
+                            // Simple parsing for yikes<T> - just consume tokens until >
+                            _ = self.advance(); // consume < or LeftAngle
+                            
+                            // Parse the type argument (should be drip in most cases)
+                            const inner_type = try self.parseType();
+                            
+                            // Consume the closing >
+                            if (!self.match(.Greater) and !self.match(.RightAngle)) {
+                                return ParserError.InvalidType;
+                            }
+                            
+                            // For now, just return a generic type with yikes as base
+                            return ast.Type{ .Generic = ast.GenericType{
+                                .name = "yikes",
+                                .type_arguments = blk: {
+                                    var args = std.ArrayList(ast.Type){};
+                                    try args.append(self.allocator, inner_type);
+                                    break :blk args;
+                                },
+                                .constraints = std.ArrayList(ast.TypeConstraint){},
+                            }};
+                        },
+                        else => {
+                            // Other basic types don't support generics
+                        }
+                    }
+                },
+                else => {}
             }
-            
-            return ast.Type{ .Function = ast.FunctionType{
-                .ref_counted = ast.RefCounted.init(self.allocator),
-                .parameters = param_types,
-                .return_type = if (return_type) |rt| ast.RefPtr(ast.Type).init(rt) else null,
-            }};
         }
-
-        // Basic types using keywords (with generic support for yikes)
-        if (self.match(.Yikes)) {
-            // Check for generic syntax yikes<T>
-            if (self.match(.Less) or self.match(.LeftAngle)) {
-                return try self.parseGenericType("yikes");
-            }
+        
+        return result_type;
+    }
+    
+    /// Report helpful error message when old array syntax is used
+    fn reportOldArraySyntaxError(self: *Parser) ParserError {
+        _ = self.reportErrorWithContext(
+            "Old array syntax '[]type' is no longer supported. Use new syntax 'type[value]' for slices or 'type[size]' for arrays.",
+            "parseType"
+        ) catch {};
+        return ParserError.InvalidSyntax;
+    }
+    
+    /// Check if identifier is a known CURSED type name
+    fn isKnownTypeName(self: *Parser, name: []const u8) bool {
+        _ = self; // suppress unused parameter
+        return std.mem.eql(u8, name, "normie") or
+               std.mem.eql(u8, name, "tea") or
+               std.mem.eql(u8, name, "txt") or
+               std.mem.eql(u8, name, "sip") or
+               std.mem.eql(u8, name, "smol") or
+               std.mem.eql(u8, name, "mid") or
+               std.mem.eql(u8, name, "thicc") or
+               std.mem.eql(u8, name, "snack") or
+               std.mem.eql(u8, name, "meal") or
+               std.mem.eql(u8, name, "byte") or
+               std.mem.eql(u8, name, "rune") or
+               std.mem.eql(u8, name, "extra") or
+               std.mem.eql(u8, name, "lit") or
+               std.mem.eql(u8, name, "cap") or
+               std.mem.eql(u8, name, "yikes") or
+               std.mem.eql(u8, name, "drip");
+    }
+    
+    /// Get BasicType from type name string
+    fn getBasicTypeFromName(self: *Parser, name: []const u8) ast.Type {
+        _ = self; // suppress unused parameter
+        if (std.mem.eql(u8, name, "normie")) {
+            return ast.Type{ .Basic = .Normie };
+        } else if (std.mem.eql(u8, name, "drip")) {
+            return ast.Type{ .Basic = .Drip };
+        } else if (std.mem.eql(u8, name, "tea")) {
+            return ast.Type{ .Basic = .Tea };
+        } else if (std.mem.eql(u8, name, "txt")) {
+            return ast.Type{ .Basic = .Txt };
+        } else if (std.mem.eql(u8, name, "sip")) {
+            return ast.Type{ .Basic = .Sip };
+        } else if (std.mem.eql(u8, name, "smol")) {
+            return ast.Type{ .Basic = .Smol };
+        } else if (std.mem.eql(u8, name, "mid")) {
+            return ast.Type{ .Basic = .Mid };
+        } else if (std.mem.eql(u8, name, "thicc")) {
+            return ast.Type{ .Basic = .Thicc };
+        } else if (std.mem.eql(u8, name, "snack")) {
+            return ast.Type{ .Basic = .Snack };
+        } else if (std.mem.eql(u8, name, "meal")) {
+            return ast.Type{ .Basic = .Meal };
+        } else if (std.mem.eql(u8, name, "byte")) {
+            return ast.Type{ .Basic = .Byte };
+        } else if (std.mem.eql(u8, name, "rune")) {
+            return ast.Type{ .Basic = .Rune };
+        } else if (std.mem.eql(u8, name, "extra")) {
+            return ast.Type{ .Basic = .Extra };
+        } else if (std.mem.eql(u8, name, "lit")) {
+            return ast.Type{ .Basic = .Lit };
+        } else if (std.mem.eql(u8, name, "cap")) {
+            return ast.Type{ .Basic = .Cap };
+        } else if (std.mem.eql(u8, name, "yikes")) {
             return ast.Type{ .Basic = .Yikes };
+        } else {
+            // Default to custom type if not recognized
+            return ast.Type{ .Custom = name };
         }
-        if (self.match(.Normie)) return ast.Type{ .Basic = .Normie };
-        if (self.match(.Tea)) return ast.Type{ .Basic = .Tea };
-        if (self.match(.Txt)) return ast.Type{ .Basic = .Txt };
-        if (self.match(.Sip)) return ast.Type{ .Basic = .Sip };
-        if (self.match(.Smol)) return ast.Type{ .Basic = .Smol };
-        if (self.match(.Mid)) return ast.Type{ .Basic = .Mid };
-        if (self.match(.Thicc)) return ast.Type{ .Basic = .Thicc };
-        if (self.match(.Snack)) return ast.Type{ .Basic = .Snack };
-        if (self.match(.Meal)) return ast.Type{ .Basic = .Meal };
-        if (self.match(.Byte)) return ast.Type{ .Basic = .Byte };
-        if (self.match(.Rune)) return ast.Type{ .Basic = .Rune };
-        if (self.match(.Extra)) return ast.Type{ .Basic = .Extra };
-        if (self.match(.Lit)) return ast.Type{ .Basic = .Lit };
-        if (self.match(.Cap)) return ast.Type{ .Basic = .Cap };
+    }
+    
+    /// Parse function types: slay(params) return_type
+    fn parseFunctionType(self: *Parser) ParserError!ast.Type {
+        _ = try self.consume(.Slay, "Expected 'slay'");
+        _ = try self.consume(.LeftParen, "Expected '(' after 'slay'");
         
-        return ParserError.InvalidType;
+        var param_types = ArrayList(ast.Type){};
+        
+        // Parse parameter types
+        while (!self.check(.RightParen) and !self.isAtEnd()) {
+            const param_type = try self.parseType();
+            try param_types.append(self.allocator, param_type);
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        _ = try self.consume(.RightParen, "Expected ')' after function parameters");
+        
+        // Parse return type (optional)
+        var return_type: ?*ast.Type = null;
+        if (!self.check(.Newline) and !self.check(.Semicolon) and !self.isAtEnd() and !self.check(.RightBrace)) {
+            return_type = try self.arena_allocator.create(ast.Type);
+            return_type.?.* = try self.parseType();
+        }
+        
+        var func_return_type: ?ast.RefPtr(ast.Type) = null;
+        if (return_type) |rt| {
+            func_return_type = ast.RefPtr(ast.Type).init(rt);
+        }
+        
+        return ast.Type{ .Function = ast.FunctionType{
+            .parameters = param_types,
+            .return_type = func_return_type,
+            .ref_counted = ast.RefCounted.init(self.allocator),
+        }};
     }
 
     pub fn parseExpression(self: *Parser) ParserError!Expression {
@@ -1985,14 +2013,10 @@ pub const Parser = struct {
     }
 
     fn parseCompositeLiteral(self: *Parser) ParserError!Expression {
-        // CRITICAL: Bounds check before parsing type
-        if (self.isAtEnd()) {
-            return ParserError.UnexpectedEof;
-        }
-        
-        // Parse type after []
-        const element_type = try self.parseType();
-        return self.parseCompositeLiteralWithType(element_type);
+        // NEW SYNTAX: This function is no longer used with []Type{} syntax
+        // Instead, composite literals use Type[value]{} syntax
+        // This function is kept for backward compatibility and error handling
+        return self.reportOldArraySyntaxError();
     }
 
     fn parseCompositeLiteralWithType(self: *Parser, element_type: ast.Type) ParserError!Expression {
@@ -2040,6 +2064,50 @@ pub const Parser = struct {
                 std.debug.print("MEMORY ERROR: Failed to convert expressions to pointers: {any}\n", .{conv_err});
                 return ParserError.OutOfMemory;
             },
+        })};
+    }
+
+    fn parseCompositeLiteralFromType(self: *Parser, type_name: []const u8) ParserError!Expression {
+        _ = type_name; // Type info is not used in current AST structure but kept for semantic context
+        
+        // Parse Type[expr]{...} syntax
+        // We already consumed the type identifier, now parse [expr]
+        _ = try self.consume(.LeftBracket, "Expected '[' after type in composite literal");
+        
+        // Parse the array expression (size or 'value')
+        var array_size: ?usize = null;
+        if (self.check(.Number) or self.check(.Integer)) {
+            const size_token = self.advance();
+            array_size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch null;
+        } else if (self.check(.Identifier) and std.mem.eql(u8, self.peek().lexeme, "value")) {
+            _ = self.advance(); // consume 'value'
+            // array_size stays null for slice
+        } else {
+            // For now, treat complex expressions as slices
+            _ = try self.parseExpression();
+            // array_size stays null
+        }
+        
+        _ = try self.consume(.RightBracket, "Expected ']' after array size");
+        
+        // Now parse the composite literal body {...}
+        _ = try self.consume(.LeftBrace, "Expected '{' after array type");
+        
+        // Parse elements in composite literal
+        var elements = ArrayList(Expression){};
+        
+        while (!self.check(.RightBrace) and !self.isAtEnd()) {
+            const elem = try self.parseExpression();
+            try elements.append(self.arena_allocator, elem);
+            
+            if (!self.match(.Comma)) break;
+        }
+        
+        _ = try self.consume(.RightBrace, "Expected '}' after composite literal elements");
+        
+        // Return as array expression - type info is contextual
+        return Expression{ .Array = try self.allocateArrayExpression(ast.ArrayExpression{
+            .elements = try self.convertExpressionsToPointers(&elements),
         })};
     }
 
@@ -2714,6 +2782,87 @@ pub const Parser = struct {
         if (self.check(.Identifier) or self.check(.Facts)) {
             const name = self.advance().lexeme;
             
+            // NEW SYNTAX: Check for composite literal Type[value]{...}
+            if (self.check(.LeftBracket)) {
+                // Parse array/slice type suffix: Type[value] or Type[5]
+                var type_with_array = if (self.isKnownTypeName(name))
+                    self.getBasicTypeFromName(name)
+                else
+                    ast.Type{ .Custom = name };
+                    
+                // Parse array/slice suffix(es)
+                while (self.match(.LeftBracket)) {
+                    if (self.check(.RightBracket)) {
+                        // Empty brackets Type[] means slice (no size)
+                        _ = self.advance(); // consume ']'
+                        
+                        const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                        element_type_ptr.* = type_with_array;
+                        
+                        type_with_array = ast.Type{ .Array = ast.ArrayType{
+                            .ref_counted = ast.RefCounted.init(self.allocator),
+                            .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                            .size = null, // slice - no fixed size
+                        }};
+                    } else {
+                        // Parse the size/value expression
+                        if (self.check(.Number) or self.check(.Integer)) {
+                            // Numeric size: Type[5]
+                            const size_token = self.advance();
+                            const size = std.fmt.parseInt(usize, size_token.lexeme, 10) catch {
+                                return ParserError.InvalidSyntax;
+                            };
+                            
+                            _ = try self.consume(.RightBracket, "Expected ']' after array size");
+                            
+                            const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                            element_type_ptr.* = type_with_array;
+                            
+                            type_with_array = ast.Type{ .Array = ast.ArrayType{
+                                .ref_counted = ast.RefCounted.init(self.allocator),
+                                .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                                .size = size,
+                            }};
+                        } else if (self.check(.Identifier) and std.mem.eql(u8, self.peek().lexeme, "value")) {
+                            // Special case: Type[value] means slice
+                            _ = self.advance(); // consume 'value'
+                            _ = try self.consume(.RightBracket, "Expected ']' after 'value'");
+                            
+                            const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                            element_type_ptr.* = type_with_array;
+                            
+                            type_with_array = ast.Type{ .Array = ast.ArrayType{
+                                .ref_counted = ast.RefCounted.init(self.allocator),
+                                .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                                .size = null, // slice - no fixed size
+                            }};
+                        } else {
+                            // Complex expression - consume and treat as slice
+                            _ = try self.parseExpression(); // consume the expression
+                            _ = try self.consume(.RightBracket, "Expected ']' after array expression");
+                            
+                            const element_type_ptr = try self.arena_allocator.create(ast.Type);
+                            element_type_ptr.* = type_with_array;
+                            
+                            type_with_array = ast.Type{ .Array = ast.ArrayType{
+                                .ref_counted = ast.RefCounted.init(self.allocator),
+                                .element_type = ast.RefPtr(ast.Type).init(element_type_ptr),
+                                .size = null, // treat as slice
+                            }};
+                        }
+                    }
+                }
+                
+                // Check for composite literal: Type[value]{...}
+                if (self.check(.LeftBrace)) {
+                    return try self.parseCompositeLiteralWithType(type_with_array);
+                } else {
+                    // This was just a type expression, return identifier
+                    // (The type parsing was speculative)
+                    return Expression{ .Identifier = name };
+                }
+            }
+            
             // CRITICAL: Check for struct literal Name{field: value, ...} with proper brace handling
             // This distinguishes between struct literals and erroneous complex expressions
             if (self.check(.LeftBrace)) {
@@ -3194,8 +3343,11 @@ pub const Parser = struct {
         _ = try self.consume(.Bestie, "Expected 'bestie'");
         
         if (builtin.mode == .Debug) {
-            std.debug.print("DEBUG: parseForStatement started\n", .{});
+            std.debug.print("DEBUG: parseForStatement started at position {}\n", .{self.current});
         }
+        
+        // Check for infinite loop
+        try self.checkInfiniteLoop();
         
         // Check for range-for loop (bestie var := flex ...)
         if (self.isRangeForLoop()) {
@@ -3214,7 +3366,13 @@ pub const Parser = struct {
             var condition: ?Expression = null;
             
             if (!self.check(.LeftBrace)) {
-                condition = try self.parseExpression();
+                condition = self.parseExpression() catch |err| {
+                    // If expression parsing fails, provide better error recovery
+                    if (builtin.mode == .Debug) {
+                        std.debug.print("DEBUG: parseForStatement failed to parse condition: {any}\n", .{err});
+                    }
+                    return ParserError.InvalidSyntax;
+                };
             }
             
         _ = try self.consume(.LeftBrace, "Expected '{'");
@@ -4294,7 +4452,13 @@ pub const Parser = struct {
     }
 
     fn advance(self: *Parser) Token {
-        if (!self.isAtEnd()) self.current += 1;
+        if (!self.isAtEnd()) {
+            self.current += 1;
+            // Reset loop counter when position actually advances
+            if (self.current % 10 == 0) { // Periodic cleanup
+                self.resetLoopCounter();
+            }
+        }
         return self.previous();
     }
 
@@ -4508,30 +4672,61 @@ pub const Parser = struct {
     fn hasSemicolonsBeforeBrace(self: *Parser) bool {
         var pos = self.current;
         var semicolon_count: usize = 0;
+        const start_pos = pos;
+        var loop_protection: usize = 0;
+        const MAX_LOOKAHEAD: usize = 1000; // Limit lookahead to prevent infinite loops
         
         if (builtin.mode == .Debug) {
             std.debug.print("DEBUG: hasSemicolonsBeforeBrace starting at pos {}, current token: {any}\n", .{ pos, if (pos < self.tokens.len) self.tokens[pos].kind else .Eof });
         }
         
-        while (pos < self.tokens.len) {
+        while (pos < self.tokens.len and loop_protection < MAX_LOOKAHEAD) {
             const token = self.tokens[pos];
             if (builtin.mode == .Debug) {
                 std.debug.print("DEBUG: checking token {}: {any}\n", .{ pos, token.kind });
             }
+            
+            // Break conditions
             if (token.kind == .LeftBrace) {
                 break;
-            }
-            if (token.kind == .Semicolon) {
-                semicolon_count += 1;
             }
             if (token.kind == .Eof) {
                 break;
             }
+            // Also break on unexpected control flow tokens that indicate we've gone too far
+            if (token.kind == .RightBrace or token.kind == .RightParen) {
+                if (builtin.mode == .Debug) {
+                    std.debug.print("DEBUG: hasSemicolonsBeforeBrace hit unexpected delimiter, stopping scan\n", .{});
+                }
+                break;
+            }
+            
+            if (token.kind == .Semicolon) {
+                semicolon_count += 1;
+            }
+            
             pos += 1;
+            loop_protection += 1;
+            
+            // Additional safety: if we've scanned too far without finding a brace, assume no semicolons
+            if (pos - start_pos > 50) {
+                if (builtin.mode == .Debug) {
+                    std.debug.print("DEBUG: hasSemicolonsBeforeBrace scanned too far ({}), assuming no C-style for loop\n", .{pos - start_pos});
+                }
+                return false;
+            }
+        }
+        
+        // If we hit loop protection limit, return false to avoid infinite loops
+        if (loop_protection >= MAX_LOOKAHEAD) {
+            if (builtin.mode == .Debug) {
+                std.debug.print("DEBUG: hasSemicolonsBeforeBrace hit lookahead limit, assuming no C-style for loop\n", .{});
+            }
+            return false;
         }
         
         if (builtin.mode == .Debug) {
-            std.debug.print("DEBUG: hasSemicolonsBeforeBrace found {} semicolons\n", .{semicolon_count});
+            std.debug.print("DEBUG: hasSemicolonsBeforeBrace found {} semicolons after scanning {} tokens\n", .{ semicolon_count, pos - start_pos });
         }
         return semicolon_count > 0;
     }

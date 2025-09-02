@@ -32,7 +32,7 @@ squad SmtpClient {
     sus timeout drip        // Connection timeout in seconds
     sus connection TcpConnection // Network connection handle
     sus authenticated lit   // Current authentication status
-    sus capabilities []tea  // Server capabilities from EHLO response
+    sus capabilities tea[value]  // Server capabilities from EHLO response
     sus verify_certificate lit // Whether to verify TLS certificates
 }
 
@@ -72,19 +72,19 @@ enum EmailPriority {
 squad Email {
     // RFC 5322 Headers
     sus from tea            // From address (required)
-    sus to []tea            // To addresses (required)
-    sus cc []tea            // CC addresses
-    sus bcc []tea           // BCC addresses (not included in headers)
+    sus to tea[value]            // To addresses (required)
+    sus cc tea[value]            // CC addresses
+    sus bcc tea[value]           // BCC addresses (not included in headers)
     sus subject tea         // Email subject
     sus reply_to tea        // Reply-to address
     sus date tea            // Date header (RFC 2822 format)
     sus message_id tea      // Unique message identifier
-    sus headers []EmailHeader // Additional custom headers
+    sus headers EmailHeader[value] // Additional custom headers
     
     // Content
     sus body_text tea       // Plain text body
     sus body_html tea       // HTML body content
-    sus attachments []EmailAttachment // File attachments
+    sus attachments EmailAttachment[value] // File attachments
     sus priority EmailPriority // Message priority
     sus encoding tea        // Character encoding (default: "utf-8")
     
@@ -95,15 +95,15 @@ squad Email {
 
 // Parsed email structure for incoming messages
 squad ParsedEmail {
-    sus headers []EmailHeader   // All parsed headers
+    sus headers EmailHeader[value]   // All parsed headers
     sus from tea               // From address
-    sus to []tea               // To addresses  
+    sus to tea[value]               // To addresses  
     sus subject tea            // Subject line
     sus date tea               // Date sent
     sus message_id tea         // Message ID
     sus body_text tea          // Plain text body
     sus body_html tea          // HTML body
-    sus attachments []EmailAttachment // Attachments found
+    sus attachments EmailAttachment[value] // Attachments found
     sus raw_headers tea        // Raw header section
     sus raw_body tea           // Raw body section
     sus is_multipart lit       // Whether message is multipart
@@ -702,7 +702,7 @@ slay send_email(client SmtpClient, email Email) yikes<SmtpResponse> {
     }
     
     // Send RCPT TO commands for all recipients (TO, CC, BCC)
-    sus all_recipients []tea = combine_recipients(email)
+    sus all_recipients tea[value] = combine_recipients(email)
     sus i drip = 0
     
     bestie (i < arrayz.len(all_recipients)) {
@@ -888,11 +888,11 @@ slay format_date_header() tea {
     
     // Calculate day of week (rough approximation - Unix epoch was Thursday)
     sus day_of_week drip = (days_since_epoch + 4) % 7  // 4 = Thursday offset
-    sus weekday_names []tea = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
+    sus weekday_names tea[value] = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
     sus weekday tea = weekday_names[day_of_week]
     
     // Calculate approximate date (simplified - not accounting for leap years properly)
-    sus days_per_month []drip = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    sus days_per_month drip[value] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     sus year drip = 1970 + (days_since_epoch / 365)
     sus day_of_year drip = days_since_epoch % 365
     
@@ -906,7 +906,7 @@ slay format_date_header() tea {
         i = i + 1
     }
     
-    sus month_names []tea = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    sus month_names tea[value] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
                             "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
     sus month_name tea = month_names[month - 1]
     
@@ -949,7 +949,7 @@ slay generate_mime_boundary() tea {
 
 // Formats email for RFC 5322 compliant sending
 slay format_email_for_sending(email Email) tea {
-    sus headers []tea = []
+    sus headers tea[value] = []
     
     // Required headers
     headers = arrayz.push(headers, stringz.concat(["From: ", email.from]))
@@ -1015,7 +1015,7 @@ slay format_email_body(email Email) tea {
     }
     
     // Multipart email
-    sus parts []tea = []
+    sus parts tea[value] = []
     
     // Add text part if present
     ready (stringz.len(email.body_text) > 0) {
@@ -1056,7 +1056,7 @@ slay format_email_body(email Email) tea {
 
 // Formats an attachment as a MIME part
 slay format_attachment_part(attachment EmailAttachment, boundary tea) tea {
-    sus part_headers []tea = []
+    sus part_headers tea[value] = []
     
     part_headers = arrayz.push(part_headers, stringz.concat(["--", boundary]))
     part_headers = arrayz.push(part_headers, stringz.concat(["Content-Type: ", attachment.content_type]))
@@ -1217,9 +1217,9 @@ slay supports_capability(client SmtpClient, capability tea) lit {
 }
 
 // Helper function to parse EHLO capabilities
-slay parse_ehlo_capabilities(response_text tea) []tea {
-    sus lines []tea = stringz.split(response_text, "\r\n")
-    sus capabilities []tea = []
+slay parse_ehlo_capabilities(response_text tea) tea[value]{
+    sus lines tea[value] = stringz.split(response_text, "\r\n")
+    sus capabilities tea[value] = []
     
     sus i drip = 1  // Skip first line (250-hostname greeting)
     bestie (i < arrayz.len(lines)) {
@@ -1235,8 +1235,8 @@ slay parse_ehlo_capabilities(response_text tea) []tea {
 }
 
 // Helper function to combine all email recipients
-slay combine_recipients(email Email) []tea {
-    sus recipients []tea = email.to
+slay combine_recipients(email Email) tea[value]{
+    sus recipients tea[value] = email.to
     
     sus i drip = 0
     bestie (i < arrayz.len(email.cc)) {

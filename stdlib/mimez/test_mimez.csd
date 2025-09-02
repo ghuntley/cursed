@@ -98,53 +98,53 @@ slay test_binary_signature_detection() {
     test_start("Binary Signature Detection")
     
     fr fr JPEG signature (FFD8FF)
-    sus jpeg_bytes []drip = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]
+    sus jpeg_bytes drip[value] = [0xFF, 0xD8, 0xFF, 0xE0, 0x00, 0x10]
     assert_eq_string(detect_mime_from_content(jpeg_bytes), "image/jpeg")
     assert_eq_bool(is_jpeg_signature(jpeg_bytes), based)
     
-    sus jpeg_bytes2 []drip = [0xFF, 0xD8, 0xFF, 0xE1, 0x12, 0x34]  
+    sus jpeg_bytes2 drip[value] = [0xFF, 0xD8, 0xFF, 0xE1, 0x12, 0x34]  
     assert_eq_string(detect_mime_from_content(jpeg_bytes2), "image/jpeg")
     assert_eq_bool(is_jpeg_signature(jpeg_bytes2), based)
     
     fr fr PNG signature (89504E47)
-    sus png_bytes []drip = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+    sus png_bytes drip[value] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
     assert_eq_string(detect_mime_from_content(png_bytes), "image/png")
     assert_eq_bool(is_png_signature(png_bytes), based)
     
     fr fr GIF87a signature
-    sus gif87_bytes []drip = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
+    sus gif87_bytes drip[value] = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
     assert_eq_string(detect_mime_from_content(gif87_bytes), "image/gif")
     assert_eq_bool(is_gif_signature(gif87_bytes), based)
     
     fr fr GIF89a signature  
-    sus gif89_bytes []drip = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]
+    sus gif89_bytes drip[value] = [0x47, 0x49, 0x46, 0x38, 0x39, 0x61]
     assert_eq_string(detect_mime_from_content(gif89_bytes), "image/gif")
     assert_eq_bool(is_gif_signature(gif89_bytes), based)
     
     fr fr PDF signature (%PDF)
-    sus pdf_bytes []drip = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
+    sus pdf_bytes drip[value] = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
     assert_eq_string(detect_mime_from_content(pdf_bytes), "application/pdf")
     assert_eq_bool(is_pdf_signature(pdf_bytes), based)
     
     fr fr ZIP signature variants
-    sus zip_bytes1 []drip = [0x50, 0x4B, 0x03, 0x04]
+    sus zip_bytes1 drip[value] = [0x50, 0x4B, 0x03, 0x04]
     assert_eq_string(detect_mime_from_content(zip_bytes1), "application/zip")
     assert_eq_bool(is_zip_signature(zip_bytes1), based)
     
-    sus zip_bytes2 []drip = [0x50, 0x4B, 0x05, 0x06]
+    sus zip_bytes2 drip[value] = [0x50, 0x4B, 0x05, 0x06]
     assert_eq_string(detect_mime_from_content(zip_bytes2), "application/zip")
     assert_eq_bool(is_zip_signature(zip_bytes2), based)
     
     fr fr Text content detection
-    sus text_bytes []drip = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64]  fr fr "Hello World"
+    sus text_bytes drip[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64]  fr fr "Hello World"
     assert_eq_string(detect_mime_from_content(text_bytes), "text/plain")
     assert_eq_bool(is_text_content(text_bytes), based)
     
     fr fr Invalid/insufficient signatures
-    sus short_bytes []drip = [0xFF, 0xD8]  fr fr Too short for JPEG
+    sus short_bytes drip[value] = [0xFF, 0xD8]  fr fr Too short for JPEG
     assert_eq_bool(is_jpeg_signature(short_bytes), cap)
     
-    sus wrong_signature []drip = [0x12, 0x34, 0x56, 0x78]
+    sus wrong_signature drip[value] = [0x12, 0x34, 0x56, 0x78]
     assert_eq_string(detect_mime_from_content(wrong_signature), "application/octet-stream")
     
     vibez.spill("✅ Binary signature detection tests passed")
@@ -244,32 +244,32 @@ slay test_comprehensive_detection() {
     test_start("Comprehensive MIME Detection")
     
     fr fr Matching extension and content
-    sus jpeg_content []drip = [0xFF, 0xD8, 0xFF, 0xE0, 0x12, 0x34]
+    sus jpeg_content drip[value] = [0xFF, 0xD8, 0xFF, 0xE0, 0x12, 0x34]
     sus jpeg_result tea = detect_mime_comprehensive("photo.jpg", jpeg_content)
     assert_eq_string(jpeg_result, "image/jpeg")
     
     fr fr Extension says one thing, content says another (content wins)
-    sus png_content []drip = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
+    sus png_content drip[value] = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]
     sus mismatch_result tea = detect_mime_comprehensive("wrong.txt", png_content)
     assert_eq_string(mismatch_result, "image/png")
     
     fr fr No content provided (extension-based)
-    sus empty_content []drip = []
+    sus empty_content drip[value] = []
     sus ext_only tea = detect_mime_comprehensive("document.pdf", empty_content)
     assert_eq_string(ext_only, "application/pdf")
     
     fr fr Unknown extension with recognizable content
-    sus gif_content []drip = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
+    sus gif_content drip[value] = [0x47, 0x49, 0x46, 0x38, 0x37, 0x61]
     sus unknown_ext tea = detect_mime_comprehensive("file.unknown", gif_content)
     assert_eq_string(unknown_ext, "image/gif")
     
     fr fr Text content with correct extension
-    sus text_content []drip = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64]
+    sus text_content drip[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x20, 0x57, 0x6F, 0x72, 0x6C, 0x64]
     sus text_result tea = detect_mime_comprehensive("hello.txt", text_content)
     assert_eq_string(text_result, "text/plain")
     
     fr fr Binary content with binary extension
-    sus pdf_content []drip = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
+    sus pdf_content drip[value] = [0x25, 0x50, 0x44, 0x46, 0x2D, 0x31, 0x2E, 0x34]
     sus pdf_result tea = detect_mime_comprehensive("document.pdf", pdf_content)
     assert_eq_string(pdf_result, "application/pdf")
     
@@ -314,7 +314,7 @@ slay test_utility_functions() {
     assert_eq_bool(is_supported_extension("JPG"), based)  fr fr Case insensitive
     
     fr fr List supported extensions
-    sus extensions []tea = list_supported_extensions()
+    sus extensions tea[value] = list_supported_extensions()
     assert_greater_than_int(array_len(extensions), 50)  fr fr Should have 50+ extensions
     
     fr fr Verify some key extensions are included
@@ -368,11 +368,11 @@ slay test_edge_cases() {
     test_start("Edge Cases")
     
     fr fr Empty arrays and strings
-    sus empty_content []drip = []
+    sus empty_content drip[value] = []
     assert_eq_string(detect_mime_from_content(empty_content), "application/octet-stream")
     
     fr fr Very short content
-    sus short_content []drip = [0x12]
+    sus short_content drip[value] = [0x12]
     assert_eq_string(detect_mime_from_content(short_content), "application/octet-stream")
     
     fr fr Filenames with multiple extensions
@@ -393,12 +393,12 @@ slay test_edge_cases() {
     assert_eq_string(detect_mime_from_extension("SCRIPT.Js"), "application/javascript")
     
     fr fr Content with mixed binary/text characters
-    sus mixed_content []drip = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x00, 0xFF, 0x57, 0x6F, 0x72, 0x6C, 0x64]
+    sus mixed_content drip[value] = [0x48, 0x65, 0x6C, 0x6C, 0x6F, 0x00, 0xFF, 0x57, 0x6F, 0x72, 0x6C, 0x64]
     sus is_mixed_text lit = is_text_content(mixed_content)
     fr fr Should detect as binary due to null bytes and high bytes
     
     fr fr Very large text content (test sampling)
-    sus large_text_content []drip = []
+    sus large_text_content drip[value] = []
     bestie (i drip = 0; i < 1000; i++) {
         large_text_content = array_push(large_text_content, 0x41)  fr fr 'A'
     }
@@ -430,7 +430,7 @@ slay test_performance_scenarios() {
     assert_less_than_int(elapsed, 1000)  fr fr Should complete in under 1 second
     
     fr fr Test content analysis with large binary content
-    sus large_binary []drip = []
+    sus large_binary drip[value] = []
     bestie (i drip = 0; i < 10000; i++) {
         large_binary = array_push(large_binary, i % 256)
     }
@@ -447,7 +447,7 @@ slay test_performance_scenarios() {
     sus comp_start drip = timez.now_millis()
     
     bestie (i drip = 0; i < 100; i++) {
-        sus jpeg_content []drip = [0xFF, 0xD8, 0xFF, 0xE0]
+        sus jpeg_content drip[value] = [0xFF, 0xD8, 0xFF, 0xE0]
         detect_mime_comprehensive("photo.jpg", jpeg_content)
     }
     

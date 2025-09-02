@@ -164,7 +164,7 @@ slay demo_audio_analysis() lit {
     vibez.print_result("Peak level", stringz_from_float(peak_level))
     
     // Detect silence regions
-    sus silence_regions [100]drip = audioz_detect_silence(audio, 0.01)
+    sus silence_regions drip[100] = audioz_detect_silence(audio, 0.01)
     vibez.print_success("Detected silence regions")
     
     damn true

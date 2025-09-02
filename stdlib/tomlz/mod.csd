@@ -37,11 +37,11 @@ squad TomlValue {
     value_type TomlValueType
     string_type TomlStringType
     value tea
-    array_values []TomlValue
+    array_values TomlValue[value]
     table_values map[tea]TomlValue
     line_number drip
     column_number drip
-    key_path []tea
+    key_path tea[value]
 }
 
 # TOML Table Structure
@@ -82,8 +82,8 @@ squad TomlParseError {
 # TOML Validation Result
 squad TomlValidationResult {
     valid lit
-    errors []tea
-    warnings []tea
+    errors tea[value]
+    warnings tea[value]
 }
 
 # ========================
@@ -373,7 +373,7 @@ slay get_toml_boolean(doc TomlDocument, key tea) yikes<lit> {
 }
 
 # Get array value from TOML document
-slay get_toml_array(doc TomlDocument, key tea) yikes<[]TomlValue> {
+slay get_toml_array(doc TomlDocument, key tea) yikes<TomlValue[value]> {
     sus value TomlValue = get_toml_value(doc, key) fam {
         when err -> yikes err
     }
@@ -396,7 +396,7 @@ slay get_toml_table(doc TomlDocument, table_name tea) yikes<TomlTable> {
 
 # Get nested value using dot notation
 slay get_toml_nested(doc TomlDocument, path tea) yikes<TomlValue> {
-    sus path_parts []tea = stringz.split(path, ".")
+    sus path_parts tea[value] = stringz.split(path, ".")
     
     ready (path_parts.len() == 0) {
         yikes "Invalid path: " + path
@@ -454,7 +454,7 @@ slay validate_toml_structure(doc TomlDocument) TomlValidationResult {
     }
     
     # Check for duplicate table definitions
-    sus table_names []tea = []
+    sus table_names tea[value] = []
     bestie (sus table_name tea, sus table TomlTable in doc.tables) {
         ready (arrayz.contains(table_names, table_name)) {
             result.valid = cap
@@ -631,7 +631,7 @@ slay create_toml_boolean(value lit) TomlValue {
 }
 
 # Create TOML array value
-slay create_toml_array(values []TomlValue) TomlValue {
+slay create_toml_array(values TomlValue[value]) TomlValue {
     damn {
         value_type: TomlValueType.Array,
         string_type: TomlStringType.Basic,

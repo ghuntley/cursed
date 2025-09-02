@@ -301,7 +301,7 @@ slay len_real(args ...tea) normie { fr fr In a real implementation, this would b
 
 fr fr Enhanced input functions with better simulation
 slay read_single_char_real() normie { fr fr Simulate reading from different input sources
-    sus input_sequence [10]normie = [65, 66, 67, 68, 69, 10, 32, 72, 73, 0] fr fr ABCDE\n HI
+    sus input_sequence normie[10] = [65, 66, 67, 68, 69, 10, 32, 72, 73, 0] fr fr ABCDE\n HI
     sus static_pos normie = 0
     
     check static_pos >= 10 {

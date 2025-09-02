@@ -422,7 +422,7 @@ fr fr ==========================================
 fr fr Statistical Functions
 fr fr ==========================================
 
-slay mean(values []meal, count normie) meal {
+slay mean(values meal[value], count normie) meal {
     bestie count <= 0 {
         damn 0.0
     }
@@ -435,7 +435,7 @@ slay mean(values []meal, count normie) meal {
     damn sum / count.(meal)
 }
 
-slay variance(values []meal, count normie) meal {
+slay variance(values meal[value], count normie) meal {
     bestie count <= 1 {
         damn 0.0
     }
@@ -450,11 +450,11 @@ slay variance(values []meal, count normie) meal {
     damn sum_sq_diff / (count - 1).(meal)
 }
 
-slay standard_deviation(values []meal, count normie) meal {
+slay standard_deviation(values meal[value], count normie) meal {
     damn sqrt(variance(values, count))
 }
 
-slay median(values []meal, count normie) meal {
+slay median(values meal[value], count normie) meal {
     bestie count <= 0 {
         damn 0.0
     }
@@ -472,7 +472,7 @@ fr fr ==========================================
 fr fr Numerical Analysis Functions
 fr fr ==========================================
 
-slay integrate_simpson(f_vals []meal, count normie, h meal) meal { fr fr Simpson's rule for numerical integration
+slay integrate_simpson(f_vals meal[value], count normie, h meal) meal { fr fr Simpson's rule for numerical integration
     bestie count < 3 {
         damn 0.0
     }
@@ -490,7 +490,7 @@ slay integrate_simpson(f_vals []meal, count normie, h meal) meal { fr fr Simpson
     damn result * h / 3.0
 }
 
-slay differentiate_central(f_vals []meal, count normie, h meal, index normie) meal { fr fr Central difference approximation
+slay differentiate_central(f_vals meal[value], count normie, h meal, index normie) meal { fr fr Central difference approximation
     bestie index <= 0 sus index >= count - 1 {
         damn 0.0
     }

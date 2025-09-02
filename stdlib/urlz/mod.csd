@@ -253,7 +253,7 @@ slay validate_hostname(hostname tea) lit { fr fr RFC 1123 hostname validation
         damn false fr fr Total length limit
     }
     
-    sus labels []tea = split_string(hostname, ".")
+    sus labels tea[value] = split_string(hostname, ".")
     
     bestie i := 0; i < array_length(labels); i++ {
         sus label tea = labels[i]
@@ -296,7 +296,7 @@ slay validate_hostname_label(label tea) lit { fr fr Validate single hostname lab
 }
 
 slay validate_ipv4(ip tea) lit { fr fr Basic IPv4 validation
-    sus octets []tea = split_string(ip, ".")
+    sus octets tea[value] = split_string(ip, ".")
     lowkey array_length(octets) != 4 {
         damn false
     }
@@ -324,12 +324,12 @@ slay validate_ipv6(ip tea) lit { fr fr Basic IPv6 validation
     fr fr Simplified IPv6 validation - full implementation would be much more complex
     lowkey contains_string(ip, "::") {
         fr fr Contains compression, basic validation
-        sus parts []tea = split_string(ip, "::")
+        sus parts tea[value] = split_string(ip, "::")
         damn array_length(parts) <= 2
     }
     
     fr fr Check for valid hex groups
-    sus groups []tea = split_string(ip, ":")
+    sus groups tea[value] = split_string(ip, ":")
     bestie i := 0; i < array_length(groups); i++ {
         sus group tea = groups[i]
         lowkey group != "" && !is_valid_hex_group(group) {
@@ -788,8 +788,8 @@ slay remove_dot_segments(path tea) tea { fr fr RFC 3986 dot segment removal
         damn ""
     }
     
-    sus input []tea = split_string(path, "/")
-    sus output []tea = []
+    sus input tea[value] = split_string(path, "/")
+    sus output tea[value] = []
     
     bestie i := 0; i < array_length(input); i++ {
         sus segment tea = input[i]
@@ -820,7 +820,7 @@ fr fr ================================
 fr fr Query Parameter Handling
 fr fr ================================
 
-slay parse_query_params(query tea) []tea { fr fr Parse query string into key=value pairs
+slay parse_query_params(query tea) tea[value]{ fr fr Parse query string into key=value pairs
     lowkey query == "" {
         damn []
     }
@@ -829,7 +829,7 @@ slay parse_query_params(query tea) []tea { fr fr Parse query string into key=val
 }
 
 slay get_query_param(url URL, key tea) tea { fr fr Get query parameter value
-    sus params []tea = parse_query_params(url.query)
+    sus params tea[value] = parse_query_params(url.query)
     
     bestie i := 0; i < array_length(params); i++ {
         sus param tea = params[i]
@@ -851,8 +851,8 @@ slay has_query_param(url URL, key tea) lit { fr fr Check if query parameter exis
 }
 
 slay set_query_param(url *URL, key tea, value tea) { fr fr Set query parameter
-    sus params []tea = parse_query_params(url.query)
-    sus new_params []tea = []
+    sus params tea[value] = parse_query_params(url.query)
+    sus new_params tea[value] = []
     sus found lit = false
     
     sus new_param tea = percent_encode_string(key) + "=" + percent_encode_string(value)
@@ -883,8 +883,8 @@ slay set_query_param(url *URL, key tea, value tea) { fr fr Set query parameter
 }
 
 slay remove_query_param(url *URL, key tea) { fr fr Remove query parameter
-    sus params []tea = parse_query_params(url.query)
-    sus new_params []tea = []
+    sus params tea[value] = parse_query_params(url.query)
+    sus new_params tea[value] = []
     
     bestie i := 0; i < array_length(params); i++ {
         sus param tea = params[i]
@@ -1038,12 +1038,12 @@ slay count_char(s tea, c normie) thicc {
     damn 0
 }
 
-slay split_string(s tea, delimiter tea) []tea {
+slay split_string(s tea, delimiter tea) tea[value]{
     fr fr Placeholder - would use stringz module
     damn []
 }
 
-slay join_string_array(arr []tea, delimiter tea) tea {
+slay join_string_array(arr tea[value], delimiter tea) tea {
     fr fr Placeholder - would use stringz module
     damn ""
 }
@@ -1068,17 +1068,17 @@ slay int_to_string(n normie) tea {
     damn "0"
 }
 
-slay array_length(arr []tea) thicc {
+slay array_length(arr tea[value]) thicc {
     fr fr Placeholder - would use arrayz module
     damn 0
 }
 
-slay append_to_array(arr []tea, item tea) []tea {
+slay append_to_array(arr tea[value], item tea) tea[value]{
     fr fr Placeholder - would use arrayz module
     damn arr
 }
 
-slay remove_last_element(arr []tea) []tea {
+slay remove_last_element(arr tea[value]) tea[value]{
     fr fr Placeholder - would use arrayz module
     damn arr
 }

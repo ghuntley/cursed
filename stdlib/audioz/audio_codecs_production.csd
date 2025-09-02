@@ -333,7 +333,7 @@ slay audioz_read_int24_le(data tea, offset normie) normie { damn 0 }
 slay audioz_read_int32_le(data tea, offset normie) normie { damn 0 }
 
 slay audioz_get_mp3_sample_rate(version normie, index normie) normie {
-    sus rates [4][4]normie = [
+    sus rates normie[4][4] = [
         [11025, 12000, 8000, 0],   fr fr MPEG 2.5
         [0, 0, 0, 0],              fr fr Reserved
         [22050, 24000, 16000, 0],  fr fr MPEG 2
@@ -344,7 +344,7 @@ slay audioz_get_mp3_sample_rate(version normie, index normie) normie {
 
 slay audioz_get_mp3_bitrate(version normie, layer normie, index normie) normie {
     fr fr Simplified bitrate table for MPEG-1 Layer III
-    sus bitrates [16]normie = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0]
+    sus bitrates normie[16] = [0, 32, 40, 48, 56, 64, 80, 96, 112, 128, 160, 192, 224, 256, 320, 0]
     damn bitrates[index]
 }
 

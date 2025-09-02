@@ -16,7 +16,7 @@ fr fr Enhanced process representation with real execution support
 be_like Process squad {
     pid normie
     command tea
-    args []tea
+    args tea[value]
     working_dir tea
     env_vars map<tea, tea>      fr fr Environment variables
     state normie               fr fr 0=created, 1=running, 2=finished, 3=failed, 4=killed, 5=timeout
@@ -72,7 +72,7 @@ fr fr Pipe handle for inter-process communication
 be_like PipeHandle squad {
     read_fd normie
     write_fd normie
-    buffer []tea               fr fr Buffered data
+    buffer tea[value]               fr fr Buffered data
     closed lit
     non_blocking lit
 }
@@ -96,7 +96,7 @@ be_like ProcessGroup squad {
     pgid normie                fr fr Process group ID
     session_id normie          fr fr Session ID
     leader_pid normie          fr fr Group leader PID
-    processes []normie         fr fr PIDs in the group
+    processes normie[value]         fr fr PIDs in the group
 }
 
 fr fr Signal information
@@ -126,7 +126,7 @@ sus SIGSTOP normie = 19
 sus SIGCONT normie = 18
 
 fr fr Spawn a new process with real execution
-slay spawn(command tea, args []tea, options ProcessOptions) Process {
+slay spawn(command tea, args tea[value], options ProcessOptions) Process {
     sus pid normie = next_pid
     next_pid = next_pid + 1
     
@@ -179,10 +179,10 @@ slay start_process_execution(process Process, options ProcessOptions) lit {
     fr fr Set up environment
     sus env_context map<tea, tea> = {}
     ready options.inherit_env {
-        sus parent_env []tea = environ()
+        sus parent_env tea[value] = environ()
         bestie i := 0; i < arrayz.len(parent_env); i++ {
             sus env_pair tea = parent_env[i]
-            sus parts []tea = stringz.split(env_pair, "=")
+            sus parts tea[value] = stringz.split(env_pair, "=")
             ready arrayz.len(parts) >= 2 {
                 env_context[parts[0]] = stringz.join(arrayz.slice(parts, 1), "=")
             }
@@ -190,7 +190,7 @@ slay start_process_execution(process Process, options ProcessOptions) lit {
     }
     
     fr fr Override with custom environment
-    sus env_keys []tea = options.env_vars.keys()
+    sus env_keys tea[value] = options.env_vars.keys()
     bestie i := 0; i < arrayz.len(env_keys); i++ {
         sus key tea = env_keys[i]
         env_context[key] = options.env_vars[key]
@@ -399,7 +399,7 @@ fr fr ENHANCED COMMAND EXECUTION
 fr fr ==============================================================================
 
 fr fr Execute command and wait for completion
-slay exec(command tea, args []tea) CommandResult {
+slay exec(command tea, args tea[value]) CommandResult {
     sus options ProcessOptions = ProcessOptions{
         working_dir: "",
         env_vars: {},
@@ -423,7 +423,7 @@ slay exec(command tea, args []tea) CommandResult {
 }
 
 fr fr Execute command with options
-slay exec_with_options(command tea, args []tea, options ProcessOptions) CommandResult {
+slay exec_with_options(command tea, args tea[value], options ProcessOptions) CommandResult {
     sus process Process = spawn(command, args, options)
     sus result CommandResult = wait_for_process(process)
     
@@ -663,8 +663,8 @@ slay getppid() normie {
 }
 
 fr fr Get all running processes (simplified)
-slay get_processes() []Process {
-    sus processes []Process = [
+slay get_processes() Process[value]{
+    sus processes Process[value] = [
         Process{
             pid: 1,
             command: "init",
@@ -697,7 +697,7 @@ slay get_processes() []Process {
 
 fr fr Find process by PID
 slay find_process(pid normie) Process {
-    sus processes []Process = get_processes()
+    sus processes Process[value] = get_processes()
     
     bestie i := 0; i < processes.length(); i++ {
         bestie processes[i].pid == pid {
@@ -785,7 +785,7 @@ slay unsetenv(name tea) lit {
 }
 
 fr fr Get all environment variables
-slay environ() []tea {
+slay environ() tea[value]{
     damn [
         "PATH=/usr/local/bin:/usr/bin:/bin",
         "HOME=/home/user",
@@ -920,7 +920,7 @@ slay get_process_stats(pid normie) ProcessStats {
 fr fr Get all active processes with statistics
 slay get_all_process_stats() map<normie, ProcessStats> {
     sus all_stats map<normie, ProcessStats> = {}
-    sus pids []normie = active_processes.keys()
+    sus pids normie[value] = active_processes.keys()
     
     bestie i := 0; i < arrayz.len(pids); i++ {
         sus pid normie = pids[i]
@@ -956,9 +956,9 @@ slay monitor_process_health(process Process) lit {
 }
 
 fr fr Get process tree information
-slay get_process_tree(root_pid normie) []Process {
-    sus tree []Process = []
-    sus all_pids []normie = active_processes.keys()
+slay get_process_tree(root_pid normie) Process[value]{
+    sus tree Process[value] = []
+    sus all_pids normie[value] = active_processes.keys()
     
     fr fr Find all child processes
     bestie i := 0; i < arrayz.len(all_pids); i++ {
@@ -969,7 +969,7 @@ slay get_process_tree(root_pid normie) []Process {
             arrayz.push(tree, process)
             
             fr fr Recursively add children
-            sus children []Process = get_process_tree(pid)
+            sus children Process[value] = get_process_tree(pid)
             bestie j := 0; j < arrayz.len(children); j++ {
                 arrayz.push(tree, children[j])
             }
@@ -1188,7 +1188,7 @@ slay move_file(src tea, dest tea) lit {
 }
 
 slay command_exists(command tea) lit {
-    sus system_commands []tea = ["ls", "cat", "grep", "awk", "sed", "mkdir", "rm", "cp", "mv", "chmod", "chown", "find", "sort", "uniq", "head", "tail", "wc", "tr", "cut", "paste"]
+    sus system_commands tea[value] = ["ls", "cat", "grep", "awk", "sed", "mkdir", "rm", "cp", "mv", "chmod", "chown", "find", "sort", "uniq", "head", "tail", "wc", "tr", "cut", "paste"]
     
     sus i normie = 0
     bestie i < len(system_commands) {
@@ -1357,13 +1357,13 @@ slay add_to_process_group(pid normie, pgid normie) lit {
 fr fr Enhanced simulation for shell execution
 slay simulate_shell_execution(process Process, command tea) {
     ready stringz.contains(command, "echo") {
-        sus args []tea = stringz.split(command, " ")
+        sus args tea[value] = stringz.split(command, " ")
         ready arrayz.len(args) > 1 {
             process.stdout = stringz.join(arrayz.slice(args, 1), " ")
         }
         process.exit_code = 0
     } otherwise ready stringz.contains(command, "sleep") {
-        sus args []tea = stringz.split(command, " ")
+        sus args tea[value] = stringz.split(command, " ")
         ready arrayz.len(args) > 1 {
             sus sleep_time normie = mathz.parse_int(args[1], 0)
             ready sleep_time > 0 && sleep_time <= 10 {
@@ -1411,7 +1411,7 @@ slay simulate_direct_execution(process Process, env map<tea, tea>) {
         process.exit_code = 0
     } otherwise ready process.command == "env" {
         sus env_output tea = ""
-        sus keys []tea = env.keys()
+        sus keys tea[value] = env.keys()
         bestie i := 0; i < arrayz.len(keys); i++ {
             sus key tea = keys[i]
             env_output = stringz.concat(env_output, key + "=" + env[key] + "\n")

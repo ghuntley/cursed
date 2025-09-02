@@ -108,7 +108,7 @@ slay benchmark_end(name tea, operations normie, start_time_ns normie, end_time_n
 
 // Multiple runs for statistical analysis
 slay benchmark_multiple_runs(benchmark_func slay(), runs normie) BenchmarkStats {
-    sus results []normie = []
+    sus results normie[value] = []
     sus i normie = 0
     
     bestie i < runs {
@@ -325,7 +325,7 @@ slay benchmark_btree_range_queries() BenchmarkResult {
     bestie i < operations {
         sus start_key tea = pad_number(i * 10, 6)
         sus end_key tea = pad_number(i * 10 + 50, 6)
-        sus results []tea = btree_range_query(tree, start_key, end_key)
+        sus results tea[value] = btree_range_query(tree, start_key, end_key)
         memory_tracker = memory_tracker_update(memory_tracker)
         i = i + 1
     }
@@ -728,7 +728,7 @@ slay benchmark_performance_regression() {
     sus tolerance_percent normie = 10 // 10% tolerance for timing variation
     
     // HashMap insertion regression test
-    sus hashmap_times []normie = []
+    sus hashmap_times normie[value] = []
     sus i normie = 0
     bestie i < runs {
         sus result BenchmarkResult = benchmark_hashmap_insertions()
@@ -816,7 +816,7 @@ slay benchmark_scalability_analysis() {
     vibez.spill("📊 === Scalability Analysis ===")
     
     // Test different data sizes
-    sus sizes []normie = [100, 500, 1000, 2500, 5000, 10000]
+    sus sizes normie[value] = [100, 500, 1000, 2500, 5000, 10000]
     
     sus i normie = 0
     bestie i < len(sizes) {
@@ -891,7 +891,7 @@ slay pad_number(num normie, width normie) tea {
     damn str
 }
 
-slay min_array(arr []normie) normie {
+slay min_array(arr normie[value]) normie {
     sus min normie = arr[0]
     sus i normie = 1
     bestie i < len(arr) {
@@ -903,7 +903,7 @@ slay min_array(arr []normie) normie {
     damn min
 }
 
-slay max_array(arr []normie) normie {
+slay max_array(arr normie[value]) normie {
     sus max normie = arr[0]
     sus i normie = 1
     bestie i < len(arr) {
@@ -915,7 +915,7 @@ slay max_array(arr []normie) normie {
     damn max
 }
 
-slay avg_array(arr []normie) normie {
+slay avg_array(arr normie[value]) normie {
     sus sum normie = 0
     sus i normie = 0
     bestie i < len(arr) {
@@ -925,7 +925,7 @@ slay avg_array(arr []normie) normie {
     damn sum / len(arr)
 }
 
-slay std_dev_array(arr []normie) normie {
+slay std_dev_array(arr normie[value]) normie {
     sus avg normie = avg_array(arr)
     sus sum_squared_diffs normie = 0
     sus i normie = 0
@@ -938,7 +938,7 @@ slay std_dev_array(arr []normie) normie {
     damn sqrt(variance)
 }
 
-slay percentile_array(arr []normie, percentile normie) normie {
+slay percentile_array(arr normie[value], percentile normie) normie {
     // Simple percentile calculation (would sort array first in real implementation)
     sus index normie = (percentile * len(arr)) - 1
     ready (index < 0) { index = 0 }

@@ -33,7 +33,7 @@ fr fr Test DATA frame creation
     testz.assert_eq_int(data_frame.payload_length, 14)
     
 fr fr Test HEADERS frame creation
-    sus headers []tea = [
+    sus headers tea[value] = [
         ":method: GET",
         ":path: /test",
         ":scheme: https",
@@ -125,7 +125,7 @@ fr fr Test small integer (fits in prefix)
     sus encoded tea = hpack_encode_integer(10, 5, 0x00)
     testz.assert_eq_int(stringz.len(encoded), 1)
     
-    sus decoded_result [2]drip = hpack_decode_integer(encoded, 0, 5) fam {
+    sus decoded_result drip[2] = hpack_decode_integer(encoded, 0, 5) fam {
         when err -> {
             testz.test_fail("Failed to decode small integer", err.message)
             damn
@@ -138,7 +138,7 @@ fr fr Test large integer (requires multiple bytes)
     sus large_encoded tea = hpack_encode_integer(1337, 5, 0x00)
     testz.assert_true(stringz.len(large_encoded) > 1)
     
-    sus large_decoded_result [2]drip = hpack_decode_integer(large_encoded, 0, 5) fam {
+    sus large_decoded_result drip[2] = hpack_decode_integer(large_encoded, 0, 5) fam {
         when err -> {
             testz.test_fail("Failed to decode large integer", err.message)
             damn
@@ -158,7 +158,7 @@ fr fr Test literal string encoding
     testz.assert_true(stringz.len(encoded_string) > stringz.len(test_string))
     
 fr fr Test string decoding
-    sus decoded_result [2]tea = hpack_decode_string(encoded_string, 0) fam {
+    sus decoded_result tea[2] = hpack_decode_string(encoded_string, 0) fam {
         when err -> {
             testz.test_fail("Failed to decode string", err.message)
             damn
@@ -168,7 +168,7 @@ fr fr Test string decoding
     
 fr fr Test empty string
     sus empty_encoded tea = hpack_encode_string("", cringe)
-    sus empty_decoded [2]tea = hpack_decode_string(empty_encoded, 0) fam {
+    sus empty_decoded tea[2] = hpack_decode_string(empty_encoded, 0) fam {
         when err -> {
             testz.test_fail("Failed to decode empty string", err.message)
             damn
@@ -382,7 +382,7 @@ slay test_http2_server_push() {
     testz.test_start("HTTP/2 Server Push Implementation")
     
 fr fr Test PUSH_PROMISE frame creation
-    sus push_headers []tea = [
+    sus push_headers tea[value] = [
         ":method: GET",
         ":path: /style.css",
         ":scheme: https",
@@ -589,7 +589,7 @@ fr fr Create request stream
     }
     
 fr fr Create request headers
-    sus request_headers []tea = [
+    sus request_headers tea[value] = [
         ":method: GET",
         ":path: /get",
         ":scheme: https",
@@ -612,7 +612,7 @@ fr fr Create HEADERS frame
     testz.assert_true(headers_frame.flags & HTTP2_FLAG_END_HEADERS)
     
 fr fr Simulate response headers
-    sus response_headers []tea = [
+    sus response_headers tea[value] = [
         ":status: 200",
         "content-type: application/json",
         "content-length: 256",
@@ -675,7 +675,7 @@ fr fr Test HPACK encoding performance
     sus j drip = 0
     
     bestie (j < 500) {
-        sus test_headers []tea = [
+        sus test_headers tea[value] = [
             stringz.concat(["custom-header-", stringz.from_int(j)]),
             stringz.concat(["custom-value-", stringz.from_int(j * 2)])
         ]

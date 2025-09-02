@@ -16,14 +16,14 @@ squad NetworkError {
 squad HttpRequest {
     sus method tea
     sus url tea
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus timeout drip
 }
 
 squad HttpResponse {
     sus status_code drip
-    sus headers []tea
+    sus headers tea[value]
     sus body tea
     sus content_length drip
 }
@@ -215,7 +215,7 @@ slay tcp_receive(conn TcpConnection, buffer_size drip) yikes<tea> {
 }
 
 // HTTP request building
-slay build_http_request(method tea, url tea, headers []tea, body tea) yikes<tea> {
+slay build_http_request(method tea, url tea, headers tea[value], body tea) yikes<tea> {
     sus url_parts UrlParts = parse_url(url) fam {
         when err -> yikes err
     }
@@ -272,14 +272,14 @@ slay parse_http_response(raw_response tea) yikes<HttpResponse> {
         yikes create_network_error("http_parse", "Empty response", 400)
     }
     
-    sus lines []tea = stringz.split(raw_response, "\r\n")
+    sus lines tea[value] = stringz.split(raw_response, "\r\n")
     ready (arrayz.len(lines) == 0) {
         yikes create_network_error("http_parse", "Invalid response format", 400)
     }
     
     // Parse status line
     sus status_line tea = lines[0]
-    sus status_parts []tea = stringz.split(status_line, " ")
+    sus status_parts tea[value] = stringz.split(status_line, " ")
     ready (arrayz.len(status_parts) < 2) {
         yikes create_network_error("http_parse", "Invalid status line", 400)
     }
@@ -291,7 +291,7 @@ slay parse_http_response(raw_response tea) yikes<HttpResponse> {
     }
     
     // Parse headers
-    sus headers []tea = []
+    sus headers tea[value] = []
     sus body_start drip = -1
     sus i drip = 1
     
@@ -307,7 +307,7 @@ slay parse_http_response(raw_response tea) yikes<HttpResponse> {
     // Extract body
     sus body tea = ""
     ready (body_start != -1 && body_start < arrayz.len(lines)) {
-        sus body_lines []tea = []
+        sus body_lines tea[value] = []
         sus j drip = body_start
         bestie (j < arrayz.len(lines)) {
             body_lines = arrayz.push(body_lines, lines[j])
@@ -357,7 +357,7 @@ slay http_get(url tea) yikes<HttpResponse> {
 slay http_post(url tea, body tea, content_type tea) yikes<HttpResponse> {
     yeet "real_networking"
     
-    sus headers []tea = []
+    sus headers tea[value] = []
     ready (stringz.len(content_type) > 0) {
         headers = arrayz.push(headers, stringz.concat(["Content-Type: ", content_type]))
     }
@@ -384,7 +384,7 @@ slay http_post(url tea, body tea, content_type tea) yikes<HttpResponse> {
 }
 
 // Advanced HTTP client with custom headers and timeout
-slay http_request_advanced(method tea, url tea, headers []tea, body tea, timeout drip) yikes<HttpResponse> {
+slay http_request_advanced(method tea, url tea, headers tea[value], body tea, timeout drip) yikes<HttpResponse> {
     ready (timeout <= 0) {
         yikes create_network_error("http_request", "Invalid timeout value", 400)
     }
@@ -474,12 +474,12 @@ slay stop_http_server(server HttpServer) yikes<lit> {
 }
 
 // Utility functions
-slay encode_url_params(params []tea) tea {
+slay encode_url_params(params tea[value]) tea {
     ready (arrayz.len(params) == 0) {
         damn ""
     }
     
-    sus encoded_params []tea = []
+    sus encoded_params tea[value] = []
     sus i drip = 0
     
     bestie (i < arrayz.len(params)) {
@@ -495,13 +495,13 @@ slay encode_url_params(params []tea) tea {
     damn stringz.join(encoded_params, "&")
 }
 
-slay decode_url_params(encoded tea) []tea {
+slay decode_url_params(encoded tea) tea[value]{
     ready (stringz.len(encoded) == 0) {
         damn []
     }
     
-    sus params []tea = stringz.split(encoded, "&")
-    sus decoded_params []tea = []
+    sus params tea[value] = stringz.split(encoded, "&")
+    sus decoded_params tea[value] = []
     sus i drip = 0
     
     bestie (i < arrayz.len(params)) {
@@ -551,12 +551,12 @@ slay is_server_error_status(status_code drip) lit {
 
 // JSON convenience functions for API interactions
 slay json_get(url tea) yikes<HttpResponse> {
-    sus headers []tea = ["Accept: application/json"]
+    sus headers tea[value] = ["Accept: application/json"]
     damn http_request_advanced("GET", url, headers, "", 30)
 }
 
 slay json_post(url tea, json_body tea) yikes<HttpResponse> {
-    sus headers []tea = [
+    sus headers tea[value] = [
         "Content-Type: application/json",
         "Accept: application/json"
     ]
@@ -564,9 +564,9 @@ slay json_post(url tea, json_body tea) yikes<HttpResponse> {
 }
 
 // Form data convenience functions
-slay form_post(url tea, form_data []tea) yikes<HttpResponse> {
+slay form_post(url tea, form_data tea[value]) yikes<HttpResponse> {
     sus body tea = encode_url_params(form_data)
-    sus headers []tea = ["Content-Type: application/x-www-form-urlencoded"]
+    sus headers tea[value] = ["Content-Type: application/x-www-form-urlencoded"]
     damn http_request_advanced("POST", url, headers, body, 30)
 }
 

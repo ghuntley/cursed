@@ -105,7 +105,7 @@ slay test_signal_masking() {
     assert_false(is_signal_blocked(SIGUSR1))
     
     fr fr Test blocking multiple signals
-    sus signals []normie = [SIGUSR1, SIGUSR2, SIGALRM]
+    sus signals normie[value] = [SIGUSR1, SIGUSR2, SIGALRM]
     sus err3 *ErrorInstance = block_signals_array(signals, 3)
     assert_true(err3 == 0)
     

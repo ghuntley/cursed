@@ -29,7 +29,7 @@ slay test_basic_scanner() {
     
     # Test scan all tokens
     sus scanner2 Scanner = new_text_scanner("one,two,three", [","])
-    sus all_tokens []tea = scan_all_tokens(&scanner2)
+    sus all_tokens tea[value] = scan_all_tokens(&scanner2)
     assert_eq_int(all_tokens.length, 3)
     assert_eq(all_tokens[0], "one")
     assert_eq(all_tokens[1], "two")
@@ -44,9 +44,9 @@ slay test_custom_delimiters() {
     
     # Test multiple delimiters
     sus text tea = "a,b|c\td e"
-    sus delimiters []tea = [",", "|", "\t", " "]
+    sus delimiters tea[value] = [",", "|", "\t", " "]
     sus scanner Scanner = new_text_scanner(text, delimiters)
-    sus tokens []tea = scan_all_tokens(&scanner)
+    sus tokens tea[value] = scan_all_tokens(&scanner)
     
     assert_eq_int(tokens.length, 5)
     assert_eq(tokens[0], "a")
@@ -59,7 +59,7 @@ slay test_custom_delimiters() {
     
     # Test line-based scanning
     sus line_text tea = "line1\nline2\nline3"
-    sus line_tokens []tea = scan_tokens(line_text, ["\n"])
+    sus line_tokens tea[value] = scan_tokens(line_text, ["\n"])
     assert_eq_int(line_tokens.length, 3)
     assert_eq(line_tokens[0], "line1")
     assert_eq(line_tokens[1], "line2")
@@ -74,7 +74,7 @@ slay test_csv_scanner() {
     
     # Basic CSV parsing
     sus csv_text tea = "Name,Age,City\nJohn,25,NYC\nJane,30,LA"
-    sus records [][]tea = parse_csv(csv_text)
+    sus records tea[value][value] = parse_csv(csv_text)
     
     assert_eq_int(records.length, 3)
     assert_eq_int(records[0].length, 3)  # Header row
@@ -90,7 +90,7 @@ slay test_csv_scanner() {
     
     # Test quoted fields
     sus quoted_csv tea = "Name,Description\n\"John Doe\",\"Software Engineer, Senior\""
-    sus quoted_records [][]tea = parse_csv(quoted_csv)
+    sus quoted_records tea[value][value] = parse_csv(quoted_csv)
     
     assert_eq_int(quoted_records.length, 2)
     assert_eq(quoted_records[1][0], "John Doe")
@@ -105,7 +105,7 @@ slay test_csv_edge_cases() {
     
     # Empty fields
     sus empty_csv tea = "A,B,C\n1,,3\n,2,"
-    sus empty_records [][]tea = parse_csv(empty_csv)
+    sus empty_records tea[value][value] = parse_csv(empty_csv)
     
     assert_eq_int(empty_records.length, 3)
     assert_eq(empty_records[1][0], "1")
@@ -116,7 +116,7 @@ slay test_csv_edge_cases() {
     
     # Single column
     sus single_csv tea = "Value\n1\n2\n3"
-    sus single_records [][]tea = parse_csv(single_csv)
+    sus single_records tea[value][value] = parse_csv(single_csv)
     
     assert_eq_int(single_records.length, 4)
     assert_eq_int(single_records[0].length, 1)
@@ -131,7 +131,7 @@ slay test_basic_tabwriter() {
     test_start("Basic TabWriter Tests")
     
     # Create simple table
-    sus headers []tea = ["Name", "Age", "City"]
+    sus headers tea[value] = ["Name", "Age", "City"]
     sus writer TabWriter = create_table(headers)
     
     add_row(&writer, ["John", "25", "NYC"])
@@ -144,7 +144,7 @@ slay test_basic_tabwriter() {
     test_pass("Basic table creation and rendering")
     
     # Test table stats
-    sus stats []drip = get_table_stats(&writer)
+    sus stats drip[value] = get_table_stats(&writer)
     assert_eq_int(stats[0], 3)  # Column count
     assert_eq_int(stats[1], 2)  # Row count
     
@@ -155,8 +155,8 @@ slay test_basic_tabwriter() {
 slay test_tabwriter_formatting() {
     test_start("TabWriter Formatting Tests")
     
-    sus headers []tea = ["Short", "Very Long Header", "Med"]
-    sus data [][]tea = [
+    sus headers tea[value] = ["Short", "Very Long Header", "Med"]
+    sus data tea[value][value] = [
         ["A", "Short", "X"],
         ["BB", "Much Longer Content", "YY"],
         ["CCC", "Z", "ZZZ"]
@@ -176,7 +176,7 @@ slay test_utility_functions() {
     test_start("Utility Function Tests")
     
     # Test word splitting
-    sus words []tea = split_words("hello world test")
+    sus words tea[value] = split_words("hello world test")
     assert_eq_int(words.length, 3)
     assert_eq(words[0], "hello")
     assert_eq(words[1], "world")
@@ -185,7 +185,7 @@ slay test_utility_functions() {
     test_pass("Word splitting")
     
     # Test line splitting
-    sus lines []tea = split_text_lines("line1\nline2\nline3")
+    sus lines tea[value] = split_text_lines("line1\nline2\nline3")
     assert_eq_int(lines.length, 3)
     assert_eq(lines[0], "line1")
     assert_eq(lines[1], "line2")
@@ -194,7 +194,7 @@ slay test_utility_functions() {
     test_pass("Line splitting")
     
     # Test token statistics
-    sus stats []drip = get_token_stats("hello world test", [" "])
+    sus stats drip[value] = get_token_stats("hello world test", [" "])
     assert_eq_int(stats[0], 3)  # Total count
     # Average length should be reasonable
     assert_gt_int(stats[1], 3)
@@ -208,7 +208,7 @@ slay test_tsv_parsing() {
     test_start("TSV Parsing Tests")
     
     sus tsv_text tea = "Name\tAge\tCity\nJohn\t25\tNYC\nJane\t30\tLA"
-    sus tsv_records [][]tea = parse_tsv(tsv_text)
+    sus tsv_records tea[value][value] = parse_tsv(tsv_text)
     
     assert_eq_int(tsv_records.length, 3)
     assert_eq_int(tsv_records[0].length, 3)
@@ -236,7 +236,7 @@ slay test_advanced_scanner() {
     
     # Test line scanning with mixed content
     sus mixed_text tea = "word1 word2\nword3 word4\n"
-    sus line_data [][]tea = scan_lines(mixed_text)
+    sus line_data tea[value][value] = scan_lines(mixed_text)
     
     assert_eq_int(line_data.length, 2)
     assert_eq_int(line_data[0].length, 2)
@@ -298,7 +298,7 @@ slay test_performance() {
         large_csv = large_csv + int_to_string(i) + "," + int_to_string(i*2) + "," + int_to_string(i*3) + "\n"
     }
     
-    sus csv_records [][]tea = parse_csv(large_csv)
+    sus csv_records tea[value][value] = parse_csv(large_csv)
     assert_eq_int(csv_records.length, 101)  # Header + 100 rows
     
     test_pass("Large CSV parsing performance")
@@ -311,7 +311,7 @@ slay test_real_world_data() {
     # Test log file parsing
     sus log_data tea = "2023-01-01 10:00:00 INFO Application started\n2023-01-01 10:01:00 WARN Low memory\n2023-01-01 10:02:00 ERROR Connection failed"
     
-    sus log_lines [][]tea = scan_lines(log_data)
+    sus log_lines tea[value][value] = scan_lines(log_data)
     assert_eq_int(log_lines.length, 3)
     
     # Each log line should have multiple tokens
@@ -324,14 +324,14 @@ slay test_real_world_data() {
     
     # Test configuration file parsing
     sus config_data tea = "host=localhost\nport=8080\ndebug=true"
-    sus config_lines []tea = split_text_lines(config_data)
+    sus config_lines tea[value] = split_text_lines(config_data)
     
     assert_eq_int(config_lines.length, 3)
     
     # Parse key-value pairs
     bestie (sus i drip = 0; i < config_lines.length; i += 1) {
         sus kv_scanner Scanner = new_text_scanner(config_lines[i], ["="])
-        sus kv_tokens []tea = scan_all_tokens(&kv_scanner)
+        sus kv_tokens tea[value] = scan_all_tokens(&kv_scanner)
         assert_eq_int(kv_tokens.length, 2)
     }
     

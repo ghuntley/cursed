@@ -37,7 +37,7 @@ fr fr High-resolution timer system
 struct HighResolutionTimer {
     spill primary_counter PerformanceCounter
     spill fallback_counter PerformanceCounter
-    spill counters [6]PerformanceCounter
+    spill counters PerformanceCounter[6]
     spill cpu_frequency thicc
     spill tsc_reliable lit
     spill invariant_tsc lit
@@ -45,7 +45,7 @@ struct HighResolutionTimer {
     spill calibration_factor drip
     spill reference_time thicc
     spill system_boot_time thicc
-    spill overhead_samples [100]thicc
+    spill overhead_samples thicc[100]
     spill overhead_calibrated lit
 }
 
@@ -499,7 +499,7 @@ slay hr_timing_measure_counter_resolution(counter *PerformanceCounter) {
 fr fr Measure counter stability
 slay hr_timing_measure_counter_stability(counter *PerformanceCounter) {
     sus samples normie = 100
-    sus deltas []thicc = []
+    sus deltas thicc[value] = []
     
     bestie i := 0; i < samples; i = i + 1 {
         sus time1 thicc = hr_timing_get_raw_time_for_counter(counter)
@@ -519,7 +519,7 @@ slay hr_timing_measure_counter_stability(counter *PerformanceCounter) {
 }
 
 fr fr Calculate variance of timing samples
-slay calculate_variance(values []thicc) drip {
+slay calculate_variance(values thicc[value]) drip {
     yo values.len() == 0 {
         damn 0.0
     }
@@ -546,7 +546,7 @@ slay hr_timing_select_primary_counter(timer *HighResolutionTimer) {
     vibez.spill("HR Timing: Selecting primary performance counter...")
     
     fr fr Priority order for counter selection
-    sus priority_order []normie = [
+    sus priority_order normie[value] = [
         TIMING_SOURCE_TSC,           fr fr Highest priority if stable
         TIMING_SOURCE_MACH_ABSOLUTE, fr fr macOS specific
         TIMING_SOURCE_QPC,           fr fr Windows specific
@@ -995,7 +995,7 @@ slay hr_timing_measure_function_call(func slay() void) thicc {
 slay hr_timing_benchmark_function(func slay() void, iterations normie) {
     vibez.spillf("Benchmarking function over {} iterations...", iterations)
     
-    sus measurements []thicc = []
+    sus measurements thicc[value] = []
     sus total_time thicc = 0
     sus min_time thicc = thicc(0xFFFFFFFFFFFFFFFF)
     sus max_time thicc = 0

@@ -24,8 +24,8 @@ sus signal_handlers_registered normie = 0
 sus signal_system_active lit = cap
 sus last_signal_received normie = 0
 sus signal_received_flag lit = cap
-sus registered_signal_handlers [32]SignalHandlerType
-sus registered_signals [32]normie
+sus registered_signal_handlers SignalHandlerType[32]
+sus registered_signals normie[32]
 
 fr fr Foreign function interface to native signal handling
 extern slay cursed_real_signal_init() lit

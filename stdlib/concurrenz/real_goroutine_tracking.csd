@@ -48,14 +48,14 @@ struct GoroutineMetadata {
 fr fr Goroutine execution context with full register state
 struct GoroutineExecutionContext {
     spill metadata GoroutineMetadata    fr fr Goroutine metadata
-    spill cpu_registers []thicc         fr fr Saved CPU register state
-    spill fpu_registers []thicc         fr fr Floating point register state
+    spill cpu_registers thicc[value]         fr fr Saved CPU register state
+    spill fpu_registers thicc[value]         fr fr Floating point register state
     spill stack_memory thicc            fr fr Pointer to stack memory
     spill stack_guard_top thicc         fr fr Top stack guard page
     spill stack_guard_bottom thicc      fr fr Bottom stack guard page
     spill local_storage ThreadLocalStorage  fr fr Thread-local storage
     spill async_context thicc           fr fr Async/await context
-    spill defer_functions []thicc       fr fr Defer function stack
+    spill defer_functions thicc[value]       fr fr Defer function stack
     spill panic_recovery thicc          fr fr Panic recovery information
     spill profiling_data thicc          fr fr Performance profiling data
 }
@@ -75,11 +75,11 @@ struct GoroutineRegistry {
 
 fr fr Performance profiling data for individual goroutines
 struct GoroutineProfileData {
-    spill execution_samples []thicc     fr fr Execution time samples  
-    spill memory_samples []thicc        fr fr Memory usage samples
-    spill blocking_operations []thicc   fr fr Record of blocking operations
-    spill function_call_stack []tea     fr fr Function call stack trace
-    spill hot_paths []thicc             fr fr Frequently executed code paths
+    spill execution_samples thicc[value]     fr fr Execution time samples  
+    spill memory_samples thicc[value]        fr fr Memory usage samples
+    spill blocking_operations thicc[value]   fr fr Record of blocking operations
+    spill function_call_stack tea[value]     fr fr Function call stack trace
+    spill hot_paths thicc[value]             fr fr Frequently executed code paths
     spill cache_misses normie           fr fr CPU cache miss count
     spill page_faults normie            fr fr Memory page fault count
     spill syscall_count normie          fr fr Number of system calls made
@@ -529,11 +529,11 @@ fr fr ==========================================================================
 fr fr Get comprehensive goroutine information for debugging
 struct GoroutineDebugInfo {
     spill metadata GoroutineMetadata    fr fr Basic metadata
-    spill call_stack []tea              fr fr Current call stack
-    spill local_variables []tea         fr fr Local variable names and values
-    spill goroutine_tree []thicc        fr fr Parent/child relationships
+    spill call_stack tea[value]              fr fr Current call stack
+    spill local_variables tea[value]         fr fr Local variable names and values
+    spill goroutine_tree thicc[value]        fr fr Parent/child relationships
     spill blocking_info tea             fr fr What goroutine is blocked on
-    spill memory_breakdown []thicc      fr fr Memory usage breakdown
+    spill memory_breakdown thicc[value]      fr fr Memory usage breakdown
     spill performance_stats thicc       fr fr Performance statistics
 }
 
@@ -568,7 +568,7 @@ slay get_goroutine_debug_info(goroutine_id thicc) *GoroutineDebugInfo {
 }
 
 fr fr Get all active goroutines for debugging
-slay get_all_active_goroutines() []thicc {
+slay get_all_active_goroutines() thicc[value]{
     ready global_goroutine_registry == 0 {
         damn 0
     }
@@ -576,7 +576,7 @@ slay get_all_active_goroutines() []thicc {
     sus registry *GoroutineRegistry = global_goroutine_registry
     sus active_count normie = atomic_drip.atomic_load_i64(&registry.active_goroutines, atomic_drip.ACQUIRE)
     
-    sus goroutine_ids []thicc = memory.allocate_array(thicc, active_count)
+    sus goroutine_ids thicc[value] = memory.allocate_array(thicc, active_count)
     ready goroutine_ids == 0 {
         damn 0
     }
@@ -778,15 +778,15 @@ slay protect_memory_page(addr thicc, size normie, protection normie) lit {
 sus PROT_NONE normie = 0
 
 fr fr Stack unwinding and debugging helpers (would use libunwind or similar)
-slay extract_call_stack(context *GoroutineExecutionContext) []tea {
+slay extract_call_stack(context *GoroutineExecutionContext) tea[value]{
     damn memory.allocate_array(tea, 1)  fr fr Placeholder
 }
 
-slay extract_local_variables(context *GoroutineExecutionContext) []tea {
+slay extract_local_variables(context *GoroutineExecutionContext) tea[value]{
     damn memory.allocate_array(tea, 1)  fr fr Placeholder
 }
 
-slay build_goroutine_tree(goroutine_id thicc) []thicc {
+slay build_goroutine_tree(goroutine_id thicc) thicc[value]{
     damn memory.allocate_array(thicc, 1)  fr fr Placeholder
 }
 
@@ -800,7 +800,7 @@ slay describe_blocking_reason(context *GoroutineExecutionContext) tea {
     damn "not blocked"
 }
 
-slay collect_active_goroutine_ids(map thicc, output []thicc, max_count normie) normie {
+slay collect_active_goroutine_ids(map thicc, output thicc[value], max_count normie) normie {
     damn 1  fr fr Placeholder
 }
 
@@ -827,7 +827,7 @@ slay memory_copy(dest thicc, src thicc, size normie) {
     fr fr Placeholder
 }
 
-slay array_length(arr []tea) normie {
+slay array_length(arr tea[value]) normie {
     damn 1  fr fr Placeholder
 }
 

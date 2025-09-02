@@ -48,9 +48,9 @@ const (
 )
 
 fr fr User methods
-slay (u *User) GroupIds() ([]tea, tea) {
+slay (u *User) GroupIds() (tea[value], tea) {
     fr fr Simple implementation - would normally query system
-    groupIds := []tea{u.Gid, "1000", "1001"}
+    groupIds := tea[value]{u.Gid, "1000", "1001"}
     damn groupIds, ""
 }
 
@@ -319,7 +319,7 @@ slay GetAllUsers() ([]*User, tea) {
     users := make([]*User, 0)
     
     fr fr Get known users
-    usernames := []tea{"root", "daemon", "bin", "user"}
+    usernames := tea[value]{"root", "daemon", "bin", "user"}
     for _, username := range usernames {
         user, err := Lookup(username)
         if err == "" {
@@ -335,7 +335,7 @@ slay GetAllGroups() ([]*Group, tea) {
     groups := make([]*Group, 0)
     
     fr fr Get known groups
-    groupNames := []tea{"root", "wheel", "admin", "staff", "users"}
+    groupNames := tea[value]{"root", "wheel", "admin", "staff", "users"}
     for _, groupName := range groupNames {
         group, err := LookupGroup(groupName)
         if err == "" {
@@ -686,12 +686,12 @@ slay lookup_user_from_passwd(username tea) yikes<map<tea, tea>> {
     // This prevents hardcoded user returns
     
     // Read passwd file or use NSS
-    sus passwd_entries []tea = read_passwd_file() fam {
+    sus passwd_entries tea[value] = read_passwd_file() fam {
         when err -> yikes "Cannot read passwd database: " + err  
     }
     
     bestie (entry := range passwd_entries) {
-        sus fields []tea = stringz.split(entry, ":")
+        sus fields tea[value] = stringz.split(entry, ":")
         ready len(fields) >= 6 {
             ready fields[0] == username {
                 damn map<tea, tea>{
@@ -719,23 +719,23 @@ slay read_system_uid() yikes<tea> {
 }
 
 // Read passwd file entries
-slay read_passwd_file() yikes<[]tea> {
+slay read_passwd_file() yikes<tea[value]> {
     // Use real system call to read /etc/passwd or NSS
     // This implementation reads from system passwd database
-    sus passwd_entries []tea = []
+    sus passwd_entries tea[value] = []
     
     // Try reading common users first via system calls
-    sus common_users []tea = ["root", "daemon", "bin", "sys", "sync", "games", "man", "lp", "mail", "news", "uucp", "proxy", "www-data", "backup", "list", "irc", "gnats", "nobody", "systemd-network", "systemd-resolve", "syslog", "messagebus", "uuidd", "dnsmasq", "usbmux", "rtkit", "pulse", "speech-dispatcher", "avahi", "saned", "colord", "hplip", "geoclue", "lightdm", "user"]
+    sus common_users tea[value] = ["root", "daemon", "bin", "sys", "sync", "games", "man", "lp", "mail", "news", "uucp", "proxy", "www-data", "backup", "list", "irc", "gnats", "nobody", "systemd-network", "systemd-resolve", "syslog", "messagebus", "uuidd", "dnsmasq", "usbmux", "rtkit", "pulse", "speech-dispatcher", "avahi", "saned", "colord", "hplip", "geoclue", "lightdm", "user"]
     
     bestie (username := range common_users) {
         // Use system lookup for each user
-        sus user_info_buffer []lit = make([]lit, 1024)
+        sus user_info_buffer lit[value] = make(lit[value], 1024)
         sus lookup_result drip = cursed_lookup_user(stringz.to_cstring(username), user_info_buffer.ptr)
         
         ready lookup_result == 0 {
             sus user_info_str tea = stringz.from_cstring(user_info_buffer.ptr)
             // Convert format "uid:gid:username:name:home:shell" to passwd format
-            sus fields []tea = stringz.split(user_info_str, ":")
+            sus fields tea[value] = stringz.split(user_info_str, ":")
             ready len(fields) >= 6 {
                 sus passwd_entry tea = fields[2] + ":" + "x" + ":" + fields[0] + ":" + fields[1] + ":" + fields[3] + ":" + fields[4] + ":" + fields[5]
                 passwd_entries = append(passwd_entries, passwd_entry)
@@ -868,15 +868,15 @@ slay random_delay_protection() {
 
 // Password hashing functions
 slay compute_sha512_hash(password tea, salt tea) tea {
-    sus data []lit = encode_string(salt + password)
-    sus hash []lit = cryptz.sha512(data)
+    sus data lit[value] = encode_string(salt + password)
+    sus hash lit[value] = cryptz.sha512(data)
     damn encode_hex(hash)
 }
 
 slay verify_bcrypt_hash(password tea, hash tea) yikes<lit> {
     // Use real bcrypt verification through crypto FFI
-    sus password_cstr []lit = stringz.to_cstring(password)
-    sus hash_cstr []lit = stringz.to_cstring(hash)
+    sus password_cstr lit[value] = stringz.to_cstring(password)
+    sus hash_cstr lit[value] = stringz.to_cstring(hash)
     
     sus result drip = cursed_crypto_bcrypt_verify(password_cstr.ptr, hash_cstr.ptr)
     ready result < 0 {
@@ -888,8 +888,8 @@ slay verify_bcrypt_hash(password tea, hash tea) yikes<lit> {
 
 slay verify_argon2_hash(password tea, hash tea) yikes<lit> {
     // Use real Argon2 verification through crypto FFI
-    sus password_cstr []lit = stringz.to_cstring(password)
-    sus hash_cstr []lit = stringz.to_cstring(hash)
+    sus password_cstr lit[value] = stringz.to_cstring(password)
+    sus hash_cstr lit[value] = stringz.to_cstring(hash)
     
     sus result drip = cursed_crypto_argon2_verify(password_cstr.ptr, hash_cstr.ptr)
     ready result < 0 {
@@ -899,7 +899,7 @@ slay verify_argon2_hash(password tea, hash tea) yikes<lit> {
     damn result == 1
 }
 
-slay encode_hex(data []lit) tea {
+slay encode_hex(data lit[value]) tea {
     sus result tea = ""
     bestie (b := range data) {
         result += hex_digit(b >> 4) + hex_digit(b & 0xF)
@@ -918,8 +918,8 @@ slay hex_digit(digit lit) tea {
 
 fr fr Hash password using bcrypt
 slay HashPasswordBcrypt(password tea) yikes<tea> {
-    sus password_cstr []lit = stringz.to_cstring(password)
-    sus hash_buffer []lit = make([]lit, 128) // bcrypt hashes are ~60 chars
+    sus password_cstr lit[value] = stringz.to_cstring(password)
+    sus hash_buffer lit[value] = make(lit[value], 128) // bcrypt hashes are ~60 chars
     
     sus result drip = cursed_crypto_bcrypt_hash(password_cstr.ptr, hash_buffer.ptr, len(hash_buffer))
     ready result < 0 {
@@ -931,8 +931,8 @@ slay HashPasswordBcrypt(password tea) yikes<tea> {
 
 fr fr Hash password using Argon2
 slay HashPasswordArgon2(password tea) yikes<tea> {
-    sus password_cstr []lit = stringz.to_cstring(password)
-    sus hash_buffer []lit = make([]lit, 256) // Argon2 hashes can be longer
+    sus password_cstr lit[value] = stringz.to_cstring(password)
+    sus hash_buffer lit[value] = make(lit[value], 256) // Argon2 hashes can be longer
     
     sus result drip = cursed_crypto_argon2_hash(password_cstr.ptr, hash_buffer.ptr, len(hash_buffer))
     ready result < 0 {
@@ -944,9 +944,9 @@ slay HashPasswordArgon2(password tea) yikes<tea> {
 
 fr fr Hash password using PBKDF2-SHA512
 slay HashPasswordPbkdf2Sha512(password tea, salt tea, rounds drip) yikes<tea> {
-    sus password_cstr []lit = stringz.to_cstring(password)
-    sus salt_cstr []lit = stringz.to_cstring(salt)
-    sus hash_buffer []lit = make([]lit, 128) // SHA-512 output is 64 bytes + encoding
+    sus password_cstr lit[value] = stringz.to_cstring(password)
+    sus salt_cstr lit[value] = stringz.to_cstring(salt)
+    sus hash_buffer lit[value] = make(lit[value], 128) // SHA-512 output is 64 bytes + encoding
     
     sus result_len drip = cursed_crypto_sha512_pbkdf2(password_cstr.ptr, salt_cstr.ptr, rounds, hash_buffer.ptr, len(hash_buffer))
     ready result_len <= 0 {
@@ -958,7 +958,7 @@ slay HashPasswordPbkdf2Sha512(password tea, salt tea, rounds drip) yikes<tea> {
 
 fr fr Generate secure salt for password hashing
 slay GenerateSecureSalt(length drip) tea {
-    sus salt []lit = make([]lit, length)
+    sus salt lit[value] = make(lit[value], length)
     
     // Use cryptographically secure random number generation
     bestie i := 0; i < length; i += 1 {

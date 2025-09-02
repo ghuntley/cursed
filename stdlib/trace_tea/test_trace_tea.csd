@@ -198,7 +198,7 @@ slay test_sampling() {
 
 slay test_metrics_extraction() {
     test_start("metrics extraction") fr fr Create dummy trace data
-    sus trace_data []byte = []byte("dummy trace data") fr fr Extract metrics
+    sus trace_data byte[value] = byte[value]("dummy trace data") fr fr Extract metrics
     metrics := trace_tea.ExtractMetrics(trace_data)
     assert_not_nil(metrics)
     assert_not_nil(metrics.latencies)
@@ -214,7 +214,7 @@ slay test_metrics_extraction() {
 
 slay test_visualization() {
     test_start("trace visualization") fr fr Create dummy trace data
-    sus trace_data []byte = []byte("dummy trace data") fr fr Create visualizer
+    sus trace_data byte[value] = byte[value]("dummy trace data") fr fr Create visualizer
     visualizer := trace_tea.NewVisualizer(trace_data)
     assert_not_nil(visualizer) fr fr Generate timeline
     timeline := visualizer.GenerateTimeline()
@@ -227,7 +227,7 @@ slay test_visualization() {
 slay test_external_exports() {
     test_start("external system exports")
     
-    sus trace_data []byte = []byte("test trace data") fr fr Test Jaeger export
+    sus trace_data byte[value] = byte[value]("test trace data") fr fr Test Jaeger export
     err := trace_tea.ExportToJaeger(trace_data, "http://localhost:14268/api/traces")
     assert_eq_string(err, "") fr fr Test Zipkin export
     err = trace_tea.ExportToZipkin(trace_data, "http://localhost:9411/api/v2/spans")

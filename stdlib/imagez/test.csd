@@ -128,7 +128,7 @@ slay test_image_creation() lit {
 slay test_pixel_operations() lit {
     run_test("Pixel Get/Set Operations", slay() yikes<lit> {
         sus img Image = create_image(10, 10, 3)
-        sus test_pixel []drip = [255, 128, 64]
+        sus test_pixel drip[value] = [255, 128, 64]
         
         # Set pixel
         set_pixel(&img, 5, 5, test_pixel) fam {
@@ -136,7 +136,7 @@ slay test_pixel_operations() lit {
         }
         
         # Get pixel
-        sus retrieved_pixel []drip = get_pixel(img, 5, 5) fam {
+        sus retrieved_pixel drip[value] = get_pixel(img, 5, 5) fam {
             when e -> yikes e
         }
         
@@ -157,7 +157,7 @@ slay test_pixel_operations() lit {
         sus img Image = create_image(5, 5, 3)
         
         # Test out of bounds access
-        sus result []drip = get_pixel(img, 10, 10) fam {
+        sus result drip[value] = get_pixel(img, 10, 10) fam {
             when _ -> damn []  # Expected to fail
         }
         
@@ -337,7 +337,7 @@ slay test_rgb_lab_conversion() lit {
 slay test_rgb_cmyk_conversion() lit {
     run_test("RGB to CMYK Conversion", slay() yikes<lit> {
         sus black RGB = RGB{r: 0, g: 0, b: 0}
-        sus cmyk []tea = rgb_to_cmyk(black)
+        sus cmyk tea[value] = rgb_to_cmyk(black)
         
         ready (len(cmyk) != 4) {
             yikes "CMYK conversion wrong number of components"
@@ -352,7 +352,7 @@ slay test_rgb_cmyk_conversion() lit {
     })
     
     run_test("CMYK to RGB Conversion", slay() yikes<lit> {
-        sus cmyk []tea = [0.0, 0.0, 0.0, 0.0]  # White
+        sus cmyk tea[value] = [0.0, 0.0, 0.0, 0.0]  # White
         sus rgb RGB = cmyk_to_rgb(cmyk)
         
         # Should result in white
@@ -371,7 +371,7 @@ slay test_colorspace_image_conversion() lit {
         sus img Image = create_image(10, 10, 3)
         
         # Fill with known RGB values
-        sus red_pixel []drip = [255, 0, 0]
+        sus red_pixel drip[value] = [255, 0, 0]
         set_pixel(&img, 5, 5, red_pixel) fam {
             when e -> yikes e
         }
@@ -388,7 +388,7 @@ slay test_colorspace_image_conversion() lit {
             yikes "grayscale color space incorrect"
         }
         
-        sus gray_pixel []drip = get_pixel(gray_img, 5, 5) fam {
+        sus gray_pixel drip[value] = get_pixel(gray_img, 5, 5) fam {
             when e -> yikes e
         }
         
@@ -443,7 +443,7 @@ slay test_image_cropping() lit {
         sus img Image = create_image(10, 10, 3)
         
         # Set a known pixel
-        sus test_pixel []drip = [123, 45, 67]
+        sus test_pixel drip[value] = [123, 45, 67]
         set_pixel(&img, 7, 8, test_pixel) fam {
             when e -> yikes e
         }
@@ -458,7 +458,7 @@ slay test_image_cropping() lit {
         }
         
         # Test pixel should now be at (2, 3) in cropped image
-        sus cropped_pixel []drip = get_pixel(cropped, 2, 3) fam {
+        sus cropped_pixel drip[value] = get_pixel(cropped, 2, 3) fam {
             when e -> yikes e
         }
         
@@ -497,7 +497,7 @@ slay test_image_flipping() lit {
         sus img Image = create_image(5, 3, 3)
         
         # Set pixel at left side
-        sus test_pixel []drip = [255, 128, 64]
+        sus test_pixel drip[value] = [255, 128, 64]
         set_pixel(&img, 0, 1, test_pixel) fam {
             when e -> yikes e
         }
@@ -507,7 +507,7 @@ slay test_image_flipping() lit {
         }
         
         # Pixel should now be on the right side
-        sus flipped_pixel []drip = get_pixel(flipped, 4, 1) fam {
+        sus flipped_pixel drip[value] = get_pixel(flipped, 4, 1) fam {
             when e -> yikes e
         }
         
@@ -524,7 +524,7 @@ slay test_image_flipping() lit {
         sus img Image = create_image(3, 5, 3)
         
         # Set pixel at top
-        sus test_pixel []drip = [200, 100, 50]
+        sus test_pixel drip[value] = [200, 100, 50]
         set_pixel(&img, 1, 0, test_pixel) fam {
             when e -> yikes e
         }
@@ -534,7 +534,7 @@ slay test_image_flipping() lit {
         }
         
         # Pixel should now be at bottom
-        sus flipped_pixel []drip = get_pixel(flipped, 1, 4) fam {
+        sus flipped_pixel drip[value] = get_pixel(flipped, 1, 4) fam {
             when e -> yikes e
         }
         
@@ -652,7 +652,7 @@ slay test_image_adjustments() lit {
         sus img Image = create_image(3, 3, 3)
         
         # Set a known pixel
-        sus original_pixel []drip = [128, 128, 128]
+        sus original_pixel drip[value] = [128, 128, 128]
         set_pixel(&img, 1, 1, original_pixel) fam {
             when e -> yikes e
         }
@@ -661,7 +661,7 @@ slay test_image_adjustments() lit {
             when e -> yikes e
         }
         
-        sus adjusted_pixel []drip = get_pixel(brightened, 1, 1) fam {
+        sus adjusted_pixel drip[value] = get_pixel(brightened, 1, 1) fam {
             when e -> yikes e
         }
         
@@ -801,7 +801,7 @@ slay test_memory_safety() lit {
         sus img Image = create_image(5, 5, 3)
         
         # Set original pixel
-        sus original_pixel []drip = [100, 200, 150]
+        sus original_pixel drip[value] = [100, 200, 150]
         set_pixel(&img, 2, 2, original_pixel) fam {
             when e -> yikes e
         }
@@ -815,7 +815,7 @@ slay test_memory_safety() lit {
         }
         
         # Cloned should be unchanged
-        sus cloned_pixel []drip = get_pixel(cloned, 2, 2) fam {
+        sus cloned_pixel drip[value] = get_pixel(cloned, 2, 2) fam {
             when e -> yikes e
         }
         

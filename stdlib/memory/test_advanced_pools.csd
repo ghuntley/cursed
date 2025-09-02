@@ -412,7 +412,7 @@ slay test_concurrent_allocation_safety() {
         success lit
     }
     
-    sus thread_data [8]ThreadTestData
+    sus thread_data ThreadTestData[8]
     
     // Initialize thread data
     frfr i := 0; i < 8; i++ {
@@ -592,7 +592,7 @@ slay test_alignment_optimization() {
     assert_not_null(pool, "Alignment pool creation failed")
     
     // Test various object sizes and their alignments
-    sus test_sizes [8]normie = [8, 16, 32, 64, 128, 256, 512, 1024]
+    sus test_sizes normie[8] = [8, 16, 32, 64, 128, 256, 512, 1024]
     
     frfr i := 0; i < 8; i++ {
         sus size normie = test_sizes[i]
@@ -629,7 +629,7 @@ slay test_alignment_optimization() {
 slay benchmark_allocation_performance() {
     vibez.spill("\n--- Benchmarking Allocation Performance ---")
     
-    sus results [7]BenchmarkResult
+    sus results BenchmarkResult[7]
     
     frfr size_idx := 0; size_idx < 7; size_idx++ {
         sus size normie = ALLOCATION_SIZES[size_idx]
@@ -648,7 +648,7 @@ slay benchmark_allocation_performance() {
         }
         
         // Benchmark
-        sus times [1000]normie
+        sus times normie[1000]
         sus min_time normie = 999999999
         sus max_time normie = 0
         sus total_time normie = 0
@@ -823,7 +823,7 @@ slay benchmark_thread_scalability() {
     sus pool *AdvancedPool = create_numa_pool("thread_scalability_bench", 256, POOL_TYPE_THREAD_LOCAL)
     assert_not_null(pool, "Thread scalability benchmark pool creation failed")
     
-    sus thread_counts [4]normie = [1, 2, 4, 8]
+    sus thread_counts normie[4] = [1, 2, 4, 8]
     
     frfr test_idx := 0; test_idx < 4; test_idx++ {
         sus thread_count normie = thread_counts[test_idx]

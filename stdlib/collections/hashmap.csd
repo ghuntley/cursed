@@ -18,7 +18,7 @@ fr fr Core HashMap Structure
 fr fr ================================
 
 be_like HashMap squad {
-    entries []HashMapEntry
+    entries HashMapEntry[value]
     size normie
     capacity normie
     load_factor meal
@@ -63,7 +63,7 @@ slay hashmap_new() HashMap {
     sus initial_capacity normie = 16
     sus map HashMap
     
-    map.entries = make([]HashMapEntry, initial_capacity)
+    map.entries = make(HashMapEntry[value], initial_capacity)
     map.size = 0
     map.capacity = initial_capacity
     map.load_factor = 0.75
@@ -82,7 +82,7 @@ slay hashmap_new() HashMap {
 slay hashmap_with_capacity(capacity normie) HashMap {
     sus map HashMap
     
-    map.entries = make([]HashMapEntry, capacity)
+    map.entries = make(HashMapEntry[value], capacity)
     map.size = 0
     map.capacity = capacity
     map.load_factor = 0.75
@@ -130,12 +130,12 @@ slay hashmap_find_slot(map HashMap, key tea) normie {
 }
 
 slay hashmap_resize(map HashMap) HashMap {
-    sus old_entries []HashMapEntry = map.entries
+    sus old_entries HashMapEntry[value] = map.entries
     sus old_capacity normie = map.capacity
     
     fr fr Double capacity
     map.capacity = map.capacity * 2
-    map.entries = make([]HashMapEntry, map.capacity)
+    map.entries = make(HashMapEntry[value], map.capacity)
     map.size = 0
     
     fr fr Initialize new entries
@@ -246,8 +246,8 @@ slay hashmap_clear(map HashMap) HashMap {
     damn map
 }
 
-slay hashmap_keys(map HashMap) []tea {
-    sus keys []tea = make([]tea, map.size)
+slay hashmap_keys(map HashMap) tea[value]{
+    sus keys tea[value] = make(tea[value], map.size)
     sus key_index normie = 0
     
     sus i normie = 0
@@ -263,8 +263,8 @@ slay hashmap_keys(map HashMap) []tea {
     damn keys
 }
 
-slay hashmap_values(map HashMap) []tea {
-    sus values []tea = make([]tea, map.size)
+slay hashmap_values(map HashMap) tea[value]{
+    sus values tea[value] = make(tea[value], map.size)
     sus value_index normie = 0
     
     sus i normie = 0

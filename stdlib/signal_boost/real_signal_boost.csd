@@ -93,16 +93,16 @@ squad RealSignalResult {
 fr fr Real pending signals from OS kernel
 squad RealPendingSignals {
     spill count normie
-    spill signals [64]normie
-    spill timestamps [64]normie
-    spill sender_pids [64]normie
+    spill signals normie[64]
+    spill timestamps normie[64]
+    spill sender_pids normie[64]
 }
 
 fr fr Global state for real signal handling
 sus real_signal_system_active lit = cap
-sus registered_real_handlers [64]RealSignalHandler
+sus registered_real_handlers RealSignalHandler[64]
 sus current_real_mask RealSignalMask
-sus real_signal_stats [64]normie  fr fr Signal receive counts
+sus real_signal_stats normie[64]  fr fr Signal receive counts
 
 fr fr Foreign function interface to native signal platform
 extern slay cursed_native_signal_init() lit

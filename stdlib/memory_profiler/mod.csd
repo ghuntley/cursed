@@ -31,9 +31,9 @@ vibe ProfilerSession {
 
 // Global profiler state
 sus global_profiler_session ProfilerSession
-sus global_allocations [1000]AllocationRecord
+sus global_allocations AllocationRecord[1000]
 sus global_allocation_count normie = 0
-sus global_gc_stats [100]normie
+sus global_gc_stats normie[100]
 sus global_gc_count normie = 0
 
 // Initialize memory profiler
@@ -167,8 +167,8 @@ slay analyze_allocation_patterns() tea {
     sus pattern_report tea = "=== ALLOCATION PATTERN ANALYSIS ===\n"
     
     // Analyze by type
-    sus type_counts [10]normie
-    sus type_names [10]tea
+    sus type_counts normie[10]
+    sus type_names tea[10]
     sus type_count normie = 0
     
     bestie i := 0; i < global_allocation_count; i++ {
@@ -361,7 +361,7 @@ slay visualize_memory_usage() tea {
     
     // Create a simple timeline visualization
     sus time_slots normie = 20
-    sus slot_allocations [20]normie
+    sus slot_allocations normie[20]
     sus max_in_slot normie = 0
     
     // Fill time slots with allocation counts

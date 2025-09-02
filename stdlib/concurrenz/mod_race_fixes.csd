@@ -32,7 +32,7 @@ struct WaitGroup {
 
 fr fr RACE-SAFE: Channel structure with atomic fields and signaling
 struct Channel {
-    spill buffer []normie                       fr fr Message buffer array
+    spill buffer normie[value]                       fr fr Message buffer array
     spill capacity normie                       fr fr Maximum buffer size
     spill size *atomic_drip.AtomicI32          fr fr Current buffer size (atomic)
     spill send_pos *atomic_drip.AtomicI32      fr fr Send position in buffer (atomic)
@@ -46,8 +46,8 @@ struct Channel {
 
 fr fr RACE-SAFE: Thread pool with proper synchronization
 struct ThreadPool {
-    spill workers []normie                      fr fr Worker thread IDs
-    spill task_queue []normie                   fr fr Queue of pending tasks
+    spill workers normie[value]                      fr fr Worker thread IDs
+    spill task_queue normie[value]                   fr fr Queue of pending tasks
     spill queue_size *atomic_drip.AtomicI32    fr fr Current queue size (atomic)
     spill queue_head *atomic_drip.AtomicI32    fr fr Queue head position (atomic)
     spill queue_tail *atomic_drip.AtomicI32    fr fr Queue tail position (atomic)
@@ -61,7 +61,7 @@ struct Barrier {
     spill count normie                          fr fr Total number of participants
     spill arrived *atomic_drip.AtomicI32       fr fr Number of participants arrived (atomic)
     spill generation *atomic_drip.AtomicI32    fr fr Generation counter for reuse (atomic)
-    spill waiting_list []normie                fr fr List of waiting goroutines
+    spill waiting_list normie[value]                fr fr List of waiting goroutines
     spill barrier_signal *atomic_drip.AtomicFlag fr fr FIXED: Barrier release signal
 }
 
@@ -69,14 +69,14 @@ fr fr RACE-SAFE: Semaphore with proper blocking/signaling
 struct Semaphore {
     spill permits *atomic_drip.AtomicI32       fr fr Available permits (atomic)
     spill max_permits normie                   fr fr Maximum permits allowed
-    spill waiters []normie                     fr fr Queue of waiting goroutines
+    spill waiters normie[value]                     fr fr Queue of waiting goroutines
     spill waiter_count *atomic_drip.AtomicI32  fr fr Number of waiting goroutines (atomic)
     spill permit_signal *atomic_drip.AtomicFlag fr fr FIXED: Permit availability signal
 }
 
 fr fr RACE-SAFE: Condition Variable with proper signaling
 struct CondVar {
-    spill waiters []normie                     fr fr Queue of waiting goroutines
+    spill waiters normie[value]                     fr fr Queue of waiting goroutines
     spill waiter_count *atomic_drip.AtomicI32  fr fr Number of waiting goroutines (atomic)
     spill signal_count *atomic_drip.AtomicI32  fr fr Number of signals sent (atomic)
     spill broadcast_flag *atomic_drip.AtomicFlag fr fr Broadcast flag (atomic)

@@ -80,7 +80,7 @@ test_group_start("Test Failure Capability Tests")
 
 test_start("collection_tests_can_detect_errors")
 fr fr Simulate a broken collection operation
-sus broken_collection []tea = ["a", "b", "c"]
+sus broken_collection tea[value] = ["a", "b", "c"]
 sus original_size normie = broken_collection.len()
 broken_collection = broken_collection + ["d"]
 sus final_size normie = broken_collection.len()
@@ -110,7 +110,7 @@ fr fr Test template validation and quality
 test_group_start("Template Quality Validation Tests")
 
 test_start("no_remaining_placeholders_in_templates")
-sus modules []tea = ["arrayz", "mathz", "cryptz", "filez", "networkz"]
+sus modules tea[value] = ["arrayz", "mathz", "cryptz", "filez", "networkz"]
 bestie module in modules {
     sus template tea = create_module_test_template(module)
     sus enhanced_template tea = ""

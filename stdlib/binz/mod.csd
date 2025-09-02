@@ -47,16 +47,16 @@ squad BinzValue {
     sus uint_value drip
     sus float_value normie
     sus string_value tea
-    sus array_values []BinzValue
-    sus struct_fields []tea        fr fr field names
-    sus struct_values []BinzValue  fr fr field values
+    sus array_values BinzValue[value]
+    sus struct_fields tea[value]        fr fr field names
+    sus struct_values BinzValue[value]  fr fr field values
     sus schema_id drip
     sus compressed lit
-    sus raw_bytes []drip
+    sus raw_bytes drip[value]
 }
 
 squad BinzEncoder {
-    sus output_bytes []drip
+    sus output_bytes drip[value]
     sus position drip
     sus compression_enabled lit
     sus schema_registry BinzSchemaRegistry
@@ -65,7 +65,7 @@ squad BinzEncoder {
 }
 
 squad BinzDecoder {
-    sus input_bytes []drip
+    sus input_bytes drip[value]
     sus position drip
     sus length drip
     sus schema_registry BinzSchemaRegistry
@@ -77,18 +77,18 @@ squad BinzSchema {
     sus id drip
     sus version drip
     sus name tea
-    sus field_names []tea
-    sus field_types []tea
-    sus field_optional []lit
+    sus field_names tea[value]
+    sus field_types tea[value]
+    sus field_optional lit[value]
     sus compatibility_mode tea  fr fr "strict", "forward", "backward", "full"
-    sus migration_rules []BinzMigrationRule
+    sus migration_rules BinzMigrationRule[value]
 }
 
 squad BinzMigrationRule {
     sus from_version drip
     sus to_version drip
-    sus field_mappings []BinzFieldMapping
-    sus default_values []BinzValue
+    sus field_mappings BinzFieldMapping[value]
+    sus default_values BinzValue[value]
 }
 
 squad BinzFieldMapping {
@@ -99,14 +99,14 @@ squad BinzFieldMapping {
 }
 
 squad BinzSchemaRegistry {
-    sus schemas []BinzSchema
+    sus schemas BinzSchema[value]
     sus schema_count drip
-    sus version_compatibility []tea
+    sus version_compatibility tea[value]
 }
 
 fr fr ===== HIGH-LEVEL ENCODING API =====
 
-slay binz_encode(value BinzValue) []drip {
+slay binz_encode(value BinzValue) drip[value]{
     fr fr Encode BinzValue to binary format
     sus encoder BinzEncoder = binz_create_encoder()
     encoder.compression_enabled = based
@@ -125,7 +125,7 @@ slay binz_encode(value BinzValue) []drip {
     damn encoder.output_bytes
 }
 
-slay binz_decode(data []drip) BinzValue {
+slay binz_decode(data drip[value]) BinzValue {
     fr fr Decode binary data to BinzValue
     sus decoder BinzDecoder = binz_create_decoder(data)
     
@@ -148,7 +148,7 @@ slay binz_decode(data []drip) BinzValue {
     damn result
 }
 
-slay binz_encode_with_schema(value BinzValue, schema BinzSchema) []drip {
+slay binz_encode_with_schema(value BinzValue, schema BinzSchema) drip[value]{
     fr fr Encode with schema validation and optimization
     sus encoder BinzEncoder = binz_create_encoder()
     encoder.schema_registry = binz_create_schema_registry()
@@ -176,7 +176,7 @@ slay binz_encode_with_schema(value BinzValue, schema BinzSchema) []drip {
     damn encoder.output_bytes
 }
 
-slay binz_decode_with_schema(data []drip, expected_schema BinzSchema) BinzValue {
+slay binz_decode_with_schema(data drip[value], expected_schema BinzSchema) BinzValue {
     fr fr Decode with schema validation and migration
     sus decoder BinzDecoder = binz_create_decoder(data)
     decoder.schema_registry = binz_create_schema_registry()
@@ -282,7 +282,7 @@ slay binz_encode_value(encoder BinzEncoder, value BinzValue) lit {
 
 slay binz_encode_string(encoder BinzEncoder, str tea) lit {
     sus length drip = string_length(str)
-    sus str_bytes []drip = string_to_bytes(str)
+    sus str_bytes drip[value] = string_to_bytes(str)
     
     ready (length < 256) {
         binz_write_uint8(encoder, TAG_STRING_SHORT)
@@ -360,7 +360,7 @@ slay binz_encode_compressed(encoder BinzEncoder, value BinzValue) lit {
     binz_encode_value(temp_encoder, value)
     
     fr fr Apply compression (simplified LZ-style)
-    sus compressed_data []drip = binz_compress_data(temp_encoder.output_bytes)
+    sus compressed_data drip[value] = binz_compress_data(temp_encoder.output_bytes)
     sus compressed_size drip = array_length(compressed_data)
     sus original_size drip = array_length(temp_encoder.output_bytes)
     
@@ -380,7 +380,7 @@ slay binz_encode_compressed(encoder BinzEncoder, value BinzValue) lit {
 
 fr fr ===== CORE DECODING IMPLEMENTATION =====
 
-slay binz_create_decoder(data []drip) BinzDecoder {
+slay binz_create_decoder(data drip[value]) BinzDecoder {
     sus decoder BinzDecoder = BinzDecoder{}
     decoder.input_bytes = data
     decoder.position = 0
@@ -504,7 +504,7 @@ slay binz_decode_string(decoder BinzDecoder, type_tag drip) tea {
         damn ""
     }
     
-    sus str_bytes []drip = []
+    sus str_bytes drip[value] = []
     sus i drip = 0
     bestie (i < length) {
         str_bytes[i] = binz_read_uint8(decoder)
@@ -573,7 +573,7 @@ slay binz_decode_compressed(decoder BinzDecoder) BinzValue {
     }
     
     fr fr Read compressed data
-    sus compressed_data []drip = []
+    sus compressed_data drip[value] = []
     sus i drip = 0
     bestie (i < compressed_size) {
         compressed_data[i] = binz_read_uint8(decoder)
@@ -581,7 +581,7 @@ slay binz_decode_compressed(decoder BinzDecoder) BinzValue {
     }
     
     fr fr Decompress
-    sus decompressed_data []drip = binz_decompress_data(compressed_data, original_size)
+    sus decompressed_data drip[value] = binz_decompress_data(compressed_data, original_size)
     
     fr fr Create new decoder for decompressed data
     sus temp_decoder BinzDecoder = binz_create_decoder(decompressed_data)
@@ -816,9 +816,9 @@ slay binz_unreflect_value(value BinzValue) lit {
 
 fr fr ===== COMPRESSION UTILITIES =====
 
-slay binz_compress_data(data []drip) []drip {
+slay binz_compress_data(data drip[value]) drip[value]{
     fr fr Simple run-length encoding compression
-    sus compressed []drip = []
+    sus compressed drip[value] = []
     sus compressed_pos drip = 0
     sus data_length drip = array_length(data)
     sus pos drip = 0
@@ -854,9 +854,9 @@ slay binz_compress_data(data []drip) []drip {
     damn compressed
 }
 
-slay binz_decompress_data(compressed_data []drip, original_size drip) []drip {
+slay binz_decompress_data(compressed_data drip[value], original_size drip) drip[value]{
     fr fr Decompress run-length encoded data
-    sus decompressed []drip = []
+    sus decompressed drip[value] = []
     sus decompressed_pos drip = 0
     sus compressed_length drip = array_length(compressed_data)
     sus pos drip = 0
@@ -1053,10 +1053,10 @@ slay binz_create_struct() BinzValue {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay string_to_bytes(str tea) []drip {
+slay string_to_bytes(str tea) drip[value]{
     fr fr Convert string to byte array (UTF-8)
     sus length drip = string_length(str)
-    sus bytes []drip = []
+    sus bytes drip[value] = []
     sus i drip = 0
     
     bestie (i < length) {
@@ -1069,7 +1069,7 @@ slay string_to_bytes(str tea) []drip {
     damn bytes
 }
 
-slay bytes_to_string(bytes []drip) tea {
+slay bytes_to_string(bytes drip[value]) tea {
     fr fr Convert byte array to string (UTF-8)
     sus length drip = array_length(bytes)
     sus result tea = ""
@@ -1119,7 +1119,7 @@ slay signed_int_from_unsigned(unsigned_val drip) drip {
 
 fr fr ===== HIGH-LEVEL CONVENIENCE FUNCTIONS =====
 
-slay binz_serialize_simple_struct(name tea, age drip, active lit) []drip {
+slay binz_serialize_simple_struct(name tea, age drip, active lit) drip[value]{
     fr fr Example: serialize a simple struct
     sus value BinzValue = binz_create_struct()
     
@@ -1140,7 +1140,7 @@ slay binz_serialize_simple_struct(name tea, age drip, active lit) []drip {
     damn binz_encode(value)
 }
 
-slay binz_deserialize_simple_struct(data []drip) lit {
+slay binz_deserialize_simple_struct(data drip[value]) lit {
     fr fr Example: deserialize and extract fields
     sus value BinzValue = binz_decode(data)
     
@@ -1187,13 +1187,13 @@ slay binz_create_memory_pool(initial_size drip) BinzMemoryPool {
 }
 
 squad BinzMemoryPool {
-    sus buffer []drip
+    sus buffer drip[value]
     sus size drip
     sus position drip
-    sus allocated_blocks []drip
+    sus allocated_blocks drip[value]
 }
 
-slay binz_encode_with_pool(value BinzValue, pool BinzMemoryPool) []drip {
+slay binz_encode_with_pool(value BinzValue, pool BinzMemoryPool) drip[value]{
     fr fr Use memory pool for zero-allocation encoding
     sus encoder BinzEncoder = binz_create_encoder()
     encoder.output_bytes = pool.buffer  fr fr Use pre-allocated buffer
@@ -1206,7 +1206,7 @@ slay binz_encode_with_pool(value BinzValue, pool BinzMemoryPool) []drip {
     }
     
     fr fr Return slice of used buffer
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     bestie (i < encoder.position) {
         result[i] = encoder.output_bytes[i]
@@ -1279,7 +1279,7 @@ slay binz_varint_size(value drip) drip {
 
 fr fr ===== BATCH OPERATIONS FOR PERFORMANCE =====
 
-slay binz_encode_batch(values []BinzValue) []drip {
+slay binz_encode_batch(values BinzValue[value]) drip[value]{
     fr fr Encode multiple values efficiently
     sus total_size drip = 8  fr fr Header
     sus count drip = array_length(values)
@@ -1310,7 +1310,7 @@ slay binz_encode_batch(values []BinzValue) []drip {
     damn encoder.output_bytes
 }
 
-slay binz_decode_batch(data []drip) []BinzValue {
+slay binz_decode_batch(data drip[value]) BinzValue[value]{
     fr fr Decode multiple values efficiently
     sus decoder BinzDecoder = binz_create_decoder(data)
     
@@ -1319,7 +1319,7 @@ slay binz_decode_batch(data []drip) []BinzValue {
     }
     
     sus count drip = binz_read_varint(decoder)
-    sus results []BinzValue = []
+    sus results BinzValue[value] = []
     
     sus i drip = 0
     bestie (i < count) {

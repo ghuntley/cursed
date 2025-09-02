@@ -28,7 +28,7 @@ squad ResolutionNode {
     sus name tea
     sus version tea
     sus metadata PackageMetadata
-    sus dependencies []ResolutionNode
+    sus dependencies ResolutionNode[value]
     sus resolved lit
     sus conflict_source tea
 }
@@ -36,9 +36,9 @@ squad ResolutionNode {
 # Dependency resolution context
 squad ResolutionContext {
     sus registry PackageRegistry
-    sus resolved_packages []ResolutionNode
-    sus pending_packages []tea
-    sus conflicts []ResolutionConflict
+    sus resolved_packages ResolutionNode[value]
+    sus pending_packages tea[value]
+    sus conflicts ResolutionConflict[value]
     sus max_depth drip
     sus current_depth drip
 }
@@ -46,16 +46,16 @@ squad ResolutionContext {
 # Resolution conflict information
 squad ResolutionConflict {
     sus package_name tea
-    sus conflicting_versions []tea
-    sus required_by []tea
+    sus conflicting_versions tea[value]
+    sus required_by tea[value]
     sus conflict_type tea
 }
 
 # Resolution result
 squad ResolutionResult {
     sus success lit
-    sus resolved_packages []PackageMetadata
-    sus conflicts []ResolutionConflict
+    sus resolved_packages PackageMetadata[value]
+    sus conflicts ResolutionConflict[value]
     sus resolution_time drip
     sus packages_analyzed drip
 }
@@ -73,7 +73,7 @@ slay init_resolver(registry PackageRegistry) ResolutionContext {
 }
 
 # Resolve dependencies for a package with conflict detection
-slay resolve_dependencies(context ResolutionContext, root_packages []PackageMetadata) ResolutionResult {
+slay resolve_dependencies(context ResolutionContext, root_packages PackageMetadata[value]) ResolutionResult {
     vibez.spill("Starting dependency resolution for", arrayz.len(root_packages), "root packages")
     sus start_time drip = get_timestamp_ms()
     sus packages_analyzed drip = 0
@@ -115,10 +115,10 @@ slay resolve_dependencies(context ResolutionContext, root_packages []PackageMeta
     }
     
     # Check for conflicts in final resolution
-    sus final_conflicts []ResolutionConflict = detect_version_conflicts(context.resolved_packages)
+    sus final_conflicts ResolutionConflict[value] = detect_version_conflicts(context.resolved_packages)
     context.conflicts = arrayz.concat(context.conflicts, final_conflicts)
     
-    sus resolved_metadata []PackageMetadata = extract_package_metadata(context.resolved_packages)
+    sus resolved_metadata PackageMetadata[value] = extract_package_metadata(context.resolved_packages)
     sus end_time drip = get_timestamp_ms()
     
     vibez.spill("Resolution completed. Packages analyzed:", packages_analyzed, "Time:", end_time - start_time, "ms")
@@ -152,7 +152,7 @@ slay resolve_node_dependencies(context ResolutionContext, node ResolutionNode) l
         sus constraint VersionConstraint = parse_version_constraint(dep.version_req)
         
         # Find compatible version
-        sus compatible_versions []PackageMetadata = find_compatible_versions(context.registry, dep.name, constraint)
+        sus compatible_versions PackageMetadata[value] = find_compatible_versions(context.registry, dep.name, constraint)
         ready (arrayz.len(compatible_versions) == 0) {
             sus conflict ResolutionConflict = ResolutionConflict {
                 package_name: dep.name,
@@ -204,7 +204,7 @@ slay resolve_node_dependencies(context ResolutionContext, node ResolutionNode) l
 }
 
 # Create resolution node from package metadata
-slay create_resolution_node(metadata PackageMetadata, required_by []tea) ResolutionNode {
+slay create_resolution_node(metadata PackageMetadata, required_by tea[value]) ResolutionNode {
     damn ResolutionNode {
         name: metadata.name,
         version: metadata.version,
@@ -261,10 +261,10 @@ slay parse_version_constraint(constraint_str tea) VersionConstraint {
 }
 
 # Find compatible package versions for constraint
-slay find_compatible_versions(registry PackageRegistry, package_name tea, constraint VersionConstraint) []PackageMetadata {
+slay find_compatible_versions(registry PackageRegistry, package_name tea, constraint VersionConstraint) PackageMetadata[value]{
     # Search registry for all versions of the package
-    sus search_results []PackageMetadata = search_packages_registry(registry, package_name)
-    sus compatible []PackageMetadata = []
+    sus search_results PackageMetadata[value] = search_packages_registry(registry, package_name)
+    sus compatible PackageMetadata[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(search_results); i = i + 1) {
         sus pkg PackageMetadata = search_results[i]
@@ -325,7 +325,7 @@ slay is_wildcard_compatible(version PackageVersion, constraint_version PackageVe
 }
 
 # Select best version from compatible versions (latest stable)
-slay select_best_version(versions []PackageMetadata, constraint VersionConstraint) PackageMetadata {
+slay select_best_version(versions PackageMetadata[value], constraint VersionConstraint) PackageMetadata {
     ready (arrayz.len(versions) == 0) {
         damn PackageMetadata{}
     }
@@ -358,8 +358,8 @@ slay select_best_version(versions []PackageMetadata, constraint VersionConstrain
 }
 
 # Detect version conflicts in resolved packages
-slay detect_version_conflicts(resolved []ResolutionNode) []ResolutionConflict {
-    sus conflicts []ResolutionConflict = []
+slay detect_version_conflicts(resolved ResolutionNode[value]) ResolutionConflict[value]{
+    sus conflicts ResolutionConflict[value] = []
     sus package_map map[tea]ResolutionNode = {}
     
     # Build package name to node mapping
@@ -385,7 +385,7 @@ slay detect_version_conflicts(resolved []ResolutionNode) []ResolutionConflict {
 }
 
 # Find existing resolution node by package name
-slay find_existing_resolution(resolved []ResolutionNode, package_name tea) ResolutionNode {
+slay find_existing_resolution(resolved ResolutionNode[value], package_name tea) ResolutionNode {
     bestie (sus i drip = 0; i < arrayz.len(resolved); i = i + 1) {
         sus node ResolutionNode = resolved[i]
         ready (node.name == package_name) {
@@ -413,8 +413,8 @@ slay can_resolve_version_conflict(existing ResolutionNode, new_metadata PackageM
 }
 
 # Extract package metadata from resolution nodes
-slay extract_package_metadata(nodes []ResolutionNode) []PackageMetadata {
-    sus metadata []PackageMetadata = []
+slay extract_package_metadata(nodes ResolutionNode[value]) PackageMetadata[value]{
+    sus metadata PackageMetadata[value] = []
     bestie (sus i drip = 0; i < arrayz.len(nodes); i = i + 1) {
         sus node ResolutionNode = nodes[i]
         ready (node.resolved) {
@@ -425,15 +425,15 @@ slay extract_package_metadata(nodes []ResolutionNode) []PackageMetadata {
 }
 
 # Circular dependency detection
-slay detect_circular_dependencies(nodes []ResolutionNode) []ResolutionConflict {
-    sus conflicts []ResolutionConflict = []
-    sus visiting []tea = []
-    sus visited []tea = []
+slay detect_circular_dependencies(nodes ResolutionNode[value]) ResolutionConflict[value]{
+    sus conflicts ResolutionConflict[value] = []
+    sus visiting tea[value] = []
+    sus visited tea[value] = []
     
     bestie (sus i drip = 0; i < arrayz.len(nodes); i = i + 1) {
         sus node ResolutionNode = nodes[i]
         ready (!arrayz.contains_string(visited, node.name)) {
-            sus cycle []tea = find_circular_dependency(node, visiting, visited)
+            sus cycle tea[value] = find_circular_dependency(node, visiting, visited)
             ready (arrayz.len(cycle) > 0) {
                 sus conflict ResolutionConflict = ResolutionConflict {
                     package_name: "circular_dependency",
@@ -450,7 +450,7 @@ slay detect_circular_dependencies(nodes []ResolutionNode) []ResolutionConflict {
 }
 
 # Find circular dependency path
-slay find_circular_dependency(node ResolutionNode, visiting []tea, visited []tea) []tea {
+slay find_circular_dependency(node ResolutionNode, visiting tea[value], visited tea[value]) tea[value]{
     ready (arrayz.contains_string(visiting, node.name)) {
         # Found cycle
         sus cycle_start drip = arrayz.index_of_string(visiting, node.name)
@@ -465,7 +465,7 @@ slay find_circular_dependency(node ResolutionNode, visiting []tea, visited []tea
     
     bestie (sus i drip = 0; i < arrayz.len(node.dependencies); i = i + 1) {
         sus dep_node ResolutionNode = node.dependencies[i]
-        sus cycle []tea = find_circular_dependency(dep_node, visiting, visited)
+        sus cycle tea[value] = find_circular_dependency(dep_node, visiting, visited)
         ready (arrayz.len(cycle) > 0) {
             damn cycle
         }
@@ -483,7 +483,7 @@ slay should_install_optional_dependency(dep PackageDependency) lit {
     damn cap
 }
 
-slay search_packages_registry(registry PackageRegistry, name tea) []PackageMetadata {
+slay search_packages_registry(registry PackageRegistry, name tea) PackageMetadata[value]{
     # In real implementation, would query the registry
     damn []
 }

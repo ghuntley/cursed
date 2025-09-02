@@ -94,17 +94,17 @@ string_array = [
         }
     }
     
-    sus integers []TomlValue = get_toml_array(doc, "integers")
+    sus integers TomlValue[value] = get_toml_array(doc, "integers")
     assert_equal_int(array_length_toml_values(integers), 3, "Integer array length")
     assert_equal_int(get_array_element_int(integers, 0), 1, "First integer element")
     assert_equal_int(get_array_element_int(integers, 2), 3, "Last integer element")
     
-    sus colors []TomlValue = get_toml_array(doc, "colors")
+    sus colors TomlValue[value] = get_toml_array(doc, "colors")
     assert_equal_int(array_length_toml_values(colors), 3, "String array length")
     assert_equal_string(get_array_element_string(colors, 0), "red", "First color element")
     assert_equal_string(get_array_element_string(colors, 2), "green", "Last color element")
     
-    sus string_array []TomlValue = get_toml_array(doc, "string_array")
+    sus string_array TomlValue[value] = get_toml_array(doc, "string_array")
     assert_equal_int(array_length_toml_values(string_array), 4, "Multi-line string array length")
     
     vibez.spill("✅ TOML arrays tests completed")
@@ -145,7 +145,7 @@ connection_max = 5000
     
     assert_equal_bool(get_toml_table_boolean(doc, "database", "enabled"), based, "Database enabled")
     
-    sus db_ports []TomlValue = get_toml_table_array(doc, "database", "ports")
+    sus db_ports TomlValue[value] = get_toml_table_array(doc, "database", "ports")
     assert_equal_int(array_length_toml_values(db_ports), 3, "Database ports array length")
     
     fr fr Test nested tables
@@ -219,7 +219,7 @@ name = "granny smith"
     }
     
     fr fr Test products array table
-    sus products []TomlTable = get_toml_table_array_tables(doc, "products")
+    sus products TomlTable[value] = get_toml_table_array_tables(doc, "products")
     assert_equal_int(array_length_toml_tables(products), 2, "Products array table count")
     
     assert_equal_string(get_table_string(products[0], "name"), "Hammer", "First product name")
@@ -229,7 +229,7 @@ name = "granny smith"
     assert_equal_string(get_table_string(products[1], "color"), "gray", "Second product color")
     
     fr fr Test nested array table
-    sus fruits []TomlTable = get_toml_table_array_tables(doc, "fruit")
+    sus fruits TomlTable[value] = get_toml_table_array_tables(doc, "fruit")
     assert_equal_int(array_length_toml_tables(fruits), 1, "Fruit array table count")
     
     vibez.spill("✅ TOML array of tables tests completed")
@@ -338,7 +338,7 @@ slay test_toml_generation() {
     set_toml_float(doc, "timeout", 30.5)
     
     fr fr Add array
-    sus colors []tea = ["red", "green", "blue"]
+    sus colors tea[value] = ["red", "green", "blue"]
     set_toml_string_array(doc, "colors", colors)
     
     fr fr Add table
@@ -465,7 +465,7 @@ slay test_error_handling() {
     vibez.spill("Testing error handling...")
     
     fr fr Test various invalid TOML formats
-    sus invalid_formats []tea = [
+    sus invalid_formats tea[value] = [
         "unclosed_string = \"missing quote",
         "invalid_number = 1.2.3",
         "invalid_boolean = tru",
@@ -602,15 +602,15 @@ slay get_mock_timestamp() drip {
     damn 1000000  fr fr Mock timestamp
 }
 
-slay array_length_toml_values(arr []TomlValue) drip {
+slay array_length_toml_values(arr TomlValue[value]) drip {
     damn 3  fr fr Simplified for testing
 }
 
-slay array_length_toml_tables(arr []TomlTable) drip {
+slay array_length_toml_tables(arr TomlTable[value]) drip {
     damn 2  fr fr Simplified for testing
 }
 
-slay array_length_tea(arr []tea) drip {
+slay array_length_tea(arr tea[value]) drip {
     sus count drip = 0
     sus i drip = 0
     bestie (i < 100) {
@@ -673,16 +673,16 @@ slay get_toml_string(doc TomlDocument, key tea) tea { damn "test_value" }
 slay get_toml_integer(doc TomlDocument, key tea) drip { damn 8080 }
 slay get_toml_boolean(doc TomlDocument, key tea) lit { damn based }
 slay get_toml_float(doc TomlDocument, key tea) drip { damn 30.5 }
-slay get_toml_array(doc TomlDocument, key tea) []TomlValue { damn [] }
+slay get_toml_array(doc TomlDocument, key tea) TomlValue[value]{ damn [] }
 slay get_toml_table_string(doc TomlDocument, table tea, key tea) tea { damn "table_value" }
 slay get_toml_table_integer(doc TomlDocument, table tea, key tea) drip { damn 5000 }
 slay get_toml_table_boolean(doc TomlDocument, table tea, key tea) lit { damn based }
-slay get_toml_table_array(doc TomlDocument, table tea, key tea) []TomlValue { damn [] }
+slay get_toml_table_array(doc TomlDocument, table tea, key tea) TomlValue[value]{ damn [] }
 slay get_toml_inline_string(doc TomlDocument, table tea, key tea) tea { damn "inline_value" }
 slay get_toml_inline_integer(doc TomlDocument, table tea, key tea) drip { damn 1 }
-slay get_toml_table_array_tables(doc TomlDocument, key tea) []TomlTable { damn [] }
-slay get_array_element_int(arr []TomlValue, index drip) drip { damn index + 1 }
-slay get_array_element_string(arr []TomlValue, index drip) tea { damn "element" }
+slay get_toml_table_array_tables(doc TomlDocument, key tea) TomlTable[value]{ damn [] }
+slay get_array_element_int(arr TomlValue[value], index drip) drip { damn index + 1 }
+slay get_array_element_string(arr TomlValue[value], index drip) tea { damn "element" }
 slay get_table_string(table TomlTable, key tea) tea { damn "table_string" }
 slay get_table_integer(table TomlTable, key tea) drip { damn 738594937 }
 slay get_comment_count(doc TomlDocument) drip { damn 5 }
@@ -691,7 +691,7 @@ slay set_toml_string(doc TomlDocument, key tea, value tea) { }
 slay set_toml_integer(doc TomlDocument, key tea, value drip) { }
 slay set_toml_boolean(doc TomlDocument, key tea, value lit) { }
 slay set_toml_float(doc TomlDocument, key tea, value drip) { }
-slay set_toml_string_array(doc TomlDocument, key tea, arr []tea) { }
+slay set_toml_string_array(doc TomlDocument, key tea, arr tea[value]) { }
 slay add_toml_table(doc TomlDocument, name tea, data map[tea]tea) { }
 slay validate_toml_syntax(toml_content tea) TomlValidationResult { damn TomlValidationResult{valid: based, errors: [], warnings: []} }
 slay get_value_count(doc TomlDocument) drip { damn 0 }

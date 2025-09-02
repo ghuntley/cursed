@@ -14,12 +14,12 @@ squad JsonValue {
 }
 
 squad JsonObject {
-    keys []tea
-    values []JsonValue
+    keys tea[value]
+    values JsonValue[value]
 }
 
 squad JsonArray {
-    items []JsonValue
+    items JsonValue[value]
 }
 
 sus JSON_TYPE_NULL tea = "null"
@@ -175,8 +175,8 @@ slay parse_object(text tea, pos_ptr *drip) JsonValue {
     skip_whitespace(text, pos_ptr)
     
     sus obj JsonObject = JsonObject{
-        keys: make([]tea, 0),
-        values: make([]JsonValue, 0)
+        keys: make(tea[value], 0),
+        values: make(JsonValue[value], 0)
     }
     
     fr fr Check for empty object
@@ -239,7 +239,7 @@ slay parse_array(text tea, pos_ptr *drip) JsonValue {
     skip_whitespace(text, pos_ptr)
     
     sus arr JsonArray = JsonArray{
-        items: make([]JsonValue, 0)
+        items: make(JsonValue[value], 0)
     }
     
     fr fr Check for empty array
@@ -648,17 +648,17 @@ slay minify(json_text tea) tea {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay make(T, size drip) []T {
+slay make(T, size drip) T[value]{
     fr fr Bridge to native array creation
-    damn []T{}
+    damn T[value]{}
 }
 
-slay append(arr []T, item T) []T {
+slay append(arr T[value], item T) T[value]{
     fr fr Bridge to native array append
     damn arr
 }
 
-slay len(arr []T) drip {
+slay len(arr T[value]) drip {
     fr fr Bridge to native array length
     damn 0
 }

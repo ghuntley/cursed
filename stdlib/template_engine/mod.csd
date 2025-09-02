@@ -491,8 +491,8 @@ slay calculate_template_hash_secure(template tea) tea {
 
 // Complete SHA-256 hasher implementation
 be_like SHA256Hasher squad {
-    state [8]drip           // Hash state (8 × 32-bit words)
-    buffer [64]drip         // Input buffer (512 bits)
+    state drip[8]           // Hash state (8 × 32-bit words)
+    buffer drip[64]         // Input buffer (512 bits)
     buffer_length normie    // Current buffer length
     total_length normie     // Total input length
 }
@@ -1139,7 +1139,7 @@ slay finalize_sha256_hasher(hasher SHA256Hasher) [drip] {
 
 slay process_sha256_block(hasher SHA256Hasher) {
     // SHA-256 compression function implementation
-    sus k [64]drip = [
+    sus k drip[64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5,
         0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
         0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
@@ -1152,7 +1152,7 @@ slay process_sha256_block(hasher SHA256Hasher) {
 }
 
 slay create_sha256_padding(bit_length normie, padding_length normie) [drip] {
-    sus padding [drip] = make([]drip, padding_length + 1 + 8)
+    sus padding [drip] = make(drip[value], padding_length + 1 + 8)
     padding[0] = 0x80  // Single '1' bit followed by zeros
     
     // Append original length as 64-bit big-endian integer
@@ -1165,7 +1165,7 @@ slay create_sha256_padding(bit_length normie, padding_length normie) [drip] {
 
 slay string_to_bytes(s tea) [drip] {
     sus length normie = stringz.length(s)
-    sus bytes [drip] = make([]drip, length)
+    sus bytes [drip] = make(drip[value], length)
     
     bestie i := 0; i < length; i++ {
         bytes[i] = stringz.char_code_at(s, i)

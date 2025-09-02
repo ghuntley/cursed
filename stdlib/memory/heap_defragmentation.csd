@@ -57,7 +57,7 @@ struct FragmentationAnalysis {
     spill external_fragmentation drip
     spill internal_fragmentation drip
     spill compaction_benefit_estimate drip
-    spill regions []MemoryRegion
+    spill regions MemoryRegion[value]
 }
 
 fr fr Advanced heap defragmenter
@@ -79,7 +79,7 @@ struct HeapDefragmenter {
     
     fr fr Relocation tracking
     spill relocation_table map<*void, *void>
-    spill relocation_entries []RelocationEntry
+    spill relocation_entries RelocationEntry[value]
     spill pinned_objects [](*void)
     
     fr fr Statistics
@@ -209,7 +209,7 @@ slay heap_defrag_analyze_fragmentation(defrag *HeapDefragmenter) FragmentationAn
     }
     
     fr fr Scan heap to identify memory regions
-    sus regions []MemoryRegion = heap_defrag_identify_regions(defrag)
+    sus regions MemoryRegion[value] = heap_defrag_identify_regions(defrag)
     analysis.regions = regions
     
     fr fr Calculate fragmentation metrics
@@ -253,8 +253,8 @@ slay heap_defrag_analyze_fragmentation(defrag *HeapDefragmenter) FragmentationAn
 }
 
 fr fr Identify memory regions for analysis
-slay heap_defrag_identify_regions(defrag *HeapDefragmenter) []MemoryRegion {
-    sus regions []MemoryRegion = []
+slay heap_defrag_identify_regions(defrag *HeapDefragmenter) MemoryRegion[value]{
+    sus regions MemoryRegion[value] = []
     sus region_size normie = normie(defrag.heap_size / 64)  fr fr 64 regions
     
     fr fr Divide heap into regions for analysis
@@ -494,9 +494,9 @@ slay heap_defrag_stop_world_compaction(defrag *HeapDefragmenter) {
 
 fr fr Compaction plan structure
 struct CompactionPlan {
-    spill source_regions []MemoryRegion
-    spill target_regions []MemoryRegion
-    spill move_operations []MoveOperation
+    spill source_regions MemoryRegion[value]
+    spill target_regions MemoryRegion[value]
+    spill move_operations MoveOperation[value]
     spill estimated_bytes_moved thicc
     spill estimated_time_cost thicc
     spill numa_optimized lit
@@ -524,7 +524,7 @@ slay heap_defrag_create_compaction_plan(defrag *HeapDefragmenter, analysis *Frag
     }
     
     fr fr Sort regions by compaction priority
-    sus sorted_regions []MemoryRegion = sort_regions_by_priority(analysis.regions)
+    sus sorted_regions MemoryRegion[value] = sort_regions_by_priority(analysis.regions)
     
     fr fr Select source regions (high fragmentation)
     bestie i := 0; i < sorted_regions.len() && i < 10; i = i + 1 {
@@ -537,7 +537,7 @@ slay heap_defrag_create_compaction_plan(defrag *HeapDefragmenter, analysis *Frag
     fr fr Create move operations
     bestie i := 0; i < plan.source_regions.len(); i = i + 1 {
         sus source MemoryRegion = plan.source_regions[i]
-        sus operations []MoveOperation = heap_defrag_plan_region_moves(defrag, &source)
+        sus operations MoveOperation[value] = heap_defrag_plan_region_moves(defrag, &source)
         
         bestie j := 0; j < operations.len(); j = j + 1 {
             plan.move_operations.push(operations[j])
@@ -556,9 +556,9 @@ slay heap_defrag_create_compaction_plan(defrag *HeapDefragmenter, analysis *Frag
 }
 
 fr fr Sort regions by compaction priority
-slay sort_regions_by_priority(regions []MemoryRegion) []MemoryRegion {
+slay sort_regions_by_priority(regions MemoryRegion[value]) MemoryRegion[value]{
     fr fr Simple bubble sort by compaction priority (descending)
-    sus sorted []MemoryRegion = []
+    sus sorted MemoryRegion[value] = []
     
     fr fr Copy regions
     bestie i := 0; i < regions.len(); i = i + 1 {
@@ -580,8 +580,8 @@ slay sort_regions_by_priority(regions []MemoryRegion) []MemoryRegion {
 }
 
 fr fr Plan moves for a specific region
-slay heap_defrag_plan_region_moves(defrag *HeapDefragmenter, region *MemoryRegion) []MoveOperation {
-    sus operations []MoveOperation = []
+slay heap_defrag_plan_region_moves(defrag *HeapDefragmenter, region *MemoryRegion) MoveOperation[value]{
+    sus operations MoveOperation[value] = []
     
     fr fr Scan region for objects to move
     sus current_addr *void = region.start_addr

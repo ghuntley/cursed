@@ -465,7 +465,7 @@ pg_pool_load := create_postgresql_pool(pg_config, 5)
 mysql_pool_load := create_mysql_pool(mysql_config, 5)
 
 fr fr Test pool exhaustion
-connections := []PostgreSQLConnection{}
+connections := PostgreSQLConnection[value]{}
 bestie i := 0; i < 6; i++ {
     pool_conn := get_pool_connection(&pg_pool_load)
     connections = append(connections, pool_conn)

@@ -6,7 +6,7 @@
 sus MAX_DIGIT_VALUE normie = 1000000000  // 10^9
 
 // Global storage for big integers (workaround for array return type issues)
-sus bigint_storage [1000]normie
+sus bigint_storage normie[1000]
 sus bigint_index normie = 0
 
 // Create new big integer from regular integer

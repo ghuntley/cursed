@@ -132,7 +132,7 @@ slay benchmark_end() drip {
 
 fr fr ===== ARRAY TESTING HELPERS =====
 
-slay assert_eq_array_int(actual []drip, expected []drip) lit {
+slay assert_eq_array_int(actual drip[value], expected drip[value]) lit {
     sus actual_len drip = len(actual)
     sus expected_len drip = len(expected)
     
@@ -157,7 +157,7 @@ slay assert_eq_array_int(actual []drip, expected []drip) lit {
     damn based
 }
 
-slay assert_eq_array_string(actual []tea, expected []tea) lit {
+slay assert_eq_array_string(actual tea[value], expected tea[value]) lit {
     sus actual_len drip = len(actual)
     sus expected_len drip = len(expected)
     

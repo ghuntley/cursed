@@ -3,23 +3,23 @@ fr fr Production-ready implementation with advanced array manipulation
 
 fr fr ===== CORE ARRAY CREATION =====
 
-slay new_array() []tea {
-    sus result []tea = []
+slay new_array() tea[value]{
+    sus result tea[value] = []
     damn result
 }
 
-slay array_new() []tea {
+slay array_new() tea[value]{
     damn new_array()
 }
 
-slay array_with_capacity(capacity normie) []tea {
+slay array_with_capacity(capacity normie) tea[value]{
     fr fr Create array with estimated capacity
-    sus result []tea = []
+    sus result tea[value] = []
     damn result
 }
 
-slay array_from_values(values ...tea) []tea {
-    sus result []tea = []
+slay array_from_values(values ...tea) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < len_variadic(values) {
         result = append_to_array(result, values[i])
@@ -28,8 +28,8 @@ slay array_from_values(values ...tea) []tea {
     damn result
 }
 
-slay array_fill(size normie, value tea) []tea {
-    sus result []tea = []
+slay array_fill(size normie, value tea) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < size {
         result = append_to_array(result, value)
@@ -38,8 +38,8 @@ slay array_fill(size normie, value tea) []tea {
     damn result
 }
 
-slay array_range(start normie, end normie) []normie {
-    sus result []normie = []
+slay array_range(start normie, end normie) normie[value]{
+    sus result normie[value] = []
     sus i normie = start
     bestie i < end {
         result = append_to_int_array(result, i)
@@ -48,12 +48,12 @@ slay array_range(start normie, end normie) []normie {
     damn result
 }
 
-slay array_range_step(start normie, end normie, step normie) []normie {
+slay array_range_step(start normie, end normie, step normie) normie[value]{
     check step <= 0 {
         damn []
     }
     
-    sus result []normie = []
+    sus result normie[value] = []
     sus i normie = start
     bestie i < end {
         result = append_to_int_array(result, i)
@@ -64,35 +64,35 @@ slay array_range_step(start normie, end normie, step normie) []normie {
 
 fr fr ===== BASIC ARRAY OPERATIONS =====
 
-slay length(arr []tea) normie {
+slay length(arr tea[value]) normie {
     damn len_array(arr)
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     damn length(arr)
 }
 
-slay size(arr []tea) normie {
+slay size(arr tea[value]) normie {
     damn length(arr)
 }
 
-slay is_empty(arr []tea) lit {
+slay is_empty(arr tea[value]) lit {
     damn length(arr) == 0
 }
 
-slay get(arr []tea, index normie) tea {
+slay get(arr tea[value], index normie) tea {
     check index < 0 || index >= length(arr) {
         damn ""
     }
     damn arr[index]
 }
 
-slay set(arr []tea, index normie, value tea) []tea {
+slay set(arr tea[value], index normie, value tea) tea[value]{
     check index < 0 || index >= length(arr) {
         damn arr
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr) {
         check i == index {
@@ -105,51 +105,51 @@ slay set(arr []tea, index normie, value tea) []tea {
     damn result
 }
 
-slay first(arr []tea) tea {
+slay first(arr tea[value]) tea {
     check is_empty(arr) {
         damn ""
     }
     damn arr[0]
 }
 
-slay last(arr []tea) tea {
+slay last(arr tea[value]) tea {
     check is_empty(arr) {
         damn ""
     }
     damn arr[length(arr) - 1]
 }
 
-slay push(arr []tea, value tea) []tea {
+slay push(arr tea[value], value tea) tea[value]{
     damn append_to_array(arr, value)
 }
 
-slay append(arr []tea, value tea) []tea {
+slay append(arr tea[value], value tea) tea[value]{
     damn push(arr, value)
 }
 
-slay pop(arr []tea) ([]tea, tea) {
+slay pop(arr tea[value]) (tea[value], tea) {
     check is_empty(arr) {
         damn (arr, "")
     }
     
     sus last_index normie = length(arr) - 1
     sus last_value tea = arr[last_index]
-    sus result []tea = slice(arr, 0, last_index)
+    sus result tea[value] = slice(arr, 0, last_index)
     damn (result, last_value)
 }
 
-slay shift(arr []tea) ([]tea, tea) {
+slay shift(arr tea[value]) (tea[value], tea) {
     check is_empty(arr) {
         damn (arr, "")
     }
     
     sus first_value tea = arr[0]
-    sus result []tea = slice(arr, 1, length(arr))
+    sus result tea[value] = slice(arr, 1, length(arr))
     damn (result, first_value)
 }
 
-slay unshift(arr []tea, value tea) []tea {
-    sus result []tea = []
+slay unshift(arr tea[value], value tea) tea[value]{
+    sus result tea[value] = []
     result = append_to_array(result, value)
     sus i normie = 0
     bestie i < length(arr) {
@@ -161,7 +161,7 @@ slay unshift(arr []tea, value tea) []tea {
 
 fr fr ===== ARRAY INSERTION AND REMOVAL =====
 
-slay insert(arr []tea, index normie, value tea) []tea {
+slay insert(arr tea[value], index normie, value tea) tea[value]{
     check index <= 0 {
         damn unshift(arr, value)
     }
@@ -169,7 +169,7 @@ slay insert(arr []tea, index normie, value tea) []tea {
         damn push(arr, value)
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = 0
     
     bestie i < index {
@@ -187,7 +187,7 @@ slay insert(arr []tea, index normie, value tea) []tea {
     damn result
 }
 
-slay insert_multiple(arr []tea, index normie, values []tea) []tea {
+slay insert_multiple(arr tea[value], index normie, values tea[value]) tea[value]{
     check index <= 0 {
         damn concat(values, arr)
     }
@@ -195,19 +195,19 @@ slay insert_multiple(arr []tea, index normie, values []tea) []tea {
         damn concat(arr, values)
     }
     
-    sus before []tea = slice(arr, 0, index)
-    sus after []tea = slice(arr, index, length(arr))
-    sus result []tea = concat(before, values)
+    sus before tea[value] = slice(arr, 0, index)
+    sus after tea[value] = slice(arr, index, length(arr))
+    sus result tea[value] = concat(before, values)
     damn concat(result, after)
 }
 
-slay remove(arr []tea, index normie) ([]tea, tea) {
+slay remove(arr tea[value], index normie) (tea[value], tea) {
     check index < 0 || index >= length(arr) {
         damn (arr, "")
     }
     
     sus removed_value tea = arr[index]
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = 0
     
     bestie i < length(arr) {
@@ -220,7 +220,7 @@ slay remove(arr []tea, index normie) ([]tea, tea) {
     damn (result, removed_value)
 }
 
-slay remove_range(arr []tea, start normie, count normie) []tea {
+slay remove_range(arr tea[value], start normie, count normie) tea[value]{
     check start < 0 || start >= length(arr) || count <= 0 {
         damn arr
     }
@@ -230,18 +230,18 @@ slay remove_range(arr []tea, start normie, count normie) []tea {
         end = length(arr)
     }
     
-    sus before []tea = slice(arr, 0, start)
-    sus after []tea = slice(arr, end, length(arr))
+    sus before tea[value] = slice(arr, 0, start)
+    sus after tea[value] = slice(arr, end, length(arr))
     damn concat(before, after)
 }
 
-slay clear(arr []tea) []tea {
+slay clear(arr tea[value]) tea[value]{
     damn new_array()
 }
 
 fr fr ===== ARRAY SLICING AND COPYING =====
 
-slay slice(arr []tea, start normie, end normie) []tea {
+slay slice(arr tea[value], start normie, end normie) tea[value]{
     check start < 0 {
         start = 0
     }
@@ -252,7 +252,7 @@ slay slice(arr []tea, start normie, end normie) []tea {
         damn new_array()
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus i normie = start
     bestie i < end {
         result = append_to_array(result, arr[i])
@@ -261,15 +261,15 @@ slay slice(arr []tea, start normie, end normie) []tea {
     damn result
 }
 
-slay subarray(arr []tea, start normie, length normie) []tea {
+slay subarray(arr tea[value], start normie, length normie) tea[value]{
     check length <= 0 {
         damn new_array()
     }
     damn slice(arr, start, start + length)
 }
 
-slay copy(arr []tea) []tea {
-    sus result []tea = []
+slay copy(arr tea[value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr) {
         result = append_to_array(result, arr[i])
@@ -278,14 +278,14 @@ slay copy(arr []tea) []tea {
     damn result
 }
 
-slay clone(arr []tea) []tea {
+slay clone(arr tea[value]) tea[value]{
     damn copy(arr)
 }
 
 fr fr ===== ARRAY CONCATENATION =====
 
-slay concat(arr1 []tea, arr2 []tea) []tea {
-    sus result []tea = copy(arr1)
+slay concat(arr1 tea[value], arr2 tea[value]) tea[value]{
+    sus result tea[value] = copy(arr1)
     sus i normie = 0
     bestie i < length(arr2) {
         result = append_to_array(result, arr2[i])
@@ -294,8 +294,8 @@ slay concat(arr1 []tea, arr2 []tea) []tea {
     damn result
 }
 
-slay concat_multiple(arrays [][]tea) []tea {
-    sus result []tea = []
+slay concat_multiple(arrays tea[value][value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < len_2d_array(arrays) {
         sus j normie = 0
@@ -308,7 +308,7 @@ slay concat_multiple(arrays [][]tea) []tea {
     damn result
 }
 
-slay join(arr []tea, separator tea) tea {
+slay join(arr tea[value], separator tea) tea {
     check is_empty(arr) {
         damn ""
     }
@@ -327,7 +327,7 @@ slay join(arr []tea, separator tea) tea {
 
 fr fr ===== SEARCHING OPERATIONS =====
 
-slay find(arr []tea, value tea) normie {
+slay find(arr tea[value], value tea) normie {
     sus i normie = 0
     bestie i < length(arr) {
         check arr[i] == value {
@@ -338,11 +338,11 @@ slay find(arr []tea, value tea) normie {
     damn -1
 }
 
-slay index_of(arr []tea, value tea) normie {
+slay index_of(arr tea[value], value tea) normie {
     damn find(arr, value)
 }
 
-slay last_index_of(arr []tea, value tea) normie {
+slay last_index_of(arr tea[value], value tea) normie {
     sus last_found normie = -1
     sus i normie = 0
     bestie i < length(arr) {
@@ -354,7 +354,7 @@ slay last_index_of(arr []tea, value tea) normie {
     damn last_found
 }
 
-slay find_index(arr []tea, predicate slay(tea) lit) normie {
+slay find_index(arr tea[value], predicate slay(tea) lit) normie {
     sus i normie = 0
     bestie i < length(arr) {
         check predicate(arr[i]) {
@@ -365,7 +365,7 @@ slay find_index(arr []tea, predicate slay(tea) lit) normie {
     damn -1
 }
 
-slay find_last_index(arr []tea, predicate slay(tea) lit) normie {
+slay find_last_index(arr tea[value], predicate slay(tea) lit) normie {
     sus last_found normie = -1
     sus i normie = 0
     bestie i < length(arr) {
@@ -377,15 +377,15 @@ slay find_last_index(arr []tea, predicate slay(tea) lit) normie {
     damn last_found
 }
 
-slay contains(arr []tea, value tea) lit {
+slay contains(arr tea[value], value tea) lit {
     damn find(arr, value) != -1
 }
 
-slay includes(arr []tea, value tea) lit {
+slay includes(arr tea[value], value tea) lit {
     damn contains(arr, value)
 }
 
-slay count(arr []tea, value tea) normie {
+slay count(arr tea[value], value tea) normie {
     sus count normie = 0
     sus i normie = 0
     bestie i < length(arr) {
@@ -399,8 +399,8 @@ slay count(arr []tea, value tea) normie {
 
 fr fr ===== ARRAY MANIPULATION =====
 
-slay reverse(arr []tea) []tea {
-    sus result []tea = []
+slay reverse(arr tea[value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = length(arr) - 1
     bestie i >= 0 {
         result = append_to_array(result, arr[i])
@@ -409,8 +409,8 @@ slay reverse(arr []tea) []tea {
     damn result
 }
 
-slay shuffle(arr []tea) []tea {
-    sus result []tea = copy(arr)
+slay shuffle(arr tea[value]) tea[value]{
+    sus result tea[value] = copy(arr)
     sus len normie = length(result)
     
     fr fr Fisher-Yates shuffle
@@ -426,19 +426,19 @@ slay shuffle(arr []tea) []tea {
     damn result
 }
 
-slay rotate_left(arr []tea, positions normie) []tea {
+slay rotate_left(arr tea[value], positions normie) tea[value]{
     sus len normie = length(arr)
     check len <= 1 || positions <= 0 {
         damn copy(arr)
     }
     
     positions = positions % len
-    sus left []tea = slice(arr, positions, len)
-    sus right []tea = slice(arr, 0, positions)
+    sus left tea[value] = slice(arr, positions, len)
+    sus right tea[value] = slice(arr, 0, positions)
     damn concat(left, right)
 }
 
-slay rotate_right(arr []tea, positions normie) []tea {
+slay rotate_right(arr tea[value], positions normie) tea[value]{
     sus len normie = length(arr)
     check len <= 1 || positions <= 0 {
         damn copy(arr)
@@ -450,8 +450,8 @@ slay rotate_right(arr []tea, positions normie) []tea {
 
 fr fr ===== FUNCTIONAL OPERATIONS =====
 
-slay map(arr []tea, mapper slay(tea) tea) []tea {
-    sus result []tea = []
+slay map(arr tea[value], mapper slay(tea) tea) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr) {
         sus mapped tea = mapper(arr[i])
@@ -461,8 +461,8 @@ slay map(arr []tea, mapper slay(tea) tea) []tea {
     damn result
 }
 
-slay filter(arr []tea, predicate slay(tea) lit) []tea {
-    sus result []tea = []
+slay filter(arr tea[value], predicate slay(tea) lit) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr) {
         check predicate(arr[i]) {
@@ -473,7 +473,7 @@ slay filter(arr []tea, predicate slay(tea) lit) []tea {
     damn result
 }
 
-slay reduce(arr []tea, initial tea, reducer slay(tea, tea) tea) tea {
+slay reduce(arr tea[value], initial tea, reducer slay(tea, tea) tea) tea {
     sus accumulator tea = initial
     sus i normie = 0
     bestie i < length(arr) {
@@ -483,7 +483,7 @@ slay reduce(arr []tea, initial tea, reducer slay(tea, tea) tea) tea {
     damn accumulator
 }
 
-slay reduce_right(arr []tea, initial tea, reducer slay(tea, tea) tea) tea {
+slay reduce_right(arr tea[value], initial tea, reducer slay(tea, tea) tea) tea {
     sus accumulator tea = initial
     sus i normie = length(arr) - 1
     bestie i >= 0 {
@@ -493,7 +493,7 @@ slay reduce_right(arr []tea, initial tea, reducer slay(tea, tea) tea) tea {
     damn accumulator
 }
 
-slay for_each(arr []tea, action slay(tea) cringe) cringe {
+slay for_each(arr tea[value], action slay(tea) cringe) cringe {
     sus i normie = 0
     bestie i < length(arr) {
         action(arr[i])
@@ -502,7 +502,7 @@ slay for_each(arr []tea, action slay(tea) cringe) cringe {
     damn cringe
 }
 
-slay for_each_indexed(arr []tea, action slay(normie, tea) cringe) cringe {
+slay for_each_indexed(arr tea[value], action slay(normie, tea) cringe) cringe {
     sus i normie = 0
     bestie i < length(arr) {
         action(i, arr[i])
@@ -513,7 +513,7 @@ slay for_each_indexed(arr []tea, action slay(normie, tea) cringe) cringe {
 
 fr fr ===== ARRAY TESTING =====
 
-slay every(arr []tea, predicate slay(tea) lit) lit {
+slay every(arr tea[value], predicate slay(tea) lit) lit {
     sus i normie = 0
     bestie i < length(arr) {
         check !predicate(arr[i]) {
@@ -524,7 +524,7 @@ slay every(arr []tea, predicate slay(tea) lit) lit {
     damn based
 }
 
-slay some(arr []tea, predicate slay(tea) lit) lit {
+slay some(arr tea[value], predicate slay(tea) lit) lit {
     sus i normie = 0
     bestie i < length(arr) {
         check predicate(arr[i]) {
@@ -535,25 +535,25 @@ slay some(arr []tea, predicate slay(tea) lit) lit {
     damn cringe
 }
 
-slay none(arr []tea, predicate slay(tea) lit) lit {
+slay none(arr tea[value], predicate slay(tea) lit) lit {
     damn !some(arr, predicate)
 }
 
-slay all(arr []tea, predicate slay(tea) lit) lit {
+slay all(arr tea[value], predicate slay(tea) lit) lit {
     damn every(arr, predicate)
 }
 
-slay any(arr []tea, predicate slay(tea) lit) lit {
+slay any(arr tea[value], predicate slay(tea) lit) lit {
     damn some(arr, predicate)
 }
 
 fr fr ===== ARRAY SORTING =====
 
-slay sort(arr []tea) []tea {
+slay sort(arr tea[value]) tea[value]{
     damn sort_strings(arr)
 }
 
-slay sort_strings(arr []tea) []tea {
+slay sort_strings(arr tea[value]) tea[value]{
     sus len normie = length(arr)
     check len <= 1 {
         damn copy(arr)
@@ -561,9 +561,9 @@ slay sort_strings(arr []tea) []tea {
     
     fr fr Quick sort implementation
     sus pivot tea = arr[len / 2]
-    sus less []tea = []
-    sus equal []tea = []
-    sus greater []tea = []
+    sus less tea[value] = []
+    sus equal tea[value] = []
+    sus greater tea[value] = []
     
     sus i normie = 0
     bestie i < len {
@@ -578,14 +578,14 @@ slay sort_strings(arr []tea) []tea {
         i = i + 1
     }
     
-    sus sorted_less []tea = sort_strings(less)
-    sus sorted_greater []tea = sort_strings(greater)
+    sus sorted_less tea[value] = sort_strings(less)
+    sus sorted_greater tea[value] = sort_strings(greater)
     
-    sus result []tea = concat(sorted_less, equal)
+    sus result tea[value] = concat(sorted_less, equal)
     damn concat(result, sorted_greater)
 }
 
-slay sort_numbers(arr []normie) []normie {
+slay sort_numbers(arr normie[value]) normie[value]{
     sus len normie = len_int_array(arr)
     check len <= 1 {
         damn copy_int_array(arr)
@@ -593,9 +593,9 @@ slay sort_numbers(arr []normie) []normie {
     
     fr fr Quick sort for numbers
     sus pivot normie = arr[len / 2]
-    sus less []normie = []
-    sus equal []normie = []
-    sus greater []normie = []
+    sus less normie[value] = []
+    sus equal normie[value] = []
+    sus greater normie[value] = []
     
     sus i normie = 0
     bestie i < len {
@@ -610,14 +610,14 @@ slay sort_numbers(arr []normie) []normie {
         i = i + 1
     }
     
-    sus sorted_less []normie = sort_numbers(less)
-    sus sorted_greater []normie = sort_numbers(greater)
+    sus sorted_less normie[value] = sort_numbers(less)
+    sus sorted_greater normie[value] = sort_numbers(greater)
     
-    sus result []normie = concat_int_arrays(sorted_less, equal)
+    sus result normie[value] = concat_int_arrays(sorted_less, equal)
     damn concat_int_arrays(result, sorted_greater)
 }
 
-slay sort_by(arr []tea, key_func slay(tea) tea) []tea {
+slay sort_by(arr tea[value], key_func slay(tea) tea) tea[value]{
     fr fr Create pairs of (key, original_value)
     sus pairs [](tea, tea) = []
     sus i normie = 0
@@ -632,7 +632,7 @@ slay sort_by(arr []tea, key_func slay(tea) tea) []tea {
     sus sorted_pairs [](tea, tea) = sort_pairs_by_first(pairs)
     
     fr fr Extract values
-    sus result []tea = []
+    sus result tea[value] = []
     i = 0
     bestie i < len_pair_array(sorted_pairs) {
         sus (key, value) = sorted_pairs[i]
@@ -645,7 +645,7 @@ slay sort_by(arr []tea, key_func slay(tea) tea) []tea {
 
 fr fr ===== ARRAY COMPARISON =====
 
-slay equals(arr1 []tea, arr2 []tea) lit {
+slay equals(arr1 tea[value], arr2 tea[value]) lit {
     check length(arr1) != length(arr2) {
         damn cringe
     }
@@ -660,7 +660,7 @@ slay equals(arr1 []tea, arr2 []tea) lit {
     damn based
 }
 
-slay starts_with(arr []tea, prefix []tea) lit {
+slay starts_with(arr tea[value], prefix tea[value]) lit {
     check length(prefix) > length(arr) {
         damn cringe
     }
@@ -675,7 +675,7 @@ slay starts_with(arr []tea, prefix []tea) lit {
     damn based
 }
 
-slay ends_with(arr []tea, suffix []tea) lit {
+slay ends_with(arr tea[value], suffix tea[value]) lit {
     sus arr_len normie = length(arr)
     sus suffix_len normie = length(suffix)
     
@@ -696,8 +696,8 @@ slay ends_with(arr []tea, suffix []tea) lit {
 
 fr fr ===== ARRAY UTILITIES =====
 
-slay unique(arr []tea) []tea {
-    sus result []tea = []
+slay unique(arr tea[value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr) {
         check !contains(result, arr[i]) {
@@ -708,12 +708,12 @@ slay unique(arr []tea) []tea {
     damn result
 }
 
-slay distinct(arr []tea) []tea {
+slay distinct(arr tea[value]) tea[value]{
     damn unique(arr)
 }
 
-slay intersection(arr1 []tea, arr2 []tea) []tea {
-    sus result []tea = []
+slay intersection(arr1 tea[value], arr2 tea[value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr1) {
         check contains(arr2, arr1[i]) && !contains(result, arr1[i]) {
@@ -724,8 +724,8 @@ slay intersection(arr1 []tea, arr2 []tea) []tea {
     damn result
 }
 
-slay union(arr1 []tea, arr2 []tea) []tea {
-    sus result []tea = unique(arr1)
+slay union(arr1 tea[value], arr2 tea[value]) tea[value]{
+    sus result tea[value] = unique(arr1)
     sus i normie = 0
     bestie i < length(arr2) {
         check !contains(result, arr2[i]) {
@@ -736,8 +736,8 @@ slay union(arr1 []tea, arr2 []tea) []tea {
     damn result
 }
 
-slay difference(arr1 []tea, arr2 []tea) []tea {
-    sus result []tea = []
+slay difference(arr1 tea[value], arr2 tea[value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < length(arr1) {
         check !contains(arr2, arr1[i]) {
@@ -748,24 +748,24 @@ slay difference(arr1 []tea, arr2 []tea) []tea {
     damn result
 }
 
-slay symmetric_difference(arr1 []tea, arr2 []tea) []tea {
-    sus diff1 []tea = difference(arr1, arr2)
-    sus diff2 []tea = difference(arr2, arr1)
+slay symmetric_difference(arr1 tea[value], arr2 tea[value]) tea[value]{
+    sus diff1 tea[value] = difference(arr1, arr2)
+    sus diff2 tea[value] = difference(arr2, arr1)
     damn concat(diff1, diff2)
 }
 
 fr fr ===== ARRAY CHUNKING AND GROUPING =====
 
-slay chunk(arr []tea, size normie) [][]tea {
+slay chunk(arr tea[value], size normie) tea[value][value] {
     check size <= 0 {
         damn []
     }
     
-    sus result [][]tea = []
+    sus result tea[value][value] = []
     sus i normie = 0
     
     bestie i < length(arr) {
-        sus chunk_array []tea = []
+        sus chunk_array tea[value] = []
         sus end normie = i + size
         check end > length(arr) {
             end = length(arr)
@@ -784,8 +784,8 @@ slay chunk(arr []tea, size normie) [][]tea {
     damn result
 }
 
-slay flatten(nested_arr [][]tea) []tea {
-    sus result []tea = []
+slay flatten(nested_arr tea[value][value]) tea[value]{
+    sus result tea[value] = []
     sus i normie = 0
     bestie i < len_2d_array(nested_arr) {
         sus j normie = 0
@@ -798,16 +798,16 @@ slay flatten(nested_arr [][]tea) []tea {
     damn result
 }
 
-slay group_by(arr []tea, key_func slay(tea) tea) [][]tea {
-    sus groups [][]tea = []
-    sus processed []tea = []
+slay group_by(arr tea[value], key_func slay(tea) tea) tea[value][value] {
+    sus groups tea[value][value] = []
+    sus processed tea[value] = []
     
     sus i normie = 0
     bestie i < length(arr) {
         sus item tea = arr[i]
         check !contains(processed, item) {
             sus key tea = key_func(item)
-            sus group []tea = []
+            sus group tea[value] = []
             
             sus j normie = 0
             bestie j < length(arr) {
@@ -828,7 +828,7 @@ slay group_by(arr []tea, key_func slay(tea) tea) [][]tea {
 
 fr fr ===== ARRAY STATISTICS =====
 
-slay sum_numbers(arr []normie) normie {
+slay sum_numbers(arr normie[value]) normie {
     sus total normie = 0
     sus i normie = 0
     bestie i < len_int_array(arr) {
@@ -838,7 +838,7 @@ slay sum_numbers(arr []normie) normie {
     damn total
 }
 
-slay average_numbers(arr []normie) meal {
+slay average_numbers(arr normie[value]) meal {
     sus len normie = len_int_array(arr)
     check len == 0 {
         damn 0.0
@@ -847,7 +847,7 @@ slay average_numbers(arr []normie) meal {
     damn sum / len
 }
 
-slay min_numbers(arr []normie) normie {
+slay min_numbers(arr normie[value]) normie {
     sus len normie = len_int_array(arr)
     check len == 0 {
         damn 0
@@ -864,7 +864,7 @@ slay min_numbers(arr []normie) normie {
     damn min_val
 }
 
-slay max_numbers(arr []normie) normie {
+slay max_numbers(arr normie[value]) normie {
     sus len normie = len_int_array(arr)
     check len == 0 {
         damn 0
@@ -905,15 +905,15 @@ slay random_int_range(min normie, max normie) normie {
 
 fr fr ===== TYPE-SPECIFIC ARRAY FUNCTIONS =====
 
-slay len_array(arr []tea) normie {
+slay len_array(arr tea[value]) normie {
     damn runtime_array_length(arr)
 }
 
-slay len_int_array(arr []normie) normie {
+slay len_int_array(arr normie[value]) normie {
     damn runtime_int_array_length(arr)
 }
 
-slay len_2d_array(arr [][]tea) normie {
+slay len_2d_array(arr tea[value][value]) normie {
     damn runtime_2d_array_length(arr)
 }
 
@@ -921,15 +921,15 @@ slay len_pair_array(arr [](tea, tea)) normie {
     damn runtime_pair_array_length(arr)
 }
 
-slay append_to_array(arr []tea, item tea) []tea {
+slay append_to_array(arr tea[value], item tea) tea[value]{
     damn runtime_array_append(arr, item)
 }
 
-slay append_to_int_array(arr []normie, item normie) []normie {
+slay append_to_int_array(arr normie[value], item normie) normie[value]{
     damn runtime_int_array_append(arr, item)
 }
 
-slay append_to_2d_array(arr [][]tea, item []tea) [][]tea {
+slay append_to_2d_array(arr tea[value][value], item tea[value]) tea[value][value] {
     damn runtime_2d_array_append(arr, item)
 }
 
@@ -937,8 +937,8 @@ slay append_to_pair_array(arr [](tea, tea), item (tea, tea)) [](tea, tea) {
     damn runtime_pair_array_append(arr, item)
 }
 
-slay copy_int_array(arr []normie) []normie {
-    sus result []normie = []
+slay copy_int_array(arr normie[value]) normie[value]{
+    sus result normie[value] = []
     sus i normie = 0
     bestie i < len_int_array(arr) {
         result = append_to_int_array(result, arr[i])
@@ -947,8 +947,8 @@ slay copy_int_array(arr []normie) []normie {
     damn result
 }
 
-slay concat_int_arrays(arr1 []normie, arr2 []normie) []normie {
-    sus result []normie = copy_int_array(arr1)
+slay concat_int_arrays(arr1 normie[value], arr2 normie[value]) normie[value]{
+    sus result normie[value] = copy_int_array(arr1)
     sus i normie = 0
     bestie i < len_int_array(arr2) {
         result = append_to_int_array(result, arr2[i])
@@ -995,15 +995,15 @@ slay len_variadic(values ...tea) normie {
 
 fr fr ===== RUNTIME INTERFACE FUNCTIONS =====
 
-slay runtime_array_length(arr []tea) normie {
+slay runtime_array_length(arr tea[value]) normie {
     damn core.array_length(arr)
 }
 
-slay runtime_int_array_length(arr []normie) normie {
+slay runtime_int_array_length(arr normie[value]) normie {
     damn core.int_array_length(arr)
 }
 
-slay runtime_2d_array_length(arr [][]tea) normie {
+slay runtime_2d_array_length(arr tea[value][value]) normie {
     damn core.array_2d_length(arr)
 }
 
@@ -1011,15 +1011,15 @@ slay runtime_pair_array_length(arr [](tea, tea)) normie {
     damn core.pair_array_length(arr)
 }
 
-slay runtime_array_append(arr []tea, item tea) []tea {
+slay runtime_array_append(arr tea[value], item tea) tea[value]{
     damn core.array_append(arr, item)
 }
 
-slay runtime_int_array_append(arr []normie, item normie) []normie {
+slay runtime_int_array_append(arr normie[value], item normie) normie[value]{
     damn core.int_array_append(arr, item)
 }
 
-slay runtime_2d_array_append(arr [][]tea, item []tea) [][]tea {
+slay runtime_2d_array_append(arr tea[value][value], item tea[value]) tea[value][value] {
     damn core.array_2d_append(arr, item)
 }
 
@@ -1041,70 +1041,70 @@ slay runtime_get_random_int() normie {
 
 fr fr ===== LEGACY COMPATIBILITY =====
 
-slay array_new() []tea {
+slay array_new() tea[value]{
     damn new_array()
 }
 
-slay array_length(arr []tea) normie {
+slay array_length(arr tea[value]) normie {
     damn length(arr)
 }
 
-slay array_is_empty(arr []tea) lit {
+slay array_is_empty(arr tea[value]) lit {
     damn is_empty(arr)
 }
 
-slay array_get(arr []tea, index normie) tea {
+slay array_get(arr tea[value], index normie) tea {
     damn get(arr, index)
 }
 
-slay array_set(arr []tea, index normie, value tea) []tea {
+slay array_set(arr tea[value], index normie, value tea) tea[value]{
     damn set(arr, index, value)
 }
 
-slay array_push(arr []tea, value tea) []tea {
+slay array_push(arr tea[value], value tea) tea[value]{
     damn push(arr, value)
 }
 
-slay array_pop(arr []tea) ([]tea, tea) {
+slay array_pop(arr tea[value]) (tea[value], tea) {
     damn pop(arr)
 }
 
-slay array_find(arr []tea, value tea) normie {
+slay array_find(arr tea[value], value tea) normie {
     damn find(arr, value)
 }
 
-slay array_contains(arr []tea, value tea) lit {
+slay array_contains(arr tea[value], value tea) lit {
     damn contains(arr, value)
 }
 
-slay array_reverse(arr []tea) []tea {
+slay array_reverse(arr tea[value]) tea[value]{
     damn reverse(arr)
 }
 
-slay array_slice(arr []tea, start normie, end normie) []tea {
+slay array_slice(arr tea[value], start normie, end normie) tea[value]{
     damn slice(arr, start, end)
 }
 
-slay array_concat(arr1 []tea, arr2 []tea) []tea {
+slay array_concat(arr1 tea[value], arr2 tea[value]) tea[value]{
     damn concat(arr1, arr2)
 }
 
-slay array_join(arr []tea, separator tea) tea {
+slay array_join(arr tea[value], separator tea) tea {
     damn join(arr, separator)
 }
 
-slay array_sort(arr []tea) []tea {
+slay array_sort(arr tea[value]) tea[value]{
     damn sort(arr)
 }
 
-slay array_filter(arr []tea, predicate slay(tea) lit) []tea {
+slay array_filter(arr tea[value], predicate slay(tea) lit) tea[value]{
     damn filter(arr, predicate)
 }
 
-slay array_map(arr []tea, mapper slay(tea) tea) []tea {
+slay array_map(arr tea[value], mapper slay(tea) tea) tea[value]{
     damn map(arr, mapper)
 }
 
-slay array_reduce(arr []tea, initial tea, reducer slay(tea, tea) tea) tea {
+slay array_reduce(arr tea[value], initial tea, reducer slay(tea, tea) tea) tea {
     damn reduce(arr, initial, reducer)
 }

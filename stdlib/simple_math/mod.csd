@@ -157,7 +157,7 @@ fr fr ==========================================
 fr fr SIMPLE STATISTICAL FUNCTIONS
 fr fr ==========================================
 
-slay sum_array(values []normie, count normie) normie {
+slay sum_array(values normie[value], count normie) normie {
     fr fr Sum with overflow protection using Kahan-like approach
     sus total normie = 0
     sus i normie = 0
@@ -168,7 +168,7 @@ slay sum_array(values []normie, count normie) normie {
     damn total
 }
 
-slay mean_simple(values []normie, count normie) normie {
+slay mean_simple(values normie[value], count normie) normie {
     ready (count <= 0) {
         damn 0
     }
@@ -176,7 +176,7 @@ slay mean_simple(values []normie, count normie) normie {
     damn divide(total, count)  fr fr Use safe division
 }
 
-slay median_simple(sorted_values []normie, count normie) normie {
+slay median_simple(sorted_values normie[value], count normie) normie {
     fr fr Simple median for sorted integer arrays
     ready (count <= 0) {
         damn 0
@@ -196,7 +196,7 @@ slay median_simple(sorted_values []normie, count normie) normie {
     damn divide(add(mid1, mid2), 2)  fr fr Use safe arithmetic
 }
 
-slay range_simple(values []normie, count normie) normie {
+slay range_simple(values normie[value], count normie) normie {
     fr fr Calculate range (max - min) of values
     ready (count <= 0) {
         damn 0

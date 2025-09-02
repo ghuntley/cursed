@@ -86,7 +86,7 @@ squad Connection {
             }
             5 -> {
                 // MD5 password
-                sus salt []lit = read_bytes(4) fam {
+                sus salt lit[value] = read_bytes(4) fam {
                     when _ -> yikes "failed to read salt"
                 }
                 sus hashed_password tea = md5_password(config.username, config.password, salt)
@@ -104,7 +104,7 @@ squad Connection {
         }
     }
     
-    slay query(sql tea, params []drip) yikes<[]Row> {
+    slay query(sql tea, params drip[value]) yikes<Row[value]> {
         // Simple query protocol
         send_query(sql) fam {
             when err -> yikes "failed to send query: " + err
@@ -137,7 +137,7 @@ squad Connection {
         damn stmt
     }
     
-    slay execute_prepared(name tea, params []drip) yikes<[]Row> {
+    slay execute_prepared(name tea, params drip[value]) yikes<Row[value]> {
         sus stmt PreparedStatement = self.prepared_statements[name] fam {
             when _ -> yikes "prepared statement not found: " + name
         }
@@ -189,14 +189,14 @@ squad Connection {
     
     // Private protocol methods
     slay send_startup_message(params map<tea, tea>) yikes<tea> {
-        sus message []lit = build_startup_message(params)
+        sus message lit[value] = build_startup_message(params)
         self.socket.write(message) fam {
             when _ -> yikes "failed to send startup message"
         }
     }
     
     slay send_query(sql tea) yikes<tea> {
-        sus message []lit = build_query_message(sql)
+        sus message lit[value] = build_query_message(sql)
         self.socket.write(message) fam {
             when _ -> yikes "failed to send query"
         }
@@ -258,8 +258,8 @@ squad Connection {
 squad PreparedStatement {
     name tea
     sql tea
-    parameter_types []drip
-    result_columns []ColumnInfo
+    parameter_types drip[value]
+    result_columns ColumnInfo[value]
 }
 
 squad ColumnInfo {
@@ -401,7 +401,7 @@ squad Pool {
         }
     }
     
-    slay query(sql tea, params []drip) yikes<[]Row> {
+    slay query(sql tea, params drip[value]) yikes<Row[value]> {
         sus conn Connection = self.acquire() fam {
             when err -> yikes "failed to acquire connection: " + err
         }
@@ -507,7 +507,7 @@ slay is_connection_healthy(conn Connection) lit {
     damn based
 }
 
-slay md5_password(username tea, password tea, salt []lit) tea {
+slay md5_password(username tea, password tea, salt lit[value]) tea {
     // MD5 hash implementation for PostgreSQL auth
     sus combined tea = password + username
     sus hash1 tea = cryptz.md5(combined)
@@ -516,9 +516,9 @@ slay md5_password(username tea, password tea, salt []lit) tea {
 }
 
 // Protocol message builders
-slay build_startup_message(params map<tea, tea>) []lit {
+slay build_startup_message(params map<tea, tea>) lit[value]{
     // Build PostgreSQL startup message
-    sus message []lit = []
+    sus message lit[value] = []
     
     // Protocol version (3.0)
     message = append(message, encode_int32(196608))
@@ -534,15 +534,15 @@ slay build_startup_message(params map<tea, tea>) []lit {
     
     // Prepend length
     sus length drip = len(message) + 4
-    sus result []lit = encode_int32(length)
+    sus result lit[value] = encode_int32(length)
     result = append(result, message...)
     
     damn result
 }
 
-slay build_query_message(sql tea) []lit {
-    sus message []lit = ['Q']
-    sus sql_bytes []lit = encode_cstring(sql)
+slay build_query_message(sql tea) lit[value]{
+    sus message lit[value] = ['Q']
+    sus sql_bytes lit[value] = encode_cstring(sql)
     sus length drip = len(sql_bytes) + 4
     
     message = append(message, encode_int32(length))

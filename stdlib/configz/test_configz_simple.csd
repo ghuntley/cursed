@@ -217,7 +217,7 @@ slay test_validation() {
     
     fr fr Test required keys validation
     sus config_with_keys tea = "{\"database_url\":\"postgres://localhost\",\"api_key\":\"secret\"}"
-    sus required_keys []tea = ["database_url", "api_key"]
+    sus required_keys tea[value] = ["database_url", "api_key"]
     sus validation_errors tea = validate_required_keys(config_with_keys, required_keys)
     assert_eq_string(validation_errors, "")
     
@@ -346,8 +346,8 @@ slay test_simple_schema() {
     test_start("Simple Schema Validation")
     
     fr fr Create simple schema
-    sus required_keys []tea = ["database_url", "api_key"]
-    sus optional_defaults []tea = ["debug:false", "port:3000"]
+    sus required_keys tea[value] = ["database_url", "api_key"]
+    sus optional_defaults tea[value] = ["debug:false", "port:3000"]
     sus schema tea = create_simple_schema(required_keys, optional_defaults)
     assert_true(validate_configuration(schema))
     

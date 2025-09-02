@@ -8,9 +8,9 @@ yeet "testz"
 // ================================
 
 be_like BTreeNode squad {
-    keys []tea
-    values []tea
-    children []BTreeNode
+    keys tea[value]
+    values tea[value]
+    children BTreeNode[value]
     is_leaf lit
     key_count normie
 }
@@ -31,9 +31,9 @@ slay btree_new(min_degree normie) BTree {
 
 slay btree_node_new(is_leaf lit) BTreeNode {
     sus node BTreeNode
-    node.keys = make([]tea, 0)
-    node.values = make([]tea, 0)
-    node.children = make([]BTreeNode, 0)
+    node.keys = make(tea[value], 0)
+    node.values = make(tea[value], 0)
+    node.children = make(BTreeNode[value], 0)
     node.is_leaf = is_leaf
     node.key_count = 0
     damn node
@@ -320,13 +320,13 @@ be_like PriorityQueueItem squad {
 }
 
 be_like PriorityQueue squad {
-    items []PriorityQueueItem
+    items PriorityQueueItem[value]
     size normie
 }
 
 slay priority_queue_new() PriorityQueue {
     sus pq PriorityQueue
-    pq.items = make([]PriorityQueueItem, 0)
+    pq.items = make(PriorityQueueItem[value], 0)
     pq.size = 0
     damn pq
 }
@@ -420,14 +420,14 @@ slay priority_queue_size(pq PriorityQueue) normie {
 // ================================
 
 be_like ConcurrentHashMap squad {
-    segments []HashMap
+    segments HashMap[value]
     segment_count normie
     size normie
 }
 
 slay concurrent_hashmap_new(segment_count normie) ConcurrentHashMap {
     sus chm ConcurrentHashMap
-    chm.segments = make([]HashMap, segment_count)
+    chm.segments = make(HashMap[value], segment_count)
     chm.segment_count = segment_count
     chm.size = 0
     
@@ -505,9 +505,9 @@ slay string_compare(s1 tea, s2 tea) normie {
     }
 }
 
-slay btree_insert_at(arr []BTreeNode, index normie, item BTreeNode) []BTreeNode {
+slay btree_insert_at(arr BTreeNode[value], index normie, item BTreeNode) BTreeNode[value]{
     // Insert item at specific index
-    sus result []BTreeNode = make([]BTreeNode, len(arr) + 1)
+    sus result BTreeNode[value] = make(BTreeNode[value], len(arr) + 1)
     sus i normie = 0
     
     bestie i < index {
@@ -525,9 +525,9 @@ slay btree_insert_at(arr []BTreeNode, index normie, item BTreeNode) []BTreeNode 
     damn result
 }
 
-slay btree_insert_at_tea(arr []tea, index normie, item tea) []tea {
+slay btree_insert_at_tea(arr tea[value], index normie, item tea) tea[value]{
     // Insert item at specific index
-    sus result []tea = make([]tea, len(arr) + 1)
+    sus result tea[value] = make(tea[value], len(arr) + 1)
     sus i normie = 0
     
     bestie i < index {

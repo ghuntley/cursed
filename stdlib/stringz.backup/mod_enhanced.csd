@@ -66,7 +66,7 @@ slay concat(a tea, b tea) tea {
     damn a + b
 }
 
-slay concat_multiple(strings []tea) tea {
+slay concat_multiple(strings tea[value]) tea {
     check len_array(strings) == 0 {
         damn ""
     }
@@ -94,7 +94,7 @@ slay repeat(s tea, count normie) tea {
     damn result
 }
 
-slay join(strings []tea, separator tea) tea {
+slay join(strings tea[value], separator tea) tea {
     check len_array(strings) == 0 {
         damn ""
     }
@@ -513,10 +513,10 @@ slay center(s tea, target_length normie, pad_char tea) tea {
 
 fr fr ===== STRING SPLITTING =====
 
-slay split(s tea, delimiter tea) []tea {
+slay split(s tea, delimiter tea) tea[value]{
     check delimiter == "" {
         fr fr Split into individual characters
-        sus result []tea = []
+        sus result tea[value] = []
         sus i normie = 0
         bestie i < length(s) {
             sus char_str tea = char_to_string(char_at(s, i))
@@ -526,7 +526,7 @@ slay split(s tea, delimiter tea) []tea {
         damn result
     }
     
-    sus result []tea = []
+    sus result tea[value] = []
     sus s_len normie = length(s)
     sus delim_len normie = length(delimiter)
     sus start normie = 0
@@ -552,11 +552,11 @@ slay split(s tea, delimiter tea) []tea {
     damn result
 }
 
-slay split_lines(s tea) []tea {
+slay split_lines(s tea) tea[value]{
     damn split(s, "\n")
 }
 
-slay split_words(s tea) []tea {
+slay split_words(s tea) tea[value]{
     damn split(trim(s), " ")
 }
 
@@ -591,7 +591,7 @@ slay reverse(s tea) tea {
 }
 
 slay shuffle(s tea) tea {
-    sus chars []tea = split(s, "")
+    sus chars tea[value] = split(s, "")
     sus result tea = ""
     
     fr fr Simple shuffle using current time as seed
@@ -614,8 +614,8 @@ slay shuffle(s tea) tea {
 }
 
 slay sort_chars(s tea) tea {
-    sus chars []tea = split(s, "")
-    sus sorted_chars []tea = array_sort_strings(chars)
+    sus chars tea[value] = split(s, "")
+    sus sorted_chars tea[value] = array_sort_strings(chars)
     damn join(sorted_chars, "")
 }
 
@@ -869,12 +869,12 @@ slay count_chars(s tea) normie {
 }
 
 slay count_words(s tea) normie {
-    sus words []tea = split_words(s)
+    sus words tea[value] = split_words(s)
     damn len_array(words)
 }
 
 slay count_lines(s tea) normie {
-    sus lines []tea = split_lines(s)
+    sus lines tea[value] = split_lines(s)
     damn len_array(lines)
 }
 
@@ -963,19 +963,19 @@ slay hex_char_to_value(c normie) normie {
 
 fr fr ===== ARRAY HELPER FUNCTIONS =====
 
-slay len_array(arr []tea) normie {
+slay len_array(arr tea[value]) normie {
     damn runtime_array_length(arr)
 }
 
-slay append_to_array(arr []tea, item tea) []tea {
+slay append_to_array(arr tea[value], item tea) tea[value]{
     damn runtime_array_append(arr, item)
 }
 
-slay array_set_at(arr []tea, index normie, value tea) []tea {
+slay array_set_at(arr tea[value], index normie, value tea) tea[value]{
     damn runtime_array_set(arr, index, value)
 }
 
-slay array_sort_strings(arr []tea) []tea {
+slay array_sort_strings(arr tea[value]) tea[value]{
     damn runtime_array_sort_strings(arr)
 }
 
@@ -1001,19 +1001,19 @@ slay runtime_get_current_time() normie {
     damn core.get_current_time()
 }
 
-slay runtime_array_length(arr []tea) normie {
+slay runtime_array_length(arr tea[value]) normie {
     damn core.array_length(arr)
 }
 
-slay runtime_array_append(arr []tea, item tea) []tea {
+slay runtime_array_append(arr tea[value], item tea) tea[value]{
     damn core.array_append(arr, item)
 }
 
-slay runtime_array_set(arr []tea, index normie, value tea) []tea {
+slay runtime_array_set(arr tea[value], index normie, value tea) tea[value]{
     damn core.array_set(arr, index, value)
 }
 
-slay runtime_array_sort_strings(arr []tea) []tea {
+slay runtime_array_sort_strings(arr tea[value]) tea[value]{
     damn core.array_sort_strings(arr)
 }
 

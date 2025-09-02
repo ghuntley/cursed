@@ -32,7 +32,7 @@ slay test_string_manipulation() {
     assert_eq_string(string_energy.ReplaceAll("hello world world", "world", "universe"), "hello universe universe")
     
     fr fr Test Join/Split
-    sus parts := []tea{"hello", "world", "test"}
+    sus parts := tea[value]{"hello", "world", "test"}
     assert_eq_string(string_energy.Join(parts, " "), "hello world test")
     
     sus split := string_energy.Split("hello,world,test", ",")

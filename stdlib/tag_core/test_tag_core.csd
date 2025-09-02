@@ -18,7 +18,7 @@ slay test_html_escaping() {
     assert_eq_string(unescaped, "<>&\"'")
     
     fr fr Test bytes escaping
-    sus bytes_escaped := tag_core.EscapeBytes([]byte("<test>"))
+    sus bytes_escaped := tag_core.EscapeBytes(byte[value]("<test>"))
     assert_true(len(bytes_escaped) > 0)
     
     fr fr Test URL escaping
@@ -288,14 +288,14 @@ slay test_tag_statistics() {
 
 fr fr Test bulk operations
 slay test_bulk_operations() {
-    sus names := []tea{"bulk1", "bulk2", "bulk3"}
+    sus names := tea[value]{"bulk1", "bulk2", "bulk3"}
     
     fr fr Test bulk create
     sus created_tags := tag_core.BulkCreateTags(names, "bulk_test")
     assert_eq_int(len(created_tags), 3)
     
     fr fr Test bulk update
-    sus tag_ids := []tea{}
+    sus tag_ids := tea[value]{}
     for _, tag := range created_tags {
         tag_ids = append(tag_ids, tag.id)
     }
@@ -407,7 +407,7 @@ slay test_tag_export_import() {
     tag2.SetDescription("Export test tag 2")
     
     fr fr Test export
-    sus tag_ids := []tea{tag1.id, tag2.id}
+    sus tag_ids := tea[value]{tag1.id, tag2.id}
     sus exported := tag_core.ExportTags(tag_ids)
     assert_true(exported != "")
     assert_true(len(exported) > 0)

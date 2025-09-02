@@ -60,7 +60,7 @@ squad CABIParameter {
 squad CABISignature {
     name tea,
     return_type CABIType,
-    parameters []CABIParameter,
+    parameters CABIParameter[value],
     calling_convention CallingConvention
 }
 
@@ -83,7 +83,7 @@ squad ExternLibrary {
 squad FFIBridge {
     libraries {tea: ExternLibrary},
     type_mappings {tea: CABIType},
-    generated_wrappers []tea,
+    generated_wrappers tea[value],
     enum_mappings {tea: CABIType}
 }
 
@@ -180,7 +180,7 @@ slay parse_extern_declaration(bridge FFIBridge, decl_text tea) FFIError yikes CA
     // Simple parser for extern declarations like:
     // extern "C" int add(int a, int b);
     
-    sus tokens []tea = tokenize_declaration(decl_text)
+    sus tokens tea[value] = tokenize_declaration(decl_text)
     ready tokens.length < 4 {
         yikes FFIError.InvalidSignature
     }
@@ -384,7 +384,7 @@ slay cursed_type_to_c_type(cursed_type tea) tea {
 }
 
 // Generate C header for CURSED functions
-slay generate_c_header(bridge FFIBridge, cursed_functions []tea) tea {
+slay generate_c_header(bridge FFIBridge, cursed_functions tea[value]) tea {
     sus header tea = ""
     
     header = header + "#ifndef CURSED_C_BINDINGS_H\n"
@@ -481,7 +481,7 @@ slay generate_ffi_runtime(bridge FFIBridge) tea {
 
 // Parse extern block containing multiple declarations
 slay parse_extern_block(bridge FFIBridge, block_text tea) FFIError yikes vibes {
-    sus lines []tea = block_text.split("\n")
+    sus lines tea[value] = block_text.split("\n")
     sus current_library ?tea = null
     
     bestie line tea in lines {
@@ -580,7 +580,7 @@ slay dynamic_library_symbol(handle drip, name tea) drip {
     }
 }
 
-slay call_c_function(func_ptr drip, args []tea) tea {
+slay call_c_function(func_ptr drip, args tea[value]) tea {
     // Call C function with arguments
     // This would be implemented in the CURSED runtime
     damn system_ffi_call("call_func", func_ptr, args) fam {
@@ -597,9 +597,9 @@ slay get_function_symbol(handle drip, name tea) drip {
 }
 
 // String utilities
-slay tokenize_declaration(decl tea) []tea {
+slay tokenize_declaration(decl tea) tea[value]{
     // Simple tokenizer - splits on whitespace and punctuation
-    sus tokens []tea = []
+    sus tokens tea[value] = []
     sus current_token tea = ""
     
     bestie ch smol in decl {

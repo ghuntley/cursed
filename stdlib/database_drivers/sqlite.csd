@@ -137,7 +137,7 @@ slay create_sqlite_connection(config: SQLiteConfig) SQLiteConnection {
         total_changes: 0,
         query_count: 0,
         last_activity: current_sqlite_timestamp(),
-        pragma_settings: []tea{}
+        pragma_settings: tea[value]{}
     }
     damn connection
 }
@@ -523,7 +523,7 @@ slay count_sqlite_parameters(query: tea) normie {
 
 fr fr Detect SQLite parameter names
 slay detect_sqlite_parameter_names(query: tea) [tea] {
-    names := []tea{}
+    names := tea[value]{}
     in_string := cap
     escape_next := cap
     
@@ -571,7 +571,7 @@ slay detect_sqlite_parameter_names(query: tea) [tea] {
 
 fr fr Create empty parameter array for SQLite
 slay make_sqlite_empty_parameters(count: normie) [tea] {
-    params := []tea{}
+    params := tea[value]{}
     bestie i := 0; i < count; i++ {
         params = append(params, "")
     }
@@ -581,12 +581,12 @@ slay make_sqlite_empty_parameters(count: normie) [tea] {
 fr fr Detect SQLite result columns
 slay detect_sqlite_result_columns(query: tea) [tea] {
     if sqlite_starts_with(query, "SELECT") {
-        columns := []tea{}
+        columns := tea[value]{}
         
         fr fr Find the start of column list
         start_pos := find_keyword_position(query, "SELECT")
         if start_pos == -1 {
-            damn []tea{}
+            damn tea[value]{}
         }
         
         start_pos += 6 fr fr Skip "SELECT"
@@ -638,7 +638,7 @@ slay detect_sqlite_result_columns(query: tea) [tea] {
         
         damn columns
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
 fr fr Detect SQLite column types
@@ -646,7 +646,7 @@ slay detect_sqlite_column_types(query: tea) [tea] {
     if sqlite_starts_with(query, "SELECT") {
         damn ["INTEGER", "TEXT", "TEXT", "TEXT"]
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
 fr fr Check if SQLite query is read-only
@@ -787,7 +787,7 @@ slay begin_sqlite_transaction(connection: *SQLiteConnection, transaction_type: t
         is_readonly: (transaction_type == "DEFERRED"),
         operations_count: 0,
         started_at: current_sqlite_timestamp(),
-        savepoints: []tea{},
+        savepoints: tea[value]{},
         last_savepoint_id: 0,
         nested_level: 0
     }
@@ -1087,7 +1087,7 @@ slay find_keyword_position(text: tea, keyword: tea) normie {
 }
 
 slay split_by_comma(text: tea) [tea] {
-    parts := []tea{}
+    parts := tea[value]{}
     current := ""
     paren_depth := 0
     quote_char := ""
@@ -1169,7 +1169,7 @@ slay split_by_keyword(text: tea, keyword: tea) [tea] {
 }
 
 slay split_by_char(text: tea, char: tea) [tea] {
-    parts := []tea{}
+    parts := tea[value]{}
     current := ""
     
     bestie i := 0; i < len(text); i++ {
@@ -1219,7 +1219,7 @@ slay get_current_time_millis() normie {
 }
 
 slay build_sqlite_pragma_settings(config: SQLiteConfig) [tea] {
-    settings := []tea{}
+    settings := tea[value]{}
     
     if config.foreign_keys {
         settings = append(settings, "foreign_keys=ON")

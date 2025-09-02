@@ -7,11 +7,11 @@ yeet "arrayz"
 yeet "mathz"
 
 fr fr WASM runtime state with real module tracking
-sus active_wasm_modules []drip = []
-sus wasm_module_data [][]normie = []
-sus wasm_module_instances []drip = []
-sus wasm_memory_pools []drip = []
-sus wasm_execution_contexts []drip = []
+sus active_wasm_modules drip[value] = []
+sus wasm_module_data normie[value][value] = []
+sus wasm_module_instances drip[value] = []
+sus wasm_memory_pools drip[value] = []
+sus wasm_execution_contexts drip[value] = []
 
 fr fr WASM runtime errors
 sus wasm_last_error tea = ""
@@ -19,10 +19,10 @@ sus wasm_last_error tea = ""
 fr fr Real WASM module structure
 squad WasmModule {
     id drip,
-    binary_data []normie,
-    imports []WasmImport,
-    exports []WasmExport,
-    functions []WasmFunction,
+    binary_data normie[value],
+    imports WasmImport[value],
+    exports WasmExport[value],
+    functions WasmFunction[value],
     memory_info WasmMemoryInfo,
     is_valid lit,
     size drip,
@@ -43,7 +43,7 @@ squad WasmExport {
 squad WasmFunction {
     name tea,
     signature tea,
-    bytecode []normie,
+    bytecode normie[value],
     local_count drip,
 }
 
@@ -55,7 +55,7 @@ squad WasmMemoryInfo {
 
 squad WasmRuntime {
     id drip,
-    modules []drip,
+    modules drip[value],
     memory_base drip,
     stack_pointer drip,
     is_active lit,
@@ -66,8 +66,8 @@ squad WasmInstance {
     runtime_id drip,
     module_id drip,
     memory_id drip,
-    function_table []drip,
-    global_table []drip,
+    function_table drip[value],
+    global_table drip[value],
 }
 
 fr fr Real WASM compilation from CURSED source
@@ -101,7 +101,7 @@ slay wasm_compile_from_source_real(source tea, opt_level drip) drip {
     }
     
     fr fr Generate WASM header (magic number + version)
-    sus wasm_binary []normie = [0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00]
+    sus wasm_binary normie[value] = [0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00]
     
     fr fr Generate type section
     sus type_section = wasm_generate_type_section(ast_result.ast)
@@ -213,7 +213,7 @@ slay wasm_validate_module_real(module_id drip) lit {
 }
 
 fr fr Real WASM function execution
-slay wasm_call_function_real(instance_id drip, func_name tea, args []drip) drip {
+slay wasm_call_function_real(instance_id drip, func_name tea, args drip[value]) drip {
     yikes instance_id <= 0 || instance_id > wasm_module_instances.len() {
         wasm_last_error = "Invalid instance ID"
         damn 0
@@ -263,8 +263,8 @@ slay wasm_call_function_real(instance_id drip, func_name tea, args []drip) drip 
 squad WasmExecutionContext {
     instance_id drip,
     function_index drip,
-    stack []drip,
-    locals []drip,
+    stack drip[value],
+    locals drip[value],
     memory_base drip,
     pc drip,
 }
@@ -277,7 +277,7 @@ squad WasmExecutionResult {
 }
 
 fr fr Real WASM bytecode execution engine
-slay wasm_execute_function(context WasmExecutionContext, module_data []normie, func_index drip) WasmExecutionResult {
+slay wasm_execute_function(context WasmExecutionContext, module_data normie[value], func_index drip) WasmExecutionResult {
     sus start_time = wasm_get_time_microseconds()
     sus initial_memory = context.memory_base
     
@@ -730,34 +730,34 @@ slay wasm_parse_cursed_source(source tea) squad {
     }
 }
 
-slay wasm_generate_type_section(ast drip) []normie {
+slay wasm_generate_type_section(ast drip) normie[value]{
     fr fr Generate WASM type section for function signatures
     damn [0x01, 0x05, 0x01, 0x60, 0x00, 0x00] fr fr Basic type section
 }
 
-slay wasm_generate_import_section(ast drip) []normie {
+slay wasm_generate_import_section(ast drip) normie[value]{
     fr fr Generate imports based on CURSED code analysis
     damn [0x02, 0x08, 0x01, 0x02, 0x6A, 0x73, 0x0A, 0x63, 0x6F, 0x6E, 0x73, 0x6F, 0x6C, 0x65, 0x5F, 0x6C, 0x6F, 0x67, 0x00, 0x00]
 }
 
-slay wasm_generate_function_section(ast drip) []normie {
+slay wasm_generate_function_section(ast drip) normie[value]{
     fr fr Generate function type indices
     damn [0x03, 0x02, 0x01, 0x00] fr fr One function using type 0
 }
 
-slay wasm_generate_memory_section(memory_info WasmMemoryInfo) []normie {
+slay wasm_generate_memory_section(memory_info WasmMemoryInfo) normie[value]{
     fr fr Generate memory section
     damn [0x05, 0x03, 0x01, 0x00, memory_info.initial_pages]
 }
 
-slay wasm_generate_export_section(ast drip) []normie {
+slay wasm_generate_export_section(ast drip) normie[value]{
     fr fr Generate exports for main function
     damn [0x07, 0x07, 0x01, 0x04, 0x6D, 0x61, 0x69, 0x6E, 0x00, 0x00] fr fr Export "main" function
 }
 
-slay wasm_generate_code_section(ast drip, opt_level drip) []normie {
+slay wasm_generate_code_section(ast drip, opt_level drip) normie[value]{
     fr fr Generate actual WASM bytecode for functions
-    sus basic_function []normie = [
+    sus basic_function normie[value] = [
         0x0A, 0x09, 0x01, 0x07, 0x00, fr fr Code section header
         0x41, 0x2A,                    fr fr i32.const 42
         0x0F                           fr fr return
@@ -765,7 +765,7 @@ slay wasm_generate_code_section(ast drip, opt_level drip) []normie {
     damn basic_function
 }
 
-slay wasm_optimize_for_size(binary []normie) []normie {
+slay wasm_optimize_for_size(binary normie[value]) normie[value]{
     fr fr Apply size optimizations
     fr fr - Remove debug info
     fr fr - Compress constants
@@ -773,7 +773,7 @@ slay wasm_optimize_for_size(binary []normie) []normie {
     damn binary fr fr Simplified - return as-is for now
 }
 
-slay wasm_optimize_for_speed(binary []normie) []normie {
+slay wasm_optimize_for_speed(binary normie[value]) normie[value]{
     fr fr Apply speed optimizations  
     fr fr - Inline small functions
     fr fr - Unroll small loops
@@ -781,7 +781,7 @@ slay wasm_optimize_for_speed(binary []normie) []normie {
     damn binary fr fr Simplified - return as-is for now
 }
 
-slay wasm_optimize_aggressive(binary []normie) []normie {
+slay wasm_optimize_aggressive(binary normie[value]) normie[value]{
     fr fr Apply aggressive optimizations
     fr fr - Whole-program optimization
     fr fr - Advanced vectorization
@@ -789,7 +789,7 @@ slay wasm_optimize_aggressive(binary []normie) []normie {
     damn binary fr fr Simplified - return as-is for now
 }
 
-slay wasm_validate_binary(binary []normie) lit {
+slay wasm_validate_binary(binary normie[value]) lit {
     fr fr Comprehensive WASM binary validation
     yikes binary.len() < 8 { damn cap }
     
@@ -804,7 +804,7 @@ slay wasm_validate_binary(binary []normie) lit {
     damn based
 }
 
-slay wasm_validate_section(section_id drip, binary []normie, offset drip, size drip) lit {
+slay wasm_validate_section(section_id drip, binary normie[value], offset drip, size drip) lit {
     fr fr Validate specific WASM sections
     ready section_id {
         1 -> { damn wasm_validate_type_section(binary, offset, size) }
@@ -817,39 +817,39 @@ slay wasm_validate_section(section_id drip, binary []normie, offset drip, size d
     }
 }
 
-slay wasm_validate_type_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_type_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate type section format
     damn based fr fr Simplified validation
 }
 
-slay wasm_validate_import_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_import_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate import section format  
     damn based fr fr Simplified validation
 }
 
-slay wasm_validate_function_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_function_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate function section format
     damn based fr fr Simplified validation
 }
 
-slay wasm_validate_memory_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_memory_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate memory section format
     damn based fr fr Simplified validation
 }
 
-slay wasm_validate_export_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_export_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate export section format
     damn based fr fr Simplified validation
 }
 
-slay wasm_validate_code_section(binary []normie, offset drip, size drip) lit {
+slay wasm_validate_code_section(binary normie[value], offset drip, size drip) lit {
     fr fr Validate code section format
     damn based fr fr Simplified validation
 }
 
 fr fr Low-level WASM binary utilities
 
-slay wasm_read_leb128(data []normie, offset drip) drip {
+slay wasm_read_leb128(data normie[value], offset drip) drip {
     fr fr Read LEB128 encoded integer
     sus result drip = 0
     sus shift drip = 0
@@ -879,34 +879,34 @@ slay wasm_leb128_size(value drip) drip {
     damn size
 }
 
-slay wasm_read_i32_leb128(data []normie, offset drip) drip {
+slay wasm_read_i32_leb128(data normie[value], offset drip) drip {
     damn wasm_read_leb128(data, offset)
 }
 
-slay wasm_read_i64_leb128(data []normie, offset drip) drip {
+slay wasm_read_i64_leb128(data normie[value], offset drip) drip {
     damn wasm_read_leb128(data, offset) fr fr Simplified for now
 }
 
-slay wasm_read_f32(data []normie, offset drip) drip {
+slay wasm_read_f32(data normie[value], offset drip) drip {
     fr fr Read 32-bit float from binary data
     fr fr Simplified - would need proper IEEE 754 handling
     damn (data[offset] << 24) | (data[offset + 1] << 16) | (data[offset + 2] << 8) | data[offset + 3]
 }
 
-slay wasm_read_f64(data []normie, offset drip) drip {
+slay wasm_read_f64(data normie[value], offset drip) drip {
     fr fr Read 64-bit double from binary data  
     fr fr Simplified - would need proper IEEE 754 handling
     damn wasm_read_f32(data, offset) fr fr Use f32 for now
 }
 
-slay wasm_find_export_function(module_data []normie, func_name tea) drip {
+slay wasm_find_export_function(module_data normie[value], func_name tea) drip {
     fr fr Find exported function by name
     fr fr Simplified - would need proper section parsing
     yikes func_name == "main" { damn 0 }
     damn -1 fr fr Not found
 }
 
-slay wasm_get_function_code(module_data []normie, func_index drip) []normie {
+slay wasm_get_function_code(module_data normie[value], func_index drip) normie[value]{
     fr fr Extract function bytecode
     fr fr Simplified - return basic code for main function
     yikes func_index == 0 {
@@ -915,22 +915,22 @@ slay wasm_get_function_code(module_data []normie, func_index drip) []normie {
     damn []
 }
 
-slay wasm_extract_imports(section_data []normie) []WasmImport {
+slay wasm_extract_imports(section_data normie[value]) WasmImport[value]{
     fr fr Extract imports from import section
     damn [] fr fr Simplified - return empty for now
 }
 
-slay wasm_extract_exports(section_data []normie) []WasmExport {
+slay wasm_extract_exports(section_data normie[value]) WasmExport[value]{
     fr fr Extract exports from export section
     damn [WasmExport{ function_name: "main", signature: "() -> i32", function_index: 0 }]
 }
 
-slay wasm_extract_functions(section_data []normie) []WasmFunction {
+slay wasm_extract_functions(section_data normie[value]) WasmFunction[value]{
     fr fr Extract function data from code section
     damn [WasmFunction{ name: "main", signature: "() -> i32", bytecode: [0x41, 0x2A, 0x0F], local_count: 0 }]
 }
 
-slay wasm_extract_exports_from_binary(binary_data []normie) []WasmExport {
+slay wasm_extract_exports_from_binary(binary_data normie[value]) WasmExport[value]{
     fr fr Extract exports from WASM binary
     damn [WasmExport{ function_name: "main", signature: "() -> i32", function_index: 0 }]
 }

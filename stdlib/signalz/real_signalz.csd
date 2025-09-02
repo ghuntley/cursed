@@ -122,9 +122,9 @@ squad SignalHandler {
 
 fr fr Signal statistics for monitoring
 squad SignalStats {
-    spill signals_received [64]normie
-    spill signals_handled [64]normie
-    spill signals_blocked [64]normie
+    spill signals_received normie[64]
+    spill signals_handled normie[64]
+    spill signals_blocked normie[64]
     spill total_signals normie
     spill last_signal_time normie
     spill handler_errors normie
@@ -135,7 +135,7 @@ sus signal_system_initialized lit = cap
 sus registered_handlers [64]*SignalHandler
 sus current_signal_mask SignalMask
 sus signal_statistics SignalStats
-sus cleanup_handlers []slay()
+sus cleanup_handlers slay[value]()
 sus in_signal_handler lit = cap
 
 fr fr Foreign function interface to Zig signal handling platform
@@ -623,7 +623,7 @@ fr fr ==========================================================================
 
 slay signal_setup_graceful_shutdown() *ErrorInstance {
     fr fr Register handlers for common termination signals
-    sus signals []normie = [SIGINT, SIGTERM, SIGQUIT, SIGHUP]
+    sus signals normie[value] = [SIGINT, SIGTERM, SIGQUIT, SIGHUP]
     
     sus i normie = 0
     bestie i < 4 {

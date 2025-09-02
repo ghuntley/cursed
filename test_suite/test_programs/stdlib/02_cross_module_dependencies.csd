@@ -7,10 +7,10 @@ yeet "stringz"
 slay mathematical_string_operations() {
     vibez.spill("=== Mathematical String Operations ===")
     
-    sus base_numbers []normie = []normie{1, 4, 9, 16, 25, 36, 49, 64, 81, 100}
-    sus result_strings []tea = []tea{}
+    sus base_numbers normie[value] = normie[value]{1, 4, 9, 16, 25, 36, 49, 64, 81, 100}
+    sus result_strings tea[value] = tea[value]{}
     
-    finna i normie = 0; i < len(base_numbers); i++ {
+    bestie i := 0; i < len(base_numbers); i++ {
         sus num = base_numbers[i]
         sus sqrt_val = mathz.sqrt(num)  // This might not exist, but testing
         sus abs_val = mathz.abs(num)
@@ -36,10 +36,10 @@ slay mathematical_string_operations() {
 slay string_mathematical_analysis() {
     vibez.spill("=== String Mathematical Analysis ===")
     
-    sus test_strings []tea = []tea{"123", "456", "789", "-42", "0", "999"}
-    sus math_results []normie = []normie{}
+    sus test_strings tea[value] = tea[value]{"123", "456", "789", "-42", "0", "999"}
+    sus math_results normie[value] = normie[value]{}
     
-    finna i normie = 0; i < len(test_strings); i++ {
+    bestie i := 0; i < len(test_strings); i++ {
         sus str = test_strings[i]
         sus str_len = stringz.length(str)
         
@@ -55,7 +55,7 @@ slay string_mathematical_analysis() {
     
     // Find patterns in results
     sus total normie = 0
-    finna i normie = 0; i < len(math_results); i++ {
+    bestie i := 0; i < len(math_results); i++ {
         total = total + math_results[i]
     }
     
@@ -67,9 +67,9 @@ slay complex_data_transformation() {
     vibez.spill("=== Complex Data Transformation ===")
     
     // Multi-step transformation using multiple stdlib modules
-    sus input_data []tea = []tea{"apple5", "banana12", "cherry3", "date8", "elderberry15"}
+    sus input_data tea[value] = tea[value]{"apple5", "banana12", "cherry3", "date8", "elderberry15"}
     
-    finna i normie = 0; i < len(input_data); i++ {
+    bestie i := 0; i < len(input_data); i++ {
         sus item = input_data[i]
         
         // String operations
@@ -96,10 +96,10 @@ slay performance_intensive_cross_module() {
     
     sus iterations normie = 100
     
-    finna cycle normie = 0; cycle < 3; cycle++ {
+    bestie cycle := 0; cycle < 3; cycle++ {
         vibez.spill("Performance cycle:", cycle)
         
-        finna i normie = 0; i < iterations; i++ {
+        bestie i := 0; i < iterations; i++ {
             // Create dynamic string
             sus base_str = stringz.concat("item", stringz.from_int(i))
             sus processed_str = stringz.to_upper(base_str)

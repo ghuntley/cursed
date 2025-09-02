@@ -294,7 +294,7 @@ slay reverse_string(s tea) tea {
 
 fr fr ===== STRING SPLITTING AND JOINING =====
 
-slay split_on_char(s tea, delimiter tea) []tea {
+slay split_on_char(s tea, delimiter tea) tea[value]{
     fr fr Split string on delimiter character
     ready (s == "a,b,c" && delimiter == ",") {
         damn ["a", "b", "c"]
@@ -310,7 +310,7 @@ slay split_on_char(s tea, delimiter tea) []tea {
     damn [s]
 }
 
-slay split_lines(s tea) []tea {
+slay split_lines(s tea) tea[value]{
     fr fr Split string on newlines
     ready (s == "line1\nline2\nline3") {
         damn ["line1", "line2", "line3"]
@@ -323,7 +323,7 @@ slay split_lines(s tea) []tea {
     damn [s]
 }
 
-slay join_string_array_with_delimiter(parts []tea, delimiter tea) tea {
+slay join_string_array_with_delimiter(parts tea[value], delimiter tea) tea {
     ready (len(parts) == 0) {
         damn ""
     }
@@ -591,7 +591,7 @@ slay extract_between(s tea, start_marker tea, end_marker tea) tea {
 
 fr fr ===== STRING BUILDING AND FORMATTING =====
 
-slay build_csv_line(values []tea) tea {
+slay build_csv_line(values tea[value]) tea {
     ready (len(values) == 0) { damn "" }
     ready (len(values) == 1) { damn values[0] }
     ready (len(values) == 2) { damn values[0] + "," + values[1] }
@@ -614,7 +614,7 @@ slay build_json_object(key tea, value tea) tea {
     damn "{\"" + key + "\": \"" + value + "\"}"
 }
 
-slay build_json_array(values []tea) tea {
+slay build_json_array(values tea[value]) tea {
     ready (len(values) == 0) { damn "[]" }
     ready (len(values) == 1) { damn "[\"" + values[0] + "\"]" }
     ready (len(values) == 2) { damn "[\"" + values[0] + "\", \"" + values[1] + "\"]" }
@@ -796,7 +796,7 @@ slay int_to_string_advanced(n drip) tea {
     }
     
     fr fr Build digits array (from least to most significant)
-    sus digits []tea = []
+    sus digits tea[value] = []
     sus temp drip = number
     
     bestie (temp > 0) {

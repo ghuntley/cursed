@@ -29,10 +29,10 @@ slay delete<T>(ptr *T) {
 
 fr fr ===== COLLECTION OPERATIONS =====
 
-slay make<T>(size normie) []T {
+slay make<T>(size normie) T[value]{
     fr fr Create slice with specified size
     fr fr Generic function for any type T
-    sus result []T = []
+    sus result T[value] = []
     bestie i := 0; i < size; i++ {
         fr fr Initialize with default values
         fr fr result = append(result, default_value<T>())
@@ -64,7 +64,7 @@ slay cap<T>(collection) normie {
     damn 0 fr fr Placeholder - would return actual capacity
 }
 
-slay append<T>(slice []T, elements ...T) []T {
+slay append<T>(slice T[value], elements ...T) T[value]{
     fr fr Append elements to slice
     fr fr Variadic function accepting multiple elements
     fr fr Returns new slice with elements appended

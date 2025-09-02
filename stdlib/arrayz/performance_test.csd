@@ -4,9 +4,9 @@ yeet "arrayz/mod_optimized"
 fr fr Performance benchmarks for ArrayZ O(n log n) optimizations
 
 test_start("Array Sorting Performance - Small Dataset")
-sus small_array []drip = [9, 7, 5, 3, 1, 8, 6, 4, 2]  # 9 elements - worst case (reverse sorted)
+sus small_array drip[value] = [9, 7, 5, 3, 1, 8, 6, 4, 2]  # 9 elements - worst case (reverse sorted)
 sus start_time drip = current_timestamp_ms()
-sus sorted_small []drip = quicksort_array(small_array)
+sus sorted_small drip[value] = quicksort_array(small_array)
 sus small_time drip = current_timestamp_ms() - start_time
 vibez.spill("QuickSort small dataset (9 elements): " + tea(small_time) + "ms")
 assert_eq_int(sorted_small[0], 1)
@@ -15,9 +15,9 @@ test_pass("Small dataset sorting completed correctly")
 
 test_start("Array Sorting Performance - Medium Dataset")
 # Create medium reverse-sorted dataset (worst case for QuickSort)
-sus medium_array []drip = create_reverse_sorted_array(100)
+sus medium_array drip[value] = create_reverse_sorted_array(100)
 start_time = current_timestamp_ms()
-sus sorted_medium []drip = quicksort_array(medium_array)
+sus sorted_medium drip[value] = quicksort_array(medium_array)
 sus medium_time drip = current_timestamp_ms() - start_time
 vibez.spill("QuickSort medium dataset (100 elements): " + tea(medium_time) + "ms")
 assert_eq_int(sorted_medium[0], 1)
@@ -26,9 +26,9 @@ test_pass("Medium dataset sorting completed efficiently")
 
 test_start("Array Sorting Performance - Large Dataset")
 # Create large reverse-sorted dataset  
-sus large_array []drip = create_reverse_sorted_array(1000)
+sus large_array drip[value] = create_reverse_sorted_array(1000)
 start_time = current_timestamp_ms()
-sus sorted_large []drip = quicksort_array(large_array)
+sus sorted_large drip[value] = quicksort_array(large_array)
 sus large_time drip = current_timestamp_ms() - start_time
 vibez.spill("QuickSort large dataset (1000 elements): " + tea(large_time) + "ms")
 assert_eq_int(sorted_large[0], 1)
@@ -38,21 +38,21 @@ assert_true(large_time < 100)
 test_pass("Large dataset sorting completed in reasonable time")
 
 test_start("Sorting Algorithm Comparison")
-sus test_array []drip = [50, 40, 30, 20, 10, 45, 35, 25, 15, 5]
+sus test_array drip[value] = [50, 40, 30, 20, 10, 45, 35, 25, 15, 5]
 
 # Test QuickSort
 start_time = current_timestamp_ms()
-sus quicksort_result []drip = quicksort_array(test_array)
+sus quicksort_result drip[value] = quicksort_array(test_array)
 sus quicksort_time drip = current_timestamp_ms() - start_time
 
 # Test MergeSort
 start_time = current_timestamp_ms()
-sus mergesort_result []drip = mergesort_array(test_array)
+sus mergesort_result drip[value] = mergesort_array(test_array)
 sus mergesort_time drip = current_timestamp_ms() - start_time
 
 # Test HeapSort
 start_time = current_timestamp_ms()
-sus heapsort_result []drip = heapsort_array(test_array)
+sus heapsort_result drip[value] = heapsort_array(test_array)
 sus heapsort_time drip = current_timestamp_ms() - start_time
 
 vibez.spill("Algorithm Performance Comparison (10 elements):")
@@ -67,7 +67,7 @@ assert_arrays_equal(heapsort_result, [5, 10, 15, 20, 25, 30, 35, 40, 45, 50])
 test_pass("All O(n log n) algorithms produce correct results")
 
 test_start("Binary Search Performance")
-sus sorted_search_array []drip = quicksort_array(create_reverse_sorted_array(1000))
+sus sorted_search_array drip[value] = quicksort_array(create_reverse_sorted_array(1000))
 
 # Test binary search performance
 start_time = current_timestamp_ms()
@@ -83,11 +83,11 @@ assert_eq_int(search_result3, -1)   # 999 doesn't exist in 1-1000 range
 test_pass("Binary search O(log n) performance validated")
 
 test_start("Performance vs Original Implementation")
-sus performance_test_array []drip = create_reverse_sorted_array(50)
+sus performance_test_array drip[value] = create_reverse_sorted_array(50)
 
 # Test optimized version
 start_time = current_timestamp_ms()
-sus optimized_result []drip = quicksort_array(performance_test_array)
+sus optimized_result drip[value] = quicksort_array(performance_test_array)
 sus optimized_time drip = current_timestamp_ms() - start_time
 
 vibez.spill("Optimized O(n log n) sorting time: " + tea(optimized_time) + "ms")
@@ -101,9 +101,9 @@ test_pass("O(n log n) optimization provides dramatic performance improvement")
 
 test_start("Memory Efficiency Test")
 # Test with large dataset to ensure efficient memory usage
-sus memory_test_array []drip = create_reverse_sorted_array(500)
+sus memory_test_array drip[value] = create_reverse_sorted_array(500)
 start_time = current_timestamp_ms()
-sus memory_result []drip = mergesort_array(memory_test_array)
+sus memory_result drip[value] = mergesort_array(memory_test_array)
 sus memory_time drip = current_timestamp_ms() - start_time
 
 vibez.spill("Memory efficiency test (500 elements): " + tea(memory_time) + "ms")
@@ -114,7 +114,7 @@ assert_true(memory_time < 50)  # Should complete quickly
 test_pass("Memory efficient processing of large arrays")
 
 # Helper functions for testing
-slay create_reverse_sorted_array(size drip) []drip {
+slay create_reverse_sorted_array(size drip) drip[value]{
     ready (size <= 0) { damn [] }
     ready (size == 1) { damn [1] }
     ready (size == 2) { damn [2, 1] }
@@ -124,7 +124,7 @@ slay create_reverse_sorted_array(size drip) []drip {
     ready (size == 10) { damn [10, 9, 8, 7, 6, 5, 4, 3, 2, 1] }
     
     # For larger sizes, create programmatically
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = size
     bestie (i > 0 && len(result) < 100) {  # Limit for array construction
         result = append_to_test_array(result, i)
@@ -133,7 +133,7 @@ slay create_reverse_sorted_array(size drip) []drip {
     damn result
 }
 
-slay append_to_test_array(arr []drip, value drip) []drip {
+slay append_to_test_array(arr drip[value], value drip) drip[value]{
     sus length drip = len(arr)
     ready (length == 0) { damn [value] }
     ready (length == 1) { damn [arr[0], value] }
@@ -146,7 +146,7 @@ slay append_to_test_array(arr []drip, value drip) []drip {
     damn arr
 }
 
-slay assert_arrays_equal(arr1 []drip, arr2 []drip) {
+slay assert_arrays_equal(arr1 drip[value], arr2 drip[value]) {
     assert_eq_int(len(arr1), len(arr2))
     sus i drip = 0
     bestie (i < len(arr1)) {

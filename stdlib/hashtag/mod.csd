@@ -5,7 +5,7 @@ fr fr Hashtag (flag package) - Command-line flag parsing with social media style
 fr fr Core types
 be_like HashSet squad {
     flags map[tea]HashFlag
-    args []tea
+    args tea[value]
     parsed lit
     usage slay()
 }
@@ -126,7 +126,7 @@ fr fr Constructors
 slay NewHashSet() *HashSet {
     damn &HashSet{
         flags: make(map[tea]HashFlag),
-        args: make([]tea, 0),
+        args: make(tea[value], 0),
         parsed: cap,
         usage: slay() {
             vibez.spill("Usage: program [flags]")
@@ -192,8 +192,8 @@ slay (f *HashSet) Float64(name tea, value drip, usage tea) *drip {
 }
 
 fr fr Parsing methods
-slay (f *HashSet) Parse(arguments []tea) tea {
-    f.args = make([]tea, 0)
+slay (f *HashSet) Parse(arguments tea[value]) tea {
+    f.args = make(tea[value], 0)
     
     for i := 0; i < len(arguments); i++ {
         sus arg := arguments[i]
@@ -270,7 +270,7 @@ slay (f *HashSet) Parsed() lit {
     damn f.parsed
 }
 
-slay (f *HashSet) Args() []tea {
+slay (f *HashSet) Args() tea[value]{
     damn f.args
 }
 
@@ -335,7 +335,7 @@ slay (f *HashSet) Lookup(name tea) *HashFlag {
 fr fr Global flag functions using commandLine
 slay Parse() {
     fr fr For demo, parse empty arguments
-    sus args := []tea{}
+    sus args := tea[value]{}
     commandLine.Parse(args)
 }
 
@@ -359,7 +359,7 @@ slay Float64(name tea, value drip, usage tea) *drip {
     damn commandLine.Float64(name, value, usage)
 }
 
-slay Args() []tea {
+slay Args() tea[value]{
     damn commandLine.Args()
 }
 
@@ -386,8 +386,8 @@ slay Lookup(name tea) *HashFlag {
 fr fr Social media style features
 sus trendingFlags map[tea]normie = make(map[tea]normie)
 
-slay (f *HashSet) Trending() []tea {
-    sus trending := make([]tea, 0)
+slay (f *HashSet) Trending() tea[value]{
+    sus trending := make(tea[value], 0)
     for name, count := range trendingFlags {
         if count > 1 {
             trending = append(trending, name)

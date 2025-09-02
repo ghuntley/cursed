@@ -2,19 +2,19 @@
 // Pure CURSED implementation with comprehensive sorting functions
 
 // Quick Sort for integers
-slay sort_ints(arr []normie) []normie {
+slay sort_ints(arr normie[value]) normie[value]{
     sus len normie = len(arr)
     if len <= 1 {
         damn arr
     }
     
-    sus result []normie = copy(arr)
+    sus result normie[value] = copy(arr)
     quicksort_ints(result, 0, len - 1)
     damn result
 }
 
 // Quick Sort implementation for integers
-slay quicksort_ints(arr []normie, low normie, high normie) {
+slay quicksort_ints(arr normie[value], low normie, high normie) {
     if low < high {
         sus pivot_idx normie = partition_ints(arr, low, high)
         quicksort_ints(arr, low, pivot_idx - 1)
@@ -23,7 +23,7 @@ slay quicksort_ints(arr []normie, low normie, high normie) {
 }
 
 // Partition function for integers
-slay partition_ints(arr []normie, low normie, high normie) normie {
+slay partition_ints(arr normie[value], low normie, high normie) normie {
     sus pivot normie = arr[high]
     sus i normie = low - 1
     
@@ -38,26 +38,26 @@ slay partition_ints(arr []normie, low normie, high normie) normie {
 }
 
 // Swap function for integers
-slay swap_ints(arr []normie, i normie, j normie) {
+slay swap_ints(arr normie[value], i normie, j normie) {
     sus temp normie = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
 }
 
 // Quick Sort for strings
-slay sort_strings(arr []tea) []tea {
+slay sort_strings(arr tea[value]) tea[value]{
     sus len normie = len(arr)
     if len <= 1 {
         damn arr
     }
     
-    sus result []tea = copy(arr)
+    sus result tea[value] = copy(arr)
     quicksort_strings(result, 0, len - 1)
     damn result
 }
 
 // Quick Sort implementation for strings
-slay quicksort_strings(arr []tea, low normie, high normie) {
+slay quicksort_strings(arr tea[value], low normie, high normie) {
     if low < high {
         sus pivot_idx normie = partition_strings(arr, low, high)
         quicksort_strings(arr, low, pivot_idx - 1)
@@ -66,7 +66,7 @@ slay quicksort_strings(arr []tea, low normie, high normie) {
 }
 
 // Partition function for strings
-slay partition_strings(arr []tea, low normie, high normie) normie {
+slay partition_strings(arr tea[value], low normie, high normie) normie {
     sus pivot tea = arr[high]
     sus i normie = low - 1
     
@@ -81,7 +81,7 @@ slay partition_strings(arr []tea, low normie, high normie) normie {
 }
 
 // Swap function for strings
-slay swap_strings(arr []tea, i normie, j normie) {
+slay swap_strings(arr tea[value], i normie, j normie) {
     sus temp tea = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
@@ -99,19 +99,19 @@ slay string_compare(a tea, b tea) normie {
 }
 
 // Quick Sort for floats
-slay sort_floats(arr []meal) []meal {
+slay sort_floats(arr meal[value]) meal[value]{
     sus len normie = len(arr)
     if len <= 1 {
         damn arr
     }
     
-    sus result []meal = copy(arr)
+    sus result meal[value] = copy(arr)
     quicksort_floats(result, 0, len - 1)
     damn result
 }
 
 // Quick Sort implementation for floats
-slay quicksort_floats(arr []meal, low normie, high normie) {
+slay quicksort_floats(arr meal[value], low normie, high normie) {
     if low < high {
         sus pivot_idx normie = partition_floats(arr, low, high)
         quicksort_floats(arr, low, pivot_idx - 1)
@@ -120,7 +120,7 @@ slay quicksort_floats(arr []meal, low normie, high normie) {
 }
 
 // Partition function for floats
-slay partition_floats(arr []meal, low normie, high normie) normie {
+slay partition_floats(arr meal[value], low normie, high normie) normie {
     sus pivot meal = arr[high]
     sus i normie = low - 1
     
@@ -135,17 +135,17 @@ slay partition_floats(arr []meal, low normie, high normie) normie {
 }
 
 // Swap function for floats
-slay swap_floats(arr []meal, i normie, j normie) {
+slay swap_floats(arr meal[value], i normie, j normie) {
     sus temp meal = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
 }
 
 // Reverse sort for integers
-slay sort_reverse(arr []normie) []normie {
-    sus sorted []normie = sort_ints(arr)
+slay sort_reverse(arr normie[value]) normie[value]{
+    sus sorted normie[value] = sort_ints(arr)
     sus len normie = len(sorted)
-    sus result []normie = make([]normie, len)
+    sus result normie[value] = make(normie[value], len)
     
     bestie i := 0; i < len; i++ {
         result[i] = sorted[len - 1 - i]
@@ -154,7 +154,7 @@ slay sort_reverse(arr []normie) []normie {
 }
 
 // Check if array is sorted
-slay is_sorted(arr []normie) lit {
+slay is_sorted(arr normie[value]) lit {
     sus len normie = len(arr)
     if len <= 1 {
         damn based
@@ -169,7 +169,7 @@ slay is_sorted(arr []normie) lit {
 }
 
 // Partition array around pivot
-slay partition(arr []normie, pivot normie) normie {
+slay partition(arr normie[value], pivot normie) normie {
     sus len normie = len(arr)
     sus pivot_idx normie = -1
     
@@ -188,18 +188,18 @@ slay partition(arr []normie, pivot normie) normie {
 }
 
 // Quick Select - find k-th smallest element
-slay quick_select(arr []normie, k normie) normie {
+slay quick_select(arr normie[value], k normie) normie {
     sus len normie = len(arr)
     if k < 0 || k >= len {
         damn -1
     }
     
-    sus temp []normie = copy(arr)
+    sus temp normie[value] = copy(arr)
     damn quick_select_impl(temp, 0, len - 1, k)
 }
 
 // Quick Select implementation
-slay quick_select_impl(arr []normie, low normie, high normie, k normie) normie {
+slay quick_select_impl(arr normie[value], low normie, high normie, k normie) normie {
     if low == high {
         damn arr[low]
     }
@@ -216,10 +216,10 @@ slay quick_select_impl(arr []normie, low normie, high normie, k normie) normie {
 }
 
 // Merge two sorted arrays
-slay merge(arr1 []normie, arr2 []normie) []normie {
+slay merge(arr1 normie[value], arr2 normie[value]) normie[value]{
     sus len1 normie = len(arr1)
     sus len2 normie = len(arr2)
-    sus result []normie = make([]normie, len1 + len2)
+    sus result normie[value] = make(normie[value], len1 + len2)
     
     sus i normie = 0
     sus j normie = 0
@@ -252,7 +252,7 @@ slay merge(arr1 []normie, arr2 []normie) []normie {
 }
 
 // Binary search in sorted array
-slay binary_search(arr []normie, target normie) normie {
+slay binary_search(arr normie[value], target normie) normie {
     sus left normie = 0
     sus right normie = len(arr) - 1
     
@@ -272,7 +272,7 @@ slay binary_search(arr []normie, target normie) normie {
 }
 
 // Lower bound - first position where element could be inserted
-slay lower_bound(arr []normie, target normie) normie {
+slay lower_bound(arr normie[value], target normie) normie {
     sus left normie = 0
     sus right normie = len(arr)
     
@@ -290,7 +290,7 @@ slay lower_bound(arr []normie, target normie) normie {
 }
 
 // Upper bound - last position where element could be inserted
-slay upper_bound(arr []normie, target normie) normie {
+slay upper_bound(arr normie[value], target normie) normie {
     sus left normie = 0
     sus right normie = len(arr)
     
@@ -308,19 +308,19 @@ slay upper_bound(arr []normie, target normie) normie {
 }
 
 // Merge Sort for stable sorting
-slay sort_stable(arr []normie) []normie {
+slay sort_stable(arr normie[value]) normie[value]{
     sus len normie = len(arr)
     if len <= 1 {
         damn arr
     }
     
-    sus result []normie = copy(arr)
+    sus result normie[value] = copy(arr)
     merge_sort(result, 0, len - 1)
     damn result
 }
 
 // Merge Sort implementation
-slay merge_sort(arr []normie, left normie, right normie) {
+slay merge_sort(arr normie[value], left normie, right normie) {
     if left < right {
         sus mid normie = left + (right - left) / 2
         
@@ -331,12 +331,12 @@ slay merge_sort(arr []normie, left normie, right normie) {
 }
 
 // Merge function for merge sort
-slay merge_arrays(arr []normie, left normie, mid normie, right normie) {
+slay merge_arrays(arr normie[value], left normie, mid normie, right normie) {
     sus left_size normie = mid - left + 1
     sus right_size normie = right - mid
     
-    sus left_arr []normie = make([]normie, left_size)
-    sus right_arr []normie = make([]normie, right_size)
+    sus left_arr normie[value] = make(normie[value], left_size)
+    sus right_arr normie[value] = make(normie[value], right_size)
     
     bestie i := 0; i < left_size; i++ {
         left_arr[i] = arr[left + i]
@@ -375,14 +375,14 @@ slay merge_arrays(arr []normie, left normie, mid normie, right normie) {
 }
 
 // Unstable sort (alias for quicksort)
-slay sort_unstable(arr []normie) []normie {
+slay sort_unstable(arr normie[value]) normie[value]{
     damn sort_ints(arr)
 }
 
 // Array copy function
-slay copy(arr []normie) []normie {
+slay copy(arr normie[value]) normie[value]{
     sus len normie = len(arr)
-    sus result []normie = make([]normie, len)
+    sus result normie[value] = make(normie[value], len)
     
     bestie i := 0; i < len; i++ {
         result[i] = arr[i]
@@ -392,12 +392,12 @@ slay copy(arr []normie) []normie {
 }
 
 // Array length function
-slay len(arr []normie) normie {
+slay len(arr normie[value]) normie {
     damn 0  // This would be implemented by the runtime
 }
 
 // Make array function
-slay make(type tea, size normie) []normie {
+slay make(type tea, size normie) normie[value]{
     // This would be implemented by the runtime
-    damn []normie{}
+    damn normie[value]{}
 }

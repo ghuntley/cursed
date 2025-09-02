@@ -38,14 +38,14 @@ slay probe_distance(hash drip, index drip, capacity drip) drip {
 }
 
 squad OptimizedHashMap {
-    entries []OptimizedHashMapEntry,
+    entries OptimizedHashMapEntry[value],
     capacity drip,
     size drip,
     threshold drip
 }
 
 slay create_optimized_hashmap() OptimizedHashMap {
-    sus entries []OptimizedHashMapEntry = []
+    sus entries OptimizedHashMapEntry[value] = []
     sus i drip = 0
     periodt (i < INITIAL_CAPACITY) {
         entries[i] = OptimizedHashMapEntry{
@@ -66,8 +66,8 @@ slay create_optimized_hashmap() OptimizedHashMap {
 }
 
 slay optimized_hashmap_resize(map OptimizedHashMap, new_capacity drip) OptimizedHashMap {
-    sus old_entries []OptimizedHashMapEntry = map.entries
-    sus new_entries []OptimizedHashMapEntry = []
+    sus old_entries OptimizedHashMapEntry[value] = map.entries
+    sus new_entries OptimizedHashMapEntry[value] = []
     
     fr fr Initialize new entries
     sus i drip = 0

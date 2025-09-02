@@ -183,7 +183,7 @@ slay encode_integer(value normie) tea {
 
 fr fr Encode OID to ASN.1 format
 slay encode_oid(oid tea) tea {
-    sus parts [10]normie
+    sus parts normie[10]
     sus part_count normie = parse_oid_parts(oid, parts)
     
     bestie part_count < 2 {
@@ -202,7 +202,7 @@ slay encode_oid(oid tea) tea {
 }
 
 fr fr Parse OID string into numeric parts
-slay parse_oid_parts(oid tea, parts [10]normie) normie {
+slay parse_oid_parts(oid tea, parts normie[10]) normie {
     sus count normie = 0
     sus current normie = 0
     sus i normie = 0

@@ -29,7 +29,7 @@ squad ArchiveOptions {
     sus format ArchiveFormat
     sus compression_level drip
     sus include_hidden lit
-    sus exclude_patterns []tea
+    sus exclude_patterns tea[value]
     sus preserve_permissions lit
 }
 
@@ -60,7 +60,7 @@ slay create_package_archive(source_dir tea, output_path tea, options ArchiveOpti
     }
     
     # Collect files to archive
-    sus file_list []tea = collect_archive_files(source_dir, options)
+    sus file_list tea[value] = collect_archive_files(source_dir, options)
     ready (arrayz.len(file_list) == 0) {
         vibez.spill("No files found to archive in:", source_dir)
         damn cap
@@ -87,7 +87,7 @@ slay create_package_archive(source_dir tea, output_path tea, options ArchiveOpti
 }
 
 # Create tar.gz archive with compression
-slay create_tar_gz_archive(source_dir tea, output_path tea, file_list []tea, options ArchiveOptions) lit {
+slay create_tar_gz_archive(source_dir tea, output_path tea, file_list tea[value], options ArchiveOptions) lit {
     # Create temporary tar file first
     sus temp_tar tea = output_path + ".tmp.tar"
     
@@ -109,7 +109,7 @@ slay create_tar_gz_archive(source_dir tea, output_path tea, file_list []tea, opt
 }
 
 # Create tar archive (uncompressed)
-slay create_tar_archive(source_dir tea, output_path tea, file_list []tea, options ArchiveOptions) lit {
+slay create_tar_archive(source_dir tea, output_path tea, file_list tea[value], options ArchiveOptions) lit {
     sus archive_data tea = ""
     
     # Create tar header and file entries
@@ -443,11 +443,11 @@ slay detect_archive_format(file_path tea) ArchiveFormat {
 }
 
 # Collect files to include in archive
-slay collect_archive_files(source_dir tea, options ArchiveOptions) []tea {
-    sus file_list []tea = []
+slay collect_archive_files(source_dir tea, options ArchiveOptions) tea[value]{
+    sus file_list tea[value] = []
     
     # Get all files in directory recursively
-    sus all_files []tea = filez.list_files_recursive(source_dir)
+    sus all_files tea[value] = filez.list_files_recursive(source_dir)
     
     bestie (sus i drip = 0; i < arrayz.len(all_files); i = i + 1) {
         sus file_path tea = all_files[i]
@@ -528,7 +528,7 @@ slay is_hidden_file(path tea) lit {
     damn stringz.starts_with(filename, ".")
 }
 
-slay should_exclude_file(path tea, exclude_patterns []tea) lit {
+slay should_exclude_file(path tea, exclude_patterns tea[value]) lit {
     bestie (sus i drip = 0; i < arrayz.len(exclude_patterns); i = i + 1) {
         sus pattern tea = exclude_patterns[i]
         ready (matches_pattern(path, pattern)) {
@@ -555,7 +555,7 @@ slay make_relative_path(full_path tea, base_dir tea) tea {
 }
 
 # Real ZIP archive support implementation
-slay create_zip_archive(source_dir tea, output_path tea, file_list []tea, options ArchiveOptions) lit {
+slay create_zip_archive(source_dir tea, output_path tea, file_list tea[value], options ArchiveOptions) lit {
     vibez.spill("Creating ZIP archive:", output_path)
     
     # ZIP file structure: local file headers + central directory + end record

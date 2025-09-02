@@ -52,7 +52,7 @@ slay test_directory_operations() {
     assert_true(dir_exists)
     
     fr fr Test 3: List directory contents (should be empty)
-    sus files []tea = fs.list_dir(test_dir)
+    sus files tea[value] = fs.list_dir(test_dir)
     assert_true(files.length >= 0)
     
     fr fr Test 4: Remove directory

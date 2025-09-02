@@ -296,7 +296,7 @@ fr fr ================================
 fr fr Public Parallel Execution API
 fr fr ================================
 
-slay run_tests_in_parallel(test_functions []slay() TestResult, worker_count normie) lit {
+slay run_tests_in_parallel(test_functions slay[value]() TestResult, worker_count normie) lit {
     ready (len(test_functions) == 0) {
         vibez.spill("⚠️  No tests to execute")
         damn based  fr fr No tests provided
@@ -413,7 +413,7 @@ struct CoverageReport {
     total_lines normie
     covered_lines normie
     coverage_percentage drip
-    uncovered_functions []tea
+    uncovered_functions tea[value]
     function_coverage_map {tea: lit}
 }
 
@@ -493,7 +493,7 @@ slay demo_parallel_execution() lit {
     vibez.spill("🎯 Demonstrating Parallel Test Execution")
     
     fr fr Create array of test functions
-    sus test_functions []slay() TestResult = [
+    sus test_functions slay[value]() TestResult = [
         slay() TestResult { damn simulate_test_result("Quick Test", based) },
         slay() TestResult { damn simulate_test_result("Medium Test", based) },
         slay() TestResult { damn simulate_test_result("Complex Test", based) },

@@ -56,7 +56,7 @@ sus readValue := cursed_pointer.ReadByte(basePtr)
 assert_eq_int(readValue, 42)
 
 fr fr Test bytes operations
-sus data := []normie{1, 2, 3, 4, 5}
+sus data := normie[value]{1, 2, 3, 4, 5}
 cursed_pointer.WriteBytes(basePtr, data)
 sus readData := cursed_pointer.ReadBytes(basePtr, 5)
 assert_eq_int(len(readData), 5)

@@ -868,7 +868,7 @@ slay char_from_byte(b byte) tea { fr fr Convert single byte to character
     damn ""  fr fr Placeholder
 }
 
-slay string_from_bytes(bytes []byte) tea { fr fr Create string from byte array
+slay string_from_bytes(bytes byte[value]) tea { fr fr Create string from byte array
     fr fr This would be implemented as a compiler intrinsic
     damn ""  fr fr Placeholder
 }

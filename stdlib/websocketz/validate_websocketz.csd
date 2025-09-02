@@ -30,7 +30,7 @@ slay validate_core_functionality() {
     sus accept_key tea = ws_compute_accept_key(client_key)
     assert_true(stringz.length(accept_key) > 0)
     
-    sus protocols [2]tea
+    sus protocols tea[2]
     protocols[0] = "chat"
     protocols[1] = "validation"
     sus request tea = ws_create_handshake_request("/validate", protocols, 2)
@@ -140,7 +140,7 @@ slay validate_client_server() {
     
     fr fr Test client connection
     vibez.spill("  ✓ Testing client connection...")
-    sus protocols [2]tea
+    sus protocols tea[2]
     protocols[0] = "validation"
     protocols[1] = "test"
     
@@ -179,7 +179,7 @@ slay validate_extensions_security() {
     
     fr fr Test security features
     vibez.spill("  ✓ Testing security validation...")
-    sus allowed_origins [3]tea
+    sus allowed_origins tea[3]
     allowed_origins[0] = "https://validation.test"
     allowed_origins[1] = "https://secure.validation.test"
     allowed_origins[2] = "*"
@@ -189,7 +189,7 @@ slay validate_extensions_security() {
     vibez.spill("    ✅ Origin validation working")
     
     fr fr Test content filtering
-    sus blocked_words [2]tea
+    sus blocked_words tea[2]
     blocked_words[0] = "forbidden"
     blocked_words[1] = "blocked"
     

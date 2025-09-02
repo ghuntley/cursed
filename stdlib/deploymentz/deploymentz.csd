@@ -75,9 +75,9 @@ squad DeploymentConfig {
     sus health_check_url tea
     sus readiness_probe map<tea, any>
     sus liveness_probe map<tea, any>
-    sus secrets []tea
-    sus config_maps []tea
-    sus volumes []map<tea, any>
+    sus secrets tea[value]
+    sus config_maps tea[value]
+    sus volumes map[value]<tea, any>
     sus networking map<tea, any>
     sus scaling map<tea, any>
     sus rollout_strategy map<tea, any>
@@ -89,23 +89,23 @@ squad BuildConfig {
     sus context_path tea
     sus build_args map<tea, tea>
     sus target_stage tea
-    sus cache_from []tea
+    sus cache_from tea[value]
     sus push_registry tea
-    sus tags []tea
+    sus tags tea[value]
     sus labels map<tea, tea>
     sus multi_arch lit
-    sus platforms []tea
+    sus platforms tea[value]
 }
 
 # Pipeline Definition
 squad Pipeline {
     sus name tea
-    sus stages []DeploymentStage
+    sus stages DeploymentStage[value]
     sus environment_variables map<tea, tea>
-    sus secrets []tea
-    sus triggers []map<tea, any>
-    sus notifications []map<tea, any>
-    sus artifacts []map<tea, any>
+    sus secrets tea[value]
+    sus triggers map[value]<tea, any>
+    sus notifications map[value]<tea, any>
+    sus artifacts map[value]<tea, any>
     sus timeout drip
     sus retry_count drip
 }
@@ -116,7 +116,7 @@ squad DeploymentResult {
     sus deployment_id tea
     sus status DeploymentStatus
     sus message tea
-    sus artifacts []tea
+    sus artifacts tea[value]
     sus metadata map<tea, any>
     sus started_at drip
     sus completed_at drip
@@ -128,9 +128,9 @@ module ContainerBuilder {
     squad BuildResult {
         sus success lit
         sus image_id tea
-        sus tags []tea
+        sus tags tea[value]
         sus size drip
-        sus layers []tea
+        sus layers tea[value]
         sus build_log tea
         sus security_scan_results map<tea, any>
     }
@@ -196,7 +196,7 @@ module ContainerBuilder {
         vibez.spill("Starting multi-architecture build")
         
         sus start_time drip = timez.now()
-        sus built_images []tea = []
+        sus built_images tea[value] = []
 
         bestie platform in config.platforms {
             vibez.spill("Building for platform: {}", platform)
@@ -306,7 +306,7 @@ module ContainerBuilder {
         damn "sha256:abcdef123456"
     }
 
-    slay push_to_registry(image_id tea, tags []tea, registry tea) yikes<tea> {
+    slay push_to_registry(image_id tea, tags tea[value], registry tea) yikes<tea> {
         bestie tag in tags {
             sus push_command tea = stringz.format("docker push {}", tag)
             execute_command(push_command) fam {
@@ -316,7 +316,7 @@ module ContainerBuilder {
         damn "Push completed"
     }
 
-    slay create_manifest_list(manifest_tag tea, images []tea) yikes<tea> {
+    slay create_manifest_list(manifest_tag tea, images tea[value]) yikes<tea> {
         sus create_command tea = stringz.format("docker manifest create {} {}", 
             manifest_tag, stringz.join(images, " "))
         
@@ -1019,7 +1019,7 @@ module KubernetesDeployment {
         }
 
         # Get pod IP addresses
-        sus pods_result kubernetesz.KubeResult<[]map<tea, any>> = kubernetesz.PodManager.list_pods(
+        sus pods_result kubernetesz.KubeResult<map[value]<tea, any>> = kubernetesz.PodManager.list_pods(
             kube_config, namespace, stringz.format("app={}", deployment_name)
         )
 
@@ -1060,7 +1060,7 @@ module KubernetesDeployment {
 
             ready (status_result.success) {
                 sus status map<tea, any> = status_result.data["status"]?(map<tea, any>)
-                sus conditions []any = status["conditions"]?([]any)
+                sus conditions any[value] = status["conditions"]?(any[value])
                 
                 bestie condition in conditions {
                     sus condition_type tea = condition["type"]?(tea)
@@ -1232,7 +1232,7 @@ module InfrastructureAsCode {
             sus playbook_path tea
             sus inventory_file tea
             sus variables map<tea, any>
-            sus tags []tea
+            sus tags tea[value]
             sus limit tea
             sus vault_password_file tea
         }
@@ -1513,8 +1513,8 @@ module ServiceMeshIntegration {
         slay create_virtual_service(
             app_name tea,
             namespace tea,
-            hosts []tea,
-            routes []map<tea, any>
+            hosts tea[value],
+            routes map[value]<tea, any>
         ) DeploymentResult {
             sus virtual_service tea = stringz.format(`apiVersion: networking.istio.io/v1beta1
 kind: VirtualService
@@ -1575,7 +1575,7 @@ spec:
             }
         }
 
-        slay format_yaml_array(items []tea) tea {
+        slay format_yaml_array(items tea[value]) tea {
             sus result tea = ""
             bestie item in items {
                 result = stringz.format("{}\n  - {}", result, item)
@@ -1583,7 +1583,7 @@ spec:
             damn result
         }
 
-        slay format_yaml_routes(routes []map<tea, any>) tea {
+        slay format_yaml_routes(routes map[value]<tea, any>) tea {
             # Simplified route formatting
             damn "\n  - route:\n    - destination:\n        host: service"
         }
@@ -1654,7 +1654,7 @@ slay base64_encode(data tea) tea {
 # Export main deployment functions
 slay create_deployment_pipeline(
     name tea,
-    stages []DeploymentStage,
+    stages DeploymentStage[value],
     target_platform tea
 ) Pipeline {
     damn Pipeline{

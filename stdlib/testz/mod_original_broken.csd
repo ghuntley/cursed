@@ -166,8 +166,8 @@ slay random_string(length drip) tea {
     damn result
 }
 
-slay random_list_int(size drip, min_val drip, max_val drip) []drip {
-    sus result []drip = []
+slay random_list_int(size drip, min_val drip, max_val drip) drip[value]{
+    sus result drip[value] = []
     sus i drip = 0
     periodt (i < size) {
         sus value drip = random_int(min_val, max_val)
@@ -177,8 +177,8 @@ slay random_list_int(size drip, min_val drip, max_val drip) []drip {
     damn result
 }
 
-slay random_list_string(size drip, max_length drip) []tea {
-    sus result []tea = []
+slay random_list_string(size drip, max_length drip) tea[value]{
+    sus result tea[value] = []
     sus i drip = 0
     periodt (i < size) {
         sus length drip = random_int(1, max_length)
@@ -251,12 +251,12 @@ slay test_property_custom(property_name tea, test_function tea, iterations drip)
             
         } otherwise ready (test_function == "test_list_reverse_twice") {
             sus list_size drip = random_int(1, 5)
-            sus test_list []drip = random_list_int(list_size, 1, 10)
+            sus test_list drip[value] = random_list_int(list_size, 1, 10)
             sus description tea = "list=[" + format_list_int(test_list) + "]"
             
             fr fr Test: reverse(reverse(list)) == list
-            sus reversed_once []drip = reverse_list_int(test_list)
-            sus reversed_twice []drip = reverse_list_int(reversed_once)
+            sus reversed_once drip[value] = reverse_list_int(test_list)
+            sus reversed_twice drip[value] = reverse_list_int(reversed_once)
             property_assert(lists_equal_int(test_list, reversed_twice), description)
         }
         i = i + 1
@@ -265,9 +265,9 @@ slay test_property_custom(property_name tea, test_function tea, iterations drip)
 
 fr fr ===== SHRINKING HELPERS =====
 
-slay shrink_int(value drip) []drip {
+slay shrink_int(value drip) drip[value]{
     fr fr Generate smaller values for shrinking
-    sus shrunk []drip = []
+    sus shrunk drip[value] = []
     
     ready (value > 0) {
         shrunk = append_to_list_int(shrunk, 0)
@@ -282,9 +282,9 @@ slay shrink_int(value drip) []drip {
     damn shrunk
 }
 
-slay shrink_string(value tea) []tea {
+slay shrink_string(value tea) tea[value]{
     fr fr Generate smaller strings for shrinking
-    sus shrunk []tea = []
+    sus shrunk tea[value] = []
     sus length drip = string_length(value)
     
     ready (length > 0) {
@@ -306,13 +306,13 @@ slay test_invariant(invariant_name tea, setup_function tea, iterations drip) {
     sus i drip = 0
     periodt (i < iterations) {
         ready (setup_function == "test_list_operations") {
-            sus list []drip = random_list_int(random_int(1, 10), 1, 100)
+            sus list drip[value] = random_list_int(random_int(1, 10), 1, 100)
             sus description tea = "list=[" + format_list_int(list) + "]"
             
             fr fr Invariant: length after adding and removing element should be same
             sus original_length drip = len(list)
-            sus modified []drip = append_to_list_int(list, 42)
-            sus restored []drip = remove_last_int(modified)
+            sus modified drip[value] = append_to_list_int(list, 42)
+            sus restored drip[value] = remove_last_int(modified)
             sus final_length drip = len(restored)
             
             property_assert(original_length == final_length, description)
@@ -334,7 +334,7 @@ slay test_invariant(invariant_name tea, setup_function tea, iterations drip) {
 
 fr fr ===== UTILITY FUNCTIONS =====
 
-slay append_to_list_int(list []drip, item drip) []drip {
+slay append_to_list_int(list drip[value], item drip) drip[value]{
     ready (len(list) == 0) { damn [item] }
     ready (len(list) == 1) { damn [list[0], item] }
     ready (len(list) == 2) { damn [list[0], list[1], item] }
@@ -343,7 +343,7 @@ slay append_to_list_int(list []drip, item drip) []drip {
     damn list  fr fr Return original if full
 }
 
-slay append_to_list_string(list []tea, item tea) []tea {
+slay append_to_list_string(list tea[value], item tea) tea[value]{
     ready (len(list) == 0) { damn [item] }
     ready (len(list) == 1) { damn [list[0], item] }
     ready (len(list) == 2) { damn [list[0], list[1], item] }
@@ -352,7 +352,7 @@ slay append_to_list_string(list []tea, item tea) []tea {
     damn list  fr fr Return original if full
 }
 
-slay reverse_list_int(list []drip) []drip {
+slay reverse_list_int(list drip[value]) drip[value]{
     sus length drip = len(list)
     ready (length == 0) { damn [] }
     ready (length == 1) { damn [list[0]] }
@@ -362,7 +362,7 @@ slay reverse_list_int(list []drip) []drip {
     damn list  fr fr Return original if too long for demo
 }
 
-slay remove_last_int(list []drip) []drip {
+slay remove_last_int(list drip[value]) drip[value]{
     sus length drip = len(list)
     ready (length <= 1) { damn [] }
     ready (length == 2) { damn [list[0]] }
@@ -371,7 +371,7 @@ slay remove_last_int(list []drip) []drip {
     damn list  fr fr Return original if too long for demo
 }
 
-slay lists_equal_int(list1 []drip, list2 []drip) lit {
+slay lists_equal_int(list1 drip[value], list2 drip[value]) lit {
     sus len1 drip = len(list1)
     sus len2 drip = len(list2)
     
@@ -390,7 +390,7 @@ slay lists_equal_int(list1 []drip, list2 []drip) lit {
     damn based
 }
 
-slay format_list_int(list []drip) tea {
+slay format_list_int(list drip[value]) tea {
     sus length drip = len(list)
     ready (length == 0) { damn "" }
     ready (length == 1) { damn json_number_to_string(list[0]) }

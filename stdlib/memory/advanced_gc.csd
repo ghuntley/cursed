@@ -77,7 +77,7 @@ struct AdvancedGarbageCollector {
     spill generations [GC_NUM_GENERATIONS]GCGeneration
     spill root_set *GCRootEntry
     spill mark_stack [](*GCObjectHeader)
-    spill remembered_set []WriteBarrierEntry
+    spill remembered_set WriteBarrierEntry[value]
     spill weak_references [](*GCObjectHeader)
     
     fr fr Collection state

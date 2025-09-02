@@ -11,7 +11,7 @@ fr fr Dynamic Array (Vector) Implementation
 fr fr ================================
 
 be_like DynamicArray squad {
-    data []extra
+    data extra[value]
     length normie
 }
 
@@ -118,7 +118,7 @@ be_like SimpleHashEntry squad {
 }
 
 be_like SimpleHashMap squad {
-    entries []SimpleHashEntry
+    entries SimpleHashEntry[value]
     size normie
 }
 
@@ -234,7 +234,7 @@ slay HashMap_clear(map SimpleHashMap) SimpleHashMap {
     damn map
 }
 
-slay HashMap_keys(map SimpleHashMap) []tea {
+slay HashMap_keys(map SimpleHashMap) tea[value]{
     lowkey map.size == 0 {
         damn []
     }
@@ -251,7 +251,7 @@ slay HashMap_keys(map SimpleHashMap) []tea {
     damn []  fr fr Default for larger sizes
 }
 
-slay HashMap_values(map SimpleHashMap) []extra {
+slay HashMap_values(map SimpleHashMap) extra[value]{
     lowkey map.size == 0 {
         damn []
     }
@@ -272,14 +272,14 @@ fr fr ================================
 fr fr Enhanced Array Operations
 fr fr ================================
 
-slay Array_safe_get(arr []extra, index normie, default_value extra) extra {
+slay Array_safe_get(arr extra[value], index normie, default_value extra) extra {
     lowkey index >= 0 && index < len(arr) {
         damn arr[index]
     }
     damn default_value
 }
 
-slay Array_contains(arr []extra, value extra) lit {
+slay Array_contains(arr extra[value], value extra) lit {
     sus i normie = 0
     bestie i < len(arr) {
         lowkey arr[i] == value {
@@ -290,7 +290,7 @@ slay Array_contains(arr []extra, value extra) lit {
     damn cringe
 }
 
-slay Array_find_index(arr []extra, value extra) normie {
+slay Array_find_index(arr extra[value], value extra) normie {
     sus i normie = 0
     bestie i < len(arr) {
         lowkey arr[i] == value {
@@ -301,7 +301,7 @@ slay Array_find_index(arr []extra, value extra) normie {
     damn -1
 }
 
-slay Array_reverse(arr []extra) []extra {
+slay Array_reverse(arr extra[value]) extra[value]{
     sus length normie = len(arr)
     
     lowkey length == 0 { damn [] }
@@ -314,7 +314,7 @@ slay Array_reverse(arr []extra) []extra {
     damn arr  fr fr Default for larger arrays
 }
 
-slay Array_slice(arr []extra, start normie, end normie) []extra {
+slay Array_slice(arr extra[value], start normie, end normie) extra[value]{
     sus length normie = len(arr)
     
     fr fr Bounds checking
@@ -371,14 +371,14 @@ slay test_simple_collections() {
     test_assert(!HashMap_contains_key(map, "key1"), "Should not contain removed key")
     
     fr fr Test Array operations
-    sus arr []normie = [10, 20, 30, 40]
+    sus arr normie[value] = [10, 20, 30, 40]
     test_assert(Array_contains(arr, 30), "Array should contain 30")
     test_assert(Array_find_index(arr, 40) == 3, "Index of 40 should be 3")
     
-    sus reversed []normie = Array_reverse(arr)
+    sus reversed normie[value] = Array_reverse(arr)
     test_assert(reversed[0] == 40, "First element of reversed should be 40")
     
-    sus sliced []normie = Array_slice(arr, 1, 3)
+    sus sliced normie[value] = Array_slice(arr, 1, 3)
     test_assert(len(sliced) == 2, "Slice should have 2 elements")
     test_assert(sliced[0] == 20, "First element of slice should be 20")
     

@@ -653,7 +653,7 @@ slay TestResult.benchmark(test_name tea, assertion_name tea, operation slay()) T
     damn result
 }
 
-slay TestSuite.benchmark_suite(suite_name tea, operations []slay()) TestSuite {
+slay TestSuite.benchmark_suite(suite_name tea, operations slay[value]()) TestSuite {
     sus suite TestSuite = TestSuite.new(suite_name)
     
     bestie i := 0; i < operations.length; i++ {

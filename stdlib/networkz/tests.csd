@@ -79,7 +79,7 @@ slay test_url_parsing() lit {
 // URL Encoding/Decoding Tests
 slay test_url_encoding() lit {
     testz.test_case("URL parameter encoding")
-    sus params []tea = ["name=John Doe", "city=New York", "special=hello&world"]
+    sus params tea[value] = ["name=John Doe", "city=New York", "special=hello&world"]
     sus encoded tea = networkz.encode_url_params(params)
     
     testz.assert_true(stringz.contains(encoded, "John%20Doe"))
@@ -88,7 +88,7 @@ slay test_url_encoding() lit {
     
     testz.test_case("URL parameter decoding")
     sus encoded_params tea = "name=John%20Doe&city=New%20York&special=hello%26world"
-    sus decoded []tea = networkz.decode_url_params(encoded_params)
+    sus decoded tea[value] = networkz.decode_url_params(encoded_params)
     
     testz.assert_eq_int(arrayz.len(decoded), 3)
     testz.assert_eq_string(decoded[0], "name=John Doe")
@@ -99,7 +99,7 @@ slay test_url_encoding() lit {
     sus empty_encoded tea = networkz.encode_url_params([])
     testz.assert_eq_string(empty_encoded, "")
     
-    sus empty_decoded []tea = networkz.decode_url_params("")
+    sus empty_decoded tea[value] = networkz.decode_url_params("")
     testz.assert_eq_int(arrayz.len(empty_decoded), 0)
     
     damn based
@@ -214,7 +214,7 @@ slay test_http_request_building() lit {
     testz.assert_true(stringz.contains(get_request, "Connection: close"))
     
     testz.test_case("HTTP request building - POST request with body")
-    sus custom_headers []tea = ["Content-Type: application/json", "Authorization: Bearer token123"]
+    sus custom_headers tea[value] = ["Content-Type: application/json", "Authorization: Bearer token123"]
     sus post_body tea = "{\"name\": \"test\", \"value\": 42}"
     
     sus post_request tea = networkz.build_http_request(
@@ -359,7 +359,7 @@ slay test_http_client() lit {
     }
     
     testz.test_case("HTTP advanced request - with custom headers")
-    sus custom_headers []tea = [
+    sus custom_headers tea[value] = [
         "Authorization: Bearer test-token",
         "X-Custom-Header: test-value",
         "Accept: application/json"
@@ -415,7 +415,7 @@ slay test_json_api() lit {
 // Form Data Tests
 slay test_form_data() lit {
     testz.test_case("Form POST request")
-    sus form_data []tea = [
+    sus form_data tea[value] = [
         "username=testuser",
         "password=secret123",
         "email=test@example.com"
@@ -677,7 +677,7 @@ slay test_error_handling_integration() lit {
     
     testz.test_case("Multiple error conditions")
     // Test handling multiple potential error points
-    sus invalid_responses []tea = ["", "Invalid", "HTTP/1.1 ABC Invalid"]
+    sus invalid_responses tea[value] = ["", "Invalid", "HTTP/1.1 ABC Invalid"]
     sus i drip = 0
     
     bestie (i < arrayz.len(invalid_responses)) {
@@ -698,7 +698,7 @@ slay test_error_handling_integration() lit {
 // Performance and Stress Tests
 slay test_performance_characteristics() lit {
     testz.test_case("Multiple concurrent requests simulation")
-    sus urls []tea = [
+    sus urls tea[value] = [
         "http://api.example.com/endpoint1",
         "http://api.example.com/endpoint2", 
         "http://api.example.com/endpoint3",
@@ -725,7 +725,7 @@ slay test_performance_characteristics() lit {
     
     testz.test_case("Large request/response handling")
     sus large_body tea = stringz.repeat("A", 10000)  // 10KB of data
-    sus large_headers []tea = []
+    sus large_headers tea[value] = []
     sus header_count drip = 0
     
     bestie (header_count < 20) {
@@ -768,7 +768,7 @@ slay test_real_world_scenarios() lit {
     testz.assert_true(networkz.is_success_status(auth_response.status_code))
     
     // 2. Authenticated API call
-    sus auth_headers []tea = ["Authorization: Bearer fake-token"]
+    sus auth_headers tea[value] = ["Authorization: Bearer fake-token"]
     sus api_response networkz.HttpResponse = networkz.http_request_advanced(
         "GET",
         "http://api.example.com/protected-resource",

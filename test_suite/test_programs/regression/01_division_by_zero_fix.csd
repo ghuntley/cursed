@@ -129,14 +129,14 @@ slay test_division_in_loops() {
     vibez.spill("=== Division in Loop Scenarios ===")
     
     // Test division operations in loops to ensure no regression
-    finna i normie = 1; i <= 10; i++ {
+    bestie i := 1; i <= 10; i++ {
         sus result = 100 / i
         vibez.spill("100 /", i, "=", result)
     }
     
     // Test potential division by zero in loop
     vibez.spill("Testing division in loop with potential zeros:")
-    finna j normie = 3; j >= -3; j-- {
+    bestie j := 3; j >= -3; j-- {
         ready (j != 0) {
             sus loop_result = 18 / j
             vibez.spill("18 /", j, "=", loop_result)

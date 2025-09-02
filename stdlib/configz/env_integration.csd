@@ -7,7 +7,7 @@ yeet "vibez"
 fr fr ===== ADVANCED ENVIRONMENT VARIABLE PROCESSING =====
 
 squad EnvProcessor {
-    sus prefix_filters []tea
+    sus prefix_filters tea[value]
     sus key_transformations map<tea, tea>
     sus type_hints map<tea, tea>
     sus validation_patterns map<tea, tea>
@@ -52,10 +52,10 @@ slay env_set_case_sensitivity(processor EnvProcessor, sensitive lit) EnvProcesso
 
 fr fr ===== ENVIRONMENT VARIABLE COLLECTION =====
 
-slay collect_filtered_env_vars(processor EnvProcessor) []tea {
+slay collect_filtered_env_vars(processor EnvProcessor) tea[value]{
     fr fr Collect environment variables based on processor configuration
-    sus all_vars []tea = get_all_env_vars()
-    sus filtered_vars []tea = []
+    sus all_vars tea[value] = get_all_env_vars()
+    sus filtered_vars tea[value] = []
     sus var_count drip = array_length(all_vars)
     sus filter_count drip = array_length(processor.prefix_filters)
     sus result_count drip = 0
@@ -63,7 +63,7 @@ slay collect_filtered_env_vars(processor EnvProcessor) []tea {
     sus i drip = 0
     bestie (i < var_count) {
         sus env_var tea = all_vars[i]
-        sus key_value []tea = split_env_var(env_var)
+        sus key_value tea[value] = split_env_var(env_var)
         
         ready (array_length(key_value) == 2) {
             sus env_key tea = key_value[0]
@@ -140,7 +140,7 @@ slay get_env_type_hint(processor EnvProcessor, key tea) tea {
     }
     
     fr fr Check pattern matches
-    sus hint_keys []tea = env_map_keys_string(processor.type_hints)
+    sus hint_keys tea[value] = env_map_keys_string(processor.type_hints)
     sus key_count drip = array_length(hint_keys)
     
     sus i drip = 0
@@ -216,7 +216,7 @@ slay is_integer_string(str tea) lit {
 slay convert_to_array(config_value ConfigValue) ConfigValue {
     fr fr Convert comma-separated string to array
     sus value_str tea = config_value.string_value
-    sus elements []tea = split_string(value_str, ",", 0)
+    sus elements tea[value] = split_string(value_str, ",", 0)
     sus element_count drip = array_length(elements)
     
     config_value.type = "array"
@@ -336,7 +336,7 @@ slay validate_env_configuration(processor EnvProcessor, config ConfigManager) li
     sus validation_passed lit = based
     
     fr fr Check required environment variables
-    sus required_vars []tea = [
+    sus required_vars tea[value] = [
         "DATABASE_HOST",
         "DATABASE_PORT", 
         "JWT_SECRET",
@@ -678,8 +678,8 @@ slay env_map_has_string(m map<tea, tea>, key tea) lit {
     damn cringe
 }
 
-slay env_map_keys_string(m map<tea, tea>) []tea {
+slay env_map_keys_string(m map<tea, tea>) tea[value]{
     fr fr Get all keys from environment string map
-    sus empty_keys []tea = []
+    sus empty_keys tea[value] = []
     damn empty_keys
 }

@@ -47,7 +47,7 @@ collab RpcHandler {
 # RPC Method Registry
 squad RpcRegistry {
     methods map<tea, RpcHandler>,
-    middleware []RpcMiddleware
+    middleware RpcMiddleware[value]
 }
 
 # RPC Middleware Interface
@@ -218,11 +218,11 @@ slay is_notification(request RpcRequest) lit {
 
 # Create batch response for multiple requests
 slay process_batch_request(registry &RpcRegistry, json_data tea) yikes<tea> {
-    sus requests []RpcRequest = []
-    sus responses []RpcResponse = []
+    sus requests RpcRequest[value] = []
+    sus responses RpcResponse[value] = []
     
     # Parse batch request
-    sus json_array []map<tea, tea> = jsonz.parse_array(json_data) fam {
+    sus json_array map[value]<tea, tea> = jsonz.parse_array(json_data) fam {
         when _ -> yikes "Invalid batch request format"
     }
     

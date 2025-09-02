@@ -166,7 +166,7 @@ slay test_http2_request_response() {
     test_start("HTTP/2 Request/Response")
     
     fr fr Test HEADERS frame creation for request
-    sus request_headers [5]tea
+    sus request_headers tea[5]
     request_headers[0] = ":method: GET"
     request_headers[1] = ":path: /api/test"
     request_headers[2] = ":scheme: https"
@@ -228,7 +228,7 @@ slay test_http2_server_push() {
     test_start("HTTP/2 Server Push")
     
     fr fr Test PUSH_PROMISE frame creation
-    sus push_headers [3]tea
+    sus push_headers tea[3]
     push_headers[0] = ":method: GET"
     push_headers[1] = ":path: /static/style.css"
     push_headers[2] = ":authority: example.com"
@@ -305,7 +305,7 @@ slay test_http2_client() {
     test_start("HTTP/2 Client")
     
     fr fr Test GET request
-    sus headers [3]tea
+    sus headers tea[3]
     headers[0] = "accept: application/json"
     headers[1] = "user-agent: CURSED-HTTP2-Test/1.0"
     
@@ -316,7 +316,7 @@ slay test_http2_client() {
     assert_true(stringz.contains(get_response, "HTTP/2 GET response"))
     
     fr fr Test POST request
-    sus post_headers [2]tea
+    sus post_headers tea[2]
     post_headers[0] = "content-type: application/json"
     post_headers[1] = "accept: application/json"
     sus post_body tea = "{\"name\": \"Test User\", \"email\": \"test@example.com\"}"
@@ -433,7 +433,7 @@ slay test_http2_integration() {
     sus conn HTTP2Connection = http2_connection_create()
     
     fr fr Send request
-    sus request_headers [4]tea
+    sus request_headers tea[4]
     request_headers[0] = "accept: application/json"
     request_headers[1] = "user-agent: CURSED-HTTP2-Integration/1.0"
     request_headers[2] = "authorization: Bearer test-token"
@@ -443,7 +443,7 @@ slay test_http2_integration() {
     assert_true(stream_id % 2 == 1)  fr fr Client-initiated streams are odd
     
     fr fr Send response
-    sus response_headers [3]tea
+    sus response_headers tea[3]
     response_headers[0] = "cache-control: max-age=300"
     response_headers[1] = "x-request-id: test-123"
     
@@ -452,7 +452,7 @@ slay test_http2_integration() {
     assert_eq_lit(response_result, based)
     
     fr fr Test server push in integration
-    sus push_headers [2]tea
+    sus push_headers tea[2]
     push_headers[0] = ":path: /api/user/123/avatar"
     push_headers[1] = ":method: GET"
     
@@ -470,11 +470,11 @@ slay test_http2_performance() {
     
     fr fr Test multiple concurrent streams
     sus conn HTTP2Connection = http2_connection_create()
-    sus concurrent_streams [10]normie
+    sus concurrent_streams normie[10]
     
     fr fr Create 10 concurrent streams
     bestie i normie = 0; i < 10; i++ {
-        sus headers [2]tea
+        sus headers tea[2]
         headers[0] = "accept: application/json"
         headers[1] = "x-stream-id: " + stringz.int_to_string(i)
         

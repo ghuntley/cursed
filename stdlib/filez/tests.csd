@@ -66,7 +66,7 @@ assert_true(array_length(lines) >= 2, "Should have at least 2 lines")
 
 fr fr Test writing lines to file
 sus lines_filename tea = "test_filez_lines.txt"
-sus test_lines []tea = ["First line", "Second line", "Third line with spaces"]
+sus test_lines tea[value] = ["First line", "Second line", "Third line with spaces"]
 sus write_lines_err tea = write_file_lines(lines_filename, test_lines)
 assert_eq_string(write_lines_err, "", "Writing file lines should succeed")
 
@@ -78,7 +78,7 @@ test_start("Binary File Operations")
 
 fr fr Test binary file operations
 sus binary_filename tea = "test_filez_binary.bin"
-sus binary_data []drip = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]  fr fr "Hello World"
+sus binary_data drip[value] = [72, 101, 108, 108, 111, 32, 87, 111, 114, 108, 100]  fr fr "Hello World"
 sus write_binary_err tea = write_file_bytes(binary_filename, binary_data)
 assert_eq_string(write_binary_err, "", "Binary file write should succeed")
 
@@ -268,7 +268,7 @@ ready (string_length(long_name) > 255) {
 test_start("Performance and Stress Testing")
 
 fr fr Test handling multiple files
-sus stress_files []tea = ["stress1.txt", "stress2.txt", "stress3.txt", "stress4.txt", "stress5.txt"]
+sus stress_files tea[value] = ["stress1.txt", "stress2.txt", "stress3.txt", "stress4.txt", "stress5.txt"]
 sus stress_content tea = "Stress test content for performance validation"
 
 sus i drip = 0

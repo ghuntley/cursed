@@ -38,7 +38,7 @@ be_like FileHandle squad {
     position thicc
     is_open lit
     buffer_size normie
-    buffer []byte
+    buffer byte[value]
     buffer_pos normie
     buffer_len normie
     is_eof lit
@@ -210,8 +210,8 @@ slay normalize_path(path tea) tea { fr fr Normalize path with proper separator h
     }
     
     fr fr Split into components and resolve . and ..
-    sus components []tea = string_split(normalized, "/")
-    sus result_components []tea = []
+    sus components tea[value] = string_split(normalized, "/")
+    sus result_components tea[value] = []
     sus is_absolute lit = starts_with(normalized, "/")
     
     bestie i := 0; i < array_length(components); i++ {
@@ -263,7 +263,7 @@ slay get_absolute_path(path tea) tea { fr fr Get absolute path
 
 slay resolve_path(path tea) tea { fr fr Resolve all symbolic links in path
     sus c_path [*:0]const u8 = string_to_cstring(path)
-    sus buffer [4096]u8 = undefined
+    sus buffer u8[4096] = undefined
     sus resolved [*:0]const u8 = sys_realpath(c_path, &buffer[0])
     
     lowkey resolved == null {
@@ -384,7 +384,7 @@ fr fr Core File Operations
 fr fr ================================
 
 slay read_file(path tea) tea { fr fr Read entire file as string
-    sus bytes []byte = read_file_bytes(path)
+    sus bytes byte[value] = read_file_bytes(path)
     lowkey array_length(bytes) == 0 {
         damn ""
     }
@@ -392,7 +392,7 @@ slay read_file(path tea) tea { fr fr Read entire file as string
     damn bytes_to_string(bytes)
 }
 
-slay read_file_bytes(path tea) []byte { fr fr Read entire file as bytes
+slay read_file_bytes(path tea) byte[value]{ fr fr Read entire file as bytes
     sus handle FileHandle = open_file(path, MODE_READ)
     lowkey handle.fd < 0 {
         damn []
@@ -404,7 +404,7 @@ slay read_file_bytes(path tea) []byte { fr fr Read entire file as bytes
         damn []
     }
     
-    sus buffer []byte = make_byte_array(file_info.size)
+    sus buffer byte[value] = make_byte_array(file_info.size)
     sus bytes_read thicc = read_from_handle(handle, buffer)
     
     close_file(handle)
@@ -416,23 +416,23 @@ slay read_file_bytes(path tea) []byte { fr fr Read entire file as bytes
     damn buffer
 }
 
-slay read_file_lines(path tea) []tea { fr fr Read file as array of lines
+slay read_file_lines(path tea) tea[value]{ fr fr Read file as array of lines
     sus content tea = read_file(path)
     lowkey content == "" {
         damn []
     }
     
     fr fr Split by various line endings
-    sus lines []tea = string_split_lines(content)
+    sus lines tea[value] = string_split_lines(content)
     damn lines
 }
 
 slay write_file(path tea, content tea) lit { fr fr Write string to file
-    sus bytes []byte = string_to_bytes(content)
+    sus bytes byte[value] = string_to_bytes(content)
     damn write_file_bytes(path, bytes)
 }
 
-slay write_file_bytes(path tea, data []byte) lit { fr fr Write bytes to file
+slay write_file_bytes(path tea, data byte[value]) lit { fr fr Write bytes to file
     sus handle FileHandle = open_file(path, MODE_WRITE | MODE_CREATE | MODE_TRUNCATE)
     lowkey handle.fd < 0 {
         damn false
@@ -445,17 +445,17 @@ slay write_file_bytes(path tea, data []byte) lit { fr fr Write bytes to file
     damn success
 }
 
-slay write_file_lines(path tea, lines []tea) lit { fr fr Write array of lines to file
+slay write_file_lines(path tea, lines tea[value]) lit { fr fr Write array of lines to file
     sus content tea = join_array(lines, get_line_ending())
     damn write_file(path, content)
 }
 
 slay append_file(path tea, content tea) lit { fr fr Append string to file
-    sus bytes []byte = string_to_bytes(content)
+    sus bytes byte[value] = string_to_bytes(content)
     damn append_file_bytes(path, bytes)
 }
 
-slay append_file_bytes(path tea, data []byte) lit { fr fr Append bytes to file
+slay append_file_bytes(path tea, data byte[value]) lit { fr fr Append bytes to file
     sus handle FileHandle = open_file(path, MODE_WRITE | MODE_APPEND | MODE_CREATE)
     lowkey handle.fd < 0 {
         damn false
@@ -478,7 +478,7 @@ slay copy_file(source tea, dest tea) lit { fr fr Copy file with metadata preserv
     }
     
     fr fr Read source file
-    sus data []byte = read_file_bytes(source)
+    sus data byte[value] = read_file_bytes(source)
     lowkey array_length(data) == 0 && get_file_size(source) > 0 {
         damn false fr fr Read error
     }
@@ -513,7 +513,7 @@ slay copy_file_with_progress(source tea, dest tea, progress_callback tea) lit {
     }
     
     sus buffer_size normie = 64 * 1024 fr fr 64KB buffer
-    sus buffer []byte = make_byte_array(buffer_size)
+    sus buffer byte[value] = make_byte_array(buffer_size)
     sus total_copied thicc = 0
     sus file_size thicc = get_file_size(source)
     
@@ -523,7 +523,7 @@ slay copy_file_with_progress(source tea, dest tea, progress_callback tea) lit {
             break
         }
         
-        sus chunk []byte = slice_bytes(buffer, 0, bytes_read)
+        sus chunk byte[value] = slice_bytes(buffer, 0, bytes_read)
         sus bytes_written thicc = write_to_handle(dest_handle, chunk)
         
         lowkey bytes_written != bytes_read {
@@ -641,7 +641,7 @@ slay remove_directory_recursive(path tea) lit { fr fr Remove directory tree
         damn delete_file(path) fr fr Try as file
     }
     
-    sus entries []tea = list_directory(path)
+    sus entries tea[value] = list_directory(path)
     
     bestie i := 0; i < array_length(entries); i++ {
         sus entry tea = entries[i]
@@ -665,7 +665,7 @@ slay remove_directory_recursive(path tea) lit { fr fr Remove directory tree
     damn remove_directory(path)
 }
 
-slay list_directory(path tea) []tea { fr fr List directory contents
+slay list_directory(path tea) tea[value]{ fr fr List directory contents
     lowkey !is_directory(path) {
         damn []
     }
@@ -677,7 +677,7 @@ slay list_directory(path tea) []tea { fr fr List directory contents
         damn []
     }
     
-    sus entries []tea = []
+    sus entries tea[value] = []
     
     bestie true {
         sus entry_name [*:0]const u8 = sys_readdir(dir_fd)
@@ -695,9 +695,9 @@ slay list_directory(path tea) []tea { fr fr List directory contents
     damn entries
 }
 
-slay list_directory_detailed(path tea) []FileInfo { fr fr List with file info
-    sus entries []tea = list_directory(path)
-    sus detailed_entries []FileInfo = []
+slay list_directory_detailed(path tea) FileInfo[value]{ fr fr List with file info
+    sus entries tea[value] = list_directory(path)
+    sus detailed_entries FileInfo[value] = []
     
     bestie i := 0; i < array_length(entries); i++ {
         sus entry tea = entries[i]
@@ -718,7 +718,7 @@ slay copy_directory_recursive(source tea, dest tea) lit { fr fr Copy directory t
         damn false
     }
     
-    sus entries []tea = list_directory(source)
+    sus entries tea[value] = list_directory(source)
     
     bestie i := 0; i < array_length(entries); i++ {
         sus entry tea = entries[i]
@@ -858,7 +858,7 @@ slay get_file_times(path tea) (thicc, thicc, thicc) { fr fr Get created, modifie
 
 slay set_file_times(path tea, accessed_time thicc, modified_time thicc) lit { fr fr Set file times
     sus c_path [*:0]const u8 = string_to_cstring(path)
-    sus times [2]TimeSpec = undefined
+    sus times TimeSpec[2] = undefined
     
     times[0].tv_sec = accessed_time
     times[0].tv_nsec = 0
@@ -963,7 +963,7 @@ slay close_file(handle FileHandle) lit { fr fr Close file handle
     damn result == 0
 }
 
-slay read_from_handle(handle FileHandle, buffer []byte) thicc { fr fr Read from file handle
+slay read_from_handle(handle FileHandle, buffer byte[value]) thicc { fr fr Read from file handle
     lowkey !handle.is_open || handle.fd < 0 {
         damn 0
     }
@@ -972,7 +972,7 @@ slay read_from_handle(handle FileHandle, buffer []byte) thicc { fr fr Read from 
     damn max_int(0, bytes_read)
 }
 
-slay write_to_handle(handle FileHandle, data []byte) thicc { fr fr Write to file handle
+slay write_to_handle(handle FileHandle, data byte[value]) thicc { fr fr Write to file handle
     lowkey !handle.is_open || handle.fd < 0 {
         damn 0
     }
@@ -1067,7 +1067,7 @@ slay read_symlink(link_path tea) tea { fr fr Read symbolic link target
     }
     
     sus c_path [*:0]const u8 = string_to_cstring(link_path)
-    sus buffer [4096]u8 = undefined
+    sus buffer u8[4096] = undefined
     
     sus length thicc = sys_readlink(c_path, &buffer[0], 4095)
     lowkey length <= 0 {
@@ -1083,7 +1083,7 @@ fr fr Directory and Working Directory Management
 fr fr ================================
 
 slay get_current_directory() tea { fr fr Get current working directory
-    sus buffer [4096]u8 = undefined
+    sus buffer u8[4096] = undefined
     sus result [*:0]const u8 = sys_getcwd(&buffer[0], 4095)
     
     lowkey result == null {
@@ -1100,7 +1100,7 @@ slay set_current_directory(path tea) lit { fr fr Change current working director
 
 slay get_temp_directory() tea { fr fr Get temporary directory path
     fr fr Try various environment variables and fallback paths
-    sus temp_dirs []tea = ["/tmp", "/var/tmp", "/usr/tmp", "."]
+    sus temp_dirs tea[value] = ["/tmp", "/var/tmp", "/usr/tmp", "."]
     
     bestie i := 0; i < array_length(temp_dirs); i++ {
         sus temp_dir tea = temp_dirs[i]
@@ -1182,7 +1182,7 @@ slay get_disk_usage(path tea) thicc { fr fr Get disk space used by path
     }
     
     sus total_size thicc = 0
-    sus entries []tea = list_directory(path)
+    sus entries tea[value] = list_directory(path)
     
     bestie i := 0; i < array_length(entries); i++ {
         sus entry tea = entries[i]
@@ -1325,32 +1325,32 @@ slay cstring_to_string(cs [*:0]const u8) tea {
     damn ""
 }
 
-slay string_to_bytes(s tea) []byte {
+slay string_to_bytes(s tea) byte[value]{
     fr fr Placeholder - would use proper string conversion
     damn []
 }
 
-slay bytes_to_string(bytes []byte) tea {
+slay bytes_to_string(bytes byte[value]) tea {
     fr fr Placeholder - would use proper string conversion
     damn ""
 }
 
-slay make_byte_array(size thicc) []byte {
+slay make_byte_array(size thicc) byte[value]{
     fr fr Placeholder - would use proper memory allocation
     damn []
 }
 
-slay array_ptr(arr []byte) [*]u8 {
+slay array_ptr(arr byte[value]) [*]u8 {
     fr fr Placeholder - would get array pointer
     damn null
 }
 
-slay array_length(arr []byte) thicc {
+slay array_length(arr byte[value]) thicc {
     fr fr Placeholder - would get array length
     damn 0
 }
 
-slay slice_bytes(arr []byte, start thicc, end thicc) []byte {
+slay slice_bytes(arr byte[value], start thicc, end thicc) byte[value]{
     fr fr Placeholder - would slice byte array
     damn []
 }
@@ -1378,8 +1378,8 @@ slay call_progress_callback(callback_name tea, progress normie) {
 
 fr fr String function placeholders
 slay string_replace_all(s tea, old tea, new tea) tea { damn s }
-slay string_split(s tea, delimiter tea) []tea { damn [] }
-slay string_split_lines(s tea) []tea { damn [] }
+slay string_split(s tea, delimiter tea) tea[value]{ damn [] }
+slay string_split_lines(s tea) tea[value]{ damn [] }
 slay string_last_index(s tea, sub tea) thicc { damn -1 }
 slay string_substring(s tea, start thicc, end thicc) tea { damn s }
 slay string_length(s tea) thicc { damn 0 }
@@ -1391,10 +1391,10 @@ slay int_to_string(n normie) tea { damn "0" }
 slay int_to_string(n thicc) tea { damn "0" }
 
 fr fr Array function placeholders
-slay append_array(arr []tea, item tea) []tea { damn arr }
-slay append_array(arr []FileInfo, item FileInfo) []FileInfo { damn arr }
-slay join_array(arr []tea, delimiter tea) tea { damn "" }
-slay last_element(arr []tea) tea { damn "" }
-slay remove_last_element(arr []tea) []tea { damn arr }
-slay array_length(arr []tea) thicc { damn 0 }
-slay array_length(arr []FileInfo) thicc { damn 0 }
+slay append_array(arr tea[value], item tea) tea[value]{ damn arr }
+slay append_array(arr FileInfo[value], item FileInfo) FileInfo[value]{ damn arr }
+slay join_array(arr tea[value], delimiter tea) tea { damn "" }
+slay last_element(arr tea[value]) tea { damn "" }
+slay remove_last_element(arr tea[value]) tea[value]{ damn arr }
+slay array_length(arr tea[value]) thicc { damn 0 }
+slay array_length(arr FileInfo[value]) thicc { damn 0 }

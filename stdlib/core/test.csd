@@ -119,7 +119,7 @@ slay test_collection_operations() lit {
     print_test("Testing collection operations...")
     
     fr fr Test make() function
-    sus array []normie = make<normie>(5)
+    sus array normie[value] = make<normie>(5)
     lowkey array != cringe {
         print_success("make<normie>(5) creates array")
     } else {
@@ -146,7 +146,7 @@ slay test_collection_operations() lit {
     }
     
     fr fr Test append() function
-    sus new_array []normie = append(array, 42, 123)
+    sus new_array normie[value] = append(array, 42, 123)
     lowkey new_array != cringe {
         print_success("append() works")
     } else {

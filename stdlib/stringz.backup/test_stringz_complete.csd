@@ -25,7 +25,7 @@ slay test_core_spec_functions() {
     test_pass("HasSuffix() function works")
     
     // Test Split()
-    sus parts []tea = stringz.Split("hello,world,test", ",")
+    sus parts tea[value] = stringz.Split("hello,world,test", ",")
     assert_eq_int(len(parts), 3)
     assert_eq_string(parts[0], "hello")
     assert_eq_string(parts[1], "world")
@@ -33,7 +33,7 @@ slay test_core_spec_functions() {
     test_pass("Split() function works")
     
     // Test Join()
-    sus words []tea = ["hello", "world", "test"]
+    sus words tea[value] = ["hello", "world", "test"]
     sus joined tea = stringz.Join(words, " ")
     assert_eq_string(joined, "hello world test")
     test_pass("Join() function works")
@@ -317,7 +317,7 @@ slay test_integration() {
     
     // Test split and join roundtrip
     sus sentence tea = "The quick brown fox"
-    sus words []tea = stringz.Split(sentence, " ")
+    sus words tea[value] = stringz.Split(sentence, " ")
     sus rejoined tea = stringz.Join(words, " ")
     assert_eq_string(rejoined, sentence)
     test_pass("Split and join roundtrip works")

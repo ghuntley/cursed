@@ -34,8 +34,8 @@ slay chat_room_example() {
     sus chat_server WebSocketConnection = ws_server_create(8080, "/chat")
     
     fr fr Create multiple chat rooms
-    sus rooms [5]WebSocketRoom
-    sus room_names [5]tea
+    sus rooms WebSocketRoom[5]
+    sus room_names tea[5]
     room_names[0] = "General Discussion"
     room_names[1] = "Tech Talk"
     room_names[2] = "Gaming Zone"
@@ -48,8 +48,8 @@ slay chat_room_example() {
     }
     
     fr fr Create chat users
-    sus users [10]ChatUser
-    sus usernames [10]tea
+    sus users ChatUser[10]
+    sus usernames tea[10]
     usernames[0] = "Alice"
     usernames[1] = "Bob"
     usernames[2] = "Charlie"
@@ -93,8 +93,8 @@ slay chat_room_example() {
     }
     
     fr fr Simulate chat conversation
-    sus chat_messages [15]ChatMessage
-    sus message_contents [15]tea
+    sus chat_messages ChatMessage[15]
+    sus message_contents tea[15]
     message_contents[0] = "Hello everyone! 👋"
     message_contents[1] = "How's everyone doing today?"
     message_contents[2] = "Anyone working on interesting projects?"
@@ -175,7 +175,7 @@ be_like TradingTick squad {
 be_like TradingUser squad {
     spill user_id normie
     spill username tea
-    spill subscriptions [20]tea  fr fr Subscribed symbols
+    spill subscriptions tea[20]  fr fr Subscribed symbols
     spill subscription_count normie
     spill connection_id normie
 }
@@ -188,15 +188,15 @@ slay trading_platform_example() {
     sus trading_server WebSocketConnection = ws_server_create(8081, "/trading")
     
     fr fr Create rooms for different asset classes
-    sus asset_rooms [4]WebSocketRoom
+    sus asset_rooms WebSocketRoom[4]
     asset_rooms[0] = ws_room_create("stocks", "Stock Market")
     asset_rooms[1] = ws_room_create("crypto", "Cryptocurrency")
     asset_rooms[2] = ws_room_create("forex", "Foreign Exchange")
     asset_rooms[3] = ws_room_create("commodities", "Commodities")
     
     fr fr Create trading users with different interests
-    sus traders [8]TradingUser
-    sus trader_names [8]tea
+    sus traders TradingUser[8]
+    sus trader_names tea[8]
     trader_names[0] = "StockTrader"
     trader_names[1] = "CryptoInvestor"
     trader_names[2] = "ForexExpert"
@@ -246,8 +246,8 @@ slay trading_platform_example() {
     }
     
     fr fr Generate sample market data
-    sus ticks [12]TradingTick
-    sus symbols [12]tea
+    sus ticks TradingTick[12]
+    sus symbols tea[12]
     symbols[0] = "AAPL"
     symbols[1] = "GOOGL"
     symbols[2] = "MSFT"
@@ -261,7 +261,7 @@ slay trading_platform_example() {
     symbols[10] = "OIL"
     symbols[11] = "SILVER"
     
-    sus prices [12]normie
+    sus prices normie[12]
     prices[0] = 15025  fr fr $150.25
     prices[1] = 285043 fr fr $2850.43
     prices[2] = 41289  fr fr $412.89
@@ -324,7 +324,7 @@ slay trading_platform_example() {
     
     fr fr Display trading platform statistics
     vibez.spill("📊 Trading Platform Statistics:")
-    sus room_types [4]tea
+    sus room_types tea[4]
     room_types[0] = "Stocks"
     room_types[1] = "Crypto"
     room_types[2] = "Forex"
@@ -365,14 +365,14 @@ slay multiplayer_game_example() {
     sus game_server WebSocketConnection = ws_server_create(8082, "/game")
     
     fr fr Create game rooms for different modes
-    sus game_rooms [3]WebSocketRoom
+    sus game_rooms WebSocketRoom[3]
     game_rooms[0] = ws_room_create("battle_royale", "Battle Royale (100 players)")
     game_rooms[1] = ws_room_create("team_deathmatch", "Team Deathmatch (12 players)")
     game_rooms[2] = ws_room_create("co_op_campaign", "Co-op Campaign (4 players)")
     
     fr fr Create players with different skills
-    sus players [15]GamePlayer
-    sus player_names [15]tea
+    sus players GamePlayer[15]
+    sus player_names tea[15]
     player_names[0] = "ProGamer"
     player_names[1] = "NoobSlayer"
     player_names[2] = "CasualPlayer"
@@ -426,7 +426,7 @@ slay multiplayer_game_example() {
     }
     
     fr fr Simulate lobby chat and matchmaking
-    sus lobby_messages [10]tea
+    sus lobby_messages tea[10]
     lobby_messages[0] = "Looking for a good team!"
     lobby_messages[1] = "Anyone want to play co-op?"
     lobby_messages[2] = "Battle Royale starting soon!"
@@ -455,7 +455,7 @@ slay multiplayer_game_example() {
     }
     
     fr fr Simulate game start countdown
-    sus countdown [3]tea
+    sus countdown tea[3]
     countdown[0] = "Game starting in 3..."
     countdown[1] = "Game starting in 2..."
     countdown[2] = "Game starting in 1... GO!"
@@ -481,7 +481,7 @@ slay multiplayer_game_example() {
     
     fr fr Display game statistics
     vibez.spill("🎮 Game Lobby Statistics:")
-    sus mode_names [3]tea
+    sus mode_names tea[3]
     mode_names[0] = "Battle Royale"
     mode_names[1] = "Team Deathmatch"
     mode_names[2] = "Co-op Campaign"
@@ -494,7 +494,7 @@ slay multiplayer_game_example() {
     
     fr fr Display player status
     vibez.spill("👤 Player Status:")
-    sus status_counts [3]normie  fr fr online, lobby, in_game
+    sus status_counts normie[3]  fr fr online, lobby, in_game
     bestie player_idx normie = 0; player_idx < 15; player_idx++ {
         lowkey players[player_idx].status == "online" {
             status_counts[0]++
@@ -540,15 +540,15 @@ slay iot_monitoring_example() {
     sus iot_server WebSocketConnection = ws_server_create(8083, "/iot")
     
     fr fr Create rooms for different device types and locations
-    sus monitoring_rooms [4]WebSocketRoom
+    sus monitoring_rooms WebSocketRoom[4]
     monitoring_rooms[0] = ws_room_create("temperature_sensors", "Temperature Monitoring")
     monitoring_rooms[1] = ws_room_create("security_devices", "Security System")
     monitoring_rooms[2] = ws_room_create("industrial_controllers", "Industrial Controllers")
     monitoring_rooms[3] = ws_room_create("environmental_sensors", "Environmental Monitoring")
     
     fr fr Create IoT devices
-    sus devices [12]IoTDevice
-    sus device_names [12]tea
+    sus devices IoTDevice[12]
+    sus device_names tea[12]
     device_names[0] = "TEMP_SENSOR_01"
     device_names[1] = "TEMP_SENSOR_02" 
     device_names[2] = "HUMIDITY_SENSOR_01"
@@ -562,7 +562,7 @@ slay iot_monitoring_example() {
     device_names[10] = "AIR_QUALITY_01"
     device_names[11] = "SMOKE_DETECTOR_01"
     
-    sus locations [12]tea
+    sus locations tea[12]
     locations[0] = "Server Room A"
     locations[1] = "Server Room B"
     locations[2] = "Warehouse Floor 1"
@@ -617,8 +617,8 @@ slay iot_monitoring_example() {
     }
     
     fr fr Generate sensor readings
-    sus readings [20]SensorReading
-    sus reading_values [20]normie
+    sus readings SensorReading[20]
+    sus reading_values normie[20]
     reading_values[0] = 2245   fr fr 22.45°C
     reading_values[1] = 2387   fr fr 23.87°C
     reading_values[2] = 4567   fr fr 45.67% humidity
@@ -729,7 +729,7 @@ slay iot_monitoring_example() {
     
     fr fr Display monitoring statistics
     vibez.spill("🔧 IoT Monitoring Statistics:")
-    sus room_types [4]tea
+    sus room_types tea[4]
     room_types[0] = "Temperature Sensors"
     room_types[1] = "Security Devices"
     room_types[2] = "Industrial Controllers"
@@ -742,7 +742,7 @@ slay iot_monitoring_example() {
     }
     
     fr fr Display device status summary
-    sus status_counts [4]normie  fr fr online, warning, error, offline
+    sus status_counts normie[4]  fr fr online, warning, error, offline
     bestie device_idx normie = 0; device_idx < 12; device_idx++ {
         lowkey devices[device_idx].status == "online" {
             status_counts[0]++

@@ -22,8 +22,8 @@ squad DatabaseConnection {
 
 squad QueryResult {
     sus success lit
-    sus rows []tea
-    sus columns []tea
+    sus rows tea[value]
+    sus columns tea[value]
     sus rows_affected drip
     sus last_insert_id drip
     sus execution_time_ms drip
@@ -32,9 +32,9 @@ squad QueryResult {
 
 squad TableSchema {
     sus name tea
-    sus columns []tea
+    sus columns tea[value]
     sus primary_key tea
-    sus indices []tea
+    sus indices tea[value]
 }
 
 fr fr ===== CONNECTION MANAGEMENT =====
@@ -146,9 +146,9 @@ slay insert_record(conn DatabaseConnection, table tea, data tea) lit {
     }
     
     fr fr Build INSERT query
-    sus columns []tea = []
-    sus values []tea = []
-    sus placeholders []tea = []
+    sus columns tea[value] = []
+    sus values tea[value] = []
+    sus placeholders tea[value] = []
     
     sus i drip = 0
     bestie key, value := range json_data {
@@ -182,8 +182,8 @@ slay update_record(conn DatabaseConnection, table tea, id drip, data tea) lit {
     }
     
     fr fr Build UPDATE query
-    sus set_clauses []tea = []
-    sus values []tea = []
+    sus set_clauses tea[value] = []
+    sus values tea[value] = []
     
     sus i drip = 0
     bestie key, value := range json_data {
@@ -210,16 +210,16 @@ slay delete_record(conn DatabaseConnection, table tea, id drip) lit {
     }
     
     sus query tea = stringz.format("DELETE FROM {} WHERE id = ?", table)
-    sus params []tea = [stringz.from_int(id)]
+    sus params tea[value] = [stringz.from_int(id)]
     
     sus result QueryResult = execute_parameterized_query(conn, query, params)
     damn result.success && result.rows_affected > 0
 }
 
-slay find_records(conn DatabaseConnection, table tea, conditions tea) []tea {
+slay find_records(conn DatabaseConnection, table tea, conditions tea) tea[value]{
     ready (!conn.is_connected) {
         vibez.spill("ERROR: Database not connected")
-        sus empty []tea = []
+        sus empty tea[value] = []
         damn empty
     }
     
@@ -237,7 +237,7 @@ slay find_records(conn DatabaseConnection, table tea, conditions tea) []tea {
         damn result.rows
     }
     
-    sus empty []tea = []
+    sus empty tea[value] = []
     damn empty
 }
 
@@ -256,7 +256,7 @@ slay create_table(conn DatabaseConnection, name tea, schema tea) lit {
     
     fr fr Build CREATE TABLE query
     sus query tea = "CREATE TABLE " + name + " ("
-    sus column_defs []tea = []
+    sus column_defs tea[value] = []
     sus i drip = 0
     
     bestie column_name, column_type := range schema_data {
@@ -400,7 +400,7 @@ slay execute_file_select(conn DatabaseConnection, query tea) QueryResult {
     }
     
     sus file_content tea = fs.read_file(file_path)
-    sus lines []tea = stringz.split(file_content, "\n")
+    sus lines tea[value] = stringz.split(file_content, "\n")
     
     ready (lines.length == 0) {
         result.success = based
@@ -457,11 +457,11 @@ fr fr ===== MEMORY DATABASE IMPLEMENTATION =====
 
 squad MemoryTable {
     sus name tea
-    sus columns []tea
-    sus rows [][]tea
+    sus columns tea[value]
+    sus rows tea[value][value]
 }
 
-sus global_memory_tables []MemoryTable = []
+sus global_memory_tables MemoryTable[value] = []
 
 slay execute_memory_select(conn DatabaseConnection, query tea) QueryResult {
     sus result QueryResult = QueryResult{}
@@ -502,7 +502,7 @@ slay execute_memory_insert(conn DatabaseConnection, query tea) QueryResult {
     }
     
     fr fr Extract values and add to memory table
-    sus values []tea = extract_values_array_from_insert(query)
+    sus values tea[value] = extract_values_array_from_insert(query)
     sus new_row_index drip = table.rows.length
     table.rows[new_row_index] = values
     
@@ -619,10 +619,10 @@ slay extract_values_from_insert(query tea) tea {
     damn stringz.replace_all(values_part, "'", "")
 }
 
-slay extract_values_array_from_insert(query tea) []tea {
+slay extract_values_array_from_insert(query tea) tea[value]{
     sus values_str tea = extract_values_from_insert(query)
     ready (values_str == "") {
-        sus empty []tea = []
+        sus empty tea[value] = []
         damn empty
     }
     damn stringz.split(values_str, ",")
@@ -640,7 +640,7 @@ slay build_where_clause_from_json(conditions tea) tea {
         damn ""
     }
     
-    sus clauses []tea = []
+    sus clauses tea[value] = []
     sus i drip = 0
     bestie key, value := range conditions_map {
         clauses[i] = key + " = " + escape_sql_value(value)
@@ -650,7 +650,7 @@ slay build_where_clause_from_json(conditions tea) tea {
     damn stringz.join(clauses, " AND ")
 }
 
-slay execute_parameterized_query(conn DatabaseConnection, query tea, params []tea) QueryResult {
+slay execute_parameterized_query(conn DatabaseConnection, query tea, params tea[value]) QueryResult {
     fr fr Replace ? placeholders with actual values
     sus final_query tea = query
     sus i drip = 0
@@ -681,7 +681,7 @@ slay find_memory_table(name tea) MemoryTable {
     damn empty
 }
 
-slay create_memory_table(name tea, columns []tea) MemoryTable {
+slay create_memory_table(name tea, columns tea[value]) MemoryTable {
     sus table MemoryTable = MemoryTable{}
     table.name = name
     table.columns = columns
@@ -700,7 +700,7 @@ slay empty_map() map[tea]tea {
 
 fr fr ===== BATCH OPERATIONS =====
 
-slay batch_insert(conn DatabaseConnection, table tea, records []tea) lit {
+slay batch_insert(conn DatabaseConnection, table tea, records tea[value]) lit {
     sus success_count drip = 0
     sus i drip = 0
     
@@ -738,7 +738,7 @@ slay get_table_info(conn DatabaseConnection, table_name tea) tea {
         sus file_path tea = get_table_file_path(conn, table_name)
         ready (fs.file_exists(file_path)) {
             sus content tea = fs.read_file(file_path)
-            sus lines []tea = stringz.split(content, "\n")
+            sus lines tea[value] = stringz.split(content, "\n")
             ready (lines.length > 0) {
                 damn lines[0]
             }

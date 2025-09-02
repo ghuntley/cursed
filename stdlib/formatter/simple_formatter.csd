@@ -81,8 +81,8 @@ slay get_keyword_type(word tea) tea {
     damn "IDENTIFIER"
 }
 
-slay tokenize_simple(source tea) []Token {
-    sus tokens []Token = []
+slay tokenize_simple(source tea) Token[value]{
+    sus tokens Token[value] = []
     sus i drip = 0
     sus line drip = 1
     sus column drip = 1
@@ -239,7 +239,7 @@ slay generate_indent(ctx FormattingContext) tea {
 
 fr fr ===== TOKEN FORMATTER =====
 
-slay format_tokens(tokens []Token, config FormatterConfig) tea {
+slay format_tokens(tokens Token[value], config FormatterConfig) tea {
     sus ctx FormattingContext = create_formatting_context(config)
     sus output tea = ""
     sus i drip = 0
@@ -352,15 +352,15 @@ slay format_cursed_code(source tea) tea {
 }
 
 slay format_cursed_code_with_config(source tea, config FormatterConfig) tea {
-    sus tokens []Token = tokenize_simple(source)
+    sus tokens Token[value] = tokenize_simple(source)
     damn format_tokens(tokens, config)
 }
 
 fr fr ===== DIFF GENERATION =====
 
 slay generate_simple_diff(original tea, formatted tea) tea {
-    sus original_lines []tea = split_lines(original)
-    sus formatted_lines []tea = split_lines(formatted)
+    sus original_lines tea[value] = split_lines(original)
+    sus formatted_lines tea[value] = split_lines(formatted)
     sus diff_output tea = ""
     
     sus max_lines drip = find_max([len(original_lines), len(formatted_lines)])
@@ -402,9 +402,9 @@ slay format_with_diff(source tea, config FormatterConfig) tea {
 
 fr fr ===== VALIDATION FUNCTIONS =====
 
-slay validate_basic_syntax(source tea) []tea {
-    sus tokens []Token = tokenize_simple(source)
-    sus errors []tea = []
+slay validate_basic_syntax(source tea) tea[value]{
+    sus tokens Token[value] = tokenize_simple(source)
+    sus errors tea[value] = []
     
     sus brace_count drip = 0
     sus paren_count drip = 0
@@ -451,9 +451,9 @@ slay needs_formatting(source tea, config FormatterConfig) lit {
 }
 
 slay count_format_changes(source tea, config FormatterConfig) drip {
-    sus original_lines []tea = split_lines(source)
+    sus original_lines tea[value] = split_lines(source)
     sus formatted tea = format_cursed_code_with_config(source, config)
-    sus formatted_lines []tea = split_lines(formatted)
+    sus formatted_lines tea[value] = split_lines(formatted)
     
     sus changes drip = 0
     sus max_lines drip = find_max([len(original_lines), len(formatted_lines)])
@@ -533,11 +533,11 @@ slay main() {
     fr fr Test syntax validation
     vibez.spill("=== TEST 6: Syntax Validation ===")
     sus valid_code tea = "sus x drip = 42;"
-    sus errors []tea = validate_basic_syntax(valid_code)
+    sus errors tea[value] = validate_basic_syntax(valid_code)
     vibez.spill("Valid code errors: " + int_to_string(len(errors)))
     
     sus invalid_code tea = "sus x drip = 42; {"
-    sus errors2 []tea = validate_basic_syntax(invalid_code)
+    sus errors2 tea[value] = validate_basic_syntax(invalid_code)
     vibez.spill("Invalid code errors: " + int_to_string(len(errors2)))
     ready (len(errors2) > 0) {
         vibez.spill("Error: " + errors2[0])

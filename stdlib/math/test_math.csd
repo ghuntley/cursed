@@ -265,7 +265,7 @@ fr fr Statistical Function Tests
 fr fr ==========================================
 
 fr fr Create test array for statistical functions
-sus test_values [5]meal
+sus test_values meal[5]
 test_values[0] = 1.0
 test_values[1] = 2.0
 test_values[2] = 3.0
@@ -360,7 +360,7 @@ assert_true(linear_result > 0.99)
 assert_true(linear_result < 1.01)
 
 fr fr Test integration (Simpson's rule)
-sus integration_values [5]meal
+sus integration_values meal[5]
 integration_values[0] = 1.0
 integration_values[1] = 4.0
 integration_values[2] = 6.0
@@ -372,7 +372,7 @@ assert_true(integration_result > 5.0)
 assert_true(integration_result < 6.0)
 
 fr fr Test differentiation
-sus diff_values [3]meal
+sus diff_values meal[3]
 diff_values[0] = 1.0
 diff_values[1] = 4.0
 diff_values[2] = 9.0

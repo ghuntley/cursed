@@ -74,7 +74,7 @@ sus sorted2 [normie] = QuickSort_sort(unsorted2)
 validate_test("QuickSort basic functionality", 
     sorted2[0] <= sorted2[1] && sorted2[1] <= sorted2[2])
 
-sus large_array []normie = []
+sus large_array normie[value] = []
 sus j normie = 50
 bestie j > 0 {
     large_array.push(j)
@@ -274,7 +274,7 @@ sus single_median drip = Statistics_median(single)
 validate_test("Single element median", single_median == 42.0)
 
 fr fr Test statistics edge cases
-sus empty_stats []normie = []
+sus empty_stats normie[value] = []
 validate_test("Empty array mean", Statistics_mean(empty_stats) == 0.0)
 validate_test("Empty array median", Statistics_median(empty_stats) == 0.0)
 
@@ -290,7 +290,7 @@ fr fr ================================
 vibez.spill("\n🚀 Running Memory and Performance Stress Tests...")
 
 fr fr Large dataset sorting stress test
-sus large_dataset []normie = []
+sus large_dataset normie[value] = []
 sus p normie = 200
 bestie p > 0 {
     large_dataset.push(p * 3 mod 997)  fr fr Generate pseudo-random data

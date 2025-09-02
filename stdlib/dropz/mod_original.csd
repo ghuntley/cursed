@@ -7,12 +7,12 @@ fr fr === CORE INTERFACES ===
 
 fr fr Reader interface - provides read functionality
 collab Reader {
-    read(buf []byte) (normie, tea)
+    read(buf byte[value]) (normie, tea)
 }
 
 fr fr Writer interface - provides write functionality  
 collab Writer {
-    write(data []byte) (normie, tea)
+    write(data byte[value]) (normie, tea)
 }
 
 fr fr Closer interface - provides close functionality
@@ -22,14 +22,14 @@ collab Closer {
 
 fr fr ReadWriter combines Reader and Writer interfaces
 collab ReadWriter {
-    read(buf []byte) (normie, tea)
-    write(data []byte) (normie, tea)
+    read(buf byte[value]) (normie, tea)
+    write(data byte[value]) (normie, tea)
 }
 
 fr fr ReadWriteCloser combines all I/O interfaces
 collab ReadWriteCloser {
-    read(buf []byte) (normie, tea)
-    write(data []byte) (normie, tea)
+    read(buf byte[value]) (normie, tea)
+    write(data byte[value]) (normie, tea)
     close() tea
 }
 
@@ -139,26 +139,26 @@ sus fs_files map[tea]tea = map[tea]tea{
     "config.toml": "optimization_level = 2\ntarget = \"native\"\ndebug = false"
 }
 
-sus fs_dirs map[tea][]tea = map[tea][]tea{
-    ".": []tea{"main.csd", "test.csd", "config.toml"},
-    "src": []tea{"compiler.csd", "parser.csd", "codegen.csd"},
-    "output": []tea{}
+sus fs_dirs map[tea]tea[value] = map[tea]tea[value]{
+    ".": tea[value]{"main.csd", "test.csd", "config.toml"},
+    "src": tea[value]{"compiler.csd", "parser.csd", "codegen.csd"},
+    "output": tea[value]{}
 }
 
 fr fr === FILE OPERATIONS ===
 
 fr fr Read entire file as bytes
-slay read_file(filename tea) ([]byte, tea) {
+slay read_file(filename tea) (byte[value], tea) {
     vibez.spill("📖 Reading file: " + filename)
     
     bestie content, exists := fs_files[filename]; exists {
-        sus bytes []byte = make([]byte, string_length(content))
+        sus bytes byte[value] = make(byte[value], string_length(content))
         bestie i := 0; i < string_length(content); i++ {
             bytes[i] = byte(content[i])
         }
         damn (bytes, "")
     } else {
-        damn ([]byte{}, ErrNotExist)
+        damn (byte[value]{}, ErrNotExist)
     }
 }
 
@@ -174,7 +174,7 @@ slay read_text_file(filename tea) (tea, tea) {
 }
 
 fr fr Write bytes to file
-slay write_file(filename tea, data []byte, perm normie) tea {
+slay write_file(filename tea, data byte[value], perm normie) tea {
     vibez.spill("📝 Writing file: " + filename)
     
     sus content tea = ""
@@ -195,7 +195,7 @@ slay write_text_file(filename tea, content tea, perm normie) tea {
 }
 
 fr fr Append bytes to file
-slay append_file(filename tea, data []byte, perm normie) tea {
+slay append_file(filename tea, data byte[value], perm normie) tea {
     vibez.spill("📝 Appending to file: " + filename)
     
     sus existing tea = ""
@@ -286,7 +286,7 @@ slay open_file(filename tea, flag normie, perm normie) (*File, tea) {
 }
 
 fr fr File methods
-slay (f *File) read(b []byte) (normie, tea) {
+slay (f *File) read(b byte[value]) (normie, tea) {
     bestie f.closed {
         damn (0, ErrClosed)
     }
@@ -306,7 +306,7 @@ slay (f *File) read(b []byte) (normie, tea) {
     damn (toRead, "")
 }
 
-slay (f *File) write(b []byte) (normie, tea) {
+slay (f *File) write(b byte[value]) (normie, tea) {
     bestie f.closed {
         damn (0, ErrClosed)
     }
@@ -372,7 +372,7 @@ slay mkdir(dirname tea, perm normie) tea {
     vibez.spill("📁 Creating directory: " + dirname)
     
     bestie _, exists := fs_dirs[dirname]; !exists {
-        fs_dirs[dirname] = []tea{}
+        fs_dirs[dirname] = tea[value]{}
         damn ""
     } else {
         damn ErrExist
@@ -380,11 +380,11 @@ slay mkdir(dirname tea, perm normie) tea {
 }
 
 fr fr List directory contents
-slay read_dir(dirname tea) ([]DirEntry, tea) {
+slay read_dir(dirname tea) (DirEntry[value], tea) {
     vibez.spill("📋 Reading directory: " + dirname)
     
     bestie files, exists := fs_dirs[dirname]; exists {
-        sus entries []DirEntry = make([]DirEntry, len(files))
+        sus entries DirEntry[value] = make(DirEntry[value], len(files))
         
         bestie i := 0; i < len(files); i++ {
             sus filename tea = files[i]
@@ -407,7 +407,7 @@ slay read_dir(dirname tea) ([]DirEntry, tea) {
         
         damn (entries, "")
     } else {
-        damn ([]DirEntry{}, ErrNotExist)
+        damn (DirEntry[value]{}, ErrNotExist)
     }
 }
 
@@ -444,7 +444,7 @@ slay new_byte_reader(data tea) *ByteReader {
     damn &ByteReader{data: data, pos: 0}
 }
 
-slay (r *ByteReader) read(buf []byte) (normie, tea) {
+slay (r *ByteReader) read(buf byte[value]) (normie, tea) {
     bestie r.pos >= string_length(r.data) {
         damn (0, EOF)
     }
@@ -464,7 +464,7 @@ slay new_byte_writer() *ByteWriter {
     damn &ByteWriter{data: "", closed: cap}
 }
 
-slay (w *ByteWriter) write(data []byte) (normie, tea) {
+slay (w *ByteWriter) write(data byte[value]) (normie, tea) {
     bestie w.closed {
         damn (0, ErrClosed)
     }
@@ -491,7 +491,7 @@ slay new_buffer() *Buffer {
     damn &Buffer{content: "", readPos: 0, writePos: 0}
 }
 
-slay (b *Buffer) read(buf []byte) (normie, tea) {
+slay (b *Buffer) read(buf byte[value]) (normie, tea) {
     bestie b.readPos >= string_length(b.content) {
         damn (0, EOF)
     }
@@ -507,7 +507,7 @@ slay (b *Buffer) read(buf []byte) (normie, tea) {
     damn (toRead, "")
 }
 
-slay (b *Buffer) write(data []byte) (normie, tea) {
+slay (b *Buffer) write(data byte[value]) (normie, tea) {
     bestie i := 0; i < len(data); i++ {
         b.content += string(data[i])
     }
@@ -530,7 +530,7 @@ fr fr === UTILITY FUNCTIONS ===
 
 fr fr Copy from Reader to Writer
 slay copy(dst Writer, src Reader) (thicc, tea) {
-    sus buffer [1024]byte
+    sus buffer byte[1024]
     sus total thicc = 0
     
     bestie based {
@@ -556,9 +556,9 @@ slay copy(dst Writer, src Reader) (thicc, tea) {
 }
 
 fr fr Read all data from reader
-slay read_all(r Reader) ([]byte, tea) {
-    sus buffer [1024]byte
-    sus result []byte = []byte{}
+slay read_all(r Reader) (byte[value], tea) {
+    sus buffer byte[1024]
+    sus result byte[value] = byte[value]{}
     
     bestie based {
         sus (n, err) = r.read(buffer[:])
@@ -573,7 +573,7 @@ slay read_all(r Reader) ([]byte, tea) {
             damn (result, "")
         } fr fr Append to result
         sus oldLen normie = len(result)
-        sus newResult []byte = make([]byte, oldLen + n)
+        sus newResult byte[value] = make(byte[value], oldLen + n)
         bestie i := 0; i < oldLen; i++ {
             newResult[i] = result[i]
         }
@@ -586,7 +586,7 @@ slay read_all(r Reader) ([]byte, tea) {
 
 fr fr Write string to writer
 slay write_string(w Writer, s tea) (normie, tea) {
-    sus bytes []byte = make([]byte, string_length(s))
+    sus bytes byte[value] = make(byte[value], string_length(s))
     bestie i := 0; i < string_length(s); i++ {
         bytes[i] = byte(s[i])
     }
@@ -595,7 +595,7 @@ slay write_string(w Writer, s tea) (normie, tea) {
 
 fr fr Read line from reader
 slay read_line(r Reader) (tea, tea) {
-    sus buffer [1]byte
+    sus buffer byte[1]
     sus result tea = ""
     
     bestie based {

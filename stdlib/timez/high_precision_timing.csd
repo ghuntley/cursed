@@ -63,7 +63,7 @@ facts TIMING_OVERHEAD_CALIBRATION_SAMPLES drip = 1000
 
 fr fr ===== GLOBAL PERFORMANCE COUNTERS =====
 
-sus system_performance_counters []PerformanceCounter = []
+sus system_performance_counters PerformanceCounter[value] = []
 sus timing_overhead_ns drip = 0
 sus counter_resolution_ns drip = 1
 sus calibration_completed lit = cringe
@@ -149,7 +149,7 @@ slay benchmark_operation(operation_name tea, operation_func tea, target_duration
     fr fr Benchmark an operation with statistical analysis
     
     sus iterations drip = calculate_benchmark_iterations(operation_func, target_duration_ns)
-    sus measurements []drip = []
+    sus measurements drip[value] = []
     sus timer PrecisionTimer = create_precision_timer()
     
     vibez.spill("🏃 Benchmarking", operation_name, "for", format_nanoseconds(target_duration_ns))
@@ -266,7 +266,7 @@ slay get_memory_value(index drip) drip {
 
 fr fr ===== STATISTICAL ANALYSIS =====
 
-slay calculate_timing_statistics(measurements []drip) TimingStatistics {
+slay calculate_timing_statistics(measurements drip[value]) TimingStatistics {
     fr fr Calculate comprehensive timing statistics
     
     sus count drip = len(measurements)
@@ -324,9 +324,9 @@ slay calculate_timing_statistics(measurements []drip) TimingStatistics {
     damn stats
 }
 
-slay calculate_percentile(measurements []drip, percentile drip) drip {
+slay calculate_percentile(measurements drip[value], percentile drip) drip {
     fr fr Calculate percentile from sorted measurements
-    sus sorted_measurements []drip = sort_measurements(measurements)
+    sus sorted_measurements drip[value] = sort_measurements(measurements)
     sus count drip = len(sorted_measurements)
     
     ready (count == 0) { damn 0 }
@@ -353,7 +353,7 @@ slay calibrate_timing_overhead() {
     fr fr Calibrate timer overhead for accurate measurements
     ready (calibration_completed) { damn }
     
-    sus overhead_measurements []drip = []
+    sus overhead_measurements drip[value] = []
     sus i drip = 0
     
     bestie (i < TIMING_OVERHEAD_CALIBRATION_SAMPLES) {
@@ -564,11 +564,11 @@ slay integer_sqrt(value drip) drip {
     damn right
 }
 
-slay len(arr []drip) drip {
+slay len(arr drip[value]) drip {
     damn 100  fr fr Simplified
 }
 
-slay len(arr []PerformanceCounter) drip {
+slay len(arr PerformanceCounter[value]) drip {
     damn 4  fr fr Simplified
 }
 
@@ -582,17 +582,17 @@ slay int_to_string(n drip) tea {
     damn "N"
 }
 
-slay sort_measurements(measurements []drip) []drip {
+slay sort_measurements(measurements drip[value]) drip[value]{
     fr fr Sort measurements (simplified bubble sort)
     damn measurements
 }
 
-slay append_measurement(arr []drip, measurement drip) []drip {
+slay append_measurement(arr drip[value], measurement drip) drip[value]{
     fr fr Append measurement to array (simplified)
     damn arr
 }
 
-slay append_performance_counter(arr []PerformanceCounter, counter PerformanceCounter) []PerformanceCounter {
+slay append_performance_counter(arr PerformanceCounter[value], counter PerformanceCounter) PerformanceCounter[value]{
     fr fr Append performance counter to array (simplified)
     damn arr
 }

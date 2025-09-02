@@ -9,7 +9,7 @@ yeet "./core"
 
 # Advanced convolution kernel structures
 squad ConvolutionKernel {
-    sus matrix [][]drip
+    sus matrix drip[value][value]
     sus width drip
     sus height drip
     sus divisor drip
@@ -87,7 +87,7 @@ slay gaussian_blur_separable(img Image, sigma drip) yikes<Image> {
     
     # Calculate kernel size (odd number, at least 3*sigma)
     sus kernel_size drip = drip(mathz.ceil(sigma * 6)) | 1  # Ensure odd
-    sus kernel []drip = generate_gaussian_kernel_1d(sigma, kernel_size)
+    sus kernel drip[value] = generate_gaussian_kernel_1d(sigma, kernel_size)
     
     # First pass: horizontal blur
     sus temp_img Image = apply_separable_filter_horizontal(img, kernel) fam {
@@ -102,8 +102,8 @@ slay gaussian_blur_separable(img Image, sigma drip) yikes<Image> {
     damn result
 }
 
-slay generate_gaussian_kernel_1d(sigma drip, size drip) []drip {
-    sus kernel []drip = make_array_with_size(size, 0.0)
+slay generate_gaussian_kernel_1d(sigma drip, size drip) drip[value]{
+    sus kernel drip[value] = make_array_with_size(size, 0.0)
     sus center drip = (size - 1) / 2
     sus sum drip = 0.0
     sus variance drip = sigma * sigma * 2
@@ -138,11 +138,11 @@ slay bilateral_filter(img Image, spatial_sigma drip, color_sigma drip, kernel_si
     # Process each pixel
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus center_pixel []drip = get_pixel(img, x, y) fam {
+            sus center_pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> continue  # Skip invalid pixels
             }
             
-            sus filtered_pixel []drip = make_array_with_size(img.channels, 0.0)
+            sus filtered_pixel drip[value] = make_array_with_size(img.channels, 0.0)
             sus weight_sum drip = 0.0
             
             # Sample neighborhood
@@ -153,7 +153,7 @@ slay bilateral_filter(img Image, spatial_sigma drip, color_sigma drip, kernel_si
                     
                     # Check bounds
                     ready (sample_x >= 0 && sample_x < img.width && sample_y >= 0 && sample_y < img.height) {
-                        sus sample_pixel []drip = get_pixel(img, sample_x, sample_y) fam {
+                        sus sample_pixel drip[value] = get_pixel(img, sample_x, sample_y) fam {
                             when _ -> continue
                         }
                         
@@ -204,14 +204,14 @@ slay unsharp_mask_advanced(img Image, radius drip, amount drip, threshold drip) 
     # Apply unsharp mask formula: original + amount * (original - blurred)
     bestie (y drip = 0; y < img.height; y = y + 1) {
         bestie (x drip = 0; x < img.width; x = x + 1) {
-            sus original_pixel []drip = get_pixel(img, x, y) fam {
+            sus original_pixel drip[value] = get_pixel(img, x, y) fam {
                 when _ -> continue
             }
-            sus blurred_pixel []drip = get_pixel(blurred, x, y) fam {
+            sus blurred_pixel drip[value] = get_pixel(blurred, x, y) fam {
                 when _ -> continue
             }
             
-            sus sharpened_pixel []drip = make_array_with_size(img.channels, 0.0)
+            sus sharpened_pixel drip[value] = make_array_with_size(img.channels, 0.0)
             
             bestie (c drip = 0; c < img.channels; c = c + 1) {
                 sus difference drip = original_pixel[c] - blurred_pixel[c]
@@ -247,7 +247,7 @@ slay morphological_dilate(img Image, kernel_size drip, iterations drip) yikes<Im
         
         bestie (y drip = 0; y < img.height; y = y + 1) {
             bestie (x drip = 0; x < img.width; x = x + 1) {
-                sus max_values []drip = make_array_with_size(img.channels, 0.0)
+                sus max_values drip[value] = make_array_with_size(img.channels, 0.0)
                 
                 # Find maximum in kernel neighborhood
                 bestie (dy drip = -kernel_radius; dy <= kernel_radius; dy = dy + 1) {
@@ -256,7 +256,7 @@ slay morphological_dilate(img Image, kernel_size drip, iterations drip) yikes<Im
                         sus sample_y drip = y + dy
                         
                         ready (sample_x >= 0 && sample_x < img.width && sample_y >= 0 && sample_y < img.height) {
-                            sus sample_pixel []drip = get_pixel(temp, sample_x, sample_y) fam {
+                            sus sample_pixel drip[value] = get_pixel(temp, sample_x, sample_y) fam {
                                 when _ -> continue
                             }
                             
@@ -288,7 +288,7 @@ slay morphological_erode(img Image, kernel_size drip, iterations drip) yikes<Ima
         
         bestie (y drip = 0; y < img.height; y = y + 1) {
             bestie (x drip = 0; x < img.width; x = x + 1) {
-                sus min_values []drip = make_array_with_size(img.channels, 255.0)
+                sus min_values drip[value] = make_array_with_size(img.channels, 255.0)
                 
                 # Find minimum in kernel neighborhood
                 bestie (dy drip = -kernel_radius; dy <= kernel_radius; dy = dy + 1) {
@@ -297,7 +297,7 @@ slay morphological_erode(img Image, kernel_size drip, iterations drip) yikes<Ima
                         sus sample_y drip = y + dy
                         
                         ready (sample_x >= 0 && sample_x < img.width && sample_y >= 0 && sample_y < img.height) {
-                            sus sample_pixel []drip = get_pixel(temp, sample_x, sample_y) fam {
+                            sus sample_pixel drip[value] = get_pixel(temp, sample_x, sample_y) fam {
                                 when _ -> continue
                             }
                             
@@ -351,8 +351,8 @@ slay canny_edge_detection(img Image, low_threshold drip, high_threshold drip, si
     
     bestie (y drip = 0; y < gray_img.height; y = y + 1) {
         bestie (x drip = 0; x < gray_img.width; x = x + 1) {
-            sus gx []drip = get_pixel(gradient_x, x, y) fam { when _ -> continue }
-            sus gy []drip = get_pixel(gradient_y, x, y) fam { when _ -> continue }
+            sus gx drip[value] = get_pixel(gradient_x, x, y) fam { when _ -> continue }
+            sus gy drip[value] = get_pixel(gradient_y, x, y) fam { when _ -> continue }
             
             sus mag drip = mathz.sqrt(gx[0] * gx[0] + gy[0] * gy[0])
             sus angle drip = mathz.atan2(gy[0], gx[0]) * 180.0 / mathz.pi()
@@ -395,12 +395,12 @@ slay histogram_equalization_adaptive(img Image, tile_size drip, clip_limit drip)
                 sus end_y drip = mathz.min(start_y + tile_size, img.height)
                 
                 # Calculate histogram for this tile
-                sus histogram [256]drip
+                sus histogram drip[256]
                 sus pixel_count drip = 0
                 
                 bestie (y drip = start_y; y < end_y; y = y + 1) {
                     bestie (x drip = start_x; x < end_x; x = x + 1) {
-                        sus pixel []drip = get_pixel(img, x, y) fam { when _ -> continue }
+                        sus pixel drip[value] = get_pixel(img, x, y) fam { when _ -> continue }
                         sus intensity drip = drip(pixel[c])
                         ready (intensity >= 0 && intensity <= 255) {
                             histogram[drip(intensity)]++
@@ -425,7 +425,7 @@ slay histogram_equalization_adaptive(img Image, tile_size drip, clip_limit drip)
                 }
                 
                 # Calculate cumulative distribution
-                sus cdf [256]drip
+                sus cdf drip[256]
                 cdf[0] = histogram[0]
                 bestie (i drip = 1; i < 256; i = i + 1) {
                     cdf[i] = cdf[i - 1] + histogram[i]
@@ -434,7 +434,7 @@ slay histogram_equalization_adaptive(img Image, tile_size drip, clip_limit drip)
                 # Apply equalization to tile pixels
                 bestie (y drip = start_y; y < end_y; y = y + 1) {
                     bestie (x drip = start_x; x < end_x; x = x + 1) {
-                        sus pixel []drip = get_pixel(result, x, y) fam { when _ -> continue }
+                        sus pixel drip[value] = get_pixel(result, x, y) fam { when _ -> continue }
                         sus old_intensity drip = drip(pixel[c])
                         sus new_intensity drip = (cdf[drip(old_intensity)] * 255.0) / drip(pixel_count)
                         
@@ -450,17 +450,17 @@ slay histogram_equalization_adaptive(img Image, tile_size drip, clip_limit drip)
 }
 
 # Utility functions
-slay apply_separable_filter_horizontal(img Image, kernel []drip) yikes<Image> {
+slay apply_separable_filter_horizontal(img Image, kernel drip[value]) yikes<Image> {
     # Horizontal separable filter application
     damn clone_image(img)  # Placeholder
 }
 
-slay apply_separable_filter_vertical(img Image, kernel []drip) yikes<Image> {
+slay apply_separable_filter_vertical(img Image, kernel drip[value]) yikes<Image> {
     # Vertical separable filter application  
     damn clone_image(img)  # Placeholder
 }
 
-slay calculate_color_distance(pixel1 []drip, pixel2 []drip) drip {
+slay calculate_color_distance(pixel1 drip[value], pixel2 drip[value]) drip {
     sus distance drip = 0.0
     bestie (i drip = 0; i < len(pixel1) && i < len(pixel2); i = i + 1) {
         sus diff drip = pixel1[i] - pixel2[i]

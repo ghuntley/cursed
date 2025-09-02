@@ -22,7 +22,7 @@ sus test_registry PackageRegistry = init_registry(
 sus resolver DependencyResolver = init_dependency_resolver(test_registry)
 
 # Test with simple dependency chain
-sus root_packages []tea = ["test-app"]
+sus root_packages tea[value] = ["test-app"]
 sus resolution_result ResolutionResult = resolve_dependencies_advanced(resolver, root_packages)
 
 assert_true(resolution_result.success)
@@ -58,7 +58,7 @@ test_start("test_dependency_cycle_resolution")
 vibez.spill("Testing dependency cycle detection and resolution...")
 
 # Create mock dependency cycle
-sus test_cycles []tea = ["pkg-a -> pkg-b -> pkg-c -> pkg-a"]
+sus test_cycles tea[value] = ["pkg-a -> pkg-b -> pkg-c -> pkg-a"]
 sus cycle_resolution_result lit = resolve_dependency_cycles(resolver, test_cycles)
 
 assert_true(cycle_resolution_result)
@@ -192,7 +192,7 @@ test_start("test_lockfile_management")
 vibez.spill("Testing package lock file creation and verification...")
 
 # Create test locked packages
-sus locked_packages []LockedPackage = []
+sus locked_packages LockedPackage[value] = []
 locked_packages = arrayz.append(locked_packages, LockedPackage {
     name: "dependency-a",
     version: "1.2.3", 
@@ -337,7 +337,7 @@ sus bad_version PackageVersion = parse_version("not.a.version")
 assert_eq_int(bad_version.major, 0)  # Should default to 0.0.0
 
 # Test empty dependency list
-sus empty_deps []tea = get_dependency_names([])
+sus empty_deps tea[value] = get_dependency_names([])
 assert_eq_int(arrayz.len(empty_deps), 0)
 
 # Test archive with empty directory

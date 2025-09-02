@@ -14,13 +14,13 @@ sus SHA256_BLOCK_SIZE drip = 64
 sus SHA256_DIGEST_SIZE drip = 32
 
 fr fr Initial hash values (first 32 bits of fractional parts of square roots of first 8 primes)
-sus SHA256_H [8]normie = [
+sus SHA256_H normie[8] = [
     0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a,
     0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19
 ]
 
 fr fr Round constants (first 32 bits of fractional parts of cube roots of first 64 primes)
-sus SHA256_K [64]normie = [
+sus SHA256_K normie[64] = [
     0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
     0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
     0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
@@ -59,8 +59,8 @@ slay sha256_gamma1(x normie) normie {
     damn sha256_rotr(x, 17) ^ sha256_rotr(x, 19) ^ (x >> 10)
 }
 
-slay sha256_process_block(data []normie, hash []normie) {
-    sus w [64]normie
+slay sha256_process_block(data normie[value], hash normie[value]) {
+    sus w normie[64]
     
     fr fr Prepare message schedule
     bestie i := 0; i < 16; i++ {
@@ -108,7 +108,7 @@ slay sha256_process_block(data []normie, hash []normie) {
 }
 
 slay sha256_constant_time(input tea) tea {
-    sus input_bytes []normie = string_to_bytes(input)
+    sus input_bytes normie[value] = string_to_bytes(input)
     sus input_len drip = array_length(input_bytes)
     
     fr fr Message length in bits
@@ -122,7 +122,7 @@ slay sha256_constant_time(input tea) tea {
     padded_len = padded_len + 8  fr fr +8 for length
     
     fr fr Create padded message
-    sus padded [1024]normie  fr fr Max supported message size
+    sus padded normie[1024]  fr fr Max supported message size
     bestie i := 0; i < input_len; i++ {
         padded[i] = input_bytes[i]
     }
@@ -141,7 +141,7 @@ slay sha256_constant_time(input tea) tea {
     }
     
     fr fr Initialize hash values
-    sus hash [8]normie
+    sus hash normie[8]
     bestie i := 0; i < 8; i++ {
         hash[i] = SHA256_H[i]
     }
@@ -174,7 +174,7 @@ slay pbkdf2_hmac_sha256(password tea, salt tea, iterations drip, key_length drip
         vibez.spill("WARNING: PBKDF2 iterations < 1000 is insecure")
     }
     
-    sus salt_bytes []normie = string_to_bytes(salt)
+    sus salt_bytes normie[value] = string_to_bytes(salt)
     sus derived_key tea = ""
     sus block_count drip = (key_length + 31) / 32  fr fr Ceiling division
     
@@ -209,14 +209,14 @@ slay pbkdf2_hmac_sha256(password tea, salt tea, iterations drip, key_length drip
 slay hmac_sha256_secure(key tea, message tea) tea {
     fr fr Production HMAC-SHA256 with constant-time operations
     sus block_size drip = 64
-    sus key_bytes []normie = string_to_bytes(key)
+    sus key_bytes normie[value] = string_to_bytes(key)
     sus key_len drip = array_length(key_bytes)
     
     fr fr Process key
-    sus processed_key [64]normie
+    sus processed_key normie[64]
     ready key_len > block_size {
         sus hashed_key tea = sha256_constant_time(key)
-        sus hashed_bytes []normie = hex_to_bytes(hashed_key)
+        sus hashed_bytes normie[value] = hex_to_bytes(hashed_key)
         bestie i := 0; i < 32; i++ {
             processed_key[i] = hashed_bytes[i]
         }
@@ -233,8 +233,8 @@ slay hmac_sha256_secure(key tea, message tea) tea {
     }
     
     fr fr Create pads
-    sus inner_pad [64]normie
-    sus outer_pad [64]normie
+    sus inner_pad normie[64]
+    sus outer_pad normie[64]
     bestie i := 0; i < block_size; i++ {
         inner_pad[i] = processed_key[i] ^ 0x36
         outer_pad[i] = processed_key[i] ^ 0x5c
@@ -243,7 +243,7 @@ slay hmac_sha256_secure(key tea, message tea) tea {
     fr fr Inner hash
     sus inner_input tea = bytes_to_string(inner_pad, block_size) + message
     sus inner_hash tea = sha256_constant_time(inner_input)
-    sus inner_bytes []normie = hex_to_bytes(inner_hash)
+    sus inner_bytes normie[value] = hex_to_bytes(inner_hash)
     
     fr fr Outer hash
     sus outer_input tea = bytes_to_string(outer_pad, block_size) + bytes_to_string(inner_bytes, 32)
@@ -256,9 +256,9 @@ fr fr ==============================
 fr fr Cryptographically Secure RNG
 fr fr ==============================
 
-slay secure_random_bytes(length drip) []normie {
+slay secure_random_bytes(length drip) normie[value]{
     fr fr Use system entropy source
-    sus random_bytes [1024]normie
+    sus random_bytes normie[1024]
     
     fr fr Mix multiple entropy sources for better security
     sus time_seed normie = get_current_time_nano() & 0xFFFFFFFF
@@ -283,7 +283,7 @@ slay secure_random_bytes(length drip) []normie {
 slay secure_random_string(length drip) tea {
     sus charset tea = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789"
     sus charset_len drip = string_length(charset)
-    sus random_bytes []normie = secure_random_bytes(length)
+    sus random_bytes normie[value] = secure_random_bytes(length)
     
     sus result tea = ""
     bestie i := 0; i < length; i++ {
@@ -327,9 +327,9 @@ slay byte_to_hex(b normie) tea {
     damn string_char_at(hex_chars, high) + string_char_at(hex_chars, low)
 }
 
-slay hex_to_bytes(hex tea) []normie {
+slay hex_to_bytes(hex tea) normie[value]{
     sus len drip = string_length(hex) / 2
-    sus bytes [512]normie  fr fr Max supported hex string
+    sus bytes normie[512]  fr fr Max supported hex string
     
     bestie i := 0; i < len; i++ {
         sus high_char tea = string_char_at(hex, i * 2)

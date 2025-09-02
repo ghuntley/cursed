@@ -7,7 +7,7 @@ yeet "concurrenz"
 # Context propagation utilities for complex scenarios
 
 # Merge multiple contexts - cancels when any parent cancels
-slay merge_contexts(contexts []Context) (Context, CancelFunc) {
+slay merge_contexts(contexts Context[value]) (Context, CancelFunc) {
     ready (len(contexts) == 0) {
         damn with_cancel(background())
     }
@@ -74,11 +74,11 @@ slay (tree *ContextTree) add_child(parent Context, child Context) {
     tree.children[child] = parent
 }
 
-slay (tree *ContextTree) get_children(parent Context) []Context {
+slay (tree *ContextTree) get_children(parent Context) Context[value]{
     tree.mu.rlock()
     defer tree.mu.runlock()
     
-    sus children []Context = []
+    sus children Context[value] = []
     bestie (child, child_parent in tree.children) {
         ready (child_parent == parent) {
             children = append(children, child)
@@ -91,7 +91,7 @@ slay (tree *ContextTree) get_children(parent Context) []Context {
 type ContextMiddleware slay(Context, slay(Context)) Context
 
 # Chain context middleware
-slay chain_middleware(middlewares []ContextMiddleware) ContextMiddleware {
+slay chain_middleware(middlewares ContextMiddleware[value]) ContextMiddleware {
     damn slay(ctx Context, next slay(Context)) Context {
         ready (len(middlewares) == 0) {
             damn next(ctx)

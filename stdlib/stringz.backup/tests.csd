@@ -12,24 +12,24 @@ fr fr ===== STRING MANIPULATION TESTS =====
 test_start("String Manipulation")
 
 fr fr Test split function
-sus parts1 []tea = split("a,b,c", ",")
+sus parts1 tea[value] = split("a,b,c", ",")
 assert_eq_int(len(parts1), 3)
 assert_eq_string(parts1[0], "a")
 assert_eq_string(parts1[1], "b") 
 assert_eq_string(parts1[2], "c")
 
-sus parts2 []tea = split("hello world", " ")
+sus parts2 tea[value] = split("hello world", " ")
 assert_eq_int(len(parts2), 2)
 assert_eq_string(parts2[0], "hello")
 assert_eq_string(parts2[1], "world")
 
-sus parts3 []tea = split("x-y-z", "-") 
+sus parts3 tea[value] = split("x-y-z", "-") 
 assert_eq_int(len(parts3), 3)
 assert_eq_string(parts3[0], "x")
 assert_eq_string(parts3[1], "y")
 assert_eq_string(parts3[2], "z")
 
-sus empty_split []tea = split("", ",")
+sus empty_split tea[value] = split("", ",")
 assert_eq_int(len(empty_split), 0)
 
 vibez.spill("✅ Split tests passed")
@@ -370,8 +370,8 @@ fr fr Test complex string processing pipeline
 sus input tea = "  Hello, World! This is a TEST.  "
 sus cleaned tea = trim(input)
 sus lower tea = to_lowercase(cleaned)
-sus words []tea = split(lower, " ")
-sus filtered []tea = []
+sus words tea[value] = split(lower, " ")
+sus filtered tea[value] = []
 
 fr fr Filter out punctuation words (simplified)
 sus i drip = 0
@@ -401,7 +401,7 @@ fr fr ===== EDGE CASES AND ERROR HANDLING =====
 test_start("Edge Cases and Error Handling")
 
 fr fr Test empty string handling
-sus empty_parts []tea = split("", ",")
+sus empty_parts tea[value] = split("", ",")
 assert_eq_int(len(empty_parts), 0)
 
 sus empty_join tea = join([], "-")
@@ -428,7 +428,7 @@ assert_eq_string(zero_repeat, "")
 vibez.spill("✅ Boundary condition tests passed")
 
 fr fr Test special characters and unicode (basic)
-sus special_split []tea = split("a;b;c", ";")
+sus special_split tea[value] = split("a;b;c", ";")
 assert_eq_int(len(special_split), 3)
 
 sus special_join tea = join(["x", "y"], "|")
@@ -448,7 +448,7 @@ vibez.spill("Long string length calculated:", long_length)
 fr fr Test multiple operations
 sus performance_input tea = "performance test string"
 sus perf_upper tea = to_uppercase(performance_input)
-sus perf_split []tea = split(perf_upper, " ")
+sus perf_split tea[value] = split(perf_upper, " ")
 sus perf_joined tea = join(perf_split, "_")
 sus perf_final tea = to_lowercase(perf_joined)
 

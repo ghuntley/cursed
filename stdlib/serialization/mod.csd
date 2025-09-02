@@ -132,7 +132,7 @@ slay deserialize_bool(data tea, offset drip) lit {
 // Array Serialization
 // ================================
 
-slay serialize_array_int(values []drip) tea {
+slay serialize_array_int(values drip[value]) tea {
     // Serialize array of integers with length prefix
     sus length drip = array_len_int(values)
     sus result tea = serialize_int(length)
@@ -144,10 +144,10 @@ slay serialize_array_int(values []drip) tea {
     damn result
 }
 
-slay deserialize_array_int(data tea, offset drip) []drip {
+slay deserialize_array_int(data tea, offset drip) drip[value]{
     // Deserialize array of integers
     sus length drip = deserialize_int(data, offset)
-    sus result []drip = []
+    sus result drip[value] = []
     sus current_offset drip = offset + 4
     
     bestie i := 0; i < length; i++ {
@@ -162,7 +162,7 @@ slay deserialize_array_int(data tea, offset drip) []drip {
     damn result
 }
 
-slay serialize_array_long(values []thicc) tea {
+slay serialize_array_long(values thicc[value]) tea {
     // Serialize array of longs
     sus length drip = array_len_long(values)
     sus result tea = serialize_int(length)
@@ -174,10 +174,10 @@ slay serialize_array_long(values []thicc) tea {
     damn result
 }
 
-slay deserialize_array_long(data tea, offset drip) []thicc {
+slay deserialize_array_long(data tea, offset drip) thicc[value]{
     // Deserialize array of longs
     sus length drip = deserialize_int(data, offset)
-    sus result []thicc = []
+    sus result thicc[value] = []
     sus current_offset drip = offset + 4
     
     bestie i := 0; i < length; i++ {
@@ -192,7 +192,7 @@ slay deserialize_array_long(data tea, offset drip) []thicc {
     damn result
 }
 
-slay serialize_array_string(values []tea) tea {
+slay serialize_array_string(values tea[value]) tea {
     // Serialize array of strings
     sus length drip = array_len_string(values)
     sus result tea = serialize_int(length)
@@ -204,10 +204,10 @@ slay serialize_array_string(values []tea) tea {
     damn result
 }
 
-slay deserialize_array_string(data tea, offset drip) []tea {
+slay deserialize_array_string(data tea, offset drip) tea[value]{
     // Deserialize array of strings
     sus length drip = deserialize_int(data, offset)
-    sus result []tea = []
+    sus result tea[value] = []
     sus current_offset drip = offset + 4
     
     bestie i := 0; i < length; i++ {
@@ -310,7 +310,7 @@ slay write_bool(context SerializationContext, value lit) SerializationContext {
     damn context
 }
 
-slay write_array_int(context SerializationContext, values []drip) SerializationContext {
+slay write_array_int(context SerializationContext, values drip[value]) SerializationContext {
     lowkey context.error != "" {
         damn context
     }
@@ -318,7 +318,7 @@ slay write_array_int(context SerializationContext, values []drip) SerializationC
     damn context
 }
 
-slay write_array_string(context SerializationContext, values []tea) SerializationContext {
+slay write_array_string(context SerializationContext, values tea[value]) SerializationContext {
     lowkey context.error != "" {
         damn context
     }
@@ -905,32 +905,32 @@ slay string_first_codepoint(str tea) drip {
 }
 
 // Array utility functions
-slay array_len_int(arr []drip) drip {
+slay array_len_int(arr drip[value]) drip {
     // Get length of integer array - would be provided by runtime
     damn 0  // Simplified
 }
 
-slay array_len_long(arr []thicc) drip {
+slay array_len_long(arr thicc[value]) drip {
     // Get length of long array
     damn 0  // Simplified
 }
 
-slay array_len_string(arr []tea) drip {
+slay array_len_string(arr tea[value]) drip {
     // Get length of string array
     damn 0  // Simplified
 }
 
-slay append_int_array(arr []drip, item drip) []drip {
+slay append_int_array(arr drip[value], item drip) drip[value]{
     // Append integer to array - would be provided by runtime
     damn arr  // Simplified
 }
 
-slay append_long_array(arr []thicc, item thicc) []thicc {
+slay append_long_array(arr thicc[value], item thicc) thicc[value]{
     // Append long to array
     damn arr  // Simplified
 }
 
-slay append_string_array(arr []tea, item tea) []tea {
+slay append_string_array(arr tea[value], item tea) tea[value]{
     // Append string to array
     damn arr  // Simplified
 }

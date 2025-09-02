@@ -5,7 +5,7 @@ yeet "algorithms"
 
 fr fr ===== ARRAY ARITHMETIC =====
 
-slay sum_array(nums []drip) drip {
+slay sum_array(nums drip[value]) drip {
     sus total drip = 0
     sus i drip = 0
     periodt (i < len(nums)) {
@@ -15,7 +15,7 @@ slay sum_array(nums []drip) drip {
     damn total
 }
 
-slay average_array(nums []drip) drip {
+slay average_array(nums drip[value]) drip {
     lowkey (len(nums) == 0) {
         damn 0
     }
@@ -23,7 +23,7 @@ slay average_array(nums []drip) drip {
     damn total / len(nums)
 }
 
-slay product_array(nums []drip) drip {
+slay product_array(nums drip[value]) drip {
     lowkey (len(nums) == 0) {
         damn 0
     }
@@ -38,7 +38,7 @@ slay product_array(nums []drip) drip {
 
 fr fr ===== ARRAY SEARCH =====
 
-slay find_max(nums []drip) drip {
+slay find_max(nums drip[value]) drip {
     lowkey (len(nums) == 0) {
         damn 0
     }
@@ -53,7 +53,7 @@ slay find_max(nums []drip) drip {
     damn max_val
 }
 
-slay find_min(nums []drip) drip {
+slay find_min(nums drip[value]) drip {
     ready (len(nums) == 0) {
         damn 0
     }
@@ -68,7 +68,7 @@ slay find_min(nums []drip) drip {
     damn min_val
 }
 
-slay contains_value(nums []drip, value drip) lit {
+slay contains_value(nums drip[value], value drip) lit {
     sus i drip = 0
     periodt (i < len(nums)) {
         ready (nums[i] == value) {
@@ -79,7 +79,7 @@ slay contains_value(nums []drip, value drip) lit {
     damn cringe
 }
 
-slay find_index(nums []drip, value drip) drip {
+slay find_index(nums drip[value], value drip) drip {
     sus i drip = 0
     periodt (i < len(nums)) {
         ready (nums[i] == value) {
@@ -93,13 +93,13 @@ slay find_index(nums []drip, value drip) drip {
 fr fr ===== DYNAMIC ARRAY BUILDING =====
 
 fr fr Build array dynamically using iteration approach
-slay build_array_from_function(size drip, func_name tea, source_array []drip) []drip {
+slay build_array_from_function(size drip, func_name tea, source_array drip[value]) drip[value]{
     ready (size == 0) {
         damn []
     }
     
     fr fr Start with first element
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     periodt (i < size) {
@@ -144,7 +144,7 @@ slay build_array_from_function(size drip, func_name tea, source_array []drip) []
 }
 
 fr fr Dynamic array append using exponential pattern
-slay append_to_dynamic_array(base_array []drip, new_element drip, position drip) []drip {
+slay append_to_dynamic_array(base_array drip[value], new_element drip, position drip) drip[value]{
     sus base_len drip = len(base_array)
     
     fr fr Build new array by copying all existing elements plus new one
@@ -182,7 +182,7 @@ slay append_to_dynamic_array(base_array []drip, new_element drip, position drip)
 
 fr fr ===== ADVANCED ARRAY OPERATIONS (FIXED) =====
 
-slay reverse_array(nums []drip) []drip {
+slay reverse_array(nums drip[value]) drip[value]{
     sus length drip = len(nums)
     ready (length <= 1) {
         damn nums
@@ -193,7 +193,7 @@ slay reverse_array(nums []drip) []drip {
 }
 
 fr fr Quick sort implementation that works with any array size
-slay sort_array_ascending(nums []drip) []drip {
+slay sort_array_ascending(nums drip[value]) drip[value]{
     sus length drip = len(nums)
     ready (length <= 1) {
         damn nums
@@ -203,22 +203,22 @@ slay sort_array_ascending(nums []drip) []drip {
     damn quick_sort_integers(nums)
 }
 
-slay bubble_sort_array(nums []drip) []drip {
+slay bubble_sort_array(nums drip[value]) drip[value]{
     fr fr Replaced O(n²) bubble sort with O(n log n) QuickSort
     damn optimized_array_sort(nums)
 }
 
-slay optimized_array_sort(nums []drip) []drip {
+slay optimized_array_sort(nums drip[value]) drip[value]{
     sus length drip = len(nums)
     ready (length <= 1) {
         damn nums
     }
     
-    sus result []drip = build_array_from_function(length, "copy", nums)
+    sus result drip[value] = build_array_from_function(length, "copy", nums)
     damn quicksort_array(result, 0, length - 1)
 }
 
-slay quicksort_array(arr []drip, low drip, high drip) []drip {
+slay quicksort_array(arr drip[value], low drip, high drip) drip[value]{
     ready (low < high) {
         sus pivot_index drip = partition_array(arr, low, high)
         arr = quicksort_array(arr, low, pivot_index - 1)
@@ -227,7 +227,7 @@ slay quicksort_array(arr []drip, low drip, high drip) []drip {
     damn arr
 }
 
-slay partition_array(arr []drip, low drip, high drip) drip {
+slay partition_array(arr drip[value], low drip, high drip) drip {
     sus pivot drip = arr[high]
     sus i drip = low - 1
     sus j drip = low
@@ -249,13 +249,13 @@ slay partition_array(arr []drip, low drip, high drip) drip {
 }
 
 fr fr Set element in array at specific index
-slay set_array_element(arr []drip, index drip, value drip) []drip {
+slay set_array_element(arr drip[value], index drip, value drip) drip[value]{
     sus length drip = len(arr)
     ready (index < 0 || index >= length) {
         damn arr
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     periodt (i < length) {
         ready (i == index) {
@@ -271,7 +271,7 @@ slay set_array_element(arr []drip, index drip, value drip) []drip {
 }
 
 fr fr Append element at specific position using pattern matching
-slay append_element_at_position(base []drip, element drip, pos drip) []drip {
+slay append_element_at_position(base drip[value], element drip, pos drip) drip[value]{
     ready (pos == 0) {
         damn [element]
     }
@@ -310,14 +310,14 @@ slay append_element_at_position(base []drip, element drip, pos drip) []drip {
     damn base
 }
 
-slay sort_array_descending(nums []drip) []drip {
-    sus sorted_asc []drip = sort_array_ascending(nums)
+slay sort_array_descending(nums drip[value]) drip[value]{
+    sus sorted_asc drip[value] = sort_array_ascending(nums)
     damn reverse_array(sorted_asc)
 }
 
 fr fr ===== ARRAY TRANSFORMATION (FIXED) =====
 
-slay map_array(nums []drip, operation tea) []drip {
+slay map_array(nums drip[value], operation tea) drip[value]{
     sus length drip = len(nums)
     ready (length == 0) {
         damn []
@@ -328,8 +328,8 @@ slay map_array(nums []drip, operation tea) []drip {
 }
 
 fr fr Filter array with dynamic result building
-slay filter_array(nums []drip, condition tea) []drip {
-    sus result []drip = []
+slay filter_array(nums drip[value], condition tea) drip[value]{
+    sus result drip[value] = []
     sus result_count drip = 0
     sus i drip = 0
     
@@ -362,7 +362,7 @@ slay filter_array(nums []drip, condition tea) []drip {
 
 fr fr ===== ARRAY SLICING (FIXED) =====
 
-slay slice_array(nums []drip, start drip, end drip) []drip {
+slay slice_array(nums drip[value], start drip, end drip) drip[value]{
     sus length drip = len(nums)
     
     fr fr Bounds checking
@@ -371,7 +371,7 @@ slay slice_array(nums []drip, start drip, end drip) []drip {
     }
     
     sus slice_length drip = end - start
-    sus result []drip = []
+    sus result drip[value] = []
     sus result_pos drip = 0
     sus i drip = start
     
@@ -386,14 +386,14 @@ slay slice_array(nums []drip, start drip, end drip) []drip {
 
 fr fr ===== ARRAY CONCATENATION (FIXED) =====
 
-slay concat_arrays(a []drip, b []drip) []drip {
+slay concat_arrays(a drip[value], b drip[value]) drip[value]{
     sus len_a drip = len(a)
     sus len_b drip = len(b)
     
     ready (len_a == 0) { damn b }
     ready (len_b == 0) { damn a }
     
-    sus result []drip = build_array_from_function(len_a, "copy", a)
+    sus result drip[value] = build_array_from_function(len_a, "copy", a)
     sus i drip = 0
     
     periodt (i < len_b) {
@@ -406,14 +406,14 @@ slay concat_arrays(a []drip, b []drip) []drip {
 
 fr fr ===== ARRAY INSERTION AND REMOVAL (FIXED) =====
 
-slay insert_at_index(nums []drip, index drip, value drip) []drip {
+slay insert_at_index(nums drip[value], index drip, value drip) drip[value]{
     sus length drip = len(nums)
     
     ready (index < 0 || index > length) {
         damn nums
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus result_pos drip = 0
     sus i drip = 0
     
@@ -438,14 +438,14 @@ slay insert_at_index(nums []drip, index drip, value drip) []drip {
     damn result
 }
 
-slay remove_at_index(nums []drip, index drip) []drip {
+slay remove_at_index(nums drip[value], index drip) drip[value]{
     sus length drip = len(nums)
     
     ready (index < 0 || index >= length) {
         damn nums
     }
     
-    sus result []drip = []
+    sus result drip[value] = []
     sus result_pos drip = 0
     sus i drip = 0
     
@@ -462,7 +462,7 @@ slay remove_at_index(nums []drip, index drip) []drip {
 
 fr fr ===== DYNAMIC ARRAY APPEND OPERATIONS =====
 
-slay append_to_int_array(arr []drip, value drip) []drip {
+slay append_to_int_array(arr drip[value], value drip) drip[value]{
     sus length drip = len(arr)
     damn append_element_at_position(arr, value, length)
 }
@@ -470,19 +470,19 @@ slay append_to_int_array(arr []drip, value drip) []drip {
 fr fr ===== LEGACY COMPATIBILITY FUNCTIONS =====
 
 fr fr Keep all original functions that work correctly
-slay array_size(nums []drip) drip {
+slay array_size(nums drip[value]) drip {
     damn len(nums)
 }
 
-slay is_empty_array(nums []drip) lit {
+slay is_empty_array(nums drip[value]) lit {
     damn len(nums) == 0
 }
 
-slay arrays_equal_size(a []drip, b []drip) lit {
+slay arrays_equal_size(a drip[value], b drip[value]) lit {
     damn len(a) == len(b)
 }
 
-slay count_positive(nums []drip) drip {
+slay count_positive(nums drip[value]) drip {
     sus count drip = 0
     sus i drip = 0
     periodt (i < len(nums)) {
@@ -494,7 +494,7 @@ slay count_positive(nums []drip) drip {
     damn count
 }
 
-slay count_negative(nums []drip) drip {
+slay count_negative(nums drip[value]) drip {
     sus count drip = 0
     sus i drip = 0
     periodt (i < len(nums)) {
@@ -506,7 +506,7 @@ slay count_negative(nums []drip) drip {
     damn count
 }
 
-slay count_zeros(nums []drip) drip {
+slay count_zeros(nums drip[value]) drip {
     sus count drip = 0
     sus i drip = 0
     periodt (i < len(nums)) {
@@ -518,7 +518,7 @@ slay count_zeros(nums []drip) drip {
     damn count
 }
 
-slay count_occurrences(nums []drip, value drip) drip {
+slay count_occurrences(nums drip[value], value drip) drip {
     sus count drip = 0
     sus i drip = 0
     periodt (i < len(nums)) {
@@ -530,18 +530,18 @@ slay count_occurrences(nums []drip, value drip) drip {
     damn count
 }
 
-slay is_valid_index(nums []drip, index drip) lit {
+slay is_valid_index(nums drip[value], index drip) lit {
     damn index >= 0 && index < len(nums)
 }
 
-slay safe_get(nums []drip, index drip, default_value drip) drip {
+slay safe_get(nums drip[value], index drip, default_value drip) drip {
     ready (is_valid_index(nums, index)) {
         damn nums[index]
     }
     damn default_value
 }
 
-slay all_positive(nums []drip) lit {
+slay all_positive(nums drip[value]) lit {
     sus i drip = 0
     periodt (i < len(nums)) {
         ready (nums[i] <= 0) {
@@ -552,7 +552,7 @@ slay all_positive(nums []drip) lit {
     damn based
 }
 
-slay all_negative(nums []drip) lit {
+slay all_negative(nums drip[value]) lit {
     sus i drip = 0
     periodt (i < len(nums)) {
         ready (nums[i] >= 0) {
@@ -563,7 +563,7 @@ slay all_negative(nums []drip) lit {
     damn based
 }
 
-slay has_duplicates(nums []drip) lit {
+slay has_duplicates(nums drip[value]) lit {
     sus i drip = 0
     periodt (i < len(nums)) {
         sus j drip = i + 1
@@ -578,7 +578,7 @@ slay has_duplicates(nums []drip) lit {
     damn cringe
 }
 
-slay arrays_equal(a []drip, b []drip) lit {
+slay arrays_equal(a drip[value], b drip[value]) lit {
     sus len_a drip = len(a)
     sus len_b drip = len(b)
     
@@ -597,7 +597,7 @@ slay arrays_equal(a []drip, b []drip) lit {
     damn based
 }
 
-slay is_sorted_ascending(nums []drip) lit {
+slay is_sorted_ascending(nums drip[value]) lit {
     sus length drip = len(nums)
     ready (length <= 1) {
         damn based
@@ -614,7 +614,7 @@ slay is_sorted_ascending(nums []drip) lit {
     damn based
 }
 
-slay is_sorted_descending(nums []drip) lit {
+slay is_sorted_descending(nums drip[value]) lit {
     sus length drip = len(nums)
     ready (length <= 1) {
         damn based
@@ -631,13 +631,13 @@ slay is_sorted_descending(nums []drip) lit {
     damn based
 }
 
-slay median_array(nums []drip) drip {
+slay median_array(nums drip[value]) drip {
     sus length drip = len(nums)
     ready (length == 0) {
         damn 0
     }
     
-    sus sorted []drip = sort_array_ascending(nums)
+    sus sorted drip[value] = sort_array_ascending(nums)
     sus middle drip = length / 2
     
     ready (length % 2 == 1) {
@@ -652,7 +652,7 @@ slay median_array(nums []drip) drip {
     damn sorted[0]
 }
 
-slay mode_array(nums []drip) drip {
+slay mode_array(nums drip[value]) drip {
     ready (len(nums) == 0) {
         damn 0
     }
@@ -673,7 +673,7 @@ slay mode_array(nums []drip) drip {
     damn mode_value
 }
 
-slay range_array(nums []drip) drip {
+slay range_array(nums drip[value]) drip {
     ready (len(nums) == 0) {
         damn 0
     }

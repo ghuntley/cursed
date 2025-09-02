@@ -202,14 +202,14 @@ slay demo_i2c_communication() {
     sus device_address drip = 0x48  # Example temperature sensor address
     
     # Write configuration to device
-    sus config_data []drip = [0x01, 0x60, 0xA0]  # Example config
+    sus config_data drip[value] = [0x01, 0x60, 0xA0]  # Example config
     sus write_success lit = i2c_write(i2c_device, device_address, config_data)
     
     ready (write_success) {
         vibez.spill("I2C configuration written successfully")
         
         # Read data from device
-        sus read_data []drip = i2c_read(i2c_device, device_address, 4)
+        sus read_data drip[value] = i2c_read(i2c_device, device_address, 4)
         
         vibez.spill("I2C data read:")
         bestie (sus i drip = 0; i < len_drip_array(read_data); i = i + 1) {
@@ -227,8 +227,8 @@ slay demo_spi_communication() {
     sus spi_device SpiDevice = spi_init(11, 12, 13, 10)  # MOSI, MISO, SCLK, CS
     
     # Send command to SPI device
-    sus command_data []drip = [0x9F, 0x00, 0x00, 0x00]  # Read ID command
-    sus response []drip = spi_transfer(spi_device, command_data)
+    sus command_data drip[value] = [0x9F, 0x00, 0x00, 0x00]  # Read ID command
+    sus response drip[value] = spi_transfer(spi_device, command_data)
     
     vibez.spill("SPI command sent:", command_data[0])
     vibez.spill("SPI response received:")

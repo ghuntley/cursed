@@ -65,8 +65,8 @@ squad FileWatcher {
     windows_handle drip,
     
     // Watch descriptors
-    watch_descriptors []normie,
-    watched_paths []tea
+    watch_descriptors normie[value],
+    watched_paths tea[value]
 }
 
 // Initialize file watcher for current platform
@@ -196,7 +196,7 @@ slay start_linux_watching(watcher FileWatcher, path tea, recursive lit) WatchErr
 
 // Add recursive watches for Linux
 slay add_recursive_watches_linux(watcher FileWatcher, base_path tea) WatchError yikes vibes {
-    sus entries []tea = list_directory_entries(base_path) fam {
+    sus entries tea[value] = list_directory_entries(base_path) fam {
         when _ -> damn // Skip if can't list directory
     }
     
@@ -247,7 +247,7 @@ slay start_macos_watching(watcher FileWatcher, path tea, recursive lit) WatchErr
 
 // Add recursive watches for macOS
 slay add_recursive_watches_macos(watcher FileWatcher, base_path tea) WatchError yikes vibes {
-    sus entries []tea = list_directory_entries(base_path) fam {
+    sus entries tea[value] = list_directory_entries(base_path) fam {
         when _ -> damn // Skip if can't list directory
     }
     
@@ -287,7 +287,7 @@ slay start_windows_watching(watcher FileWatcher, path tea, recursive lit) WatchE
 
 // Main event processing loop
 slay event_loop(watcher FileWatcher) vibes {
-    sus buffer [4096]smol
+    sus buffer smol[4096]
     
     bestie watcher.running {
         sick watcher.platform {
@@ -311,7 +311,7 @@ slay event_loop(watcher FileWatcher) vibes {
 }
 
 // Process Linux inotify events
-slay process_linux_events(watcher FileWatcher, buffer [4096]smol) vibes {
+slay process_linux_events(watcher FileWatcher, buffer smol[4096]) vibes {
     sus bytes_read normie = read_from_fd(watcher.linux_fd, buffer, 4096)
     
     ready bytes_read <= 0 {
@@ -350,7 +350,7 @@ slay process_linux_events(watcher FileWatcher, buffer [4096]smol) vibes {
 }
 
 // Process macOS kqueue events
-slay process_macos_events(watcher FileWatcher, buffer [4096]smol) vibes {
+slay process_macos_events(watcher FileWatcher, buffer smol[4096]) vibes {
     sus num_events normie = macos_kevent_wait(watcher.macos_fd, buffer, 1000) // 1 second timeout
     
     ready num_events <= 0 {
@@ -375,7 +375,7 @@ slay process_macos_events(watcher FileWatcher, buffer [4096]smol) vibes {
 }
 
 // Process Windows ReadDirectoryChangesW events
-slay process_windows_events(watcher FileWatcher, buffer [4096]smol) vibes {
+slay process_windows_events(watcher FileWatcher, buffer smol[4096]) vibes {
     sus bytes_returned normie = windows_read_directory_changes(watcher.windows_handle, buffer, 4096)
     
     ready bytes_returned <= 0 {
@@ -520,7 +520,7 @@ slay macos_add_kevent(kq_fd normie, watch_fd normie, flags normie) normie {
     }
 }
 
-slay macos_kevent_wait(kq_fd normie, buffer [4096]smol, timeout_ms normie) normie {
+slay macos_kevent_wait(kq_fd normie, buffer smol[4096], timeout_ms normie) normie {
     // FFI call to kevent() to wait for events
     damn system_call("kevent_wait", kq_fd, buffer, timeout_ms) fam {
         when _ -> damn -1
@@ -534,7 +534,7 @@ slay windows_open_directory(path tea) drip {
     }
 }
 
-slay windows_read_directory_changes(handle drip, buffer [4096]smol, size normie) normie {
+slay windows_read_directory_changes(handle drip, buffer smol[4096], size normie) normie {
     // FFI call to ReadDirectoryChangesW
     damn system_call("ReadDirectoryChangesW", handle, buffer, size, based, 0x3ff) fam {
         when _ -> damn -1
@@ -554,7 +554,7 @@ slay windows_close_handle(handle drip) vibes {
     }
 }
 
-slay read_from_fd(fd normie, buffer [4096]smol, size normie) normie {
+slay read_from_fd(fd normie, buffer smol[4096], size normie) normie {
     damn system_call("read", fd, buffer, size) fam {
         when _ -> damn -1
     }
@@ -574,7 +574,7 @@ slay get_macos_watch_flags() normie {
     damn NOTE_DELETE | NOTE_WRITE | NOTE_EXTEND | NOTE_ATTRIB
 }
 
-slay list_directory_entries(path tea) []tea {
+slay list_directory_entries(path tea) tea[value]{
     // Returns list of directory entries
     damn system_call("list_dir", path) fam {
         when _ -> damn []
@@ -616,7 +616,7 @@ slay sleep_milliseconds(ms normie) vibes {
 }
 
 // Buffer reading utilities
-slay read_u32_from_buffer(buffer [4096]smol, offset normie) normie {
+slay read_u32_from_buffer(buffer smol[4096], offset normie) normie {
     // Read 32-bit integer from buffer at offset (little endian)
     sus byte0 normie = buffer[offset]
     sus byte1 normie = buffer[offset + 1]  
@@ -626,7 +626,7 @@ slay read_u32_from_buffer(buffer [4096]smol, offset normie) normie {
     damn byte0 | (byte1 << 8) | (byte2 << 16) | (byte3 << 24)
 }
 
-slay read_string_from_buffer(buffer [4096]smol, offset normie, length normie) tea {
+slay read_string_from_buffer(buffer smol[4096], offset normie, length normie) tea {
     // Extract null-terminated string from buffer
     sus result tea = ""
     bestie i normie in 0..length {
@@ -638,7 +638,7 @@ slay read_string_from_buffer(buffer [4096]smol, offset normie, length normie) te
     damn result
 }
 
-slay read_wide_string_from_buffer(buffer [4096]smol, offset normie, length normie) tea {
+slay read_wide_string_from_buffer(buffer smol[4096], offset normie, length normie) tea {
     // Convert UTF-16 to UTF-8 string (simplified)
     sus result tea = ""
     sus i normie = 0

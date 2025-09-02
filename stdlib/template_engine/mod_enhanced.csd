@@ -140,8 +140,8 @@ slay sha256_hash_bytes(input [drip]) tea {
 
 // Complete SHA-256 implementation
 be_like SHA256Hasher squad {
-    state [8]drip           // Hash state (8 × 32-bit words)
-    buffer [64]drip         // Input buffer (512 bits)
+    state drip[8]           // Hash state (8 × 32-bit words)
+    buffer drip[64]         // Input buffer (512 bits)
     buffer_length normie    // Current buffer length
     total_length normie     // Total input length
 }
@@ -189,9 +189,9 @@ slay finalize_sha256_hasher(hasher SHA256Hasher) [drip] {
     damn digest[:]
 }
 
-slay process_sha256_block(hasher SHA256Hasher, block [64]drip) {
+slay process_sha256_block(hasher SHA256Hasher, block drip[64]) {
     // SHA-256 round constants
-    sus k [64]drip = [
+    sus k drip[64] = [
         0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1,
         0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3,
         0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174, 0xe49b69c1, 0xefbe4786,
@@ -206,7 +206,7 @@ slay process_sha256_block(hasher SHA256Hasher, block [64]drip) {
     ]
     
     // Initialize working variables
-    sus w [64]drip = [64]drip{}
+    sus w drip[64] = [64]drip{}
     
     // Copy chunk into first 16 words of the message schedule array
     bestie i := 0; i < 16; i++ {
@@ -629,7 +629,7 @@ slay generate_cryptographic_nonce(length normie) tea {
 }
 
 slay generate_secure_random_bytes(length normie) [drip] {
-    sus bytes [drip] = make([]drip, length)
+    sus bytes [drip] = make(drip[value], length)
     sus entropy_sources [tea] = [
         string(timez.now_unix_nano()),
         string(mathz.random()),
@@ -656,14 +656,14 @@ slay generate_secure_random_bytes(length normie) [drip] {
 
 // Cryptographically Secure Pseudo-Random Number Generator
 be_like CSPRNG squad {
-    state [32]drip     // Internal state (256 bits)
+    state drip[32]     // Internal state (256 bits)
     counter normie     // Counter for additional entropy
-    pool [256]drip     // Entropy pool
+    pool drip[256]     // Entropy pool
 }
 
 slay create_csprng(seed tea) CSPRNG {
     sus seed_bytes [drip] = string_to_bytes(seed)
-    sus state [32]drip = [32]drip{}
+    sus state drip[32] = [32]drip{}
     
     // Initialize state with seed
     bestie i := 0; i < min(32, len(seed_bytes)); i++ {
@@ -703,7 +703,7 @@ slay hmac_sha256(message tea, key tea) tea {
     sus message_bytes [drip] = string_to_bytes(message)
     
     // Ensure key is exactly 64 bytes (SHA-256 block size)
-    sus actual_key [64]drip = [64]drip{}
+    sus actual_key drip[64] = [64]drip{}
     vibes len(key_bytes) > 64 {
         sus hashed_key [drip] = sha256_hash_bytes(key_bytes)
         copy_bytes(actual_key[:], hashed_key[:32])
@@ -712,8 +712,8 @@ slay hmac_sha256(message tea, key tea) tea {
     }
     
     // Create inner and outer padding
-    sus inner_pad [64]drip = [64]drip{}
-    sus outer_pad [64]drip = [64]drip{}
+    sus inner_pad drip[64] = [64]drip{}
+    sus outer_pad drip[64] = [64]drip{}
     
     bestie i := 0; i < 64; i++ {
         inner_pad[i] = actual_key[i] ^ 0x36  // ipad
@@ -747,7 +747,7 @@ slay bytes_to_hex_string(bytes [drip]) tea {
 
 slay string_to_bytes(s tea) [drip] {
     sus length normie = stringz.length(s)
-    sus bytes [drip] = make([]drip, length)
+    sus bytes [drip] = make(drip[value], length)
     
     bestie i := 0; i < length; i++ {
         bytes[i] = stringz.char_code_at(s, i)
@@ -757,7 +757,7 @@ slay string_to_bytes(s tea) [drip] {
 }
 
 slay int64_to_bytes(value normie) [drip] {
-    sus bytes [8]drip = [8]drip{}
+    sus bytes drip[8] = [8]drip{}
     bytes[0] = (value >> 56) & 0xFF
     bytes[1] = (value >> 48) & 0xFF  
     bytes[2] = (value >> 40) & 0xFF
@@ -776,7 +776,7 @@ slay copy_bytes(dest [drip], src [drip]) {
 }
 
 slay append_bytes(a [drip], b [drip]) [drip] {
-    sus result [drip] = make([]drip, len(a) + len(b))
+    sus result [drip] = make(drip[value], len(a) + len(b))
     copy_bytes(result[:len(a)], a)
     copy_bytes(result[len(a):], b)
     damn result
@@ -794,11 +794,11 @@ slay right_rotate(value drip, amount normie) drip {
 }
 
 slay create_sha256_padding(bit_length normie, padding_length normie) [drip] {
-    sus padding [drip] = make([]drip, padding_length + 1 + 8)
+    sus padding [drip] = make(drip[value], padding_length + 1 + 8)
     padding[0] = 0x80  // Single '1' bit followed by zeros
     
     // Append original length as 64-bit big-endian integer
-    sus length_bytes [8]drip = int64_to_bytes(bit_length)
+    sus length_bytes drip[8] = int64_to_bytes(bit_length)
     copy_bytes(padding[len(padding)-8:], length_bytes[:])
     
     damn padding

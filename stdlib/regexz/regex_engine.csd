@@ -13,16 +13,16 @@ squad RegexEngine {
 }
 
 squad NFA {
-    sus states []NFAState
+    sus states NFAState[value]
     sus start_state drip
-    sus accept_states []drip
-    sus transitions map<drip, []Transition>
+    sus accept_states drip[value]
+    sus transitions map<drip, Transition[value]>
 }
 
 squad DFA {
-    sus states []DFAState  
+    sus states DFAState[value]  
     sus start_state drip
-    sus accept_states []drip
+    sus accept_states drip[value]
     sus transition_table map<[drip, drip], drip>
     sus optimized lit
 }
@@ -30,14 +30,14 @@ squad DFA {
 squad NFAState {
     sus id drip
     sus is_accept lit
-    sus epsilon_transitions []drip
-    sus char_transitions map<drip, []drip>
-    sus class_transitions []ClassTransition
+    sus epsilon_transitions drip[value]
+    sus char_transitions map<drip, drip[value]>
+    sus class_transitions ClassTransition[value]
 }
 
 squad DFAState {
     sus id drip
-    sus nfa_states []drip
+    sus nfa_states drip[value]
     sus is_accept lit
     sus transitions map<drip, drip>
 }
@@ -57,7 +57,7 @@ squad TransitionCondition {
 
 squad ClassTransition {
     sus char_class tea  # "[a-z]", "\\d", "\\p{Letter}", etc.
-    sus target_states []drip
+    sus target_states drip[value]
     sus negated lit
 }
 
@@ -66,7 +66,7 @@ squad MatchResult {
     sus full_match tea
     sus start_pos drip
     sus end_pos drip
-    sus groups []GroupMatch
+    sus groups GroupMatch[value]
     sus named_groups map<tea, GroupMatch>
 }
 
@@ -136,7 +136,7 @@ slay parse_pattern(pattern tea) yikes<RegexAST> {
 squad RegexParser {
     sus pattern tea
     sus position drip
-    sus groups []tea
+    sus groups tea[value]
     sus named_groups map<tea, drip>
 }
 
@@ -147,7 +147,7 @@ squad RegexAST {
 squad ASTNode {
     sus type tea  # "concat", "union", "star", "plus", "question", "char", "class", "group", "lookahead", "lookbehind"
     sus value tea
-    sus children []ASTNode
+    sus children ASTNode[value]
     sus quantifier Quantifier
     sus group_info GroupInfo
     sus lookaround_info LookaroundInfo
@@ -193,8 +193,8 @@ slay compile_to_nfa(ast RegexAST) yikes<NFA> {
 
 squad NFACompiler {
     sus next_state_id drip
-    sus states []NFAState
-    sus transitions map<drip, []Transition>
+    sus states NFAState[value]
+    sus transitions map<drip, Transition[value]>
 }
 
 slay create_state(compiler *NFACompiler) drip {
@@ -217,7 +217,7 @@ slay create_state(compiler *NFACompiler) drip {
 
 # Advanced Unicode property support
 squad UnicodePropertyMatcher {
-    sus property_cache map<tea, []drip>
+    sus property_cache map<tea, drip[value]>
     sus category_cache map<tea, lit>
 }
 
@@ -229,12 +229,12 @@ sus unicode_matcher UnicodePropertyMatcher = {
 slay match_unicode_property(ch drip, property tea) lit {
     # Cache Unicode property lookups for performance
     ready (unicode_matcher.property_cache.has(property)) {
-        sus ranges []drip = unicode_matcher.property_cache[property]
+        sus ranges drip[value] = unicode_matcher.property_cache[property]
         damn is_in_ranges(ch, ranges)
     }
     
     # Load Unicode property data (optimized for common properties)
-    sus ranges []drip = load_unicode_property(property)
+    sus ranges drip[value] = load_unicode_property(property)
     unicode_matcher.property_cache[property] = ranges
     
     damn is_in_ranges(ch, ranges)
@@ -346,7 +346,7 @@ slay match_dfa(dfa DFA, text tea, start_pos drip) MatchResult {
     sus current_state drip = dfa.start_state
     sus position drip = start_pos
     sus matched_end drip = -1
-    sus groups []GroupMatch = create_array()
+    sus groups GroupMatch[value] = create_array()
     sus named_groups map<tea, GroupMatch> = create_map()
     
     bestie (position < text.len()) {
@@ -401,8 +401,8 @@ squad NFAMatcher {
     sus nfa NFA
     sus text tea
     sus position drip
-    sus capture_stack []CaptureFrame
-    sus backtrack_stack []BacktrackFrame
+    sus capture_stack CaptureFrame[value]
+    sus backtrack_stack BacktrackFrame[value]
 }
 
 squad CaptureFrame {
@@ -414,7 +414,7 @@ squad CaptureFrame {
 squad BacktrackFrame {
     sus state drip
     sus position drip
-    sus capture_snapshot []CaptureFrame
+    sus capture_snapshot CaptureFrame[value]
 }
 
 # Performance-optimized pattern compilation cache

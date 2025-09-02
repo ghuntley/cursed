@@ -10,7 +10,7 @@ fr fr Advanced Array Data Structures
 fr fr ==========================================
 
 squad ArrayResult<T> {
-    sus data []T
+    sus data T[value]
     sus success lit
     sus error_message tea
     sus length drip
@@ -20,12 +20,12 @@ squad ArraySearchResult {
     sus found lit
     sus index drip
     sus count drip
-    sus indices []drip
+    sus indices drip[value]
 }
 
 squad ArraySortResult<T> {
-    sus sorted_array []T
-    sus original_indices []drip
+    sus sorted_array T[value]
+    sus original_indices drip[value]
     sus comparisons_made drip
     sus swaps_made drip
 }
@@ -34,7 +34,7 @@ fr fr ==========================================
 fr fr Efficient Array Search Operations
 fr fr ==========================================
 
-slay array_binary_search(arr []drip, target drip) ArraySearchResult {
+slay array_binary_search(arr drip[value], target drip) ArraySearchResult {
     fr fr Binary search in sorted integer array
     sus result ArraySearchResult = ArraySearchResult{
         found: cringe,
@@ -71,7 +71,7 @@ slay array_binary_search(arr []drip, target drip) ArraySearchResult {
     damn result
 }
 
-slay array_linear_search_all(arr []tea, target tea) ArraySearchResult {
+slay array_linear_search_all(arr tea[value], target tea) ArraySearchResult {
     fr fr Find all occurrences of target in string array
     sus result ArraySearchResult = ArraySearchResult{
         found: cringe,
@@ -81,7 +81,7 @@ slay array_linear_search_all(arr []tea, target tea) ArraySearchResult {
     }
     
     sus length drip = len(arr)
-    sus found_indices []drip = []
+    sus found_indices drip[value] = []
     sus found_count drip = 0
     
     sus i drip = 0
@@ -102,7 +102,7 @@ slay array_linear_search_all(arr []tea, target tea) ArraySearchResult {
     damn result
 }
 
-slay array_search_pattern(arr []tea, pattern tea) ArraySearchResult {
+slay array_search_pattern(arr tea[value], pattern tea) ArraySearchResult {
     fr fr Search for strings matching pattern
     sus result ArraySearchResult = ArraySearchResult{
         found: cringe,
@@ -112,7 +112,7 @@ slay array_search_pattern(arr []tea, pattern tea) ArraySearchResult {
     }
     
     sus length drip = len(arr)
-    sus matching_indices []drip = []
+    sus matching_indices drip[value] = []
     sus match_count drip = 0
     
     sus i drip = 0
@@ -137,7 +137,7 @@ fr fr ==========================================
 fr fr Advanced Array Sorting Algorithms
 fr fr ==========================================
 
-slay array_quick_sort_strings(arr []tea) ArraySortResult<tea> {
+slay array_quick_sort_strings(arr tea[value]) ArraySortResult<tea> {
     fr fr Quick sort implementation for strings
     sus result ArraySortResult<tea> = ArraySortResult<tea>{
         sorted_array: [],
@@ -152,8 +152,8 @@ slay array_quick_sort_strings(arr []tea) ArraySortResult<tea> {
     }
     
     fr fr Create copy and index array
-    sus sorted_array []tea = array_copy_strings(arr)
-    sus indices []drip = create_index_array(length)
+    sus sorted_array tea[value] = array_copy_strings(arr)
+    sus indices drip[value] = create_index_array(length)
     sus stats SortStats = SortStats{comparisons: 0, swaps: 0}
     
     quick_sort_strings_recursive(sorted_array, indices, 0, length - 1, stats)
@@ -170,7 +170,7 @@ squad SortStats {
     sus swaps drip
 }
 
-slay quick_sort_strings_recursive(arr []tea, indices []drip, low drip, high drip, stats SortStats) SortStats {
+slay quick_sort_strings_recursive(arr tea[value], indices drip[value], low drip, high drip, stats SortStats) SortStats {
     fr fr Recursive quick sort implementation
     ready (low < high) {
         sus pivot_result PartitionResult = partition_strings(arr, indices, low, high, stats)
@@ -188,7 +188,7 @@ squad PartitionResult {
     sus stats SortStats
 }
 
-slay partition_strings(arr []tea, indices []drip, low drip, high drip, stats SortStats) PartitionResult {
+slay partition_strings(arr tea[value], indices drip[value], low drip, high drip, stats SortStats) PartitionResult {
     fr fr Partition array around pivot
     sus result PartitionResult = PartitionResult{
         pivot_index: low,
@@ -238,7 +238,7 @@ slay partition_strings(arr []tea, indices []drip, low drip, high drip, stats Sor
     damn result
 }
 
-slay array_merge_sort_numbers(arr []drip) ArraySortResult<drip> {
+slay array_merge_sort_numbers(arr drip[value]) ArraySortResult<drip> {
     fr fr Merge sort implementation for numbers (stable sort)
     sus result ArraySortResult<drip> = ArraySortResult<drip>{
         sorted_array: [],
@@ -254,10 +254,10 @@ slay array_merge_sort_numbers(arr []drip) ArraySortResult<drip> {
         damn result
     }
     
-    sus sorted_array []drip = array_copy_numbers(arr)
-    sus indices []drip = create_index_array(length)
-    sus temp_array []drip = create_number_array(length)
-    sus temp_indices []drip = create_index_array(length)
+    sus sorted_array drip[value] = array_copy_numbers(arr)
+    sus indices drip[value] = create_index_array(length)
+    sus temp_array drip[value] = create_number_array(length)
+    sus temp_indices drip[value] = create_index_array(length)
     sus stats SortStats = SortStats{comparisons: 0, swaps: 0}
     
     stats = merge_sort_numbers_recursive(sorted_array, indices, temp_array, temp_indices, 0, length - 1, stats)
@@ -268,7 +268,7 @@ slay array_merge_sort_numbers(arr []drip) ArraySortResult<drip> {
     damn result
 }
 
-slay merge_sort_numbers_recursive(arr []drip, indices []drip, temp []drip, temp_indices []drip, left drip, right drip, stats SortStats) SortStats {
+slay merge_sort_numbers_recursive(arr drip[value], indices drip[value], temp drip[value], temp_indices drip[value], left drip, right drip, stats SortStats) SortStats {
     fr fr Recursive merge sort implementation
     ready (left < right) {
         sus mid drip = left + (right - left) / 2
@@ -280,7 +280,7 @@ slay merge_sort_numbers_recursive(arr []drip, indices []drip, temp []drip, temp_
     damn stats
 }
 
-slay merge_numbers(arr []drip, indices []drip, temp []drip, temp_indices []drip, left drip, mid drip, right drip, stats SortStats) SortStats {
+slay merge_numbers(arr drip[value], indices drip[value], temp drip[value], temp_indices drip[value], left drip, mid drip, right drip, stats SortStats) SortStats {
     fr fr Merge two sorted subarrays
     
     fr fr Copy data to temporary arrays
@@ -333,7 +333,7 @@ fr fr ==========================================
 fr fr Array Filtering and Transformation
 fr fr ==========================================
 
-slay array_filter_by_predicate(arr []tea, predicate_func tea) ArrayResult<tea> {
+slay array_filter_by_predicate(arr tea[value], predicate_func tea) ArrayResult<tea> {
     fr fr Filter array elements using predicate function
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -343,7 +343,7 @@ slay array_filter_by_predicate(arr []tea, predicate_func tea) ArrayResult<tea> {
     }
     
     sus length drip = len(arr)
-    sus filtered []tea = []
+    sus filtered tea[value] = []
     sus filtered_count drip = 0
     
     sus i drip = 0
@@ -364,7 +364,7 @@ slay array_filter_by_predicate(arr []tea, predicate_func tea) ArrayResult<tea> {
     damn result
 }
 
-slay array_map_transform(arr []tea, transform_func tea) ArrayResult<tea> {
+slay array_map_transform(arr tea[value], transform_func tea) ArrayResult<tea> {
     fr fr Transform array elements using mapping function
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -374,7 +374,7 @@ slay array_map_transform(arr []tea, transform_func tea) ArrayResult<tea> {
     }
     
     sus length drip = len(arr)
-    sus transformed []tea = create_string_array(length)
+    sus transformed tea[value] = create_string_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -388,7 +388,7 @@ slay array_map_transform(arr []tea, transform_func tea) ArrayResult<tea> {
     damn result
 }
 
-slay array_reduce_to_value(arr []drip, initial_value drip, operation tea) drip {
+slay array_reduce_to_value(arr drip[value], initial_value drip, operation tea) drip {
     fr fr Reduce array to single value using operation
     sus accumulator drip = initial_value
     sus length drip = len(arr)
@@ -408,13 +408,13 @@ fr fr Array Partitioning and Grouping
 fr fr ==========================================
 
 squad PartitionResult<T> {
-    sus left_partition []T
-    sus right_partition []T
+    sus left_partition T[value]
+    sus right_partition T[value]
     sus left_count drip
     sus right_count drip
 }
 
-slay array_partition_by_condition(arr []tea, condition tea) PartitionResult<tea> {
+slay array_partition_by_condition(arr tea[value], condition tea) PartitionResult<tea> {
     fr fr Partition array into two groups based on condition
     sus result PartitionResult<tea> = PartitionResult<tea>{
         left_partition: [],
@@ -424,8 +424,8 @@ slay array_partition_by_condition(arr []tea, condition tea) PartitionResult<tea>
     }
     
     sus length drip = len(arr)
-    sus left_group []tea = []
-    sus right_group []tea = []
+    sus left_group tea[value] = []
+    sus right_group tea[value] = []
     sus left_count drip = 0
     sus right_count drip = 0
     
@@ -453,12 +453,12 @@ slay array_partition_by_condition(arr []tea, condition tea) PartitionResult<tea>
 }
 
 squad GroupResult<T> {
-    sus groups [][]T
-    sus group_keys []tea
+    sus groups T[value][value]
+    sus group_keys tea[value]
     sus group_count drip
 }
 
-slay array_group_by_key(arr []tea, key_extractor tea) GroupResult<tea> {
+slay array_group_by_key(arr tea[value], key_extractor tea) GroupResult<tea> {
     fr fr Group array elements by extracted key
     sus result GroupResult<tea> = GroupResult<tea>{
         groups: [],
@@ -467,8 +467,8 @@ slay array_group_by_key(arr []tea, key_extractor tea) GroupResult<tea> {
     }
     
     sus length drip = len(arr)
-    sus groups_map map<tea, []tea> = create_string_to_array_map()
-    sus unique_keys []tea = []
+    sus groups_map map<tea, tea[value]> = create_string_to_array_map()
+    sus unique_keys tea[value] = []
     sus key_count drip = 0
     
     sus i drip = 0
@@ -482,7 +482,7 @@ slay array_group_by_key(arr []tea, key_extractor tea) GroupResult<tea> {
             key_count = key_count + 1
         }
         
-        sus existing_group []tea = map_get_array(groups_map, key)
+        sus existing_group tea[value] = map_get_array(groups_map, key)
         existing_group = append_string_to_filtered_array(existing_group, element)
         map_set_array(groups_map, key, existing_group)
         
@@ -490,7 +490,7 @@ slay array_group_by_key(arr []tea, key_extractor tea) GroupResult<tea> {
     }
     
     fr fr Convert map to arrays
-    sus groups [][]tea = create_array_of_arrays(key_count)
+    sus groups tea[value][value] = create_array_of_arrays(key_count)
     sus j drip = 0
     bestie (j < key_count) {
         sus key tea = unique_keys[j]
@@ -508,7 +508,7 @@ fr fr ==========================================
 fr fr Array Set Operations
 fr fr ==========================================
 
-slay array_union_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
+slay array_union_strings(arr1 tea[value], arr2 tea[value]) ArrayResult<tea> {
     fr fr Union of two string arrays (no duplicates)
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -517,7 +517,7 @@ slay array_union_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
         length: 0
     }
     
-    sus union_set []tea = []
+    sus union_set tea[value] = []
     sus union_count drip = 0
     
     fr fr Add all elements from first array
@@ -549,7 +549,7 @@ slay array_union_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
     damn result
 }
 
-slay array_intersection_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
+slay array_intersection_strings(arr1 tea[value], arr2 tea[value]) ArrayResult<tea> {
     fr fr Intersection of two string arrays
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -558,7 +558,7 @@ slay array_intersection_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
         length: 0
     }
     
-    sus intersection []tea = []
+    sus intersection tea[value] = []
     sus intersection_count drip = 0
     
     sus i drip = 0
@@ -578,7 +578,7 @@ slay array_intersection_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
     damn result
 }
 
-slay array_difference_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
+slay array_difference_strings(arr1 tea[value], arr2 tea[value]) ArrayResult<tea> {
     fr fr Elements in arr1 but not in arr2
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -587,7 +587,7 @@ slay array_difference_strings(arr1 []tea, arr2 []tea) ArrayResult<tea> {
         length: 0
     }
     
-    sus difference []tea = []
+    sus difference tea[value] = []
     sus difference_count drip = 0
     
     sus i drip = 0
@@ -620,7 +620,7 @@ squad ArrayStats {
     sus range drip
 }
 
-slay array_calculate_statistics(arr []drip) ArrayStats {
+slay array_calculate_statistics(arr drip[value]) ArrayStats {
     fr fr Calculate comprehensive statistics for number array
     sus stats ArrayStats = ArrayStats{
         min_value: 0,
@@ -664,9 +664,9 @@ slay array_calculate_statistics(arr []drip) ArrayStats {
     stats.range = max_val - min_val
     
     fr fr Calculate median (requires sorted array)
-    sus sorted_copy []drip = array_copy_numbers(arr)
+    sus sorted_copy drip[value] = array_copy_numbers(arr)
     sus sort_result ArraySortResult<drip> = array_merge_sort_numbers(sorted_copy)
-    sus sorted_arr []drip = sort_result.sorted_array
+    sus sorted_arr drip[value] = sort_result.sorted_array
     
     ready (length % 2 == 1) {
         stats.median = meal(sorted_arr[length / 2])
@@ -683,7 +683,7 @@ slay array_calculate_statistics(arr []drip) ArrayStats {
     damn stats
 }
 
-slay calculate_mode(arr []drip) drip {
+slay calculate_mode(arr drip[value]) drip {
     fr fr Find the most frequently occurring value
     sus length drip = len(arr)
     ready (length == 0) {
@@ -715,7 +715,7 @@ fr fr ==========================================
 fr fr Array Rotation and Manipulation
 fr fr ==========================================
 
-slay array_rotate_left(arr []tea, positions drip) ArrayResult<tea> {
+slay array_rotate_left(arr tea[value], positions drip) ArrayResult<tea> {
     fr fr Rotate array elements to the left by specified positions
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -735,7 +735,7 @@ slay array_rotate_left(arr []tea, positions drip) ArrayResult<tea> {
         effective_rotation = effective_rotation + length
     }
     
-    sus rotated []tea = create_string_array(length)
+    sus rotated tea[value] = create_string_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -748,7 +748,7 @@ slay array_rotate_left(arr []tea, positions drip) ArrayResult<tea> {
     damn result
 }
 
-slay array_rotate_right(arr []tea, positions drip) ArrayResult<tea> {
+slay array_rotate_right(arr tea[value], positions drip) ArrayResult<tea> {
     fr fr Rotate array elements to the right by specified positions
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -768,7 +768,7 @@ slay array_rotate_right(arr []tea, positions drip) ArrayResult<tea> {
         effective_rotation = effective_rotation + length
     }
     
-    sus rotated []tea = create_string_array(length)
+    sus rotated tea[value] = create_string_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -781,7 +781,7 @@ slay array_rotate_right(arr []tea, positions drip) ArrayResult<tea> {
     damn result
 }
 
-slay array_reverse(arr []tea) ArrayResult<tea> {
+slay array_reverse(arr tea[value]) ArrayResult<tea> {
     fr fr Reverse array elements
     sus result ArrayResult<tea> = ArrayResult<tea>{
         data: [],
@@ -791,7 +791,7 @@ slay array_reverse(arr []tea) ArrayResult<tea> {
     }
     
     sus length drip = len(arr)
-    sus reversed []tea = create_string_array(length)
+    sus reversed tea[value] = create_string_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -840,9 +840,9 @@ slay min_of_two(a drip, b drip) drip {
     ready (a < b) { damn a } otherwise { damn b }
 }
 
-slay create_index_array(size drip) []drip {
+slay create_index_array(size drip) drip[value]{
     fr fr Create array of indices [0, 1, 2, ..., size-1]
-    sus indices []drip = create_number_array(size)
+    sus indices drip[value] = create_number_array(size)
     
     sus i drip = 0
     bestie (i < size) {
@@ -853,10 +853,10 @@ slay create_index_array(size drip) []drip {
     damn indices
 }
 
-slay array_copy_strings(arr []tea) []tea {
+slay array_copy_strings(arr tea[value]) tea[value]{
     fr fr Create deep copy of string array
     sus length drip = len(arr)
-    sus copy []tea = create_string_array(length)
+    sus copy tea[value] = create_string_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -867,10 +867,10 @@ slay array_copy_strings(arr []tea) []tea {
     damn copy
 }
 
-slay array_copy_numbers(arr []drip) []drip {
+slay array_copy_numbers(arr drip[value]) drip[value]{
     fr fr Create deep copy of number array
     sus length drip = len(arr)
-    sus copy []drip = create_number_array(length)
+    sus copy drip[value] = create_number_array(length)
     
     sus i drip = 0
     bestie (i < length) {
@@ -881,10 +881,10 @@ slay array_copy_numbers(arr []drip) []drip {
     damn copy
 }
 
-slay append_int_to_array(arr []drip, value drip) []drip {
+slay append_int_to_array(arr drip[value], value drip) drip[value]{
     fr fr Append integer to array
     sus length drip = len(arr)
-    sus new_arr []drip = create_number_array(length + 1)
+    sus new_arr drip[value] = create_number_array(length + 1)
     
     sus i drip = 0
     bestie (i < length) {
@@ -896,10 +896,10 @@ slay append_int_to_array(arr []drip, value drip) []drip {
     damn new_arr
 }
 
-slay append_string_to_filtered_array(arr []tea, value tea) []tea {
+slay append_string_to_filtered_array(arr tea[value], value tea) tea[value]{
     fr fr Append string to array
     sus length drip = len(arr)
-    sus new_arr []tea = create_string_array(length + 1)
+    sus new_arr tea[value] = create_string_array(length + 1)
     
     sus i drip = 0
     bestie (i < length) {
@@ -911,7 +911,7 @@ slay append_string_to_filtered_array(arr []tea, value tea) []tea {
     damn new_arr
 }
 
-slay array_contains_string_optimized(arr []tea, target tea) lit {
+slay array_contains_string_optimized(arr tea[value], target tea) lit {
     fr fr Optimized string contains check
     sus length drip = len(arr)
     
@@ -971,9 +971,9 @@ fr fr ==========================================
 fr fr Mock Implementations for Missing Functions
 fr fr ==========================================
 
-slay create_string_array(size drip) []tea {
+slay create_string_array(size drip) tea[value]{
     fr fr Create empty string array of specified size
-    sus arr []tea = []
+    sus arr tea[value] = []
     sus i drip = 0
     bestie (i < size) {
         arr[i] = ""
@@ -982,9 +982,9 @@ slay create_string_array(size drip) []tea {
     damn arr
 }
 
-slay create_number_array(size drip) []drip {
+slay create_number_array(size drip) drip[value]{
     fr fr Create empty number array of specified size
-    sus arr []drip = []
+    sus arr drip[value] = []
     sus i drip = 0
     bestie (i < size) {
         arr[i] = 0
@@ -993,9 +993,9 @@ slay create_number_array(size drip) []drip {
     damn arr
 }
 
-slay create_array_of_arrays(size drip) [][]tea {
+slay create_array_of_arrays(size drip) tea[value][value] {
     fr fr Create array of string arrays
-    sus arr [][]tea = []
+    sus arr tea[value][value] = []
     sus i drip = 0
     bestie (i < size) {
         arr[i] = []
@@ -1229,9 +1229,9 @@ slay drip_to_string(num drip) tea {
 }
 
 fr fr Mock implementations for map operations
-slay create_string_to_array_map() map<tea, []tea> {
+slay create_string_to_array_map() map<tea, tea[value]> {
     fr fr Create string to array map
-    damn map<tea, []tea>{}
+    damn map<tea, tea[value]>{}
 }
 
 slay create_int_to_int_map() map<drip, drip> {
@@ -1239,16 +1239,16 @@ slay create_int_to_int_map() map<drip, drip> {
     damn map<drip, drip>{}
 }
 
-slay map_contains_key(m map<tea, []tea>, key tea) lit {
+slay map_contains_key(m map<tea, tea[value]>, key tea) lit {
     fr fr Check if map contains key
     damn cringe  fr fr Simplified implementation
 }
 
-slay map_set_array(m map<tea, []tea>, key tea, value []tea) slay {
+slay map_set_array(m map<tea, tea[value]>, key tea, value tea[value]) slay {
     fr fr Set array value in map
 }
 
-slay map_get_array(m map<tea, []tea>, key tea) []tea {
+slay map_get_array(m map<tea, tea[value]>, key tea) tea[value]{
     fr fr Get array value from map
     damn []
 }

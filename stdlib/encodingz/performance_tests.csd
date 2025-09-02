@@ -235,7 +235,7 @@ slay benchmark_streaming_base64(total_size drip) StreamingBenchmark {
     sus start_time drip = get_current_time_ms()
     sus peak_memory drip = 0
     
-    sus chunk_times []drip = []
+    sus chunk_times drip[value] = []
     sus i drip = 0
     
     bestie i < chunks_needed {
@@ -414,7 +414,7 @@ slay test_scalability() {
     vibez.spill("🔄 Scalability Test - Multiple Data Sizes")
     vibez.spill("=" * 50)
     
-    sus test_sizes []drip = [
+    sus test_sizes drip[value] = [
         SMALL_DATA_SIZE,    fr fr 1KB
         MEDIUM_DATA_SIZE,   fr fr 64KB
         LARGE_DATA_SIZE,    fr fr 1MB
@@ -447,7 +447,7 @@ slay estimate_streaming_memory(encoder StreamEncoder) drip {
     damn (buffer_memory + overhead) / 1024
 }
 
-slay print_performance_results(results []PerformanceResult) {
+slay print_performance_results(results PerformanceResult[value]) {
     sus i drip = 0
     bestie i < array_length(results) {
         sus result PerformanceResult = results[i]
@@ -461,7 +461,7 @@ slay print_performance_results(results []PerformanceResult) {
     }
 }
 
-slay print_streaming_results(results []StreamingBenchmark) {
+slay print_streaming_results(results StreamingBenchmark[value]) {
     sus i drip = 0
     bestie i < array_length(results) {
         sus result StreamingBenchmark = results[i]

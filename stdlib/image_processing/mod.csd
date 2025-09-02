@@ -32,7 +32,7 @@ be_like ImageData = struct {
     height normie,
     channels normie,
     format tea,
-    pixels []byte fr fr Raw pixel data as byte array for efficiency
+    pixels byte[value] fr fr Raw pixel data as byte array for efficiency
 }
 
 be_like ImageMetadata = struct {
@@ -76,7 +76,7 @@ slay img_detect_format(filepath tea) tea {
 slay img_decode_format(data tea, format tea) ImageData {
     sus img ImageData
     img.format = format
-    sus byte_data []byte = string_to_bytes(data)
+    sus byte_data byte[value] = string_to_bytes(data)
     
     sketchy format == "PNG" {
         img = img_decode_png_real(byte_data)
@@ -97,13 +97,13 @@ slay img_decode_format(data tea, format tea) ImageData {
 }
 
 fr fr Real format-specific decoders using algorithms from algorithms.csd
-slay img_decode_png_real(data []byte) ImageData {
+slay img_decode_png_real(data byte[value]) ImageData {
     sus img ImageData
     img.format = "PNG"
     
     sus width normie = 0
     sus height normie = 0  
-    sus pixels []byte = []
+    sus pixels byte[value] = []
     
     width, height, pixels = decode_png_basic(data)
     
@@ -124,13 +124,13 @@ slay img_decode_png_real(data []byte) ImageData {
     damn img
 }
 
-slay img_decode_jpeg_real(data []byte) ImageData {
+slay img_decode_jpeg_real(data byte[value]) ImageData {
     sus img ImageData
     img.format = "JPEG"
     
     sus width normie = 0
     sus height normie = 0
-    sus pixels []byte = []
+    sus pixels byte[value] = []
     
     width, height, pixels = decode_jpeg_basic(data)
     
@@ -151,13 +151,13 @@ slay img_decode_jpeg_real(data []byte) ImageData {
     damn img
 }
 
-slay img_decode_gif_real(data []byte) ImageData {
+slay img_decode_gif_real(data byte[value]) ImageData {
     sus img ImageData
     img.format = "GIF"
     
     sus width normie = 0
     sus height normie = 0
-    sus pixels []byte = []
+    sus pixels byte[value] = []
     
     width, height, pixels = decode_gif_basic(data)
     
@@ -177,13 +177,13 @@ slay img_decode_gif_real(data []byte) ImageData {
     damn img
 }
 
-slay img_decode_bmp_real(data []byte) ImageData {
+slay img_decode_bmp_real(data byte[value]) ImageData {
     sus img ImageData
     img.format = "BMP"
     
     sus width normie = 0
     sus height normie = 0
-    sus pixels []byte = []
+    sus pixels byte[value] = []
     
     width, height, pixels = decode_bmp_basic(data)
     
@@ -255,7 +255,7 @@ slay img_compress_pixels(pixels tea, format tea) tea {
     } sketchy format == "GIF" {
         fr fr Basic GIF-style compression (LZW simplified)
         sus compressed tea = ""
-        sus dictionary [256]tea
+        sus dictionary tea[256]
         sus dict_size normie = 256
         
         fr fr Initialize ASCII dictionary
@@ -615,9 +615,9 @@ slay img_find_contours(img ImageData) tea {
 }
 
 fr fr Helper functions for image processing algorithms
-slay img_create_test_pattern_pixels(width normie, height normie, channels normie) []byte {
+slay img_create_test_pattern_pixels(width normie, height normie, channels normie) byte[value]{
     sus total_bytes normie = width * height * channels
-    sus pixels []byte = []
+    sus pixels byte[value] = []
     
     bestie y := 0; y < height; y++ {
         bestie x := 0; x < width; x++ {
@@ -655,28 +655,28 @@ slay img_create_test_pattern_pixels(width normie, height normie, channels normie
 }
 
 fr fr Updated brightness and contrast adjustment functions
-slay img_modify_brightness(pixels []byte, width normie, height normie, channels normie, brightness drip) []byte {
+slay img_modify_brightness(pixels byte[value], width normie, height normie, channels normie, brightness drip) byte[value]{
     damn adjust_brightness(pixels, width, height, channels, brightness)
 }
 
-slay img_modify_contrast(pixels []byte, width normie, height normie, channels normie, contrast drip) []byte {
+slay img_modify_contrast(pixels byte[value], width normie, height normie, channels normie, contrast drip) byte[value]{
     damn adjust_contrast(pixels, width, height, channels, contrast)
 }
 
-slay img_flip_pixels_horizontal(pixels []byte, width normie, height normie, channels normie) []byte {
+slay img_flip_pixels_horizontal(pixels byte[value], width normie, height normie, channels normie) byte[value]{
     damn flip_horizontal(pixels, width, height, channels)
 }
 
-slay img_flip_pixels_vertical(pixels []byte, width normie, height normie, channels normie) []byte {
+slay img_flip_pixels_vertical(pixels byte[value], width normie, height normie, channels normie) byte[value]{
     damn flip_vertical(pixels, width, height, channels)
 }
 
-slay img_rotate_pixels(pixels []byte, src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) []byte {
+slay img_rotate_pixels(pixels byte[value], src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) byte[value]{
     damn rotate_image(pixels, src_width, src_height, dst_width, dst_height, angle, channels)
 }
 
 fr fr Real implementations for image processing operations
-slay img_extract_pixel_color(pixels []byte, pixel_index normie, channels normie) normie {
+slay img_extract_pixel_color(pixels byte[value], pixel_index normie, channels normie) normie {
     vibe_check pixel_index >= 0 && pixel_index < len(pixels) {
         sus r normie = normie(pixels[pixel_index])
         vibe_check channels >= 3 && pixel_index + 2 < len(pixels) {
@@ -690,8 +690,8 @@ slay img_extract_pixel_color(pixels []byte, pixel_index normie, channels normie)
     damn COLOR_BLACK
 }
 
-slay img_modify_pixel_color(pixels []byte, x normie, y normie, width normie, channels normie, color normie) []byte {
-    sus result []byte = pixels
+slay img_modify_pixel_color(pixels byte[value], x normie, y normie, width normie, channels normie, color normie) byte[value]{
+    sus result byte[value] = pixels
     sus pixel_index normie = (y * width + x) * channels
     
     vibe_check pixel_index >= 0 && pixel_index + channels <= len(result) {
@@ -712,9 +712,9 @@ slay img_modify_pixel_color(pixels []byte, x normie, y normie, width normie, cha
     damn result
 }
 
-slay img_perform_color_replacement(pixels []byte, width normie, height normie, channels normie, 
-                                   old_color normie, new_color normie, tolerance drip) []byte {
-    sus result []byte = pixels
+slay img_perform_color_replacement(pixels byte[value], width normie, height normie, channels normie, 
+                                   old_color normie, new_color normie, tolerance drip) byte[value]{
+    sus result byte[value] = pixels
     
     sus old_r normie = (old_color >> 16) & 0xFF
     sus old_g normie = (old_color >> 8) & 0xFF  
@@ -749,8 +749,8 @@ slay img_perform_color_replacement(pixels []byte, width normie, height normie, c
     damn result
 }
 
-slay img_calculate_histogram(pixels []byte, width normie, height normie, channels normie) tea {
-    sus histogram [256]normie = [0; 256]
+slay img_calculate_histogram(pixels byte[value], width normie, height normie, channels normie) tea {
+    sus histogram normie[256] = [0; 256]
     
     bestie i := 0; i < len(pixels); i++ {
         sus pixel_value byte = pixels[i]
@@ -771,9 +771,9 @@ slay img_calculate_histogram(pixels []byte, width normie, height normie, channel
     damn result
 }
 
-slay img_blend_images(base_pixels []byte, overlay_pixels []byte, base_width normie, base_height normie, 
-                     overlay_width normie, overlay_height normie, x normie, y normie, alpha drip, channels normie) []byte {
-    sus result []byte = base_pixels
+slay img_blend_images(base_pixels byte[value], overlay_pixels byte[value], base_width normie, base_height normie, 
+                     overlay_width normie, overlay_height normie, x normie, y normie, alpha drip, channels normie) byte[value]{
+    sus result byte[value] = base_pixels
     
     bestie oy := 0; oy < overlay_height; oy++ {
         bestie ox := 0; ox < overlay_width; ox++ {
@@ -801,7 +801,7 @@ slay img_blend_images(base_pixels []byte, overlay_pixels []byte, base_width norm
     damn result
 }
 
-slay img_compute_mse(pixels1 []byte, pixels2 []byte, width normie, height normie, channels normie) drip {
+slay img_compute_mse(pixels1 byte[value], pixels2 byte[value], width normie, height normie, channels normie) drip {
     vibe_check len(pixels1) != len(pixels2) {
         damn 1.0 fr fr Maximum error for different sizes
     }
@@ -913,8 +913,8 @@ slay float_to_int(f drip) normie {
 }
 
 fr fr Array allocation helper
-slay make_byte_array(size normie) []byte {
-    sus result []byte = []
+slay make_byte_array(size normie) byte[value]{
+    sus result byte[value] = []
     sus i normie = 0
     bestie (i < size) {
         result = append(result, 0)
@@ -957,11 +957,11 @@ slay string_from_bytes(bytes tea) tea {
 
 slay char_to_string(ascii_value normie) tea {
     fr fr Simple ASCII to string conversion
-    sus chars [2]normie = [ascii_value, 0]
+    sus chars normie[2] = [ascii_value, 0]
     damn string_from_char_array(chars)
 }
 
-slay string_from_char_array(chars [2]normie) tea {
+slay string_from_char_array(chars normie[2]) tea {
     fr fr Convert character array to string (basic implementation)
     vibe_check chars[0] == 0 { damn "" }
     fr fr Convert ASCII value to character
@@ -1004,7 +1004,7 @@ slay calculate_crc32(data tea) normie {
 slay create_quantization_table() tea {
     fr fr Standard JPEG luminance quantization table
     sus table tea = ""
-    sus standard_table [64]normie = [
+    sus standard_table normie[64] = [
         16, 11, 10, 16, 24, 40, 51, 61,
         12, 12, 14, 19, 26, 58, 60, 55,
         14, 13, 16, 24, 40, 57, 69, 56,
@@ -1156,7 +1156,7 @@ slay array_length(arr [ImageData]) normie {
 fr fr Utility functions for binary data reading (consolidated)
 
 fr fr Advanced image processing algorithms (from algorithms.csd)
-slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
+slay decode_bmp_basic(data byte[value]) (normie, normie, byte[value]) {
     vibe_check len(data) < 54 { fr fr BMP header is 54 bytes minimum
         damn 0, 0, []
     }
@@ -1190,7 +1190,7 @@ slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
     }
     
     fr fr Decode pixel data (BMP stores pixels bottom-to-top)
-    sus pixels []byte = make_byte_array(width * height * 3) fr fr Always output RGB (3 channels)
+    sus pixels byte[value] = make_byte_array(width * height * 3) fr fr Always output RGB (3 channels)
     sus pixel_index normie = 0
     
     sus y normie = height - 1 
@@ -1222,9 +1222,9 @@ slay decode_bmp_basic(data []byte) (normie, normie, []byte) {
     damn width, height, pixels
 }
 
-slay crop_image(pixels []byte, src_width normie, src_height normie, channels normie, 
-                x normie, y normie, crop_width normie, crop_height normie) []byte {
-    sus result []byte = []
+slay crop_image(pixels byte[value], src_width normie, src_height normie, channels normie, 
+                x normie, y normie, crop_width normie, crop_height normie) byte[value]{
+    sus result byte[value] = []
     
     bestie cy := 0; cy < crop_height; cy++ {
         bestie cx := 0; cx < crop_width; cx++ {
@@ -1252,8 +1252,8 @@ slay crop_image(pixels []byte, src_width normie, src_height normie, channels nor
     damn result
 }
 
-slay flip_horizontal(pixels []byte, width normie, height normie, channels normie) []byte {
-    sus result []byte = []
+slay flip_horizontal(pixels byte[value], width normie, height normie, channels normie) byte[value]{
+    sus result byte[value] = []
     
     bestie y := 0; y < height; y++ {
         bestie x := width - 1; x >= 0; x-- {
@@ -1271,8 +1271,8 @@ slay flip_horizontal(pixels []byte, width normie, height normie, channels normie
     damn result
 }
 
-slay flip_vertical(pixels []byte, width normie, height normie, channels normie) []byte {
-    sus result []byte = []
+slay flip_vertical(pixels byte[value], width normie, height normie, channels normie) byte[value]{
+    sus result byte[value] = []
     
     bestie y := height - 1; y >= 0; y-- {
         bestie x := 0; x < width; x++ {
@@ -1290,8 +1290,8 @@ slay flip_vertical(pixels []byte, width normie, height normie, channels normie) 
     damn result
 }
 
-slay rotate_image(pixels []byte, src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) []byte {
-    sus result []byte = []
+slay rotate_image(pixels byte[value], src_width normie, src_height normie, dst_width normie, dst_height normie, angle drip, channels normie) byte[value]{
+    sus result byte[value] = []
     
     sus cos_angle drip = math_cos(angle)
     sus sin_angle drip = math_sin(angle)
@@ -1333,8 +1333,8 @@ slay rotate_image(pixels []byte, src_width normie, src_height normie, dst_width 
     damn result
 }
 
-slay adjust_brightness(pixels []byte, width normie, height normie, channels normie, brightness drip) []byte {
-    sus result []byte = []
+slay adjust_brightness(pixels byte[value], width normie, height normie, channels normie, brightness drip) byte[value]{
+    sus result byte[value] = []
     sus brightness_offset normie = normie(brightness * 255.0)
     
     bestie i := 0; i < len(pixels); i++ {
@@ -1352,8 +1352,8 @@ slay adjust_brightness(pixels []byte, width normie, height normie, channels norm
     damn result
 }
 
-slay adjust_contrast(pixels []byte, width normie, height normie, channels normie, contrast drip) []byte {
-    sus result []byte = []
+slay adjust_contrast(pixels byte[value], width normie, height normie, channels normie, contrast drip) byte[value]{
+    sus result byte[value] = []
     sus contrast_factor drip = (259.0 * (contrast * 255.0 + 255.0)) / (255.0 * (259.0 - contrast * 255.0))
     
     bestie i := 0; i < len(pixels); i++ {
@@ -1372,10 +1372,10 @@ slay adjust_contrast(pixels []byte, width normie, height normie, channels normie
     damn result
 }
 
-slay apply_unsharp_mask(pixels []byte, width normie, height normie, channels normie, amount drip, radius normie, threshold normie) []byte {
+slay apply_unsharp_mask(pixels byte[value], width normie, height normie, channels normie, amount drip, radius normie, threshold normie) byte[value]{
     fr fr First apply Gaussian blur to create mask
-    sus blurred []byte = apply_gaussian_blur(pixels, width, height, channels, radius)
-    sus result []byte = []
+    sus blurred byte[value] = apply_gaussian_blur(pixels, width, height, channels, radius)
+    sus result byte[value] = []
     
     bestie i := 0; i < len(pixels); i++ {
         vibe_check channels == 4 && (i % channels) == 3 {
@@ -1403,7 +1403,7 @@ slay apply_unsharp_mask(pixels []byte, width normie, height normie, channels nor
 }
 
 fr fr Additional helper functions
-slay read_uint32_le(data []byte, offset normie) normie {
+slay read_uint32_le(data byte[value], offset normie) normie {
     vibe_check offset + 3 < len(data) {
         damn normie(data[offset]) | (normie(data[offset+1]) << 8) | 
              (normie(data[offset+2]) << 16) | (normie(data[offset+3]) << 24)
@@ -1411,14 +1411,14 @@ slay read_uint32_le(data []byte, offset normie) normie {
     damn 0
 }
 
-slay read_uint16_le(data []byte, offset normie) normie {
+slay read_uint16_le(data byte[value], offset normie) normie {
     vibe_check offset + 1 < len(data) {
         damn normie(data[offset]) | (normie(data[offset+1]) << 8)
     }
     damn 0
 }
 
-slay read_uint32_be(data []byte, offset normie) normie {
+slay read_uint32_be(data byte[value], offset normie) normie {
     vibe_check offset + 3 < len(data) {
         damn (normie(data[offset]) << 24) | (normie(data[offset+1]) << 16) |
              (normie(data[offset+2]) << 8) | normie(data[offset+3])
@@ -1426,7 +1426,7 @@ slay read_uint32_be(data []byte, offset normie) normie {
     damn 0
 }
 
-slay read_uint16_be(data []byte, offset normie) normie {
+slay read_uint16_be(data byte[value], offset normie) normie {
     vibe_check offset + 1 < len(data) {
         damn (normie(data[offset]) << 8) | normie(data[offset+1])
     }

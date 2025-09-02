@@ -153,7 +153,7 @@ slay test_string_utilities() {
     assert_true(string_starts_with("hello world", "hello"))
     assert_false(string_starts_with("hello world", "world"))
     
-    sus parts []tea = string_split("a,b,c", ",")
+    sus parts tea[value] = string_split("a,b,c", ",")
     assert_eq_int(len(parts), 3)
     assert_eq_string(parts[0], "a")
     assert_eq_string(parts[1], "b")
@@ -178,16 +178,16 @@ slay test_dns_resolution() {
     
     // These tests would require actual network connectivity
     // For now, we test the function structure
-    sus addresses []tea = resolve_hostname("localhost")
+    sus addresses tea[value] = resolve_hostname("localhost")
     assert_true(len(addresses) >= 0)  // Should not crash
     
     sus hostname tea = resolve_ip_to_hostname("127.0.0.1")
     assert_true(string_length(hostname) >= 0)  // Should not crash
     
-    sus mx_records []tea = lookup_mx("example.com")
+    sus mx_records tea[value] = lookup_mx("example.com")
     assert_true(len(mx_records) >= 0)  // Should not crash
     
-    sus txt_records []tea = lookup_txt("example.com")
+    sus txt_records tea[value] = lookup_txt("example.com")
     assert_true(len(txt_records) >= 0)  // Should not crash
 }
 
@@ -204,7 +204,7 @@ slay test_network_utilities() {
     assert_true(ping_result == based || ping_result == cap)  // Should return boolean
     
     // Test network scan
-    sus scan_results []tea = network_scan("127.0.0.1", "127.0.0.1", 80)
+    sus scan_results tea[value] = network_scan("127.0.0.1", "127.0.0.1", 80)
     assert_true(len(scan_results) >= 0)  // Should not crash
 }
 
@@ -275,7 +275,7 @@ slay test_error_handling() {
     assert_eq_string(ip_to_string(invalid_ip), "invalid.ip.address")
     
     // Test empty string handling
-    sus empty_split []tea = string_split("", ",")
+    sus empty_split tea[value] = string_split("", ",")
     assert_eq_int(len(empty_split), 0)
     
     sus empty_join tea = string_join(empty_split, "-")

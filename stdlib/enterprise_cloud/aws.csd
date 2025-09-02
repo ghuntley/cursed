@@ -40,7 +40,7 @@ squad AWSSigner {
         method tea,
         url tea,
         headers map<tea, tea>,
-        payload []lit,
+        payload lit[value],
         service tea,
         timestamp drip
     ) yikes<map<tea, tea>> {
@@ -84,13 +84,13 @@ squad AWSSigner {
         method tea,
         url tea,
         headers map<tea, tea>,
-        payload []lit
+        payload lit[value]
     ) tea {
         sus uri tea = extract_path(url)
         sus query_string tea = extract_query(url)
         
         // Canonical headers
-        sus header_names []tea = sort_keys(headers)
+        sus header_names tea[value] = sort_keys(headers)
         sus canonical_headers tea = ""
         sus signed_header_list tea = ""
         
@@ -123,11 +123,11 @@ squad AWSSigner {
     }
     
     slay calculate_signature(date tea, region tea, service tea, string_to_sign tea) tea {
-        sus k_date []lit = cryptz.hmac_sha256(encode_string("AWS4" + self.config.secret_access_key), encode_string(date))
-        sus k_region []lit = cryptz.hmac_sha256(k_date, encode_string(region))
-        sus k_service []lit = cryptz.hmac_sha256(k_region, encode_string(service))
-        sus k_signing []lit = cryptz.hmac_sha256(k_service, encode_string("aws4_request"))
-        sus signature []lit = cryptz.hmac_sha256(k_signing, encode_string(string_to_sign))
+        sus k_date lit[value] = cryptz.hmac_sha256(encode_string("AWS4" + self.config.secret_access_key), encode_string(date))
+        sus k_region lit[value] = cryptz.hmac_sha256(k_date, encode_string(region))
+        sus k_service lit[value] = cryptz.hmac_sha256(k_region, encode_string(service))
+        sus k_signing lit[value] = cryptz.hmac_sha256(k_service, encode_string("aws4_request"))
+        sus signature lit[value] = cryptz.hmac_sha256(k_signing, encode_string(string_to_sign))
         
         damn hex(signature)
     }
@@ -161,7 +161,7 @@ squad S3Client {
         }
     }
     
-    slay put_object(bucket tea, key tea, data []lit, content_type tea) yikes<S3PutResult> {
+    slay put_object(bucket tea, key tea, data lit[value], content_type tea) yikes<S3PutResult> {
         sus url tea = self.build_s3_url(bucket, key)
         sus headers map<tea, tea> = {
             "content-type": content_type,
@@ -328,7 +328,7 @@ squad EC2Client {
         }
     }
     
-    slay describe_instances(instance_ids []tea) yikes<[]EC2Instance> {
+    slay describe_instances(instance_ids tea[value]) yikes<EC2Instance[value]> {
         sus params map<tea, tea> = {
             "Action": "DescribeInstances",
             "Version": "2016-11-15",
@@ -348,7 +348,7 @@ squad EC2Client {
         }
     }
     
-    slay run_instances(ami_id tea, instance_type tea, min_count drip, max_count drip) yikes<[]EC2Instance> {
+    slay run_instances(ami_id tea, instance_type tea, min_count drip, max_count drip) yikes<EC2Instance[value]> {
         sus params map<tea, tea> = {
             "Action": "RunInstances",
             "Version": "2016-11-15",
@@ -367,7 +367,7 @@ squad EC2Client {
         }
     }
     
-    slay terminate_instances(instance_ids []tea) yikes<[]EC2InstanceStateChange> {
+    slay terminate_instances(instance_ids tea[value]) yikes<EC2InstanceStateChange[value]> {
         sus params map<tea, tea> = {
             "Action": "TerminateInstances",
             "Version": "2016-11-15",
@@ -430,7 +430,7 @@ squad LambdaClient {
         }
     }
     
-    slay invoke(function_name tea, payload []lit, invocation_type tea) yikes<LambdaInvokeResult> {
+    slay invoke(function_name tea, payload lit[value], invocation_type tea) yikes<LambdaInvokeResult> {
         sus url tea = "https://lambda." + self.config.region + ".amazonaws.com/2015-03-31/functions/" + function_name + "/invocations"
         sus headers map<tea, tea> = {
             "content-type": "application/json",
@@ -463,7 +463,7 @@ squad LambdaClient {
     
     slay create_function(function_config LambdaFunctionConfig) yikes<LambdaFunction> {
         sus url tea = "https://lambda." + self.config.region + ".amazonaws.com/2015-03-31/functions"
-        sus body []lit = jsonz.marshal(function_config) fam {
+        sus body lit[value] = jsonz.marshal(function_config) fam {
             when err -> yikes "failed to marshal function config: " + err
         }
         sus headers map<tea, tea> = {
@@ -490,9 +490,9 @@ squad LambdaClient {
         }
     }
     
-    slay update_function_code(function_name tea, zip_file []lit) yikes<LambdaFunction> {
+    slay update_function_code(function_name tea, zip_file lit[value]) yikes<LambdaFunction> {
         sus url tea = "https://lambda." + self.config.region + ".amazonaws.com/2015-03-31/functions/" + function_name + "/code"
-        sus body []lit = jsonz.marshal({
+        sus body lit[value] = jsonz.marshal({
             "ZipFile": base64_encode(zip_file),
         }) fam {
             when err -> yikes "failed to marshal update request: " + err
@@ -524,7 +524,7 @@ squad LambdaClient {
 
 // Data structures
 squad S3Object {
-    data []lit
+    data lit[value]
     content_type tea
     content_length drip
     etag tea
@@ -537,7 +537,7 @@ squad S3PutResult {
 }
 
 squad S3ListResult {
-    objects []S3ObjectInfo
+    objects S3ObjectInfo[value]
     is_truncated lit
     next_continuation_token tea
 }
@@ -559,7 +559,7 @@ squad EC2Instance {
     private_ip tea
     vpc_id tea
     subnet_id tea
-    security_groups []tea
+    security_groups tea[value]
     tags map<tea, tea>
 }
 
@@ -571,7 +571,7 @@ squad EC2InstanceStateChange {
 
 squad LambdaInvokeResult {
     status_code drip
-    payload []lit
+    payload lit[value]
     executed_version tea
     function_error tea
     log_result tea
@@ -605,7 +605,7 @@ squad LambdaFunctionConfig {
 }
 
 squad LambdaCode {
-    zip_file []lit
+    zip_file lit[value]
     s3_bucket tea = ""
     s3_key tea = ""
     s3_object_version tea = ""
@@ -655,7 +655,7 @@ slay load_credentials_from_profile(profile_name tea) yikes<AWSCredentials> {
     }
     
     sus profile_section tea = "[" + profile_name + "]"
-    sus lines []tea = filez.read_lines(credentials_file) fam {
+    sus lines tea[value] = filez.read_lines(credentials_file) fam {
         when err -> yikes "failed to read credentials file: " + err
     }
     
@@ -671,7 +671,7 @@ slay load_credentials_from_profile(profile_name tea) yikes<AWSCredentials> {
         }
         
         ready (in_profile && stringz.contains(line, "=")) {
-            sus parts []tea = stringz.split(line, "=", 2)
+            sus parts tea[value] = stringz.split(line, "=", 2)
             sus key tea = stringz.trim(parts[0])
             sus value tea = stringz.trim(parts[1])
             
@@ -705,7 +705,7 @@ slay example_s3_usage() yikes<tea> {
     sus s3 S3Client = create_s3_client(config)
     
     // Upload file
-    sus file_data []lit = filez.read_file("example.txt") fam {
+    sus file_data lit[value] = filez.read_file("example.txt") fam {
         when err -> yikes err
     }
     
@@ -753,7 +753,7 @@ slay example_ec2_usage() yikes<tea> {
     sus ec2 EC2Client = create_ec2_client(config)
     
     // Launch instance
-    sus instances []EC2Instance = ec2.run_instances(
+    sus instances EC2Instance[value] = ec2.run_instances(
         "ami-0abcdef1234567890",  // Amazon Linux 2 AMI
         "t2.micro",
         1,  // min count
@@ -768,7 +768,7 @@ slay example_ec2_usage() yikes<tea> {
     // Wait a bit then describe instance
     concurrenz.sleep(5000)
     
-    sus described_instances []EC2Instance = ec2.describe_instances([instance_id]) fam {
+    sus described_instances EC2Instance[value] = ec2.describe_instances([instance_id]) fam {
         when err -> yikes err
     }
     
@@ -788,7 +788,7 @@ slay example_lambda_usage() yikes<tea> {
     sus lambda LambdaClient = create_lambda_client(config)
     
     // Invoke existing function
-    sus payload []lit = jsonz.marshal({
+    sus payload lit[value] = jsonz.marshal({
         "name": "World",
         "message": "Hello from CURSED!",
     }) fam {

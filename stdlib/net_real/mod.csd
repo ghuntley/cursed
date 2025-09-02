@@ -68,7 +68,7 @@ fr fr ================================
 
 fr fr Socket registry for tracking active sockets
 be_like SocketRegistry squad {
-    sockets [1024]Socket
+    sockets Socket[1024]
     next_socket_id normie
     active_count normie
 }
@@ -694,7 +694,7 @@ slay parse_url(url tea) ParsedURL {
         parsed.scheme = "https"
         parsed.port = 443
         sus url_without_scheme tea = substring(url, 8, string_length(url))
-        sus parts []tea = split_string(url_without_scheme, "/")
+        sus parts tea[value] = split_string(url_without_scheme, "/")
         lowkey len(parts) > 0 {
             parsed.host = parts[0]
             lowkey len(parts) > 1 {
@@ -703,7 +703,7 @@ slay parse_url(url tea) ParsedURL {
         }
     } elseif starts_with(url, "http://") {
         sus url_without_scheme tea = substring(url, 7, string_length(url))
-        sus parts []tea = split_string(url_without_scheme, "/")
+        sus parts tea[value] = split_string(url_without_scheme, "/")
         lowkey len(parts) > 0 {
             parsed.host = parts[0]
             lowkey len(parts) > 1 {
@@ -733,10 +733,10 @@ slay parse_http_response(response_data tea) HTTPResponse {
     sus body_part tea = substring(response_data, separator_pos + 4, string_length(response_data))
     
     fr fr Parse status line
-    sus lines []tea = split_string(headers_part, "\r\n")
+    sus lines tea[value] = split_string(headers_part, "\r\n")
     lowkey len(lines) > 0 {
         sus status_line tea = lines[0]
-        sus status_parts []tea = split_string(status_line, " ")
+        sus status_parts tea[value] = split_string(status_line, " ")
         lowkey len(status_parts) >= 2 {
             response.status_code = string_to_normie(status_parts[1])
         }
@@ -900,18 +900,18 @@ slay index_of(s tea, sub tea) normie {
     damn -1
 }
 
-slay split_string(s tea, delimiter tea) []tea {
+slay split_string(s tea, delimiter tea) tea[value]{
     lowkey s == "" {
-        damn []tea{}
+        damn tea[value]{}
     }
     
-    sus parts []tea = []tea{}
+    sus parts tea[value] = tea[value]{}
     sus current tea = ""
     sus s_len normie = string_length(s)
     sus d_len normie = string_length(delimiter)
     
     lowkey d_len == 0 {
-        damn []tea{s}
+        damn tea[value]{s}
     }
     
     sus i normie = 0
@@ -945,7 +945,7 @@ slay split_string(s tea, delimiter tea) []tea {
     damn parts
 }
 
-slay join_strings(parts []tea, delimiter tea) tea {
+slay join_strings(parts tea[value], delimiter tea) tea {
     lowkey len(parts) == 0 {
         damn ""
     }
@@ -968,7 +968,7 @@ slay normie_to_string(n normie) tea {
         n = -n
     }
     
-    sus digits []tea = []tea{}
+    sus digits tea[value] = tea[value]{}
     bestie n > 0 {
         sus digit normie = n % 10
         digits = append(digits, tea('0' + digit))
@@ -1017,13 +1017,13 @@ slay string_to_normie(s tea) normie {
     damn result
 }
 
-slay len(arr []tea) normie {
+slay len(arr tea[value]) normie {
     damn arr.length fr fr Use built-in array length
 }
 
-slay append(arr []tea, item tea) []tea {
+slay append(arr tea[value], item tea) tea[value]{
     fr fr Simple append implementation
-    sus new_arr []tea = make([]tea, len(arr) + 1)
+    sus new_arr tea[value] = make(tea[value], len(arr) + 1)
     frfr i normie = 0; i < len(arr); i++ {
         new_arr[i] = arr[i]
     }

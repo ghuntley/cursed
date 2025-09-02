@@ -10,9 +10,9 @@ fr fr Unicode String Data Structures
 fr fr ================================
 
 collab UnicodeString {
-    slay new(raw_bytes []normie) UnicodeString
-    slay from_utf8(utf8_bytes []normie) (UnicodeString, yikes)
-    slay to_utf8() []normie
+    slay new(raw_bytes normie[value]) UnicodeString
+    slay from_utf8(utf8_bytes normie[value]) (UnicodeString, yikes)
+    slay to_utf8() normie[value]
     slay length() normie
     slay byte_length() normie
     slay is_valid_utf8() lit
@@ -23,7 +23,7 @@ collab UnicodeString {
     slay ends_with(suffix UnicodeString) lit
     slay index_of(substring UnicodeString) normie
     slay last_index_of(substring UnicodeString) normie
-    slay split(separator UnicodeString) []UnicodeString
+    slay split(separator UnicodeString) UnicodeString[value]
     slay replace(old UnicodeString, new UnicodeString) UnicodeString
     slay trim() UnicodeString
     slay trim_left() UnicodeString
@@ -276,8 +276,8 @@ fr fr ================================
 fr fr UTF-8 Encoding/Decoding
 fr fr ================================
 
-slay utf8_encode_codepoint(codepoint normie) []normie {
-    sus result []normie = []
+slay utf8_encode_codepoint(codepoint normie) normie[value]{
+    sus result normie[value] = []
     
     lowkey codepoint <= 0x7F { fr fr 1-byte sequence
         result = [codepoint]
@@ -301,7 +301,7 @@ slay utf8_encode_codepoint(codepoint normie) []normie {
     damn result
 }
 
-slay utf8_decode_codepoint(bytes []normie, offset normie) (normie, normie, yikes) {
+slay utf8_decode_codepoint(bytes normie[value], offset normie) (normie, normie, yikes) {
     lowkey offset >= len(bytes) {
         damn 0, 0, new_value_error("UTF-8 decode: offset out of bounds", "offset=" + string(offset), "valid offset")
     }
@@ -374,7 +374,7 @@ slay utf8_sequence_length(first_byte normie) normie {
     damn 0 fr fr Invalid
 }
 
-slay utf8_validate_sequence(bytes []normie, offset normie, length normie) lit {
+slay utf8_validate_sequence(bytes normie[value], offset normie, length normie) lit {
     lowkey offset + length > len(bytes) {
         damn cap
     }
@@ -398,7 +398,7 @@ fr fr ================================
 fr fr String Operations Implementation
 fr fr ================================
 
-slay unicode_string_create(utf8_bytes []normie) (UnicodeString, yikes) {
+slay unicode_string_create(utf8_bytes normie[value]) (UnicodeString, yikes) {
     lowkey !utf8_validate_string(utf8_bytes) {
         damn UnicodeString{}, new_value_error("Invalid UTF-8 sequence", "malformed UTF-8", "valid UTF-8")
     }
@@ -412,17 +412,17 @@ slay unicode_string_create(utf8_bytes []normie) (UnicodeString, yikes) {
     damn str, cringe
 }
 
-slay unicode_string_from_codepoints(codepoints []normie) (UnicodeString, yikes) {
+slay unicode_string_from_codepoints(codepoints normie[value]) (UnicodeString, yikes) {
     sus total_bytes normie = 0 fr fr Calculate total byte length needed
     bestie i := 0; i < len(codepoints); i++ {
-        sus encoded []normie = utf8_encode_codepoint(codepoints[i])
+        sus encoded normie[value] = utf8_encode_codepoint(codepoints[i])
         total_bytes = total_bytes + len(encoded)
     }
     
-    sus result_bytes []normie = make_byte_array(total_bytes)
+    sus result_bytes normie[value] = make_byte_array(total_bytes)
     sus pos normie = 0 fr fr Encode all codepoints
     bestie i := 0; i < len(codepoints); i++ {
-        sus encoded []normie = utf8_encode_codepoint(codepoints[i])
+        sus encoded normie[value] = utf8_encode_codepoint(codepoints[i])
         bestie j := 0; j < len(encoded); j++ {
             result_bytes[pos] = encoded[j]
             pos = pos + 1
@@ -477,7 +477,7 @@ slay unicode_string_slice(str UnicodeString, start normie, end normie) (UnicodeS
     sus start_byte normie = unicode_string_char_to_byte_offset(str, start)
     sus end_byte normie = unicode_string_char_to_byte_offset(str, end)
     
-    sus slice_bytes []normie = array_slice(str.bytes, start_byte, end_byte)
+    sus slice_bytes normie[value] = array_slice(str.bytes, start_byte, end_byte)
     damn unicode_string_create(slice_bytes)
 }
 
@@ -521,7 +521,7 @@ slay unicode_string_ends_with(str UnicodeString, suffix UnicodeString) lit {
 }
 
 slay unicode_string_to_upper(str UnicodeString) (UnicodeString, yikes) {
-    sus codepoints []normie = unicode_string_to_codepoints(str)
+    sus codepoints normie[value] = unicode_string_to_codepoints(str)
     
     bestie i := 0; i < len(codepoints); i++ {
         codepoints[i] = unicode_to_upper(codepoints[i])
@@ -531,7 +531,7 @@ slay unicode_string_to_upper(str UnicodeString) (UnicodeString, yikes) {
 }
 
 slay unicode_string_to_lower(str UnicodeString) (UnicodeString, yikes) {
-    sus codepoints []normie = unicode_string_to_codepoints(str)
+    sus codepoints normie[value] = unicode_string_to_codepoints(str)
     
     bestie i := 0; i < len(codepoints); i++ {
         codepoints[i] = unicode_to_lower(codepoints[i])
@@ -588,7 +588,7 @@ slay unicode_string_trim_right(str UnicodeString) (UnicodeString, yikes) {
 }
 
 slay unicode_string_reverse(str UnicodeString) (UnicodeString, yikes) {
-    sus codepoints []normie = unicode_string_to_codepoints(str) fr fr Reverse the codepoint array
+    sus codepoints normie[value] = unicode_string_to_codepoints(str) fr fr Reverse the codepoint array
     bestie i := 0; i < len(codepoints) / 2; i++ {
         sus temp normie = codepoints[i]
         codepoints[i] = codepoints[len(codepoints) - 1 - i]
@@ -628,7 +628,7 @@ fr fr ================================
 fr fr Helper Functions
 fr fr ================================
 
-slay utf8_validate_string(bytes []normie) lit {
+slay utf8_validate_string(bytes normie[value]) lit {
     sus offset normie = 0
     
     bestie offset < len(bytes) {
@@ -642,7 +642,7 @@ slay utf8_validate_string(bytes []normie) lit {
     damn based
 }
 
-slay utf8_count_codepoints(bytes []normie) normie {
+slay utf8_count_codepoints(bytes normie[value]) normie {
     sus count normie = 0
     sus offset normie = 0
     
@@ -658,7 +658,7 @@ slay utf8_count_codepoints(bytes []normie) normie {
     damn count
 }
 
-slay utf8_is_ascii(bytes []normie) lit {
+slay utf8_is_ascii(bytes normie[value]) lit {
     bestie i := 0; i < len(bytes); i++ {
         lowkey bytes[i] > 0x7F {
             damn cap
@@ -667,8 +667,8 @@ slay utf8_is_ascii(bytes []normie) lit {
     damn based
 }
 
-slay unicode_string_to_codepoints(str UnicodeString) []normie {
-    sus codepoints []normie = make_int_array(str.char_count)
+slay unicode_string_to_codepoints(str UnicodeString) normie[value]{
+    sus codepoints normie[value] = make_int_array(str.char_count)
     sus byte_offset normie = 0
     sus char_index normie = 0
     
@@ -714,31 +714,31 @@ fr fr ================================
 fr fr Array Helper Functions
 fr fr ================================
 
-slay make_byte_array(size normie) []normie { fr fr Would be implemented by runtime
-    sus arr []normie = []
+slay make_byte_array(size normie) normie[value]{ fr fr Would be implemented by runtime
+    sus arr normie[value] = []
     bestie i := 0; i < size; i++ {
         arr = append(arr, 0)
     }
     damn arr
 }
 
-slay make_int_array(size normie) []normie { fr fr Would be implemented by runtime
-    sus arr []normie = []
+slay make_int_array(size normie) normie[value]{ fr fr Would be implemented by runtime
+    sus arr normie[value] = []
     bestie i := 0; i < size; i++ {
         arr = append(arr, 0)
     }
     damn arr
 }
 
-slay array_slice(arr []normie, start normie, end normie) []normie {
-    sus result []normie = []
+slay array_slice(arr normie[value], start normie, end normie) normie[value]{
+    sus result normie[value] = []
     bestie i := start; i < end && i < len(arr); i++ {
         result = append(result, arr[i])
     }
     damn result
 }
 
-slay array_equals(arr1 []normie, start1 normie, arr2 []normie, start2 normie, length normie) lit {
+slay array_equals(arr1 normie[value], start1 normie, arr2 normie[value], start2 normie, length normie) lit {
     bestie i := 0; i < length; i++ {
         lowkey start1 + i >= len(arr1) || start2 + i >= len(arr2) {
             damn cap

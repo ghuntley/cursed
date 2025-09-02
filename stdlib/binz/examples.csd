@@ -20,11 +20,11 @@ slay example_basic_types() lit {
     sus string_val BinzValue = binz_create_string("Hello BINZ!")
     
     fr fr Encode each type
-    sus null_encoded []drip = binz_encode(null_val)
-    sus bool_encoded []drip = binz_encode(bool_val)
-    sus int_encoded []drip = binz_encode(int_val)
-    sus float_encoded []drip = binz_encode(float_val)
-    sus string_encoded []drip = binz_encode(string_val)
+    sus null_encoded drip[value] = binz_encode(null_val)
+    sus bool_encoded drip[value] = binz_encode(bool_val)
+    sus int_encoded drip[value] = binz_encode(int_val)
+    sus float_encoded drip[value] = binz_encode(float_val)
+    sus string_encoded drip[value] = binz_encode(string_val)
     
     vibez.spill("Encoded sizes:")
     vibez.spill("  Null: " + int_to_string(array_length(null_encoded)) + " bytes")
@@ -79,8 +79,8 @@ slay example_arrays_and_structs() lit {
     person.struct_values[4] = hobbies
     
     fr fr Encode both
-    sus array_encoded []drip = binz_encode(mixed_array)
-    sus struct_encoded []drip = binz_encode(person)
+    sus array_encoded drip[value] = binz_encode(mixed_array)
+    sus struct_encoded drip[value] = binz_encode(person)
     
     vibez.spill("Array encoded: " + int_to_string(array_length(array_encoded)) + " bytes")
     vibez.spill("Struct encoded: " + int_to_string(array_length(struct_encoded)) + " bytes")
@@ -156,8 +156,8 @@ slay example_schema_definition() lit {
     vibez.spill("Schema validation: " + ready (validation_result) { "PASSED" } otherwise { "FAILED" })
     
     fr fr Encode with schema
-    sus schema_encoded []drip = binz_encode_with_schema(user_data, user_schema)
-    sus normal_encoded []drip = binz_encode(user_data)
+    sus schema_encoded drip[value] = binz_encode_with_schema(user_data, user_schema)
+    sus normal_encoded drip[value] = binz_encode(user_data)
     
     vibez.spill("Normal encoding: " + int_to_string(array_length(normal_encoded)) + " bytes")
     vibez.spill("Schema encoding: " + int_to_string(array_length(schema_encoded)) + " bytes")
@@ -240,12 +240,12 @@ slay example_compression() lit {
     }
     
     fr fr Normal encoding
-    sus normal_encoded []drip = binz_encode(repetitive_array)
+    sus normal_encoded drip[value] = binz_encode(repetitive_array)
     
     fr fr Compressed encoding
     sus compressed_copy BinzValue = repetitive_array
     compressed_copy.type_tag = TAG_COMPRESSED
-    sus compressed_encoded []drip = binz_encode(compressed_copy)
+    sus compressed_encoded drip[value] = binz_encode(compressed_copy)
     
     sus normal_size drip = array_length(normal_encoded)
     sus compressed_size drip = array_length(compressed_encoded)
@@ -282,8 +282,8 @@ slay example_memory_pools() lit {
     test_struct.struct_values[3] = binz_create_bool(based)
     
     fr fr Encode with pool (high performance)
-    sus pooled_encoded []drip = binz_encode_with_pool(test_struct, pool)
-    sus normal_encoded []drip = binz_encode(test_struct)
+    sus pooled_encoded drip[value] = binz_encode_with_pool(test_struct, pool)
+    sus normal_encoded drip[value] = binz_encode(test_struct)
     
     vibez.spill("Pool buffer size: " + int_to_string(pool.size) + " bytes")
     vibez.spill("Pooled encoding: " + int_to_string(array_length(pooled_encoded)) + " bytes")
@@ -305,7 +305,7 @@ slay example_batch_operations() lit {
     vibez.spill("-" * 40)
     
     fr fr Create batch of log entries
-    sus log_entries []BinzValue = []
+    sus log_entries BinzValue[value] = []
     
     sus i drip = 0
     bestie (i < 10) {
@@ -324,13 +324,13 @@ slay example_batch_operations() lit {
     }
     
     fr fr Batch encode
-    sus batch_encoded []drip = binz_encode_batch(log_entries)
+    sus batch_encoded drip[value] = binz_encode_batch(log_entries)
     
     fr fr Individual encoding for comparison
     sus individual_total drip = 0
     sus j drip = 0
     bestie (j < array_length(log_entries)) {
-        sus individual_encoded []drip = binz_encode(log_entries[j])
+        sus individual_encoded drip[value] = binz_encode(log_entries[j])
         individual_total = individual_total + array_length(individual_encoded)
         j = j + 1
     }
@@ -343,7 +343,7 @@ slay example_batch_operations() lit {
     vibez.spill("Batch overhead: " + int_to_string(batch_size - individual_total) + " bytes")
     
     fr fr Decode batch
-    sus decoded_entries []BinzValue = binz_decode_batch(batch_encoded)
+    sus decoded_entries BinzValue[value] = binz_decode_batch(batch_encoded)
     vibez.spill("Decoded entries: " + int_to_string(array_length(decoded_entries)))
     
     fr fr Verify first entry
@@ -403,7 +403,7 @@ slay example_configuration_file() lit {
     config.struct_values[3] = binz_create_string("1.2.3")
     
     fr fr Encode configuration
-    sus config_encoded []drip = binz_encode(config)
+    sus config_encoded drip[value] = binz_encode(config)
     vibez.spill("Configuration encoded: " + int_to_string(array_length(config_encoded)) + " bytes")
     
     fr fr Simulate saving to file and loading
@@ -464,8 +464,8 @@ slay example_api_message_protocol() lit {
     response.struct_values[3] = binz_create_uint(47)
     
     fr fr Encode both messages
-    sus request_encoded []drip = binz_encode(request)
-    sus response_encoded []drip = binz_encode(response)
+    sus request_encoded drip[value] = binz_encode(request)
+    sus response_encoded drip[value] = binz_encode(response)
     
     vibez.spill("Request size: " + int_to_string(array_length(request_encoded)) + " bytes")
     vibez.spill("Response size: " + int_to_string(array_length(response_encoded)) + " bytes")
@@ -496,7 +496,7 @@ slay float_to_string(val normie) tea {
     }
 }
 
-slay arrays_equal(a []drip, b []drip) lit {
+slay arrays_equal(a drip[value], b drip[value]) lit {
     sus len_a drip = array_length(a)
     sus len_b drip = array_length(b)
     

@@ -90,12 +90,12 @@ module PodManager {
         sus name tea
         sus namespace tea
         sus image tea
-        sus command []tea
-        sus args []tea
+        sus command tea[value]
+        sus args tea[value]
         sus env map<tea, tea>
-        sus ports []drip
+        sus ports drip[value]
         sus resources map<tea, any>
-        sus volumes []map<tea, any>
+        sus volumes map[value]<tea, any>
         sus labels map<tea, tea>
         sus annotations map<tea, tea>
     }
@@ -208,7 +208,7 @@ module PodManager {
         }
     }
 
-    slay list_pods(config KubeConfig, namespace tea, label_selector tea) KubeResult<[]map<tea, any>> {
+    slay list_pods(config KubeConfig, namespace tea, label_selector tea) KubeResult<map[value]<tea, any>> {
         sus query_params tea = ready (label_selector != "") {
             stringz.format("?labelSelector={}", label_selector)
         } otherwise { "" }
@@ -238,7 +238,7 @@ module PodManager {
             }
         }
 
-        sus pods []map<tea, any> = response_data["items"]?([]map<tea, any>)
+        sus pods map[value]<tea, any> = response_data["items"]?(map[value]<tea, any>)
 
         damn KubeResult{
             success: based,
@@ -278,8 +278,8 @@ module PodManager {
         }
     }
 
-    slay build_env_vars(env_map map<tea, tea>) []map<tea, tea> {
-        sus env_vars []map<tea, tea> = []
+    slay build_env_vars(env_map map<tea, tea>) map[value]<tea, tea> {
+        sus env_vars map[value]<tea, tea> = []
         bestie (key, value) in env_map {
             env_vars.append({
                 "name": key,
@@ -289,8 +289,8 @@ module PodManager {
         damn env_vars
     }
 
-    slay build_container_ports(ports []drip) []map<tea, any> {
-        sus container_ports []map<tea, any> = []
+    slay build_container_ports(ports drip[value]) map[value]<tea, any> {
+        sus container_ports map[value]<tea, any> = []
         bestie port in ports {
             container_ports.append({
                 "containerPort": port
@@ -309,7 +309,7 @@ module DeploymentManager {
         sus image tea
         sus labels map<tea, tea>
         sus selector map<tea, tea>
-        sus ports []drip
+        sus ports drip[value]
         sus env map<tea, tea>
         sus resources map<tea, any>
         sus strategy map<tea, any>
@@ -483,7 +483,7 @@ module ServiceManager {
         sus namespace tea
         sus type tea  # ClusterIP, NodePort, LoadBalancer, ExternalName
         sus selector map<tea, tea>
-        sus ports []map<tea, any>
+        sus ports map[value]<tea, any>
         sus labels map<tea, tea>
     }
 
@@ -695,8 +695,8 @@ module AutoscalingManager {
         }
     }
 
-    slay build_hpa_metrics(spec HPASpec) []map<tea, any> {
-        sus metrics []map<tea, any> = []
+    slay build_hpa_metrics(spec HPASpec) map[value]<tea, any> {
+        sus metrics map[value]<tea, any> = []
 
         ready (spec.target_cpu_utilization > 0) {
             metrics.append({
@@ -777,8 +777,8 @@ module MonitoringManager {
         sus pods_data map<tea, any> = jsonz.unmarshal(pods_response)
 
         sus metrics ClusterMetrics = ClusterMetrics{
-            node_count: len(nodes_data["items"]?([]any)),
-            pod_count: len(pods_data["items"]?([]any)),
+            node_count: len(nodes_data["items"]?(any[value])),
+            pod_count: len(pods_data["items"]?(any[value])),
             cpu_usage: calculate_cpu_usage(nodes_data),
             memory_usage: calculate_memory_usage(nodes_data),
             disk_usage: calculate_disk_usage(nodes_data),
@@ -833,7 +833,7 @@ module MonitoringManager {
 
     slay calculate_cpu_usage(nodes_data map<tea, any>) drip {
         # Calculate cluster-wide CPU usage from real node metrics
-        sus nodes []any = nodes_data["items"]?([]any)
+        sus nodes any[value] = nodes_data["items"]?(any[value])
         sus total_cpu_capacity drip = 0.0
         sus total_cpu_usage drip = 0.0
         sus active_nodes drip = 0.0
@@ -841,7 +841,7 @@ module MonitoringManager {
         bestie node in nodes {
             sus node_map map<tea, any> = node?(map<tea, any>)
             sus node_status map<tea, any> = node_map["status"]?(map<tea, any>)
-            sus conditions []any = node_status["conditions"]?([]any)
+            sus conditions any[value] = node_status["conditions"]?(any[value])
             
             # Check if node is ready
             sus is_ready lit = is_node_ready(conditions)
@@ -878,7 +878,7 @@ module MonitoringManager {
 
     slay calculate_memory_usage(nodes_data map<tea, any>) drip {
         # Calculate cluster-wide memory usage from real node metrics
-        sus nodes []any = nodes_data["items"]?([]any)
+        sus nodes any[value] = nodes_data["items"]?(any[value])
         sus total_memory_capacity drip = 0.0
         sus total_memory_usage drip = 0.0
         sus active_nodes drip = 0.0
@@ -886,7 +886,7 @@ module MonitoringManager {
         bestie node in nodes {
             sus node_map map<tea, any> = node?(map<tea, any>)
             sus node_status map<tea, any> = node_map["status"]?(map<tea, any>)
-            sus conditions []any = node_status["conditions"]?([]any)
+            sus conditions any[value] = node_status["conditions"]?(any[value])
             
             # Check if node is ready
             sus is_ready lit = is_node_ready(conditions)
@@ -923,7 +923,7 @@ module MonitoringManager {
 
     slay calculate_disk_usage(nodes_data map<tea, any>) drip {
         # Calculate cluster-wide disk usage from node storage metrics
-        sus nodes []any = nodes_data["items"]?([]any)
+        sus nodes any[value] = nodes_data["items"]?(any[value])
         sus total_disk_capacity drip = 0.0
         sus total_disk_usage drip = 0.0
         sus active_nodes drip = 0.0
@@ -931,7 +931,7 @@ module MonitoringManager {
         bestie node in nodes {
             sus node_map map<tea, any> = node?(map<tea, any>)
             sus node_status map<tea, any> = node_map["status"]?(map<tea, any>)
-            sus conditions []any = node_status["conditions"]?([]any)
+            sus conditions any[value] = node_status["conditions"]?(any[value])
             
             # Check if node is ready
             sus is_ready lit = is_node_ready(conditions)
@@ -970,14 +970,14 @@ module MonitoringManager {
 
     slay calculate_network_io(nodes_data map<tea, any>) drip {
         # Calculate cluster-wide network I/O from node and pod metrics
-        sus nodes []any = nodes_data["items"]?([]any)
+        sus nodes any[value] = nodes_data["items"]?(any[value])
         sus total_network_throughput drip = 0.0
         sus active_nodes drip = 0.0
         
         bestie node in nodes {
             sus node_map map<tea, any> = node?(map<tea, any>)
             sus node_status map<tea, any> = node_map["status"]?(map<tea, any>)
-            sus conditions []any = node_status["conditions"]?([]any)
+            sus conditions any[value] = node_status["conditions"]?(any[value])
             
             # Check if node is ready
             sus is_ready lit = is_node_ready(conditions)
@@ -1011,7 +1011,7 @@ module MonitoringManager {
     }
 
     # Helper functions for real metrics calculations
-    slay is_node_ready(conditions []any) lit {
+    slay is_node_ready(conditions any[value]) lit {
         bestie condition in conditions {
             sus condition_map map<tea, any> = condition?(map<tea, any>)
             sus condition_type tea = condition_map["type"]?(tea)
@@ -1103,7 +1103,7 @@ module MonitoringManager {
         
         # Check for node taints that might reduce pod scheduling
         sus node_spec map<tea, any> = node_map["spec"]?(map<tea, any>)
-        sus taints []any = node_spec["taints"]?([]any)
+        sus taints any[value] = node_spec["taints"]?(any[value])
         ready (len(taints) > 0) {
             damn 0.6  # Tainted nodes often have reduced utilization
         }
@@ -1187,7 +1187,7 @@ module HelmManager {
 
     slay install_chart(config KubeConfig, chart HelmChart) KubeResult<tea> {
         # Convert Helm chart to Kubernetes manifests
-        sus manifests []map<tea, any> = render_helm_chart(chart) fam {
+        sus manifests map[value]<tea, any> = render_helm_chart(chart) fam {
             when _ -> damn KubeResult{
                 success: nah,
                 error: "Failed to render Helm chart",
@@ -1224,9 +1224,9 @@ module HelmManager {
         }
     }
 
-    slay render_helm_chart(chart HelmChart) yikes<[]map<tea, any>> {
+    slay render_helm_chart(chart HelmChart) yikes<map[value]<tea, any>> {
         # Simplified Helm chart rendering
-        sus manifests []map<tea, any> = []
+        sus manifests map[value]<tea, any> = []
         
         # Mock manifest generation
         manifests.append({
@@ -1301,9 +1301,9 @@ slay load_kubeconfig(path tea) yikes<KubeConfig> {
     }
 
     sus current_context tea = config_data["current-context"]?(tea)
-    sus contexts []any = config_data["contexts"]?([]any)
-    sus clusters []any = config_data["clusters"]?([]any)
-    sus users []any = config_data["users"]?([]any)
+    sus contexts any[value] = config_data["contexts"]?(any[value])
+    sus clusters any[value] = config_data["clusters"]?(any[value])
+    sus users any[value] = config_data["users"]?(any[value])
 
     # Extract current context details
     sus context map<tea, any> = {}
@@ -1409,7 +1409,7 @@ slay apply_manifest(config KubeConfig, manifest_path tea) KubeResult<tea> {
     }
 
     # Parse and apply multiple YAML documents
-    sus manifests []map<tea, any> = parse_yaml_documents(manifest_content) fam {
+    sus manifests map[value]<tea, any> = parse_yaml_documents(manifest_content) fam {
         when _ -> damn KubeResult{
             success: nah,
             error: "Failed to parse manifest YAML",
@@ -1442,9 +1442,9 @@ slay apply_manifest(config KubeConfig, manifest_path tea) KubeResult<tea> {
     }
 }
 
-slay parse_yaml_documents(content tea) yikes<[]map<tea, any>> {
+slay parse_yaml_documents(content tea) yikes<map[value]<tea, any>> {
     # Simplified YAML document parsing - would use proper YAML parser
-    sus documents []map<tea, any> = []
+    sus documents map[value]<tea, any> = []
     documents.append({
         "apiVersion": "v1",
         "kind": "Pod",

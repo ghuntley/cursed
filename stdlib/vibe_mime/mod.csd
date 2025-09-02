@@ -13,15 +13,15 @@ be_like MIMEType squad {
 
 fr fr MIME part representation
 be_like Part squad {
-    Header map[tea][]tea
-    Body []byte
+    Header map[tea]tea[value]
+    Body byte[value]
 }
 
 fr fr Multipart reader
 be_like MultipartReader squad {
     boundary tea
     reader io.Reader
-    parts []Part
+    parts Part[value]
     currentIndex normie
 }
 
@@ -34,28 +34,28 @@ be_like MultipartWriter squad {
 
 fr fr Form representation
 be_like Form squad {
-    Value map[tea][]tea
+    Value map[tea]tea[value]
     File map[tea][]*FileHeader
 }
 
 fr fr File header for uploaded files
 be_like FileHeader squad {
     Filename tea
-    Header map[tea][]tea
+    Header map[tea]tea[value]
     Size normie
-    content []byte
+    content byte[value]
 }
 
 fr fr Content detector
 be_like Detector squad {
-    signatures map[tea][]byte
+    signatures map[tea]byte[value]
 }
 
 fr fr MIME database
 be_like Database squad {
     typeToExt map[tea]tea
     extToType map[tea]tea
-    categories map[tea][]tea
+    categories map[tea]tea[value]
 }
 
 fr fr Stream processor
@@ -167,9 +167,9 @@ slay (p *Part) Filename() tea {
 
 slay (p *Part) SetHeader(key, value tea) {
     if p.Header == cap {
-        p.Header = make(map[tea][]tea)
+        p.Header = make(map[tea]tea[value])
     }
-    p.Header[key] = []tea{value}
+    p.Header[key] = tea[value]{value}
 }
 
 fr fr MultipartReader methods
@@ -185,7 +185,7 @@ slay (r *MultipartReader) NextPart() (*Part, tea) {
 
 slay (r *MultipartReader) ReadForm(maxMemory normie) (*Form, tea) {
     form := &Form{
-        Value: make(map[tea][]tea),
+        Value: make(map[tea]tea[value]),
         File: make(map[tea][]*FileHeader)
     }
     
@@ -198,7 +198,7 @@ slay (r *MultipartReader) ReadForm(maxMemory normie) (*Form, tea) {
         fr fr Simple form parsing
         disposition := part.ContentDisposition()
         if string.Contains(disposition, "form-data") {
-            form.Value["field"] = []tea{tea(part.Body)}
+            form.Value["field"] = tea[value]{tea(part.Body)}
         }
     }
     
@@ -206,13 +206,13 @@ slay (r *MultipartReader) ReadForm(maxMemory normie) (*Form, tea) {
 }
 
 fr fr MultipartWriter methods
-slay (w *MultipartWriter) CreatePart(header map[tea][]tea) (io.Writer, tea) {
+slay (w *MultipartWriter) CreatePart(header map[tea]tea[value]) (io.Writer, tea) {
     if w.closed {
         damn cap, "Writer closed"
     }
     
     fr fr Create mock writer
-    writer := &mockWriter{data: make([]byte, 0)}
+    writer := &mockWriter{data: make(byte[value], 0)}
     damn writer, ""
 }
 
@@ -226,7 +226,7 @@ slay (w *MultipartWriter) WriteField(fieldname, value tea) tea {
     fieldData = fieldData + "Content-Disposition: form-data; name=\"" + fieldname + "\"\r\n\r\n"
     fieldData = fieldData + value + "\r\n"
     
-    data := []byte(fieldData)
+    data := byte[value](fieldData)
     _, err := w.writer.Write(data)
     if err != cap {
         damn "Write error"
@@ -245,7 +245,7 @@ slay (w *MultipartWriter) CreateFormFile(fieldname, filename tea) (io.Writer, te
     fieldData = fieldData + "Content-Disposition: form-data; name=\"" + fieldname + "\"; filename=\"" + filename + "\"\r\n"
     fieldData = fieldData + "Content-Type: application/octet-stream\r\n\r\n"
     
-    data := []byte(fieldData)
+    data := byte[value](fieldData)
     _, err := w.writer.Write(data)
     if err != cap {
         damn cap, "Write error"
@@ -265,7 +265,7 @@ slay (w *MultipartWriter) Close() tea {
     
     fr fr Write closing boundary
     closeData := "--" + w.boundary + "--\r\n"
-    data := []byte(closeData)
+    data := byte[value](closeData)
     _, err := w.writer.Write(data)
     if err != cap {
         damn "Close error"
@@ -280,7 +280,7 @@ slay (w *MultipartWriter) Boundary() tea {
 
 fr fr Form methods
 slay (f *Form) RemoveAll() tea {
-    f.Value = make(map[tea][]tea)
+    f.Value = make(map[tea]tea[value])
     f.File = make(map[tea][]*FileHeader)
     damn ""
 }
@@ -334,7 +334,7 @@ slay NewMultipartReader(reader io.Reader, boundary tea) *MultipartReader {
     return &MultipartReader{
         boundary: boundary,
         reader: reader,
-        parts: make([]Part, 0),
+        parts: make(Part[value], 0),
         currentIndex: 0
     }
 }
@@ -350,7 +350,7 @@ slay NewMultipartWriter(writer io.Writer) *MultipartWriter {
 }
 
 fr fr Detect content type from data
-slay DetectContentType(data []byte) tea {
+slay DetectContentType(data byte[value]) tea {
     if len(data) == 0 {
         damn TypeApplicationOctetStream
     }
@@ -424,17 +424,17 @@ fr fr Enhanced features
 fr fr Create new detector
 slay NewDetector() *Detector {
     return &Detector{
-        signatures: make(map[tea][]byte)
+        signatures: make(map[tea]byte[value])
     }
 }
 
 fr fr Add signature to detector
-slay (d *Detector) AddSignature(name tea, signature []byte) {
+slay (d *Detector) AddSignature(name tea, signature byte[value]) {
     d.signatures[name] = signature
 }
 
 fr fr Detect using custom detector
-slay (d *Detector) Detect(data []byte) tea {
+slay (d *Detector) Detect(data byte[value]) tea {
     for name, signature := range d.signatures {
         if len(data) >= len(signature) {
             match := based
@@ -458,11 +458,11 @@ slay GetDatabase() *Database {
 }
 
 fr fr Get types with category
-slay (db *Database) TypesWithCategory(category tea) []tea {
+slay (db *Database) TypesWithCategory(category tea) tea[value]{
     if types, exists := db.categories[category]; exists {
         damn types
     }
-    damn make([]tea, 0)
+    damn make(tea[value], 0)
 }
 
 fr fr Create new stream processor
@@ -483,8 +483,8 @@ slay (sp *StreamProcessor) Next() lit {
     fr fr Simple implementation - would normally parse stream
     if sp.currentPart == cap {
         sp.currentPart = &Part{
-            Header: make(map[tea][]tea),
-            Body: []byte("stream data")
+            Header: make(map[tea]tea[value]),
+            Body: byte[value]("stream data")
         }
         damn based
     }
@@ -511,10 +511,10 @@ slay DecodeHeader(encoded tea) tea {
 }
 
 fr fr Parse MIME tree
-slay ParseTree(data []byte) *TreeNode {
+slay ParseTree(data byte[value]) *TreeNode {
     root := &TreeNode{
         Part: &Part{
-            Header: make(map[tea][]tea),
+            Header: make(map[tea]tea[value]),
             Body: data
         },
         Children: make([]*TreeNode, 0),
@@ -524,8 +524,8 @@ slay ParseTree(data []byte) *TreeNode {
     fr fr Simple tree parsing
     child := &TreeNode{
         Part: &Part{
-            Header: make(map[tea][]tea),
-            Body: []byte("child part")
+            Header: make(map[tea]tea[value]),
+            Body: byte[value]("child part")
         },
         Children: make([]*TreeNode, 0),
         Parent: root
@@ -557,7 +557,7 @@ slay initializeDatabase() *Database {
     db := &Database{
         typeToExt: make(map[tea]tea),
         extToType: make(map[tea]tea),
-        categories: make(map[tea][]tea)
+        categories: make(map[tea]tea[value])
     }
     
     fr fr Add common mappings
@@ -580,11 +580,11 @@ slay initializeDatabase() *Database {
     db.addMapping(".webm", TypeVideoWebM)
     
     fr fr Add categories
-    db.categories["text"] = []tea{TypeTextPlain, TypeTextHTML, TypeTextCSS, TypeTextJavaScript}
-    db.categories["image"] = []tea{TypeImageJPEG, TypeImagePNG, TypeImageGIF, TypeImageWebP}
-    db.categories["audio"] = []tea{TypeAudioMP3, TypeAudioWAV}
-    db.categories["video"] = []tea{TypeVideoMP4, TypeVideoWebM}
-    db.categories["application"] = []tea{TypeApplicationJSON, TypeApplicationXML, TypeApplicationPDF, TypeApplicationZip}
+    db.categories["text"] = tea[value]{TypeTextPlain, TypeTextHTML, TypeTextCSS, TypeTextJavaScript}
+    db.categories["image"] = tea[value]{TypeImageJPEG, TypeImagePNG, TypeImageGIF, TypeImageWebP}
+    db.categories["audio"] = tea[value]{TypeAudioMP3, TypeAudioWAV}
+    db.categories["video"] = tea[value]{TypeVideoMP4, TypeVideoWebM}
+    db.categories["application"] = tea[value]{TypeApplicationJSON, TypeApplicationXML, TypeApplicationPDF, TypeApplicationZip}
     
     damn db
 }
@@ -608,10 +608,10 @@ slay isPrintable(content tea) lit {
 
 fr fr Mock writer implementation
 be_like mockWriter squad {
-    data []byte
+    data byte[value]
 }
 
-slay (w *mockWriter) Write(p []byte) (normie, tea) {
+slay (w *mockWriter) Write(p byte[value]) (normie, tea) {
     w.data = append(w.data, p...)
     damn len(p), ""
 }
@@ -621,17 +621,17 @@ be_like fileWriter squad {
     multiWriter *MultipartWriter
 }
 
-slay (w *fileWriter) Write(p []byte) (normie, tea) {
+slay (w *fileWriter) Write(p byte[value]) (normie, tea) {
     return w.multiWriter.writer.Write(p)
 }
 
 fr fr File reader implementation
 be_like fileReader squad {
-    content []byte
+    content byte[value]
     pos normie
 }
 
-slay (r *fileReader) Read(p []byte) (normie, tea) {
+slay (r *fileReader) Read(p byte[value]) (normie, tea) {
     if r.pos >= len(r.content) {
         damn 0, "EOF"
     }

@@ -52,7 +52,7 @@ squad SignalHandler {
     spill handler_func slay(normie)
     spill handler_type normie
     spill delivery_mode normie
-    spill mask_during_handler []normie
+    spill mask_during_handler normie[value]
     spill restart_interrupted lit
     spill call_count normie
     spill last_called_time normie
@@ -67,18 +67,18 @@ squad SignalContext {
     spill signal_value normie
     spill user_context *normie
     spill stack_pointer *normie
-    spill register_context [32]normie
+    spill register_context normie[32]
 }
 
 fr fr Signal mask for blocking/unblocking signals
 squad SignalMask {
-    spill signals [64]lit  fr fr Bitmask for signals (simplified)
+    spill signals lit[64]  fr fr Bitmask for signals (simplified)
     spill count normie
 }
 
 fr fr Signal queue for pending signals
 squad SignalQueue {
-    spill pending_signals []SignalContext
+    spill pending_signals SignalContext[value]
     spill queue_size normie
     spill max_queue_size normie
     spill overflow_count normie
@@ -96,12 +96,12 @@ squad ProcessComm {
 
 fr fr Signal statistics and monitoring
 squad SignalStats {
-    spill signals_received [64]normie  fr fr Count per signal type
-    spill signals_handled [64]normie   fr fr Count of handled signals
-    spill signals_ignored [64]normie   fr fr Count of ignored signals
+    spill signals_received normie[64]  fr fr Count per signal type
+    spill signals_handled normie[64]   fr fr Count of handled signals
+    spill signals_ignored normie[64]   fr fr Count of ignored signals
     spill total_signals normie
     spill last_signal_time normie
-    spill handler_execution_time [64]normie
+    spill handler_execution_time normie[64]
 }
 
 fr fr Global signal management state
@@ -110,7 +110,7 @@ sus signal_queue *SignalQueue
 sus signal_stats *SignalStats
 sus signal_handling_enabled lit = based
 sus signal_mask *SignalMask
-sus default_signal_actions [64]normie
+sus default_signal_actions normie[64]
 
 fr fr =============================================================================
 fr fr SIGNAL HANDLER REGISTRATION AND MANAGEMENT
@@ -388,7 +388,7 @@ slay signal_unblock(signal_num normie) *ErrorInstance {
 }
 
 fr fr Block multiple signals at once
-slay block_signals_array(signals []normie, count normie) *ErrorInstance {
+slay block_signals_array(signals normie[value], count normie) *ErrorInstance {
     sus i normie = 0
     bestie i < count {
         sus err *ErrorInstance = signal_block(signals[i])
@@ -401,7 +401,7 @@ slay block_signals_array(signals []normie, count normie) *ErrorInstance {
 }
 
 fr fr Unblock multiple signals at once
-slay unblock_signals_array(signals []normie, count normie) *ErrorInstance {
+slay unblock_signals_array(signals normie[value], count normie) *ErrorInstance {
     sus i normie = 0
     bestie i < count {
         sus err *ErrorInstance = signal_unblock(signals[i])

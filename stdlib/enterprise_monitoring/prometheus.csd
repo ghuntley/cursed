@@ -20,8 +20,8 @@ squad MetricConfig {
     name tea
     help tea
     metric_type drip
-    labels []tea = []
-    buckets []drip = []  // For histograms
+    labels tea[value] = []
+    buckets drip[value] = []  // For histograms
     objectives map<drip, drip> = {}  // For summaries (quantile -> error)
 }
 
@@ -38,7 +38,7 @@ squad HistogramBucket {
 
 squad HistogramValue {
     labels map<tea, tea>
-    buckets []HistogramBucket
+    buckets HistogramBucket[value]
     count drip
     sum drip
 }
@@ -50,7 +50,7 @@ squad SummaryQuantile {
 
 squad SummaryValue {
     labels map<tea, tea>
-    quantiles []SummaryQuantile
+    quantiles SummaryQuantile[value]
     count drip
     sum drip
 }
@@ -61,7 +61,7 @@ squad Counter {
     values map<tea, drip>  // serialized labels -> value
     mutex concurrenz.Mutex
     
-    slay create_counter(name tea, help tea, label_names []tea) Counter {
+    slay create_counter(name tea, help tea, label_names tea[value]) Counter {
         damn Counter{
             .config = MetricConfig{
                 .name = name,
@@ -98,11 +98,11 @@ squad Counter {
         damn self.values[label_key]
     }
     
-    slay collect() []MetricValue {
+    slay collect() MetricValue[value]{
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
-        sus result []MetricValue = []
+        sus result MetricValue[value] = []
         bestie (label_key, value := range self.values) {
             sus labels map<tea, tea> = self.deserialize_labels(label_key)
             result = append(result, MetricValue{
@@ -116,7 +116,7 @@ squad Counter {
     
     // Private helpers
     slay serialize_labels(labels map<tea, tea>) tea {
-        sus pairs []tea = []
+        sus pairs tea[value] = []
         bestie (name := range self.config.labels) {
             sus value tea = labels[name] fam { when _ -> "" }
             pairs = append(pairs, name + "=" + value)
@@ -126,10 +126,10 @@ squad Counter {
     
     slay deserialize_labels(label_key tea) map<tea, tea> {
         sus result map<tea, tea> = {}
-        sus pairs []tea = stringz.split(label_key, ",")
+        sus pairs tea[value] = stringz.split(label_key, ",")
         
         bestie (pair := range pairs) {
-            sus parts []tea = stringz.split(pair, "=", 2)
+            sus parts tea[value] = stringz.split(pair, "=", 2)
             ready (len(parts) == 2) {
                 result[parts[0]] = parts[1]
             }
@@ -143,7 +143,7 @@ squad Gauge {
     values map<tea, drip>
     mutex concurrenz.Mutex
     
-    slay create_gauge(name tea, help tea, label_names []tea) Gauge {
+    slay create_gauge(name tea, help tea, label_names tea[value]) Gauge {
         damn Gauge{
             .config = MetricConfig{
                 .name = name,
@@ -187,11 +187,11 @@ squad Gauge {
         damn self.values[label_key]
     }
     
-    slay collect() []MetricValue {
+    slay collect() MetricValue[value]{
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
-        sus result []MetricValue = []
+        sus result MetricValue[value] = []
         bestie (label_key, value := range self.values) {
             sus labels map<tea, tea> = self.deserialize_labels(label_key)
             result = append(result, MetricValue{
@@ -205,7 +205,7 @@ squad Gauge {
     
     // Helper methods (same as Counter)
     slay serialize_labels(labels map<tea, tea>) tea {
-        sus pairs []tea = []
+        sus pairs tea[value] = []
         bestie (name := range self.config.labels) {
             sus value tea = labels[name] fam { when _ -> "" }
             pairs = append(pairs, name + "=" + value)
@@ -215,10 +215,10 @@ squad Gauge {
     
     slay deserialize_labels(label_key tea) map<tea, tea> {
         sus result map<tea, tea> = {}
-        sus pairs []tea = stringz.split(label_key, ",")
+        sus pairs tea[value] = stringz.split(label_key, ",")
         
         bestie (pair := range pairs) {
-            sus parts []tea = stringz.split(pair, "=", 2)
+            sus parts tea[value] = stringz.split(pair, "=", 2)
             ready (len(parts) == 2) {
                 result[parts[0]] = parts[1]
             }
@@ -232,9 +232,9 @@ squad Histogram {
     values map<tea, HistogramValue>
     mutex concurrenz.Mutex
     
-    slay create_histogram(name tea, help tea, label_names []tea, buckets []drip) Histogram {
+    slay create_histogram(name tea, help tea, label_names tea[value], buckets drip[value]) Histogram {
         // Ensure buckets are sorted and include +Inf
-        sus sorted_buckets []drip = sort_buckets(buckets)
+        sus sorted_buckets drip[value] = sort_buckets(buckets)
         ready (sorted_buckets[len(sorted_buckets)-1] != mathz.inf()) {
             sorted_buckets = append(sorted_buckets, mathz.inf())
         }
@@ -274,11 +274,11 @@ squad Histogram {
         self.values[label_key] = hist_value
     }
     
-    slay collect() []HistogramValue {
+    slay collect() HistogramValue[value]{
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
-        sus result []HistogramValue = []
+        sus result HistogramValue[value] = []
         bestie (_, hist_value := range self.values) {
             result = append(result, hist_value)
         }
@@ -287,7 +287,7 @@ squad Histogram {
     
     // Private helpers
     slay create_empty_histogram_value(labels map<tea, tea>) HistogramValue {
-        sus buckets []HistogramBucket = []
+        sus buckets HistogramBucket[value] = []
         bestie (bucket_bound := range self.config.buckets) {
             buckets = append(buckets, HistogramBucket{
                 .upper_bound = bucket_bound,
@@ -304,7 +304,7 @@ squad Histogram {
     }
     
     slay serialize_labels(labels map<tea, tea>) tea {
-        sus pairs []tea = []
+        sus pairs tea[value] = []
         bestie (name := range self.config.labels) {
             sus value tea = labels[name] fam { when _ -> "" }
             pairs = append(pairs, name + "=" + value)
@@ -317,8 +317,8 @@ squad Histogram {
 squad Timer {
     histogram Histogram
     
-    slay create_timer(name tea, help tea, label_names []tea) Timer {
-        sus default_buckets []drip = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
+    slay create_timer(name tea, help tea, label_names tea[value]) Timer {
+        sus default_buckets drip[value] = [0.005, 0.01, 0.025, 0.05, 0.1, 0.25, 0.5, 1, 2.5, 5, 10]
         
         damn Timer{
             .histogram = create_histogram(name, help, label_names, default_buckets),
@@ -338,7 +338,7 @@ squad Timer {
         self.histogram.observe(duration_ms, labels)
     }
     
-    slay collect() []HistogramValue {
+    slay collect() HistogramValue[value]{
         damn self.histogram.collect()
     }
 }
@@ -360,7 +360,7 @@ squad MetricsRegistry {
         }
     }
     
-    slay register_counter(name tea, help tea, label_names []tea) Counter {
+    slay register_counter(name tea, help tea, label_names tea[value]) Counter {
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
@@ -369,7 +369,7 @@ squad MetricsRegistry {
         damn counter
     }
     
-    slay register_gauge(name tea, help tea, label_names []tea) Gauge {
+    slay register_gauge(name tea, help tea, label_names tea[value]) Gauge {
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
@@ -378,7 +378,7 @@ squad MetricsRegistry {
         damn gauge
     }
     
-    slay register_histogram(name tea, help tea, label_names []tea, buckets []drip) Histogram {
+    slay register_histogram(name tea, help tea, label_names tea[value], buckets drip[value]) Histogram {
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
@@ -387,7 +387,7 @@ squad MetricsRegistry {
         damn histogram
     }
     
-    slay register_timer(name tea, help tea, label_names []tea) Timer {
+    slay register_timer(name tea, help tea, label_names tea[value]) Timer {
         self.mutex.lock()
         defer { self.mutex.unlock() }
         
@@ -468,8 +468,8 @@ squad PrometheusMetricFamily {
     name tea
     help tea
     type tea
-    metrics []MetricValue
-    histogram_metrics []HistogramValue
+    metrics MetricValue[value]
+    histogram_metrics HistogramValue[value]
 }
 
 squad PrometheusMetricFamilies = map<tea, PrometheusMetricFamily>
@@ -517,7 +517,7 @@ squad PrometheusHandler {
                         // Add labels
                         ready (len(metric.labels) > 0) {
                             output += "{"
-                            sus label_pairs []tea = []
+                            sus label_pairs tea[value] = []
                             bestie (label_name, label_value := range metric.labels) {
                                 label_pairs = append(label_pairs, label_name + "=\"" + escape_label_value(label_value) + "\"")
                             }
@@ -569,7 +569,7 @@ squad PrometheusHandler {
             damn ""
         }
         
-        sus label_pairs []tea = []
+        sus label_pairs tea[value] = []
         bestie (name, value := range labels) {
             label_pairs = append(label_pairs, name + "=\"" + escape_label_value(value) + "\"")
         }
@@ -748,19 +748,19 @@ squad ApplicationMetrics {
 sus default_registry MetricsRegistry = create_registry()
 
 // Convenience functions using default registry
-slay register_counter(name tea, help tea, label_names []tea) Counter {
+slay register_counter(name tea, help tea, label_names tea[value]) Counter {
     damn default_registry.register_counter(name, help, label_names)
 }
 
-slay register_gauge(name tea, help tea, label_names []tea) Gauge {
+slay register_gauge(name tea, help tea, label_names tea[value]) Gauge {
     damn default_registry.register_gauge(name, help, label_names)
 }
 
-slay register_histogram(name tea, help tea, label_names []tea, buckets []drip) Histogram {
+slay register_histogram(name tea, help tea, label_names tea[value], buckets drip[value]) Histogram {
     damn default_registry.register_histogram(name, help, label_names, buckets)
 }
 
-slay register_timer(name tea, help tea, label_names []tea) Timer {
+slay register_timer(name tea, help tea, label_names tea[value]) Timer {
     damn default_registry.register_timer(name, help, label_names)
 }
 
@@ -769,9 +769,9 @@ slay get_prometheus_handler() PrometheusHandler {
 }
 
 // Utility functions
-slay sort_buckets(buckets []drip) []drip {
+slay sort_buckets(buckets drip[value]) drip[value]{
     // Simple insertion sort for bucket values
-    sus sorted []drip = buckets[:]
+    sus sorted drip[value] = buckets[:]
     bestie (i := 1; i < len(sorted); i += 1) {
         sus key drip = sorted[i]
         sus j drip = i - 1

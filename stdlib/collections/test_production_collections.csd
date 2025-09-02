@@ -112,29 +112,29 @@ fr fr ================================
 
 slay test_merge_sort() {
     fr fr Test empty array
-    sus empty []normie = []
+    sus empty normie[value] = []
     sus result1 [normie] = MergeSort_sort(empty)
     run_test("MergeSort empty array", Array_length(result1) == 0)
     
     fr fr Test single element
-    sus single []normie = [42]
+    sus single normie[value] = [42]
     sus result2 [normie] = MergeSort_sort(single)
     run_test("MergeSort single element", result2[0] == 42)
     
     fr fr Test sorted array
-    sus sorted []normie = [1, 2, 3, 4, 5]
+    sus sorted normie[value] = [1, 2, 3, 4, 5]
     sus result3 [normie] = MergeSort_sort(sorted)
     run_test("MergeSort already sorted", 
         result3[0] == 1 && result3[1] == 2 && result3[2] == 3 && result3[3] == 4 && result3[4] == 5)
     
     fr fr Test reverse sorted array
-    sus reverse []normie = [5, 4, 3, 2, 1]
+    sus reverse normie[value] = [5, 4, 3, 2, 1]
     sus result4 [normie] = MergeSort_sort(reverse)
     run_test("MergeSort reverse sorted", 
         result4[0] == 1 && result4[1] == 2 && result4[2] == 3 && result4[3] == 4 && result4[4] == 5)
     
     fr fr Test random array
-    sus random []normie = [3, 1, 4, 1, 5, 9, 2, 6]
+    sus random normie[value] = [3, 1, 4, 1, 5, 9, 2, 6]
     sus result5 [normie] = MergeSort_sort(random)
     run_test("MergeSort random array first elements", 
         result5[0] == 1 && result5[1] == 1 && result5[2] == 2 && result5[3] == 3)
@@ -142,20 +142,20 @@ slay test_merge_sort() {
 
 slay test_quick_sort() {
     fr fr Test basic sorting
-    sus unsorted []normie = [64, 34, 25, 12, 22, 11, 90]
+    sus unsorted normie[value] = [64, 34, 25, 12, 22, 11, 90]
     sus result [normie] = QuickSort_sort(unsorted)
     
     run_test("QuickSort basic test first elements",
         result[0] <= result[1] && result[1] <= result[2])
     
     fr fr Test with duplicates
-    sus duplicates []normie = [5, 2, 8, 2, 9, 1, 5]
+    sus duplicates normie[value] = [5, 2, 8, 2, 9, 1, 5]
     sus result2 [normie] = QuickSort_sort(duplicates)
     run_test("QuickSort with duplicates", 
         result2[0] <= result2[1] && result2[1] <= result2[2])
     
     fr fr Test small array fallback to insertion sort
-    sus small []normie = [3, 1, 2]
+    sus small normie[value] = [3, 1, 2]
     sus result3 [normie] = QuickSort_sort(small)
     run_test("QuickSort small array", 
         result3[0] == 1 && result3[1] == 2 && result3[2] == 3)
@@ -163,28 +163,28 @@ slay test_quick_sort() {
 
 slay test_heap_sort() {
     fr fr Test basic heap sort
-    sus unsorted []normie = [12, 11, 13, 5, 6, 7]
+    sus unsorted normie[value] = [12, 11, 13, 5, 6, 7]
     sus result [normie] = HeapSort_sort(unsorted)
     
     run_test("HeapSort basic test", 
         result[0] <= result[1] && result[1] <= result[2])
     
     fr fr Test heap sort with negative numbers
-    sus mixed []normie = [-1, 5, -3, 2]
+    sus mixed normie[value] = [-1, 5, -3, 2]
     sus result2 [normie] = HeapSort_sort(mixed)
     run_test("HeapSort with negatives", result2[0] <= result2[1])
 }
 
 slay test_insertion_sort() {
     fr fr Test basic insertion sort
-    sus unsorted []normie = [5, 2, 4, 6, 1, 3]
+    sus unsorted normie[value] = [5, 2, 4, 6, 1, 3]
     sus result [normie] = InsertionSort_sort(unsorted)
     
     run_test("InsertionSort basic test", 
         result[0] == 1 && result[1] == 2 && result[2] == 3)
     
     fr fr Test already sorted
-    sus sorted []normie = [1, 2, 3, 4, 5]
+    sus sorted normie[value] = [1, 2, 3, 4, 5]
     sus result2 [normie] = InsertionSort_sort(sorted)
     run_test("InsertionSort already sorted", 
         result2[0] == 1 && result2[1] == 2)
@@ -195,7 +195,7 @@ fr fr Statistics Tests
 fr fr ================================
 
 slay test_statistics_basic() {
-    sus data []normie = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    sus data normie[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     
     fr fr Test mean
     sus mean drip = Statistics_mean(data)
@@ -222,24 +222,24 @@ slay test_statistics_basic() {
 
 slay test_statistics_edge_cases() {
     fr fr Test single element
-    sus single []normie = [42]
+    sus single normie[value] = [42]
     run_test("Statistics single element mean", Statistics_mean(single) == 42.0)
     run_test("Statistics single element median", Statistics_median(single) == 42.0)
     run_test("Statistics single element variance", Statistics_variance(single) == 0.0)
     
     fr fr Test empty array
-    sus empty []normie = []
+    sus empty normie[value] = []
     run_test("Statistics empty array mean", Statistics_mean(empty) == 0.0)
     run_test("Statistics empty array median", Statistics_median(empty) == 0.0)
     
     fr fr Test extreme percentiles
-    sus data []normie = [1, 2, 3, 4, 5]
+    sus data normie[value] = [1, 2, 3, 4, 5]
     run_test("Statistics 0th percentile", Statistics_percentile(data, 0.0) == 1.0)
     run_test("Statistics 100th percentile", Statistics_percentile(data, 100.0) == 5.0)
 }
 
 slay test_statistics_variance_and_std_dev() {
-    sus data []normie = [2, 4, 4, 4, 5, 5, 7, 9]
+    sus data normie[value] = [2, 4, 4, 4, 5, 5, 7, 9]
     
     sus variance drip = Statistics_variance(data)
     sus std_dev drip = Statistics_standard_deviation(data)
@@ -371,7 +371,7 @@ slay test_sorting_performance_comparison() {
     vibez.spill("\n=== Sorting Performance Comparison ===")
     
     fr fr Test with same dataset
-    sus test_data []normie = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42, 30, 15, 8, 3, 1]
+    sus test_data normie[value] = [64, 34, 25, 12, 22, 11, 90, 88, 76, 50, 42, 30, 15, 8, 3, 1]
     
     fr fr Test MergeSort
     sus merge_result [normie] = MergeSort_sort(test_data)
@@ -446,7 +446,7 @@ slay test_combined_data_structures() {
 slay test_sorting_with_statistics() {
     vibez.spill("\n=== Integration Test: Sorting + Statistics ===")
     
-    sus data []normie = [85, 90, 78, 92, 88, 76, 95, 87, 83, 91]
+    sus data normie[value] = [85, 90, 78, 92, 88, 76, 95, 87, 83, 91]
     
     fr fr Sort the data
     sus sorted_data [normie] = MergeSort_sort(data)

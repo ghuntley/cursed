@@ -201,7 +201,7 @@ slay test_x509_verify_chain() {
         signature: "root_signature"
     }
     
-    sus chain []X509Cert = [leaf_cert, intermediate_cert, root_cert]
+    sus chain X509Cert[value] = [leaf_cert, intermediate_cert, root_cert]
     sus is_valid lit = x509_verify_chain(chain)
     assert_true(is_valid)
 }

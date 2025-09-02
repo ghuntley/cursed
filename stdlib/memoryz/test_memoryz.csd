@@ -189,7 +189,7 @@ slay test_memory_leak_detection() lit {
     fr fr Simulate passage of time for leak detection
     fr fr In real implementation, this would involve actual time delays
     
-    sus potential_leaks []memoryz.MemoryBlock = memoryz.find_memory_leaks()
+    sus potential_leaks memoryz[value].MemoryBlock = memoryz.find_memory_leaks()
     fr fr Should detect blocks allocated above (simplified test)
     testz.assert_true(potential_leaks.len() >= 0)
     
@@ -322,7 +322,7 @@ fr fr ===== INTEGRATION TESTS =====
 slay test_memory_stress() lit {
     testz.test_start("Memory stress test")
     
-    sus pointers []normie = []
+    sus pointers normie[value] = []
     
     fr fr Allocate many blocks
     bestie i := 0; i < 100; i++ {

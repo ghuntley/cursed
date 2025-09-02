@@ -74,8 +74,8 @@ squad VariableInfo {
 // Linter state
 squad Linter {
     spill config LinterConfig
-    spill issues []LintIssue
-    spill variables []VariableInfo
+    spill issues LintIssue[value]
+    spill variables VariableInfo[value]
     spill current_line drip
     spill in_function lit
     spill function_start_line drip
@@ -124,7 +124,7 @@ slay check_naming_conventions(linter Linter, line tea, line_num drip) {
     
     // Variable names should be snake_case
     ready (contains_str(line, "sus ")) {
-        sus parts []tea = split_str(line, " ")
+        sus parts tea[value] = split_str(line, " ")
         ready (len(parts) >= 2) {
             sus var_name tea = parts[1]
             ready (contains_str(var_name, "camelCase") || contains_str(var_name, "PascalCase")) {
@@ -137,7 +137,7 @@ slay check_naming_conventions(linter Linter, line tea, line_num drip) {
     
     // Function names should be snake_case
     ready (contains_str(line, "slay ")) {
-        sus parts []tea = split_str(line, " ")
+        sus parts tea[value] = split_str(line, " ")
         ready (len(parts) >= 2) {
             sus func_name tea = parts[1]
             sus clean_name tea = substring(func_name, 0, index_of(func_name, "("))
@@ -232,7 +232,7 @@ slay track_variable_usage(linter Linter, line tea, line_num drip) {
     
     // Track variable declarations
     ready (contains_str(line, "sus ")) {
-        sus parts []tea = split_str(line, " ")
+        sus parts tea[value] = split_str(line, " ")
         ready (len(parts) >= 2) {
             sus var_name tea = parts[1]
             sus var_info VariableInfo = VariableInfo{
@@ -289,9 +289,9 @@ slay check_missing_semicolons(linter Linter, line tea, line_num drip) {
 }
 
 // Main lint function
-slay lint_cursed_code(source tea, config LinterConfig) []LintIssue {
+slay lint_cursed_code(source tea, config LinterConfig) LintIssue[value]{
     sus linter Linter = init_linter(config)
-    sus lines []tea = split_str(source, "\n")
+    sus lines tea[value] = split_str(source, "\n")
     
     sus line_num drip = 1
     bestie (line_num <= len(lines)) {
@@ -337,7 +337,7 @@ slay check_unused_variables(linter Linter) {
 }
 
 // Format lint results
-slay format_lint_results(issues []LintIssue) tea {
+slay format_lint_results(issues LintIssue[value]) tea {
     sus output tea = ""
     sus i drip = 0
     
@@ -416,12 +416,12 @@ slay count_occurrences(text tea, pattern tea) drip {
 // Public API
 slay lint_code(source tea) tea {
     sus config LinterConfig = default_linter_config()
-    sus issues []LintIssue = lint_cursed_code(source, config)
+    sus issues LintIssue[value] = lint_cursed_code(source, config)
     damn format_lint_results(issues)
 }
 
 slay lint_code_with_config(source tea, config LinterConfig) tea {
-    sus issues []LintIssue = lint_cursed_code(source, config)
+    sus issues LintIssue[value] = lint_cursed_code(source, config)
     damn format_lint_results(issues)
 }
 

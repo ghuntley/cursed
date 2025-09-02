@@ -397,8 +397,8 @@ slay has_active_panic() lit {
 fr fr Error statistics and monitoring
 squad ErrorStats {
     spill total_errors normie
-    spill errors_by_category [8]normie  fr fr For each category
-    spill errors_by_severity [5]normie  fr fr For each severity level
+    spill errors_by_category normie[8]  fr fr For each category
+    spill errors_by_severity normie[5]  fr fr For each severity level
     spill error_rate meal
     spill most_common_code normie
     spill last_error_time normie

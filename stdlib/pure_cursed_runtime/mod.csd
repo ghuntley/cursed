@@ -9,7 +9,7 @@ fr fr Pure CURSED I/O System
 fr fr ================================
 
 be_like FileSystem squad {
-    files [100]FileEntry
+    files FileEntry[100]
     file_count normie
     input_buffer tea
     input_position normie
@@ -192,7 +192,7 @@ fr fr Pure CURSED Crypto System
 fr fr ================================
 
 be_like CryptoState squad {
-    sha256_state [8]normie
+    sha256_state normie[8]
     random_seed normie
     random_calls normie
 }

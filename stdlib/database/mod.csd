@@ -24,8 +24,8 @@ be_like DatabaseConfig = {
 fr fr Connection pool management
 be_like ConnectionPool = {
     config DatabaseConfig
-    active_connections []tea
-    available_connections []tea
+    active_connections tea[value]
+    available_connections tea[value]
     max_connections normie
     current_connections normie
 }
@@ -40,8 +40,8 @@ be_like Transaction = {
 
 fr fr Query result structure
 be_like QueryResult = {
-    rows [][]tea
-    columns []tea
+    rows tea[value][value]
+    columns tea[value]
     affected_rows normie
     last_insert_id tea
     error_message tea
@@ -168,7 +168,7 @@ slay return_connection_to_pool(pool ConnectionPool, connection_id tea) lit {
 }
 
 fr fr SQL Query execution
-slay execute_query(connection_id tea, query tea, params []tea) QueryResult {
+slay execute_query(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [],
         columns: [],
@@ -224,7 +224,7 @@ slay prepare_statement(connection_id tea, sql_query tea) PreparedStatement {
     damn stmt
 }
 
-slay execute_prepared_statement(stmt PreparedStatement, params []tea) QueryResult {
+slay execute_prepared_statement(stmt PreparedStatement, params tea[value]) QueryResult {
     yikes params.length != stmt.parameter_count {
         sus error_result QueryResult = {
             rows: [],
@@ -276,10 +276,10 @@ slay rollback_transaction(tx Transaction) lit {
 fr fr Query builder functionality
 be_like QueryBuilder = {
     table_name tea
-    select_fields []tea
-    where_conditions []tea
-    join_clauses []tea
-    order_by_fields []tea
+    select_fields tea[value]
+    where_conditions tea[value]
+    join_clauses tea[value]
+    order_by_fields tea[value]
     limit_count normie
     offset_count normie
 }
@@ -297,7 +297,7 @@ slay new_query_builder(table tea) QueryBuilder {
     damn builder
 }
 
-slay query_select(builder QueryBuilder, fields []tea) QueryBuilder {
+slay query_select(builder QueryBuilder, fields tea[value]) QueryBuilder {
     builder.select_fields = fields
     damn builder
 }
@@ -451,8 +451,8 @@ slay get_field(record Record, field tea) tea {
 
 slay save_record(connection_id tea, record Record) lit {
     yikes record.is_new { fr fr INSERT operation
-        sus fields []tea = []
-        sus values []tea = []
+        sus fields tea[value] = []
+        sus values tea[value] = []
         
         bestie key, value := range record.fields {
             fields.append(key)

@@ -27,7 +27,7 @@ squad TOMLValue {
     sus float_value tea  # Using tea for float representation
     sus bool_value lit
     sus datetime_value tea
-    sus array_values []TOMLValue
+    sus array_values TOMLValue[value]
     sus table_values map<tea, TOMLValue>
 }
 
@@ -39,7 +39,7 @@ squad TOMLParser {
     sus column_number drip
     sus current_char tea
     sus root_table map<tea, TOMLValue>
-    sus current_table_path []tea
+    sus current_table_path tea[value]
 }
 
 # TOML parsing error
@@ -124,7 +124,7 @@ slay parse_table_header(parser TOMLParser) lit {
     }
     
     # Parse table name
-    sus table_path []tea = parse_table_path(parser)
+    sus table_path tea[value] = parse_table_path(parser)
     ready (arrayz.len(table_path) == 0) {
         report_error(parser, "Empty table name")
         damn cap
@@ -157,8 +157,8 @@ slay parse_table_header(parser TOMLParser) lit {
 }
 
 # Parse dotted table path like "section.subsection.name"
-slay parse_table_path(parser TOMLParser) []tea {
-    sus path []tea = []
+slay parse_table_path(parser TOMLParser) tea[value]{
+    sus path tea[value] = []
     
     bestie (based) {
         skip_whitespace(parser)
@@ -556,7 +556,7 @@ slay parse_array_value(parser TOMLParser) TOMLValue {
     advance(parser)  # Skip opening bracket
     skip_whitespace_and_comments(parser)
     
-    sus values []TOMLValue = []
+    sus values TOMLValue[value] = []
     
     # Empty array
     ready (parser.current_char == "]") {
@@ -861,7 +861,7 @@ slay is_valid_datetime_format(datetime_str tea) lit {
     damn based
 }
 
-slay ensure_table_path_exists(parser TOMLParser, path []tea, is_array_of_tables lit) lit {
+slay ensure_table_path_exists(parser TOMLParser, path tea[value], is_array_of_tables lit) lit {
     # Navigate/create nested table structure
     sus current_table map<tea, TOMLValue> = parser.root_table
     
@@ -963,7 +963,7 @@ slay toml_value_to_string(value TOMLValue) tea {
         }
         TOMLValueType.DateTime -> damn value.datetime_value
         TOMLValueType.Array -> {
-            sus elements []tea = []
+            sus elements tea[value] = []
             bestie (sus i drip = 0; i < arrayz.len(value.array_values); i = i + 1) {
                 sus element_str tea = toml_value_to_string(value.array_values[i])
                 elements = arrayz.append(elements, element_str)

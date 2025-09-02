@@ -27,7 +27,7 @@ squad BulkEmailSender {
 squad BulkEmailResult {
     sus total_sent drip      // Number of successfully sent emails
     sus total_failed drip    // Number of failed emails
-    sus failed_emails []Email // List of emails that failed to send
+    sus failed_emails Email[value] // List of emails that failed to send
     sus send_duration drip   // Total time taken in milliseconds
     sus rate_limited_count drip // Number of emails delayed due to rate limiting
     sus retry_count drip     // Number of emails that were retried
@@ -48,9 +48,9 @@ slay create_bulk_email_sender(client SmtpClient, batch_size drip) BulkEmailSende
 }
 
 // Sends emails in batches with rate limiting and retry logic
-slay send_bulk_emails(sender BulkEmailSender, emails []Email) yikes<BulkEmailResult> {
+slay send_bulk_emails(sender BulkEmailSender, emails Email[value]) yikes<BulkEmailResult> {
     sus start_time drip = timez.current_milliseconds()
-    sus failed_emails []Email = []
+    sus failed_emails Email[value] = []
     sus sent_count drip = 0
     sus rate_limited_count drip = 0
     sus retry_count drip = 0
@@ -180,8 +180,8 @@ squad SmtpPoolConfig {
 // SMTP connection pool
 squad SmtpPool {
     sus config SmtpPoolConfig
-    sus connections []SmtpClient     // Pool of available connections
-    sus active_connections []SmtpClient // Currently in-use connections
+    sus connections SmtpClient[value]     // Pool of available connections
+    sus active_connections SmtpClient[value] // Currently in-use connections
     sus total_sent drip              // Total emails sent through pool
     sus connection_count drip        // Current number of connections
     sus max_reached lit              // Whether max connections has been reached
@@ -357,12 +357,12 @@ squad EmailTemplate {
     sus text_template tea      // Plain text body template
     sus from_template tea      // From address template
     sus reply_to_template tea  // Reply-to template
-    sus variables []tea        // List of required variable names
+    sus variables tea[value]        // List of required variable names
 }
 
 // Template registry for storing email templates
 squad TemplateRegistry {
-    sus templates []EmailTemplate
+    sus templates EmailTemplate[value]
     sus registry_lock ConcurrencyLock
 }
 
@@ -411,7 +411,7 @@ slay register_email_template(name tea, subject_template tea, html_template tea, 
 }
 
 // Creates an email from a template
-slay create_template_email(template_name tea, variables []TemplateVariable, from tea, to tea) yikes<Email> {
+slay create_template_email(template_name tea, variables TemplateVariable[value], from tea, to tea) yikes<Email> {
     concurrenz.lock(global_template_registry.registry_lock)
     
     // Find template
@@ -470,7 +470,7 @@ slay create_template_email(template_name tea, variables []TemplateVariable, from
 }
 
 // Renders a template with variable substitution
-slay render_template(template tea, variables []TemplateVariable) yikes<tea> {
+slay render_template(template tea, variables TemplateVariable[value]) yikes<tea> {
     ready (stringz.len(template) == 0) {
         damn ""
     }
@@ -497,8 +497,8 @@ slay render_template(template tea, variables []TemplateVariable) yikes<tea> {
 }
 
 // Extracts template variables from template strings
-slay extract_template_variables(subject tea, html tea, text tea) []tea {
-    sus variables []tea = []
+slay extract_template_variables(subject tea, html tea, text tea) tea[value]{
+    sus variables tea[value] = []
     sus all_content tea = stringz.concat([subject, " ", html, " ", text])
     
     sus current_pos drip = 0
@@ -526,7 +526,7 @@ slay extract_template_variables(subject tea, html tea, text tea) []tea {
 
 // Extracts unresolved variables from rendered template
 slay extract_unresolved_variables(rendered tea) tea {
-    sus unresolved []tea = []
+    sus unresolved tea[value] = []
     sus current_pos drip = 0
     
     bestie (current_pos < stringz.len(rendered)) {
@@ -619,7 +619,7 @@ slay parse_bounce_email(bounce_email ParsedEmail) yikes<BounceInfo> {
 slay parse_delivery_status_content(content tea) yikes<BounceInfo> {
     sus bounce_info BounceInfo = BounceInfo{}
     
-    sus lines []tea = stringz.split(content, "\r\n")
+    sus lines tea[value] = stringz.split(content, "\r\n")
     sus current_section tea = "message"  // "message" or "recipient"
     
     sus i drip = 0
@@ -656,7 +656,7 @@ slay parse_delivery_status_content(content tea) yikes<BounceInfo> {
             when "original-recipient", "final-recipient" -> {
                 // Format: "rfc822;email@example.com"
                 ready (stringz.contains(field_value, ";")) {
-                    sus parts []tea = stringz.split(field_value, ";")
+                    sus parts tea[value] = stringz.split(field_value, ";")
                     ready (arrayz.len(parts) >= 2) {
                         sus email_addr tea = stringz.trim(parts[1])
                         ready (stringz.equals(field_name, "original-recipient")) {
@@ -816,17 +816,17 @@ slay extract_email_from_text(text tea) tea {
 }
 
 // Helper functions for array operations (placeholders)
-slay arrayz.remove_at(array []SmtpClient, index drip) []SmtpClient {
+slay arrayz.remove_at(array SmtpClient[value], index drip) SmtpClient[value]{
     // Implementation would remove element at specified index
     damn array
 }
 
-slay arrayz.filter(array []SmtpClient, predicate slay(SmtpClient) lit) []SmtpClient {
+slay arrayz.filter(array SmtpClient[value], predicate slay(SmtpClient) lit) SmtpClient[value]{
     // Implementation would filter array based on predicate
     damn array
 }
 
-slay arrayz.contains(array []tea, value tea) lit {
+slay arrayz.contains(array tea[value], value tea) lit {
     sus i drip = 0
     bestie (i < arrayz.len(array)) {
         ready (stringz.equals(array[i], value)) {

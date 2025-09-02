@@ -68,7 +68,7 @@ module AWS {
         image_id tea,
         instance_type tea,
         key_name tea,
-        security_groups []tea,
+        security_groups tea[value],
         user_data tea
     ) CloudResult<tea> {
         ready (!validate_credentials()) {
@@ -137,7 +137,7 @@ module AWS {
         }
     }
 
-    slay upload_object(bucket tea, key tea, data []drip) CloudResult<tea> {
+    slay upload_object(bucket tea, key tea, data drip[value]) CloudResult<tea> {
         sus response tea = aws_s3_upload(bucket, key, data) fam {
             when _ -> damn CloudResult{
                 success: nah,
@@ -193,7 +193,7 @@ module AWS {
     # Lambda Function Management
     slay deploy_function(
         function_name tea,
-        zip_file []drip,
+        zip_file drip[value],
         runtime tea,
         handler tea,
         role tea
@@ -227,7 +227,7 @@ module AWS {
 
     # CloudFormation Stack Management
     slay deploy_stack(stack_name tea, template tea, parameters map<tea, tea>) CloudResult<tea> {
-        sus param_array []any = []
+        sus param_array any[value] = []
         bestie (param_name, param_value) in parameters {
             param_array.append({
                 "ParameterKey": param_name,
@@ -400,7 +400,7 @@ module Azure {
         resource_group tea,
         function_app_name tea,
         runtime tea,
-        code_zip []drip
+        code_zip drip[value]
     ) CloudResult<tea> {
         sus request_body tea = jsonz.marshal({
             "kind": "functionapp",
@@ -543,7 +543,7 @@ module GCP {
         project_id tea,
         location tea,
         function_name tea,
-        source_zip []drip,
+        source_zip drip[value],
         runtime tea,
         entry_point tea
     ) CloudResult<tea> {
@@ -597,7 +597,7 @@ module GCP {
         damn env.get("GCP_ACCESS_TOKEN", "")
     }
 
-    slay upload_source_zip(zip_data []drip) tea {
+    slay upload_source_zip(zip_data drip[value]) tea {
         # Simplified - would upload to Cloud Storage and return URL
         damn "gs://temp-source-bucket/function-source.zip"
     }
@@ -616,7 +616,7 @@ module MultiCloud {
                     config["image_id"]?(tea),
                     config["instance_type"]?(tea),
                     config["key_name"]?(tea),
-                    config["security_groups"]?([]tea),
+                    config["security_groups"]?(tea[value]),
                     config["user_data"]?(tea)
                 )
             }
@@ -651,7 +651,7 @@ module MultiCloud {
     }
 
     # Cost Optimization Across Clouds
-    slay optimize_costs(resources []CloudResource) CloudResult<map<tea, any>> {
+    slay optimize_costs(resources CloudResource[value]) CloudResult<map<tea, any>> {
         sus recommendations map<tea, any> = {}
         sus total_savings drip = 0
 
@@ -948,15 +948,15 @@ module MultiCloud {
         damn total_cost
     }
 
-    slay get_aws_recommendations(resource CloudResource) []tea {
+    slay get_aws_recommendations(resource CloudResource) tea[value]{
         damn ["Use Reserved Instances", "Rightsize instance type"]
     }
 
-    slay get_azure_recommendations(resource CloudResource) []tea {
+    slay get_azure_recommendations(resource CloudResource) tea[value]{
         damn ["Use Azure Reserved VM Instances", "Enable auto-shutdown"]
     }
 
-    slay get_gcp_recommendations(resource CloudResource) []tea {
+    slay get_gcp_recommendations(resource CloudResource) tea[value]{
         damn ["Use Committed Use Discounts", "Enable sustained use discounts"]
     }
 
@@ -1345,16 +1345,16 @@ module Migration {
     squad MigrationPlan {
         sus source_provider CloudProvider
         sus target_provider CloudProvider
-        sus resources []CloudResource
+        sus resources CloudResource[value]
         sus estimated_downtime drip
         sus estimated_cost drip
-        sus migration_steps []tea
+        sus migration_steps tea[value]
     }
 
     slay create_migration_plan(
         source CloudProvider,
         target CloudProvider,
-        resources []CloudResource
+        resources CloudResource[value]
     ) CloudResult<MigrationPlan> {
         sus plan MigrationPlan = MigrationPlan{
             source_provider: source,
@@ -1390,7 +1390,7 @@ module Migration {
         }
     }
 
-    slay calculate_downtime(resources []CloudResource) drip {
+    slay calculate_downtime(resources CloudResource[value]) drip {
         # Calculate estimated downtime based on resource types
         damn resources.len() * 5.0  # 5 minutes per resource
     }
@@ -1398,7 +1398,7 @@ module Migration {
     slay calculate_migration_cost(
         source CloudProvider,
         target CloudProvider,
-        resources []CloudResource
+        resources CloudResource[value]
     ) drip {
         # Calculate migration cost based on data transfer and complexity
         damn resources.len() * 1000.0  # $1000 per resource
@@ -1407,9 +1407,9 @@ module Migration {
     slay generate_migration_steps(
         source CloudProvider,
         target CloudProvider,
-        resources []CloudResource
-    ) []tea {
-        sus steps []tea = [
+        resources CloudResource[value]
+    ) tea[value]{
+        sus steps tea[value] = [
             "Backup source resources",
             "Create target infrastructure",
             "Migrate data",
@@ -1424,7 +1424,7 @@ module Migration {
 # Cloud Security and Compliance
 module Security {
     # Security Assessment
-    slay assess_security(resources []CloudResource) CloudResult<map<tea, any>> {
+    slay assess_security(resources CloudResource[value]) CloudResult<map<tea, any>> {
         sus assessment map<tea, any> = {
             "overall_score": 0,
             "vulnerabilities": [],
@@ -1433,8 +1433,8 @@ module Security {
         }
 
         sus total_score drip = 0
-        sus vulnerabilities []tea = []
-        sus recommendations []tea = []
+        sus vulnerabilities tea[value] = []
+        sus recommendations tea[value] = []
 
         bestie resource in resources {
             sus score drip = assess_resource_security(resource)
@@ -1469,7 +1469,7 @@ module Security {
         }
     }
 
-    slay check_compliance(resources []CloudResource) map<tea, lit> {
+    slay check_compliance(resources CloudResource[value]) map<tea, lit> {
         damn {
             "SOC2": based,
             "HIPAA": nah,
@@ -1486,9 +1486,9 @@ slay configure_credentials(provider CloudProvider, creds CloudCredentials) lit {
     damn based
 }
 
-slay list_resources(provider CloudProvider, region tea) CloudResult<[]CloudResource> {
+slay list_resources(provider CloudProvider, region tea) CloudResult<CloudResource[value]> {
     # List all resources for a provider in a region
-    sus resources []CloudResource = []
+    sus resources CloudResource[value] = []
     
     # Mock data for demo
     resources.append(CloudResource{
@@ -1513,7 +1513,7 @@ slay list_resources(provider CloudProvider, region tea) CloudResult<[]CloudResou
 
 slay deploy_multi_cloud_app(
     app_config map<tea, any>,
-    providers []CloudProvider
+    providers CloudProvider[value]
 ) CloudResult<map<tea, any>> {
     sus deployment_results map<tea, any> = {}
 
@@ -1549,7 +1549,7 @@ slay deploy_multi_cloud_app(
 }
 
 # Helper functions for encoding
-slay base64_encode(data []drip) tea {
+slay base64_encode(data drip[value]) tea {
     # Simplified base64 encoding
     damn "base64encodeddata"
 }

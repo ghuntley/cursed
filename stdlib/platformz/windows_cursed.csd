@@ -122,7 +122,7 @@ slay windows_close_handle(handle WindowsHandle) WindowsError yikes vibes {
 }
 
 // Read from a file handle
-slay windows_read_file(handle WindowsHandle, buffer []smol, size normie) WindowsError yikes normie {
+slay windows_read_file(handle WindowsHandle, buffer smol[value], size normie) WindowsError yikes normie {
     ready !handle.valid {
         yikes WindowsError.InvalidHandle
     }
@@ -147,7 +147,7 @@ slay windows_read_file(handle WindowsHandle, buffer []smol, size normie) Windows
 }
 
 // Write to a file handle
-slay windows_write_file(handle WindowsHandle, buffer []smol, size normie) WindowsError yikes normie {
+slay windows_write_file(handle WindowsHandle, buffer smol[value], size normie) WindowsError yikes normie {
     ready !handle.valid {
         yikes WindowsError.InvalidHandle
     }
@@ -260,7 +260,7 @@ slay windows_move_file(old_path tea, new_path tea) WindowsError yikes vibes {
 
 // Get current directory
 slay windows_get_current_directory() WindowsError yikes tea {
-    sus buffer [260]smol  // MAX_PATH
+    sus buffer smol[260]  // MAX_PATH
     
     sus result normie = windows_ffi_call("GetCurrentDirectoryW", 260, buffer as drip) fam {
         when _ -> yikes WindowsError.SystemError
@@ -295,7 +295,7 @@ slay windows_set_current_directory(path tea) WindowsError yikes vibes {
 
 // Get temporary directory path
 slay windows_get_temp_path() WindowsError yikes tea {
-    sus buffer [260]smol  // MAX_PATH
+    sus buffer smol[260]  // MAX_PATH
     
     sus result normie = windows_ffi_call("GetTempPathW", 260, buffer as drip) fam {
         when _ -> yikes WindowsError.SystemError
@@ -332,7 +332,7 @@ slay windows_find_first_file(pattern tea) WindowsError yikes {FindHandle, FindDa
         when _ -> yikes WindowsError.InvalidParameter
     }
     
-    sus find_data [592]smol  // sizeof(WIN32_FIND_DATAW)
+    sus find_data smol[592]  // sizeof(WIN32_FIND_DATAW)
     
     sus handle_value drip = windows_ffi_call("FindFirstFileW", wide_pattern, find_data as drip) fam {
         when _ -> yikes WindowsError.SystemError
@@ -362,7 +362,7 @@ slay windows_find_next_file(find_handle FindHandle) WindowsError yikes FindData 
         yikes WindowsError.InvalidHandle
     }
     
-    sus find_data [592]smol  // sizeof(WIN32_FIND_DATAW)
+    sus find_data smol[592]  // sizeof(WIN32_FIND_DATAW)
     
     sus result normie = windows_ffi_call("FindNextFileW", find_handle.handle, find_data as drip) fam {
         when _ -> yikes WindowsError.SystemError
@@ -417,7 +417,7 @@ slay utf8_to_utf16(utf8_string tea) tea yikes WindowsError {
 }
 
 // Convert UTF-16 to UTF-8  
-slay utf16_to_utf8(utf16_buffer []smol, length normie) tea yikes WindowsError {
+slay utf16_to_utf8(utf16_buffer smol[value], length normie) tea yikes WindowsError {
     // Simplified conversion - real implementation would do proper UTF-16 to UTF-8 conversion
     sus result tea = ""
     sus i normie = 0
@@ -431,7 +431,7 @@ slay utf16_to_utf8(utf16_buffer []smol, length normie) tea yikes WindowsError {
 }
 
 // Parse WIN32_FIND_DATA structure
-slay parse_find_data(buffer []smol) FindData yikes WindowsError {
+slay parse_find_data(buffer smol[value]) FindData yikes WindowsError {
     // Simplified parsing - real implementation would properly parse the structure
     sus data FindData = FindData{
         filename: "example.txt",

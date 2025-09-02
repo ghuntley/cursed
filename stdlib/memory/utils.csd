@@ -463,7 +463,7 @@ slay detect_memory_corruption(ptr *byte, size normie) lit {
     }
     
     // Check for common corruption patterns
-    sus corruption_patterns [4]byte = {0xCC, 0xDD, 0xEE, 0xFF}
+    sus corruption_patterns byte[4] = {0xCC, 0xDD, 0xEE, 0xFF}
     
     frfr i := 0; i < size; i++ {
         frfr j := 0; j < 4; j++ {

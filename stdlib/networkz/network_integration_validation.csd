@@ -214,8 +214,8 @@ slay validate_utility_functions() {
     vibez.spill("\n🔧 Utility Functions Validation")
     
     // Test IP address validation
-    sus valid_tests []tea = ["127.0.0.1", "192.168.1.1", "10.0.0.1", "8.8.8.8"]
-    sus invalid_tests []tea = ["", "256.256.256.256", "not.an.ip", "192.168"]
+    sus valid_tests tea[value] = ["127.0.0.1", "192.168.1.1", "10.0.0.1", "8.8.8.8"]
+    sus invalid_tests tea[value] = ["", "256.256.256.256", "not.an.ip", "192.168"]
     
     sus i drip = 0
     bestie (i < arrayz.len(valid_tests)) {
@@ -255,7 +255,7 @@ slay validate_compatibility() {
     vibez.spill("✅ Enhanced functions accessible alongside original")
     
     // Validate that CURSED language constructs work properly
-    sus test_array []drip = [1, 2, 3, 4, 5]
+    sus test_array drip[value] = [1, 2, 3, 4, 5]
     ready (arrayz.len(test_array) == 5) {
         vibez.spill("✅ Array operations working correctly")
     }

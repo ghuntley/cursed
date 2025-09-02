@@ -13,7 +13,7 @@ slay performance_test_room_scaling() {
     
     fr fr Test room creation performance
     sus start_time normie = 0  fr fr Would use actual timestamp
-    sus rooms [10]WebSocketRoom
+    sus rooms WebSocketRoom[10]
     
     bestie i normie = 0; i < 10; i++ {
         sus room_id tea = "room_" + stringz.int_to_string(i)
@@ -50,7 +50,7 @@ slay performance_test_message_throughput() {
     test_start("WebSocket Message Throughput")
     
     fr fr Create multiple connections
-    sus connections [5]WebSocketConnection
+    sus connections WebSocketConnection[5]
     bestie i normie = 0; i < 5; i++ {
         sus url tea = "ws://localhost:808" + stringz.int_to_string(i) + "/perf"
         connections[i] = ws_connection_create(url, cap)
@@ -97,7 +97,7 @@ slay performance_test_large_frames() {
     ws_connection_open(&conn)
     
     fr fr Test progressively larger frames
-    sus frame_sizes [8]normie
+    sus frame_sizes normie[8]
     frame_sizes[0] = 100      fr fr 100 bytes
     frame_sizes[1] = 1024     fr fr 1KB
     frame_sizes[2] = 10240    fr fr 10KB
@@ -135,8 +135,8 @@ slay performance_test_concurrent_rooms() {
     test_start("WebSocket Concurrent Room Operations")
     
     fr fr Create multiple rooms with overlapping users
-    sus rooms [5]WebSocketRoom
-    sus room_names [5]tea
+    sus rooms WebSocketRoom[5]
+    sus room_names tea[5]
     room_names[0] = "General"
     room_names[1] = "Tech"
     room_names[2] = "Gaming"
@@ -229,7 +229,7 @@ slay performance_test_frame_serialization() {
     test_start("WebSocket Frame Serialization Performance")
     
     fr fr Test serialization of different frame types and sizes
-    sus frame_types [6]smol
+    sus frame_types smol[6]
     frame_types[0] = WS_OPCODE_TEXT
     frame_types[1] = WS_OPCODE_BINARY
     frame_types[2] = WS_OPCODE_PING
@@ -237,7 +237,7 @@ slay performance_test_frame_serialization() {
     frame_types[4] = WS_OPCODE_CLOSE
     frame_types[5] = WS_OPCODE_CONTINUATION
     
-    sus payload_sizes [5]normie
+    sus payload_sizes normie[5]
     payload_sizes[0] = 10      fr fr Very small
     payload_sizes[1] = 125     fr fr Control frame limit
     payload_sizes[2] = 1024    fr fr 1KB
@@ -297,7 +297,7 @@ slay performance_test_handshake_overhead() {
         assert_true(stringz.length(accept_key) > 0)
         
         fr fr Create handshake request
-        sus protocols [3]tea
+        sus protocols tea[3]
         protocols[0] = "chat"
         protocols[1] = "echo"
         protocols[2] = "test"
@@ -324,14 +324,14 @@ slay performance_test_extension_processing() {
     test_start("WebSocket Extension Processing Performance")
     
     fr fr Test extension negotiation with various combinations
-    sus client_extensions [5]tea
+    sus client_extensions tea[5]
     client_extensions[0] = "permessage-deflate"
     client_extensions[1] = "permessage-deflate; client_max_window_bits"
     client_extensions[2] = "x-webkit-deflate-frame"
     client_extensions[3] = "permessage-deflate, x-webkit-deflate-frame"
     client_extensions[4] = "unknown-extension"
     
-    sus server_extensions [3]tea
+    sus server_extensions tea[3]
     server_extensions[0] = "permessage-deflate"
     server_extensions[1] = "x-webkit-deflate-frame"
     server_extensions[2] = "unsupported-extension"
@@ -371,12 +371,12 @@ slay performance_test_security_validation() {
     test_start("WebSocket Security Validation Performance")
     
     fr fr Test origin validation with large lists
-    sus allowed_origins [20]tea
+    sus allowed_origins tea[20]
     bestie i normie = 0; i < 20; i++ {
         allowed_origins[i] = "https://domain" + stringz.int_to_string(i) + ".com"
     }
     
-    sus test_origins [10]tea
+    sus test_origins tea[10]
     test_origins[0] = "https://domain5.com"    fr fr Should pass
     test_origins[1] = "https://domain15.com"   fr fr Should pass
     test_origins[2] = "https://malicious.com"  fr fr Should fail
@@ -406,7 +406,7 @@ slay performance_test_security_validation() {
     }
     
     fr fr Test content filtering performance
-    sus blocked_words [10]tea
+    sus blocked_words tea[10]
     blocked_words[0] = "spam"
     blocked_words[1] = "malicious"
     blocked_words[2] = "forbidden"
@@ -499,7 +499,7 @@ slay demo_performance_characteristics() {
     
     fr fr Demo frame size optimization
     vibez.spill("📦 Frame size optimization...")
-    sus sizes [3]normie
+    sus sizes normie[3]
     sizes[0] = 100
     sizes[1] = 1024
     sizes[2] = 65536

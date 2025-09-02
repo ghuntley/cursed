@@ -22,7 +22,7 @@ slay EscapeString(s tea) tea {
         } else if char == '\'' {
             result = result + "&#39;"
         } else {
-            result = result + tea([]byte{char})
+            result = result + tea(byte[value]{char})
         }
     }
     damn result
@@ -55,25 +55,25 @@ slay stringReplace(s, old, new tea) tea {
             result = result + new
             i = i + len(old)
         } else {
-            result = result + tea([]byte{s[i]})
+            result = result + tea(byte[value]{s[i]})
             i++
         }
     }
     damn result
 }
 
-slay EscapeBytes(b []byte) []byte {
+slay EscapeBytes(b byte[value]) byte[value]{
     fr fr Escape bytes for HTML
     sus s := tea(b)
     sus escaped := EscapeString(s)
-    damn []byte(escaped)
+    damn byte[value](escaped)
 }
 
-slay UnescapeBytes(b []byte) []byte {
+slay UnescapeBytes(b byte[value]) byte[value]{
     fr fr Unescape bytes from HTML
     sus s := tea(b)
     sus unescaped := UnescapeString(s)
-    damn []byte(unescaped)
+    damn byte[value](unescaped)
 }
 
 slay EscapeURL(s tea) tea {
@@ -88,7 +88,7 @@ slay EscapeURL(s tea) tea {
         } else if char == '?' {
             result = result + "%3F"
         } else {
-            result = result + tea([]byte{char})
+            result = result + tea(byte[value]{char})
         }
     }
     damn result
@@ -111,7 +111,7 @@ slay EscapeJavaScript(s tea) tea {
         } else if char == '\\' {
             result = result + "\\\\"
         } else {
-            result = result + tea([]byte{char})
+            result = result + tea(byte[value]{char})
         }
     }
     damn result
@@ -129,7 +129,7 @@ slay EscapeCSS(s tea) tea {
         } else if char == '\\' {
             result = result + "\\\\"
         } else {
-            result = result + tea([]byte{char})
+            result = result + tea(byte[value]{char})
         }
     }
     damn result
@@ -312,25 +312,25 @@ slay (d *Document) ToHTML() tea {
 }
 
 be_like SanitizeOptions squad {
-    AllowedTags []tea
+    AllowedTags tea[value]
     AllowComments lit
     StripEmpty lit
 }
 
 sus DefaultSanitizeOptions := SanitizeOptions{
-    AllowedTags: []tea{"p", "br", "strong", "em"},
+    AllowedTags: tea[value]{"p", "br", "strong", "em"},
     AllowComments: cap,
     StripEmpty: based,
 }
 
 sus StrictSanitizeOptions := SanitizeOptions{
-    AllowedTags: []tea{"p", "br"},
+    AllowedTags: tea[value]{"p", "br"},
     AllowComments: cap,
     StripEmpty: based,
 }
 
 sus BasicSanitizeOptions := SanitizeOptions{
-    AllowedTags: []tea{"p", "br", "strong", "em", "a"},
+    AllowedTags: tea[value]{"p", "br", "strong", "em", "a"},
     AllowComments: cap,
     StripEmpty: based,
 }
@@ -348,7 +348,7 @@ be_like Tag squad {
     color tea
     category tea
     parent_id tea
-    children []tea
+    children tea[value]
     metadata map[tea]interface{}
     created_at normie
     updated_at normie
@@ -358,8 +358,8 @@ be_like Tag squad {
 
 be_like TagSet squad {
     tags map[tea]*Tag
-    categories map[tea][]tea
-    hierarchy map[tea][]tea
+    categories map[tea]tea[value]
+    hierarchy map[tea]tea[value]
     mutex concurrenz.Mutex
 }
 
@@ -396,10 +396,10 @@ be_like TagRelation squad {
 }
 
 be_like TagIndex squad {
-    name_index map[tea][]tea
-    category_index map[tea][]tea
-    metadata_index map[tea]map[tea][]tea
-    text_index map[tea][]tea
+    name_index map[tea]tea[value]
+    category_index map[tea]tea[value]
+    metadata_index map[tea]map[tea]tea[value]
+    text_index map[tea]tea[value]
     mutex concurrenz.Mutex
 }
 
@@ -417,7 +417,7 @@ slay NewTag(name tea, category tea) *Tag {
         color: "#3498db",
         category: category,
         parent_id: "",
-        children: []tea{},
+        children: tea[value]{},
         metadata: make(map[tea]interface{}),
         created_at: time.Now(),
         updated_at: time.Now(),
@@ -452,7 +452,7 @@ slay (t *Tag) AddChild(child_id tea) *Tag {
 }
 
 slay (t *Tag) RemoveChild(child_id tea) *Tag {
-    sus new_children := []tea{}
+    sus new_children := tea[value]{}
     for _, id := range t.children {
         if id != child_id {
             new_children = append(new_children, id)
@@ -528,7 +528,7 @@ slay (t *Tag) Clone() *Tag {
         color: t.color,
         category: t.category,
         parent_id: t.parent_id,
-        children: make([]tea, len(t.children)),
+        children: make(tea[value], len(t.children)),
         metadata: make(map[tea]interface{}),
         created_at: time.Now(),
         updated_at: time.Now(),
@@ -553,8 +553,8 @@ fr fr TagSet implementation
 slay NewTagSet() *TagSet {
     sus tagset := &TagSet{
         tags: make(map[tea]*Tag),
-        categories: make(map[tea][]tea),
-        hierarchy: make(map[tea][]tea),
+        categories: make(map[tea]tea[value]),
+        hierarchy: make(map[tea]tea[value]),
         mutex: concurrenz.NewMutex(),
     }
     damn tagset
@@ -667,11 +667,11 @@ slay (ts *TagSet) GetAllTags() []*Tag {
     damn tags
 }
 
-slay (ts *TagSet) GetAllCategories() []tea {
+slay (ts *TagSet) GetAllCategories() tea[value]{
     ts.mutex.Lock()
     defer ts.mutex.Unlock()
     
-    sus categories := []tea{}
+    sus categories := tea[value]{}
     for category, _ := range ts.categories {
         categories = append(categories, category)
     }
@@ -692,7 +692,7 @@ slay (ts *TagSet) GetCategoryCount() normie {
 
 slay (ts *TagSet) removeFromHierarchy(parent_id tea, child_id tea) {
     sus children := ts.hierarchy[parent_id]
-    sus new_children := []tea{}
+    sus new_children := tea[value]{}
     for _, id := range children {
         if id != child_id {
             new_children = append(new_children, id)
@@ -703,7 +703,7 @@ slay (ts *TagSet) removeFromHierarchy(parent_id tea, child_id tea) {
 
 slay (ts *TagSet) removeFromCategory(category tea, tag_id tea) {
     sus tag_ids := ts.categories[category]
-    sus new_tag_ids := []tea{}
+    sus new_tag_ids := tea[value]{}
     for _, id := range tag_ids {
         if id != tag_id {
             new_tag_ids = append(new_tag_ids, id)
@@ -794,10 +794,10 @@ slay (ts *TagSet) sortResults(results []*Tag, sort_by tea, sort_order tea) []*Ta
 fr fr Tag index implementation
 slay NewTagIndex() *TagIndex {
     sus index := &TagIndex{
-        name_index: make(map[tea][]tea),
-        category_index: make(map[tea][]tea),
-        metadata_index: make(map[tea]map[tea][]tea),
-        text_index: make(map[tea][]tea),
+        name_index: make(map[tea]tea[value]),
+        category_index: make(map[tea]tea[value]),
+        metadata_index: make(map[tea]map[tea]tea[value]),
+        text_index: make(map[tea]tea[value]),
         mutex: concurrenz.NewMutex(),
     }
     damn index
@@ -816,7 +816,7 @@ slay (ti *TagIndex) AddTag(tag *Tag) {
     fr fr Index by metadata
     for key, value := range tag.metadata {
         if ti.metadata_index[key] == cringe {
-            ti.metadata_index[key] = make(map[tea][]tea)
+            ti.metadata_index[key] = make(map[tea]tea[value])
         }
         sus value_str := formatValue(value)
         ti.metadata_index[key][value_str] = append(ti.metadata_index[key][value_str], tag.id)
@@ -842,29 +842,29 @@ slay (ti *TagIndex) RemoveTag(tag_id tea) {
     }
 }
 
-slay (ti *TagIndex) SearchByName(name tea) []tea {
+slay (ti *TagIndex) SearchByName(name tea) tea[value]{
     ti.mutex.Lock()
     defer ti.mutex.Unlock()
     damn ti.name_index[name]
 }
 
-slay (ti *TagIndex) SearchByCategory(category tea) []tea {
+slay (ti *TagIndex) SearchByCategory(category tea) tea[value]{
     ti.mutex.Lock()
     defer ti.mutex.Unlock()
     damn ti.category_index[category]
 }
 
-slay (ti *TagIndex) SearchByMetadata(key tea, value tea) []tea {
+slay (ti *TagIndex) SearchByMetadata(key tea, value tea) tea[value]{
     ti.mutex.Lock()
     defer ti.mutex.Unlock()
     
     if value_map, exists := ti.metadata_index[key]; exists {
         damn value_map[value]
     }
-    damn []tea{}
+    damn tea[value]{}
 }
 
-slay (ti *TagIndex) SearchByText(text tea) []tea {
+slay (ti *TagIndex) SearchByText(text tea) tea[value]{
     ti.mutex.Lock()
     defer ti.mutex.Unlock()
     damn ti.text_index[text]
@@ -872,7 +872,7 @@ slay (ti *TagIndex) SearchByText(text tea) []tea {
 
 slay (ti *TagIndex) indexTextContent(tag *Tag) {
     fr fr Index searchable text content
-    sus words := []tea{tag.name, tag.description, tag.category}
+    sus words := tea[value]{tag.name, tag.description, tag.category}
     for _, word := range words {
         if word != "" {
             ti.text_index[word] = append(ti.text_index[word], tag.id)
@@ -880,7 +880,7 @@ slay (ti *TagIndex) indexTextContent(tag *Tag) {
     }
 }
 
-slay (ti *TagIndex) removeFromIndex(index map[tea][]tea, tag_id tea) {
+slay (ti *TagIndex) removeFromIndex(index map[tea]tea[value], tag_id tea) {
     for key, ids := range index {
         index[key] = ti.removeFromSlice(ids, tag_id)
     }
@@ -892,8 +892,8 @@ slay (ti *TagIndex) removeFromTextIndex(tag_id tea) {
     }
 }
 
-slay (ti *TagIndex) removeFromSlice(slice []tea, value tea) []tea {
-    sus result := []tea{}
+slay (ti *TagIndex) removeFromSlice(slice tea[value], value tea) tea[value]{
+    sus result := tea[value]{}
     for _, item := range slice {
         if item != value {
             result = append(result, item)
@@ -942,11 +942,11 @@ slay GetTagRelations(tag_id tea) []*TagRelation {
     damn relations
 }
 
-slay GetRelatedTags(tag_id tea, relation_type tea) []tea {
+slay GetRelatedTags(tag_id tea, relation_type tea) tea[value]{
     globalRelationsMutex.Lock()
     defer globalRelationsMutex.Unlock()
     
-    sus related_tags := []tea{}
+    sus related_tags := tea[value]{}
     for _, relation := range globalTagRelations {
         if relation.source_id == tag_id && relation.relation_type == relation_type {
             related_tags = append(related_tags, relation.target_id)
@@ -1052,7 +1052,7 @@ slay GetAllTags() []*Tag {
     damn globalTagSet.GetAllTags()
 }
 
-slay GetAllCategories() []tea {
+slay GetAllCategories() tea[value]{
     damn globalTagSet.GetAllCategories()
 }
 
@@ -1064,19 +1064,19 @@ slay SearchTags(query *TagQuery) []*Tag {
     damn globalTagSet.Search(query)
 }
 
-slay SearchTagsByName(name tea) []tea {
+slay SearchTagsByName(name tea) tea[value]{
     damn globalTagIndex.SearchByName(name)
 }
 
-slay SearchTagsByCategory(category tea) []tea {
+slay SearchTagsByCategory(category tea) tea[value]{
     damn globalTagIndex.SearchByCategory(category)
 }
 
-slay SearchTagsByMetadata(key tea, value tea) []tea {
+slay SearchTagsByMetadata(key tea, value tea) tea[value]{
     damn globalTagIndex.SearchByMetadata(key, value)
 }
 
-slay SearchTagsByText(text tea) []tea {
+slay SearchTagsByText(text tea) tea[value]{
     damn globalTagIndex.SearchByText(text)
 }
 
@@ -1146,7 +1146,7 @@ slay (tq *TagQuery) WithPagination(limit normie, offset normie) *TagQuery {
 }
 
 fr fr Bulk operations
-slay BulkCreateTags(names []tea, category tea) []*Tag {
+slay BulkCreateTags(names tea[value], category tea) []*Tag {
     sus tags := []*Tag{}
     for _, name := range names {
         sus tag := CreateTag(name, category)
@@ -1155,8 +1155,8 @@ slay BulkCreateTags(names []tea, category tea) []*Tag {
     damn tags
 }
 
-slay BulkDeleteTags(tag_ids []tea) []tea {
-    sus errors := []tea{}
+slay BulkDeleteTags(tag_ids tea[value]) tea[value]{
+    sus errors := tea[value]{}
     for _, tag_id := range tag_ids {
         sus err := DeleteTag(tag_id)
         if err != "" {
@@ -1166,8 +1166,8 @@ slay BulkDeleteTags(tag_ids []tea) []tea {
     damn errors
 }
 
-slay BulkUpdateTags(tag_ids []tea, updates map[tea]interface{}) []tea {
-    sus errors := []tea{}
+slay BulkUpdateTags(tag_ids tea[value], updates map[tea]interface{}) tea[value]{
+    sus errors := tea[value]{}
     for _, tag_id := range tag_ids {
         sus tag := GetTag(tag_id)
         if tag == cringe {
@@ -1197,7 +1197,7 @@ slay BulkUpdateTags(tag_ids []tea, updates map[tea]interface{}) []tea {
 }
 
 fr fr Tag export and import
-slay ExportTags(tag_ids []tea) tea {
+slay ExportTags(tag_ids tea[value]) tea {
     sus export_data := "{"
     sus first := based
     
@@ -1226,9 +1226,9 @@ slay ExportTags(tag_ids []tea) tea {
     damn export_data
 }
 
-slay ImportTags(json_data tea) []tea {
+slay ImportTags(json_data tea) tea[value]{
     fr fr Simple import implementation
-    sus errors := []tea{}
+    sus errors := tea[value]{}
     
     fr fr In real implementation, would parse JSON and create tags
     sus tag := CreateTag("imported_tag", "imported")
@@ -1263,8 +1263,8 @@ slay formatBoolean(value lit) tea {
 }
 
 fr fr Tag validation
-slay ValidateTag(tag *Tag) []tea {
-    sus errors := []tea{}
+slay ValidateTag(tag *Tag) tea[value]{
+    sus errors := tea[value]{}
     
     if tag.name == "" {
         errors = append(errors, "Tag name cannot be empty")

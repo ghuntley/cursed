@@ -9,20 +9,20 @@ fr fr ===== YAML PARSER STRUCTURES =====
 squad YamlNode {
     sus type tea                    fr fr "scalar", "sequence", "mapping"
     sus scalar_value tea
-    sus sequence_items []YamlNode
-    sus mapping_keys []tea
-    sus mapping_values []YamlNode
+    sus sequence_items YamlNode[value]
+    sus mapping_keys tea[value]
+    sus mapping_values YamlNode[value]
     sus indent_level drip
     sus line_number drip
 }
 
 squad YamlParser {
     sus content tea
-    sus lines []tea
+    sus lines tea[value]
     sus current_line drip
     sus total_lines drip
-    sus indent_stack []drip
-    sus key_stack []tea
+    sus indent_stack drip[value]
+    sus key_stack tea[value]
     sus error_message tea
     sus has_error lit
 }
@@ -306,7 +306,7 @@ slay parse_inline_yaml_sequence(sequence_str tea) YamlNode {
     node.sequence_items = []
     
     fr fr Simple parsing for inline sequences
-    sus items []tea = split_yaml_inline_sequence(sequence_str)
+    sus items tea[value] = split_yaml_inline_sequence(sequence_str)
     sus item_count drip = array_length(items)
     
     sus i drip = 0
@@ -330,7 +330,7 @@ slay parse_inline_yaml_mapping(mapping_str tea) YamlNode {
     
     fr fr Remove braces and split by commas
     sus inner tea = substring(mapping_str, 1, string_length(mapping_str) - 2)
-    sus pairs []tea = split_string(inner, ",", 0)
+    sus pairs tea[value] = split_string(inner, ",", 0)
     sus pair_count drip = array_length(pairs)
     
     sus i drip = 0
@@ -364,7 +364,7 @@ slay parse_inline_yaml_array(array_str tea) YamlNode {
     
     fr fr Remove brackets and split by commas
     sus inner tea = substring(array_str, 1, string_length(array_str) - 2)
-    sus items []tea = split_string(inner, ",", 0)
+    sus items tea[value] = split_string(inner, ",", 0)
     sus item_count drip = array_length(items)
     
     sus i drip = 0
@@ -550,9 +550,9 @@ slay count_unescaped_quotes(str tea) drip {
     damn count
 }
 
-slay split_yaml_inline_sequence(sequence_str tea) []tea {
+slay split_yaml_inline_sequence(sequence_str tea) tea[value]{
     fr fr Split inline sequence by dashes
-    sus items []tea = []
+    sus items tea[value] = []
     sus current_item tea = ""
     sus item_count drip = 0
     sus length drip = string_length(sequence_str)

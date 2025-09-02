@@ -47,7 +47,7 @@ assert_true(warmup_result)
 
 fr fr Test statistical calculations
 test_start("Statistical calculation tests")
-sus test_values []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
+sus test_values meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
 
 sus mean_result = calculate_mean(test_values)
 assert_true(mean_result > 0.0)
@@ -112,7 +112,7 @@ assert_true(micro_result)
 fr fr Test macro-benchmarking
 test_start("Macro-benchmark tests")
 sus macro_func = slay() lit {
-    sus arr []normie = []
+    sus arr normie[value] = []
     bestie i := 0; i < 50; i++ {
         arr = append(arr, i)
     }
@@ -148,12 +148,12 @@ fr fr Test edge cases
 test_start("Edge case tests")
 
 fr fr Test with very small arrays
-sus small_array []meal = [0.001]
+sus small_array meal[value] = [0.001]
 sus small_mean = calculate_mean(small_array)
 assert_true(small_mean == 0.001)
 
 fr fr Test with identical values
-sus identical_values []meal = [1.0, 1.0, 1.0]
+sus identical_values meal[value] = [1.0, 1.0, 1.0]
 sus identical_mean = calculate_mean(identical_values)
 assert_true(identical_mean == 1.0)
 
@@ -175,14 +175,14 @@ assert_true(zero_result)
 
 fr fr Test large number calculations
 test_start("Large number tests")
-sus large_values []meal = [1000.0, 2000.0, 3000.0]
+sus large_values meal[value] = [1000.0, 2000.0, 3000.0]
 sus large_mean = calculate_mean(large_values)
 assert_true(large_mean == 2000.0)
 
 fr fr Test realistic timing scenario
 test_start("Realistic timing tests")
 sus realistic_func = slay() lit {
-    sus data []normie = []
+    sus data normie[value] = []
     bestie i := 0; i < 1000; i++ {
         data = append(data, i * 3)
     }

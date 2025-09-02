@@ -29,7 +29,7 @@ squad OptimizedObjectPool {
     
     // Pre-allocated free list to avoid linear searches
     sus free_objects hashz.HashSet<*normie>  // O(1) lookup
-    sus chunks []PoolChunk
+    sus chunks PoolChunk[value]
     sus chunk_count normie
     
     // Memory locality optimizations
@@ -37,8 +37,8 @@ squad OptimizedObjectPool {
     sus batch_allocation_size normie = 64
     
     // Performance tracking
-    sus allocation_times []normie  // For percentile calculations
-    sus deallocation_times []normie
+    sus allocation_times normie[value]  // For percentile calculations
+    sus deallocation_times normie[value]
 }
 
 // Optimized chunk with hash-based free list
@@ -357,11 +357,11 @@ slay generate_performance_report(pool *OptimizedObjectPool) {
     vibez.spill("Total capacity: " + pool.capacity.to_string())
 }
 
-slay calculate_percentile(values []normie, percentile normie) normie {
+slay calculate_percentile(values normie[value], percentile normie) normie {
     // Simple percentile calculation for performance monitoring
     // In production, would use more sophisticated algorithm
     
-    sus valid_values []normie = filter_non_zero(values)
+    sus valid_values normie[value] = filter_non_zero(values)
     if valid_values.len == 0 {
         damn 0
     }
@@ -377,8 +377,8 @@ slay calculate_percentile(values []normie, percentile normie) normie {
     damn valid_values[index]
 }
 
-slay filter_non_zero(values []normie) []normie {
-    sus result []normie = []
+slay filter_non_zero(values normie[value]) normie[value]{
+    sus result normie[value] = []
     frfr val in values {
         if val > 0 {
             result.push(val)

@@ -44,7 +44,7 @@ slay test_buffered_channel() lit {
 // Concurrent send/receive test
 slay test_concurrent_operations() lit {
     sus ch chan<drip> = make_channel()
-    sus results []drip = []
+    sus results drip[value] = []
     
     // Start multiple senders
     go {
@@ -144,7 +144,7 @@ slay test_buffer_overflow_underflow() lit {
 
 // Channel cleanup and resource management
 slay test_channel_cleanup() lit {
-    sus channels []chan<drip> = []
+    sus channels chan[value]<drip> = []
     
     // Create many channels
     bestie (i drip = 0; i < 50; i += 1) {
@@ -278,7 +278,7 @@ slay test_multi_producer_consumer() lit {
 // Memory safety with goroutines and channels
 slay test_memory_safety_goroutines() lit {
     bestie (iteration drip = 0; iteration < 10; iteration += 1) {
-        sus channels []chan<drip> = []
+        sus channels chan[value]<drip> = []
         sus goroutine_count drip = 20
         
         // Create channels and goroutines
@@ -305,7 +305,7 @@ slay test_memory_safety_goroutines() lit {
 slay test_channel_priority() lit {
     sus high_priority chan<drip> = make_priority_channel(10)
     sus low_priority chan<drip> = make_priority_channel(1)
-    sus results []drip = []
+    sus results drip[value] = []
     
     // Send to low priority first
     go {

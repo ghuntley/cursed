@@ -34,7 +34,7 @@ struct Task {
     completed_at normie
     cancelled lit
     parent_id normie
-    children_ids []normie
+    children_ids normie[value]
 }
 
 // Task context for execution
@@ -167,7 +167,7 @@ slay Task.add_child(child_task *Task) {
 }
 
 slay Task.remove_child(child_id normie) {
-    sus new_children []normie = []
+    sus new_children normie[value] = []
     
     bestie i := 0; i < len(this.children_ids); i++ {
         if this.children_ids[i] != child_id {

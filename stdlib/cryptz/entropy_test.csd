@@ -73,9 +73,9 @@ slay test_entropy_unpredictability() {
     
     fr fr Test 4: Verify random bytes are different each time
     vibez.spill("Testing random byte generation...")
-    sus random1 []drip = cryptz.generate_random_bytes(16)
-    sus random2 []drip = cryptz.generate_random_bytes(16)
-    sus random3 []drip = cryptz.generate_random_bytes(16)
+    sus random1 drip[value] = cryptz.generate_random_bytes(16)
+    sus random2 drip[value] = cryptz.generate_random_bytes(16)
+    sus random3 drip[value] = cryptz.generate_random_bytes(16)
     
     vibez.spill("Random bytes 1:", bytes_to_hex_string(random1))
     vibez.spill("Random bytes 2:", bytes_to_hex_string(random2))
@@ -92,8 +92,8 @@ slay test_entropy_unpredictability() {
     
     fr fr Test 5: Check entropy pool diversity
     vibez.spill("Testing entropy source diversity...")
-    sus entropy1 []drip = cryptz.system_entropy_sources()
-    sus entropy2 []drip = cryptz.system_entropy_sources() 
+    sus entropy1 drip[value] = cryptz.system_entropy_sources()
+    sus entropy2 drip[value] = cryptz.system_entropy_sources() 
     
     vibez.spill("Entropy pool 1 length:", len(entropy1))
     vibez.spill("Entropy pool 2 length:", len(entropy2))
@@ -125,7 +125,7 @@ slay test_entropy_unpredictability() {
     damn based
 }
 
-slay bytes_to_hex_string(bytes []drip) tea {
+slay bytes_to_hex_string(bytes drip[value]) tea {
     sus result tea = ""
     bestie i := 0; i < len(bytes); i++ {
         sus hex_byte tea = to_hex_byte(bytes[i])
@@ -141,7 +141,7 @@ slay to_hex_byte(b drip) tea {
     damn stringz.char_at(hex_chars, high) + stringz.char_at(hex_chars, low)
 }
 
-slay arrays_equal(a []drip, b []drip) lit {
+slay arrays_equal(a drip[value], b drip[value]) lit {
     ready len(a) != len(b) { damn cringe }
     
     bestie i := 0; i < len(a); i++ {

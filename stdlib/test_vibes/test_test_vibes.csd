@@ -111,14 +111,14 @@ slay test_collection_assertions() {
     sus t := test_vibes.NewVibeTest("collection_test")
     
     fr fr Test AssertLen
-    sus slice := []tea{"a", "b", "c"}
+    sus slice := tea[value]{"a", "b", "c"}
     test_vibes.AssertLen(t, slice, 3, "slice should have length 3")
     
     sus str := "hello"
     test_vibes.AssertLen(t, str, 5, "string should have length 5")
     
     fr fr Test AssertEmpty
-    sus empty := []tea{}
+    sus empty := tea[value]{}
     test_vibes.AssertEmpty(t, empty, "slice should be empty")
     
     fr fr Test AssertNotEmpty
@@ -247,23 +247,23 @@ slay test_table_driven_tests() {
     
     sus t := test_vibes.NewVibeTest("table_test")
     
-    sus testCases := []test_vibes.TestCase{
+    sus testCases := test_vibes[value].TestCase{
         {
             Name:     "Addition",
-            Input:    []normie{2, 3},
+            Input:    normie[value]{2, 3},
             Expected: 5,
             TestFn: func(t *test_vibes.VibeTest, input, expected interface{}) {
-                sus nums := input.([]normie)
+                sus nums := input.(normie[value])
                 sus result := nums[0] + nums[1]
                 test_vibes.AssertEqual(t, expected, result, "addition should work")
             },
         },
         {
             Name:     "Subtraction",
-            Input:    []normie{10, 3},
+            Input:    normie[value]{10, 3},
             Expected: 7,
             TestFn: func(t *test_vibes.VibeTest, input, expected interface{}) {
-                sus nums := input.([]normie)
+                sus nums := input.(normie[value])
                 sus result := nums[0] - nums[1]
                 test_vibes.AssertEqual(t, expected, result, "subtraction should work")
             },

@@ -681,7 +681,7 @@ slay benchmark_compression_algorithms(test_data tea) tea {
     sus benchmark_results tea = "Compression Algorithm Benchmarks:\n\n"
     
     # Test each algorithm
-    sus algorithms []tea = [
+    sus algorithms tea[value] = [
         COMPRESSION_LZ4, COMPRESSION_LZ4HC, COMPRESSION_SNAPPY,
         COMPRESSION_ZSTD, COMPRESSION_DEFLATE, COMPRESSION_GZIP,
         COMPRESSION_BZIP2, COMPRESSION_LZMA, COMPRESSION_BROTLI
@@ -721,21 +721,21 @@ slay analyze_speed_vs_ratio(test_data tea) tea {
     analysis = analysis + "Fast Algorithms (Speed Priority):\n"
     
     # Test fast algorithms
-    sus fast_algorithms []tea = [COMPRESSION_LZ4, COMPRESSION_SNAPPY]
+    sus fast_algorithms tea[value] = [COMPRESSION_LZ4, COMPRESSION_SNAPPY]
     bestie (drip i = 0; i < len(fast_algorithms); i = i + 1) {
         sus result tea = benchmark_single_algorithm(fast_algorithms[i], test_data)
         analysis = analysis + "  " + result + "\n"
     }
     
     analysis = analysis + "\nBalanced Algorithms (Speed/Ratio Balance):\n"
-    sus balanced_algorithms []tea = [COMPRESSION_ZSTD, COMPRESSION_DEFLATE, COMPRESSION_GZIP]
+    sus balanced_algorithms tea[value] = [COMPRESSION_ZSTD, COMPRESSION_DEFLATE, COMPRESSION_GZIP]
     bestie (drip i = 0; i < len(balanced_algorithms); i = i + 1) {
         sus result tea = benchmark_single_algorithm(balanced_algorithms[i], test_data)
         analysis = analysis + "  " + result + "\n"
     }
     
     analysis = analysis + "\nHigh Ratio Algorithms (Compression Priority):\n"
-    sus ratio_algorithms []tea = [COMPRESSION_BZIP2, COMPRESSION_LZMA, COMPRESSION_BROTLI]
+    sus ratio_algorithms tea[value] = [COMPRESSION_BZIP2, COMPRESSION_LZMA, COMPRESSION_BROTLI]
     bestie (drip i = 0; i < len(ratio_algorithms); i = i + 1) {
         sus result tea = benchmark_single_algorithm(ratio_algorithms[i], test_data)
         analysis = analysis + "  " + result + "\n"
@@ -934,7 +934,7 @@ sus lz4_stream_context squad {
     sus dictionary tea
     sus ring_buffer tea
     sus position drip
-    sus hash_table []drip
+    sus hash_table drip[value]
     sus matches_found drip
 }
 
@@ -1115,8 +1115,8 @@ sus bzip2_context squad {
     sus block_size drip
     sus bwt_buffer tea
     sus mtf_alphabet tea
-    sus huffman_trees []tea
-    sus compressed_blocks []tea
+    sus huffman_trees tea[value]
+    sus compressed_blocks tea[value]
 }
 
 # Initialize Bzip2 compression context
@@ -1174,7 +1174,7 @@ slay apply_advanced_bwt(data tea) tea {
     vibez.spill("BWT: Advanced transform with suffix array construction")
     
     sus data_size drip = len(data)
-    sus transformations []tea = []
+    sus transformations tea[value] = []
     
     # Generate all rotations (simplified for demo)
     bestie (drip i = 0; i < data_size; i = i + 1) {
@@ -1183,7 +1183,7 @@ slay apply_advanced_bwt(data tea) tea {
     }
     
     # Sort transformations lexicographically (simplified)
-    sus sorted_transformations []tea = bwt_sort_rotations(transformations)
+    sus sorted_transformations tea[value] = bwt_sort_rotations(transformations)
     
     # Extract last character of each sorted rotation
     sus bwt_string tea = ""
@@ -1205,11 +1205,11 @@ slay apply_advanced_bwt(data tea) tea {
 }
 
 # Sort rotations for BWT (simplified lexicographic sort)
-slay bwt_sort_rotations(rotations []tea) []tea {
+slay bwt_sort_rotations(rotations tea[value]) tea[value]{
     vibez.spill("BWT: Sorting " + to_string(len(rotations)) + " rotations")
     
     # Simple bubble sort for demonstration
-    sus sorted []tea = rotations
+    sus sorted tea[value] = rotations
     sus n drip = len(sorted)
     
     bestie (drip i = 0; i < n - 1; i = i + 1) {
@@ -1334,7 +1334,7 @@ sus zstd_context squad {
     sus literals_buffer tea
     sus compression_level drip
     sus window_size drip
-    sus match_history []tea
+    sus match_history tea[value]
 }
 
 # Initialize Zstandard compression context
@@ -1418,7 +1418,7 @@ slay find_zstd_sequences(block tea, base_offset drip) tea {
         ready (zstd_context.dictionary_data != "") {
             sus dict_match tea = find_dictionary_match(block, position)
             ready (dict_match != "") {
-                sus match_parts []tea = split_string(dict_match, ",")
+                sus match_parts tea[value] = split_string(dict_match, ",")
                 best_match_offset = string_to_int(match_parts[0])
                 best_match_length = string_to_int(match_parts[1])
                 best_match_source = "DICT"
@@ -1428,7 +1428,7 @@ slay find_zstd_sequences(block tea, base_offset drip) tea {
         # Search in recent history
         sus history_match tea = find_history_match(block, position)
         ready (history_match != "") {
-            sus match_parts []tea = split_string(history_match, ",")
+            sus match_parts tea[value] = split_string(history_match, ",")
             sus history_offset drip = string_to_int(match_parts[0])
             sus history_length drip = string_to_int(match_parts[1])
             
@@ -1505,7 +1505,7 @@ slay extract_zstd_literals(block tea, sequences tea) tea {
     # Simplified: extract characters not covered by sequences
     sus literals tea = ""
     sus block_size drip = len(block)
-    sus covered_positions []lit = []
+    sus covered_positions lit[value] = []
     
     # Mark positions covered by sequences
     sus position drip = 0
@@ -1608,7 +1608,7 @@ slay apply_zstd_decompression(compressed_data tea, dictionary tea) tea {
         damn compressed_data
     }
     
-    sus header_parts []tea = split_string(header_match, ":")
+    sus header_parts tea[value] = split_string(header_match, ":")
     sus dict_id drip = string_to_int(header_parts[0])
     sus block_count drip = string_to_int(header_parts[1])
     sus payload tea = header_parts[2]
@@ -1708,8 +1708,8 @@ slay remove_char_from_string(str tea, char tea) tea {
     damn result
 }
 
-slay split_string(str tea, delimiter tea) []tea {
-    sus parts []tea = []
+slay split_string(str tea, delimiter tea) tea[value]{
+    sus parts tea[value] = []
     sus current tea = ""
     
     bestie (drip i = 0; i < len(str); i = i + 1) {
@@ -1744,8 +1744,8 @@ slay find_common_prefix(str1 tea, str2 tea) drip {
     damn common_length
 }
 
-slay remove_first_element(arr []tea) []tea {
-    sus result []tea = []
+slay remove_first_element(arr tea[value]) tea[value]{
+    sus result tea[value] = []
     bestie (drip i = 1; i < len(arr); i = i + 1) {
         result = append(result, arr[i])
     }

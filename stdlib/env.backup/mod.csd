@@ -28,12 +28,12 @@ be_like EnvVar = struct {
 fr fr Environment Manager Structure
 be_like EnvManager = struct {
     variables map[tea]EnvVar
-    search_path []tea
+    search_path tea[value]
     home_dir tea
     current_user tea
     shell_path tea
     argc normie
-    argv []tea
+    argv tea[value]
     initialized lit
 }
 
@@ -45,12 +45,12 @@ slay init_env_manager() {
     lowkey global_env_manager.initialized == cap {
         global_env_manager = EnvManager{
             variables: map[tea]EnvVar{},
-            search_path: []tea{},
+            search_path: tea[value]{},
             home_dir: ENV_HOME_DEFAULT,
             current_user: "user",
             shell_path: ENV_SHELL_DEFAULT,
             argc: 0,
-            argv: []tea{},
+            argv: tea[value]{},
             initialized: based,
         } fr fr Initialize default environment variables
         setup_default_environment()
@@ -89,7 +89,7 @@ slay setup_search_path() {
     lowkey path_env != "" {
         global_env_manager.search_path = stringz.split(path_env, ENV_PATH_SEPARATOR)
     } highkey {
-        global_env_manager.search_path = []tea{"/usr/local/bin", "/usr/bin", "/bin"}
+        global_env_manager.search_path = tea[value]{"/usr/local/bin", "/usr/bin", "/bin"}
     }
 }
 
@@ -197,10 +197,10 @@ slay is_env_system(key tea) lit {
 }
 
 fr fr Environment Variable Listing
-slay list_env_vars() []tea {
+slay list_env_vars() tea[value]{
     init_env_manager()
     
-    keys := []tea{}
+    keys := tea[value]{}
     bestie key, _ := range global_env_manager.variables {
         keys = append(keys, key)
     }
@@ -237,7 +237,7 @@ slay export_env(key tea, value tea) lit {
 }
 
 fr fr Path Management Functions
-slay get_search_path() []tea {
+slay get_search_path() tea[value]{
     init_env_manager()
     
     damn global_env_manager.search_path
@@ -250,7 +250,7 @@ slay add_to_path(dir tea) lit {
             damn based fr fr Already in path
         }
     } fr fr Add to beginning of path
-    global_env_manager.search_path = append([]tea{dir}, global_env_manager.search_path...) fr fr Update PATH environment variable
+    global_env_manager.search_path = append(tea[value]{dir}, global_env_manager.search_path...) fr fr Update PATH environment variable
     new_path := stringz.join(global_env_manager.search_path, ENV_PATH_SEPARATOR)
     set_env("PATH", new_path)
     
@@ -260,7 +260,7 @@ slay add_to_path(dir tea) lit {
 slay remove_from_path(dir tea) lit {
     init_env_manager()
     
-    new_path := []tea{}
+    new_path := tea[value]{}
     found := cap
     
     bestie _, path_dir := range global_env_manager.search_path {
@@ -337,7 +337,7 @@ slay get_os_type() tea {
 }
 
 fr fr Command Line Arguments
-slay set_args(argc normie, argv []tea) lit {
+slay set_args(argc normie, argv tea[value]) lit {
     init_env_manager()
     
     global_env_manager.argc = argc
@@ -350,7 +350,7 @@ slay set_args(argc normie, argv []tea) lit {
     damn based
 }
 
-slay get_args() []tea {
+slay get_args() tea[value]{
     init_env_manager()
     
     damn global_env_manager.argv
@@ -477,7 +477,7 @@ slay merge_env(other_env map[tea]tea) lit {
 
 fr fr Helper Functions
 slay file_exists(path tea) lit { fr fr Simple file existence check simulation fr fr In real implementation, would check file system
-    known_files := []tea{
+    known_files := tea[value]{
         "/bin/bash",
         "/usr/bin/vim",
         "/usr/bin/less",
@@ -539,9 +539,9 @@ slay cleanup_env_manager() {
     init_env_manager()
     
     global_env_manager.variables = map[tea]EnvVar{}
-    global_env_manager.search_path = []tea{}
+    global_env_manager.search_path = tea[value]{}
     global_env_manager.argc = 0
-    global_env_manager.argv = []tea{}
+    global_env_manager.argv = tea[value]{}
     global_env_manager.initialized = cap
     
     vibez.spill("Environment manager cleanup complete")

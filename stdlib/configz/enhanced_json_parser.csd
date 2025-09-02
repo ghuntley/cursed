@@ -16,8 +16,8 @@ squad JsonValue {
     sus string_value tea
     sus number_value meal
     sus boolean_value lit
-    sus array_items []JsonValue
-    sus object_pairs []JsonKeyValue
+    sus array_items JsonValue[value]
+    sus object_pairs JsonKeyValue[value]
     sus line_number drip
     sus column_number drip
 }
@@ -34,7 +34,7 @@ squad JsonParser {
     sus line drip
     sus column drip
     sus current_char tea
-    sus error_messages []tea
+    sus error_messages tea[value]
     sus has_error lit
 }
 
@@ -415,9 +415,9 @@ slay parse_json_object(parser JsonParser) JsonParseResult {
     parser = advance_json_parser(parser)  fr fr Skip opening brace
     parser = skip_json_whitespace(parser)
     
-    sus object_pairs []JsonKeyValue = []
+    sus object_pairs JsonKeyValue[value] = []
     sus pair_count drip = 0
-    sus used_keys []tea = []  fr fr Track keys to prevent duplicates
+    sus used_keys tea[value] = []  fr fr Track keys to prevent duplicates
     
     fr fr Handle empty object
     ready (parser.position < parser.length && parser.current_char == "}") {
@@ -556,7 +556,7 @@ slay parse_json_array(parser JsonParser) JsonParseResult {
     parser = advance_json_parser(parser)  fr fr Skip opening bracket
     parser = skip_json_whitespace(parser)
     
-    sus array_items []JsonValue = []
+    sus array_items JsonValue[value] = []
     sus item_count drip = 0
     
     fr fr Handle empty array
@@ -847,7 +847,7 @@ fr fr ==========================================
 fr fr Array Helper Functions
 fr fr ==========================================
 
-slay array_contains_string(arr []tea, target tea) lit {
+slay array_contains_string(arr tea[value], target tea) lit {
     fr fr Check if string array contains target string
     sus length drip = len(arr)
     sus i drip = 0
@@ -862,33 +862,33 @@ slay array_contains_string(arr []tea, target tea) lit {
     damn cringe
 }
 
-slay append_string_to_array(arr []tea, item tea) []tea {
+slay append_string_to_array(arr tea[value], item tea) tea[value]{
     fr fr Append string to array
     sus length drip = len(arr)
-    sus new_arr []tea = resize_string_array(arr, length + 1)
+    sus new_arr tea[value] = resize_string_array(arr, length + 1)
     new_arr[length] = item
     damn new_arr
 }
 
-slay append_json_pair_to_array(arr []JsonKeyValue, pair JsonKeyValue) []JsonKeyValue {
+slay append_json_pair_to_array(arr JsonKeyValue[value], pair JsonKeyValue) JsonKeyValue[value]{
     fr fr Append JSON key-value pair to array
     sus length drip = len(arr)
-    sus new_arr []JsonKeyValue = resize_json_pair_array(arr, length + 1)
+    sus new_arr JsonKeyValue[value] = resize_json_pair_array(arr, length + 1)
     new_arr[length] = pair
     damn new_arr
 }
 
-slay append_json_value_to_array(arr []JsonValue, value JsonValue) []JsonValue {
+slay append_json_value_to_array(arr JsonValue[value], value JsonValue) JsonValue[value]{
     fr fr Append JSON value to array
     sus length drip = len(arr)
-    sus new_arr []JsonValue = resize_json_value_array(arr, length + 1)
+    sus new_arr JsonValue[value] = resize_json_value_array(arr, length + 1)
     new_arr[length] = value
     damn new_arr
 }
 
-slay resize_string_array(arr []tea, new_size drip) []tea {
+slay resize_string_array(arr tea[value], new_size drip) tea[value]{
     fr fr Resize string array
-    sus new_arr []tea = []
+    sus new_arr tea[value] = []
     sus old_size drip = len(arr)
     sus copy_size drip = min_int(old_size, new_size)
     
@@ -901,9 +901,9 @@ slay resize_string_array(arr []tea, new_size drip) []tea {
     damn new_arr
 }
 
-slay resize_json_pair_array(arr []JsonKeyValue, new_size drip) []JsonKeyValue {
+slay resize_json_pair_array(arr JsonKeyValue[value], new_size drip) JsonKeyValue[value]{
     fr fr Resize JSON pair array
-    sus new_arr []JsonKeyValue = []
+    sus new_arr JsonKeyValue[value] = []
     sus old_size drip = len(arr)
     sus copy_size drip = min_int(old_size, new_size)
     
@@ -916,9 +916,9 @@ slay resize_json_pair_array(arr []JsonKeyValue, new_size drip) []JsonKeyValue {
     damn new_arr
 }
 
-slay resize_json_value_array(arr []JsonValue, new_size drip) []JsonValue {
+slay resize_json_value_array(arr JsonValue[value], new_size drip) JsonValue[value]{
     fr fr Resize JSON value array
-    sus new_arr []JsonValue = []
+    sus new_arr JsonValue[value] = []
     sus old_size drip = len(arr)
     sus copy_size drip = min_int(old_size, new_size)
     

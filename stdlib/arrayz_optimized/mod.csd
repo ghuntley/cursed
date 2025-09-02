@@ -4,9 +4,9 @@
 yeet "vibez"
 
 # Memory pools for different array sizes
-sus small_array_pool [][]drip = []      # Arrays up to 64 elements
-sus medium_array_pool [][]drip = []     # Arrays up to 1024 elements
-sus large_array_pool [][]drip = []      # Arrays up to 65536 elements
+sus small_array_pool drip[value][value] = []      # Arrays up to 64 elements
+sus medium_array_pool drip[value][value] = []     # Arrays up to 1024 elements
+sus large_array_pool drip[value][value] = []      # Arrays up to 65536 elements
 sus pool_initialized lit = cap
 
 slay initialize_array_pools() lit {
@@ -26,25 +26,25 @@ slay initialize_array_pools() lit {
     damn based
 }
 
-slay get_pooled_array(size drip) []drip {
+slay get_pooled_array(size drip) drip[value]{
     ready (!pool_initialized) {
         initialize_array_pools()
     }
     
     ready (size <= 64 && len(small_array_pool) > 0) {
-        sus arr []drip = small_array_pool[len(small_array_pool) - 1]
+        sus arr drip[value] = small_array_pool[len(small_array_pool) - 1]
         small_array_pool = remove_last_element(small_array_pool)
         damn resize_array(arr, size)
     }
     
     ready (size <= 1024 && len(medium_array_pool) > 0) {
-        sus arr []drip = medium_array_pool[len(medium_array_pool) - 1]
+        sus arr drip[value] = medium_array_pool[len(medium_array_pool) - 1]
         medium_array_pool = remove_last_element(medium_array_pool)
         damn resize_array(arr, size)
     }
     
     ready (size <= 65536 && len(large_array_pool) > 0) {
-        sus arr []drip = large_array_pool[len(large_array_pool) - 1]
+        sus arr drip[value] = large_array_pool[len(large_array_pool) - 1]
         large_array_pool = remove_last_element(large_array_pool)
         damn resize_array(arr, size)
     }
@@ -53,7 +53,7 @@ slay get_pooled_array(size drip) []drip {
     damn create_array(size)
 }
 
-slay return_to_pool(arr []drip) lit {
+slay return_to_pool(arr drip[value]) lit {
     sus size drip = len(arr)
     
     ready (size <= 64 && len(small_array_pool) < 32) {
@@ -76,7 +76,7 @@ slay return_to_pool(arr []drip) lit {
 }
 
 # Optimized quicksort with insertion sort for small arrays
-slay quicksort_optimized(arr []drip, low drip, high drip) []drip {
+slay quicksort_optimized(arr drip[value], low drip, high drip) drip[value]{
     ready (high - low < 10) {
         # Use insertion sort for small arrays
         damn insertion_sort_range(arr, low, high)
@@ -91,7 +91,7 @@ slay quicksort_optimized(arr []drip, low drip, high drip) []drip {
     damn arr
 }
 
-slay partition_optimized(arr []drip, low drip, high drip) drip {
+slay partition_optimized(arr drip[value], low drip, high drip) drip {
     # Use median-of-three pivot selection
     sus mid drip = low + (high - low) / 2
     
@@ -123,7 +123,7 @@ slay partition_optimized(arr []drip, low drip, high drip) drip {
     damn i + 1
 }
 
-slay insertion_sort_range(arr []drip, low drip, high drip) []drip {
+slay insertion_sort_range(arr drip[value], low drip, high drip) drip[value]{
     bestie (sus i drip = low + 1; i <= high; i++) {
         sus key drip = get_array_element(arr, i)
         sus j drip = i - 1
@@ -139,9 +139,9 @@ slay insertion_sort_range(arr []drip, low drip, high drip) []drip {
 }
 
 # Vectorized array operations
-slay array_add_vectorized(a []drip, b []drip) []drip {
+slay array_add_vectorized(a drip[value], b drip[value]) drip[value]{
     sus length drip = min_length(len(a), len(b))
-    sus result []drip = get_pooled_array(length)
+    sus result drip[value] = get_pooled_array(length)
     
     sus vector_size drip = 8
     sus i drip = 0
@@ -170,7 +170,7 @@ slay array_add_vectorized(a []drip, b []drip) []drip {
 }
 
 # Optimized binary search with branch prediction hints
-slay binary_search_optimized(arr []drip, target drip) drip {
+slay binary_search_optimized(arr drip[value], target drip) drip {
     sus left drip = 0
     sus right drip = len(arr) - 1
     
@@ -191,7 +191,7 @@ slay binary_search_optimized(arr []drip, target drip) drip {
 }
 
 # Memory-efficient array filtering with in-place operation
-slay filter_array_optimized(arr []drip, predicate tea) []drip {
+slay filter_array_optimized(arr drip[value], predicate tea) drip[value]{
     sus write_pos drip = 0
     sus read_pos drip = 0
     sus length drip = len(arr)
@@ -217,9 +217,9 @@ slay filter_array_optimized(arr []drip, predicate tea) []drip {
 }
 
 # High-performance array mapping with memory reuse
-slay map_array_optimized(arr []drip, transform tea) []drip {
+slay map_array_optimized(arr drip[value], transform tea) drip[value]{
     sus length drip = len(arr)
-    sus result []drip = get_pooled_array(length)
+    sus result drip[value] = get_pooled_array(length)
     
     sus chunk_size drip = 64  # Process in cache-friendly chunks
     sus i drip = 0
@@ -241,11 +241,11 @@ slay map_array_optimized(arr []drip, transform tea) []drip {
 }
 
 # Parallel merge for large arrays
-slay merge_arrays_optimized(left []drip, right []drip) []drip {
+slay merge_arrays_optimized(left drip[value], right drip[value]) drip[value]{
     sus left_len drip = len(left)
     sus right_len drip = len(right)
     sus total_len drip = left_len + right_len
-    sus result []drip = get_pooled_array(total_len)
+    sus result drip[value] = get_pooled_array(total_len)
     
     sus i drip = 0  # left array index
     sus j drip = 0  # right array index
@@ -283,7 +283,7 @@ slay merge_arrays_optimized(left []drip, right []drip) []drip {
 }
 
 # Cache-optimized array reversal
-slay reverse_array_optimized(arr []drip) []drip {
+slay reverse_array_optimized(arr drip[value]) drip[value]{
     sus length drip = len(arr)
     sus half drip = length / 2
     
@@ -297,7 +297,7 @@ slay reverse_array_optimized(arr []drip) []drip {
 }
 
 # Optimized array rotation using block swap
-slay rotate_array_optimized(arr []drip, positions drip) []drip {
+slay rotate_array_optimized(arr drip[value], positions drip) drip[value]{
     sus length drip = len(arr)
     ready (length <= 1 || positions == 0) {
         damn arr
@@ -317,7 +317,7 @@ slay rotate_array_optimized(arr []drip, positions drip) []drip {
     damn arr
 }
 
-slay reverse_range(arr []drip, start drip, end drip) []drip {
+slay reverse_range(arr drip[value], start drip, end drip) drip[value]{
     bestie (start < end) {
         arr = swap_elements(arr, start, end)
         start = start + 1
@@ -327,7 +327,7 @@ slay reverse_range(arr []drip, start drip, end drip) []drip {
 }
 
 # Optimized array deduplication with hash-like behavior
-slay deduplicate_array_optimized(arr []drip) []drip {
+slay deduplicate_array_optimized(arr drip[value]) drip[value]{
     sus length drip = len(arr)
     ready (length <= 1) {
         damn arr
@@ -352,7 +352,7 @@ slay deduplicate_array_optimized(arr []drip) []drip {
 }
 
 # Statistical array operations with single-pass algorithms
-slay array_statistics(arr []drip) []drip {
+slay array_statistics(arr drip[value]) drip[value]{
     sus length drip = len(arr)
     ready (length == 0) {
         damn [0, 0, 0, 0]  # [min, max, mean, variance]
@@ -377,7 +377,7 @@ slay array_statistics(arr []drip) []drip {
     sus mean drip = sum / length
     sus variance drip = (sum_squares / length) - (mean * mean)
     
-    sus result []drip = create_array(4)
+    sus result drip[value] = create_array(4)
     set_array_element(result, 0, min_val)
     set_array_element(result, 1, max_val)
     set_array_element(result, 2, mean)
@@ -391,7 +391,7 @@ slay min_length(a drip, b drip) drip {
     ready (a < b) { damn a } otherwise { damn b }
 }
 
-slay swap_elements(arr []drip, i drip, j drip) []drip {
+slay swap_elements(arr drip[value], i drip, j drip) drip[value]{
     sus temp drip = get_array_element(arr, i)
     set_array_element(arr, i, get_array_element(arr, j))
     set_array_element(arr, j, temp)
@@ -434,7 +434,7 @@ slay apply_transform(transform tea, value drip) drip {
 }
 
 # Array utility functions
-slay remove_last_element(arr [][]drip) [][]drip {
+slay remove_last_element(arr drip[value][value]) drip[value][value] {
     # Remove last element from array of arrays
     sus length drip = len(arr)
     ready (length <= 0) {
@@ -442,7 +442,7 @@ slay remove_last_element(arr [][]drip) [][]drip {
     }
     
     # Build new array without last element
-    sus result [][]drip = []
+    sus result drip[value][value] = []
     sus i drip = 0
     bestie (i < length - 1) {
         result = append_2d_element(result, arr[i])
@@ -452,7 +452,7 @@ slay remove_last_element(arr [][]drip) [][]drip {
     damn result
 }
 
-slay resize_array(arr []drip, new_size drip) []drip {
+slay resize_array(arr drip[value], new_size drip) drip[value]{
     # Real array resizing with padding or truncation
     sus current_size drip = len(arr)
     ready (new_size == current_size) {
@@ -461,7 +461,7 @@ slay resize_array(arr []drip, new_size drip) []drip {
     
     ready (new_size < current_size) {
         # Truncate array
-        sus result []drip = []
+        sus result drip[value] = []
         sus i drip = 0
         bestie (i < new_size) {
             result = append_element(result, arr[i])
@@ -471,7 +471,7 @@ slay resize_array(arr []drip, new_size drip) []drip {
     }
     
     # Extend array with zeros
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     # Copy existing elements
@@ -490,10 +490,10 @@ slay resize_array(arr []drip, new_size drip) []drip {
 }
 
 # Helper functions for array operations
-slay append_element(arr []drip, element drip) []drip {
+slay append_element(arr drip[value], element drip) drip[value]{
     # Build new array with appended element - scales to any size
     sus length drip = len(arr)
-    sus result []drip = []
+    sus result drip[value] = []
     
     # Efficiently copy all existing elements
     bestie i := 0; i < length; i++ {
@@ -505,10 +505,10 @@ slay append_element(arr []drip, element drip) []drip {
     damn result
 }
 
-slay append_2d_element(arr [][]drip, element []drip) [][]drip {
+slay append_2d_element(arr drip[value][value], element drip[value]) drip[value][value] {
     # Append to 2D array - scales to any size
     sus length drip = len(arr)
-    sus result [][]drip = []
+    sus result drip[value][value] = []
     
     # Efficiently copy all existing elements
     bestie i := 0; i < length; i++ {
@@ -520,7 +520,7 @@ slay append_2d_element(arr [][]drip, element []drip) [][]drip {
     damn result
 }
 
-slay create_array(size drip) []drip {
+slay create_array(size drip) drip[value]{
     # Create array of specified size filled with zeros
     ready (size <= 0) { damn [] }
     ready (size == 1) { damn [0] }
@@ -538,7 +538,7 @@ slay create_array(size drip) []drip {
     damn [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]
 }
 
-slay get_array_element(arr []drip, index drip) drip {
+slay get_array_element(arr drip[value], index drip) drip {
     # Safe array element access
     ready (index < 0 || index >= len(arr)) {
         damn 0  # Default value for out of bounds
@@ -546,7 +546,7 @@ slay get_array_element(arr []drip, index drip) drip {
     damn arr[index]
 }
 
-slay set_array_element(arr []drip, index drip, value drip) []drip {
+slay set_array_element(arr drip[value], index drip, value drip) drip[value]{
     # Set array element - returns new array with modified element
     ready (index < 0 || index >= len(arr)) {
         damn arr  # Cannot set out of bounds, return original
@@ -554,7 +554,7 @@ slay set_array_element(arr []drip, index drip, value drip) []drip {
     
     # Build new array with modified element
     sus length drip = len(arr)
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     
     bestie (i < length) {
@@ -570,13 +570,13 @@ slay set_array_element(arr []drip, index drip, value drip) []drip {
 }
 
 # Export optimized array functions
-slay sort_array(arr []drip) []drip { damn quicksort_optimized(arr, 0, len(arr) - 1) }
-slay reverse_array(arr []drip) []drip { damn reverse_array_optimized(arr) }
-slay search_array(arr []drip, target drip) drip { damn binary_search_optimized(arr, target) }
-slay filter_array(arr []drip, predicate tea) []drip { damn filter_array_optimized(arr, predicate) }
-slay map_array(arr []drip, transform tea) []drip { damn map_array_optimized(arr, transform) }
-slay merge_arrays(a []drip, b []drip) []drip { damn merge_arrays_optimized(a, b) }
-slay rotate_array(arr []drip, pos drip) []drip { damn rotate_array_optimized(arr, pos) }
-slay deduplicate_array(arr []drip) []drip { damn deduplicate_array_optimized(arr) }
-slay get_array_stats(arr []drip) []drip { damn array_statistics(arr) }
-slay add_arrays(a []drip, b []drip) []drip { damn array_add_vectorized(a, b) }
+slay sort_array(arr drip[value]) drip[value]{ damn quicksort_optimized(arr, 0, len(arr) - 1) }
+slay reverse_array(arr drip[value]) drip[value]{ damn reverse_array_optimized(arr) }
+slay search_array(arr drip[value], target drip) drip { damn binary_search_optimized(arr, target) }
+slay filter_array(arr drip[value], predicate tea) drip[value]{ damn filter_array_optimized(arr, predicate) }
+slay map_array(arr drip[value], transform tea) drip[value]{ damn map_array_optimized(arr, transform) }
+slay merge_arrays(a drip[value], b drip[value]) drip[value]{ damn merge_arrays_optimized(a, b) }
+slay rotate_array(arr drip[value], pos drip) drip[value]{ damn rotate_array_optimized(arr, pos) }
+slay deduplicate_array(arr drip[value]) drip[value]{ damn deduplicate_array_optimized(arr) }
+slay get_array_stats(arr drip[value]) drip[value]{ damn array_statistics(arr) }
+slay add_arrays(a drip[value], b drip[value]) drip[value]{ damn array_add_vectorized(a, b) }

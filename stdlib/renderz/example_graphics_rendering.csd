@@ -152,7 +152,7 @@ slay demo_3d_mesh_rendering() lit {
     vibez.print_success("Perspective camera created")
     
     // Create lights
-    sus lights [32]renderz.Light
+    sus lights renderz[32].Light
     lights[0] = renderz_create_directional_light(
         renderz_vec3(-1.0, -1.0, -1.0),
         renderz_vec4(1.0, 1.0, 1.0, 1.0),
@@ -399,7 +399,7 @@ slay demo_performance_testing() lit {
     
     // Create many meshes for stress testing
     sus mesh_count normie = 100
-    sus meshes [100]renderz.Mesh
+    sus meshes renderz[100].Mesh
     sus i normie = 0
     bestie (i < mesh_count) {
         meshes[i] = renderz_create_cube_mesh()
@@ -470,13 +470,13 @@ slay demo_multi_api_support() lit {
     vibez.print_header("Multi-API Support Demo")
     
     // Test different graphics APIs
-    sus apis [4]normie
+    sus apis normie[4]
     apis[0] = renderz.GRAPHICS_API_OPENGL
     apis[1] = renderz.GRAPHICS_API_VULKAN
     apis[2] = renderz.GRAPHICS_API_DIRECTX11
     apis[3] = renderz.GRAPHICS_API_SOFTWARE
     
-    sus api_names [4]tea
+    sus api_names tea[4]
     api_names[0] = "OpenGL"
     api_names[1] = "Vulkan"
     api_names[2] = "DirectX 11"

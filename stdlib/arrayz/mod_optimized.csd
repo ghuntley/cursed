@@ -4,19 +4,19 @@ fr fr Replaces O(n²) bubble sort with QuickSort/MergeSort
 
 fr fr ===== ADVANCED SORTING ALGORITHMS =====
 
-slay quicksort_array(nums []drip) []drip {
+slay quicksort_array(nums drip[value]) drip[value]{
     sus length drip = len(nums)
     ready (length <= 1) {
         damn nums
     }
     
     # Create copy for sorting
-    sus result []drip = copy_array(nums)
+    sus result drip[value] = copy_array(nums)
     quicksort_recursive(result, 0, length - 1)
     damn result
 }
 
-slay quicksort_recursive(arr []drip, low drip, high drip) {
+slay quicksort_recursive(arr drip[value], low drip, high drip) {
     ready (low < high) {
         sus pivot_index drip = partition_array(arr, low, high)
         quicksort_recursive(arr, low, pivot_index - 1)
@@ -24,7 +24,7 @@ slay quicksort_recursive(arr []drip, low drip, high drip) {
     }
 }
 
-slay partition_array(arr []drip, low drip, high drip) drip {
+slay partition_array(arr drip[value], low drip, high drip) drip {
     sus pivot drip = arr[high]
     sus i drip = low - 1
     
@@ -41,7 +41,7 @@ slay partition_array(arr []drip, low drip, high drip) drip {
     damn i + 1
 }
 
-slay swap_elements(arr []drip, i drip, j drip) {
+slay swap_elements(arr drip[value], i drip, j drip) {
     ready (i != j && i >= 0 && j >= 0 && i < len(arr) && j < len(arr)) {
         sus temp drip = arr[i]
         arr[i] = arr[j]
@@ -49,18 +49,18 @@ slay swap_elements(arr []drip, i drip, j drip) {
     }
 }
 
-slay mergesort_array(nums []drip) []drip {
+slay mergesort_array(nums drip[value]) drip[value]{
     sus length drip = len(nums)
     ready (length <= 1) {
         damn nums
     }
     
-    sus result []drip = copy_array(nums)
+    sus result drip[value] = copy_array(nums)
     mergesort_recursive(result, 0, length - 1)
     damn result
 }
 
-slay mergesort_recursive(arr []drip, left drip, right drip) {
+slay mergesort_recursive(arr drip[value], left drip, right drip) {
     ready (left >= right) {
         damn
     }
@@ -71,13 +71,13 @@ slay mergesort_recursive(arr []drip, left drip, right drip) {
     merge_arrays(arr, left, mid, right)
 }
 
-slay merge_arrays(arr []drip, left drip, mid drip, right drip) {
+slay merge_arrays(arr drip[value], left drip, mid drip, right drip) {
     sus left_size drip = mid - left + 1
     sus right_size drip = right - mid
     
     # Create temporary arrays
-    sus left_arr []drip = create_sized_array(left_size)
-    sus right_arr []drip = create_sized_array(right_size)
+    sus left_arr drip[value] = create_sized_array(left_size)
+    sus right_arr drip[value] = create_sized_array(right_size)
     
     # Copy data to temp arrays
     sus i drip = 0
@@ -124,7 +124,7 @@ slay merge_arrays(arr []drip, left drip, mid drip, right drip) {
 
 fr fr ===== BINARY SEARCH (O(log n)) =====
 
-slay binary_search(nums []drip, target drip) drip {
+slay binary_search(nums drip[value], target drip) drip {
     sus left drip = 0
     sus right drip = len(nums) - 1
     
@@ -143,7 +143,7 @@ slay binary_search(nums []drip, target drip) drip {
     damn -1
 }
 
-slay binary_search_insert_position(nums []drip, target drip) drip {
+slay binary_search_insert_position(nums drip[value], target drip) drip {
     sus left drip = 0
     sus right drip = len(nums)
     
@@ -162,7 +162,7 @@ slay binary_search_insert_position(nums []drip, target drip) drip {
 
 fr fr ===== HEAP OPERATIONS (O(log n)) =====
 
-slay heapify_down(arr []drip, start drip, end drip) {
+slay heapify_down(arr drip[value], start drip, end drip) {
     sus root drip = start
     
     bestie (root * 2 + 1 <= end) {
@@ -186,8 +186,8 @@ slay heapify_down(arr []drip, start drip, end drip) {
     }
 }
 
-slay heapsort_array(nums []drip) []drip {
-    sus result []drip = copy_array(nums)
+slay heapsort_array(nums drip[value]) drip[value]{
+    sus result drip[value] = copy_array(nums)
     sus length drip = len(result)
     
     ready (length <= 1) {
@@ -214,11 +214,11 @@ slay heapsort_array(nums []drip) []drip {
 
 fr fr ===== EFFICIENT ARRAY UTILITIES =====
 
-slay copy_array(source []drip) []drip {
+slay copy_array(source drip[value]) drip[value]{
     sus length drip = len(source)
     ready (length == 0) { damn [] }
     
-    sus result []drip = create_sized_array(length)
+    sus result drip[value] = create_sized_array(length)
     sus i drip = 0
     bestie (i < length) {
         result[i] = source[i]
@@ -227,7 +227,7 @@ slay copy_array(source []drip) []drip {
     damn result
 }
 
-slay create_sized_array(size drip) []drip {
+slay create_sized_array(size drip) drip[value]{
     ready (size <= 0) { damn [] }
     ready (size == 1) { damn [0] }
     ready (size == 2) { damn [0, 0] }
@@ -237,7 +237,7 @@ slay create_sized_array(size drip) []drip {
     ready (size == 10) { damn [0, 0, 0, 0, 0, 0, 0, 0, 0, 0] }
     
     # For larger arrays, use efficient construction
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     bestie (i < size) {
         result = append_efficient(result, 0)
@@ -246,7 +246,7 @@ slay create_sized_array(size drip) []drip {
     damn result
 }
 
-slay append_efficient(arr []drip, value drip) []drip {
+slay append_efficient(arr drip[value], value drip) drip[value]{
     sus length drip = len(arr)
     
     # Use array literal construction for efficiency
@@ -259,7 +259,7 @@ slay append_efficient(arr []drip, value drip) []drip {
     
     # For larger arrays, use chunked construction
     ready (length < 20) {
-        sus result []drip = [value]
+        sus result drip[value] = [value]
         sus i drip = 0
         bestie (i < length) {
             result = [arr[i]] + result
@@ -271,11 +271,11 @@ slay append_efficient(arr []drip, value drip) []drip {
     damn arr  # Fallback - would need dynamic array in full implementation
 }
 
-slay reverse_efficient(arr []drip) []drip {
+slay reverse_efficient(arr drip[value]) drip[value]{
     sus length drip = len(arr)
     ready (length <= 1) { damn arr }
     
-    sus result []drip = create_sized_array(length)
+    sus result drip[value] = create_sized_array(length)
     sus i drip = 0
     bestie (i < length) {
         result[i] = arr[length - 1 - i]
@@ -286,11 +286,11 @@ slay reverse_efficient(arr []drip) []drip {
 
 fr fr ===== PERFORMANCE OPTIMIZED OPERATIONS =====
 
-slay remove_duplicates_sorted(nums []drip) []drip {
+slay remove_duplicates_sorted(nums drip[value]) drip[value]{
     # O(n) for sorted arrays
     ready (len(nums) <= 1) { damn nums }
     
-    sus result []drip = [nums[0]]
+    sus result drip[value] = [nums[0]]
     sus i drip = 1
     bestie (i < len(nums)) {
         ready (nums[i] != nums[i-1]) {
@@ -301,25 +301,25 @@ slay remove_duplicates_sorted(nums []drip) []drip {
     damn result
 }
 
-slay remove_duplicates_unsorted(nums []drip) []drip {
+slay remove_duplicates_unsorted(nums drip[value]) drip[value]{
     # O(n log n) - sort first, then remove duplicates
-    sus sorted_array []drip = quicksort_array(nums)
+    sus sorted_array drip[value] = quicksort_array(nums)
     damn remove_duplicates_sorted(sorted_array)
 }
 
-slay find_kth_largest(nums []drip, k drip) drip {
+slay find_kth_largest(nums drip[value], k drip) drip {
     # O(n log n) approach using sorting
     ready (k <= 0 || k > len(nums)) { damn 0 }
     
-    sus sorted_array []drip = quicksort_array(nums)
+    sus sorted_array drip[value] = quicksort_array(nums)
     damn sorted_array[len(nums) - k]
 }
 
-slay median_optimized(nums []drip) drip {
+slay median_optimized(nums drip[value]) drip {
     sus length drip = len(nums)
     ready (length == 0) { damn 0 }
     
-    sus sorted_array []drip = quicksort_array(nums)
+    sus sorted_array drip[value] = quicksort_array(nums)
     
     ready (length % 2 == 1) {
         damn sorted_array[length / 2]
@@ -333,10 +333,10 @@ slay median_optimized(nums []drip) drip {
 fr fr ===== LEGACY COMPATIBILITY =====
 
 # High-performance versions of original functions
-slay sort_array_ascending(nums []drip) []drip { damn quicksort_array(nums) }
-slay sort_array_descending(nums []drip) []drip { damn reverse_efficient(quicksort_array(nums)) }
-slay find_max(nums []drip) drip { damn find_kth_largest(nums, 1) }
-slay find_min(nums []drip) drip { damn find_kth_largest(nums, len(nums)) }
+slay sort_array_ascending(nums drip[value]) drip[value]{ damn quicksort_array(nums) }
+slay sort_array_descending(nums drip[value]) drip[value]{ damn reverse_efficient(quicksort_array(nums)) }
+slay find_max(nums drip[value]) drip { damn find_kth_largest(nums, 1) }
+slay find_min(nums drip[value]) drip { damn find_kth_largest(nums, len(nums)) }
 
 # Import all basic operations from original module
 yeet "arrayz/mod_original"
@@ -346,21 +346,21 @@ slay test_sorting_performance(size drip) {
     ready (size <= 0) { damn }
     
     # Create test array
-    sus test_array []drip = create_test_array(size)
+    sus test_array drip[value] = create_test_array(size)
     
     # Test QuickSort
     sus start_time drip = get_current_timestamp()
-    sus sorted_quick []drip = quicksort_array(test_array)
+    sus sorted_quick drip[value] = quicksort_array(test_array)
     sus quicksort_time drip = get_current_timestamp() - start_time
     
     # Test MergeSort  
     start_time = get_current_timestamp()
-    sus sorted_merge []drip = mergesort_array(test_array)
+    sus sorted_merge drip[value] = mergesort_array(test_array)
     sus mergesort_time drip = get_current_timestamp() - start_time
     
     # Test HeapSort
     start_time = get_current_timestamp()
-    sus sorted_heap []drip = heapsort_array(test_array)
+    sus sorted_heap drip[value] = heapsort_array(test_array)
     sus heapsort_time drip = get_current_timestamp() - start_time
     
     vibez.spill("Performance test for " + tea(size) + " elements:")
@@ -369,8 +369,8 @@ slay test_sorting_performance(size drip) {
     vibez.spill("  HeapSort: " + tea(heapsort_time) + "ms")
 }
 
-slay create_test_array(size drip) []drip {
-    sus result []drip = []
+slay create_test_array(size drip) drip[value]{
+    sus result drip[value] = []
     sus i drip = 0
     bestie (i < size && i < 100) { # Limit for array literal construction
         result = append_efficient(result, size - i) # Reverse order for worst-case testing

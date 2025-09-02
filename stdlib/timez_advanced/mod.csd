@@ -19,7 +19,7 @@ be_like TimeZone squad {
     is_dst_active lit        fr fr Whether DST is currently active
     dst_start_rule DST_Rule  fr fr When DST starts
     dst_end_rule DST_Rule    fr fr When DST ends
-    historical_changes []HistoricalChange
+    historical_changes HistoricalChange[value]
 }
 
 be_like DST_Rule squad {
@@ -55,9 +55,9 @@ be_like DateTime squad {
 
 be_like TimeZoneDatabase squad {
     version tea               fr fr IANA database version
-    zones []TimeZone         fr fr All available time zones
-    aliases []TimeZoneAlias  fr fr Zone aliases (e.g., US/Eastern -> America/New_York)
-    leap_seconds []LeapSecond fr fr Leap second history
+    zones TimeZone[value]         fr fr All available time zones
+    aliases TimeZoneAlias[value]  fr fr Zone aliases (e.g., US/Eastern -> America/New_York)
+    leap_seconds LeapSecond[value] fr fr Leap second history
     last_updated thicc       fr fr When database was last updated
 }
 
@@ -100,8 +100,8 @@ be_like DSTTransition squad {
     timestamp thicc          fr fr When transition occurs
     old_offset normie        fr fr Offset before transition
     new_offset normie        fr fr Offset after transition
-    old_abbreviation [16]u8  fr fr Abbreviation before
-    new_abbreviation [16]u8  fr fr Abbreviation after
+    old_abbreviation u8[16]  fr fr Abbreviation before
+    new_abbreviation u8[16]  fr fr Abbreviation after
     is_dst_start lit         fr fr True if entering DST, false if leaving
 }
 
@@ -112,7 +112,7 @@ fr fr ================================
 sus global_timezone_db TimeZoneDatabase
 sus system_timezone TimeZone
 sus utc_timezone TimeZone
-sus timezone_cache []CachedZone
+sus timezone_cache CachedZone[value]
 
 be_like CachedZone squad {
     name tea
@@ -502,12 +502,12 @@ slay set_system_timezone(timezone_name tea) lit { fr fr Set system timezone
     damn true
 }
 
-slay list_available_timezones() []tea { fr fr List all available timezone names
-    sus zones []tea = []
+slay list_available_timezones() tea[value]{ fr fr List all available timezone names
+    sus zones tea[value] = []
     
     fr fr This would enumerate system timezone database
     fr fr For now, return common timezones
-    sus common_zones []tea = [
+    sus common_zones tea[value] = [
         "UTC",
         "America/New_York",
         "America/Los_Angeles", 
@@ -537,10 +537,10 @@ slay get_timezone_info(timezone_name tea) TimeZone { fr fr Get detailed timezone
     damn load_timezone_by_name(timezone_name)
 }
 
-slay find_timezones_by_offset(offset_hours normie) []tea { fr fr Find timezones by UTC offset
-    sus matching_zones []tea = []
+slay find_timezones_by_offset(offset_hours normie) tea[value]{ fr fr Find timezones by UTC offset
+    sus matching_zones tea[value] = []
     sus target_offset normie = offset_hours * 3600
-    sus all_zones []tea = list_available_timezones()
+    sus all_zones tea[value] = list_available_timezones()
     
     bestie i := 0; i < array_length(all_zones); i++ {
         sus zone_name tea = all_zones[i]
@@ -554,9 +554,9 @@ slay find_timezones_by_offset(offset_hours normie) []tea { fr fr Find timezones 
     damn matching_zones
 }
 
-slay find_timezones_by_region(region tea) []tea { fr fr Find timezones in geographic region
-    sus matching_zones []tea = []
-    sus all_zones []tea = list_available_timezones()
+slay find_timezones_by_region(region tea) tea[value]{ fr fr Find timezones in geographic region
+    sus matching_zones tea[value] = []
+    sus all_zones tea[value] = list_available_timezones()
     sus region_prefix tea = region + "/"
     
     bestie i := 0; i < array_length(all_zones); i++ {
@@ -603,14 +603,14 @@ fr fr ================================
 fr fr Leap Second Handling
 fr fr ================================
 
-slay load_leap_seconds() []LeapSecond { fr fr Load leap second data
+slay load_leap_seconds() LeapSecond[value]{ fr fr Load leap second data
     sus leap_seconds [*]LeapSecond = sys_get_leap_seconds()
     lowkey leap_seconds == null {
         damn []
     }
     
     fr fr Convert to CURSED array
-    sus result []LeapSecond = []
+    sus result LeapSecond[value] = []
     sus count thicc = get_leap_second_count(leap_seconds)
     
     bestie i := 0; i < count; i++ {
@@ -621,7 +621,7 @@ slay load_leap_seconds() []LeapSecond { fr fr Load leap second data
 }
 
 slay get_leap_second_offset(timestamp thicc) normie { fr fr Get cumulative leap seconds at timestamp
-    sus leap_seconds []LeapSecond = global_timezone_db.leap_seconds
+    sus leap_seconds LeapSecond[value] = global_timezone_db.leap_seconds
     sus total_offset normie = 0
     
     bestie i := 0; i < array_length(leap_seconds); i++ {
@@ -730,7 +730,7 @@ fr fr Utility Functions
 fr fr ================================
 
 slay resolve_timezone_alias(name tea) tea { fr fr Resolve timezone alias to canonical name
-    sus aliases []TimeZoneAlias = global_timezone_db.aliases
+    sus aliases TimeZoneAlias[value] = global_timezone_db.aliases
     
     bestie i := 0; i < array_length(aliases); i++ {
         sus alias TimeZoneAlias = aliases[i]
@@ -742,9 +742,9 @@ slay resolve_timezone_alias(name tea) tea { fr fr Resolve timezone alias to cano
     damn name fr fr Not an alias, return as-is
 }
 
-slay load_timezone_aliases() []TimeZoneAlias { fr fr Load timezone aliases
+slay load_timezone_aliases() TimeZoneAlias[value]{ fr fr Load timezone aliases
     fr fr Common timezone aliases
-    sus aliases []TimeZoneAlias = [
+    sus aliases TimeZoneAlias[value] = [
         {alias: "EST", canonical_name: "America/New_York"},
         {alias: "EDT", canonical_name: "America/New_York"},
         {alias: "CST", canonical_name: "America/Chicago"}, 
@@ -840,7 +840,7 @@ slay calculate_week_of_month(day normie) normie { fr fr Calculate which week of 
 }
 
 slay get_days_in_month(year normie, month normie) normie { fr fr Get number of days in month
-    sus days_in_months [12]normie = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
+    sus days_in_months normie[12] = [31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31]
     
     lowkey month == 2 && is_leap_year(year) {
         damn 29
@@ -872,11 +872,11 @@ slay get_tzdb_version() tea {
     sus version_file tea = read_system_file("/usr/share/zoneinfo/tzdata.zi")
     ready (version_file.len > 0) {
         fr fr Parse version from tzdata.zi file
-        sus lines []tea = split_string(version_file, "\n")
+        sus lines tea[value] = split_string(version_file, "\n")
         bestie (i normie = 0; i < lines.len; i = i + 1) {
             sus line tea = lines[i]
             ready (starts_with(line, "# version")) {
-                sus parts []tea = split_string(line, " ")
+                sus parts tea[value] = split_string(line, " ")
                 ready (parts.len > 2) {
                     damn parts[2]
                 }
@@ -886,9 +886,9 @@ slay get_tzdb_version() tea {
     damn "2024b"  fr fr Fallback to known version
 }
 
-slay make_timezone_cache(size normie) []CachedZone {
+slay make_timezone_cache(size normie) CachedZone[value]{
     fr fr Create real LRU cache for timezone data
-    sus cache []CachedZone = allocate_array(size)
+    sus cache CachedZone[value] = allocate_array(size)
     bestie (i normie = 0; i < size; i = i + 1) {
         cache[i] = CachedZone{
             zone_name: "",
@@ -900,9 +900,9 @@ slay make_timezone_cache(size normie) []CachedZone {
     damn cache
 }
 
-slay load_historical_changes(handle normie) []HistoricalChange {
+slay load_historical_changes(handle normie) HistoricalChange[value]{
     fr fr Load real DST and timezone historical data
-    sus changes []HistoricalChange = []
+    sus changes HistoricalChange[value] = []
     
     fr fr Common historical timezone changes
     changes = append_array(changes, HistoricalChange{
@@ -974,9 +974,9 @@ slay read_system_file(path tea) tea {
     damn ""  fr fr Placeholder: would read real file
 }
 
-slay split_string(s tea, delimiter tea) []tea {
+slay split_string(s tea, delimiter tea) tea[value]{
     fr fr String splitting utility
-    sus result []tea = []
+    sus result tea[value] = []
     sus current tea = ""
     
     bestie (i normie = 0; i < s.len; i = i + 1) {
@@ -998,9 +998,9 @@ slay split_string(s tea, delimiter tea) []tea {
     damn result
 }
 
-slay allocate_array(size normie) []CachedZone {
+slay allocate_array(size normie) CachedZone[value]{
     fr fr Allocate array with specified size
-    sus result []CachedZone = []
+    sus result CachedZone[value] = []
     bestie (i normie = 0; i < size; i = i + 1) {
         result = append_array(result, CachedZone{
             zone_name: "",
@@ -1033,12 +1033,12 @@ slay starts_with(s tea, prefix tea) lit {
     }
     damn based
 }
-slay array_length(arr []tea) thicc { damn 0 }
-slay array_length(arr []TimeZone) thicc { damn 0 }
-slay array_length(arr []TimeZoneAlias) thicc { damn 0 }
-slay array_length(arr []LeapSecond) thicc { damn 0 }
-slay array_length(arr []CachedZone) thicc { damn 0 }
-slay array_length(arr []HistoricalChange) thicc { damn 0 }
+slay array_length(arr tea[value]) thicc { damn 0 }
+slay array_length(arr TimeZone[value]) thicc { damn 0 }
+slay array_length(arr TimeZoneAlias[value]) thicc { damn 0 }
+slay array_length(arr LeapSecond[value]) thicc { damn 0 }
+slay array_length(arr CachedZone[value]) thicc { damn 0 }
+slay array_length(arr HistoricalChange[value]) thicc { damn 0 }
 slay array_length(arr [*]DSTTransition) thicc { damn 0 }
-slay append_array(arr []tea, item tea) []tea { damn arr }
-slay append_array(arr []LeapSecond, item LeapSecond) []LeapSecond { damn arr }
+slay append_array(arr tea[value], item tea) tea[value]{ damn arr }
+slay append_array(arr LeapSecond[value], item LeapSecond) LeapSecond[value]{ damn arr }

@@ -12,7 +12,7 @@ fr fr ===== HTTP TYPES =====
 squad HttpRequest {
     method tea
     url tea
-    headers []HttpHeader
+    headers HttpHeader[value]
     body tea
     timeout drip
 }
@@ -20,7 +20,7 @@ squad HttpRequest {
 squad HttpResponse {
     status drip
     status_text tea
-    headers []HttpHeader
+    headers HttpHeader[value]
     body tea
 }
 
@@ -31,7 +31,7 @@ squad HttpHeader {
 
 squad HttpServer {
     port drip
-    handlers []HttpHandler
+    handlers HttpHandler[value]
     is_running lit
 }
 
@@ -113,7 +113,7 @@ slay options(url tea) HttpResponse {
 
 fr fr ===== ADVANCED HTTP CLIENT =====
 
-slay get_with_headers(url tea, headers []HttpHeader) HttpResponse {
+slay get_with_headers(url tea, headers HttpHeader[value]) HttpResponse {
     sus request HttpRequest = create_request(HTTP_METHOD_GET, url)
     request.headers = headers
     damn send_request(request)
@@ -158,7 +158,7 @@ fr fr ===== HTTP SERVER =====
 slay create_server(port drip) HttpServer {
     damn HttpServer{
         port: port,
-        handlers: make([]HttpHandler, 0),
+        handlers: make(HttpHandler[value], 0),
         is_running: cap
     }
 }
@@ -238,7 +238,7 @@ slay create_request(method tea, url tea) HttpRequest {
     damn HttpRequest{
         method: method,
         url: url,
-        headers: make([]HttpHeader, 0),
+        headers: make(HttpHeader[value], 0),
         body: "",
         timeout: 30000  fr fr 30 seconds default
     }
@@ -248,7 +248,7 @@ slay create_response(status drip, body tea) HttpResponse {
     damn HttpResponse{
         status: status,
         status_text: get_status_text(status),
-        headers: make([]HttpHeader, 0),
+        headers: make(HttpHeader[value], 0),
         body: body
     }
 }
@@ -288,7 +288,7 @@ slay add_header(request *HttpRequest, name tea, value tea) lit {
     damn based
 }
 
-slay get_header(headers []HttpHeader, name tea) tea {
+slay get_header(headers HttpHeader[value], name tea) tea {
     sus lower_name tea = to_lowercase(name)
     sus i drip = 0
     bestie (i < len(headers)) {
@@ -300,7 +300,7 @@ slay get_header(headers []HttpHeader, name tea) tea {
     damn ""
 }
 
-slay has_header(headers []HttpHeader, name tea) lit {
+slay has_header(headers HttpHeader[value], name tea) lit {
     damn !is_empty(get_header(headers, name))
 }
 
@@ -314,7 +314,7 @@ slay set_user_agent(request *HttpRequest, user_agent tea) lit {
 
 fr fr ===== URL OPERATIONS =====
 
-slay build_url(base tea, path tea, params []tea) tea {
+slay build_url(base tea, path tea, params tea[value]) tea {
     sus url tea = base
     ready (!ends_with(url, "/") && !starts_with(path, "/")) {
         url = concat(url, "/")
@@ -438,12 +438,12 @@ slay get_cookie(request HttpRequest, name tea) tea {
         damn response
     }
     
-    sus cookies []tea = split(cookie_header, ";")
+    sus cookies tea[value] = split(cookie_header, ";")
     sus i drip = 0
     
     bestie (i < len(cookies)) {
         sus cookie tea = trim(cookies[i])
-        sus parts []tea = split(cookie, "=")
+        sus parts tea[value] = split(cookie, "=")
         ready (len(parts) == 2 && equals(trim(parts[0]), name)) {
             damn trim(parts[1])
         }
@@ -703,7 +703,7 @@ slay parse_http_response(response_data tea) HttpResponse {
     }
     
     fr fr Parse headers
-    sus headers []HttpHeader = []
+    sus headers HttpHeader[value] = []
     sus header_end drip = 1
     bestie (header_end < len(lines) && lines[header_end] != "") {
         sus header_line = lines[header_end]
@@ -930,17 +930,17 @@ slay validate_token(token tea) lit {
 
 fr fr ===== HELPER FUNCTIONS =====
 
-slay make(T, size drip) []T {
+slay make(T, size drip) T[value]{
     fr fr Bridge to native array creation
-    damn []T{}
+    damn T[value]{}
 }
 
-slay append(arr []T, item T) []T {
+slay append(arr T[value], item T) T[value]{
     fr fr Bridge to native array append
     damn arr
 }
 
-slay len(arr []T) drip {
+slay len(arr T[value]) drip {
     fr fr Bridge to native array length
     damn 0
 }
@@ -989,9 +989,9 @@ slay slice(text tea, start drip) tea {
     damn ""
 }
 
-slay split(text tea, separator tea) []tea {
+slay split(text tea, separator tea) tea[value]{
     fr fr Implemented in stringz module
-    damn []tea{}
+    damn tea[value]{}
 }
 
 slay trim(text tea) tea {
@@ -1195,19 +1195,19 @@ slay str_to_int(text tea) drip {
     damn result
 }
 
-slay str_split(text tea, separator tea) []tea {
+slay str_split(text tea, separator tea) tea[value]{
     fr fr Split string by separator
-    damn []tea{}  fr fr Mock implementation
+    damn tea[value]{}  fr fr Mock implementation
 }
 
-slay str_join(parts []tea, separator tea) tea {
+slay str_join(parts tea[value], separator tea) tea {
     fr fr Join string array with separator
     damn ""  fr fr Mock implementation
 }
 
-slay str_slice_array(arr []tea, start drip, end drip) []tea {
+slay str_slice_array(arr tea[value], start drip, end drip) tea[value]{
     fr fr Slice array of strings
-    damn []tea{}  fr fr Mock implementation
+    damn tea[value]{}  fr fr Mock implementation
 }
 
 slay str_trim(text tea) tea {

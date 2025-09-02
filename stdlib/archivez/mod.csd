@@ -208,7 +208,7 @@ slay extract_all(output_dir tea) yikes<drip> {
     vibez.spill("Extracting all files to: " + output_dir)
     
     # Get file list and extract each
-    sus files []tea = list_files() fam {
+    sus files tea[value] = list_files() fam {
         when _ -> damn 0
     }
     
@@ -231,13 +231,13 @@ slay extract_all(output_dir tea) yikes<drip> {
 }
 
 # List files in archive
-slay list_files() yikes<[]tea> {
+slay list_files() yikes<tea[value]> {
     ready (!archive_open) {
         yikes "no archive is open"
     }
     
     # Simulate file listing based on format
-    sus files []tea
+    sus files tea[value]
     
     ready (archive_format == ZIP_FORMAT) {
         files = list_files_zip()
@@ -256,7 +256,7 @@ slay list_files() yikes<[]tea> {
 
 # Get file count in archive
 slay get_file_count() yikes<drip> {
-    sus files []tea = list_files() fam {
+    sus files tea[value] = list_files() fam {
         when _ -> damn 0
     }
     damn len(files)
@@ -268,7 +268,7 @@ slay file_exists(archive_path tea) yikes<lit> {
         yikes "no archive is open"
     }
     
-    sus files []tea = list_files() fam {
+    sus files tea[value] = list_files() fam {
         when _ -> damn cap
     }
     
@@ -378,9 +378,9 @@ slay extract_file_zip(archive_path tea, output_path tea) {
     # ZIP-specific file extraction logic would go here
 }
 
-slay list_files_zip() []tea {
+slay list_files_zip() tea[value]{
     # Simulate ZIP file listing
-    sus files []tea = ["file1.txt", "dir/file2.txt", "dir/subdir/file3.txt"]
+    sus files tea[value] = ["file1.txt", "dir/file2.txt", "dir/subdir/file3.txt"]
     damn files
 }
 
@@ -400,9 +400,9 @@ slay extract_file_tar(archive_path tea, output_path tea) {
     # TAR-specific file extraction logic would go here
 }
 
-slay list_files_tar() []tea {
+slay list_files_tar() tea[value]{
     # Simulate TAR file listing
-    sus files []tea = ["document.txt", "data/report.csv", "backup/config.json"]
+    sus files tea[value] = ["document.txt", "data/report.csv", "backup/config.json"]
     damn files
 }
 
@@ -422,9 +422,9 @@ slay extract_file_gzip(archive_path tea, output_path tea) {
     # GZIP-specific file decompression logic would go here
 }
 
-slay list_files_gzip() []tea {
+slay list_files_gzip() tea[value]{
     # GZIP typically contains single file
-    sus files []tea = ["compressed_file.txt"]
+    sus files tea[value] = ["compressed_file.txt"]
     damn files
 }
 
@@ -444,9 +444,9 @@ slay extract_file_bzip2(archive_path tea, output_path tea) {
     # BZIP2-specific file decompression logic would go here
 }
 
-slay list_files_bzip2() []tea {
+slay list_files_bzip2() tea[value]{
     # BZIP2 typically contains single file
-    sus files []tea = ["compressed_data.dat"]
+    sus files tea[value] = ["compressed_data.dat"]
     damn files
 }
 
@@ -501,7 +501,7 @@ slay len(str tea) drip {
     damn 10  # Default length for demo
 }
 
-slay len(arr []tea) drip {
+slay len(arr tea[value]) drip {
     # Simulate array length calculation
     # In real implementation, this would be a builtin function
     damn 3  # Default length for demo arrays

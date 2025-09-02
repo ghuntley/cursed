@@ -73,7 +73,7 @@ squad PackageVersion {
 }
 
 slay parseVersion(version_str tea) PackageVersion {
-    sus parts []tea = split_str(version_str, ".")
+    sus parts tea[value] = split_str(version_str, ".")
     ready (len(parts) != 3) {
         damn PackageVersion.new(0, 0, 0)
     }
@@ -125,30 +125,30 @@ squad PackageManifest {
     spill name tea
     spill version tea
     spill description tea
-    spill authors []tea
+    spill authors tea[value]
     spill license tea
-    spill keywords []tea
+    spill keywords tea[value]
     spill repository tea
-    spill dependencies []PackageDependency
-    spill dev_dependencies []PackageDependency
-    spill build_dependencies []PackageDependency
-    spill bin_targets []tea
-    spill lib_targets []tea
+    spill dependencies PackageDependency[value]
+    spill dev_dependencies PackageDependency[value]
+    spill build_dependencies PackageDependency[value]
+    spill bin_targets tea[value]
+    spill lib_targets tea[value]
     
     slay new(name tea, version tea) PackageManifest {
         damn PackageManifest{
             name: name,
             version: version,
             description: "",
-            authors: []tea{},
+            authors: tea[value]{},
             license: "MIT",
-            keywords: []tea{},
+            keywords: tea[value]{},
             repository: "",
-            dependencies: []PackageDependency{},
-            dev_dependencies: []PackageDependency{},
-            build_dependencies: []PackageDependency{},
-            bin_targets: []tea{},
-            lib_targets: []tea{}
+            dependencies: PackageDependency[value]{},
+            dev_dependencies: PackageDependency[value]{},
+            build_dependencies: PackageDependency[value]{},
+            bin_targets: tea[value]{},
+            lib_targets: tea[value]{}
         }
     }
     
@@ -222,7 +222,7 @@ squad PackageManifest {
     
     slay removeDependency(self PackageManifest, name tea) lit {
         // Remove from regular dependencies
-        sus new_deps []PackageDependency = []PackageDependency{}
+        sus new_deps PackageDependency[value] = PackageDependency[value]{}
         sus found lit = cringe
         
         sus i drip = 0
@@ -237,7 +237,7 @@ squad PackageManifest {
         self.dependencies = new_deps
         
         // Remove from dev dependencies
-        sus new_dev_deps []PackageDependency = []PackageDependency{}
+        sus new_dev_deps PackageDependency[value] = PackageDependency[value]{}
         i = 0
         bestie (i < len(self.dev_dependencies)) {
             ready (self.dev_dependencies[i].name != name) {
@@ -257,7 +257,7 @@ slay parseManifest(content tea) PackageManifest {
     // Simple manifest parser - in production would use proper parser
     sus manifest PackageManifest = PackageManifest.new("", "0.1.0")
     
-    sus lines []tea = split_str(content, "\n")
+    sus lines tea[value] = split_str(content, "\n")
     sus i drip = 0
     bestie (i < len(lines)) {
         sus line tea = trim_str(lines[i])
@@ -318,7 +318,7 @@ slay extractQuotedValue(line tea) tea {
 }
 
 slay parseDependencyLine(line tea) PackageDependency {
-    sus parts []tea = split_str(line, "=")
+    sus parts tea[value] = split_str(line, "=")
     ready (len(parts) != 2) {
         damn PackageDependency.new("", "")
     }
@@ -332,13 +332,13 @@ slay parseDependencyLine(line tea) PackageDependency {
 squad PackageResolver {
     spill cache_dir tea
     spill registry_url tea
-    spill installed_packages []PackageInfo
+    spill installed_packages PackageInfo[value]
     
     slay new(cache_dir tea) PackageResolver {
         damn PackageResolver{
             cache_dir: cache_dir,
             registry_url: "https://packages.cursed.dev/api/v1",
-            installed_packages: []PackageInfo{}
+            installed_packages: PackageInfo[value]{}
         }
     }
     
@@ -379,9 +379,9 @@ squad PackageResolver {
         damn PackageInfo.new("", PackageVersion.new(0, 0, 0))
     }
     
-    slay resolveDependencies(self PackageResolver, manifest PackageManifest) []PackageInfo {
-        sus resolved []PackageInfo = []PackageInfo{}
-        sus to_resolve []PackageDependency = manifest.dependencies
+    slay resolveDependencies(self PackageResolver, manifest PackageManifest) PackageInfo[value]{
+        sus resolved PackageInfo[value] = PackageInfo[value]{}
+        sus to_resolve PackageDependency[value] = manifest.dependencies
         
         // Add dev dependencies if in development mode
         sus i drip = 0
@@ -400,7 +400,7 @@ squad PackageResolver {
                 
                 // Recursively resolve transitive dependencies
                 sus dep_manifest PackageManifest = pkg.getManifest()
-                sus transitive_deps []PackageInfo = self.resolveDependencies(dep_manifest)
+                sus transitive_deps PackageInfo[value] = self.resolveDependencies(dep_manifest)
                 
                 sus j drip = 0
                 bestie (j < len(transitive_deps)) {
@@ -448,8 +448,8 @@ squad PackageInfo {
     spill name tea
     spill version PackageVersion
     spill description tea
-    spill versions []tea
-    spill dependencies []PackageDependency
+    spill versions tea[value]
+    spill dependencies PackageDependency[value]
     spill download_url tea
     
     slay new(name tea, version PackageVersion) PackageInfo {
@@ -457,8 +457,8 @@ squad PackageInfo {
             name: name,
             version: version,
             description: "",
-            versions: []tea{},
-            dependencies: []PackageDependency{},
+            versions: tea[value]{},
+            dependencies: PackageDependency[value]{},
             download_url: ""
         }
     }
@@ -488,8 +488,8 @@ slay parsePackageInfo(json_str tea) PackageInfo {
     damn info
 }
 
-slay removeDuplicates(packages []PackageInfo) []PackageInfo {
-    sus unique []PackageInfo = []PackageInfo{}
+slay removeDuplicates(packages PackageInfo[value]) PackageInfo[value]{
+    sus unique PackageInfo[value] = PackageInfo[value]{}
     
     sus i drip = 0
     bestie (i < len(packages)) {
@@ -580,7 +580,7 @@ slay cmd_install() lit {
     sus resolver PackageResolver = PackageResolver.new(".cursed/cache")
     
     vibez.spill("Resolving dependencies...")
-    sus packages []PackageInfo = resolver.resolveDependencies(manifest)
+    sus packages PackageInfo[value] = resolver.resolveDependencies(manifest)
     
     vibez.spill("Installing {} packages...", len(packages))
     sus i drip = 0

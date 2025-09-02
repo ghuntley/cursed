@@ -2,7 +2,7 @@
 # Comprehensive Unicode category and property matching
 
 # Unicode General Categories
-sus unicode_categories map<tea, []drip> = create_map()
+sus unicode_categories map<tea, drip[value]> = create_map()
 
 # Unicode property initialization
 slay init_unicode_properties() drip {
@@ -84,7 +84,7 @@ slay init_unicode_properties() drip {
 }
 
 # Unicode script properties
-sus unicode_scripts map<tea, []drip> = create_map()
+sus unicode_scripts map<tea, drip[value]> = create_map()
 
 slay init_unicode_scripts() drip {
     unicode_scripts["Latin"] = load_unicode_script_range("Latin")
@@ -126,7 +126,7 @@ slay init_unicode_scripts() drip {
 }
 
 # Unicode block properties
-sus unicode_blocks map<tea, []drip> = create_map()
+sus unicode_blocks map<tea, drip[value]> = create_map()
 
 slay init_unicode_blocks() drip {
     unicode_blocks["Basic_Latin"] = [0x0000, 0x007F]
@@ -258,7 +258,7 @@ slay init_unicode_blocks() drip {
 slay match_unicode_property(ch drip, property tea) lit {
     # Handle general category properties
     ready (unicode_categories.has(property)) {
-        sus ranges []drip = unicode_categories[property]
+        sus ranges drip[value] = unicode_categories[property]
         damn is_in_ranges(ch, ranges)
     }
     
@@ -271,7 +271,7 @@ slay match_unicode_property(ch drip, property tea) lit {
         }
         
         ready (unicode_scripts.has(script)) {
-            sus ranges []drip = unicode_scripts[script]
+            sus ranges drip[value] = unicode_scripts[script]
             damn is_in_ranges(ch, ranges)
         }
     }
@@ -285,7 +285,7 @@ slay match_unicode_property(ch drip, property tea) lit {
         }
         
         ready (unicode_blocks.has(block)) {
-            sus range []drip = unicode_blocks[block]
+            sus range drip[value] = unicode_blocks[block]
             damn ch >= range[0] && ch <= range[1]
         }
     }
@@ -336,7 +336,7 @@ slay match_unicode_property(ch drip, property tea) lit {
 }
 
 # Helper functions for range checking
-slay is_in_ranges(ch drip, ranges []drip) lit {
+slay is_in_ranges(ch drip, ranges drip[value]) lit {
     sus i drip = 0
     bestie (i < ranges.len()) {
         ready (ch >= ranges[i] && ch <= ranges[i + 1]) {
@@ -347,8 +347,8 @@ slay is_in_ranges(ch drip, ranges []drip) lit {
     damn nah
 }
 
-slay combine_ranges(range_lists [][]drip) []drip {
-    sus combined []drip = create_array()
+slay combine_ranges(range_lists drip[value][value]) drip[value]{
+    sus combined drip[value] = create_array()
     
     bestie (ranges in range_lists) {
         bestie (range in ranges) {
@@ -416,7 +416,7 @@ slay is_ideographic(ch drip) lit {
 }
 
 # Performance-optimized Unicode data loading
-slay load_unicode_range(category tea) []drip {
+slay load_unicode_range(category tea) drip[value]{
     # This would load from optimized Unicode data files
     # For demo, returning representative ranges
     
@@ -428,7 +428,7 @@ slay load_unicode_range(category tea) []drip {
     }
 }
 
-slay load_unicode_script_range(script tea) []drip {
+slay load_unicode_script_range(script tea) drip[value]{
     # Load script ranges from optimized data files
     sick (script) {
         when "Latin" -> damn [0x0041, 0x007A, 0x00C0, 0x024F]

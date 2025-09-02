@@ -4,7 +4,7 @@ yeet "unicode_normalization_real"
 fr fr Performance benchmarks for Unicode normalization O(n log n) improvements
 
 test_start("Unicode Normalization Performance - Small Dataset")
-sus small_codepoints []drip = [65, 776, 769, 768, 772, 66, 771, 770, 67]  # 9 elements
+sus small_codepoints drip[value] = [65, 776, 769, 768, 772, 66, 771, 770, 67]  # 9 elements
 sus start_time drip = current_timestamp_ms()
 sus normalized_small tea = normalize_nfd_text(codepoints_to_text(small_codepoints))
 sus small_time drip = current_timestamp_ms() - start_time
@@ -14,7 +14,7 @@ test_pass("Small dataset normalization completed")
 
 test_start("Unicode Normalization Performance - Medium Dataset") 
 # Create medium dataset with 100 combining marks
-sus medium_codepoints []drip = []
+sus medium_codepoints drip[value] = []
 sus i drip = 0
 bestie (i < 25) {
     medium_codepoints = append_codepoint(medium_codepoints, 65 + (i % 26))  # Base letters
@@ -33,7 +33,7 @@ test_pass("Medium dataset normalization completed efficiently")
 
 test_start("Unicode Normalization Performance - Large Dataset")
 # Create large dataset with 1000+ combining marks  
-sus large_codepoints []drip = []
+sus large_codepoints drip[value] = []
 i = 0
 bestie (i < 250) {  # Create 1000 elements (4 per iteration)
     large_codepoints = append_codepoint(large_codepoints, 65 + (i % 26))  # Base letters
@@ -54,7 +54,7 @@ test_pass("Large dataset normalization completed in reasonable time")
 
 test_start("Performance Comparison - O(n²) vs O(n log n)")
 # Test with worst-case scenario (reverse sorted combining marks)
-sus worst_case_codepoints []drip = []
+sus worst_case_codepoints drip[value] = []
 sus base_char drip = 65  # 'A'
 worst_case_codepoints = append_codepoint(worst_case_codepoints, base_char)
 
@@ -79,7 +79,7 @@ test_pass("O(n log n) optimization provides dramatic performance improvement")
 
 test_start("Memory Efficiency Test")
 # Test with large dataset to ensure no memory leaks
-sus memory_test_codepoints []drip = []
+sus memory_test_codepoints drip[value] = []
 i = 0
 bestie (i < 500) {  # 2000 elements total
     memory_test_codepoints = append_codepoint(memory_test_codepoints, 65 + (i % 26))
@@ -99,7 +99,7 @@ assert_true(memory_time < 5000)  # Should complete within 5 seconds
 test_pass("Memory efficient processing of large Unicode datasets")
 
 # Helper function for building codepoint arrays
-slay append_codepoint(codepoints []drip, codepoint drip) []drip {
+slay append_codepoint(codepoints drip[value], codepoint drip) drip[value]{
     sus length drip = len(codepoints)
     ready (length == 0) { damn [codepoint] }
     ready (length == 1) { damn [codepoints[0], codepoint] }

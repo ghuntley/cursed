@@ -59,8 +59,8 @@ be_like Transaction = {
 
 fr fr Query result structure
 be_like QueryResult = {
-    rows []map[tea]tea
-    columns []ColumnInfo
+    rows map[value][tea]tea
+    columns ColumnInfo[value]
     affected_rows normie
     last_insert_id tea
     execution_time normie
@@ -228,7 +228,7 @@ fr fr Enhanced query execution
 slay execute_enhanced_query(
     connection_id tea,
     query tea,
-    params []tea,
+    params tea[value],
     cache_enabled lit
 ) QueryResult {
     sus start_time normie = timez.now()
@@ -253,7 +253,7 @@ fr fr Enhanced prepared statement
 slay create_enhanced_prepared_statement(
     connection_id tea,
     sql_query tea,
-    parameter_types []tea
+    parameter_types tea[value]
 ) PreparedStatement {
     sus statement_id tea = "stmt_" + connection_id + "_" + stringz.to_string(timez.now())
     
@@ -427,7 +427,7 @@ slay connect_driver(config DatabaseDriverConfig) tea {
     }
 }
 
-slay execute_driver_query(connection_id tea, query tea, params []tea, driver_type DatabaseDriverType) QueryResult {
+slay execute_driver_query(connection_id tea, query tea, params tea[value], driver_type DatabaseDriverType) QueryResult {
     ready driver_type {
         DRIVER_POSTGRES -> damn postgres_execute(connection_id, query, params)
         DRIVER_MYSQL -> damn mysql_execute(connection_id, query, params)
@@ -458,7 +458,7 @@ slay postgres_connect(config DatabaseDriverConfig) tea {
     damn conn_id
 }
 
-slay postgres_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay postgres_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
         columns: [
@@ -481,7 +481,7 @@ slay mysql_connect(config DatabaseDriverConfig) tea {
     damn conn_id
 }
 
-slay mysql_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay mysql_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
         columns: [
@@ -504,7 +504,7 @@ slay sqlite_connect(config DatabaseDriverConfig) tea {
     damn conn_id
 }
 
-slay sqlite_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay sqlite_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"id": "1", "name": "John"}, {"id": "2", "name": "Jane"}],
         columns: [
@@ -527,7 +527,7 @@ slay mongodb_connect(config DatabaseDriverConfig) tea {
     damn conn_id
 }
 
-slay mongodb_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay mongodb_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"_id": "ObjectId1", "name": "John"}, {"_id": "ObjectId2", "name": "Jane"}],
         columns: [
@@ -550,7 +550,7 @@ slay redis_connect(config DatabaseDriverConfig) tea {
     damn conn_id
 }
 
-slay redis_execute(connection_id tea, query tea, params []tea) QueryResult {
+slay redis_execute(connection_id tea, query tea, params tea[value]) QueryResult {
     sus result QueryResult = {
         rows: [{"key": "user:1", "value": "John"}, {"key": "user:2", "value": "Jane"}],
         columns: [
@@ -583,8 +583,8 @@ slay count_parameters(sql_query tea) normie {
 
 fr fr Registry query functions
 
-slay list_registered_drivers() []DatabaseDriver {
-    sus drivers []DatabaseDriver = []
+slay list_registered_drivers() DatabaseDriver[value]{
+    sus drivers DatabaseDriver[value] = []
     
     bestie _, driver := range global_registry.registered_drivers {
         drivers.append(driver)

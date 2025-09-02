@@ -88,7 +88,7 @@ slay test_email_validation() lit {
     
     // Test valid email addresses
     testz.test_case("Valid email addresses") {
-        sus valid_emails []tea = [
+        sus valid_emails tea[value] = [
             "user@example.com",
             "test.email@domain.org",
             "user+tag@example.com",
@@ -108,7 +108,7 @@ slay test_email_validation() lit {
     
     // Test invalid email addresses
     testz.test_case("Invalid email addresses") {
-        sus invalid_emails []tea = [
+        sus invalid_emails tea[value] = [
             "",
             "plainaddress",
             "@missinglocal.com",
@@ -662,7 +662,7 @@ slay test_header_parsing() lit {
             "X-Custom: Custom Value\r\n"
         ])
         
-        sus headers []EmailHeader = parse_email_headers(header_text) fam {
+        sus headers EmailHeader[value] = parse_email_headers(header_text) fam {
             when err -> {
                 testz.assert_fail(stringz.concat(["Header parsing failed: ", err.message]))
                 damn []
@@ -684,7 +684,7 @@ slay test_header_parsing() lit {
     testz.test_case("Header value with spaces") {
         sus header_text tea = "Content-Type: text/plain; charset=utf-8; boundary=\"boundary123\"\r\n"
         
-        sus headers []EmailHeader = parse_email_headers(header_text) fam {
+        sus headers EmailHeader[value] = parse_email_headers(header_text) fam {
             when err -> {
                 testz.assert_fail("Header parsing failed")
                 damn []
@@ -699,7 +699,7 @@ slay test_header_parsing() lit {
     }
     
     testz.test_case("Missing header value") {
-        sus headers []EmailHeader = []
+        sus headers EmailHeader[value] = []
         sus missing_value tea = get_header_value(headers, "NonExistent")
         testz.assert_eq_str(missing_value, "")
     }
@@ -821,7 +821,7 @@ slay test_templates() lit {
             }
         }
         
-        sus variables []TemplateVariable = [
+        sus variables TemplateVariable[value] = [
             TemplateVariable{name: "name", value: "John Doe"},
             TemplateVariable{name: "message", value: "Welcome to our service!"}
         ]
@@ -859,7 +859,7 @@ slay test_templates() lit {
         }
         
         // Provide only some variables
-        sus variables []TemplateVariable = [
+        sus variables TemplateVariable[value] = [
             TemplateVariable{name: "name", value: "John"}
         ]
         
@@ -877,7 +877,7 @@ slay test_templates() lit {
     }
     
     testz.test_case("Non-existent template") {
-        sus variables []TemplateVariable = []
+        sus variables TemplateVariable[value] = []
         
         sus result Email = create_template_email(
             "non_existent_template",

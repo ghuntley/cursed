@@ -51,7 +51,7 @@ struct GoroutineContext {
     spill state normie             fr fr Current state (running/waiting/etc)
     spill parent_id thicc          fr fr Parent goroutine ID (0 if main)
     spill stack GoroutineStack     fr fr Stack allocation for goroutine
-    spill registers []thicc        fr fr Saved register context
+    spill registers thicc[value]        fr fr Saved register context
     spill creation_time thicc      fr fr When goroutine was created
     spill execution_time thicc     fr fr Total execution time
     spill yield_count normie       fr fr Number of times yielded
@@ -73,7 +73,7 @@ struct WorkerThread {
 
 fr fr Global runtime scheduler
 struct GoroutineScheduler {
-    spill worker_threads []WorkerThread  fr fr Array of worker threads
+    spill worker_threads WorkerThread[value]  fr fr Array of worker threads
     spill num_workers normie        fr fr Number of worker threads
     spill global_queue WorkStealingQueue  fr fr Global work queue
     spill active_goroutines normie  fr fr Count of active goroutines (atomic)

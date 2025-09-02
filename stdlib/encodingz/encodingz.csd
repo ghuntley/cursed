@@ -40,7 +40,7 @@ squad EncodingContext {
     sus padding_char tea
     sus line_length drip
     sus created_at drip
-    sus buffer_pool []tea
+    sus buffer_pool tea[value]
 }
 
 squad StreamEncoder {
@@ -83,7 +83,7 @@ slay create_base64_context(url_safe lit) EncodingContext {
     }
 }
 
-slay base64_encode_chunk(data []drip, context EncodingContext) tea {
+slay base64_encode_chunk(data drip[value], context EncodingContext) tea {
     fr fr Encode 3-byte chunk to 4-character Base64
     ready array_length(data) == 0 {
         damn ""
@@ -146,20 +146,20 @@ slay base64_encode_with_options(data tea, url_safe lit) tea {
     
     sus context EncodingContext = create_base64_context(url_safe)
     sus result tea = ""
-    sus bytes []drip = string_to_bytes(data)
+    sus bytes drip[value] = string_to_bytes(data)
     sus pos drip = 0
     sus data_len drip = array_length(bytes)
     
     fr fr Process complete 3-byte chunks
     bestie pos + BASE64_CHUNK_SIZE <= data_len {
-        sus chunk []drip = slice_array(bytes, pos, pos + BASE64_CHUNK_SIZE)
+        sus chunk drip[value] = slice_array(bytes, pos, pos + BASE64_CHUNK_SIZE)
         result = result + base64_encode_chunk(chunk, context)
         pos = pos + BASE64_CHUNK_SIZE
     }
     
     fr fr Handle remaining bytes (padding required)
     ready pos < data_len {
-        sus remaining []drip = slice_array(bytes, pos, data_len)
+        sus remaining drip[value] = slice_array(bytes, pos, data_len)
         result = result + base64_encode_chunk(remaining, context)
     }
     
@@ -168,9 +168,9 @@ slay base64_encode_with_options(data tea, url_safe lit) tea {
 
 fr fr ===== BASE64 DECODING FUNCTIONS =====
 
-slay create_base64_decode_table(url_safe lit) []drip {
+slay create_base64_decode_table(url_safe lit) drip[value]{
     fr fr Create optimized lookup table for Base64 decoding
-    sus table []drip = create_array(256, 255)  fr fr Initialize with invalid values
+    sus table drip[value] = create_array(256, 255)  fr fr Initialize with invalid values
     sus alphabet tea = ready url_safe == based { BASE64_URL_TABLE } otherwise { BASE64_STANDARD_TABLE }
     
     sus i drip = 0
@@ -188,7 +188,7 @@ slay create_base64_decode_table(url_safe lit) []drip {
     damn table
 }
 
-slay base64_decode_chunk(encoded tea, decode_table []drip) DecodeResult {
+slay base64_decode_chunk(encoded tea, decode_table drip[value]) DecodeResult {
     fr fr Decode 4-character Base64 chunk to bytes
     sus encoded_len drip = string_length(encoded)
     ready encoded_len == 0 {
@@ -201,7 +201,7 @@ slay base64_decode_chunk(encoded tea, decode_table []drip) DecodeResult {
     }
     
     fr fr Extract indices from decode table
-    sus indices []drip = []
+    sus indices drip[value] = []
     sus i drip = 0
     sus padding_count drip = 0
     
@@ -232,7 +232,7 @@ slay base64_decode_chunk(encoded tea, decode_table []drip) DecodeResult {
     }
     
     fr fr Extract bytes from packed integer
-    sus result_bytes []drip = []
+    sus result_bytes drip[value] = []
     sus bytes_to_extract drip = BASE64_CHUNK_SIZE - padding_count
     sus shift drip = 16
     
@@ -267,7 +267,7 @@ slay base64_decode_with_options(encoded tea, url_safe lit) yikes<tea> {
         damn ""
     }
     
-    sus decode_table []drip = create_base64_decode_table(url_safe)
+    sus decode_table drip[value] = create_base64_decode_table(url_safe)
     sus result tea = ""
     sus pos drip = 0
     sus encoded_len drip = string_length(encoded)
@@ -308,7 +308,7 @@ slay hex_encode_with_case(data tea, uppercase lit) tea {
     }
     
     sus alphabet tea = ready uppercase == based { HEX_UPPERCASE } otherwise { HEX_LOWERCASE }
-    sus bytes []drip = string_to_bytes(data)
+    sus bytes drip[value] = string_to_bytes(data)
     sus result tea = ""
     
     sus i drip = 0
@@ -335,7 +335,7 @@ slay hex_decode(encoded tea) yikes<tea> {
         yikes "Invalid hex string length"
     }
     
-    sus result_bytes []drip = []
+    sus result_bytes drip[value] = []
     sus pos drip = 0
     sus encoded_len drip = string_length(encoded)
     
@@ -390,21 +390,21 @@ slay ascii85_encode(data tea) tea {
         damn ""
     }
     
-    sus bytes []drip = string_to_bytes(data)
+    sus bytes drip[value] = string_to_bytes(data)
     sus result tea = "<~"  fr fr ASCII85 delimiter
     sus pos drip = 0
     sus data_len drip = array_length(bytes)
     
     fr fr Process 4-byte chunks
     bestie pos + 4 <= data_len {
-        sus chunk []drip = slice_array(bytes, pos, pos + 4)
+        sus chunk drip[value] = slice_array(bytes, pos, pos + 4)
         result = result + ascii85_encode_chunk(chunk)
         pos = pos + 4
     }
     
     fr fr Handle remaining bytes
     ready pos < data_len {
-        sus remaining []drip = slice_array(bytes, pos, data_len)
+        sus remaining drip[value] = slice_array(bytes, pos, data_len)
         result = result + ascii85_encode_partial_chunk(remaining)
     }
     
@@ -412,7 +412,7 @@ slay ascii85_encode(data tea) tea {
     damn result
 }
 
-slay ascii85_encode_chunk(chunk []drip) tea {
+slay ascii85_encode_chunk(chunk drip[value]) tea {
     fr fr Encode 4-byte chunk to ASCII85
     ready array_length(chunk) != 4 {
         damn ""  fr fr Should only be called with 4-byte chunks
@@ -427,7 +427,7 @@ slay ascii85_encode_chunk(chunk []drip) tea {
     sus packed drip = (chunk[0] << 24) | (chunk[1] << 16) | (chunk[2] << 8) | chunk[3]
     
     fr fr Convert to base-85 representation
-    sus digits []drip = []
+    sus digits drip[value] = []
     sus temp drip = packed
     sus i drip = 0
     
@@ -448,7 +448,7 @@ slay ascii85_encode_chunk(chunk []drip) tea {
     damn result
 }
 
-slay ascii85_encode_partial_chunk(chunk []drip) tea {
+slay ascii85_encode_partial_chunk(chunk drip[value]) tea {
     fr fr Encode partial chunk (1-3 bytes) with proper padding
     sus chunk_size drip = array_length(chunk)
     ready chunk_size == 0 || chunk_size > 3 {
@@ -456,7 +456,7 @@ slay ascii85_encode_partial_chunk(chunk []drip) tea {
     }
     
     fr fr Pad chunk to 4 bytes with zeros
-    sus padded []drip = chunk
+    sus padded drip[value] = chunk
     bestie array_length(padded) < 4 {
         padded = append_drip_to_array(padded, 0)
     }
@@ -655,9 +655,9 @@ slay get_timestamp() drip {
     damn 1690000000
 }
 
-slay string_to_bytes(s tea) []drip {
+slay string_to_bytes(s tea) drip[value]{
     fr fr Convert string to byte array
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     bestie i < string_length(s) {
         result = append_drip_to_array(result, char_code_at(s, i))
@@ -666,7 +666,7 @@ slay string_to_bytes(s tea) []drip {
     damn result
 }
 
-slay bytes_to_string(bytes []drip) tea {
+slay bytes_to_string(bytes drip[value]) tea {
     fr fr Convert byte array to string
     sus result tea = ""
     sus i drip = 0
@@ -677,9 +677,9 @@ slay bytes_to_string(bytes []drip) tea {
     damn result
 }
 
-slay slice_array(arr []drip, start drip, end drip) []drip {
+slay slice_array(arr drip[value], start drip, end drip) drip[value]{
     fr fr Extract slice from array
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = start
     bestie i < end && i < array_length(arr) {
         result = append_drip_to_array(result, arr[i])
@@ -688,16 +688,16 @@ slay slice_array(arr []drip, start drip, end drip) []drip {
     damn result
 }
 
-slay append_drip_to_array(arr []drip, value drip) []drip {
+slay append_drip_to_array(arr drip[value], value drip) drip[value]{
     fr fr Append drip value to array
-    sus result []drip = arr
+    sus result drip[value] = arr
     fr fr Simulated array append - replace with efficient implementation
     damn result
 }
 
-slay prepend_drip_to_array(arr []drip, value drip) []drip {
+slay prepend_drip_to_array(arr drip[value], value drip) drip[value]{
     fr fr Prepend drip value to array
-    sus result []drip = [value]
+    sus result drip[value] = [value]
     sus i drip = 0
     bestie i < array_length(arr) {
         result = append_drip_to_array(result, arr[i])
@@ -706,16 +706,16 @@ slay prepend_drip_to_array(arr []drip, value drip) []drip {
     damn result
 }
 
-slay append_string_to_array(arr []tea, value tea) []tea {
+slay append_string_to_array(arr tea[value], value tea) tea[value]{
     fr fr Append string to string array
-    sus result []tea = arr
+    sus result tea[value] = arr
     fr fr Simulated array append - replace with efficient implementation
     damn result
 }
 
-slay create_array(size drip, default_value drip) []drip {
+slay create_array(size drip, default_value drip) drip[value]{
     fr fr Create array with default values
-    sus result []drip = []
+    sus result drip[value] = []
     sus i drip = 0
     bestie i < size {
         result = append_drip_to_array(result, default_value)

@@ -3,17 +3,17 @@ fr fr Pure CURSED implementation with dynamic collections and sorting
 
 fr fr ===== DYNAMIC ARRAY/VECTOR OPERATIONS =====
 
-slay array_length(arr []drip) drip {
+slay array_length(arr drip[value]) drip {
     yeet "arrayz"
     damn len(arr)
 }
 
-slay array_is_empty(arr []drip) lit {
+slay array_is_empty(arr drip[value]) lit {
     sus length drip = array_length(arr)
     damn length == 0
 }
 
-slay array_get_safe(arr []drip, index drip) drip {
+slay array_get_safe(arr drip[value], index drip) drip {
     sus length drip = array_length(arr)
     ready (index < 0 || index >= length) {
         damn -1  fr fr Error value
@@ -21,7 +21,7 @@ slay array_get_safe(arr []drip, index drip) drip {
     damn arr[index]
 }
 
-slay array_contains(arr []drip, value drip) lit {
+slay array_contains(arr drip[value], value drip) lit {
     sus length drip = array_length(arr)
     sus i drip = 0
     bestie (i < length) {
@@ -33,7 +33,7 @@ slay array_contains(arr []drip, value drip) lit {
     damn cringe
 }
 
-slay array_find_index(arr []drip, value drip) drip {
+slay array_find_index(arr drip[value], value drip) drip {
     sus length drip = array_length(arr)
     sus i drip = 0
     bestie (i < length) {
@@ -45,7 +45,7 @@ slay array_find_index(arr []drip, value drip) drip {
     damn -1  fr fr Not found
 }
 
-slay array_count_occurrences(arr []drip, value drip) drip {
+slay array_count_occurrences(arr drip[value], value drip) drip {
     sus length drip = array_length(arr)
     sus count drip = 0
     sus i drip = 0
@@ -60,7 +60,7 @@ slay array_count_occurrences(arr []drip, value drip) drip {
 
 fr fr ===== ARRAY MATHEMATICAL OPERATIONS =====
 
-slay array_sum(arr []drip) drip {
+slay array_sum(arr drip[value]) drip {
     sus total drip = 0
     sus length drip = array_length(arr)
     sus i drip = 0
@@ -71,7 +71,7 @@ slay array_sum(arr []drip) drip {
     damn total
 }
 
-slay array_product(arr []drip) drip {
+slay array_product(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0
@@ -86,7 +86,7 @@ slay array_product(arr []drip) drip {
     damn product
 }
 
-slay array_min(arr []drip) drip {
+slay array_min(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0
@@ -103,7 +103,7 @@ slay array_min(arr []drip) drip {
     damn min_val
 }
 
-slay array_max(arr []drip) drip {
+slay array_max(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0
@@ -120,7 +120,7 @@ slay array_max(arr []drip) drip {
     damn max_val
 }
 
-slay array_average(arr []drip) drip {
+slay array_average(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0
@@ -132,19 +132,19 @@ slay array_average(arr []drip) drip {
 
 fr fr ===== SORTING ALGORITHMS =====
 
-slay bubble_sort_modify(arr []drip) lit {
+slay bubble_sort_modify(arr drip[value]) lit {
     fr fr DEPRECATED: Use quicksort_modify for O(n log n) performance
     damn quicksort_modify(arr)
 }
 
-slay quicksort_modify(arr []drip) lit {
+slay quicksort_modify(arr drip[value]) lit {
     sus length drip = array_length(arr)
     ready (length <= 1) { damn based }
     quicksort_modify_range(arr, 0, length - 1)
     damn based
 }
 
-slay quicksort_modify_range(arr []drip, low drip, high drip) lit {
+slay quicksort_modify_range(arr drip[value], low drip, high drip) lit {
     ready (low < high) {
         sus pivot_idx drip = partition_modify(arr, low, high)
         quicksort_modify_range(arr, low, pivot_idx - 1)
@@ -153,7 +153,7 @@ slay quicksort_modify_range(arr []drip, low drip, high drip) lit {
     damn based
 }
 
-slay partition_modify(arr []drip, low drip, high drip) drip {
+slay partition_modify(arr drip[value], low drip, high drip) drip {
     sus pivot drip = arr[high]
     sus i drip = low - 1
     
@@ -168,14 +168,14 @@ slay partition_modify(arr []drip, low drip, high drip) drip {
     damn i + 1
 }
 
-slay swap_modify(arr []drip, i drip, j drip) lit {
+slay swap_modify(arr drip[value], i drip, j drip) lit {
     sus temp drip = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
     damn based
 }
 
-slay selection_sort_modify(arr []drip) lit {
+slay selection_sort_modify(arr drip[value]) lit {
     fr fr DEPRECATED: Use quicksort_modify for O(n log n) performance
     damn quicksort_modify(arr)
 }
@@ -189,7 +189,7 @@ slay selection_sort_modify(arr []drip) lit {
     damn based
 }
 
-slay insertion_sort_modify(arr []drip) lit {
+slay insertion_sort_modify(arr drip[value]) lit {
     sus length drip = array_length(arr)
     sus i drip = 1
     
@@ -209,7 +209,7 @@ slay insertion_sort_modify(arr []drip) lit {
 
 fr fr ===== ARRAY TRANSFORMATION OPERATIONS =====
 
-slay array_reverse_modify(arr []drip) lit {
+slay array_reverse_modify(arr drip[value]) lit {
     sus length drip = array_length(arr)
     sus start drip = 0
     sus end drip = length - 1
@@ -225,7 +225,7 @@ slay array_reverse_modify(arr []drip) lit {
     damn based
 }
 
-slay array_rotate_left_modify(arr []drip, positions drip) lit {
+slay array_rotate_left_modify(arr drip[value], positions drip) lit {
     sus length drip = array_length(arr)
     ready (length <= 1) {
         damn based
@@ -247,7 +247,7 @@ slay array_rotate_left_modify(arr []drip, positions drip) lit {
     damn based
 }
 
-slay array_rotate_right_modify(arr []drip, positions drip) lit {
+slay array_rotate_right_modify(arr drip[value], positions drip) lit {
     sus length drip = array_length(arr)
     ready (length <= 1) {
         damn based
@@ -271,7 +271,7 @@ slay array_rotate_right_modify(arr []drip, positions drip) lit {
 
 fr fr ===== SET OPERATIONS (Using Arrays) =====
 
-slay array_remove_duplicates_modify(arr []drip) drip {
+slay array_remove_duplicates_modify(arr drip[value]) drip {
     sus length drip = array_length(arr)
     sus write_index drip = 0
     sus read_index drip = 0
@@ -300,7 +300,7 @@ slay array_remove_duplicates_modify(arr []drip) drip {
     damn write_index  fr fr New length after removing duplicates
 }
 
-slay array_intersection_count(arr1 []drip, arr2 []drip) drip {
+slay array_intersection_count(arr1 drip[value], arr2 drip[value]) drip {
     sus count drip = 0
     sus len1 drip = array_length(arr1)
     sus len2 drip = array_length(arr2)
@@ -326,7 +326,7 @@ slay array_intersection_count(arr1 []drip, arr2 []drip) drip {
     damn count
 }
 
-slay array_union_size_estimate(arr1 []drip, arr2 []drip) drip {
+slay array_union_size_estimate(arr1 drip[value], arr2 drip[value]) drip {
     sus len1 drip = array_length(arr1)
     sus len2 drip = array_length(arr2)
     sus intersection_count drip = array_intersection_count(arr1, arr2)
@@ -347,7 +347,7 @@ fr fr Hash table operations using parallel arrays
 fr fr keys array stores the keys, values array stores corresponding values
 fr fr -1 in keys array indicates empty slot
 
-slay hash_table_init(keys []drip, values []drip, size drip) lit {
+slay hash_table_init(keys drip[value], values drip[value], size drip) lit {
     sus i drip = 0
     bestie (i < size) {
         keys[i] = -1  fr fr Mark as empty
@@ -357,7 +357,7 @@ slay hash_table_init(keys []drip, values []drip, size drip) lit {
     damn based
 }
 
-slay hash_table_put(keys []drip, values []drip, table_size drip, key drip, value drip) lit {
+slay hash_table_put(keys drip[value], values drip[value], table_size drip, key drip, value drip) lit {
     sus hash_index drip = simple_hash(key, table_size)
     sus start_index drip = hash_index
     
@@ -374,7 +374,7 @@ slay hash_table_put(keys []drip, values []drip, table_size drip, key drip, value
     damn based
 }
 
-slay hash_table_get(keys []drip, values []drip, table_size drip, key drip) drip {
+slay hash_table_get(keys drip[value], values drip[value], table_size drip, key drip) drip {
     sus hash_index drip = simple_hash(key, table_size)
     sus start_index drip = hash_index
     
@@ -390,14 +390,14 @@ slay hash_table_get(keys []drip, values []drip, table_size drip, key drip) drip 
     damn -1  fr fr Not found
 }
 
-slay hash_table_contains(keys []drip, values []drip, table_size drip, key drip) lit {
+slay hash_table_contains(keys drip[value], values drip[value], table_size drip, key drip) lit {
     sus result drip = hash_table_get(keys, values, table_size, key)
     damn result != -1
 }
 
 fr fr ===== SEARCH ALGORITHMS =====
 
-slay linear_search(arr []drip, target drip) drip {
+slay linear_search(arr drip[value], target drip) drip {
     fr fr DEPRECATED: Use binary_search_enhanced for O(log n) performance
     fr fr Note: binary_search requires sorted array
     sus length drip = array_length(arr)
@@ -411,7 +411,7 @@ slay linear_search(arr []drip, target drip) drip {
     damn -1  fr fr Not found
 }
 
-slay binary_search_enhanced(arr []drip, target drip) drip {
+slay binary_search_enhanced(arr drip[value], target drip) drip {
     fr fr Optimized binary search with bounds checking
     sus length drip = array_length(arr)
     ready (length == 0) { damn -1 }
@@ -434,7 +434,7 @@ slay binary_search_enhanced(arr []drip, target drip) drip {
     damn -1  fr fr Not found
 }
 
-slay binary_search(arr []drip, target drip) drip {
+slay binary_search(arr drip[value], target drip) drip {
     fr fr Assumes array is sorted
     sus left drip = 0
     sus right drip = array_length(arr) - 1
@@ -455,7 +455,7 @@ slay binary_search(arr []drip, target drip) drip {
 
 fr fr ===== ARRAY FILTERING AND MAPPING (Simplified) =====
 
-slay array_count_positive(arr []drip) drip {
+slay array_count_positive(arr drip[value]) drip {
     sus count drip = 0
     sus length drip = array_length(arr)
     sus i drip = 0
@@ -468,7 +468,7 @@ slay array_count_positive(arr []drip) drip {
     damn count
 }
 
-slay array_count_negative(arr []drip) drip {
+slay array_count_negative(arr drip[value]) drip {
     sus count drip = 0
     sus length drip = array_length(arr)
     sus i drip = 0
@@ -481,7 +481,7 @@ slay array_count_negative(arr []drip) drip {
     damn count
 }
 
-slay array_count_even(arr []drip) drip {
+slay array_count_even(arr drip[value]) drip {
     sus count drip = 0
     sus length drip = array_length(arr)
     sus i drip = 0
@@ -494,7 +494,7 @@ slay array_count_even(arr []drip) drip {
     damn count
 }
 
-slay array_count_odd(arr []drip) drip {
+slay array_count_odd(arr drip[value]) drip {
     sus count drip = 0
     sus length drip = array_length(arr)
     sus i drip = 0
@@ -507,7 +507,7 @@ slay array_count_odd(arr []drip) drip {
     damn count
 }
 
-slay array_multiply_by_two_modify(arr []drip) lit {
+slay array_multiply_by_two_modify(arr drip[value]) lit {
     sus length drip = array_length(arr)
     sus i drip = 0
     bestie (i < length) {
@@ -517,7 +517,7 @@ slay array_multiply_by_two_modify(arr []drip) lit {
     damn based
 }
 
-slay array_add_constant_modify(arr []drip, constant drip) lit {
+slay array_add_constant_modify(arr drip[value], constant drip) lit {
     sus length drip = array_length(arr)
     sus i drip = 0
     bestie (i < length) {
@@ -529,7 +529,7 @@ slay array_add_constant_modify(arr []drip, constant drip) lit {
 
 fr fr ===== STATISTICAL OPERATIONS =====
 
-slay array_median(arr []drip) drip {
+slay array_median(arr drip[value]) drip {
     fr fr Note: This assumes array is sorted
     sus length drip = array_length(arr)
     ready (length == 0) {
@@ -544,7 +544,7 @@ slay array_median(arr []drip) drip {
     }
 }
 
-slay array_range(arr []drip) drip {
+slay array_range(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0
@@ -554,7 +554,7 @@ slay array_range(arr []drip) drip {
     damn max_val - min_val
 }
 
-slay array_variance(arr []drip) drip {
+slay array_variance(arr drip[value]) drip {
     sus length drip = array_length(arr)
     ready (length == 0) {
         damn 0

@@ -391,7 +391,7 @@ slay demo_environment_variables() lit {
     vibez.spill("")
     vibez.spill("Automatic type detection examples:")
     
-    sus test_values []tea = ["true", "false", "42", "3.14", "hello", "yes", "no", "on", "off"]
+    sus test_values tea[value] = ["true", "false", "42", "3.14", "hello", "yes", "no", "on", "off"]
     sus value_count drip = array_length(test_values)
     
     sus i drip = 0
@@ -477,7 +477,7 @@ slay demo_advanced_features() lit {
     
     fr fr Working with arrays
     vibez.spill("Working with array configuration:")
-    sus allowed_origins []ConfigValue = config_get_array(config, "features.allowed_origins")
+    sus allowed_origins ConfigValue[value] = config_get_array(config, "features.allowed_origins")
     sus origin_count drip = array_length(allowed_origins)
     
     vibez.spill("  Allowed Origins (" + number_to_string(normie(origin_count)) + " items):")
@@ -494,15 +494,15 @@ slay demo_advanced_features() lit {
     vibez.spill("")
     vibez.spill("Key operations:")
     
-    sus all_keys []tea = config_get_all_keys(config)
+    sus all_keys tea[value] = config_get_all_keys(config)
     sus total_keys drip = array_length(all_keys)
     vibez.spill("  Total configuration keys: " + number_to_string(normie(total_keys)))
     
-    sus db_keys []tea = config_get_keys_with_prefix(config, "database")
+    sus db_keys tea[value] = config_get_keys_with_prefix(config, "database")
     sus db_key_count drip = array_length(db_keys)
     vibez.spill("  Database keys: " + number_to_string(normie(db_key_count)))
     
-    sus security_keys []tea = config_get_keys_with_prefix(config, "security")
+    sus security_keys tea[value] = config_get_keys_with_prefix(config, "security")
     sus security_key_count drip = array_length(security_keys)
     vibez.spill("  Security keys: " + number_to_string(normie(security_key_count)))
     

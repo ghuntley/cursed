@@ -190,7 +190,7 @@ slay ternary_search_minimize(left tea, right tea, tolerance tea, max_iterations 
 
 fr fr ===== MULTIDIMENSIONAL OPTIMIZATION =====
 
-slay gradient_descent_2d(x []tea, learning_rate tea, tolerance tea, max_iterations drip) lit {
+slay gradient_descent_2d(x tea[value], learning_rate tea, tolerance tea, max_iterations drip) lit {
     fr fr Minimize f(x,y) = x² + y²
     sus iterations drip = 0
     
@@ -220,7 +220,7 @@ slay gradient_descent_2d(x []tea, learning_rate tea, tolerance tea, max_iteratio
     damn cringe  fr fr Max iterations reached
 }
 
-slay nelder_mead_2d(simplex []tea, tolerance tea, max_iterations drip) lit {
+slay nelder_mead_2d(simplex tea[value], tolerance tea, max_iterations drip) lit {
     fr fr Nelder-Mead simplex method for 2D optimization
     fr fr simplex contains [x1, y1, x2, y2, x3, y3] - three vertices
     sus iterations drip = 0
@@ -282,7 +282,7 @@ slay nelder_mead_2d(simplex []tea, tolerance tea, max_iterations drip) lit {
     damn cringe  fr fr Max iterations reached
 }
 
-slay swap_vertices_2d(simplex []tea, i drip, j drip) lit {
+slay swap_vertices_2d(simplex tea[value], i drip, j drip) lit {
     sus temp_x tea = simplex[i]
     sus temp_y tea = simplex[i + 1]
     simplex[i] = simplex[j]
@@ -292,7 +292,7 @@ slay swap_vertices_2d(simplex []tea, i drip, j drip) lit {
     damn based
 }
 
-slay simplex_diameter_2d(simplex []tea) tea {
+slay simplex_diameter_2d(simplex tea[value]) tea {
     fr fr Compute maximum distance between any two vertices
     sus max_dist tea = "0.0"
     
@@ -316,7 +316,7 @@ slay simplex_diameter_2d(simplex []tea) tea {
 
 fr fr ===== NUMERICAL DIFFERENTIATION =====
 
-slay forward_difference(func_values []tea, h tea, index drip) tea {
+slay forward_difference(func_values tea[value], h tea, index drip) tea {
     ready (index < 0) {
         damn "0.0"
     }
@@ -326,7 +326,7 @@ slay forward_difference(func_values []tea, h tea, index drip) tea {
     damn float_divide(numerator, h)
 }
 
-slay backward_difference(func_values []tea, h tea, index drip) tea {
+slay backward_difference(func_values tea[value], h tea, index drip) tea {
     ready (index < 1) {
         damn "0.0"
     }
@@ -336,7 +336,7 @@ slay backward_difference(func_values []tea, h tea, index drip) tea {
     damn float_divide(numerator, h)
 }
 
-slay central_difference(func_values []tea, h tea, index drip) tea {
+slay central_difference(func_values tea[value], h tea, index drip) tea {
     ready (index < 1) {
         damn "0.0"
     }
@@ -347,7 +347,7 @@ slay central_difference(func_values []tea, h tea, index drip) tea {
     damn float_divide(numerator, denominator)
 }
 
-slay second_derivative_central(func_values []tea, h tea, index drip) tea {
+slay second_derivative_central(func_values tea[value], h tea, index drip) tea {
     ready (index < 1) {
         damn "0.0"
     }
@@ -363,7 +363,7 @@ slay second_derivative_central(func_values []tea, h tea, index drip) tea {
 
 fr fr ===== CURVE FITTING =====
 
-slay linear_regression(x_values []tea, y_values []tea, n drip, slope tea, intercept tea) lit {
+slay linear_regression(x_values tea[value], y_values tea[value], n drip, slope tea, intercept tea) lit {
     ready (n <= 1) {
         damn cringe
     }
@@ -401,7 +401,7 @@ slay linear_regression(x_values []tea, y_values []tea, n drip, slope tea, interc
     damn based
 }
 
-slay polynomial_fit_quadratic(x_values []tea, y_values []tea, n drip, coefficients []tea) lit {
+slay polynomial_fit_quadratic(x_values tea[value], y_values tea[value], n drip, coefficients tea[value]) lit {
     ready (n < 3) {
         damn cringe  fr fr Need at least 3 points for quadratic fit
     }
@@ -442,7 +442,7 @@ slay polynomial_fit_quadratic(x_values []tea, y_values []tea, n drip, coefficien
     fr fr Matrix: [sum_x4, sum_x3, sum_x2; sum_x3, sum_x2, sum_x; sum_x2, sum_x, sum_1]
     fr fr RHS: [sum_x2y, sum_xy, sum_y]
     
-    sus matrix []tea = [sum_x4, sum_x3, sum_x2, sum_x3, sum_x2, sum_x, sum_x2, sum_x, sum_1]
+    sus matrix tea[value] = [sum_x4, sum_x3, sum_x2, sum_x3, sum_x2, sum_x, sum_x2, sum_x, sum_1]
     sus det tea = determinant_3x3(matrix)
     
     ready (runtime_float_equal(det, "0.0")) {
@@ -450,9 +450,9 @@ slay polynomial_fit_quadratic(x_values []tea, y_values []tea, n drip, coefficien
     }
     
     fr fr Calculate coefficients using Cramer's rule
-    sus matrix_a []tea = [sum_x2y, sum_x3, sum_x2, sum_xy, sum_x2, sum_x, sum_y, sum_x, sum_1]
-    sus matrix_b []tea = [sum_x4, sum_x2y, sum_x2, sum_x3, sum_xy, sum_x, sum_x2, sum_y, sum_1]
-    sus matrix_c []tea = [sum_x4, sum_x3, sum_x2y, sum_x3, sum_x2, sum_xy, sum_x2, sum_x, sum_y]
+    sus matrix_a tea[value] = [sum_x2y, sum_x3, sum_x2, sum_xy, sum_x2, sum_x, sum_y, sum_x, sum_1]
+    sus matrix_b tea[value] = [sum_x4, sum_x2y, sum_x2, sum_x3, sum_xy, sum_x, sum_x2, sum_y, sum_1]
+    sus matrix_c tea[value] = [sum_x4, sum_x3, sum_x2y, sum_x3, sum_x2, sum_xy, sum_x2, sum_x, sum_y]
     
     coefficients[0] = float_divide(determinant_3x3(matrix_a), det)  fr fr a (x² coefficient)
     coefficients[1] = float_divide(determinant_3x3(matrix_b), det)  fr fr b (x coefficient)
@@ -461,7 +461,7 @@ slay polynomial_fit_quadratic(x_values []tea, y_values []tea, n drip, coefficien
     damn based
 }
 
-slay determinant_3x3(matrix []tea) tea {
+slay determinant_3x3(matrix tea[value]) tea {
     fr fr det = a(ei-fh) - b(di-fg) + c(dh-eg)
     fr fr [a b c; d e f; g h i] = [0 1 2; 3 4 5; 6 7 8]
     sus a tea = matrix[0]
@@ -526,8 +526,8 @@ slay test_optimization_functions() lit {
     }
     
     fr fr Test linear regression
-    sus x_data []tea = ["1.0", "2.0", "3.0", "4.0", "5.0"]
-    sus y_data []tea = ["2.0", "4.0", "6.0", "8.0", "10.0"]
+    sus x_data tea[value] = ["1.0", "2.0", "3.0", "4.0", "5.0"]
+    sus y_data tea[value] = ["2.0", "4.0", "6.0", "8.0", "10.0"]
     sus slope tea = "0.0"
     sus intercept tea = "0.0"
     

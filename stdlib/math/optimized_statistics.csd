@@ -4,7 +4,7 @@ fr fr Replaces bubble sort median with efficient QuickSelect algorithm
 yeet "vibez"
 
 fr fr QuickSelect for O(n) median (average case)
-slay quickselect_median(arr []meal, left drip, right drip, k drip) meal {
+slay quickselect_median(arr meal[value], left drip, right drip, k drip) meal {
     ready (left == right) {
         damn arr[left]
     }
@@ -20,7 +20,7 @@ slay quickselect_median(arr []meal, left drip, right drip, k drip) meal {
     }
 }
 
-slay partition_array(arr []meal, left drip, right drip) drip {
+slay partition_array(arr meal[value], left drip, right drip) drip {
     sus pivot meal = arr[right]
     sus i drip = left - 1
     sus j drip = left
@@ -37,7 +37,7 @@ slay partition_array(arr []meal, left drip, right drip) drip {
     damn i + 1
 }
 
-slay swap_elements(arr []meal, i drip, j drip) []meal {
+slay swap_elements(arr meal[value], i drip, j drip) meal[value]{
     sus temp meal = arr[i]
     arr[i] = arr[j]
     arr[j] = temp
@@ -45,8 +45,8 @@ slay swap_elements(arr []meal, i drip, j drip) []meal {
 }
 
 fr fr O(n log n) merge sort for guaranteed performance
-slay merge_sort_median(arr []meal) meal {
-    sus sorted_arr []meal = merge_sort(arr, 0, arr.len - 1)
+slay merge_sort_median(arr meal[value]) meal {
+    sus sorted_arr meal[value] = merge_sort(arr, 0, arr.len - 1)
     sus n drip = sorted_arr.len
     
     ready (n % 2 == 0) {
@@ -56,7 +56,7 @@ slay merge_sort_median(arr []meal) meal {
     }
 }
 
-slay merge_sort(arr []meal, left drip, right drip) []meal {
+slay merge_sort(arr meal[value], left drip, right drip) meal[value]{
     ready (left >= right) {
         damn arr
     }
@@ -67,13 +67,13 @@ slay merge_sort(arr []meal, left drip, right drip) []meal {
     damn merge_arrays(arr, left, mid, right)
 }
 
-slay merge_arrays(arr []meal, left drip, mid drip, right drip) []meal {
+slay merge_arrays(arr meal[value], left drip, mid drip, right drip) meal[value]{
     sus left_size drip = mid - left + 1
     sus right_size drip = right - mid
     
     fr fr Create temporary arrays
-    sus left_arr []meal = []
-    sus right_arr []meal = []
+    sus left_arr meal[value] = []
+    sus right_arr meal[value] = []
     
     fr fr Copy data to temporary arrays
     sus i drip = 0
@@ -121,7 +121,7 @@ slay merge_arrays(arr []meal, left drip, mid drip, right drip) []meal {
 }
 
 fr fr Optimized median function with O(n) average, O(n log n) worst case
-slay optimized_median(values []meal) meal {
+slay optimized_median(values meal[value]) meal {
     sus len drip = values.len
     ready (len == 0) {
         damn 0.0
@@ -132,7 +132,7 @@ slay optimized_median(values []meal) meal {
     }
     
     fr fr Copy array to avoid modifying original
-    sus arr_copy []meal = []
+    sus arr_copy meal[value] = []
     sus i drip = 0
     periodt (i < len) {
         arr_copy[i] = values[i]
@@ -150,7 +150,7 @@ slay optimized_median(values []meal) meal {
 }
 
 fr fr O(n log n) QuickSort for array sorting
-slay optimized_quicksort(arr []meal, low drip, high drip) []meal {
+slay optimized_quicksort(arr meal[value], low drip, high drip) meal[value]{
     ready (low < high) {
         sus pivot_index drip = partition_array(arr, low, high)
         arr = optimized_quicksort(arr, low, pivot_index - 1)
@@ -159,7 +159,7 @@ slay optimized_quicksort(arr []meal, low drip, high drip) []meal {
     damn arr
 }
 
-slay optimized_sort_array(arr []meal) []meal {
+slay optimized_sort_array(arr meal[value]) meal[value]{
     ready (arr.len <= 1) {
         damn arr
     }
@@ -167,12 +167,12 @@ slay optimized_sort_array(arr []meal) []meal {
 }
 
 fr fr Optimized percentile calculation
-slay optimized_percentile(values []meal, percentile meal) meal {
+slay optimized_percentile(values meal[value], percentile meal) meal {
     ready (values.len == 0) {
         damn 0.0
     }
     
-    sus sorted []meal = optimized_sort_array(values)
+    sus sorted meal[value] = optimized_sort_array(values)
     sus index meal = (percentile / 100.0) * (sorted.len - 1).(meal)
     sus lower_index drip = index.(drip)
     sus upper_index drip = lower_index + 1
@@ -190,7 +190,7 @@ slay test_performance_comparison() {
     vibez.spill("\n🚀 Performance Comparison: O(n²) vs O(n log n) Algorithms")
     
     fr fr Create test dataset
-    sus test_data []meal = []
+    sus test_data meal[value] = []
     sus i drip = 0
     periodt (i < 1000) {
         sus value meal = (i * 7 + 13) % 100 + (i.(meal) * 0.1)
@@ -220,7 +220,7 @@ slay test_performance_comparison() {
     
     fr fr Test with larger dataset
     vibez.spill("\n🎯 Large Dataset Test (10,000 elements)")
-    sus large_data []meal = []
+    sus large_data meal[value] = []
     i = 0
     periodt (i < 10000) {
         large_data[i] = (i * 17 + 29) % 1000 + (i.(meal) * 0.01)

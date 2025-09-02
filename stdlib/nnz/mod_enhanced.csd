@@ -86,14 +86,14 @@ slay swish_derivative_real(x meal) meal {
     damn s + x * s * (1.0 - s)
 }
 
-slay softmax_real(inputs []meal) []meal {
+slay softmax_real(inputs meal[value]) meal[value]{
     sus max_val meal = tensor_max_1d(inputs)
     
     fr fr Subtract max for numerical stability
-    sus shifted []meal = tensor_add_scalar_1d(inputs, -max_val)
+    sus shifted meal[value] = tensor_add_scalar_1d(inputs, -max_val)
     
     fr fr Compute exponentials
-    sus exp_vals []meal = tensor_exp_1d(shifted)
+    sus exp_vals meal[value] = tensor_exp_1d(shifted)
     
     fr fr Compute sum
     sus sum_exp meal = tensor_sum_1d(exp_vals)
@@ -109,8 +109,8 @@ fr fr ===============================================
 squad DenseLayer {
     input_size drip
     output_size drip
-    weights []meal
-    biases []meal
+    weights meal[value]
+    biases meal[value]
     activation_func tea
 }
 
@@ -119,7 +119,7 @@ slay dense_layer_create(input_size drip, output_size drip, activation tea) Dense
     sus variance meal = 2.0 / (input_size + output_size)
     sus std_dev meal = sqrt_meal(variance)
     
-    sus weights []meal = []
+    sus weights meal[value] = []
     sus i drip = 0
     bestie (i < input_size * output_size) {
         sus weight meal = random_gaussian() * std_dev
@@ -127,7 +127,7 @@ slay dense_layer_create(input_size drip, output_size drip, activation tea) Dense
         i = i + 1
     }
     
-    sus biases []meal = tensor_zeros_1d(output_size)
+    sus biases meal[value] = tensor_zeros_1d(output_size)
     
     damn DenseLayer{
         input_size: input_size,
@@ -138,9 +138,9 @@ slay dense_layer_create(input_size drip, output_size drip, activation tea) Dense
     }
 }
 
-slay dense_layer_forward(layer DenseLayer, input []meal) []meal {
+slay dense_layer_forward(layer DenseLayer, input meal[value]) meal[value]{
     fr fr Matrix multiplication: output = input * weights + bias
-    sus output []meal = []
+    sus output meal[value] = []
     sus j drip = 0
     bestie (j < layer.output_size) {
         sus sum meal = layer.biases[j]
@@ -155,7 +155,7 @@ slay dense_layer_forward(layer DenseLayer, input []meal) []meal {
     }
     
     fr fr Apply activation function
-    sus activated []meal = []
+    sus activated meal[value] = []
     j = 0
     bestie (j < layer.output_size) {
         sus activated_val meal = 0.0
@@ -183,7 +183,7 @@ fr fr ===============================================
 fr fr REAL LOSS FUNCTIONS
 fr fr ===============================================
 
-slay mse_loss_real(predictions []meal, targets []meal) meal {
+slay mse_loss_real(predictions meal[value], targets meal[value]) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -199,7 +199,7 @@ slay mse_loss_real(predictions []meal, targets []meal) meal {
     damn sum_squared_error / len(predictions)
 }
 
-slay categorical_crossentropy_loss_real(predictions []meal, targets []meal) meal {
+slay categorical_crossentropy_loss_real(predictions meal[value], targets meal[value]) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -216,7 +216,7 @@ slay categorical_crossentropy_loss_real(predictions []meal, targets []meal) meal
     damn loss
 }
 
-slay binary_crossentropy_loss_real(predictions []meal, targets []meal) meal {
+slay binary_crossentropy_loss_real(predictions meal[value], targets meal[value]) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -234,7 +234,7 @@ slay binary_crossentropy_loss_real(predictions []meal, targets []meal) meal {
     damn loss / len(predictions)
 }
 
-slay huber_loss_real(predictions []meal, targets []meal, delta meal) meal {
+slay huber_loss_real(predictions meal[value], targets meal[value], delta meal) meal {
     ready (len(predictions) != len(targets)) {
         damn 0.0
     }
@@ -267,8 +267,8 @@ squad AdamOptimizer {
     beta1 meal
     beta2 meal
     epsilon meal
-    m []meal  fr fr First moment vector
-    v []meal  fr fr Second moment vector
+    m meal[value]  fr fr First moment vector
+    v meal[value]  fr fr Second moment vector
     t drip    fr fr Time step
 }
 
@@ -284,10 +284,10 @@ slay adam_optimizer_create(learning_rate meal, beta1 meal, beta2 meal, epsilon m
     }
 }
 
-slay adam_optimizer_update(optimizer AdamOptimizer, parameters []meal, gradients []meal) (AdamOptimizer, []meal) {
+slay adam_optimizer_update(optimizer AdamOptimizer, parameters meal[value], gradients meal[value]) (AdamOptimizer, meal[value]) {
     optimizer.t = optimizer.t + 1
     
-    sus updated_params []meal = []
+    sus updated_params meal[value] = []
     sus i drip = 0
     bestie (i < len(parameters)) {
         fr fr Update biased first moment estimate
@@ -317,7 +317,7 @@ fr fr REAL NEURAL NETWORK ARCHITECTURE
 fr fr ===============================================
 
 squad NeuralNetwork {
-    layers []DenseLayer
+    layers DenseLayer[value]
     loss_function tea
     optimizer_type tea
     adam_opt AdamOptimizer
@@ -351,8 +351,8 @@ slay neural_network_add_layer(network NeuralNetwork, layer DenseLayer) NeuralNet
     damn network
 }
 
-slay neural_network_forward(network NeuralNetwork, input []meal) []meal {
-    sus current_input []meal = input
+slay neural_network_forward(network NeuralNetwork, input meal[value]) meal[value]{
+    sus current_input meal[value] = input
     sus i drip = 0
     bestie (i < len(network.layers)) {
         current_input = dense_layer_forward(network.layers[i], current_input)
@@ -361,12 +361,12 @@ slay neural_network_forward(network NeuralNetwork, input []meal) []meal {
     damn current_input
 }
 
-slay neural_network_backward(network NeuralNetwork, input []meal, target []meal) NeuralNetwork {
+slay neural_network_backward(network NeuralNetwork, input meal[value], target meal[value]) NeuralNetwork {
     fr fr Forward pass to get predictions
-    sus prediction []meal = neural_network_forward(network, input)
+    sus prediction meal[value] = neural_network_forward(network, input)
     
     fr fr Compute loss gradient (simplified)
-    sus output_gradient []meal = []
+    sus output_gradient meal[value] = []
     sus i drip = 0
     bestie (i < len(prediction)) {
         sus gradient meal = 0.0
@@ -412,13 +412,13 @@ fr fr ===============================================
 fr fr REAL CONVOLUTIONAL OPERATIONS
 fr fr ===============================================
 
-slay conv2d_real(input []meal, input_h drip, input_w drip, input_c drip,
-                 kernel []meal, kernel_h drip, kernel_w drip, 
-                 output_c drip, stride drip, padding drip) []meal {
+slay conv2d_real(input meal[value], input_h drip, input_w drip, input_c drip,
+                 kernel meal[value], kernel_h drip, kernel_w drip, 
+                 output_c drip, stride drip, padding drip) meal[value]{
     
     sus output_h drip = (input_h + 2 * padding - kernel_h) / stride + 1
     sus output_w drip = (input_w + 2 * padding - kernel_w) / stride + 1
-    sus output []meal = tensor_zeros_1d(output_h * output_w * output_c)
+    sus output meal[value] = tensor_zeros_1d(output_h * output_w * output_c)
     
     sus out_c drip = 0
     bestie (out_c < output_c) {
@@ -461,12 +461,12 @@ slay conv2d_real(input []meal, input_h drip, input_w drip, input_c drip,
     damn output
 }
 
-slay max_pool2d_real(input []meal, input_h drip, input_w drip, input_c drip,
-                     pool_size drip, stride drip) []meal {
+slay max_pool2d_real(input meal[value], input_h drip, input_w drip, input_c drip,
+                     pool_size drip, stride drip) meal[value]{
     
     sus output_h drip = (input_h - pool_size) / stride + 1
     sus output_w drip = (input_w - pool_size) / stride + 1
-    sus output []meal = tensor_zeros_1d(output_h * output_w * input_c)
+    sus output meal[value] = tensor_zeros_1d(output_h * output_w * input_c)
     
     sus c drip = 0
     bestie (c < input_c) {
@@ -509,10 +509,10 @@ fr fr ===============================================
 
 squad BatchNormLayer {
     size drip
-    gamma []meal
-    beta []meal
-    running_mean []meal
-    running_var []meal
+    gamma meal[value]
+    beta meal[value]
+    running_mean meal[value]
+    running_var meal[value]
     momentum meal
     epsilon meal
 }
@@ -529,7 +529,7 @@ slay batch_norm_create(size drip) BatchNormLayer {
     }
 }
 
-slay batch_norm_forward(layer BatchNormLayer, input []meal, training lit) (BatchNormLayer, []meal) {
+slay batch_norm_forward(layer BatchNormLayer, input meal[value], training lit) (BatchNormLayer, meal[value]) {
     ready (training) {
         fr fr Training mode: use batch statistics
         sus mean meal = tensor_mean_1d(input)
@@ -544,7 +544,7 @@ slay batch_norm_forward(layer BatchNormLayer, input []meal, training lit) (Batch
         }
         
         fr fr Normalize
-        sus output []meal = []
+        sus output meal[value] = []
         i = 0
         bestie (i < len(input)) {
             sus normalized meal = (input[i] - mean) / sqrt_meal(variance + layer.epsilon)
@@ -556,7 +556,7 @@ slay batch_norm_forward(layer BatchNormLayer, input []meal, training lit) (Batch
         damn (layer, output)
     } otherwise {
         fr fr Inference mode: use running statistics
-        sus output []meal = []
+        sus output meal[value] = []
         sus i drip = 0
         bestie (i < len(input)) {
             sus normalized meal = (input[i] - layer.running_mean[i % layer.size]) / sqrt_meal(layer.running_var[i % layer.size] + layer.epsilon)
@@ -573,16 +573,16 @@ fr fr ===============================================
 fr fr REAL ADVANCED ML ALGORITHMS
 fr fr ===============================================
 
-slay k_means_clustering_real(data []meal, n_samples drip, n_features drip, k drip, max_iters drip) ([]meal, []drip) {
+slay k_means_clustering_real(data meal[value], n_samples drip, n_features drip, k drip, max_iters drip) (meal[value], drip[value]) {
     fr fr Initialize centroids randomly
-    sus centroids []meal = []
+    sus centroids meal[value] = []
     sus i drip = 0
     bestie (i < k * n_features) {
         centroids = append(centroids, random_meal_range(-1.0, 1.0))
         i = i + 1
     }
     
-    sus assignments []drip = tensor_fill(n_samples, 0)
+    sus assignments drip[value] = tensor_fill(n_samples, 0)
     
     sus iter drip = 0
     bestie (iter < max_iters) {
@@ -629,7 +629,7 @@ slay k_means_clustering_real(data []meal, n_samples drip, n_features drip, k dri
         sus cluster drip = 0
         bestie (cluster < k) {
             sus cluster_count drip = 0
-            sus cluster_sum []meal = tensor_zeros_1d(n_features)
+            sus cluster_sum meal[value] = tensor_zeros_1d(n_features)
             
             sample = 0
             bestie (sample < n_samples) {
@@ -662,7 +662,7 @@ slay k_means_clustering_real(data []meal, n_samples drip, n_features drip, k dri
     damn (centroids, assignments)
 }
 
-slay svm_rbf_kernel_real(x1 []meal, x2 []meal, gamma meal) meal {
+slay svm_rbf_kernel_real(x1 meal[value], x2 meal[value], gamma meal) meal {
     sus diff_squared meal = 0.0
     sus i drip = 0
     bestie (i < len(x1)) {
@@ -691,13 +691,13 @@ slay test_neural_network_xor() cringe {
     network = neural_network_add_layer(network, output_layer)
     
     fr fr XOR training data
-    sus inputs [][]meal = [
+    sus inputs meal[value][value] = [
         [0.0, 0.0],
         [0.0, 1.0], 
         [1.0, 0.0],
         [1.0, 1.0]
     ]
-    sus targets [][]meal = [
+    sus targets meal[value][value] = [
         [0.0],
         [1.0],
         [1.0], 
@@ -710,7 +710,7 @@ slay test_neural_network_xor() cringe {
         sus total_loss meal = 0.0
         sus i drip = 0
         bestie (i < 4) {
-            sus prediction []meal = neural_network_forward(network, inputs[i])
+            sus prediction meal[value] = neural_network_forward(network, inputs[i])
             sus loss meal = mse_loss_real(prediction, targets[i])
             total_loss = total_loss + loss
             
@@ -728,7 +728,7 @@ slay test_neural_network_xor() cringe {
     vibez.spill("Final XOR Predictions:")
     sus i drip = 0
     bestie (i < 4) {
-        sus prediction []meal = neural_network_forward(network, inputs[i])
+        sus prediction meal[value] = neural_network_forward(network, inputs[i])
         vibez.spill("Input: [", inputs[i][0], ", ", inputs[i][1], "] -> Output: ", prediction[0], " (Target: ", targets[i][0], ")")
         i = i + 1
     }
@@ -738,19 +738,19 @@ slay test_conv2d_operation() cringe {
     vibez.spill("=== Testing 2D Convolution ===")
     
     fr fr Create test input (3x3 image, 1 channel)
-    sus input []meal = [
+    sus input meal[value] = [
         1.0, 2.0, 3.0,
         4.0, 5.0, 6.0,
         7.0, 8.0, 9.0
     ]
     
     fr fr Create test kernel (2x2, edge detection)
-    sus kernel []meal = [
+    sus kernel meal[value] = [
         -1.0, -1.0,
         -1.0, 8.0
     ]
     
-    sus output []meal = conv2d_real(input, 3, 3, 1, kernel, 2, 2, 1, 1, 0)
+    sus output meal[value] = conv2d_real(input, 3, 3, 1, kernel, 2, 2, 1, 1, 0)
     
     vibez.spill("Convolution result:")
     sus i drip = 0
@@ -764,9 +764,9 @@ slay test_batch_normalization() cringe {
     vibez.spill("=== Testing Batch Normalization ===")
     
     sus layer BatchNormLayer = batch_norm_create(4)
-    sus input []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
+    sus input meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0]
     
-    sus output []meal
+    sus output meal[value]
     (layer, output) = batch_norm_forward(layer, input, based)
     
     vibez.spill("Batch norm output:")
@@ -781,13 +781,13 @@ slay test_k_means_clustering() cringe {
     vibez.spill("=== Testing K-Means Clustering ===")
     
     fr fr Create test data (2D points)
-    sus data []meal = [
+    sus data meal[value] = [
         1.0, 1.0,   1.5, 2.0,   2.0, 1.5,  fr fr Cluster 1
         8.0, 8.0,   8.5, 9.0,   9.0, 8.5   fr fr Cluster 2
     ]
     
-    sus centroids []meal
-    sus assignments []drip
+    sus centroids meal[value]
+    sus assignments drip[value]
     (centroids, assignments) = k_means_clustering_real(data, 6, 2, 2, 100)
     
     vibez.spill("K-means results:")

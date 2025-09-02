@@ -36,7 +36,7 @@ squad RpcServer {
 
 # Rate Limiter for client IPs
 squad RateLimiter {
-    requests []drip,        # Timestamps of recent requests
+    requests drip[value],        # Timestamps of recent requests
     limit drip,             # Max requests per minute
     window_ms drip          # Time window in milliseconds
 }
@@ -105,7 +105,7 @@ slay check_rate_limit(server &RpcServer, client_ip tea) yikes<lit> {
     })
     
     # Clean old requests outside time window
-    sus filtered_requests []drip = []
+    sus filtered_requests drip[value] = []
     bestie (timestamp in limiter.requests) {
         ready (now - timestamp < limiter.window_ms) {
             filtered_requests = append(filtered_requests, timestamp)

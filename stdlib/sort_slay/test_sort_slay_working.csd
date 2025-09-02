@@ -5,7 +5,7 @@ slay test_sort_basic() {
     vibez.spill("Testing basic array creation and access...")
     
     // Test basic array creation
-    sus arr []normie = [3, 1, 4, 1, 5]
+    sus arr normie[value] = [3, 1, 4, 1, 5]
     vibez.spill("Original array created successfully")
     
     // Test array access
@@ -43,7 +43,7 @@ slay test_array_sorting() {
     vibez.spill("Testing array sorting simulation...")
     
     // Create test array
-    sus arr []normie = [3, 1, 4, 1, 5]
+    sus arr normie[value] = [3, 1, 4, 1, 5]
     vibez.spill("Original: ", arr[0], arr[1], arr[2], arr[3], arr[4])
     
     // Manual bubble sort simulation for small array
@@ -89,7 +89,7 @@ slay test_is_sorted_check() {
     vibez.spill("Testing sorted array detection...")
     
     // Test sorted array
-    sus sorted []normie = [1, 2, 3, 4, 5]
+    sus sorted normie[value] = [1, 2, 3, 4, 5]
     sus is_sorted_result lit = based
     
     bestie i := 0; i < 4; i++ {
@@ -105,7 +105,7 @@ slay test_is_sorted_check() {
     }
     
     // Test unsorted array
-    sus unsorted []normie = [3, 1, 4, 1, 5]
+    sus unsorted normie[value] = [3, 1, 4, 1, 5]
     sus is_unsorted_result lit = based
     
     bestie j := 0; j < 4; j++ {
@@ -125,7 +125,7 @@ slay test_binary_search_concept() {
     vibez.spill("Testing binary search concept...")
     
     // Test binary search on sorted array
-    sus sorted []normie = [1, 2, 3, 4, 5, 6, 7, 8, 9]
+    sus sorted normie[value] = [1, 2, 3, 4, 5, 6, 7, 8, 9]
     sus target normie = 5
     
     sus left normie = 0
@@ -158,7 +158,7 @@ slay test_performance_concept() {
     vibez.spill("Testing performance with medium-sized array...")
     
     // Create larger array for performance testing
-    sus large_arr []normie = [50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
+    sus large_arr normie[value] = [50, 49, 48, 47, 46, 45, 44, 43, 42, 41, 40, 39, 38, 37, 36, 35, 34, 33, 32, 31, 30, 29, 28, 27, 26, 25, 24, 23, 22, 21, 20, 19, 18, 17, 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1]
     
     vibez.spill("Large array created with ", 50, " elements")
     vibez.spill("First element: ", large_arr[0])

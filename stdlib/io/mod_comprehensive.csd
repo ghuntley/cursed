@@ -68,7 +68,7 @@ be_like FileDescriptor squad {
 
 be_like BufferedReader squad {
     fd *FileDescriptor
-    buffer []byte
+    buffer byte[value]
     buffer_size thicc
     buffer_pos thicc
     buffer_len thicc
@@ -77,7 +77,7 @@ be_like BufferedReader squad {
 
 be_like BufferedWriter squad {
     fd *FileDescriptor
-    buffer []byte
+    buffer byte[value]
     buffer_size thicc
     buffer_pos thicc
     auto_flush lit
@@ -185,7 +185,7 @@ slay close_file(file_desc *FileDescriptor) IOError { fr fr Close file descriptor
     damn empty_error
 }
 
-slay read_from_fd(file_desc *FileDescriptor, buffer []byte, count thicc) (thicc, IOError) { fr fr Read from file descriptor
+slay read_from_fd(file_desc *FileDescriptor, buffer byte[value], count thicc) (thicc, IOError) { fr fr Read from file descriptor
     lowkey file_desc == null || !file_desc.is_open {
         sus error IOError = create_io_error("read", file_desc.path, ErrClosed, -1)
         damn 0, error
@@ -221,7 +221,7 @@ slay read_from_fd(file_desc *FileDescriptor, buffer []byte, count thicc) (thicc,
     damn bytes_read, empty_error
 }
 
-slay write_to_fd(file_desc *FileDescriptor, buffer []byte, count thicc) (thicc, IOError) { fr fr Write to file descriptor
+slay write_to_fd(file_desc *FileDescriptor, buffer byte[value], count thicc) (thicc, IOError) { fr fr Write to file descriptor
     lowkey file_desc == null || !file_desc.is_open {
         sus error IOError = create_io_error("write", file_desc.path, ErrClosed, -1)
         damn 0, error
@@ -311,7 +311,7 @@ slay create_buffered_reader(file_desc *FileDescriptor, buffer_size thicc) *Buffe
         buffer_size = DEFAULT_BUFFER_SIZE
     }
     
-    sus buffer []byte = allocate_byte_array(buffer_size)
+    sus buffer byte[value] = allocate_byte_array(buffer_size)
     
     sus reader BufferedReader = {
         fd: file_desc,
@@ -325,7 +325,7 @@ slay create_buffered_reader(file_desc *FileDescriptor, buffer_size thicc) *Buffe
     damn &reader
 }
 
-slay read_buffered(reader *BufferedReader, output []byte, count thicc) (thicc, IOError) { fr fr Read with buffering
+slay read_buffered(reader *BufferedReader, output byte[value], count thicc) (thicc, IOError) { fr fr Read with buffering
     lowkey reader == null || reader.fd == null {
         sus error IOError = create_io_error("read", "", ErrInvalid, -1)
         damn 0, error
@@ -395,7 +395,7 @@ slay create_buffered_writer(file_desc *FileDescriptor, buffer_size thicc, auto_f
         buffer_size = DEFAULT_BUFFER_SIZE
     }
     
-    sus buffer []byte = allocate_byte_array(buffer_size)
+    sus buffer byte[value] = allocate_byte_array(buffer_size)
     
     sus writer BufferedWriter = {
         fd: file_desc,
@@ -408,7 +408,7 @@ slay create_buffered_writer(file_desc *FileDescriptor, buffer_size thicc, auto_f
     damn &writer
 }
 
-slay write_buffered(writer *BufferedWriter, input []byte, count thicc) (thicc, IOError) { fr fr Write with buffering
+slay write_buffered(writer *BufferedWriter, input byte[value], count thicc) (thicc, IOError) { fr fr Write with buffering
     lowkey writer == null || writer.fd == null {
         sus error IOError = create_io_error("write", "", ErrInvalid, -1)
         damn 0, error
@@ -496,11 +496,11 @@ slay read_entire_file(path tea) (tea, IOError) { fr fr Read entire file as strin
     damn content, empty_error
 }
 
-slay read_entire_file_bytes(path tea) ([]byte, IOError) { fr fr Read entire file as bytes
+slay read_entire_file_bytes(path tea) (byte[value], IOError) { fr fr Read entire file as bytes
     sus file_desc, open_error := open_file(path, O_RDONLY, 0)
     
     lowkey open_error.error_code != 0 {
-        sus empty_data []byte
+        sus empty_data byte[value]
         damn empty_data, open_error
     }
     
@@ -514,7 +514,7 @@ slay read_entire_file_bytes(path tea) ([]byte, IOError) { fr fr Read entire file
         buffer_size = 100000000
     }
     
-    sus buffer []byte = allocate_byte_array(buffer_size)
+    sus buffer byte[value] = allocate_byte_array(buffer_size)
     sus total_read thicc = 0
     
     bestie {
@@ -523,7 +523,7 @@ slay read_entire_file_bytes(path tea) ([]byte, IOError) { fr fr Read entire file
             buffer_size - total_read)
         
         lowkey read_error.error_code != 0 && read_error.message != EOF {
-            sus empty_data []byte
+            sus empty_data byte[value]
             damn empty_data, read_error
         }
         
@@ -545,18 +545,18 @@ slay read_entire_file_bytes(path tea) ([]byte, IOError) { fr fr Read entire file
     }
     
     fr fr Return actual data read
-    sus result []byte = slice_byte_array(buffer, 0, total_read)
+    sus result byte[value] = slice_byte_array(buffer, 0, total_read)
     
     sus empty_error IOError
     damn result, empty_error
 }
 
 slay write_entire_file(path tea, content tea) IOError { fr fr Write string to file
-    sus bytes_data []byte = utf8_string_to_bytes(content)
+    sus bytes_data byte[value] = utf8_string_to_bytes(content)
     damn write_entire_file_bytes(path, bytes_data)
 }
 
-slay write_entire_file_bytes(path tea, data []byte) IOError { fr fr Write bytes to file
+slay write_entire_file_bytes(path tea, data byte[value]) IOError { fr fr Write bytes to file
     sus file_desc, open_error := open_file(path, O_WRONLY | O_CREATE | O_TRUNC, MODE_REGULAR)
     
     lowkey open_error.error_code != 0 {
@@ -586,11 +586,11 @@ slay write_entire_file_bytes(path tea, data []byte) IOError { fr fr Write bytes 
 }
 
 slay append_to_file(path tea, content tea) IOError { fr fr Append string to file
-    sus bytes_data []byte = utf8_string_to_bytes(content)
+    sus bytes_data byte[value] = utf8_string_to_bytes(content)
     damn append_to_file_bytes(path, bytes_data)
 }
 
-slay append_to_file_bytes(path tea, data []byte) IOError { fr fr Append bytes to file
+slay append_to_file_bytes(path tea, data byte[value]) IOError { fr fr Append bytes to file
     sus file_desc, open_error := open_file(path, O_WRONLY | O_APPEND | O_CREATE, MODE_REGULAR)
     
     lowkey open_error.error_code != 0 {
@@ -639,7 +639,7 @@ slay copy_file_comprehensive(source_path tea, dest_path tea, buffer_size thicc) 
     
     defer close_file(dest_fd)
     
-    sus buffer []byte = allocate_byte_array(buffer_size)
+    sus buffer byte[value] = allocate_byte_array(buffer_size)
     
     bestie {
         sus bytes_read, read_error := read_from_fd(source_fd, buffer, buffer_size)
@@ -887,8 +887,8 @@ fr fr ================================
 fr fr These would be implemented as actual system calls
 slay syscall_open(path tea, flags normie, mode normie) normie { damn -1 }
 slay syscall_close(fd normie) normie { damn 0 }
-slay syscall_read(fd normie, buffer []byte, count thicc) thicc { damn 0 }
-slay syscall_write(fd normie, buffer []byte, count thicc) thicc { damn count }
+slay syscall_read(fd normie, buffer byte[value], count thicc) thicc { damn 0 }
+slay syscall_write(fd normie, buffer byte[value], count thicc) thicc { damn count }
 slay syscall_seek(fd normie, offset thicc, whence normie) thicc { damn 0 }
 slay syscall_fsync(fd normie) normie { damn 0 }
 slay syscall_stat(path tea) normie { damn 0 }
@@ -922,11 +922,11 @@ slay extract_filename(path tea) tea { damn "filename" }
 slay extract_parent_directory(path tea) tea { damn "/parent" }
 
 fr fr Memory and string utilities (would use actual implementations)
-slay allocate_byte_array(size thicc) []byte { sus arr []byte = []; damn arr }
-slay expand_byte_array(arr []byte, new_size thicc) []byte { damn arr }
-slay slice_byte_array(arr []byte, start thicc, end thicc) []byte { damn arr }
-slay copy_bytes(dest []byte, dest_pos thicc, src []byte, src_pos thicc, count thicc) { }
-slay bytes_to_utf8_string(data []byte) tea { damn "" }
-slay utf8_string_to_bytes(s tea) []byte { sus arr []byte = []; damn arr }
+slay allocate_byte_array(size thicc) byte[value]{ sus arr byte[value] = []; damn arr }
+slay expand_byte_array(arr byte[value], new_size thicc) byte[value]{ damn arr }
+slay slice_byte_array(arr byte[value], start thicc, end thicc) byte[value]{ damn arr }
+slay copy_bytes(dest byte[value], dest_pos thicc, src byte[value], src_pos thicc, count thicc) { }
+slay bytes_to_utf8_string(data byte[value]) tea { damn "" }
+slay utf8_string_to_bytes(s tea) byte[value]{ sus arr byte[value] = []; damn arr }
 slay char_at_position(s tea, pos thicc) tea { damn "" }
-slay len(arr []byte) thicc { damn 0 }
+slay len(arr byte[value]) thicc { damn 0 }

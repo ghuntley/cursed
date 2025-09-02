@@ -293,7 +293,7 @@ slay test_debugging_introspection() lit {
     real_goroutine_tracking.print_goroutine_stack_trace(main_id)
     
     fr fr Test active goroutines retrieval
-    sus active_goroutines []thicc = real_goroutine_tracking.get_all_active_goroutines()
+    sus active_goroutines thicc[value] = real_goroutine_tracking.get_all_active_goroutines()
     testz.assert_not_null(active_goroutines, "Should be able to get active goroutines")
     
     fr fr Test state string conversion

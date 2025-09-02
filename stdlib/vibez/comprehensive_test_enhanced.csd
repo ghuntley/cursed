@@ -104,21 +104,21 @@ slay test_placeholder_replacement() {
     
     fr fr Test basic placeholder replacement
     sus template1 tea = "Hello {}, welcome to {}!"
-    sus values1 []tea = ["Alice", "CURSED"]
+    sus values1 tea[value] = ["Alice", "CURSED"]
     sus result1 tea = format_with_placeholders(template1, values1)
     test_assert(stringz.contains(result1, "Alice"), "Placeholder replacement works")
     test_assert(stringz.contains(result1, "CURSED"), "Multiple placeholders work")
     
     fr fr Test numbered placeholders
     sus template2 tea = "Item {0} costs {1} dollars"
-    sus values2 []tea = ["Book", "15"]
+    sus values2 tea[value] = ["Book", "15"]
     sus result2 tea = format_with_placeholders(template2, values2)
     test_assert(stringz.contains(result2, "Book"), "Numbered placeholders work")
     test_assert(stringz.contains(result2, "15"), "Numbered placeholder values correct")
     
     fr fr Test mixed placeholders
     sus template3 tea = "Hello {0}, you have {} messages"
-    sus values3 []tea = ["Bob", "5"]
+    sus values3 tea[value] = ["Bob", "5"]
     sus result3 tea = format_with_placeholders(template3, values3)
     test_assert(stringz.contains(result3, "Bob"), "Mixed placeholder types work")
     test_assert(stringz.contains(result3, "messages"), "Template text preserved")

@@ -373,7 +373,7 @@ slay WithValues(parent Context, values map[interface{}]interface{}) Context {
 }
 
 fr fr Create context with multiple vibes
-slay WithVibes(parent Context, vibes []tea) Context {
+slay WithVibes(parent Context, vibes tea[value]) Context {
     ctx := parent
     for _, vibe := range vibes {
         ctx = WithVibe(ctx, vibe)
@@ -439,7 +439,7 @@ slay WithoutCancel(parent Context) Context {
 }
 
 fr fr Merge multiple contexts
-slay MergeContexts(contexts []Context) Context {
+slay MergeContexts(contexts Context[value]) Context {
     if len(contexts) == 0 {
         damn Background()
     }

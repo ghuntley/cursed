@@ -63,7 +63,7 @@ be_like HTTP2Stream squad {
     spill stream_id normie
     spill state smol                 fr fr 0=idle, 1=open, 2=half_closed, 3=closed
     spill window_size normie         fr fr Flow control window
-    spill headers [20]tea           fr fr Request/response headers
+    spill headers tea[20]           fr fr Request/response headers
     spill header_count normie
     spill data tea                   fr fr Stream data
     spill priority normie            fr fr Stream priority
@@ -78,7 +78,7 @@ be_like HTTP2Connection squad {
     spill header_table_size normie   fr fr SETTINGS_HEADER_TABLE_SIZE
     spill enable_push lit            fr fr SETTINGS_ENABLE_PUSH
     spill max_concurrent_streams normie  fr fr SETTINGS_MAX_CONCURRENT_STREAMS
-    spill streams [100]HTTP2Stream   fr fr Active streams
+    spill streams HTTP2Stream[100]   fr fr Active streams
     spill stream_count normie
 }
 
@@ -94,7 +94,7 @@ be_like HTTP2Settings squad {
 
 fr fr HPACK Header Compression Context
 be_like HPACKContext squad {
-    spill dynamic_table [100]tea     fr fr Dynamic table for header compression
+    spill dynamic_table tea[100]     fr fr Dynamic table for header compression
     spill table_size normie          fr fr Current dynamic table size
     spill max_size normie            fr fr Maximum dynamic table size
 }
@@ -283,14 +283,14 @@ fr fr ==========================================================================
 fr fr HTTP/2 REQUEST/RESPONSE HANDLING
 fr fr =============================================================================
 
-slay http2_create_headers_frame(stream_id normie, headers [20]tea, header_count normie, end_stream lit) HTTP2Frame {
+slay http2_create_headers_frame(stream_id normie, headers tea[20], header_count normie, end_stream lit) HTTP2Frame {
     fr fr Create HEADERS frame with HPACK-compressed headers
     sus ctx HPACKContext = hpack_context_create()
     sus payload tea = ""
     
     fr fr Encode headers using HPACK
     bestie i normie = 0; i < header_count; i++ {
-        sus header_parts []tea = stringz.split(headers[i], ": ")
+        sus header_parts tea[value] = stringz.split(headers[i], ": ")
         lowkey stringz.length(header_parts) >= 2 {
             sus encoded tea = hpack_encode_header(&ctx, header_parts[0], header_parts[1])
             payload = stringz.concat(payload, encoded)
@@ -313,7 +313,7 @@ slay http2_create_data_frame(stream_id normie, data tea, end_stream lit) HTTP2Fr
     damn http2_frame_create(HTTP2_FRAME_DATA, flags, stream_id, data)
 }
 
-slay http2_send_request(conn *HTTP2Connection, method tea, path tea, headers [20]tea, header_count normie, body tea) normie {
+slay http2_send_request(conn *HTTP2Connection, method tea, path tea, headers tea[20], header_count normie, body tea) normie {
     fr fr Generate new stream ID (odd for client-initiated)
     sus stream_id normie = (conn.stream_count * 2) + 1
     conn.stream_count++
@@ -323,7 +323,7 @@ slay http2_send_request(conn *HTTP2Connection, method tea, path tea, headers [20
     conn.streams[stream_id % 100] = stream
     
     fr fr Prepare pseudo-headers
-    sus request_headers [25]tea
+    sus request_headers tea[25]
     request_headers[0] = ":method: " + method
     request_headers[1] = ":path: " + path
     request_headers[2] = ":scheme: https"
@@ -349,9 +349,9 @@ slay http2_send_request(conn *HTTP2Connection, method tea, path tea, headers [20
     damn stream_id
 }
 
-slay http2_send_response(conn *HTTP2Connection, stream_id normie, status_code normie, headers [20]tea, header_count normie, body tea) lit {
+slay http2_send_response(conn *HTTP2Connection, stream_id normie, status_code normie, headers tea[20], header_count normie, body tea) lit {
     fr fr Prepare response headers
-    sus response_headers [25]tea
+    sus response_headers tea[25]
     response_headers[0] = ":status: " + stringz.int_to_string(status_code)
     response_headers[1] = "content-type: application/json"
     response_headers[2] = "content-length: " + stringz.int_to_string(stringz.length(body))
@@ -423,14 +423,14 @@ fr fr ==========================================================================
 fr fr HTTP/2 SERVER PUSH
 fr fr =============================================================================
 
-slay http2_push_promise_frame(stream_id normie, promised_stream_id normie, headers [20]tea, header_count normie) HTTP2Frame {
+slay http2_push_promise_frame(stream_id normie, promised_stream_id normie, headers tea[20], header_count normie) HTTP2Frame {
     fr fr Create PUSH_PROMISE frame
     sus ctx HPACKContext = hpack_context_create()
     sus payload tea = stringz.int_to_string(promised_stream_id)
     
     fr fr Encode headers for promised resource
     bestie i normie = 0; i < header_count; i++ {
-        sus header_parts []tea = stringz.split(headers[i], ": ")
+        sus header_parts tea[value] = stringz.split(headers[i], ": ")
         lowkey stringz.length(header_parts) >= 2 {
             sus encoded tea = hpack_encode_header(&ctx, header_parts[0], header_parts[1])
             payload = stringz.concat(payload, encoded)
@@ -440,7 +440,7 @@ slay http2_push_promise_frame(stream_id normie, promised_stream_id normie, heade
     damn http2_frame_create(HTTP2_FRAME_PUSH_PROMISE, HTTP2_FLAG_END_HEADERS, stream_id, payload)
 }
 
-slay http2_server_push(conn *HTTP2Connection, parent_stream_id normie, push_path tea, push_headers [20]tea, header_count normie) normie {
+slay http2_server_push(conn *HTTP2Connection, parent_stream_id normie, push_path tea, push_headers tea[20], header_count normie) normie {
     lowkey !conn.enable_push {
         damn 0  fr fr Server push disabled
     }
@@ -528,13 +528,13 @@ fr fr ==========================================================================
 fr fr HTTP/2 CLIENT INTERFACE
 fr fr =============================================================================
 
-slay http2_client_get(url tea, headers [20]tea, header_count normie) tea {
+slay http2_client_get(url tea, headers tea[20], header_count normie) tea {
     sus conn HTTP2Connection = http2_connection_create()
     
     fr fr Parse URL (simplified)
     sus path tea = url
     lowkey stringz.contains(url, "://") {
-        sus url_parts []tea = stringz.split(url, "://")
+        sus url_parts tea[value] = stringz.split(url, "://")
         lowkey stringz.length(url_parts) >= 2 {
             sus remaining tea = url_parts[1]
             lowkey stringz.contains(remaining, "/") {
@@ -561,13 +561,13 @@ slay http2_client_get(url tea, headers [20]tea, header_count normie) tea {
     damn response
 }
 
-slay http2_client_post(url tea, body tea, headers [20]tea, header_count normie) tea {
+slay http2_client_post(url tea, body tea, headers tea[20], header_count normie) tea {
     sus conn HTTP2Connection = http2_connection_create()
     
     fr fr Parse URL (simplified)
     sus path tea = url
     lowkey stringz.contains(url, "://") {
-        sus url_parts []tea = stringz.split(url, "://")
+        sus url_parts tea[value] = stringz.split(url, "://")
         lowkey stringz.length(url_parts) >= 2 {
             sus remaining tea = url_parts[1]
             lowkey stringz.contains(remaining, "/") {
@@ -609,33 +609,33 @@ slay http2_server_create(port normie) HTTP2Connection {
 slay http2_server_handle_request(conn *HTTP2Connection, method tea, path tea, body tea) tea {
     fr fr Route request based on path and method
     lowkey path == "/" && method == "GET" {
-        sus headers [5]tea
+        sus headers tea[5]
         headers[0] = "cache-control: no-cache"
         sus response_body tea = "{\"message\": \"Welcome to CURSED HTTP/2 Server!\", \"protocol\": \"HTTP/2\"}"
         http2_send_response(conn, 1, 200, headers, 1, response_body)
         damn response_body
     } elif path == "/api/data" && method == "GET" {
-        sus headers [5]tea
+        sus headers tea[5]
         headers[0] = "cache-control: max-age=300"
         sus response_body tea = "{\"data\": [1, 2, 3], \"protocol\": \"HTTP/2\", \"compressed\": true}"
         http2_send_response(conn, 1, 200, headers, 1, response_body)
         damn response_body
     } elif path == "/api/upload" && method == "POST" {
-        sus headers [5]tea
+        sus headers tea[5]
         headers[0] = "location: /api/upload/123"
         sus response_body tea = "{\"uploaded\": true, \"id\": 123, \"protocol\": \"HTTP/2\"}"
         http2_send_response(conn, 1, 201, headers, 1, response_body)
         damn response_body
     } elif path == "/stream" {
         fr fr Server-sent events over HTTP/2
-        sus headers [5]tea
+        sus headers tea[5]
         headers[0] = "content-type: text/plain"
         headers[1] = "cache-control: no-cache"
         sus response_body tea = "data: HTTP/2 server-sent event\\n\\n"
         http2_send_response(conn, 1, 200, headers, 2, response_body)
         damn response_body
     } else {
-        sus headers [5]tea
+        sus headers tea[5]
         headers[0] = "content-type: application/json"
         sus error_body tea = "{\"error\": \"Not Found\", \"protocol\": \"HTTP/2\"}"
         http2_send_response(conn, 1, 404, headers, 1, error_body)
@@ -769,7 +769,7 @@ slay http2_demo_client() {
     
     fr fr Demo GET request
     vibez.spill("📥 Sending HTTP/2 GET request...")
-    sus headers [5]tea
+    sus headers tea[5]
     headers[0] = "accept: application/json"
     headers[1] = "user-agent: CURSED-HTTP2-Client/1.0"
     sus get_response tea = http2_client_get("https://api.example.com/users", headers, 2)
@@ -777,7 +777,7 @@ slay http2_demo_client() {
     
     fr fr Demo POST request
     vibez.spill("📤 Sending HTTP/2 POST request...")
-    sus post_headers [5]tea
+    sus post_headers tea[5]
     post_headers[0] = "content-type: application/json"
     post_headers[1] = "accept: application/json"
     sus post_body tea = "{\"name\": \"CURSED User\", \"age\": 25}"
@@ -815,7 +815,7 @@ slay http2_demo_server() {
     
     fr fr Demo server push
     vibez.spill("📡 Demonstrating HTTP/2 server push...")
-    sus push_headers [5]tea
+    sus push_headers tea[5]
     push_headers[0] = ":path: /static/style.css"
     push_headers[1] = ":method: GET"
     sus pushed_stream normie = http2_server_push(&server, 1, "/static/style.css", push_headers, 2)

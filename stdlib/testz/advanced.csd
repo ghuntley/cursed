@@ -31,7 +31,7 @@ squad BenchmarkResult {
     spill ops_per_sec meal
 }
 
-sus benchmark_results []BenchmarkResult = []
+sus benchmark_results BenchmarkResult[value] = []
 
 fr fr Enhanced Test Management
 slay test_group_start(group_name tea) lit {
@@ -134,7 +134,7 @@ slay get_coverage_percentage() meal {
 }
 
 fr fr Test Suite Management
-slay run_test_suite(suite_name tea, tests []slay()) lit {
+slay run_test_suite(suite_name tea, tests slay[value]()) lit {
     vibez.spill("🧪 Running test suite: ", suite_name)
     sus suite_start normie = clock_bait.now_ns()
     sus passed normie = 0
@@ -187,7 +187,7 @@ slay assert_throws(operation slay()) lit {
     }
 }
 
-slay assert_array_eq(actual []normie, expected []normie) lit {
+slay assert_array_eq(actual normie[value], expected normie[value]) lit {
     lowkey actual.len() != expected.len() {
         vibez.spillf("❌ FAIL: array length mismatch {} != {}", actual.len(), expected.len())
         damn cringe
@@ -226,9 +226,9 @@ slay print_coverage_report() lit {
 }
 
 fr fr Test Discovery and Auto-execution
-slay discover_stdlib_tests() []tea {
+slay discover_stdlib_tests() tea[value]{
     fr fr Returns list of all stdlib test files
-    sus test_files []tea = [
+    sus test_files tea[value] = [
         "stdlib/testz/test_testz.csd",
         "stdlib/collections/test_collections.csd", 
         "stdlib/string_simple/test_string_simple.csd",
@@ -241,7 +241,7 @@ slay discover_stdlib_tests() []tea {
 }
 
 slay run_all_stdlib_tests() lit {
-    sus test_files []tea = discover_stdlib_tests()
+    sus test_files tea[value] = discover_stdlib_tests()
     sus total_passed normie = 0
     sus total_failed normie = 0
     

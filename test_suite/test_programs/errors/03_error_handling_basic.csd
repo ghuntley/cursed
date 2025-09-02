@@ -47,16 +47,16 @@ slay validate_input(value normie) normie {
 slay test_input_validation() {
     vibez.spill("=== Input Validation Tests ===")
     
-    sus test_values []normie = []normie{-5, 42, 1500, 0, 999, -100}
+    sus test_values normie[value] = normie[value]{-5, 42, 1500, 0, 999, -100}
     
-    finna i normie = 0; i < len(test_values); i++ {
+    bestie i := 0; i < len(test_values); i++ {
         sus original = test_values[i]
         sus validated = validate_input(original)
         vibez.spill("Input:", original, "-> Validated:", validated)
     }
 }
 
-slay process_array_safe(arr []normie) {
+slay process_array_safe(arr normie[value]) {
     vibez.spill("=== Safe Array Processing ===")
     
     ready (len(arr) == 0) {
@@ -70,7 +70,7 @@ slay process_array_safe(arr []normie) {
     sus max_val normie = arr[0]
     sus min_val normie = arr[0]
     
-    finna i normie = 0; i < len(arr); i++ {
+    bestie i := 0; i < len(arr); i++ {
         sus val = arr[i]
         sum = sum + val
         
@@ -93,15 +93,15 @@ slay test_error_recovery() {
     vibez.spill("=== Error Recovery Tests ===")
     
     // Test empty array handling
-    sus empty_array []normie = []normie{}
+    sus empty_array normie[value] = normie[value]{}
     process_array_safe(empty_array)
     
     // Test normal array
-    sus normal_array []normie = []normie{1, 5, -3, 8, 2}
+    sus normal_array normie[value] = normie[value]{1, 5, -3, 8, 2}
     process_array_safe(normal_array)
     
     // Test single element array
-    sus single_array []normie = []normie{42}
+    sus single_array normie[value] = normie[value]{42}
     process_array_safe(single_array)
 }
 

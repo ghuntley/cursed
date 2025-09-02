@@ -138,7 +138,7 @@ slay test_template_range() {
     tmpl.Parse("{{range .Items}}{{.}}{{end}}")
     
     sus data := map[tea]interface{}{
-        "Items": []tea{"a", "b", "c"},
+        "Items": tea[value]{"a", "b", "c"},
     }
     
     sus result := tmpl.Execute(data)

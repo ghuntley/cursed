@@ -79,13 +79,13 @@ slay Any(key tea, value interface{}) Attr {
 
 be_like SusLogger squad {
     level Level
-    attrs []Attr
+    attrs Attr[value]
 }
 
 slay NewSusLogger() *SusLogger {
     sus l := &SusLogger{
         level: LevelInfo,
-        attrs: []Attr{},
+        attrs: Attr[value]{},
     }
     damn l
 }
@@ -149,7 +149,7 @@ slay (l *SusLogger) Yikes(msg tea, attrs ...Attr) {
 slay (l *SusLogger) log(level Level, msg tea, attrs ...Attr) {
     sus output := "[" + level.String() + "] " + msg
     bestie i := 0; i < len(attrs); i++ {
-        output = output + " " + attrs[i].Key + "=" + tea([]byte{})
+        output = output + " " + attrs[i].Key + "=" + tea(byte[value]{})
     }
     vibez.spill(output)
 }
@@ -157,7 +157,7 @@ slay (l *SusLogger) log(level Level, msg tea, attrs ...Attr) {
 slay (l *SusLogger) With(attrs ...Attr) *SusLogger {
     sus newLogger := &SusLogger{
         level: l.level,
-        attrs: make([]Attr, len(l.attrs)),
+        attrs: make(Attr[value], len(l.attrs)),
     }
     bestie i := 0; i < len(l.attrs); i++ {
         newLogger.attrs[i] = l.attrs[i]
@@ -231,7 +231,7 @@ be_like ConsoleOutput squad {
 }
 
 be_like BufferedOutput squad {
-    buffer []tea
+    buffer tea[value]
     max_buffer_size normie
     auto_flush lit
     mutex concurrenz.Mutex
@@ -246,7 +246,7 @@ be_like NetworkOutput squad {
 }
 
 be_like LogFormatter collab {
-    Format(level Level, message tea, attrs []Attr, timestamp normie) tea
+    Format(level Level, message tea, attrs Attr[value], timestamp normie) tea
 }
 
 be_like JSONFormatter squad {
@@ -263,7 +263,7 @@ be_like TextFormatter squad {
 }
 
 be_like LogFilter collab {
-    ShouldLog(level Level, message tea, attrs []Attr) lit
+    ShouldLog(level Level, message tea, attrs Attr[value]) lit
 }
 
 be_like LevelFilter squad {
@@ -271,16 +271,16 @@ be_like LevelFilter squad {
 }
 
 be_like KeywordFilter squad {
-    keywords []tea
+    keywords tea[value]
     block_mode lit
 }
 
 be_like AdvancedLogger squad {
     level Level
-    attrs []Attr
-    outputs []LogOutput
+    attrs Attr[value]
+    outputs LogOutput[value]
     formatter LogFormatter
-    filters []LogFilter
+    filters LogFilter[value]
     async_enabled lit
     buffer_size normie
     log_channel chan LogEntry
@@ -290,7 +290,7 @@ be_like AdvancedLogger squad {
 be_like LogEntry squad {
     level Level
     message tea
-    attrs []Attr
+    attrs Attr[value]
     timestamp normie
     caller_info tea
 }
@@ -317,10 +317,10 @@ fr fr Advanced logger implementation
 slay NewAdvancedLogger() *AdvancedLogger {
     sus logger := &AdvancedLogger{
         level: LevelInfo,
-        attrs: []Attr{},
-        outputs: []LogOutput{},
+        attrs: Attr[value]{},
+        outputs: LogOutput[value]{},
         formatter: NewTextFormatter(),
-        filters: []LogFilter{},
+        filters: LogFilter[value]{},
         async_enabled: cap,
         buffer_size: 1000,
         log_channel: make(chan LogEntry, 1000),
@@ -620,7 +620,7 @@ slay (c *ConsoleOutput) DisableColors() {
 fr fr Buffered output implementation
 slay NewBufferedOutput(max_size normie) *BufferedOutput {
     sus output := &BufferedOutput{
-        buffer: []tea{},
+        buffer: tea[value]{},
         max_buffer_size: max_size,
         auto_flush: based,
         mutex: concurrenz.NewMutex(),
@@ -645,7 +645,7 @@ slay (b *BufferedOutput) flush() {
     for _, message := range b.buffer {
         vibez.spill(message)
     }
-    b.buffer = []tea{}
+    b.buffer = tea[value]{}
 }
 
 slay (b *BufferedOutput) Close() tea {
@@ -720,7 +720,7 @@ slay NewJSONFormatter() *JSONFormatter {
     damn formatter
 }
 
-slay (j *JSONFormatter) Format(level Level, message tea, attrs []Attr, timestamp normie) tea {
+slay (j *JSONFormatter) Format(level Level, message tea, attrs Attr[value], timestamp normie) tea {
     sus json_message := "{"
     
     if j.include_timestamp {
@@ -759,7 +759,7 @@ slay NewTextFormatter() *TextFormatter {
     damn formatter
 }
 
-slay (t *TextFormatter) Format(level Level, message tea, attrs []Attr, timestamp normie) tea {
+slay (t *TextFormatter) Format(level Level, message tea, attrs Attr[value], timestamp normie) tea {
     sus text_message := ""
     
     if t.include_timestamp {
@@ -811,12 +811,12 @@ slay NewLevelFilter(min_level Level) *LevelFilter {
     damn filter
 }
 
-slay (l *LevelFilter) ShouldLog(level Level, message tea, attrs []Attr) lit {
+slay (l *LevelFilter) ShouldLog(level Level, message tea, attrs Attr[value]) lit {
     damn level >= l.min_level
 }
 
 fr fr Keyword filter implementation
-slay NewKeywordFilter(keywords []tea, block_mode lit) *KeywordFilter {
+slay NewKeywordFilter(keywords tea[value], block_mode lit) *KeywordFilter {
     sus filter := &KeywordFilter{
         keywords: keywords,
         block_mode: block_mode,
@@ -824,7 +824,7 @@ slay NewKeywordFilter(keywords []tea, block_mode lit) *KeywordFilter {
     damn filter
 }
 
-slay (k *KeywordFilter) ShouldLog(level Level, message tea, attrs []Attr) lit {
+slay (k *KeywordFilter) ShouldLog(level Level, message tea, attrs Attr[value]) lit {
     fr fr Check message for keywords
     for _, keyword := range k.keywords {
         if StringContains(message, keyword) {

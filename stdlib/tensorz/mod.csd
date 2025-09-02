@@ -6,8 +6,8 @@ yeet "arrayz"
 
 fr fr === TENSOR CREATION FUNCTIONS ===
 
-slay tensor_new_1d(size normie) []meal {
-    sus result []meal = []
+slay tensor_new_1d(size normie) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < size {
         result = append(result, 0.0)
@@ -16,12 +16,12 @@ slay tensor_new_1d(size normie) []meal {
     damn result
 }
 
-slay tensor_zeros_1d(size normie) []meal {
+slay tensor_zeros_1d(size normie) meal[value]{
     damn tensor_new_1d(size)
 }
 
-slay tensor_ones_1d(size normie) []meal {
-    sus result []meal = []
+slay tensor_ones_1d(size normie) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < size {
         result = append(result, 1.0)
@@ -30,8 +30,8 @@ slay tensor_ones_1d(size normie) []meal {
     damn result
 }
 
-slay tensor_from_array_1d(data []meal) []meal {
-    sus result []meal = []
+slay tensor_from_array_1d(data meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(data) {
         result = append(result, data[i])
@@ -40,8 +40,8 @@ slay tensor_from_array_1d(data []meal) []meal {
     damn result
 }
 
-slay tensor_random_1d(size normie, min_val meal, max_val meal) []meal {
-    sus result []meal = []
+slay tensor_random_1d(size normie, min_val meal, max_val meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < size {
         sus random_val meal = random_meal_range(min_val, max_val)
@@ -51,8 +51,8 @@ slay tensor_random_1d(size normie, min_val meal, max_val meal) []meal {
     damn result
 }
 
-slay tensor_random_normal_1d(size normie, mean meal, std_dev meal) []meal {
-    sus result []meal = []
+slay tensor_random_normal_1d(size normie, mean meal, std_dev meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < size {
         sus normal_val meal = mean + std_dev * random_gaussian()
@@ -64,22 +64,22 @@ slay tensor_random_normal_1d(size normie, mean meal, std_dev meal) []meal {
 
 fr fr === MATRIX OPERATIONS (2D arrays as flattened 1D) ===
 
-slay matrix_new(rows normie, cols normie) []meal {
+slay matrix_new(rows normie, cols normie) meal[value]{
     sus size normie = rows * cols
     damn tensor_new_1d(size)
 }
 
-slay matrix_zeros(rows normie, cols normie) []meal {
+slay matrix_zeros(rows normie, cols normie) meal[value]{
     damn matrix_new(rows, cols)
 }
 
-slay matrix_ones(rows normie, cols normie) []meal {
+slay matrix_ones(rows normie, cols normie) meal[value]{
     sus size normie = rows * cols
     damn tensor_ones_1d(size)
 }
 
-slay matrix_eye(n normie) []meal {
-    sus result []meal = matrix_zeros(n, n)
+slay matrix_eye(n normie) meal[value]{
+    sus result meal[value] = matrix_zeros(n, n)
     sus i normie = 0
     bestie i < n {
         sus index normie = i * n + i
@@ -89,7 +89,7 @@ slay matrix_eye(n normie) []meal {
     damn result
 }
 
-slay matrix_get(matrix []meal, rows normie, cols normie, row normie, col normie) meal {
+slay matrix_get(matrix meal[value], rows normie, cols normie, row normie, col normie) meal {
     lowkey row < 0 || row >= rows || col < 0 || col >= cols {
         damn 0.0
     }
@@ -97,7 +97,7 @@ slay matrix_get(matrix []meal, rows normie, cols normie, row normie, col normie)
     damn matrix[index]
 }
 
-slay matrix_set(matrix []meal, rows normie, cols normie, row normie, col normie, value meal) []meal {
+slay matrix_set(matrix meal[value], rows normie, cols normie, row normie, col normie, value meal) meal[value]{
     lowkey row < 0 || row >= rows || col < 0 || col >= cols {
         damn matrix
     }
@@ -108,12 +108,12 @@ slay matrix_set(matrix []meal, rows normie, cols normie, row normie, col normie,
 
 fr fr === TENSOR ARITHMETIC OPERATIONS ===
 
-slay tensor_add_1d(a []meal, b []meal) []meal {
+slay tensor_add_1d(a meal[value], b meal[value]) meal[value]{
     lowkey len(a) != len(b) {
         damn a
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(a) {
         result = append(result, a[i] + b[i])
@@ -122,12 +122,12 @@ slay tensor_add_1d(a []meal, b []meal) []meal {
     damn result
 }
 
-slay tensor_subtract_1d(a []meal, b []meal) []meal {
+slay tensor_subtract_1d(a meal[value], b meal[value]) meal[value]{
     lowkey len(a) != len(b) {
         damn a
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(a) {
         result = append(result, a[i] - b[i])
@@ -136,12 +136,12 @@ slay tensor_subtract_1d(a []meal, b []meal) []meal {
     damn result
 }
 
-slay tensor_multiply_1d(a []meal, b []meal) []meal {
+slay tensor_multiply_1d(a meal[value], b meal[value]) meal[value]{
     lowkey len(a) != len(b) {
         damn a
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(a) {
         result = append(result, a[i] * b[i])
@@ -150,12 +150,12 @@ slay tensor_multiply_1d(a []meal, b []meal) []meal {
     damn result
 }
 
-slay tensor_divide_1d(a []meal, b []meal) []meal {
+slay tensor_divide_1d(a meal[value], b meal[value]) meal[value]{
     lowkey len(a) != len(b) {
         damn a
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(a) {
         lowkey abs_meal(b[i]) < EPSILON {
@@ -168,8 +168,8 @@ slay tensor_divide_1d(a []meal, b []meal) []meal {
     damn result
 }
 
-slay tensor_add_scalar_1d(tensor []meal, scalar meal) []meal {
-    sus result []meal = []
+slay tensor_add_scalar_1d(tensor meal[value], scalar meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, tensor[i] + scalar)
@@ -178,8 +178,8 @@ slay tensor_add_scalar_1d(tensor []meal, scalar meal) []meal {
     damn result
 }
 
-slay tensor_multiply_scalar_1d(tensor []meal, scalar meal) []meal {
-    sus result []meal = []
+slay tensor_multiply_scalar_1d(tensor meal[value], scalar meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, tensor[i] * scalar)
@@ -190,12 +190,12 @@ slay tensor_multiply_scalar_1d(tensor []meal, scalar meal) []meal {
 
 fr fr === MATRIX MULTIPLICATION ===
 
-slay matrix_multiply(a []meal, a_rows normie, a_cols normie, b []meal, b_rows normie, b_cols normie) []meal {
+slay matrix_multiply(a meal[value], a_rows normie, a_cols normie, b meal[value], b_rows normie, b_cols normie) meal[value]{
     lowkey a_cols != b_rows {
         damn a
     }
     
-    sus result []meal = matrix_zeros(a_rows, b_cols)
+    sus result meal[value] = matrix_zeros(a_rows, b_cols)
     
     sus i normie = 0
     bestie i < a_rows {
@@ -218,8 +218,8 @@ slay matrix_multiply(a []meal, a_rows normie, a_cols normie, b []meal, b_rows no
     damn result
 }
 
-slay matrix_transpose(matrix []meal, rows normie, cols normie) []meal {
-    sus result []meal = matrix_zeros(cols, rows)
+slay matrix_transpose(matrix meal[value], rows normie, cols normie) meal[value]{
+    sus result meal[value] = matrix_zeros(cols, rows)
     
     sus i normie = 0
     bestie i < rows {
@@ -235,7 +235,7 @@ slay matrix_transpose(matrix []meal, rows normie, cols normie) []meal {
     damn result
 }
 
-slay tensor_dot_product_1d(a []meal, b []meal) meal {
+slay tensor_dot_product_1d(a meal[value], b meal[value]) meal {
     lowkey len(a) != len(b) {
         damn 0.0
     }
@@ -251,7 +251,7 @@ slay tensor_dot_product_1d(a []meal, b []meal) meal {
 
 fr fr === TENSOR STATISTICS ===
 
-slay tensor_sum_1d(tensor []meal) meal {
+slay tensor_sum_1d(tensor meal[value]) meal {
     sus sum meal = 0.0
     sus i normie = 0
     bestie i < len(tensor) {
@@ -261,14 +261,14 @@ slay tensor_sum_1d(tensor []meal) meal {
     damn sum
 }
 
-slay tensor_mean_1d(tensor []meal) meal {
+slay tensor_mean_1d(tensor meal[value]) meal {
     lowkey len(tensor) == 0 {
         damn 0.0
     }
     damn tensor_sum_1d(tensor) / len(tensor)
 }
 
-slay tensor_min_1d(tensor []meal) meal {
+slay tensor_min_1d(tensor meal[value]) meal {
     lowkey len(tensor) == 0 {
         damn 0.0
     }
@@ -284,7 +284,7 @@ slay tensor_min_1d(tensor []meal) meal {
     damn min_val
 }
 
-slay tensor_max_1d(tensor []meal) meal {
+slay tensor_max_1d(tensor meal[value]) meal {
     lowkey len(tensor) == 0 {
         damn 0.0
     }
@@ -300,7 +300,7 @@ slay tensor_max_1d(tensor []meal) meal {
     damn max_val
 }
 
-slay tensor_variance_1d(tensor []meal) meal {
+slay tensor_variance_1d(tensor meal[value]) meal {
     lowkey len(tensor) <= 1 {
         damn 0.0
     }
@@ -316,14 +316,14 @@ slay tensor_variance_1d(tensor []meal) meal {
     damn sum_sq_diff / (len(tensor) - 1)
 }
 
-slay tensor_std_dev_1d(tensor []meal) meal {
+slay tensor_std_dev_1d(tensor meal[value]) meal {
     damn sqrt_meal(tensor_variance_1d(tensor))
 }
 
 fr fr === MATHEMATICAL OPERATIONS ===
 
-slay tensor_abs_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay tensor_abs_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, abs_meal(tensor[i]))
@@ -332,8 +332,8 @@ slay tensor_abs_1d(tensor []meal) []meal {
     damn result
 }
 
-slay tensor_pow_1d(tensor []meal, exponent meal) []meal {
-    sus result []meal = []
+slay tensor_pow_1d(tensor meal[value], exponent meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, pow_meal_meal(tensor[i], exponent))
@@ -342,8 +342,8 @@ slay tensor_pow_1d(tensor []meal, exponent meal) []meal {
     damn result
 }
 
-slay tensor_exp_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay tensor_exp_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, exp_meal(tensor[i]))
@@ -352,8 +352,8 @@ slay tensor_exp_1d(tensor []meal) []meal {
     damn result
 }
 
-slay tensor_log_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay tensor_log_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         lowkey tensor[i] <= 0.0 {
@@ -366,8 +366,8 @@ slay tensor_log_1d(tensor []meal) []meal {
     damn result
 }
 
-slay tensor_sqrt_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay tensor_sqrt_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         lowkey tensor[i] < 0.0 {
@@ -382,7 +382,7 @@ slay tensor_sqrt_1d(tensor []meal) []meal {
 
 fr fr === NORMALIZATION ===
 
-slay tensor_normalize_1d(tensor []meal) []meal {
+slay tensor_normalize_1d(tensor meal[value]) meal[value]{
     sus mean meal = tensor_mean_1d(tensor)
     sus std_dev meal = tensor_std_dev_1d(tensor)
     
@@ -390,7 +390,7 @@ slay tensor_normalize_1d(tensor []meal) []meal {
         damn tensor_add_scalar_1d(tensor_zeros_1d(len(tensor)), -mean)
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         sus normalized_val meal = (tensor[i] - mean) / std_dev
@@ -400,7 +400,7 @@ slay tensor_normalize_1d(tensor []meal) []meal {
     damn result
 }
 
-slay tensor_min_max_normalize_1d(tensor []meal) []meal {
+slay tensor_min_max_normalize_1d(tensor meal[value]) meal[value]{
     sus min_val meal = tensor_min_1d(tensor)
     sus max_val meal = tensor_max_1d(tensor)
     sus range meal = max_val - min_val
@@ -409,7 +409,7 @@ slay tensor_min_max_normalize_1d(tensor []meal) []meal {
         damn tensor_zeros_1d(len(tensor))
     }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         sus normalized_val meal = (tensor[i] - min_val) / range
@@ -421,7 +421,7 @@ slay tensor_min_max_normalize_1d(tensor []meal) []meal {
 
 fr fr === UTILITY FUNCTIONS ===
 
-slay tensor_equals_1d(a []meal, b []meal, tolerance meal) lit {
+slay tensor_equals_1d(a meal[value], b meal[value], tolerance meal) lit {
     lowkey len(a) != len(b) {
         damn cringe
     }
@@ -437,8 +437,8 @@ slay tensor_equals_1d(a []meal, b []meal, tolerance meal) lit {
     damn based
 }
 
-slay tensor_copy_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay tensor_copy_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, tensor[i])
@@ -447,8 +447,8 @@ slay tensor_copy_1d(tensor []meal) []meal {
     damn result
 }
 
-slay tensor_fill_1d(size normie, value meal) []meal {
-    sus result []meal = []
+slay tensor_fill_1d(size normie, value meal) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < size {
         result = append(result, value)
@@ -457,12 +457,12 @@ slay tensor_fill_1d(size normie, value meal) []meal {
     damn result
 }
 
-slay tensor_slice_1d(tensor []meal, start normie, end normie) []meal {
+slay tensor_slice_1d(tensor meal[value], start normie, end normie) meal[value]{
     lowkey start < 0 { start = 0 }
     lowkey end > len(tensor) { end = len(tensor) }
     lowkey start >= end { damn [] }
     
-    sus result []meal = []
+    sus result meal[value] = []
     sus i normie = start
     bestie i < end {
         result = append(result, tensor[i])
@@ -471,8 +471,8 @@ slay tensor_slice_1d(tensor []meal, start normie, end normie) []meal {
     damn result
 }
 
-slay tensor_concat_1d(a []meal, b []meal) []meal {
-    sus result []meal = []
+slay tensor_concat_1d(a meal[value], b meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(a) {
         result = append(result, a[i])
@@ -488,7 +488,7 @@ slay tensor_concat_1d(a []meal, b []meal) []meal {
 
 fr fr === PRINT FUNCTIONS ===
 
-slay tensor_print_1d(tensor []meal, name tea) cringe {
+slay tensor_print_1d(tensor meal[value], name tea) cringe {
     vibez.spill(name, " [", len(tensor), "]: [")
     sus i normie = 0
     bestie i < len(tensor) {
@@ -501,7 +501,7 @@ slay tensor_print_1d(tensor []meal, name tea) cringe {
     vibez.spill("]")
 }
 
-slay matrix_print(matrix []meal, rows normie, cols normie, name tea) cringe {
+slay matrix_print(matrix meal[value], rows normie, cols normie, name tea) cringe {
     vibez.spill(name, " [", rows, "x", cols, "]:")
     sus i normie = 0
     bestie i < rows {
@@ -522,8 +522,8 @@ slay matrix_print(matrix []meal, rows normie, cols normie, name tea) cringe {
 
 fr fr === ACTIVATION FUNCTIONS FOR ML ===
 
-slay apply_sigmoid_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay apply_sigmoid_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         sus x meal = tensor[i]
@@ -540,8 +540,8 @@ slay apply_sigmoid_1d(tensor []meal) []meal {
     damn result
 }
 
-slay apply_relu_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay apply_relu_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         lowkey tensor[i] > 0.0 {
@@ -554,8 +554,8 @@ slay apply_relu_1d(tensor []meal) []meal {
     damn result
 }
 
-slay apply_tanh_1d(tensor []meal) []meal {
-    sus result []meal = []
+slay apply_tanh_1d(tensor meal[value]) meal[value]{
+    sus result meal[value] = []
     sus i normie = 0
     bestie i < len(tensor) {
         result = append(result, tanh_meal(tensor[i]))
@@ -566,7 +566,7 @@ slay apply_tanh_1d(tensor []meal) []meal {
 
 fr fr === LOSS FUNCTIONS ===
 
-slay mean_squared_error_1d(predictions []meal, targets []meal) meal {
+slay mean_squared_error_1d(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -581,7 +581,7 @@ slay mean_squared_error_1d(predictions []meal, targets []meal) meal {
     damn sum_squared_error / len(predictions)
 }
 
-slay mean_absolute_error_1d(predictions []meal, targets []meal) meal {
+slay mean_absolute_error_1d(predictions meal[value], targets meal[value]) meal {
     lowkey len(predictions) != len(targets) {
         damn 0.0
     }
@@ -598,7 +598,7 @@ slay mean_absolute_error_1d(predictions []meal, targets []meal) meal {
 
 fr fr === LINEAR ALGEBRA UTILITIES ===
 
-slay vector_magnitude_1d(vector []meal) meal {
+slay vector_magnitude_1d(vector meal[value]) meal {
     sus sum_squares meal = 0.0
     sus i normie = 0
     bestie i < len(vector) {
@@ -608,7 +608,7 @@ slay vector_magnitude_1d(vector []meal) meal {
     damn sqrt_meal(sum_squares)
 }
 
-slay vector_normalize_1d(vector []meal) []meal {
+slay vector_normalize_1d(vector meal[value]) meal[value]{
     sus magnitude meal = vector_magnitude_1d(vector)
     lowkey magnitude == 0.0 {
         damn vector
@@ -616,7 +616,7 @@ slay vector_normalize_1d(vector []meal) []meal {
     damn tensor_multiply_scalar_1d(vector, 1.0 / magnitude)
 }
 
-slay cosine_similarity_1d(a []meal, b []meal) meal {
+slay cosine_similarity_1d(a meal[value], b meal[value]) meal {
     lowkey len(a) != len(b) {
         damn 0.0
     }

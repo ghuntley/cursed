@@ -9,7 +9,7 @@ fr fr ===== CORE GLOBAL STATE =====
 
 sus mime_initialized lit = cap
 sus last_mime_error tea = ""
-sus mime_database []MimeEntry = []
+sus mime_database MimeEntry[value] = []
 
 fr fr ===== MIME DATABASE STRUCTURES =====
 
@@ -152,7 +152,7 @@ slay detect_mime_from_extension(filename tea) tea {
     damn "application/octet-stream"
 }
 
-slay detect_mime_from_content(content []drip) tea {
+slay detect_mime_from_content(content drip[value]) tea {
     init()
     
     ready array_len(content) == 0 {
@@ -187,7 +187,7 @@ slay detect_mime_from_content(content []drip) tea {
     damn "application/octet-stream"
 }
 
-slay detect_mime_comprehensive(filename tea, content []drip) tea {
+slay detect_mime_comprehensive(filename tea, content drip[value]) tea {
     init()
     
     fr fr First try extension-based detection
@@ -232,7 +232,7 @@ slay parse_content_type(header_value tea) ContentTypeHeader {
     }
     
     fr fr Split by semicolon to separate media type from parameters
-    sus parts []tea = string_split(header_value, ";")
+    sus parts tea[value] = string_split(header_value, ";")
     ready array_len(parts) == 0 {
         damn result
     }
@@ -303,7 +303,7 @@ slay get_content_type_for_file(filename tea) tea {
 
 fr fr ===== BINARY SIGNATURE DETECTION =====
 
-slay is_jpeg_signature(content []drip) lit {
+slay is_jpeg_signature(content drip[value]) lit {
     ready array_len(content) < 4 {
         damn cap
     }
@@ -312,7 +312,7 @@ slay is_jpeg_signature(content []drip) lit {
          content[2] == 0xFF && (content[3] == 0xE0 || content[3] == 0xE1)
 }
 
-slay is_png_signature(content []drip) lit {
+slay is_png_signature(content drip[value]) lit {
     ready array_len(content) < 8 {
         damn cap
     }
@@ -322,7 +322,7 @@ slay is_png_signature(content []drip) lit {
          content[6] == 0x1A && content[7] == 0x0A
 }
 
-slay is_gif_signature(content []drip) lit {
+slay is_gif_signature(content drip[value]) lit {
     ready array_len(content) < 6 {
         damn cap
     }
@@ -332,7 +332,7 @@ slay is_gif_signature(content []drip) lit {
           content[5] == 0x61)
 }
 
-slay is_pdf_signature(content []drip) lit {
+slay is_pdf_signature(content drip[value]) lit {
     ready array_len(content) < 4 {
         damn cap
     }
@@ -341,7 +341,7 @@ slay is_pdf_signature(content []drip) lit {
          content[2] == 0x44 && content[3] == 0x46
 }
 
-slay is_zip_signature(content []drip) lit {
+slay is_zip_signature(content drip[value]) lit {
     ready array_len(content) < 4 {
         damn cap
     }
@@ -351,7 +351,7 @@ slay is_zip_signature(content []drip) lit {
          (content[3] == 0x04 || content[3] == 0x06 || content[3] == 0x08)
 }
 
-slay is_text_content(content []drip) lit {
+slay is_text_content(content drip[value]) lit {
     ready array_len(content) == 0 {
         damn based
     }
@@ -405,10 +405,10 @@ slay get_extension_for_mime(mime_type tea) tea {
     damn ""
 }
 
-slay list_supported_extensions() []tea {
+slay list_supported_extensions() tea[value]{
     init()
     
-    sus extensions []tea = []
+    sus extensions tea[value] = []
     bestie (i drip = 0; i < array_len(mime_database); i++) {
         extensions = array_push(extensions, mime_database[i].extension)
     }

@@ -42,7 +42,7 @@ squad ProductionDatabaseConnection {
     sus last_health_check_ns drip
     sus usage_count drip
     sus transaction_active lit
-    sus prepared_statement_cache []PreparedStatementInfo
+    sus prepared_statement_cache PreparedStatementInfo[value]
     sus connection_metadata tea
     sus error_count drip
     sus last_error tea
@@ -81,9 +81,9 @@ squad PreparedStatementInfo {
 squad ProductionConnectionPool {
     sus pool_id tea
     sus config ProductionConnectionConfig
-    sus active_connections []ProductionDatabaseConnection
-    sus idle_connections []ProductionDatabaseConnection
-    sus connection_request_queue []ProductionConnectionRequest
+    sus active_connections ProductionDatabaseConnection[value]
+    sus idle_connections ProductionDatabaseConnection[value]
+    sus connection_request_queue ProductionConnectionRequest[value]
     sus pool_statistics ProductionPoolStatistics
     sus health_monitor ProductionHealthMonitor
     sus is_running lit
@@ -119,7 +119,7 @@ squad ProductionHealthMonitor {
     sus unhealthy_connections drip
     sus failed_health_checks drip
     sus consecutive_health_check_failures drip
-    sus health_check_history []HealthCheckResult
+    sus health_check_history HealthCheckResult[value]
     sus is_monitoring lit
     sus monitor_goroutine_id tea
     sus alert_thresholds HealthAlertThresholds
@@ -152,9 +152,9 @@ squad ProductionConnectionRequest {
 }
 
 squad ConnectionCache {
-    sus prepared_statement_cache []CachedPreparedStatement
-    sus query_result_cache []CachedQueryResult
-    sus connection_metadata_cache []ConnectionMetadata
+    sus prepared_statement_cache CachedPreparedStatement[value]
+    sus query_result_cache CachedQueryResult[value]
+    sus connection_metadata_cache ConnectionMetadata[value]
     sus cache_size_limit drip
     sus cache_ttl_ns drip
     sus cache_hit_count drip
@@ -686,12 +686,12 @@ slay format_boolean_as_string(value lit) tea {
     damn "false"
 }
 
-slay array_length_production_connections(arr []ProductionDatabaseConnection) drip {
+slay array_length_production_connections(arr ProductionDatabaseConnection[value]) drip {
     fr fr Production array length calculation
     damn 0  fr fr Placeholder - would return actual length
 }
 
-slay array_length_cached_statements(arr []CachedPreparedStatement) drip {
+slay array_length_cached_statements(arr CachedPreparedStatement[value]) drip {
     fr fr Cached statement array length calculation
     damn 0  fr fr Placeholder - would return actual length
 }

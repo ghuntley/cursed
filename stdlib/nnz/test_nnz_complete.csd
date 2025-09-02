@@ -110,8 +110,8 @@ slay test_activation_functions() cringe {
     assert_true(mish_pos > 0.8, "Mish positive")
     
     fr fr Test Softmax
-    sus input_softmax []meal = [1.0, 2.0, 3.0]
-    sus softmax_result []meal = softmax_activation(input_softmax)
+    sus input_softmax meal[value] = [1.0, 2.0, 3.0]
+    sus softmax_result meal[value] = softmax_activation(input_softmax)
     
     sus sum meal = 0.0
     sus i drip = 0
@@ -138,8 +138,8 @@ slay test_layer_operations() cringe {
     assert_eq_drip(len(dense_layer.biases), 5, "Dense biases count")
     
     fr fr Test dense forward pass
-    sus input []meal = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
-    sus output []meal = dense_forward_complete(dense_layer, input)
+    sus input meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]
+    sus output meal[value] = dense_forward_complete(dense_layer, input)
     assert_eq_drip(len(output), 5, "Dense output size check")
     
     fr fr All outputs should be non-negative due to ReLU
@@ -156,8 +156,8 @@ slay test_layer_operations() cringe {
     assert_eq_drip(len(bn_layer.beta), 5, "BatchNorm beta size")
     
     fr fr Test batch norm forward (simplified single sample)
-    sus bn_input []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
-    sus bn_output []meal = batch_norm_forward_complete(bn_layer, bn_input, 1)
+    sus bn_input meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
+    sus bn_output meal[value] = batch_norm_forward_complete(bn_layer, bn_input, 1)
     assert_eq_drip(len(bn_output), 5, "BatchNorm output size")
     
     fr fr Test dropout layer
@@ -167,13 +167,13 @@ slay test_layer_operations() cringe {
     
     fr fr Test dropout forward (training mode)
     dropout_layer.training = based
-    sus dropout_input []meal = [1.0, 2.0, 3.0, 4.0, 5.0]
-    sus dropout_output []meal = dropout_forward_complete(dropout_layer, dropout_input)
+    sus dropout_input meal[value] = [1.0, 2.0, 3.0, 4.0, 5.0]
+    sus dropout_output meal[value] = dropout_forward_complete(dropout_layer, dropout_input)
     assert_eq_drip(len(dropout_output), 5, "Dropout output size")
     
     fr fr Test dropout forward (inference mode)
     dropout_layer.training = cap
-    sus dropout_inference []meal = dropout_forward_complete(dropout_layer, dropout_input)
+    sus dropout_inference meal[value] = dropout_forward_complete(dropout_layer, dropout_input)
     assert_eq_drip(len(dropout_inference), 5, "Dropout inference size")
     
     fr fr In inference mode, output should equal input
@@ -204,33 +204,33 @@ slay test_convolutional_layers() cringe {
     assert_eq_drip(len(conv_layer.biases), 64, "Conv2D biases count")
     
     fr fr Test convolution forward pass (small example)
-    sus small_input []meal = []
+    sus small_input meal[value] = []
     sus pixel drip = 0
     bestie (pixel < 4 * 4 * 2) {  fr fr 4x4 image with 2 channels
         small_input = append(small_input, 1.0)
         pixel = pixel + 1
     }
     
-    sus conv_output []meal = conv2d_forward_complete(small_input, conv_layer.weights, conv_layer.biases,
+    sus conv_output meal[value] = conv2d_forward_complete(small_input, conv_layer.weights, conv_layer.biases,
                                                      4, 4, 2, 3, 2, 1, 0)  fr fr Simple config
     
     fr fr Output size: (4 + 2*0 - 2)/1 + 1 = 3, so 3x3x3 = 27
     assert_eq_drip(len(conv_output), 27, "Conv2D output size")
     
     fr fr Test max pooling
-    sus pool_input []meal = []
+    sus pool_input meal[value] = []
     pixel = 0
     bestie (pixel < 4 * 4 * 2) {
         pool_input = append(pool_input, pixel * 0.1)
         pixel = pixel + 1
     }
     
-    sus pool_output []meal = maxpool2d_forward_complete(pool_input, 4, 4, 2, 2, 2)
+    sus pool_output meal[value] = maxpool2d_forward_complete(pool_input, 4, 4, 2, 2, 2)
     fr fr Output: (4-2)/2 + 1 = 2, so 2x2x2 = 8
     assert_eq_drip(len(pool_output), 8, "MaxPool2D output size")
     
     fr fr Test average pooling
-    sus avgpool_output []meal = avgpool2d_forward_complete(pool_input, 4, 4, 2, 2, 2)
+    sus avgpool_output meal[value] = avgpool2d_forward_complete(pool_input, 4, 4, 2, 2, 2)
     assert_eq_drip(len(avgpool_output), 8, "AvgPool2D output size")
     
     vibez.spill("✓ Convolutional layers tests passed")
@@ -255,21 +255,21 @@ slay test_recurrent_layers() cringe {
     assert_eq_drip(len(lstm_layer.candidate_weights), expected_gate_weights, "LSTM candidate weights")
     
     fr fr Test LSTM forward pass
-    sus lstm_input []meal = []
+    sus lstm_input meal[value] = []
     sus i drip = 0
     bestie (i < 50) {
         lstm_input = append(lstm_input, i * 0.01)
         i = i + 1
     }
     
-    sus lstm_output []meal = lstm_forward_complete(lstm_layer, lstm_input)
+    sus lstm_output meal[value] = lstm_forward_complete(lstm_layer, lstm_input)
     assert_eq_drip(len(lstm_output), 100, "LSTM output size")
     
     fr fr Check that hidden state is updated
     assert_true(len(lstm_layer.hidden_state) == 100, "LSTM hidden state maintained")
     
     fr fr Run another step to test state persistence
-    sus lstm_output2 []meal = lstm_forward_complete(lstm_layer, lstm_input)
+    sus lstm_output2 meal[value] = lstm_forward_complete(lstm_layer, lstm_input)
     assert_eq_drip(len(lstm_output2), 100, "LSTM second output size")
     
     vibez.spill("✓ Recurrent layers tests passed")
@@ -293,14 +293,14 @@ slay test_attention_mechanisms() cringe {
     assert_eq_drip(len(attention_layer.value_weights), expected_attention_weights, "Value weights size")
     
     fr fr Test attention forward pass (simplified single sequence element)
-    sus attention_input []meal = []
+    sus attention_input meal[value] = []
     sus i drip = 0
     bestie (i < 64) {
         attention_input = append(attention_input, i * 0.01)
         i = i + 1
     }
     
-    sus attention_output []meal = attention_forward_complete(attention_layer, attention_input, 1)
+    sus attention_output meal[value] = attention_forward_complete(attention_layer, attention_input, 1)
     assert_eq_drip(len(attention_output), 128, "Attention output size")
     
     vibez.spill("✓ Attention mechanisms tests passed")
@@ -310,12 +310,12 @@ slay test_optimizers() cringe {
     vibez.spill("Testing optimizers...")
     
     fr fr Test Adam optimizer
-    sus weights []meal = [1.0, 2.0, 3.0]
-    sus gradients []meal = [0.1, 0.2, 0.3]
-    sus m []meal = [0.0, 0.0, 0.0]
-    sus v []meal = [0.0, 0.0, 0.0]
+    sus weights meal[value] = [1.0, 2.0, 3.0]
+    sus gradients meal[value] = [0.1, 0.2, 0.3]
+    sus m meal[value] = [0.0, 0.0, 0.0]
+    sus v meal[value] = [0.0, 0.0, 0.0]
     
-    sus updated_weights []meal = adam_optimizer_update_complete(weights, gradients, m, v, 0.001, 0.9, 0.999, 1e-8, 1)
+    sus updated_weights meal[value] = adam_optimizer_update_complete(weights, gradients, m, v, 0.001, 0.9, 0.999, 1e-8, 1)
     
     assert_eq_drip(len(updated_weights), 3, "Adam updated weights size")
     
@@ -325,8 +325,8 @@ slay test_optimizers() cringe {
     assert_true(updated_weights[2] < weights[2], "Adam weight 2 decreased")
     
     fr fr Test RMSprop optimizer
-    sus v_rmsprop []meal = [0.0, 0.0, 0.0]
-    sus rmsprop_weights []meal = rmsprop_optimizer_update_complete(weights, gradients, v_rmsprop, 0.001, 0.9, 1e-8)
+    sus v_rmsprop meal[value] = [0.0, 0.0, 0.0]
+    sus rmsprop_weights meal[value] = rmsprop_optimizer_update_complete(weights, gradients, v_rmsprop, 0.001, 0.9, 1e-8)
     
     assert_eq_drip(len(rmsprop_weights), 3, "RMSprop updated weights size")
     assert_true(rmsprop_weights[0] < weights[0], "RMSprop weight 0 decreased")
@@ -340,19 +340,19 @@ slay test_loss_functions() cringe {
     vibez.spill("Testing loss functions...")
     
     fr fr Test categorical crossentropy
-    sus predictions []meal = [0.1, 0.2, 0.7]
-    sus targets []meal = [0.0, 0.0, 1.0]
+    sus predictions meal[value] = [0.1, 0.2, 0.7]
+    sus targets meal[value] = [0.0, 0.0, 1.0]
     
     sus ce_loss meal = categorical_crossentropy_loss_complete(predictions, targets)
     assert_true(ce_loss > 0.0, "Crossentropy loss positive")
     
     fr fr Perfect prediction should have low loss
-    sus perfect_pred []meal = [0.001, 0.001, 0.998]
+    sus perfect_pred meal[value] = [0.001, 0.001, 0.998]
     sus perfect_loss meal = categorical_crossentropy_loss_complete(perfect_pred, targets)
     assert_true(perfect_loss < ce_loss, "Perfect prediction lower loss")
     
     fr fr Test crossentropy gradient
-    sus ce_gradients []meal = categorical_crossentropy_gradient_complete(predictions, targets)
+    sus ce_gradients meal[value] = categorical_crossentropy_gradient_complete(predictions, targets)
     assert_eq_drip(len(ce_gradients), 3, "Crossentropy gradient size")
     
     fr fr Gradient for correct class should be negative (since target=1, pred<1)
@@ -373,14 +373,14 @@ slay test_batch_operations() cringe {
     bn_layer.training = based
     
     fr fr Create batch of 4 samples, each with 3 features
-    sus batch_input []meal = [
+    sus batch_input meal[value] = [
         1.0, 2.0, 3.0,    fr fr Sample 1
         4.0, 5.0, 6.0,    fr fr Sample 2
         7.0, 8.0, 9.0,    fr fr Sample 3
         2.0, 3.0, 4.0     fr fr Sample 4
     ]
     
-    sus batch_output []meal = batch_norm_forward_complete(bn_layer, batch_input, 4)
+    sus batch_output meal[value] = batch_norm_forward_complete(bn_layer, batch_input, 4)
     assert_eq_drip(len(batch_output), 12, "Batch norm output size")  fr fr 4 samples * 3 features
     
     fr fr Test that running statistics are updated
@@ -388,7 +388,7 @@ slay test_batch_operations() cringe {
     
     fr fr Test inference mode
     bn_layer.training = cap
-    sus inference_output []meal = batch_norm_forward_complete(bn_layer, batch_input, 4)
+    sus inference_output meal[value] = batch_norm_forward_complete(bn_layer, batch_input, 4)
     assert_eq_drip(len(inference_output), 12, "Batch norm inference output size")
     
     vibez.spill("✓ Batch operations tests passed")
@@ -405,30 +405,30 @@ slay test_gpu_acceleration() cringe {
         vibez.spill("GPU available for testing")
         
         fr fr Test GPU matrix multiplication
-        sus a []meal = [1.0, 2.0, 3.0, 4.0]
-        sus b []meal = [5.0, 6.0, 7.0, 8.0]
-        sus c []meal = [0.0, 0.0, 0.0, 0.0]
+        sus a meal[value] = [1.0, 2.0, 3.0, 4.0]
+        sus b meal[value] = [5.0, 6.0, 7.0, 8.0]
+        sus c meal[value] = [0.0, 0.0, 0.0, 0.0]
         
         sus success lit = gpu_matrix_multiply_optimized_complete(a, b, c, 2, 2, 2)
         assert_true(success, "GPU matrix multiply success")
         
         fr fr Test GPU convolution
-        sus input []meal = []
+        sus input meal[value] = []
         sus i drip = 0
         bestie (i < 3 * 3 * 2) {  fr fr 3x3 image, 2 channels
             input = append(input, 1.0)
             i = i + 1
         }
         
-        sus weights []meal = []
+        sus weights meal[value] = []
         i = 0
         bestie (i < 2 * 2 * 2 * 3) {  fr fr 2x2 kernel, 2 input channels, 3 output channels
             weights = append(weights, 0.1)
             i = i + 1
         }
         
-        sus biases []meal = [0.0, 0.0, 0.0]
-        sus output []meal = tensor_zeros_1d(2 * 2 * 3)  fr fr Expected output size
+        sus biases meal[value] = [0.0, 0.0, 0.0]
+        sus output meal[value] = tensor_zeros_1d(2 * 2 * 3)  fr fr Expected output size
         
         sus conv_success lit = gpu_conv2d_optimized_complete(input, weights, biases, output, 3, 3, 2, 3, 2, 1, 0)
         assert_true(conv_success, "GPU convolution success")
@@ -438,9 +438,9 @@ slay test_gpu_acceleration() cringe {
         vibez.spill("GPU not available, testing CPU fallbacks")
         
         fr fr Even without GPU, the functions should work via CPU fallback
-        sus a []meal = [1.0, 2.0, 3.0, 4.0]
-        sus b []meal = [5.0, 6.0, 7.0, 8.0]
-        sus c []meal = [0.0, 0.0, 0.0, 0.0]
+        sus a meal[value] = [1.0, 2.0, 3.0, 4.0]
+        sus b meal[value] = [5.0, 6.0, 7.0, 8.0]
+        sus c meal[value] = [0.0, 0.0, 0.0, 0.0]
         
         sus success lit = gpu_matrix_multiply_optimized_complete(a, b, c, 2, 2, 2)
         assert_true(success, "CPU fallback matrix multiply success")
@@ -453,16 +453,16 @@ slay test_tensor_serialization() cringe {
     vibez.spill("Testing tensor serialization...")
     
     fr fr Test tensor serialization
-    sus tensor []meal = [1.5, 2.7, 3.14159, -0.5, 100.0]
-    sus shape []drip = [5]
+    sus tensor meal[value] = [1.5, 2.7, 3.14159, -0.5, 100.0]
+    sus shape drip[value] = [5]
     
     sus serialized tea = tensor_serialize_complete(tensor, shape)
     assert_true(len(serialized) > 0, "Serialization produces output")
     assert_true(string_starts_with(serialized, "CURSED_TENSOR"), "Serialization header correct")
     
     fr fr Test tensor deserialization
-    sus deserialized_data []meal
-    sus deserialized_shape []drip
+    sus deserialized_data meal[value]
+    sus deserialized_shape drip[value]
     (deserialized_data, deserialized_shape) = tensor_deserialize_complete(serialized)
     
     fr fr Note: Due to hex conversion limitations in the stub implementations,
@@ -491,14 +491,14 @@ slay test_complete_training() cringe {
     sus num_samples drip = 20
     sus input_size drip = 4
     
-    sus train_data []meal = generate_synthetic_data(num_samples, input_size)
-    sus train_labels []meal = generate_synthetic_labels(num_samples, 2)
-    sus val_data []meal = generate_synthetic_data(10, input_size)
-    sus val_labels []meal = generate_synthetic_labels(10, 2)
+    sus train_data meal[value] = generate_synthetic_data(num_samples, input_size)
+    sus train_labels meal[value] = generate_synthetic_labels(num_samples, 2)
+    sus val_data meal[value] = generate_synthetic_data(10, input_size)
+    sus val_labels meal[value] = generate_synthetic_labels(10, 2)
     
     fr fr Test single forward pass
-    sus sample_input []meal = extract_sample(train_data, 0, input_size)
-    sus prediction []meal = neural_network_forward_complete(network, sample_input)
+    sus sample_input meal[value] = extract_sample(train_data, 0, input_size)
+    sus prediction meal[value] = neural_network_forward_complete(network, sample_input)
     assert_eq_drip(len(prediction), 2, "Network output size")
     
     fr fr Test that prediction sums to 1 (due to softmax)
@@ -538,21 +538,21 @@ slay test_memory_management() cringe {
     assert_eq_drip(len(large_layer.biases), 500, "Large layer bias allocation")
     
     fr fr Test large input processing
-    sus large_input []meal = []
+    sus large_input meal[value] = []
     sus i drip = 0
     bestie (i < 1000) {
         large_input = append(large_input, i * 0.001)
         i = i + 1
     }
     
-    sus large_output []meal = dense_forward_complete(large_layer, large_input)
+    sus large_output meal[value] = dense_forward_complete(large_layer, large_input)
     assert_eq_drip(len(large_output), 500, "Large layer output size")
     
     fr fr Test gradient computation memory management
-    sus output_gradient []meal = tensor_ones_1d(500)
-    sus weight_grad []meal
-    sus bias_grad []meal
-    sus input_grad []meal
+    sus output_gradient meal[value] = tensor_ones_1d(500)
+    sus weight_grad meal[value]
+    sus bias_grad meal[value]
+    sus input_grad meal[value]
     
     (weight_grad, bias_grad, input_grad) = compute_dense_gradients_complete(large_layer, large_input, output_gradient)
     
@@ -585,8 +585,8 @@ slay test_numerical_stability() cringe {
     assert_true(tanh_small >= -1.0 && tanh_small <= 1.0, "Tanh small value stability")
     
     fr fr Test softmax with extreme values (should use max subtraction for stability)
-    sus extreme_input []meal = [1000.0, 999.0, -1000.0]
-    sus stable_softmax []meal = softmax_activation(extreme_input)
+    sus extreme_input meal[value] = [1000.0, 999.0, -1000.0]
+    sus stable_softmax meal[value] = softmax_activation(extreme_input)
     
     sus softmax_sum meal = 0.0
     sus i drip = 0
@@ -603,8 +603,8 @@ slay test_numerical_stability() cringe {
     assert_true(stable_softmax[1] > stable_softmax[2], "Softmax extreme ordering 2")
     
     fr fr Test loss functions with edge cases
-    sus edge_predictions []meal = [0.999, 0.0005, 0.0005]
-    sus edge_targets []meal = [1.0, 0.0, 0.0]
+    sus edge_predictions meal[value] = [0.999, 0.0005, 0.0005]
+    sus edge_targets meal[value] = [1.0, 0.0, 0.0]
     
     sus edge_loss meal = categorical_crossentropy_loss_complete(edge_predictions, edge_targets)
     assert_true(edge_loss > 0.0, "Edge case loss positive")

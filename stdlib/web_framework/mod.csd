@@ -15,8 +15,8 @@ fr fr Server types for different configurations
 be_like WebServer squad {
     server_id normie
     port normie
-    routes []Route
-    middleware []MiddlewareFunc
+    routes Route[value]
+    middleware MiddlewareFunc[value]
     static_paths map[tea]tea
     is_running lit
     request_count normie
@@ -52,7 +52,7 @@ be_like Response squad {
     headers map[tea]tea
     body tea
     content_type tea
-    cookies []Cookie
+    cookies Cookie[value]
     is_sent lit
 }
 
@@ -281,9 +281,9 @@ slay parse_request(raw_request tea) Request {
     }
     
     fr fr Parse HTTP request line and headers using stringz
-    sus lines []tea = stringz.split(raw_request, "\r\n")
+    sus lines tea[value] = stringz.split(raw_request, "\r\n")
     vibe_if len(lines) > 0 {
-        sus request_line []tea = stringz.split(lines[0], " ")
+        sus request_line tea[value] = stringz.split(lines[0], " ")
         vibe_if len(request_line) >= 3 {
             request.method = request_line[0]
             request.url = request_line[1]
@@ -299,7 +299,7 @@ slay parse_request(raw_request tea) Request {
             header_end = i
             ghosted
         }
-        sus header_parts []tea = stringz.split(lines[i], ": ")
+        sus header_parts tea[value] = stringz.split(lines[i], ": ")
         vibe_if len(header_parts) >= 2 {
             request.headers[header_parts[0]] = stringz.join(header_parts[1:], ": ")
         }
@@ -307,7 +307,7 @@ slay parse_request(raw_request tea) Request {
     
     fr fr Extract body if present
     vibe_if header_end > 0 && header_end + 1 < len(lines) {
-        sus body_lines []tea = lines[header_end + 1:]
+        sus body_lines tea[value] = lines[header_end + 1:]
         request.body = stringz.join(body_lines, "\r\n")
         
         fr fr Parse form data if content type is form-encoded
@@ -390,10 +390,10 @@ slay set_cookie(ctx *Context, name tea, value tea, expires normie) cringe {
 
 slay get_cookie(ctx *Context, name tea) tea {
     sus cookies_header tea = get_header(ctx, "Cookie")
-    sus cookies []tea = stringz.split(cookies_header, "; ")
+    sus cookies tea[value] = stringz.split(cookies_header, "; ")
     
     bestie i := 0; i < len(cookies); i++ {
-        sus cookie_parts []tea = stringz.split(cookies[i], "=")
+        sus cookie_parts tea[value] = stringz.split(cookies[i], "=")
         vibe_if len(cookie_parts) == 2 && cookie_parts[0] == name {
             damn cookie_parts[1]
         }
@@ -476,7 +476,7 @@ slay handle_request(server *WebServer, raw_request tea) cringe {
 fr fr ===== UTILITY FUNCTIONS =====
 
 slay extract_server_id(server_key tea) normie {
-    sus parts []tea = stringz.split(server_key, "_")
+    sus parts tea[value] = stringz.split(server_key, "_")
     vibe_if len(parts) >= 3 && parts[0] == "web" && parts[1] == "server" {
         damn string_to_int(parts[2])
     }
@@ -499,7 +499,7 @@ slay path_matches(pattern tea, path tea) lit {
     
     fr fr Handle parameter patterns
     vibe_if stringz.contains(pattern, "([^/]+)") {
-        sus pattern_parts []tea = stringz.split(pattern, "([^/]+)")
+        sus pattern_parts tea[value] = stringz.split(pattern, "([^/]+)")
         sus path_start lit = stringz.starts_with(path, pattern_parts[0])
         vibe_if len(pattern_parts) > 1 {
             sus path_end lit = stringz.ends_with(path, pattern_parts[len(pattern_parts) - 1])
@@ -515,7 +515,7 @@ slay extract_route_params(pattern tea, path tea) map[tea]tea {
     sus params map[tea]tea = {}
     fr fr Simple parameter extraction (would be more complex in real implementation)
     vibe_if stringz.contains(pattern, ":id") {
-        sus parts []tea = stringz.split(path, "/")
+        sus parts tea[value] = stringz.split(path, "/")
         vibe_if len(parts) > 2 {
             params["id"] = parts[len(parts) - 1]
         }
@@ -536,10 +536,10 @@ slay parse_query_string(url tea) map[tea]tea {
     sus question_pos normie = stringz.index_of(url, "?")
     vibe_if question_pos >= 0 && question_pos < stringz.length(url) - 1 {
         sus query_string tea = stringz.substring(url, question_pos + 1, stringz.length(url))
-        sus params []tea = stringz.split(query_string, "&")
+        sus params tea[value] = stringz.split(query_string, "&")
         
         bestie i := 0; i < len(params); i++ {
-            sus param_parts []tea = stringz.split(params[i], "=")
+            sus param_parts tea[value] = stringz.split(params[i], "=")
             vibe_if len(param_parts) == 2 {
                 query[param_parts[0]] = param_parts[1]
             }
@@ -550,10 +550,10 @@ slay parse_query_string(url tea) map[tea]tea {
 
 slay parse_form_data(body tea) map[tea]tea {
     sus form map[tea]tea = {}
-    sus params []tea = stringz.split(body, "&")
+    sus params tea[value] = stringz.split(body, "&")
     
     bestie i := 0; i < len(params); i++ {
-        sus param_parts []tea = stringz.split(params[i], "=")
+        sus param_parts tea[value] = stringz.split(params[i], "=")
         vibe_if len(param_parts) == 2 {
             form[param_parts[0]] = url_decode(param_parts[1])
         }

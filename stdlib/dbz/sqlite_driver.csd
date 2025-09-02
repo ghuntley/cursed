@@ -70,8 +70,8 @@ squad SQLiteConnection {
 }
 
 squad SQLiteResult {
-    sus rows [][]tea
-    sus column_names []tea
+    sus rows tea[value][value]
+    sus column_names tea[value]
     sus rows_affected drip
     sus last_insert_id drip
     sus execution_time_ms drip
@@ -186,7 +186,7 @@ slay sqlite_real_query(connection *SQLiteConnection, sql tea) SQLiteResult {
     
     fr fr Get column information
     sus column_count drip = sqlite3_column_count(stmt)
-    sus col_names []tea = []
+    sus col_names tea[value] = []
     sus i drip = 0
     bestie (i < column_count) {
         sus col_name *tea = sqlite3_column_name(stmt, i)
@@ -196,7 +196,7 @@ slay sqlite_real_query(connection *SQLiteConnection, sql tea) SQLiteResult {
     result.column_names = col_names
     
     fr fr Execute and fetch results
-    sus rows [][]tea = []
+    sus rows tea[value][value] = []
     sus row_count drip = 0
     
     bestie (based) {
@@ -204,7 +204,7 @@ slay sqlite_real_query(connection *SQLiteConnection, sql tea) SQLiteResult {
         
         ready (step_result == SQLITE_ROW) {
             fr fr Fetch row data
-            sus row_data []tea = []
+            sus row_data tea[value] = []
             sus j drip = 0
             bestie (j < column_count) {
                 sus cell_data *tea = sqlite3_column_text(stmt, j)
@@ -274,7 +274,7 @@ slay sqlite_real_prepare(connection *SQLiteConnection, sql tea) SQLiteStatement 
     damn statement
 }
 
-slay sqlite_real_execute_prepared(statement *SQLiteStatement, parameters []tea) SQLiteResult {
+slay sqlite_real_execute_prepared(statement *SQLiteStatement, parameters tea[value]) SQLiteResult {
     fr fr Execute prepared statement with real parameters
     sus result SQLiteResult = SQLiteResult{}
     result.success = cringe
@@ -427,7 +427,7 @@ slay sqlite_real_table_exists(connection *SQLiteConnection, table_name tea) lit 
         damn cringe
     }
     
-    sus params []tea = [table_name]
+    sus params tea[value] = [table_name]
     sus result SQLiteResult = sqlite_real_execute_prepared(&stmt, params)
     sqlite_real_finalize_statement(&stmt)
     

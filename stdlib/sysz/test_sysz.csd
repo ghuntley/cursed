@@ -82,7 +82,7 @@ slay test_environment_variables() lit {
     testz.assert_eq_string(unset_value, "")
     
     fr fr Test getting all environment variables
-    sus all_vars []sysz.EnvironmentVar = sysz.get_all_env()
+    sus all_vars sysz[value].EnvironmentVar = sysz.get_all_env()
     testz.assert_true(all_vars.len() > 0)
     
     fr fr Verify we can find common environment variables
@@ -154,7 +154,7 @@ slay test_process_spawning() lit {
     testz.test_start("Process spawning and management")
     
     fr fr Spawn a simple process (echo command)
-    sus args []tea = ["Hello from CURSED"]
+    sus args tea[value] = ["Hello from CURSED"]
     sus working_dir tea = sysz.get_current_directory()
     sus child_pid normie = sysz.spawn_process("echo", args, working_dir)
     
@@ -261,7 +261,7 @@ slay test_file_stats() lit {
     testz.assert_true(permissions > 0)
     
     fr fr Test directory listing
-    sus files []tea = sysz.list_directory(current_dir)
+    sus files tea[value] = sysz.list_directory(current_dir)
     testz.assert_true(files.len() >= 0)  fr fr May be empty, that's OK
     
     damn based
@@ -379,7 +379,7 @@ slay test_network_functions() lit {
     fr fr Don't assert - network may or may not be available in test environment
     
     fr fr Test network interface listing
-    sus interfaces []tea = sysz.get_network_interfaces()
+    sus interfaces tea[value] = sysz.get_network_interfaces()
     testz.assert_true(interfaces.len() >= 0)  fr fr May be empty
     
     fr fr If we have interfaces, test getting their info
@@ -403,7 +403,7 @@ slay test_utility_functions() lit {
     testz.test_start("System utility functions")
     
     fr fr Test command line arguments
-    sus args []tea = sysz.get_command_line_args()
+    sus args tea[value] = sysz.get_command_line_args()
     testz.assert_true(args.len() >= 1)  fr fr At least the program name
     
     fr fr Test working directory functions

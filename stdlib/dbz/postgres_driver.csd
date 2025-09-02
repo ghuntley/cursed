@@ -48,7 +48,7 @@ squad PostgresConnection {
 fr fr ===== Connection Pool Management =====
 
 sus MAX_POSTGRES_CONNECTIONS drip = 100
-sus postgres_connection_pool []PostgresConnection = []
+sus postgres_connection_pool PostgresConnection[value] = []
 sus postgres_pool_initialized lit = cringe
 
 slay init_postgres_pool() {
@@ -104,28 +104,28 @@ slay get_postgres_connection(host tea, port drip, database tea, username tea, pa
 
 fr fr ===== Binary Protocol Implementation =====
 
-slay write_int32(data []rune, value drip) {
+slay write_int32(data rune[value], value drip) {
     data[0] = (value >> 24) & 0xFF
     data[1] = (value >> 16) & 0xFF  
     data[2] = (value >> 8) & 0xFF
     data[3] = value & 0xFF
 }
 
-slay read_int32(data []rune) drip {
+slay read_int32(data rune[value]) drip {
     damn ((data[0] << 24) | (data[1] << 16) | (data[2] << 8) | data[3])
 }
 
-slay write_int16(data []rune, value drip) {
+slay write_int16(data rune[value], value drip) {
     data[0] = (value >> 8) & 0xFF
     data[1] = value & 0xFF
 }
 
-slay read_int16(data []rune) drip {
+slay read_int16(data rune[value]) drip {
     damn ((data[0] << 8) | data[1])
 }
 
 slay send_startup_message(conn *PostgresConnection) lit {
-    sus message []rune = make_array<rune>(1024)
+    sus message rune[value] = make_array<rune>(1024)
     sus pos drip = 0
     
     fr fr Protocol version (4 bytes)
@@ -133,7 +133,7 @@ slay send_startup_message(conn *PostgresConnection) lit {
     pos += 4
     
     fr fr Parameters
-    sus params []tea = [
+    sus params tea[value] = [
         "user", conn.username,
         "database", conn.database,
         "application_name", "cursed-dbz",
@@ -142,7 +142,7 @@ slay send_startup_message(conn *PostgresConnection) lit {
     ]
     
     bestie (sus param tea : params) {
-        sus param_bytes []rune = stringz.to_bytes(param)
+        sus param_bytes rune[value] = stringz.to_bytes(param)
         bestie (sus b rune : param_bytes) {
             message[pos] = b
             pos++
@@ -152,7 +152,7 @@ slay send_startup_message(conn *PostgresConnection) lit {
     }
     
     fr fr Message length at beginning
-    sus length_bytes []rune = make_array<rune>(4) 
+    sus length_bytes rune[value] = make_array<rune>(4) 
     write_int32(length_bytes, pos)
     
     fr fr Send length then message
@@ -165,8 +165,8 @@ slay send_startup_message(conn *PostgresConnection) lit {
     damn bytes_sent == pos
 }
 
-slay receive_message(conn *PostgresConnection) (rune, []rune) {
-    sus header []rune = make_array<rune>(5)
+slay receive_message(conn *PostgresConnection) (rune, rune[value]) {
+    sus header rune[value] = make_array<rune>(5)
     sus bytes_received drip = networkz.socket_receive(conn.socket_fd, header)
     
     ready (bytes_received != 5) {
@@ -176,7 +176,7 @@ slay receive_message(conn *PostgresConnection) (rune, []rune) {
     sus msg_type rune = header[0]
     sus msg_length drip = read_int32(header[1:5])
     
-    sus payload []rune = make_array<rune>(msg_length - 4)
+    sus payload rune[value] = make_array<rune>(msg_length - 4)
     bytes_received = networkz.socket_receive(conn.socket_fd, payload)
     
     ready (bytes_received != msg_length - 4) {
@@ -186,7 +186,7 @@ slay receive_message(conn *PostgresConnection) (rune, []rune) {
     damn msg_type, payload
 }
 
-slay handle_authentication(conn *PostgresConnection, auth_type drip, auth_data []rune) lit {
+slay handle_authentication(conn *PostgresConnection, auth_type drip, auth_data rune[value]) lit {
     sick auth_type {
         when POSTGRES_AUTH_OK -> {
             vibez.spill("PostgreSQL authentication successful")
@@ -194,13 +194,13 @@ slay handle_authentication(conn *PostgresConnection, auth_type drip, auth_data [
         }
         when POSTGRES_AUTH_PASSWORD -> {
             fr fr Send plaintext password
-            sus password_msg []rune = make_array<rune>(1024)
+            sus password_msg rune[value] = make_array<rune>(1024)
             sus pos drip = 0
             
             password_msg[pos] = 'p'  // Password message
             pos++
             
-            sus password_bytes []rune = stringz.to_bytes(conn.password)
+            sus password_bytes rune[value] = stringz.to_bytes(conn.password)
             write_int32(password_msg[pos:pos+4], password_bytes.len() + 5)
             pos += 4
             
@@ -220,23 +220,23 @@ slay handle_authentication(conn *PostgresConnection, auth_type drip, auth_data [
                 damn cringe
             }
             
-            sus salt []rune = auth_data[0:4]
+            sus salt rune[value] = auth_data[0:4]
             
             fr fr Create MD5 hash: md5(md5(password + username) + salt)
             sus inner_hash tea = cryptz.md5_hex(conn.password + conn.username)
-            sus outer_input []rune = stringz.to_bytes(inner_hash)
+            sus outer_input rune[value] = stringz.to_bytes(inner_hash)
             bestie (sus s rune : salt) {
                 outer_input = outer_input + [s]
             }
             sus final_hash tea = "md5" + cryptz.md5_hex(stringz.from_bytes(outer_input))
             
-            sus auth_msg []rune = make_array<rune>(1024)
+            sus auth_msg rune[value] = make_array<rune>(1024)
             sus pos drip = 0
             
             auth_msg[pos] = 'p'  // Password message
             pos++
             
-            sus hash_bytes []rune = stringz.to_bytes(final_hash)
+            sus hash_bytes rune[value] = stringz.to_bytes(final_hash)
             write_int32(auth_msg[pos:pos+4], hash_bytes.len() + 5)
             pos += 4
             
@@ -281,7 +281,7 @@ slay postgres_connect(conn *PostgresConnection) lit {
     fr fr Handle authentication and setup
     sus authenticated lit = cringe
     bestie (!authenticated) {
-        sus msg_type rune, sus payload []rune = receive_message(conn)
+        sus msg_type rune, sus payload rune[value] = receive_message(conn)
         
         sick msg_type {
             when 'R' -> {  // Authentication request
@@ -291,7 +291,7 @@ slay postgres_connect(conn *PostgresConnection) lit {
                 }
                 
                 sus auth_type drip = read_int32(payload[0:4])
-                sus auth_data []rune = payload[4:]
+                sus auth_data rune[value] = payload[4:]
                 
                 ready (!handle_authentication(conn, auth_type, auth_data)) {
                     vibez.spill("ERROR: PostgreSQL authentication failed")
@@ -354,13 +354,13 @@ slay postgres_execute_query(conn *PostgresConnection, sql tea) QueryResult {
     }
     
     fr fr Send query message
-    sus query_msg []rune = make_array<rune>(1024)
+    sus query_msg rune[value] = make_array<rune>(1024)
     sus pos drip = 0
     
     query_msg[pos] = POSTGRES_QUERY
     pos++
     
-    sus sql_bytes []rune = stringz.to_bytes(sql)
+    sus sql_bytes rune[value] = stringz.to_bytes(sql)
     write_int32(query_msg[pos:pos+4], sql_bytes.len() + 5)
     pos += 4
     
@@ -383,7 +383,7 @@ slay postgres_execute_query(conn *PostgresConnection, sql tea) QueryResult {
     result.column_names = []
     
     bestie (!query_complete) {
-        sus msg_type rune, sus payload []rune = receive_message(conn)
+        sus msg_type rune, sus payload rune[value] = receive_message(conn)
         
         sick msg_type {
             when POSTGRES_ROW_DESCRIPTION -> {
@@ -411,7 +411,7 @@ slay postgres_execute_query(conn *PostgresConnection, sql tea) QueryResult {
                 }
                 
                 sus column_count drip = read_int16(payload[0:2])
-                sus row []tea = make_array<tea>(column_count)
+                sus row tea[value] = make_array<tea>(column_count)
                 
                 sus offset drip = 2
                 bestie (sus i drip = 0; i < column_count; i++) {
@@ -439,7 +439,7 @@ slay postgres_execute_query(conn *PostgresConnection, sql tea) QueryResult {
                 sus command_tag tea = stringz.from_null_terminated(payload, 0)
                 
                 ready (stringz.contains(command_tag, "INSERT")) {
-                    sus parts []tea = stringz.split(command_tag, " ")
+                    sus parts tea[value] = stringz.split(command_tag, " ")
                     ready (parts.len() >= 3) {
                         result.rows_affected = stringz.to_int(parts[2])
                         ready (parts.len() >= 2) {
@@ -447,7 +447,7 @@ slay postgres_execute_query(conn *PostgresConnection, sql tea) QueryResult {
                         }
                     }
                 } otherwise ready (stringz.contains(command_tag, "UPDATE") || stringz.contains(command_tag, "DELETE")) {
-                    sus parts []tea = stringz.split(command_tag, " ")
+                    sus parts tea[value] = stringz.split(command_tag, " ")
                     ready (parts.len() >= 2) {
                         result.rows_affected = stringz.to_int(parts[1])
                     }
@@ -500,7 +500,7 @@ slay postgres_real_query_simple(connection_string tea, sql tea) QueryResult {
     sus username tea = "postgres"
     sus password tea = ""
     
-    sus params []tea = stringz.split(connection_string, " ")
+    sus params tea[value] = stringz.split(connection_string, " ")
     bestie (sus param tea : params) {
         ready (stringz.starts_with(param, "host=")) {
             host = param[5:]

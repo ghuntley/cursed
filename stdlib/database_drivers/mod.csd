@@ -110,7 +110,7 @@ slay get_driver(registry: *DriverRegistry, name: tea) DriverInfo {
 
 fr fr List all registered drivers
 slay list_drivers(registry: *DriverRegistry) [tea] {
-    driver_names := []tea{}
+    driver_names := tea[value]{}
     bestie i := 0; i < len(registry.drivers); i++ {
         driver_names = append(driver_names, registry.drivers[i].name)
     }
@@ -136,7 +136,7 @@ slay unregister_driver(registry: *DriverRegistry, name: tea) lit {
 
 fr fr Clear all drivers
 slay clear_drivers(registry: *DriverRegistry) {
-    registry.drivers = []DriverInfo{}
+    registry.drivers = DriverInfo[value]{}
     vibez.spill("🧹 Cleared all drivers")
 }
 
@@ -225,7 +225,7 @@ slay prepare_statement(registry: *DriverRegistry, connection_id: normie, query: 
                 query: query,
                 parameter_count: 0,
                 is_prepared: based,
-                bound_parameters: []tea{}
+                bound_parameters: tea[value]{}
             }
             
             registry.prepared_statements = append(registry.prepared_statements, stmt)

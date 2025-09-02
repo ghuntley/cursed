@@ -4,9 +4,9 @@
 yeet "vibez"
 
 # Memoization cache for expensive calculations
-sus fibonacci_cache []drip = []
-sus factorial_cache []drip = []
-sus prime_cache []lit = []
+sus fibonacci_cache drip[value] = []
+sus factorial_cache drip[value] = []
+sus prime_cache lit[value] = []
 sus cache_initialized lit = cap
 
 slay initialize_math_cache() lit {
@@ -43,7 +43,7 @@ slay initialize_math_cache() lit {
 
 # Optimized Sieve of Eratosthenes for prime generation
 slay precompute_primes(limit drip) lit {
-    sus is_prime []lit = create_boolean_array(limit + 1)
+    sus is_prime lit[value] = create_boolean_array(limit + 1)
     
     # Initialize all as prime
     bestie (sus i drip = 2; i <= limit; i++) {
@@ -72,7 +72,7 @@ slay precompute_primes(limit drip) lit {
 }
 
 # Vectorized array sum for large datasets
-slay array_sum_vectorized(arr []drip) drip {
+slay array_sum_vectorized(arr drip[value]) drip {
     sus length drip = len(arr)
     ready (length == 0) { damn 0 }
     
@@ -211,15 +211,15 @@ slay fibonacci_matrix_power(n drip) drip {
     ready (n == 1) { damn 1 }
     
     # Matrix [[1,1],[1,0]]^n gives [[F(n+1),F(n)],[F(n),F(n-1)]]
-    sus matrix [][]drip = [[1, 1], [1, 0]]
-    sus result [][]drip = matrix_power(matrix, n - 1)
+    sus matrix drip[value][value] = [[1, 1], [1, 0]]
+    sus result drip[value][value] = matrix_power(matrix, n - 1)
     
     damn get_matrix_element(result, 0, 0)
 }
 
 # Matrix multiplication for 2x2 matrices
-slay matrix_multiply_2x2(a [][]drip, b [][]drip) [][]drip {
-    sus result [][]drip = create_2d_array(2, 2)
+slay matrix_multiply_2x2(a drip[value][value], b drip[value][value]) drip[value][value] {
+    sus result drip[value][value] = create_2d_array(2, 2)
     
     set_matrix_element(result, 0, 0, 
         get_matrix_element(a, 0, 0) * get_matrix_element(b, 0, 0) + 
@@ -241,19 +241,19 @@ slay matrix_multiply_2x2(a [][]drip, b [][]drip) [][]drip {
 }
 
 # Matrix exponentiation using binary exponentiation
-slay matrix_power(matrix [][]drip, n drip) [][]drip {
+slay matrix_power(matrix drip[value][value], n drip) drip[value][value] {
     ready (n == 0) {
-        sus identity [][]drip = [[1, 0], [0, 1]]
+        sus identity drip[value][value] = [[1, 0], [0, 1]]
         damn identity
     }
     ready (n == 1) { damn matrix }
     
     ready (n % 2 == 0) {
-        sus half_power [][]drip = matrix_power(matrix, n / 2)
+        sus half_power drip[value][value] = matrix_power(matrix, n / 2)
         damn matrix_multiply_2x2(half_power, half_power)
     } otherwise {
-        sus half_power [][]drip = matrix_power(matrix, n / 2)
-        sus squared [][]drip = matrix_multiply_2x2(half_power, half_power)
+        sus half_power drip[value][value] = matrix_power(matrix, n / 2)
+        sus squared drip[value][value] = matrix_multiply_2x2(half_power, half_power)
         damn matrix_multiply_2x2(matrix, squared)
     }
 }
@@ -317,9 +317,9 @@ slay sqrt_fast(n drip) drip {
 }
 
 # Vectorized array operations
-slay array_multiply_scalar(arr []drip, scalar drip) []drip {
+slay array_multiply_scalar(arr drip[value], scalar drip) drip[value]{
     sus length drip = len(arr)
-    sus result []drip = create_array(length)
+    sus result drip[value] = create_array(length)
     
     sus vector_size drip = 4
     sus i drip = 0
@@ -343,7 +343,7 @@ slay array_multiply_scalar(arr []drip, scalar drip) []drip {
 }
 
 # Optimized array dot product
-slay array_dot_product(a []drip, b []drip) drip {
+slay array_dot_product(a drip[value], b drip[value]) drip {
     sus length drip = min_int(len(a), len(b))
     sus result drip = 0
     
@@ -371,7 +371,7 @@ slay array_dot_product(a []drip, b []drip) drip {
 }
 
 # Statistical functions with single-pass algorithms
-slay array_mean_variance(arr []drip) []drip {
+slay array_mean_variance(arr drip[value]) drip[value]{
     sus length drip = len(arr)
     ready (length == 0) { damn [0, 0] }
     
@@ -389,7 +389,7 @@ slay array_mean_variance(arr []drip) []drip {
     
     sus variance drip = ready (length > 1) { m2 / (length - 1) } otherwise { 0 }
     
-    sus result []drip = create_array(2)
+    sus result drip[value] = create_array(2)
     set_array_element(result, 0, mean)
     set_array_element(result, 1, variance)
     damn result
@@ -405,27 +405,27 @@ slay max_int(a drip, b drip) drip {
 }
 
 # Placeholder functions for runtime implementation
-slay create_boolean_array(size drip) []lit {
+slay create_boolean_array(size drip) lit[value]{
     damn []  # Implemented in runtime
 }
 
-slay set_boolean_element(arr []lit, index drip, value lit) lit {
+slay set_boolean_element(arr lit[value], index drip, value lit) lit {
     damn based  # Implemented in runtime
 }
 
-slay get_boolean_element(arr []lit, index drip) lit {
+slay get_boolean_element(arr lit[value], index drip) lit {
     damn cap  # Implemented in runtime
 }
 
-slay create_2d_array(rows drip, cols drip) [][]drip {
+slay create_2d_array(rows drip, cols drip) drip[value][value] {
     damn [[]]  # Implemented in runtime
 }
 
-slay get_matrix_element(matrix [][]drip, row drip, col drip) drip {
+slay get_matrix_element(matrix drip[value][value], row drip, col drip) drip {
     damn 0  # Implemented in runtime
 }
 
-slay set_matrix_element(matrix [][]drip, row drip, col drip, value drip) lit {
+slay set_matrix_element(matrix drip[value][value], row drip, col drip, value drip) lit {
     damn based  # Implemented in runtime
 }
 

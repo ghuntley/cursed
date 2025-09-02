@@ -30,22 +30,22 @@ print_test_summary()
 
 test_start("test_array_sum_vectorized")
 # Test vectorized array summation
-sus test_array []drip = [1, 2, 3, 4, 5]
+sus test_array drip[value] = [1, 2, 3, 4, 5]
 sus sum drip = array_sum_vectorized(test_array)
 assert_eq_int(sum, 15)
 
 # Test with larger array
-sus large_array []drip = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+sus large_array drip[value] = [10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 sus large_sum drip = array_sum_vectorized(large_array)
 assert_eq_int(large_sum, 550)
 
 # Test with empty array
-sus empty_array []drip = []
+sus empty_array drip[value] = []
 sus empty_sum drip = array_sum_vectorized(empty_array)
 assert_eq_int(empty_sum, 0)
 
 # Test with negative numbers
-sus mixed_array []drip = [-5, -3, 0, 3, 5]
+sus mixed_array drip[value] = [-5, -3, 0, 3, 5]
 sus mixed_sum drip = array_sum_vectorized(mixed_array)
 assert_eq_int(mixed_sum, 0)
 print_test_summary()
@@ -142,9 +142,9 @@ print_test_summary()
 
 test_start("test_matrix_multiply_2x2")
 # Test 2x2 matrix multiplication
-sus matrix_a [][]drip = [[1, 2], [3, 4]]
-sus matrix_b [][]drip = [[5, 6], [7, 8]]
-sus result [][]drip = matrix_multiply_2x2(matrix_a, matrix_b)
+sus matrix_a drip[value][value] = [[1, 2], [3, 4]]
+sus matrix_b drip[value][value] = [[5, 6], [7, 8]]
+sus result drip[value][value] = matrix_multiply_2x2(matrix_a, matrix_b)
 
 # Result should be [[19, 22], [43, 50]]
 assert_eq_int(result[0][0], 19)
@@ -153,8 +153,8 @@ assert_eq_int(result[1][0], 43)
 assert_eq_int(result[1][1], 50)
 
 # Test with identity matrix
-sus identity [][]drip = [[1, 0], [0, 1]]
-sus identity_result [][]drip = matrix_multiply_2x2(matrix_a, identity)
+sus identity drip[value][value] = [[1, 0], [0, 1]]
+sus identity_result drip[value][value] = matrix_multiply_2x2(matrix_a, identity)
 assert_eq_int(identity_result[0][0], 1)
 assert_eq_int(identity_result[0][1], 2)
 assert_eq_int(identity_result[1][0], 3)
@@ -163,19 +163,19 @@ print_test_summary()
 
 test_start("test_matrix_power")
 # Test matrix exponentiation
-sus base_matrix [][]drip = [[1, 1], [1, 0]]  # Fibonacci matrix
-sus power2 [][]drip = matrix_power(base_matrix, 2)
-sus power5 [][]drip = matrix_power(base_matrix, 5)
+sus base_matrix drip[value][value] = [[1, 1], [1, 0]]  # Fibonacci matrix
+sus power2 drip[value][value] = matrix_power(base_matrix, 2)
+sus power5 drip[value][value] = matrix_power(base_matrix, 5)
 
 # Test power 0 (should return identity)
-sus power0 [][]drip = matrix_power(base_matrix, 0)
+sus power0 drip[value][value] = matrix_power(base_matrix, 0)
 assert_eq_int(power0[0][0], 1)
 assert_eq_int(power0[0][1], 0)
 assert_eq_int(power0[1][0], 0)
 assert_eq_int(power0[1][1], 1)
 
 # Test power 1
-sus power1 [][]drip = matrix_power(base_matrix, 1)
+sus power1 drip[value][value] = matrix_power(base_matrix, 1)
 assert_eq_int(power1[0][0], 1)
 assert_eq_int(power1[0][1], 1)
 assert_eq_int(power1[1][0], 1)
@@ -226,8 +226,8 @@ print_test_summary()
 
 test_start("test_array_multiply_scalar")
 # Test scalar multiplication of arrays
-sus test_array []drip = [1, 2, 3, 4, 5]
-sus result []drip = array_multiply_scalar(test_array, 3)
+sus test_array drip[value] = [1, 2, 3, 4, 5]
+sus result drip[value] = array_multiply_scalar(test_array, 3)
 
 assert_eq_int(result[0], 3)
 assert_eq_int(result[1], 6)
@@ -236,50 +236,50 @@ assert_eq_int(result[3], 12)
 assert_eq_int(result[4], 15)
 
 # Test with zero scalar
-sus zero_result []drip = array_multiply_scalar(test_array, 0)
+sus zero_result drip[value] = array_multiply_scalar(test_array, 0)
 assert_eq_int(zero_result[0], 0)
 assert_eq_int(zero_result[4], 0)
 
 # Test with negative scalar
-sus negative_result []drip = array_multiply_scalar(test_array, -2)
+sus negative_result drip[value] = array_multiply_scalar(test_array, -2)
 assert_eq_int(negative_result[0], -2)
 assert_eq_int(negative_result[1], -4)
 print_test_summary()
 
 test_start("test_array_dot_product")
 # Test dot product of two arrays
-sus array_a []drip = [1, 2, 3]
-sus array_b []drip = [4, 5, 6]
+sus array_a drip[value] = [1, 2, 3]
+sus array_b drip[value] = [4, 5, 6]
 sus dot_product drip = array_dot_product(array_a, array_b)
 assert_eq_int(dot_product, 32)  # 1*4 + 2*5 + 3*6 = 4 + 10 + 18 = 32
 
 # Test with orthogonal vectors
-sus ortho_a []drip = [1, 0]
-sus ortho_b []drip = [0, 1]
+sus ortho_a drip[value] = [1, 0]
+sus ortho_b drip[value] = [0, 1]
 sus ortho_dot drip = array_dot_product(ortho_a, ortho_b)
 assert_eq_int(ortho_dot, 0)
 
 # Test with identical arrays
-sus same_array []drip = [2, 3, 4]
+sus same_array drip[value] = [2, 3, 4]
 sus same_dot drip = array_dot_product(same_array, same_array)
 assert_eq_int(same_dot, 29)  # 2*2 + 3*3 + 4*4 = 4 + 9 + 16 = 29
 print_test_summary()
 
 test_start("test_array_mean_variance")
 # Test calculating mean and variance of array
-sus test_data []drip = [1, 2, 3, 4, 5]
+sus test_data drip[value] = [1, 2, 3, 4, 5]
 sus stats MeanVarianceResult = array_mean_variance(test_data)
 assert_eq_int(stats.mean, 3)    # (1+2+3+4+5)/5 = 3
 assert_true(stats.variance >= 2 && stats.variance <= 3)  # Approximate variance
 
 # Test with identical values
-sus uniform_data []drip = [5, 5, 5, 5, 5]
+sus uniform_data drip[value] = [5, 5, 5, 5, 5]
 sus uniform_stats MeanVarianceResult = array_mean_variance(uniform_data)
 assert_eq_int(uniform_stats.mean, 5)
 assert_eq_int(uniform_stats.variance, 0)
 
 # Test with two values
-sus simple_data []drip = [10, 20]
+sus simple_data drip[value] = [10, 20]
 sus simple_stats MeanVarianceResult = array_mean_variance(simple_data)
 assert_eq_int(simple_stats.mean, 15)
 assert_true(simple_stats.variance > 0)
@@ -304,7 +304,7 @@ bestie i := 1; i <= 20; i++ {
 }
 
 # Test large array operations
-sus large_array []drip = []
+sus large_array drip[value] = []
 bestie i := 1; i <= 1000; i++ {
     large_array = append(large_array, i)
 }
@@ -331,11 +331,11 @@ sus large_factorial drip = factorial_optimized(12)
 assert_true(large_factorial > 400000000)
 
 # Test empty array operations
-sus empty_array []drip = []
+sus empty_array drip[value] = []
 sus empty_sum drip = array_sum_vectorized(empty_array)
 assert_eq_int(empty_sum, 0)
 
-sus empty_scalar []drip = array_multiply_scalar(empty_array, 5)
+sus empty_scalar drip[value] = array_multiply_scalar(empty_array, 5)
 assert_eq_int(len(empty_scalar), 0)
 print_test_summary()
 
@@ -346,7 +346,7 @@ initialize_math_cache()
 precompute_primes(100)
 
 # Generate test data
-sus data []drip = []
+sus data drip[value] = []
 bestie i := 1; i <= 20; i++ {
     sus fib drip = fibonacci_optimized(i)
     data = append(data, fib)
@@ -354,7 +354,7 @@ bestie i := 1; i <= 20; i++ {
 
 # Analyze the data
 sus sum drip = array_sum_vectorized(data)
-sus scaled []drip = array_multiply_scalar(data, 2)
+sus scaled drip[value] = array_multiply_scalar(data, 2)
 sus stats MeanVarianceResult = array_mean_variance(data)
 
 assert_true(sum > 0)
@@ -362,8 +362,8 @@ assert_true(len(scaled) == len(data))
 assert_true(stats.mean > 0)
 
 # Verify mathematical relationships
-sus first_ten []drip = data[0:10]
-sus last_ten []drip = data[10:20]
+sus first_ten drip[value] = data[0:10]
+sus last_ten drip[value] = data[10:20]
 sus dot drip = array_dot_product(first_ten, last_ten)
 assert_true(dot > 0)
 

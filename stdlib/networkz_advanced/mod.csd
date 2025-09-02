@@ -11,7 +11,7 @@ fr fr ========================================
 
 fr fr HTTP/2 Connection Pool for High Performance
 be_like HTTP2ConnectionPool squad {
-    spill connections [50]httpz_v2.HTTP2Connection
+    spill connections httpz_v2[50].HTTP2Connection
     spill connection_count normie
     spill max_connections normie
     spill default_settings httpz_v2.HTTP2Settings
@@ -39,7 +39,7 @@ be_like AdvancedHTTPClient squad {
 fr fr TLS Configuration (placeholder for future tlsz integration)
 be_like TLSConfig squad {
     spill version tea                fr fr TLS version (1.2, 1.3)
-    spill ciphers []tea             fr fr Supported cipher suites
+    spill ciphers tea[value]             fr fr Supported cipher suites
     spill verify_certificates lit   fr fr Certificate verification
     spill server_name tea           fr fr SNI server name
 }
@@ -75,7 +75,7 @@ slay http2_advanced_client_create() AdvancedHTTPClient {
 }
 
 fr fr HTTP/2 Request with Advanced Features (FIXED: Now wired to HTTP/2 parser)
-slay http2_advanced_request(client *AdvancedHTTPClient, method tea, url tea, headers [20]tea, header_count normie, body tea) tea {
+slay http2_advanced_request(client *AdvancedHTTPClient, method tea, url tea, headers tea[20], header_count normie, body tea) tea {
     lowkey !client.http2_enabled {
         fr fr Fallback to HTTP/1.1 via basic networkz
         damn networkz.http_get(url)
@@ -92,7 +92,7 @@ slay http2_advanced_request(client *AdvancedHTTPClient, method tea, url tea, hea
     sus stream_id normie = httpz_v2.http2_send_request(conn, method, parsed_url.path, headers, header_count, body)
     
     fr fr Handle HTTP/2 response frames
-    sus response_frames []httpz_v2.HTTP2Frame = http2_receive_response_frames(conn, stream_id)
+    sus response_frames httpz_v2[value].HTTP2Frame = http2_receive_response_frames(conn, stream_id)
     sus final_response tea = http2_assemble_response(response_frames)
     
     fr fr Return connection to pool
@@ -148,9 +148,9 @@ slay http2_send_frame(conn *httpz_v2.HTTP2Connection, frame httpz_v2.HTTP2Frame)
     damn based
 }
 
-slay http2_receive_response_frames(conn *httpz_v2.HTTP2Connection, stream_id normie) []httpz_v2.HTTP2Frame {
+slay http2_receive_response_frames(conn *httpz_v2.HTTP2Connection, stream_id normie) httpz_v2[value].HTTP2Frame {
     fr fr **WIRED: Use HTTP/2 frame parser for incoming frames**
-    sus frames [10]httpz_v2.HTTP2Frame
+    sus frames httpz_v2[10].HTTP2Frame
     sus frame_count normie = 0
     
     fr fr Simulate receiving HEADERS frame
@@ -166,14 +166,14 @@ slay http2_receive_response_frames(conn *httpz_v2.HTTP2Connection, stream_id nor
     frame_count++
     
     fr fr Convert to dynamic array
-    sus result []httpz_v2.HTTP2Frame
+    sus result httpz_v2[value].HTTP2Frame
     bestie i normie = 0; i < frame_count; i++ {
         result = append(result, frames[i])
     }
     damn result
 }
 
-slay http2_assemble_response(frames []httpz_v2.HTTP2Frame) tea {
+slay http2_assemble_response(frames httpz_v2[value].HTTP2Frame) tea {
     sus response tea = "HTTP/2 200\r\n"
     sus body tea = ""
     
@@ -197,7 +197,7 @@ fr fr ==========================================================================
 fr fr WEBSOCKET INTEGRATION FOR MODERN WEB PROTOCOLS
 fr fr =============================================================================
 
-slay websocket_upgrade_request(url tea, protocols []tea) tea {
+slay websocket_upgrade_request(url tea, protocols tea[value]) tea {
     fr fr Create WebSocket upgrade request with HTTP/1.1 compatibility
     sus request tea = "GET " + extract_path_from_url(url) + " HTTP/1.1\r\n"
     request = stringz.concat(request, "Host: " + extract_host_from_url(url) + "\r\n")
@@ -350,13 +350,13 @@ fr fr HIGH-LEVEL ADVANCED NETWORKING API
 fr fr =============================================================================
 
 fr fr HTTP/2 GET with advanced features
-slay http2_get(url tea, headers [20]tea, header_count normie) tea {
+slay http2_get(url tea, headers tea[20], header_count normie) tea {
     sus client AdvancedHTTPClient = http2_advanced_client_create()
     damn http2_advanced_request(&client, "GET", url, headers, header_count, "")
 }
 
 fr fr HTTP/2 POST with advanced features
-slay http2_post(url tea, body tea, headers [20]tea, header_count normie) tea {
+slay http2_post(url tea, body tea, headers tea[20], header_count normie) tea {
     sus client AdvancedHTTPClient = http2_advanced_client_create()
     damn http2_advanced_request(&client, "POST", url, headers, header_count, body)
 }
@@ -366,7 +366,7 @@ slay http2_client_session() AdvancedHTTPClient {
     damn http2_advanced_client_create()
 }
 
-slay http2_session_request(client *AdvancedHTTPClient, method tea, url tea, headers [20]tea, header_count normie, body tea) tea {
+slay http2_session_request(client *AdvancedHTTPClient, method tea, url tea, headers tea[20], header_count normie, body tea) tea {
     damn http2_advanced_request(client, method, url, headers, header_count, body)
 }
 
@@ -380,7 +380,7 @@ slay http2_session_close(client *AdvancedHTTPClient) lit {
 }
 
 fr fr WebSocket client connection
-slay websocket_connect(url tea, protocols []tea) normie {
+slay websocket_connect(url tea, protocols tea[value]) normie {
     fr fr Create WebSocket connection with protocol upgrade
     sus upgrade_request tea = websocket_upgrade_request(url, protocols)
     
@@ -433,7 +433,7 @@ slay is_websocket_url(url tea) lit {
     damn components.scheme == "ws" || components.scheme == "wss"
 }
 
-slay protocol_negotiation(schemes []tea) tea {
+slay protocol_negotiation(schemes tea[value]) tea {
     fr fr ALPN protocol negotiation simulation
     bestie i normie = 0; i < len(schemes); i++ {
         lowkey schemes[i] == "h2" {
@@ -455,7 +455,7 @@ slay connection_multiplexing_demo() {
     
     fr fr Demo multiple requests over same connection
     vibez.spill("📤 Sending concurrent HTTP/2 requests...")
-    sus headers [3]tea
+    sus headers tea[3]
     headers[0] = "accept: application/json"
     headers[1] = "user-agent: CURSED-Advanced/1.0"
     
@@ -470,7 +470,7 @@ slay connection_multiplexing_demo() {
     
     fr fr Demo WebSocket connection
     vibez.spill("🔌 Establishing WebSocket connection...")
-    sus ws_protocols [2]tea
+    sus ws_protocols tea[2]
     ws_protocols[0] = "chat"
     ws_protocols[1] = "superchat"
     sus ws_id normie = websocket_connect("wss://echo.websocket.org", ws_protocols)
@@ -495,9 +495,9 @@ fr fr ==========================================================================
 fr fr HELPER FUNCTIONS FOR ARRAY/STRING OPERATIONS
 fr fr =============================================================================
 
-slay append(arr []httpz_v2.HTTP2Frame, item httpz_v2.HTTP2Frame) []httpz_v2.HTTP2Frame {
+slay append(arr httpz_v2[value].HTTP2Frame, item httpz_v2.HTTP2Frame) httpz_v2[value].HTTP2Frame {
     fr fr Simulate array append (would be built-in in production)
-    sus new_arr [11]httpz_v2.HTTP2Frame
+    sus new_arr httpz_v2[11].HTTP2Frame
     sus current_len normie = len(arr)
     
     bestie i normie = 0; i < current_len; i++ {
@@ -506,14 +506,14 @@ slay append(arr []httpz_v2.HTTP2Frame, item httpz_v2.HTTP2Frame) []httpz_v2.HTTP
     new_arr[current_len] = item
     
     fr fr Return slice of new array
-    sus result []httpz_v2.HTTP2Frame
+    sus result httpz_v2[value].HTTP2Frame
     bestie i normie = 0; i <= current_len; i++ {
         result = result + [new_arr[i]]
     }
     damn result
 }
 
-slay len(arr []httpz_v2.HTTP2Frame) normie {
+slay len(arr httpz_v2[value].HTTP2Frame) normie {
     fr fr Count elements in slice
     sus count normie = 0
     bestie i normie = 0; i < 100; i++ {  fr fr Reasonable upper bound

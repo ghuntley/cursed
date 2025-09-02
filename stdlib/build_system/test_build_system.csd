@@ -76,7 +76,7 @@ slay test_resolve_dependencies() {
     dependencies["stringz"] = "1.0.0"
     config["dependencies"] = dependencies
     
-    sus resolved []tea = build_system.resolve_dependencies(config) fr fr Should find stdlib modules
+    sus resolved tea[value] = build_system.resolve_dependencies(config) fr fr Should find stdlib modules
     assert_true(len(resolved) >= 0) fr fr At least some dependencies should resolve
     
     vibez.spill("✅ resolve_dependencies test passed")
@@ -87,7 +87,7 @@ slay test_find_target_file() { fr fr Create test directory structure
     fs.make_dir_all("test_src")
     fs.write_file("test_src/main.csd", "vibez.spill(\"test\")")
     
-    sus source_dirs []tea = []tea{"test_src"}
+    sus source_dirs tea[value] = tea[value]{"test_src"}
     sus target_file tea = build_system.find_target_file("main", source_dirs)
     
     assert_eq_string(target_file, "test_src/main.csd") fr fr Cleanup
@@ -117,7 +117,7 @@ slay test_construct_build_command() {
     sus build_mode tea = "native"
     sus optimization tea = "2"
     sus output_dir tea = "build"
-    sus dependencies []tea = []tea{"stdlib/json", "stdlib/http"}
+    sus dependencies tea[value] = tea[value]{"stdlib/json", "stdlib/http"}
     
     sus cmd tea = build_system.construct_build_command(target_file, build_mode, optimization, output_dir, dependencies)
     
@@ -138,10 +138,10 @@ slay test_find_test_files() { fr fr Create test files
     fs.write_file("test_dir/string_test.csd", "# String tests")
     fs.write_file("test_dir/main.csd", "# Not a test")
     
-    sus patterns []tea = []tea{"test_*.csd", "*_test.csd"}
-    sus source_dirs []tea = []tea{"test_dir"}
+    sus patterns tea[value] = tea[value]{"test_*.csd", "*_test.csd"}
+    sus source_dirs tea[value] = tea[value]{"test_dir"}
     
-    sus test_files []tea = build_system.find_test_files(patterns, source_dirs)
+    sus test_files tea[value] = build_system.find_test_files(patterns, source_dirs)
     
     assert_true(len(test_files) >= 2) fr fr Should find at least the two test files fr fr Cleanup
     fs.remove_file("test_dir/test_math.csd")
@@ -154,7 +154,7 @@ slay test_find_test_files() { fr fr Create test files
 
 fr fr Test package listing
 slay test_list_packages() {
-    sus packages []tea = build_system.list_packages() fr fr Should return a list (might be empty)
+    sus packages tea[value] = build_system.list_packages() fr fr Should return a list (might be empty)
     assert_true(len(packages) >= 0)
     
     vibez.spill("✅ list_packages test passed")
@@ -163,7 +163,7 @@ slay test_list_packages() {
 fr fr Test cache functionality
 slay test_build_cache() {
     sus target tea = "test_target"
-    sus dependencies []tea = []tea{} fr fr Initially no cache should exist
+    sus dependencies tea[value] = tea[value]{} fr fr Initially no cache should exist
     sus has_cache lit = build_system.check_build_cache(target, dependencies)
     assert_false(has_cache) fr fr Update cache
     build_system.update_build_cache(target)
@@ -204,7 +204,7 @@ slay test_comprehensive_build_config() {
     assert_eq_string(parsed["optimization_level"].(tea), "3")
     assert_eq_string(parsed["build_mode"].(tea), "native")
     
-    sus targets []tea = parsed["targets"].([]tea)
+    sus targets tea[value] = parsed["targets"].(tea[value])
     assert_true(len(targets) == 3)
     
     sus dependencies map[tea]tea = parsed["dependencies"].(map[tea]tea)
@@ -242,7 +242,7 @@ slay test_build_system_integration() { fr fr Create a minimal project structure
     fs.write_file("integration_test_config.toml", minimal_config) fr fr Test that configuration parses correctly
     sus config map[tea]interface{} = build_system.parse_build_config("integration_test_config.toml")
     assert_eq_string(config["name"].(tea), "integration_test") fr fr Test that target file can be found
-    sus source_dirs []tea = config["source_dirs"].([]tea)
+    sus source_dirs tea[value] = config["source_dirs"].(tea[value])
     sus target_file tea = build_system.find_target_file("main", source_dirs)
     assert_eq_string(target_file, "integration_test/main.csd") fr fr Cleanup
     fs.remove_file("integration_test/main.csd")

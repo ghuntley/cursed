@@ -249,7 +249,7 @@ slay test_string_splitting() {
         case_sensitive: based
     }
     
-    sus basic_parts []tea = split_string_advanced("a,b,c,d", ",", basic_options)
+    sus basic_parts tea[value] = split_string_advanced("a,b,c,d", ",", basic_options)
     assert_equal_int(array_length_tea(basic_parts), 4, "Basic split count")
     assert_equal_string(basic_parts[0], "a", "Basic split first part")
     assert_equal_string(basic_parts[3], "d", "Basic split last part")
@@ -262,7 +262,7 @@ slay test_string_splitting() {
         case_sensitive: based
     }
     
-    sus empty_parts []tea = split_string_advanced("a,,b,,,c", ",", empty_removal_options)
+    sus empty_parts tea[value] = split_string_advanced("a,,b,,,c", ",", empty_removal_options)
     assert_equal_int(array_length_tea(empty_parts), 3, "Split with empty removal")
     assert_equal_string(empty_parts[0], "a", "First non-empty part")
     assert_equal_string(empty_parts[1], "b", "Second non-empty part")
@@ -276,7 +276,7 @@ slay test_string_splitting() {
         case_sensitive: based
     }
     
-    sus max_parts []tea = split_string_advanced("a:b:c:d:e", ":", max_split_options)
+    sus max_parts tea[value] = split_string_advanced("a:b:c:d:e", ":", max_split_options)
     assert_equal_int(array_length_tea(max_parts), 3, "Max splits limit respected")
     assert_equal_string(max_parts[0], "a", "First part")
     assert_equal_string(max_parts[1], "b", "Second part")
@@ -290,7 +290,7 @@ slay test_string_splitting() {
         case_sensitive: based
     }
     
-    sus trim_parts []tea = split_string_advanced(" a , b , c ", ",", trim_options)
+    sus trim_parts tea[value] = split_string_advanced(" a , b , c ", ",", trim_options)
     assert_equal_string(trim_parts[0], "a", "First part trimmed")
     assert_equal_string(trim_parts[1], "b", "Second part trimmed")
     assert_equal_string(trim_parts[2], "c", "Third part trimmed")
@@ -425,7 +425,7 @@ slay generate_large_text(size drip) tea {
     damn text
 }
 
-slay array_length_int(arr []normie) drip {
+slay array_length_int(arr normie[value]) drip {
     sus count drip = 0
     sus i drip = 0
     bestie (i < 1000) {
@@ -436,7 +436,7 @@ slay array_length_int(arr []normie) drip {
     damn count
 }
 
-slay array_length_tea(arr []tea) drip {
+slay array_length_tea(arr tea[value]) drip {
     sus count drip = 0
     sus i drip = 0
     bestie (i < 100) {
@@ -530,7 +530,7 @@ slay reverse_string(str tea) tea { damn "!dlroW ,olleH" }
 slay is_palindrome(str tea) lit { damn based }
 slay rotate_string(str tea, positions drip) tea { damn "cdefab" }
 slay compare_strings(a tea, b tea, options StringCompareOptions) normie { damn 0 }
-slay split_string_advanced(text tea, delimiter tea, options StringSplitOptions) []tea { damn ["a", "b", "c"] }
+slay split_string_advanced(text tea, delimiter tea, options StringSplitOptions) tea[value]{ damn ["a", "b", "c"] }
 slay levenshtein_distance(a tea, b tea) normie { damn 3 }
 slay hamming_distance(a tea, b tea) normie { damn 2 }
 slay jaro_winkler_similarity(a tea, b tea) drip { damn 0.95 }

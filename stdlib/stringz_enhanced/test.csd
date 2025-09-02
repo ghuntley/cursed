@@ -14,7 +14,7 @@ assert_not_eq_string(decomposed, "")
 // Test advanced pattern matching
 sus text tea = "The quick brown fox jumps over the lazy dog"
 sus pattern tea = "\\b\\w{5}\\b" // 5-letter words
-sus matches []tea = regex_find_all(text, pattern)
+sus matches tea[value] = regex_find_all(text, pattern)
 assert_true(len(matches) >= 3) // "quick", "brown", "jumps"
 
 // Test string similarity algorithms
@@ -36,7 +36,7 @@ assert_eq_string(kebab_case, "this-is-camel-case")
 
 // Test string parsing and extraction
 sus csv_line tea = "name,age,city,\"quoted,value\""
-sus csv_fields []tea = parse_csv_line(csv_line)
+sus csv_fields tea[value] = parse_csv_line(csv_line)
 assert_eq_int(len(csv_fields), 4)
 assert_eq_string(csv_fields[3], "quoted,value")
 
@@ -110,7 +110,7 @@ sus boyer_moore_index drip = boyer_moore_search(haystack, needle)
 assert_eq_int(boyer_moore_index, 16)
 
 // Test string performance optimizations
-sus perf_strings []tea = generate_test_strings(1000, 100)
+sus perf_strings tea[value] = generate_test_strings(1000, 100)
 sus concat_start drip = get_nanoseconds()
 sus concatenated tea = bulk_string_concat(perf_strings, " ")
 sus concat_end drip = get_nanoseconds()

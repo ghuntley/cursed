@@ -45,7 +45,7 @@ assert_contains_string(function_result, "success")
 sus metrics drip = collect_cloud_metrics()
 assert_true(metrics > 0)
 
-sus logs []tea = fetch_cloud_logs("cursed-app", 10)
+sus logs tea[value] = fetch_cloud_logs("cursed-app", 10)
 assert_true(len(logs) >= 0)
 
 // Test auto-scaling

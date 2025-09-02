@@ -196,7 +196,7 @@ slay test_directory_operations() {
     vibez.spill("✅ Recursive directory created")
     
     fr fr List directory with details
-    sus entries []DirectoryEntry = list_directory_detailed(".", based) fam {
+    sus entries DirectoryEntry[value] = list_directory_detailed(".", based) fam {
         when _ -> {
             vibez.spill("❌ list_directory_detailed failed:", err)
             damn
@@ -256,7 +256,7 @@ slay test_file_search() {
     vibez.spill("\n=== Testing File Search Operations ===")
     
     fr fr Find files by pattern
-    sus txt_files []tea = find_files(".", "*.txt", based, 100) fam {
+    sus txt_files tea[value] = find_files(".", "*.txt", based, 100) fam {
         when _ -> {
             vibez.spill("❌ find_files by pattern failed:", err)
             damn
@@ -270,7 +270,7 @@ slay test_file_search() {
     }
     
     fr fr Find files by size
-    sus medium_files []tea = find_files_by_size(".", 100, 10000, based) fam {
+    sus medium_files tea[value] = find_files_by_size(".", 100, 10000, based) fam {
         when _ -> {
             vibez.spill("❌ find_files_by_size failed:", err)
             damn
@@ -284,7 +284,7 @@ slay test_file_search() {
     }
     
     fr fr Find files by modification time
-    sus recent_files []tea = find_files_by_time(".", 1640995200, 1640995800, based) fam {
+    sus recent_files tea[value] = find_files_by_time(".", 1640995200, 1640995800, based) fam {
         when _ -> {
             vibez.spill("❌ find_files_by_time failed:", err)
             damn

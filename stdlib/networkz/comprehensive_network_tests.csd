@@ -12,7 +12,7 @@ sus test_results squad {
     sus total_tests drip = 0
     sus passed_tests drip = 0
     sus failed_tests drip = 0
-    sus test_details []tea = []
+    sus test_details tea[value] = []
 }
 
 slay add_test_result(test_name tea, passed lit, details tea) {
@@ -404,7 +404,7 @@ slay test_dns_record_types() {
     vibez.spill("Testing DNS record types...")
     
     // Test A records
-    sus a_records []DNSRecord = dns_resolve_hostname_all_types("google.com", 1) fam {
+    sus a_records DNSRecord[value] = dns_resolve_hostname_all_types("google.com", 1) fam {
         when err -> {
             add_test_result("DNS A records", no_cap, err.message)
             damn
@@ -418,7 +418,7 @@ slay test_dns_record_types() {
     }
     
     // Test MX records
-    sus mx_records []DNSRecord = dns_resolve_hostname_all_types("gmail.com", 15) fam {
+    sus mx_records DNSRecord[value] = dns_resolve_hostname_all_types("gmail.com", 15) fam {
         when err -> {
             add_test_result("DNS MX records", no_cap, err.message)
             damn
@@ -432,7 +432,7 @@ slay test_dns_record_types() {
     }
     
     // Test TXT records
-    sus txt_records []DNSRecord = dns_resolve_hostname_all_types("google.com", 16) fam {
+    sus txt_records DNSRecord[value] = dns_resolve_hostname_all_types("google.com", 16) fam {
         when err -> {
             add_test_result("DNS TXT records", no_cap, err.message)
             damn
@@ -462,7 +462,7 @@ slay test_advanced_http_get() {
     vibez.spill("Testing advanced HTTP GET...")
     
     // Test basic GET request
-    sus headers []tea = ["Accept: application/json", "User-Agent: CURSED-Test/1.0"]
+    sus headers tea[value] = ["Accept: application/json", "User-Agent: CURSED-Test/1.0"]
     sus response HttpResponseAdvanced = http_get_advanced("http://httpbin.org/get", headers, 30) fam {
         when err -> {
             add_test_result("HTTP GET basic", no_cap, err.message)
@@ -504,7 +504,7 @@ slay test_advanced_http_post() {
     vibez.spill("Testing advanced HTTP POST...")
     
     sus json_body tea = "{\"name\":\"test\",\"value\":123,\"active\":true}"
-    sus headers []tea = ["X-Test-Header: test-value"]
+    sus headers tea[value] = ["X-Test-Header: test-value"]
     
     sus response HttpResponseAdvanced = http_post_json_advanced("http://httpbin.org/post", json_body, headers, 30) fam {
         when err -> {
