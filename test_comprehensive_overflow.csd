@@ -27,7 +27,7 @@ slay main_character() {
     vibez.spill(result4)
     
     // Test abs of minimum int
-    sus result5 drip = mathz.abs(min_int)
+    sus result5 drip = mathz.abs_normie(min_int)
     vibez.spill("Abs of min int (should promote to float):")
     vibez.spill(result5)
     

@@ -13,3 +13,11 @@ slay abs_normie(x thicc) thicc {
 slay abs_meal(x meal) meal {
     damn x
 }
+
+slay max(a thicc, b thicc) thicc {
+    ready a > b { damn a } otherwise { damn b }
+}
+
+slay min(a thicc, b thicc) thicc {
+    ready a < b { damn a } otherwise { damn b }
+}

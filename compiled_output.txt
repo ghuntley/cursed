@@ -1,20 +1,26 @@
-"=== Boundary Conditions Test ==="
-"Testing zero values..."
-"Zero value:" 0
-"Zero abs:" 0
-"Testing negative values..."
-"Negative abs:" 999
-"Testing string boundaries..."
-"Empty string:" ""
-"Single char:" "a"
-"Testing extreme arithmetic..."
-"Large + zero:" 999999
-"Large - zero:" 999999
-"Large * zero:" 0
-"Testing boundary math operations..."
-"Max(999, -999):" 999
-"Min(999, -999):" -999
-"Testing zero division safety..."
-"999 / 1:" 999
-"0 / 1:" 0
-"Boundary conditions test completed"
+"=== Extreme Input Tests ==="
+"=== Very Large Number Tests ==="
+"Large number operations:"
+"Large1:" 999999
+"Large2:" 888888
+"Large3:" 777777
+"Large1 + Large2:" 1888887
+"Large1 - Large2:" 111111
+"Large1 abs:" 999999
+"Large accumulation:" 2666664
+"=== Very Long String Tests ==="
+"Final long string length:" 8
+"Upper version length:" 8
+"Lower version length:" 8
+"=== Very Large Array Tests ==="
+"Array length:" 5
+"Array sum:" 5500
+"Array max:" 100
+"Array min:" 100
+"=== Extreme Computation Tests ==="
+"Computation result:" 275
+"Average per cycle:" 91
+"=== Mixed Extreme Operations ==="
+"Final - num:" 234567 "str_len:" 11 "arr_len:" 3
+"Mixed extreme operations completed"
+"All extreme input tests completed"

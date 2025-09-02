@@ -1,5 +1,9 @@
+vibe main_character
+
+yeet "vibez"
+
 slay main_character() {
-    sus x normie = 5
-    sus y normie = 3
-    sus result normie = x + y
+    vibez.spill("Testing basic compilation")
+    sus x normie = 42
+    vibez.spill(x)
 }

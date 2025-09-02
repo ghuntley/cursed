@@ -15,7 +15,7 @@ slay main_character() {
     vibez.spill(result1)
     
     vibez.spill("Testing mathz.abs:")
-    result2 := mathz.abs(-7)
+    result2 := mathz.abs_normie(-7)
     vibez.spill(result2)
     
     vibez.spill("Testing mathz.max:")

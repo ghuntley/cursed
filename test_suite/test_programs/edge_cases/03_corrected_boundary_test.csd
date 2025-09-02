@@ -13,17 +13,17 @@ slay main() {
     vibez.spill("Testing zero values...")
     sus zero = 0
     vibez.spill("Zero:", zero)
-    vibez.spill("Zero abs:", mathz.abs(zero))
+    vibez.spill("Zero abs:", mathz.abs_normie(zero))
     
     vibez.spill("Testing negative values...")
     sus negative = -100
     vibez.spill("Negative:", negative)  
-    vibez.spill("Negative abs:", mathz.abs(negative))
+    vibez.spill("Negative abs:", mathz.abs_normie(negative))
     
     vibez.spill("Testing large values...")
     sus large = 999999
     vibez.spill("Large:", large)
-    vibez.spill("Large abs:", mathz.abs(large))
+    vibez.spill("Large abs:", mathz.abs_normie(large))
     
     vibez.spill("Testing empty strings...")
     sus empty_str = ""

@@ -14,7 +14,7 @@ fr fr Test basic mathz functions
     sus z: meal = -7.5;
     
 fr fr Test absolute value
-    sus abs_x: normie = mathz.abs(x);
+    sus abs_x: normie = mathz.abs_normie(x);
     vibez.spill("abs({}) = {}", x, abs_x);
     
 fr fr Test max function
@@ -38,11 +38,11 @@ fr fr Test square root (if available)
 fr fr Test multiple operations in sequence
     sus a: normie = 5;
     sus b: normie = -3;
-    sus c: normie = mathz.max(mathz.abs(a), mathz.abs(b));
+    sus c: normie = mathz.max(mathz.abs_normie(a), mathz.abs_normie(b));
     vibez.spill("max(abs({}), abs({})) = {}", a, b, c);
     
 fr fr Test with expressions
-    sus expr_result: normie = mathz.abs(a - b * 2);
+    sus expr_result: normie = mathz.abs_normie(a - b * 2);
     vibez.spill("abs({} - {} * 2) = {}", a, b, expr_result);
     
     damn 0;

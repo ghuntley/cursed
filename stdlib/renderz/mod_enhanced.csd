@@ -1089,7 +1089,7 @@ slay renderz_interpolate_color(vertices Vertex[3], bary Vec3) Vec4 {
 }
 
 slay renderz_triangle_area_2d(a Vec3, b Vec3, c Vec3) drip {
-    damn mathz.abs((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) * 0.5
+    damn mathz.abs_normie((b.x - a.x) * (c.y - a.y) - (c.x - a.x) * (b.y - a.y)) * 0.5
 }
 
 fr fr Additional implementation stubs that would be fully implemented in a production system

@@ -5,7 +5,7 @@ yeet "mathz"
 slay main_character() {
     sus x normie = 42
     sus y normie = 100
-    sus result normie = mathz.abs(-5)
+    sus result normie = mathz.abs_normie(-5)
     
     vibez.spill("Testing semicolon insertion")
     vibez.spill(x)

@@ -151,8 +151,8 @@ slay drawz_draw_line(canvas Canvas, start Point2D, end Point2D) lit {
     sus x1 normie = end.x
     sus y1 normie = end.y
     
-    sus dx normie = mathz.abs(x1 - x0)
-    sus dy normie = mathz.abs(y1 - y0)
+    sus dx normie = mathz.abs_normie(x1 - x0)
+    sus dy normie = mathz.abs_normie(y1 - y0)
     sus sx normie = ready (x0 < x1) 1 otherwise -1
     sus sy normie = ready (y0 < y1) 1 otherwise -1
     sus err normie = dx - dy
@@ -595,7 +595,7 @@ slay drawz_blend_colors(base Color, overlay Color, alpha drip) Color {
 slay drawz_hsv_to_rgb(h drip, s drip, v drip) Color {
     fr fr Convert HSV to RGB color space
     sus c drip = v * s
-    sus x drip = c * (1.0 - mathz.abs((h / 60.0) % 2.0 - 1.0))
+    sus x drip = c * (1.0 - mathz.abs_normie((h / 60.0) % 2.0 - 1.0))
     sus m drip = v - c
     
     sus r drip = 0.0

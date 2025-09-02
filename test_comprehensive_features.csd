@@ -41,8 +41,8 @@ func main() {
     sum := mathz.add_two(a, b)
     print("mathz.add_two(15, 25) = " + sum)
     
-    abs_val := mathz.abs(-42)
-    print("mathz.abs(-42) = " + abs_val)
+    abs_val := mathz.abs_normie(-42)
+    print("mathz.abs_normie(-42) = " + abs_val)
     
     # Test 4: Control flow
     print("\n--- Test 4: Control Flow ---")

@@ -68,7 +68,7 @@ slay main_character() {
                 mathz.mod(17, 3)
             )
         ),
-        mathz.abs(
+        mathz.abs_normie(
             mathz.subtract(
                 mathz.multiply(-5, 4),
                 mathz.add(10, 15)

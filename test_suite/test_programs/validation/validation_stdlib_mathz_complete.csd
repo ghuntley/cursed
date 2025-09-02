@@ -27,8 +27,8 @@ slay main_character() {
     vibez.spill(result_div)
     
     fr fr Test absolute value
-    sus result_abs_pos normie = mathz.abs(42)
-    sus result_abs_neg normie = mathz.abs(-42)
+    sus result_abs_pos normie = mathz.abs_normie(42)
+    sus result_abs_neg normie = mathz.abs_normie(-42)
     vibez.spill("abs(42) =")
     vibez.spill(result_abs_pos)
     vibez.spill("abs(-42) =")

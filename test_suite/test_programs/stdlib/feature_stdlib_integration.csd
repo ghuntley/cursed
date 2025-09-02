@@ -12,7 +12,7 @@ slay main_character() {
     
     fr fr Test mathz functions
     vibez.spill("Testing mathz.abs with negative:")
-    sus abs_result normie = mathz.abs(-25)
+    sus abs_result normie = mathz.abs_normie(-25)
     vibez.spill(abs_result)
     
     vibez.spill("Testing mathz.max with two values:")
@@ -28,12 +28,12 @@ slay main_character() {
     vibez.spill(add_result)
     
     fr fr Chain operations using stdlib results
-    sus chained_result normie = mathz.abs(mathz.min(-10, -5))
-    vibez.spill("Chained operations mathz.abs(mathz.min(-10, -5)):")
+    sus chained_result normie = mathz.abs_normie(mathz.min(-10, -5))
+    vibez.spill("Chained operations mathz.abs_normie(mathz.min(-10, -5)):")
     vibez.spill(chained_result)
     
     fr fr Use stdlib results in expressions
-    sus expr_result normie = mathz.max(10, 20) + mathz.abs(-8)
+    sus expr_result normie = mathz.max(10, 20) + mathz.abs_normie(-8)
     vibez.spill("Expression with stdlib (max(10,20) + abs(-8)):")
     vibez.spill(expr_result)
     

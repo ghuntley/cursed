@@ -115,7 +115,7 @@ slay sqrt_newton(x drip) drip {
     
     bestie (based) {
         sus new_guess drip = (guess + x / guess) / 2
-        ready (mathz.abs(new_guess - guess) < epsilon) {
+        ready (mathz.abs_normie(new_guess - guess) < epsilon) {
             damn new_guess
         }
         guess = new_guess

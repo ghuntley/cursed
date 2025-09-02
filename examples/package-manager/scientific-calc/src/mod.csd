@@ -275,7 +275,7 @@ slay evaluate_expression(expression tea, calc Calculator) drip {
                 angle = degrees_to_radians(angle)
             }
             sus cos_val drip = cos_approximation(angle)
-            ready (mathz.abs(cos_val) < 0.000001) {
+            ready (mathz.abs_normie(cos_val) < 0.000001) {
                 vibez.spill("Error: tan undefined (division by zero)")
                 damn -999999
             }

@@ -14,7 +14,7 @@ slay main() {
     sus num1 = 42
     sus num2 = -17
     
-    vibez.spill("abs(-17) =", mathz.abs(num2))
+    vibez.spill("abs(-17) =", mathz.abs_normie(num2))
     vibez.spill("max(42, 17) =", mathz.max(num1, 17))
     vibez.spill("min(42, 17) =", mathz.min(num1, 17))
     
@@ -27,7 +27,7 @@ slay main() {
     vibez.spill("Lowercase:", stringz.to_lower(text2))
     
     vibez.spill("Combined operations...")
-    sus abs_num = mathz.abs(num2)
+    sus abs_num = mathz.abs_normie(num2)
     sus num_str = stringz.from_int(abs_num)
     sus final_text = stringz.concat(text1, num_str)
     

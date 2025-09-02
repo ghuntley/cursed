@@ -37,10 +37,10 @@ slay main() {
     vibez.spill("(1+2)*(3+4)-(8/2) =", complex2, "(should be 17)")
     
     vibez.spill("Testing with mathz functions...")
-    sus math_result1 = mathz.abs(-5) + 3
+    sus math_result1 = mathz.abs_normie(-5) + 3
     vibez.spill("abs(-5) + 3 =", math_result1, "(should be 8)")
     
-    sus math_result2 = 2 * mathz.abs(-4)
+    sus math_result2 = 2 * mathz.abs_normie(-4)
     vibez.spill("2 * abs(-4) =", math_result2, "(should be 8)")
     
     vibez.spill("Arithmetic precedence regression test completed")

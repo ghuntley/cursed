@@ -13,7 +13,7 @@ slay process_numeric_data() {
     
     bestie i := 0; i < len(numbers); i++ {
         sus num = numbers[i]
-        sus abs_val = mathz.abs(num)
+        sus abs_val = mathz.abs_normie(num)
         sus squared = mathz.pow(abs_val, 2)
         
         processed_numbers = append(processed_numbers, squared)
@@ -93,7 +93,7 @@ slay integrated_processing_pipeline() {
     // Process numbers with mathz
     sus sum normie = 0
     bestie i := 0; i < len(numbers); i++ {
-        sus abs_num = mathz.abs(numbers[i])
+        sus abs_num = mathz.abs_normie(numbers[i])
         sum = sum + abs_num
     }
     
@@ -116,7 +116,7 @@ slay integrated_processing_pipeline() {
     bestie i := 0; i < len(processed_names); i++ {
         sus name = processed_names[i]
         sus number_index = i % len(numbers)
-        sus associated_number = mathz.abs(numbers[number_index])
+        sus associated_number = mathz.abs_normie(numbers[number_index])
         
         vibez.spill("Name:", name, "-> Number:", associated_number, "-> Square:", mathz.pow(associated_number, 2))
     }

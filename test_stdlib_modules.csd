@@ -9,7 +9,7 @@ slay main_character() {
     vibez.spill("Testing CURSED stdlib modules")
     
     fr fr Test mathz module  
-    sus result drip = mathz.abs(-42)
+    sus result drip = mathz.abs_normie(-42)
     sus sum drip = mathz.add_two(10, 20)
     
     fr fr Test stringz module

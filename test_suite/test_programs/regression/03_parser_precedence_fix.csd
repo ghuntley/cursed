@@ -143,18 +143,18 @@ slay test_function_call_precedence() {
     vibez.spill("=== Function Call Precedence Tests ===")
     
     // Test function calls in expressions
-    sus func_result1 = mathz.abs(-5) + 3
-    vibez.spill("mathz.abs(-5) + 3 =", func_result1, "(should be 8)")
+    sus func_result1 = mathz.abs_normie(-5) + 3
+    vibez.spill("mathz.abs_normie(-5) + 3 =", func_result1, "(should be 8)")
     
-    sus func_result2 = 2 * mathz.abs(-4)
-    vibez.spill("2 * mathz.abs(-4) =", func_result2, "(should be 8)")
+    sus func_result2 = 2 * mathz.abs_normie(-4)
+    vibez.spill("2 * mathz.abs_normie(-4) =", func_result2, "(should be 8)")
     
-    sus func_result3 = mathz.pow(2, 3) + mathz.abs(-1)
-    vibez.spill("mathz.pow(2,3) + mathz.abs(-1) =", func_result3, "(should be 9)")
+    sus func_result3 = mathz.pow(2, 3) + mathz.abs_normie(-1)
+    vibez.spill("mathz.pow(2,3) + mathz.abs_normie(-1) =", func_result3, "(should be 9)")
     
     // Test function calls with complex arguments
-    sus complex_arg1 = mathz.abs(2 - 5)
-    vibez.spill("mathz.abs(2 - 5) =", complex_arg1, "(should be 3)")
+    sus complex_arg1 = mathz.abs_normie(2 - 5)
+    vibez.spill("mathz.abs_normie(2 - 5) =", complex_arg1, "(should be 3)")
     
     sus complex_arg2 = mathz.pow(1 + 1, 2 + 1)
     vibez.spill("mathz.pow(1+1, 2+1) =", complex_arg2, "(should be 8)")

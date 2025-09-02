@@ -25,11 +25,11 @@ slay main_character() {
     vibez.spill(complex_bool)
     
     fr fr Nested function calls
-    sus nested_result normie = mathz.abs(mathz.max(-5, mathz.min(10, -3)))
+    sus nested_result thicc = mathz.abs_normie(mathz.max(-5, mathz.min(10, -3)))
     vibez.spill(nested_result)
     
     fr fr Complex conditional with nested expressions
-    ready ((a * 2) > (b - 5)) && (mathz.abs(c - 10) < 6) {
+    ready ( (a * 2) > (b - 5) && mathz.abs_normie(c - 10) < 6 ) {
         vibez.spill("Complex condition passed")
     } otherwise {
         vibez.spill("Complex condition failed")

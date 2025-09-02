@@ -14,7 +14,7 @@ slay main() {
     sus number1 = -42
     sus number2 = 17
     
-    sus abs_result = mathz.abs(number1)
+    sus abs_result = mathz.abs_normie(number1)
     vibez.spill("abs(-42) =", abs_result)
     
     sus max_result = mathz.max(abs_result, number2)

@@ -8,7 +8,7 @@ slay main_character() {
     
     sus num normie = -42
     vibez.spill("abs(-42):")
-    vibez.spill(mathz.abs(num))
+    vibez.spill(mathz.abs_normie(num))
     
     sus a normie = 3
     sus b normie = 4

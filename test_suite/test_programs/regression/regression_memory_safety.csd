@@ -36,7 +36,7 @@ slay main_character() {
     vibez.spill(y)
     
     fr fr Test complex expressions with function calls
-    sus result normie = mathz.add_two(x, y) + mathz.abs(-3)
+    sus result normie = mathz.add_two(x, y) + mathz.abs_normie(-3)
     vibez.spill("Complex expression result:")
     vibez.spill(result)
     

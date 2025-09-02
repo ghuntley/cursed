@@ -291,7 +291,7 @@ slay drawz_draw_line_antialiased(canvas Canvas, start Point2D, end Point2D) lit 
     sus x1 drip = end.x
     sus y1 drip = end.y
     
-    sus steep lit = mathz.abs(y1 - y0) > mathz.abs(x1 - x0)
+    sus steep lit = mathz.abs_normie(y1 - y0) > mathz.abs_normie(x1 - x0)
     
     ready (steep) {
         fr fr Swap x and y coordinates
@@ -473,7 +473,7 @@ slay drawz_draw_circle_antialiased(canvas Canvas, circle Circle2D, mode normie) 
             }
             
             ready (mode == DRAW_MODE_STROKE || mode == DRAW_MODE_BOTH) {
-                sus edge_distance drip = mathz.abs(distance - radius)
+                sus edge_distance drip = mathz.abs_normie(distance - radius)
                 ready (edge_distance < canvas.line_width / 2.0 + 1.0) {
                     sus alpha drip = 1.0 - mathz.clamp(edge_distance - canvas.line_width / 2.0, 0.0, 1.0)
                     drawz_plot_pixel_alpha(canvas, x, y, canvas.stroke_color, alpha)
@@ -518,7 +518,7 @@ slay drawz_draw_ellipse_antialiased(canvas Canvas, ellipse Ellipse2D, mode normi
             }
             
             ready (mode == DRAW_MODE_STROKE || mode == DRAW_MODE_BOTH) {
-                sus edge_distance drip = mathz.abs(1.0 - ellipse_value)
+                sus edge_distance drip = mathz.abs_normie(1.0 - ellipse_value)
                 ready (edge_distance < 0.1) {
                     sus alpha drip = 1.0 - edge_distance * 10.0
                     drawz_plot_pixel_alpha(canvas, x, y, canvas.stroke_color, alpha)
@@ -1123,8 +1123,8 @@ slay drawz_draw_line(canvas Canvas, start Point2D, end Point2D) lit {
     sus x1 normie = end.x
     sus y1 normie = end.y
     
-    sus dx normie = mathz.abs(x1 - x0)
-    sus dy normie = mathz.abs(y1 - y0)
+    sus dx normie = mathz.abs_normie(x1 - x0)
+    sus dy normie = mathz.abs_normie(y1 - y0)
     sus sx normie = ready (x0 < x1) 1 otherwise -1
     sus sy normie = ready (y0 < y1) 1 otherwise -1
     sus err normie = dx - dy
