@@ -7,7 +7,7 @@ pub fn build(b: *std.Build) void {
     // Build static library
     const lib = b.addStaticLibrary(.{
         .name = "cursed_stdlib",
-        .root_source_file = .{ .path = "cursed_stdlib.zig" },
+        .root_source_file = b.path("cursed_stdlib.zig"),
         .target = target,
         .optimize = optimize,
     });
@@ -19,7 +19,7 @@ pub fn build(b: *std.Build) void {
     // Also build as shared library
     const shared_lib = b.addSharedLibrary(.{
         .name = "cursed_stdlib",
-        .root_source_file = .{ .path = "cursed_stdlib.zig" },
+        .root_source_file = b.path("cursed_stdlib.zig"),
         .target = target,
         .optimize = optimize,
     });

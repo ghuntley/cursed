@@ -33,7 +33,7 @@ slay test_error_conditions() {
 slay validate_input(value normie) normie {
     ready (value < 0) {
         vibez.spill("Warning: Negative value detected:", value)
-        damn mathz.abs(value)
+        damn mathz.abs_normie(value)
     }
     
     ready (value > 1000) {

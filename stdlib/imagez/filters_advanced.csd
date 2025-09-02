@@ -217,7 +217,7 @@ slay unsharp_mask_advanced(img Image, radius drip, amount drip, threshold drip) 
                 sus difference drip = original_pixel[c] - blurred_pixel[c]
                 
                 # Apply threshold
-                ready (mathz.abs(difference) >= threshold) {
+                ready (mathz.abs_normie(difference) >= threshold) {
                     sharpened_pixel[c] = original_pixel[c] + (amount * difference)
                     
                     # Clamp to valid range

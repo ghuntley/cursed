@@ -17,10 +17,10 @@ fr fr Test vibez module
 fr fr Test mathz module
     sus num1 normie = -15
     sus num2 normie = 25
-    sus abs_result normie = mathz.abs(num1)
+    sus abs_result normie = mathz.abs_normie(num1)
     sus max_result normie = mathz.max(num1, num2)
     
-    vibez.spill("mathz.abs({}) = {}", num1, abs_result)
+    vibez.spill("mathz.abs_normie({}) = {}", num1, abs_result)
     vibez.spill("mathz.max({}, {}) = {}", num1, num2, max_result)
     
 fr fr Test stringz module (assuming it exists)
@@ -32,11 +32,11 @@ fr fr Test stringz module (assuming it exists)
     vibez.spill("stringz.upper('{}') = '{}'", test_string, upper_string)
     
 fr fr Test combining multiple modules in expressions
-    sus combined_result normie = mathz.abs(stringz.length("test") - 2)
+    sus combined_result normie = mathz.abs_normie(stringz.length("test") - 2)
     vibez.spill("Combined modules result: {}", combined_result)
     
 fr fr Test module functions in conditionals
-    ready mathz.abs(-10) > stringz.length("short") {
+    ready mathz.abs_normie(-10) > stringz.length("short") {
         vibez.spill("Module functions work in conditions")
     }
     

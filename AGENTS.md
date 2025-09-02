@@ -52,7 +52,7 @@ yeet "mathz"
 
 slay main_character() {
     vibez.spill("Hello, CURSED!")
-    sus result drip = mathz.abs(-42)
+    sus result drip = mathz.abs_normie(-42)
     vibez.spill(result)
 }
 ```

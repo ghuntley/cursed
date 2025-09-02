@@ -375,7 +375,7 @@ slay shrink_towards_zero(value normie) [] {
     candidates = reflectz.array_append(candidates, 0)
     
     fr fr Binary shrinking towards zero
-    sus abs_value normie = mathz.abs(value)
+    sus abs_value normie = mathz.abs_normie(value)
     sus sign normie = 1
     vibes value < 0 {
         sign = -1

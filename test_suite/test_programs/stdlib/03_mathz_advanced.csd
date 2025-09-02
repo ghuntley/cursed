@@ -19,7 +19,7 @@ slay main_character() {
     vibez.spill(mathz.mod(15, 4))
     
     vibez.spill("Multiple operations:")
-    vibez.spill(mathz.add_two(mathz.abs(-5), mathz.max(3, 7)))
+    vibez.spill(mathz.add_two(mathz.abs_normie(-5), mathz.max(3, 7)))
     
     vibez.spill("=== Test Complete ===")
 };

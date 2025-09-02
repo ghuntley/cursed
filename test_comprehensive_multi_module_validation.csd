@@ -34,7 +34,7 @@ func comprehensive_math_operations() -> int {
     print(quot)
     
     // Advanced operations
-    let abs_val = mathz.abs(-25)
+    let abs_val = mathz.abs_normie(-25)
     let max_val = mathz.max(a, b)
     let min_val = mathz.min(a, b)
     let power = mathz.power(c, 3)
@@ -51,7 +51,7 @@ func comprehensive_math_operations() -> int {
     // Nested calculations
     let complex_result = mathz.add(
         mathz.multiply(
-            mathz.abs(mathz.subtract(a, 100)), 
+            mathz.abs_normie(mathz.subtract(a, 100)), 
             c
         ),
         mathz.divide(power, 2)

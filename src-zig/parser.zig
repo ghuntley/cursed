@@ -467,8 +467,14 @@ pub const Parser = struct {
     }
 
     fn parsePrattString(self: *Parser) ParserError!Expression {
-        const value = self.advance().lexeme;
-        return Expression{ .String = value };
+        const token = self.advance();
+        // Strip quotes properly like other string parsing functions
+        const str_content = if (token.lexeme.len >= 2 and 
+                               token.lexeme[0] == '"' and 
+                               token.lexeme[token.lexeme.len-1] == '"')
+                              token.lexeme[1..token.lexeme.len-1] // Remove quotes
+                              else token.lexeme;
+        return Expression{ .String = str_content }; // Store WITHOUT quotes
     }
 
     fn parsePrattBoolean(self: *Parser) ParserError!Expression {

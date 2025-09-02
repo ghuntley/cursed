@@ -4,6 +4,7 @@
 const std = @import("std");
 const print = std.debug.print;
 const Allocator = std.mem.Allocator;
+const c = std.c;
 
 // Global allocator for runtime
 var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -175,6 +176,14 @@ export fn collections_vec_len(vec: i64) i64 {
     // Simple implementation - for now just return 2 to show it's working
     _ = vec;
     return 2;
+}
+
+// Generic collections.length() function to handle slice types
+export fn collections_length(slice_ptr: [*]u8) i32 {
+    // Assume slice structure: {i32 length, ptr data, i32 capacity}
+    // Cast to the appropriate type and extract length
+    const slice_as_i32_ptr: [*]i32 = @ptrCast(@alignCast(slice_ptr));
+    return slice_as_i32_ptr[0]; // Length is the first field
 }
 
 export fn collections_vec_get(vec: CursedVec, index: i64) i64 {
@@ -548,17 +557,30 @@ export fn path_is_file(path: CursedStr) i32 {
 
 // String manipulation functions
 export fn stringz_length(str_ptr: [*:0]const u8) i32 {
-    var len: i32 = 0;
-    var i: usize = 0;
-    while (str_ptr[i] != 0) : (i += 1) {
-        len += 1;
-    }
-    return len;
+    // Use std.mem.len for consistency with interpreter
+    return @as(i32, @intCast(std.mem.len(str_ptr)));
 }
 
 export fn stringz_concat(str1_ptr: [*:0]const u8, str2_ptr: [*:0]const u8) [*:0]const u8 {
-    // For now, return the first string as a simple implementation
-    // In a full implementation, we'd allocate new memory and copy both strings
-    _ = str2_ptr; // Suppress unused parameter warning
-    return str1_ptr;
+    // Calculate lengths of both strings
+    const str1_len = std.mem.len(str1_ptr);
+    const str2_len = std.mem.len(str2_ptr);
+    const total_len = str1_len + str2_len;
+    
+    // Allocate new buffer (+1 for null terminator)
+    const result_buf = allocator.alloc(u8, total_len + 1) catch {
+        // On allocation failure, return first string as fallback
+        return str1_ptr;
+    };
+    
+    // Copy first string
+    @memcpy(result_buf[0..str1_len], str1_ptr[0..str1_len]);
+    
+    // Copy second string
+    @memcpy(result_buf[str1_len..str1_len + str2_len], str2_ptr[0..str2_len]);
+    
+    // Null terminate
+    result_buf[total_len] = 0;
+    
+    return @as([*:0]const u8, @ptrCast(result_buf.ptr));
 }

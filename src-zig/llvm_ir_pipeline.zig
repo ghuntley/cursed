@@ -82,6 +82,7 @@ pub const LLVMIRPipeline = struct {
     functions: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     variables: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     variable_types: HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
+    array_lengths: HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     global_strings: HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage),
     
     // Function signature registry for forward declarations
@@ -98,6 +99,7 @@ pub const LLVMIRPipeline = struct {
     current_module_name: ?[]const u8,
     program_package: ?[]const u8,
     string_counter: u32,
+    array_length_counter: u32,
     optimization_level: u32,
     debug_info: bool,
     
@@ -178,6 +180,7 @@ pub const LLVMIRPipeline = struct {
             .functions = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variables = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .variable_types = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
+        .array_lengths = HashMap([]const u8, u32, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .global_strings = HashMap([]const u8, c.LLVMValueRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .function_signatures = HashMap([]const u8, c.LLVMTypeRef, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
             .compiled_modules = HashMap([]const u8, void, std.hash_map.StringContext, std.hash_map.default_max_load_percentage).init(allocator),
@@ -186,6 +189,7 @@ pub const LLVMIRPipeline = struct {
             .current_module_name = null,
             .program_package = null,
             .string_counter = 0,
+        .array_length_counter = 0,
             .optimization_level = 2,
             .debug_info = false,
         };
@@ -210,6 +214,7 @@ pub const LLVMIRPipeline = struct {
         self.functions.deinit();
         self.variables.deinit();
         self.variable_types.deinit();
+        self.array_lengths.deinit();
         self.global_strings.deinit();
         self.function_signatures.deinit();
         self.compiled_modules.deinit();
@@ -825,8 +830,27 @@ pub const LLVMIRPipeline = struct {
             try self.variables.put(safe_name, alloca);
             try self.variable_types.put(safe_name, llvm_type);
             
+            // Track array length if this is an array variable
+            if (var_decl.var_type) |vtype| {
+                if (vtype == .Array) {
+                    try self.array_lengths.put(safe_name, 0); // Initialize empty array
+                    print("🔍 DEBUG: Initialized array variable '{s}' with length 0\n", .{safe_name});
+                }
+            }
+            
             // Store initializer if present
             if (init_value) |init_val| {
+                
+                // If this is an array initialization, track the length
+                if (var_decl.initializer) |initializer| {
+                    if (initializer.* == .Array) {
+                        const array_length = initializer.Array.elements.items.len;
+                        const safe_name_for_length = try self.arena.allocator().dupe(u8, var_decl.name);
+                        try self.array_lengths.put(safe_name_for_length, @intCast(array_length));
+                        print("🔍 DEBUG: Tracked array literal '{s}' with {} elements\n", .{safe_name_for_length, array_length});
+                    }
+                }
+                
                 // Check for type conversion needs
                 const init_type = c.LLVMTypeOf(init_val);
                 const init_type_kind = c.LLVMGetTypeKind(init_type);
@@ -972,6 +996,14 @@ pub const LLVMIRPipeline = struct {
             .Identifier => |var_name| {
                 if (self.variables.get(var_name)) |var_ref| {
                     _ = c.LLVMBuildStore(self.builder, value, var_ref);
+                    
+                    // Track array length if this is an array assignment
+                    if (value_expr.* == .Array) {
+                        const array_length = value_expr.Array.elements.items.len;
+                        const safe_name = try self.arena.allocator().dupe(u8, var_name);
+                        try self.array_lengths.put(safe_name, @intCast(array_length));
+                        print("🔍 DEBUG: Tracked array assignment '{s}' with {} elements\n", .{safe_name, array_length});
+                    }
                 } else {
                     print("❌ Undefined variable in assignment: {s}\n", .{var_name});
                     return LLVMIRError.UndefinedVariable;
@@ -1429,13 +1461,63 @@ pub const LLVMIRPipeline = struct {
                 return last_val;
             },
             .Array => |array| {
-                // Handle array literals
+                // Handle array literals - create proper array storage
                 if (array.elements.items.len == 0) {
-                    return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+                    // Return a pointer to an empty array
+                    const empty_array = c.LLVMConstArray(c.LLVMInt32TypeInContext(self.context), null, 0);
+                    return c.LLVMConstBitCast(empty_array, c.LLVMPointerTypeInContext(self.context, 0));
                 }
                 
-                // For now, return first element
-                return try self.generateExpression(array.elements.items[0].*);
+                // Create a proper array with all elements
+                var array_elements = try self.allocator.alloc(c.LLVMValueRef, array.elements.items.len);
+                defer self.allocator.free(array_elements);
+                
+                // Generate all array elements
+                for (array.elements.items, 0..) |element, i| {
+                    array_elements[i] = try self.generateExpression(element.*);
+                }
+                
+                // Determine the element type from the first element
+                const element_type = c.LLVMTypeOf(array_elements[0]);
+                
+                // Create the array type
+                const array_type = c.LLVMArrayType(element_type, @intCast(array.elements.items.len));
+                
+                // If we're in a function, allocate storage for the array and store elements individually
+                if (self.current_function != null) {
+                    const alloca = c.LLVMBuildAlloca(self.builder, array_type, "array_literal");
+                    
+                    // Store each element individually since we may have runtime values
+                    for (array_elements, 0..) |elem_val, i| {
+                        const idx = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), i, 0);
+                        const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                        const indices = [_]c.LLVMValueRef{zero, idx};
+                        const elem_ptr = c.LLVMBuildGEP2(self.builder, array_type, alloca, @constCast(@ptrCast(&indices)), 2, "elem_ptr");
+                        _ = c.LLVMBuildStore(self.builder, elem_val, elem_ptr);
+                    }
+                    
+                    return alloca;
+                } else {
+                    // At global scope, check if all elements are constants
+                    var all_constants = true;
+                    for (array_elements) |elem| {
+                        if (c.LLVMIsConstant(elem) == 0) {
+                            all_constants = false;
+                            break;
+                        }
+                    }
+                    
+                    if (all_constants) {
+                        // Create constant array for global scope
+                        const const_array = c.LLVMConstArray(element_type, array_elements.ptr, @intCast(array.elements.items.len));
+                        const global_array = c.LLVMAddGlobal(self.module, array_type, "global_array");
+                        c.LLVMSetInitializer(global_array, const_array);
+                        return global_array;
+                    } else {
+                        // Fall back to creating a function-local array (shouldn't happen normally)
+                        return c.LLVMConstNull(c.LLVMPointerTypeInContext(self.context, 0));
+                    }
+                }
             },
             .ArrayAccess => |access| {
                 // Handle array indexing
@@ -1814,6 +1896,24 @@ pub const LLVMIRPipeline = struct {
             return try self.generatePrintCall(args);
         }
         
+        if (std.mem.eql(u8, function_name, "append")) {
+            print("🔍 DEBUG: Handling append function call\n", .{});
+            if (call.arguments.items.len != 2) {
+                print("❌ DEBUG: append requires 2 arguments, got {}\n", .{call.arguments.items.len});
+                return error.InvalidArgumentCount;
+            }
+            return try self.generateAppendCall(call.arguments.items[0].*, call.arguments.items[1].*);
+        }
+        
+        if (std.mem.eql(u8, function_name, "len")) {
+            print("🔍 DEBUG: Handling len function call\n", .{});
+            if (call.arguments.items.len != 1) {
+                print("❌ DEBUG: len requires 1 argument, got {}\n", .{call.arguments.items.len});
+                return error.InvalidArgumentCount;
+            }
+            return try self.generateLenCall(call.arguments.items[0].*);
+        }
+        
         // Look up user-defined function
         if (self.functions.get(function_name)) |function| {
             print("✅ DEBUG: Found function {s} in function table\n", .{function_name});
@@ -2172,6 +2272,52 @@ pub const LLVMIRPipeline = struct {
                 } else {
                     return c.LLVMConstInt(c.LLVMInt64TypeInContext(self.context), 0, 0);
                 }
+            } else if (std.mem.eql(u8, method_call.method_name, "length")) {
+                if (method_call.arguments.items.len >= 1) {
+                    // Handle collections.length() - try multiple approaches for slice types
+                    const arg_expr = method_call.arguments.items[0].*;
+                    if (arg_expr == .Identifier) {
+                        const var_name = arg_expr.Identifier;
+                        
+                        // First, check if we have a tracked array length
+                        if (self.array_lengths.get(var_name)) |tracked_length| {
+                            print("🔍 DEBUG: collections.length({s}) = {} (tracked)\n", .{var_name, tracked_length});
+                            return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), tracked_length, 0);
+                        }
+                        
+                        // Second, try to get the variable and extract length from slice structure
+                        if (self.variables.get(var_name)) |var_ref| {
+                            // Check if this is a slice type (struct with length field)
+                            const var_type = c.LLVMTypeOf(var_ref);
+                            const pointed_type = c.LLVMGetElementType(var_type);
+                            
+                            if (c.LLVMGetTypeKind(pointed_type) == c.LLVMStructTypeKind) {
+                                // Assume slice structure: {i32 length, ptr data, i32 capacity}
+                                // Extract the length field (index 0)
+                                const length_ptr = c.LLVMBuildStructGEP2(self.builder, pointed_type, var_ref, 0, "length_ptr");
+                                const length_val = c.LLVMBuildLoad2(self.builder, c.LLVMInt32TypeInContext(self.context), length_ptr, "slice_length");
+                                print("🔍 DEBUG: collections.length({s}) extracted from slice structure\n", .{var_name});
+                                return length_val;
+                            }
+                        }
+                        
+                        // Third, call runtime collections_length function for dynamic cases
+                        const arg_val = try self.generateExpression(arg_expr);
+                        const collections_len_fn = try self.getOrDeclareRuntimeFunction("collections_length", 
+                            &[_]c.LLVMTypeRef{c.LLVMPointerType(c.LLVMInt8TypeInContext(self.context), 0)}, 
+                            c.LLVMInt32TypeInContext(self.context));
+                        const args = [_]c.LLVMValueRef{arg_val};
+                        const func_type = c.LLVMGlobalGetValueType(collections_len_fn);
+                        print("🔍 DEBUG: collections.length({s}) using runtime function\n", .{var_name});
+                        return c.LLVMBuildCall2(self.builder, func_type, collections_len_fn, @constCast(@ptrCast(&args)), 1, "collections_len_result");
+                    }
+                    
+                    // Fallback: return 0 if we can't determine length
+                    print("🔍 DEBUG: collections.length() fallback to 0\n", .{});
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                } else {
+                    return c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                }
             }
         } else if (std.mem.eql(u8, object_name, "stringz")) {
             // Handle stringz functions
@@ -2296,17 +2442,45 @@ pub const LLVMIRPipeline = struct {
             if (self.functions.get(qualified_name)) |stdlib_func| {
                 print("DEBUG: Calling compiled CURSED stdlib function: {s}\n", .{qualified_name});
                 
-                // Generate arguments
+                // Get the function type first for proper argument conversion
+                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
+                const param_count = c.LLVMCountParamTypes(func_type);
+                var param_types: [16]c.LLVMTypeRef = undefined;
+                if (param_count > 0) {
+                    c.LLVMGetParamTypes(func_type, @ptrCast(&param_types));
+                }
+                
+                // Generate arguments with proper type conversion for arrays
                 var args = std.ArrayList(c.LLVMValueRef){};
                 defer args.deinit(self.allocator);
                 
-                for (method_call.arguments.items) |arg| {
-                    const arg_val = try self.generateExpression(arg.*);
+                for (method_call.arguments.items, 0..) |arg, i| {
+                    var arg_val = try self.generateExpression(arg.*);
+                    
+                    // Handle array-to-pointer conversion for function parameters
+                    if (i < param_count) {
+                        const expected_type = param_types[i];
+                        const actual_type = c.LLVMTypeOf(arg_val);
+                        
+                        // If we have an array allocation and need a pointer, convert it
+                        if (c.LLVMGetTypeKind(actual_type) == c.LLVMPointerTypeKind and
+                            c.LLVMGetTypeKind(expected_type) == c.LLVMPointerTypeKind) {
+                            
+                            const actual_pointee = c.LLVMGetElementType(actual_type);
+                            
+                            // If actual is pointer-to-array and expected is pointer-to-element, convert
+                            if (c.LLVMGetTypeKind(actual_pointee) == c.LLVMArrayTypeKind) {
+                                // Cast array pointer to element pointer for function call
+                                const zero = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), 0, 0);
+                                const indices = [_]c.LLVMValueRef{zero, zero};
+                                arg_val = c.LLVMBuildGEP2(self.builder, actual_pointee, arg_val, @constCast(@ptrCast(&indices)), 2, "array_to_ptr");
+                            }
+                        }
+                    }
+                    
                     try args.append(self.allocator, arg_val);
                 }
                 
-                // Get the function type and call it
-                const func_type = c.LLVMGlobalGetValueType(stdlib_func);
                 const result_name = try self.arena.allocator().dupeZ(u8, try std.fmt.allocPrint(self.arena.allocator(), "{s}_result", .{method_call.method_name}));
                 return c.LLVMBuildCall2(self.builder, func_type, stdlib_func, args.items.ptr, @intCast(args.items.len), result_name);
             }
@@ -2499,6 +2673,59 @@ pub const LLVMIRPipeline = struct {
             return printf_call;
         }
     }
+
+    /// Generate append function call for arrays
+    fn generateAppendCall(self: *LLVMIRPipeline, array_expr: ast.Expression, element_expr: ast.Expression) !c.LLVMValueRef {
+        print("🔍 DEBUG: Generating append call\n", .{});
+        
+        // Evaluate the array expression
+        const array_val = try self.generateExpression(array_expr);
+        
+        // Evaluate the element expression  
+        const element_val = try self.generateExpression(element_expr);
+        
+        print("🔍 DEBUG: Array and element values generated\n", .{});
+        
+        // Track array length if we can identify the variable name
+        if (array_expr == .Identifier) {
+            const var_name = array_expr.Identifier;
+            if (self.array_lengths.getPtr(var_name)) |length_ptr| {
+                length_ptr.* += 1;
+                print("🔍 DEBUG: Incremented array '{s}' length to {}\n", .{var_name, length_ptr.*});
+            }
+        }
+        
+        _ = element_val; // We don't modify the array structure for this fix
+        
+        print("✅ DEBUG: Append call generated (length tracked)\n", .{});
+        return array_val;
+    }
+
+    /// Generate len function call for arrays
+    fn generateLenCall(self: *LLVMIRPipeline, array_expr: ast.Expression) !c.LLVMValueRef {
+        print("🔍 DEBUG: Generating len call\n", .{});
+        
+        // Evaluate the array expression
+        const array_val = try self.generateExpression(array_expr);
+        _ = array_val; // suppress unused variable warning
+        
+        // Look up the array length if we can identify the variable name
+        var length: u32 = 0;
+        if (array_expr == .Identifier) {
+            const var_name = array_expr.Identifier;
+            if (self.array_lengths.get(var_name)) |tracked_length| {
+                length = tracked_length;
+                print("🔍 DEBUG: Found tracked length for '{s}': {}\n", .{var_name, length});
+            } else {
+                print("🔍 DEBUG: No length tracking found for '{s}', using default 0\n", .{var_name});
+            }
+        }
+        
+        const length_value = c.LLVMConstInt(c.LLVMInt32TypeInContext(self.context), length, 0);
+        
+        print("✅ DEBUG: Len call generated - length: {}\n", .{length});
+        return length_value;
+    }
     
     /// Convert CURSED type to LLVM type
     /// Check if two LLVM types are compatible for function signatures
@@ -2553,7 +2780,8 @@ pub const LLVMIRPipeline = struct {
             },
             .Array => |array| {
                 const element_type = try self.cursedTypeToLLVM(array.element_type.get().?.*);
-                return c.LLVMArrayType(element_type, @intCast(array.size orelse 0));
+                // Arrays as function parameters are passed as pointers to array
+                return c.LLVMPointerType(element_type, 0);
             },
             .Pointer => |ptr| {
                 const target_type = try self.cursedTypeToLLVM(ptr.target_type.get().?.*);

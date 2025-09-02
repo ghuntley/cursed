@@ -307,18 +307,35 @@ pub const Value = union(enum) {
     // Tuple: *ArrayList(Value), // Temporarily disabled due to circular dependency
     
     pub fn deinit(self: *Value, allocator: Allocator) void {
+        // Check for corrupted union tag - detect if it's out of range
+        const tag_int = @intFromEnum(std.meta.activeTag(self.*));
+        if (tag_int > 15) {  // We have ~13 valid enum values, anything > 15 is corrupt
+            std.debug.print("CORRUPTION DETECTED: Invalid tag value = {}, ptr={*}\n", .{ tag_int, self });
+            std.debug.panic("Value union tag corrupted before deinit");
+        }
+        
         switch (self.*) {
             .String => {}, // String is a reference, don't free
-            .OwnedString => |str| allocator.free(str),
-            .Array => |array| {
-                for (array) |*item| {
-                    item.deinit(allocator);
-                }
-                allocator.free(array);
+            .OwnedString => |str| {
+                std.debug.print("DEBUG deinit OwnedString: len={}, ptr={*}\n", .{ str.len, str.ptr });
+                allocator.free(str);
             },
-            // }
-            //     tuple.deinit();
-            // },
+            .Array => |array| {
+                std.debug.print("DEBUG Value.deinit Array: len={}, ptr={*}, self_ptr={*}\n", .{ array.len, array.ptr, self });
+                // Only deinitialize elements if there are any
+                if (array.len > 0) {
+                    for (array, 0..) |*item, i| {
+                        std.debug.print("DEBUG deinit Array[{}]: element_ptr={*}, calling deinit\n", .{ i, item });
+                        item.deinit(allocator);
+                    }
+                    // Only free if we have a valid allocation (len > 0)
+                    allocator.free(array);
+                    std.debug.print("DEBUG Value.deinit Array: freed array slice\n", .{});
+                } else {
+                    // Zero-length arrays use sentinel pointers - don't free them
+                    std.debug.print("DEBUG deinit Array: skipping free for zero-length array with sentinel ptr\n", .{});
+                }
+            },
             .Error => |*err| err.deinit(),
             .Pointer => |*ptr| ptr.deinit(),
             .Struct => |*struct_inst| struct_inst.deinit(),
@@ -333,7 +350,7 @@ pub const Value = union(enum) {
             },
             .BuiltinFunction => {}, // No cleanup needed
             .UserFunction => {}, // Function declarations are managed by the AST
-            else => {}, // Other types don't need cleanup
+            .Integer, .Float, .Boolean, .Character, .Null => {}, // Primitive types don't need cleanup
         }
     }
 
@@ -504,8 +521,10 @@ pub const Environment = struct {
         while (iterator.next()) |entry| {
             // entry.value_ptr is **Value (pointer to *Value), so:
             // entry.value_ptr.* is *Value (the stored pointer)
-            entry.value_ptr.*.deinit(self.allocator);  // deinit the Value
-            self.allocator.destroy(entry.value_ptr.*); // destroy the Value pointer
+            const value_ptr = entry.value_ptr.*;
+            
+            value_ptr.deinit(self.allocator);  // deinit the Value
+            self.allocator.destroy(value_ptr); // destroy the Value pointer
         }
         self.variables.deinit();
     }
@@ -714,6 +733,22 @@ pub const Interpreter = struct {
             .BuiltinFunction = .{ 
                 .name = "yap", 
                 .func = builtinYap 
+            } 
+        });
+        
+        // Register len function as a global builtin
+        try self.globals.define("len", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "len", 
+                .func = builtinLen 
+            } 
+        });
+        
+        // Register append function as a global builtin
+        try self.globals.define("append", Value{ 
+            .BuiltinFunction = .{ 
+                .name = "append", 
+                .func = builtinAppend 
             } 
         });
         
@@ -1143,7 +1178,7 @@ pub const Interpreter = struct {
                     const stable_name = try self.allocator.dupe(u8, name);
                     // Removed DEBUG: Copied function name to stable memory: '{s}' ptr=@{*}\n", .{ stable_name, stable_name.ptr });
                     
-                    try module_functions.put(stable_name, entry.value_ptr.*);
+                    try module_functions.put(stable_name, value);
                     // Removed DEBUG: Exported CURSED function {s}.{s}\n", .{ module_name, stable_name });
                 },
                 else => {
@@ -1183,8 +1218,8 @@ pub const Interpreter = struct {
         } else if (std.mem.eql(u8, module_name, "mathz")) {
             // Add mathz functions  
             try module_functions.put("abs_normie", Value{ .BuiltinFunction = .{ .name = "mathz.abs_normie", .func = builtinMathzAbs } });
-            try module_functions.put("max_normie", Value{ .BuiltinFunction = .{ .name = "mathz.max_normie", .func = builtinMathzMax } });
-            try module_functions.put("min_normie", Value{ .BuiltinFunction = .{ .name = "mathz.min_normie", .func = builtinMathzMin } });
+            try module_functions.put("max", Value{ .BuiltinFunction = .{ .name = "mathz.max", .func = builtinMathzMax } });
+            try module_functions.put("min", Value{ .BuiltinFunction = .{ .name = "mathz.min", .func = builtinMathzMin } });
             try module_functions.put("add", Value{ .BuiltinFunction = .{ .name = "mathz.add", .func = builtinMathzAdd } });
             try module_functions.put("sub", Value{ .BuiltinFunction = .{ .name = "mathz.sub", .func = builtinMathzSub } });
             try module_functions.put("mul", Value{ .BuiltinFunction = .{ .name = "mathz.mul", .func = builtinMathzMul } });
@@ -1251,6 +1286,9 @@ pub const Interpreter = struct {
             // Sorting algorithms
             try module_functions.put("quick_sort", Value{ .BuiltinFunction = .{ .name = "collections.quick_sort", .func = builtinCollectionsQuickSort } });
             try module_functions.put("bubble_sort", Value{ .BuiltinFunction = .{ .name = "collections.bubble_sort", .func = builtinCollectionsBubbleSort } });
+            
+            // Generic length function for arrays
+            try module_functions.put("length", Value{ .BuiltinFunction = .{ .name = "collections.length", .func = builtinCollectionsLength } });
         } else if (std.mem.eql(u8, module_name, "json")) {
             // Add json functions
             try module_functions.put("parse", Value{ .BuiltinFunction = .{ .name = "json.parse", .func = builtinJsonParse } });
@@ -1309,17 +1347,17 @@ pub const Interpreter = struct {
 
     fn loadBuiltinModule(self: *Interpreter, module_name: []const u8) InterpreterError!void {
         // Pure CURSED self-hosting: Only load CURSED stdlib implementations
-        // TEMP FIX: Skip CURSED stdlib loading and use Zig builtins for testing
-        // if (self.loadCursedStdlibModule(module_name)) {
-        //     // Removed DEBUG: Successfully loaded {s} from CURSED stdlib\n", .{module_name});
-        //     return;
-        // } else |err| {
-        //     std.debug.print("ERROR: No CURSED stdlib implementation found for module '{s}': {}\n", .{ module_name, err });
-        //     std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.csd for true self-hosting\n", .{module_name});
-        //     return err;
+        if (self.loadCursedStdlibModule(module_name)) {
+            // Successfully loaded CURSED stdlib module
+            return;
+        } else |err| {
+            std.debug.print("ERROR: No CURSED stdlib implementation found for module '{s}': {}\n", .{ module_name, err });
+            std.debug.print("SELF-HOSTING: Please implement stdlib/{s}/mod.csd for true self-hosting\n", .{module_name});
+            return err;
+        }
         
-        // Fallback to Zig builtin modules
-        try self.loadZigBuiltinModule(module_name);
+        // Fallback to Zig builtin modules (should not be reached in self-hosting mode)
+        // try self.loadZigBuiltinModule(module_name);
     }
 
     fn executeLetStatement(self: *Interpreter, let: ast.LetStatement) InterpreterError!void {
@@ -1681,6 +1719,7 @@ pub const Interpreter = struct {
             .Fam => |fam| return try self.evaluateFam(fam),
             .StringInterpolation => |interpolation| return try self.evaluateStringInterpolation(interpolation),
             .Match => |match| return try self.evaluateMatch(match),
+            .Array => |array| return try self.evaluateArray(array.*),
             .MethodCall => |method_call| {
                 // Handle vibez.spill() and other built-in method calls
                 if (std.mem.eql(u8, method_call.method_name, "spill")) {
@@ -2374,6 +2413,32 @@ pub const Interpreter = struct {
                         return try self.callFunction(func, args.items);
                     }
                     
+                    // Check if this is a global builtin function
+                    std.debug.print("DEBUG: Checking for global builtin function: {s}\n", .{name});
+                    if (self.globals.get(name)) |global_value| {
+                        switch (global_value) {
+                            .BuiltinFunction => |builtin_func| {
+                                std.debug.print("DEBUG: Found global builtin function: {s}\n", .{name});
+                                // Evaluate arguments
+                                var args = std.ArrayList(Value){};
+                                defer args.deinit(self.allocator);
+                                
+                                for (call.arguments.items) |arg_expr| {
+                                    const arg = try self.evaluateExpression(arg_expr.*);
+                                    try args.append(self.allocator, arg);
+                                }
+                                
+                                // Call the builtin function
+                                return try builtin_func.func(self, args.items);
+                            },
+                            else => {
+                                std.debug.print("DEBUG: Global value {s} is not a builtin function: {s}\n", .{name, @tagName(global_value)});
+                            },
+                        }
+                    } else |_| {
+                        std.debug.print("DEBUG: Global builtin function {s} not found\n", .{name});
+                    }
+                    
                     // Enhanced generic function call resolution
                     if (try self.resolveGenericFunctionCall(name, call.arguments.items)) |result| {
                         return result;
@@ -2674,6 +2739,25 @@ pub const Interpreter = struct {
         }
         
         return Value{ .Struct = struct_instance };
+    }
+
+    fn evaluateArray(self: *Interpreter, array_expr: ast.ArrayExpression) InterpreterError!Value {
+        // Check for overflow before allocation
+        if (array_expr.elements.items.len > std.math.maxInt(i64)) {
+            std.debug.print("DEBUG: evaluateArray - Too many elements for array: {}\n", .{array_expr.elements.items.len});
+            return InterpreterError.InvalidOperation;
+        }
+        
+        // Allocate array directly
+        const elements_slice = try self.allocator.alloc(Value, array_expr.elements.items.len);
+        
+        // Evaluate each element expression
+        for (array_expr.elements.items, 0..) |element_ptr, i| {
+            const element_value = try self.evaluateExpression(element_ptr.*);
+            elements_slice[i] = element_value;
+        }
+        
+        return Value{ .Array = elements_slice };
     }
 
     /// Enhanced generic function call resolution
@@ -3912,6 +3996,101 @@ fn builtinYap(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
     return Value{ .Boolean = true };
 }
 
+fn builtinLen(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter; // Mark as used to avoid warnings
+    std.debug.print("DEBUG: builtinLen called with {} args\n", .{args.len});
+    
+    if (args.len != 1) {
+        std.debug.print("DEBUG: builtinLen - Invalid argument count: {}\n", .{args.len});
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const value = args[0];
+    std.debug.print("DEBUG: builtinLen - Value type: {s}\n", .{@tagName(value)});
+    
+    switch (value) {
+        .Array => |array| {
+            // Safe cast with overflow checking
+            if (array.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinLen - Array length overflow: {}\n", .{array.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(array.len));
+            std.debug.print("DEBUG: builtinLen - Array length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        .String => |str| {
+            // Safe cast with overflow checking
+            if (str.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinLen - String length overflow: {}\n", .{str.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(str.len));
+            std.debug.print("DEBUG: builtinLen - String length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        .OwnedString => |str| {
+            // Safe cast with overflow checking
+            if (str.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinLen - OwnedString length overflow: {}\n", .{str.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(str.len));
+            std.debug.print("DEBUG: builtinLen - OwnedString length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        else => {
+            std.debug.print("DEBUG: builtinLen - Unsupported type for len(): {s}\n", .{@tagName(value)});
+            return InterpreterError.TypeMismatch;
+        },
+    }
+}
+
+fn builtinAppend(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    std.debug.print("DEBUG: builtinAppend called with {} args\n", .{args.len});
+    
+    if (args.len != 2) {
+        std.debug.print("DEBUG: builtinAppend - Invalid argument count: {}\n", .{args.len});
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const array_value = args[0];
+    const element_value = args[1];
+    
+    std.debug.print("DEBUG: builtinAppend - Array type: {s}, Element type: {s}\n", .{@tagName(array_value), @tagName(element_value)});
+    
+    switch (array_value) {
+        .Array => |array| {
+            // Check for overflow before allocation
+            if (array.len >= std.math.maxInt(usize) - 1) {
+                std.debug.print("DEBUG: builtinAppend - Array too large for append: {}\n", .{array.len});
+                return InterpreterError.InvalidOperation;
+            }
+            
+            // Create new array with one additional element
+            const new_array = interpreter.allocator.alloc(Value, array.len + 1) catch {
+                std.debug.print("DEBUG: builtinAppend - Memory allocation failed\n", .{});
+                return InterpreterError.OutOfMemory;
+            };
+            
+            // Copy existing elements
+            for (array, 0..) |elem, i| {
+                new_array[i] = elem;
+            }
+            
+            // Add new element
+            new_array[array.len] = element_value;
+            
+            std.debug.print("DEBUG: builtinAppend - New array length: {}\n", .{new_array.len});
+            return Value{ .Array = new_array };
+        },
+        else => {
+            std.debug.print("DEBUG: builtinAppend - First argument is not an array: {s}\n", .{@tagName(array_value)});
+            return InterpreterError.TypeMismatch;
+        },
+    }
+}
+
 fn builtinVibezSpill(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
     _ = interpreter; // Mark as unused to avoid warnings
     if (args.len != 1) {
@@ -4190,11 +4369,15 @@ fn builtinStringzConcat(interpreter: *Interpreter, args: []Value) InterpreterErr
     switch (a) {
         .String => |str_a| switch (b) {
             .String => |str_b| {
-                const result = interpreter.allocator.alloc(u8, str_a.len + str_b.len) catch {
+                // Properly concatenate both strings by allocating new buffer
+                const total_len = str_a.len + str_b.len;
+                const result = interpreter.allocator.alloc(u8, total_len) catch {
                     return InterpreterError.OutOfMemory;
                 };
+                // Copy first string
                 @memcpy(result[0..str_a.len], str_a);
-                @memcpy(result[str_a.len..], str_b);
+                // Copy second string
+                @memcpy(result[str_a.len..total_len], str_b);
                 return Value{ .String = result };
             },
             else => return InterpreterError.TypeMismatch,
@@ -4803,6 +4986,56 @@ fn builtinCollectionsSetLen(interpreter: *Interpreter, args: []Value) Interprete
     switch (args[0]) {
         .Array => |arr| return Value{ .Integer = @intCast(arr.len) },
         else => return InterpreterError.TypeMismatch,
+    }
+}
+
+fn builtinCollectionsLength(interpreter: *Interpreter, args: []Value) InterpreterError!Value {
+    _ = interpreter; // Mark as used to avoid warnings
+    // std.debug.print("DEBUG: builtinCollectionsLength called with {} args\n", .{args.len});
+    
+    if (args.len != 1) {
+        // std.debug.print("DEBUG: builtinCollectionsLength - Invalid argument count: {}\n", .{args.len});
+        return InterpreterError.InvalidArgumentCount;
+    }
+    
+    const value = args[0];
+    // std.debug.print("DEBUG: builtinCollectionsLength - Value type: {s}\n", .{@tagName(value)});
+    
+    switch (value) {
+        .Array => |array| {
+            // Safe cast with overflow checking
+            if (array.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinCollectionsLength - Array length overflow: {}\n", .{array.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(array.len));
+            // std.debug.print("DEBUG: builtinCollectionsLength - Array length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        .String => |str| {
+            // Safe cast with overflow checking
+            if (str.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinCollectionsLength - String length overflow: {}\n", .{str.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(str.len));
+            std.debug.print("DEBUG: builtinCollectionsLength - String length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        .OwnedString => |str| {
+            // Safe cast with overflow checking
+            if (str.len > std.math.maxInt(i64)) {
+                std.debug.print("DEBUG: builtinCollectionsLength - OwnedString length overflow: {}\n", .{str.len});
+                return InterpreterError.InvalidOperation;
+            }
+            const length = @as(i64, @intCast(str.len));
+            std.debug.print("DEBUG: builtinCollectionsLength - OwnedString length: {}\n", .{length});
+            return Value{ .Integer = length };
+        },
+        else => {
+            std.debug.print("DEBUG: builtinCollectionsLength - Unsupported type for length(): {s}\n", .{@tagName(value)});
+            return InterpreterError.TypeMismatch;
+        },
     }
 }
 

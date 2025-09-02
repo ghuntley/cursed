@@ -49,7 +49,7 @@ slay main_character() {
     vibez.spill(complex_expr)
     
     fr fr Test stdlib and custom function mixing
-    sus mixed_result normie = mathz.abs(calculate_sum(-10, 5))
+    sus mixed_result normie = mathz.abs_normie(calculate_sum(-10, 5))
     vibez.spill("Mixed function calls result:")
     vibez.spill(mixed_result)
     

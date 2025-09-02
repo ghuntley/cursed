@@ -424,7 +424,7 @@ slay benchmark_gc_integration() lit {
     vibez.spill("  Post-GC Allocation Throughput: ", post_gc_throughput, " ops/sec")
     
     # GC should not significantly impact pool performance
-    sus gc_overhead drip = mathz.abs((post_gc_throughput - pre_gc_throughput) * 100 / pre_gc_throughput)
+    sus gc_overhead drip = mathz.abs_normie((post_gc_throughput - pre_gc_throughput) * 100 / pre_gc_throughput)
     
     vibez.spill("  GC Integration Overhead: ", gc_overhead, "%")
     

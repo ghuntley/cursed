@@ -8,6 +8,6 @@ slay main() no_cap {
     sus multiply_result drip = mathz.multiply(a, b);
     print("mathz.multiply(5, 3): ", multiply_result);
     
-    sus abs_result drip = mathz.abs(-7);
-    print("mathz.abs(-7): ", abs_result);
+    sus abs_result drip = mathz.abs_normie(-7);
+    print("mathz.abs_normie(-7): ", abs_result);
 }

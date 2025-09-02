@@ -2,6 +2,7 @@ vibe main
 yeet "vibez"
 yeet "mathz"
 yeet "stringz"
+yeet "collections"
 
 fr fr Test extreme input values and stress conditions
 slay test_very_large_numbers() {
@@ -53,16 +54,12 @@ slay test_very_long_strings() {
 slay test_very_large_arrays() {
     vibez.spill("=== Very Large Array Tests ===")
     
-    sus huge_array []normie = []normie{}
+    sus huge_array normie[value] = normie[value]{}
     
-    fr fr Build large array manually
-    huge_array = append(huge_array, 100)
-    huge_array = append(huge_array, 400)
-    huge_array = append(huge_array, 900)
-    huge_array = append(huge_array, 1600)
-    huge_array = append(huge_array, 2500)
+    fr fr Create array with initial values
+    huge_array = normie[value]{100, 400, 900, 1600, 2500}
     
-    vibez.spill("Array length:", len(huge_array))
+    vibez.spill("Array length:", collections.length(huge_array))
     
     fr fr Test operations on array
     sus sum normie = 0
@@ -116,12 +113,9 @@ slay test_mixed_extreme_operations() {
     big_str = stringz.concat(big_str, "123456")
     
     fr fr Large arrays
-    sus big_array []normie = []normie{}
-    big_array = append(big_array, mathz.abs_normie(100 - big_num))
-    big_array = append(big_array, mathz.abs_normie(200 - big_num))
-    big_array = append(big_array, mathz.abs_normie(300 - big_num))
+    sus big_array normie[value] = normie[value]{mathz.abs_normie(100 - big_num), mathz.abs_normie(200 - big_num), mathz.abs_normie(300 - big_num)}
     
-    vibez.spill("Final - num:", big_num, "str_len:", stringz.length(big_str), "arr_len:", len(big_array))
+    vibez.spill("Final - num:", big_num, "str_len:", stringz.length(big_str), "arr_len:", collections.length(big_array))
     
     vibez.spill("Mixed extreme operations completed")
 }

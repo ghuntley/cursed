@@ -13,7 +13,7 @@ slay mathematical_string_operations() {
     bestie i := 0; i < len(base_numbers); i++ {
         sus num = base_numbers[i]
         sus sqrt_val = mathz.sqrt(num)  // This might not exist, but testing
-        sus abs_val = mathz.abs(num)
+        sus abs_val = mathz.abs_normie(num)
         sus pow_val = mathz.pow(num, 2)
         
         // Convert numbers to strings using string operations
@@ -45,7 +45,7 @@ slay string_mathematical_analysis() {
         
         // Convert string length to mathematical operations
         sus len_squared = mathz.pow(str_len, 2) 
-        sus len_abs = mathz.abs(str_len)
+        sus len_abs = mathz.abs_normie(str_len)
         sus len_doubled = mathz.multiply(str_len, 2)
         
         math_results = append(math_results, len_squared)
@@ -80,7 +80,7 @@ slay complex_data_transformation() {
         // Mathematical operations on length
         sus len_fact = mathz.pow(item_len, 2)
         sus len_mod = mathz.modulo(item_len, 3)
-        sus len_abs = mathz.abs(item_len - 10)
+        sus len_abs = mathz.abs_normie(item_len - 10)
         
         // Combine results
         sus len_str = stringz.from_int(len_fact)
@@ -106,7 +106,7 @@ slay performance_intensive_cross_module() {
             
             // Mathematical processing
             sus str_len = stringz.length(processed_str)
-            sus math_result = mathz.multiply(str_len, mathz.abs(i - 50))
+            sus math_result = mathz.multiply(str_len, mathz.abs_normie(i - 50))
             
             // Create result string
             sus result_str = stringz.concat(processed_str, "_")

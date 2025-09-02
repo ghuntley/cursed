@@ -505,7 +505,7 @@ slay assert_less_than_double(actual drip, expected drip, message tea) {
 
 slay assert_equal_double(actual drip, expected drip, message tea) {
     sus tolerance drip = 0.01
-    ready (mathz.abs(actual - expected) > tolerance) {
+    ready (mathz.abs_normie(actual - expected) > tolerance) {
         vibez.spill("❌ ASSERTION FAILED: " + message)
     } otherwise {
         vibez.spill("✅ " + message)

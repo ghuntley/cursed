@@ -189,7 +189,7 @@ yeet "stringz"  # String utilities
 yeet "filez"    # File operations
 
 # Use imported functions
-sus result drip = mathz.abs(-42)
+sus result drip = mathz.abs_normie(-42)
 sus upper tea = stringz.to_upper("hello")
 vibez.spill("Absolute value:", result)
 vibez.spill("Uppercase:", upper)

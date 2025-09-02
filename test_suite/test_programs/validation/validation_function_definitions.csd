@@ -19,7 +19,7 @@ slay add_three_numbers(a normie, b normie, c normie) normie {
 
 fr fr Function using stdlib
 slay double_absolute(value normie) normie {
-    sus abs_value normie = mathz.abs(value)
+    sus abs_value normie = mathz.abs_normie(value)
     damn abs_value * 2
 }
 
