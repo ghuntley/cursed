@@ -53,4 +53,5 @@ slay main() {
     }
     
     vibez.spill("Simple boundary test completed")
+    damn
 }
