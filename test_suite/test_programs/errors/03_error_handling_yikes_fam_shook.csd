@@ -55,4 +55,5 @@ slay main() {
     }
     
     vibez.spill("Error handling tests completed")
+    damn
 }

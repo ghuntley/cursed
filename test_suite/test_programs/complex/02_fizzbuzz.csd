@@ -25,4 +25,5 @@ slay main() {
     fizzbuzz(15)
     
     vibez.spill("=== Test Complete ===")
+    damn
 }

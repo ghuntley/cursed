@@ -62,4 +62,5 @@ slay main() {
     vibez.spill("0 / 1:", zero / 1)
     
     vibez.spill("Boundary conditions test completed")
+    damn
 }

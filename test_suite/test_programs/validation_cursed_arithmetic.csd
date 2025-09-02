@@ -13,4 +13,5 @@ slay main() {
     vibez.spill("Division: 10 / 5")
     vibez.spill("Mathz abs test:")
     vibez.spill(mathz.abs_normie(-42))
+    damn
 }

@@ -47,4 +47,5 @@ slay main() {
     }
     
     vibez.spill("=== Control Flow Test Complete ===")
+    damn
 }
