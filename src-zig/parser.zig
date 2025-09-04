@@ -76,16 +76,8 @@ pub const ErrorRecoveryStats = struct {
     }
     
     pub fn reportStats(self: *const ErrorRecoveryStats) void {
-        if (builtin.mode == .Debug) {
-            std.debug.print("\n=== Error Recovery Statistics ===\n", .{});
-            std.debug.print("Total errors encountered: {}\n", .{self.total_errors});
-            std.debug.print("Semicolon recoveries: {}\n", .{self.semicolon_recoveries});
-            std.debug.print("Statement recoveries: {}\n", .{self.statement_recoveries});
-            std.debug.print("Expression recoveries: {}\n", .{self.expression_recoveries});
-            std.debug.print("Delimiter recoveries: {}\n", .{self.delimiter_recoveries});
-            std.debug.print("Total tokens skipped: {}\n", .{self.tokens_skipped});
-            std.debug.print("================================\n", .{});
-        }
+        _ = self;
+        // Error recovery statistics disabled for clean test output
     }
 };
 
@@ -891,37 +883,17 @@ pub const Parser = struct {
     }
     
     fn reportErrorWithContext(self: *Parser, message: []const u8, context: []const u8) ParserError {
-        // Validate message before printing
-        if (message.len == 0 or message.len > 1024) {
-            if (builtin.mode == .Debug) {
-                std.debug.print("Error: Invalid error message (length: {})\n", .{message.len});
-            }
-            self.had_error = true;
-            return ParserError.SyntaxError;
-        }
-        
-        if (builtin.mode == .Debug) {
-            const location = self.getCurrentSourceLocation();
-            if (location) |loc| {
-                // Bounds check for safe formatting
-                if (loc.line < 65536 and loc.column < 65536) {
-                    std.debug.print("Error at {s}:{}:{} - {s} (context: {s})\n", .{ loc.file, loc.line, loc.column, message, context });
-                } else {
-                    std.debug.print("Error in {s} - {s} (context: {s})\n", .{ loc.file, message, context });
-                }
-            } else {
-                std.debug.print("Error: {s} (context: {s})\n", .{ message, context });
-            }
-        }
+        _ = message;
+        _ = context;
+        // Error reporting disabled for clean test output
         self.had_error = true;
         return ParserError.SyntaxError;
     }
 
     fn reportErrorAtToken(self: *Parser, token: Token, message: []const u8) ParserError {
-        if (builtin.mode == .Debug) {
-            const location = self.getSourceLocationForToken(token);
-            std.debug.print("Error at {s}:{}:{} - {s}\n", .{ location.file, location.line, location.column, message });
-        }
+        _ = token;
+        _ = message;
+        // Error reporting disabled for clean test output
         self.had_error = true;
         return ParserError.SyntaxError;
     }
@@ -954,7 +926,7 @@ pub const Parser = struct {
                 _ = self.advance(); // consume the semicolon
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
                 if (builtin.mode == .Debug) {
-                    std.debug.print("INFO: Recovered at semicolon after skipping {} tokens\n", .{tokens_skipped});
+                    // Recovered at semicolon
                 }
                 return;
             }
@@ -964,7 +936,7 @@ pub const Parser = struct {
                 _ = self.advance(); // consume the newline
                 self.error_recovery_stats.tokens_skipped += tokens_skipped;
                 if (builtin.mode == .Debug) {
-                    std.debug.print("INFO: Recovered at newline after skipping {} tokens\n", .{tokens_skipped});
+                    // Recovered at newline
                 }
                 return;
             }
@@ -977,7 +949,7 @@ pub const Parser = struct {
                     // Don't consume these - let the next parsing cycle handle them
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
                     if (builtin.mode == .Debug) {
-                        std.debug.print("INFO: Recovered at statement keyword '{s}' after skipping {} tokens\n", .{ @tagName(current_token.kind), tokens_skipped });
+                        // Recovered at statement keyword
                     }
                     return;
                 },
@@ -990,7 +962,7 @@ pub const Parser = struct {
                     // Don't consume these - they might be needed for proper parsing
                     self.error_recovery_stats.tokens_skipped += tokens_skipped;
                     if (builtin.mode == .Debug) {
-                        std.debug.print("INFO: Recovered at delimiter '{s}' after skipping {} tokens\n", .{ @tagName(current_token.kind), tokens_skipped });
+                        // Recovered at delimiter
                     }
                     return;
                 },
@@ -1098,7 +1070,7 @@ pub const Parser = struct {
             .Periodt, .Flex, .Bestie, .Later, .Impl, .Stan, .Match
         };
         
-        std.debug.print("INFO: Attempting additional statement recovery\n", .{});
+        // Attempting additional statement recovery
         self.syncToAnyToken(&stmt_start_tokens);
     }
 
@@ -3348,35 +3320,27 @@ pub const Parser = struct {
     fn parseForStatement(self: *Parser) ParserError!Statement {
         _ = try self.consume(.Bestie, "Expected 'bestie'");
         
-        if (builtin.mode == .Debug) {
-            std.debug.print("DEBUG: parseForStatement started at position {}\n", .{self.current});
-        }
+        // Debug logging removed for test compatibility
         
         // Check for infinite loop
         try self.checkInfiniteLoop();
         
         // Check for range-for loop (bestie var := flex ...)
         if (self.isRangeForLoop()) {
-            if (builtin.mode == .Debug) {
-                std.debug.print("DEBUG: detected range for loop\n", .{});
-            }
+            // Range for loop detected
             return try self.parseRangeForStatement();
         }
         
         // Check if it's a while-style for loop (no semicolons)
         if (!self.hasSemicolonsBeforeBrace()) {
-            if (builtin.mode == .Debug) {
-                std.debug.print("DEBUG: detected while-style for loop\n", .{});
-            }
+            // While-style for loop detected
             // While-style for loop: bestie condition { ... }
             var condition: ?Expression = null;
             
             if (!self.check(.LeftBrace)) {
-                condition = self.parseExpression() catch |err| {
+                condition = self.parseExpression() catch {
                     // If expression parsing fails, provide better error recovery
-                    if (builtin.mode == .Debug) {
-                        std.debug.print("DEBUG: parseForStatement failed to parse condition: {any}\n", .{err});
-                    }
+                    // Failed to parse condition
                     return ParserError.InvalidSyntax;
                 };
             }
@@ -4682,15 +4646,11 @@ pub const Parser = struct {
         var loop_protection: usize = 0;
         const MAX_LOOKAHEAD: usize = 1000; // Limit lookahead to prevent infinite loops
         
-        if (builtin.mode == .Debug) {
-            std.debug.print("DEBUG: hasSemicolonsBeforeBrace starting at pos {}, current token: {any}\n", .{ pos, if (pos < self.tokens.len) self.tokens[pos].kind else .Eof });
-        }
+        // Check for semicolons before brace
         
         while (pos < self.tokens.len and loop_protection < MAX_LOOKAHEAD) {
             const token = self.tokens[pos];
-            if (builtin.mode == .Debug) {
-                std.debug.print("DEBUG: checking token {}: {any}\n", .{ pos, token.kind });
-            }
+            // Check token type
             
             // Break conditions
             if (token.kind == .LeftBrace) {
@@ -4701,9 +4661,7 @@ pub const Parser = struct {
             }
             // Also break on unexpected control flow tokens that indicate we've gone too far
             if (token.kind == .RightBrace or token.kind == .RightParen) {
-                if (builtin.mode == .Debug) {
-                    std.debug.print("DEBUG: hasSemicolonsBeforeBrace hit unexpected delimiter, stopping scan\n", .{});
-                }
+                // Hit unexpected delimiter, stopping scan
                 break;
             }
             
@@ -4725,15 +4683,11 @@ pub const Parser = struct {
         
         // If we hit loop protection limit, return false to avoid infinite loops
         if (loop_protection >= MAX_LOOKAHEAD) {
-            if (builtin.mode == .Debug) {
-                std.debug.print("DEBUG: hasSemicolonsBeforeBrace hit lookahead limit, assuming no C-style for loop\n", .{});
-            }
+            // Hit lookahead limit, assuming no C-style for loop
             return false;
         }
         
-        if (builtin.mode == .Debug) {
-            std.debug.print("DEBUG: hasSemicolonsBeforeBrace found {} semicolons after scanning {} tokens\n", .{ semicolon_count, pos - start_pos });
-        }
+        // Found semicolons after scanning tokens
         return semicolon_count > 0;
     }
 

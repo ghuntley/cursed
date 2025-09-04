@@ -1,4 +1,4 @@
-vibe main_character
+vibe main
 
 fr fr Test: Minimal CURSED syntax validation
 fr fr Purpose: Test basic parsing without stdlib dependencies

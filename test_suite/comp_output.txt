@@ -1,0 +1,319 @@
+🔧 Initializing LLVM components...
+✅ C library functions declared
+✅ Builtin functions registered (yap)
+✅ LLVM IR Pipeline initialized successfully
+🚀 Starting complete LLVM compilation pipeline...
+🔍 DEBUG: Building function signature registry for 1 functions
+🔧 DEBUG: Building function signature for main_character
+🔍 DEBUG: Inferring return type for function main_character
+🔍 DEBUG: Found return statement with value, inferring integer type
+✅ DEBUG: Stored function signature for main_character with return type
+🔍 DEBUG: About to generate 1 functions
+🔍 DEBUG: Generating function 1 of 1
+🔍 DEBUG: Inferring return type for function main_character
+🔍 DEBUG: Found return statement with value, inferring integer type
+🔧 DEBUG: Created new function main_character with 0 parameters
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: complex1
+🔍 DEBUG: Found complex1 as variable reference
+🔍 DEBUG: Found type info for variable complex1
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: complex2
+🔍 DEBUG: Found complex2 as variable reference
+🔍 DEBUG: Found type info for variable complex2
+🔍 DEBUG: Generating binary operation: ||
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: &&
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: <
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: a
+🔍 DEBUG: Found a as variable reference
+🔍 DEBUG: Found type info for variable a
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: >
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: c
+🔍 DEBUG: Found c as variable reference
+🔍 DEBUG: Found type info for variable c
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: ==
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: a
+🔍 DEBUG: Found a as variable reference
+🔍 DEBUG: Found type info for variable a
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: c
+🔍 DEBUG: Found c as variable reference
+🔍 DEBUG: Found type info for variable c
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: complex_bool
+🔍 DEBUG: Found complex_bool as variable reference
+🔍 DEBUG: Found type info for variable complex_bool
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+⚠️ Unhandled method call: mathz.max
+🔍 DEBUG: Looking up identifier: nested_result
+🔍 DEBUG: Found nested_result as variable reference
+🔍 DEBUG: Found type info for variable nested_result
+🔍 DEBUG: Generating binary operation: &&
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: >
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: a
+🔍 DEBUG: Found a as variable reference
+🔍 DEBUG: Found type info for variable a
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: <
+🔍 DEBUG: Generating left operand
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: c
+🔍 DEBUG: Found c as variable reference
+🔍 DEBUG: Found type info for variable c
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: x
+🔍 DEBUG: Found x as variable reference
+🔍 DEBUG: Found type info for variable x
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: y
+🔍 DEBUG: Found y as variable reference
+🔍 DEBUG: Found type info for variable y
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: -
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: x
+🔍 DEBUG: Found x as variable reference
+🔍 DEBUG: Found type info for variable x
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: y
+🔍 DEBUG: Found y as variable reference
+🔍 DEBUG: Found type info for variable y
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: /
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: *
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: x
+🔍 DEBUG: Found x as variable reference
+🔍 DEBUG: Found type info for variable x
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: y
+🔍 DEBUG: Found y as variable reference
+🔍 DEBUG: Found type info for variable y
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: x
+🔍 DEBUG: Found x as variable reference
+🔍 DEBUG: Found type info for variable x
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: complex_float
+🔍 DEBUG: Found complex_float as variable reference
+🔍 DEBUG: Found type info for variable complex_float
+🔍 DEBUG: Generating binary operation: &&
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: &&
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: <
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: a
+🔍 DEBUG: Found a as variable reference
+🔍 DEBUG: Found type info for variable a
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: <
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: b
+🔍 DEBUG: Found b as variable reference
+🔍 DEBUG: Found type info for variable b
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: c
+🔍 DEBUG: Found c as variable reference
+🔍 DEBUG: Found type info for variable c
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generating binary operation: <
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Generating binary operation: +
+🔍 DEBUG: Generating left operand
+🔍 DEBUG: Looking up identifier: c
+🔍 DEBUG: Found c as variable reference
+🔍 DEBUG: Found type info for variable c
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated left operand successfully
+🔍 DEBUG: Generating right operand
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Generated right operand successfully
+🔍 DEBUG: Looking up identifier: chain_result
+🔍 DEBUG: Found chain_result as variable reference
+🔍 DEBUG: Found type info for variable chain_result
+🔍 DEBUG: Generating return statement
+🔍 DEBUG: Generating return value expression
+🔍 DEBUG: Return value generated successfully
+🔍 DEBUG: Checking type compatibility for return value
+🔍 DEBUG: Return type needs integer cast
+🔍 DEBUG: Successfully generated function 1 of 1
+🔍 DEBUG: About to ensure main function with 2 global statements
+📦 Processing import: vibez
+DEBUG: Skipping vibez module loading - using built-in printf handling
+📦 Processing import: mathz
+DEBUG: Loading and compiling CURSED module: mathz
+DEBUG: Could not read CURSED module stdlib/mathz/mod.csd: error.FileNotFound
+🔍 DEBUG: Successfully ensured main function
+✅ LLVM IR written to: temp_binary.ll
+🔧 Step 1: Compiling IR to object file with llc-18...
+🔧 Step 2: Linking object file with gcc...
+✅ Successfully compiled to: temp_binary
+🎉 Compilation pipeline completed successfully!
+🎉 Successfully compiled test_programs/edge_cases/edge_case_complex_expressions.csd to temp_binary
+🧹 Cleaning up LLVM IR Pipeline...
+✅ LLVM IR Pipeline cleanup complete

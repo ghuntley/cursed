@@ -317,15 +317,12 @@ pub const Value = union(enum) {
         switch (self.*) {
             .String => {}, // String is a reference, don't free
             .OwnedString => |str| {
-                std.debug.print("DEBUG deinit OwnedString: len={}, ptr={*}\n", .{ str.len, str.ptr });
                 allocator.free(str);
             },
             .Array => |array| {
-                std.debug.print("DEBUG Value.deinit Array: len={}, ptr={*}, self_ptr={*}\n", .{ array.len, array.ptr, self });
                 // Only deinitialize elements if there are any
                 if (array.len > 0) {
-                    for (array, 0..) |*item, i| {
-                        std.debug.print("DEBUG deinit Array[{}]: element_ptr={*}, calling deinit\n", .{ i, item });
+                    for (array) |*item| {
                         item.deinit(allocator);
                     }
                     // Only free if we have a valid allocation (len > 0)
@@ -446,6 +443,79 @@ pub const Value = union(enum) {
         }
     }
 
+    pub fn deepClone(self: Value, allocator: Allocator) InterpreterError!Value {
+        switch (self) {
+            .Array => |array| {
+                // Deep clone array elements
+                const cloned_elements = try allocator.alloc(Value, array.len);
+                for (array, 0..) |element, i| {
+                    cloned_elements[i] = try element.deepClone(allocator);
+                }
+                return Value{ .Array = cloned_elements };
+            },
+            .OwnedString => |str| {
+                // Clone the owned string
+                return Value{ .OwnedString = try allocator.dupe(u8, str) };
+            },
+            .String => |str| {
+                // Convert string reference to owned copy
+                return Value{ .OwnedString = try allocator.dupe(u8, str) };
+            },
+            .Struct => |struct_inst| {
+                // Deep clone struct instance
+                var cloned_fields = std.StringHashMap(*Value).init(allocator);
+                var iterator = struct_inst.fields.iterator();
+                while (iterator.next()) |entry| {
+                    const cloned_field_value = try allocator.create(Value);
+                    cloned_field_value.* = try entry.value_ptr.*.deepClone(allocator);
+                    const cloned_field_name = try allocator.dupe(u8, entry.key_ptr.*);
+                    try cloned_fields.put(cloned_field_name, cloned_field_value);
+                }
+                
+                return Value{ .Struct = StructInstance{
+                    .type_name = try allocator.dupe(u8, struct_inst.type_name),
+                    .fields = cloned_fields,
+                    .allocator = allocator,
+                }};
+            },
+            .Pointer => |ptr| {
+                // Deep clone the pointee value
+                const cloned_pointee = try allocator.create(Value);
+                cloned_pointee.* = try ptr.pointee_value.deepClone(allocator);
+                return Value{ .Pointer = PointerValue{
+                    .pointee_value = cloned_pointee,
+                    .allocator = allocator,
+                }};
+            },
+            .Error => |err| {
+                // Deep clone error value
+                const message_copy = try allocator.dupe(u8, err.message);
+                const context_copy = if (err.context) |ctx| try allocator.dupe(u8, ctx) else null;
+                
+                var stack_frames_copy: ?[][]const u8 = null;
+                if (err.stack_trace) |trace| {
+                    const frames_copy = try allocator.alloc([]const u8, trace.len);
+                    for (trace, 0..) |frame, i| {
+                        frames_copy[i] = try allocator.dupe(u8, frame);
+                    }
+                    stack_frames_copy = frames_copy;
+                }
+                
+                return Value{ .Error = ErrorValue{
+                    .message = message_copy,
+                    .code = err.code,
+                    .context = context_copy,
+                    .stack_trace = stack_frames_copy,
+                    .allocator = allocator,
+                }};
+            },
+            // Primitive types and references don't need deep cloning
+            .Integer, .Float, .Boolean, .Character, .Null, .BuiltinFunction, .UserFunction, .Module, .Interface, .CursedError => {
+                return self; // Shallow copy is sufficient for these types
+            },
+        }
+    }
+
     pub fn toBool(self: Value) bool {
         switch (self) {
             .Boolean => |bool_val| return bool_val,
@@ -531,7 +601,7 @@ pub const Environment = struct {
 
     pub fn define(self: *Environment, name: []const u8, value: Value) !void {
         const value_ptr = try self.allocator.create(Value);
-        value_ptr.* = value;
+        value_ptr.* = try value.deepClone(self.allocator);
         try self.variables.put(name, value_ptr);
     }
 
@@ -569,7 +639,7 @@ pub const Environment = struct {
             // Update the existing value
             if (self.variables.get(name)) |value_ptr| {
                 value_ptr.*.deinit(self.allocator);
-                value_ptr.* = value;
+                value_ptr.* = try value.deepClone(self.allocator);
             }
             return;
         }
@@ -769,7 +839,7 @@ pub const Interpreter = struct {
                         .declaration = func,
                         .closure = self.environment,
                     };
-                    // Removed DEBUG output
+                    // Function registered
                     try self.functions.put(func.name, cursed_func);
                 },
                 .Struct => |struct_decl| {
@@ -791,18 +861,16 @@ pub const Interpreter = struct {
         }
         }
         
-        // CRITICAL FIX: Determine main function based on package clause
-        // If package is "main", look for "main" function
-        // If package is "main_character" or missing, look for "main_character" function  
-        var main_function_name: []const u8 = "main_character"; // default
-        if (program.package) |pkg| {
-            if (std.mem.eql(u8, pkg.name, "main")) {
-                main_function_name = "main";
-            }
-        }
+        // CURSED SPEC: The canonical main function is "main" per grammar specification
+        // Fall back to "main_character" for backward compatibility
+        const canonical_main_name: []const u8 = "main";
+        const legacy_main_name: []const u8 = "main_character";
         
-        // Execute the determined main function if it exists
-        if (self.functions.get(main_function_name)) |main_func| {
+        // Execute the main function if it exists (prefer canonical "main")
+        if (self.functions.get(canonical_main_name)) |main_func| {
+            _ = try self.callFunction(main_func, &[_]Value{});
+        } else if (self.functions.get(legacy_main_name)) |main_func| {
+            // Fallback to legacy main_character for backward compatibility
             _ = try self.callFunction(main_func, &[_]Value{});
         } else {
             // Execute statements in order
@@ -1721,8 +1789,16 @@ pub const Interpreter = struct {
             .Match => |match| return try self.evaluateMatch(match),
             .Array => |array| return try self.evaluateArray(array.*),
             .MethodCall => |method_call| {
-                // Handle vibez.spill() and other built-in method calls
-                if (std.mem.eql(u8, method_call.method_name, "spill")) {
+                // Check if this is a vibez.spill call specifically
+                const is_vibez_spill = blk: {
+                    if (!std.mem.eql(u8, method_call.method_name, "spill")) break :blk false;
+                    switch (method_call.object.*) {
+                        .Identifier => |id| break :blk std.mem.eql(u8, id, "vibez"),
+                        else => break :blk false,
+                    }
+                };
+                
+                if (is_vibez_spill) {
                     for (method_call.arguments.items) |arg_ptr| {
                         const arg_value = try self.evaluateExpression(arg_ptr.*);
                         const str_repr = try arg_value.toString(self.allocator);
@@ -1987,7 +2063,13 @@ pub const Interpreter = struct {
         // Handle built-in functions
         switch (call.function.*) {
             .MemberAccess => |member| {
-                if (std.mem.eql(u8, member.property, "spill")) {
+                // Check if this is a vibez.spill call specifically
+                const is_vibez_call = switch (member.object.*) {
+                    .Identifier => |id| std.mem.eql(u8, id, "vibez"),
+                    else => false,
+                };
+                
+                if (is_vibez_call and std.mem.eql(u8, member.property, "spill")) {
                     // vibez.spill - print function (can handle multiple arguments)
                     if (call.arguments.items.len == 0) {
                         std.debug.print("{s}", .{"\n"});
