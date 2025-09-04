@@ -1714,11 +1714,16 @@ pub const LLVMIRPipeline = struct {
         
         const is_float = left_is_float or right_is_float;
         
+        // Check if we're dealing with pointer types (for string comparisons)
+        const left_is_pointer = c.LLVMGetTypeKind(left_type) == c.LLVMPointerTypeKind;
+        const right_is_pointer = c.LLVMGetTypeKind(right_type) == c.LLVMPointerTypeKind;
+        const is_pointer_comparison = left_is_pointer and right_is_pointer;
+        
         // Skip type normalization for logical operators (&&, ||) - they handle their own boolean conversions
         const is_logical_op = std.mem.eql(u8, bin_op.operator, "&&") or std.mem.eql(u8, bin_op.operator, "||");
         
-        // Handle integer type normalization for all operations (except logical operators)
-        if (!left_is_float and !right_is_float and !is_logical_op) {
+        // Handle integer type normalization for all operations (except logical operators and pointer comparisons)
+        if (!left_is_float and !right_is_float and !is_logical_op and !is_pointer_comparison) {
             // Check if operands are boolean (i1) - don't normalize boolean values for comparison operations
             const left_is_bool = c.LLVMGetTypeKind(left_type) == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(left_type) == 1;
             const right_is_bool = c.LLVMGetTypeKind(right_type) == c.LLVMIntegerTypeKind and c.LLVMGetIntTypeWidth(right_type) == 1;
@@ -1783,6 +1788,10 @@ pub const LLVMIRPipeline = struct {
         if (std.mem.eql(u8, bin_op.operator, "+")) {
             if (is_float) {
                 return c.LLVMBuildFAdd(self.builder, left, right, "fadd_tmp");
+            } else if (is_pointer_comparison) {
+                // String concatenation - for now, just return the first string
+                // TODO: Implement proper string concatenation
+                return left; // Temporary fallback
             } else {
                 return c.LLVMBuildAdd(self.builder, left, right, "add_tmp");
             }
@@ -1844,12 +1853,19 @@ pub const LLVMIRPipeline = struct {
         } else if (std.mem.eql(u8, bin_op.operator, "==")) {
             if (is_float) {
                 return c.LLVMBuildFCmp(self.builder, c.LLVMRealOEQ, left, right, "feq_tmp");
+            } else if (is_pointer_comparison) {
+                // For string/pointer comparisons, we need to call strcmp or similar
+                // For now, use pointer equality (works for string literals)
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "ptr_eq_tmp");
             } else {
                 return c.LLVMBuildICmp(self.builder, c.LLVMIntEQ, left, right, "eq_tmp");
             }
         } else if (std.mem.eql(u8, bin_op.operator, "!=")) {
             if (is_float) {
                 return c.LLVMBuildFCmp(self.builder, c.LLVMRealONE, left, right, "fne_tmp");
+            } else if (is_pointer_comparison) {
+                // For string/pointer comparisons, use pointer inequality
+                return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ptr_ne_tmp");
             } else {
                 return c.LLVMBuildICmp(self.builder, c.LLVMIntNE, left, right, "ne_tmp");
             }

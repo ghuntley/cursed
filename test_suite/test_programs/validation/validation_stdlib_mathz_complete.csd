@@ -35,7 +35,7 @@ slay main_character() {
     vibez.spill(result_abs_neg)
     
     fr fr Test power operation
-    sus result_pow normie = mathz.power(2, 8)
+    sus result_pow normie = mathz.pow(2, 8)
     vibez.spill("2^8 =")
     vibez.spill(result_pow)
     
