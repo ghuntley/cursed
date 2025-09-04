@@ -38,6 +38,7 @@
 - **Parser debug output cleanup** - removed DEBUG messages causing test output mismatches
 - **Type annotation fixes** - corrected drip -> normie syntax in comprehensive tests
 - **Error recovery statistics** - cleaned up parser error reporting for consistent output
+- **Critical increment/decrement bug fix** - Fixed `i++` and `i--` operations not updating variable values in environment, eliminating infinite loops in for statements and memory allocation tests
 
 ## Phase 0: LLVM Backend Critical Fix ✅ COMPLETED
 
@@ -55,6 +56,7 @@
 - Enhanced test infrastructure to properly compare interpreter vs compiler output
 
 ## NEXT PRIORITIES
+- **LLVM Compilation ShortDeclaration Fix**: Resolve LLVM compilation not handling ShortDeclaration statements (`i := 0` syntax), preventing compiled mode from working with for loops
 - **String Operations**: Fix string length and concatenation mismatches between interpreter/compiled modes
 - **Array Operations**: Resolve array indexing and manipulation differences between execution modes
 - **Stdlib Consistency**: Ensure mathz, stringz, collections produce identical output in both modes
@@ -74,6 +76,7 @@
 - [x] Remove parser debug output causing test mismatches
 - [x] Fix type annotation parsing (drip -> normie corrections)
 - [x] Clean error recovery statistics output
+- [x] **Fixed increment/decrement operations** - `i++` and `i--` now properly update variable values in environment, resolving infinite loops in for statements and memory tests
 - [ ] Fix "Error parsing complex expression statement" failures (reduced occurrence)
 - [ ] Validate proper handling of CURSED syntax (else lowkey, etc.)
 
