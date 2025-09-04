@@ -178,9 +178,9 @@ for test_file in "${test_files[@]}"; do
         has_comp_output=1
     fi
     
-    # Normalize outputs for comparison
-    interp_normalized=$(echo "$interp_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
-    compiled_normalized=$(echo "$compiled_output" | sed 's/[[:space:]]*$//' | tr -d '\r')
+    # Normalize outputs for comparison (filter out DEBUG messages)
+    interp_normalized=$(echo "$interp_output" | grep -v "^DEBUG " | sed 's/[[:space:]]*$//' | tr -d '\r')
+    compiled_normalized=$(echo "$compiled_output" | grep -v "^DEBUG " | sed 's/[[:space:]]*$//' | tr -d '\r')
     
     if [[ $has_interp_output -eq 1 && $has_comp_output -eq 1 ]]; then
         # Both produced output - compare them
