@@ -117,7 +117,7 @@ slay test_mixed_extreme_operations() {
     vibez.spill("Mixed extreme operations completed")
 }
 
-slay main_character() {
+slay main() {
     vibez.spill("=== Extreme Input Tests ===")
     
     test_very_large_numbers()
